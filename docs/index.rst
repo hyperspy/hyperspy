@@ -6,12 +6,12 @@
 Welcome to EELSLab's documentation!
 ===================================
 
-Contents:
 
 .. toctree::
     :maxdepth: 2
    
-    tutorial
+    users/index.rst
+    api/index.rst
 
 
 Indices and tables

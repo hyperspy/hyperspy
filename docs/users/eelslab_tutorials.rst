@@ -1,124 +1,21 @@
 EELSLab Tutorial
 ++++++++++++++++
 
-Introduction
-============
-
-Starting eelslab
-----------------
-To start eelslab type in a console:
-
-.. code-block:: bash
-
-    eelslab
-
-or altenatively:
-
-.. code-block:: bash
-
-    python -pylab -wthread
-
-and in the ipython console type:
-
-.. code-block:: python
-
-
-    import eelslab as el
-
-
-.. NOTE::
-
-   If you are using GNOME in Linux, you can open a terminal in a folder by 
-   choosing "open terminal" in the file menu
-
-Loading a file
---------------
-
-To load a supported file (i.e. NetCDF, dm3, MSA, MRC, ser or emi) simply type:
-
-.. code-block:: python
-
-    s = el.load('filename')
-
-.. NOTE::
-
-   We use the variable `s` but you can choose any (valid) variable name
-
-.. NOTE::
-
-   The filename must include the extension
-
-If the loading was successful, the variable s now contains a python object that 
-can be an Image of Spectrum depending on the file
-
-.. _getting-help-label:
-
-Getting help
-------------
-
-The documentation can be accessed by adding a question mark to the name of a function. e.g.:
-
-.. code-block:: python
-    
-    el.load?
-
-.. NOTE::
-  
-        The documentation of the code is a work in progress, 
-        so not all the objects are documented yet.
-
-Autocompletion
---------------
-
-In the Ipython terminal (that eelslab uses) you can conveniently use the tabulator to autocomplete the commands and filenames.
-
-Plotting
---------
-
-To plot an Spectrum or Image objects type:
-
-.. code-block:: python
-    
-    s.plot()
-
-
-To navigate in a spectrum image you can either use the pointer of the navigator window or the numpad cursors **when numlock is active**.
-
-You can add an extra cursor to the navigator by pressing 'e' while the navigator figure is focused.
-
-.. NOTE::
-    If you prefer that 2D maps in gray scale type:
-
-    .. code-block:: python
-	
-	gray()
-
-
-.. NOTE::
-    To close all the figures type:
-    
-    .. code-block:: python
-	
-	close('all')
-
-
-
-
-Multivariate analysis
-=====================
-
 The tutorial files are in the tutorial folder of your home directory that will be generated the first time that you start EELSLab.
 
-In GNOME you can directly start the terminal in the mva folder or, alternatively, navigate util that folder by typing the following in the terminal prompt
+In GNOME you can directly start the terminal in the mva folder or, alternatively, navigate to that folder by typing the following in the terminal prompt
 
 .. code-block:: bash
 
     cd tutorial/mva
 
+Multivariate analysis
+=====================
+
 
 .. _example1-label:
 
-Example 1: Basic PCA/ICA workflow
+Tutorial 1: Basic PCA/ICA workflow
 -------------------------------------------------------
 
 For this example we will use the file `CL1_eelslab.nc` that contains a simulated EELS SI.
@@ -127,11 +24,11 @@ We start by loading and plotting the data:
 
 .. code-block:: python
 
-    s = el.load('CL1_eelslab.nc')
+    s = load('CL1_eelslab.nc')
     s.plot()
 
 
-As we can observe, the spectra contains the Sr, Ti, O and C ionisation edges in the 100-600 eV energy range.
+A trained EELS analyst well easily note that the spectra contains the Sr, Ti, O and C ionisation edges in the 100-600 eV energy range.
 
 .. NOTE::
 
@@ -139,9 +36,9 @@ As we can observe, the spectra contains the Sr, Ti, O and C ionisation edges in 
 
    .. code-block:: python
 
-    el.edges_db.edges_dict['element_symbol']
+    edges_dict['element_symbol']
 
-However the spectra are rather noisy. We will use principal components analysis (PCA) to improve the SNR. For that we type:
+We will use principal components analysis (PCA) to improve the SNR. For that we type:
 
 .. code-block:: python
 
@@ -158,7 +55,7 @@ To check the scree plot simply type:
 
     s.plot_lev()
 
-As you can observe, there are clearly just four principal components.
+As you can observe, there are just four principal components.
 
 To plot the principal components:
 
@@ -166,25 +63,23 @@ To plot the principal components:
 
     s.plot_principal_components(4)
 
-or
+and to plot the score maps:
 
 .. code-block:: python
 
     s.plot_principal_components_maps(4)
 
-to get their distribution maps.
-
-To save just the PCA matrix decomposition:
+To save the PCA matrix decomposition:
 
 .. code-block:: python
 
-    s.pca_results.save('filename')
+    s.mva_results.save('filename')
 
 If later on you want to load the PCA file:
 
 .. code-block:: python
 
-    s.pca_results.load('filename.npz')
+    s.mva_results.load('filename.npz')
 
 
 To obtain a model of the SI using only the first four principal components:
@@ -219,16 +114,21 @@ And to see the result:
     s.plot_independent_components_maps()
 
 
-Example 2: Better SNR -> Better ICA
+Tutorial 2: Better SNR -> Better ICA
 -----------------------------------
 For this example we will use the file `CL2_eelslab.nc` that contains a simulated EELS SI.
 
-The SI is identical to the former one, but with higher SNR. Do the full treatment as in :ref:`example1-label` to see the improvement in the ICA result.
+The SI is identical to the former one, but with higher SNR. Do the full treatment as in :ref:`example1-label`. Is the ICA result any better?
 
+Now you can try to use second order differentation to perform the ICA by
+looking at the `independent_components_analysis` method documentation.
 
-Example 3: Correcting energy instabilities
+.. _tutorial3-label:
+Tutorial 3: Correcting energy instabilities
 ------------------------------------------
-For this example we will use the file `CL3_eelslab.nc` that contains a simulated EELS SI.
+Real data (unlike simulated ones) use to suffer from energy instabilities. In this tutorial we will see how to partially correct its effect by aligning the SI using an spectral feature that is known to be fixed in energy, ideally the zero loss peak (ZLP).
+
+For this example we will use the files `CL3_eelslab.nc` and `LL3_eelslab.nc` that contais a simulated EELS SIs.
 
 The SI is identical to `CL1_eelslab.nc`, but it suffers from poor energy stability.
 
@@ -239,10 +139,10 @@ First load the data:
 .. code-block:: python
 
     # Load the CL
-    cl = el.load('CL3_eelslab.nc')
+    cl = load('CL3_eelslab.nc')
 
     # Load the LL
-    ll = el.load('LL3_eelslab.nc')
+    ll = load('LL3_eelslab.nc')
 
 
 .. NOTE::
@@ -273,14 +173,15 @@ To align the low loss using the -5eV, 5eV energy interval, and apply the same co
     ll.find_low_loss_origin(sync_SI = cl)
     
 
-Once aligned you can check that the scree plot gets closer to the one in :ref:`example1-label`
+Once aligned you can perform again the PCA and check that the scree plot gets closer to the one in :ref:`example1-label`
 
 
-Example 4: Removing spikes
+Tutorial 4: Removing spikes
 --------------------------
-For this example we will use the file `CL4_eelslab.nc` that contains a simulated EELS SI.
+For this example we will use the file `CL4_eelslab.nc` and  `LL3_eelslab.nc` that contain a simulated EELS SIs.
 
-The SI is identical to `CL1_eelslab.nc`, but it suffers from X-rays spikes.
+The SI is identical to `CL1_eelslab.nc`, but it suffers from X-rays spikes and
+the same energy instabilities found in  :ref:`tutorial3-label`.
 
 If we perform the PCA analysis as in :ref:`example1-label` we can observe in the scree plot that the number of principal components has increased.
 
@@ -290,8 +191,6 @@ The workflow for spikes removal is as follows:
 
 .. code-block:: python
 
-    # Load the file
-    s = el.load('CL4_eelslab.nc')
     
     # Plot the energy derivative histogram and 
     # find a threshold for the outliers using spikes_diagnosis 
@@ -310,19 +209,19 @@ The workflow for spikes removal is as follows:
     # `coordinates` parameter to provide a list of the SI 
     # coordinates where there are spikes. See the documentation.
 
-After cleaning the spikes the SI can be processed as in :ref:`example1-label`
+After cleaning the spikes the SI can be processed as in :ref:`tutorial3-label`.
 
 
 Curve fitting
 =============
 
-Example 1: 
-----------
+Tutorial 1: 
+-----------
 
-Example 2: 
-----------
+Tutorial 2: 
+-----------
 
-Example 3: 
-----------
+Tutorial 3: 
+-----------
 
 
