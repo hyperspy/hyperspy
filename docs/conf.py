@@ -12,7 +12,8 @@
 # serve to show the default.
 
 import sys, os
-from eelslab import Release
+sys.path.append('../')
+from  src import Release
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
