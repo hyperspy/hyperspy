@@ -1,0 +1,25 @@
+#! /usr/bin/python
+# To produce a binary-only deb file
+# Requires python-stdeb and dpkg-dev
+
+import argparse
+
+parser = argparse.ArgumentParser(description='Creates a debian package')
+
+parser.add_argument('-i', '--install', action = 'store_true', 
+                    help='Installs the program after packing it')
+
+args = parser.parse_args()
+
+import os
+from subprocess import call
+import src.Release as Release
+release_name = 'eelslab-' + Release.version
+if Release.revision != '':
+    release_name +=  ('-rev' + Release.revision)
+os.system('python setup.py --command-packages=stdeb.command bdist_deb')
+
+if args.install is True:
+    os.system('sudo dpkg -i deb_dist/python-%s-1_all.deb' % 
+    release_name.replace('eelslab-', 'eelslab_'))
+    

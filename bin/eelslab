@@ -1,0 +1,7 @@
+#!/usr/bin/python
+
+import os
+
+# The -wthread forces matplotlib to use the WXAgg backend
+# This is necessary to support traits visualisation
+os.system('ipython -pylab -wthread -c "from eelslab import *" -i')

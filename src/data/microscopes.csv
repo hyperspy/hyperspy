@@ -1,0 +1,13 @@
+"#name","E0 / eV","alpha / mrad","beta / mrad","pppc","correlation_factor"
+"Orsay-VG_Col-Out_Obj-S_Foc-4-5-5-6","1.00E+005","6.9","29.",1,1
+"Orsay-VG_Col-L_Obj-S_Foc-4-5-5-6","1.00E+005","6.9","10.95",1,1
+"Orsay-VG_Col-M_Obj-S_Foc-4-5-5-6","1.00E+005","6.9","4.6",1,1
+"Orsay-VG_Col-S_Obj-S_Foc-4-5-5-6","1.00E+005","6.9","1.2",1,1
+"Orsay-VG_Col-Out_Obj-M_Foc-4-5-5-6","1.00E+005","7.","29.",1,1
+"Orsay-VG_Col-L_Obj-M_Foc-4-5-5-6","1.00E+005","7.","10.95",1,1
+"Orsay-VG_Col-M_Obj-M_Foc-4-5-5-6","1.00E+005","7.","4.6",1,1
+"Orsay-VG_Col-S_Obj-M_Foc-4-5-5-6","1.00E+005","7.","1.2",1,1
+"Orsay-VG_Col-L_Obj-L_Foc-4-5-5-6","1.00E+005","14.5","29.",1,1
+"Orsay-VG_Col-L_Obj-L_Foc-4-5-5-6","1.00E+005","14.5","10.95",1,1
+"Orsay-VG_Col-M_Obj-L_Foc-4-5-5-6","1.00E+005","14.5","4.6",1,1
+"Orsay-VG_Col-S_Obj-L_Foc-4-5-5-6","1.00E+005","14.5","1.2",1,1

@@ -1,0 +1,11 @@
+#!/usr/bin/python
+
+import os,sys
+
+from eelslab import mva
+
+if os.geteuid() != 0:
+    print "sorry, you need to run this as root"
+    sys.exit(1)
+    
+mva.compile_kica()

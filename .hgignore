@@ -1,0 +1,15 @@
+syntax: glob
+*.pyc
+*~
+dist
+*.deb
+build/*
+eelslab.egg-info/*
+deb_dist/*
+~.vimrc
+data/octave-core
+.spyderproject
+docs/_build/*
+docs/_static/*
+docs/.build/*
+bin/*.bat
