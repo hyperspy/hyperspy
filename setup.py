@@ -41,15 +41,15 @@ if Release.revision != '':
 
 setup(
     name = "eelslab",
-    package_dir = {'eelslib': 'src'},
+    package_dir = {'silib': 'src'},
     version = version,
     py_modules = ['eelslab', ],
-    packages = ['eelslib', 'eelslib.components', 'eelslib.io'],
+    packages = ['silib', 'silib.components', 'silib.io'],
     requires = install_req,
     scripts = scripts,
     package_data = 
     {
-        'eelslib': 
+        'silib': 
             [
                 'data/eelslabrc',
                 'data/*.m', 

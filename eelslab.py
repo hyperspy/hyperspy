@@ -18,17 +18,17 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
 
-import eelslib.Release
-import eelslib.components as components
+import silib.Release
+import silib.components as components
 
-from eelslib.spectrum import Spectrum
-from eelslib.image import Image
-from eelslib.experiments import Experiments
-from eelslib.model import Model
-from eelslib.file_io import load
-from eelslib.edges_db import edges_dict
+from silib.spectrum import Spectrum
+from silib.image import Image
+from silib.experiments import Experiments
+from silib.model import Model
+from silib.file_io import load
+from silib.edges_db import edges_dict
 
-__version__ = eelslib.Release.version
-__revision__ = eelslib.Release.revision
+__version__ = silib.Release.version
+__revision__ = silib.Release.revision
 
-print(eelslib.Release.info)
+print(silib.Release.info)
