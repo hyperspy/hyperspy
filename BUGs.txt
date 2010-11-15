@@ -1,1 +1,0 @@
-* The poissonian noise normalization is not properly undone when using energy masks.
