@@ -26,6 +26,7 @@ from eelslib.image import Image
 from eelslib.experiments import Experiments
 from eelslib.model import Model
 from eelslib.file_io import load
+from eelslib.edges_db import edges_dict
 
 __version__ = eelslib.Release.version
 __revision__ = eelslib.Release.revision
