@@ -8,8 +8,7 @@ import sys
 
 import src.Release as Release
 
-install_req = ['scipy', 'ipython', 'matplotlib', 'numpy', 'mdp', 'netcdf', 
-'setuptools', 'traits', 'netcdf']
+install_req = ['scipy', 'ipython', 'matplotlib', 'numpy', 'mdp', 'netcdf',]
 
 
 def are_we_building4windows():

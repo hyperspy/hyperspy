@@ -22,21 +22,19 @@ import csv
 import os
 import os.path
 
-from enthought.traits.api import HasTraits, Float, String
-
 from config_dir import config_path
 from defaults_parser import defaults
 
 microscopes_file = os.path.join(config_path, 'microscopes.csv')
 
-class Microscope(HasTraits):
+class Microscope(object):
     microscopes = {}
-    name = String
-    E0 = Float
-    alpha = Float
-    beta = Float
-    pppc = Float
-    correlation_factor = Float
+    name = None
+    E0 = None
+    alpha = None
+    beta = None
+    pppc = None
+    correlation_factor = None
     def __init__(self):
         self.load_microscopes()
         self.set_microscope(defaults.microscope)

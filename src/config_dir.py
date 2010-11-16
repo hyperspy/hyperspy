@@ -20,12 +20,11 @@
 
 import os
 import os.path
-from pkg_resources import resource_filename
 import shutil
+import messages
 
 config_files = ['eelslabrc', 'microscopes.csv', 'edges_db.csv']
-
-data_path = resource_filename(__name__, 'data')
+data_path = os.sep.join([os.path.dirname(__file__), 'data'])
 
 if os.name == 'posix':
     config_path = os.path.join(os.path.expanduser('~'),'.eelslab')
@@ -38,11 +37,10 @@ elif os.name in ['nt','dos']:
 ##    config_path = os.path.join(os.environ['APPDATA'], 'eelslab')
     os_name = 'windows'
 else:
-    print 'Unsupported operating system:', os.name
-    sys.exit(1)
+    messages.warning_exit('Unsupported operating system:', os.name)
 
 if os.path.isdir(config_path) is False:
-    print "Creating config directory: ", config_path
+    messages.warning_exit("Creating config directory: ", config_path)
     os.mkdir(config_path)
     
 for file in config_files:

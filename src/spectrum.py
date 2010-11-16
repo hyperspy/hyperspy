@@ -30,7 +30,6 @@ except:
 import numpy as np
 from scipy.interpolate import UnivariateSpline, interp1d
 from scipy.ndimage import  gaussian_filter1d
-import enthought.traits.api as t
 
 import file_io
 import messages
@@ -52,19 +51,19 @@ from mva import MVA, MVA_Results
 
 #TODO Acquisition_Parameters and Treatments must be merged into a more general
 #class to store somewhe else, and to use with the Image class too.
-class Acquisition_Parameters(t.HasTraits, object):
+class Acquisition_Parameters(object):
     '''
     Container for the acquisition parameters.
     
     Calling the class prints all the acquisition parameters.
     '''
-    binning = t.Int(t.Undefined)
-    exposure = t.Float(t.Undefined)
-    readout_frequency = t.Float(t.Undefined)
-    ccd_height = t.Int(t.Undefined)
-    blanking = t.Bool(t.Undefined)
-    gain_factor = t.Float(1)
-    gain_offset = t.Float(0)
+    binning = None
+    exposure = None
+    readout_frequency = None
+    ccd_height = None
+    blanking = None
+    gain_factor = None
+    gain_offset = None
     
     def __call__(self):
         for item in self.__dict__.items():

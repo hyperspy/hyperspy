@@ -20,8 +20,6 @@
 
 
 import numpy as np
-import enthought.traits.api as t
-
 
 no_netcdf = False
 from .. import Release
@@ -266,7 +264,7 @@ def netcdf_spectrum_writer(filename, spectrum,
                 value)
                 if type(value) is bool:
                     value = int(value)
-                if value is not t.Undefined:
+                if value is not None:
                     setattr(data_cube, attrib[1], value)
                 else:
                     print(attrib[1] + ' undefined')

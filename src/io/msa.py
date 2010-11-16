@@ -23,7 +23,6 @@ import time
 import datetime
 
 import numpy as np
-import enthought.traits.api as t
 
 from ..config_dir import os_name
 from ..utils import generate_axis
@@ -194,7 +193,7 @@ format = 'Y', separator = ', '):
     else:
         print "The units y units are not defined"
         keywords['YUNITS'] = 'Undefined'
-    if spectrum.acquisition_parameters.exposure is not t.Undefined:
+    if spectrum.acquisition_parameters.exposure is not None:
         keywords['INTEGTIME'] = spectrum.acquisition_parameters.exposure
     if format == 'XY':
         keywords['DATATYPE'] = 'XY'
