@@ -35,14 +35,7 @@ except:
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
 
-try:
-    import mdp
-except:
-    print \
-    '''
-    Warning! In order to enjoy the PCA features you must install python-mdp
-    '''
-
+import mdp
 import utils
 from svd_pca import pca    
 from widgets import cursors
