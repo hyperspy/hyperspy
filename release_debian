@@ -13,7 +13,7 @@ args = parser.parse_args()
 
 import os
 from subprocess import call
-import src.Release as Release
+import lib.Release as Release
 release_name = 'eelslab-' + Release.version
 if Release.revision != '':
     release_name +=  ('-rev' + Release.revision)
