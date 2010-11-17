@@ -6,7 +6,7 @@ from distutils.core import setup
 import os
 import sys
 
-import src.Release as Release
+import lib.Release as Release
 
 install_req = ['scipy', 'ipython', 'matplotlib', 'numpy', 'mdp', 'netcdf',]
 
@@ -40,7 +40,7 @@ if Release.revision != '':
 
 setup(
     name = "eelslab",
-    package_dir = {'silib': 'src'},
+    package_dir = {'silib': 'lib'},
     version = version,
     py_modules = ['eelslab', ],
     packages = ['silib', 'silib.components', 'silib.io'],
