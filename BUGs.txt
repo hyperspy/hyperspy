@@ -1,0 +1,2 @@
+- The ipython name space does not get the edges when loaded
+- When alpha = 0 there is a divison by zero error (reported by Sergio)
