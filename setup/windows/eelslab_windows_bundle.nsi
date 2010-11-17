@@ -83,7 +83,7 @@ Section -Prerequisites
 	endWXPythonCommon:
 SectionEnd
 Section EELSLab
-	SetOutPath $INSTDIR\requires
+	SetOutPath $INSTDIR
     MessageBox MB_YESNO "Install EELSLab" /SD IDYES IDNO endEELSLab
         File "eelslab-0.2.5-dev.win-amd64.exe"
         ExecWait "$INSTDIR\eelslab-0.2.5-dev.win-amd64.exe"
