@@ -20,8 +20,10 @@
 
 import __main__
 
-
-if hasattr(__main__, '__IP'):
-    interactive_ns = __main__.__IP.user_ns
-else:
+try:
+    import IPython.ipapi
+    ip = IPython.ipapi.get()
+    interactive_ns = ip.user_ns
+except:
+    # Ipython is not installed
     interactive_ns = __main__.__dict__
