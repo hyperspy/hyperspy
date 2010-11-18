@@ -1,5 +1,10 @@
-v0.2.4, 03/11/2010
+v0.2.5, 18/11/2010
+* Several bugs fixed (many thanks to the reporters). Probably the most annoying one was the failure to write to the user namespace after upgrading ipython. Now the name of the subshells are again availabe in the interactive session
+* Several changes to the interface.
+* The documentation was updated to reflex the last changes
+* The microscopes.csv file was updated so it no longer contains the Orsay VG parameters.
 
+v0.2.4, 03/11/2010
 * Added Spectrum.save_principal_components method
 * The poissonian noise normalization uses a masks to avoid errors with rows or columns that are always zero
 * The dm3 reader was improved and should now read most of the data types.
