@@ -41,9 +41,10 @@ def EffectiveAngle(E0,E,alpha,beta):
     Notes
     -----
     Code from Egerton (SE) page 420
-    """	
-    # Convert to float
-    E0=10**-3*float(E0)
+    """	   
+    if alpha == 0:
+        return beta * 10**-3
+    E0=10.**-3*E0 # In KeV
     E=float(E)
     alpha=float(alpha)
     beta=float(beta)
@@ -61,4 +62,4 @@ def EffectiveAngle(E0,E,alpha,beta):
     if (alpha/beta)> 1 :
         F2=F1*A2/B2
     BSTAR=thetaE*math.sqrt(math.exp(F2*math.log(1.+B2/T2))-1.)
-    return BSTAR*10**-3
+    return BSTAR*10**-3 # In rad
