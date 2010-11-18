@@ -46,7 +46,7 @@ class Microscope(object):
         db = csv.reader(f)
         for row in db:
             i = 1
-            if row[0] != 'Syntax' or row[0][0] != '#':
+            if row != '' and row[0] != 'Syntax' and row[0][0] != '#': 
                 self.microscopes[row[0]] = {}
                 for column in row[1:]:
                     self.microscopes[row[0]][column_labels[i]] = float(row[i])
