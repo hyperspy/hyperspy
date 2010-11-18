@@ -46,11 +46,16 @@ class Microscope(object):
         db = csv.reader(f)
         for row in db:
             i = 1
-            if row[0][0] is not '#':
+            if row[0] != 'Syntax':
                 self.microscopes[row[0]] = {}
                 for column in row[1:]:
                     self.microscopes[row[0]][column_labels[i]] = float(row[i])
                     i += 1
+        f.close()
+        
+    def get_available_microscope_names(self):
+        for microscope in self.microscopes.keys():
+            print microscope
     
     def set_microscope(self, microscope_name):
         for key in self.microscopes[microscope_name]:

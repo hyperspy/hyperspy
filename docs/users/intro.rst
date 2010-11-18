@@ -51,26 +51,41 @@ To load a supported file (i.e. NetCDF, dm3, MSA, MRC, ser or emi) simply type:
 If the loading was successful, the variable `s` now contains a python object 
 that can be an Image of Spectrum.
 
-Changing the microscope parameters
+Setting the microscope parameters
 ----------------------------------
 
 The microscope parameters are stored in the silib.microscope.microscope class.
-To modify the parameters from the eelslab prompt simply change the
-attributes of the microscope class that is in the interactive namespace,e.g.:
+The parameters by default are defined in the microscopes.csv file that is
+placed in the configuration directory (see :ref:`configuring-eelslab-label` to
+find out where is your configuration directory). Each microscope has a name
+associated to it and you can define the default microscope in the eelslabrc
+file (see :ref:`configuring-eelslab-label`).
+To modify the parameters from an eelslab interactive session simply change the
+attributes of the microscope class,e.g.:
 
 .. code-block:: python
 
     microscope.alpha = 15 # convergence semiangle in mrad
     microscope.beta = 20 #  collection semiangle in mrad
     microscope.E0 = 100E3 # Beam energy in eV
-    microscope.name = 'Pepe' 
+    microscope.name = 'Pepe'
 
-You can select the default microscope that will be loaded automatically in
-the beginning of each session by editing the eelslab configuration file (see
-:ref:`configuring-eelslab-label`) and changing the name of the default
-microscope to one of the names that are defined i the microscopes.csv file in
-the configuration directory. You must edit this file to include your
-microscope.
+.. NOTE::
+
+   This settings will be lost once you close your session unless you save a
+   file in a format that supports saving the microscope parameters (at the
+   moment only netCDF and msa). In that case, the settings will be loaded when
+   you load the file.
+
+In the interactive session you can load the parameters of a microscope defined
+in microscope.csv as follows:
+
+.. code-block:: python
+
+    # To print the list of the microscopes defined in the microscope.csv file
+    microscope.get_available_microscope_names()
+    # To load the parameters of a particular microscope
+    microscope.set_microscope('the_name_of_your_microscope')
 
 
 .. _getting-help-label:
