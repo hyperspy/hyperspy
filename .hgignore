@@ -13,3 +13,7 @@ docs/_build/*
 docs/_static/*
 docs/.build/*
 bin/*.bat
+setup/windows/requires/*
+setup/windows/reccomends/*
+
+
