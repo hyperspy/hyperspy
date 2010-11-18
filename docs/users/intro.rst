@@ -17,6 +17,20 @@ To start eelslab type in a console:
    choosing "open terminal" in the file menu if nautilus-open-terminal is 
    installed in your system
 
+.. _configuring-eelslab-label:
+Configuring eelslab
+-------------------
+You can configure some parameters of eelslab by editing the eelslabrc. The
+location of the configuration file depends on the system. You can find its path
+by calling the get_configuration_directory_path function in the eelslab prompt:
+
+.. code-block:: bash
+
+    get_configuration_directory_path()
+
+
+
+
 Loading a file
 --------------
 
@@ -36,6 +50,28 @@ To load a supported file (i.e. NetCDF, dm3, MSA, MRC, ser or emi) simply type:
 
 If the loading was successful, the variable `s` now contains a python object 
 that can be an Image of Spectrum.
+
+Changing the microscope parameters
+----------------------------------
+
+The microscope parameters are stored in the silib.microscope.microscope class.
+To modify the parameters from the eelslab prompt simply change the
+attributes of the microscope class that is in the interactive namespace,e.g.:
+
+.. code-block:: python
+
+    microscope.alpha = 15 # convergence semiangle in mrad
+    microscope.beta = 20 #  collection semiangle in mrad
+    microscope.E0 = 100E3 # Beam energy in eV
+    microscope.name = 'Pepe' 
+
+You can select the default microscope that will be loaded automatically in
+the beginning of each session by editing the eelslab configuration file (see
+:ref:`configuring-eelslab-label`) and changing the name of the default
+microscope to one of the names that are defined i the microscopes.csv file in
+the configuration directory. You must edit this file to include your
+microscope.
+
 
 .. _getting-help-label:
 
@@ -61,7 +97,7 @@ In the Ipython terminal (that eelslab uses) you can conveniently use the tabulat
 Plotting
 --------
 
-To plot an Spectrum or Image objects type:
+To plot an Spectrum or Image object type:
 
 .. code-block:: python
     
