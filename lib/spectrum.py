@@ -1238,6 +1238,8 @@ class Spectrum(object, MVA):
             for key in dictionary['treatments']:
                 exec('self.treatments.%s = dictionary[\'treatments\'][\'%s\']' \
                 % (key, key))
+        if 'imported_parameters' in dictionary:
+            self.imported_parameters = dictionary['imported_parameters']
         self.get_dimensions_from_cube()
         print "Shape: ", self.data_cube.shape
         print "History:"

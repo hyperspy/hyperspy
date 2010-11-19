@@ -270,6 +270,9 @@ def file_reader(filename, data_type = None):
        
     calibration_dict['data_cube'] = data_cube.squeeze()
     dm3.close()
-    dictionary = {'data_type' : data_type, 'calibration' : calibration_dict, 
-    'acquisition' : acquisition_dict}
+    dictionary = {
+        'data_type' : data_type, 
+        'calibration' : calibration_dict, 
+        'acquisition' : acquisition_dict,
+        'imported_parameters' : calibration_dict}
     return [dictionary,]

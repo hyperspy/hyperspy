@@ -219,7 +219,7 @@ def file_reader(filename, *args, **kwds):
     elif ext in emi_extensions:
         return emi_reader(filename, *args, **kwds)
             
-def load_ser_file(filename, print_info = True):
+def load_ser_file(filename, print_info = False):
     print "Opening the file: ", filename
     file = open(filename,'rb')
     header = np.fromfile(file, dtype = np.dtype(get_header_dtype_list(file)), 
@@ -266,10 +266,9 @@ def ser_reader(filename, *args, **kwds):
     calibration_dict, acquisition_dict , treatments_dict= {}, {}, {}
     axis_names = [None, 'x', 'y', 'z']
     array_shape = []
-    data['CalibrationOffset'][0]
     calibration_dict['energyorigin'] = data['CalibrationOffset'][0]
     calibration_dict['energyscale'] = data['CalibrationDelta'][0]
-    
+    imported_parameters = {'header' : header, 'data' : data}
     for i in range(1,header['NumberDimensions'] + 1):
         calibration_dict['%sorigin' % axis_names[i]] = \
         header['Dim-%i_CalibrationOffset' % i][0]
@@ -278,10 +277,16 @@ def ser_reader(filename, *args, **kwds):
         calibration_dict['%sunits' % axis_names[i]] = \
         header['Dim-%i_Units' % i][0]
         array_shape.append(header['Dim-%i_DimensionSize' % i][0])
+    if data['PositionY'][0] == data['PositionY'][1]:
+        # The spatial dimensions are stored in the reversed order
+        # We reverse the shape
+        array_shape.reverse()
     array_shape.append(data['ArrayLength'][0])
     calibration_dict['data_cube'] = \
     data['Array'].reshape(array_shape).swapaxes(0,-1)
-    dictionary = {'data_type' : guess_data_type(header["DataTypeID"]), 
-                  'calibration' : calibration_dict, 
-    'acquisition' : acquisition_dict}
+    dictionary = {
+        'data_type' : guess_data_type(header["DataTypeID"]), 
+        'calibration' : calibration_dict, 
+        'acquisition' : acquisition_dict,
+        'imported_parameters' : imported_parameters}
     return dictionary
