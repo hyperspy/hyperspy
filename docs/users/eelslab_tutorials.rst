@@ -1,4 +1,4 @@
-EELSLab Tutorial
+Tutorials
 ++++++++++++++++
 
 The tutorial files are in the tutorial folder of your home directory that will be generated the first time that you start EELSLab.
