@@ -1,5 +1,5 @@
 ; These are the programs that are needed by ACME Suite.
-!define PRODUCT_NAME "EELSLab 0.2.5 bundle installer"
+!define PRODUCT_NAME "EELSLab 0.2.6 bundle installer"
 !define PRODUCT_VERSION "0.1"
 
 ; !include "UserManagement.nsh"
@@ -93,8 +93,8 @@ SectionEnd
 Section EELSLab
 	SetOutPath $INSTDIR
     MessageBox MB_YESNO "Install EELSLab" /SD IDYES IDNO endEELSLab
-        File "requires\eelslab-0.2.5.win-amd64.exe"
-        ExecWait "$INSTDIR\eelslab-0.2.5.win-amd64.exe"
+        File "requires\eelslab-0.2.6.win-amd64.exe"
+        ExecWait "$INSTDIR\eelslab-0.2.6.win-amd64.exe"
         Goto endEELSLab
   endEELSLab:
 SectionEnd
