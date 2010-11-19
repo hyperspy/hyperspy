@@ -35,4 +35,4 @@ __revision__ = silib.Release.revision
 print(silib.Release.info)
 
 def get_configuration_directory_path():
-    print("silib.config_dir.config_path")
+    print(silib.config_dir.config_path)
