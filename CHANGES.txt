@@ -1,3 +1,8 @@
+v0.2.6, 19/11/2010
+* Added imported_parameters attribute to the Spectrum object for FEI's and DMs data format
+* FEI's reader now handles properly the SIs with reversed dimensions
+* Fixed the get_configuration_directory_path() that was not working
+
 v0.2.5, 18/11/2010
 * Several bugs fixed (many thanks to the reporters). Probably the most annoying one was the failure to write to the user namespace after upgrading ipython. Now the name of the subshells are again availabe in the interactive session
 * Several changes to the interface.
