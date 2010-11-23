@@ -37,17 +37,17 @@ elif os.name in ['nt','dos']:
 ##    config_path = os.path.join(os.environ['APPDATA'], 'eelslab')
     os_name = 'windows'
 else:
-    messages.warning_exit('Unsupported operating system:', os.name)
+    messages.warning_exit('Unsupported operating system: %s' % os.name)
 
 if os.path.isdir(config_path) is False:
-    messages.warning_exit("Creating config directory: ", config_path)
+    messages.information("Creating config directory: %s" % config_path)
     os.mkdir(config_path)
     
 for file in config_files:
     templates_file = os.path.join(data_path, file)
     config_file = os.path.join(config_path, file)
     if os.path.isfile(config_file) is False:
-        print "Setting configuration file: ", file
+        messages.information("Setting configuration file: %s" % file)
         shutil.copy(templates_file, config_file)
         
 
