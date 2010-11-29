@@ -1,6 +1,6 @@
 #! /usr/bin/python
 # To produce a binary-only deb file
-# Requires python-stdeb and dpkg-dev
+# Requires python-stdeb, debhelper and dpkg-dev
 
 import argparse
 
