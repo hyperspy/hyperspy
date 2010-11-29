@@ -1470,8 +1470,8 @@ class Spectrum(object, MVA):
         '''
         print "Calculating the thickness"
         # Create the thickness array
-        spim = self.data_cube.copy()
-        integral = spim.sum(0)
+        dc = self.data_cube
+        integral = dc.sum(0)
         if method == 'zl':
             if self.zero_loss is None:
                 self.extract_zero_loss()
@@ -1480,9 +1480,9 @@ class Spectrum(object, MVA):
             
         elif method == 'threshold':
             ti =self.energy2index(threshold)
-            zl_int = spim[:ti,:,:].sum(0)*factor 
-        self.thickness = Image()
-        self.thickness.data_cube = np.log( integral / zl_int)
+            zl_int = dc[:ti,...].sum(0) * factor 
+        self.thickness = \
+        Image({'calibration' : {'data_cube' : np.log( integral / zl_int)}})
                 
     def calculate_FWHM(self, factor = 0.5, channels = 7, der_roots = False):
         '''Use a third order spline interpolation to estimate the FWHM of 
