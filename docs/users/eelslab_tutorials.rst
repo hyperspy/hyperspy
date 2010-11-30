@@ -115,7 +115,7 @@ And to see the result:
 
 
 Tutorial 2: Better SNR -> Better ICA
------------------------------------
+-------------------------------------
 For this example we will use the file `CL2_eelslab.nc` that contains a simulated EELS SI.
 
 The SI is identical to the former one, but with higher SNR. Do the full treatment as in :ref:`example1-label`. Is the ICA result any better?
@@ -124,8 +124,9 @@ Now you can try to use second order differentation to perform the ICA by
 looking at the `independent_components_analysis` method documentation.
 
 .. _tutorial3-label:
+
 Tutorial 3: Correcting energy instabilities
-------------------------------------------
+--------------------------------------------
 Real data (unlike simulated ones) use to suffer from energy instabilities. In this tutorial we will see how to partially correct its effect by aligning the SI using an spectral feature that is known to be fixed in energy, ideally the zero loss peak (ZLP).
 
 For this example we will use the files `CL3_eelslab.nc` and `LL3_eelslab.nc` that contais a simulated EELS SIs.
@@ -177,7 +178,7 @@ Once aligned you can perform again the PCA and check that the scree plot gets cl
 
 
 Tutorial 4: Removing spikes
---------------------------
+----------------------------
 For this example we will use the file `CL4_eelslab.nc` and  `LL3_eelslab.nc` that contain a simulated EELS SIs.
 
 The SI is identical to `CL1_eelslab.nc`, but it suffers from X-rays spikes and

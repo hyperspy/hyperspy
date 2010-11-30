@@ -15,20 +15,10 @@ To start eelslab type in a console:
 
    If you are using GNOME in Linux, you can open a terminal in a folder by 
    choosing "open terminal" in the file menu if nautilus-open-terminal is 
-   installed in your system
-
-.. _configuring-eelslab-label:
-Configuring eelslab
--------------------
-You can configure some parameters of eelslab by editing the eelslabrc. The
-location of the configuration file depends on the system. You can find its path
-by calling the get_configuration_directory_path function in the eelslab prompt:
-
-.. code-block:: bash
-
-    get_configuration_directory_path()
-
-
+   installed in your system.
+   A similar feature is available in Windows 7 and Windows Vista when pressing 
+   the Shift key and the right mouse buttom. For more confort in Windows it is 
+   reccomended to install `Console2 <http://sourceforge.net/projects/console/>`_
 
 
 Loading a file
@@ -50,6 +40,36 @@ To load a supported file (i.e. NetCDF, dm3, MSA, MRC, ser or emi) simply type:
 
 If the loading was successful, the variable `s` now contains a python object 
 that can be an Image of Spectrum.
+
+.. _configuring-eelslab-label:
+
+Configuring eelslab
+-------------------
+You can configure some parameters of eelslab by editing the eelslabrc. The
+location of the configuration file depends on the system. You can find its path
+by calling the get_configuration_directory_path function in the eelslab prompt:
+
+.. code-block:: bash
+
+    get_configuration_directory_path()
+
+
+Alternatively it is possible to change the same parameters at runtime by changing 
+the attributes of the defaults class. For example, to plot automatically plot the 
+data when loading it:
+
+.. code-block:: bash
+
+    # First we load some data
+    s = load('YourDataFilenameHere')
+    # (in the defaults setting nothing is plotted, unless you can changed the 
+    # defaults in the eelslabrc file)
+    #
+    # Now we will change the setting at runtime
+    defaults.plot_on_load = True
+    s = load('YourDataFilenameHere')
+    # The data should have been automatically plotted.
+
 
 Setting the microscope parameters
 ----------------------------------
@@ -99,15 +119,16 @@ The documentation can be accessed by adding a question mark to the name of a fun
     
     load?
 
-.. NOTE::
-  
-        The documentation of the code is a work in progress, 
-        so not all the objects are documented yet.
+This syntax is one of the many features of `IPython <http://ipython.scipy.org/moin/>`_
+
+Please note that the documentation of the code is a work in progress, so not all the objects are documented yet.
 
 Autocompletion
 --------------
 
-In the Ipython terminal (that eelslab uses) you can conveniently use the tabulator to autocomplete the commands and filenames.
+Another useful `IPython <http://ipython.scipy.org/moin/>`_ feature is the 
+autocompletion of commands and filenames. It is highly recommended to read the 
+`Ipython documentation <http://ipython.scipy.org/moin/Documentation>`_.
 
 Exploring the data
 ------------------
@@ -132,15 +153,12 @@ It is also possible to explore an SI by using the numpad arrows **when numlock i
 
 The same keys can be used to explore an image stack.
 
+To close all the figures type:
+
+.. code-block:: python
+
+    close('all')
 
 
-
-
-
-.. NOTE::
-    To close all the figures type:
-    
-    .. code-block:: python
-	
-	close('all')
-    # Note that this is a matplotlib command, not an eelslab one.
+This is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command. 
+Matplotlib is the library that eelslab uses to produce the plots.
