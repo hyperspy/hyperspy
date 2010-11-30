@@ -109,32 +109,32 @@ Autocompletion
 
 In the Ipython terminal (that eelslab uses) you can conveniently use the tabulator to autocomplete the commands and filenames.
 
-Plotting
---------
+Exploring the data
+------------------
 
-To plot an Spectrum or Image object type:
+The Spectrum and Image objects have a plot method.
 
 .. code-block:: python
     
+    s = load('YourDataFilenameHere')
     s.plot()
 
+if the object is single spectrum or an image one window will appear when calling the plot method. If the object is a 2D or 3D SI two figures will appear, one containing a plot of a spectrum of the dataset and the other a 2D representation of the data. 
 
-It is possible to change the coordiantes of the spectrum figure by dragging the cursor or by using the numpad arrows when **when numlock is on and the spectrum figure is on focus**. When using the numpad arrows the PgUp and PgDw keys change the size of the step.
+To explore an SI drag the cursor present in the 2D data representation (it can be a line for 2D SIs or a square for 3D SIs). An extra cursor can be added by pressing 'e'  **when numlock is on and the spectrum figure is on focus**. Pressing the 'e' key again will remove the extra cursor.
 
 When exploring a 2D SI of high spatial resolution the default size of the
-cursors can be too small to be dragged or even seen. It is possible to change
+rectangular cursors can be too small to be dragged or even seen. It is possible to change
 the size of the cursors by pressing the '+' and '-' keys  **when the navigator
 windows is on focus**.
 
-An extra cursor can be added by pressing 'e'  **when numlock is on and the spectrum figure is on focus**. Pressing the 'e' key again will remove the extra cursor.
+It is also possible to explore an SI by using the numpad arrows **when numlock is on and the spectrum figure is on focus**. When using the numpad arrows the PageUp and PageDown keys change the size of the step.
 
-.. NOTE::
-    If you prefer that 2D maps in gray scale type:
+The same keys can be used to explore an image stack.
 
-    .. code-block:: python
-	
-	gray()
-    # Note that this is a matplotlib command, not an eelslab one.
+
+
+
 
 
 .. NOTE::
@@ -143,4 +143,4 @@ An extra cursor can be added by pressing 'e'  **when numlock is on and the spect
     .. code-block:: python
 	
 	close('all')
-    # Another matplotlib command.
+    # Note that this is a matplotlib command, not an eelslab one.
