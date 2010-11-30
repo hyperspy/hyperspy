@@ -119,9 +119,14 @@ To plot an Spectrum or Image object type:
     s.plot()
 
 
-To navigate in a spectrum image you can either use the pointer of the navigator window or the numpad cursors **when numlock is active**.
+It is possible to change the coordiantes of the spectrum figure by dragging the cursor or by using the numpad arrows when **when numlock is on and the spectrum figure is on focus**. When using the numpad arrows the PgUp and PgDw keys change the size of the step.
 
-You can add an extra cursor to the navigator by pressing 'e' while the navigator figure is focused.
+When exploring a 2D SI of high spatial resolution the default size of the
+cursors can be too small to be dragged or even seen. It is possible to change
+the size of the cursors by pressing the '+' and '-' keys  **when the navigator
+windows is on focus**.
+
+An extra cursor can be added by pressing 'e'  **when numlock is on and the spectrum figure is on focus**. Pressing the 'e' key again will remove the extra cursor.
 
 .. NOTE::
     If you prefer that 2D maps in gray scale type:
