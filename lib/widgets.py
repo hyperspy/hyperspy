@@ -18,6 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301
 # USA
 
+from __future__ import division
+import math
 import copy
 
 try:
@@ -50,12 +52,42 @@ class SquarePointer(object):
         self.explorers = list()
         self.explorer_ON = False
         self.picked_list = None
-        self.__pointer = plt.Rectangle(pointer.coordinates - (0.5,0.5), 
-        1, 1, fc = 'r', fill= False,lw = 2, animated = True, picker = True, 
-        ec = 'black')
-        self.__explorer = plt.Rectangle(explorer.coordinates - (0.5, 0.5), 
-        1,1, fc = 'r', fill= False,lw = 2, animated = True, picker = True, 
-        ec = 'white')
+        self.square_width = 1.
+        self.__pointer = plt.Rectangle(explorer.coordinates - 
+        (self.square_width / 2, self.square_width / 2), 
+        self.square_width,self.square_width, fc = 'r', fill= False,lw = 2, 
+        animated = True, picker = True, ec = 'black')
+        self.__explorer = plt.Rectangle(explorer.coordinates - 
+        (self.square_width / 2, self.square_width / 2), 
+        self.square_width,self.square_width, fc = 'r', fill= False,lw = 2, 
+        animated = True, picker = True, ec = 'white')
+        pointer.connect(self._update_squares)
+        explorer.connect(self._update_squares)
+        
+    def set_square_width(self, width):
+        self.square_width = width
+        self._update_squares()
+        
+    def _update_squares(self):
+        for rect in self.pointers:
+            rect.set_width(self.square_width)
+            rect.set_height(self.square_width)
+            delta = self.square_width / 2
+            rect.set_xy(pointer.coordinates - (delta, delta))
+        for rect in self.explorers:
+            rect.set_width(self.square_width)
+            rect.set_height(self.square_width)
+            delta = self.square_width / 2
+            rect.set_xy(explorer.coordinates - (delta, delta))
+        self._update()
+    
+    def increase_square_width(self):
+        self.square_width += 1
+        self._update_squares()
+        
+    def decrease_square_width(self):
+        self.square_width -= 1
+        self._update_squares()
         
     def add_axes(self, ax):
         self.ax.append(ax)
@@ -83,6 +115,11 @@ class SquarePointer(object):
     def on_key_press(self, event):
         if event.key == "e":
             self.explorer_ON = not self.explorer_ON
+        if event.key == "+":
+            self.increase_square_width()
+        if event.key == "-":
+            self.decrease_square_width()
+        
     def add_pointer(self, ax):
         self.pointers.append(copy.copy(self.__pointer))
         ax.add_patch(self.pointers[-1])
@@ -132,9 +169,17 @@ class SquarePointer(object):
     def _turn_on_explorer(self):
         for ax in self.ax:
             self.add_explorer(ax)
+        self._update_squares()
+        pointer.coordinates_change_signal()
+        explorer.coordinates_change_signal()
+
     def _turn_off_explorer(self):
         for ax in self.ax:
             self.remove_explorer(ax)
+        self._update_squares()
+        pointer.coordinates_change_signal()
+        explorer.coordinates_change_signal()
+
     explorer_ON = property(_get_explorerON, _set_explorerON)
     
     def clear(self, event = None):
@@ -166,11 +211,6 @@ class SquarePointer(object):
                 round(event.ydata)))
                 if not (new_coordinates == self.picked.coordinates).all():
                     self.picked.ix, self.picked.iy = new_coordinates
-                    for patch in self.picked_list:
-                        patch.set_x(self.picked.ix-0.5)
-                        patch.set_y(self.picked.iy-0.5)
-                    for ax in self.ax:
-                        self._update(ax)
                     for function in self.callback_on_move:
                         function()
         if bridge:
@@ -181,13 +221,16 @@ class SquarePointer(object):
         if event.button != 1: return
         self.picked_list = None
     
-    def _update(self,ax):
-        background = ax.figure.canvas.background
-        if background is not None:
-            ax.figure.canvas.restore_region(background)
-        for patch in ax.patches:
-            ax.draw_artist(patch)
-        ax.figure.canvas.blit(ax.bbox)
+    def _update(self,axs = None):
+        if axs is None:
+            axs = self.ax
+        for ax in axs:
+            background = ax.figure.canvas.background
+            if background is not None:
+                ax.figure.canvas.restore_region(background)
+            for patch in ax.patches:
+                ax.draw_artist(patch)
+            ax.figure.canvas.blit(ax.bbox)
     def reset(self):
         for ax in self.ax:
             self.remove_explorer(ax)
@@ -210,6 +253,8 @@ class LinePointer(object):
         self.explorers = list()
         self.explorer_ON = False
         self.picked_list = None
+        pointer.connect(self._update_position)
+        explorer.connect(self._update_position)
         
     def add_axes(self, ax):
         self.ax.append(ax)
@@ -240,13 +285,13 @@ class LinePointer(object):
             self.explorer_ON = not self.explorer_ON
             
     def add_pointer(self, ax):
-        ax.axhline(pointer.ix,color='red', animated = True, picker=True )
-        self.pointers.append(ax.lines[-1])
-        
+        self.pointers.append(
+        ax.axhline(pointer.ix,color='red', animated = True, picker=True))
+          
     def add_explorer(self, ax):
-        ax.axhline(pointer.ix,color='white', animated = True, picker=True )
-        self.explorers.append(ax.lines[-1])
-    
+        self.pointers.append(
+        ax.axhline(pointer.ix,color='white', animated = True, picker=True))
+      
     def remove_explorer(self, ax):
         for explorer in self.explorers:
             if explorer in ax.lines:
@@ -284,9 +329,13 @@ class LinePointer(object):
     def _turn_on_explorer(self):
         for ax in self.ax:
             self.add_explorer(ax)
+        pointer.coordinates_change_signal()
+        explorer.coordinates_change_signal()
     def _turn_off_explorer(self):
         for ax in self.ax:
             self.remove_explorer(ax)
+        pointer.coordinates_change_signal()
+        explorer.coordinates_change_signal()
     explorer_ON = property(_get_explorerON, _set_explorerON)
     
     def clear(self, event = None):
@@ -305,6 +354,14 @@ class LinePointer(object):
         elif self.explorer_ON and event.artist in self.explorers:
             self.picked_list = self.explorers
             self.picked = explorer
+            
+    def _update_position(self):
+        for line in self.explorers:
+            line.set_ydata(explorer.ix)
+        for line in self.pointers:
+            line.set_ydata(pointer.ix)
+        self._update()
+        
     def onmove(self, event, bridge = False):
         'on mouse motion draw the cursor if picked'
         if bridge:
@@ -317,10 +374,7 @@ class LinePointer(object):
             if event.inaxes:
                 if not event.ydata == self.picked.ix:
                     self.picked.ix = event.ydata
-                    for line in self.picked_list:
-                        line.set_ydata(self.picked.ix)
-                    for ax in self.ax:
-                        self._update(ax)
+                    self._update_position()
                     for function in self.callback_on_move:
                         function()
         if bridge:
@@ -331,13 +385,16 @@ class LinePointer(object):
         if event.button != 1: return
         self.picked_list = None
     
-    def _update(self,ax):
-        background = ax.figure.canvas.background
-        if background is not None:
-            ax.figure.canvas.restore_region(background)
-        for line in ax.lines:
-            ax.draw_artist(line)
-        ax.figure.canvas.blit(ax.bbox)
+    def _update(self, axs = None):
+        if axs is None:
+            axs = self.ax
+        for ax in axs:
+            background = ax.figure.canvas.background
+            if background is not None:
+                ax.figure.canvas.restore_region(background)
+            for line in ax.lines:
+                ax.draw_artist(line)
+            ax.figure.canvas.blit(ax.bbox)
     def reset(self):
         for ax in self.ax:
             self.remove_explorer(ax)

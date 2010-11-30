@@ -34,16 +34,14 @@ class Coordinates(object):
         if abs(ix) >= self.shape[0]:
             ix = ix % self.shape[0]
         self.coordinates[0] = ix
-        for f in self.on_coordinates_change:
-            f()
+        self.coordinates_change_signal()
     def _get_ix(self):
         return self.coordinates[0]
     def _set_iy(self, iy):
         if abs(iy) >= self.shape[1]:
             iy = iy % self.shape[1]
         self.coordinates[1] = iy
-        for f in self.on_coordinates_change:
-            f()
+        self.coordinates_change_signal()
     def _get_iy(self):
         return self.coordinates[1]
     ix = property(_get_ix, _set_ix)
@@ -51,6 +49,9 @@ class Coordinates(object):
         
     np.array((0,0))
     
+    def coordinates_change_signal(self):
+        for f in self.on_coordinates_change:
+            f()
     def _eval_functions(self, coord, function_list, mask):
             if mask[coord]:
                 self.ix = coord[0]
@@ -64,22 +65,22 @@ class Coordinates(object):
                 function(coord[0], coord[1])
 
     def eval4all(self, function_list, mask = None, mode = 'lines'):
-        if shape:
+        if self.shape:
             if mask is None:
-                 mask = np.ones(shape).astype('Bool')
+                 mask = np.ones(self.shape).astype('Bool')
                  
             if mode == 'lines':
-                for y in np.arange(shape[1]) :
-                    for x in np.arange(shape[0]) :
+                for y in np.arange(self.shape[1]) :
+                    for x in np.arange(self.shape[0]) :
                         self._eval_functions((x,y), function_list, mask)
             elif mode == 'zigzag':
                 inverter = 1
-                for y in range(shape[1]) :
+                for y in range(self.shape[1]) :
                     if inverter == 1 :
-                        for x in range(shape[0]):
+                        for x in range(self.shape[0]):
                             self._eval_functions((x,y), function_list, mask)
                     if inverter == -1 :
-                        for x in reversed(range(shape[0])):
+                        for x in reversed(range(self.shape[0])):
                             self._eval_functions((x,y), function_list, mask)
                     inverter*=-1
     def reset(self):
