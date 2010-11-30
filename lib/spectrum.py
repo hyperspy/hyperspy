@@ -26,7 +26,8 @@ except:
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    
+# Set the matplotlib cmap to gray (the default is jet)
+plt.rcParams['image.cmap'] = 'gray'    
 import numpy as np
 from scipy.interpolate import UnivariateSpline, interp1d
 from scipy.ndimage import  gaussian_filter1d

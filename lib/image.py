@@ -28,7 +28,8 @@ except:
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-
+# Set the matplotlib cmap to gray (the default is jet)
+plt.rcParams['image.cmap'] = 'gray'
 import file_io
 import utils
 import messages

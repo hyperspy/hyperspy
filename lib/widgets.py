@@ -19,7 +19,6 @@
 # USA
 
 from __future__ import division
-import math
 import copy
 
 try:
@@ -32,9 +31,6 @@ import numpy as np
 
 from coordinates import pointer, explorer
 from utils import on_window_close
-
-class foo:
-    pass
 
 
 class SquarePointer(object):
@@ -56,11 +52,11 @@ class SquarePointer(object):
         self.__pointer = plt.Rectangle(explorer.coordinates - 
         (self.square_width / 2, self.square_width / 2), 
         self.square_width,self.square_width, fc = 'r', fill= False,lw = 2, 
-        animated = True, picker = True, ec = 'black')
+        animated = True, picker = True, ec = 'red')
         self.__explorer = plt.Rectangle(explorer.coordinates - 
         (self.square_width / 2, self.square_width / 2), 
         self.square_width,self.square_width, fc = 'r', fill= False,lw = 2, 
-        animated = True, picker = True, ec = 'white')
+        animated = True, picker = True, ec = 'yellow')
         pointer.connect(self._update_squares)
         explorer.connect(self._update_squares)
         
@@ -290,7 +286,7 @@ class LinePointer(object):
           
     def add_explorer(self, ax):
         self.pointers.append(
-        ax.axhline(pointer.ix,color='white', animated = True, picker=True))
+        ax.axhline(pointer.ix,color='yellow', animated = True, picker=True))
       
     def remove_explorer(self, ax):
         for explorer in self.explorers:
