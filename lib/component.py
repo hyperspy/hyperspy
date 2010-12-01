@@ -144,7 +144,7 @@ class Parameter(object):
         elif dim == 3:
             self.map[mask,:] = self.value
         self.already_set_map = mask
-            
+                    
 
 class Component:
     def __init__(self, parameter_name_list):
@@ -204,21 +204,30 @@ class Component:
                 p_std[i:i+lenght].tolist())
                 i+=lenght
             
-    def charge2map( self, p, onlyfree = False ):
+    def charge2map(self, p, onlyfree = False, array = 'value'):
         if onlyfree :
             parameters = self.free_parameters
         else :
             parameters = self.parameters
         i=0
         for parameter in parameters:
-            lenght = parameter._number_of_elements
-            parameter.map=(p[:,:,i] if lenght == 1 else p[:,:,i:i+lenght])
-            parameter.already_set_map = np.ones((parameter.map.shape[0], 
-            parameter.map.shape[1]), dtype = bool)
-            i+=lenght
-    
-    def store_current_parameters_in_map(self,ix,iy,xdimension,ydimension) :
+            if array == 'value':
+                lenght = parameter._number_of_elements
+                parameter.map = (p[:,:,i] if lenght == 1 else p[:,:,i:i+lenght])
+                i+=lenght
+            if array == 'std':
+                lenght = parameter._number_of_elements
+                parameter.std_map = (
+                p[:,:,i] if lenght == 1 else p[:,:,i:i+lenght])
+                i+=lenght
+            if array == 'asm':
+                parameter.already_set_map = p[:,:,i]
+                
+    def create_arrays(self, xdimension, ydimension):
         for parameter in self.parameters:
+            # It will overwrite the arrays if the dimension changes.
+            # This is only useful if the number of knots of the fine structure
+            # component has changed
             if parameter.map is None  or \
             (parameter.map.shape[0], parameter.map.shape[1]) !=(xdimension,
              ydimension):
@@ -226,12 +235,13 @@ class Component:
                 parameter.map = (np.zeros((xdimension, ydimension)) if dim == 1 
                 else np.zeros((xdimension, ydimension, dim)))
                 parameter.already_set_map = np.zeros((
-                    xdimension, ydimension), dtype = bool )
-            if parameter.std is not None and parameter.std_map is None:
-                dim = parameter._number_of_elements
+                    xdimension, ydimension), dtype = bool)
                 parameter.std_map = (np.zeros((xdimension, ydimension))
                 if dim == 1 else np.zeros((xdimension, ydimension, dim)))
                 parameter.std_map[:] = np.nan
+    
+    def store_current_parameters_in_map(self,ix,iy):
+        for parameter in self.parameters:
             parameter.copy_current_value_to_map(ix,iy)
         
     def charge_value_from_map(self,ix,iy, only_fixed = False) :

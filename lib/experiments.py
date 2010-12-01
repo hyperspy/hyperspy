@@ -29,8 +29,8 @@ class Experiments:
         else:
             self.ll = None
         self.shape = self.hl.data_cube.shape
-            
-    def __set_convolution_axis(self):
+        self.convolution_axis = None
+    def set_convolution_axis(self):
         """
         Creates an axis to use to generate the data of the model in the precise
         scale to obtain the correct axis and origin after convolution with the

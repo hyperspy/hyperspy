@@ -161,7 +161,7 @@ class Optimizers(Estimators):
 #            self.p_std = self.calculate_p_std(self.p0, method, *args)
         self._charge_p0(p_std = self.p_std)
         self.set()
-        self.model_cube[:,self.ix,self.iy] = self.__call__(not self.convolved,
-        onlyactive = True)
+        self.model_cube[self.channel_switches,self.ix,self.iy] = self.__call__(
+        not self.convolved, onlyactive = True)
         if ext_bounding:
             self._disable_ext_bounding()

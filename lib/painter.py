@@ -79,10 +79,18 @@ class Painter:
         # Plotting commands
         plt.figure(1)
         plt.cla()
-        plt.plot(self.hl.energy_axis,self.__call__(non_convolved,
-        onlyactive = True))
+        m2plot = np.zeros(self.hl.energy_axis.shape)
+        m2plot[:] = np.nan
+        m2plot[self.channel_switches] = self.__call__(non_convolved,
+        onlyactive = True)
+        plt.plot(
+        self.hl.energy_axis, m2plot, color = 'red')
         plt.scatter(self.hl.energy_axis[self.channel_switches],
-        self.hl.data_cube[self.channel_switches,self.ix,self.iy], s =1)
+        self.hl.data_cube[self.channel_switches,self.ix,self.iy], s =1, 
+        color = 'blue')
+        plt.scatter(self.hl.energy_axis[self.channel_switches == False],
+        self.hl.data_cube[self.channel_switches == False,self.ix,self.iy], s =1, 
+        alpha = 0.1, color = 'blue')
         plt.xlabel('Energy Loss (eV)')
         plt.ylabel('Counts')
         plt.title(title)
@@ -102,7 +110,7 @@ class Painter:
                 plt.connect('key_press_event', key_navigator)
                 plt.connect('button_press_event', mouse_navigator_x)
         elif self.hl.ydimension > 1 and self.hl.xdimension == 1:
-            spectra2D = plt.figure(2)
+            plt.figure(2)
             plt.cla()
             plt.imshow(self.hl.data_cube[:,self.ix,:],interpolation='nearest')
             plt.axvline(self.iy,color='r')
