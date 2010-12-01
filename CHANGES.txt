@@ -1,3 +1,22 @@
+v0.2.7, 01/12/2010
+Enhancements
+------------
+* Improvements in the visual data exploring features:
+	- The cursors size can be changed
+	- A coordinates change update the cursors and spectrum figure
+	- Enabling and disabling the 'explorer' updates the spectrum figure
+	- The maps colors defaults now to gray and the cursors are colorful.
+* Improvements in the model class:
+	- When saving the parameters to a file the std and asm arrays are saved too.
+	- Prettier plotting
+	- No need to manually call the touch or set_convolution_axis methods anymore
+	- Much improved performance when the model is not convolved
+
+Bugs fixed
+----------
+* The calculate_thickness method was broken
+* The creation of the configuration folder was broken
+
 v0.2.6, 19/11/2010
 * Added imported_parameters attribute to the Spectrum object for FEI's and DMs data format
 * FEI's reader now handles properly the SIs with reversed dimensions
