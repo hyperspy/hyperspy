@@ -28,18 +28,20 @@ from components.power_law import PowerLaw
 from interactive_ns import interactive_ns
 from defaults_parser import defaults
 from utils import two_area_powerlaw_estimation
-from painter import Painter
 from estimators import Estimators
 from optimizers import Optimizers
 from model_controls import Controls
+import coordinates
 import messages
+import mpl_hse
+import widgets
 
-class Model(list, Painter, Optimizers, Estimators, Controls):
+class Model(list, Optimizers, Estimators, Controls):
     '''Build a fit a model
     
     Parameters
     ----------
-    data : Spectrum instance
+    data : Spectrum or Experiment instance
     auto_background : boolean
         If True, it adds automatically a powerlaw to the model and estimate the 
         parameters by the two-area method.
@@ -48,15 +50,12 @@ class Model(list, Painter, Optimizers, Estimators, Controls):
         defined in the Spectrum instance.
     '''
     
-    ix, iy = 0, 0
     __firstimetouch = True
 
     def __init__(self, data, auto_background = True, auto_add_edges = True):
-        self.divide_ll_by_I0 = False
-        
-        # 
         from experiments import Experiments
         from spectrum import Spectrum
+        self.hse = None
         if isinstance(data, Experiments):
             self.experiments = data
             self.hl = data.hl
@@ -94,7 +93,9 @@ class Model(list, Painter, Optimizers, Estimators, Controls):
                 self.experiments.set_convolution_axis()
         else:
             self.convolved = False 
-        self._touch()
+        self.ix, self.iy = coordinates.cursor.ix, coordinates.cursor.iy
+        coordinates.cursor.connect(self.charge)
+        coordinates.cursor2.connect(self.charge)
         
     # Extend the list methods to call the _touch when the model is modified
     def append(self, object):
@@ -245,36 +246,7 @@ class Model(list, Painter, Optimizers, Estimators, Controls):
                     self.resolve_fine_structure(i1 = i2)
         else:
             return
-        
-    def set_coordinates(self,ix=None,iy=None):
-        '''Store the current parameters in the parameter matrix and change the
-         active spectrum to the given coordinates
-         
-         ix, iy : int
-        '''
 
-        if ix is not None:
-            ix = int(ix) # Convert it to int, just in case...
-            if ix >= 0:
-                if ix < self.hl.data_cube.shape[1] :
-                    self.ix = ix
-                else :
-                    self.ix = ix - self.hl.data_cube.shape[1]
-            elif ix < 0:
-                self.ix = self.hl.data_cube.shape[1] + ix
-
-        if iy is not None:
-            iy = int(iy) # Convert it to int, just in case...
-            if iy >= 0 :
-                if iy < self.hl.data_cube.shape[2]:
-                    self.iy = iy
-                else :
-                    self.iy = iy - self.hl.data_cube.shape[2]
-            elif iy < 0:
-                self.iy = self.hl.data_cube.shape[2] + iy
-        if ix is not None or iy is not None:
-            self.charge()
-      
     def _set_p0(self):
         p0 = None
         for component in self:
@@ -351,6 +323,21 @@ class Model(list, Painter, Optimizers, Estimators, Controls):
                 counter += component.nfree_param
 
     # Defines the functions for the fitting process -------------------------
+    def model2plot(self, cursor, out_of_region2nans = True):
+        if cursor == 2:
+            self.ix, self.iy = coordinates.cursor2.ix, coordinates.cursor2.iy
+            self.charge()        
+        s = self.__call__(non_convolved=False, onlyactive=True)
+        if cursor == 2:
+                    self.ix, self.iy = \
+                    coordinates.cursor.ix, coordinates.cursor.iy
+                    self.charge()
+        if out_of_region2nans is True:
+            ns = np.zeros((self.hl.energy_axis.shape))
+            ns[:] = np.nan
+            ns[self.channel_switches] = s
+        return ns
+    
     def __call__(self,non_convolved=False, onlyactive=False) :
         '''Returns the corresponding model for the current coordinates
         
@@ -360,6 +347,8 @@ class Model(list, Painter, Optimizers, Estimators, Controls):
             If True it will return the deconvolved model
         only_active : bool
             If True, only the active components will be used to build the model.
+            
+        cursor: 1 or 2
         
         Returns
         -------
@@ -405,8 +394,10 @@ class Model(list, Painter, Optimizers, Estimators, Controls):
                         np.add(sum_, component.function(self.hl.energy_axis),
                         sum_)
                     counter+=component.nfree_param
-            return sum_ + np.convolve(self.ll.data_cube[: , self.ix, self.iy],
-            sum_convolved, mode="valid")
+            to_return = sum_ + np.convolve(
+                self.ll.data_cube[: , self.ix, self.iy], 
+                sum_convolved, mode="valid")            
+            return to_return
 
 
     def set_energy_region(self, E1=None, E2=None):
@@ -615,14 +606,17 @@ class Model(list, Painter, Optimizers, Estimators, Controls):
         if E1 is None or E1 < ea[0]:
             E1 = ea[0]
         else:
-            E1 = E1    
+            E1 = E1
         if E2 is None:
-            i = 0
-            while self.edges[i].edge_position() < E1 or \
-            self.edges[i].active is False:
-                i += 1
-            E2 = self.edges[i].edge_position() - \
-            defaults.preedge_safe_window_width
+            if self.edges:
+                i = 0
+                while self.edges[i].edge_position() < E1 or \
+                self.edges[i].active is False:
+                    i += 1
+                E2 = self.edges[i].edge_position() - \
+                defaults.preedge_safe_window_width
+            else:
+                E2 = ea[-1]
         else:
             E2 = E2           
         print \
@@ -849,3 +843,38 @@ class Model(list, Painter, Optimizers, Estimators, Controls):
                 for subshell in elements[element]:
                     print "%s_%s\t%f" % (element, subshell, 
                     elements[element][subshell])
+    
+    def plot(self):
+        '''Plots the current spectrum to the screen and a map with a cursor to 
+        explore the SI.
+        '''
+        if self.hse is not None:
+            self.hse.plot()
+            return
+        
+        self.hse = mpl_hse.MPL_HyperSpectrum_Explorer()
+        self.hse.spectrum_data_function = self.hl.__call__
+        self.hse.spectrum_data2_function = self.model2plot
+        self.hse.axis = self.hl.energy_axis
+        self.hse.xlabel = 'Energy Loss (%s)' % self.hl.energyunits
+        self.hse.ylabel = 'Counts'
+        self.hse.line_type_d1 = 'scatter'
+        self.hse.line_type_d2 = 'line'
+        self.hse.channel_switches = self.channel_switches
+        shape = self.hl.data_cube.shape
+        if shape[1] > 1 and shape[2] > 1:
+            self.hse.pointers = widgets.cursors
+            if self.hl.image is not None:
+                self.hse.image = self.hl.image.data_cube
+            else:
+                self.hse.image = self.hl.data_cube.sum(0)
+            self.hse.plot()
+        elif shape[1] > 1 and shape[2] == 1:
+            self.hse.pointers = widgets.lines
+            self.hse.image = self.data_cube.squeeze()  
+            self.hse.plot()
+        elif shape[1] == 1 and shape[2] == 1:
+            self.hse.pointers = None
+            self.hse.image = None  
+            self.hse.plot()
+        

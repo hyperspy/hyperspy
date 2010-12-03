@@ -22,20 +22,12 @@ import math
 
 import numpy as np
 
-try:
-    import matplotlib.pyplot as plt
-except:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-# Set the matplotlib cmap to gray (the default is jet)
-plt.rcParams['image.cmap'] = 'gray'
 import file_io
 import utils
 import messages
 import coordinates
 
-class Image:
+class Image():
     '''
     '''    
     
@@ -122,7 +114,12 @@ class Image:
         for key in calibration_dict:
             exec('self.%s = calibration_dict[\'%s\']' % (key, key))
         print "Shape: ", self.data_cube.shape
-        
+                            
+    def crop(self, ix1, iy1, ix2, iy2):
+        print "Cropping the image from (%s, %s) to (%s, %s)" % \
+        (ix1, iy1, ix2, iy2)
+        self.data_cube = self.data_cube[ix1:ix2, iy1:iy2]
+
     def plot(self, z = 0):
         shape = self.data_cube.squeeze().shape
         if len(shape) == 2:
@@ -139,53 +136,3 @@ class Image:
             'Image stacks of more than 4 dimensions are not supported')
             return
         self.create_image_figure(dc)
-                    
-    def change_to_frame(self, i1 = 0, i2 = 0):
-        shape = self.data_cube.squeeze().shape
-        if len(shape) == 3:
-            self.image_ax.images[0].set_array(self.data_cube[...,i1].T)
-        elif len(shape) == 4:
-            self.image_ax.images[0].set_array(self.data_cube[...,i1,i2].T)
-        if self.auto_contrast is True:
-            self.image_ax.images[0].autoscale()
-        plt.draw()
-        
-    def update_figure(self):
-        self.change_to_frame(self.coordinates.ix, self.coordinates.iy)
-        
-    def _on_figure_close(self):
-        self.image_figure = None
-        self.image_ax = None
-        self.coordinates.reset()
-        
-    def create_image_figure(self, dc):
-        if self.image_figure is not None:
-            # Test if the figure really exists. If not call the reset function 
-            # and start again. This is necessary because with some backends 
-            # EELSLab fails to connect the close event to the function.
-            try:
-                self.image_figure.show()
-            except:
-                self._on_figure_close()
-                self.create_image_figure(dc)
-            return True
-            
-        self.image_figure = plt.figure()
-        utils.on_window_close(self.image_figure, self._on_figure_close)
-        if hasattr(self, 'title'):
-            title = self.title
-        else:
-            title = 'Image'
-        self.image_figure.canvas.set_window_title(title)
-        self.image_ax = self.image_figure.add_subplot(111)
-        self.image_ax.imshow(dc.T, interpolation = 'nearest')
-        self.image_figure.canvas.draw()
-        self.coordinates.on_coordinates_change.append(self.update_figure)
-        plt.connect('key_press_event', self.coordinates.key_navigator)
-        plt.show()
-        return True
-
-    def crop(self, ix1, iy1, ix2, iy2):
-        print "Cropping the image from (%s, %s) to (%s, %s)" % \
-        (ix1, iy1, ix2, iy2)
-        self.data_cube = self.data_cube[ix1:ix2, iy1:iy2]

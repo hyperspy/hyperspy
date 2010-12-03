@@ -20,6 +20,9 @@
 
 import copy
 
+import numpy as np
+from scipy.interpolate import UnivariateSpline, interp1d
+from scipy.ndimage import  gaussian_filter1d
 try:
     import matplotlib.pyplot as plt
 except:
@@ -27,11 +30,7 @@ except:
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
 # Set the matplotlib cmap to gray (the default is jet)
-plt.rcParams['image.cmap'] = 'gray'    
-import numpy as np
-from scipy.interpolate import UnivariateSpline, interp1d
-from scipy.ndimage import  gaussian_filter1d
-
+plt.rcParams['image.cmap'] = 'gray'
 import file_io
 import messages
 import utils
@@ -44,10 +43,11 @@ from components.edge import Edge
 import coordinates
 from defaults_parser import defaults
 from interactive_ns import interactive_ns
-from widgets import cursors, lines
-from utils import generate_axis, on_window_close
+from utils import generate_axis
 from utils import rebin
 from mva import MVA, MVA_Results
+import widgets
+import mpl_hse
 
 
 #TODO Acquisition_Parameters and Treatments must be merged into a more general
@@ -134,18 +134,8 @@ class Spectrum(object, MVA):
         self.dark_current = None
         self.gain_correction = None
         self.backup_cubes = False
-        
-        # Plotting attributes definition
-        self.sp_figure = None
-        self.sp_ax1 = None
-        self.sp_ax2 = None
-        self.navigator_figure = None
-        self.navigator_ax = None
-        self.unid_navigator_figure = None
-        self.unid_navigator_ax = None
-        self.pointers = None
-        self.autoscale = True
-        
+        self.hse = None
+                
         # Attributes declaration (for simulation)
         self.xdimension = 1
         self.ydimension = 1
@@ -282,23 +272,25 @@ class Spectrum(object, MVA):
     def _set_coordinates_shape(self):
         shape = self.data_cube.squeeze().shape
         if len(shape) == 2:
-            coordinates.pointer.shape = (self.data_cube.shape[1],1)
-            coordinates.explorer.shape = (self.data_cube.shape[1],1)
+            coordinates.cursor.shape = (self.data_cube.shape[1],1)
+            coordinates.cursor2.shape = (self.data_cube.shape[1],1)
         elif len(shape) == 3:
-            coordinates.pointer.shape = self.data_cube.shape[1:]
-            coordinates.explorer.shape = self.data_cube.shape[1:]
-	coordinates.pointer.reset()
-	coordinates.explorer.reset()
-	if self.sp_figure is not None:
-		plt.close(self.sp_figure)
-		self._on_spectrum_close()
+            coordinates.cursor.shape = self.data_cube.shape[1:]
+            coordinates.cursor2.shape = self.data_cube.shape[1:]
+	coordinates.cursor.reset()
+	coordinates.cursor2.reset()
+	if self.hse is not None and self.hse.spectrum_figure is not None:
+		plt.close(self.hse.spectrum_figure)
+		self.hse._on_spectrum_close()
 		self.plot()
             
     def _get_cube(self):
         return self.__cubes[self.current_cube]['data']
+    
     def _set_cube(self,arg):
         self.__cubes[self.current_cube]['data'] = arg
     data_cube = property(_get_cube,_set_cube)
+    
     def __new_cube(self, cube, treatment):
         history = copy.copy(self.history)
         history.append(treatment)
@@ -308,16 +300,17 @@ class Spectrum(object, MVA):
             self.__cubes[-1]['data'] = cube
             self.__cubes[-1]['history'] = history
         self.current_cube = -1
-    def __call__(self, cursor = 'pointer'):
+    
+    def __call__(self, cursor = 1):
         '''Returns the spectrum at the coordinates given by the choosen cursor
         Parameters
         ----------
-        cursor : {'pointer', 'explorer'}
+        cursor : 1 or 2
         '''
-        if cursor == 'pointer':
-            cursor = coordinates.pointer
-        elif cursor == 'explorer':
-            cursor = coordinates.explorer
+        if cursor == 1:
+            cursor = coordinates.cursor
+        elif cursor == 2:
+            cursor = coordinates.cursor2
         dc = self.data_cube[:, cursor.ix, cursor.iy]
         return dc
     
@@ -1250,205 +1243,6 @@ class Spectrum(object, MVA):
     def load_image(self,filename):
         print "Loading the image..."
         self.image = file_io.load(filename)
-        
-    # Plot _____________________________________________________________________        
-    def _does_figure_object_exists(self, fig_obj):
-        if fig_obj is None:
-            return False
-        else:
-            # Test if the figure really exists. If not call the reset function 
-            # and start again. This is necessary because with some backends 
-            # EELSLab fails to connect the close event to the function.
-            try:
-                fig_obj.show()
-                return True
-            except:
-                fig_obj = None
-                return False
-                
-    def _create_spectrum_figure(self):
-        if self._does_figure_object_exists(self.sp_figure) is True:
-            return            
-        else:
-            self.sp_figure = plt.figure()
-            self.sp_figure.canvas.set_window_title(self.title + ' Spectrum')
-            on_window_close(self.sp_figure, self._on_spectrum_close)
-            
-    def _on_spectrum_close(self, *arg):
-        if self._does_figure_object_exists(self.navigator_figure) is True:
-            plt.close(self.navigator_figure)
-        if self._does_figure_object_exists(self.unid_navigator_figure) is True:
-            plt.close(self.unid_navigator_figure)
-        coordinates.pointer.disconnect(self.update_spectrum)
-        coordinates.explorer.disconnect(self.update_spectrum)
-        self.navigator_figure = None
-        self.navigator_ax = None
-        self.unid_navigator_figure = None
-        self.unid_navigator_ax = None
-        self.pointers = None
-        self.autoscale = True
-        self.sp_figure = None
-        self.sp_ax1 = None
-        self.sp_ax2 = None
-        
-    def _create_navigator_figure(self):
-        if self._does_figure_object_exists(self.navigator_figure) is True:
-            return 
-        self.navigator_figure = plt.figure()
-        if self.image is not None:
-            title = self.image.title
-        else:
-            title = 'Energy Integral'
-        self.navigator_figure.canvas.set_window_title(title)
-
-    def _plot_navigator(self):
-        self._create_navigator_figure()
-        self.navigator_ax = self.navigator_figure.add_subplot(111)
-        if self.image is not None:
-            cube = self.image.data_cube.squeeze()
-        else:
-            cube = np.sum(self.data_cube,axis=0)
-        self.navigator_ax.imshow(np.transpose(cube), interpolation='nearest')
-        self.navigator_figure.canvas.draw()
-
-    def _create_unid_navigator_figure(self):
-        if self._does_figure_object_exists(self.unid_navigator_figure) is True:
-            return 
-        self.unid_navigator_figure = plt.figure()
-        title = self.title + ' 1D navigator'
-        self.unid_navigator_figure.canvas.set_window_title(title)
-        return True
-        
-    def _plot_unid_navigator(self, y_line = False):
-        self._create_unid_navigator_figure()
-        self.unid_navigator_ax = self.unid_navigator_figure.add_subplot(111)
-        if y_line is False:
-            cube = self.data_cube[...,0]
-        else:
-            cube = self.data_cube[:,0,:]
-        self.unid_navigator_ax.imshow(np.transpose(cube), 
-        interpolation='nearest')
-        self.unid_navigator_figure.canvas.draw()
-        
-    def plot_spectrum(self, filename=None):
-        '''Plot or save as an image the current spectrum
-        
-        Parameters
-        ----------
-        filename : {None, str}
-            if None, it will plot to the screen the current spectrum. If string 
-            it will save the current spectrum as a png image
-        '''
-        if self.pointers:
-            self._previous_explorer_ON = self.pointers.explorer_ON
-        self._create_spectrum_figure()
-        self.sp_ax1 = self.sp_figure.add_subplot(111)
-        self.sp_ax1.step(self.energy_axis, self('pointer'), color = 'blue')
-        # Fixing the xlim is necessary because if the data_cube contains NaNs 
-        # the x autoscaling will change the limits for the first figures and
-        # leave it like that for the rest
-        self.sp_ax1.set_xlim(self.energy_axis[0], self.energy_axis[-1])
-        plt.xlabel('Energy Loss (eV)')
-        plt.ylabel('Counts')
-        p_coord = tuple(coordinates.pointer.coordinates)
-        if self.pointers and self.pointers.explorer_ON:
-            self._add_explorer()
-        elif not filename or (filename and self.data_cube.shape[1] > 1):
-            self.sp_ax1.set_title('(%i,%i)' % p_coord)
-        if filename:
-            plt.savefig(filename)
-    def _add_explorer(self):
-        p_coord = tuple(coordinates.pointer.coordinates)
-        e_coord = tuple(coordinates.explorer.coordinates)
-        self.sp_ax2 = plt.twinx(self.sp_ax1)
-        self.sp_ax2.step(self.energy_axis, self('explorer'), color = 'red')
-        self.sp_ax1.set_title('Pointer (%i,%i) Explorer (%i,%i)' % \
-                (p_coord + e_coord))
-    def _remove_explorer(self):
-        self.sp_figure.axes.remove(self.sp_ax2)
-        self.sp_ax2 = None
-    def update_spectrum(self):
-        '''Update the current spectrum figure'''
-        if self._does_figure_object_exists(self.sp_figure) is False:
-            self._on_spectrum_close()
-            return
-        if self.pointers and (self._previous_explorer_ON is not 
-        self.pointers.explorer_ON):
-            if self.pointers.explorer_ON:
-                self._add_explorer()
-            else:
-                self._remove_explorer()
-            self._previous_explorer_ON = self.pointers.explorer_ON
-        else:
-            ydata = self('pointer')
-            self.sp_ax1.lines[0].set_ydata(ydata)
-            p_coord = tuple(coordinates.pointer.coordinates)
-            if self.autoscale is True:
-                self.sp_ax1.relim()
-                y1, y2 = np.searchsorted(self.energy_axis, 
-                self.sp_ax1.get_xbound())
-                y2 += 2
-                y1, y2 = np.clip((y1,y2),0,len(ydata-1))
-                clipped_ydata = ydata[y1:y2]
-                y_max, y_min = clipped_ydata.max(), clipped_ydata.min()
-                self.sp_ax1.set_ylim(y_min, y_max)
-            if self.pointers and self.pointers.explorer_ON:
-                ydata = self('explorer')
-                e_coord = tuple(coordinates.explorer.coordinates)
-                self.sp_ax2.lines[0].set_ydata(self('explorer'))
-                if self.autoscale is True:
-                    self.sp_ax2.relim()
-                    y1, y2 = np.searchsorted(self.energy_axis, 
-                    self.sp_ax2.get_xbound())
-                    y2 += 2
-                    y1, y2 = np.clip((y1,y2),0,len(ydata-1))
-                    clipped_ydata = ydata[y1:y2]
-                    y_max, y_min = clipped_ydata.max(), clipped_ydata.min()
-                    self.sp_ax2.set_ylim(y_min, y_max)
-                self.sp_ax1.set_title('Pointer (%i,%i) Explorer (%i,%i)' % \
-                (p_coord + e_coord))
-            else:
-                self.sp_ax1.set_title('(%i,%i)' % p_coord)
-            self.sp_figure.canvas.draw()
-            
-    def plot(self):
-        '''Plots the current spectrum to the screen and a map with a pointer to 
-        explore the SI.
-        '''
-        self._set_coordinates_shape()
-        if self.ydimension > 1 and self.xdimension > 1:
-            if self.pointers is None:
-                self.pointers = cursors
-            self._plot_navigator()  
-            self.pointers.add_axes(self.navigator_ax)
-            self.plot_spectrum()
-            self.navigator_figure.canvas.draw()
-            coordinates.pointer.connect(self.update_spectrum)
-            coordinates.explorer.connect(self.update_spectrum)
-            plt.connect('key_press_event', coordinates.pointer.key_navigator)
-        elif self.xdimension > 1 and self.ydimension == 1:
-            if not self.pointers:
-                self.pointers = lines
-            self._plot_unid_navigator()  
-            lines.add_axes(self.unid_navigator_ax)
-            self.plot_spectrum()
-            self.unid_navigator_figure.canvas.draw()
-            coordinates.pointer.connect(self.update_spectrum)
-            coordinates.explorer.connect(self.update_spectrum)
-            plt.connect('key_press_event', coordinates.pointer.key_navigator)
-        elif self.xdimension == 1 and self.ydimension > 1:
-            if not self.pointers:
-                self.pointers = lines
-            self._plot_unid_navigator(y_line = True)  
-            lines.add_axes(self.unid_navigator_ax)
-            self.plot_spectrum()
-            self.unid_navigator_figure.canvas.draw()
-            coordinates.pointer.connect(self.update_spectrum)
-            coordinates.explorer.connect(self.update_spectrum)
-            plt.connect('key_press_event', coordinates.pointer.key_navigator)
-        elif self.xdimension == 1 and self.ydimension == 1:
-            self.plot_spectrum()
-        plt.show()
             
     # Info _____________________________________________________________________
     def calculate_thickness(self, method = 'threshold', threshold = 3, 
@@ -1513,8 +1307,8 @@ class Spectrum(object, MVA):
                 Position in energy units of the roots of the first
             derivative if der_roots is True (False by default)
         '''
-        ix = coordinates.pointer.ix
-        iy = coordinates.pointer.iy
+        ix = coordinates.cursor.ix
+        iy = coordinates.cursor.iy
         i0 = np.argmax(self.data_cube[:,ix, iy])
         data = self.data_cube[i0 - channels:i0 + channels + 1, ix, iy]
         x = self.energy_axis[i0 - channels:i0 + channels + 1]
@@ -1692,7 +1486,6 @@ class Spectrum(object, MVA):
             original_size
         new_cube = np.zeros((new_size, s[1], s[2]))
         iright = self.energy2index(right)
-        inc = new_size - original_size      
         new_cube[:iright,:,:] = self.data_cube[:iright,:,:]
         self.data_cube = new_cube
         self.get_dimensions_from_cube()
@@ -1827,7 +1620,6 @@ class Spectrum(object, MVA):
         '''
         dc = self.data_cube
         der = np.diff(dc,1,0)
-        E_ax = self.energy_axis
         index = 0
         spikes =[]
         for i in range(dc.shape[1]):
@@ -1937,10 +1729,10 @@ class Spectrum(object, MVA):
         -------
         float
         '''
-        ilt1 = self.energy2index(left_tuple[0])
-        ilt2 = self.energy2index(left_tuple[1])
-        irt1 = self.energy2index(right_tuple[0])
-        irt2 = self.energy2index(right_tuple[1])
+        ilt1 = self.energy2index(left_interval[0])
+        ilt2 = self.energy2index(left_interval[1])
+        irt1 = self.energy2index(right_interval[0])
+        irt2 = self.energy2index(right_interval[1])
         jump_ratio = (self.data_cube[irt1:irt2,:,:].sum(0) \
         / self.data_cube[ilt1:ilt2,:,:].sum(0))
         return jump_ratio
@@ -2140,10 +1932,39 @@ class Spectrum(object, MVA):
     
     def _correct_spatial_mask_when_unfolded(self, spatial_mask = None,):
         if 'unfolded' in self.history:
-            dc = self.data_cube
             if spatial_mask is not None:
                 spatial_mask = \
                 spatial_mask.reshape((-1,), order = 'F')
         return spatial_mask
         
-            
+    def plot(self):
+        '''Plots the current spectrum to the screen and a map with a cursor to 
+        explore the SI.
+        '''
+        self._set_coordinates_shape()
+        if self.hse is not None:
+            self.hse.plot()
+            return
+        
+        self.hse = mpl_hse.MPL_HyperSpectrum_Explorer()
+        self.hse.spectrum_data_function = self.__call__
+        self.hse.axis = self.energy_axis
+        self.hse.xlabel = 'Energy Loss (%s)' % self.energyunits
+        self.hse.ylabel = 'Counts'
+        self.hse.line_type_d1 = 'step'
+        shape = self.data_cube.shape
+        if shape[1] > 1 and shape[2] > 1:
+            self.hse.pointers = widgets.cursors
+            if self.image is not None:
+                self.hse.image = self.image.data_cube
+            else:
+                self.hse.image = self.data_cube.sum(0)
+            self.hse.plot()
+        elif shape[1] > 1 and shape[2] == 1:
+            self.hse.pointers = widgets.lines
+            self.hse.image = self.data_cube.squeeze()  
+            self.hse.plot()
+        elif shape[1] == 1 and shape[2] == 1:
+            self.hse.pointers = None
+            self.hse.image = None  
+            self.hse.plot()

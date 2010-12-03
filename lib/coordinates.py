@@ -33,6 +33,8 @@ class Coordinates(object):
     def _set_ix(self, ix):
         if abs(ix) >= self.shape[0]:
             ix = ix % self.shape[0]
+        if ix < 0:
+            ix = ix + self.shape[0]
         self.coordinates[0] = ix
         self.coordinates_change_signal()
     def _get_ix(self):
@@ -40,6 +42,8 @@ class Coordinates(object):
     def _set_iy(self, iy):
         if abs(iy) >= self.shape[1]:
             iy = iy % self.shape[1]
+        if iy < 0:
+            iy = iy + self.shape[1]
         self.coordinates[1] = iy
         self.coordinates_change_signal()
     def _get_iy(self):
@@ -83,6 +87,7 @@ class Coordinates(object):
                         for x in reversed(range(self.shape[0])):
                             self._eval_functions((x,y), function_list, mask)
                     inverter*=-1
+                    
     def reset(self):
 #        self.on_coordinates_change = []
         self.ix = 0
@@ -103,10 +108,8 @@ class Coordinates(object):
             self.iy += self.step
         elif event.key == "right" or event.key == "6":
             self.ix += self.step
-            print "ix = ", self.ix
         elif event.key == "left" or event.key == "4":
             self.ix -= self.step
-            print "ix = ", self.ix
         elif event.key == "pageup":
             self.step += 1
             print "Step = ", self.step
@@ -115,7 +118,7 @@ class Coordinates(object):
                 self.step -= 1
             print "Step = ", self.step
 
-pointer = Coordinates()
-explorer = Coordinates()
+cursor = Coordinates()
+cursor2 = Coordinates()
 
     
