@@ -30,6 +30,7 @@ plt.rcParams['image.cmap'] = 'gray'
 
 from utils import on_window_close
 import widgets
+import coordinates
 
 class MPL_HyperSpectrum_Explorer():
     def __init__(self):
@@ -39,8 +40,10 @@ class MPL_HyperSpectrum_Explorer():
         self.spectrum_data2_function = None
         self.axis = None
         self.axis_switches = None
-        self.axis_switches2 = None
         self.image = None
+        self.pixel_size = None
+        self.pixel_units = None
+        self.plot_scale_bar = False
         self.pointers = None
         
         # Plotting attributes
@@ -61,32 +64,34 @@ class MPL_HyperSpectrum_Explorer():
         self.ylabel = ''
         self.image_title = ''
         self.spectrum_title = ''
-        self.data_explorer_window_title = 'Data explorer'
+        
         
         # Lines options
         
-        self.lines_options = {
-            'data1' : {
-                'type' : None,
-                'switches' : None,},
-            'data2' : {
-                'type' : None,
-                'switches' : None,}}
-        # Type options:'scatter', 'step', 'line'
-        self.line_type_d1 = None
-        self.line_type_d2 = None
-        
-        # Switches options: 'nans' , 'transparency'
-        self.line_switches_d1 = None
-        self.line_switches_d2 = None
-        
-        # Colors options: any valid color
-        self.line_color_d1c1 = 'blue'
-        self.line_color_d1c2 = 'green'
-        self.line_color_d2c1 = 'red'
-        self.line_color_d2c2 = 'black'
-        
-        
+        self.line_options = {
+            'left_axis' : {
+                'data1' : {
+                    'line' : None,
+                    'type' : None,  # 'scatter', 'step', 'line'
+                    'switches' : None, # 'nans' , 'transparency'
+                    'color' : None},
+                'data2' : {
+                    'line' : None,
+                    'type' : None,
+                    'switches' : None,
+                    'color' : None},},
+            'right_axis' : {
+                'data1' : {
+                    'line' : None,
+                    'type' : None,
+                    'switches' : None,
+                    'color' : None},
+                'data2' : {
+                    'line' : None,
+                    'type' : None,
+                    'switches' : None,
+                    'color' : None},}}         
+            
     def _does_figure_object_exists(self, fig_obj):
         if fig_obj is None:
             return False
@@ -106,17 +111,24 @@ class MPL_HyperSpectrum_Explorer():
             return            
         else:
             self.spectrum_figure = plt.figure()
-            self.spectrum_figure.canvas.set_window_title(self.spectrum_title)
+            self.spectrum_figure.canvas.set_window_title(self.spectrum_title 
+            + ' Spectrum')
             on_window_close(self.spectrum_figure, self._on_spectrum_close)
+            self.spectrum_figure.canvas.mpl_connect(
+                'draw_event', self.clear)
+
             
     def _on_spectrum_close(self, *arg):
+        
+        # First we close the explorer
         if self._does_figure_object_exists(self.data_explorer_figure) is True:
             plt.close(self.data_explorer_figure)
         widgets.cursor.disconnect(self._update_spectrum_lines_cursor1)
         widgets.cursor2.disconnect(self._update_spectrum_lines_cursor2)
+        self._remove_cursor(cursor = 2)
+        self._remove_cursor(cursor = 1)
         self.data_explorer_figure = None
         self.data_explorer_ax = None
-#        self.pointers = None
         self.autoscale = True
         self.spectrum_figure = None
         self.spectrum_ax1 = None
@@ -127,7 +139,7 @@ class MPL_HyperSpectrum_Explorer():
             return
         self.data_explorer_figure = plt.figure()
         self.data_explorer_figure.canvas.set_window_title(
-        self.data_explorer_window_title)
+        self.image_title + ' Data explorer')
 
 
     def plot_data_explorer(self):
@@ -137,134 +149,165 @@ class MPL_HyperSpectrum_Explorer():
         if not self.data_explorer_figure.axes:
             self.data_explorer_ax = self.data_explorer_figure.add_subplot(111)
         else:
-            # Remove the former images
+            # Remove the old images
             if self.data_explorer_ax.images:
                 self.data_explorer_ax.images = []
         self.data_explorer_ax.imshow(self.image.T, interpolation='nearest')
+        self.data_explorer_ax.set_axis_off()
+        if self.pixel_size is not None and self.plot_scale_bar is True:
+            self.data_explorer_ax.scale_bar = widgets.Scale_Bar(
+             ax = self.data_explorer_ax, units = self.pixel_units, 
+             pixel_size = self.pixel_size)
+        self.data_explorer_figure.subplots_adjust(0,0,1,1)
+        # Adjust the size of the window
+        size = [ 6,  6.* self.image.shape[1] / self.image.shape[0]]
+        self.data_explorer_figure.set_size_inches(size, forward = True)        
         self.data_explorer_figure.canvas.draw()
                 
-    def plot_spectrum_lines(self, cursor = 1):
+    def plot_spectrum_lines(self, cursor = 1, data = 1):
+        '''Plot lines in the spectrum figure
+        
+        This function will plot all the lines in this order from the one 
+        defined by the cursor and data parameters in this order:
+            (cursor,data) (1,1),(1,2),(2,1),(2,2).
+        '''
         self._create_spectrum_figure()
         if cursor == 1:
             cursor_position = tuple(widgets.cursor.coordinates)
-            if self.spectrum_ax1 is not None:
-                self.spectrum_figure.axes.remove(self.spectrum_ax1)
-            self.spectrum_ax1 = self.spectrum_figure.add_subplot(111)
+            if self.spectrum_ax1 is None:
+                self.spectrum_ax1 = self.spectrum_figure.add_subplot(111)
+                
+            elif not self._does_figure_object_exists(self.spectrum_ax1.figure):
+                self._on_spectrum_close()
+                self.spectrum_ax1 = self.spectrum_figure.add_subplot(111)
             ax = self.spectrum_ax1
+            line_options = self.line_options['left_axis']
             
-            line1_type = self.line_type_d1
-            line2_type = self.line_type_d2
-            
-            # Switches options: 'nans' , 'transparency'
-            line1_switches = self.line_switches_d1
-            line2_switches = self.line_switches_d2
-            
-            # Colors options: any valid color
-            line1_color = self.line_color_d1c1
-            line2_color = self.line_color_d2c1
         if cursor == 2:
             cursor_position = tuple(widgets.cursor2.coordinates)
-            if self.spectrum_ax2 is not None:
-                self.spectrum_figure.axes.remove(self.spectrum_ax2)
-            self.spectrum_ax2 = self.spectrum_ax1.twinx()
+            if self.spectrum_ax2 is None:
+                self.spectrum_ax2 = self.spectrum_ax1.twinx()
+            elif not self._does_figure_object_exists(self.spectrum_ax2.figure):
+                self._on_spectrum_close()
+                self.plot_spectrum_lines(cursor = 1, data = 1)
             ax = self.spectrum_ax2
+            line_options = self.line_options['right_axis']
             
-            line1_type = self.line_type_d1
-            line2_type = self.line_type_d2
+        if data == 1:
+            f = self.spectrum_data_function
+            lo = line_options['data1']
+        elif data == 2:
+            f = self.spectrum_data2_function
+            lo = line_options['data2']
             
-            # Switches options: 'nans' , 'transparency'
-            line1_switches = self.line_switches_d1
-            line2_switches = self.line_switches_d2
-            
-            # Colors options: any valid color
-            line1_color = self.line_color_d1c2
-            line2_color = self.line_color_d2c2
-
-        if self.spectrum_data_function is not None:
-            if line1_type == 'scatter':
-                line1, = ax.plot(self.axis, self.spectrum_data_function(cursor = cursor),
-                        color = line1_color, marker = 'o')
-            if line1_type == 'step':
-                line1, = ax.step(self.axis, self.spectrum_data_function(cursor = cursor),
-                        color = line1_color)
-            if line1_type == 'line':
-                line1, = ax.step(self.axis, self.spectrum_data_function(cursor = cursor),
-                        color = line1_color)
-            if cursor == 1:
-                self._line_d1c1 = line1
-            elif cursor == 2:
-                self._line_d1c2 = line1
-            
-        if self.spectrum_data2_function is not None:
-            if line2_type == 'scatter':
-                line2, = ax.plot(
-                self.axis, self.spectrum_data2_function(cursor = cursor),
-                        color = line2_color, marker = 'o')
-            if line2_type == 'step':
-                line2, = ax.step(
-                self.axis, self.spectrum_data2_function(cursor = cursor),
-                        color = line2_color)
-            if line2_type == 'line':
-                line2, = ax.step(
-                self.axis, self.spectrum_data2_function(cursor = cursor),
-                        color = line2_color)
-            if cursor == 1:
-                self._line_d2c1 = line2
-            elif cursor == 2:
-                self._line_d2c2 = line2
+        if f is not None:
+            if lo['type'] == 'scatter':
+                line, = ax.plot(self.axis, f(cursor = cursor), 
+                color = lo['color'], marker = 'o', markersize = 1, 
+                linestyle = 'None', markeredgecolor = lo['color'])
+            if lo['type'] == 'step':
+                line, = ax.step(self.axis, f(cursor = cursor), 
+                color = lo['color'])
+            if lo['type'] == 'line':
+                line, = ax.plot(self.axis, f(cursor = cursor),
+                        color = lo['color'])
+            line.set_animated(True)
+            lo['line'] = line
                 
-        # Fixing the xlim is necessary because if the data_cube contains NaNs 
-        # the x autoscaling will change the limits for the first figures and
-        # leave it like that for the rest
-        ax.set_xlim(self.axis[0], self.axis[-1])
-        plt.xlabel(self.xlabel)
-        plt.ylabel(self.ylabel)
-        
-        self.spectrum_ax1.set_title('(%i,%i)' % cursor_position)
-        if self.pointers is not None:
-            self._previous_cursor2_ON = self.pointers.cursor2_ON
-            if self.pointers.cursor2_ON and cursor == 1:
-                self.plot_spectrum_lines(cursor = 2)
+            # Fixing the xlim is necessary because if the data_cube contains  
+            # NaNs the x autoscaling will change the limits for the first 
+            # figures and leave it like that for the rest
+            ax.set_xlim(self.axis[0], self.axis[-1])
+            if self.pointers and data == 1 and cursor == 1:
+                ax.set_xlabel(self.xlabel)
+                ax.set_ylabel(self.ylabel)
+                ax.set_title('(%i,%i)' % cursor_position)
+                ax.title.set_animated(True)
+        if self.pointers:
+            if data == 1:
+                self.plot_spectrum_lines(cursor = cursor, data = 2)
+                return
+            if data == 2 and cursor == 1 and self.pointers.cursor2_ON:
+                self.plot_spectrum_lines(cursor = 2, data = 1)
+                return
+            
+        # We only draw at the end of the process
+        self.spectrum_figure.canvas.draw()
     
-    def _remove_cursor2(self):
-        self.spectrum_figure.axes.remove(self.spectrum_ax2)
-        self.spectrum_ax2 = None        
-
-    def _update_spectrum_lines(self, cursor):
-        '''Update the current spectrum figure'''
+    def _remove_cursor(self, cursor = 1):
+        if cursor == 1:
+            ax = self.spectrum_ax1
+            ld1 = self.line_options['left_axis']['data1']['line']
+            ld2 = self.line_options['left_axis']['data2']['line']
+        elif cursor == 2:
+            ax = self.spectrum_ax2
+            ld1 = self.line_options['right_axis']['data1']['line']
+            ld2 = self.line_options['right_axis']['data2']['line']
+        if ax is not None:
+            for line in (ld1, ld2):
+                if line in ax.lines:
+                    ax.lines.remove(line)
+            if ax in self.spectrum_figure.axes:
+                self.spectrum_figure.axes.remove(ax)
+            if cursor == 2:
+                self.spectrum_ax2 = None
+                self.line_options['right_axis']['data1']['line'] = None
+                self.line_options['right_axis']['data2']['line'] = None
+                if self.spectrum_ax1 is not None:
+                    self.spectrum_ax1.figure.canvas.draw_idle()
+            if cursor == 1:
+                self.spectrum_ax1 = None
+                self.line_options['left_axis']['data1']['line'] = None
+                self.line_options['left_axis']['data2']['line'] = None
         
+
+    def _update_spectrum_lines(self, cursor, data = 1):
+        '''Update the current spectrum figure'''
         if self._does_figure_object_exists(self.spectrum_figure) is False:
             self._on_spectrum_close()
             return
-        if self.pointers and (self._previous_cursor2_ON is not 
-        self.pointers.cursor2_ON):
-            if self.pointers.cursor2_ON:
-                self.plot_spectrum_lines(cursor = 2)
-            else:
-                self._remove_cursor2()
-            self._previous_cursor2_ON = self.pointers.cursor2_ON
-            #  _update_spectrum_line will be called by the cursor2 functions so 
-            # there is no need to carry on
-        else:
-            if cursor == 1:
-                ax = self.spectrum_ax1
-                line1 = self._line_d1c1
-                line2 = self._line_d2c1
-            elif cursor == 2:
-                ax = self.spectrum_ax2
-                line1 = self._line_d1c2
-                line2 = self._line_d2c2
-            if ax is None:
-                self.spectrum_figure.canvas.draw()
+            
+        if cursor == 1:
+            ax = self.spectrum_ax1
+            line_options = self.line_options['left_axis'] 
+        elif cursor == 2:
+            # When cursor2 is turned on/off a coordiantes change is triggered 
+            # calls this function, so it is here were we have to call the
+            # machinery to plot or erase the lines
+            
+            # If it was just turned on, there will be no lines but the switcher
+            # will be on, so we must draw it
+            l = self.line_options['right_axis']['data1']['line']
+            if l is None and self.pointers.cursor2_ON is True:
+                self.plot_spectrum_lines(cursor = cursor)
                 return
-            if self.spectrum_data_function is not None:
-                ydata = self.spectrum_data_function(cursor = cursor)
-            if self.spectrum_data2_function is not None:
-                ydata2 = self.spectrum_data2_function(cursor = cursor)
-            if line1 is not None:
-                line1.set_ydata(ydata)
-            if line2 is not None:
-                line2.set_ydata(ydata2)
+            # If the switcher is off but there is a line we have to remove the 
+            # cursor2
+            elif l is not None and self.pointers.cursor2_ON is False:
+                self._remove_cursor(cursor = 2)
+                return
+            
+            # The other cases are: 
+            # l is not None and cursor2_ON is True : we proceed to update
+            # l is None and cursor2_ON is True : This should never happen
+            
+            line_options = self.line_options['right_axis']
+            ax = self.spectrum_ax2
+        
+        if ax is None and cursor == 2:
+            return
+            
+        if data == 1:
+            f = self.spectrum_data_function
+            l = line_options['data1']['line']
+        elif data == 2:
+            f = self.spectrum_data2_function
+            l = line_options['data2']['line']            
+        if f is not None:
+            
+            ydata = f(cursor = cursor)
+            l.set_ydata(ydata)
+        
             if self.autoscale is True:
                 ax.relim()
                 y1, y2 = np.searchsorted(self.axis, 
@@ -272,20 +315,33 @@ class MPL_HyperSpectrum_Explorer():
                 y2 += 2
                 y1, y2 = np.clip((y1,y2),0,len(ydata-1))
                 clipped_ydata = ydata[y1:y2]
-                y_max, y_min = clipped_ydata.max(), clipped_ydata.min()
+                y_max, y_min = np.nanmax(clipped_ydata), np.nanmin(clipped_ydata)
                 ax.set_ylim(y_min, y_max)
+            
             if self.pointers.cursor2_ON is not True:
-                self.spectrum_ax1.set_title(
+                self.spectrum_ax1.title.set_text(
                 'Cursor (%i,%i) ' % 
                 tuple(widgets.cursor.coordinates))   
             else:
-                self.spectrum_ax1.set_title(
+                self.spectrum_ax1.title.set_text(
                 'Cursor 1 (%i,%i) Cursor 2 (%i,%i)' % 
                 (tuple(widgets.cursor.coordinates) + 
                 tuple(widgets.cursor2.coordinates)))
-                
-            self.spectrum_figure.canvas.draw()
-        
+            if data == 1:
+                self._update_spectrum_lines(cursor = cursor, data = 2)
+            background = ax.old_bbox
+            ax.figure.canvas.restore_region(background)
+            for line in ax.lines:
+                ax.draw_artist(line)
+                # We must also draw the ax2 lines if active
+                if self.spectrum_ax1 == ax and self.spectrum_ax2 is not None:
+                    for line in self.spectrum_ax2.lines:
+                        self.spectrum_ax2.draw_artist(line)
+            self.spectrum_ax1.draw_artist(self.spectrum_ax1.title)
+            ax.figure.canvas.draw_idle()
+            ax.figure.canvas.blit(ax.bbox)
+            
+
     def _update_spectrum_lines_cursor1(self):
         self._update_spectrum_lines(cursor = 1)
     def _update_spectrum_lines_cursor2(self):
@@ -296,14 +352,28 @@ class MPL_HyperSpectrum_Explorer():
             # It is not an 1D HSI, so we plot the data explorer
             self.plot_data_explorer()
             self.pointers.add_axes(self.data_explorer_ax)
-            plt.connect('key_press_event', widgets.cursor.key_navigator)
+            self.data_explorer_figure.canvas.mpl_connect(
+            'key_press_event', coordinates.cursor.key_navigator)
         
         self.plot_spectrum_lines(cursor = 1)
+#        self.spectrum_figure.canvas.connect(
+#            'key_press_event', widgets.cursor.key_navigator)
         if self.image is not None:
             # It is not an 1D HSI, so we plot the data explorer, we connect the 
             # coordinates changes to the functions that update de lines
             widgets.cursor.connect(self._update_spectrum_lines_cursor1)
             widgets.cursor2.connect(self._update_spectrum_lines_cursor2)
-            plt.connect('key_press_event', widgets.cursor.key_navigator)
-            self.data_explorer_figure.canvas.draw()
+            self.spectrum_figure.canvas.mpl_connect('key_press_event', coordinates.cursor.key_navigator)
+            self.data_explorer_figure.canvas.draw_idle()
+                                    
+    def clear(self, event = None):
+        'clear the cursor'
+        # By using blitz the drawing time /spectrum is 30 ms
+        # Without it 80 ms
+        canvas = event.canvas
+        self.spectrum_ax1.draw_artist(self.spectrum_ax1.title)
+        for ax in canvas.figure.axes:
+            ax.old_bbox = canvas.copy_from_bbox(ax.bbox)
+            for line in ax.lines:
+                ax.draw_artist(line)
 plt.show()

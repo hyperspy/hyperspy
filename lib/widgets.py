@@ -49,8 +49,8 @@ class SquarePointer(object):
         self.cursor2_ON = False
         self.picked_list = None
         self.square_width = 1.
-        self.cursor_color = 'blue'
-        self.cursor2_color = 'green'
+        self.cursor_color = 'red'
+        self.cursor2_color = 'blue'
         self.__cursor = plt.Rectangle(cursor2.coordinates - 
         (self.square_width / 2, self.square_width / 2), 
         self.square_width,self.square_width, fc = 'r', fill= False,lw = 2, 
@@ -253,8 +253,8 @@ class LinePointer(object):
         self.picked_list = None
         cursor.connect(self._update_position)
         cursor2.connect(self._update_position)
-        self.cursor_color = 'blue'
-        self.cursor2_color = 'green'
+        self.cursor_color = 'red'
+        self.cursor2_color = 'blue'
         
     def add_axes(self, ax):
         self.ax.append(ax)
@@ -403,6 +403,92 @@ class LinePointer(object):
             self.remove_axes(ax.figure.canvas.manager.window)
         self.callback_on_move = list()
 
+class Scale_Bar():
+    def __init__(self, ax, units, pixel_size, color = 'white', position = None, 
+    ratio = 0.25, lw = 1, lenght_in_units = None):
+        self.ax = ax
+        self.units = units
+        self.pixel_size = pixel_size
+        self.xmin, self.xmax = ax.get_xlim()
+        self.ymin, self.ymax = ax.get_ylim()
+        self.text = None
+        self.line = None
+        self.tex_bold = False
+        self.lenght_in_units = lenght_in_units
+        if position is None:
+            self.position = self.calculate_line_position()
+        else:
+            self.position = position
+        self.calculate_scale_size(ratio = ratio)
+        self.calculate_text_position()
+        self.plot_scale(line_width = lw)
+        self.set_color(color)
+        
+    def get_units_string(self):
+        if self.tex_bold is True:
+            if (self.units[0] and self.units[-1]) == '$':
+                return r'$\mathbf{%i\,%s}$' % \
+            (self.lenght_in_units, self.units[1:-1])
+            else:
+                return r'$\mathbf{%i\,}$\textbf{%s}' % \
+            (self.lenght_in_units, self.units)
+        else:
+            return r'$%i\,$%s' % (self.lenght_in_units, self.units)
+    def calculate_line_position(self):
+        return 0.95*self.xmin + 0.05*self.xmax, 0.95*self.ymin+0.05*self.ymax
+    def calculate_text_position(self, pad = 1/180.):
+        pad = float(pad)
+        x1, y1 = self.position
+        x2, y2 = x1 + self.lenght_in_pixels, y1
+        self.text_position = (x1+x2)/2, y2+self.ymax * pad
+    def calculate_scale_size(self, ratio = 0.25):
+        if self.lenght_in_units is None:
+            self.lenght_in_units = (self.xmax * self.pixel_size) // (1/ratio)
+        self.lenght_in_pixels = self.lenght_in_units / self.pixel_size
+    def delete_scale_if_exists(self):
+        if self.line is not None:
+            self.ax.lines.remove(self.line)
+        if self.text is not None:
+            self.ax.texts.remove(self.text)
+    def plot_scale(self, line_width = 1):
+        self.delete_scale_if_exists()
+        x1, y1 = self.position
+        x2, y2 = x1 + self.lenght_in_pixels, y1
+        self.line, = self.ax.plot([x1,x2],[y1,y2], linestyle='-', 
+        lw = line_width)
+        self.text = self.ax.text(*self.text_position, s=self.get_units_string(), 
+        ha = 'center', size = 'medium') 
+        self.ax.set_xlim(self.xmin, self.xmax)
+        self.ax.set_ylim(self.ymin, self.ymax)
+        self.ax.figure.canvas.draw_idle()
+    def set_position(self,x,y):
+        self.position = x, y
+        self.calculate_text_position()
+        self.plot_scale(line_width = self.line.get_linewidth())
+
+    def set_color(self, c):
+        self.line.set_color(c)
+        self.text.set_color(c)
+        self.ax.figure.canvas.draw_idle()
+    def set_lenght_in_units(self, lenght):
+        color = self.line.get_color()
+        self.lenght_in_units = lenght
+        self.calculate_scale_size()
+        self.calculate_text_position()
+        self.plot_scale(line_width = self.line.get_linewidth())
+        self.set_color(color)
+    def set_tex_bold(self):
+        self.tex_bold = True
+        self.text.set_text(self.get_units_string())
+        self.ax.figure.canvas.draw_idle()
+
+
+def scale_bar(ax, units, pixel_size, color = 'white', position = None, 
+    ratio = 0.25, lw = 1, lenght_in_units = None):
+    ax.scale_bar = Scale_Bar(ax = ax, units = units, pixel_size = pixel_size, 
+    color = color, position = position, ratio = ratio, lw = lw, 
+    lenght_in_units = lenght_in_units)
+    
 cursors = SquarePointer()
 lines = LinePointer()
 

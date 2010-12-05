@@ -1947,11 +1947,14 @@ class Spectrum(object, MVA):
             return
         
         self.hse = mpl_hse.MPL_HyperSpectrum_Explorer()
+        self.hse.spectrum_title = self.title
+        self.hse.image_title = self.title
         self.hse.spectrum_data_function = self.__call__
         self.hse.axis = self.energy_axis
         self.hse.xlabel = 'Energy Loss (%s)' % self.energyunits
         self.hse.ylabel = 'Counts'
-        self.hse.line_type_d1 = 'step'
+        self.hse.line_options['left_axis']['data1']['type'] = 'step'
+        self.hse.line_options['right_axis']['data1']['type'] = 'step'
         shape = self.data_cube.shape
         if shape[1] > 1 and shape[2] > 1:
             self.hse.pointers = widgets.cursors
@@ -1959,12 +1962,22 @@ class Spectrum(object, MVA):
                 self.hse.image = self.image.data_cube
             else:
                 self.hse.image = self.data_cube.sum(0)
-            self.hse.plot()
+            self.hse.pixel_size = self.xscale
+            self.hse.pixel_units = self.xunits
+            self.hse.plot_scale_bar = True
+            self.hse.line_options['left_axis']['data1']['color'] = \
+            self.hse.pointers.cursor_color
+            self.hse.line_options['right_axis']['data1']['color'] = \
+            self.hse.pointers.cursor2_color
         elif shape[1] > 1 and shape[2] == 1:
             self.hse.pointers = widgets.lines
-            self.hse.image = self.data_cube.squeeze()  
-            self.hse.plot()
+            self.hse.image = self.data_cube.squeeze()
+            self.hse.line_options['left_axis']['data1']['color'] = \
+            self.hse.pointers.cursor_color
+            self.hse.line_options['right_axis']['data1']['color'] = \
+            self.hse.pointers.cursor2_color
         elif shape[1] == 1 and shape[2] == 1:
             self.hse.pointers = None
-            self.hse.image = None  
-            self.hse.plot()
+            self.hse.image = None
+            self.hse.line_options['left_axis']['data1']['color'] = 'red'
+        self.hse.plot()

@@ -56,6 +56,7 @@ class Model(list, Optimizers, Estimators, Controls):
         from experiments import Experiments
         from spectrum import Spectrum
         self.hse = None
+        self.auto_update_plot = False
         if isinstance(data, Experiments):
             self.experiments = data
             self.hl = data.hl
@@ -83,9 +84,6 @@ class Model(list, Optimizers, Estimators, Controls):
             bg = PowerLaw()
             interactive_ns['bg'] = bg
             self.append(bg)
-            
-        if self.hl.edges and auto_add_edges is True:
-            self.extend(self.hl.edges)
 
         if self.ll is not None:
             self.convolved = True
@@ -96,6 +94,8 @@ class Model(list, Optimizers, Estimators, Controls):
         self.ix, self.iy = coordinates.cursor.ix, coordinates.cursor.iy
         coordinates.cursor.connect(self.charge)
         coordinates.cursor2.connect(self.charge)
+        if self.hl.edges and auto_add_edges is True:
+            self.extend(self.hl.edges)
         
     # Extend the list methods to call the _touch when the model is modified
     def append(self, object):
@@ -181,7 +181,23 @@ class Model(list, Optimizers, Estimators, Controls):
             if self.__firstimetouch and self.edges:
                 self.two_area_background_estimation()
                 self.__firstimetouch = False
+        self.connect_parameters2update_plot()
                 
+    def connect_parameters2update_plot(self):   
+        for component in self:
+            for parameter in component.parameters:
+                if self.hse is not None:
+                    parameter.connect(self.hse._update_spectrum_lines_cursor1)
+                    parameter.connect(self.hse._update_spectrum_lines_cursor2)
+                    parameter.connection_activated = True
+        self.auto_update_plot = True
+                    
+    def set_auto_update_plot(self, tof):
+        for component in self:
+            for parameter in component.parameters:
+                parameter.connection_activated = tof
+        self.auto_update_plot = tof
+                    
     def generate_cube(self):
         '''Generate a SI with the current model
         
@@ -298,9 +314,16 @@ class Model(list, Optimizers, Estimators, Controls):
         only_fixed : bool
             If True, only the fixed parameters will be charged.
         '''
+        switch_aap = (False != self.auto_update_plot)
+        if switch_aap is True:
+            self.set_auto_update_plot(False)
         for component in self :
             component.charge_value_from_map(self.ix,self.iy, only_fixed = 
             only_fixed)
+        if switch_aap is True:
+            self.set_auto_update_plot(True)
+            self.hse._update_spectrum_lines_cursor1()
+            self.hse._update_spectrum_lines_cursor2()
 
     def _charge_p0(self, p_std = None):
         '''Charge the free data for the current coordinates (x,y) from the
@@ -843,6 +866,7 @@ class Model(list, Optimizers, Estimators, Controls):
                 for subshell in elements[element]:
                     print "%s_%s\t%f" % (element, subshell, 
                     elements[element][subshell])
+
     
     def plot(self):
         '''Plots the current spectrum to the screen and a map with a cursor to 
@@ -853,14 +877,18 @@ class Model(list, Optimizers, Estimators, Controls):
             return
         
         self.hse = mpl_hse.MPL_HyperSpectrum_Explorer()
+        self.connect_parameters2update_plot()
+        self.hse.spectrum_title = self.hl.title
+        self.hse.image_title = self.hl.title
         self.hse.spectrum_data_function = self.hl.__call__
         self.hse.spectrum_data2_function = self.model2plot
         self.hse.axis = self.hl.energy_axis
         self.hse.xlabel = 'Energy Loss (%s)' % self.hl.energyunits
         self.hse.ylabel = 'Counts'
-        self.hse.line_type_d1 = 'scatter'
-        self.hse.line_type_d2 = 'line'
-        self.hse.channel_switches = self.channel_switches
+        self.hse.line_options['left_axis']['data1']['type'] = 'scatter'
+        self.hse.line_options['right_axis']['data1']['type'] = 'scatter'
+        self.hse.line_options['left_axis']['data2']['type'] = 'line'
+        self.hse.line_options['right_axis']['data2']['type'] = 'line'
         shape = self.hl.data_cube.shape
         if shape[1] > 1 and shape[2] > 1:
             self.hse.pointers = widgets.cursors
@@ -868,13 +896,31 @@ class Model(list, Optimizers, Estimators, Controls):
                 self.hse.image = self.hl.image.data_cube
             else:
                 self.hse.image = self.hl.data_cube.sum(0)
-            self.hse.plot()
+            self.hse.pixel_size = self.hl.xscale
+            self.hse.pixel_units = self.hl.xunits
+            self.hse.plot_scale_bar = True
+            self.hse.line_options['left_axis']['data1']['color'] = \
+            self.hse.pointers.cursor_color
+            self.hse.line_options['right_axis']['data1']['color'] = \
+            self.hse.pointers.cursor2_color
+            self.hse.line_options['left_axis']['data2']['color'] = \
+            self.hse.pointers.cursor_color
+            self.hse.line_options['right_axis']['data2']['color'] = \
+            self.hse.pointers.cursor2_color
         elif shape[1] > 1 and shape[2] == 1:
             self.hse.pointers = widgets.lines
-            self.hse.image = self.data_cube.squeeze()  
-            self.hse.plot()
+            self.hse.image = self.hl.data_cube.squeeze()
+            self.hse.line_options['left_axis']['data1']['color'] = \
+            self.hse.pointers.cursor_color
+            self.hse.line_options['right_axis']['data1']['color'] = \
+            self.hse.pointers.cursor2_color
+            self.hse.line_options['left_axis']['data2']['color'] = \
+            self.hse.pointers.cursor_color
+            self.hse.line_options['right_axis']['data2']['color'] = \
+            self.hse.pointers.cursor2_color
         elif shape[1] == 1 and shape[2] == 1:
             self.hse.pointers = None
-            self.hse.image = None  
-            self.hse.plot()
-        
+            self.hse.image = None
+            self.hse.line_options['left_axis']['data1']['color'] = 'red'
+            self.hse.line_options['left_axis']['data2']['color'] = 'blue'
+        self.hse.plot()        

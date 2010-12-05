@@ -37,7 +37,9 @@ class Parameter(object):
 
     def __init__(self, value=0., free=True, bmin=None, 
     bmax=None, twin = None):
-
+        
+        self.connection_activated = False
+        self.connected_functions = []
         self.ext_bounded = False
         self._number_of_elements = 1
         self._bounds = (None, None)
@@ -57,14 +59,29 @@ class Parameter(object):
         self.name = ''
         self.units = ''
         self.std = None
+        
 
     # Define the bounding and coupling propertires
+    
+    def connect(self, f):
+        if f not in self.connected_functions:
+            self.connected_functions.append(f)
+    def disconnect(self, f):
+        if f in self.connected_functions:
+            self.connected_functions.remove(f)
+            
     def _coerce(self):
         if self.twin is None:
             return self.__value
         else:
             return self.twin_function(self.twin.value)
     def _decoerce(self, arg):
+        if self.connection_activated is True:
+            for f in self.connected_functions:
+                try:
+                    f()
+                except:
+                    self.disconnect(f)
         if self.ext_bounded is False :
                 self.__value = arg
         else:

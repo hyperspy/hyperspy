@@ -34,13 +34,16 @@ class Optimizers(Estimators):
     '''
 
     def fit(self, fitter = defaults.fitter, method = 'ls', grad = False, 
-    weights = None, ext_bounding = False, ascombe = True, **kwargs):
+    weights = None, ext_bounding = False, ascombe = True, update_plot = False, 
+    **kwargs):
         '''
         Fits the model to the experimental data using the fitter e
         The covariance matrix calculated by the 'leastsq' fitter is not always
         reliable
         '''
-        
+        switch_aap = (update_plot != self.auto_update_plot)
+        if switch_aap is True:
+            self.set_auto_update_plot(update_plot)
         self.p_std = None
         self._set_p0()
         if ext_bounding:
@@ -165,3 +168,8 @@ class Optimizers(Estimators):
         not self.convolved, onlyactive = True)
         if ext_bounding:
             self._disable_ext_bounding()
+        if switch_aap is True:
+            self.set_auto_update_plot(not update_plot)
+            if not update_plot:
+                self.hse._update_spectrum_lines_cursor1()
+                self.hse._update_spectrum_lines_cursor2()

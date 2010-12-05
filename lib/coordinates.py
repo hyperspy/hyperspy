@@ -61,7 +61,10 @@ class Coordinates(object):
                 self.ix = coord[0]
                 self.iy = coord[1]
                 for function in function_list:
-                    function()
+                    try:
+                        function()
+                    except:
+                        self.disconnect(function)
                     
     def _eval_ifunctions(self, coord, function_list, mask):
         if mask[coord]:
