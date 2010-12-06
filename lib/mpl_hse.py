@@ -371,7 +371,6 @@ class MPL_HyperSpectrum_Explorer():
         # By using blitz the drawing time /spectrum is 30 ms
         # Without it 80 ms
         canvas = event.canvas
-        self.spectrum_ax1.draw_artist(self.spectrum_ax1.title)
         for ax in canvas.figure.axes:
             ax.old_bbox = canvas.copy_from_bbox(ax.bbox)
             for line in ax.lines:
