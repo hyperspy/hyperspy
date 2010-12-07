@@ -30,7 +30,6 @@ plt.rcParams['image.cmap'] = 'gray'
 
 from utils import on_window_close
 import widgets
-import coordinates
 
 class MPL_HyperSpectrum_Explorer():
     def __init__(self):
@@ -44,7 +43,8 @@ class MPL_HyperSpectrum_Explorer():
         self.pixel_size = None
         self.pixel_units = None
         self.plot_scale_bar = False
-        self.pointers = None
+        self.right_pointer = None
+        self.left_pointer = None
         
         # Plotting attributes
         self.spectrum_figure = None
@@ -123,8 +123,8 @@ class MPL_HyperSpectrum_Explorer():
         # First we close the explorer
         if self._does_figure_object_exists(self.data_explorer_figure) is True:
             plt.close(self.data_explorer_figure)
-        widgets.cursor.disconnect(self._update_spectrum_lines_cursor1)
-        widgets.cursor2.disconnect(self._update_spectrum_lines_cursor2)
+        self.left_pointer.coordinates.disconnect(self._update_spectrum_lines_cursor1)
+        self.right_pointer.coordinates.disconnect(self._update_spectrum_lines_cursor2)
         self._remove_cursor(cursor = 2)
         self._remove_cursor(cursor = 1)
         self.data_explorer_figure = None
@@ -173,7 +173,7 @@ class MPL_HyperSpectrum_Explorer():
         '''
         self._create_spectrum_figure()
         if cursor == 1:
-            cursor_position = tuple(widgets.cursor.coordinates)
+            cursor_position = tuple(self.left_pointer.coordinates.coordinates)
             if self.spectrum_ax1 is None:
                 self.spectrum_ax1 = self.spectrum_figure.add_subplot(111)
                 
@@ -184,7 +184,7 @@ class MPL_HyperSpectrum_Explorer():
             line_options = self.line_options['left_axis']
             
         if cursor == 2:
-            cursor_position = tuple(widgets.cursor2.coordinates)
+            cursor_position = tuple(self.right_pointer.coordinates.coordinates)
             if self.spectrum_ax2 is None:
                 self.spectrum_ax2 = self.spectrum_ax1.twinx()
             elif not self._does_figure_object_exists(self.spectrum_ax2.figure):
@@ -218,18 +218,17 @@ class MPL_HyperSpectrum_Explorer():
             # NaNs the x autoscaling will change the limits for the first 
             # figures and leave it like that for the rest
             ax.set_xlim(self.axis[0], self.axis[-1])
-            if self.pointers and data == 1 and cursor == 1:
+            if self.left_pointer is not None and data == 1 and cursor == 1:
                 ax.set_xlabel(self.xlabel)
                 ax.set_ylabel(self.ylabel)
                 ax.set_title('(%i,%i)' % cursor_position)
                 ax.title.set_animated(True)
-        if self.pointers:
-            if data == 1:
-                self.plot_spectrum_lines(cursor = cursor, data = 2)
-                return
-            if data == 2 and cursor == 1 and self.pointers.cursor2_ON:
-                self.plot_spectrum_lines(cursor = 2, data = 1)
-                return
+        if data == 1:
+            self.plot_spectrum_lines(cursor = cursor, data = 2)
+            return
+        if data == 2 and cursor == 1 and self.right_pointer.is_on():
+            self.plot_spectrum_lines(cursor = 2, data = 1)
+            return
             
         # We only draw at the end of the process
         self.spectrum_figure.canvas.draw()
@@ -278,12 +277,12 @@ class MPL_HyperSpectrum_Explorer():
             # If it was just turned on, there will be no lines but the switcher
             # will be on, so we must draw it
             l = self.line_options['right_axis']['data1']['line']
-            if l is None and self.pointers.cursor2_ON is True:
+            if l is None and self.right_pointer.is_on() is True:
                 self.plot_spectrum_lines(cursor = cursor)
                 return
             # If the switcher is off but there is a line we have to remove the 
             # cursor2
-            elif l is not None and self.pointers.cursor2_ON is False:
+            elif l is not None and self.right_pointer.is_on() is False:
                 self._remove_cursor(cursor = 2)
                 return
             
@@ -304,7 +303,6 @@ class MPL_HyperSpectrum_Explorer():
             f = self.spectrum_data2_function
             l = line_options['data2']['line']            
         if f is not None:
-            
             ydata = f(cursor = cursor)
             l.set_ydata(ydata)
         
@@ -318,15 +316,15 @@ class MPL_HyperSpectrum_Explorer():
                 y_max, y_min = np.nanmax(clipped_ydata), np.nanmin(clipped_ydata)
                 ax.set_ylim(y_min, y_max)
             
-            if self.pointers.cursor2_ON is not True:
+            if self.right_pointer.is_on() is not True:
                 self.spectrum_ax1.title.set_text(
                 'Cursor (%i,%i) ' % 
-                tuple(widgets.cursor.coordinates))   
+                tuple(self.left_pointer.coordinates.coordinates))   
             else:
                 self.spectrum_ax1.title.set_text(
                 'Cursor 1 (%i,%i) Cursor 2 (%i,%i)' % 
-                (tuple(widgets.cursor.coordinates) + 
-                tuple(widgets.cursor2.coordinates)))
+                (tuple(self.left_pointer.coordinates.coordinates) + 
+                tuple(self.right_pointer.coordinates.coordinates)))
             if data == 1:
                 self._update_spectrum_lines(cursor = cursor, data = 2)
             background = ax.old_bbox
@@ -351,9 +349,10 @@ class MPL_HyperSpectrum_Explorer():
         if self.image is not None:
             # It is not an 1D HSI, so we plot the data explorer
             self.plot_data_explorer()
-            self.pointers.add_axes(self.data_explorer_ax)
+            self.left_pointer.add_axes(self.data_explorer_ax)
+            self.right_pointer.add_axes(self.data_explorer_ax)
             self.data_explorer_figure.canvas.mpl_connect(
-            'key_press_event', coordinates.cursor.key_navigator)
+            'key_press_event', self.left_pointer.coordinates.key_navigator)
         
         self.plot_spectrum_lines(cursor = 1)
 #        self.spectrum_figure.canvas.connect(
@@ -361,10 +360,16 @@ class MPL_HyperSpectrum_Explorer():
         if self.image is not None:
             # It is not an 1D HSI, so we plot the data explorer, we connect the 
             # coordinates changes to the functions that update de lines
-            widgets.cursor.connect(self._update_spectrum_lines_cursor1)
-            widgets.cursor2.connect(self._update_spectrum_lines_cursor2)
-            self.spectrum_figure.canvas.mpl_connect('key_press_event', coordinates.cursor.key_navigator)
-            self.data_explorer_figure.canvas.draw_idle()
+            self.left_pointer.coordinates.connect(
+            self._update_spectrum_lines_cursor1)
+            self.right_pointer.coordinates.connect(
+            self._update_spectrum_lines_cursor2)
+            self.spectrum_figure.canvas.mpl_connect('key_press_event', 
+                                self.left_pointer.coordinates.key_navigator)
+            self.data_explorer_figure.canvas.draw()
+            self.left_pointer.update_patch_position()
+            self.right_pointer.update_patch_position()
+            
                                     
     def clear(self, event = None):
         'clear the cursor'

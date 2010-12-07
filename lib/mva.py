@@ -38,7 +38,6 @@ except:
 import mdp
 import utils
 from svd_pca import pca    
-from widgets import cursors
 from utils import unfold_if_2D
 from mlpca import mlpca
 from image import Image
@@ -534,7 +533,7 @@ class MVA():
                     mapa = ax.matshow(toplot, cmap = cmap)
                     figure.colorbar(mapa)
                     figure.canvas.draw()
-                    cursors.add_axes(ax)
+                    self.coordinates.pointers.add_axes(ax)
             else:
                 im_list.append(Spectrum())
                 toplot = recmatrix[i,:]
@@ -661,7 +660,7 @@ class MVA():
                         ax2.set_xlabel('Energy (eV)')
                     figure.colorbar(mapa)
                     figure.canvas.draw()
-                    cursors.add_axes(ax)
+                    self.coordinates.pointers.add_axes(ax)
             else:
                 toplot = recmatrix[i,:]
                 im_list.append(Spectrum())

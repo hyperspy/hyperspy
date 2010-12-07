@@ -26,7 +26,6 @@ import numpy as np
 
 from ..config_dir import os_name
 from ..utils import generate_axis
-from ..coordinates import cursor
 from ..microscope import microscope
 from .. import messages
 
@@ -216,13 +215,16 @@ format = 'Y', separator = ', '):
     file.write(u'#SPECTRUM    : Spectral Data Starts Here\u000D\u000A')
     fmt="%g"
     i = 0
+    ix = spectrum.coordinates.coordinate1.ix
+    iy = spectrum.coordinates.coordinate1.iy
     if format == 'XY':
-        for row in spectrum.data_cube[:,cursor.ix, cursor.iy]:
+        
+        for row in spectrum.data_cube[:,ix, iy]:
             file.write("%g%s%g" % (spectrum.energy_axis[i], separator, row))
             file.write(u'\u000D\u000A')
             i += 1
     elif format == 'Y':
-        for row in spectrum.data_cube[:,cursor.ix, cursor.iy]:
+        for row in spectrum.data_cube[:, ix, iy]:
             file.write(fmt % row)
             file.write(u'\u000D\u000A')
         

@@ -40,14 +40,13 @@ from components.power_law import PowerLaw
 from edges_db import edges_dict
 from model import Model
 from components.edge import Edge
-import coordinates
 from defaults_parser import defaults
 from interactive_ns import interactive_ns
 from utils import generate_axis
 from utils import rebin
 from mva import MVA, MVA_Results
-import widgets
 import mpl_hse
+import controllers
 
 
 #TODO Acquisition_Parameters and Treatments must be merged into a more general
@@ -135,6 +134,7 @@ class Spectrum(object, MVA):
         self.gain_correction = None
         self.backup_cubes = False
         self.hse = None
+        self.coordinates = None
                 
         # Attributes declaration (for simulation)
         self.xdimension = 1
@@ -158,7 +158,6 @@ class Spectrum(object, MVA):
         # Load the spectrum and image if they exist
         if dictionary is not None:            
             self.load_data_from_dictionary(dictionary)
-            self._set_coordinates_shape()
         else:
             apply_treatments = False
         if image is not None:
@@ -268,22 +267,6 @@ class Spectrum(object, MVA):
                 print "Warning: the given energy is above the axis limits"
                 return int(self.energydimension - 1)
                 
-        
-    def _set_coordinates_shape(self):
-        shape = self.data_cube.squeeze().shape
-        if len(shape) == 2:
-            coordinates.cursor.shape = (self.data_cube.shape[1],1)
-            coordinates.cursor2.shape = (self.data_cube.shape[1],1)
-        elif len(shape) == 3:
-            coordinates.cursor.shape = self.data_cube.shape[1:]
-            coordinates.cursor2.shape = self.data_cube.shape[1:]
-	coordinates.cursor.reset()
-	coordinates.cursor2.reset()
-	if self.hse is not None and self.hse.spectrum_figure is not None:
-		plt.close(self.hse.spectrum_figure)
-		self.hse._on_spectrum_close()
-		self.plot()
-            
     def _get_cube(self):
         return self.__cubes[self.current_cube]['data']
     
@@ -308,9 +291,9 @@ class Spectrum(object, MVA):
         cursor : 1 or 2
         '''
         if cursor == 1:
-            cursor = coordinates.cursor
+            cursor = self.coordinates.coordinates1
         elif cursor == 2:
-            cursor = coordinates.cursor2
+            cursor = self.coordinates.coordinates2
         dc = self.data_cube[:, cursor.ix, cursor.iy]
         return dc
     
@@ -330,7 +313,7 @@ class Spectrum(object, MVA):
         self.xdimension = self.data_cube.shape[1]
         self.ydimension = self.data_cube.shape[2]
         self.updateenergy_axis()
-        self._set_coordinates_shape()
+        controllers.coordinates_controller.assign_double_coordinates(self)
         
     # Transform ________________________________________________________________
     def delete_spectrum(self, index):
@@ -519,7 +502,8 @@ class Spectrum(object, MVA):
             # Copy the extension
             data[i0 + width:] = canvas[i0 + width:]
         else:
-            fp = ZL_Fingerprinting(zl)
+            import components
+            fp = components.ZL_Fingerprinting(zl)
             m = Model(self,False)
             m.append(fp)
             m.set_energy_region(None,right)
@@ -566,7 +550,6 @@ class Spectrum(object, MVA):
         Spectrum object to feed the correct spectrum function. If 
         a readout correction is provided, it corrects the readout in the dark
         current spim.'''
-        channels = self.dark_current.data_cube.shape[0]
         if self.dark_current.data_cube.shape[1:]  > (1, 1):
             self.dark_current.data_cube = np.average(
             np.average(self.dark_current.data_cube,1),1).reshape((-1, 1, 1))
@@ -849,7 +832,6 @@ class Spectrum(object, MVA):
         self.__new_cube(data, 'normalization')
         
     def calculate_I0(self, threshold = None):
-        from image import Image
         '''Estimates the integral of the ZLP from a LL SI
         
         The value is stored in self.I0 as an Image.
@@ -1239,6 +1221,7 @@ class Spectrum(object, MVA):
         print "History:"
         for treatment in self.history:
             print treatment
+        controllers.coordinates_controller.assign_double_coordinates(self)
 
     def load_image(self,filename):
         print "Loading the image..."
@@ -1307,8 +1290,8 @@ class Spectrum(object, MVA):
                 Position in energy units of the roots of the first
             derivative if der_roots is True (False by default)
         '''
-        ix = coordinates.cursor.ix
-        iy = coordinates.cursor.iy
+        ix = self.coordinates.coordinates1.ix
+        iy = self.coordinates.coordinates1.iy
         i0 = np.argmax(self.data_cube[:,ix, iy])
         data = self.data_cube[i0 - channels:i0 + channels + 1, ix, iy]
         x = self.energy_axis[i0 - channels:i0 + channels + 1]
@@ -1941,7 +1924,7 @@ class Spectrum(object, MVA):
         '''Plots the current spectrum to the screen and a map with a cursor to 
         explore the SI.
         '''
-        self._set_coordinates_shape()
+        controllers.coordinates_controller.assign_double_coordinates(self)
         if self.hse is not None:
             self.hse.plot()
             return
@@ -1956,8 +1939,10 @@ class Spectrum(object, MVA):
         self.hse.line_options['left_axis']['data1']['type'] = 'step'
         self.hse.line_options['right_axis']['data1']['type'] = 'step'
         shape = self.data_cube.shape
+        self.hse.left_pointer = self.coordinates.coordinates1.pointer
+        self.hse.right_pointer = self.coordinates.coordinates2.pointer
         if shape[1] > 1 and shape[2] > 1:
-            self.hse.pointers = widgets.cursors
+            
             if self.image is not None:
                 self.hse.image = self.image.data_cube
             else:
@@ -1966,18 +1951,16 @@ class Spectrum(object, MVA):
             self.hse.pixel_units = self.xunits
             self.hse.plot_scale_bar = True
             self.hse.line_options['left_axis']['data1']['color'] = \
-            self.hse.pointers.cursor_color
+            self.hse.left_pointer.color
             self.hse.line_options['right_axis']['data1']['color'] = \
-            self.hse.pointers.cursor2_color
+            self.hse.right_pointer.color
         elif shape[1] > 1 and shape[2] == 1:
-            self.hse.pointers = widgets.lines
             self.hse.image = self.data_cube.squeeze()
             self.hse.line_options['left_axis']['data1']['color'] = \
-            self.hse.pointers.cursor_color
+            self.hse.left_pointer.color
             self.hse.line_options['right_axis']['data1']['color'] = \
-            self.hse.pointers.cursor2_color
+            self.hse.right_pointer.color
         elif shape[1] == 1 and shape[2] == 1:
-            self.hse.pointers = None
             self.hse.image = None
             self.hse.line_options['left_axis']['data1']['color'] = 'red'
         self.hse.plot()

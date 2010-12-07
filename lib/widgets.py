@@ -29,73 +29,40 @@ except:
     import matplotlib.pyplot as plt
 import numpy as np
 
-from coordinates import cursor, cursor2
 from utils import on_window_close
 
-
-class SquarePointer(object):
+    
+class MovingPatch(object):
     """
     """
 
-    def __init__(self):
+    def __init__(self, coordinates):
         """
         Add a cursor to ax.
         """
-        self.ax = list()
-        self.callback_on_move = list()
-        self.picked = None
-        self.cursors = list()
-        self.cursor2s = list()
-        self.cursor2_ON = False
-        self.picked_list = None
-        self.square_width = 1.
-        self.cursor_color = 'red'
-        self.cursor2_color = 'blue'
-        self.__cursor = plt.Rectangle(cursor2.coordinates - 
-        (self.square_width / 2, self.square_width / 2), 
-        self.square_width,self.square_width, fc = 'r', fill= False,lw = 2, 
-        animated = True, picker = True, ec = self.cursor_color)
-        self.__cursor2 = plt.Rectangle(cursor2.coordinates - 
-        (self.square_width / 2, self.square_width / 2), 
-        self.square_width,self.square_width, fc = 'r', fill= False,lw = 2, 
-        animated = True, picker = True, ec = self.cursor2_color)
-        cursor.connect(self._update_squares)
-        cursor2.connect(self._update_squares)
-        
-    def set_square_width(self, width):
-        self.square_width = width
-        self._update_squares()
-        
-    def _update_squares(self):
-        for rect in self.cursors:
-            rect.set_width(self.square_width)
-            rect.set_height(self.square_width)
-            delta = self.square_width / 2
-            rect.set_xy(cursor.coordinates - (delta, delta))
-        for rect in self.cursor2s:
-            rect.set_width(self.square_width)
-            rect.set_height(self.square_width)
-            delta = self.square_width / 2
-            rect.set_xy(cursor2.coordinates - (delta, delta))
-        self._update()
+        self.coordinates = coordinates
+        self.axs = list()
+        self.picked = False
+        self.size = 1.
+        self.color = 'red'
+        self.patch = None # Must be provided by the subclass
+        self.__is_on = True
     
-    def increase_square_width(self):
-        self.square_width += 1
-        self._update_squares()
+    def is_on(self):
+        return self.__is_on
         
-    def decrease_square_width(self):
-        self.square_width -= 1
-        self._update_squares()
+    def set_is_on(self, value):
+        self.__is_on = value
         
     def add_axes(self, ax):
-        self.ax.append(ax)
+        self.axs.append(ax)
         canvas = ax.figure.canvas
         if not hasattr(canvas, 'background'):
             canvas.background = None
-        self.connect(ax)
-        self.add_cursor(ax)
-        if self.cursor2_ON:
-            self.add_cursor2(ax)
+        if self.is_on() is True:
+            self.connect(ax)
+            ax.add_patch(self.patch)
+#            self.draw_patch(axs = [ax,])
             
     def connect(self, ax):
         if not hasattr(ax, 'cids'):
@@ -106,307 +73,152 @@ class SquarePointer(object):
         ax.cids.append(canvas.mpl_connect('draw_event', self.clear))
         ax.cids.append(canvas.mpl_connect('button_release_event', 
         self.button_release))
-        ax.cids.append(canvas.mpl_connect('key_press_event', self.on_key_press))
+        self.coordinates.connect(self.update_patch_position)
         on_window_close(ax.figure, self.remove_axes)
 
-
-    def on_key_press(self, event):
-        if event.key == "e":
-            self.cursor2_ON = not self.cursor2_ON
-        if event.key == "+":
-            self.increase_square_width()
-        if event.key == "-":
-            self.decrease_square_width()
         
-    def add_cursor(self, ax):
-        self.cursors.append(copy.copy(self.__cursor))
-        ax.add_patch(self.cursors[-1])
-        
-    def add_cursor2(self, ax):
-        self.cursor2s.append(copy.copy(self.__cursor2))
-        ax.add_patch(self.cursor2s[-1])
-    
-    def remove_cursor2(self, ax):
-        for cursor2 in self.cursor2s:
-            if cursor2 in ax.patches:
-                ax.patches.remove(cursor2)
-                self.cursor2s.remove(cursor2)
-            
     def remove_axes(self,window):
-        for ax in self.ax:
+        for ax in self.axs:
             if hasattr(ax.figure.canvas.manager, 'window'):
                 ax_window = ax.figure.canvas.manager.window
             else:
                 ax_window = False
-            if ax_window is window or not ax_window:
-                for patch in ax.patches:
-                    if patch in self.cursors:
-                        self.cursors.remove(patch)
-                    elif patch in self.cursor2s:
-                        self.cursor2s.remove(patch)
+            if ax_window is window or ax_window is False:
+                if self.patch in ax.patches:
+                    ax.patches.remove(self.patch)
                 for cid in ax.cids:
                     ax.figure.canvas.mpl_disconnect(cid)
-                self.ax.remove(ax)
-                if not self.ax:
-                    self.callback_on_move = list()
-        
-    def _set_cursor2ON(self, value):
-        if value:
-            if self.cursor2_ON: return
-            self.__cursor2ON = True
-            self._turn_on_cursor2()
-            for ax in self.ax:
-                ax.figure.canvas.draw_idle()
-        elif not value:
-            self.__cursor2ON = False
-            self._turn_off_cursor2()
-            for ax in self.ax:
-                ax.figure.canvas.draw_idle()
-    def _get_cursor2ON(self):
-        return self.__cursor2ON
-    def _turn_on_cursor2(self):
-        for ax in self.ax:
-            self.add_cursor2(ax)
-        self._update_squares()
-        cursor.coordinates_change_signal()
-        cursor2.coordinates_change_signal()
-
-    def _turn_off_cursor2(self):
-        for ax in self.ax:
-            self.remove_cursor2(ax)
-        self._update_squares()
-        cursor.coordinates_change_signal()
-        cursor2.coordinates_change_signal()
-
-    cursor2_ON = property(_get_cursor2ON, _set_cursor2ON)
+                self.axs.remove(ax)
+                if not self.axs:
+                    self.call_on_move = list()
     
     def clear(self, event = None):
-        'clear the cursor'
+        'clear the patch'
         canvas = event.canvas
-        ax = canvas.figure.axes[0]
-        if ax:
+        if canvas.figure.axes:
+            ax = canvas.figure.axes[0]
             canvas.background = canvas.copy_from_bbox(ax.bbox)
             for patch in ax.patches:
                 ax.draw_artist(patch)
 
     def onpick(self, event):
-        if event.artist in self.cursors:
-            self.picked_list = self.cursors
-            self.picked = cursor
-        elif self.cursor2_ON and event.artist in self.cursor2s:
-            self.picked_list = self.cursor2s
-            self.picked = cursor2
-    def onmove(self, event, bridge = False):
-        'on mouse motion draw the cursor if picked'
-        if bridge is True:
-            if self.picked == cursor:
-                self.picked_list = self.cursors
-            elif self.picked == cursor2:
-                self.picked_list = self.cursor2s
-        if self.picked_list is not None:
-            if event.inaxes:
-                new_coordinates = np.array((round(event.xdata), 
-                round(event.ydata)))
-                if not (new_coordinates == self.picked.coordinates).all():
-                    self.picked.ix, self.picked.iy = new_coordinates
-                    for function in self.callback_on_move:
-                        function()
-        if bridge:
-            self.picked_list = None
+        if event.artist is self.patch:
+            self.picked = True
 
+    def onmove(self, event):
+        'on mouse motion draw the cursor if picked'
+        if self.picked is True and event.inaxes:
+            new_coordinates = np.array((round(event.xdata), 
+            round(event.ydata)))
+            if not (new_coordinates == self.coordinates.coordinates).all():
+                self.coordinates.ix, self.coordinates.iy = new_coordinates
+            self.update_patch_position()
+            
+    def update_patch_position(self):
+        '''This method must be provided by the subclass'''
+        pass
+    
     def button_release(self, event):
         'whenever a mouse button is released'
         if event.button != 1: return
-        self.picked_list = None
+        if self.picked is True:
+            self.picked = False
     
-    def _update(self,axs = None):
-        if axs is None:
-            axs = self.ax
-        for ax in axs:
-            background = ax.figure.canvas.background
-            if background is not None:
-                ax.figure.canvas.restore_region(background)
-            for patch in ax.patches:
-                ax.draw_artist(patch)
-            ax.figure.canvas.blit(ax.bbox)
-    def reset(self):
-        for ax in self.ax:
-            self.remove_cursor2(ax)
-            self.remove_axes(ax.figure.canvas.manager.window)
-        self.callback_on_move = list()
+    def draw_patch(self, axs = None):
+        if self.is_on() is True:
+            if axs is None:
+                axs = self.axs
+            for ax in self.axs:
+                background = ax.figure.canvas.background
+                if background is not None:
+                    ax.figure.canvas.restore_region(background)
+                ax.draw_artist(self.patch)
+                ax.figure.canvas.blit(ax.bbox)
+
+class ResizebleMovingPatch(MovingPatch):
+    
+    def __init__(self, coordinates):
+        MovingPatch.__init__(self, coordinates)
+        self.size = 1
+    
+    def set_size(self, size):
+        self.size = size
+        self.update_patch_size()
+    
+    def increase_size(self):
+        self.size += 1
+        self.update_patch_size()
         
+    def decrease_size(self):
+        self.size -= 1
+        self.update_patch_size()
+    def update_patch_size(self):
+        '''This method must be provided by the subclass'''
+        pass
+    
+    def on_key_press(self, event):
+        if event.key == "+":
+            self.increase_size()
+        if event.key == "-":
+            self.decrease_size()
+    def connect(self, ax):
+        MovingPatch.connect(self, ax)
+        canvas = ax.figure.canvas
+        ax.cids.append(canvas.mpl_connect('key_press_event', self.on_key_press))
 
-class LinePointer(object):
-    """
-    """
-
-    def __init__(self):
-        """
-        Add a cursor to ax.
-        """
-        self.ax = list()
-        self.callback_on_move = list()
-        self.picked = None
-        self.cursors = list()
-        self.cursor2s = list()
-        self.cursor2_ON = False
-        self.picked_list = None
-        cursor.connect(self._update_position)
-        cursor2.connect(self._update_position)
-        self.cursor_color = 'red'
-        self.cursor2_color = 'blue'
+class MovingSquare(ResizebleMovingPatch):
+    
+    def __init__(self, coordinates):
+        MovingPatch.__init__(self, coordinates)
+        self.patch = \
+        plt.Rectangle(
+        self.coordinates.coordinates - (self.size / 2, self.size / 2), 
+        self.size, self.size, 
+        fill= False, lw = 2,  ec = self.color,
+        animated = True, picker = True,)
+        
+    def update_patch_size(self):
+        self.patch.set_width(self.size)
+        self.patch.set_height(self.size)
+        self.draw_patch()
+        
+    def update_patch_position(self):
+        if self.patch is not None:
+            delta = self.size / 2
+            self.patch.set_xy(self.coordinates.coordinates - (delta, delta))
+            self.draw_patch()
+        
+class MovingHorizontalLine(MovingPatch):
+            
+    def update_patch_position(self):
+        if self.patch is not None:
+            self.patch.set_ydata(self.coordinates.ix)
+            self.draw_patch()
         
     def add_axes(self, ax):
-        self.ax.append(ax)
+        self.axs.append(ax)
         canvas = ax.figure.canvas
-        ax.figure.canvas.manager.window.ax = ax
         if not hasattr(canvas, 'background'):
             canvas.background = None
-        self.connect(ax)
-        self.add_cursor(ax)
-        if self.cursor2_ON:
-            self.add_cursor2(ax)
+        if self.is_on() is True:
+            if self.patch is None:
+                self.patch = ax.axhline(self.coordinates.ix, color = self.color, 
+                                    animated = True, picker = True)
+            else:
+                ax.add_line(self.patch)
+            self.connect(ax)
+            self.update_patch_position()
             
-    def connect(self, ax):
-        if not hasattr(ax, 'cids'):
-            ax.cids = list()
-        canvas = ax.figure.canvas
-        ax.cids.append(canvas.mpl_connect('motion_notify_event', self.onmove))
-        ax.cids.append(canvas.mpl_connect('pick_event', self.onpick))
-        ax.cids.append(canvas.mpl_connect('draw_event', self.clear))
-        ax.cids.append(canvas.mpl_connect('button_release_event', 
-        self.button_release))
-        ax.cids.append(canvas.mpl_connect('key_press_event', self.on_key_press))
-        on_window_close(ax.figure, self.remove_axes)
-
-
-    def on_key_press(self, event):
-        if event.key == "e":
-            self.cursor2_ON = not self.cursor2_ON
-            
-    def add_cursor(self, ax):
-        self.cursors.append(
-        ax.axhline(cursor.ix,color = self.cursor_color, animated = True, 
-                   picker=True))
-          
-    def add_cursor2(self, ax):
-        self.cursor2s.append(
-        ax.axhline(cursor2.ix,color = self.cursor2_color, animated = True, 
-                   picker=True))
-      
-    def remove_cursor2(self, ax):
-        for cursor2 in self.cursor2s:
-            if cursor2 in ax.lines:
-                ax.lines.remove(cursor2)
-                self.cursor2s.remove(cursor2)
-            
-    def remove_axes(self,window):
-        for ax in self.ax:
-            if window.ax is ax:
-                for line in ax.lines:
-                    if line in self.cursors:
-                        self.cursors.remove(line)
-                    elif line in self.cursor2s:
-                        self.cursor2s.remove(line)
-                for cid in ax.cids:
-                    ax.figure.canvas.mpl_disconnect(cid)
-                self.ax.remove(ax)
-                if not self.ax:
-                    self.callback_on_move = list()
-        
-    def _set_cursor2ON(self, value):
-        if value:
-            if self.cursor2_ON: return
-            self.__cursor2ON = True
-            self._turn_on_cursor2()
-            for ax in self.ax:
-                ax.figure.canvas.draw_idle()
-        elif not value:
-            self.__cursor2ON = False
-            self._turn_off_cursor2()
-            for ax in self.ax:
-                ax.figure.canvas.draw_idle()
-    def _get_cursor2ON(self):
-        return self.__cursor2ON
-    def _turn_on_cursor2(self):
-        for ax in self.ax:
-            self.add_cursor2(ax)
-        cursor.coordinates_change_signal()
-        cursor2.coordinates_change_signal()
-    def _turn_off_cursor2(self):
-        for ax in self.ax:
-            self.remove_cursor2(ax)
-        cursor.coordinates_change_signal()
-        cursor2.coordinates_change_signal()
-    cursor2_ON = property(_get_cursor2ON, _set_cursor2ON)
-    
-    def clear(self, event = None):
-        'clear the cursor'
-        canvas = event.canvas
-        ax = canvas.figure.axes[0]
-        if ax:
-            canvas.background = canvas.copy_from_bbox(ax.bbox)
-            for line in ax.lines:
-                ax.draw_artist(line)
-
-    def onpick(self, event):
-        if event.artist in self.cursors:
-            self.picked_list = self.cursors
-            self.picked = cursor
-        elif self.cursor2_ON and event.artist in self.cursor2s:
-            self.picked_list = self.cursor2s
-            self.picked = cursor2
-            
-    def _update_position(self):
-        for line in self.cursor2s:
-            line.set_ydata(cursor2.ix)
-        for line in self.cursors:
-            line.set_ydata(cursor.ix)
-        self._update()
-        
-    def onmove(self, event, bridge = False):
+    def onmove(self, event):
         'on mouse motion draw the cursor if picked'
-        if bridge:
-            if self.picked == cursor:
-                self.picked_list = self.cursors
-            elif self.picked == cursor2:
-                self.picked_list = self.cursor2s
-                
-        if self.picked_list:
-            if event.inaxes:
-                if not event.ydata == self.picked.ix:
-                    self.picked.ix = event.ydata
-                    self._update_position()
-                    for function in self.callback_on_move:
-                        function()
-        if bridge:
-            self.picked_list = None
-
-    def button_release(self, event):
-        'whenever a mouse button is released'
-        if event.button != 1: return
-        self.picked_list = None
-    
-    def _update(self, axs = None):
-        if axs is None:
-            axs = self.ax
-        for ax in axs:
-            background = ax.figure.canvas.background
-            if background is not None:
-                ax.figure.canvas.restore_region(background)
-            for line in ax.lines:
-                ax.draw_artist(line)
-            ax.figure.canvas.blit(ax.bbox)
-    def reset(self):
-        for ax in self.ax:
-            self.remove_cursor2(ax)
-            self.remove_axes(ax.figure.canvas.manager.window)
-        self.callback_on_move = list()
-
+        if self.picked is True and event.inaxes:
+            if not round(event.ydata) == self.coordinates.ix:
+                self.coordinates.ix = round(event.ydata)
+            
 class Scale_Bar():
     def __init__(self, ax, units, pixel_size, color = 'white', position = None, 
     ratio = 0.25, lw = 1, lenght_in_units = None):
-        self.ax = ax
+        self.axs = ax
         self.units = units
         self.pixel_size = pixel_size
         self.xmin, self.xmax = ax.get_xlim()
@@ -447,20 +259,20 @@ class Scale_Bar():
         self.lenght_in_pixels = self.lenght_in_units / self.pixel_size
     def delete_scale_if_exists(self):
         if self.line is not None:
-            self.ax.lines.remove(self.line)
+            self.axs.lines.remove(self.line)
         if self.text is not None:
-            self.ax.texts.remove(self.text)
+            self.axs.texts.remove(self.text)
     def plot_scale(self, line_width = 1):
         self.delete_scale_if_exists()
         x1, y1 = self.position
         x2, y2 = x1 + self.lenght_in_pixels, y1
-        self.line, = self.ax.plot([x1,x2],[y1,y2], linestyle='-', 
+        self.line, = self.axs.plot([x1,x2],[y1,y2], linestyle='-', 
         lw = line_width)
-        self.text = self.ax.text(*self.text_position, s=self.get_units_string(), 
+        self.text = self.axs.text(*self.text_position, s=self.get_units_string(), 
         ha = 'center', size = 'medium') 
-        self.ax.set_xlim(self.xmin, self.xmax)
-        self.ax.set_ylim(self.ymin, self.ymax)
-        self.ax.figure.canvas.draw_idle()
+        self.axs.set_xlim(self.xmin, self.xmax)
+        self.axs.set_ylim(self.ymin, self.ymax)
+        self.axs.figure.canvas.draw_idle()
     def set_position(self,x,y):
         self.position = x, y
         self.calculate_text_position()
@@ -469,7 +281,7 @@ class Scale_Bar():
     def set_color(self, c):
         self.line.set_color(c)
         self.text.set_color(c)
-        self.ax.figure.canvas.draw_idle()
+        self.axs.figure.canvas.draw_idle()
     def set_lenght_in_units(self, lenght):
         color = self.line.get_color()
         self.lenght_in_units = lenght
@@ -480,7 +292,7 @@ class Scale_Bar():
     def set_tex_bold(self):
         self.tex_bold = True
         self.text.set_text(self.get_units_string())
-        self.ax.figure.canvas.draw_idle()
+        self.axs.figure.canvas.draw_idle()
 
 
 def scale_bar(ax, units, pixel_size, color = 'white', position = None, 
@@ -488,7 +300,5 @@ def scale_bar(ax, units, pixel_size, color = 'white', position = None,
     ax.scale_bar = Scale_Bar(ax = ax, units = units, pixel_size = pixel_size, 
     color = color, position = position, ratio = ratio, lw = lw, 
     lenght_in_units = lenght_in_units)
-    
-cursors = SquarePointer()
-lines = LinePointer()
+
 

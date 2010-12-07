@@ -26,7 +26,7 @@ except:
     import matplotlib.pyplot as plt
 
 import numpy as np
-from widgets import cursors
+#from widgets import cursors
 
 
 
@@ -278,32 +278,32 @@ class Component:
                         parameter.value = parameter.map[ix,iy,:].tolist()
                         if parameter.std is not None:
                            parameter.std = parameter.std_map[ix,iy,:].tolist()
-    def plot_maps(self):
-        for parameter in self.parameters:
-            if (parameter.map is not None) and (parameter.twin is None):
-                dim = len(parameter.map.squeeze().shape)
-                title = '%s - %s' % (self.name, parameter.name)
-                if dim == 2:
-                    fig = plt.figure()
-                    ax = fig.add_subplot(111)
-                    this_map = ax.matshow(parameter.map.squeeze().T)
-                    ax.set_title(title)
-                    fig.canvas.set_window_title(title)
-                    fig.colorbar(this_map)
-                    cursors.add_axes(ax)
-                    fig.canvas.draw()
-                elif dim == 1:
-                    fig = plt.figure()
-                    ax = fig.add_subplot(111)
-                    this_graph = ax.plot(parameter.map.squeeze())
-                    ax.set_title(title)
-                    fig.canvas.set_window_title(title)
-                    ax.set_title(title)
-                    ax.set_ylabel('%s (%s)' % (parameter.name, parameter.units))
-                    ax.set_xlabel('Pixel')
-                    fig.canvas.draw()
-                elif dim == 3:
-                    pass
+#    def plot_maps(self):
+#        for parameter in self.parameters:
+#            if (parameter.map is not None) and (parameter.twin is None):
+#                dim = len(parameter.map.squeeze().shape)
+#                title = '%s - %s' % (self.name, parameter.name)
+#                if dim == 2:
+#                    fig = plt.figure()
+#                    ax = fig.add_subplot(111)
+#                    this_map = ax.matshow(parameter.map.squeeze().T)
+#                    ax.set_title(title)
+#                    fig.canvas.set_window_title(title)
+#                    fig.colorbar(this_map)
+#                    cursors.add_axes(ax)
+#                    fig.canvas.draw()
+#                elif dim == 1:
+#                    fig = plt.figure()
+#                    ax = fig.add_subplot(111)
+#                    this_graph = ax.plot(parameter.map.squeeze())
+#                    ax.set_title(title)
+#                    fig.canvas.set_window_title(title)
+#                    ax.set_title(title)
+#                    ax.set_ylabel('%s (%s)' % (parameter.name, parameter.units))
+#                    ax.set_xlabel('Pixel')
+#                    fig.canvas.draw()
+#                elif dim == 3:
+#                    pass
     def summary(self):
         for parameter in self.parameters:
             dim = len(parameter.map.squeeze().shape)

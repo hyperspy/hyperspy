@@ -22,8 +22,8 @@
 import numpy as np
     
 class Coordinates(object):
-    def __init__(self):
-        self.shape = (1,1)
+    def __init__(self, shape):
+        self.shape = shape
         self.coordinates = np.array((0,0))
         self.on_coordinates_change = []
         self.step = 1
@@ -121,7 +121,11 @@ class Coordinates(object):
                 self.step -= 1
             print "Step = ", self.step
 
-cursor = Coordinates()
-cursor2 = Coordinates()
+class TwoCoordinates():
+    def __init__(self, shape):
+        self.shape = shape
+        self.coordinates1 = Coordinates(self.shape)
+        self.coordinates2 = Coordinates(self.shape)
+        self.pointers = None
 
     
