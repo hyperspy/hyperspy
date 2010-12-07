@@ -41,7 +41,7 @@ class MovingPatch(object):
         Add a cursor to ax.
         """
         self.coordinates = coordinates
-        self.axs = list()
+        self.axs = set()
         self.picked = False
         self.size = 1.
         self.color = 'red'
@@ -55,14 +55,13 @@ class MovingPatch(object):
         self.__is_on = value
         
     def add_axes(self, ax):
-        self.axs.append(ax)
+        self.axs.add(ax)
         canvas = ax.figure.canvas
         if not hasattr(canvas, 'background'):
             canvas.background = None
         if self.is_on() is True:
-            self.connect(ax)
             ax.add_patch(self.patch)
-#            self.draw_patch(axs = [ax,])
+            self.connect(ax)
             
     def connect(self, ax):
         if not hasattr(ax, 'cids'):
@@ -78,19 +77,18 @@ class MovingPatch(object):
 
         
     def remove_axes(self,window):
+        toremove = []
         for ax in self.axs:
             if hasattr(ax.figure.canvas.manager, 'window'):
                 ax_window = ax.figure.canvas.manager.window
             else:
                 ax_window = False
             if ax_window is window or ax_window is False:
-                if self.patch in ax.patches:
-                    ax.patches.remove(self.patch)
-                for cid in ax.cids:
-                    ax.figure.canvas.mpl_disconnect(cid)
-                self.axs.remove(ax)
-                if not self.axs:
-                    self.call_on_move = list()
+                toremove.append(ax)
+        for ax in toremove:
+            for cid in ax.cids:
+                ax.figure.canvas.mpl_disconnect(cid)
+            self.axs.remove(ax)
     
     def clear(self, event = None):
         'clear the patch'
@@ -126,12 +124,13 @@ class MovingPatch(object):
     
     def draw_patch(self, axs = None):
         if self.is_on() is True:
-            if axs is None:
-                axs = self.axs
             for ax in self.axs:
-                background = ax.figure.canvas.background
+                canvas = ax.figure.canvas
+                background = canvas.background
                 if background is not None:
-                    ax.figure.canvas.restore_region(background)
+                    canvas.restore_region(background)
+                else:
+                    canvas.background = canvas.copy_from_bbox(ax.bbox)
                 ax.draw_artist(self.patch)
                 ax.figure.canvas.blit(ax.bbox)
 
@@ -196,18 +195,17 @@ class MovingHorizontalLine(MovingPatch):
             self.draw_patch()
         
     def add_axes(self, ax):
-        self.axs.append(ax)
+        self.axs.add(ax)
         canvas = ax.figure.canvas
         if not hasattr(canvas, 'background'):
             canvas.background = None
         if self.is_on() is True:
             if self.patch is None:
                 self.patch = ax.axhline(self.coordinates.ix, color = self.color, 
-                                    animated = True, picker = True)
+                                    animated = True, picker = 5)
             else:
                 ax.add_line(self.patch)
             self.connect(ax)
-            self.update_patch_position()
             
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'

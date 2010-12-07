@@ -1,0 +1,2 @@
+* After plotting a new data explorer, the cursors from all the previous data 
+explorers dissapears
