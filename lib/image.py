@@ -36,7 +36,7 @@ class Image():
         self.image_figure = None
         self.image_ax = None
         self.load(dictionary)
-        self.coordinates = coordinates.Coordinates()
+        self.coordinates = coordinates.Coordinates(self.data_cube.shape)
         self.auto_contrast = True
         shape = self.data_cube.squeeze().shape
         if len(shape) <= 2:
