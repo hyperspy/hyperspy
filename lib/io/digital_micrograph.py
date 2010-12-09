@@ -241,7 +241,7 @@ def file_reader(filename, data_type = None):
         # Store the calibration in the calibration dict
         origins_keys = ['energyorigin', 'xorigin', 'yorigin']
         scales_keys = ['energyscale', 'xscale', 'yscale']
-        units_keys = ['energyunits', 'xnits', 'yunits']
+        units_keys = ['energyunits', 'xunits', 'yunits']
 
         for value in origins:
             calibration_dict.__setitem__(origins_keys.pop(0), value)
