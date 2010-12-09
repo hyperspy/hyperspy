@@ -41,8 +41,10 @@ class Coordinates_Controller():
         else:
             Pointer = None
         coord.coordinates1.pointer = Pointer(coord.coordinates1)
+        coord.coordinates1.pointer.color = 'red'
         coord.coordinates2.pointer = Pointer(coord.coordinates2)
-        coord.coordinates2.pointer.set_is_on(False)
+        coord.coordinates2.pointer.color = 'blue'
+        coord.coordinates2.pointer.set_on(False)
         signal.coordinates = coord
         self.registered_double_coordinates.append(coord) 
         
