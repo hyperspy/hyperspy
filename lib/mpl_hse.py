@@ -54,11 +54,6 @@ class MPL_HyperSpectrum_Explorer():
         self.data_explorer_ax = None
         self.autoscale = True
         
-        self._line_d1c1 = None
-        self._line_d1c2 = None
-        self._line_d2c1 = None
-        self._line_d2c2 = None
-        
         # Labels
         self.xlabel = ''
         self.ylabel = ''
@@ -327,6 +322,8 @@ class MPL_HyperSpectrum_Explorer():
                 tuple(self.right_pointer.coordinates.coordinates)))
             if data == 1:
                 self._update_spectrum_lines(cursor = cursor, data = 2)
+                
+            # Update the drawing using blit
             background = ax.old_bbox
             ax.figure.canvas.restore_region(background)
             for line in ax.lines:
@@ -335,8 +332,6 @@ class MPL_HyperSpectrum_Explorer():
                 if self.spectrum_ax1 == ax and self.spectrum_ax2 is not None:
                     for line in self.spectrum_ax2.lines:
                         self.spectrum_ax2.draw_artist(line)
-            self.spectrum_ax1.draw_artist(self.spectrum_ax1.title)
-            ax.figure.canvas.draw_idle()
             ax.figure.canvas.blit(ax.bbox)
             
 
@@ -380,4 +375,5 @@ class MPL_HyperSpectrum_Explorer():
             ax.old_bbox = canvas.copy_from_bbox(ax.bbox)
             for line in ax.lines:
                 ax.draw_artist(line)
+            canvas.blit(ax.bbox)
 plt.show()

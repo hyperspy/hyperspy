@@ -35,9 +35,9 @@ class Coordinates_Controller():
         coord = coordinates.TwoCoordinates(shape)
         if shape[0] > 1:
             if shape[1] > 1:
-                Pointer = widgets.MovingSquare
+                Pointer = widgets.DraggableSquare
             else:
-                Pointer = widgets.MovingHorizontalLine
+                Pointer = widgets.DraggableHorizontalLine
         else:
             Pointer = None
         coord.coordinates1.pointer = Pointer(coord.coordinates1)
