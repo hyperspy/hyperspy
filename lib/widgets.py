@@ -192,20 +192,19 @@ class ResizebleDraggablePatch(DraggablePatch):
     
     def __init__(self, coordinates):
         DraggablePatch.__init__(self, coordinates)
-        self.size = 1
-    
+        self.size = 1.
+        
     def set_size(self, size):
         self.size = size
         self.update_patch_size()
     
     def increase_size(self):
-        self.size += 1
-        self.update_patch_size()
+        self.set_size(self.size + 1)
         
     def decrease_size(self):
         if self.size > 1:
-            self.size -= 1
-            self.update_patch_size()
+            self.set_size(self.size - 1)
+            
     def update_patch_size(self):
         '''This method must be provided by the subclass'''
         pass
@@ -215,6 +214,7 @@ class ResizebleDraggablePatch(DraggablePatch):
             self.increase_size()
         if event.key == "-":
             self.decrease_size()
+            
     def connect(self, ax):
         DraggablePatch.connect(self, ax)
         canvas = ax.figure.canvas
@@ -236,7 +236,8 @@ class DraggableSquare(ResizebleDraggablePatch):
         for patch in self.patches:
             patch.set_width(self.size)
             patch.set_height(self.size)
-        self.draw_patch()
+        for ax in self.axs:
+            ax.figure.canvas.draw()
         
     def update_patch_position(self):
         delta = self.size / 2

@@ -326,12 +326,13 @@ class MPL_HyperSpectrum_Explorer():
             # Update the drawing using blit
             background = ax.old_bbox
             ax.figure.canvas.restore_region(background)
-            for line in ax.lines:
-                ax.draw_artist(line)
-                # We must also draw the ax2 lines if active
-                if self.spectrum_ax1 == ax and self.spectrum_ax2 is not None:
-                    for line in self.spectrum_ax2.lines:
-                        self.spectrum_ax2.draw_artist(line)
+#            for line in ax.lines:
+#                ax.draw_artist(line)
+#                # We must also draw the ax2 lines if active
+#                if self.spectrum_ax1 == ax and self.spectrum_ax2 is not None:
+#                    for line in self.spectrum_ax2.lines:
+#                        self.spectrum_ax2.draw_artist(line)
+            ax.figure.canvas.draw_idle()
             ax.figure.canvas.blit(ax.bbox)
             
 
