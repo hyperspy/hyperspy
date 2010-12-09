@@ -203,8 +203,9 @@ class ResizebleDraggablePatch(DraggablePatch):
         self.update_patch_size()
         
     def decrease_size(self):
-        self.size -= 1
-        self.update_patch_size()
+        if self.size > 1:
+            self.size -= 1
+            self.update_patch_size()
     def update_patch_size(self):
         '''This method must be provided by the subclass'''
         pass
