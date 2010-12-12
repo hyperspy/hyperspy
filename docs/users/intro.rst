@@ -184,4 +184,6 @@ To close all the figures type:
 
 
 This is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command. 
-Matplotlib is the library that eelslab uses to produce the plots.
+Matplotlib is the library that eelslab uses to produce the plots. To learn how 
+to pan/zoom and more a matplotlib plot 
+`check here <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`

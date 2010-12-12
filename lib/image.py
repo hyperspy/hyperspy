@@ -57,47 +57,6 @@ class Image():
 #            self.vmax = None
 #            self.colorbar_vmin = None
 #            self.colorbar_vmax = None
-            
-    def auto_contrast(self, perc = 0.01):
-        dc = self.data_cube.copy().ravel()
-        dc = dc[np.isnan(dc) == False]
-        dc.sort()
-        i = int(round(len(dc)*perc/100.))
-        i = i if i > 0 else 1
-        print "i = ", i
-        vmin = dc[i]
-        vmax = dc[-i]
-        print "Automatically setting the constrast values"
-        self.vmin = vmin
-        self.vmax = vmax
-        print "Min = ", vmin
-        print "Max = ", vmax
-    
-    def optimize_colorbar(self, number_of_ticks = 5, tolerance = 5, 
-    step_prec_max = 1):
-        vmin, vmax = self.vmin, self.vmax
-        _range = vmax - vmin
-        step = _range / (number_of_ticks - 1)
-        step_oom = utils.order_of_magnitude(step)
-        def optimize_for_oom(oom):
-            self.colorbar_step = math.floor(step / 10**oom)*10**oom
-            self.colorbar_vmin = math.floor(vmin / 10**oom)*10**oom
-            self.colorbar_vmax = self.colorbar_vmin + \
-            self.colorbar_step * (number_of_ticks - 1)
-            self.colorbar_locs = np.arange(0,number_of_ticks)* self.colorbar_step \
-            + self.colorbar_vmin
-        def check_tolerance():
-            if abs(self.colorbar_vmax - vmax) / vmax > (tolerance / 100.) or \
-            abs(self.colorbar_vmin - vmin) >  (tolerance / 100.):
-                return True
-            else:
-                return False
-                    
-        optimize_for_oom(step_oom)
-        i = 1
-        while check_tolerance() and i <= step_prec_max:
-            optimize_for_oom(step_oom - i)
-            i += 1
     
     def to_spectrum(self):
         from spectrum import Spectrum

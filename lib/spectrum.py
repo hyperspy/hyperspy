@@ -45,7 +45,7 @@ from interactive_ns import interactive_ns
 from utils import generate_axis
 from utils import rebin
 from mva import MVA, MVA_Results
-import mpl_hse
+import drawing.mpl_hse
 import controllers
 
 
@@ -146,9 +146,9 @@ class Spectrum(object, MVA):
         self.xorigin = 0.
         self.yorigin = 0.
         self.energyorigin = 0.
-        self.xunits = 'arbitrary'
-        self.yunits = 'arbitrary'
-        self.energyunits = 'eV'
+        self.xunits = ''
+        self.yunits = ''
+        self.energyunits = ''
         self.title = ''
         self.mva_results = MVA_Results()
         
@@ -284,17 +284,16 @@ class Spectrum(object, MVA):
             self.__cubes[-1]['history'] = history
         self.current_cube = -1
     
-    def __call__(self, cursor = 1):
+    def __call__(self, coordinates = None):
         '''Returns the spectrum at the coordinates given by the choosen cursor
         Parameters
         ----------
         cursor : 1 or 2
         '''
-        if cursor == 1:
-            cursor = self.coordinates.coordinates1
-        elif cursor == 2:
-            cursor = self.coordinates.coordinates2
-        dc = self.data_cube[:, cursor.ix, cursor.iy]
+        if coordinates is None:
+            coordinates = self.coordinates
+
+        dc = self.data_cube[:, coordinates.ix, coordinates.iy]
         return dc
     
     def get_dimensions_from_cube(self):
@@ -313,7 +312,7 @@ class Spectrum(object, MVA):
         self.xdimension = self.data_cube.shape[1]
         self.ydimension = self.data_cube.shape[2]
         self.updateenergy_axis()
-        controllers.coordinates_controller.assign_double_coordinates(self)
+        controllers.coordinates_controller.assign_coordinates(self)
         
     # Transform ________________________________________________________________
     def delete_spectrum(self, index):
@@ -1221,7 +1220,7 @@ class Spectrum(object, MVA):
         print "History:"
         for treatment in self.history:
             print treatment
-        controllers.coordinates_controller.assign_double_coordinates(self)
+        controllers.coordinates_controller.assign_coordinates(self)
 
     def load_image(self,filename):
         print "Loading the image..."
@@ -1290,8 +1289,8 @@ class Spectrum(object, MVA):
                 Position in energy units of the roots of the first
             derivative if der_roots is True (False by default)
         '''
-        ix = self.coordinates.coordinates1.ix
-        iy = self.coordinates.coordinates1.iy
+        ix = self.coordinates.ix
+        iy = self.coordinates.iy
         i0 = np.argmax(self.data_cube[:,ix, iy])
         data = self.data_cube[i0 - channels:i0 + channels + 1, ix, iy]
         x = self.energy_axis[i0 - channels:i0 + channels + 1]
@@ -1919,48 +1918,54 @@ class Spectrum(object, MVA):
                 spatial_mask = \
                 spatial_mask.reshape((-1,), order = 'F')
         return spatial_mask
+
+    def get_image(self, spectral_range = slice(None), background_range = None):
+        data = self.data_cube
+        if self.is_spectrum_line() is True:
+            return self.data_cube.squeeze()
+        elif self.is_single_spectrum() is True:
+            return None
+        if background_range is not None:
+            bg_est = utils.two_area_powerlaw_estimation(self, 
+                                                        background_range.start, 
+                                                        background_range.stop, )
+            A = bg_est['A'][np.newaxis,:,:]
+            r = bg_est['r'][np.newaxis,:,:]
+            E = self.energy_axis[spectral_range,np.newaxis,np.newaxis]
+            bg = A*E**-r
+            return (data[spectral_range,:,:] - bg).sum(0)
+        else:
+            return data[spectral_range,:,:].sum(0)
         
     def plot(self):
         '''Plots the current spectrum to the screen and a map with a cursor to 
         explore the SI.
         '''
-        controllers.coordinates_controller.assign_double_coordinates(self)
-        if self.hse is not None:
-            self.hse.plot()
-            return
         
-        self.hse = mpl_hse.MPL_HyperSpectrum_Explorer()
-        self.hse.spectrum_title = self.title
-        self.hse.image_title = self.title
-        self.hse.spectrum_data_function = self.__call__
-        self.hse.axis = self.energy_axis
-        self.hse.xlabel = 'Energy Loss (%s)' % self.energyunits
-        self.hse.ylabel = 'Counts'
-        self.hse.line_options['left_axis']['data1']['type'] = 'step'
-        self.hse.line_options['right_axis']['data1']['type'] = 'step'
-        shape = self.data_cube.shape
-        self.hse.left_pointer = self.coordinates.coordinates1.pointer
-        self.hse.right_pointer = self.coordinates.coordinates2.pointer
-        if shape[1] > 1 and shape[2] > 1:
-            
-            if self.image is not None:
-                self.hse.image = self.image.data_cube
+        # If new coordinates are assigned
+        controllers.coordinates_controller.assign_coordinates(self)
+        if self.hse is not None:
+            if self.coordinates is not self.hse.coordinates:
+                self.hse.close()
+                del(self.hse)
+                self.hse = None
             else:
-                self.hse.image = self.data_cube.sum(0)
-            self.hse.pixel_size = self.xscale
-            self.hse.pixel_units = self.xunits
-            self.hse.plot_scale_bar = True
-            self.hse.line_options['left_axis']['data1']['color'] = \
-            self.hse.left_pointer.color
-            self.hse.line_options['right_axis']['data1']['color'] = \
-            self.hse.right_pointer.color
-        elif shape[1] > 1 and shape[2] == 1:
-            self.hse.image = self.data_cube.squeeze()
-            self.hse.line_options['left_axis']['data1']['color'] = \
-            self.hse.left_pointer.color
-            self.hse.line_options['right_axis']['data1']['color'] = \
-            self.hse.right_pointer.color
-        elif shape[1] == 1 and shape[2] == 1:
-            self.hse.image = None
-            self.hse.line_options['left_axis']['data1']['color'] = 'red'
+                self.hse.plot()
+                return
+        
+        # Spectrum properties
+        self.hse = drawing.mpl_hse.MPL_HyperSpectrum_Explorer()
+        self.hse.spectrum_data_function = self.__call__
+        self.hse.spectrum_title = 'EELS Spectrum'
+        self.hse.xlabel = 'Energy Loss (%s)' % self.energyunits
+        self.hse.ylabel = 'Counts (arbitraty)'
+        self.hse.coordinates = self.coordinates
+        self.hse.axis = self.energy_axis
+        
+        # Image properties
+        self.hse.image_data_function = self.get_image
+        self.hse.image_title = ''
+        self.hse.pixel_size = self.xscale
+        self.hse.pixel_units = self.xunits
+        
         self.hse.plot()

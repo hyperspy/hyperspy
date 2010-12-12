@@ -30,7 +30,13 @@ except:
 import numpy as np
 
 from utils import on_window_close
-    
+#if self.blit is True:
+#                self.patch.set_animated(True)
+#                canvas = self.ax.figure.canvas
+#                canvas.draw()
+#                self.background = canvas.copy_from_bbox(self.ax.bbox)
+#                self.ax.draw_artist(self.patch)
+#                self.ax.figure.canvas.blit()  
 class DraggablePatch(object):
     """
     """
@@ -40,14 +46,15 @@ class DraggablePatch(object):
         Add a cursor to ax.
         """
         self.coordinates = coordinates
-        self.axs = list()
+        self.ax = None
         self.picked = False
         self.size = 1.
         self.color = 'red'
-        self.patches = list() # Must be provided by the subclass
         self.__is_on = True
         self._2D = True # Whether the cursor lives in the 2D dimension
         self.patch = None
+        self.cids = list()
+        self.blit = True
     
     def is_on(self):
         return self.__is_on
@@ -55,19 +62,17 @@ class DraggablePatch(object):
     def set_on(self, value):
         if value is not self.is_on():
             if value is True:
-                for ax in self.axs:
-                    self.add_patch_to(ax)
-                    self.connect(ax)
+                self.add_patch_to(self.ax)
+                self.connect(self.ax)
             elif value is False:
-                for ax,patch in zip(self.axs, self.patches):
-                    if self._2D:
-                        ax.patches.remove(patch)
-                    else:
-                        ax.lines.remove(patch)
-                    self.disconnect(ax)
+                if self._2D:
+                    self.ax.patches.remove(self.patch)
+                else:
+                    self.ax.lines.remove(self.patch)
+                self.we_are_animated.remove(self.patch)
+                self.disconnect(self.ax)
             self.__is_on = value
-            for ax in self.axs:
-                ax.figure.canvas.draw()
+            self.ax.figure.canvas.draw()
         
     def set_patch(self):
         pass
@@ -79,80 +84,47 @@ class DraggablePatch(object):
             ax.add_patch(self.patch)
         else:
             ax.add_line(self.patch)
-        self.patches.append(self.patch)
+        canvas = ax.figure.canvas
+        if not hasattr(canvas, 'we_are_animated'):
+            canvas.we_are_animated = list()
+        ax.figure.canvas.we_are_animated.append(self.patch)
         
     def add_axes(self, ax):
-        self.axs.append(ax)
+        self.ax = ax
         canvas = ax.figure.canvas
-        if not hasattr(canvas, 'background'):
-            canvas.background = None
+
         if self.is_on() is True:
-            self.connect(ax)
             self.add_patch_to(ax)
+            self.connect(ax)
+            canvas.draw()
             
     def connect(self, ax):
-        if not hasattr(ax, 'cids'):
-            ax.cids = list()
         canvas = ax.figure.canvas
-        ax.cids.append(canvas.mpl_connect('motion_notify_event', self.onmove))
-        ax.cids.append(canvas.mpl_connect('pick_event', self.onpick))
-#        ax.cids.append(canvas.mpl_connect('draw_event', self.clear))
-        ax.cids.append(canvas.mpl_connect('button_release_event', 
+        self.cids.append(canvas.mpl_connect('motion_notify_event', self.onmove))
+        self.cids.append(canvas.mpl_connect('pick_event', self.onpick))
+        self.cids.append(canvas.mpl_connect('draw_event', self.update_background))
+        self.cids.append(canvas.mpl_connect('button_release_event', 
         self.button_release))
         self.coordinates.connect(self.update_patch_position)
-        on_window_close(ax.figure, self.remove_axes)
+        on_window_close(ax.figure, self.close)
     
     def disconnect(self, ax):
-        for cid in ax.cids:
-                ax.figure.canvas.mpl_disconnect(cid)
+        for cid in self.cids:
+            ax.figure.canvas.mpl_disconnect(cid)
+        self.coordinates.disconnect(self.update_patch_position)
         
-    def remove_axes(self,window):
-        toremove = []
-        for ax in self.axs:
-            if hasattr(ax.figure.canvas.manager, 'window'):
-                ax_window = ax.figure.canvas.manager.window
-            else:
-                ax_window = False
-            if ax_window is window or ax_window is False:
-                toremove.append(ax)
-        for ax in toremove:
-            self.disconnect(ax)
-            self.axs.remove(ax)
-            for patch in self.patches:
-                if patch in ax.patches:
-                    ax.patches.remove(patch)
-                    self.patches.remove(patch)
-                elif patch in ax.lines:
-                    ax.lines.remove(patch)
-                    self.patches.remove(patch)
+    def close(self, window = None):
+        ax = self.ax
+        
+        if self._2D is True:
+            ax.patches.remove(self.patch)
+        else:
+            ax.lines.remove(self.patch)
+        self.disconnect(ax)
                     
     def onpick(self, event):
-        if event.artist in self.patches:
+        if event.artist is self.patch:
             self.picked = True
-            for patch in self.patches:
-                patch.set_animated(True)
-            for ax in self.axs:
-                canvas = ax.figure.canvas
-                canvas.draw()
-                canvas.background = canvas.copy_from_bbox(ax.bbox)
-                for patch in self.patches:
-                    ax.draw_artist(patch)
-                ax.figure.canvas.blit()
-                
-    def clear(self, event):
-        if self.is_on() is True:
-            canvas = event.canvas
-            ax = canvas.figure.axes[0]
-            canvas.background = canvas.copy_from_bbox(ax.bbox)
-            if self._2D:
-                for patch in ax.patches:
-                    if patch in self.patches:
-                        ax.draw_artist(patch)
-            else:
-                for line in ax.lines:
-                    if line in self.patches:
-                        ax.draw_artist(line)
-            canvas.blit(ax.bbox)         
 
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'
@@ -166,7 +138,6 @@ class DraggablePatch(object):
                 if not round(event.ydata) == self.coordinates.ix:
                     self.coordinates.ix = round(event.ydata)
         
-            
     def update_patch_position(self):
         '''This method must be provided by the subclass'''
         pass
@@ -176,17 +147,25 @@ class DraggablePatch(object):
         if event.button != 1: return
         if self.picked is True:
             self.picked = False
-        for patch in self.patches:
-            patch.set_animated(False)
+            
+    def update_background(self, *args):
+        canvas = self.ax.figure.canvas
+        self.background = canvas.copy_from_bbox(self.ax.bbox)
+        for artist in canvas.we_are_animated:
+            self.ax.draw_artist(artist)
+        self.ax.figure.canvas.blit()  
     
-    def draw_patch(self, axs = None):
-        for ax,patch in  zip(self.axs, self.patches):
-            canvas = ax.figure.canvas
-            canvas.restore_region(canvas.background)
+    def draw_patch(self, *args):
+        canvas = self.ax.figure.canvas
+        if self.blit is True:
+            canvas.restore_region(self.background)
             # redraw just the current rectangle
-            ax.draw_artist(patch)
+            for artist in canvas.we_are_animated:
+                self.ax.draw_artist(artist)
             # blit just the redrawn area
-            canvas.blit(ax.bbox)
+            canvas.blit()
+        else:
+            canvas.draw()
 
 class ResizebleDraggablePatch(DraggablePatch):
     
@@ -218,7 +197,7 @@ class ResizebleDraggablePatch(DraggablePatch):
     def connect(self, ax):
         DraggablePatch.connect(self, ax)
         canvas = ax.figure.canvas
-        ax.cids.append(canvas.mpl_connect('key_press_event', self.on_key_press))
+        self.cids.append(canvas.mpl_connect('key_press_event', self.on_key_press))
 
 class DraggableSquare(ResizebleDraggablePatch):
     
@@ -229,20 +208,17 @@ class DraggableSquare(ResizebleDraggablePatch):
         self.patch = \
         plt.Rectangle(
         self.coordinates.coordinates - (self.size / 2, self.size / 2), 
-        self.size, self.size, 
+        self.size, self.size, animated = True,
         fill= False, lw = 2,  ec = self.color, picker = True,)
         
     def update_patch_size(self):
-        for patch in self.patches:
-            patch.set_width(self.size)
-            patch.set_height(self.size)
-        for ax in self.axs:
-            ax.figure.canvas.draw()
+        self.patch.set_width(self.size)
+        self.patch.set_height(self.size)
+        self.update_patch_position()
         
     def update_patch_position(self):
         delta = self.size / 2
-        for patch in self.patches:
-            patch.set_xy(self.coordinates.coordinates - (delta, delta))
+        self.patch.set_xy(self.coordinates.coordinates - (delta, delta))
         self.draw_patch()
         
 class DraggableHorizontalLine(DraggablePatch):
@@ -256,9 +232,9 @@ class DraggableHorizontalLine(DraggablePatch):
             self.draw_patch()
      
     def set_patch(self):
-        ax = self.axs[-1]
+        ax = self.ax
         self.patch = ax.axhline(self.coordinates.ix, color = self.color, 
-                               picker = 5)
+                               picker = 5, animated = True)
             
 class Scale_Bar():
     def __init__(self, ax, units, pixel_size, color = 'white', position = None, 
