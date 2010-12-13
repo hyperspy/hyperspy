@@ -21,11 +21,17 @@
 import math
 
 import numpy as np
+try:
+    import matplotlib.pyplot as plt
+except:
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
 
 import file_io
-import utils
 import messages
 import coordinates
+import drawing.utils
 
 class Image():
     '''
@@ -36,33 +42,25 @@ class Image():
         self.image_figure = None
         self.image_ax = None
         self.load(dictionary)
-        self.coordinates = coordinates.Coordinates(self.data_cube.shape)
-        self.auto_contrast = True
         shape = self.data_cube.squeeze().shape
         if len(shape) <= 2:
-            self.coordinates.shape = (0,0)
+            shape = (1,1)
         elif len(shape) == 3:
-            self.coordinates.shape = (shape[2],0)
+            shape = (shape[2],1)
         elif len(shape) == 4:
-            self.coordinates.shape = (shape[2],shape[3])
+            shape = (shape[2],shape[3])
         else:
             messages.warning_exit(
             'Image stacks of more than 4 dimensions are not supported')  
 
-#        try:
-#            self.auto_contrast()
-#            self.optimize_colorbar()
-#        except:
-#            self.vmin = None
-#            self.vmax = None
-#            self.colorbar_vmin = None
-#            self.colorbar_vmax = None
+        self.coordinates = coordinates.Coordinates(shape)
     
     def to_spectrum(self):
         from spectrum import Spectrum
         s = Spectrum(
         {'calibration' : {'data_cube' : np.rollaxis(self.data_cube,-1)}})
         return s
+
     def save(self, filename, **kwds):
         ''''''
         file_io.save(filename, self, **kwds)        
@@ -78,6 +76,7 @@ class Image():
         print "Cropping the image from (%s, %s) to (%s, %s)" % \
         (ix1, iy1, ix2, iy2)
         self.data_cube = self.data_cube[ix1:ix2, iy1:iy2]
+        
 
     def plot(self, z = 0):
         shape = self.data_cube.squeeze().shape
@@ -95,3 +94,71 @@ class Image():
             'Image stacks of more than 4 dimensions are not supported')
             return
         self.create_image_figure(dc)
+                    
+    def change_to_frame(self, i1 = 0, i2 = 0):
+        shape = self.data_cube.squeeze().shape
+        if len(shape) == 3:
+            self.image_ax.images[0].set_array(self.data_cube[...,i1].T)
+        elif len(shape) == 4:
+            self.image_ax.images[0].set_array(self.data_cube[...,i1,i2].T)
+        if self.auto_contrast is True:
+            self.image_ax.images[0].autoscale()
+        plt.draw()
+        
+    def update_figure(self):
+        self.image_ax.set_title(self.get_title())
+        self.change_to_frame(self.coordinates.ix, self.coordinates.iy)
+        
+        
+    def _on_figure_close(self):
+        self.image_figure = None
+        self.image_ax = None
+        self.coordinates.reset()
+    def get_title(self):
+        title = '%i/%i %i/%i' % (
+        self.coordinates.ix, self.coordinates.shape[0] - 1, 
+        self.coordinates.iy, self.coordinates.shape[1] - 1,)
+        return title
+    def create_image_figure(self, dc):
+        if self.image_figure is not None:
+            # Test if the figure really exists. If not call the reset function 
+            # and start again. This is necessary because with some backends 
+            # EELSLab fails to connect the close event to the function.
+            try:
+                self.image_figure.show()
+            except:
+                self._on_figure_close()
+                self.create_image_figure(dc)
+            return True
+            
+        self.image_figure = plt.figure()
+        drawing.utils.on_window_close(self.image_figure, self._on_figure_close)
+        if hasattr(self, 'title'):
+            title = self.title
+        else:
+            title = 'Image'
+        self.image_figure.canvas.set_window_title(title)
+        self.image_ax = self.image_figure.add_subplot(111)
+        self.image_ax.imshow(dc.T, interpolation = 'nearest')
+        self.image_ax.set_title(self.get_title())
+        self.image_figure.canvas.draw()
+        self.coordinates.on_coordinates_change.append(self.update_figure)
+        plt.connect('key_press_event', self.coordinates.key_navigator)
+       
+        return True
+    def auto_contrast(self, perc = 0.01):
+        dc = self.data_cube.copy().ravel()
+        dc = dc[np.isnan(dc) == False]
+        dc.sort()
+        i = int(round(len(dc)*perc/100.))
+        i = i if i > 0 else 1
+        print "i = ", i
+        vmin = dc[i]
+        vmax = dc[-i]
+        print "Automatically setting the constrast values"
+        self.vmin = vmin
+        self.vmax = vmax
+        print "Min = ", vmin
+        print "Max = ", vmax
+        
+plt.show()
