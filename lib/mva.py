@@ -45,6 +45,7 @@ from utils import center_and_scale
 from defaults_parser import defaults
 import messages
 import config_dir
+import drawing.widgets
 
 def compile_kica():
     kica_path = os.path.join(config_dir.data_path, 'kica')
@@ -533,7 +534,8 @@ class MVA():
                     mapa = ax.matshow(toplot, cmap = cmap)
                     figure.colorbar(mapa)
                     figure.canvas.draw()
-                    self.coordinates.pointers.add_axes(ax)
+                    pointer = drawing.widgets.DraggableSquare(self.coordinates)
+                    pointer.add_axes(ax)
             else:
                 im_list.append(Spectrum())
                 toplot = recmatrix[i,:]
@@ -660,7 +662,8 @@ class MVA():
                         ax2.set_xlabel('Energy (eV)')
                     figure.colorbar(mapa)
                     figure.canvas.draw()
-                    self.coordinates.pointers.add_axes(ax)
+                    pointer = drawing.widgets.DraggableSquare(self.coordinates)
+                    pointer.add_axes(ax)
             else:
                 toplot = recmatrix[i,:]
                 im_list.append(Spectrum())
