@@ -38,6 +38,7 @@ class Coordinates_Controller():
         
         '''
         shape = self.get_coordinates_shape(signal)
+
         # Check if coordinates with this shape have been registered
         for coord in self.registered_coordinates:
             if shape == coord.shape:
@@ -50,7 +51,7 @@ class Coordinates_Controller():
         return True
         
     def get_coordinates_shape(self, signal):
-        shape = signal.data_cube.squeeze().shape
+        shape = signal.data_cube.shape
         if len(shape) == 2:
             shape = (signal.data_cube.shape[1],1)
         elif len(shape) == 3:
