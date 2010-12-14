@@ -739,7 +739,7 @@ class Model(list, Optimizers, Estimators, Controls):
 
     def multifit(self, background_fit_E1 = None, mask = None, kind = "normal", 
                  fitter = "leastsq", charge_only_fixed = False, grad = False, 
-                 autosave = "row", **kwargs) :
+                 autosave = False, **kwargs) :
         if autosave is not None:
             fd, autosave_fn = tempfile.mkstemp(prefix = 'eelslab_autosave-', 
             dir = '.', suffix = '.par')
