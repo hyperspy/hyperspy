@@ -185,8 +185,8 @@ class Model(list, Optimizers, Estimators, Controls):
                 if self.hl.hse is not None:
                     for line in self.hl.hse.spectrum_plot.left_ax_lines:
                         parameter.connect(line.update)
-                    parameter.connection_activated = True
-        self.auto_update_plot = True
+                    parameter.connection_activated = False
+
                     
     def set_auto_update_plot(self, tof):
         for component in self:
@@ -739,7 +739,7 @@ class Model(list, Optimizers, Estimators, Controls):
 
     def multifit(self, background_fit_E1 = None, mask = None, kind = "normal", 
                  fitter = "leastsq", charge_only_fixed = False, grad = False, 
-                 autosave = "pixel", **kwargs) :
+                 autosave = "row", **kwargs) :
         if autosave is not None:
             fd, autosave_fn = tempfile.mkstemp(prefix = 'eelslab_autosave-', 
             dir = '.', suffix = '.par')
@@ -768,9 +768,18 @@ class Model(list, Optimizers, Estimators, Controls):
                     elif kind == "normal" :
                         self.fit(fitter = fitter, grad = grad, **kwargs)
                     if autosave == 'pixel':
-                        self.save_parameters2file(autosave_fn)
+                        try:
+                            # Saving can fail, e.g., if the std was not present 
+                            # due to a current leastsq bug
+                            # Therefore we only try to save...
+                            self.save_parameters2file(autosave_fn)
+                        except:
+                            pass
                 if autosave == 'row':
-                        self.save_parameters2file(autosave_fn)
+                        try:
+                            self.save_parameters2file(autosave_fn)
+                        except:
+                            pass
 
         messages.information(
         'Removing the temporary file %s' % (autosave_fn + 'par'))
@@ -868,7 +877,7 @@ class Model(list, Optimizers, Estimators, Controls):
                     print "%s_%s\t%f" % (element, subshell, 
                     elements[element][subshell])
        
-    def plot(self):
+    def plot(self, auto_update_plot = True):
         '''Plots the current spectrum to the screen and a map with a cursor to 
         explore the SI.
         '''
@@ -889,4 +898,7 @@ class Model(list, Optimizers, Estimators, Controls):
         hse.spectrum_plot.add_line(l2)
         l2.plot()
         self.connect_parameters2update_plot()
+        self.set_auto_update_plot(True)
+        # TODO Set autoupdate to False on close
+
         
