@@ -285,7 +285,6 @@ class MVA():
         
         # Rescale the results if the noise was normalized
         if normalize_poissonian_noise is True:
-            print "I'm here"
             self.mva_results.pc[energy_mask,:] *= self._root_bH
             self.mva_results.v *= self._root_aG.T
             if isinstance(spatial_mask, slice):
