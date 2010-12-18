@@ -90,6 +90,7 @@ def on_window_close(figure, function):
 #        window.connect(window, SIGNAL('destroyed()'), function)
         # I don't understand the qt syntax for connecting. Therefore, it is 
         # disable until I have the time to study it.
+
 def plot_RGB_map(im_list, normalization = 'single', dont_plot = False):
     '''Plots 2 or 3 maps in RGB
     

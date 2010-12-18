@@ -44,6 +44,9 @@ class MPL_HyperSpectrum_Explorer():
         self.axis = None
         self.pointer = None
     
+    def is_active(self):
+        return utils.does_figure_object_exists(self.spectrum_plot.figure)
+    
     def assign_pointer(self):
         shape = self.coordinates.shape
         if shape[0] > 1:
