@@ -1,3 +1,19 @@
+v0.2.8b 18/12/2010
+
+Enhancements
+------------
+*  The data exploration code was totally rewritten. Between the enhancements 
+are automatic update after spectrum and model changes. However there are some 
+regressions, e.g. the second cursor feature is not yet available
+* New format supported for reading: Bucker raw.
+* The autosaving of Model is now disable by default (what results in a big 
+performance improve when fitting simple model)
+
+BUGs fixes
+----------
+* m.fit was broken for grad = True and any fitter but leastsq and odr 
+
+
 v0.2.7, 01/12/2010
 Enhancements
 ------------
