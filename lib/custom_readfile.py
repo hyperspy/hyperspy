@@ -1,21 +1,30 @@
 #!/usr/bin/env python
-# -*- coding: latin-1 -*-
+# -*- coding: utf-8 -*-
 
-# general functions for reading TEM Image files
+# Copyright © 2007 Francisco Javier de la Peña
+# Copyright © 2010 Francisco Javier de la Peña & Stefano Mazzucco
 #
-# Copyright (c) 2010 Stefano Mazzucco.
-# All rights reserved.
+# This file is part of EELSLab.
 #
-# This program is still at an early stage to be released, so the use of this
-# code must be explicitly authorized by its author and cannot be shared for any reason.
+# EELSLab is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-# Once the program will be mature, it will be released under a GNU GPL license
+# EELSLab is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EELSLab; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
+# USA
 
-import platform, sys, re, mmap, struct
-import numpy as np
-from temExceptions import *
+# general functions for reading data from files
 
-
+import struct
+from custom_exceptions import *
 
 # Declare simple TagDataType structures for faster execution.
 # The variables are named as following:
@@ -51,14 +60,14 @@ L_byte = struct.Struct('<b')
 B_char = struct.Struct('>c')
 L_char = struct.Struct('<c')
 
-def readShort(f, endian):
+def read_short(f, endian):
     """Read a 2-Byte integer from file f
     with a given endianness (byte order).
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print 'File address:', f.tell()
-        raise ByteOrderError, endian
+        print('File address:', f.tell())
+        raise ByteOrderError(endian)
     else:
         data = f.read(2)      # hexadecimal representation
         if endian == 'big':
@@ -67,14 +76,14 @@ def readShort(f, endian):
             s = L_short
         return s.unpack(data)[0] # struct.unpack returns a tuple
 
-def readUShort(f, endian):
+def read_ushort(f, endian):
     """Read a 2-Byte integer from file f
     with a given endianness (byte order).
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print 'File address:', f.tell()
-        raise ByteOrderError, endian
+        print('File address:', f.tell())
+        raise ByteOrderError(endian)
     else:
         data = f.read(2)
         if endian == 'big':
@@ -83,14 +92,14 @@ def readUShort(f, endian):
             s = L_ushort
         return s.unpack(data)[0]
 
-def readLong(f, endian):
+def read_long(f, endian):
     """Read a 4-Byte integer from file f
     with a given endianness (byte order).
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print 'File address:', f.tell()
-        raise ByteOrderError, endian
+        print('File address:', f.tell())
+        raise ByteOrderError(endian)
     else:
         data = f.read(4)
         if endian == 'big':
@@ -99,14 +108,14 @@ def readLong(f, endian):
             s = L_long
         return s.unpack(data)[0]
 
-def readULong(f, endian):
+def read_ulong(f, endian):
     """Read a 4-Byte integer from file f
     with a given endianness (byte order).
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print 'File address:', f.tell()
-        raise ByteOrderError, endian
+        print('File address:', f.tell())
+        raise ByteOrderError(endian)
     else:
         data = f.read(4)
         if endian == 'big':
@@ -115,14 +124,14 @@ def readULong(f, endian):
             s = L_ulong
         return s.unpack(data)[0]
     
-def readFloat(f, endian):
+def read_float(f, endian):
     """Read a 4-Byte floating point from file f
     with a given endianness (byte order).
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print 'File address:', f.tell()
-        raise ByteOrderError, endian
+        print('File address:', f.tell())
+        raise ByteOrderError(endian)
     else:
         data = f.read(4)
         if endian == 'big':
@@ -131,14 +140,14 @@ def readFloat(f, endian):
             s = L_float
         return s.unpack(data)[0]    
 
-def readDouble(f, endian):
+def read_double(f, endian):
     """Read a 8-Byte floating point from file f
     with a given endianness (byte order).
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print 'File address:', f.tell()
-        raise ByteOrderError, endian
+        print('File address:', f.tell())
+        raise ByteOrderError(endian)
     else:
         data = f.read(8)
         if endian == 'big':
@@ -147,14 +156,14 @@ def readDouble(f, endian):
             s = L_double
         return s.unpack(data)[0]            
 
-def readBoolean(f, endian):
+def read_boolean(f, endian):
     """Read a 1-Byte charater from file f
     with a given endianness (byte order).
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print 'File address:', f.tell()
-        raise ByteOrderError, endian
+        print('File address:', f.tell())
+        raise ByteOrderError(endian)
     else:
         data = f.read(1)
         if endian == 'big':
@@ -163,14 +172,14 @@ def readBoolean(f, endian):
             s = L_bool
         return s.unpack(data)[0]    
 
-def readByte(f, endian):
+def read_byte(f, endian):
     """Read a 1-Byte charater from file f
     with a given endianness (byte order).
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print 'File address:', f.tell()
-        raise ByteOrderError, endian
+        print('File address:', f.tell())
+        raise ByteOrderError(endian)
     else:
         data = f.read(1)
         if endian == 'big':
@@ -179,14 +188,14 @@ def readByte(f, endian):
             s = L_byte
         return s.unpack(data)[0]
 
-def readChar(f, endian):
+def read_char(f, endian):
     """Read a 1-Byte charater from file f
     with a given endianness (byte order).
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print 'File address:', f.tell()
-        raise ByteOrderError, endian
+        print('File address:', f.tell())
+        raise ByteOrderError(endian)
     else:
         data = f.read(1)
         if endian == 'big':

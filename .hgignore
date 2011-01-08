@@ -15,5 +15,6 @@ docs/.build/*
 bin/*.bat
 setup/windows/requires/*
 setup/windows/reccomends/*
+eelslab_dev.py
 
 
