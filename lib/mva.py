@@ -45,6 +45,7 @@ from utils import center_and_scale
 from defaults_parser import defaults
 import messages
 import config_dir
+import drawing.widgets
 
 def compile_kica():
     kica_path = os.path.join(config_dir.data_path, 'kica')
@@ -284,7 +285,6 @@ class MVA():
         
         # Rescale the results if the noise was normalized
         if normalize_poissonian_noise is True:
-            print "I'm here"
             self.mva_results.pc[energy_mask,:] *= self._root_bH
             self.mva_results.v *= self._root_aG.T
             if isinstance(spatial_mask, slice):
@@ -533,7 +533,8 @@ class MVA():
                     mapa = ax.matshow(toplot, cmap = cmap)
                     figure.colorbar(mapa)
                     figure.canvas.draw()
-                    self.coordinates.pointers.add_axes(ax)
+                    pointer = drawing.widgets.DraggableSquare(self.coordinates)
+                    pointer.add_axes(ax)
             else:
                 im_list.append(Spectrum())
                 toplot = recmatrix[i,:]
@@ -660,7 +661,8 @@ class MVA():
                         ax2.set_xlabel('Energy (eV)')
                     figure.colorbar(mapa)
                     figure.canvas.draw()
-                    self.coordinates.pointers.add_axes(ax)
+                    pointer = drawing.widgets.DraggableSquare(self.coordinates)
+                    pointer.add_axes(ax)
             else:
                 toplot = recmatrix[i,:]
                 im_list.append(Spectrum())

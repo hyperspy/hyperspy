@@ -51,15 +51,18 @@ class Estimators:
         ihess = np.linalg.inv(hess)
         p_std = np.sqrt(1./np.diag(ihess))
         return p_std
+
     def _poisson_likelihood_function(self,param,y, weights = None):
         '''Returns the likelihood function of the model for the given
         data and parameters
         '''
         mf = self._model_function(param)
         return -(y*np.log(mf) - mf).sum()
+
     def _gradient_ml(self,param, y, weights = None):
         mf = self._model_function(param)
-        return -(self.jacobian(param, y)*(y/mf - 1)).sum(1)
+        return -(self._jacobian(param, y)*(y/mf - 1)).sum(1)
+
 
     def _errfunc(self,param, y, weights = None):
         errfunc = self._model_function(param) - y
@@ -75,7 +78,7 @@ class Estimators:
 
     def _gradient_ls(self,param, y, weights = None):
         gls =(2*self._errfunc(param, y, weights) * 
-        self.jacobian(param, y)).sum(1)
+        self._jacobian(param, y)).sum(1)
         return gls
 
             

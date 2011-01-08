@@ -48,7 +48,7 @@ setup(
     package_dir = {'silib': 'lib'},
     version = version,
     py_modules = ['eelslab', ],
-    packages = ['silib', 'silib.components', 'silib.io'],
+    packages = ['silib', 'silib.components', 'silib.io', 'silib.drawing'],
     requires = install_req,
     scripts = scripts,
     package_data = 

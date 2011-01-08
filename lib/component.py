@@ -18,13 +18,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
 
-try:
-    import matplotlib.pyplot as plt
-except:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-
 import numpy as np
 #from widgets import cursors
 

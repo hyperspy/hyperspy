@@ -18,38 +18,40 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301
 # USA
 import coordinates
-import widgets
+import drawing
 
 class Coordinates_Controller():
     def __init__(self):
-        self.registered_double_coordinates = []
+        self.registered_coordinates = []
     
-    def assign_double_coordinates(self, signal):
+    def assign_coordinates(self, signal):
+        '''Add coordenates to a signal.
+        
+        Checks if the shape is equal to any other coordinate that has been 
+        registered before, if any; if yes it assigns the matching registered 
+        coordinates to the signal and return False, otherwise it creates a new 
+        coordinates instance and returns True
+        
+        Parameters:
+        -----------
+        signal : Signal instance
+        
+        '''
         shape = self.get_coordinates_shape(signal)
+
         # Check if coordinates with this shape have been registered
-        for coord in self.registered_double_coordinates:
+        for coord in self.registered_coordinates:
             if shape == coord.shape:
                 signal.coordinates = coord
-                return
+                return False
         # There are no coordinates with that shape so we register a new one
-        coord = coordinates.TwoCoordinates(shape)
-        if shape[0] > 1:
-            if shape[1] > 1:
-                Pointer = widgets.DraggableSquare
-            else:
-                Pointer = widgets.DraggableHorizontalLine
-        else:
-            Pointer = None
-        coord.coordinates1.pointer = Pointer(coord.coordinates1)
-        coord.coordinates1.pointer.color = 'red'
-        coord.coordinates2.pointer = Pointer(coord.coordinates2)
-        coord.coordinates2.pointer.color = 'blue'
-        coord.coordinates2.pointer.set_on(False)
+        coord = coordinates.Coordinates(shape)
         signal.coordinates = coord
-        self.registered_double_coordinates.append(coord) 
+        self.registered_coordinates.append(coord) 
+        return True
         
     def get_coordinates_shape(self, signal):
-        shape = signal.data_cube.squeeze().shape
+        shape = signal.data_cube.shape
         if len(shape) == 2:
             shape = (signal.data_cube.shape[1],1)
         elif len(shape) == 3:

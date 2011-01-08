@@ -45,7 +45,7 @@ from interactive_ns import interactive_ns
 from utils import generate_axis
 from utils import rebin
 from mva import MVA, MVA_Results
-import mpl_hse
+import drawing.mpl_hse
 import controllers
 
 
@@ -146,9 +146,9 @@ class Spectrum(object, MVA):
         self.xorigin = 0.
         self.yorigin = 0.
         self.energyorigin = 0.
-        self.xunits = 'arbitrary'
-        self.yunits = 'arbitrary'
-        self.energyunits = 'eV'
+        self.xunits = ''
+        self.yunits = ''
+        self.energyunits = ''
         self.title = ''
         self.mva_results = MVA_Results()
         
@@ -227,6 +227,7 @@ class Spectrum(object, MVA):
          and energydimension'''
         self.energy_axis = generate_axis(self.energyorigin, self.energyscale, 
         self.energydimension)
+        self._replot()
 
     def set_new_calibration(self,energy_origin, energy_scale):
         '''Updates the energy origin and scale and the energy axis with the 
@@ -284,17 +285,16 @@ class Spectrum(object, MVA):
             self.__cubes[-1]['history'] = history
         self.current_cube = -1
     
-    def __call__(self, cursor = 1):
+    def __call__(self, coordinates = None):
         '''Returns the spectrum at the coordinates given by the choosen cursor
         Parameters
         ----------
         cursor : 1 or 2
         '''
-        if cursor == 1:
-            cursor = self.coordinates.coordinates1
-        elif cursor == 2:
-            cursor = self.coordinates.coordinates2
-        dc = self.data_cube[:, cursor.ix, cursor.iy]
+        if coordinates is None:
+            coordinates = self.coordinates
+
+        dc = self.data_cube[:, coordinates.ix, coordinates.iy]
         return dc
     
     def get_dimensions_from_cube(self):
@@ -313,7 +313,8 @@ class Spectrum(object, MVA):
         self.xdimension = self.data_cube.shape[1]
         self.ydimension = self.data_cube.shape[2]
         self.updateenergy_axis()
-        controllers.coordinates_controller.assign_double_coordinates(self)
+        controllers.coordinates_controller.assign_coordinates(self)
+        self._replot()
         
     # Transform ________________________________________________________________
     def delete_spectrum(self, index):
@@ -324,6 +325,8 @@ class Spectrum(object, MVA):
             The index of the spectrum to remove
         '''
         self.delete_column(index)
+        self._replot()
+        
     def delete_column(self, index, until = None):
         '''
         Removes a column or a range of rows.
@@ -343,6 +346,7 @@ class Spectrum(object, MVA):
             cube['data'] = np.hstack((cube['data'][:, None:index, :], 
             cube['data'][:, index + width:None, :]))
             self.get_dimensions_from_cube()
+        self._replot()
         
     def delete_row(self, index, until = None):
         '''
@@ -364,6 +368,7 @@ class Spectrum(object, MVA):
             cube['data'] = np.swapaxes(np.hstack((_cube[:, None:index, :], 
             _cube[:, index + width:None, :])),1,2)
         self.get_dimensions_from_cube()
+
         
 
     def spatial_crop(self, ix1 = None, iy1 = None, ix2 = None, iy2 = None):
@@ -380,6 +385,7 @@ class Spectrum(object, MVA):
         if self.image:
             self.image.crop(ix1, iy1, ix2, iy2)
         self.get_dimensions_from_cube()
+        self._replot()
         
     def energy_crop(self, _from = None, to = None, in_energy_units = False):
         '''Crop the spectrum on energy
@@ -401,6 +407,7 @@ class Spectrum(object, MVA):
         self.energy_axis = self.energy_axis[_from: to]
         self.energyorigin = self.energy_axis[0]
         self.get_dimensions_from_cube()
+
            
     def roll_xy(self, n_x, n_y = 1):
         '''Roll over the x axis n_x positions and n_y positions the former rows 
@@ -415,6 +422,7 @@ class Spectrum(object, MVA):
         '''
         self.data_cube = np.roll(self.data_cube, n_x, 1)
         self.data_cube[:,:n_x,:] = np.roll(self.data_cube[:,:n_x,:],n_y,2)
+        self._replot()
     
     def swap_x_y(self):
         '''Swaps the x and y axes'''
@@ -426,6 +434,7 @@ class Spectrum(object, MVA):
         self.yunits, self.xunits = self.xunits, self.yunits
         self.__new_cube(data, 'x and y swapped')
         self.get_dimensions_from_cube()
+
         
     def rebin(self, new_shape):
         '''
@@ -441,6 +450,7 @@ class Spectrum(object, MVA):
             self.image.data_cube = \
             rebin(self.image.data_cube, new_shape[1:])
         self.get_dimensions_from_cube()
+
     
     # Process __________________________________________________________________
 
@@ -513,6 +523,7 @@ class Spectrum(object, MVA):
             self.zero_loss.data_cube = m.model_cube
             self.zl_substracted = copy.deepcopy(self)
             self.zl_substracted.data_cube -= self.zero_loss.data_cube
+        self._replot()
         
     def _process_gain_correction(self):
         gain = self.gain_correction
@@ -720,7 +731,9 @@ class Spectrum(object, MVA):
                 order = 'F')
                 cube['history'].append('unfolded')
             self.get_dimensions_from_cube()
+            self._replot()
             print "\nSI unfolded"
+            
         else:
             print "Nothing done, cannot unfold an 1D SI"
             
@@ -743,11 +756,13 @@ class Spectrum(object, MVA):
         self._energy_mean = np.mean(self.data_cube, 0)
         data = (self.data_cube - self._energy_mean)
         self.__new_cube(data, 'energy centering')
+        self._replot()
         
     def undo_energy_center(self):
         if hasattr(self,'_energy_mean'):
             data = (self.data_cube + self._energy_mean)
             self.__new_cube(data, 'undo energy centering')
+            self._replot()
         
     def variance2one(self):
         # Whitening
@@ -755,25 +770,13 @@ class Spectrum(object, MVA):
         self._std = np.std(data, 0)
         data /= self._std
         self.__new_cube(data, 'variance2one')
+        self._replot()
         
     def undo_variance2one(self):
         if hasattr(self,'_std'):
             data = (self.data_cube * self._std)
             self.__new_cube(data, 'undo variance2one')
-        
-    def correct_pppc(self, pppc = None):
-        '''Divedes the data_cube by the pppc to correct the poissonian noise
-        variance
-        '''
-        if pppc:
-            microscope.pppc = pppc
-        if not self.treatments.pppc:
-            data = self.data_cube * microscope.pppc
-            self.__new_cube(data, 'pppc correction')
-            if microscope.pppc != 1:
-                self.treatments.pppc = 1
-        else:
-            print "Nothing done. The pppc correction was already applied"
+            self._replot()
                     
     def correct_bad_pixels(self, indexes):
         '''Substitutes the energy channels by the average of the 
@@ -788,6 +791,7 @@ class Spectrum(object, MVA):
             data[channel,:,:] = (data[channel-1,:,:] + \
             data[channel+1,:,:]) / 2
         self.__new_cube(data, 'bad pixels correction')
+        self._replot()
     
     def remove_background(self, start_energy = None, mask = None):
         '''Removes the power law background of the EELS SI if the present 
@@ -816,6 +820,7 @@ class Spectrum(object, MVA):
         print "Background stored in self.background"
         self.__new_cube(self.data_cube[:] - m.model_cube[:], 
         'background removal')
+        self._replot()
         
     def normalize(self, value = 1):
         '''Make the sum of each spectrum equal to a given value
@@ -830,6 +835,7 @@ class Spectrum(object, MVA):
                 sum_ = np.sum(data[:,ix,iy])
                 data[:,ix,iy] *= (value / sum_)
         self.__new_cube(data, 'normalization')
+        self._replot()
         
     def calculate_I0(self, threshold = None):
         '''Estimates the integral of the ZLP from a LL SI
@@ -872,6 +878,7 @@ class Spectrum(object, MVA):
                     data[:,ix,iy])
             self.__new_cube(data, 'gain correction')
             self.treatments.gain = 1
+            self._replot()
         else:
             print "Nothing done, the SI was already gain corrected"
 
@@ -925,6 +932,7 @@ class Spectrum(object, MVA):
         if fix_negative:
             data = np.abs(data)
         self.__new_cube(data, 'baseline correction')
+        self._replot()
 
     def readout_correction(self):
         if not self.treatments.readout:
@@ -936,6 +944,7 @@ class Spectrum(object, MVA):
                         data[:, ix, iy] -= self.readout.data_cube[:,0,0]
                 self.__new_cube(data, 'readout correction')
                 self.treatments.readout = 1
+                self._replot()
             else:
                 print "To correct the readout, please define the readout attribute"
         else:
@@ -974,6 +983,7 @@ class Spectrum(object, MVA):
                     data -= self.dark_current.data_cube
                     self.__new_cube(data, 'dark current correction')
                     self.treatments.dark_current = 1
+                    self._replot()
                 else:
                     
                     messages.warning_exit(
@@ -988,6 +998,7 @@ class Spectrum(object, MVA):
         '''Add Poissonian noise to the SI'''
         self.__new_cube(np.random.poisson(self.data_cube).astype('float64'), 
         'poissonian noise')
+        self._replot()
 
     def add_gaussian_noise(self, std):
         '''Add Gaussian noise to the SI
@@ -1000,6 +1011,7 @@ class Spectrum(object, MVA):
         Spectrum.simulate
         '''
         self.__new_cube(np.random.normal(self.data_cube,std), 'gaussian_noise')
+        self._replot()
         
     def align_with_map(self, shift_map, cut = 'left', 
     interpolation_kind = 'linear'):
@@ -1148,8 +1160,10 @@ class Spectrum(object, MVA):
             else:
                 spectrum.energy_crop(shift_map.max())
         apply_correction(self)
+
         if sync_SI is not None:
             apply_correction(sync_SI)
+
         return shift_map
 
     def find_low_loss_origin(self, sync_SI = None):
@@ -1178,6 +1192,7 @@ class Spectrum(object, MVA):
         j1 = z*np.log(j/z)
         self.__new_cube(np.fft.ifft(j1, axis = 0).real, 
         'fourier-log deconvolution')
+        self._replot()
         
     # IO _______________________________________________________________________
     
@@ -1221,7 +1236,7 @@ class Spectrum(object, MVA):
         print "History:"
         for treatment in self.history:
             print treatment
-        controllers.coordinates_controller.assign_double_coordinates(self)
+        controllers.coordinates_controller.assign_coordinates(self)
 
     def load_image(self,filename):
         print "Loading the image..."
@@ -1290,8 +1305,8 @@ class Spectrum(object, MVA):
                 Position in energy units of the roots of the first
             derivative if der_roots is True (False by default)
         '''
-        ix = self.coordinates.coordinates1.ix
-        iy = self.coordinates.coordinates1.iy
+        ix = self.coordinates.ix
+        iy = self.coordinates.iy
         i0 = np.argmax(self.data_cube[:,ix, iy])
         data = self.data_cube[i0 - channels:i0 + channels + 1, ix, iy]
         x = self.energy_axis[i0 - channels:i0 + channels + 1]
@@ -1755,6 +1770,7 @@ class Spectrum(object, MVA):
         shift : int
         '''
         self.data_cube = np.roll(self.data_cube, shift, axis)
+        self._replot()
         
     def remove_Shirley_background(self, max_iter = 10, eps = 1e-6):
         '''Remove the inelastic background of photoemission SI by the shirley 
@@ -1841,7 +1857,9 @@ class Spectrum(object, MVA):
         sc.data_cube[(pw+1):(pw+1+mw),:,:].mean(0)
         self.data_cube[1024:,:,:] += step.reshape((1, step.shape[0], 
         step.shape[1]))
+        self._replot()
         return step
+    
     def get_calibration_from(self, s):
         '''Copy the calibration from another Spectrum instance
         Parameters
@@ -1919,48 +1937,60 @@ class Spectrum(object, MVA):
                 spatial_mask = \
                 spatial_mask.reshape((-1,), order = 'F')
         return spatial_mask
-        
+
+    def get_image(self, spectral_range = slice(None), background_range = None):
+        data = self.data_cube
+        if self.is_spectrum_line() is True:
+            return self.data_cube.squeeze()
+        elif self.is_single_spectrum() is True:
+            return None
+        if background_range is not None:
+            bg_est = utils.two_area_powerlaw_estimation(self, 
+                                                        background_range.start, 
+                                                        background_range.stop, )
+            A = bg_est['A'][np.newaxis,:,:]
+            r = bg_est['r'][np.newaxis,:,:]
+            E = self.energy_axis[spectral_range,np.newaxis,np.newaxis]
+            bg = A*E**-r
+            return (data[spectral_range,:,:] - bg).sum(0)
+        else:
+            return data[spectral_range,:,:].sum(0)
+    
     def plot(self):
         '''Plots the current spectrum to the screen and a map with a cursor to 
         explore the SI.
         '''
-        controllers.coordinates_controller.assign_double_coordinates(self)
-        if self.hse is not None:
-            self.hse.plot()
-            return
         
-        self.hse = mpl_hse.MPL_HyperSpectrum_Explorer()
-        self.hse.spectrum_title = self.title
-        self.hse.image_title = self.title
-        self.hse.spectrum_data_function = self.__call__
-        self.hse.axis = self.energy_axis
-        self.hse.xlabel = 'Energy Loss (%s)' % self.energyunits
-        self.hse.ylabel = 'Counts'
-        self.hse.line_options['left_axis']['data1']['type'] = 'step'
-        self.hse.line_options['right_axis']['data1']['type'] = 'step'
-        shape = self.data_cube.shape
-        self.hse.left_pointer = self.coordinates.coordinates1.pointer
-        self.hse.right_pointer = self.coordinates.coordinates2.pointer
-        if shape[1] > 1 and shape[2] > 1:
+        # If new coordinates are assigned
+        controllers.coordinates_controller.assign_coordinates(self)
+        if self.hse is not None:
+#            if self.coordinates is not self.hse.coordinates:
+            try:
+                self.hse.close()
+            except:
+                pass
+            del(self.hse)
+            self.hse = None
             
-            if self.image is not None:
-                self.hse.image = self.image.data_cube
-            else:
-                self.hse.image = self.data_cube.sum(0)
-            self.hse.pixel_size = self.xscale
-            self.hse.pixel_units = self.xunits
-            self.hse.plot_scale_bar = True
-            self.hse.line_options['left_axis']['data1']['color'] = \
-            self.hse.left_pointer.color
-            self.hse.line_options['right_axis']['data1']['color'] = \
-            self.hse.right_pointer.color
-        elif shape[1] > 1 and shape[2] == 1:
-            self.hse.image = self.data_cube.squeeze()
-            self.hse.line_options['left_axis']['data1']['color'] = \
-            self.hse.left_pointer.color
-            self.hse.line_options['right_axis']['data1']['color'] = \
-            self.hse.right_pointer.color
-        elif shape[1] == 1 and shape[2] == 1:
-            self.hse.image = None
-            self.hse.line_options['left_axis']['data1']['color'] = 'red'
+                    
+        # Spectrum properties
+        self.hse = drawing.mpl_hse.MPL_HyperSpectrum_Explorer()
+        self.hse.spectrum_data_function = self.__call__
+        self.hse.spectrum_title = 'EELS Spectrum'
+        self.hse.xlabel = 'Energy Loss (%s)' % self.energyunits
+        self.hse.ylabel = 'Counts (arbitraty)'
+        self.hse.coordinates = self.coordinates
+        self.hse.axis = self.energy_axis
+        
+        # Image properties
+        self.hse.image_data_function = self.get_image
+        self.hse.image_title = ''
+        self.hse.pixel_size = self.xscale
+        self.hse.pixel_units = self.xunits
+        
         self.hse.plot()
+        
+    def _replot(self):
+        if self.hse is not None:
+            if self.hse.is_active() is True:
+                self.plot()

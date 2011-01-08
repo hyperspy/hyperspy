@@ -31,10 +31,8 @@ from utils import two_area_powerlaw_estimation
 from estimators import Estimators
 from optimizers import Optimizers
 from model_controls import Controls
-import coordinates
 import messages
-import mpl_hse
-import widgets
+import drawing.spectrum
 
 class Model(list, Optimizers, Estimators, Controls):
     '''Build a fit a model
@@ -55,7 +53,6 @@ class Model(list, Optimizers, Estimators, Controls):
     def __init__(self, data, auto_background = True, auto_add_edges = True):
         from experiments import Experiments
         from spectrum import Spectrum
-        self.hse = None
         self.auto_update_plot = False
         if isinstance(data, Experiments):
             self.experiments = data
@@ -90,10 +87,9 @@ class Model(list, Optimizers, Estimators, Controls):
             if self.convolution_axis is None:
                 self.experiments.set_convolution_axis()
         else:
-            self.convolved = False 
-        self.ix, self.iy = coordinates.cursor.ix, coordinates.cursor.iy
-        coordinates.cursor.connect(self.charge)
-        coordinates.cursor2.connect(self.charge)
+            self.convolved = False
+        self.coordinates = self.hl.coordinates
+        self.coordinates.connect(self.charge)
         if self.hl.edges and auto_add_edges is True:
             self.extend(self.hl.edges)
         
@@ -186,11 +182,11 @@ class Model(list, Optimizers, Estimators, Controls):
     def connect_parameters2update_plot(self):   
         for component in self:
             for parameter in component.parameters:
-                if self.hse is not None:
-                    parameter.connect(self.hse._update_spectrum_lines_cursor1)
-                    parameter.connect(self.hse._update_spectrum_lines_cursor2)
-                    parameter.connection_activated = True
-        self.auto_update_plot = True
+                if self.hl.hse is not None:
+                    for line in self.hl.hse.spectrum_plot.left_ax_lines:
+                        parameter.connect(line.update)
+                    parameter.connection_activated = False
+
                     
     def set_auto_update_plot(self, tof):
         for component in self:
@@ -207,7 +203,7 @@ class Model(list, Optimizers, Estimators, Controls):
             for ix in range(self.model_cube.shape[1]):
                 print "x = %i\ty = %i" % (ix, iy)
                 self.set_coordinates(ix, iy)
-                self.model_cube[self.channel_switches, self.ix, self.iy] = \
+                self.model_cube[self.channel_switches, self.coordinates.ix, self.coordinates.iy] = \
                 self.__call__(
                 non_convolved = not self.convolved, onlyactive = True)
                 self.model_cube[self.channel_switches == False,:,:] = np.nan
@@ -303,7 +299,8 @@ class Model(list, Optimizers, Estimators, Controls):
         If the parameters array has not being defined yet it creates it filling 
         it with the current parameters.'''
         for component in self:
-            component.store_current_parameters_in_map(self.ix,self.iy)
+            component.store_current_parameters_in_map(
+            *self.coordinates.coordinates)
 
     def charge(self, only_fixed = False):
         '''Charge the parameters for the current spectrum from the parameters 
@@ -318,12 +315,13 @@ class Model(list, Optimizers, Estimators, Controls):
         if switch_aap is True:
             self.set_auto_update_plot(False)
         for component in self :
-            component.charge_value_from_map(self.ix,self.iy, only_fixed = 
+            component.charge_value_from_map(
+            self.coordinates.ix,self.coordinates.iy, only_fixed = 
             only_fixed)
         if switch_aap is True:
             self.set_auto_update_plot(True)
-            self.hse._update_spectrum_lines_cursor1()
-            self.hse._update_spectrum_lines_cursor2()
+            for line in self.hl.hse.spectrum_plot.left_ax_lines:
+                line.update()
 
     def _charge_p0(self, p_std = None):
         '''Charge the free data for the current coordinates (x,y) from the
@@ -346,15 +344,15 @@ class Model(list, Optimizers, Estimators, Controls):
                 counter += component.nfree_param
 
     # Defines the functions for the fitting process -------------------------
-    def model2plot(self, cursor, out_of_region2nans = True):
-        if cursor == 2:
-            self.ix, self.iy = coordinates.cursor2.ix, coordinates.cursor2.iy
-            self.charge()        
+    def model2plot(self, coordinates, out_of_region2nans = True):
+        old_coord = None
+        if coordinates is not self.coordinates:
+            old_coord = self.coordinates.coordinates
+            self.coordinates.ix, self.coordinates.iy = coordinates.coordinates
         s = self.__call__(non_convolved=False, onlyactive=True)
-        if cursor == 2:
-                    self.ix, self.iy = \
-                    coordinates.cursor.ix, coordinates.cursor.iy
-                    self.charge()
+        if old_coord is not None:
+            self.coordinates.ix, self.coordinates.iy = old_coord
+            self.charge()
         if out_of_region2nans is True:
             ns = np.zeros((self.hl.energy_axis.shape))
             ns[:] = np.nan
@@ -418,7 +416,7 @@ class Model(list, Optimizers, Estimators, Controls):
                         sum_)
                     counter+=component.nfree_param
             to_return = sum_ + np.convolve(
-                self.ll.data_cube[: , self.ix, self.iy], 
+                self.ll.data_cube[: , self.coordinates.ix, self.coordinates.iy], 
                 sum_convolved, mode="valid")            
             return to_return
 
@@ -492,7 +490,8 @@ class Model(list, Optimizers, Estimators, Controls):
                         component.nfree_param],self.hl.energy_axis), sum)
                     counter+=component.nfree_param
 
-            return (sum + np.convolve(self.ll.data_cube[:,self.ix,self.iy],
+            return (sum + np.convolve(self.ll.data_cube[
+            :,self.coordinates.ix,self.coordinates.iy],
         sum_convolved,mode="valid"))[self.channel_switches]
 
         else:
@@ -523,14 +522,16 @@ class Model(list, Optimizers, Estimators, Controls):
                         for parameter in component.free_parameters :
                             par_grad = np.convolve(
                             parameter.grad(self.experiments.convolution_axis), 
-                            self.ll.data_cube[:,self.ix,self.iy], 
+                            self.ll.data_cube[
+                            :,self.coordinates.ix,self.coordinates.iy], 
                             mode="valid")
                             if parameter._twins:
                                 for parameter in parameter._twins:
                                     np.add(par_grad, np.convolve(
                                     parameter.grad(
                                     self.experiments.convolution_axis), 
-                                    self.ll.data_cube[:, self.ix, self.iy], 
+                                    self.ll.data_cube[
+                                    :, self.coordinates.ix, self.coordinates.iy], 
                                     mode="valid"), par_grad)
                             grad = np.vstack((grad, par_grad))
                         counter += component.nfree_param
@@ -655,7 +656,7 @@ class Model(list, Optimizers, Estimators, Controls):
                 (self.hl.xdimension, self.hl.ydimension))
             bg.r.map = estimation['r']
             bg.A.map = estimation['A']
-            bg.charge_value_from_map(self.ix,self.iy)
+            bg.charge_value_from_map(self.coordinates.ix,self.coordinates.iy)
         except ValueError:
             messages.warning(
             "The power law background parameters could not be estimated\n"
@@ -738,7 +739,7 @@ class Model(list, Optimizers, Estimators, Controls):
 
     def multifit(self, background_fit_E1 = None, mask = None, kind = "normal", 
                  fitter = "leastsq", charge_only_fixed = False, grad = False, 
-                 autosave = "pixel", **kwargs) :
+                 autosave = False, **kwargs) :
         if autosave is not None:
             fd, autosave_fn = tempfile.mkstemp(prefix = 'eelslab_autosave-', 
             dir = '.', suffix = '.par')
@@ -756,20 +757,29 @@ class Model(list, Optimizers, Estimators, Controls):
         for y in np.arange(0,self.hl.ydimension) :
             for x in np.arange(0,self.hl.xdimension) :
                 if mask is None or mask[x,y] :
-                    self.ix = x
-                    self.iy = y
+                    self.coordinates.ix = x
+                    self.coordinates.iy = y
                     self.charge(only_fixed=charge_only_fixed)
                     print '-'*40
-                    print "Fitting x=",self.ix," y=",self.iy
+                    print "Fitting x=",self.coordinates.ix," y=",self.coordinates.iy
                     if kind  == "smart" :
                         self.smart_fit(background_fit_E1 = None,
                          fitter = fitter, **kwargs)
                     elif kind == "normal" :
                         self.fit(fitter = fitter, grad = grad, **kwargs)
                     if autosave == 'pixel':
-                        self.save_parameters2file(autosave_fn)
+                        try:
+                            # Saving can fail, e.g., if the std was not present 
+                            # due to a current leastsq bug
+                            # Therefore we only try to save...
+                            self.save_parameters2file(autosave_fn)
+                        except:
+                            pass
                 if autosave == 'row':
-                        self.save_parameters2file(autosave_fn)
+                        try:
+                            self.save_parameters2file(autosave_fn)
+                        except:
+                            pass
 
         messages.information(
         'Removing the temporary file %s' % (autosave_fn + 'par'))
@@ -866,61 +876,29 @@ class Model(list, Optimizers, Estimators, Controls):
                 for subshell in elements[element]:
                     print "%s_%s\t%f" % (element, subshell, 
                     elements[element][subshell])
-
-    
-    def plot(self):
+       
+    def plot(self, auto_update_plot = True):
         '''Plots the current spectrum to the screen and a map with a cursor to 
         explore the SI.
         '''
-        if self.hse is not None:
-            self.hse.plot()
-            return
         
-        self.hse = mpl_hse.MPL_HyperSpectrum_Explorer()
+        # If new coordinates are assigned
+        self.hl.plot()
+        hse = self.hl.hse
+        l1 = hse.spectrum_plot.left_ax_lines[0]
+        color = l1.line.get_color()
+        l1.line_properties_helper(color, 'scatter')
+        l1.set_properties()
+        
+        l2 = drawing.spectrum.SpectrumLine()
+        l2.data_function = self.model2plot
+        l2.line_properties_helper(color, 'line')        
+        # Add the line to the figure
+          
+        hse.spectrum_plot.add_line(l2)
+        l2.plot()
         self.connect_parameters2update_plot()
-        self.hse.spectrum_title = self.hl.title
-        self.hse.image_title = self.hl.title
-        self.hse.spectrum_data_function = self.hl.__call__
-        self.hse.spectrum_data2_function = self.model2plot
-        self.hse.axis = self.hl.energy_axis
-        self.hse.xlabel = 'Energy Loss (%s)' % self.hl.energyunits
-        self.hse.ylabel = 'Counts'
-        self.hse.line_options['left_axis']['data1']['type'] = 'scatter'
-        self.hse.line_options['right_axis']['data1']['type'] = 'scatter'
-        self.hse.line_options['left_axis']['data2']['type'] = 'line'
-        self.hse.line_options['right_axis']['data2']['type'] = 'line'
-        shape = self.hl.data_cube.shape
-        if shape[1] > 1 and shape[2] > 1:
-            self.hse.pointers = widgets.cursors
-            if self.hl.image is not None:
-                self.hse.image = self.hl.image.data_cube
-            else:
-                self.hse.image = self.hl.data_cube.sum(0)
-            self.hse.pixel_size = self.hl.xscale
-            self.hse.pixel_units = self.hl.xunits
-            self.hse.plot_scale_bar = True
-            self.hse.line_options['left_axis']['data1']['color'] = \
-            self.hse.pointers.cursor_color
-            self.hse.line_options['right_axis']['data1']['color'] = \
-            self.hse.pointers.cursor2_color
-            self.hse.line_options['left_axis']['data2']['color'] = \
-            self.hse.pointers.cursor_color
-            self.hse.line_options['right_axis']['data2']['color'] = \
-            self.hse.pointers.cursor2_color
-        elif shape[1] > 1 and shape[2] == 1:
-            self.hse.pointers = widgets.lines
-            self.hse.image = self.hl.data_cube.squeeze()
-            self.hse.line_options['left_axis']['data1']['color'] = \
-            self.hse.pointers.cursor_color
-            self.hse.line_options['right_axis']['data1']['color'] = \
-            self.hse.pointers.cursor2_color
-            self.hse.line_options['left_axis']['data2']['color'] = \
-            self.hse.pointers.cursor_color
-            self.hse.line_options['right_axis']['data2']['color'] = \
-            self.hse.pointers.cursor2_color
-        elif shape[1] == 1 and shape[2] == 1:
-            self.hse.pointers = None
-            self.hse.image = None
-            self.hse.line_options['left_axis']['data1']['color'] = 'red'
-            self.hse.line_options['left_axis']['data2']['color'] = 'blue'
-        self.hse.plot()        
+        self.set_auto_update_plot(True)
+        # TODO Set autoupdate to False on close
+
+        
