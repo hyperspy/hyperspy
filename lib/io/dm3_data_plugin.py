@@ -664,9 +664,9 @@ class DM3ImageFile(object):
         swapelem(units, 0, 1)
         
         self.dimensions = [ (sizes[i][1][1][1],
-                             origins[i][1][1][1],
-                             scales[i][1][1][1],
-                             units[i][1][1][1])
+                        origins[i][1][1][1],
+                        scales[i][1][1][1],
+                        units[i][1][1][1])
                        for i in range(len(sizes))]
 
         self.imsize = [self.dimensions[i][0]
@@ -822,11 +822,11 @@ def file_reader(filename, data_type=None):
     calibration_dict = {}
     acquisition_dict = {}
     
-    if 'image' in dm3.mode:
+    if '2D' in dm3.mode:
         data_type = 'Image'
-    elif 'spim' in dm3.mode:
+    elif '3D' in dm3.mode:
         data_type = 'SI'
-    elif 'spectrum' in dm3. mode:
+    elif '1D' in dm3. mode:
         raise IOError, "single spectra can't be loaded... yet"
 
     if dm3.name:
@@ -836,16 +836,20 @@ def file_reader(filename, data_type=None):
 
     data_cube = dm3.data
 
-    # Scale the origins
-    dm3.origin = np.asarray(dm3.origin)
-    dm3.scale = np.asarray(dm3.scale)
-    dm3.origin *= dm3.scale
-
     # Determine the dimensions
     dimensions = len(dm3.imsize)
     units = ['' for i in range(dimensions)]
     origins = np.zeros((dimensions), dtype = np.float)
     scales =  np.ones((dimensions), dtype = np.float)
+
+    # Scale the origins
+    units = np.asarray([dm3.dimensions[i][3]
+                          for i in range(len(dm3.dimensions))])
+    origins = np.asarray([dm3.dimensions[i][1]
+                             for i in range(len(dm3.dimensions))])
+    scales =np.asarray([dm3.dimensions[i][2]
+                           for i in range(len(dm3.dimensions))])
+    origins *= scales
 
     if data_type == 'SI': 
         print("Treating the data as an SI")
