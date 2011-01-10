@@ -815,9 +815,14 @@ class DM3ImageFile(object):
         return data
 
 
-def file_reader(filename, data_type=None):
+def file_reader(filename, data_type=None, data_id=1):
+    """Reads a DM3 file and loads the data into the
+    appropriate class.
+    data_id can be specified to load a given image
+    within a DM3 file that contains more than one.
+    """
 
-    dm3 = DM3ImageFile(filename)
+    dm3 = DM3ImageFile(filename, data_id)
     
     calibration_dict = {}
     acquisition_dict = {}
@@ -837,19 +842,16 @@ def file_reader(filename, data_type=None):
     data_cube = dm3.data
 
     # Determine the dimensions
-    dimensions = len(dm3.imsize)
-    units = ['' for i in range(dimensions)]
-    origins = np.zeros((dimensions), dtype = np.float)
-    scales =  np.ones((dimensions), dtype = np.float)
-
-    # Scale the origins
-    units = np.asarray([dm3.dimensions[i][3]
-                          for i in range(len(dm3.dimensions))])
+    units = [dm3.dimensions[i][3] for i in range(len(dm3.dimensions))]
     origins = np.asarray([dm3.dimensions[i][1]
-                             for i in range(len(dm3.dimensions))])
+                          for i in range(len(dm3.dimensions))],
+                         dtype=np.float)
     scales =np.asarray([dm3.dimensions[i][2]
-                           for i in range(len(dm3.dimensions))])
-    origins *= scales
+                        for i in range(len(dm3.dimensions))],
+                       dtype=np.float)
+    
+    # Scale the origins
+    origins = origins * scales
 
     if data_type == 'SI': 
         print("Treating the data as an SI")
@@ -863,25 +865,25 @@ def file_reader(filename, data_type=None):
 
         # In EELSLab1 the first index must be the energy (this changes in EELSLab2)
         # Rearrange the data_cube and parameters to have the energy first
-        if 'eV' in dm3.units: #could use regular expressions or compare to a 'energy units' dictionary/list
-            energy_index = dm3.units.index('eV')
-        elif 'keV' in dm3.units:
-            energy_index = dm3.units.index('keV')
+        if 'eV' in units: #could use regular expressions or compare to a 'energy units' dictionary/list
+            energy_index = units.index('eV')
+        elif 'keV' in units:
+            energy_index = units.index('keV')
         else:
             energy_index = -1
 
         # In DM the origin is negative. Change it to positive
-        dm3.origin[energy_index] *= -1
+        origins[energy_index] *= -1
     
         data_cube = np.rollaxis(data_cube, energy_index, 0)
-        origins = np.roll(dm3.origin, 1)
-        scales = np.roll(dm3.scale, 1)
-        units = np.roll(dm3.units, 1)
+        origins = np.roll(origins, 1)
+        scales = np.roll(scales, 1)
+        units = np.roll(units, 1)
 
         # Store the calibration in the calibration dict
-        origins_keys = ['energyorigin', 'xorigin', 'yorigin']
-        scales_keys = ['energyscale', 'xscale', 'yscale']
-        units_keys = ['energyunits', 'xunits', 'yunits']
+        origins_keys = ['energyorigin', 'yorigin', 'xorigin']
+        scales_keys = ['energyscale', 'yscale', 'xscale']
+        units_keys = ['energyunits', 'yunits', 'xunits']
 
         for value in origins:
             calibration_dict.__setitem__(origins_keys.pop(0), value)
