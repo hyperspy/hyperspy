@@ -58,6 +58,10 @@ writes_spectrum_image = False
 tag_group_pattern = re.compile('\.Group[0-9]{1,}$')
 tag_data_pattern = re.compile('\.Data[0-9]{1,}$')
 image_data_pattern = re.compile('\.Calibrations\.Data$')
+micinfo_pattern = re.compile('\.Microscope Info$')
+orsay_pattern = re.compile('\.spim$')
+# root_pattern = re.compile('^\w{1,}\.')
+image_tags_pattern = re.compile('.*ImageTags\.')
 ####
 
 read_char = read_byte # dm3 uses chars for 1-Byte signed integers
@@ -353,7 +357,7 @@ def crawl_dm3(f, data_dict, endian, ntags, group_name='root',
             if debug > 5 and debug < 10:
                 print('Infoarray:', infoarray)
 
-            # Don't overwrite duplicate keys, instead, rename them!
+            # Don't overwrite duplicate keys, just rename them
             while data_dict.has_key(data_key):
                 data_search = tag_data_pattern.search(data_key)
                 tag_name = data_search.group()
@@ -405,8 +409,17 @@ def crawl_dm3(f, data_dict, endian, ntags, group_name='root',
                 else:
                     group_name = group_name + tag_name
             else:
+                orsay_search = orsay_pattern.search(group_name)
+                if orsay_search: # move orsay-specific dir in the ImageTags dir
+                    o = 'Orsay' + orsay_search.group()
+                    r = image_tags_pattern.search(group_name).group()
+                    group_name = r + o
+                micinfo_search = micinfo_pattern.search(group_name)
+                if micinfo_search: # move Microscope Info in the ImageTags dir
+                    m = micinfo_search.group()[1:]
+                    r = image_tags_pattern.search(group_name).group()
+                    group_name = r + m
                 group_name += '.' + tag_name
-            
             if debug > 3 and debug < 10:
                 print('Crawling at address:', f.tell())
             ntags = parse_tag_group(f)[2]
@@ -511,6 +524,7 @@ class DM3ImageFile(object):
     rootdir = ['DM3',]
     endian = rootdir + ['isLittleEndian',]
     version = rootdir + ['Version',]
+    micinfodir = rootdir + ['Microscope Info',]
     rootdir = rootdir + ['DocumentObjectList',] # contains DocumentTags,Group0..
     imlistdir = rootdir + ['DocumentTags', 'Image Behavior', 'ImageList']
     # imlistdir contains ImageSourceList, Group0, Group1, ... Group[N]
@@ -521,10 +535,11 @@ class DM3ImageFile(object):
     imdatadir = ['ImageData',]
     imtagsdir = imdatadir + ['ImageTags',]
     imname = imtagsdir + ['Name',]
-    micinfodir_orsay = imtagsdir + ['Microscope Info',] # Orsay only ?
-    micinfodir = imtagsdir + ['Acquisition', 'DataBar', 'Microscope Info']
-    orsaydir = micinfodir_orsay + ['Private', 'Processing', 'spim',
-                                   'detectors', 'eels']
+    # micinfodir_orsay = imtagsdir + ['Microscope Info',] # Orsay only ?
+    # micinfodir = imtagsdir + ['Acquisition', 'DataBar', 'Microscope Info']
+    # orsaydir = micinfodir_orsay + ['Private', 'Processing', 'spim',
+    #                                'detectors', 'eels']
+    orsaydir = imtagsdir + ['Orsay', 'spim', 'detectors', 'eels']
     vsm = orsaydir + ['vsm',]
     dwelltime = orsaydir + ['dwell time',]
     orsaymicdir = orsaydir + ['microscope',]
@@ -858,13 +873,11 @@ def file_reader(filename, data_type=None, data_id=1):
 
         # only Orsay Spim is supported for now
         if dm3.exposure:
-            acquisition_dict['exposure'] = dm3.exposure
-            
+            acquisition_dict['exposure'] = dm3.exposure            
         if dm3.vsm:
             calibration_dict['vsm'] = float(dm3.vsm)
 
         # In EELSLab1 the first index must be the energy (this changes in EELSLab2)
-        # Rearrange the data_cube and parameters to have the energy first
         if 'eV' in units: #could use regular expressions or compare to a 'energy units' dictionary/list
             energy_index = units.index('eV')
         elif 'keV' in units:
@@ -874,7 +887,9 @@ def file_reader(filename, data_type=None, data_id=1):
 
         # In DM the origin is negative. Change it to positive
         origins[energy_index] *= -1
-    
+        
+        # Rearrange the data_cube and parameters to have the energy first
+        #MAY NOT WORK WITH SPLIs/ChronoSPLIS
         data_cube = np.rollaxis(data_cube, energy_index, 0)
         origins = np.roll(origins, 1)
         scales = np.roll(scales, 1)
@@ -910,10 +925,10 @@ def file_reader(filename, data_type=None, data_id=1):
         for value in units:
             calibration_dict.__setitem__(units_keys.pop(0), value)
     else:
-        raise TypeError, "could not identify the file's data_type"
+        raise TypeError, "could not identify the file data_type"
 
     calibration_dict['data_cube'] = data_cube
-    
+
     dictionary = {
         'data_type' : data_type, 
         'calibration' : calibration_dict, 
