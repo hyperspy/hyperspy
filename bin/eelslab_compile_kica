@@ -2,7 +2,7 @@
 
 import os,sys
 
-from eelslab import mva
+from silib import mva
 
 if os.geteuid() != 0:
     print "sorry, you need to run this as root"
