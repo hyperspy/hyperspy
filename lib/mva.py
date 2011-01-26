@@ -743,7 +743,7 @@ class MVA():
                 if maps is True:
                     pl[i].save('map_ic-%s.%s' % (i, image_format))
                 else:
-                    pl[i].save('profile_ic-%s' % (i, spectrum_format))
+                    pl[i].save('profile_ic-%s.%s' % (i, spectrum_format))
             else:
                 element = elements[i]
                 sp.save('ic-%s.%s' % (element, spectrum_format))

@@ -22,9 +22,9 @@ import os
 
 import messages
 from defaults_parser import defaults
-from io import netcdf, msa, digital_micrograph, fei, bin, mrc, pil
+from io import netcdf, msa, digital_micrograph, fei, bin, mrc, pil, buker_raw
 
-io_plugins = (netcdf, msa, digital_micrograph, fei, bin, mrc, pil)
+io_plugins = (netcdf, msa, digital_micrograph, fei, bin, mrc, pil, buker_raw)
 
 def load(filename, data_type = None, **kwds):
     '''
@@ -75,6 +75,9 @@ def load_with_reader(filename, reader, data_type = None, **kwds):
             if defaults.plot_on_load is True:
                 im.plot()
             objects.append(im)
+        else:
+            messages.warning_exit(
+            'The data type was not recognised')
     if len(objects) == 1:
         objects = objects[0]
     return objects
