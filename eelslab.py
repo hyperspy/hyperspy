@@ -29,6 +29,7 @@ from silib.file_io import load
 from silib.edges_db import edges_dict
 from silib.microscope import microscope
 from silib.defaults_parser import defaults
+from silib import utils
 
 __version__ = silib.Release.version
 __revision__ = silib.Release.revision
