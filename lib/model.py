@@ -33,6 +33,7 @@ from optimizers import Optimizers
 from model_controls import Controls
 import messages
 import drawing.spectrum
+import progressbar
 
 class Model(list, Optimizers, Estimators, Controls):
     '''Build a fit a model
@@ -754,14 +755,17 @@ class Model(list, Optimizers, Estimators, Controls):
            messages.warning_exit(
            "The mask must be an array with the same espatial dimensions as the" 
            "data cube")
-        for y in np.arange(0,self.hl.ydimension) :
-            for x in np.arange(0,self.hl.xdimension) :
+        pbar = progressbar.progressbar(
+        maxval = (self.hl.ydimension * self.hl.xdimension))
+        i = 0
+        for y in np.arange(0,self.hl.ydimension):
+            for x in np.arange(0,self.hl.xdimension):
                 if mask is None or mask[x,y] :
                     self.coordinates.ix = x
                     self.coordinates.iy = y
                     self.charge(only_fixed=charge_only_fixed)
-                    print '-'*40
-                    print "Fitting x=",self.coordinates.ix," y=",self.coordinates.iy
+#                    print '-'*40
+#                    print "Fitting x=",self.coordinates.ix," y=",self.coordinates.iy
                     if kind  == "smart" :
                         self.smart_fit(background_fit_E1 = None,
                          fitter = fitter, **kwargs)
@@ -775,11 +779,14 @@ class Model(list, Optimizers, Estimators, Controls):
                             self.save_parameters2file(autosave_fn)
                         except:
                             pass
+                    i += 1
+                    pbar.update(i)
                 if autosave == 'row':
                         try:
                             self.save_parameters2file(autosave_fn)
                         except:
                             pass
+        pbar.finish()
 
         messages.information(
         'Removing the temporary file %s' % (autosave_fn + 'par'))
