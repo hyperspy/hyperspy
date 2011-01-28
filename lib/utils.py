@@ -85,7 +85,7 @@ def two_area_powerlaw_estimation(SI, E1, E2):
     
     energy2index = SI.energy2index
     i1 = energy2index(E1)
-    if energy2index(E2) - i1 % 2 == 0:
+    if (energy2index(E2) - i1) % 2 == 0:
         i2 = energy2index(E2)
     else :
         i2 = energy2index(E2) - 1
