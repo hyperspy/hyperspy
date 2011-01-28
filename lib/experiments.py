@@ -12,6 +12,7 @@ from utils import generate_axis, check_cube_dimensions, check_energy_dimensions
 from spectrum import Spectrum
 from utils import estimate_drift
 from file_io import load
+from progressbar import progressbar
 
 class Experiments:
     def __init__(self, hl, ll=None):
@@ -148,10 +149,13 @@ class Experiments:
         to_dec_data = copy.copy(to_dec.data_cube)
         length = kernel_data.shape[0]
         print "\nPerfoming Richardson-Lucy iterative deconvolution"
+        dcshape = to_dec.data_cube.shape
+        pbar = progressbar(maxval = (dcshape[1] * dcshape[2]))
+        index = 0
         for ix in range(to_dec.data_cube.shape[1]):
             for iy in range(to_dec.data_cube.shape[2]):
                 if mask is None or mask[ix,iy]:
-                    print "\n(%s, %s)" % (ix, iy)
+#                    print "\n(%s, %s)" % (ix, iy)
                     kernel_ = kernel_data[:, ix, iy]
                     imax = kernel_.argmax()
                     mimax = length -1 - imax
@@ -162,10 +166,13 @@ class Experiments:
                         O = O * (np.convolve(kernel_[::-1], 
                         D / first)[mimax: mimax + length])
                     to_dec_data[:, ix, iy] = O
+                index += 1
+                pbar.update(index)
+        pbar.finish()
         to_dec._Spectrum__new_cube(to_dec_data, 
         'poissonian R-L deconvolution %i iterations' % iterations)
         
-    def correct_spatial_drift(selfll ):
+    def correct_spatial_drift(self):
         '''Corrects the spatial drift between the CL and LL. It estimates 
         the drift by cross-correlation and crops the ll and cl SI and images to 
         the overlapping area
