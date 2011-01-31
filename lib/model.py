@@ -899,7 +899,7 @@ class Model(list, Optimizers, Estimators, Controls):
         
         l2 = drawing.spectrum.SpectrumLine()
         l2.data_function = self.model2plot
-        l2.line_properties_helper(color, 'line')        
+        l2.line_properties_helper('blue', 'line')        
         # Add the line to the figure
           
         hse.spectrum_plot.add_line(l2)
@@ -907,5 +907,3 @@ class Model(list, Optimizers, Estimators, Controls):
         self.connect_parameters2update_plot()
         self.set_auto_update_plot(True)
         # TODO Set autoupdate to False on close
-
-        

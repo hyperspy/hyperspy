@@ -48,7 +48,7 @@ class SpectrumFigure():
         self.title = ''
         self.create_figure()
         self.create_left_axis()
-        self.create_right_axis()
+#        self.create_right_axis()
 
         
     def create_figure(self):
@@ -64,7 +64,7 @@ class SpectrumFigure():
     def create_right_axis(self):
         if self.left_ax is None:
             self.create_left_axis()
-        self.right_axis = self.left_ax.twinx()
+        self.right_ax = self.left_ax.twinx()
         
     def add_line(self, line, ax = 'left'):
         if ax == 'left':
