@@ -66,7 +66,7 @@ def generate_axis(origin,step,N,index=0):
 N)    
 
 
-def two_area_powerlaw_estimation(SI, E1, E2):
+def two_area_powerlaw_estimation(SI, E1, E2, only_current_spectrum = False):
     '''Estimate a power law fit by the two area method
     
     Parameters
@@ -92,9 +92,12 @@ def two_area_powerlaw_estimation(SI, E1, E2):
     E2 = SI.energy_axis[i2]
     i3 = (i2+i1) / 2
     E3 = SI.energy_axis[i3]
-
-    I1 = SI.energyscale * np.sum(SI.data_cube[i1:i3], 0)
-    I2 = SI.energyscale * np.sum(SI.data_cube[i3:i2],0)
+    if only_current_spectrum is True:
+        dc = SI()
+    else:
+        dc = SI.data_cube
+    I1 = SI.energyscale * np.sum(dc[i1:i3], 0)
+    I2 = SI.energyscale * np.sum(dc[i3:i2],0)
     r = 2*np.log(I1 / I2) / math.log(E2/E1)
     k = 1 - r
     A = k * I2 / (E2**k - E3**k)
