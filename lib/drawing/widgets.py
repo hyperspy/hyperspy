@@ -334,7 +334,7 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
     
     def __init__(self, ax, **kwargs):
         matplotlib.widgets.SpanSelector.__init__(
-        self, ax, lambda : True, 'horizontal', useblit = False, **kwargs)
+        self, ax, direction = 'horizontal', useblit = False, **kwargs)
         self.tolerance = 1 # The tolerance in points to pick the rectangle sizes
         self.on_move_cid = None
 
@@ -343,7 +343,7 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         iteractivity machinery passes to modify mode'''
         if self.pressv is None or (self.ignore(event) and not self.buttonDown): return
         self.buttonDown = False
-        
+        self.onselect()
         # We first disconnect the previous signals
         for cid in self.cids:
             self.canvas.mpl_disconnect(cid)
