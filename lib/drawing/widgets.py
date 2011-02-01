@@ -22,11 +22,13 @@ from __future__ import division
 import copy
 
 try:
+    import matplotlib
     import matplotlib.pyplot as plt
 except:
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
+
 import numpy as np
 
 from utils import on_window_close
@@ -321,5 +323,110 @@ def scale_bar(ax, units, pixel_size, color = 'white', position = None,
     ax.scale_bar = Scale_Bar(ax = ax, units = units, pixel_size = pixel_size, 
     color = color, position = position, ratio = ratio, lw = lw, 
     lenght_in_units = lenght_in_units)
+    
+def in_interval(number, interval):
+        if number >= interval[0] and number <= interval[1]:
+            return True
+        else:
+            return False  
+            
+class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
+    
+    def __init__(self, ax, **kwargs):
+        matplotlib.widgets.SpanSelector.__init__(
+        self, ax, lambda : True, 'horizontal', useblit = False, **kwargs)
+        self.tolerance = 1 # The tolerance in points to pick the rectangle sizes
+        self.on_move_cid = None
+
+    def release(self, event):
+        '''When the button is realeased, the span stays in the screen and the 
+        iteractivity machinery passes to modify mode'''
+        if self.pressv is None or (self.ignore(event) and not self.buttonDown): return
+        self.buttonDown = False
+        
+        # We first disconnect the previous signals
+        for cid in self.cids:
+            self.canvas.mpl_disconnect(cid)
+            
+        # And connect to the new ones
+        self.cids.append(
+        self.canvas.mpl_connect('button_press_event', self.mm_on_press))
+        self.cids.append(
+        self.canvas.mpl_connect('button_release_event', self.mm_on_release))
+        self.cids.append(
+        self.canvas.mpl_connect('draw_event', self.update_background))
+                    
+    def mm_on_press(self, event):
+        if (self.ignore(event) and not self.buttonDown): return
+        self.buttonDown = True
+        
+        # Calculate the point size in data units
+        invtrans = self.ax.transData.inverted()
+        x_point_size = abs((invtrans.transform((1,0)) - 
+        invtrans.transform((0,0)))[0])
+        
+        # Determine the size of the regions for moving and stretching
+        rect = self.rect        
+        right_edge = rect.get_x() + rect.get_width()
+        left_region = rect.get_x() - x_point_size, rect.get_x() + x_point_size
+        right_region = right_edge - x_point_size, right_edge + x_point_size
+        middle_region = rect.get_x() + x_point_size, right_edge - x_point_size
+        
+        if in_interval(event.xdata, left_region) is True:
+            self.on_move_cid = \
+            self.canvas.mpl_connect('motion_notify_event', self.move_left)
+        elif in_interval(event.xdata, right_region):
+            self.on_move_cid = \
+            self.canvas.mpl_connect('motion_notify_event', self.move_right)
+        elif in_interval(event.xdata, middle_region):
+            self.pressv = event.xdata
+            self.on_move_cid = \
+            self.canvas.mpl_connect('motion_notify_event', self.move_rect)
+        else:
+            return
+        
+    def move_left(self, event):
+        if self.buttonDown is False or self.ignore(event): return
+        width_increment = self.rect.get_x() - event.xdata
+        self.rect.set_x(event.xdata)
+        self.rect.set_width(self.rect.get_width() + width_increment)
+        if self.onmove_callback is not None:
+            self.onmove_callback(self.rect.get_x(), 
+                                  self.rect.get_x() + self.rect.get_width())
+        self.update()
+        
+    def move_right(self, event):
+        if self.buttonDown is False or self.ignore(event): return
+        width_increment = \
+        event.xdata - self.rect.get_x() - self.rect.get_width()
+        self.rect.set_width(self.rect.get_width() + width_increment)
+        if self.onmove_callback is not None:
+            self.onmove_callback(self.rect.get_x(), 
+                                  self.rect.get_x() + self.rect.get_width())
+        self.update()
+        
+    def move_rect(self, event):
+        if self.buttonDown is False or self.ignore(event): return
+        x_increment = event.xdata - self.pressv
+        self.rect.set_x(self.rect.get_x() + x_increment)
+        self.pressv = event.xdata
+        if self.onmove_callback is not None:
+            self.onmove_callback(self.rect.get_x(), 
+                                  self.rect.get_x() + self.rect.get_width())
+        self.update()
+        
+    def mm_on_release(self, event):
+        if self.buttonDown is False or self.ignore(event): return
+        self.buttonDown = False
+        self.canvas.mpl_disconnect(self.on_move_cid)
+        self.on_move_cid = None
+        
+    def turn_off(self):
+        for cid in self.cids:
+            self.canvas.mpl_disconnect(cid)
+        if self.on_move_cid is not None:
+            self.canvas.mpl_disconnect(cid)
+        self.ax.patches.remove(self.rect)
+        self.ax.figure.canvas.draw()
 
 
