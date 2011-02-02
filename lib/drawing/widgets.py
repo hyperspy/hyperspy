@@ -337,13 +337,15 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self, ax, direction = 'horizontal', useblit = False, **kwargs)
         self.tolerance = 1 # The tolerance in points to pick the rectangle sizes
         self.on_move_cid = None
+        self.range = None
 
     def release(self, event):
         '''When the button is realeased, the span stays in the screen and the 
         iteractivity machinery passes to modify mode'''
         if self.pressv is None or (self.ignore(event) and not self.buttonDown): return
         self.buttonDown = False
-        self.onselect()
+        self.update_range()
+        self.onselect()        
         # We first disconnect the previous signals
         for cid in self.cids:
             self.canvas.mpl_disconnect(cid)
@@ -362,15 +364,15 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         
         # Calculate the point size in data units
         invtrans = self.ax.transData.inverted()
-        x_point_size = abs((invtrans.transform((1,0)) - 
+        x_pt = abs((invtrans.transform((1,0)) - 
         invtrans.transform((0,0)))[0])
         
         # Determine the size of the regions for moving and stretching
         rect = self.rect        
-        right_edge = rect.get_x() + rect.get_width()
-        left_region = rect.get_x() - x_point_size, rect.get_x() + x_point_size
-        right_region = right_edge - x_point_size, right_edge + x_point_size
-        middle_region = rect.get_x() + x_point_size, right_edge - x_point_size
+        self.range = rect.get_x(), rect.get_x() + rect.get_width()
+        left_region = self.range[0] - x_pt, self.range[0] + x_pt
+        right_region = self.range[1] - x_pt, self.range[1] + x_pt
+        middle_region = self.range[0] + x_pt, self.range[1] - x_pt
         
         if in_interval(event.xdata, left_region) is True:
             self.on_move_cid = \
@@ -384,35 +386,36 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
             self.canvas.mpl_connect('motion_notify_event', self.move_rect)
         else:
             return
-        
+    def update_range(self):
+        self.range = self.rect.get_x(), self.rect.get_x() + self.rect.get_width()
     def move_left(self, event):
         if self.buttonDown is False or self.ignore(event): return
-        width_increment = self.rect.get_x() - event.xdata
+        width_increment = self.range[0] - event.xdata
         self.rect.set_x(event.xdata)
         self.rect.set_width(self.rect.get_width() + width_increment)
+        self.update_range()
         if self.onmove_callback is not None:
-            self.onmove_callback(self.rect.get_x(), 
-                                  self.rect.get_x() + self.rect.get_width())
+            self.onmove_callback(*self.range)                       
         self.update()
         
     def move_right(self, event):
         if self.buttonDown is False or self.ignore(event): return
         width_increment = \
-        event.xdata - self.rect.get_x() - self.rect.get_width()
+        event.xdata - self.range[1]
         self.rect.set_width(self.rect.get_width() + width_increment)
+        self.update_range()
         if self.onmove_callback is not None:
-            self.onmove_callback(self.rect.get_x(), 
-                                  self.rect.get_x() + self.rect.get_width())
+            self.onmove_callback(*self.range)
         self.update()
         
     def move_rect(self, event):
         if self.buttonDown is False or self.ignore(event): return
         x_increment = event.xdata - self.pressv
         self.rect.set_x(self.rect.get_x() + x_increment)
+        self.update_range()
         self.pressv = event.xdata
         if self.onmove_callback is not None:
-            self.onmove_callback(self.rect.get_x(), 
-                                  self.rect.get_x() + self.rect.get_width())
+            self.onmove_callback(*self.range)
         self.update()
         
     def mm_on_release(self, event):
