@@ -28,7 +28,8 @@ description = "EELS data analysis for Python."
 
 license = 'GPL'
 
-authors = {'F_DLP' : (u'Francisco Javier de la Peña','delapena@lps.u-psud.fr')      
+authors = {'F_DLP' : (u'Francisco Javier de la Peña','delapena@lps.u-psud.fr'),
+           'S_M'    : ('Stefano Mazzucco'),
            }
 
 url = 'http://www.eelslab.org'
@@ -44,7 +45,9 @@ info = u'''
     E E L S L a b
     Version %s
     
-    Copyright (C) 2007-2010 Francisco de la Peña
+    Copyright (C) 2007-2009 Francisco de la Peña
+    Copyright (C) 2010-2011 Francisco de la Peña and Stefano Mazzucco
+    
     http://www.eelslab.org
     
     ''' % version
