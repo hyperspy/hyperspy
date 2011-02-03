@@ -2012,3 +2012,8 @@ class Spectrum(object, MVA):
         if self.hse is not None:
             if self.hse.is_active() is True:
                 self.plot()
+                
+    def get_single_spectrum(self):
+        s = Spectrum({'calibration' : {'data_cube' : self()}})
+        s.get_calibration_from(self)
+        return s

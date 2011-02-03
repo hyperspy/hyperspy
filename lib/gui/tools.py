@@ -23,8 +23,8 @@ from ..interactive_ns import interactive_ns
 
 class SavitzkyGolay(t.HasTraits):
     input_signal_name = t.Str
-    polynomial_order = t.Range(1,10,4)
-    number_of_points = t.Range(4, 100, 8)
+    polynomial_order = t.Range(1,10,3)
+    number_of_points = t.Range(2, 20, 3)
     differential_order = t.Int(0)
     signal_name = t.Str('signal')
     extract_signal = t.Button()    
@@ -57,7 +57,7 @@ class SavitzkyGolay(t.HasTraits):
             self.signal = interactive_ns[new]
             self.plot()
             
-    def model2plot(self, coordinates):
+    def model2plot(self, coordinates = None):
         smoothed = utils.sg(self.signal(), self.number_of_points, 
                             self.polynomial_order, self.differential_order)
         return smoothed
