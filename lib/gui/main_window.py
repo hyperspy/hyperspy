@@ -10,6 +10,7 @@ from microscope import Microscope
 from egerton_quantification import EgertonPanel
 
 import messages
+import tools
 from ..interactive_ns import interactive_ns
 from .. import Release
 
@@ -65,8 +66,16 @@ menu_tools_calibrate = Action(name = "Calibrate",
 
 menu_tools_egerton_quantification = Action(name = "Egerton Quantification",
                 action = "egerton_quantification",
-                toolip = "",)                
-            
+                toolip = "",)
+                
+menu_tools_savitzky_golay = Action(name = "Savitzky-Golay Smoothing",
+                action = "savitzky_golay",
+                toolip = "",)
+                
+menu_tools_lowess = Action(name = "Lowess Smoothing",
+                action = "lowess",
+                toolip = "",)
+                
 menu_edit_microscope = Action(name = "Microscope parameters",
                 action = "edit_microscope",
                 toolip = "",)
@@ -108,6 +117,14 @@ class MainWindowHandler(tui.Handler):
         if interactive_ns.has_key('s'):
             ep = EgertonPanel(interactive_ns['s'])
             ep.edit_traits()
+            
+    def savitzky_golay(self, *args, **kw):
+        sg = tools.SavitzkyGolay()
+        sg.edit_traits()
+        
+    def lowess(self, *args, **kw):
+        lw = tools.Lowess()
+        lw.edit_traits()
         
     def notification_about(self,*args, **kw):
         messages.information(Release.info)
@@ -123,15 +140,22 @@ class MainWindow(t.HasTraits):
                             title = 'EELSLab',
                             width = 500,
                             menubar = MenuBar(
-                            Menu(menu_file_open, menu_file_save,
+                            Menu(
+                            menu_file_open, 
+                            menu_file_save,
                             name = 'File'),
-                            Menu(menu_edit_microscope, 
+                            Menu(
+                            menu_edit_microscope, 
                             menu_edit_acquisition_parameters,
                             name = 'Edit'),
-                            Menu(menu_tools_calibrate, 
-                            menu_tools_egerton_quantification, 
+                            Menu(
+                            menu_tools_calibrate, 
+                            menu_tools_egerton_quantification,
+                            menu_tools_savitzky_golay,
+                            menu_tools_lowess,
                             name = 'Tools'),
-                            Menu(menu_help_about,
+                            Menu(
+                            menu_help_about,
                             name = 'Help'),
                             ))
 
