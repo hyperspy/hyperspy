@@ -93,11 +93,11 @@ class Spectrum(object, MVA):
     '''Base class for SI
     
     This class contains the SI (Spectrum Image) basic methods. It can be used to
-    load an SI or to create a monte carlo. It also heritage all the multivariate
+    load an SI or to create a monte carlo. It also inherits all the multivariate
     analysis methods from the MVA class.
      
     The addition is defined for members of the Spectrum class that has the same 
-    number of channel, the same energy step and the same number of pixels in the 
+    number of channel, the same energy step and the same number of pixels in the
     x direction. It return a vertically stacked SI.
     
     Parameters:
@@ -1083,7 +1083,7 @@ class Spectrum(object, MVA):
     
     def align(self, energy_range = (None,None), 
     reference_spectrum_coordinates = (0,0), max_energy_shift = None, 
-    sync_SI = None, interpolate = True, interp_points = 5):
+    sync_SI = None, interpolate = True, interp_points = 5, progress_bar = True):
         ''' Align the SI by cross-correlation.
                 
         Parameters
@@ -1126,13 +1126,22 @@ class Spectrum(object, MVA):
         else:
             ref = data[channel_1:channel_2, ref_ix, ref_iy]
         print "Calculating the shift"
+        
+        if progress_bar is True:
+            from progressbar import progressbar
+            maxval = max(1,size_x) * max(1,size_y)
+            pbar = progressbar(maxval = maxval)
         for iy in range(size_y):
             for ix in range(size_x):
-                print '(%s, %s)' % (ix, iy)
+                if progress_bar is True:
+                    i = (ix + 1)*(iy+1)
+                    pbar.update(i)
                 if interpolate:
                     dc = self._interpolate_spectrum(ip, (ix, iy))
                 shift_map[ix,iy] = np.argmax(np.correlate(ref, 
                 dc[channel_1:channel_2],'full')) - channels + 1
+        if progress_bar is True:
+            pbar.finish()
         if np.min(shift_map) < 0:
             shift_map -= np.min(shift_map)
         if max_energy_shift:
@@ -1140,12 +1149,19 @@ class Spectrum(object, MVA):
             if interpolate:
                 max_index *= ip
             shift_map.clip(a_max = max_index)
+            
         def apply_correction(spectrum):
             data = spectrum.data_cube
             print "Applying the correction"
+            if progress_bar is True:
+                maxval = max(1,size_x) * max(1,size_y)
+                pbar = progressbar(maxval = maxval)
             for iy in range(size_y):
                 for ix in range(size_x):
-                    print '(%s, %s)' % (ix, iy)
+                    if progress_bar is True:
+                        i = (ix + 1)*(iy+1)
+                        pbar.update(i)
+
                     if interpolate:
                         sp = spectrum._interpolate_spectrum(ip, (ix, iy))
                         data[:,ix,iy] = np.roll(sp, 
@@ -1154,6 +1170,8 @@ class Spectrum(object, MVA):
                     else:
                         data[:,ix,iy] = np.roll(data[:,ix,iy], 
                         int(shift_map[ix,iy]), axis = 0)
+            if progress_bar is True:
+                pbar.finish()
             spectrum.__new_cube(data, 'alignment by cross-correlation')
             if interpolate is True:
                 spectrum.energy_crop(shift_map.max()/ip)

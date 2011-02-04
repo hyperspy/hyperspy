@@ -24,6 +24,7 @@
 # Plugin to read the Gatan Digital Micrograph(TM) file format
 
 from __future__ import with_statement #for Python versions < 2.6
+from __future__ import division
 
 import os
 import mmap
@@ -39,7 +40,7 @@ from ..custom_utils import DictBrowser, fsdict
 # Plugin characteristics
 # ----------------------
 format_name = 'Digital Micrograph dm3'
-description = ''
+description = 'Read data from Gatan Digital Micrograph (TM) files'
 full_suport = False
 # Recognised file extension
 file_extensions = ('dm3', 'DM3')
@@ -491,6 +492,27 @@ def open_dm3(fname, skip=0, debug=0, log=''):
             fsdict(nodes[0].split('.'), nodes[1], datadict_fs)
         fsbrowser =  DictBrowser(datadict_fs) # browsable dictionary'
         return fsbrowser
+
+def read_chunk(file_obj, chunk_size=1024):
+    """To be used in a loop
+    chunk_size in Bytes (defaults to 1 kByte)... or whatever
+    """
+    while True:
+        data = file_object.read(chunk_size)
+        if not data:
+            break
+        yield data
+    
+def read_data_array(filename, dtype, mode, offset, size, order):
+    """Read data from very large files, makes use of generators
+    (yield keyword).
+    This is actually just a test.
+    see also
+    http://stackoverflow.com/questions/519633/lazy-method-for-reading-big-file-in-python
+    """
+
+    
+    
    
 class DM3ImageFile(object):
     """ Class to handle Gatan Digital Micrograph (TM) files.
@@ -525,38 +547,33 @@ class DM3ImageFile(object):
     endian = rootdir + ['isLittleEndian',]
     version = rootdir + ['Version',]
     micinfodir = rootdir + ['Microscope Info',]
-    rootdir = rootdir + ['DocumentObjectList',] # contains DocumentTags,Group0..
+    rootdir = rootdir + ['DocumentObjectList',] # DocumentTags, Group0..
     imlistdir = rootdir + ['DocumentTags', 'Image Behavior', 'ImageList']
     # imlistdir contains ImageSourceList, Group0, Group1, ... Group[N]
     # "GroupX" dirs contain the useful info in subdirs
-    # Group0 is always(?) THUMBNAIL
+    # Group0 is always THUMBNAIL (?)
     # imdisplaydir = ['AnnotationGroupList', 'ImageDisplayInfo']
     # clutname = imdisplaydir + ['CLUTName',] # Greyscale, Rainbow or Temperature
     imdatadir = ['ImageData',]
     imtagsdir = imdatadir + ['ImageTags',]
     imname = imtagsdir + ['Name',]
-    # micinfodir_orsay = imtagsdir + ['Microscope Info',] # Orsay only ?
-    # micinfodir = imtagsdir + ['Acquisition', 'DataBar', 'Microscope Info']
-    # orsaydir = micinfodir_orsay + ['Private', 'Processing', 'spim',
-    #                                'detectors', 'eels']
     orsaydir = imtagsdir + ['Orsay', 'spim', 'detectors', 'eels']
     vsm = orsaydir + ['vsm',]
     dwelltime = orsaydir + ['dwell time',]
     orsaymicdir = orsaydir + ['microscope',]
-    calibdir = imdatadir + ['Calibrations',] # contains ['DataType', 'Data',
+    calibdir = imdatadir + ['Calibrations',] # ['DataType', 'Data',
                                              # 'Dimensions', 'Brightness']
-    im = calibdir + ['Data',]     # contains file addres an size of image
-    imdtype = calibdir + ['DataType',] # contains data type to compare with
-                                       # imdtype_dict
+    im = calibdir + ['Data',]     # file addres and size of image
+    imdtype = calibdir + ['DataType',] # data type to compare with imdtype_dict
     brightdir = calibdir + ['Brightness',]
     dimdir = calibdir + ['Dimensions',] # contains 'Data[X]' where
                                         # X is the dimension
     pixdepth = dimdir + ['PixelDepth', ]
     dimtagdir = brightdir + ['Dimension',] # contains 'Data[X]' where
                                            # X is the dimension
-    units = ['Units',]          # contained in dimtagdir + 'Data[X]
-    origin = ['Origin',]        # contained in dimtagdir + 'Data[X]
-    scale = ['Scale',]          # contained in dimtagdir + 'Data[X]
+    units = ['Units',]          # in dimtagdir + 'Data[X]
+    origin = ['Origin',]        # in dimtagdir + 'Data[X]
+    scale = ['Scale',]          # in dimtagdir + 'Data[X]
 
     def __init__(self, fname, data_id=1):
         self.filename = fname
@@ -573,8 +590,7 @@ class DM3ImageFile(object):
         message += '\n' + self.mode + ' ' + str(self.imsize)
         return message
 
-    def open(self):
-        
+    def open(self):        
         self.data_dict = open_dm3(self.filename)
         byte_order = self.data_dict.ls(DM3ImageFile.endian)[1][1]
         if byte_order == 1:
@@ -590,7 +606,6 @@ class DM3ImageFile(object):
         image_id = [im for im in self.data_dict.ls() if ('Group' in im
                                                          and im != 'Group0')]
         #Group0 is THUMBNAIL and GroupX (X !=0) is IMAGE
-
         image_id.sort()
 
         if len(image_id) > 1 or self.data_id == 0:
@@ -646,7 +661,7 @@ class DM3ImageFile(object):
                                                 + [i,])))
         sizes.sort()
         swapelem(sizes, 0, 1)
-        
+
         origins = []
         for i in self.data_dict.ls(DM3ImageFile.dimtagdir):
             if 'Group' in i:
@@ -721,21 +736,27 @@ class DM3ImageFile(object):
         if self.imdtype == 'not_implemented':
             raise AttributeError, self.imdtype
         with open(self.filename, 'r+b') as f:
-            fmap = mmap.mmap(f.fileno(), (self.byte_offset + self.imbytes),
-                             access=mmap.ACCESS_READ)
-            fmap.seek(self.byte_offset)
+            # To be faster, we want to map just the bytes of the file
+            # where the image data is stored. However, the module mmap
+            # only allows one to offset at multiples of ALLOCATIONGRANULARITY,
+            # so we must set up a little trick to map as little bytes
+            # as possible (see also mmap documentation).
+            remainder_ = self.byte_offset % mmap.ALLOCATIONGRANULARITY
+            offset = self.byte_offset - remainder_
+            imbytes = self.imbytes + remainder_
+            fmap = mmap.mmap(f.fileno(), imbytes,
+                             access=mmap.ACCESS_READ,
+                             offset=offset)
+            fmap.seek(remainder_)
+            # old method:
+            # fmap = mmap.mmap(f.fileno(), (self.byte_offset + self.imbytes),
+            #                  access=mmap.ACCESS_READ)
+            # fmap.seek(self.byte_offset)
             if 'rgb' in self.imdtype:
                 data = self.read_rgb(fmap)
             elif 'packed' in self.imdtype:
                 data = self.read_packed_complex(fmap)
             else:
-                # if self.mode == 'spim':
-                #     data =  np.ndarray(self.imsize, self.imdtype,
-                #                        fmap.read(self.imbytes),
-                #                        order='F').transpose((1,0,2))
-                # else:
-                #     data =  np.ndarray(self.imsize, self.imdtype,
-                #                        fmap.read(self.imbytes), order='C')
                 data =  np.ndarray(self.imsize, self.imdtype,
                                    fmap.read(self.imbytes), order='F')
             # fmap.flush()
@@ -766,6 +787,9 @@ class DM3ImageFile(object):
             msg += " -> width == height"
             print msg
             raise ImageModeError('FFT')
+        print "This image is likely a FFT and each pixel is a complex number"
+        print "You might want to display its complex norm"
+        print "with a logarithmic intensity scale."
         self.mode += 'FFT_'
         N = self.imsize[0] / 2      # think about a 2Nx2N matrix
         # read all the bytes as 1D array of 4-Byte float
@@ -834,9 +858,8 @@ def file_reader(filename, data_type=None, data_id=1):
     """Reads a DM3 file and loads the data into the
     appropriate class.
     data_id can be specified to load a given image
-    within a DM3 file that contains more than one.
+    within a DM3 file that contains more than one dataset.
     """
-
     dm3 = DM3ImageFile(filename, data_id)
     
     calibration_dict = {}
@@ -846,8 +869,12 @@ def file_reader(filename, data_type=None, data_id=1):
         data_type = 'Image'
     elif '3D' in dm3.mode:
         data_type = 'SI'
-    elif '1D' in dm3. mode:
-        raise IOError, "single spectra can't be loaded... yet"
+    elif '1D' in dm3.mode:
+        data_type = 'SI'
+    else:
+        raise IOError, 'data type "%s" not recognized' % dm3.mode
+
+    calibration_dict['mode'] = dm3.mode
 
     if dm3.name:
         calibration_dict['title'] = dm3.name
@@ -863,22 +890,23 @@ def file_reader(filename, data_type=None, data_id=1):
                          dtype=np.float)
     scales =np.asarray([dm3.dimensions[i][2]
                         for i in range(len(dm3.dimensions))],
-                       dtype=np.float)
-    
+                       dtype=np.float)    
     # Scale the origins
     origins = origins * scales
-
+    
     if data_type == 'SI': 
         print("Treating the data as an SI")
 
         # only Orsay Spim is supported for now
+        # does anyone have other kinds of SIs for testing?
         if dm3.exposure:
             acquisition_dict['exposure'] = dm3.exposure            
         if dm3.vsm:
             calibration_dict['vsm'] = float(dm3.vsm)
 
-        # In EELSLab1 the first index must be the energy (this changes in EELSLab2)
-        if 'eV' in units: #could use regular expressions or compare to a 'energy units' dictionary/list
+        # In EELSLab1 the first index must be the energy
+        # (this will change in EELSLab2)
+        if 'eV' in units: # could use regular expressions or compare to a 'energy units' dictionary/list
             energy_index = units.index('eV')
         elif 'keV' in units:
             energy_index = units.index('keV')
@@ -889,7 +917,7 @@ def file_reader(filename, data_type=None, data_id=1):
         origins[energy_index] *= -1
         
         # Rearrange the data_cube and parameters to have the energy first
-        #MAY NOT WORK WITH SPLIs/ChronoSPLIS
+        # THIS MAY NOT WORK WITH SPLIs/ChronoSPLIS
         data_cube = np.rollaxis(data_cube, energy_index, 0)
         origins = np.roll(origins, 1)
         scales = np.roll(scales, 1)

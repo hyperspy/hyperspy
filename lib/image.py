@@ -81,7 +81,15 @@ class Image():
     def plot(self, z = 0):
         shape = self.data_cube.squeeze().shape
         if len(shape) == 2:
-            dc = self.data_cube
+            try:
+                if 'FFT' in self.mode:
+                    dc = np.sqrt(self.data_cube.imag**2
+                                 + self.data_cube.real**2)
+                    dc = np.log(dc)
+                else:
+                    dc = self.data_cube
+            except:
+                dc = self.data_cube
         elif len(shape) == 3:
             dc = self.data_cube[...,self.coordinates.ix]
         elif len(shape) == 4:

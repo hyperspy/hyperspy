@@ -27,6 +27,7 @@ import tempfile
 
 import numpy as np
 import scipy as sp
+import scipy.io
 
 try:
     import matplotlib.pyplot as plt
@@ -61,7 +62,7 @@ def perform_kica(pc):
     # Until I get pytave working, a temporary file is necessary to interact 
     # with octave
     fd, temp_file = tempfile.mkstemp(suffix = '.mat')
-    subprocess.call('command --output %s' % temp_file)
+#    subprocess.call('command --output %s' % temp_file)
     kica_file = os.path.join(config_dir.data_path, 'kica.m')
     kica_path = os.path.join(config_dir.data_path, 'kica')
     print('octave %s %s %s' % (kica_file, temp_file, kica_path))
@@ -742,7 +743,7 @@ class MVA():
                 if maps is True:
                     pl[i].save('map_ic-%s.%s' % (i, image_format))
                 else:
-                    pl[i].save('profile_ic-%s' % (i, spectrum_format))
+                    pl[i].save('profile_ic-%s.%s' % (i, spectrum_format))
             else:
                 element = elements[i]
                 sp.save('ic-%s.%s' % (element, spectrum_format))

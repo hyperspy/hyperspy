@@ -67,12 +67,12 @@ def file_reader(filename, **kwds):
             elif parameters['DATATYPE'] == 'Y' :
                 y.append(float(line))
                 
-    loc = locale.getlocale(locale.LC_ALL)
+    loc = locale.getlocale(locale.LC_TIME)
     
     if os_name == 'posix':
-        locale.setlocale(locale.LC_ALL, ('en_US', 'UTF8'))
+        locale.setlocale(locale.LC_TIME, ('en_US', 'UTF8'))
     elif os_name == 'windows':
-        locale.setlocale(locale.LC_ALL, 'english')
+        locale.setlocale(locale.LC_TIME, 'english')
     try:
         H, M = time.strptime(parameters['TIME'], "%H:%M")[3:5]
     except:
@@ -86,7 +86,7 @@ def file_reader(filename, **kwds):
         # Default to Ernst Ruska birth day
         Y, M, D = time.strptime('25-Dec-1906', "%d-%b-%Y")[0:3]
     calibration_dict['date'] = datetime.date(Y, M, D)
-    locale.setlocale(locale.LC_ALL, loc) # restore saved locale
+    locale.setlocale(locale.LC_TIME, loc) # restore saved locale
 
     calibration_dict['title'] = parameters['TITLE']
     calibration_dict['owner'] = parameters['OWNER']
@@ -150,21 +150,21 @@ format = 'Y', separator = ', '):
     else :
         keywords['TITLE'] = 'Undefined'
     if hasattr(spectrum, "date"):
-        loc = locale.getlocale(locale.LC_ALL)
+        loc = locale.getlocale(locale.LC_TIME)
         if os_name == 'posix':
-            locale.setlocale(locale.LC_ALL, ('en_US', 'UTF8'))
+            locale.setlocale(locale.LC_TIME, ('en_US', 'UTF8'))
         elif os_name == 'windows':
-            locale.setlocale(locale.LC_ALL, 'english')
+            locale.setlocale(locale.LC_TIME, 'english')
         keywords['DATE'] = spectrum.date.strftime("%d-%b-%Y")
-        locale.setlocale(locale.LC_ALL, loc) # restore saved locale
+        locale.setlocale(locale.LC_TIME, loc) # restore saved locale
     else:
-        loc = locale.getlocale(locale.LC_ALL)
+        loc = locale.getlocale(locale.LC_TIME)
         if os_name == 'posix':
-            locale.setlocale(locale.LC_ALL, ('en_US', 'UTF8'))
+            locale.setlocale(locale.LC_TIME, ('en_US', 'UTF8'))
         elif os_name == 'windows':
-            locale.setlocale(locale.LC_ALL, 'english')
+            locale.setlocale(locale.LC_TIME, 'english')
         keywords['DATE'] = time.strftime("%d-%b-%Y")
-        locale.setlocale(locale.LC_ALL, loc) # restore saved locale
+        locale.setlocale(locale.LC_TIME, loc) # restore saved locale
     if hasattr(spectrum, "time"):
         keywords['TIME'] = spectrum.time.strftime("%H:%M")
     else:

@@ -234,7 +234,7 @@ def load_ser_file(filename, print_info = False):
     guess_data_type(header['DataTypeID']))
     tag_dtype_list =  get_data_tag_dtype_list(header['TagTypeID'])
     file.seek(header['Data_Offsets'][0][0])
-    data = np.fromfile(file, dtype = np.dtype(data_dtype_list + tag_dtype_list), 
+    data = np.fromfile(file, dtype=np.dtype(data_dtype_list + tag_dtype_list), 
     count = header["TotalNumberElements"])
     if print_info is True:
         print "\n"
