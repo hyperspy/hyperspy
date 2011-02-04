@@ -93,11 +93,11 @@ class Spectrum(object, MVA):
     '''Base class for SI
     
     This class contains the SI (Spectrum Image) basic methods. It can be used to
-    load an SI or to create a monte carlo. It also heritage all the multivariate
+    load an SI or to create a monte carlo. It also inherits all the multivariate
     analysis methods from the MVA class.
      
     The addition is defined for members of the Spectrum class that has the same 
-    number of channel, the same energy step and the same number of pixels in the 
+    number of channel, the same energy step and the same number of pixels in the
     x direction. It return a vertically stacked SI.
     
     Parameters:
