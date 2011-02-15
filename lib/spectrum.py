@@ -186,7 +186,7 @@ class Spectrum(object, MVA):
             # Corrects the gain of the acquisition system
 
     def __add__(self, spectrum):
-        if not hasattr(self, '_splitting_steps'):
+        if hasattr(self, '_splitting_steps') is False:
             self._splitting_steps = [self.data_cube.shape[2]]
         if 'unfolded' in self.history:
             self.fold()
@@ -197,22 +197,24 @@ class Spectrum(object, MVA):
                 if self.data_cube.shape[2] > 1 or \
                 spectrum.data_cube.shape[2] > 1:
                     if self.data_cube.shape[1] == spectrum.data_cube.shape[1]:
-                        new_spectrum = copy.deepcopy(self)
-                        new_spectrum.data_cube = np.concatenate((self.data_cube, 
+                        new_dc = np.concatenate((self.data_cube, 
                         spectrum.data_cube),2)
-                        new_spectrum.get_dimensions_from_cube()
+                        new_spectrum = Spectrum(
+                        {'calibration' : {'data_cube' : new_dc}})
+                        new_spectrum.get_calibration_from(self)
+                        new_spectrum._splitting_steps = self._splitting_steps
                         new_spectrum._splitting_steps.append(
                         spectrum.data_cube.shape[2])
-                        new_spectrum._Spectrum__cubes = \
-                        [new_spectrum._Spectrum__cubes[-1]]
                         return new_spectrum
                     else:
                         print "Cannot sum spectra with different x dimensions"
                 else:
-                    new_spectrum = copy.deepcopy(spectrum)
-                    new_spectrum.data_cube = np.concatenate((self.data_cube, 
+                    new_dc = np.concatenate((self.data_cube, 
                     spectrum.data_cube),1)
-                    new_spectrum.get_dimensions_from_cube()
+                    new_spectrum = Spectrum(
+                        {'calibration' : {'data_cube' : new_dc}})
+                    new_spectrum.get_calibration_from(self)
+                    
                     return new_spectrum
             else:
                 messages.warning_exit(
