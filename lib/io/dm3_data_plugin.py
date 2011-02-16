@@ -491,28 +491,7 @@ def open_dm3(fname, skip=0, debug=0, log=''):
         for nodes in data_dict.items():
             fsdict(nodes[0].split('.'), nodes[1], datadict_fs)
         fsbrowser =  DictBrowser(datadict_fs) # browsable dictionary'
-        return fsbrowser
-
-def read_chunk(file_obj, chunk_size=1024):
-    """To be used in a loop
-    chunk_size in Bytes (defaults to 1 kByte)... or whatever
-    """
-    while True:
-        data = file_object.read(chunk_size)
-        if not data:
-            break
-        yield data
-    
-def read_data_array(filename, dtype, mode, offset, size, order):
-    """Read data from very large files, makes use of generators
-    (yield keyword).
-    This is actually just a test.
-    see also
-    http://stackoverflow.com/questions/519633/lazy-method-for-reading-big-file-in-python
-    """
-
-    
-    
+        return fsbrowser    
    
 class DM3ImageFile(object):
     """ Class to handle Gatan Digital Micrograph (TM) files.
@@ -530,7 +509,7 @@ class DM3ImageFile(object):
         2 : 'float32',
         3 : 'complex64',
         4 : 'not_implemented', # obsolete
-        5 : "complex64_packed", # not numpy: 8-Byte packed complex (FFT data)
+        5 : 'complex64_packed', # not numpy: 8-Byte packed complex (FFT data)
         6 : 'uint8',
         7 : 'int32',
         8 : 'argb', # not numpy: 4-Byte RGB (alpha, R, G, B)
@@ -689,7 +668,6 @@ class DM3ImageFile(object):
                               self.data_dict.ls(DM3ImageFile.dimtagdir
                                                 + [i,]
                                                 + DM3ImageFile.units)))
-
         units.sort()
         swapelem(units, 0, 1)
         
@@ -710,16 +688,16 @@ class DM3ImageFile(object):
                                      + DM3ImageFile.units)[1][1]
         self.brightness = (br_orig, br_scale, br_units)
 
-        self.data = self.read_image_data()        
-        # try:
-        #     self.data = self.read_image_data()
-        # except AttributeError:
-        #     print('Error. Could not read data.')
-        #     self.data = 'UNAVAILABLE'
-        #     return None
+        # self.data = self.read_image_data()
+        try:
+            self.data = self.read_image_data()
+        except AttributeError:
+            print('Error. Could not read data.')
+            self.data = 'UNAVAILABLE'
+            return None
 
         if 1 in self.data.shape:
-            # remove dimensions of lenght 1
+            # remove dimensions of lenght 1, they are useless
             for i in range(len(self.data.shape)):
                 if self.data.shape[i] == 1:
                     self.dimensions.pop(i)
@@ -734,41 +712,37 @@ class DM3ImageFile(object):
 
     def read_image_data(self):
         if self.imdtype == 'not_implemented':
-            raise AttributeError, self.imdtype
-        with open(self.filename, 'r+b') as f:
-            # To be faster, we want to map just the bytes of the file
-            # where the image data is stored. However, the module mmap
-            # only allows one to offset at multiples of ALLOCATIONGRANULARITY,
-            # so we must set up a little trick to map as little bytes
-            # as possible (see also mmap documentation).
-            remainder_ = self.byte_offset % mmap.ALLOCATIONGRANULARITY
-            offset = self.byte_offset - remainder_
-            imbytes = self.imbytes + remainder_
-            fmap = mmap.mmap(f.fileno(), imbytes,
-                             access=mmap.ACCESS_READ,
-                             offset=offset)
-            fmap.seek(remainder_)
-            # old method:
-            # fmap = mmap.mmap(f.fileno(), (self.byte_offset + self.imbytes),
-            #                  access=mmap.ACCESS_READ)
-            # fmap.seek(self.byte_offset)
-            if 'rgb' in self.imdtype:
-                data = self.read_rgb(fmap)
-            elif 'packed' in self.imdtype:
-                data = self.read_packed_complex(fmap)
+            raise AttributeError, "image data type: %s" % self.imdtype
+        if ('packed' in self.imdtype):
+            return  self.read_packed_complex()
+        elif ('rgb' in self.imdtype):
+            return self.read_rgb()
+        else:
+            data = read_data_array(self.filename, self.imbytes,
+                                   self.byte_offset, self.imdtype, mode='r')
+            if len(self.dimensions) == 3:
+                order = 'F'
             else:
-                data =  np.ndarray(self.imsize, self.imdtype,
-                                   fmap.read(self.imbytes), order='F')
-            # fmap.flush()
-            fmap.close()
+                order = 'C'
+            data = data.reshape(self.imsize, order=order)
+            if len(self.dimensions) == 3:
+                # The Bytes in a SI are ordered as
+                # X0, Y0, Z0, X1, Y0, Z0, [...], Xn, Ym, Z0, [...]
+                # X0, Y0, Z1, [...], Xn, Ym, Zk
+                # since X <=> column and Y <=> row
+                # the 1st two axes of the ndarray must be transposed
+                # because its natural order is
+                # row (Y), column (X), E                
+                data = data.transpose((1,0,2))
             return data
             
-    def read_rgb(self, fmap):
+    def read_rgb(self):
         self.imsize = list(self.imsize)
         self.imsize.append(4)
         self.imsize = tuple(self.imsize)
-        data = np.ndarray(self.imsize, 'uint8', fmap.read(self.imbytes),
-                          order='C') # (B, G, R, A)
+        data = read_data_array(self.filename, self.imbytes,
+                               self.byte_offset, mode='r')
+        data = data.reshape(self.imsize, order='C') # (B, G, R, A)
         if self.imdtype == 'rgb':
             data = data[:, :, -2::-1] # (R, G, B)
             self.mode += 'rgb_'
@@ -781,7 +755,7 @@ class DM3ImageFile(object):
             self.mode += 'rgba_'
         return data
 
-    def read_packed_complex(self, fmap):
+    def read_packed_complex(self):
         if (self.imsize[0] != self.imsize[1]) or (len(self.imsize)>2):
             msg = "Packed complex format works only for a 2Nx2N image"
             msg += " -> width == height"
@@ -789,15 +763,18 @@ class DM3ImageFile(object):
             raise ImageModeError('FFT')
         print "This image is likely a FFT and each pixel is a complex number"
         print "You might want to display its complex norm"
-        print "with a logarithmic intensity scale."
+        print "with a logarithmic intensity scale:"
+        print "log(abs(IMAGE))"
         self.mode += 'FFT_'
-        N = self.imsize[0] / 2      # think about a 2Nx2N matrix
+        N = int(self.imsize[0] / 2)      # think about a 2Nx2N matrix
         # read all the bytes as 1D array of 4-Byte float
-        tmpdata =  np.ndarray( (self.imbytes/4, ), 'float32',
-                               fmap.read(self.imbytes), order='C')
+        tmpdata = read_data_array(self.filename, self.imbytes,
+                                   self.byte_offset, 'float32', mode='r')
+        # tmpdata =  np.ndarray( (self.imbytes/4, ), 'float32',
+        #                        fmap.read(self.imbytes), order='C')
         
         # create an empty 2Nx2N ndarray of complex
-        data = np.zeros(self.imsize, 'complex64', 'F')
+        data = np.zeros(self.imsize, 'complex64', 'C')
         
         # fill in the real values:
         data[N, 0] = tmpdata[0]
@@ -807,7 +784,7 @@ class DM3ImageFile(object):
                 
         # fill in the non-redundant complex values:
         # top right quarter, except 1st column
-        for i in range(N):
+        for i in range(N): # this could be optimized
             start = 2 * i * N + 2
             stop = start + 2 * (N - 1) - 1
             step = 2

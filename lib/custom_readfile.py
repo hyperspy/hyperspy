@@ -24,6 +24,7 @@
 # general functions for reading data from files
 
 import struct
+import os
 from custom_exceptions import *
 
 # Declare simple TagDataType structures for faster execution.
@@ -203,3 +204,107 @@ def read_char(f, endian):
         elif endian == 'little':
             s = L_char
         return s.unpack(data)[0]
+
+def read_data_array(fp, byte_size=0, byte_address=0,
+                    data_type='uint8', mode='r'):
+    # inspired by numpy's memmap
+    """Return a 1-D numpy ndarray from data contained in a binary file.
+
+    Parameters:
+    ----------
+    fp: str or file-like object.
+        The file name or file object to be used as the array data buffer.
+
+    byte_size: int, optional.
+        The size in Bytes of the data. If not specified, the
+        whole file will be read.
+
+    byte_address : int, optional
+        In the file, array data starts at this offset. Since it is measured
+        in bytes, it should be a multiple of the byte-size of
+        'data_type'. The default is 0 (beginning of the file).
+
+    data_type: data-type, optional
+               The data-type used to interpret the file contents.
+               Default is 'uint8'.
+
+    mode : {'r+', 'r', 'w+', 'c'}, optional
+        The file is opened in this mode:    
+        +------+-------------------------------------------------------------+
+        | 'r'  | Open existing file for reading only.                        |
+        +------+-------------------------------------------------------------+
+        | 'r+' | Open existing file for reading and writing.                 |
+        +------+-------------------------------------------------------------+
+        | 'w+' | Create or overwrite existing file for reading and writing.  |
+        +------+-------------------------------------------------------------+
+        | 'c'  | Copy-on-write: assignments affect data in memory, but       |
+        |      | changes are not saved to disk.  The file on disk is         |
+        |      | read-only.                                                  |
+        +------+-------------------------------------------------------------+
+        
+        Default is 'r'.
+    """
+    # import here to minimize import overhead
+    import mmap
+    import numpy as np
+    
+    def readfobj(fobj):
+        """Same as parent function, but only works with file objects.
+        """
+        # To be fast, we want to map just the bytes of the file
+        # where the image data is stored. However, the module mmap
+        # only allows one to offset at multiples of ALLOCATIONGRANULARITY,
+        # so we must set up a little trick to map as little bytes
+        # as possible (see also mmap documentation).
+        byte_remainder = byte_address % mmap.ALLOCATIONGRANULARITY
+        byte_offset = byte_address - byte_remainder
+        map_bytes = byte_remainder + byte_size
+        dt = np.dtype(data_type).itemsize
+        size = byte_size // dt
+        shape = (size,)
+        bytes = byte_address + byte_size
+        if mode == 'w+' or (mode == 'r+' and fobj.tell() < bytes):
+            fobj.seek(bytes - 1, 0) # go to the end of the file
+            fobj.write(chr(0)) 
+            fobj.flush()
+            os.fsync(fobj.fileno()) # be sure that data is written to disk
+        if mode == 'c':
+            acc = mmap.ACCESS_COPY
+        elif mode == 'r':
+            acc = mmap.ACCESS_READ
+        else:
+            acc = mmap.ACCESS_WRITE
+
+        fmap = mmap.mmap(fobj.fileno(), map_bytes,
+                         access=acc,
+                         offset=byte_offset)
+        fmap.seek(byte_remainder)
+        data =  np.ndarray(shape, data_type, fmap.read(byte_size))
+        fmap.flush()
+        fmap.close() # if I close the map, then I cannot modify the file, right?
+        return data
+        
+    if type(fp) is file:
+        if not fp.closed:
+            return readfobj(fp)
+        else:
+            with open(fp.name, 'r+b') as f:
+                return readfobj(f)            
+    elif type(fp) is str:
+        with open(fp, 'r+b') as f:
+            return readfobj(f)
+    else:
+        raise TypeError, type(fp)
+
+# def read_chunk(file_obj, chunk_size=1024):
+#     """To be used in a loop
+#     chunk_size in Bytes (defaults to 1 kByte)... or whatever
+#     """
+#     # see also
+#     # http://stackoverflow.com/questions/519633/lazy-method-for-reading-big-file-in-python
+#     while True:
+#         data = file_obj.read(chunk_size)
+#         if not data:
+#             break
+#         yield data
+
