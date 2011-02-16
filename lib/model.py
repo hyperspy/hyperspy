@@ -203,7 +203,8 @@ class Model(list, Optimizers, Estimators, Controls):
         for iy in range(self.model_cube.shape[2]):
             for ix in range(self.model_cube.shape[1]):
                 print "x = %i\ty = %i" % (ix, iy)
-                self.set_coordinates(ix, iy)
+                self.coordinates.ix = ix
+                self.coordinates.iy = iy
                 self.model_cube[self.channel_switches, self.coordinates.ix, self.coordinates.iy] = \
                 self.__call__(
                 non_convolved = not self.convolved, onlyactive = True)
@@ -740,7 +741,7 @@ class Model(list, Optimizers, Estimators, Controls):
 
     def multifit(self, background_fit_E1 = None, mask = None, kind = "normal", 
                  fitter = "leastsq", charge_only_fixed = False, grad = False, 
-                 autosave = False, **kwargs) :
+                 autosave = False, **kwargs):
         if autosave is not None:
             fd, autosave_fn = tempfile.mkstemp(prefix = 'eelslab_autosave-', 
             dir = '.', suffix = '.par')
