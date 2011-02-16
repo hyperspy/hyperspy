@@ -83,9 +83,8 @@ class Image():
         if len(shape) == 2:
             try:
                 if 'FFT' in self.mode:
-                    dc = np.sqrt(self.data_cube.imag**2
-                                 + self.data_cube.real**2)
-                    dc = np.log(dc)
+                    # display the log of the norm
+                    dc = np.log(np.abs(self.data_cube))
                 else:
                     dc = self.data_cube
             except:
