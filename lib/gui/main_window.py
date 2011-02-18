@@ -130,7 +130,8 @@ class MainWindowHandler(tui.Handler):
         messages.information(Release.info)
                 
     def calibrate(self,*args, **kw):
-        pass
+        w = tools.Calibration()
+        w.edit_traits()
                 
 class MainWindow(t.HasTraits):
     

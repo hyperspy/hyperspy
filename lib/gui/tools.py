@@ -20,6 +20,65 @@ from ..spectrum import Spectrum
 from ..interactive_ns import interactive_ns
 
 
+class Calibration(t.HasTraits):
+    input_signal_name = t.Str
+    roi_selection = t.Bool(False)
+    E1 = t.Float()
+    E2 = t.Float()
+    origin = t.Float()
+    scale = t.Float()
+    set_calibration = t.Button()    
+    view = tu.View(
+        tu.Group(
+            'input_signal_name',
+            'roi_selection',
+            'E1',
+            'E2',
+            'origin',
+            'scale',
+            tu.Item('set_calibration', show_label=False),),)
+            
+    def __init__(self):
+        self.signal = None
+            
+    def _roi_selection_changed(self, old, new):
+        if new is True:
+            self.bg_span_selector = \
+            drawing.widgets.ModifiableSpanSelector(
+            self.signal.hse.spectrum_plot.left_ax,
+            onselect = self._update_calibration,
+            onmove_callback = self._update_calibration)
+        elif self.bg_span_selector is not None:
+            if self.bg_line is not None:
+                self.bg_span_selector.ax.lines.remove(self.bg_line)
+                self.bg_line = None
+            self.bg_span_selector.turn_off()
+            self.bg_span_selector = None
+        
+    def _input_signal_name_changed(self, old, new):
+        if interactive_ns.has_key(new):
+            self.signal = interactive_ns[new]
+            self.signal.plot()
+            
+    def _E1_changed(self, old, new):
+        self._update_calibration()
+    
+    def _E2_changed(self, old, new):
+        self._update_calibration()
+            
+    def _update_calibration(self, *args, **kwargs):
+        if self.E1 == 0. or self.E2 == 0.: return
+        left = self.bg_span_selector.rect.get_x()
+        right = left + self.bg_span_selector.rect.get_width()
+        lc = self.signal.energy2index(left)
+        rc = self.signal.energy2index(right)
+        self.origin, self.scale = self.signal.calibrate(self.E1, self.E2, lc = lc, 
+                                            rc = rc, modify_calibration = False)
+            
+    def _set_calibration(self):
+        if self.signal  is not None:
+            self.signal.set_new_calibration(self.origin, self.scale)
+    
 
 class SavitzkyGolay(t.HasTraits):
     input_signal_name = t.Str
