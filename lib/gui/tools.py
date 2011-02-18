@@ -40,6 +40,7 @@ class Calibration(t.HasTraits):
             
     def __init__(self):
         self.signal = None
+        self.bg_span_selector = None
             
     def _roi_selection_changed(self, old, new):
         if new is True:
@@ -68,6 +69,7 @@ class Calibration(t.HasTraits):
             
     def _update_calibration(self, *args, **kwargs):
         if self.E1 == 0. or self.E2 == 0.: return
+        if self.bg_span_selector is None: return
         left = self.bg_span_selector.rect.get_x()
         right = left + self.bg_span_selector.rect.get_width()
         lc = self.signal.energy2index(left)
@@ -75,8 +77,8 @@ class Calibration(t.HasTraits):
         self.origin, self.scale = self.signal.calibrate(self.E1, self.E2, lc = lc, 
                                             rc = rc, modify_calibration = False)
             
-    def _set_calibration(self):
-        if self.signal  is not None:
+    def _set_calibration_fired(self):
+        if self.signal is not None:
             self.signal.set_new_calibration(self.origin, self.scale)
     
 
