@@ -153,7 +153,7 @@ class EgertonPanel(t.HasTraits):
                 else:
                     self.map, = self.map_ax.plot(self.signal_map.squeeze())
             if len(self.signal_map.squeeze().shape) == 2:
-                    self.map.set_data(self.signal_map)
+                    self.map.set_data(self.signal_map.T)
             else:
                 self.map.set_ydata(self.signal_map.squeeze())
             self.map_ax.figure.canvas.draw()
