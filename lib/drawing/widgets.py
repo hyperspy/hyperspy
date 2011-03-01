@@ -112,16 +112,20 @@ class DraggablePatch(object):
     
     def disconnect(self, ax):
         for cid in self.cids:
-            ax.figure.canvas.mpl_disconnect(cid)
+            try:
+                ax.figure.canvas.mpl_disconnect(cid)
+            except:
+                pass
         self.coordinates.disconnect(self.update_patch_position)
         
     def close(self, window = None):
         ax = self.ax
-        
         if self._2D is True:
-            ax.patches.remove(self.patch)
+            if self.patch in ax.patches:
+                ax.patches.remove(self.patch)
         else:
-            ax.lines.remove(self.patch)
+            if self.patch in ax.lines:
+                ax.lines.remove(self.patch)
         self.disconnect(ax)
                     
     def onpick(self, event):

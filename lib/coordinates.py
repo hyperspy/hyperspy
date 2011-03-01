@@ -55,7 +55,10 @@ class Coordinates(object):
     
     def coordinates_change_signal(self):
         for f in self.on_coordinates_change:
-            f()
+            try:
+                f()
+            except:
+                self.on_coordinates_change.remve(f)
     def _eval_functions(self, coord, function_list, mask):
             if mask[coord]:
                 self.ix = coord[0]

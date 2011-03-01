@@ -104,8 +104,8 @@ class MPL_HyperSpectrum_Explorer():
         sf.add_line(sl)
         self.spectrum_plot = sf
         sf.plot()
-#        if self.image_plot is not None and sf.figure is not None:
-#            utils.on_window_close(sf.figure, self.image_plot.close)
+        if self.image_plot is not None and sf.figure is not None:
+            utils.on_window_close(sf.figure, self.image_plot.close)
         
     def close(self):
         self.spectrum_plot.close()

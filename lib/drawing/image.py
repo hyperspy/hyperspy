@@ -160,6 +160,4 @@ class ImagePlot:
         if utils.does_figure_object_exists(self.figure) is True:
             plt.close(self.figure)
         
-        
-        
 plt.show()
