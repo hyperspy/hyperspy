@@ -58,7 +58,7 @@ class Coordinates(object):
             try:
                 f()
             except:
-                self.on_coordinates_change.remve(f)
+                self.on_coordinates_change.remove(f)
     def _eval_functions(self, coord, function_list, mask):
             if mask[coord]:
                 self.ix = coord[0]

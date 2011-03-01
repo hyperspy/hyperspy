@@ -56,7 +56,8 @@ class DraggablePatch(object):
         self._2D = True # Whether the cursor lives in the 2D dimension
         self.patch = None
         self.cids = list()
-        self.blit = True
+        # Blitting seems to be supported by all the backends but Qt4
+        self.blit = (plt.get_backend() !=  'Qt4Agg')
     
     def is_on(self):
         return self.__is_on
@@ -104,7 +105,9 @@ class DraggablePatch(object):
         canvas = ax.figure.canvas
         self.cids.append(canvas.mpl_connect('motion_notify_event', self.onmove))
         self.cids.append(canvas.mpl_connect('pick_event', self.onpick))
-        self.cids.append(canvas.mpl_connect('draw_event', self.update_background))
+        if self.blit is True:
+            self.cids.append(
+            canvas.mpl_connect('draw_event', self.update_background))
         self.cids.append(canvas.mpl_connect('button_release_event', 
         self.button_release))
         self.coordinates.connect(self.update_patch_position)
@@ -155,11 +158,12 @@ class DraggablePatch(object):
             self.picked = False
             
     def update_background(self, *args):
-        canvas = self.ax.figure.canvas
-        self.background = canvas.copy_from_bbox(self.ax.bbox)
-        for artist in canvas.we_are_animated:
-            self.ax.draw_artist(artist)
-        self.ax.figure.canvas.blit()  
+        if self.blit is True:
+            canvas = self.ax.figure.canvas
+            self.background = canvas.copy_from_bbox(self.ax.bbox)
+            for artist in canvas.we_are_animated:
+                self.ax.draw_artist(artist)
+            self.ax.figure.canvas.blit()  
     
     def draw_patch(self, *args):
         canvas = self.ax.figure.canvas
@@ -214,7 +218,7 @@ class DraggableSquare(ResizebleDraggablePatch):
         self.patch = \
         plt.Rectangle(
         self.coordinates.coordinates - (self.size / 2, self.size / 2), 
-        self.size, self.size, animated = True,
+        self.size, self.size, animated = self.blit,
         fill= False, lw = 2,  ec = self.color, picker = True,)
         
     def update_patch_size(self):
@@ -240,7 +244,7 @@ class DraggableHorizontalLine(DraggablePatch):
     def set_patch(self):
         ax = self.ax
         self.patch = ax.axhline(self.coordinates.ix, color = self.color, 
-                               picker = 5, animated = True)
+                               picker = 5, animated = self.blit)
             
 class Scale_Bar():
     def __init__(self, ax, units, pixel_size, color = 'white', position = None, 

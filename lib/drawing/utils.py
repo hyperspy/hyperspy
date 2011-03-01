@@ -78,12 +78,16 @@ def on_window_close(figure, function):
                 event.Skip()
             window.Bind(wx.EVT_WINDOW_DESTROY, function_wrapper)
         
-#    elif matplotlib.get_backend() == 'TkAgg':
+    elif backend == 'TkAgg':
         # Tkinter does not return the window when sending the closing
         # signal. Furthermore, for some reason that I don't understand,
         # it blocks ipython. For this reason it is now disable until I find a
         # way around the problem.
-#        figure.canvas.manager.window.bind("<Destroy>",function)
+        def function_wrapper(*args):
+                # This wrapper is needed for the destroying process to carry on
+                # after the function call
+                function()
+        figure.canvas.manager.window.bind("<Destroy>", function_wrapper)
 #    elif matplotlib.get_backend() == 'Qt4Agg':
 #        from PyQt4.QtCore import SIGNAL
 #        window = figure.canvas.manager.window
