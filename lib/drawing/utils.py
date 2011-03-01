@@ -61,15 +61,22 @@ def on_window_close(figure, function):
     window = figure.canvas.manager.window
     backend = plt.get_backend()
     if backend == 'GTKAgg':
-        window.connect('destroy', function)
+        def function_wrapper(*args):
+                # This wrapper is needed for the destroying process to carry on
+                # after the function call
+                function()
+        window.connect('destroy', function_wrapper)
     elif backend == 'WXAgg':
-        import wx
-        def function_wrapper(event):
-            # This wrapper is needed for the destroying process to carry on
-            # after the function call
-            function()
-            event.Skip()
-        window.Bind(wx.EVT_WINDOW_DESTROY, function_wrapper)
+        # In linux the following code produces a segmentation fault
+        # so it is enabled only for Windows
+        if os.name in ['nt','dos']:
+            import wx
+            def function_wrapper(event):
+                # This wrapper is needed for the destroying process to carry on
+                # after the function call
+                function()
+                event.Skip()
+            window.Bind(wx.EVT_WINDOW_DESTROY, function_wrapper)
         
 #    elif matplotlib.get_backend() == 'TkAgg':
         # Tkinter does not return the window when sending the closing
