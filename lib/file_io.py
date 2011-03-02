@@ -22,9 +22,11 @@ import os
 
 import messages
 from defaults_parser import defaults
-from io import netcdf, msa, digital_micrograph, fei, bin, mrc, pil, buker_raw
+from io import netcdf, msa, digital_micrograph, fei, bin, mrc, pil, buker_raw, \
+hdf5
 
-io_plugins = (netcdf, msa, digital_micrograph, fei, bin, mrc, pil, buker_raw)
+io_plugins = (netcdf, msa, digital_micrograph, fei, bin, mrc, pil, buker_raw, 
+              hdf5)
 
 def load(filename, data_type = None, **kwds):
     '''
@@ -60,6 +62,7 @@ def load(filename, data_type = None, **kwds):
 def load_with_reader(filename, reader, data_type = None, **kwds):
     from spectrum import Spectrum
     from image import Image
+    from signal import Signal
     messages.information(reader.description)    
     dictionary_list = reader.file_reader(filename, data_type = data_type, **kwds)
     objects = []
@@ -75,6 +78,11 @@ def load_with_reader(filename, reader, data_type = None, **kwds):
             if defaults.plot_on_load is True:
                 im.plot()
             objects.append(im)
+        elif data_type == 'Signal':
+            sg = Signal(dictionary)
+            if defaults.plot_on_load is True:
+                im.plot()
+            objects.append(sg)
         else:
             messages.warning_exit(
             'The data type was not recognised')
@@ -85,6 +93,7 @@ def load_with_reader(filename, reader, data_type = None, **kwds):
 def save(filename, object2save, format = 'nc', **kwds):
     from spectrum import Spectrum
     from image import Image
+    from signal import Signal
     
     extension = os.path.splitext(filename)[1][1:]
     i = 0
@@ -118,6 +127,8 @@ def save(filename, object2save, format = 'nc', **kwds):
                 ' in the %s format' % writer.format_name)
             else:
                 writer.file_writer(filename, object2save, **kwds)
+        elif isinstance(object2save, Signal):
+            writer.file_writer(filename, object2save, **kwds)
     
 def save_data_array_in_netcdf(filename, array,dim_list = ['x','y','z']):
     '''Save 3D array in netCDF format
