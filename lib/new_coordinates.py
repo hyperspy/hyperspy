@@ -85,17 +85,15 @@ class Coordinate(t.HasTraits):
         self.index_in_array = index_in_array
         self.slice = None
         self.update_axis()
-        self.on_trait_change(self.update_axis, 'scale')
-        self.on_trait_change(self.update_axis, 'offset')
-        self.on_trait_change(self.update_axis, 'size')
+                
+        self.on_trait_change(self.update_axis, ['scale', 'offset', 'size'])
         self.on_trait_change(self.update_value, 'index')
         self.on_trait_change(self.set_index_from_value, 'value')
         
     def __repr__(self):
         if self.name is not None:
             return self.name + ' index: ' + str(self.index_in_array)
-        
-        
+          
     def update_index_bounds(self):
         self.high_index = self.size - 1
     
@@ -184,16 +182,18 @@ class Coordinate(t.HasTraits):
         show_border = True,),
     )
     
-class NewCoordinates(t.HasTraits):
+class CoordinatesManager(t.HasTraits):
     coordinates = t.List(Coordinate)
     _slicing_coordinates = t.List()
     def __init__(self, coordinates_list):
-        super(NewCoordinates, self).__init__()
+        super(CoordinatesManager, self).__init__()
         ncoord = len(coordinates_list)
         self.coordinates = [None] * ncoord
         for coordinates_dict in coordinates_list:
             self.coordinates[coordinates_dict['index_in_array']] = Coordinate(**coordinates_dict)
         self.set_coordinate_attribute()
+        self.set_view()
+        self.set_output_dim()
         self.on_trait_change(self.set_coordinate_attribute, 'coordinates.name')
         self.on_trait_change(self.set_output_dim, 'coordinates.slice')
         self.on_trait_change(self.set_output_dim, 'coordinates.index')
@@ -225,6 +225,29 @@ class NewCoordinates(t.HasTraits):
         self.getitem_tuple = getitem_tuple
         self.output_dim = i
         
+    def set_view(self, view = 'hyperspectrum'):
+        '''
+        view : 'hyperspectrum' or 'image'
+        '''
+        if view == 'hyperspectrum':
+            for coordinate in self.coordinates:
+                if coordinate.name  not in ['x', 'y', 'z', 'alpha', 'beta']:
+                    coordinate.slice = slice(None)
+        elif view == 'image':
+            for coordinate in self.coordinates:
+                if coordinate.name in ['x', 'y', 'z', 'alpha', 'beta']:
+                    coordinate.slice = slice(None)
+                    
+    def connect(self, f):
+        for coordinate in self.coordinates:
+            if coordinate.slice is None:
+                coordinate.on_trait_change(f, 'index')
+                
+    def disconnect(self, f):
+        for coordinate in self.coordinates:
+            if coordinate.slice is None:
+                coordinate.on_trait_change(f, 'index', remove = True)
+            
     traits_view = tui.View(tui.Item('coordinates', style = 'custom'))
     
         

@@ -53,7 +53,7 @@ def _does_figure_object_exists(fig_obj):
                 
 class Plot1D(t.HasTraits):
 #    signal = t.Instance(signal.Signal)
-    coordinates = t.Instance(new_coordinates.NewCoordinates)
+    coordinates = t.Instance(new_coordinates.CoordinatesManager)
     
     figure = t.Instance(plt.Figure)
     ax1 = t.Instance(plt.Axes)
@@ -129,7 +129,7 @@ class Plot1D(t.HasTraits):
         
 class Plot2D(t.HasTraits):
 #    signal = t.Instance(signal.Signal)
-    coordinates = t.Instance(new_coordinates.NewCoordinates)    
+    coordinates = t.Instance(new_coordinates.CoordinatesManager)    
     figure = t.Instance(plt.Figure)
     ax1 = t.Instance(plt.Axes)
     autoscale = t.Bool(True)

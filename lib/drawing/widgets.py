@@ -138,14 +138,15 @@ class DraggablePatch(object):
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
-            new_coordinates = np.array((round(event.xdata), 
-            round(event.ydata)))
             if self._2D is True:
-                if not (new_coordinates == self.coordinates.coordinates).all():
-                    self.coordinates.ix, self.coordinates.iy = new_coordinates
+                if self.coordinates.coordinates[0].index != round(event.ydata):
+                    self.coordinates.coordinates[0].index = round(event.ydata)
+                if self.coordinates.coordinates[1].index != round(event.xdata):
+                    self.coordinates.coordinates[1].index = round(event.xdata)  
             else:
-                if not round(event.ydata) == self.coordinates.ix:
-                    self.coordinates.ix = round(event.ydata)
+                if not round(event.ydata) == \
+                self.coordinates.coordinates[0].index:
+                    self.coordinates.coordinates[0].index= round(event.ydata)
         
     def update_patch_position(self):
         '''This method must be provided by the subclass'''
@@ -215,11 +216,13 @@ class DraggableSquare(ResizebleDraggablePatch):
         DraggablePatch.__init__(self, coordinates)
     
     def set_patch(self):
+        c1 = self.coordinates.coordinates[1]
+        c2 = self.coordinates.coordinates[0]
         self.patch = \
         plt.Rectangle(
-        self.coordinates.coordinates - (self.size / 2, self.size / 2), 
+        (c1.index - self.size / 2, c2.index - self.size / 2), 
         self.size, self.size, animated = self.blit,
-        fill= False, lw = 2,  ec = self.color, picker = True,)
+        fill = False, lw = 2,  ec = self.color, picker = True,)
         
     def update_patch_size(self):
         self.patch.set_width(self.size)
@@ -227,8 +230,10 @@ class DraggableSquare(ResizebleDraggablePatch):
         self.update_patch_position()
         
     def update_patch_position(self):
+        c1 = self.coordinates.coordinates[1]
+        c2 = self.coordinates.coordinates[0]
         delta = self.size / 2
-        self.patch.set_xy(self.coordinates.coordinates - (delta, delta))
+        self.patch.set_xy((c1.index - delta, c2.index - delta))
         self.draw_patch()
         
 class DraggableHorizontalLine(DraggablePatch):
@@ -238,12 +243,13 @@ class DraggableHorizontalLine(DraggablePatch):
         
     def update_patch_position(self):
         if self.patch is not None:
-            self.patch.set_ydata(self.coordinates.ix)
+            self.patch.set_ydata(self.coordinates.coordinates[0].index)
             self.draw_patch()
      
     def set_patch(self):
         ax = self.ax
-        self.patch = ax.axhline(self.coordinates.ix, color = self.color, 
+        self.patch = ax.axhline(self.coordinates.coordinates[0].index, 
+                                color = self.color, 
                                picker = 5, animated = self.blit)
             
 class Scale_Bar():

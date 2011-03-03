@@ -82,7 +82,7 @@ class ImagePlot:
                  pixel_size = self.pixel_size)
         
         # Adjust the size of the window
-        size = [ 6,  6.* data.shape[1] / data.shape[0]]
+        size = [ 6,  6.* data.shape[0] / data.shape[1]]
         self.figure.set_size_inches(size, forward = True)        
         self.figure.canvas.draw()
         self.connect()
@@ -91,7 +91,7 @@ class ImagePlot:
         ims = self.ax.images
         if ims:
             ims.remove(ims[0])
-        data = self.data_function().T
+        data = self.data_function()
         self.ax.imshow(data, interpolation='nearest', vmin = self.vmin, 
                        vmax = self.vmax)
         self.figure.canvas.draw()

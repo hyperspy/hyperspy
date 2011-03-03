@@ -10,32 +10,105 @@ import enthought.traits.ui.api as tui
 import messages
 import new_coordinates
 import file_io
-import new_plot
-
+import drawing
+import utils
 
 class Signal(t.HasTraits):
     data = t.Array()
-    coordinates = t.Instance(new_coordinates.NewCoordinates)
+    coordinates = t.Instance(new_coordinates.CoordinatesManager)
     extra_parameters = t.Dict()
     parameters = t.Dict()
     name = t.Str('')
     units = t.Str()
+    scale = t.Float()
+    offset = t.Float()
     
     def __init__(self, dictionary):
         super(Signal, self).__init__()
         self.data = dictionary['data']
-        self.coordinates = new_coordinates.NewCoordinates(dictionary['coordinates'])
+        self.coordinates = new_coordinates.CoordinatesManager(
+        dictionary['coordinates'])
         self.extra_parameters = dictionary['extra_parameters']
         self.parameters = dictionary['parameters']
+        self._plot = None
         
-    def __call__(self):
-        return self.data.__getitem__(self.coordinates.getitem_tuple)
+    def __call__(self, coordinates = None):
+        if coordinates is None:
+            coordinates = self.coordinates
+        return self.data.__getitem__(coordinates.getitem_tuple)
+        
+    def is_spectrum_line(self):
+        if len(self.data.squeeze().shape) == 2:
+            return True
+        else:
+            return False
+        
+    def is_spectrum_image(self):
+        if len(self.data.squeeze().shape) == 3:
+            return True
+        else:
+            return False
+        
+    def is_single_spectrum(self):
+        if len(self.data.squeeze().shape) == 1:
+            return True
+        else:
+            return False
+        
+    def get_image(self, spectral_range = slice(None), background_range = None):
+        data = self.data
+        if self.is_spectrum_line() is True:
+            return self.data.squeeze()
+        elif self.is_single_spectrum() is True:
+            return None
+        if background_range is not None:
+            bg_est = utils.two_area_powerlaw_estimation(self, 
+                                                        background_range.start, 
+                                                        background_range.stop, )
+            A = bg_est['A'][np.newaxis,:,:]
+            r = bg_est['r'][np.newaxis,:,:]
+            E = self.energy_axis[spectral_range,np.newaxis,np.newaxis]
+            bg = A*E**-r
+            return (data[spectral_range,:,:] - bg).sum(0)
+        else:
+            return data[..., spectral_range].sum(-1)
     
-    def plot(self):
-        if self.coordinates.output_dim == 1:
-            self._plot = new_plot.Plot1D(self, self.coordinates)
-        elif self.coordinates.output_dim == 2:
-            self._plot = new_plot.Plot2D(self, self.coordinates)
+    def plot(self, coordinates = None):
+        if coordinates is None:
+            coordinates = self.coordinates
+        if coordinates.output_dim == 1:
+            # Hyperspectrum
+            if self._plot is not None:
+#            if self.coordinates is not self.hse.coordinates:
+                try:
+                    self._plot.close()
+                except:
+                    # If it was already closed it will raise an exception,
+                    # but we want to carry on...
+                    pass
+                
+                self.hse = None
+            self._plot = drawing.mpl_hse.MPL_HyperSpectrum_Explorer()
+            self._plot.spectrum_data_function = self.__call__
+            self._plot.spectrum_title = self.name
+            self._plot.xlabel = '%s (%s)' % (
+                self.coordinates.coordinates[-1].name, 
+                self.coordinates.coordinates[-1].units)
+            self._plot.ylabel = 'Intensity'
+            self._plot.coordinates = coordinates
+            self._plot.axis = self.coordinates.coordinates[-1].axis
+            
+            # Image properties
+            self._plot.image_data_function = self.get_image
+            self._plot.image_title = ''
+            self._plot.pixel_size = self.coordinates.coordinates[0].scale
+            self._plot.pixel_units = self.coordinates.coordinates[0].units
+            
+        elif coordinates.output_dim == 2:
+            self._plot = drawing.mpl_ise.MPL_HyperImage_Explorer()
+        else:
+            messages.warning_exit('Plotting is not supported for this view')
+        
         self._plot.plot()
         
     traits_view = tui.View(
@@ -63,6 +136,11 @@ class Signal(t.HasTraits):
             Gatan Digital Micrograph 'Y' is the default.
         '''
         file_io.save(filename, self, **kwds)
+        
+    def _replot(self):
+        if self.hse is not None:
+            if self.hse.is_active() is True:
+                self.plot()
         
         
         
