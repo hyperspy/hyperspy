@@ -259,56 +259,112 @@ def get_xml_info_from_emi(emi_file):
         objects.append(tx[i_start:i_end + 13]) 
     return objects[:-1]
     
-    
 def ser_reader(filename, *args, **kwds):
     '''Reads the information from the file and returns it in the EELSLab 
     required format'''
     
     header, data = load_ser_file(filename)
-    calibration_dict, acquisition_dict , treatments_dict= {}, {}, {}
-    imported_parameters = {'header' : header, 'data' : data}
-    if guess_data_type(header["DataTypeID"]) == 'SI':
-        axis_names = [None, 'x', 'y', 'z']
-        array_shape = []
-        calibration_dict['energyorigin'] = data['CalibrationOffset'][0]
-        calibration_dict['energyscale'] = data['CalibrationDelta'][0]
-        for i in range(1,header['NumberDimensions'] + 1):
-            calibration_dict['%sorigin' % axis_names[i]] = \
-            header['Dim-%i_CalibrationOffset' % i][0]
-            calibration_dict['%sscale' % axis_names[i]] = \
-            header['Dim-%i_CalibrationDelta' % i][0]
-            calibration_dict['%sunits' % axis_names[i]] = \
-            header['Dim-%i_Units' % i][0]
+    data_type = guess_data_type(header['DataTypeID'])
+    array_shape = []
+    coordinates = []
+    ndim = header['NumberDimensions']
+    
+    
+    if data_type == 'SI':
+        
+        # Extra dimensions
+        for i in range(1, ndim + 1):
+            if i == ndim:
+                name = 'x'
+            elif i == ndim - 1:
+                name = 'y'
+            else:
+                name = 'undefined%' % i
+            coordinates.append({
+            'name' : name,
+            'offset' : header['Dim-%i_CalibrationOffset' % i][0],
+            'scale' : header['Dim-%i_CalibrationDelta' % i][0],
+            'units' : header['Dim-%i_Units' % i][0],
+            'size' : header['Dim-%i_DimensionSize' % i][0],
+            'index_in_array' : i - 1
+            })
             array_shape.append(header['Dim-%i_DimensionSize' % i][0])
+        
+        # Spectral dimension    
+        coordinates.append({
+            'name' : 'undefined',
+            'offset' : data['CalibrationOffset'][0],
+            'scale' : data['CalibrationDelta'][0],
+            'units' : 'undefined',
+            'size' : data['ArrayLength'][0],
+            'index_in_array' : header['NumberDimensions'][0]
+            })
+        
         if len(data['PositionY']) > 1 and \
         (data['PositionY'][0] == data['PositionY'][1]):
             # The spatial dimensions are stored in the reversed order
             # We reverse the shape
             array_shape.reverse()
         array_shape.append(data['ArrayLength'][0])
-        # If the acquisition stops before finishing the job, the stored file will 
-        # report the requested size even though no values are recorded. Therefore if
-        # the shapes of the retrieved array does not match that of the data 
-        # dimensions we must fill the rest with zeros
-        if np.cumprod(array_shape)[-1] != np.cumprod(data['Array'].shape)[-1]:
-            dc = np.zeros((array_shape[0] * array_shape[1], array_shape[2]), 
-                          dtype = data['Array'].dtype)
-            dc[:data['Array'].shape[0],...] = data['Array']
-        else:
-            dc = data['Array']
-        calibration_dict['data_cube'] = \
-        dc.reshape(array_shape).swapaxes(0,-1)
+        
+    elif data_type == 'Image':
+        
+        # Y Coordinate
+        coordinates.append({
+            'name' : 'y',
+            'offset' : data['CalibrationOffsetY'][0] - \
+            data['CalibrationElementY'][0] * data['CalibrationDeltaY'][0],
+            'scale' : data['CalibrationDeltaY'][0],
+            'units' : 'Unknown',
+            'size' : data['ArraySizeY'][0],
+            'index_in_array' : 0
+            })
+        array_shape.append(data['ArraySizeY'][0])
+        
+        # X Coordinate
+        coordinates.append({
+            'name' : 'x',
+            'offset' : data['CalibrationOffsetX'][0] - \
+            data['CalibrationElementX'][0] * data['CalibrationDeltaX'][0],
+            'scale' : data['CalibrationDeltaX'][0],
+            'units' : 'undefined',
+            'size' : data['ArraySizeX'][0],
+            'index_in_array' : 1
+            })
+        array_shape.append(data['ArraySizeX'][0])
+        
+        # Extra dimensions
+        for i in range(1, header['NumberDimensions'] + 1):
+            coordinates.append({
+            'name' : 'undefined%s' % i,
+            'offset' : header['Dim-%i_CalibrationOffset' % i][0],
+            'scale' : header['Dim-%i_CalibrationDelta' % i][0],
+            'units' : header['Dim-%i_Units' % i][0],
+            'size' : header['Dim-%i_DimensionSize' % i][0],
+            'index_in_array' : 1 + i
+            })
+            array_shape.append(header['Dim-%i_DimensionSize' % i][0])
+
+    # If the acquisition stops before finishing the job, the stored file will 
+    # report the requested size even though no values are recorded. Therefore if
+    # the shapes of the retrieved array does not match that of the data 
+    # dimensions we must fill the rest with zeros
+    if np.cumprod(array_shape)[-1] != np.cumprod(data['Array'].shape)[-1]:
+        dc = np.zeros((array_shape[0] * array_shape[1], array_shape[2]), 
+                      dtype = data['Array'].dtype)
+        dc[:data['Array'].shape[0],...] = data['Array']
     else:
-        calibration_dict['xdimension'] = data['ArraySizeX'][0]
-        calibration_dict['ydimension'] = data['ArraySizeY'][0]
-        calibration_dict['xscale'] = data['CalibrationDeltaX'][0]
-        calibration_dict['yscale'] = data['CalibrationDeltaY'][0]
-        calibration_dict['xorigin'] = data['CalibrationOffsetX'][0]
-        calibration_dict['yorigin'] = data['CalibrationOffsetY'][0]
-        calibration_dict['data_cube'] = data['Array'].squeeze()[::-1,:].T
+        dc = data['Array']
+    
+    dc = dc.reshape(array_shape)
+    if data_type == 'Image':
+        dc = dc[::-1]
+      
     dictionary = {
-        'data_type' : guess_data_type(header["DataTypeID"]), 
-        'calibration' : calibration_dict, 
-        'acquisition' : acquisition_dict,
-        'imported_parameters' : imported_parameters}
+    'data_type' : 'Signal',
+    'filename' : filename,
+    'data' : dc,
+    'parameters' : {},
+    'coordinates' : coordinates,
+    'extra_parameters' : {'header' : header, 'data' : data}}
     return dictionary
