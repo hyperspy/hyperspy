@@ -43,7 +43,7 @@ class Signal(t.HasTraits):
         tui.Item('units'),
         )
     
-    def save(self, filename, format = 'hdf5', **kwds):
+    def save(self, filename, **kwds):
         '''Saves the SI in the specified format.
         
         Supported formats: netCDF, msa and bin. netCDF is the default. msa does 

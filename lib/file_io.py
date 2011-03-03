@@ -90,7 +90,7 @@ def load_with_reader(filename, reader, data_type = None, **kwds):
         objects = objects[0]
     return objects
     
-def save(filename, object2save, format = 'nc', **kwds):
+def save(filename, object2save, format = 'hdf5', **kwds):
     from spectrum import Spectrum
     from image import Image
     from signal import Signal
@@ -130,24 +130,7 @@ def save(filename, object2save, format = 'nc', **kwds):
         elif isinstance(object2save, Signal):
             writer.file_writer(filename, object2save, **kwds)
     
-def save_data_array_in_netcdf(filename, array,dim_list = ['x','y','z']):
-    '''Save 3D array in netCDF format
-    
-    Parameters
-    ----------
-    filename : string
-    array : 3D numpy array
-    dim_list : tuple of strings
-        dimension names
-    '''
-    ncfile = Dataset(filename+'.nc','w')
-    ndim = len(array.shape)
-    d_dtype = array.dtype.char
-    for i in range(ndim):
-        exec('ncfile.createDimension(\'%s\', data_cube.shape[i])' % dim_list[i])
-    dc = ncfile.createVariable('data_cube', d_dtype,tuple(dim_list[:ndim]))
-    dc[:] = array
-    ncfile.close()
+
 ## if file_extension in msa_extensions:
 ##     spectrum_dict, acquisition_dict = io.msa_reader(filename)
 ##     for key in spectrum_dict:
