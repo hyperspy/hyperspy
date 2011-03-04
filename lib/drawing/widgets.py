@@ -139,13 +139,13 @@ class DraggablePatch(object):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
             if self._2D is True:
-                if self.coordinates.coordinates[0].index != round(event.ydata):
+                if self.coordinates._indexes[0] != round(event.ydata):
                     self.coordinates.coordinates[0].index = round(event.ydata)
-                if self.coordinates.coordinates[1].index != round(event.xdata):
+                if  self.coordinates._indexes[1] != round(event.xdata):
                     self.coordinates.coordinates[1].index = round(event.xdata)  
             else:
                 if not round(event.ydata) == \
-                self.coordinates.coordinates[0].index:
+                 self.coordinates._indexes[0]:
                     self.coordinates.coordinates[0].index= round(event.ydata)
         
     def update_patch_position(self):
@@ -216,11 +216,9 @@ class DraggableSquare(ResizebleDraggablePatch):
         DraggablePatch.__init__(self, coordinates)
     
     def set_patch(self):
-        c1 = self.coordinates.coordinates[1]
-        c2 = self.coordinates.coordinates[0]
+        indexes = self.coordinates._indexes[::-1]
         self.patch = \
-        plt.Rectangle(
-        (c1.index - self.size / 2, c2.index - self.size / 2), 
+        plt.Rectangle(indexes - (self.size / 2.,) * 2, 
         self.size, self.size, animated = self.blit,
         fill = False, lw = 2,  ec = self.color, picker = True,)
         
@@ -230,10 +228,8 @@ class DraggableSquare(ResizebleDraggablePatch):
         self.update_patch_position()
         
     def update_patch_position(self):
-        c1 = self.coordinates.coordinates[1]
-        c2 = self.coordinates.coordinates[0]
-        delta = self.size / 2
-        self.patch.set_xy((c1.index - delta, c2.index - delta))
+        indexes = self.coordinates._indexes[::-1]
+        self.patch.set_xy(indexes - (self.size / 2.,) * 2)
         self.draw_patch()
         
 class DraggableHorizontalLine(DraggablePatch):
@@ -243,12 +239,12 @@ class DraggableHorizontalLine(DraggablePatch):
         
     def update_patch_position(self):
         if self.patch is not None:
-            self.patch.set_ydata(self.coordinates.coordinates[0].index)
+            self.patch.set_ydata(self.coordinates._indexes[0])
             self.draw_patch()
      
     def set_patch(self):
         ax = self.ax
-        self.patch = ax.axhline(self.coordinates.coordinates[0].index, 
+        self.patch = ax.axhline(self.coordinates._indexes[0], 
                                 color = self.color, 
                                picker = 5, animated = self.blit)
             

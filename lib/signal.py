@@ -35,7 +35,7 @@ class Signal(t.HasTraits):
     def __call__(self, coordinates = None):
         if coordinates is None:
             coordinates = self.coordinates
-        return self.data.__getitem__(coordinates.getitem_tuple)
+        return self.data.__getitem__(coordinates._getitem_tuple)
         
     def is_spectrum_line(self):
         if len(self.data.squeeze().shape) == 2:

@@ -213,16 +213,19 @@ class CoordinatesManager(t.HasTraits):
         
     def set_output_dim(self):
         getitem_tuple = []
+        indexes = []
         self._slicing_coordinates = []
         i = 0
         for coordinate in self.coordinates:
             if coordinate.slice is None:
                 getitem_tuple.append(coordinate.index)
+                indexes.append(coordinate.index)
             else:
                 getitem_tuple.append(coordinate.slice)
                 self._slicing_coordinates.append(coordinate)
                 i += 1
-        self.getitem_tuple = getitem_tuple
+        self._getitem_tuple = getitem_tuple
+        self._indexes = np.array(indexes)
         self.output_dim = i
         
     def set_view(self, view = 'hyperspectrum'):

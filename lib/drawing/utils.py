@@ -62,10 +62,9 @@ def on_window_close(figure, function):
     backend = plt.get_backend()
     if backend == 'GTKAgg':
         def function_wrapper(*args):
-                # This wrapper is needed for the destroying process to carry on
-                # after the function call
                 function()
         window.connect('destroy', function_wrapper)
+
     elif backend == 'WXAgg':
         # In linux the following code produces a segmentation fault
         # so it is enabled only for Windows
@@ -86,6 +85,7 @@ def on_window_close(figure, function):
         def function_wrapper(*args):
                 function()
         figure.canvas.manager.window.bind("<Destroy>", function_wrapper)
+
     elif backend == 'Qt4Agg':
         from PyQt4.QtCore import SIGNAL
         window = figure.canvas.manager.window
