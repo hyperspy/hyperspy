@@ -191,25 +191,25 @@ class CoordinatesManager(t.HasTraits):
         self.coordinates = [None] * ncoord
         for coordinates_dict in coordinates_list:
             self.coordinates[coordinates_dict['index_in_array']] = Coordinate(**coordinates_dict)
-        self.set_coordinate_attribute()
+#        self.set_coordinate_attribute()
         self.set_view()
         self.set_output_dim()
-        self.on_trait_change(self.set_coordinate_attribute, 'coordinates.name')
+#        self.on_trait_change(self.set_coordinate_attribute, 'coordinates.name')
         self.on_trait_change(self.set_output_dim, 'coordinates.slice')
         self.on_trait_change(self.set_output_dim, 'coordinates.index')
 
-    def set_coordinate_attribute(self):
-        if hasattr(self, '_coordinates_attributes_names'):
-            for attr in self._coordinates_attributes_names:
-                self.__delattr__(attr)
-        self._coordinates_attributes_names = []
-        for coord in self.coordinates:
-            if coord.name is '?' or '' or None:
-                name = 'coordinate_%i' % coord.index_in_array
-            else:
-                name = 'coordinate_%s' % coord.name
-            self._coordinates_attributes_names.append(name)
-            self.__setattr__(name, coord)
+#    def set_coordinate_attribute(self):
+#        if hasattr(self, '_coordinates_attributes_names'):
+#            for attr in self._coordinates_attributes_names:
+#                self.__delattr__(attr)
+#        self._coordinates_attributes_names = []
+#        for coord in self.coordinates:
+#            if coord.name is '?' or '' or None:
+#                name = 'coordinate_%i' % coord.index_in_array
+#            else:
+#                name = 'coordinate_%s' % coord.name
+#            self._coordinates_attributes_names.append(name)
+#            self.__setattr__(name, coord)
         
     def set_output_dim(self):
         getitem_tuple = []

@@ -54,7 +54,8 @@ class Signal(t.HasTraits):
             return True
         else:
             return False
-        
+    
+    # TODO: This one needs some care    
     def get_image(self, spectral_range = slice(None), background_range = None):
         data = self.data
         if self.is_spectrum_line() is True:
@@ -152,143 +153,146 @@ class Signal(t.HasTraits):
         
     # Transform ________________________________________________________________
         
-
     def crop_in_pixels(self, axis, i1 = None, i2 = None):
-        '''Crops the data in a given axis.
+        '''Crops the data in a given axis. The range is given in pixels
         axis : int
         i1 : int
             Start index
         i2 : int
             End index
+            
+        See also:
+        ---------
+        crop_in_units
         '''
+        if i1 is not None:
+            new_offset = self.coordinates.coordinates[axis].axis[i1]
+        self.data = self.data[(slice(None),)*axis + (slice(i1, i2), Ellipsis)]
+        
+        if i1 is not None:
+            self.coordinates.coordinates[axis].offset = new_offset
+        self.get_dimensions_from_data()
 
         
         
     def crop_in_units(self, axis, x1 = None, x2 = None):
-        pass
+        '''Crops the data in a given axis. The range is given in the units of 
+        the axis
+         
+        axis : int
+        i1 : int
+            Start index
+        i2 : int
+            End index
+            
+        See also:
+        ---------
+        crop_in_pixels
         
-#    def energy_crop(self, _from = None, to = None, in_energy_units = False):
-#        '''Crop the spectrum on energy
-#        Parameters
-#        ----------
-#        _from : int or float
-#            Starting channel index or energy
-#        to :  int or float
-#            End channel index or energy
-#        in_energy_units : bool
-#            By default the `from` are `to` are treated as energy index. If 
-#            `in_energy_units` the values are treated as energy.
-#        '''
-#        if in_energy_units:
-#            _from = self.energy2index(_from)
-#            to = self.energy2index(to)
-#        for cube in self.__cubes:
-#            cube['data'] = cube['data'][_from: to]
-#        self.energy_axis = self.energy_axis[_from: to]
-#        self.energyorigin = self.energy_axis[0]
-#        self.get_dimensions_from_cube()
-#
-#           
-#    def roll_xy(self, n_x, n_y = 1):
-#        '''Roll over the x axis n_x positions and n_y positions the former rows 
-#        
-#        Parameters
-#        ----------
-#        n_x : int
-#        n_y : int
-#        
-#        Note: Useful to correct the SI column storing bug in Marcel's 
-#        acquisition routines.
-#        '''
-#        self.data_cube = np.roll(self.data_cube, n_x, 1)
-#        self.data_cube[:,:n_x,:] = np.roll(self.data_cube[:,:n_x,:],n_y,2)
-#        self._replot()
-#    
-#    def swap_x_y(self):
-#        '''Swaps the x and y axes'''
-#        
-#        print "Swapping x and y"
-#        data = self.data_cube.swapaxes(1,2)
-#        self.yorigin, self.xorigin = self.xorigin, self.yorigin
-#        self.yscale, self.xscale = self.xscale, self.yscale
-#        self.yunits, self.xunits = self.xunits, self.yunits
-#        self.__new_cube(data, 'x and y swapped')
-#        self.get_dimensions_from_cube()
-#
-#        
-#    def rebin(self, new_shape):
-#        '''
-#        Rebins the SI to the new shape
-#        
-#        Parameters
-#        ----------
-#        new_shape: tuple of int of dimension 3
-#        '''
-#        for cube in self.__cubes:
-#            cube['data'] = rebin(cube['data'],new_shape)
-#        if self.image:
-#            self.image.data_cube = \
-#            rebin(self.image.data_cube, new_shape[1:])
-#        self.get_dimensions_from_cube()
-#        
-#    def split_in(self, number_of_parts = None, steps = None, 
-#                 direction = 'rows'):
-#        '''Splits the SI
-#        
-#        The split can be defined either by the `number_of_parts` or by the 
-#        `steps` size.
-#        
-#        Parameters
-#        ----------
-#        number_of_parts : int
-#            Number of parts in which the SI will be splitted
-#        steps : int
-#            Size of the splitted parts
-#        direction : {'rows', 'columns'}
-#            The direction of splitting.
-#            
-#        Return
-#        ------
-#        tuple with the splitted SIs
-#        '''
-#        if number_of_parts is None and steps is None:
-#            if not self._splitting_steps:
-#                messages.warning_exit(
-#                "Please provide either number_of_parts or a steps list")
-#            else:
-#                steps = self._splitting_steps
-#                print "Splitting in ", steps
-#        elif number_of_parts is not None and steps is not None:
-#            print "Using the given steps list. number_of_parts dimissed"
-#        splitted = []
-#        shape = self.data_cube.shape
-#        if direction == 'rows':
-#            if steps is None:
-#                rounded = (shape[2] - (shape[2] % number_of_parts))
-#                step =  rounded / number_of_parts
-#                cut_node = range(0,rounded+step,step)
-#            else:
-#                cut_node = np.array([0] + steps).cumsum()
-#            for i in range(len(cut_node)-1):
-#                s = copy.deepcopy(self)
-#                for cube in s.__cubes:
-#                    cube['data'] = cube['data'][:,:,cut_node[i]:cut_node[i+1]]
-#                s.get_dimensions_from_cube()
-#                splitted.append(s)
-#            return splitted
-#        if direction == 'columns':
-#            if steps is None:
-#                rounded = (shape[1] - (shape[1] % number_of_parts))
-#                step =  rounded / number_of_parts
-#                cut_node = range(0,rounded+step,step)
-#            else:
-#                cut_node = np.array([0] + steps).cumsum()
-#            for i in range(len(cut_node)-1):
-#                s = copy.deepcopy(self)
-#                s.data_cube = self.data_cube[:,cut_node[i]:cut_node[i+1], :]
-#                s.get_dimensions_from_cube()
-#                splitted.append(s)
-#            return splitted
+        '''
+        i1 = self.coordinates.coordinates[axis].value2index(x1)
+        i2 = self.coordinates.coordinates[axis].value2index(x2)
+        self.crop_in_pixels(axis, i1, i2)
+        
+    def roll_xy(self, n_x, n_y = 1):
+        '''Roll over the x axis n_x positions and n_y positions the former rows
+        
+        This method has the purpose of "fixing" a bug in the acquisition of the
+        Orsay's microscopes and probably it does not have general interest
+        
+        Parameters
+        ----------
+        n_x : int
+        n_y : int
+        
+        Note: Useful to correct the SI column storing bug in Marcel's 
+        acquisition routines.
+        '''
+        self.data = np.roll(self.data, n_x, 0)
+        self.data[:n_x,...] = np.roll(self.data[:n_x,...],n_y,1)
+        self._replot()
+
+    # TODO: After using this function the plotting does not work  
+    def swap_axis(self, axis1, axis2):
+        '''Swaps the axes
+        
+        Parameters
+        ----------
+        axis1 : positive int
+        axis2 : positive int        
+        '''
+        self.data = self.data.swapaxes(axis1,axis2)
+        c1 = self.coordinates.coordinates[axis1]
+        c2 = self.coordinates.coordinates[axis2]
+        c1.index_in_array, c2.index_in_array =  \
+            c2.index_in_array, c1.index_in_array
+        self.coordinates.coordinates[axis1] = c2
+        self.coordinates.coordinates[axis2] = c1
+        self.coordinates.set_output_dim()
+        self._replot()
+
+        
+    def rebin(self, new_shape):
+        '''
+        Rebins the SI to the new shape
+        
+        Parameters
+        ----------
+        new_shape: tuple of int of dimension 3
+        '''
+        factors = np.array(self.data.shape) / np.array(new_shape)
+        self.data = utils.rebin(self.data,new_shape)
+        for coordinate in self.coordinates.coordinates:
+            coordinate.scale *= factors[coordinate.index_in_array]
+        self.get_dimensions_from_data()
+        
+        
+    def split_in(self, number_of_parts = None, steps = None, 
+                 axis):
+        '''Splits the data
+        
+        The split can be defined either by the `number_of_parts` or by the 
+        `steps` size.
+        
+        Parameters
+        ----------
+        number_of_parts : int or None
+            Number of parts in which the SI will be splitted
+        steps : int or None
+            Size of the splitted parts
+        direction : {'rows', 'columns'}
+            The direction of splitting.
+            
+        Return
+        ------
+        tuple with the splitted signals
+        '''
+        if number_of_parts is None and steps is None:
+            if not self._splitting_steps:
+                messages.warning_exit(
+                "Please provide either number_of_parts or a steps list")
+            else:
+                steps = self._splitting_steps
+                print "Splitting in ", steps
+        elif number_of_parts is not None and steps is not None:
+            print "Using the given steps list. number_of_parts dimissed"
+        splitted = []
+        shape = self.data.shape
+        
+        if steps is None:
+            rounded = (shape[2] - (shape[2] % number_of_parts))
+            step =  rounded / number_of_parts
+            cut_node = range(0,rounded+step,step)
+        else:
+            cut_node = np.array([0] + steps).cumsum()
+        for i in range(len(cut_node)-1):
+            s = copy.deepcopy(self)
+            for cube in s.__cubes:
+                cube['data'] = cube['data'][:,:,cut_node[i]:cut_node[i+1]]
+            s.get_dimensions_from_cube()
+            splitted.append(s)
+        return splitted
+
 #            
 #    def unfold(self):
 #        '''If the SI dimension is > 2, it folds it to dimension 2'''
