@@ -12,25 +12,96 @@ import new_coordinates
 import file_io
 import drawing
 import utils
+import types
+class Parameters(object):
+    '''
+    A class to comfortable access some parameters as attributes'''
+    def __init__(self, dictionary):
+        self.load_from_dictionary(dictionary)
+        
+    def load_from_dictionary(self, dictionary):
+        for key, value in dictionary.iteritems():
+            self.__setattr__(key, value)
+ 
+    def print_items(self):
+        '''Prints only the attributes that are not methods'''
+        for item in self.__dict__.items():
+            if type(item) != types.MethodType:
+                print("%s = %s") % item
+
 
 class Signal(t.HasTraits):
     data = t.Array()
     coordinates = t.Instance(new_coordinates.CoordinatesManager)
     extra_parameters = t.Dict()
-    parameters = t.Dict()
+    parameters = t.Instance(Parameters)
     name = t.Str('')
     units = t.Str()
-    scale = t.Float()
-    offset = t.Float()
-    
+    scale = t.Float(1)
+    offset = t.Float(0)
+    physical_property = t.Str()
     def __init__(self, dictionary):
+        '''All data interaction is made through this class or its subclasses
+            
+        
+        Parameters:
+        -----------
+        dictionary : dictionary
+           see load_dictionary for the format
+        '''    
         super(Signal, self).__init__()
+        self.load_dictionary(dictionary)
+        self._plot = None
+        self._shape_before_unfolding = None
+        
+    def load_dictionary(self, dictionary, parameters = Parameters):
+        '''
+        Parameters:
+        -----------
+        dictionary : dictionary
+            A dictionary containing at least a 'data' keyword with an array of 
+            arbitrary dimensions. Additionally the dictionary can contain the 
+            following keys:
+                coordinates: a dictionary that defines the coordinates (see the 
+                    CoordiantesManager class)
+                attributes: a dictionary which keywords are stored as attributes 
+                of the signal class
+                parameters: a dictionary containing a set of parameters that 
+                    will be stored as attributes of a Parameters class. 
+                    For some subclasses some particular parameters might be 
+                    mandatory.
+                extra_parameters: a dictionary that will be accesible in the 
+                    extra_parameters attribute of the signal class and that 
+                    tipycally contains all the parameters that has been imported
+                    from the original data file.
+        parameters : a Parameters class or subclass 
+        '''
         self.data = dictionary['data']
+        if not dictionary.has_key('coordinates'):
+            dictionary['coordinates'] = self._get_undefined_coordinates_list()
         self.coordinates = new_coordinates.CoordinatesManager(
         dictionary['coordinates'])
+        if not dictionary.has_key('parameters'):
+            dictionary['parameters'] = {}
+        if not dictionary.has_key('extra_parameters'):
+            dictionary['extra_parameters'] = {}
+        if dictionary.has_key('attributes'):
+            for key, value in dictionary['attributes'].iteritems():
+                self.__setattr__(key, value)
+        self.parameters = parameters(dictionary['parameters'])
         self.extra_parameters = dictionary['extra_parameters']
-        self.parameters = dictionary['parameters']
-        self._plot = None
+        
+    def _get_undefined_coordinates_list(self):
+        coordinates = []
+        for i in range(len(self.data.shape)):
+            coordinates.append(
+            {'name' : 'undefined',
+            'scale' : 1.,
+            'offset' : 0.,
+            'size' : int(self.data.shape[i]),
+            'units' : 'undefined',
+            'index_in_array' : i,})
+        return coordinates
         
     def __call__(self, coordinates = None):
         if coordinates is None:
@@ -114,8 +185,10 @@ class Signal(t.HasTraits):
         
     traits_view = tui.View(
         tui.Item('name'),
+        tui.Item('physical_property'),
         tui.Item('units'),
-        )
+        tui.Item('offset'),
+        tui.Item('scale'),)
     
     def save(self, filename, **kwds):
         '''Saves the signal in the specified format.
@@ -149,6 +222,8 @@ class Signal(t.HasTraits):
         dc = self.data
         for coordinate in self.coordinates.coordinates:
             coordinate.size = int(dc.shape[coordinate.index_in_array])
+            print("%s size: %i" % 
+            (coordinate.name, dc.shape[coordinate.index_in_array]))
         self._replot()
         
     # Transform ________________________________________________________________
@@ -171,9 +246,7 @@ class Signal(t.HasTraits):
         
         if i1 is not None:
             self.coordinates.coordinates[axis].offset = new_offset
-        self.get_dimensions_from_data()
-
-        
+        self.get_dimensions_from_data()      
         
     def crop_in_units(self, axis, x1 = None, x2 = None):
         '''Crops the data in a given axis. The range is given in the units of 
@@ -230,7 +303,6 @@ class Signal(t.HasTraits):
         self.coordinates.coordinates[axis2] = c1
         self.coordinates.set_output_dim()
         self._replot()
-
         
     def rebin(self, new_shape):
         '''
@@ -247,8 +319,7 @@ class Signal(t.HasTraits):
         self.get_dimensions_from_data()
         
         
-    def split_in(self, number_of_parts = None, steps = None, 
-                 axis):
+    def split_in(self, axis, number_of_parts = None, steps = None):
         '''Splits the data
         
         The split can be defined either by the `number_of_parts` or by the 
@@ -260,13 +331,14 @@ class Signal(t.HasTraits):
             Number of parts in which the SI will be splitted
         steps : int or None
             Size of the splitted parts
-        direction : {'rows', 'columns'}
-            The direction of splitting.
+        axis : int
+            The splitting axis
             
         Return
         ------
         tuple with the splitted signals
         '''
+        import copy
         if number_of_parts is None and steps is None:
             if not self._splitting_steps:
                 messages.warning_exit(
@@ -280,48 +352,47 @@ class Signal(t.HasTraits):
         shape = self.data.shape
         
         if steps is None:
-            rounded = (shape[2] - (shape[2] % number_of_parts))
+            rounded = (shape[axis] - (shape[axis] % number_of_parts))
             step =  rounded / number_of_parts
             cut_node = range(0,rounded+step,step)
         else:
             cut_node = np.array([0] + steps).cumsum()
         for i in range(len(cut_node)-1):
             s = copy.deepcopy(self)
-            for cube in s.__cubes:
-                cube['data'] = cube['data'][:,:,cut_node[i]:cut_node[i+1]]
-            s.get_dimensions_from_cube()
+            s.data = self.data[
+            (slice(None),)*axis + (slice(cut_node[i],cut_node[i+1]), Ellipsis)]
+            s.get_dimensions_from_data()
             splitted.append(s)
         return splitted
 
-#            
-#    def unfold(self):
-#        '''If the SI dimension is > 2, it folds it to dimension 2'''
-#        if self.xdimension > 1 and self.ydimension > 1:
-#            self.shape_before_folding = list(self.data_cube.shape)
-#            for cube in self.__cubes:
-#                cube['data'] = cube['data'].reshape((self.energydimension,-1,1), 
-#                order = 'F')
-#                cube['history'].append('unfolded')
-#            self.get_dimensions_from_cube()
-#            self._replot()
-#            print "\nSI unfolded"
-#            
-#        else:
-#            print "Nothing done, cannot unfold an 1D SI"
-#            
-#    def fold(self):
-#        '''If the SI was previously unfolded, folds it'''
-#        if 'unfolded' in self.history:
-#            # Just in case the number of channels have changed...
-#            self.shape_before_folding[0] = self.energydimension
-#            for cube in self.__cubes:
-#                cube['data'] = cube['data'].reshape(self.shape_before_folding, 
-#                order = 'F')
-#                cube['history'].remove('unfolded')
-#            self.get_dimensions_from_cube()
-#            print "\nSI folded back"
-#        else:
-#            print "Nothing done, the SI was not unfolded"
+            
+    def unfold(self, steady_axis = -1, unfolded_axis = -2):
+        if len(self.data.squeeze().shape) < 3: return
+        self._shape_before_unfolding = self.data.shape
+        self._coordinates_before_unfolding = self.coordinates
+        new_shape = [1] * len(self.data.shape)
+        new_shape[steady_axis] = self.data.shape[steady_axis]
+        new_shape[unfolded_axis] = -1
+        self.data = self.data.reshape(new_shape).squeeze()
+        self.coordinates = new_coordinates.CoordinatesManager(
+        self._get_undefined_coordinates_list())
+        if steady_axis > unfolded_axis:
+            index = -1
+        else:
+            index = 0
+        # TODO: get some coordinates data
+            
+        self.coordinates.coordinates()
+        self._replot()            
+            
+    def fold(self):
+        '''If the SI was previously unfolded, folds it back'''
+        if self._shape_before_unfolding is not None:
+            self.data = self.data.reshape(self._shape_before_unfolding)
+            self.coordinates = self._coordinates_before_unfolding
+            self._shape_before_unfolding = None
+            self._coordinates_before_unfolding = None
+            
 #    def energy_center(self):
 #        '''Substract the mean energy pixel by pixel'''
 #        print "\nCentering the energy axis"
