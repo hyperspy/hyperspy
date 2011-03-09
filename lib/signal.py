@@ -13,6 +13,8 @@ import file_io
 import drawing
 import utils
 import types
+import copy
+
 class Parameters(object):
     '''
     A class to comfortable access some parameters as attributes'''
@@ -240,6 +242,7 @@ class Signal(t.HasTraits):
         ---------
         crop_in_units
         '''
+        axis = self._get_positive_axis(axis)
         if i1 is not None:
             new_offset = self.coordinates.coordinates[axis].axis[i1]
         self.data = self.data[(slice(None),)*axis + (slice(i1, i2), Ellipsis)]
@@ -338,7 +341,7 @@ class Signal(t.HasTraits):
         ------
         tuple with the splitted signals
         '''
-        import copy
+        axis = self._get_positive_axis(axis)
         if number_of_parts is None and steps is None:
             if not self._splitting_steps:
                 messages.warning_exit(
@@ -358,9 +361,11 @@ class Signal(t.HasTraits):
         else:
             cut_node = np.array([0] + steps).cumsum()
         for i in range(len(cut_node)-1):
-            s = copy.deepcopy(self)
-            s.data = self.data[
+            data = self.data[
             (slice(None),)*axis + (slice(cut_node[i],cut_node[i+1]), Ellipsis)]
+            s = Signal({'data' : data})
+            # TODO: When copying plotting does not work
+#            s.coordinates = copy.deepcopy(self.coordinates)
             s.get_dimensions_from_data()
             splitted.append(s)
         return splitted
@@ -377,12 +382,17 @@ class Signal(t.HasTraits):
         self.coordinates = new_coordinates.CoordinatesManager(
         self._get_undefined_coordinates_list())
         if steady_axis > unfolded_axis:
-            index = -1
+            index = 1
         else:
             index = 0
+        nc = self.coordinates.coordinates[
+        steady_axis].get_coordinate_dictionary()
+        nc['index_in_array'] = index 
         # TODO: get some coordinates data
-            
-        self.coordinates.coordinates()
+        self.coordinates.coordinates[index].__init__(
+       **nc)
+        self.coordinates.coordinates[index].slice = slice(None)
+        self.coordinates.coordinates[index - 1].slice = None
         self._replot()            
             
     def fold(self):
@@ -392,67 +402,31 @@ class Signal(t.HasTraits):
             self.coordinates = self._coordinates_before_unfolding
             self._shape_before_unfolding = None
             self._coordinates_before_unfolding = None
-            
-#    def energy_center(self):
-#        '''Substract the mean energy pixel by pixel'''
-#        print "\nCentering the energy axis"
-#        self._energy_mean = np.mean(self.data_cube, 0)
-#        data = (self.data_cube - self._energy_mean)
-#        self.__new_cube(data, 'energy centering')
-#        self._replot()
-#        
-#    def undo_energy_center(self):
-#        if hasattr(self,'_energy_mean'):
-#            data = (self.data_cube + self._energy_mean)
-#            self.__new_cube(data, 'undo energy centering')
-#            self._replot()
-#        
-#    def variance2one(self):
-#        # Whitening
-#        data = copy.deepcopy(self.data_cube)
-#        self._std = np.std(data, 0)
-#        data /= self._std
-#        self.__new_cube(data, 'variance2one')
-#        self._replot()
-#        
-#    def undo_variance2one(self):
-#        if hasattr(self,'_std'):
-#            data = (self.data_cube * self._std)
-#            self.__new_cube(data, 'undo variance2one')
-#            self._replot()
-#                    
-#    def correct_bad_pixels(self, indexes):
-#        '''Substitutes the energy channels by the average of the 
-#        adjencent channels
-#        Parameters
-#        ----------
-#        indexes : tuple of int
-#        '''
-#        data = copy.copy(self.data_cube)
-#        print "Correcting bad pixels of the spectrometer"
-#        for channel in indexes:
-#            data[channel,:,:] = (data[channel-1,:,:] + \
-#            data[channel+1,:,:]) / 2
-#        self.__new_cube(data, 'bad pixels correction')
-#        self._replot()
-#        
-#    def normalize(self, value = 1):
-#        '''Make the sum of each spectrum equal to a given value
-#        Parameters:
-#        -----------
-#        value : float
-#        '''
-#        data = copy.copy(self.data_cube)
-#        print "Normalizing the spectrum/a"
-#        for ix in range(0,self.xdimension):
-#            for iy in range(0,self.ydimension):
-#                sum_ = np.sum(data[:,ix,iy])
-#                data[:,ix,iy] *= (value / sum_)
-#        self.__new_cube(data, 'normalization')
-#        self._replot()
-#        
-#    def align_with_map(self, shift_map, cut = 'left', 
-#                       interpolation_kind = 'linear'):
+            self._replot()
+    def _get_positive_axis(self, axis):
+        if axis < 0:
+            axis = len(self.data.shape) + axis
+        return axis
+    def correct_bad_pixels(self, indexes, axis = -1):
+        '''Substitutes the value of a given pixel by the average of the 
+        adjencent pixels
+        
+        Parameters
+        ----------
+        indexes : tuple of int
+        axis : -1
+        '''
+        axis = self._get_positive_axis(axis)
+        data = self.data
+        for pixel in indexes:
+            data[(slice(None),)*axis + (pixel, Ellipsis)] = \
+            (data[(slice(None),)*axis + (pixel - 1, Ellipsis)] + \
+            data[(slice(None),)*axis + (pixel + 1, Ellipsis)]) / 2.
+        self._replot()
+        
+        
+#    def align_with_map(self, shift_array, axis = -1, cut = 'left', 
+#                       interpolation_method = 'linear'):
 #        '''Shift each spectrum by the energy increment indicated in an array.
 #        
 #        The shifts are relative. The direction of the shift will be determined 
@@ -468,33 +442,32 @@ class Signal(t.HasTraits):
 #            specifying the order of the spline interpolator to use.
 #        '''
 #        
-#        dc = self.data_cube
+#        dc = self.data
 #        ea = np.empty(dc.shape)
 #        if cut == 'left':
-#            shift_map -= shift_map.max()
+#            shift_array -= shift_array.max()
 #        elif cut == 'right':
-#            shift_map -= shift_map.min()
+#            shift_array -= shift_array.min()
 #        else:
-#            messages.warning_exit(
-#            "Parameter cut only accepts \'left\' or '\right\'")
-#        ea[:] = self.energy_axis.reshape((-1,1,1)) + shift_map.reshape(
+#            raise ValueError(
+#            'The cut key admits only \'left\' or \'right\' values')
+#        ea[:] = self.energy_axis.reshape((-1,1,1)) + shift_array.reshape(
 #        (1, dc.shape[1], dc.shape[2]))
 #        new_dc = np.empty(dc.shape)
 #        for j in range(dc.shape[2]):
 #            for  i in range(dc.shape[1]):
-#                print "(%s, %s)" % (i, j)
 #                sp = interp1d(self.energy_axis ,dc[:,i,j], bounds_error = False, 
-#                fill_value = 0, kind = interpolation_kind)
+#                fill_value = 0, kind = interpolation_method)
 #                new_dc[:,i,j] = sp(ea[:,i,j])
 #        s = Spectrum()
 #        s.data_cube = new_dc
 #        utils.copy_energy_calibration(self, s)
 #        if cut == 'left':
-#            iE_min = 1 + np.floor(-1*shift_map.min()/self.energyscale)
+#            iE_min = 1 + np.floor(-1*shift_array.min()/self.energyscale)
 #            print iE_min
 #            s.energy_crop(int(iE_min),None,False)
 #        elif cut == 'right':
-#            iE_max = 1 + np.floor(shift_map.max()/self.energyscale)
+#            iE_max = 1 + np.floor(shift_array.max()/self.energyscale)
 #            s.energy_crop(None,int(iE_max),False)
 #        return s
 #    
@@ -779,24 +752,6 @@ class Signal(t.HasTraits):
 #                print "Clipping the variance to the gaussian_noise_var"
 #                self.variance = np.clip(self.variance, gaussian_noise_var, 
 #                np.Inf) 
-#                
-#    def is_spectrum_line(self):
-#        if len(self.data_cube.squeeze().shape) == 2:
-#            return True
-#        else:
-#            return False
-#        
-#    def is_spectrum_image(self):
-#        if len(self.data_cube.squeeze().shape) == 3:
-#            return True
-#        else:
-#            return False
-#        
-#    def is_single_spectrum(self):
-#        if len(self.data_cube.squeeze().shape) == 1:
-#            return True
-#        else:
-#            return False
 #   
 #    def calibrate(self, lcE = 642.6, rcE = 849.7, lc = 161.9, rc = 1137.6, 
 #    modify_calibration = True):
