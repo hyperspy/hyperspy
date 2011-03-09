@@ -44,7 +44,7 @@ from defaults_parser import defaults
 from interactive_ns import interactive_ns
 from utils import generate_axis
 from utils import rebin
-from mva import MVA, MVA_Results
+from mva.mva import MVA, MVA_Results
 import drawing.mpl_hse
 import controllers
 
