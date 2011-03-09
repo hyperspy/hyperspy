@@ -4,6 +4,8 @@ Created on Wed Oct 06 09:48:42 2010
 
 """
 import numpy as np
+import scipy as sp
+import scipy.interpolate
 import enthought.traits.api as t
 import enthought.traits.ui.api as tui 
 
@@ -245,7 +247,9 @@ class Signal(t.HasTraits):
         axis = self._get_positive_axis(axis)
         if i1 is not None:
             new_offset = self.coordinates.coordinates[axis].axis[i1]
-        self.data = self.data[(slice(None),)*axis + (slice(i1, i2), Ellipsis)]
+        # We take a copy to guarantee the continuity of the data
+        self.data = self.data[
+        (slice(None),)*axis + (slice(i1, i2), Ellipsis)].copy()
         
         if i1 is not None:
             self.coordinates.coordinates[axis].offset = new_offset
@@ -320,8 +324,7 @@ class Signal(t.HasTraits):
         for coordinate in self.coordinates.coordinates:
             coordinate.scale *= factors[coordinate.index_in_array]
         self.get_dimensions_from_data()
-        
-        
+             
     def split_in(self, axis, number_of_parts = None, steps = None):
         '''Splits the data
         
@@ -370,7 +373,7 @@ class Signal(t.HasTraits):
             splitted.append(s)
         return splitted
 
-            
+    # TODO: there is a bug when plotting if in a SI unfolded_axis = 0
     def unfold(self, steady_axis = -1, unfolded_axis = -2):
         if len(self.data.squeeze().shape) < 3: return
         self._shape_before_unfolding = self.data.shape
@@ -403,10 +406,12 @@ class Signal(t.HasTraits):
             self._shape_before_unfolding = None
             self._coordinates_before_unfolding = None
             self._replot()
+
     def _get_positive_axis(self, axis):
         if axis < 0:
             axis = len(self.data.shape) + axis
         return axis
+
     def correct_bad_pixels(self, indexes, axis = -1):
         '''Substitutes the value of a given pixel by the average of the 
         adjencent pixels
@@ -425,54 +430,70 @@ class Signal(t.HasTraits):
         self._replot()
         
         
-#    def align_with_map(self, shift_array, axis = -1, cut = 'left', 
-#                       interpolation_method = 'linear'):
-#        '''Shift each spectrum by the energy increment indicated in an array.
-#        
-#        The shifts are relative. The direction of the shift will be determined 
-#        by wether we prefer to crop the SI on the left or on the right
-#        
-#        Parameters
-#        ----------
-#        shift_map : numpy array
-#        cut : {'left', 'right'}
-#        interpolation_kind : str or int
-#            Specifies the kind of interpolation as a string ('linear',
-#            'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an integer
-#            specifying the order of the spline interpolator to use.
-#        '''
-#        
+    def align_with_array_1D(self, shift_array, axis = -1, 
+                            interpolation_method = 'linear'):
+        '''Shift each one dimensional object by the amount specify by a given 
+        array
+        
+        Parameters
+        ----------
+        shift_map : numpy array
+            The shift is specify in the units of the selected axis
+        interpolation_method : str or int
+            Specifies the kind of interpolation as a string ('linear',
+            'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an integer
+            specifying the order of the spline interpolator to use.
+        '''
+        
+        axis = self._get_positive_axis(axis)
+        ss = list(shift_array.shape)
+        ss.insert(axis,1)
+        shift_array = shift_array.reshape(ss).copy()
+        coord = self.coordinates.coordinates[axis]
+        offset = coord.offset
+        _axis = coord.axis.copy()
+        from progressbar import progressbar
+        maxval = np.cumprod(ss)[-1] - 1
+        pbar = progressbar(maxval = maxval)
+        i = 0
+        for dat, shift in zip(self.iterate_axis(axis), 
+                              utils.iterate_axis(shift_array, axis)):
+                si = sp.interpolate.interp1d(_axis ,dat, 
+                                             bounds_error = False, 
+                                             fill_value = 0., 
+                                             kind = interpolation_method)
+                coord.offset = offset + shift[0]
+                dat[:] = si(coord.axis)
+                pbar.update(i)
+                i += 1
+        coord.offset = offset
+        
+        # Cropping time
+        mini, maxi = shift_array.min(), shift_array.max()
+        if mini < 0:
+            self.crop_in_units(axis, offset - mini)
+        if maxi > 0:
+            self.crop_in_units(axis, None, _axis[-1] - maxi)
+
+    def iterate_axis(self, axis = -1):
+        # We make a copy to guarantee that the data in contiguous, otherwise
+        # it will not return a view of the data
+        utils.iterate_axis(self.data, axis)
+        axis = self._get_positive_axis(axis)
+        unfolded_axis = axis - 1
+        new_shape = [1] * len(self.data.shape)
+        new_shape[axis] = self.data.shape[axis]
+        new_shape[unfolded_axis] = -1
+        # Warning! if the data is not contious it will make a copy!!
+        data = self.data.reshape(new_shape)
+        for i in range(data.shape[unfolded_axis]):
+            getitem = [0] * len(data.shape)
+            getitem[axis] = slice(None)
+            getitem[unfolded_axis] = i
+            yield(data[getitem])
+#
+#    def interpolate_1D(self, axis, E1, E2, xch = 20, kind = 3):
 #        dc = self.data
-#        ea = np.empty(dc.shape)
-#        if cut == 'left':
-#            shift_array -= shift_array.max()
-#        elif cut == 'right':
-#            shift_array -= shift_array.min()
-#        else:
-#            raise ValueError(
-#            'The cut key admits only \'left\' or \'right\' values')
-#        ea[:] = self.energy_axis.reshape((-1,1,1)) + shift_array.reshape(
-#        (1, dc.shape[1], dc.shape[2]))
-#        new_dc = np.empty(dc.shape)
-#        for j in range(dc.shape[2]):
-#            for  i in range(dc.shape[1]):
-#                sp = interp1d(self.energy_axis ,dc[:,i,j], bounds_error = False, 
-#                fill_value = 0, kind = interpolation_method)
-#                new_dc[:,i,j] = sp(ea[:,i,j])
-#        s = Spectrum()
-#        s.data_cube = new_dc
-#        utils.copy_energy_calibration(self, s)
-#        if cut == 'left':
-#            iE_min = 1 + np.floor(-1*shift_array.min()/self.energyscale)
-#            print iE_min
-#            s.energy_crop(int(iE_min),None,False)
-#        elif cut == 'right':
-#            iE_max = 1 + np.floor(shift_array.max()/self.energyscale)
-#            s.energy_crop(None,int(iE_max),False)
-#        return s
-#    
-#    def energy_interpolation(self, E1, E2, xch = 20, kind = 3):
-#        dc = self.data_cube
 #        ix1 = self.energy2index(E1)
 #        ix2 = self.energy2index(E2)
 #        ix0 = np.clip(ix1 - xch, 0, np.inf)
@@ -492,7 +513,7 @@ class Signal(t.HasTraits):
 #        sp = interp1d(old_ax,data[:,ix,iy])
 #        return sp(new_ax)
 #    
-#    def align(self, energy_range = (None,None), 
+#    def align_1D(self, energy_range = (None,None), 
 #    reference_spectrum_coordinates = (0,0), max_energy_shift = None, 
 #    sync_SI = None, interpolate = True, interp_points = 5, progress_bar = True):
 #        ''' Align the SI by cross-correlation.

@@ -98,7 +98,6 @@ class Coordinate(t.HasTraits):
         self.high_index = self.size - 1
     
     def update_axis(self):
-        messages.information("Updating the %s axis" % self.name)
         self.axis = generate_axis(self.offset, self.scale, self.size)
         self.low_value, self.high_value = self.axis.min(), self.axis.max()
 #        self.update_value()

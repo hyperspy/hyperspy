@@ -1020,3 +1020,20 @@ def ratio(edge_A, edge_B):
     print "Ratio %s/%s %1.3f +- %1.3f " % (edge_A.name, edge_B.name, a/b, 
     1.96*ratio_std )
     return ratio, ratio_std
+    
+def iterate_axis(data, axis = -1):
+        # We make a copy to guarantee that the data in contiguous, otherwise
+        # it will not return a view of the data
+        data = data.copy()
+        if axis < 0:
+            axis = len(data.shape) + axis
+        unfolded_axis = axis - 1
+        new_shape = [1] * len(data.shape)
+        new_shape[axis] = data.shape[axis]
+        new_shape[unfolded_axis] = -1
+        data = data.reshape(new_shape)
+        for i in range(data.shape[unfolded_axis]):
+            getitem = [0] * len(data.shape)
+            getitem[axis] = slice(None)
+            getitem[unfolded_axis] = i
+            yield(data[getitem])
