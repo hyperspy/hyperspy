@@ -189,7 +189,6 @@ def guess_data_type(data_type_id):
     if data_type_id == 16672:
         return 'SI'
     else:
-        # 16722 e.g.
         return 'Image'
         
 def emi_reader(filename, dump_xml = False, **kwds):
@@ -231,12 +230,11 @@ def load_ser_file(filename, print_info = False):
         print "Header info:"
         print "------------"
         print_struct_array_values(header[0])
-    data_dtype_list = get_data_dtype_list(file, 
-    header['Data_Offsets'].ravel()[0], 
+    data_dtype_list = get_data_dtype_list(file, header['Data_Offsets'][0][0], 
     guess_data_type(header['DataTypeID']))
     tag_dtype_list =  get_data_tag_dtype_list(header['TagTypeID'])
-    file.seek(header['Data_Offsets'].ravel()[0])
-    data = np.fromfile(file, dtype = np.dtype(data_dtype_list + tag_dtype_list), 
+    file.seek(header['Data_Offsets'][0][0])
+    data = np.fromfile(file, dtype=np.dtype(data_dtype_list + tag_dtype_list), 
     count = header["TotalNumberElements"])
     if print_info is True:
         print "\n"
@@ -259,53 +257,33 @@ def get_xml_info_from_emi(emi_file):
         objects.append(tx[i_start:i_end + 13]) 
     return objects[:-1]
     
-    
 def ser_reader(filename, *args, **kwds):
     '''Reads the information from the file and returns it in the EELSLab 
     required format'''
+    # Determine if it is an emi or a ser file.
     
     header, data = load_ser_file(filename)
     calibration_dict, acquisition_dict , treatments_dict= {}, {}, {}
+    axis_names = [None, 'x', 'y', 'z']
+    array_shape = []
+    calibration_dict['energyorigin'] = data['CalibrationOffset'][0]
+    calibration_dict['energyscale'] = data['CalibrationDelta'][0]
     imported_parameters = {'header' : header, 'data' : data}
-    if guess_data_type(header["DataTypeID"]) == 'SI':
-        axis_names = [None, 'x', 'y', 'z']
-        array_shape = []
-        calibration_dict['energyorigin'] = data['CalibrationOffset'][0]
-        calibration_dict['energyscale'] = data['CalibrationDelta'][0]
-        for i in range(1,header['NumberDimensions'] + 1):
-            calibration_dict['%sorigin' % axis_names[i]] = \
-            header['Dim-%i_CalibrationOffset' % i][0]
-            calibration_dict['%sscale' % axis_names[i]] = \
-            header['Dim-%i_CalibrationDelta' % i][0]
-            calibration_dict['%sunits' % axis_names[i]] = \
-            header['Dim-%i_Units' % i][0]
-            array_shape.append(header['Dim-%i_DimensionSize' % i][0])
-        if len(data['PositionY']) > 1 and \
-        (data['PositionY'][0] == data['PositionY'][1]):
-            # The spatial dimensions are stored in the reversed order
-            # We reverse the shape
-            array_shape.reverse()
-        array_shape.append(data['ArrayLength'][0])
-        # If the acquisition stops before finishing the job, the stored file will 
-        # report the requested size even though no values are recorded. Therefore if
-        # the shapes of the retrieved array does not match that of the data 
-        # dimensions we must fill the rest with zeros
-        if np.cumprod(array_shape)[-1] != np.cumprod(data['Array'].shape)[-1]:
-            dc = np.zeros((array_shape[0] * array_shape[1], array_shape[2]), 
-                          dtype = data['Array'].dtype)
-            dc[:data['Array'].shape[0],...] = data['Array']
-        else:
-            dc = data['Array']
-        calibration_dict['data_cube'] = \
-        dc.reshape(array_shape).swapaxes(0,-1)
-    else:
-        calibration_dict['xdimension'] = data['ArraySizeX'][0]
-        calibration_dict['ydimension'] = data['ArraySizeY'][0]
-        calibration_dict['xscale'] = data['CalibrationDeltaX'][0]
-        calibration_dict['yscale'] = data['CalibrationDeltaY'][0]
-        calibration_dict['xorigin'] = data['CalibrationOffsetX'][0]
-        calibration_dict['yorigin'] = data['CalibrationOffsetY'][0]
-        calibration_dict['data_cube'] = data['Array'].squeeze()[::-1,:].T
+    for i in range(1,header['NumberDimensions'] + 1):
+        calibration_dict['%sorigin' % axis_names[i]] = \
+        header['Dim-%i_CalibrationOffset' % i][0]
+        calibration_dict['%sscale' % axis_names[i]] = \
+        header['Dim-%i_CalibrationDelta' % i][0]
+        calibration_dict['%sunits' % axis_names[i]] = \
+        header['Dim-%i_Units' % i][0]
+        array_shape.append(header['Dim-%i_DimensionSize' % i][0])
+    if data['PositionY'][0] == data['PositionY'][1]:
+        # The spatial dimensions are stored in the reversed order
+        # We reverse the shape
+        array_shape.reverse()
+    array_shape.append(data['ArrayLength'][0])
+    calibration_dict['data_cube'] = \
+    data['Array'].reshape(array_shape).swapaxes(0,-1)
     dictionary = {
         'data_type' : guess_data_type(header["DataTypeID"]), 
         'calibration' : calibration_dict, 

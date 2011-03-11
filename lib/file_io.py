@@ -22,16 +22,19 @@ import os
 
 import messages
 from defaults_parser import defaults
-from io import netcdf, msa, digital_micrograph, fei, bin, mrc, pil, buker_raw
+#from io import netcdf, msa, digital_micrograph, fei, bin, mrc, pil
+from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil
 
-io_plugins = (netcdf, msa, digital_micrograph, fei, bin, mrc, pil, buker_raw)
+#io_plugins = (netcdf, msa, digital_micrograph, fei, bin, mrc, pil)
+io_plugins = (netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil)
 
 def load(filename, data_type = None, **kwds):
     '''
     Load any supported file into an EELSLab structure
-    Supported formats: netCDF, msa, Gatan's dm3, FEI's ser and emi.
+    Supported formats: netCDF, msa, Gatan dm3, FEI ser and emi.
 
     Parameters
+cd
     ----------
 
     filename : string
@@ -67,17 +70,11 @@ def load_with_reader(filename, reader, data_type = None, **kwds):
         data_type = dictionary['data_type']
         if data_type == 'SI':
             s = Spectrum(dictionary)
-            if defaults.plot_on_load is True:
-                s.plot()
-            objects.append(s)
         elif data_type == 'Image':
-            im = Image(dictionary)
-            if defaults.plot_on_load is True:
-                im.plot()
-            objects.append(im)
-        else:
-            messages.warning_exit(
-            'The data type was not recognised')
+            s = Image(dictionary)        
+        if defaults.plot_on_load is True:
+                s.plot()
+        objects.append(s)
     if len(objects) == 1:
         objects = objects[0]
     return objects
