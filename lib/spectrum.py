@@ -152,6 +152,8 @@ class Spectrum(object, MVA):
         self.title = ''
         self.mva_results = MVA_Results()
         
+        self._replot_activated = True
+        
         self.acquisition_parameters = Acquisition_Parameters()
         self.treatments = Treatments()
         
@@ -1108,6 +1110,8 @@ class Spectrum(object, MVA):
         '''
         
         print "Aligning the SI"
+        activate_replot = self._replot_activated
+        self._replot_activated = False
         ip = interp_points + 1
         data = self.data_cube
         channel_1 = self.energy2index(energy_range[0])
@@ -1183,7 +1187,9 @@ class Spectrum(object, MVA):
 
         if sync_SI is not None:
             apply_correction(sync_SI)
-
+        if activate_replot is True:
+            self._replot_activated = True
+            
         return shift_map
 
     def find_low_loss_origin(self, sync_SI = None):
@@ -2011,7 +2017,7 @@ class Spectrum(object, MVA):
         self.hse.plot()
         
     def _replot(self):
-        if self.hse is not None:
+        if self.hse is not None and self._replot_activated is True:
             if self.hse.is_active() is True:
                 self.plot()
                 
