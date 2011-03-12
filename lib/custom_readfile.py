@@ -247,7 +247,7 @@ def read_data_array(fp, byte_size=0, byte_address=0,
     # import here to minimize import overhead
     import mmap
     import numpy as np
-    
+        
     def readfobj(fobj):
         """Same as parent function, but only works with file objects.
         """
@@ -283,15 +283,21 @@ def read_data_array(fp, byte_size=0, byte_address=0,
         fmap.flush()
         fmap.close() # if I close the map, then I cannot modify the file, right?
         return data
-        
+
     if type(fp) is file:
         if not fp.closed:
+            if byte_size == 0:
+                byte_size = os.fstat(fp.fileno())[6]
             return readfobj(fp)
         else:
             with open(fp.name, 'r+b') as f:
+                if byte_size == 0:
+                    byte_size = os.fstat(f.fileno())[6]
                 return readfobj(f)            
     elif type(fp) is str:
         with open(fp, 'r+b') as f:
+            if byte_size == 0:
+                byte_size = os.fstat(f.fileno())[6]
             return readfobj(f)
     else:
         raise TypeError, type(fp)
