@@ -1137,11 +1137,12 @@ class Spectrum(object, MVA):
             from progressbar import progressbar
             maxval = max(1,size_x) * max(1,size_y)
             pbar = progressbar(maxval = maxval)
-        for iy in range(size_y):
-            for ix in range(size_x):
+        i = 0
+        for iy in np.arange(size_y):
+            for ix in np.arange(size_x):
                 if progress_bar is True:
-                    i = (ix + 1)*(iy+1)
                     pbar.update(i)
+                    i += 1
                 if interpolate:
                     dc = self._interpolate_spectrum(ip, (ix, iy))
                 shift_map[ix,iy] = np.argmax(np.correlate(ref, 
@@ -1162,11 +1163,12 @@ class Spectrum(object, MVA):
             if progress_bar is True:
                 maxval = max(1,size_x) * max(1,size_y)
                 pbar = progressbar(maxval = maxval)
+            i = 0
             for iy in range(size_y):
                 for ix in range(size_x):
                     if progress_bar is True:
-                        i = (ix + 1)*(iy+1)
                         pbar.update(i)
+                        i += 1
 
                     if interpolate:
                         sp = spectrum._interpolate_spectrum(ip, (ix, iy))
