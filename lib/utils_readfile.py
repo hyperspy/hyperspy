@@ -25,7 +25,7 @@
 
 import struct
 import os
-from custom_exceptions import *
+from exceptions import *
 
 # Declare simple TagDataType structures for faster execution.
 # The variables are named as following:

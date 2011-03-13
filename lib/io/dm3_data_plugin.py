@@ -32,10 +32,10 @@ import re
 import numpy as np
 
 # relative imports are discouraged (PEP0008)
-from ..custom_readfile import *
-from ..custom_exceptions import *
-from ..custom_utils import overwrite, swapelem
-from ..custom_utils import DictBrowser, fsdict
+from ..utils_readfile import *
+from ..exceptions import *
+from ..utils_varia import overwrite, swapelem
+from ..utils_varia import DictBrowser, fsdict
 
 # Plugin characteristics
 # ----------------------

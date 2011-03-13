@@ -26,7 +26,7 @@
 
 import numpy as np
 import os
-from ..custom_readfile import *
+from ..utils_readfile import *
 
 # Plugin characteristics
 # ----------------------
