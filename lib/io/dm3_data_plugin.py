@@ -605,7 +605,11 @@ class DM3ImageFile(object):
                 return None
         try:
             im = image_id[self.data_id - 1]
-            self.name = self.data_dict.ls([im,] + DM3ImageFile.imname)[1][1]
+            name = self.data_dict.ls([im,] + DM3ImageFile.imname)
+            if name:
+                self.name = self.data_dict.ls([im,] + DM3ImageFile.imname)[1][1]
+            else:
+                self.name = self.filename
             print 'Loading image "%s" (ID: %i) from file %s'% (self.name,
                                                                self.data_id,
                                                                self.filename)
