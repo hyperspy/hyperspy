@@ -2,6 +2,11 @@
 
 import os
 
-# The -wthread forces matplotlib to use the WXAgg backend
-# This is necessary to support traits visualisation
-os.system('ipython -pylab -wthread -c "from eelslab import *" -i')
+if os.name in ['nt','dos']:
+    # The -wthread forces matplotlib to use the WXAgg backend
+    # This is necessary to support traits visualisation
+    # In windows is the default because it the only one that works correctly
+    os.system('ipython -pylab -wthread -c "from eelslab import *" -i')
+else:
+    # When not running in Windows the backend is defined by matplotlib
+    os.system('ipython -pylab -c "from eelslab import *" -i')
