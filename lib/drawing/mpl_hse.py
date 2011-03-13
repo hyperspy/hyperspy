@@ -22,10 +22,9 @@ import numpy as np
 
 import widgets
 import spectrum, image, utils
+from .. import coordinates
 
-
-
-class MPL_HyperSpectrum_Explorer():
+class MPL_HyperSpectrum_Explorer(object):
     '''Plots the current spectrum to the screen and a map with a cursor to 
     explore the SI.'''
     
@@ -43,28 +42,45 @@ class MPL_HyperSpectrum_Explorer():
         self.pixel_units =  None
         self.axis = None
         self.pointer = None
+        self.right_pointer = None
         self._key_nav_cid = None
+        self._right_pointer_on = False
+        
+    @property
+    def right_pointer_on(self):
+        """I'm the 'x' property."""
+        return self._right_pointer_on
+
+    @right_pointer_on.setter
+    def right_pointer_on(self, value):
+        if value == self._right_pointer_on: return
+        self._right_pointer_on = value
+        if value is True:
+            self.add_right_pointer()
+        else:
+            self.remove_right_pointer()
     
     def is_active(self):
         return utils.does_figure_object_exists(self.spectrum_plot.figure)
     
     def assign_pointer(self):
+
         shape = self.coordinates.shape
         if shape[0] > 1:
             if shape[1] > 1:
                 Pointer = widgets.DraggableSquare
             else:
                 Pointer = widgets.DraggableHorizontalLine
+            return Pointer
         else:
-            return
-        
-        self.pointer = Pointer(self.coordinates)
-        self.pointer.color = 'red'
+            return None    
         
     def plot(self):
         if self.pointer is None:
-            self.assign_pointer()
+            pointer = self.assign_pointer()  
         if self.pointer is not None:
+            self.pointer = pointer(self.coordinates)
+            self.pointer.color = 'red'
             self.plot_image()
         self.plot_spectrum()
         
@@ -110,7 +126,41 @@ class MPL_HyperSpectrum_Explorer():
             utils.on_window_close(sf.figure, self.image_plot.close)
             self._key_nav_cid = self.spectrum_plot.figure.canvas.mpl_connect(
             'key_press_event', self.coordinates.key_navigator)
+            self._key_nav_cid = self.image_plot.figure.canvas.mpl_connect(
+            'key_press_event', self.coordinates.key_navigator)
+            self.spectrum_plot.figure.canvas.mpl_connect(
+                'key_press_event', self.key2switch_right_pointer)
+            self.image_plot.figure.canvas.mpl_connect(
+                'key_press_event', self.key2switch_right_pointer)
+            
+    def key2switch_right_pointer(self, event):
+        if event.key == "e":
+            self.right_pointer_on = not self.right_pointer_on
+            
+    def add_right_pointer(self):
+        if self.spectrum_plot.right_coordinates is None:
+            self.spectrum_plot.right_coordinates = coordinates.Coordinates(
+            self.coordinates.shape)
+        if self.right_pointer is None:
+            pointer = self.assign_pointer()
+            self.right_pointer = pointer(self.spectrum_plot.right_coordinates)
+            self.right_pointer.color = 'blue'
+            self.right_pointer.add_axes(self.image_plot.ax)
+        rl = spectrum.SpectrumLine()
+        rl.data_function = self.spectrum_data_function
+        rl.line_properties_helper(self.right_pointer.color, 'step')
+        self.spectrum_plot.create_right_axis()
+        self.spectrum_plot.add_line(rl, ax = 'right')
+        rl.plot()
+        self.right_pointer_on = True
         
+    def remove_right_pointer(self):
+        for line in self.spectrum_plot.right_ax_lines:
+            self.spectrum_plot.right_ax_lines.remove(line)
+            line.close()
+        self.right_pointer.close()
+        self.right_pointer = None
+        self.image_plot.update_image()
     def close(self):         
         self.spectrum_plot.close()
         self.image_plot.close()

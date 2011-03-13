@@ -64,7 +64,8 @@ class SpectrumFigure():
     def create_right_axis(self):
         if self.left_ax is None:
             self.create_left_axis()
-        self.right_ax = self.left_ax.twinx()
+        if self.right_ax is None:
+            self.right_ax = self.left_ax.twinx()
         
     def add_line(self, line, ax = 'left'):
         if ax == 'left':
@@ -160,7 +161,12 @@ class SpectrumLine():
             self.ax.figure.canvas.draw()
         
     def close(self):
+        self.ax.lines.remove(self.line)
         self.coordinates.disconnect(self.update)
+        try:
+            self.ax.figure.canvas.draw()
+        except:
+            pass
         
         
         
