@@ -22,16 +22,18 @@ import os
 
 import messages
 from defaults_parser import defaults
-from io import netcdf, msa, digital_micrograph, fei, bin, mrc, pil, buker_raw
+from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil
 
-io_plugins = (netcdf, msa, digital_micrograph, fei, bin, mrc, pil, buker_raw)
+io_plugins = (netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil)
 
 def load(filename, data_type = None, **kwds):
-    '''
+    """
     Load any supported file into an EELSLab structure
-    Supported formats: netCDF, msa, Gatan's dm3, FEI's ser and emi.
+    Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
+    FEI ser and emi.
 
     Parameters
+cd
     ----------
 
     filename : string
@@ -40,14 +42,14 @@ def load(filename, data_type = None, **kwds):
         If None (default) it will try to guess the data type from the file,
         if 'SI' the file will be loaded as an Spectrum object
         If 'Image' the file will be loaded as an Image object
-    '''
+    """
     extension = os.path.splitext(filename)[1][1:]
     
     i = 0
     while extension not in io_plugins[i].file_extensions and \
         i < len(io_plugins) - 1: i += 1
     if i == len(io_plugins):
-        # Try to load it with the python library
+        # Try to load it with the python imaging library
         reader = pil
         try:
             return load_with_reader(filename, reader, data_type, **kwds)
@@ -61,23 +63,19 @@ def load_with_reader(filename, reader, data_type = None, **kwds):
     from spectrum import Spectrum
     from image import Image
     messages.information(reader.description)    
-    dictionary_list = reader.file_reader(filename, data_type = data_type, **kwds)
+    dictionary_list = reader.file_reader(filename,
+                                         data_type=data_type,
+                                         **kwds)
     objects = []
     for dictionary in dictionary_list:
         data_type = dictionary['data_type']
         if data_type == 'SI':
             s = Spectrum(dictionary)
-            if defaults.plot_on_load is True:
-                s.plot()
-            objects.append(s)
         elif data_type == 'Image':
-            im = Image(dictionary)
-            if defaults.plot_on_load is True:
-                im.plot()
-            objects.append(im)
-        else:
-            messages.warning_exit(
-            'The data type was not recognised')
+            s = Image(dictionary)        
+        if defaults.plot_on_load is True:
+                s.plot()
+        objects.append(s)
     if len(objects) == 1:
         objects = objects[0]
     return objects
@@ -120,7 +118,7 @@ def save(filename, object2save, format = 'nc', **kwds):
                 writer.file_writer(filename, object2save, **kwds)
     
 def save_data_array_in_netcdf(filename, array,dim_list = ['x','y','z']):
-    '''Save 3D array in netCDF format
+    """Save 3D array in netCDF format
     
     Parameters
     ----------
@@ -128,7 +126,7 @@ def save_data_array_in_netcdf(filename, array,dim_list = ['x','y','z']):
     array : 3D numpy array
     dim_list : tuple of strings
         dimension names
-    '''
+    """
     ncfile = Dataset(filename+'.nc','w')
     ndim = len(array.shape)
     d_dtype = array.dtype.char
