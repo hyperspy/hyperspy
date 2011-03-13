@@ -198,7 +198,9 @@ class IndexTracker(object): # FIXME: check contrast while scrolling
 
         self.step = step
         
-        self.im = ax.imshow(self.obj[:,:,self.index], interpolation='nearest', cmap=plt.cm.gray)
+        self.im = ax.imshow(self.obj[:,:,self.index],
+                            interpolation='nearest',
+                            cmap=plt.cm.gray)
         self.update()
 
     def onscroll(self, event):
@@ -224,7 +226,6 @@ class IndexTracker(object): # FIXME: check contrast while scrolling
             self.ax.set_ylabel('Slice n. %s' % self.index)
         
         self.im.axes.figure.canvas.draw()
-
 
 def slicer(obj, start=None, step=1):
     fig = plt.figure()
@@ -355,7 +356,6 @@ class DictBrowser(object):
         obj.ls('root.dir1.dir2.dir3')
         obj.ls(['root', 'dir1', 'dir2', 'dir3'])
         """
-
         pwd = pwd[:] # don't modify the input object, work with a copy
 
         if pwd == '..':
