@@ -85,7 +85,7 @@ class Model(list, Optimizers, Estimators, Controls):
 
         if self.ll is not None:
             self.convolved = True
-            if self.convolution_axis is None:
+            if self.experiments.convolution_axis is None:
                 self.experiments.set_convolution_axis()
         else:
             self.convolved = False
@@ -426,7 +426,8 @@ class Model(list, Optimizers, Estimators, Controls):
                     counter+=component.nfree_param
             to_return = sum_ + np.convolve(
                 self.ll.data_cube[: , self.coordinates.ix, self.coordinates.iy], 
-                sum_convolved, mode="valid")            
+                sum_convolved, mode="valid")
+            to_return = to_return[self.channel_switches]
             return to_return
 
 

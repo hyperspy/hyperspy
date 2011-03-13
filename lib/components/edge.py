@@ -128,6 +128,8 @@ class Edge(Component):
             xy_shape = list(self.fslist.map.shape[:2])    
             self.fslist.map = np.zeros(xy_shape + 
             [self.fslist._number_of_elements,])
+            self.fslist.std_map = np.zeros(xy_shape + 
+            [self.fslist._number_of_elements,])
         
     def readgosfile(self): 
         element = self.__element
