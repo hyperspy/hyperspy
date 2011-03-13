@@ -25,7 +25,6 @@ import numpy as np
 from dm3reader_eelslab import parseDM3
 from .. import messages
 
-
 # Plugin characteristics
 # ----------------------
 format_name = 'Digital Micrograph dm3'
