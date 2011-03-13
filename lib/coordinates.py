@@ -123,6 +123,8 @@ class Coordinates(object):
             if self.step > 1:
                 self.step -= 1
             print "Step = ", self.step
+        else:
+            print(event.key)
 
 class TwoCoordinates():
     def __init__(self, shape):

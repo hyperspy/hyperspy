@@ -43,6 +43,7 @@ class MPL_HyperSpectrum_Explorer():
         self.pixel_units =  None
         self.axis = None
         self.pointer = None
+        self._key_nav_cid = None
     
     def is_active(self):
         return utils.does_figure_object_exists(self.spectrum_plot.figure)
@@ -59,6 +60,7 @@ class MPL_HyperSpectrum_Explorer():
         
         self.pointer = Pointer(self.coordinates)
         self.pointer.color = 'red'
+        
     def plot(self):
         if self.pointer is None:
             self.assign_pointer()
@@ -106,8 +108,10 @@ class MPL_HyperSpectrum_Explorer():
         sf.plot()
         if self.image_plot is not None and sf.figure is not None:
             utils.on_window_close(sf.figure, self.image_plot.close)
+            self._key_nav_cid = self.spectrum_plot.figure.canvas.mpl_connect(
+            'key_press_event', self.coordinates.key_navigator)
         
-    def close(self):
+    def close(self):         
         self.spectrum_plot.close()
         self.image_plot.close()
 
