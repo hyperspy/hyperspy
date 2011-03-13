@@ -187,8 +187,15 @@ class Model(list, Optimizers, Estimators, Controls):
                     for line in self.hl.hse.spectrum_plot.left_ax_lines:
                         parameter.connect(line.update)
                     parameter.connection_activated = False
-
-                    
+    
+    def disconnect_parameters2update_plot(self):
+        for component in self:
+            for parameter in component.parameters:
+                if self.hl.hse is not None:
+                    for line in self.hl.hse.spectrum_plot.left_ax_lines:
+                        parameter.disconnect(line.update)
+                    parameter.connection_activated = False
+                            
     def set_auto_update_plot(self, tof):
         for component in self:
             for parameter in component.parameters:
@@ -906,5 +913,7 @@ class Model(list, Optimizers, Estimators, Controls):
         hse.spectrum_plot.add_line(l2)
         l2.plot()
         self.connect_parameters2update_plot()
+        drawing.utils.on_window_close(hse.spectrum_plot.figure, 
+                                      self.disconnect_parameters2update_plot)
         self.set_auto_update_plot(True)
         # TODO Set autoupdate to False on close
