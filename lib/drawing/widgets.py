@@ -237,6 +237,9 @@ class DraggableHorizontalLine(DraggablePatch):
     def __init__(self, coordinates):
         DraggablePatch.__init__(self, coordinates)
         self._2D = False
+        # Despise the bug, we use blit for this one because otherwise the 
+        # it gets really slow
+        self.blit = True
         
     def update_patch_position(self):
         if self.patch is not None:
