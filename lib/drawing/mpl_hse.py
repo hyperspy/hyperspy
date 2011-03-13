@@ -78,9 +78,10 @@ class MPL_HyperSpectrum_Explorer(object):
     def plot(self):
         if self.pointer is None:
             pointer = self.assign_pointer()  
+            if pointer is not None:
+                self.pointer = pointer(self.coordinates)
+                self.pointer.color = 'red'
         if self.pointer is not None:
-            self.pointer = pointer(self.coordinates)
-            self.pointer.color = 'red'
             self.plot_image()
         self.plot_spectrum()
         
