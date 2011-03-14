@@ -145,6 +145,12 @@ def read_raw(rpl_info, fp):
     endian = rpl_info['byte-order']
     record_by = rpl_info['record-by']
 
+    if 'signed' in data_type:
+        # data cubes of int give misleading results
+        convert2float = True
+    else:
+        convert2float = False
+
     if data_type == 'signed':
         data_type = 'int'
     elif data_type == 'unsigned':
@@ -168,16 +174,15 @@ def read_raw(rpl_info, fp):
     data = read_data_array(fp,
                            byte_address=offset,
                            data_type=data_type)
+    if convert2float:
+        data = data.astype(np.float32)
 
     if record_by == 'vector':   # spectral image
         size = (height, width, depth)
-        # old EELSLab; energy first (this will hopefully be changed)
         data = data.reshape(size)
+        # old EELSLab; energy first (this will hopefully be changed)
         data = np.rollaxis(data, 2, 0)
     elif record_by == 'image':  # stack of images
-        print 'ATTENTION!'
-        print 'Loading a stack of images.'
-        print 'This option may be buggy and needs some testing.'
         size = (depth, height, width)
         data = data.reshape(size)
 
