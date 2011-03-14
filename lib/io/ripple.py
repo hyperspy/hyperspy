@@ -170,7 +170,7 @@ def read_raw(rpl_info, fp):
                            data_type=data_type)
 
     if record_by == 'vector':   # spectral image
-        size = (width, height, depth)
+        size = (height, width, depth)
         # old EELSLab; energy first (this will hopefully be changed)
         data = data.reshape(size)
         data = np.rollaxis(data, 2, 0)
@@ -178,7 +178,7 @@ def read_raw(rpl_info, fp):
         print 'ATTENTION!'
         print 'Loading a stack of images.'
         print 'This option may be buggy and needs some testing.'
-        size = (depth, width, height)
+        size = (depth, height, width)
         data = data.reshape(size)
 
     return data
