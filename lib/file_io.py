@@ -22,9 +22,9 @@ import os
 
 import messages
 from defaults_parser import defaults
-from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil
+from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple
 
-io_plugins = (netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil)
+io_plugins = (netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple)
 
 def load(filename, data_type = None, **kwds):
     """

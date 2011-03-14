@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright © 2007 Francisco Javier de la Peña
+# Copyright © 2010 Francisco Javier de la Peña & Stefano Mazzucco
 #
 # This file is part of EELSLab.
 #
@@ -18,7 +19,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
 
-
 #  for more information on the RPL/RAW format, see
 #  http://www.nist.gov/lispix/
 #  and
@@ -31,7 +31,10 @@ from ..utils_readfile import *
 # Plugin characteristics
 # ----------------------
 format_name = 'Ripple'
-description = 'RPL file contains the information on how to read the RAW Bytes'
+description = 'RPL file contains the information on how to read the RAW file'
+description += ' with the same name.'
+description += '\nThis format may not provide information on the calibration.'
+description += '\nIf so, you should add that after loading the file.'
 full_suport = False             #  but maybe True
 # Recognised file extension
 file_extensions = ['rpl','RPL']
@@ -41,7 +44,7 @@ reads_images = True
 reads_spectrum = False          # but maybe True
 reads_spectrum_image = True
 # Writing capabilities
-writes_images = True            # but maybe True
+writes_images = False           # but maybe True
 writes_spectrum = False
 writes_spectrum_image = True
 # ----------------------
@@ -51,7 +54,7 @@ comment = ';'
 sep = '\t'
 
 rpl_keys = {
-    # spectrum/image information:
+    # spectrum/image keys
     'width' : int,
     'height' : int,
     'depth' : int,
@@ -60,9 +63,19 @@ rpl_keys = {
     'data-type' : ['signed', 'unsigned', 'float'],
     'byte-order' : ['little-endian', 'big-endian', 'dont-care'],
     'record-by' : ['image', 'vector', 'dont-care'],
-    # X-ray information:
+    # X-ray keys
     'ev-per-chan' : float,    # usually 5 or 10 eV
     'detector-peak-width-ev' : float, # usually 150 eV
+    # EELSLab-specific keys
+    'energy-origin' : int,
+    'energy-scale' : float,
+    'energy-units' : str,
+    'x-origin' : int,
+    'x-scale' : float,
+    'x-units' : str,
+    'y-origin' : int,
+    'y-scale' : float,
+    'y-units' : str,
     }
 
 def parse_ripple(fp):
@@ -131,11 +144,6 @@ def read_raw(rpl_info, fp):
     data_type = rpl_info['data-type']
     endian = rpl_info['byte-order']
     record_by = rpl_info['record-by']
-    
-    # if rpl_info.has_key('ev-per-chan'):
-    #     ev_per_chan = rpl_info['ev-per-chan']
-    # if rpl_info.has_key('detector-peak-width-ev'):
-    #     det_fwhm = rpl_info['detector-peak-width-ev']
 
     if data_type == 'signed':
         data_type = 'int'
@@ -163,10 +171,13 @@ def read_raw(rpl_info, fp):
 
     if record_by == 'vector':   # spectral image
         size = (width, height, depth)
-        # old EELSLab; energy first
+        # old EELSLab; energy first (this will hopefully be changed)
         data = data.reshape(size)
         data = np.rollaxis(data, 2, 0)
     elif record_by == 'image':  # stack of images
+        print 'ATTENTION!'
+        print 'Loading a stack of images.'
+        print 'This option may be buggy and needs some testing.'
         size = (depth, width, height)
         data = data.reshape(size)
 
@@ -176,6 +187,8 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
     """Parses a Lispix (http://www.nist.gov/lispix/) ripple (.rpl) file
     and reads the data from the corresponding raw (.raw) file;    
     or, read a raw file if the dictionary rpl_info is provided.
+
+    This format is often uses in EDS/EDX experiments.
     
     Images and spectral images or data cubes that are written in the
     (Lispix) raw file format are just a continuous string of numbers.
@@ -193,24 +206,38 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
 
     Alternatively, dictionary 'rpl_info' containing the information can
     be given.
+
+    Some keys are specific to EELSLab and will be ignored by other software.
     
     RPL stands for "Raw Parameter List", an ASCII text, tab delimited file in
-    which Lispix records or reads the image parameters for a raw file.
+    which EELSLab reads the image parameters for a raw file.
 
-                    PARAMETERS
+                    TABLE OF RPL PARAMETERS
         key             type     description            
-      ----------   ------------ ---------------------- 
-      width        int           # pixels per row 
-      height       int           # number of rows
-      depth        int           # number of images or spectral pts
-      offset       int           # bytes to skip
-      data-type    str           # 'signed', 'unsigned', or 'float' 
-      data-length  str           # bytes per pixel  '1', '2', '4', or '8'
-      byte-order   str           # 'big-endian', 'little-endian', or 'dont-care'
-      record-by    str           # 'image', 'vector', or 'dont-care'
-      ev-per-chan  int           # optional, eV per channel
-      detector-peak-width-ev int # optional, FWHM for the Mn K-alpha line
-
+      ----------   ------------ --------------------
+      # Mandatory      keys:
+      width            int      # pixels per row 
+      height           int      # number of rows
+      depth            int      # number of images or spectral pts
+      offset           int      # bytes to skip
+      data-type        str      # 'signed', 'unsigned', or 'float' 
+      data-length      str      # bytes per pixel  '1', '2', '4', or '8'
+      byte-order       str      # 'big-endian', 'little-endian', or 'dont-care'
+      record-by        str      # 'image', 'vector', or 'dont-care'
+      # X-ray keys:
+      ev-per-chan      int      # optional, eV per channel
+      detector-peak-width-ev  int   # optional, FWHM for the Mn K-alpha line
+      # EELSLab-specific keys
+      energy-origin    int      # energy offset in pixels          
+      energy-scale     float    # energy scaling (units per pixel) 
+      energy-units     str      # energy units, usually eV
+      x-origin         int      # column offset in pixels
+      x-scale          float    # column scaling (units per pixel)
+      x-units          str      # column units, usually nm         
+      y-origin         int      # row offset in pixels          
+      y-scale          float    # row scaling (units per pixel) 
+      y-units          str      # row units, usually nm
+     
     NOTES
 
     When 'data-length' is 1, the 'byte order' is not relevant as there is only
@@ -251,7 +278,6 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
         rawfname = filename[:-3] + ext
         print rawfname
         if os.path.exists(rawfname):
-            print 'EXISTS'
             break
         else:
             rawfname = ''
@@ -265,16 +291,72 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
     else:
         data_type = 'Image'
 
+    if rpl_info.has_key('ev-per-chan'):
+        energyscale = rpl_info['ev-per-chan']
+    elif rpl_info.has_key('energy-scale'):
+        # superseed previous key
+        energyscale = rpl_info['energy-scale']
+    else:
+        energyscale = 1.
+
+    if rpl_info.has_key('detector-peak-width-ev'):
+        det_fwhm = rpl_info['detector-peak-width-ev']
+    else:
+        det_fwhm = None
+
+    if rpl_info.has_key('energy-origin'):
+        energyorigin = rpl_info['energy-origin']
+    else:
+        energyorigin = 0
+        
+    if rpl_info.has_key('energy-units'):
+        energyunits = rpl_info['energy-units']
+    else:
+        energyunits = ''
+
+    if rpl_info.has_key('x-origin'):
+        xorigin = rpl_info['x-origin']
+    else:
+        xorigin = 0
+
+    if rpl_info.has_key('x-scale'):
+        xscale = rpl_info['x-scale']
+    else:
+        xscale = 1.
+        
+    if rpl_info.has_key('x-units'):
+        xunits = rpl_info['x-units']
+    else:
+        xunits = ''
+
+    if rpl_info.has_key('y-origin'):
+        yorigin = rpl_info['y-origin']
+    else:
+        yorigin = 0
+
+    if rpl_info.has_key('y-scale'):
+        yscale = rpl_info['y-scale']
+    else:
+        yscale = 1.
+        
+    if rpl_info.has_key('y-units'):
+        yunits = rpl_info['y-units']
+    else:
+        yunits = ''
+        
     calibration_dict = {
         'title' : filename,
         'data_cube' : data_cube,
-        'energyorigin' : 0,
-        'energyscale' : 1,
-        'energyunits' : 'eV',    # arbitrary
-        'xorigin' : 0,
-        'xscale' : 1,
-        'yorigin' : 0,
-        'yscale' : 1,
+        'energyorigin' : energyorigin,
+        'energyscale' : energyscale,
+        'energyunits' : energyunits, 
+        'xorigin' : xorigin,
+        'xscale' : xscale,
+        'xunits' : xunits,
+        'yorigin' : yorigin,
+        'yscale' : yscale,
+        'yunits' : yunits,
+        'detector_fwhm' : det_fwhm,
         }
 
     acquisition_dict = {}
