@@ -182,7 +182,7 @@ class Dimensions(object):
 class IndexTracker(object): # FIXME: check contrast while scrolling
     # modified from original:
     # http://matplotlib.sourceforge.net/examples/pylab_examples/image_slices_viewer.html
-    def __init__(self, ax, obj, start=None, step=1):
+    def __init__(self, ax, obj, axis=0, start=None, step=1):
         
         self.ax = ax
         ax.set_title('use scroll wheel to navigate images')
@@ -190,15 +190,26 @@ class IndexTracker(object): # FIXME: check contrast while scrolling
         self.obj = obj
         #rows, cols, self.slices = obj.shape
         #self.index = self.slices / 2
-        self.slices = obj.shape[-1]
+        axis = int(axis)
+        if not axis in (0, 1, 2):
+            raise TypeError, 'Wrong choice of axis (%i)' % axis
+        self.axis = axis
+        self.slices = obj.shape[self.axis]
         if start is None:
             self.index  = self.slices / 2
         else:
             self.index = start
-
+            
         self.step = step
+
+        if axis == 0:
+            sli = self.obj[self.index, :, :]
+        elif axis == 1:
+            sli = self.obj[:, self.index, :]
+        elif axis == 2:
+            sli = self.obj[:, :, self.index]
         
-        self.im = ax.imshow(self.obj[:,:,self.index],
+        self.im = ax.imshow(sli,
                             interpolation='nearest',
                             cmap=plt.cm.gray)
         self.update()
@@ -217,7 +228,13 @@ class IndexTracker(object): # FIXME: check contrast while scrolling
         self.update()
 
     def update(self):
-        self.im.set_data(self.obj[:, :, self.index])
+        if self.axis == 0:
+            sli = self.obj[self.index, :, :]
+        elif self.axis == 1:
+            sli = self.obj[:, self.index, :]
+        elif self.axis == 2:
+            sli = self.obj[:, :, self.index]        
+        self.im.set_data(sli)
         if (self.index + 1) == self.slices:
             self.ax.set_ylabel('LAST SLICE (%s)' % self.index)
         elif self.index == 0:
@@ -227,11 +244,24 @@ class IndexTracker(object): # FIXME: check contrast while scrolling
         
         self.im.axes.figure.canvas.draw()
 
-def slicer(obj, start=None, step=1):
+def slicer(obj, axis=0, start=None, step=1):
+    """Displays a the slices of a three-dimensional data set as an image
+    and allows to navigate them using the mouse scroll wheel.
+
+    Parameters
+    ----------
+    obj : three dimensional array
+
+    axis : int (optional), axis along whom cut the slice
+
+    start : int (optional), first slice to visualize
+
+    step : int (optional), number of slices to scroll at once 
+    """
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    tracker = IndexTracker(ax, obj, start, step)
+    tracker = IndexTracker(ax, obj, axis, start, step)
 
     fig.canvas.mpl_connect('scroll_event', tracker.onscroll)
     plt.show()
