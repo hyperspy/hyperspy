@@ -31,8 +31,8 @@ from ..utils_readfile import *
 # Plugin characteristics
 # ----------------------
 format_name = 'Ripple'
-description = 'RPL file contains the information on how to read the RAW file'
-description += ' with the same name.'
+description = 'RPL file contains the information on how to read\n'
+description += 'the RAW file with the same name.'
 description += '\nThis format may not provide information on the calibration.'
 description += '\nIf so, you should add that after loading the file.'
 full_suport = False             #  but maybe True
@@ -276,8 +276,11 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
     Any number of spaces can go along with each tab.
     """
     if not rpl_info:
-        with open(filename) as f:
-            rpl_info = parse_ripple(f)
+        if filename[-3:] in file_extensions:
+            with open(filename) as f:
+                rpl_info = parse_ripple(f)
+        else:
+            raise IOError, 'File has wrong extension: "%s"' % filename[-3:]
     rawfname = ''
     for ext in ['raw', 'RAW']:
         rawfname = filename[:-3] + ext
