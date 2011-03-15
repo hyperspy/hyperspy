@@ -281,22 +281,22 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
                 rpl_info = parse_ripple(f)
         else:
             raise IOError, 'File has wrong extension: "%s"' % filename[-3:]
-    rawfname = ''
     for ext in ['raw', 'RAW']:
         rawfname = filename[:-3] + ext
-        print rawfname
         if os.path.exists(rawfname):
             break
         else:
             rawfname = ''
     if not rawfname:
-        raise IOError, 'RAW file does not exists'
+        raise IOError, 'RAW file "%s" does not exists' % rawfname
     else:
         data_cube = read_raw(rpl_info, rawfname)
 
     if rpl_info['record-by'] in ['vector', 'image']: # CHECK THIS
+        print 'Loading as SI'
         data_type = 'SI'
     else:
+        print 'Loading as Image'
         data_type = 'Image'
 
     if rpl_info.has_key('ev-per-chan'):
