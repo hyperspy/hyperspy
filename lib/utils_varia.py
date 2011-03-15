@@ -245,18 +245,22 @@ class IndexTracker(object): # FIXME: check contrast while scrolling
         self.im.axes.figure.canvas.draw()
 
 def slicer(obj, axis=0, start=None, step=1):
-    """Displays a the slices of a three-dimensional data set as an image
-    and allows to navigate them using the mouse scroll wheel.
+    """Displays the slices of a three-dimensional data set
+    along a given axis (default is axis 0) as an image and
+    allows one to navigate through them using the mouse
+    scroll wheel.
 
     Parameters
     ----------
-    obj : three dimensional array
+    obj : three dimensional array.
 
-    axis : int (optional), axis along whom cut the slice
+    axis : int (optional), axis along whom cut the slice.
 
-    start : int (optional), first slice to visualize
+    start : int (optional), first slice to visualize.
+                            Defaults to the middle slice.
 
-    step : int (optional), number of slices to scroll at once 
+    step : int (optional), number of slices to scroll at once.
+                           Defaults to 1.
     """
     fig = plt.figure()
     ax = fig.add_subplot(111)
