@@ -108,7 +108,7 @@ def plot_RGB_map(im_list, normalization = 'single', dont_plot = False):
     -------
     array: RGB matrix
     '''
-    from widgets import cursors
+#    from widgets import cursors
     width, height = im_list[0].data_cube.shape[:2]
     rgb = np.zeros((height, width,3))
     rgb[:,:,0] = im_list[0].data_cube.T.squeeze()
@@ -127,7 +127,7 @@ def plot_RGB_map(im_list, normalization = 'single', dont_plot = False):
         ax.frameon = False
         ax.set_axis_off()
         ax.imshow(rgb, interpolation = 'nearest')
-        cursors.add_axes(ax)
+#        cursors.add_axes(ax)
         figure.canvas.draw()
     else:
         return rgb
