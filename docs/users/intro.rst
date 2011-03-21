@@ -4,7 +4,7 @@ Introduction
 What is EELSLab
 ---------------
 
-EELSLab is a `scientific` hyperspectra data analysis software. It was started in 
+EELSLab is a hyperspectra data analysis software. It was started in 
 the domain of Electron Energy Loss Spectroscopy (EELS), but it is useful for any 
 other spectroscopy domain.
 
