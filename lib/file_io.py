@@ -22,7 +22,7 @@ import os
 
 import messages
 from defaults_parser import defaults
-from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple
+from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple, img_stack
 
 io_plugins = (netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple)
 
@@ -44,6 +44,9 @@ cd
         If 'Image' the file will be loaded as an Image object
     """
     extension = os.path.splitext(filename)[1][1:]
+    if '*' in filename:
+	reader=img_stack
+        return load_with_reader(filename, reader, data_type, **kwds)
     
     i = 0
     while extension not in io_plugins[i].file_extensions and \
