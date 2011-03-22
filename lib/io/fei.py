@@ -347,10 +347,13 @@ def ser_reader(filename, *args, **kwds):
     # If the acquisition stops before finishing the job, the stored file will 
     # report the requested size even though no values are recorded. Therefore if
     # the shapes of the retrieved array does not match that of the data 
-    # dimensions we must fill the rest with zeros
+    # dimensions we must fill the rest with zeros or (better) nans if the 
+    # dtype is float
     if np.cumprod(array_shape)[-1] != np.cumprod(data['Array'].shape)[-1]:
         dc = np.zeros((array_shape[0] * array_shape[1], array_shape[2]), 
                       dtype = data['Array'].dtype)
+        if dc.dtype is np.dtype('f') or dc.dtype is np.dtype('f8'):
+            dc[:] = np.nan
         dc[:data['Array'].shape[0],...] = data['Array']
     else:
         dc = data['Array']
