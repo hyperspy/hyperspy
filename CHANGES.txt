@@ -1,3 +1,19 @@
+v0.2.10 22/03/2011
+
+Enhancements
+------------
+* New image stack io plugin
+
+BUGs fixed
+----------
+* A error was raised when trying to fit a model after closing a plot
+* The (old) dm3 reader was messing up the coordinates
+* The default dm3 reader is back to the old code until the new one get some 
+polishing. To test the new one add the old = True key word to the load function.
+(some data types are only properly readed with the new code) 
+
+
+
 v0.2.9 18/03/2011
 
 Enhancements
