@@ -287,7 +287,7 @@ def ser_reader(filename, *args, **kwds):
             'size' : header['Dim-%i_DimensionSize' % i][0],
             'index_in_array' : i - 1
             })
-        array_shape.append(header['Dim-%i_DimensionSize' % i][0])
+            array_shape.append(header['Dim-%i_DimensionSize' % i][0])
         
         # Spectral dimension    
         coordinates.append({
