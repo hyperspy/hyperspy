@@ -57,7 +57,9 @@ class DraggablePatch(object):
         self.patch = None
         self.cids = list()
         # Blitting seems to be supported by all the backends but Qt4
-        self.blit = (plt.get_backend() !=  'Qt4Agg')
+        # however, ATM there is a bug in EELSLab that precludes using 2 pointers
+        # when blit is active, therefore it is disable by default for the moment
+        self.blit = False #(plt.get_backend() !=  'Qt4Agg')
     
     def is_on(self):
         return self.__is_on
@@ -236,6 +238,9 @@ class DraggableHorizontalLine(DraggablePatch):
     def __init__(self, coordinates):
         DraggablePatch.__init__(self, coordinates)
         self._2D = False
+        # Despise the bug, we use blit for this one because otherwise the 
+        # it gets really slow
+        self.blit = True
         
     def update_patch_position(self):
         if self.patch is not None:

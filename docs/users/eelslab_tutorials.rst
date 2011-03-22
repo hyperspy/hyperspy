@@ -216,6 +216,44 @@ After cleaning the spikes the SI can be processed as in :ref:`tutorial3-label`.
 Curve fitting
 =============
 
+Setting the microscope parameters
+----------------------------------
+
+To quantify EEL spectra it is important to accurately define certain 
+experimental parameters. The microscope parameters are stored in the 
+``silib.microscope.microscope`` class.
+The parameters by default are defined in the :file:`microscopes.csv` file that is
+placed in the configuration directory (see :ref:`configuring-eelslab-label` to
+find out where is your configuration directory). Each microscope has a name
+associated to it and you can define the default microscope in the :file:`eelslabrc`
+file (see :ref:`configuring-eelslab-label`).
+To modify the parameters from an eelslab interactive session simply change the
+attributes of the microscope class, e.g.:
+
+.. code-block:: python
+
+    microscope.alpha = 15 # convergence semi-angle in mrad
+    microscope.beta = 20 #  collection semi-angle in mrad
+    microscope.E0 = 100E3 # Beam energy in eV
+    microscope.name = 'Pepe'
+
+.. NOTE::
+
+   This settings will be lost once you close your session unless you save a
+   file in a format that supports saving the microscope parameters (at the
+   moment only netCDF and msa). In that case, the settings will be loaded when
+   you load the file.
+
+In the interactive session you can load the parameters of a microscope defined
+in file:`microscope.csv` as follows:
+
+.. code-block:: python
+
+    # To print the list of the microscopes defined in the microscope.csv file
+    microscope.get_available_microscope_names()
+    # To load the parameters of a particular microscope
+    microscope.set_microscope('the_name_of_your_microscope')
+
 Tutorial 1: 
 -----------
 

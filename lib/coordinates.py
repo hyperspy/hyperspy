@@ -125,6 +125,7 @@ class Coordinates(object):
                 self.step -= 1
             print "Step = ", self.step
 
+
 class TwoCoordinates():
     def __init__(self, shape):
         self.shape = shape

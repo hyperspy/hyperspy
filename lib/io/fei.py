@@ -189,7 +189,6 @@ def guess_data_type(data_type_id):
     if data_type_id == 16672:
         return 'SI'
     else:
-        # 16722 e.g.
         return 'Image'
         
 def emi_reader(filename, dump_xml = False, **kwds):
@@ -231,12 +230,11 @@ def load_ser_file(filename, print_info = False):
         print "Header info:"
         print "------------"
         print_struct_array_values(header[0])
-    data_dtype_list = get_data_dtype_list(file, 
-    header['Data_Offsets'].ravel()[0], 
+    data_dtype_list = get_data_dtype_list(file, header['Data_Offsets'][0][0], 
     guess_data_type(header['DataTypeID']))
     tag_dtype_list =  get_data_tag_dtype_list(header['TagTypeID'])
-    file.seek(header['Data_Offsets'].ravel()[0])
-    data = np.fromfile(file, dtype = np.dtype(data_dtype_list + tag_dtype_list), 
+    file.seek(header['Data_Offsets'][0][0])
+    data = np.fromfile(file, dtype=np.dtype(data_dtype_list + tag_dtype_list), 
     count = header["TotalNumberElements"])
     if print_info is True:
         print "\n"
@@ -262,6 +260,7 @@ def get_xml_info_from_emi(emi_file):
 def ser_reader(filename, *args, **kwds):
     '''Reads the information from the file and returns it in the EELSLab 
     required format'''
+    # Determine if it is an emi or a ser file.
     
     header, data = load_ser_file(filename)
     data_type = guess_data_type(header['DataTypeID'])
@@ -288,7 +287,7 @@ def ser_reader(filename, *args, **kwds):
             'size' : header['Dim-%i_DimensionSize' % i][0],
             'index_in_array' : i - 1
             })
-            array_shape.append(header['Dim-%i_DimensionSize' % i][0])
+        array_shape.append(header['Dim-%i_DimensionSize' % i][0])
         
         # Spectral dimension    
         coordinates.append({

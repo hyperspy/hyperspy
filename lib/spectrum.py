@@ -93,11 +93,11 @@ class Spectrum(object, MVA):
     '''Base class for SI
     
     This class contains the SI (Spectrum Image) basic methods. It can be used to
-    load an SI or to create a monte carlo. It also heritage all the multivariate
+    load an SI or to create a monte carlo. It also inherits all the multivariate
     analysis methods from the MVA class.
      
     The addition is defined for members of the Spectrum class that has the same 
-    number of channel, the same energy step and the same number of pixels in the 
+    number of channel, the same energy step and the same number of pixels in the
     x direction. It return a vertically stacked SI.
     
     Parameters:
@@ -151,6 +151,8 @@ class Spectrum(object, MVA):
         self.energyunits = ''
         self.title = ''
         self.mva_results = MVA_Results()
+        
+        self._replot_activated = True
         
         self.acquisition_parameters = Acquisition_Parameters()
         self.treatments = Treatments()
@@ -1108,6 +1110,8 @@ class Spectrum(object, MVA):
         '''
         
         print "Aligning the SI"
+        activate_replot = self._replot_activated
+        self._replot_activated = False
         ip = interp_points + 1
         data = self.data_cube
         channel_1 = self.energy2index(energy_range[0])
@@ -1133,11 +1137,12 @@ class Spectrum(object, MVA):
             from progressbar import progressbar
             maxval = max(1,size_x) * max(1,size_y)
             pbar = progressbar(maxval = maxval)
-        for iy in range(size_y):
-            for ix in range(size_x):
+        i = 0
+        for iy in np.arange(size_y):
+            for ix in np.arange(size_x):
                 if progress_bar is True:
-                    i = (ix + 1)*(iy+1)
                     pbar.update(i)
+                    i += 1
                 if interpolate:
                     dc = self._interpolate_spectrum(ip, (ix, iy))
                 shift_map[ix,iy] = np.argmax(np.correlate(ref, 
@@ -1158,11 +1163,12 @@ class Spectrum(object, MVA):
             if progress_bar is True:
                 maxval = max(1,size_x) * max(1,size_y)
                 pbar = progressbar(maxval = maxval)
+            i = 0
             for iy in range(size_y):
                 for ix in range(size_x):
                     if progress_bar is True:
-                        i = (ix + 1)*(iy+1)
                         pbar.update(i)
+                        i += 1
 
                     if interpolate:
                         sp = spectrum._interpolate_spectrum(ip, (ix, iy))
@@ -1183,7 +1189,9 @@ class Spectrum(object, MVA):
 
         if sync_SI is not None:
             apply_correction(sync_SI)
-
+        if activate_replot is True:
+            self._replot_activated = True
+            
         return shift_map
 
     def find_low_loss_origin(self, sync_SI = None):
@@ -2011,7 +2019,7 @@ class Spectrum(object, MVA):
         self.hse.plot()
         
     def _replot(self):
-        if self.hse is not None:
+        if self.hse is not None and self._replot_activated is True:
             if self.hse.is_active() is True:
                 self.plot()
                 

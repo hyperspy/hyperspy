@@ -30,8 +30,8 @@ release_debian script
     
 .. NOTE::
 
-   To create the linux binary the packages python-stdeb, debhelper, dpkg-dev
-    and python-argparser are required.
+    To create the linux binary the packages python-stdeb, debhelper, 
+    dpkg-dev and python-argparser are required.
     
 To create a Windows binary run the  release_windows.bat script.
 

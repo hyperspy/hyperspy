@@ -1,3 +1,53 @@
+v0.2.9 18/03/2011
+
+Enhancements
+------------
+* Totally new code to read dm3s
+* The bucker reader has been replaced by ripple
+
+BUGs fixed
+----------
+* The plot_RGB function was broken
+
+Enhancements
+------------
+* The second cursor feature is again available
+* Enhancements to the documentation
+* New progress bar
+* The chronospim function from utils has been fixed
+* Python lowess function
+* A new gui based on traits (although it is not packaged ATM)
+* New calibration and Egerton quantification gui functionalities
+* The FEI's reader now supports images, even when the acquisition was aborted before completion.
+* The TK and QT4 backends are now supported
+* Added key navigation
+
+v0.2.8 13/03/2011
+
+Enhancements
+------------
+* The second cursor feature is again available
+* Enhancements to the documentation
+* New progress bar
+* The chronospim function from utils has been fixed
+* Python lowess function
+* A new gui based on traits (although it is not packaged ATM)
+* New calibration and Egerton quantification gui functionalities
+* The FEI's reader now supports images, even when the acquisition was aborted before completion.
+* The TK and QT4 backends are now supported
+* Added key navigation
+
+BUGs fixed
+----------
+* The fast powerlaw estimation was displaying a periodic behaviour
+* When closing a visualisation the callback functions were not correctely cleaned
+* After closing a model visualisation, a fitting attempt was raising an error
+
+Known BUGS
+----------
+
+* The line spectrum navigator shows a 'ghost' second pointer after disabling it.
+
 v0.2.8b 18/12/2010
 
 Enhancements

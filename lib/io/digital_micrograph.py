@@ -25,7 +25,6 @@ import numpy as np
 from dm3reader_eelslab import parseDM3
 from .. import messages
 
-
 # Plugin characteristics
 # ----------------------
 format_name = 'Digital Micrograph dm3'
@@ -228,15 +227,15 @@ def file_reader(filename, data_type = None):
         elif 'keV' in units:
            energy_index = units.index('keV')
         else:
-            energy_index = -1
+            energy_index = len(data_cube.squeeze().shape) - 1
         # In DM the origin is negative. Change it to positive
         origins[energy_index] *= -1
 
-        
-        data_cube = np.rollaxis(data_cube, energy_index, 0)
-        origins = np.roll(origins, 1)
-        scales = np.roll(scales, 1)
-        units = np.roll(units, 1)
+        if energy_index != 0:
+            data_cube = np.rollaxis(data_cube, energy_index, 0)
+            origins = np.roll(origins, 3 - energy_index)
+            scales = np.roll(scales, 3 - energy_index)
+            units = np.roll(units, 3 - energy_index)
 
         # Store the calibration in the calibration dict
         origins_keys = ['energyorigin', 'xorigin', 'yorigin']

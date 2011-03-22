@@ -22,16 +22,16 @@ import os
 
 import messages
 from defaults_parser import defaults
-from io import netcdf, msa, digital_micrograph, fei, bin, mrc, pil, buker_raw, \
-hdf5
+from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple, img_stack, hdf5
 
-io_plugins = (netcdf, msa, digital_micrograph, fei, bin, mrc, pil, buker_raw, 
+io_plugins = (netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple,
               hdf5)
 
 def load(filename, data_type = None, **kwds):
-    '''
+    """
     Load any supported file into an EELSLab structure
-    Supported formats: netCDF, msa, Gatan's dm3, FEI's ser and emi.
+    Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
+    FEI ser and emi and hdf5.
 
     Parameters
     ----------
@@ -42,14 +42,17 @@ def load(filename, data_type = None, **kwds):
         If None (default) it will try to guess the data type from the file,
         if 'SI' the file will be loaded as an Spectrum object
         If 'Image' the file will be loaded as an Image object
-    '''
+    """
     extension = os.path.splitext(filename)[1][1:]
+    if '*' in filename:
+	reader=img_stack
+        return load_with_reader(filename, reader, data_type, **kwds)
     
     i = 0
     while extension not in io_plugins[i].file_extensions and \
         i < len(io_plugins) - 1: i += 1
     if i == len(io_plugins):
-        # Try to load it with the python library
+        # Try to load it with the python imaging library
         reader = pil
         try:
             return load_with_reader(filename, reader, data_type, **kwds)
@@ -64,28 +67,22 @@ def load_with_reader(filename, reader, data_type = None, **kwds):
     from image import Image
     from signal import Signal
     messages.information(reader.description)    
-    dictionary_list = reader.file_reader(filename, data_type = data_type, **kwds)
+    dictionary_list = reader.file_reader(filename,
+                                         data_type=data_type,
+                                         **kwds)
     objects = []
     for dictionary in dictionary_list:
         data_type = dictionary['data_type']
         if data_type == 'SI':
             s = Spectrum(dictionary)
-            if defaults.plot_on_load is True:
-                s.plot()
-            objects.append(s)
         elif data_type == 'Image':
-            im = Image(dictionary)
-            if defaults.plot_on_load is True:
-                im.plot()
-            objects.append(im)
+            s = Image(dictionary)  
         elif data_type == 'Signal':
-            sg = Signal(dictionary)
-            if defaults.plot_on_load is True:
-                im.plot()
-            objects.append(sg)
-        else:
-            messages.warning_exit(
-            'The data type was not recognised')
+            s = Signal(dictionary)
+        if defaults.plot_on_load is True:
+            s.plot()
+        objects.append(s)
+        
     if len(objects) == 1:
         objects = objects[0]
     return objects

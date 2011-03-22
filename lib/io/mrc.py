@@ -159,11 +159,3 @@ def file_reader(filename, endianess = '<', **kwds):
                   }
     
     return [dictionary,]
-    
-    
-
-
-
-
-
-

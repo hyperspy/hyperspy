@@ -85,7 +85,7 @@ class Model(list, Optimizers, Estimators, Controls):
 
         if self.ll is not None:
             self.convolved = True
-            if self.convolution_axis is None:
+            if self.experiments.convolution_axis is None:
                 self.experiments.set_convolution_axis()
         else:
             self.convolved = False
@@ -187,8 +187,15 @@ class Model(list, Optimizers, Estimators, Controls):
                     for line in self.hl.hse.spectrum_plot.left_ax_lines:
                         parameter.connect(line.update)
                     parameter.connection_activated = False
-
-                    
+    
+    def disconnect_parameters2update_plot(self):
+        for component in self:
+            for parameter in component.parameters:
+                if self.hl.hse is not None:
+                    for line in self.hl.hse.spectrum_plot.left_ax_lines:
+                        parameter.disconnect(line.update)
+                    parameter.connection_activated = False
+                            
     def set_auto_update_plot(self, tof):
         for component in self:
             for parameter in component.parameters:
@@ -419,7 +426,8 @@ class Model(list, Optimizers, Estimators, Controls):
                     counter+=component.nfree_param
             to_return = sum_ + np.convolve(
                 self.ll.data_cube[: , self.coordinates.ix, self.coordinates.iy], 
-                sum_convolved, mode="valid")            
+                sum_convolved, mode="valid")
+            to_return = to_return[self.channel_switches]
             return to_return
 
 
@@ -906,5 +914,7 @@ class Model(list, Optimizers, Estimators, Controls):
         hse.spectrum_plot.add_line(l2)
         l2.plot()
         self.connect_parameters2update_plot()
+        drawing.utils.on_window_close(hse.spectrum_plot.figure, 
+                                      self.disconnect_parameters2update_plot)
         self.set_auto_update_plot(True)
         # TODO Set autoupdate to False on close

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright © 2007 Francisco Javier de la Peña
+# Copyright © 2011 Michael Sarahan, Francisco Javier de la Peña
 #
 # This file is part of EELSLab.
 #
@@ -18,41 +18,58 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
 
-import scipy as sp
+import Image
+import numpy as np
+from glob import glob
 
 # Plugin characteristics
 # ----------------------
 format_name = 'image'
-description = 'Import/Export standard image formats using PIL'
+description = 'Import/Export standard image format stack using PIL'
 full_suport = False
 file_extensions = ['bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg', 'msp', 'pcx', 
-'png', 'ppm', "pbm", "pgm", 'tiff', 'tif', 'xbm', ]
+                   'png', 'ppm', "pbm", "pgm", 'tiff', 'tif', 'xbm', 'spi']
 default_extension = -2 # tif
 
 # Reading features
 reads_images = True
 reads_spectrum = False
-reads_spectrum_image = True
+reads_spectrum_image = False
 # Writing features
 writes_images = True
 writes_spectrum = False
 writes_spectrum_image = False
 # ----------------------
 
-# TODO Extend it to support SI
-def file_writer(filename, object2save, **kwds):
-    dc = object2save.data_cube.squeeze()
-    im = sp.misc.imsave(filename, dc.T)
-    print "Image saved"
-    
 def file_reader(filename, **kwds):
-    dc = sp.misc.imread(filename).T
+    flist=glob(filename)
+    imsample=Image.open(flist[0])
+    w=imsample.size[0]
+    h=imsample.size[1]
+    d=len(flist)
+    dc=np.zeros((w,h,d))
+    for i in xrange(d):
+        dc[:,:,i]=np.array(Image.open(flist[i]))
     calibration_dict, acquisition_dict , treatments_dict= {}, {}, {}
     calibration_dict['data_cube'] = dc
-    if len(dc.shape) == 2:
-        dt = 'Image'
-    elif len(dc.shape) == 3:
-        dt = 'SI'
+    dt = 'Image'
     return [{'data_type' : dt, 'calibration' : calibration_dict, 
              'acquisition' : acquisition_dict},]
 
+def file_writer(filename, object2save, file_format='tif', rescale=False, **kwds):
+    if not file_format in extensions:
+        print "Warning! file format %s is not supported by PIL!"%file_format
+        return -1
+    if rescale:
+        arr=arr-arr.min()
+        arr=arr/arr.max()
+        if rescale==8:
+            arr=np.array(arr*255,dtype=np.uint8)
+        elif rescale==16:
+            arr=np.array(arr*65535,dtype=np.uint16)
+        elif rescale==32:
+            arr=np.array(arr*(2**32),dtype=np.uint32)
+    for i in xrange(array.shape[2]):
+        img=Image.fromarray(array[:,:,i])
+        img.save(filename+'%05i'%i+'.'+file_format)
+    print "%i images saved."%array.shape[2]
