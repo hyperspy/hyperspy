@@ -184,41 +184,33 @@ class Coordinate(t.HasTraits):
 class CoordinatesManager(t.HasTraits):
     coordinates = t.List(Coordinate)
     _slicing_coordinates = t.List()
+    _non_slicing_coordinates = t.List()
+    _step = t.Int(1)
     def __init__(self, coordinates_list):
         super(CoordinatesManager, self).__init__()
         ncoord = len(coordinates_list)
         self.coordinates = [None] * ncoord
         for coordinates_dict in coordinates_list:
-            self.coordinates[coordinates_dict['index_in_array']] = Coordinate(**coordinates_dict)
+            self.coordinates[coordinates_dict['index_in_array']] = \
+            Coordinate(**coordinates_dict)
 #        self.set_coordinate_attribute()
         self.set_view()
         self.set_output_dim()
 #        self.on_trait_change(self.set_coordinate_attribute, 'coordinates.name')
         self.on_trait_change(self.set_output_dim, 'coordinates.slice')
         self.on_trait_change(self.set_output_dim, 'coordinates.index')
-
-#    def set_coordinate_attribute(self):
-#        if hasattr(self, '_coordinates_attributes_names'):
-#            for attr in self._coordinates_attributes_names:
-#                self.__delattr__(attr)
-#        self._coordinates_attributes_names = []
-#        for coord in self.coordinates:
-#            if coord.name is '?' or '' or None:
-#                name = 'coordinate_%i' % coord.index_in_array
-#            else:
-#                name = 'coordinate_%s' % coord.name
-#            self._coordinates_attributes_names.append(name)
-#            self.__setattr__(name, coord)
         
     def set_output_dim(self):
         getitem_tuple = []
         indexes = []
         self._slicing_coordinates = []
+        self._non_slicing_coordinates = []
         i = 0
         for coordinate in self.coordinates:
             if coordinate.slice is None:
                 getitem_tuple.append(coordinate.index)
                 indexes.append(coordinate.index)
+                self._non_slicing_coordinates.append(coordinate)
             else:
                 getitem_tuple.append(coordinate.slice)
                 self._slicing_coordinates.append(coordinate)
@@ -249,9 +241,25 @@ class CoordinatesManager(t.HasTraits):
         for coordinate in self.coordinates:
             if coordinate.slice is None:
                 coordinate.on_trait_change(f, 'index', remove = True)
+                
+    def key_navigator(self, event):
+        if len(self._non_slicing_coordinates) not in (1,2): return
+        cx = self._non_slicing_coordinates[-1]
+
+        if event.key == "right" or event.key == "6":
+            cx.index += self._step
+        elif event.key == "left" or event.key == "4":
+            cx.index -= self._step
+        elif event.key == "pageup":
+            self._step += 1
+        elif event.key == "pagedown":
+            if self._step > 1:
+                self._step -= 1
+        if len(self._non_slicing_coordinates) == 2:
+            cy = self._non_slicing_coordinates[-2]
+            if event.key == "up" or event.key == "8":
+                cy.index -= self._step
+            elif event.key == "down" or event.key == "2":
+                cy.index += self._step
             
     traits_view = tui.View(tui.Item('coordinates', style = 'custom'))
-    
-        
-
-    
