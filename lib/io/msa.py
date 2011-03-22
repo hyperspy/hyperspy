@@ -209,10 +209,10 @@ format = 'Y', separator = ', '):
         keywords['BEAMKV'] = microscope.E0
         keywords['PPPC'] = microscope.pppc
         keywords['CORRFAC'] = microscope.correlation_factor
-    file = open(filename, 'w')
+    spectrum_file = open(filename, 'w')
     for keyword, value in keywords.items():
-        file.write(u'#%-13s: %s \u000D\u000A' % (keyword, value))
-    file.write(u'#SPECTRUM    : Spectral Data Starts Here\u000D\u000A')
+        spectrum_file.write(u'#%-13s: %s \u000D\u000A' % (keyword, value))
+    spectrum_file.write(u'#SPECTRUM    : Spectral Data Starts Here\u000D\u000A')
     fmt="%g"
     i = 0
     ix = spectrum.coordinates.ix
@@ -220,14 +220,15 @@ format = 'Y', separator = ', '):
     if format == 'XY':
         
         for row in spectrum.data_cube[:,ix, iy]:
-            file.write("%g%s%g" % (spectrum.energy_axis[i], separator, row))
-            file.write(u'\u000D\u000A')
+            spectrum_file.write("%g%s%g" % (spectrum.energy_axis[i], 
+                                            separator, row))
+            spectrum_file.write(u'\u000D\u000A')
             i += 1
     elif format == 'Y':
         for row in spectrum.data_cube[:, ix, iy]:
-            file.write(fmt % row)
-            file.write(u'\u000D\u000A')
+            spectrum_file.write(fmt % row)
+            spectrum_file.write(u'\u000D\u000A')
         
-    file.write(u'#ENDOFDATA   : End Of Data and File')
-    file.close()
+    spectrum_file.write(u'#ENDOFDATA   : End Of Data and File')
+    spectrum_file.close()
     print "File saved"
