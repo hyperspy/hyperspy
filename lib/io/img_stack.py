@@ -53,8 +53,7 @@ def file_reader(filename, **kwds):
     calibration_dict, acquisition_dict , treatments_dict= {}, {}, {}
     calibration_dict['data_cube'] = dc
     dt = 'Image'
-    return [{'data_type' : dt, 'calibration' : calibration_dict, 
-             'acquisition' : acquisition_dict},]
+    return [{'data' : dc, 'coordinates' : coord_list,},]
 
 def file_writer(filename, object2save, file_format='tif', rescale=False, **kwds):
     if not file_format in extensions:

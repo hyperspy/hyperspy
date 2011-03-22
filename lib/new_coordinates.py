@@ -137,7 +137,7 @@ class Coordinate(t.HasTraits):
             if self.size > index >= 0: 
                 return index
             elif index < 0:
-                messages.warning("The given value is bellow the axis limits")
+                messages.warning("The given value is below the axis limits")
                 return 0
             else:
                 messages.warning("The given value is above the axis limits")
@@ -184,14 +184,15 @@ class Coordinate(t.HasTraits):
 class CoordinatesManager(t.HasTraits):
     coordinates = t.List(Coordinate)
     _slicing_coordinates = t.List()
-    def __init__(self, coordinates_list):
+    def __init__(self, coordinates_list,parameters_dict={}):
         super(CoordinatesManager, self).__init__()
         ncoord = len(coordinates_list)
         self.coordinates = [None] * ncoord
-        for coordinates_dict in coordinates_list:
-            self.coordinates[coordinates_dict['index_in_array']] = Coordinate(**coordinates_dict)
+        for coordinate_dict in coordinates_list:
+            self.coordinates[coordinate_dict['index_in_array']] = Coordinate(**coordinate_dict)
 #        self.set_coordinate_attribute()
-        self.set_view()
+        if parameters_dict.has_key('view'): self.set_view(parameters_dict['view'])
+        else: self.set_view()
         self.set_output_dim()
 #        self.on_trait_change(self.set_coordinate_attribute, 'coordinates.name')
         self.on_trait_change(self.set_output_dim, 'coordinates.slice')

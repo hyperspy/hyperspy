@@ -67,7 +67,7 @@ class Signal(t.HasTraits):
             arbitrary dimensions. Additionally the dictionary can contain the 
             following keys:
                 coordinates: a dictionary that defines the coordinates (see the 
-                    CoordiantesManager class)
+                    CoordinatesManager class)
                 attributes: a dictionary which keywords are stored as attributes 
                 of the signal class
                 parameters: a dictionary containing a set of parameters that 
@@ -84,7 +84,7 @@ class Signal(t.HasTraits):
         if not dictionary.has_key('coordinates'):
             dictionary['coordinates'] = self._get_undefined_coordinates_list()
         self.coordinates = new_coordinates.CoordinatesManager(
-        dictionary['coordinates'])
+            dictionary['coordinates'])
         if not dictionary.has_key('parameters'):
             dictionary['parameters'] = {}
         if not dictionary.has_key('extra_parameters'):
