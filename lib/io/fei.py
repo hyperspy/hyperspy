@@ -264,30 +264,35 @@ def ser_reader(filename, *args, **kwds):
     
     header, data = load_ser_file(filename)
     data_type = guess_data_type(header['DataTypeID'])
-    array_shape = []
     coordinates = []
     ndim = header['NumberDimensions']
-    
+    array_shape = [None,] * int(ndim)
     
     if data_type == 'SI':
-        
+        i_array = range(ndim)
+        if len(data['PositionY']) > 1 and \
+        (data['PositionY'][0] == data['PositionY'][1]):
+            # The spatial dimensions are stored in the reversed order
+            # We reverse the shape
+            i_array.reverse()
         # Extra dimensions
-        for i in range(1, ndim + 1):
-            if i == ndim:
+        for i in range(ndim):
+            if i_array[i] == ndim - 1:
                 name = 'x'
-            elif i == ndim - 1:
+            elif i_array[i] == ndim - 2:
                 name = 'y'
             else:
-                name = 'undefined%' % i
+                name = 'undefined_%i' % (i + 1)
             coordinates.append({
             'name' : name,
-            'offset' : header['Dim-%i_CalibrationOffset' % i][0],
-            'scale' : header['Dim-%i_CalibrationDelta' % i][0],
-            'units' : header['Dim-%i_Units' % i][0],
-            'size' : header['Dim-%i_DimensionSize' % i][0],
-            'index_in_array' : i - 1
+            'offset' : header['Dim-%i_CalibrationOffset' % (i + 1)][0],
+            'scale' : header['Dim-%i_CalibrationDelta' % (i + 1)][0],
+            'units' : header['Dim-%i_Units' % (i + 1)][0],
+            'size' : header['Dim-%i_DimensionSize' % (i + 1)][0],
+            'index_in_array' : i_array[i]
             })
-            array_shape.append(header['Dim-%i_DimensionSize' % i][0])
+            array_shape[i_array[i]] = \
+            header['Dim-%i_DimensionSize' % (i + 1)][0]
         
         # Spectral dimension    
         coordinates.append({
@@ -299,11 +304,6 @@ def ser_reader(filename, *args, **kwds):
             'index_in_array' : header['NumberDimensions'][0]
             })
         
-        if len(data['PositionY']) > 1 and \
-        (data['PositionY'][0] == data['PositionY'][1]):
-            # The spatial dimensions are stored in the reversed order
-            # We reverse the shape
-            array_shape.reverse()
         array_shape.append(data['ArrayLength'][0])
         
     elif data_type == 'Image':
