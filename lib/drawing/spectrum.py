@@ -53,6 +53,7 @@ class SpectrumFigure():
         
     def create_figure(self):
         self.figure = utils.create_figure()
+        utils.on_window_close(self.figure, self.close)
         
     def create_left_axis(self):
         self.left_ax = self.figure.add_subplot(111)
@@ -161,13 +162,12 @@ class SpectrumLine():
             self.ax.figure.canvas.draw()
         
     def close(self):
-        self.ax.lines.remove(self.line)
+        if self.line in self.ax.lines:
+            self.ax.lines.remove(self.line)
         self.coordinates.disconnect(self.update)
         try:
             self.ax.figure.canvas.draw()
         except:
             pass
-        
-        
         
 plt.show()
