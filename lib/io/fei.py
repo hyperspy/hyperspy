@@ -293,6 +293,12 @@ def ser_reader(filename, *args, **kwds):
             })
             array_shape[i_array[i]] = \
             header['Dim-%i_DimensionSize' % (i + 1)][0]
+        # FEI seems to use the international system of units (SI) for the 
+        # spatial scale. However, we prefer to work in nm
+        for coordinate in coordinates:
+            if coordinate['units'] == 'meters':
+                coordinate['units'] = 'nm'
+                coordinate['scale'] *= 10**9
         
         # Spectral dimension    
         coordinates.append({
