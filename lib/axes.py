@@ -183,7 +183,7 @@ class DataAxis(t.HasTraits):
     )
     
 class AxesManager(t.HasTraits):
-    axes = t.List(Axis)
+    axes = t.List(DataAxis)
     _slicing_axes = t.List()
     def __init__(self, axes_list):
         super(AxesManager, self).__init__()
