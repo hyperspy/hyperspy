@@ -22,7 +22,7 @@ import os
 
 import messages
 from defaults_parser import defaults
-from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple, img_stack, hdf5
+from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple, hdf5
 
 io_plugins = (netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple,
               hdf5)
@@ -44,9 +44,6 @@ def load(filename, data_type = None, **kwds):
         If 'Image' the file will be loaded as an Image object
     """
     extension = os.path.splitext(filename)[1][1:]
-    if '*' in filename:
-	reader=img_stack
-        return load_with_reader(filename, reader, data_type, **kwds)
     
     i = 0
     while extension not in io_plugins[i].file_extensions and \
@@ -64,24 +61,23 @@ def load(filename, data_type = None, **kwds):
         
 def load_with_reader(filename, reader, data_type = None, **kwds):
     from spectrum import Spectrum
-    from image import Image
+    from signals.image import Image
     from signal import Signal
     messages.information(reader.description)    
-    dictionary_list = reader.file_reader(filename,
+    file_data_dict = reader.file_reader(filename,
                                          data_type=data_type,
                                          **kwds)
     objects = []
-    for dictionary in dictionary_list:
-        data_type = dictionary['data_type']
-        if data_type == 'SI':
-            s = Spectrum(dictionary)
-        elif data_type == 'Image':
-            s = Image(dictionary)  
-        elif data_type == 'Signal':
-            s = Signal(dictionary)
-        if defaults.plot_on_load is True:
-            s.plot()
-        objects.append(s)
+    data_type = file_data_dict['data_type']
+    if data_type == 'SI':
+        s = Spectrum(file_data_dict)
+    elif data_type == 'Image':
+        s = Image(file_data_dict)  
+    elif data_type == 'Signal':
+        s = Signal(file_data_dict)
+    if defaults.plot_on_load is True:
+        s.plot()
+    objects.append(s)
         
     if len(objects) == 1:
         objects = objects[0]

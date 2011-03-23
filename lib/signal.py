@@ -37,14 +37,14 @@ class Parameters(object):
 class Signal(t.HasTraits):
     data = t.Array()
     axes_manager = t.Instance(AxesManager)
-    extra_parameters = t.Dict()
-    parameters = t.Instance(Parameters)
+    original_parameters = t.Dict()
+    mapped_parameters = t.Instance(Parameters)
     name = t.Str('')
     units = t.Str()
     scale = t.Float(1)
     offset = t.Float(0)
     physical_property = t.Str()
-    def __init__(self, dictionary):
+    def __init__(self, file_data_dict):
         '''All data interaction is made through this class or its subclasses
             
         
@@ -54,15 +54,15 @@ class Signal(t.HasTraits):
            see load_dictionary for the format
         '''    
         super(Signal, self).__init__()
-        self.load_dictionary(dictionary)
+        self.load_dictionary(file_data_dict)
         self._plot = None
         self._shape_before_unfolding = None
         
-    def load_dictionary(self, dictionary, parameters = Parameters):
+    def load_dictionary(self, file_data_dict, mapped_parameters = Parameters):
         '''
         Parameters:
         -----------
-        dictionary : dictionary
+        file_data_dict : dictionary
             A dictionary containing at least a 'data' keyword with an array of 
             arbitrary dimensions. Additionally the dictionary can contain the 
             following keys:
@@ -70,30 +70,30 @@ class Signal(t.HasTraits):
                     AxesManager class)
                 attributes: a dictionary which keywords are stored as attributes 
                 of the signal class
-                parameters: a dictionary containing a set of parameters that 
+                mapped_parameters: a dictionary containing a set of parameters that 
                     will be stored as attributes of a Parameters class. 
                     For some subclasses some particular parameters might be 
                     mandatory.
-                extra_parameters: a dictionary that will be accesible in the 
+                original_parameters: a dictionary that will be accesible in the 
                     extra_parameters attribute of the signal class and that 
                     tipycally contains all the parameters that has been imported
                     from the original data file.
         parameters : a Parameters class or subclass 
         '''
-        self.data = dictionary['data']
-        if not dictionary.has_key('axes'):
-            dictionary['axes'] = self._get_undefined_axes_list()
+        self.data = file_data_dict['data']
+        if not file_data_dict.has_key('axes'):
+            file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(
-            dictionary['axes'])
-        if not dictionary.has_key('parameters'):
-            dictionary['parameters'] = {}
-        if not dictionary.has_key('extra_parameters'):
-            dictionary['extra_parameters'] = {}
-        if dictionary.has_key('attributes'):
-            for key, value in dictionary['attributes'].iteritems():
+            file_data_dict['axes'])
+        if not file_data_dict.has_key('mapped_parameters'):
+            file_data_dict['mapped_parameters'] = {}
+        if not file_data_dict.has_key('original_parameters'):
+            file_data_dict['original_parameters'] = {}
+        if file_data_dict.has_key('attributes'):
+            for key, value in file_data_dict['attributes'].iteritems():
                 self.__setattr__(key, value)
-        self.parameters = parameters(dictionary['parameters'])
-        self.extra_parameters = dictionary['extra_parameters']
+        self.mapped_parameters = mapped_parameters(file_data_dict['mapped_parameters'])
+        self.original_parameters = file_data_dict['original_parameters']
         
     def _get_undefined_axes_list(self):
         axes = []
