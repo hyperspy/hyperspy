@@ -26,97 +26,152 @@ import sys
 try:
     import cv
 except:
-    print "OpenCV not available!  Exiting."
-    sys.exit()
+    # commented out because just need one_dim_findpeks
+    # print "OpenCV not available!  Exiting."
+    # sys.exit()
+    print 'Module %s:' % sys.modules[__name__]
+    print 'OpenCV is not available, most of the functions will not work.'
 import numpy as np
 from scipy.signal import medfilt
 
-def one_dim_findpeaks(y, x=None, SlopeThreshold=0.5, AmpThreshold=None,
-              medfilt_radius=5, peakgroup=10, subpix=True):
+def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
+              medfilt_radius=5, maxpeakn=30000, peakgroup=10, subpix=True):
     """
     Find peaks along a 1D line.
-    function P=findpeaks(y,SlopeThreshold,AmpThreshold,smoothwidth,peakgroup)
-    Function to locate the positive peaks in a noisy x-y data
-    set.  Detects peaks by looking for downward zero-crossings
-    in the first derivative that exceed SlopeThreshold.
-    Returns list (P) containing peak number and
-    position, height, and width of each peak. SlopeThreshold,
-    AmpThreshold, and smoothwidth control sensitivity
-    Higher values will neglect smaller features. Peakgroup
-    is the number of points around the "top part" of the peak.
-    T. C. O'Haver, 1995.  Version 2  Last revised Oct 27, 2006
-    Converted to Python by Michael Sarahan, Feb 2011.
+
+    Function to locate the positive peaks in a noisy x-y data set.
     
-    Revised to handle edges better.  MCS, Mar 2011
+    Detects peaks by looking for downward zero-crossings in the first
+    derivative that exceed 'slope_thresh'.
+    
+    Returns an array containing position, height, and width of each peak.
+
+    'slope_thresh' and 'amp_thresh', control sensitivity: higher values will
+    neglect smaller features.
+    
+    peakgroup is the
+
+    Parameters
+    ---------
+    y : array
+        1D input array, e.g. a spectrum
+        
+    x : array (optional)
+        1D array describing the calibration of y (must have same shape as y)
+
+    slope_thresh : float (optional)
+                   1st derivative threshold to count the peak
+                   default is set to 0.5
+                   higher values will neglect smaller features.
+                   
+    amp_thresh : float (optional)
+                 intensity threshold above which   
+                 default is set to 10% of max(y)
+                 higher values will neglect smaller features.
+                                  
+    medfilt_radius : int (optional)
+                     median filter window to apply to smooth the data
+                     (see scipy.signal.medfilt)
+                     if 0, no filter will be applied.
+                     default is set to 5
+
+    peakgroup : int (optional)
+                number of points around the "top part" of the peak
+                default is set to 10
+
+    maxpeakn : int (optional)
+              number of maximum detectable peaks
+              default is set to 30000
+                
+    subpix : bool (optional)
+             default is set to True
+
+    Returns
+    -------
+    P : array of shape (npeaks, 3)
+        contains position, height, and width of each peak
+    
     """
-    if not x:
-        x=np.arange(len(y),dtype=np.int64)
-    if not AmpThreshold:
-        AmpThreshold = 0.1 * y.max()
-    peakgroup=np.round(peakgroup)
-    #d=medfilt(np.gradient(y),smoothwidth)
+    # Changelog
+    # T. C. O'Haver, 1995.  Version 2  Last revised Oct 27, 2006
+    # Converted to Python by Michael Sarahan, Feb 2011.
+    # Revised to handle edges better.  MCS, Mar 2011
+    if x is None:
+        x = np.arange(len(y),dtype=np.int64)
+    if not amp_thresh:
+        amp_thresh = 0.1 * y.max()
+    peakgroup = np.round(peakgroup)
     if medfilt_radius:
-        d=np.gradient(medfilt(y,medfilt_radius))
+        d = np.gradient(medfilt(y,medfilt_radius))
     else:
-        d=np.gradient(y)
-    n=np.round(peakgroup/2+1)
-    # allocate a result array for 30000 peaks.
-    P=np.zeros((30000,3))
-    peak=0;
-    for j in xrange(len(y)-4):
+        d = np.gradient(y)
+    n = np.round(peakgroup / 2 + 1)
+    # allocate a result array for 'maxpeakn' peaks
+    P = np.zeros((maxpeakn, 3))
+    peak = 0
+    for j in xrange(len(y) - 4):
         if np.sign(d[j]) > np.sign(d[j+1]): # Detects zero-crossing
-            if np.sign(d[j+1])==0: continue
-            if d[j]-d[j+1] > SlopeThreshold: # if slope of derivative is larger than SlopeThreshold
-                if y[j] > AmpThreshold:  # if height of peak is larger than AmpThreshold
+            if np.sign(d[j+1]) == 0: continue
+            # if slope of derivative is larger than slope_thresh
+            if d[j] - d[j+1] > slope_thresh:
+                # if height of peak is larger than amp_thresh
+                if y[j] > amp_thresh:  
                     # the next section is very slow, and actually messes
-                    # things up for images (discrete pixels), so by default, don't
-                    # do subpixel precision in the 1D peakfind step.
+                    # things up for images (discrete pixels),
+                    # so by default, don't do subpixel precision in the
+                    # 1D peakfind step.
                     if subpix:
-			xx=np.zeros(peakgroup)
-			yy=np.zeros(peakgroup)
-			s=0
+			xx = np.zeros(peakgroup)
+			yy = np.zeros(peakgroup)
+			s = 0
 			for k in xrange(peakgroup): 
-			    groupindex=j+k-n+1; 
-			    if groupindex<1:
-				xx=xx[1:]
-				yy=yy[1:]
-				s+=1
+			    groupindex = j + k - n + 1 
+			    if groupindex < 1:
+				xx = xx[1:]
+				yy = yy[1:]
+				s += 1
 				continue
-			    elif groupindex>y.shape[0]-1:
-				xx=xx[:groupindex-1]
-				yy=yy[:groupindex-1]
+			    elif groupindex > y.shape[0] - 1:
+				xx = xx[:groupindex-1]
+				yy = yy[:groupindex-1]
 				break
-			    xx[k-s]=x[groupindex]
-			    yy[k-s]=y[groupindex]
-			avg=np.average(xx)
-			stdev=np.std(xx)
-			xxf=(xx-avg)/stdev
-			# Fit parabola to log10 of sub-group with centering and scaling
-			coef=np.polyfit(xxf,np.log10(np.abs(yy)),2)  
-			c1=coef[2]
-			c2=coef[1]
-			c3=coef[0]
-			width=np.linalg.norm(stdev*2.35703/(np.sqrt(2)*np.sqrt(-1*c3)))
-			# if the peak is too narrow for least-squares technique to work
-			# well, just use the max value of y in the sub-group of points near peak.
-			if peakgroup<7:
-			    height=np.max(yy);
-			    location=xx[np.argmin(np.abs(yy-height))]
+			    xx[k-s] = x[groupindex]
+			    yy[k-s] = y[groupindex]
+			avg = np.average(xx)
+			stdev = np.std(xx)
+			xxf = (xx - avg) / stdev
+			# Fit parabola to log10 of sub-group with
+                        # centering and scaling
+			coef = np.polyfit(xxf, np.log10(np.abs(yy)), 2)  
+			c1 = coef[2]
+			c2 = coef[1]
+			c3 = coef[0]
+			width = np.linalg.norm(
+                            stdev * 2.35703 / (np.sqrt(2) * np.sqrt(-1 * c3)))
+			# if the peak is too narrow for least-squares
+                        # technique to work  well, just use the max value
+                        # of y in the sub-group of points near peak.
+			if peakgroup < 7:
+			    height = np.max(yy)
+			    location = xx[np.argmin(np.abs(yy - height))]
 			else:
-                            location=-((stdev*c2/(2*c3))-avg)
-			    height=np.exp(c1-c3*(c2/(2*c3))**2)    
+                            location =- ((stdev * c2 / (2 * c3)) - avg)
+			    height = np.exp( c1 - c3 * (c2 / (2 * c3))**2)    
                     # Fill results array P. One row for each peak 
-                    # detected, containing the peak number, peak 
-                    # position (x-value) and peak height (y-value).
+                    # detected, containing the
+                    # peak position (x-value) and peak height (y-value).
 		    else:
 			location = x[j]
-			height   = y[j]
-                        # no way to know peak width without the above measurements.
-			width    = 0
-                    if (location > 0 and not np.isnan(location) and location < x[-1]):
+			height = y[j]
+                        # no way to know peak width without
+                        # the above measurements.
+			width = 0
+                    if (location > 0 and not np.isnan(location)
+                        and location < x[-1]):
                         P[peak] = np.array([location, height, width])
-                        peak=peak+1;
-    # return only the part of the array that contains peaks (not the whole 30,000x3 array)
+                        peak = peak + 1
+    # return only the part of the array that contains peaks
+    # (not the whole maxpeakn x 3 array)
     return P[:peak,:]
 
 def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5):

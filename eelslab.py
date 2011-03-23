@@ -52,3 +52,13 @@ print(silib.Release.info)
 
 def get_configuration_directory_path():
     print(silib.config_dir.config_path)
+
+# The gui can produce a crash for certain toolkits and certain versions of
+# python-traits. There, until we find out which is the right configuration for
+# each platform, its availability will depend on the user luck:
+try:   
+    import silib.gui.main_window
+    def gui():
+        silib.gui.main_window.MainWindow().configure_traits()
+except:
+    pass
