@@ -185,9 +185,9 @@ def read_array(f, iarray, endian):
                     for element in range(arraysize)]
         else: # simple type
             data = [eltype(f, endian) for element in range(arraysize)]
-            # if _data_type[iarray[1]][2] == 'H': # it's actually a string
             if iarray[1] == 4: # it's actually a string
-                data = [chr(i) for i in data]
+                # disregard values that are not characters:
+                data = [chr(i) for i in data if i in range(256)]
                 data = reduce(lambda x, y: x + y, data)
         return data
     
@@ -695,6 +695,7 @@ class DM3ImageFile(object):
         # self.data = self.read_image_data()
         try:
             self.data = self.read_image_data()
+
         except AttributeError:
             print('Error. Could not read data.')
             self.data = 'UNAVAILABLE'
@@ -723,7 +724,7 @@ class DM3ImageFile(object):
             return self.read_rgb()
         else:
             data = read_data_array(self.filename, self.imbytes,
-                                   self.byte_offset, self.imdtype, mode='r')
+                                   self.byte_offset, self.imdtype)
             if len(self.dimensions) == 3:
                 order = 'F'
             else:
@@ -833,7 +834,7 @@ class DM3ImageFile(object):
 
         return data
 
-def file_reader(filename, data_type = None, data_id = 1, old = True):
+def file_reader(filename, data_type=None, data_id=1, old=False):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
