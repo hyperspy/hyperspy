@@ -695,6 +695,7 @@ class DM3ImageFile(object):
         # self.data = self.read_image_data()
         try:
             self.data = self.read_image_data()
+
         except AttributeError:
             print('Error. Could not read data.')
             self.data = 'UNAVAILABLE'
@@ -723,7 +724,7 @@ class DM3ImageFile(object):
             return self.read_rgb()
         else:
             data = read_data_array(self.filename, self.imbytes,
-                                   self.byte_offset, self.imdtype, mode='r')
+                                   self.byte_offset, self.imdtype)
             if len(self.dimensions) == 3:
                 order = 'F'
             else:
