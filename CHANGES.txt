@@ -1,4 +1,4 @@
-v0.2.10 22/03/2011
+v0.2.10 23/03/2011
 
 Enhancements
 ------------
@@ -8,9 +8,7 @@ BUGs fixed
 ----------
 * A error was raised when trying to fit a model after closing a plot
 * The (old) dm3 reader was messing up the coordinates
-* The default dm3 reader is back to the old code until the new one get some 
-polishing. To test the new one add the old = True key word to the load function.
-(some data types are only properly readed with the new code) 
+* The new dm3 reader is was failing to load some dm3 files 
 
 
 
