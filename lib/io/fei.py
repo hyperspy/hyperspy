@@ -264,7 +264,7 @@ def ser_reader(filename, *args, **kwds):
     
     header, data = load_ser_file(filename)
     data_type = guess_data_type(header['DataTypeID'])
-    coordinates = []
+    axes = []
     ndim = header['NumberDimensions']
     array_shape = [None,] * int(ndim)
     
@@ -283,7 +283,7 @@ def ser_reader(filename, *args, **kwds):
                 name = 'y'
             else:
                 name = 'undefined_%i' % (i + 1)
-            coordinates.append({
+            axes.append({
             'name' : name,
             'offset' : header['Dim-%i_CalibrationOffset' % (i + 1)][0],
             'scale' : header['Dim-%i_CalibrationDelta' % (i + 1)][0],
@@ -295,13 +295,13 @@ def ser_reader(filename, *args, **kwds):
             header['Dim-%i_DimensionSize' % (i + 1)][0]
         # FEI seems to use the international system of units (SI) for the 
         # spatial scale. However, we prefer to work in nm
-        for coordinate in coordinates:
-            if coordinate['units'] == 'meters':
-                coordinate['units'] = 'nm'
-                coordinate['scale'] *= 10**9
+        for axis in axes:
+            if axis['units'] == 'meters':
+                axis['units'] = 'nm'
+                axis['scale'] *= 10**9
         
         # Spectral dimension    
-        coordinates.append({
+        axes.append({
             'name' : 'undefined',
             'offset' : data['CalibrationOffset'][0],
             'scale' : data['CalibrationDelta'][0],
@@ -314,8 +314,8 @@ def ser_reader(filename, *args, **kwds):
         
     elif data_type == 'Image':
         
-        # Y Coordinate
-        coordinates.append({
+        # Y axis
+        axes.append({
             'name' : 'y',
             'offset' : data['CalibrationOffsetY'][0] - \
             data['CalibrationElementY'][0] * data['CalibrationDeltaY'][0],
@@ -326,8 +326,8 @@ def ser_reader(filename, *args, **kwds):
             })
         array_shape.append(data['ArraySizeY'][0])
         
-        # X Coordinate
-        coordinates.append({
+        # X axis
+        axes.append({
             'name' : 'x',
             'offset' : data['CalibrationOffsetX'][0] - \
             data['CalibrationElementX'][0] * data['CalibrationDeltaX'][0],
@@ -340,7 +340,7 @@ def ser_reader(filename, *args, **kwds):
         
         # Extra dimensions
         for i in range(1, header['NumberDimensions'] + 1):
-            coordinates.append({
+            axes.append({
             'name' : 'undefined%s' % i,
             'offset' : header['Dim-%i_CalibrationOffset' % i][0],
             'scale' : header['Dim-%i_CalibrationDelta' % i][0],
@@ -373,6 +373,6 @@ def ser_reader(filename, *args, **kwds):
     'filename' : filename,
     'data' : dc,
     'parameters' : {},
-    'coordinates' : coordinates,
+    'axes' : axes,
     'extra_parameters' : {'header' : header, 'data' : data}}
     return dictionary

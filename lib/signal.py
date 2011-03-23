@@ -5,17 +5,17 @@ Created on Wed Oct 06 09:48:42 2010
 """
 import numpy as np
 import scipy as sp
-import scipy.interpolate
 import enthought.traits.api as t
 import enthought.traits.ui.api as tui 
 
 import messages
-import new_coordinates
+from axes import AxesManager
 import file_io
 import drawing
+import drawing.mpl_ise
 import utils
 import types
-import copy
+import new_plot
 
 class Parameters(object):
     '''
@@ -36,7 +36,7 @@ class Parameters(object):
 
 class Signal(t.HasTraits):
     data = t.Array()
-    coordinates = t.Instance(new_coordinates.CoordinatesManager)
+    axes_manager = t.Instance(AxesManager)
     extra_parameters = t.Dict()
     parameters = t.Instance(Parameters)
     name = t.Str('')
@@ -66,8 +66,8 @@ class Signal(t.HasTraits):
             A dictionary containing at least a 'data' keyword with an array of 
             arbitrary dimensions. Additionally the dictionary can contain the 
             following keys:
-                coordinates: a dictionary that defines the coordinates (see the 
-                    CoordinatesManager class)
+                axes: a dictionary that defines the axes (see the 
+                    AxesManager class)
                 attributes: a dictionary which keywords are stored as attributes 
                 of the signal class
                 parameters: a dictionary containing a set of parameters that 
@@ -81,10 +81,10 @@ class Signal(t.HasTraits):
         parameters : a Parameters class or subclass 
         '''
         self.data = dictionary['data']
-        if not dictionary.has_key('coordinates'):
-            dictionary['coordinates'] = self._get_undefined_coordinates_list()
-        self.coordinates = new_coordinates.CoordinatesManager(
-            dictionary['coordinates'])
+        if not dictionary.has_key('axes'):
+            dictionary['axes'] = self._get_undefined_axes_list()
+        self.axes_manager = AxesManager(
+            dictionary['axes'])
         if not dictionary.has_key('parameters'):
             dictionary['parameters'] = {}
         if not dictionary.has_key('extra_parameters'):
@@ -95,22 +95,22 @@ class Signal(t.HasTraits):
         self.parameters = parameters(dictionary['parameters'])
         self.extra_parameters = dictionary['extra_parameters']
         
-    def _get_undefined_coordinates_list(self):
-        coordinates = []
+    def _get_undefined_axes_list(self):
+        axes = []
         for i in range(len(self.data.shape)):
-            coordinates.append(
+            axes.append(
             {'name' : 'undefined',
             'scale' : 1.,
             'offset' : 0.,
             'size' : int(self.data.shape[i]),
             'units' : 'undefined',
             'index_in_array' : i,})
-        return coordinates
+        return axes
         
-    def __call__(self, coordinates = None):
-        if coordinates is None:
-            coordinates = self.coordinates
-        return self.data.__getitem__(coordinates._getitem_tuple)
+    def __call__(self, axes_manager = None):
+        if axes_manager is None:
+            axes_manager = self.axes_manager
+        return self.data.__getitem__(axes_manager._getitem_tuple)
         
     def is_spectrum_line(self):
         if len(self.data.squeeze().shape) == 2:
@@ -149,13 +149,13 @@ class Signal(t.HasTraits):
         else:
             return data[..., spectral_range].sum(-1)
     
-    def plot(self, coordinates = None):
-        if coordinates is None:
-            coordinates = self.coordinates
-        if coordinates.output_dim == 1:
+    def plot(self, axes_manager = None):
+        # TODO: This function must be generalized F_DLP 23/03/2011
+        if axes_manager is None:
+            axes_manager = self.axes_manager
+        if axes_manager.output_dim == 1:
             # Hyperspectrum
             if self._plot is not None:
-#            if self.coordinates is not self.hse.coordinates:
                 try:
                     self._plot.close()
                 except:
@@ -168,20 +168,22 @@ class Signal(t.HasTraits):
             self._plot.spectrum_data_function = self.__call__
             self._plot.spectrum_title = self.name
             self._plot.xlabel = '%s (%s)' % (
-                self.coordinates.coordinates[-1].name, 
-                self.coordinates.coordinates[-1].units)
+                self.axes_manager.axes[-1].name, 
+                self.axes_manager.axes[-1].units)
             self._plot.ylabel = 'Intensity'
-            self._plot.coordinates = coordinates
-            self._plot.axis = self.coordinates.coordinates[-1].axis
+            self._plot.axes_manager = axes_manager
+            self._plot.axis = self.axes_manager.axes[-1].axis
             
             # Image properties
             self._plot.image_data_function = self.get_image
             self._plot.image_title = ''
-            self._plot.pixel_size = self.coordinates.coordinates[0].scale
-            self._plot.pixel_units = self.coordinates.coordinates[0].units
+            self._plot.pixel_size = self.axes_manager.axes[0].scale
+            self._plot.pixel_units = self.axes_manager.axes[0].units
             
-        elif coordinates.output_dim == 2:
-            self._plot = drawing.mpl_ise.MPL_HyperImage_Explorer()
+        elif axes_manager.output_dim == 2:
+#            self._plot = drawing.mpl_ise.MPL_Image_Stack_Explorer()
+            self._plot = new_plot.Plot2D(self, self.axes_manager)
+            self._plot.plot()
         else:
             messages.warning_exit('Plotting is not supported for this view')
         
@@ -224,10 +226,10 @@ class Signal(t.HasTraits):
         a file
         '''
         dc = self.data
-        for coordinate in self.coordinates.coordinates:
-            coordinate.size = int(dc.shape[coordinate.index_in_array])
+        for axis in self.axes_manager.axes:
+            axis.size = int(dc.shape[axis.index_in_array])
             print("%s size: %i" % 
-            (coordinate.name, dc.shape[coordinate.index_in_array]))
+            (axis.name, dc.shape[axis.index_in_array]))
         self._replot()
         
     # Transform ________________________________________________________________
@@ -246,13 +248,13 @@ class Signal(t.HasTraits):
         '''
         axis = self._get_positive_axis(axis)
         if i1 is not None:
-            new_offset = self.coordinates.coordinates[axis].axis[i1]
+            new_offset = self.axes_manager.axes[axis].axis[i1]
         # We take a copy to guarantee the continuity of the data
         self.data = self.data[
         (slice(None),)*axis + (slice(i1, i2), Ellipsis)].copy()
         
         if i1 is not None:
-            self.coordinates.coordinates[axis].offset = new_offset
+            self.axes_manager.axes[axis].offset = new_offset
         self.get_dimensions_from_data()      
         
     def crop_in_units(self, axis, x1 = None, x2 = None):
@@ -270,8 +272,8 @@ class Signal(t.HasTraits):
         crop_in_pixels
         
         '''
-        i1 = self.coordinates.coordinates[axis].value2index(x1)
-        i2 = self.coordinates.coordinates[axis].value2index(x2)
+        i1 = self.axes_manager.axes[axis].value2index(x1)
+        i2 = self.axes_manager.axes[axis].value2index(x2)
         self.crop_in_pixels(axis, i1, i2)
         
     def roll_xy(self, n_x, n_y = 1):
@@ -302,13 +304,13 @@ class Signal(t.HasTraits):
         axis2 : positive int        
         '''
         self.data = self.data.swapaxes(axis1,axis2)
-        c1 = self.coordinates.coordinates[axis1]
-        c2 = self.coordinates.coordinates[axis2]
+        c1 = self.axes_manager.axes[axis1]
+        c2 = self.axes_manager.axes[axis2]
         c1.index_in_array, c2.index_in_array =  \
             c2.index_in_array, c1.index_in_array
-        self.coordinates.coordinates[axis1] = c2
-        self.coordinates.coordinates[axis2] = c1
-        self.coordinates.set_output_dim()
+        self.axes_manager.axes[axis1] = c2
+        self.axes_manager.axes[axis2] = c1
+        self.axes_manager.set_output_dim()
         self._replot()
         
     def rebin(self, new_shape):
@@ -321,8 +323,8 @@ class Signal(t.HasTraits):
         '''
         factors = np.array(self.data.shape) / np.array(new_shape)
         self.data = utils.rebin(self.data,new_shape)
-        for coordinate in self.coordinates.coordinates:
-            coordinate.scale *= factors[coordinate.index_in_array]
+        for axis in self.axes_manager.axes:
+            axis.scale *= factors[axis.index_in_array]
         self.get_dimensions_from_data()
              
     def split_in(self, axis, number_of_parts = None, steps = None):
@@ -368,7 +370,7 @@ class Signal(t.HasTraits):
             (slice(None),)*axis + (slice(cut_node[i],cut_node[i+1]), Ellipsis)]
             s = Signal({'data' : data})
             # TODO: When copying plotting does not work
-#            s.coordinates = copy.deepcopy(self.coordinates)
+#            s.axes = copy.deepcopy(self.axes_manager)
             s.get_dimensions_from_data()
             splitted.append(s)
         return splitted
@@ -377,34 +379,34 @@ class Signal(t.HasTraits):
     def unfold(self, steady_axis = -1, unfolded_axis = -2):
         if len(self.data.squeeze().shape) < 3: return
         self._shape_before_unfolding = self.data.shape
-        self._coordinates_before_unfolding = self.coordinates
+        self._axes_manager_before_unfolding = self.axes_manager
         new_shape = [1] * len(self.data.shape)
         new_shape[steady_axis] = self.data.shape[steady_axis]
         new_shape[unfolded_axis] = -1
         self.data = self.data.reshape(new_shape).squeeze()
-        self.coordinates = new_coordinates.CoordinatesManager(
-        self._get_undefined_coordinates_list())
+        self.axes_manager = AxesManager(
+        self._get_undefined_axes_list())
         if steady_axis > unfolded_axis:
             index = 1
         else:
             index = 0
-        nc = self.coordinates.coordinates[
-        steady_axis].get_coordinate_dictionary()
+        nc = self.axes_manager.axes[
+        steady_axis].get_axis_dictionary()
         nc['index_in_array'] = index 
-        # TODO: get some coordinates data
-        self.coordinates.coordinates[index].__init__(
+        # TODO: get some axes data
+        self.axes_manager.axes[index].__init__(
        **nc)
-        self.coordinates.coordinates[index].slice = slice(None)
-        self.coordinates.coordinates[index - 1].slice = None
+        self.axes_manager.axes[index].slice = slice(None)
+        self.axes_manager.axes[index - 1].slice = None
         self._replot()            
             
     def fold(self):
         '''If the SI was previously unfolded, folds it back'''
         if self._shape_before_unfolding is not None:
             self.data = self.data.reshape(self._shape_before_unfolding)
-            self.coordinates = self._coordinates_before_unfolding
+            self.axes_manager = self._axes_manager_before_unfolding
             self._shape_before_unfolding = None
-            self._coordinates_before_unfolding = None
+            self._axes_manager_before_unfolding = None
             self._replot()
 
     def _get_positive_axis(self, axis):
@@ -449,7 +451,7 @@ class Signal(t.HasTraits):
         ss = list(shift_array.shape)
         ss.insert(axis,1)
         shift_array = shift_array.reshape(ss).copy()
-        coord = self.coordinates.coordinates[axis]
+        coord = self.axes_manager.axes[axis]
         offset = coord.offset
         _axis = coord.axis.copy()
         from progressbar import progressbar

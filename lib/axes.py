@@ -185,6 +185,8 @@ class DataAxis(t.HasTraits):
 class AxesManager(t.HasTraits):
     axes = t.List(DataAxis)
     _slicing_axes = t.List()
+    _non_slicing_axes = t.List()
+    _step = t.Int(1)
     def __init__(self, axes_list):
         super(AxesManager, self).__init__()
         ncoord = len(axes_list)
@@ -197,31 +199,20 @@ class AxesManager(t.HasTraits):
 #        self.on_trait_change(self.set_axis_attribute, 'axes.name')
         # TODO: MCS 22/03/11 - on the following two lines, axis might 
         # need to be axes
-        self.on_trait_change(self.set_output_dim, 'axis.slice')
-        self.on_trait_change(self.set_output_dim, 'axis.index')
+        self.on_trait_change(self.set_output_dim, 'axes.slice')
+        self.on_trait_change(self.set_output_dim, 'axes.index')
 
-#    def set_coordinate_attribute(self):
-#        if hasattr(self, '_coordinates_attributes_names'):
-#            for attr in self._coordinates_attributes_names:
-#                self.__delattr__(attr)
-#        self._coordinates_attributes_names = []
-#        for coord in self.coordinates:
-#            if coord.name is '?' or '' or None:
-#                name = 'coordinate_%i' % coord.index_in_array
-#            else:
-#                name = 'coordinate_%s' % coord.name
-#            self._coordinates_attributes_names.append(name)
-#            self.__setattr__(name, coord)
-        
     def set_output_dim(self):
         getitem_tuple = []
         indexes = []
         self._slicing_axes = []
+        self._non_slicing_axes = []
         i = 0
         for axis in self.axes:
             if axis.slice is None:
                 getitem_tuple.append(axis.index)
                 indexes.append(axis.index)
+                self._non_slicing_axes.append(axis)
             else:
                 getitem_tuple.append(axis.slice)
                 self._slicing_axes.append(axis)
@@ -235,12 +226,22 @@ class AxesManager(t.HasTraits):
         view : 'hyperspectrum' or 'image'
         '''
         if view == 'hyperspectrum':
-            for axis in self.axes:
-                if axis.name  not in ['x', 'y', 'z', 'alpha', 'beta']:
+            # We limit the output_dim to 1 to get a spectrum
+            i = 0
+            for axis in self.axes[::-1]:
+                if i < 1:
                     axis.slice = slice(None)
+                    i += 1
+                else:
+                    axis.slice = None
         elif view == 'image':
+            # We limit the output_dim to 2 to get a spectrum
+            i = 0
             for axis in self.axes:
-                if axis.name in ['x', 'y', 'z', 'alpha', 'beta']:
+                if i < 2:
+                    axis.slice = slice(None)
+                    i += 1
+                else:
                     axis.slice = None
                     
     def connect(self, f):
@@ -252,6 +253,26 @@ class AxesManager(t.HasTraits):
         for axis in self.axes:
             if axis.slice is None:
                 axis.on_trait_change(f, 'index', remove = True)
+                
+    def key_navigator(self, event):
+        if len(self._non_slicing_axes) not in (1,2): return
+        x = self._non_slicing_axes[-1]
+
+        if event.key == "right" or event.key == "6":
+            x.index += self._step
+        elif event.key == "left" or event.key == "4":
+            x.index -= self._step
+        elif event.key == "pageup":
+            self._step += 1
+        elif event.key == "pagedown":
+            if self._step > 1:
+                self._step -= 1
+        if len(self._non_slicing_axes) == 2:
+            y = self._non_slicing_axes[-2]
+            if event.key == "up" or event.key == "8":
+                y.index -= self._step
+            elif event.key == "down" or event.key == "2":
+                y.index += self._step
             
     traits_view = tui.View(tui.Item('axes', style = 'custom'))
     

@@ -32,7 +32,7 @@ import enthought.chaco.api as chaco
 from enthought.enable.component_editor import ComponentEditor
 
 import messages
-import new_coordinates
+from axes import AxesManager
 #import signal
 from drawing.utils import on_window_close
 
@@ -53,17 +53,17 @@ def _does_figure_object_exists(fig_obj):
                 
 class Plot1D(t.HasTraits):
 #    signal = t.Instance(signal.Signal)
-    coordinates = t.Instance(new_coordinates.CoordinatesManager)
+    axes_manager = t.Instance(AxesManager)
     
     figure = t.Instance(plt.Figure)
     ax1 = t.Instance(plt.Axes)
     ax2 = t.Instance(plt.Axes)
     autoscale = t.Bool(True)
     
-    def __init__(self, signal, coordinates):
+    def __init__(self, signal, axes_manager):
         super(Plot1D, self).__init__()
         self.signal = signal
-        self.coordinates = coordinates
+        self.axes_manager = axes_manager
                 
     def _create_figure(self):
         if _does_figure_object_exists(self.figure) is True:
@@ -94,16 +94,16 @@ class Plot1D(t.HasTraits):
             if None, it will plot to the screen the current spectrum. If string 
             it will save the current spectrum as a png image
         '''
-        if self.coordinates.output_dim != 1:
+        if self.axes_manager.output_dim != 1:
             messages.warning_exit('The view is not 1D')
         
-        coord = self.coordinates._slicing_coordinates[0]
+        coord = self.axes_manager._slicing_axes[0]
         self._create_figure()
         self.ax1 = self.figure.add_subplot(111)
         self.ax1.step(coord.axis, self.signal(), color = 'blue')
         plt.xlabel('%s (%s)' % (coord.name, coord.units))
         plt.ylabel('%s (%s)' % (self.signal.name, self.signal.units))
-        self.on_trait_change(self.update_plot, 'coordinates.coordinates.index')
+        self.on_trait_change(self.update_plot, 'axes_manager.axes.index')
         if filename is not None:
             plt.savefig(filename)
 
@@ -113,7 +113,7 @@ class Plot1D(t.HasTraits):
             self._on_figure_close()
             return
         
-        coord = self.coordinates._slicing_coordinates[0]
+        coord = self.axes_manager._slicing_axes[0]
         ydata = self.signal()
         self.ax1.lines[0].set_ydata(ydata)
         if self.autoscale is True:
@@ -129,15 +129,15 @@ class Plot1D(t.HasTraits):
         
 class Plot2D(t.HasTraits):
 #    signal = t.Instance(signal.Signal)
-    coordinates = t.Instance(new_coordinates.CoordinatesManager)    
+    axes_manager = t.Instance(AxesManager)    
     figure = t.Instance(plt.Figure)
     ax1 = t.Instance(plt.Axes)
     autoscale = t.Bool(True)
     
-    def __init__(self, signal, coordinates):
+    def __init__(self, signal, axes_manager):
         super(Plot2D, self).__init__()
         self.signal = signal
-        self.coordinates = coordinates
+        self.axes_manager = axes_manager
                 
     def _create_figure(self):
         if _does_figure_object_exists(self.figure) is True:
@@ -166,7 +166,7 @@ class Plot2D(t.HasTraits):
             if None, it will plot to the screen the current spectrum. If string 
             it will save the current spectrum as a png image
         '''
-        if self.coordinates.output_dim != 2:
+        if self.axes_manager.output_dim != 2:
             messages.warning_exit('The view is not 2D')
         
         self._create_figure()
@@ -174,7 +174,7 @@ class Plot2D(t.HasTraits):
         self.ax1.imshow(self.signal(), interpolation = 'nearest')
 #        plt.xlabel('%s (%s)' % (coord.name, coord.units))
 #        plt.ylabel('%s (%s)' % (self.signal.name, self.signal.units))
-        self.on_trait_change(self.update_plot, 'coordinates.coordinates.index')
+        self.on_trait_change(self.update_plot, 'axes_manager.axes.index')
         if filename is not None:
             plt.savefig(filename)
 
