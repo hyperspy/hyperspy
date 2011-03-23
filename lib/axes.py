@@ -241,7 +241,7 @@ class AxesManager(t.HasTraits):
         elif view == 'image':
             for axis in self.axes:
                 if axis.name in ['x', 'y', 'z', 'alpha', 'beta']:
-                    axis.slice = slice(None)
+                    axis.slice = None
                     
     def connect(self, f):
         for axis in self.axes:
