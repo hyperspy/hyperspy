@@ -29,7 +29,7 @@ plt.rcParams['image.cmap'] = 'gray'
 
 import utils
 
-class MPL_Image_Stack_Explorer():
+class MPL_HyperImage_Explorer():
     def change_to_frame(self, i1 = 0, i2 = 0):
         shape = self.data_cube.squeeze().shape
         if len(shape) == 3:

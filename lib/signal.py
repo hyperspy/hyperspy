@@ -181,7 +181,7 @@ class Signal(t.HasTraits):
             self._plot.pixel_units = self.axes_manager.axes[0].units
             
         elif axes_manager.output_dim == 2:
-#            self._plot = drawing.mpl_ise.MPL_Image_Stack_Explorer()
+#            self._plot = drawing.mpl_ise.MPL_HyperImage_Explorer()
             self._plot = new_plot.Plot2D(self, self.axes_manager)
             self._plot.plot()
         else:
