@@ -28,50 +28,103 @@ except:
 plt.rcParams['image.cmap'] = 'gray'
 
 import utils
+import image
 
 class MPL_HyperImage_Explorer():
-    def change_to_frame(self, i1 = 0, i2 = 0):
-        shape = self.data_cube.squeeze().shape
-        if len(shape) == 3:
-            self.image_ax.images[0].set_array(self.data_cube[...,i1].T)
-        elif len(shape) == 4:
-            self.image_ax.images[0].set_array(self.data_cube[...,i1,i2].T)
-        if self.auto_contrast is True:
-            self.image_ax.images[0].autoscale()
-        plt.draw()
+    def __init__(self):
+        self.image_data_function = None
+        self.axes_manager = None
+        self.image_title = ''
+        self.navigator_title = ''
+        self.image_plot = None
+        self.navigator_plot = None
+        self.pixel_size = None
+        self.pixel_units =  None
+        self.axis = None
+        self.pointer = None
+        self._key_nav_cid = None
+
+
+#    def is_active(self):
+#        return utils.does_figure_object_exists(self.spectrum_plot.figure)
+#    
+#    def assign_pointer(self):
+#        shape = len(self.axes_manager.axes) - 1
+#        if shape >= 1:
+#            if shape > 1:
+#                Pointer = widgets.DraggableSquare
+#            else:
+#                Pointer = widgets.DraggableHorizontalLine
+#            return Pointer
+#        else:
+#            return None    
         
-    def update_figure(self):
-        self.change_to_frame(self.coordinates.ix, self.coordinates.iy)
         
-    def _on_figure_close(self):
-        self.image_figure = None
-        self.image_ax = None
-        self.coordinates.reset()
+#    def plot(self):
+#        if self.pointer is None:
+#            pointer = self.assign_pointer()  
+#            if pointer is not None:
+#                self.pointer = pointer(self.axes_manager)
+#                self.pointer.color = 'red'
+#        if self.pointer is not None:
+#            self.plot_image()
+#        self.plot_spectrum()
         
-    def create_image_figure(self, dc):
-        if self.image_figure is not None:
-            # Test if the figure really exists. If not call the reset function 
-            # and start again. This is necessary because with some backends 
-            # EELSLab fails to connect the close event to the function.
-            try:
-                self.image_figure.show()
-            except:
-                self._on_figure_close()
-                self.create_image_figure(dc)
-            return True
+    def plot_image(self):
+        if self.image_plot is not None:
+            self.image_plot.plot()
+            return
+        imf = image.ImagePlot()
+        imf.data_function = self.image_data_function
+        imf.pixel_units = self.pixel_units
+        imf.pixel_size = self.pixel_size
+        imf.plot()
+        self.image_plot = imf
+        
+    def plot(self, filename=None):
+        self.plot_image()
+        
+#    def plot_navigator(self):
+#        if self.spectrum_plot is not None:
+#            self.spectrum_plot.plot()
+#            return
+#        
+#        # Create the figure
+#        sf = spectrum.SpectrumFigure()
+#        sf.xlabel = self.xlabel
+#        sf.ylabel = self.ylabel
+#        sf.title = self.spectrum_title
+#        sf.axis = self.axis
+#        sf.left_axes_manager = self.axes_manager
+#        self.spectrum_plot = sf
+#        # Create a line to the left axis with the default coordinates
+#        sl = spectrum.SpectrumLine()
+#        sl.data_function = self.spectrum_data_function
+#        if self.pointer is not None:
+#            color = self.pointer.color
+#        else:
+#            color = 'red'
+#        sl.line_properties_helper(color, 'step')        
+#        # Add the line to the figure
+#          
+#        sf.add_line(sl)
+#        self.spectrum_plot = sf
+#        sf.plot()
+#        if self.image_plot is not None and sf.figure is not None:
+#            utils.on_window_close(sf.figure, self.image_plot.close)
+#            self._key_nav_cid = self.spectrum_plot.figure.canvas.mpl_connect(
+#            'key_press_event', self.axes_manager.key_navigator)
+#            self._key_nav_cid = self.image_plot.figure.canvas.mpl_connect(
+#            'key_press_event', self.axes_manager.key_navigator)
+#            self.spectrum_plot.figure.canvas.mpl_connect(
+#                'key_press_event', self.key2switch_right_pointer)
+#            self.image_plot.figure.canvas.mpl_connect(
+#                'key_press_event', self.key2switch_right_pointer)
             
-        self.image_figure = plt.figure()
-        utils.on_window_close(self.image_figure, self._on_figure_close)
-        if hasattr(self, 'title'):
-            title = self.title
-        else:
-            title = 'Image'
-        self.image_figure.canvas.set_window_title(title)
-        self.image_ax = self.image_figure.add_subplot(111)
-        self.image_ax.imshow(dc.T, interpolation = 'nearest')
-        self.image_figure.canvas.draw()
-        self.coordinates.on_coordinates_change.append(self.update_figure)
-        plt.connect('key_press_event', self.coordinates.key_navigator)
-        plt.show()
-        return True
+    
+    def close(self):         
+        self.spectrum_plot.close()
+        self.image_plot.close()        
+           
+
 plt.show()

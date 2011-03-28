@@ -163,6 +163,7 @@ class MPL_HyperSpectrum_Explorer(object):
         self.right_pointer.close()
         self.right_pointer = None
         self.image_plot.update_image()
+    
     def close(self):         
         self.spectrum_plot.close()
         self.image_plot.close()

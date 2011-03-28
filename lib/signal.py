@@ -182,7 +182,9 @@ class Signal(t.HasTraits):
             
         elif axes_manager.output_dim == 2:
 #            self._plot = drawing.mpl_ise.MPL_HyperImage_Explorer()
-            self._plot = new_plot.Plot2D(self, self.axes_manager)
+            self._plot = drawing.mpl_ise.MPL_HyperImage_Explorer()
+            self._plot.image_data_function = self.__call__
+            self._plot.axes_manager = axes_manager
             self._plot.plot()
         else:
             messages.warning_exit('Plotting is not supported for this view')
