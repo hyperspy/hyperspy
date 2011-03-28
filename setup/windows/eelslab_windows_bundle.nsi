@@ -30,23 +30,23 @@ ShowInstDetails show
 Section -Prerequisites
   SetOutPath $INSTDIR
   MessageBox MB_YESNO "Install Python 2.7?" /SD IDYES IDNO endPython
-    File ".\requires\python-2.7.amd64.msi"
+    File ".\requires\python-2.7.1.amd64.msi"
     ExecWait '"msiexec" /i "$INSTDIR\python-2.7.amd64.msi"'
     Goto endPython
   endPython:
   MessageBox MB_YESNO "Install Numpy" /SD IDYES IDNO endNumpy
-    File ".\requires\numpy-1.5.0.win-amd64-py2.7-mkl.exe"
-    ExecWait "$INSTDIR\numpy-1.5.0.win-amd64-py2.7-mkl.exe"
+    File ".\requires\numpy-1.5.1.win-amd64-py2.7-mkl.exe"
+    ExecWait "$INSTDIR\numpy-1.5.1.win-amd64-py2.7-mkl.exe"
     Goto endNumpy
   endNumpy:
     MessageBox MB_YESNO "Install Scipy" /SD IDYES IDNO endScipy
-        File ".\requires\scipy-0.8.0.win-amd64-py2.7.exe"
-        ExecWait "$INSTDIR\scipy-0.8.0.win-amd64-py2.7.exe"
+        File ".\requires\scipy-0.9.0.win-amd64-py2.7.exe"
+        ExecWait "$INSTDIR\scipy-0.9.0.win-amd64-py2.7.exe"
         Goto endScipy
   endScipy:
     MessageBox MB_YESNO "Install Matplotlib" /SD IDYES IDNO endMatplotlib
-        File ".\requires\matplotlib-1.0.0.win-amd64-py2.7.exe"
-        ExecWait "$INSTDIR\matplotlib-1.0.0.win-amd64-py2.7.exe"
+        File ".\requires\matplotlib-1.0.1.win-amd64-py2.7.exe"
+        ExecWait "$INSTDIR\matplotlib-1.0.1.win-amd64-py2.7.exe"
         Goto endMatplotlib
   endMatplotlib:
     MessageBox MB_YESNO "Install Ipython" /SD IDYES IDNO endIpython
@@ -80,21 +80,26 @@ Section -Prerequisites
         Goto endWXPythonCommon
   endWXPythonCommon:
      MessageBox MB_YESNO "Install MDP?" /SD IDYES IDNO endMDP
-        File ".\requires\MDP-2.6.win-amd64.exe"
-        ExecWait "$INSTDIR\MDP-2.6.win-amd64.exe"
+        File ".\requires\MDP-3.0.win-amd64.exe"
+        ExecWait "$INSTDIR\MDP-3.0.win-amd64.exe"
         Goto endMDP
   endMDP:
   MessageBox MB_YESNO "Install Python Image Library?" /SD IDYES IDNO endPIL
-        File ".\requires\PIL-1.1.7.win-amd64-py2.7.exe"
+        File ".\reccomends\PIL-1.1.7.win-amd64-py2.7.exe"
         ExecWait "$INSTDIR\PIL-1.1.7.win-amd64-py2.7.exe"
         Goto endPIL
   endPIL:
+  MessageBox MB_YESNO "Install ETS 3.6.0?" /SD IDYES IDNO endETS
+        File ".\requires\ETS-3.6.0.win-amd64-py2.7.exe"
+        ExecWait "$INSTDIR\ETS-3.6.0.win-amd64-py2.7.exe"
+        Goto endETS
+  endETS:
 SectionEnd
 Section EELSLab
 	SetOutPath $INSTDIR
     MessageBox MB_YESNO "Install EELSLab" /SD IDYES IDNO endEELSLab
-        File "requires\eelslab-0.2.6.win-amd64.exe"
-        ExecWait "$INSTDIR\eelslab-0.2.6.win-amd64.exe"
+        File "eelslab-0.2.10.win-amd64.exe"
+        ExecWait "$INSTDIR\eelslab-0.2.10.win-amd64.exe"
         Goto endEELSLab
   endEELSLab:
 SectionEnd
