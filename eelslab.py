@@ -18,6 +18,20 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
 
+# The following code was commented because it does not work with
+# ETS 3.6.0 , to investigate...
+#from enthought.etsconfig.api import ETSConfig
+#import matplotlib
+#if matplotlib.get_backend() == 'Qt4Agg':
+#    ets_tk = 'qt4'
+#elif matplotlib.get_backend() == 'WXAgg':
+#    ets_tk = 'wx'
+#else:
+#    ets_tk = 'null'
+#
+#ETSConfig.toolkit =  ets_tk
+
+
 import silib.Release
 import silib.components as components
 

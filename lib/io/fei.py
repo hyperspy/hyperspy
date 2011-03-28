@@ -263,30 +263,116 @@ def ser_reader(filename, *args, **kwds):
     # Determine if it is an emi or a ser file.
     
     header, data = load_ser_file(filename)
-    calibration_dict, acquisition_dict , treatments_dict= {}, {}, {}
-    axis_names = [None, 'x', 'y', 'z']
-    array_shape = []
-    calibration_dict['energyorigin'] = data['CalibrationOffset'][0]
-    calibration_dict['energyscale'] = data['CalibrationDelta'][0]
-    imported_parameters = {'header' : header, 'data' : data}
-    for i in range(1,header['NumberDimensions'] + 1):
-        calibration_dict['%sorigin' % axis_names[i]] = \
-        header['Dim-%i_CalibrationOffset' % i][0]
-        calibration_dict['%sscale' % axis_names[i]] = \
-        header['Dim-%i_CalibrationDelta' % i][0]
-        calibration_dict['%sunits' % axis_names[i]] = \
-        header['Dim-%i_Units' % i][0]
-        array_shape.append(header['Dim-%i_DimensionSize' % i][0])
-    if data['PositionY'][0] == data['PositionY'][1]:
-        # The spatial dimensions are stored in the reversed order
-        # We reverse the shape
-        array_shape.reverse()
-    array_shape.append(data['ArrayLength'][0])
-    calibration_dict['data_cube'] = \
-    data['Array'].reshape(array_shape).swapaxes(0,-1)
+    data_type = guess_data_type(header['DataTypeID'])
+    axes = []
+    ndim = header['NumberDimensions']
+    array_shape = [None,] * int(ndim)
+    
+    if data_type == 'SI':
+        i_array = range(ndim)
+        if len(data['PositionY']) > 1 and \
+        (data['PositionY'][0] == data['PositionY'][1]):
+            # The spatial dimensions are stored in the reversed order
+            # We reverse the shape
+            i_array.reverse()
+        # Extra dimensions
+        for i in range(ndim):
+            if i_array[i] == ndim - 1:
+                name = 'x'
+            elif i_array[i] == ndim - 2:
+                name = 'y'
+            else:
+                name = 'undefined_%i' % (i + 1)
+            axes.append({
+            'name' : name,
+            'offset' : header['Dim-%i_CalibrationOffset' % (i + 1)][0],
+            'scale' : header['Dim-%i_CalibrationDelta' % (i + 1)][0],
+            'units' : header['Dim-%i_Units' % (i + 1)][0],
+            'size' : header['Dim-%i_DimensionSize' % (i + 1)][0],
+            'index_in_array' : i_array[i]
+            })
+            array_shape[i_array[i]] = \
+            header['Dim-%i_DimensionSize' % (i + 1)][0]
+        # FEI seems to use the international system of units (SI) for the 
+        # spatial scale. However, we prefer to work in nm
+        for axis in axes:
+            if axis['units'] == 'meters':
+                axis['units'] = 'nm'
+                axis['scale'] *= 10**9
+        
+        # Spectral dimension    
+        axes.append({
+            'name' : 'undefined',
+            'offset' : data['CalibrationOffset'][0],
+            'scale' : data['CalibrationDelta'][0],
+            'units' : 'undefined',
+            'size' : data['ArrayLength'][0],
+            'index_in_array' : header['NumberDimensions'][0]
+            })
+        
+        array_shape.append(data['ArrayLength'][0])
+        
+    elif data_type == 'Image':
+        
+        # Y axis
+        axes.append({
+            'name' : 'y',
+            'offset' : data['CalibrationOffsetY'][0] - \
+            data['CalibrationElementY'][0] * data['CalibrationDeltaY'][0],
+            'scale' : data['CalibrationDeltaY'][0],
+            'units' : 'Unknown',
+            'size' : data['ArraySizeY'][0],
+            'index_in_array' : 0
+            })
+        array_shape.append(data['ArraySizeY'][0])
+        
+        # X axis
+        axes.append({
+            'name' : 'x',
+            'offset' : data['CalibrationOffsetX'][0] - \
+            data['CalibrationElementX'][0] * data['CalibrationDeltaX'][0],
+            'scale' : data['CalibrationDeltaX'][0],
+            'units' : 'undefined',
+            'size' : data['ArraySizeX'][0],
+            'index_in_array' : 1
+            })
+        array_shape.append(data['ArraySizeX'][0])
+        
+        # Extra dimensions
+        for i in range(1, header['NumberDimensions'] + 1):
+            axes.append({
+            'name' : 'undefined%s' % i,
+            'offset' : header['Dim-%i_CalibrationOffset' % i][0],
+            'scale' : header['Dim-%i_CalibrationDelta' % i][0],
+            'units' : header['Dim-%i_Units' % i][0],
+            'size' : header['Dim-%i_DimensionSize' % i][0],
+            'index_in_array' : 1 + i
+            })
+            array_shape.append(header['Dim-%i_DimensionSize' % i][0])
+
+    # If the acquisition stops before finishing the job, the stored file will 
+    # report the requested size even though no values are recorded. Therefore if
+    # the shapes of the retrieved array does not match that of the data 
+    # dimensions we must fill the rest with zeros or (better) nans if the 
+    # dtype is float
+    if np.cumprod(array_shape)[-1] != np.cumprod(data['Array'].shape)[-1]:
+        dc = np.zeros((array_shape[0] * array_shape[1], array_shape[2]), 
+                      dtype = data['Array'].dtype)
+        if dc.dtype is np.dtype('f') or dc.dtype is np.dtype('f8'):
+            dc[:] = np.nan
+        dc[:data['Array'].shape[0],...] = data['Array']
+    else:
+        dc = data['Array']
+    
+    dc = dc.reshape(array_shape)
+    if data_type == 'Image':
+        dc = dc[::-1]
+      
     dictionary = {
-        'data_type' : guess_data_type(header["DataTypeID"]), 
-        'calibration' : calibration_dict, 
-        'acquisition' : acquisition_dict,
-        'imported_parameters' : imported_parameters}
+    'data_type' : 'Signal',
+    'filename' : filename,
+    'data' : dc,
+    'parameters' : {},
+    'axes' : axes,
+    'extra_parameters' : {'header' : header, 'data' : data}}
     return dictionary

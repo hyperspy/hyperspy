@@ -309,7 +309,7 @@ class Model(list, Optimizers, Estimators, Controls):
         it with the current parameters.'''
         for component in self:
             component.store_current_parameters_in_map(
-            *self.coordinates.coordinates)
+            *self.axes_manager.axes)
 
     def charge(self, only_fixed = False):
         '''Charge the parameters for the current spectrum from the parameters 
@@ -356,7 +356,7 @@ class Model(list, Optimizers, Estimators, Controls):
     def model2plot(self, coordinates, out_of_region2nans = True):
         old_coord = None
         if coordinates is not self.coordinates:
-            old_coord = self.coordinates.coordinates
+            old_coord = self.axes_manager.axes
             self.coordinates.ix, self.coordinates.iy = coordinates.coordinates
         s = self.__call__(non_convolved=False, onlyactive=True)
         if old_coord is not None:
