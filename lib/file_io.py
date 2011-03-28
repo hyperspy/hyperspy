@@ -64,20 +64,21 @@ def load_with_reader(filename, reader, data_type = None, **kwds):
     from signals.image import Image
     from signal import Signal
     messages.information(reader.description)    
-    file_data_dict = reader.file_reader(filename,
+    file_data_list = reader.file_reader(filename,
                                          data_type=data_type,
-                                         **kwds)
+                                        **kwds)
     objects = []
-    data_type = file_data_dict['data_type']
-    if data_type == 'SI':
-        s = Spectrum(file_data_dict)
-    elif data_type == 'Image':
-        s = Image(file_data_dict)  
-    elif data_type == 'Signal':
-        s = Signal(file_data_dict)
-    if defaults.plot_on_load is True:
-        s.plot()
-    objects.append(s)
+    for file_data_dict in file_data_list:
+        data_type = file_data_dict['data_type']
+        if data_type == 'SI':
+            s = Spectrum(file_data_dict)
+        elif data_type == 'Image':
+            s = Image(file_data_dict)  
+        elif data_type == 'Signal':
+            s = Signal(file_data_dict)
+        if defaults.plot_on_load is True:
+            s.plot()
+        objects.append(s)
         
     if len(objects) == 1:
         objects = objects[0]
