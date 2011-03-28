@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
 
-from silib.signal import Signal
+from ..signal import Signal
 
 import math
 
@@ -30,10 +30,10 @@ except:
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
 
-from silib import file_io
-from silib import messages
-from silib import axes
-from silib.drawing import utils
+from .. import file_io
+from .. import messages
+from .. import axes
+from ..drawing import utils
 
 class Image(Signal):
     '''
