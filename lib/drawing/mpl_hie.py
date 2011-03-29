@@ -17,22 +17,16 @@
 # along with EELSLab; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
-import numpy as np
-try:
-    import matplotlib.pyplot as plt
-except:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-# Set the matplotlib cmap to gray (the default is jet)
-plt.rcParams['image.cmap'] = 'gray'
 
-import utils
 import image
+import spectrum
+import widgets
+import utils
 
 class MPL_HyperImage_Explorer():
     def __init__(self):
         self.image_data_function = None
+        self.navigator_data_function = None
         self.axes_manager = None
         self.image_title = ''
         self.navigator_title = ''
@@ -44,31 +38,6 @@ class MPL_HyperImage_Explorer():
         self.pointer = None
         self._key_nav_cid = None
 
-
-#    def is_active(self):
-#        return utils.does_figure_object_exists(self.spectrum_plot.figure)
-#    
-#    def assign_pointer(self):
-#        shape = len(self.axes_manager.axes) - 1
-#        if shape >= 1:
-#            if shape > 1:
-#                Pointer = widgets.DraggableSquare
-#            else:
-#                Pointer = widgets.DraggableHorizontalLine
-#            return Pointer
-#        else:
-#            return None    
-        
-        
-#    def plot(self):
-#        if self.pointer is None:
-#            pointer = self.assign_pointer()  
-#            if pointer is not None:
-#                self.pointer = pointer(self.axes_manager)
-#                self.pointer.color = 'red'
-#        if self.pointer is not None:
-#            self.plot_image()
-#        self.plot_spectrum()
         
     def plot_image(self):
         if self.image_plot is not None:
@@ -81,53 +50,70 @@ class MPL_HyperImage_Explorer():
         imf.plot()
         self.image_plot = imf
         
-    def plot(self, filename=None):
+        if self.navigator_plot is not None and imf.figure is not None:
+            utils.on_window_close(imf.figure, self.navigator_plot.close)
+            self._key_nav_cid = self.image_plot.figure.canvas.mpl_connect(
+            'key_press_event', self.axes_manager.key_navigator)
+            self._key_nav_cid = self.navigator_plot.figure.canvas.mpl_connect(
+            'key_press_event', self.axes_manager.key_navigator)
+
+        
+    def plot(self):
+        self.pointer = self.assign_pointer()
+        if self.pointer is not None:
+            self.pointer = self.pointer(self.axes_manager)
+            self.pointer.color = 'red'
+            self.plot_navigator()
         self.plot_image()
         self.axes_manager.connect(self.image_plot.update_image)
-        self._key_nav_cid = self.image_plot.figure.canvas.mpl_connect(
-            'key_press_event', self.axes_manager.key_navigator)
-        
-#    def plot_navigator(self):
-#        if self.spectrum_plot is not None:
-#            self.spectrum_plot.plot()
-#            return
-#        
-#        # Create the figure
-#        sf = spectrum.SpectrumFigure()
-#        sf.xlabel = self.xlabel
-#        sf.ylabel = self.ylabel
-#        sf.title = self.spectrum_title
-#        sf.axis = self.axis
-#        sf.left_axes_manager = self.axes_manager
-#        self.spectrum_plot = sf
-#        # Create a line to the left axis with the default coordinates
-#        sl = spectrum.SpectrumLine()
-#        sl.data_function = self.spectrum_data_function
-#        if self.pointer is not None:
-#            color = self.pointer.color
-#        else:
-#            color = 'red'
-#        sl.line_properties_helper(color, 'step')        
-#        # Add the line to the figure
-#          
-#        sf.add_line(sl)
-#        self.spectrum_plot = sf
-#        sf.plot()
-#        if self.image_plot is not None and sf.figure is not None:
-#            utils.on_window_close(sf.figure, self.image_plot.close)
-#            self._key_nav_cid = self.spectrum_plot.figure.canvas.mpl_connect(
-#            'key_press_event', self.axes_manager.key_navigator)
-#            self._key_nav_cid = self.image_plot.figure.canvas.mpl_connect(
-#            'key_press_event', self.axes_manager.key_navigator)
-#            self.spectrum_plot.figure.canvas.mpl_connect(
-#                'key_press_event', self.key2switch_right_pointer)
-#            self.image_plot.figure.canvas.mpl_connect(
-#                'key_press_event', self.key2switch_right_pointer)
             
-    
-    def close(self):         
-        self.spectrum_plot.close()
-        self.image_plot.close()        
-           
+    def assign_pointer(self):
+        nav_dim = self.axes_manager.navigation_dim
+        if nav_dim == 2:
+            Pointer = widgets.DraggableSquare
+        elif nav_dim == 1:
+            Pointer = widgets.DraggableVerticalLine
+        else:
+            Pointer = None
+        return Pointer
+        
+    def plot_navigator(self):
+        if self.navigator_plot is not None:
+            self.navigator_plot.plot()
+            return
+        if self.axes_manager.navigation_dim == 2:
+            imf = image.ImagePlot()
+            imf.data_function = self.navigator_data_function
+            imf.pixel_units = self.axes_manager._non_slicing_axes[0].units
+            imf.pixel_size = self.axes_manager._non_slicing_axes[0].scale
+            imf.plot()
+            self.pointer.add_axes(imf.ax)
+            self.navigator_plot = imf
+            
+        if self.axes_manager.navigation_dim == 1:
+            
+            # Create the figure
+            sf = spectrum.SpectrumFigure()
+            axis = self.axes_manager._non_slicing_axes[0]
+            sf.xlabel = axis.name
+#            sf.ylabel = self.ylabel
+            sf.title = '1D navigator'
+            sf.axis = axis.axis
+            sf.left_axes_manager = self.axes_manager
+            self.navigator_plot = sf
+            # Create a line to the left axis with the default coordinates
+            sl = spectrum.SpectrumLine()
+            sl.data_function = self.navigator_data_function
 
-plt.show()
+            sl.line_properties_helper('blue', 'step')        
+            # Add the line to the figure
+              
+            sf.add_line(sl)
+            self.navigator_plot = sf
+            sf.plot()
+            self.pointer.add_axes(sf.left_ax)
+            
+    def close(self):         
+        self.image_plot.close()
+        self.navigator_plot.close()        
+           

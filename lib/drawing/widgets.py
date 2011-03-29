@@ -138,17 +138,8 @@ class DraggablePatch(object):
             self.picked = True
 
     def onmove(self, event):
-        'on mouse motion draw the cursor if picked'
-        if self.picked is True and event.inaxes:
-            if self._2D is True:
-                if self.axes_manager._indexes[0] != round(event.ydata):
-                    self.axes_manager.axes[0].index = round(event.ydata)
-                if  self.axes_manager._indexes[1] != round(event.xdata):
-                    self.axes_manager.axes[1].index = round(event.xdata)  
-            else:
-                if not round(event.ydata) == \
-                 self.axes_manager._indexes[0]:
-                    self.axes_manager.axes[0].index= round(event.ydata)
+        '''This method must be provided by the subclass'''
+        pass
         
     def update_patch_position(self):
         '''This method must be provided by the subclass'''
@@ -234,6 +225,17 @@ class DraggableSquare(ResizebleDraggablePatch):
         self.patch.set_xy(indexes - (self.size / 2.,) * 2)
         self.draw_patch()
         
+    def onmove(self, event):
+        'on mouse motion draw the cursor if picked'
+
+        if self.picked is True and event.inaxes:
+            if self.axes_manager._indexes[0] != round(event.ydata):
+                self.axes_manager._non_slicing_axes[0].index = \
+                round(event.ydata)
+            if  self.axes_manager._indexes[1] != round(event.xdata):
+                self.axes_manager._non_slicing_axes[1].index = \
+                round(event.xdata)
+        
 class DraggableHorizontalLine(DraggablePatch):
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
@@ -252,6 +254,42 @@ class DraggableHorizontalLine(DraggablePatch):
         self.patch = ax.axhline(self.axes_manager._indexes[0], 
                                 color = self.color, 
                                picker = 5, animated = self.blit)
+                               
+    def onmove(self, event):
+        'on mouse motion draw the cursor if picked'
+
+        if self.picked is True and event.inaxes:
+            if not round(event.ydata) == \
+             self.axes_manager._indexes[0]:
+                self.axes_manager._non_slicing_axes[0].index = \
+                round(event.ydata)
+                               
+class DraggableVerticalLine(DraggablePatch):
+    def __init__(self, axes_manager):
+        DraggablePatch.__init__(self, axes_manager)
+        self._2D = False
+        # Despise the bug, we use blit for this one because otherwise the 
+        # it gets really slow
+        self.blit = True
+        
+    def update_patch_position(self):
+        if self.patch is not None:
+            self.patch.set_xdata(self.axes_manager._indexes[0])
+            self.draw_patch()
+     
+    def set_patch(self):
+        ax = self.ax
+        self.patch = ax.axvline(self.axes_manager._indexes[0], 
+                                color = self.color, 
+                               picker = 5, animated = self.blit)
+                               
+    def onmove(self, event):
+        'on mouse motion draw the cursor if picked'
+        if self.picked is True and event.inaxes:
+            if not round(event.xdata) == \
+             self.axes_manager._indexes[0]:
+                self.axes_manager._non_slicing_axes[0].index = \
+                round(event.xdata)
             
 class Scale_Bar():
     def __init__(self, ax, units, pixel_size, color = 'white', position = None, 

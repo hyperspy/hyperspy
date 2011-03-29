@@ -112,50 +112,48 @@ class Signal(t.HasTraits):
             axes_manager = self.axes_manager
         return self.data.__getitem__(axes_manager._getitem_tuple)
         
-    def is_spectrum_line(self):
-        if len(self.data.squeeze().shape) == 2:
-            return True
-        else:
-            return False
-        
-    def is_spectrum_image(self):
-        if len(self.data.squeeze().shape) == 3:
-            return True
-        else:
-            return False
-        
-    def is_single_spectrum(self):
-        if len(self.data.squeeze().shape) == 1:
-            return True
-        else:
-            return False
-    
-    # TODO: This one needs some care    
-    def _get_explorer(self, spectral_range = slice(None), background_range = None):
-        data = self.data
-        if self.is_spectrum_line() is True:
+    def _get_hse_1D_explorer(self, *args, **kwargs):
+        islice = self.axes_manager._slicing_axes[0].index_in_array
+        inslice = self.axes_manager._non_slicing_axes[0].index_in_array
+        if islice > inslice:
             return self.data.squeeze()
-        elif self.is_single_spectrum() is True:
-            return None
-        if background_range is not None:
-            bg_est = utils.two_area_powerlaw_estimation(self, 
-                                                        background_range.start, 
-                                                        background_range.stop, )
-            A = bg_est['A'][np.newaxis,:,:]
-            r = bg_est['r'][np.newaxis,:,:]
-            E = self.energy_axis[spectral_range,np.newaxis,np.newaxis]
-            bg = A*E**-r
-            return (data[spectral_range,:,:] - bg).sum(0)
         else:
-            return data[..., spectral_range].sum(-1)
+            return self.data.squeeze().T
+            
+    
+    def _get_hse_2D_explorer(self, *args, **kwargs):
+        islice = self.axes_manager._slicing_axes[0].index_in_array
+        data = self.data.sum(islice)
+        return data
+    
+    def _get_hie_explorer(self, *args, **kwargs):
+        isslice = [self.axes_manager._slicing_axes[0].index_in_array, 
+                   self.axes_manager._slicing_axes[1].index_in_array]
+        isslice.sort()
+        data = self.data.sum(isslice[1]).sum(isslice[0])
+        return data
+         
+    def _get_explorer(self, *args, **kwargs):
+        nav_dim = self.axes_manager.navigation_dim
+        if self.axes_manager.output_dim == 1:
+            if nav_dim == 1:
+                return self._get_hse_1D_explorer(*args, **kwargs)
+            elif nav_dim == 2:
+                return self._get_hse_2D_explorer(*args, **kwargs)
+            else:
+                return None
+        if self.axes_manager.output_dim == 2:
+            if nav_dim == 1 or nav_dim == 2:
+                return self._get_hie_explorer(*args, **kwargs)
+            else:
+                return None
+        else:
+            return None
+        
     
     def plot(self, axes_manager = None):
         # TODO: This function must be generalized F_DLP 23/03/2011
-        if axes_manager is None:
-            axes_manager = self.axes_manager
-        if axes_manager.output_dim == 1:
-            # Hyperspectrum
-            if self._plot is not None:
+        if self._plot is not None:
                 try:
                     self._plot.close()
                 except:
@@ -163,27 +161,33 @@ class Signal(t.HasTraits):
                     # but we want to carry on...
                     pass
                 
-                self.hse = None
+        if axes_manager is None:
+            axes_manager = self.axes_manager
+            
+        if axes_manager.output_dim == 1:
+            # Hyperspectrum
+                            
             self._plot = drawing.mpl_hse.MPL_HyperSpectrum_Explorer()
             self._plot.spectrum_data_function = self.__call__
             self._plot.spectrum_title = self.name
             self._plot.xlabel = '%s (%s)' % (
-                self.axes_manager.axes[-1].name, 
-                self.axes_manager.axes[-1].units)
+                self.axes_manager._slicing_axes[0].name, 
+                self.axes_manager._slicing_axes[0].units)
             self._plot.ylabel = 'Intensity'
             self._plot.axes_manager = axes_manager
-            self._plot.axis = self.axes_manager.axes[-1].axis
+            self._plot.axis = self.axes_manager._slicing_axes[0].axis
             
             # Image properties
             self._plot.image_data_function = self._get_explorer
             self._plot.image_title = ''
-            self._plot.pixel_size = self.axes_manager.axes[0].scale
-            self._plot.pixel_units = self.axes_manager.axes[0].units
+            self._plot.pixel_size = self.axes_manager._non_slicing_axes[0].scale
+            self._plot.pixel_units = self.axes_manager._non_slicing_axes[0].units
             
         elif axes_manager.output_dim == 2:
 #            self._plot = drawing.mpl_hie.MPL_HyperImage_Explorer()
             self._plot = drawing.mpl_hie.MPL_HyperImage_Explorer()
             self._plot.image_data_function = self.__call__
+            self._plot.navigator_data_function = self._get_explorer
             self._plot.axes_manager = axes_manager
             self._plot.plot()
         else:

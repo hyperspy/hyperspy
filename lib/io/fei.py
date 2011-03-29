@@ -230,10 +230,15 @@ def load_ser_file(filename, print_info = False):
         print "Header info:"
         print "------------"
         print_struct_array_values(header[0])
-    data_dtype_list = get_data_dtype_list(file, header['Data_Offsets'][0][0], 
+    data_offsets = header['Data_Offsets'][0]
+    try:
+        data_offsets = data_offsets[0]
+    except:
+        pass
+    data_dtype_list = get_data_dtype_list(file, data_offsets, 
     guess_data_type(header['DataTypeID']))
     tag_dtype_list =  get_data_tag_dtype_list(header['TagTypeID'])
-    file.seek(header['Data_Offsets'][0][0])
+    file.seek(data_offsets)
     data = np.fromfile(file, dtype=np.dtype(data_dtype_list + tag_dtype_list), 
     count = header["TotalNumberElements"])
     if print_info is True:

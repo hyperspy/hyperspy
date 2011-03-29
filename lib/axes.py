@@ -68,6 +68,7 @@ class DataAxis(t.HasTraits):
     low_index = t.Int(0)
     high_index = t.Int()
     slice = t.Instance(slice)
+    slice_bool = t.Bool(False)
     
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
@@ -90,6 +91,8 @@ class DataAxis(t.HasTraits):
         self.on_trait_change(self.update_axis, ['scale', 'offset', 'size'])
         self.on_trait_change(self.update_value, 'index')
         self.on_trait_change(self.set_index_from_value, 'value')
+        self.on_trait_change(self._update_slice, 'slice_bool')
+        
         
     def __repr__(self):
         if self.name is not None:
@@ -102,6 +105,13 @@ class DataAxis(t.HasTraits):
         self.axis = generate_axis(self.offset, self.scale, self.size)
         self.low_value, self.high_value = self.axis.min(), self.axis.max()
 #        self.update_value()
+
+    def _update_slice(self, value):
+        if value is True:
+            self.slice = slice(None)
+        else:
+            self.slice = None
+        
 
     def get_axis_dictionary(self):
         adict = {
@@ -171,7 +181,7 @@ class DataAxis(t.HasTraits):
                 tui.Item(name = 'index'),
                 tui.Item(name = 'value', style = 'readonly'),
                 tui.Item(name = 'units'),
-                tui.Item(name = 'slice'),
+                tui.Item(name = 'slice_bool', label = 'slice'),
             show_border = True,),
             tui.Group(
                 tui.Item(name = 'scale'),
@@ -207,7 +217,6 @@ class AxesManager(t.HasTraits):
         indexes = []
         self._slicing_axes = []
         self._non_slicing_axes = []
-        i = 0
         for axis in self.axes:
             if axis.slice is None:
                 getitem_tuple.append(axis.index)
@@ -216,10 +225,10 @@ class AxesManager(t.HasTraits):
             else:
                 getitem_tuple.append(axis.slice)
                 self._slicing_axes.append(axis)
-                i += 1
         self._getitem_tuple = getitem_tuple
         self._indexes = np.array(indexes)
-        self.output_dim = i
+        self.output_dim = len(self._slicing_axes)
+        self.navigation_dim = len(self._non_slicing_axes)
         
     def set_view(self, view = 'hyperspectrum'):
         '''
@@ -230,19 +239,19 @@ class AxesManager(t.HasTraits):
             i = 0
             for axis in self.axes[::-1]:
                 if i < 1:
-                    axis.slice = slice(None)
+                    axis.slice_bool = True
                     i += 1
                 else:
-                    axis.slice = None
+                    axis.slice_bool = False
         elif view == 'image':
             # We limit the output_dim to 2 to get a spectrum
             i = 0
             for axis in self.axes:
                 if i < 2:
-                    axis.slice = slice(None)
+                    axis.slice_bool = True
                     i += 1
                 else:
-                    axis.slice = None
+                    axis.slice_bool = False
                     
     def connect(self, f):
         for axis in self.axes:
