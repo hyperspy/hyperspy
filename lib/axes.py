@@ -273,6 +273,10 @@ class AxesManager(t.HasTraits):
                 y.index -= self._step
             elif event.key == "down" or event.key == "2":
                 y.index += self._step
+                
+    def edit_axes_traits(self):
+        for axis in self.axes:
+            axis.edit_traits()
             
     traits_view = tui.View(tui.Item('axes', style = 'custom'))
     
