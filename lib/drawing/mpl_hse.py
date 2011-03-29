@@ -165,6 +165,3 @@ class MPL_HyperSpectrum_Explorer(object):
     def close(self):         
         self.spectrum_plot.close()
         self.navigator_plot.close()
-
-          
-

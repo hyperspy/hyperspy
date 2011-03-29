@@ -485,4 +485,3 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self.ax.patches.remove(self.rect)
         self.ax.figure.canvas.draw()
 
-
