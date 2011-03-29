@@ -83,6 +83,9 @@ class MPL_HyperImage_Explorer():
         
     def plot(self, filename=None):
         self.plot_image()
+        self.axes_manager.connect(self.image_plot.update_image)
+        self._key_nav_cid = self.image_plot.figure.canvas.mpl_connect(
+            'key_press_event', self.axes_manager.key_navigator)
         
 #    def plot_navigator(self):
 #        if self.spectrum_plot is not None:
