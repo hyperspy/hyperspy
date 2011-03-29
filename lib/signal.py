@@ -131,7 +131,7 @@ class Signal(t.HasTraits):
             return False
     
     # TODO: This one needs some care    
-    def get_image(self, spectral_range = slice(None), background_range = None):
+    def _get_explorer(self, spectral_range = slice(None), background_range = None):
         data = self.data
         if self.is_spectrum_line() is True:
             return self.data.squeeze()
@@ -175,7 +175,7 @@ class Signal(t.HasTraits):
             self._plot.axis = self.axes_manager.axes[-1].axis
             
             # Image properties
-            self._plot.image_data_function = self.get_image
+            self._plot.image_data_function = self._get_explorer
             self._plot.image_title = ''
             self._plot.pixel_size = self.axes_manager.axes[0].scale
             self._plot.pixel_units = self.axes_manager.axes[0].units
