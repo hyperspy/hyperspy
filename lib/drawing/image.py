@@ -46,7 +46,6 @@ class ImagePlot:
         self.auto_contrast = True
         
     def optimize_contrast(self, data, perc = 0.01):
-        
         dc = data[np.isnan(data) == False]
         dc.sort()
         i = int(round(len(dc)*perc/100.))

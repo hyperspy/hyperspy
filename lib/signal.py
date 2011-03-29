@@ -12,7 +12,7 @@ import messages
 from axes import AxesManager
 import file_io
 import drawing
-import drawing.mpl_ise
+import drawing.mpl_hie
 import utils
 import types
 import new_plot
@@ -181,8 +181,8 @@ class Signal(t.HasTraits):
             self._plot.pixel_units = self.axes_manager.axes[0].units
             
         elif axes_manager.output_dim == 2:
-#            self._plot = drawing.mpl_ise.MPL_HyperImage_Explorer()
-            self._plot = drawing.mpl_ise.MPL_HyperImage_Explorer()
+#            self._plot = drawing.mpl_hie.MPL_HyperImage_Explorer()
+            self._plot = drawing.mpl_hie.MPL_HyperImage_Explorer()
             self._plot.image_data_function = self.__call__
             self._plot.axes_manager = axes_manager
             self._plot.plot()
