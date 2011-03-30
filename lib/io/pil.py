@@ -65,6 +65,7 @@ def file_reader(filename, **kwds):
     if '*' in filename:
         from glob import glob
         flist=glob(filename)
+        flist.sort()
         imsample=Image.open(flist[0])
         w=imsample.size[0]
         h=imsample.size[1]
@@ -80,5 +81,5 @@ def file_reader(filename, **kwds):
         elif len(dc.shape) == 3:
             dt = 'SI'
 
-    return {'data_type' : dt, 'data':dc}
+    return [{'data_type' : dt, 'data':dc}]
 
