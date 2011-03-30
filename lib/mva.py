@@ -47,6 +47,7 @@ from defaults_parser import defaults
 import messages
 import config_dir
 import drawing.widgets
+from exceptions import *
 
 def compile_kica():
     kica_path = os.path.join(config_dir.data_path, 'kica')
@@ -548,23 +549,51 @@ class MVA():
                 plt.title('Principal component number %s map' % i)
         return im_list
             
-    def plot_independent_components(self, ic = None):
-        '''Plot the independent components.
+    def plot_independent_components(self, ic=None, same_window=False):
+        """Plot the independent components.
         
         Parameters
         ----------
-        ic : numpy array
-            externally provided independent components array
-        '''
+        ic : numpy array (optional)
+             externally provided independent components array
+             The shape of 'ic' must be (channels, n_components),
+             so that e.g. ic[:, 0] is the first independent component.
+
+        same_window : bool (optional)
+                    if 'True', the components will be plotted in the
+                    same window. Default is 'False'.
+        """
         if ic is None:
             ic = self.ic
+            x = self.energy_axis
+        else:
+            if len(ic.shape) != 2:
+                raise ShapeError(ic)
+            x = ic.shape[1]     # no way that we know the calibration
+            
         n = ic.shape[1]
-        for i in range(n):
-            plt.figure()
-            plt.plot(self.energy_axis, ic[:,i])
-            plt.title('Independent component %s' % i)
-            plt.xlabel('Energy (eV)')
-        
+
+        if not same_window:
+            for i in range(n):
+                plt.figure()
+                plt.plot(x, ic[:, i])
+                plt.title('Independent component %s' % i)
+                plt.xlabel('Energy (eV)')
+        else:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            for i in range(n):
+                # ic = ic / ic.sum(axis=0) # normalize
+                lbl = 'IC %i' % i
+                # print 'plotting %s' % lbl
+                ax.plot(x, ic[:, i], label=lbl)
+            col = (ic.shape[1]) // 2
+            ax.legend(ncol=col, loc='best')
+            ax.set_xlabel('Energy (eV)')
+            ax.set_title('Independent components')
+            plt.draw()
+            plt.show()
+    
     def plot_lev(self, n=50):
         '''Plot the principal components LEV up to the given number
         
