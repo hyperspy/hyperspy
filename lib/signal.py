@@ -15,7 +15,6 @@ import drawing
 import drawing.mpl_hie
 import utils
 import types
-import new_plot
 
 class Parameters(object):
     '''
@@ -252,7 +251,7 @@ class Signal(t.HasTraits):
         ---------
         crop_in_units
         '''
-        axis = self._get_positive_axis(axis)
+        axis = self._get_positive_axis_index_index(axis)
         if i1 is not None:
             new_offset = self.axes_manager.axes[axis].axis[i1]
         # We take a copy to guarantee the continuity of the data
@@ -352,7 +351,7 @@ class Signal(t.HasTraits):
         ------
         tuple with the splitted signals
         '''
-        axis = self._get_positive_axis(axis)
+        axis = self._get_positive_axis_index_index(axis)
         if number_of_parts is None and steps is None:
             if not self._splitting_steps:
                 messages.warning_exit(
@@ -415,7 +414,7 @@ class Signal(t.HasTraits):
             self._axes_manager_before_unfolding = None
             self._replot()
 
-    def _get_positive_axis(self, axis):
+    def _get_positive_axis_index_index(self, axis):
         if axis < 0:
             axis = len(self.data.shape) + axis
         return axis
@@ -429,7 +428,7 @@ class Signal(t.HasTraits):
         indexes : tuple of int
         axis : -1
         '''
-        axis = self._get_positive_axis(axis)
+        axis = self._get_positive_axis_index_index(axis)
         data = self.data
         for pixel in indexes:
             data[(slice(None),)*axis + (pixel, Ellipsis)] = \
@@ -453,7 +452,7 @@ class Signal(t.HasTraits):
             specifying the order of the spline interpolator to use.
         '''
         
-        axis = self._get_positive_axis(axis)
+        axis = self._get_positive_axis_index_index(axis)
         ss = list(shift_array.shape)
         ss.insert(axis,1)
         shift_array = shift_array.reshape(ss).copy()
@@ -487,7 +486,7 @@ class Signal(t.HasTraits):
         # We make a copy to guarantee that the data in contiguous, otherwise
         # it will not return a view of the data
         utils.iterate_axis(self.data, axis)
-        axis = self._get_positive_axis(axis)
+        axis = self._get_positive_axis_index_index(axis)
         unfolded_axis = axis - 1
         new_shape = [1] * len(self.data.shape)
         new_shape[axis] = self.data.shape[axis]
