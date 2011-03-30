@@ -23,13 +23,11 @@
 #from enthought.etsconfig.api import ETSConfig
 #import matplotlib
 #if matplotlib.get_backend() == 'Qt4Agg':
-#    ets_tk = 'qt4'
+#    ETSConfig.toolkit ='qt4'
 #elif matplotlib.get_backend() == 'WXAgg':
-#    ets_tk = 'wx'
+#    ETSConfig.toolkit ='wx'
 #else:
-#    ets_tk = 'null'
-#
-#ETSConfig.toolkit =  ets_tk
+#    ETSConfig.toolkit ='null'
 
 
 import silib.Release
