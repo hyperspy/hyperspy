@@ -353,6 +353,25 @@ def cd(dic, pwd, sep='.'):
             pass
      
 class DictBrowser(object):
+    """Dictionary Browser.
+
+    This class adds browsing capabilities to dictionaries. That is very useful
+    when dealing with big dictionaries of dictionaries.
+
+    Declare an instance with e.g.:
+    >>> db = DictBrowser(my_dictionary)
+
+    Now you will be able to browse the contents of my_dictionary in a *nix
+    fashion by:
+    >>> db.ls(some.path)
+    and
+    >>> db.cd(some.path)
+
+    note that the separator '.' (default) can be changed using the keyword sep
+    when declaring the DictBrowser instance.
+
+    See help(DictBrowser.ls) and help(DictBrowser.cd) for more information.
+    """
     def __init__(self, dic={}, pwd=[], sep='.'):
         self.sep = sep
         self.home = dic
@@ -433,6 +452,7 @@ class DictBrowser(object):
                     msg = 'An error occurred processing '
                     msg += 'the ls() method of '
                     msg += self.__class__.__name__
+                    print(msg)
                 return None
 
     def cd(self, pwd=[], dbg=False):

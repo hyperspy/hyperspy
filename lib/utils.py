@@ -1020,3 +1020,42 @@ def ratio(edge_A, edge_B):
     print "Ratio %s/%s %1.3f +- %1.3f " % (edge_A.name, edge_B.name, a/b, 
     1.96*ratio_std )
     return ratio, ratio_std
+
+def sum_dc(dc, *axes):
+    """Return the sum of datacube 'dc' along the specified axes.
+    Uses the numpy 'sum' function recursively.
+
+    Parameters
+    ---------
+    dc : array
+         data cube
+    *axes : int
+            axes along which one want to sum
+            
+    Returns
+    -------
+    output : array
+             sum along the specified axes
+
+    Examples:
+    ---------
+    >>> a = array([[0,1,2],[3,4,5],[6,7,8]])
+    >>> a.shape
+        (3, 3)
+    >>> sum_dc(a, 0)
+        array([ 9, 12, 15])
+    >>> sum_dc(a, 1)
+        array([ 3, 12, 21])
+    >>> sum_dc(a, 0, 1)
+        36
+    >>> sum_dc(a, 1, 0)
+        36
+    """
+    axes = list(axes)
+    axes.sort()
+    if len(axes) == 1:
+        return np.sum(dc, axes[0])
+    else:
+        dc = np.sum(dc, axes[-1])        
+        axes = axes[:-1]
+        return sum_dc(dc, *axes) # recursion

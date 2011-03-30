@@ -47,6 +47,7 @@ from utils import rebin
 from mva import MVA, MVA_Results
 import drawing.mpl_hse
 import controllers
+from exceptions import *
 
 
 #TODO Acquisition_Parameters and Treatments must be merged into a more general
@@ -2017,6 +2018,27 @@ class Spectrum(object, MVA):
         self.hse.pixel_units = self.xunits
         
         self.hse.plot()
+
+    def plot_datacube_sum(self, *axes):
+        """Plot the sum of the spectrum data cube along the given axes.
+
+        Note that since at the moment there is no way to predict the calibration
+        of a given axis, the plots won't be calibrated.
+
+        See also: utils.sum_dc
+        """
+        dcs = utils.sum_dc(self.data_cube, *axes)
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        if len(dcs.shape) == 1:
+            ax.plot(dcs)
+        elif len(dcs.shape) == 2:
+            ax.imshow(dcs, interpolation='nearest')
+        else:
+            raise ShapeError(dcs)
+        ax.set_title('Sum of datacube along axes %s' % repr(axes))
+        plt.draw()
+        plt.show()
         
     def _replot(self):
         if self.hse is not None and self._replot_activated is True:
