@@ -3,6 +3,9 @@
 Created on Wed Oct 06 09:48:42 2010
 
 """
+import types
+
+
 import numpy as np
 import scipy as sp
 import enthought.traits.api as t
@@ -14,7 +17,7 @@ import file_io
 import drawing
 import drawing.mpl_hie
 import utils
-import types
+import progressbar
 
 class Parameters(object):
     '''
@@ -459,9 +462,8 @@ class Signal(t.HasTraits):
         coord = self.axes_manager.axes[axis]
         offset = coord.offset
         _axis = coord.axis.copy()
-        from progressbar import progressbar
         maxval = np.cumprod(ss)[-1] - 1
-        pbar = progressbar(maxval = maxval)
+        pbar = progressbar.progressbar(maxval = maxval)
         i = 0
         for dat, shift in zip(self.iterate_axis(axis), 
                               utils.iterate_axis(shift_array, axis)):
@@ -491,26 +493,31 @@ class Signal(t.HasTraits):
         new_shape = [1] * len(self.data.shape)
         new_shape[axis] = self.data.shape[axis]
         new_shape[unfolded_axis] = -1
-        # Warning! if the data is not contious it will make a copy!!
+        # Warning! if the data is not contigous it will make a copy!!
         data = self.data.reshape(new_shape)
         for i in range(data.shape[unfolded_axis]):
             getitem = [0] * len(data.shape)
             getitem[axis] = slice(None)
             getitem[unfolded_axis] = i
             yield(data[getitem])
-#
-#    def interpolate_1D(self, axis, E1, E2, xch = 20, kind = 3):
-#        dc = self.data
-#        ix1 = self.energy2index(E1)
-#        ix2 = self.energy2index(E2)
-#        ix0 = np.clip(ix1 - xch, 0, np.inf)
-#        ix3 = np.clip(ix2 + xch, 0, len(self.energy_axis)+1)
-#        for iy in range(dc.shape[2]):
-#            for ix in range(dc.shape[1]):
-#                sp = interp1d(range(ix0,ix1) + range(ix2,ix3),
-#                dc[ix0:ix1,ix,iy].tolist() + dc[ix2:ix3,ix,iy].tolist(), 
-#                kind = kind)
-#                dc[ix1:ix2, ix, iy] = sp(range(ix1,ix2))
+
+    def interpolate_in_index_1D(self, axis, i1, i2, delta = 3, **kwargs):
+        axis = self.axes_manager.axes[axis]
+        i0 = int(np.clip(i1 - delta, 0, np.inf))
+        i3 = int(np.clip(i2 + delta, 0, axis.size))
+        for dat in self.iterate_axis(axis.index_in_array):
+            dat_int = sp.interpolate.interp1d(range(i0,i1) + range(i2,i3),
+                dat[i0:i1].tolist() + dat[i2:i3].tolist(), 
+                **kwargs)
+            dat[i1:i2] = dat_int(range(i1,i2))
+
+    def interpolate_in_units_1D(self, axis, u1, u2, delta = 3, **kwargs):
+        axis = self.axes_manager.axes[axis]
+        i1 = axis.value2index(u1)
+        i2 = axis.value2index(u2)
+        self.interpolate_in_index_1D(axis.index_in_array, i1, i2, delta, 
+                                     **kwargs)
+       
 #        
 #    def _interpolate_spectrum(self,ip, (ix,iy)):
 #        data = self.data_cube
