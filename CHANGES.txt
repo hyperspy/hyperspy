@@ -1,3 +1,16 @@
+v0.2.11a 31/03/2011
+
+Enhancements
+------------
+* Added option to plot ICs in the same plot
+* plot_datacube_sum(self, *axes) plots the sum of the datacube along the given axes
+
+Bugs fixed
+----------
+* EELSLab was not finding the DM path when a 32 bits DM was installed in a 64-bits Windows
+* The new dm3reader was suffering from some bugs, the default reader is back to the old code until the issues are fixed
+
+
 v0.2.10 23/03/2011
 
 Enhancements
