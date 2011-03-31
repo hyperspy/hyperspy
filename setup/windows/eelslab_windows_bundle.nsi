@@ -31,7 +31,7 @@ Section -Prerequisites
   SetOutPath $INSTDIR
   MessageBox MB_YESNO "Install Python 2.7?" /SD IDYES IDNO endPython
     File ".\requires\python-2.7.1.amd64.msi"
-    ExecWait '"msiexec" /i "$INSTDIR\python-2.7.amd64.msi"'
+    ExecWait '"msiexec" /i "$INSTDIR\python-2.7.1.amd64.msi"'
     Goto endPython
   endPython:
   MessageBox MB_YESNO "Install Numpy" /SD IDYES IDNO endNumpy
