@@ -28,6 +28,7 @@ from ..config_dir import os_name
 from ..utils import generate_axis
 from ..microscope import microscope
 from .. import messages
+from ..utils_varia import overwrite
 
 # Plugin characteristics
 # ----------------------
@@ -54,10 +55,10 @@ def file_reader(filename, **kwds):
     spectrum_file = open(filename)
     parameters = {}
     y = []
-    for line in spectrum_file:
+    for line in spectrum_file.readlines():
         if line[0] == "#":
             parameters[line[1:line.find(' ')]] = \
-            line[line.find(' : ')+3:].strip()
+                line[line.find(' : ')+3:].strip()
         else :
             if parameters['DATATYPE'] == 'XY' :
                 pair = line.strip().split(', ')
@@ -65,7 +66,7 @@ def file_reader(filename, **kwds):
                     pair = line.strip().split('\t')
                 y.append(float(pair[1]))
             elif parameters['DATATYPE'] == 'Y' :
-                y.append(float(line))
+                y.append(float(line.replace(',','')))
                 
     loc = locale.getlocale(locale.LC_TIME)
     
@@ -81,16 +82,21 @@ def file_reader(filename, **kwds):
     try:
         Y, M, D = time.strptime(parameters['DATE'], "%d-%b-%Y")[0:3]
     except:
-        messages.warning('The date information could not be properly read'
-        'The Ernst Ruska birthday is used instead')
+        messages.warning('The date information could not be properly read\n'
+                         "Ernst Ruska's birthday is used instead")
         # Default to Ernst Ruska birth day
         Y, M, D = time.strptime('25-Dec-1906', "%d-%b-%Y")[0:3]
     calibration_dict['date'] = datetime.date(Y, M, D)
     locale.setlocale(locale.LC_TIME, loc) # restore saved locale
 
-    calibration_dict['title'] = parameters['TITLE']
-    calibration_dict['owner'] = parameters['OWNER']
-    
+    if 'TITLE' in parameters:
+        calibration_dict['title'] = parameters['TITLE']
+    else:
+        calibration_dict['title'] = 'Untitled'
+    if 'OWNER' in parameters:
+        calibration_dict['owner'] = parameters['OWNER']
+    else:
+        calibration_dict['owner'] = 'Unknown'
     calibration_dict['xorigin'] = 0
     calibration_dict['xscale'] = 1
     calibration_dict['xdimension'] = 1
@@ -136,19 +142,24 @@ def file_reader(filename, **kwds):
     return [dictionary,]
 
 def file_writer(filename, spectrum, write_microscope_parameters = True, 
-format = 'Y', separator = ', '):    
+                format = 'Y', separator = ', '):
+    if not overwrite(filename): # we do not want to blindly overwrite, do we?
+        return 0
     FORMAT = "EMSA/MAS Spectral Data File"
     VERSION = '1.0'
+    STARTDATA = 'SPECTRUM'
+    ENDDATA = 'ENDOFDATA'
     keywords = {}
     if hasattr(spectrum, "title"):
         if len(spectrum.title) > 64 :
             print "The maximum lenght of the title is 64 char"
-            print "The current title:\"", spectrum.title, "\" is too long"
-            return 0
+            print "The current title:\"", spectrum.title, "\" is too long."
+            print "Truncating to the first 64 characters."
+            keywords['TITLE'] = spectrum.title[:64] # max 64 char
         else :
             keywords['TITLE'] = spectrum.title # max 64 char
     else :
-        keywords['TITLE'] = 'Undefined'
+        keywords['TITLE'] = 'Untitled'
     if hasattr(spectrum, "date"):
         loc = locale.getlocale(locale.LC_TIME)
         if os_name == 'posix':
@@ -175,23 +186,29 @@ format = 'Y', separator = ', '):
         keywords['OWNER'] = 'Undefined'
     if spectrum.energydimension > 4096 :
         print "The MSA format does not support spectrum with more \
-         than 4096 channels"
-        print "The file was not saved"
-        return
+         than 4096 channels."
+        print "The file was not saved."
+        return 0                # exception?
     else :
        keywords['NPOINTS'] = spectrum.energydimension
     keywords['NCOLUMNS'] = 1
 
-    if hasattr(spectrum, "xunits"):
-        keywords['XUNITS'] = spectrum.xunits
-    else:
-        print "The units x units are not set. Assuming eV"
-        keywords['XUNITS'] = 'eV'           
+    xunits = 'eV'
+    if hasattr(spectrum, "energyunits"): # we assume a simple spectrum
+        if spectrum.energyunits:     # must not be empty
+            xunits = spectrum.energyunits
+        else:
+            print "The units 'x units' are not set. Assuming 'eV'."
+    keywords['XUNITS'] = xunits
+    
+    yunits = 'counts'
     if hasattr(spectrum, "yunits"):
-        keywords['YUNITS'] = spectrum.yunits
-    else:
-        print "The units y units are not defined"
-        keywords['YUNITS'] = 'Undefined'
+        if spectrum.yunits:     # must not be empty
+            yunits = spectrum.yunits
+        else:
+            print "The units 'y units' are not set. Assuming 'counts'."
+    keywords['YUNITS'] = yunits
+
     if spectrum.acquisition_parameters.exposure is not None:
         keywords['INTEGTIME'] = spectrum.acquisition_parameters.exposure
     if format == 'XY':
@@ -209,26 +226,26 @@ format = 'Y', separator = ', '):
         keywords['BEAMKV'] = microscope.E0
         keywords['PPPC'] = microscope.pppc
         keywords['CORRFAC'] = microscope.correlation_factor
-    spectrum_file = open(filename, 'w')
-    for keyword, value in keywords.items():
-        spectrum_file.write(u'#%-13s: %s \u000D\u000A' % (keyword, value))
-    spectrum_file.write(u'#SPECTRUM    : Spectral Data Starts Here\u000D\u000A')
-    fmt="%g"
-    i = 0
-    ix = spectrum.coordinates.ix
-    iy = spectrum.coordinates.iy
-    if format == 'XY':
+    with open(filename, 'w') as spectrum_file:
+        spectrum_file.write(u'#%-12s: %s\u000D\u000A' % ('FORMAT', FORMAT))
+        spectrum_file.write(u'#%-12s: %s\u000D\u000A' % ('VERSION', VERSION))
+        for keyword, value in keywords.items():
+            spectrum_file.write(u'#%-12s: %s\u000D\u000A' % (keyword, value))
+        spectrum_file.write(u'#%-12s: Spectral Data Starts Here\u000D\u000A'
+                            % STARTDATA)
+        i = 0
+        ix = spectrum.coordinates.ix
+        iy = spectrum.coordinates.iy
+        if format == 'XY':        
+            for row in spectrum.data_cube[:,ix, iy]:
+                spectrum_file.write("%g%s%g" % (spectrum.energy_axis[i], 
+                                                separator, row))
+                spectrum_file.write(u'\u000D\u000A')
+                i += 1
+        elif format == 'Y':
+            for row in spectrum.data_cube[:, ix, iy]:
+                spectrum_file.write('%f%s' % (row, separator))
+                spectrum_file.write(u'\u000D\u000A')
         
-        for row in spectrum.data_cube[:,ix, iy]:
-            spectrum_file.write("%g%s%g" % (spectrum.energy_axis[i], 
-                                            separator, row))
-            spectrum_file.write(u'\u000D\u000A')
-            i += 1
-    elif format == 'Y':
-        for row in spectrum.data_cube[:, ix, iy]:
-            spectrum_file.write(fmt % row)
-            spectrum_file.write(u'\u000D\u000A')
-        
-    spectrum_file.write(u'#ENDOFDATA   : End Of Data and File')
-    spectrum_file.close()
-    print "File saved"
+        spectrum_file.write(u'#%-12s: End Of Data and File' % ENDDATA)
+        print "File '%s' saved." % filename
