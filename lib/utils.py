@@ -24,6 +24,7 @@ from StringIO import StringIO
 
 import numpy as np
 import scipy as sp
+import scipy.interpolate
 import scipy.signal
 import scipy.ndimage
 import matplotlib
@@ -1024,7 +1025,7 @@ def ratio(edge_A, edge_B):
 def iterate_axis(data, axis = -1):
         # We make a copy to guarantee that the data in contiguous, otherwise
         # it will not return a view of the data
-        data = data.copy()
+#        data = data.copy()
         if axis < 0:
             axis = len(data.shape) + axis
         unfolded_axis = axis - 1
@@ -1037,3 +1038,11 @@ def iterate_axis(data, axis = -1):
             getitem[axis] = slice(None)
             getitem[unfolded_axis] = i
             yield(data[getitem])
+            
+def interpolate_1D(number_of_interpolation_points, data):
+    ip = number_of_interpolation_points
+    ch = len(data)
+    old_ax = np.linspace(0, 100, ch)
+    new_ax = np.linspace(0, 100, ch * ip - (ip-1))
+    interpolator = sp.interpolate.interp1d(old_ax,data)
+    return interpolator(new_ax)

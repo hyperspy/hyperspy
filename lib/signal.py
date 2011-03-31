@@ -487,7 +487,7 @@ class Signal(t.HasTraits):
     def iterate_axis(self, axis = -1):
         # We make a copy to guarantee that the data in contiguous, otherwise
         # it will not return a view of the data
-        utils.iterate_axis(self.data, axis)
+        self.data = self.data.copy()
         axis = self._get_positive_axis_index_index(axis)
         unfolded_axis = axis - 1
         new_shape = [1] * len(self.data.shape)
@@ -518,15 +518,133 @@ class Signal(t.HasTraits):
         self.interpolate_in_index_1D(axis.index_in_array, i1, i2, delta, 
                                      **kwargs)
        
-#        
-#    def _interpolate_spectrum(self,ip, (ix,iy)):
-#        data = self.data_cube
-#        ch = self.data_cube.shape[0]
-#        old_ax = np.linspace(0, 100,ch)
-#        new_ax = np.linspace(0, 100,ch*ip - (ip-1))
-#        sp = interp1d(old_ax,data[:,ix,iy])
-#        return sp(new_ax)
-#    
+    def estimate_shift_in_index_1D(self, axis = -1, irange = (None,None), 
+                                   reference_indexes = None, max_shift = None, 
+                                   interpolate = True, 
+                                   number_of_interpolation_points = 5):
+        '''Estimate the shifts in a given axis using cross-correlation
+        
+        This method can only estimate the shift by comparing unidimensional 
+        features that should not change the position in the given axis. To 
+        decrease the memory usage, the time of computation and the accuracy of 
+        the results it is convenient to select the feature of interest setting 
+        the irange keyword.
+        
+        By default interpolation is used to obtain subpixel precision.
+        
+        Parameters
+        ----------
+        axis : int
+            The axis in which the analysis will be performed.
+        irange : tuple of ints (i1, i2)
+             Define the range of the feature of interest. If i1 or i2 are None, 
+             the range will not be limited in that side.
+        reference_indexes : tuple of ints or None
+            Defines the coordinates of the spectrum that will be used as a 
+            reference. If None the spectrum of 0 coordinates will be used.
+        max_shift : int
+
+        interpolate : bool
+        
+        number_of_interpolation_points : int
+            Number of interpolation points. Warning: making this number too big 
+            can saturate the memory
+            
+        Return
+        ------
+        An array with the result of the estimation
+        '''
+        
+        ip = number_of_interpolation_points + 1
+        axis = self.axes_manager.axes[axis]
+        if reference_indexes is None:
+            reference_indexes = [0,] * (len(self.axes_manager.axes) - 1)
+        else:
+            reference_indexes = list(reference_indexes)
+        reference_indexes.insert(axis.index_in_array, slice(None))
+        i1, i2 = irange
+        array_shape = [axis.size for axis in self.axes_manager.axes]
+        array_shape[axis.index_in_array] = 1
+        shift_array = np.zeros(array_shape)
+#        if i1 is not None:
+#            i1 *= ip
+#        if i2 is not None:
+#            i2 = np.clip(np.array(i2 * ip), a_min = 0, a_max = axis.size * ip-2)
+        ref = self.data[reference_indexes][i1:i2]
+        if interpolate is True:
+            ref = utils.interpolate_1D(ip, ref)
+        for dat, shift in zip(self.iterate_axis(axis.index_in_array), 
+                              utils.iterate_axis(shift_array, 
+                                                 axis.index_in_array)):
+            dat = dat[i1:i2]
+            if interpolate is True:
+                dat = utils.interpolate_1D(ip, dat)
+            shift[:] = np.argmax(np.correlate(ref, dat,'full')) - len(ref) + 1
+
+        if max_shift is not None:
+            if interpolate is True:
+                max_shift *= ip
+            shift_array.clip(a_min = -max_shift, a_max = max_shift)
+        if interpolate is True:
+            shift_array /= ip
+        return shift_array
+    
+    def estimate_shift_in_units_1D(self, axis = -1,
+                                   range_in_units = (None,None), 
+                                   reference_indexes = None, max_shift = None, 
+                                   interpolate = True, 
+                                   number_of_interpolation_points = 5):
+        '''Estimate the shifts in a given axis using cross-correlation. The 
+        values are given in the units of the selected axis.
+        
+        This method can only estimate the shift by comparing unidimensional 
+        features that should not change the position in the given axis. To 
+        decrease the memory usage, the time of computation and the accuracy of 
+        the results it is convenient to select the feature of interest setting 
+        the irange keyword.
+        
+        By default interpolation is used to obtain subpixel precision.
+        
+        Parameters
+        ----------
+        axis : int
+            The axis in which the analysis will be performed.
+        irange : tuple of floats (i1, i2)
+             Define the range of the feature of interest. If i1 or i2 are None, 
+             the range will not be limited in that side.
+        reference_indexes : tuple of ints or None
+            Defines the coordinates of the spectrum that will be used as a 
+            reference. If None the spectrum of 0 coordinates will be used.
+        max_shift : float
+
+        interpolate : bool
+        
+        number_of_interpolation_points : int
+            Number of interpolation points. Warning: making this number too big 
+            can saturate the memory
+            
+        Return
+        ------
+        An array with the result of the estimation
+        
+        See also
+        --------
+        estimate_shift_in_index_1D, align_with_array_1D and align_1D
+        '''
+        axis = self.axes_manager.axes[axis]
+        i1 = axis.value2index(range_in_units[0])
+        i2 = axis.value2index(range_in_units[1])
+        if max_shift is not None:
+            max_shift = int(round(max_shift / axis.scale))
+        
+        return self.estimate_shift_in_index_1D(axis = axis.index_in_array,
+                                   irange = (i1, i2), 
+                                   reference_indexes = reference_indexes, 
+                                   max_shift = max_shift, 
+                                   number_of_interpolation_points = 
+                                   number_of_interpolation_points)
+    
+    
 #    def align_1D(self, energy_range = (None,None), 
 #    reference_spectrum_coordinates = (0,0), max_energy_shift = None, 
 #    sync_SI = None, interpolate = True, interp_points = 5, progress_bar = True):
@@ -551,7 +669,6 @@ class Signal(t.HasTraits):
 #            can saturate the memory   
 #        '''
 #        
-#        print "Aligning the SI"
 #        ip = interp_points + 1
 #        data = self.data_cube
 #        channel_1 = self.energy2index(energy_range[0])
