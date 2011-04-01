@@ -18,6 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301
 # USA
 
+import copy
 
 import numpy as np
 import enthought.traits.api as t
@@ -282,6 +283,12 @@ class AxesManager(t.HasTraits):
     def edit_axes_traits(self):
         for axis in self.axes:
             axis.edit_traits()
+            
+    def copy(self):
+        return(copy.copy(self))
+        
+    def deepcopy(self):
+        return(copy.deepcopy(self))
             
     traits_view = tui.View(tui.Item('axes', style = 'custom'))
     

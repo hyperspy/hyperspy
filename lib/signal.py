@@ -752,11 +752,7 @@ class Signal(t.HasTraits):
         s.sum(-1, True).plot()
 
         '''
-        dc = self.data_cube
-        dc = dc.sum(axis)
-        dc = dc.reshape(list(dc.shape) + [1,])
-        self.data_cube = dc
-        self.get_dimensions_from_cube()
+        
 
 #    def sum_in_mask(self, mask):
 #        '''Returns the result of summing all the spectra in the mask.
