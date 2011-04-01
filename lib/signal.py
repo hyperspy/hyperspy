@@ -750,8 +750,66 @@ class Signal(t.HasTraits):
         (64,64)
         # If we just want to plot the result of the operation
         s.sum(-1, True).plot()
-
         '''
+        if return_signal is True:
+            s = self.deepcopy()
+        else:
+            s = self
+        s.data = s.data.sum(axis)
+        s.axes_manager.axes.remove(s.axes_manager.axes[axis])
+        for _axis in s.axes_manager.axes:
+            if _axis.index_in_array > axis:
+                _axis.index_in_array -= 1
+        s.axes_manager.set_output_dim()
+        if return_signal is True:
+            return s
+            
+    def mean(self, axis, return_signal = False):
+        '''Average the data over the specify axis
+        
+        Parameters
+        ----------
+        axis : int
+            The axis over which the operation will be performed
+        return_signal : bool
+            If False the operation will be performed on the current object. If
+            True, the current object will not be modified and the operation will
+             be performed in a new signal object that will be returned.
+             
+        Returns
+        -------
+        Depending on the value of the return_signal keyword, nothing or a signal
+         instance
+         
+        See also
+        --------
+        sum_in_mask, mean
+        
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.mean(-1)
+        >>> s.data.shape
+        (64,64)
+        # If we just want to plot the result of the operation
+        s.mean(-1, True).plot()
+        '''
+        if return_signal is True:
+            s = self.deepcopy()
+        else:
+            s = self
+        s.data = s.data.mean(axis)
+        s.axes_manager.axes.remove(s.axes_manager.axes[axis])
+        for _axis in s.axes_manager.axes:
+            if _axis.index_in_array > axis:
+                _axis.index_in_array -= 1
+        s.axes_manager.set_output_dim()
+        if return_signal is True:
+            return s 
+            
     def copy(self):
         return(copy.copy(self))
         

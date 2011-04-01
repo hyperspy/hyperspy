@@ -74,7 +74,8 @@ class DataAxis(t.HasTraits):
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
     
-    def __init__(self, name, scale, offset, size, units, index_in_array):
+    def __init__(self, name, scale, offset, size, units, index_in_array, 
+                 slice_bool = False):
         super(DataAxis, self).__init__()
         
         self.name = name
@@ -86,13 +87,14 @@ class DataAxis(t.HasTraits):
         self.low_index = 0
         self.index = 0
         self.index_in_array = index_in_array
-        self.slice = None
         self.update_axis()
                 
         self.on_trait_change(self.update_axis, ['scale', 'offset', 'size'])
         self.on_trait_change(self.update_value, 'index')
         self.on_trait_change(self.set_index_from_value, 'value')
         self.on_trait_change(self._update_slice, 'slice_bool')
+        self.slice_bool = slice_bool
+
         
         
     def __repr__(self):
@@ -113,7 +115,6 @@ class DataAxis(t.HasTraits):
         else:
             self.slice = None
         
-
     def get_axis_dictionary(self):
         adict = {
             'name' : self.name,
@@ -122,6 +123,7 @@ class DataAxis(t.HasTraits):
             'size' : self.size,
             'units' : self.units,
             'index_in_array' : self.index_in_array,
+            'slice_bool' : self.slice_bool
         }
         return adict
         
@@ -204,7 +206,10 @@ class AxesManager(t.HasTraits):
         self.axes = [None] * ncoord
         for axis_dict in axes_list:
             self.axes[axis_dict['index_in_array']] = DataAxis(**axis_dict)
-        self.set_view()
+        slices = [i.slice_bool for i in self.axes]
+        # set_view is called only if there is no current view
+        if np.all(np.array(slices) == False):
+            self.set_view()
         self.set_output_dim()
         self.on_trait_change(self.set_output_dim, 'axes.slice')
         self.on_trait_change(self.set_output_dim, 'axes.index')
@@ -289,6 +294,12 @@ class AxesManager(t.HasTraits):
         
     def deepcopy(self):
         return(copy.deepcopy(self))
+        
+    def __deepcopy__(self, *args):
+        axes_dict_list = []
+        for axis in self.axes:
+            axes_dict_list.append(axis.get_axis_dictionary())
+        return AxesManager(axes_dict_list)
             
     traits_view = tui.View(tui.Item('axes', style = 'custom'))
     
