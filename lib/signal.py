@@ -816,6 +816,158 @@ class Signal(t.HasTraits):
     def deepcopy(self):
         return(copy.deepcopy(self))
 
+    def peakfind_1D(self, xdim=None,slope_thresh=0.5, amp_thresh=None, subchannel=True, 
+                    medfilt_radius=5, maxpeakn=30000, peakgroup=10):
+        """
+        Find peaks along a 1D line (peaks in spectrum/spectra).
+
+        Function to locate the positive peaks in a noisy x-y data set.
+    
+        Detects peaks by looking for downward zero-crossings in the first
+        derivative that exceed 'slope_thresh'.
+    
+        Returns an array containing position, height, and width of each peak.
+
+        'slope_thresh' and 'amp_thresh', control sensitivity: higher values will
+        neglect smaller features.
+    
+        peakgroup is the number of points around the top peak to search around
+
+        Parameters
+        ---------
+
+        slope_thresh : float (optional)
+                       1st derivative threshold to count the peak
+                       default is set to 0.5
+                       higher values will neglect smaller features.
+                   
+        amp_thresh : float (optional)
+                     intensity threshold above which   
+                     default is set to 10% of max(y)
+                     higher values will neglect smaller features.
+                                  
+        medfilt_radius : int (optional)
+                     median filter window to apply to smooth the data
+                     (see scipy.signal.medfilt)
+                     if 0, no filter will be applied.
+                     default is set to 5
+
+        peakgroup : int (optional)
+                    number of points around the "top part" of the peak
+                    default is set to 10
+
+        maxpeakn : int (optional)
+                   number of maximum detectable peaks
+                   default is set to 5000
+                
+        subpix : bool (optional)
+                 default is set to True
+
+        Returns
+        -------
+        P : array of shape (npeaks, 3)
+            contains position, height, and width of each peak
+        """
+        from peak_char import one_dim_findpeaks
+        if len(self.data.shape)==1:
+            # preallocate a large array for the results
+            self.peaks=one_dim_findpeaks(self.data, slope_thresh=slope_thresh, amp_thresh=amp_thresh,
+                                         medfilt_radius=medfilt_radius, maxpeakn=maxpeakn, 
+                                         peakgroup=peakgroup, subchannel=subchannel)
+        elif len(self.data.shape)==2:
+            # preallocate a large array for the results
+            # the third dimension is for the number of rows in your data.
+            # assumes spectra are rows of the 2D array, each col is a channel.
+            self.peaks=np.zeros((maxpeakn,3,self.data.shape[0]))
+            for i in xrange(self.data.shape[1]):
+                tmp=one_dim_findpeaks(self.data[i], slope_thresh=slope_thresh, 
+                                                    amp_thresh=amp_thresh, 
+                                                    medfilt_radius=medfilt_radius, 
+                                                    maxpeakn=maxpeakn, 
+                                                    peakgroup=peakgroup, 
+                                                    subchannel=subchannel)
+                self.peaks[:tmp.shape[0],:,i]=tmp
+            # trim any extra blank space
+            # works by summing along axes to compress to a 1D line, then finds
+            # the first 0 along that line.
+            trim_id=np.min(np.nonzero(np.sum(np.sum(self.peaks,axis=2),axis=1)==0))
+            self.peaks=self.peaks[:trim_id,:,:]
+        elif len(self.data.shape)==3:
+            # preallocate a large array for the results
+            self.peaks=np.zeros((maxpeakn,3,self.data.shape[0],self.data.shape[1]))
+            for i in xrange(self.data.shape[0]):
+                for j in xrange(self.data.shape[1]):
+                    tmp=one_dim_findpeaks(self.data[i,j], slope_thresh=slope_thresh, amp_thresh=amp_thresh,
+                                         medfilt_radius=medfilt_radius, maxpeakn=maxpeakn, 
+                                         peakgroup=peakgroup, subchannel=subchannel)
+                    self.peaks[:tmp.shape[0],:,i,j]=tmp
+            # trim any extra blank space
+            # works by summing along axes to compress to a 1D line, then finds
+            # the first 0 along that line.
+            trim_id=np.min(np.nonzero(np.sum(np.sum(np.sum(self.peaks,axis=3),axis=2),axis=1)==0))
+            self.peaks=self.peaks[:trim_id,:,:,:]
+
+    def peakfind_2D(self, subpixel=False, peak_width=10, medfilt_radius=5,
+                        maxpeakn=30000):
+            """
+            Find peaks in a 2D array (peaks in an image).
+
+            Function to locate the positive peaks in a noisy x-y data set.
+    
+            Returns an array containing pixel position of each peak.
+            
+            Parameters
+            ---------
+            subpixel : bool (optional)
+                    default is set to True
+
+            peak_width : int (optional)
+                    expected peak width.  Affects subpixel precision fitting window,
+                    which takes the center of gravity of a box that has sides equal
+                    to this parameter.  Too big, and you'll include other peaks.
+                    default is set to 10
+
+            medfilt_radius : int (optional)
+                     median filter window to apply to smooth the data
+                     (see scipy.signal.medfilt)
+                     if 0, no filter will be applied.
+                     default is set to 5
+
+            maxpeakn : int (optional)
+                    number of maximum detectable peaks
+                    default is set to 30000
+                            
+            """
+            from peak_char import two_dim_findpeaks
+            if len(self.data.shape)==2:
+                self.peaks=two_dim_findpeaks(self.data, subpixel=subpixel,
+                                             peak_width=peak_width, 
+                                             medfilt_radius=medfilt_radius)
+                
+            elif len(self.data.shape)==3:
+                # preallocate a large array for the results
+                self.peaks=np.zeros((maxpeakn,2,self.data.shape[2]))
+                for i in xrange(self.data.shape[2]):
+                    tmp=two_dim_findpeaks(self.data[:,:,i], 
+                                             subpixel=subpixel,
+                                             peak_width=peak_width, 
+                                             medfilt_radius=medfilt_radius)
+                    self.peaks[:tmp.shape[0],:,i]=tmp
+                trim_id=np.min(np.nonzero(np.sum(np.sum(self.peaks,axis=2),axis=1)==0))
+                self.peaks=self.peaks[:trim_id,:,:]
+            elif len(self.data.shape)==4:
+                # preallocate a large array for the results
+                self.peaks=np.zeros((maxpeakn,2,self.data.shape[0],self.data.shape[1]))
+                for i in xrange(self.data.shape[0]):
+                    for j in xrange(self.data.shape[1]):
+                        tmp=two_dim_findpeaks(self.data[i,j,:,:], 
+                                             subpixel=subpixel,
+                                             peak_width=peak_width, 
+                                             medfilt_radius=medfilt_radius)
+                        self.peaks[:tmp.shape[0],:,i,j]=tmp
+                trim_id=np.min(np.nonzero(np.sum(np.sum(np.sum(self.peaks,axis=3),axis=2),axis=1)==0))
+                self.peaks=self.peaks[:trim_id,:,:,:]
+
 #    def sum_in_mask(self, mask):
 #        '''Returns the result of summing all the spectra in the mask.
 #        
