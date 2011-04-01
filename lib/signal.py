@@ -46,6 +46,7 @@ class Signal(t.HasTraits):
     scale = t.Float(1)
     offset = t.Float(0)
     physical_property = t.Str()
+    
     def __init__(self, file_data_dict):
         '''All data interaction is made through this class or its subclasses
             
@@ -154,7 +155,6 @@ class Signal(t.HasTraits):
         
     
     def plot(self, axes_manager = None):
-        # TODO: This function must be generalized F_DLP 23/03/2011
         if self._plot is not None:
                 try:
                     self._plot.close()
@@ -323,11 +323,12 @@ class Signal(t.HasTraits):
         
     def rebin(self, new_shape):
         '''
-        Rebins the SI to the new shape
+        Rebins the data to the new shape
         
         Parameters
         ----------
-        new_shape: tuple of int of dimension 3
+        new_shape: tuple of ints
+            The new shape must be a divisor of the original shape        
         '''
         factors = np.array(self.data.shape) / np.array(new_shape)
         self.data = utils.rebin(self.data,new_shape)

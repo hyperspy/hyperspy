@@ -51,8 +51,8 @@ def generate_axis(offset, scale, size, offset_index=0):
     -------
     Numpy array
     '''
-    return np.linspace(offset-offset_index*scale, 
-                       offset+scale*(size-1-offset_index),
+    return np.linspace(offset - offset_index * scale, 
+                       offset + scale * (size - 1 - offset_index),
                        size)  
 
 class DataAxis(t.HasTraits):
@@ -203,12 +203,8 @@ class AxesManager(t.HasTraits):
         self.axes = [None] * ncoord
         for axis_dict in axes_list:
             self.axes[axis_dict['index_in_array']] = DataAxis(**axis_dict)
-#        self.set_coordinate_attribute()
         self.set_view()
         self.set_output_dim()
-#        self.on_trait_change(self.set_axis_attribute, 'axes.name')
-        # TODO: MCS 22/03/11 - on the following two lines, axis might 
-        # need to be axes
         self.on_trait_change(self.set_output_dim, 'axes.slice')
         self.on_trait_change(self.set_output_dim, 'axes.index')
 
@@ -288,7 +284,4 @@ class AxesManager(t.HasTraits):
             axis.edit_traits()
             
     traits_view = tui.View(tui.Item('axes', style = 'custom'))
-    
-        
-
     
