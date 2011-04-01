@@ -383,11 +383,30 @@ class Signal(t.HasTraits):
             splitted.append(s)
         return splitted
 
-    # TODO: there is a bug when plotting if in a SI unfolded_axis = 0
     def unfold(self, steady_axis = -1, unfolded_axis = -2):
+        '''Modify the shape of the data to obtain a 2D object
+        
+        Parameters
+        ----------
+        steady_axis : int
+            The index of the axis which dimension does not change
+        unfolded_axis : int
+            The index of the axis over which all the rest of the axes (except 
+            the steady axis) will be projected
+            
+        See also
+        --------
+        fold
+        '''
+        
+        # It doesn't make sense unfolding when dim < 3
         if len(self.data.squeeze().shape) < 3: return
+        
+        # We need to store the original shape and coordinates to be used by
+        # the fold function
         self._shape_before_unfolding = self.data.shape
         self._axes_manager_before_unfolding = self.axes_manager
+        
         new_shape = [1] * len(self.data.shape)
         new_shape[steady_axis] = self.data.shape[steady_axis]
         new_shape[unfolded_axis] = -1
@@ -698,79 +717,65 @@ class Signal(t.HasTraits):
         for signal in also_align:
             signal.align_with_array_1D(shift_array = shift_array, axis = axis)
         
+    def sum(self, axis, return_signal = False):
+        '''Sum the data over the specify axis
         
+        Parameters
+        ----------
+        axis : int
+            The axis over which the operation will be performed
+        return_signal : bool
+            If False the operation will be performed on the current object. If
+            True, the current object will not be modified and the operation will
+             be performed in a new signal object that will be returned.
+             
+        Returns
+        -------
+        Depending on the value of the return_signal keyword, nothing or a signal
+         instance
+         
+        See also
+        --------
+        sum_in_mask, mean
+        
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.sum(-1)
+        >>> s.data.shape
+        (64,64)
+        # If we just want to plot the result of the operation
+        s.sum(-1, True).plot()
 
-#        
-#    def sum_every_n(self,n):
-#        '''Bin a line spectrum
+        '''
+        dc = self.data_cube
+        dc = dc.sum(axis)
+        dc = dc.reshape(list(dc.shape) + [1,])
+        self.data_cube = dc
+        self.get_dimensions_from_cube()
+
+#    def sum_in_mask(self, mask):
+#        '''Returns the result of summing all the spectra in the mask.
 #        
 #        Parameters
 #        ----------
-#        step : float
-#            binning size
+#        mask : boolean numpy array
 #        
 #        Returns
 #        -------
-#        Binned line spectrum
-#        
-#        See also
-#        --------
-#        sum_every
+#        Spectrum
 #        '''
-#        dc = self.data_cube
-#        if dc.shape[1] % n != 0:
-#            messages.warning_exit(
-#            "n is not a divisor of the size of the line spectrum\n"
-#            "Try giving a different n or using sum_every instead")
-#        size_list = np.zeros((dc.shape[1] / n))
-#        size_list[:] = n
-#        return self.sum_every(size_list)
-#    
-#    def sum_every(self,size_list):
-#        '''Sum a line spectrum intervals given in a list and return the 
-#        resulting SI
-#        
-#        Parameters
-#        ----------
-#        size_list : list of floats
-#            A list of the size of each interval to sum.
-#        
-#        Returns
-#        -------
-#        SI
-#        
-#        See also
-#        --------
-#        sum_every_n
-#        '''
-#        dc = self.data_cube
-#        dc_shape = self.data_cube.shape
-#        if np.sum(size_list) != dc.shape[1]:
-#            messages.warning_exit(
-#            "The sum of the elements of the size list is not equal to the size" 
-#            " of the line spectrum")
-#        new_dc = np.zeros((dc_shape[0], len(size_list), 1))
-#        ch = 0
-#        for i in range(len(size_list)):
-#            new_dc[:,i,0] = dc[:,ch:ch + size_list[i], 0].sum(1)
-#            ch += size_list[i]
-#        sp = Spectrum()
-#        sp.data_cube = new_dc
-#        sp.get_dimensions_from_cube()
-#        return sp
-#        
-#    def sum(self, axis):
-#        '''Sum the SI over the given axis
-#        
-#        Parameters
-#        ----------
-#        axis : int
-#        '''
-#        dc = self.data_cube
-#        dc = dc.sum(axis)
-#        dc = dc.reshape(list(dc.shape) + [1,])
-#        self.data_cube = dc
-#        self.get_dimensions_from_cube()
+#        dc = self.data_cube.copy()
+#        mask3D = mask.reshape([1,] + list(mask.shape)) * np.ones(dc.shape)
+#        dc = (mask3D*dc).sum(1).sum(1) / mask.sum()
+#        s = Spectrum()
+#        s.data_cube = dc.reshape((-1,1,1))
+#        s.get_dimensions_from_cube()
+#        utils.copy_energy_calibration(self,s)
+#        return s
 #
 #    def mean(self, axis):
 #        '''Average the SI over the given axis
@@ -796,25 +801,7 @@ class Signal(t.HasTraits):
 #        self.data_cube = np.roll(self.data_cube, shift, axis)
 #        self._replot()
 #        
-#    def sum_in_mask(self, mask):
-#        '''Returns the result of summing all the spectra in the mask.
-#        
-#        Parameters
-#        ----------
-#        mask : boolean numpy array
-#        
-#        Returns
-#        -------
-#        Spectrum
-#        '''
-#        dc = self.data_cube.copy()
-#        mask3D = mask.reshape([1,] + list(mask.shape)) * np.ones(dc.shape)
-#        dc = (mask3D*dc).sum(1).sum(1) / mask.sum()
-#        s = Spectrum()
-#        s.data_cube = dc.reshape((-1,1,1))
-#        s.get_dimensions_from_cube()
-#        utils.copy_energy_calibration(self,s)
-#        return s
+
 #        
 #    def get_calibration_from(self, s):
 #        '''Copy the calibration from another Spectrum instance
@@ -880,6 +867,64 @@ class Signal(t.HasTraits):
 #        s = Spectrum({'calibration' : {'data_cube' : self()}})
 #        s.get_calibration_from(self)
 #        return s
+#        
+#    def sum_every_n(self,n):
+#        '''Bin a line spectrum
+#        
+#        Parameters
+#        ----------
+#        step : float
+#            binning size
+#        
+#        Returns
+#        -------
+#        Binned line spectrum
+#        
+#        See also
+#        --------
+#        sum_every
+#        '''
+#        dc = self.data_cube
+#        if dc.shape[1] % n != 0:
+#            messages.warning_exit(
+#            "n is not a divisor of the size of the line spectrum\n"
+#            "Try giving a different n or using sum_every instead")
+#        size_list = np.zeros((dc.shape[1] / n))
+#        size_list[:] = n
+#        return self.sum_every(size_list)
+#    
+#    def sum_every(self,size_list):
+#        '''Sum a line spectrum intervals given in a list and return the 
+#        resulting SI
+#        
+#        Parameters
+#        ----------
+#        size_list : list of floats
+#            A list of the size of each interval to sum.
+#        
+#        Returns
+#        -------
+#        SI
+#        
+#        See also
+#        --------
+#        sum_every_n
+#        '''
+#        dc = self.data_cube
+#        dc_shape = self.data_cube.shape
+#        if np.sum(size_list) != dc.shape[1]:
+#            messages.warning_exit(
+#            "The sum of the elements of the size list is not equal to the size" 
+#            " of the line spectrum")
+#        new_dc = np.zeros((dc_shape[0], len(size_list), 1))
+#        ch = 0
+#        for i in range(len(size_list)):
+#            new_dc[:,i,0] = dc[:,ch:ch + size_list[i], 0].sum(1)
+#            ch += size_list[i]
+#        sp = Spectrum()
+#        sp.data_cube = new_dc
+#        sp.get_dimensions_from_cube()
+#        return sp
         
         
 #class SignalwHistory(Signal):
