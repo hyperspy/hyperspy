@@ -727,18 +727,17 @@ class DM3ImageFile(object):
                                    self.byte_offset, self.imdtype)
             if len(self.dimensions) == 3:
                 order = 'F'
-            else:
-                order = 'C'
-            data = data.reshape(self.imsize, order=order)
-            if len(self.dimensions) == 3:
                 # The Bytes in a SI are ordered as
                 # X0, Y0, Z0, X1, Y0, Z0, [...], Xn, Ym, Z0, [...]
                 # X0, Y0, Z1, [...], Xn, Ym, Zk
                 # since X <=> column and Y <=> row
                 # the 1st two axes of the ndarray must be transposed
                 # because its natural order is
-                # row (Y), column (X), E                
-                data = data.transpose((1,0,2))
+                # row (Y), column (X), E
+                swapelem(self.imsize, 0, 1)
+            else:
+                order = 'C'
+            data = data.reshape(self.imsize, order=order)
             return data
             
     def read_rgb(self):
@@ -834,7 +833,7 @@ class DM3ImageFile(object):
 
         return data
 
-def file_reader(filename, data_type=None, data_id=1, old = True):
+def file_reader(filename, data_type=None, data_id=1, old=False):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
