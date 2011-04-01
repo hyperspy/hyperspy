@@ -456,13 +456,10 @@ class Signal(t.HasTraits):
         '''
         
         axis = self._get_positive_axis_index_index(axis)
-        ss = list(shift_array.shape)
-        ss.insert(axis,1)
-        shift_array = shift_array.reshape(ss).copy()
         coord = self.axes_manager.axes[axis]
         offset = coord.offset
         _axis = coord.axis.copy()
-        maxval = np.cumprod(ss)[-1] - 1
+        maxval = np.cumprod(shift_array.shape)[-1] - 1
         pbar = progressbar.progressbar(maxval = maxval)
         i = 0
         for dat, shift in zip(self.iterate_axis(axis), 
@@ -471,7 +468,7 @@ class Signal(t.HasTraits):
                                              bounds_error = False, 
                                              fill_value = 0., 
                                              kind = interpolation_method)
-                coord.offset = offset + shift[0]
+                coord.offset = offset - shift[0]
                 dat[:] = si(coord.axis)
                 pbar.update(i)
                 i += 1
@@ -518,7 +515,7 @@ class Signal(t.HasTraits):
         self.interpolate_in_index_1D(axis.index_in_array, i1, i2, delta, 
                                      **kwargs)
        
-    def estimate_shift_in_index_1D(self, axis = -1, irange = (None,None), 
+    def estimate_shift_in_index_1D(self, irange = (None,None), axis = -1, 
                                    reference_indexes = None, max_shift = None, 
                                    interpolate = True, 
                                    number_of_interpolation_points = 5):
@@ -566,10 +563,6 @@ class Signal(t.HasTraits):
         array_shape = [axis.size for axis in self.axes_manager.axes]
         array_shape[axis.index_in_array] = 1
         shift_array = np.zeros(array_shape)
-#        if i1 is not None:
-#            i1 *= ip
-#        if i2 is not None:
-#            i2 = np.clip(np.array(i2 * ip), a_min = 0, a_max = axis.size * ip-2)
         ref = self.data[reference_indexes][i1:i2]
         if interpolate is True:
             ref = utils.interpolate_1D(ip, ref)
@@ -587,12 +580,12 @@ class Signal(t.HasTraits):
             shift_array.clip(a_min = -max_shift, a_max = max_shift)
         if interpolate is True:
             shift_array /= ip
+        shift_array *= axis.scale
         return shift_array
     
-    def estimate_shift_in_units_1D(self, axis = -1,
-                                   range_in_units = (None,None), 
-                                   reference_indexes = None, max_shift = None, 
-                                   interpolate = True, 
+    def estimate_shift_in_units_1D(self, range_in_units = (None,None), 
+                                   axis = -1, reference_indexes = None, 
+                                   max_shift = None, interpolate = True, 
                                    number_of_interpolation_points = 5):
         '''Estimate the shifts in a given axis using cross-correlation. The 
         values are given in the units of the selected axis.
@@ -609,9 +602,10 @@ class Signal(t.HasTraits):
         ----------
         axis : int
             The axis in which the analysis will be performed.
-        irange : tuple of floats (i1, i2)
-             Define the range of the feature of interest. If i1 or i2 are None, 
-             the range will not be limited in that side.
+        range_in_units : tuple of floats (f1, f2)
+             Define the range of the feature of interest in the units of the 
+             selected axis. If f1 or f2 are None, thee range will not be limited
+             in that side.
         reference_indexes : tuple of ints or None
             Defines the coordinates of the spectrum that will be used as a 
             reference. If None the spectrum of 0 coordinates will be used.
@@ -625,7 +619,7 @@ class Signal(t.HasTraits):
             
         Return
         ------
-        An array with the result of the estimation
+        An array with the result of the estimation. The shift will be 
         
         See also
         --------
@@ -643,109 +637,69 @@ class Signal(t.HasTraits):
                                    max_shift = max_shift, 
                                    number_of_interpolation_points = 
                                    number_of_interpolation_points)
-    
-    
-#    def align_1D(self, energy_range = (None,None), 
-#    reference_spectrum_coordinates = (0,0), max_energy_shift = None, 
-#    sync_SI = None, interpolate = True, interp_points = 5, progress_bar = True):
-#        ''' Align the SI by cross-correlation.
-#                
-#        Parameters
-#        ----------
-#        energy_range : tuple of floats (E1, E2)
-#            Restricts to the given range the area of the spectrum used for the 
-#            aligment.
-#        reference_spectrum_coordinates : tuple of int (x_coordinate, y_coordinate)
-#            The coordianates of the spectrum that will be taken as a reference
-#            to align them all
-#        max_energy_shift : float
-#            The maximum energy shift permitted
-#        sync_SI: Spectrum instance
-#            Another spectrum instance to align with the same calculated energy 
-#            shift
-#        interpolate : bool
-#        interp_points : int
-#            Number of interpolation points. Warning: making this number too big 
-#            can saturate the memory   
-#        '''
-#        
-#        ip = interp_points + 1
-#        data = self.data_cube
-#        channel_1 = self.energy2index(energy_range[0])
-#        channel_2 = self.energy2index(energy_range[1])
-#        ch, size_x, size_y = data.shape
-#        channels , size_x, size_y = data.shape
-#        channels = channel_2 - channel_1
-#        shift_map = np.zeros((size_x, size_y))
-#        ref_ix, ref_iy = reference_spectrum_coordinates
-#        if channel_1 is not None:
-#            channel_1 *= ip
-#        if channel_2 is not None:
-#            channel_2 = np.clip(np.array(channel_2 * ip),a_min = 0, 
-#            a_max = ch*ip-2)
-#        if interpolate:
-#            ref = self._interpolate_spectrum(ip, 
-#            (ref_ix, ref_iy))[channel_1:channel_2]
-#        else:
-#            ref = data[channel_1:channel_2, ref_ix, ref_iy]
-#        print "Calculating the shift"
-#        
-#        if progress_bar is True:
-#            from progressbar import progressbar
-#            maxval = max(1,size_x) * max(1,size_y)
-#            pbar = progressbar(maxval = maxval)
-#        for iy in range(size_y):
-#            for ix in range(size_x):
-#                if progress_bar is True:
-#                    i = (ix + 1)*(iy+1)
-#                    pbar.update(i)
-#                if interpolate:
-#                    dc = self._interpolate_spectrum(ip, (ix, iy))
-#                shift_map[ix,iy] = np.argmax(np.correlate(ref, 
-#                dc[channel_1:channel_2],'full')) - channels + 1
-#        if progress_bar is True:
-#            pbar.finish()
-#        if np.min(shift_map) < 0:
-#            shift_map -= np.min(shift_map)
-#        if max_energy_shift:
-#            max_index = self.energy2index(max_energy_shift)
-#            if interpolate:
-#                max_index *= ip
-#            shift_map.clip(a_max = max_index)
-#            
-#        def apply_correction(spectrum):
-#            data = spectrum.data_cube
-#            print "Applying the correction"
-#            if progress_bar is True:
-#                maxval = max(1,size_x) * max(1,size_y)
-#                pbar = progressbar(maxval = maxval)
-#            for iy in range(size_y):
-#                for ix in range(size_x):
-#                    if progress_bar is True:
-#                        i = (ix + 1)*(iy+1)
-#                        pbar.update(i)
-#
-#                    if interpolate:
-#                        sp = spectrum._interpolate_spectrum(ip, (ix, iy))
-#                        data[:,ix,iy] = np.roll(sp, 
-#                        int(shift_map[ix,iy]), axis = 0)[::ip]
-#                        spectrum.updateenergy_axis()
-#                    else:
-#                        data[:,ix,iy] = np.roll(data[:,ix,iy], 
-#                        int(shift_map[ix,iy]), axis = 0)
-#            if progress_bar is True:
-#                pbar.finish()
-#            spectrum.__new_cube(data, 'alignment by cross-correlation')
-#            if interpolate is True:
-#                spectrum.energy_crop(shift_map.max()/ip)
-#            else:
-#                spectrum.energy_crop(shift_map.max())
-#        apply_correction(self)
-#
-#        if sync_SI is not None:
-#            apply_correction(sync_SI)
-#
-#        return shift_map
+                                      
+    def align_1D(self, range_in_units = (None,None), axis = -1, 
+                 reference_indexes = None, max_shift = None, interpolate = True, 
+                 number_of_interpolation_points = 5, also_align = None):
+        '''Estimates the shifts in a given axis using cross-correlation and uses
+         the estimation to align the data over that axis.
+        
+        This method can only estimate the shift by comparing unidimensional 
+        features that should not change the position in the given axis. To 
+        decrease the memory usage, the time of computation and the accuracy of 
+        the results it is convenient to select the feature of interest setting 
+        the irange keyword.
+        
+        By default interpolation is used to obtain subpixel precision.
+        
+        It is possible to align several signals using the shift map estimated 
+        for this signal using the also_align keyword.
+        
+        Parameters
+        ----------
+        axis : int
+            The axis in which the analysis will be performed.
+        range_in_units : tuple of floats (f1, f2)
+             Define the range of the feature of interest in the units of the 
+             selected axis. If f1 or f2 are None, thee range will not be limited
+             in that side.
+        reference_indexes : tuple of ints or None
+            Defines the coordinates of the spectrum that will be used as a 
+            reference. If None the spectrum of 0 coordinates will be used.
+        max_shift : float
+
+        interpolate : bool
+        
+        number_of_interpolation_points : int
+            Number of interpolation points. Warning: making this number too big 
+            can saturate the memory
+            
+        also_align : list of signals
+            A list of Signal instances that has exactly the same dimensions 
+            as this one and that will be aligned using the shift map estimated 
+            using the this signal.
+            
+        Return
+        ------
+        An array with the result of the estimation. The shift will be 
+        
+        See also
+        --------
+        estimate_shift_in_units_1D, estimate_shift_in_index_1D
+        '''
+        
+        shift_array = self.estimate_shift_in_units_1D(axis = axis, 
+        range_in_units = range_in_units, reference_indexes = reference_indexes,  
+        max_shift = max_shift, interpolate = interpolate, 
+        number_of_interpolation_points = number_of_interpolation_points)
+        if also_align is None:
+            also_align = list()
+        also_align.append(self)
+        for signal in also_align:
+            signal.align_with_array_1D(shift_array = shift_array, axis = axis)
+        
+        
+
 #        
 #    def sum_every_n(self,n):
 #        '''Bin a line spectrum
