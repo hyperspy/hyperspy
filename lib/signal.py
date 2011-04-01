@@ -4,7 +4,7 @@ Created on Wed Oct 06 09:48:42 2010
 
 """
 import types
-
+import copy
 
 import numpy as np
 import scipy as sp
@@ -752,7 +752,11 @@ class Signal(t.HasTraits):
         s.sum(-1, True).plot()
 
         '''
+    def copy(self):
+        return(copy.copy(self))
         
+    def deepcopy(self):
+        return(copy.deepcopy(self))
 
 #    def sum_in_mask(self, mask):
 #        '''Returns the result of summing all the spectra in the mask.
