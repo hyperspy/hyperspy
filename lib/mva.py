@@ -678,7 +678,6 @@ class MVA():
             W = self.mva_results.v.T[bool_index, :]
             Q = np.linalg.inv(self.mva_results.w.T)
             recmatrix = np.dot(Q,W)
-        recmatrix = np.nan_to_num(recmatrix) # remove ugly NaN pixels
         shape = self.data_cube.shape[1], self.data_cube.shape[2]
         im_list = []
         for i in range(n):
