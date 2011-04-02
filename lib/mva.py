@@ -752,9 +752,13 @@ class MVA():
             s.save('%s-%i.%s' % (spectrum_prefix, i, spectrum_format))
             im_list[i].save('%s-%i.%s' % (image_prefix, i, image_format))
         
-    def save_independent_components(self, elements = None, 
-    spectrum_format = 'msa', image_format = 'tif', recmatrix = None, ic = None):
-        '''Saves the result of the ICA in image and spectrum format
+    def save_independent_components(self, elements=None, 
+                                    spectrum_format='msa',
+                                    image_format='tif',
+                                    recmatrix=None, ic=None):
+        """Saves the result of the ICA in image and spectrum format.
+        Note that to save the image, the NaNs in the map will be converted
+        to zeros.
         
         Parameters
         ----------
@@ -767,10 +771,12 @@ class MVA():
             externally supplied recmatrix
         ic : None or numpy array 
             externally supplied IC
-        '''
+        """
         from spectrum import Spectrum
-        pl = self.plot_independent_components_maps(plot = False, 
-        recmatrix = recmatrix, ic = ic)
+        pl = self.plot_independent_components_maps(plot=False, 
+                                                   recmatrix=recmatrix,
+                                                   ic=ic,
+                                                   no_nans=True)
         if ic is None:
             ic = self.ic
         if self.data_cube.shape[2] > 1:
