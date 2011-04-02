@@ -638,9 +638,10 @@ class MVA():
         plt.show()
         return ax
         
-    def plot_independent_components_maps(self,cmap=plt.cm.gray, recmatrix = None, 
-    comp_list = None, with_ic = True, plot = True, ic = None):
-        '''Plot the map associated to each independent component
+    def plot_independent_components_maps(self, cmap=plt.cm.gray, recmatrix=None,
+                                         comp_list=None, with_ic=True,
+                                         plot=True, ic=None, no_nans=False):
+        """Plot the map associated to each independent component
         
         Parameters
         ----------
@@ -658,11 +659,13 @@ class MVA():
             images.
         ic : numpy array
             externally supplied independent components
-             
+        no_nans : bool (optional)
+             whether substituting NaNs with zeros for a visually prettier plot
+             (default is False)
         Returns
         -------
         List with the maps as Image instances
-        '''
+        """
         from spectrum import Spectrum
         if ic is None:
             ic = self.ic
@@ -678,6 +681,9 @@ class MVA():
             W = self.mva_results.v.T[bool_index, :]
             Q = np.linalg.inv(self.mva_results.w.T)
             recmatrix = np.dot(Q,W)
+            if no_nans:
+                print 'Removing NaNs for a visually prettier plot.'
+                recmatrix = np.nan_to_num(recmatrix) # remove ugly NaN pixels
         shape = self.data_cube.shape[1], self.data_cube.shape[2]
         im_list = []
         for i in range(n):
