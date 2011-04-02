@@ -21,11 +21,11 @@ import progressbar
 
 class Parameters(object):
     '''
-    A class to comfortable access some parameters as attributes'''
-    def __init__(self, dictionary):
-        self.load_from_dictionary(dictionary)
+    A class to comfortably access some parameters as attributes'''
+    def __init__(self, dictionary={}):
+        self.load_dictionary(dictionary)
         
-    def load_from_dictionary(self, dictionary):
+    def load_dictionary(self, dictionary):
         for key, value in dictionary.iteritems():
             self.__setattr__(key, value)
  
@@ -41,10 +41,6 @@ class Signal(t.HasTraits):
     axes_manager = t.Instance(AxesManager)
     original_parameters = t.Dict()
     mapped_parameters = t.Instance(Parameters)
-    name = t.Str('')
-    units = t.Str()
-    scale = t.Float(1)
-    offset = t.Float(0)
     physical_property = t.Str()
     
     def __init__(self, file_data_dict):
@@ -57,11 +53,12 @@ class Signal(t.HasTraits):
            see load_dictionary for the format
         '''    
         super(Signal, self).__init__()
+        self.mapped_parameters=Parameters()
         self.load_dictionary(file_data_dict)
         self._plot = None
         self._shape_before_unfolding = None
         
-    def load_dictionary(self, file_data_dict, mapped_parameters = Parameters):
+    def load_dictionary(self, file_data_dict):
         '''
         Parameters:
         -----------
@@ -78,10 +75,9 @@ class Signal(t.HasTraits):
                     For some subclasses some particular parameters might be 
                     mandatory.
                 original_parameters: a dictionary that will be accesible in the 
-                    extra_parameters attribute of the signal class and that 
-                    tipycally contains all the parameters that has been imported
+                    original_parameters attribute of the signal class and that 
+                    typically contains all the parameters that has been imported
                     from the original data file.
-        parameters : a Parameters class or subclass 
         '''
         self.data = file_data_dict['data']
         if not file_data_dict.has_key('axes'):
@@ -95,21 +91,27 @@ class Signal(t.HasTraits):
         if file_data_dict.has_key('attributes'):
             for key, value in file_data_dict['attributes'].iteritems():
                 self.__setattr__(key, value)
-        self.mapped_parameters = mapped_parameters(file_data_dict['mapped_parameters'])
+        self.mapped_parameters.load_dictionary(file_data_dict['mapped_parameters'])
         self.original_parameters = file_data_dict['original_parameters']
         
     def _get_undefined_axes_list(self):
         axes = []
         for i in range(len(self.data.shape)):
+            try:
+                scale=self.mapped_parameters.calibration['scale'][i]
+                units=self.mapped_parameters.calibration['units'][i]
+            except:
+                scale=1.
+                units='undefined'
             axes.append(
             {'name' : 'undefined',
-            'scale' : 1.,
-            'offset' : 0.,
-            'size' : int(self.data.shape[i]),
-            'units' : 'undefined',
-            'index_in_array' : i,})
+             'scale' : scale,
+             'offset' : 0.,
+             'size' : int(self.data.shape[i]),
+             'units' : units,
+             'index_in_array' : i,})
         return axes
-        
+                
     def __call__(self, axes_manager = None):
         if axes_manager is None:
             axes_manager = self.axes_manager
@@ -123,7 +125,6 @@ class Signal(t.HasTraits):
         else:
             return self.data.squeeze().T
             
-    
     def _get_hse_2D_explorer(self, *args, **kwargs):
         islice = self.axes_manager._slicing_axes[0].index_in_array
         data = self.data.sum(islice)
