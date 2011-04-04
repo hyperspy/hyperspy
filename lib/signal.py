@@ -20,8 +20,7 @@ import utils
 import progressbar
 
 class Parameters(object):
-    '''
-    A class to comfortably access some parameters as attributes'''
+    """A class to comfortably access some parameters as attributes"""
     def __init__(self, dictionary={}):
         self.load_dictionary(dictionary)
         
@@ -30,7 +29,7 @@ class Parameters(object):
             self.__setattr__(key, value)
  
     def print_items(self):
-        '''Prints only the attributes that are not methods'''
+        """Prints only the attributes that are not methods"""
         for item in self.__dict__.items():
             if type(item) != types.MethodType:
                 print("%s = %s") % item
@@ -44,14 +43,14 @@ class Signal(t.HasTraits):
     physical_property = t.Str()
     
     def __init__(self, file_data_dict):
-        '''All data interaction is made through this class or its subclasses
+        """All data interaction is made through this class or its subclasses
             
         
         Parameters:
         -----------
         dictionary : dictionary
            see load_dictionary for the format
-        '''    
+        """    
         super(Signal, self).__init__()
         self.mapped_parameters=Parameters()
         self.load_dictionary(file_data_dict)
@@ -59,8 +58,7 @@ class Signal(t.HasTraits):
         self._shape_before_unfolding = None
         
     def load_dictionary(self, file_data_dict):
-        '''
-        Parameters:
+        """Parameters:
         -----------
         file_data_dict : dictionary
             A dictionary containing at least a 'data' keyword with an array of 
@@ -78,8 +76,9 @@ class Signal(t.HasTraits):
                     original_parameters attribute of the signal class and that 
                     typically contains all the parameters that has been imported
                     from the original data file.
-        '''
+        """
         self.data = file_data_dict['data']
+        self.mapped_parameters.load_dictionary(file_data_dict['mapped_parameters'])
         if not file_data_dict.has_key('axes'):
             file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(
@@ -91,24 +90,17 @@ class Signal(t.HasTraits):
         if file_data_dict.has_key('attributes'):
             for key, value in file_data_dict['attributes'].iteritems():
                 self.__setattr__(key, value)
-        self.mapped_parameters.load_dictionary(file_data_dict['mapped_parameters'])
         self.original_parameters = file_data_dict['original_parameters']
         
     def _get_undefined_axes_list(self):
         axes = []
         for i in range(len(self.data.shape)):
-            try:
-                scale=self.mapped_parameters.calibration['scale'][i]
-                units=self.mapped_parameters.calibration['units'][i]
-            except:
-                scale=1.
-                units='undefined'
             axes.append(
             {'name' : 'undefined',
-             'scale' : scale,
+             'scale' : 1.,
              'offset' : 0.,
              'size' : int(self.data.shape[i]),
-             'units' : units,
+             'units' : 'undefined',
              'index_in_array' : i,})
         return axes
                 
@@ -206,7 +198,7 @@ class Signal(t.HasTraits):
         tui.Item('scale'),)
     
     def save(self, filename, **kwds):
-        '''Saves the signal in the specified format.
+        """Saves the signal in the specified format.
         
         The function gets the format from the extension. You can use:
             - hdf5 for HDF5
@@ -221,7 +213,7 @@ class Signal(t.HasTraits):
             'Y' will produce a file without the energy axis. 'XY' will also 
             save another column with the energy axis. For compatibility with 
             Gatan Digital Micrograph 'Y' is the default.
-        '''
+        """
         file_io.save(filename, self, **kwds)
         
     def _replot(self):
@@ -230,10 +222,10 @@ class Signal(t.HasTraits):
                 self.plot()
                 
     def get_dimensions_from_data(self):
-        '''Get the dimension parameters from the data_cube. Useful when the 
+        """Get the dimension parameters from the data_cube. Useful when the 
         data_cube was externally modified, or when the SI was not loaded from
         a file
-        '''
+        """
         dc = self.data
         for axis in self.axes_manager.axes:
             axis.size = int(dc.shape[axis.index_in_array])
@@ -244,7 +236,7 @@ class Signal(t.HasTraits):
     # Transform ________________________________________________________________
         
     def crop_in_pixels(self, axis, i1 = None, i2 = None):
-        '''Crops the data in a given axis. The range is given in pixels
+        """Crops the data in a given axis. The range is given in pixels
         axis : int
         i1 : int
             Start index
@@ -254,7 +246,7 @@ class Signal(t.HasTraits):
         See also:
         ---------
         crop_in_units
-        '''
+        """
         axis = self._get_positive_axis_index_index(axis)
         if i1 is not None:
             new_offset = self.axes_manager.axes[axis].axis[i1]
@@ -267,7 +259,7 @@ class Signal(t.HasTraits):
         self.get_dimensions_from_data()      
         
     def crop_in_units(self, axis, x1 = None, x2 = None):
-        '''Crops the data in a given axis. The range is given in the units of 
+        """Crops the data in a given axis. The range is given in the units of 
         the axis
          
         axis : int
@@ -280,13 +272,13 @@ class Signal(t.HasTraits):
         ---------
         crop_in_pixels
         
-        '''
+        """
         i1 = self.axes_manager.axes[axis].value2index(x1)
         i2 = self.axes_manager.axes[axis].value2index(x2)
         self.crop_in_pixels(axis, i1, i2)
         
     def roll_xy(self, n_x, n_y = 1):
-        '''Roll over the x axis n_x positions and n_y positions the former rows
+        """Roll over the x axis n_x positions and n_y positions the former rows
         
         This method has the purpose of "fixing" a bug in the acquisition of the
         Orsay's microscopes and probably it does not have general interest
@@ -298,20 +290,20 @@ class Signal(t.HasTraits):
         
         Note: Useful to correct the SI column storing bug in Marcel's 
         acquisition routines.
-        '''
+        """
         self.data = np.roll(self.data, n_x, 0)
         self.data[:n_x,...] = np.roll(self.data[:n_x,...],n_y,1)
         self._replot()
 
     # TODO: After using this function the plotting does not work  
     def swap_axis(self, axis1, axis2):
-        '''Swaps the axes
+        """Swaps the axes
         
         Parameters
         ----------
         axis1 : positive int
         axis2 : positive int        
-        '''
+        """
         self.data = self.data.swapaxes(axis1,axis2)
         c1 = self.axes_manager.axes[axis1]
         c2 = self.axes_manager.axes[axis2]
@@ -323,14 +315,14 @@ class Signal(t.HasTraits):
         self._replot()
         
     def rebin(self, new_shape):
-        '''
+        """
         Rebins the data to the new shape
         
         Parameters
         ----------
         new_shape: tuple of ints
             The new shape must be a divisor of the original shape        
-        '''
+        """
         factors = np.array(self.data.shape) / np.array(new_shape)
         self.data = utils.rebin(self.data,new_shape)
         for axis in self.axes_manager.axes:
@@ -338,7 +330,7 @@ class Signal(t.HasTraits):
         self.get_dimensions_from_data()
              
     def split_in(self, axis, number_of_parts = None, steps = None):
-        '''Splits the data
+        """Splits the data
         
         The split can be defined either by the `number_of_parts` or by the 
         `steps` size.
@@ -355,7 +347,7 @@ class Signal(t.HasTraits):
         Return
         ------
         tuple with the splitted signals
-        '''
+        """
         axis = self._get_positive_axis_index_index(axis)
         if number_of_parts is None and steps is None:
             if not self._splitting_steps:
@@ -386,7 +378,7 @@ class Signal(t.HasTraits):
         return splitted
 
     def unfold(self, steady_axis = -1, unfolded_axis = -2):
-        '''Modify the shape of the data to obtain a 2D object
+        """Modify the shape of the data to obtain a 2D object
         
         Parameters
         ----------
@@ -399,7 +391,7 @@ class Signal(t.HasTraits):
         See also
         --------
         fold
-        '''
+        """
         
         # It doesn't make sense unfolding when dim < 3
         if len(self.data.squeeze().shape) < 3: return
@@ -430,7 +422,7 @@ class Signal(t.HasTraits):
         self._replot()            
             
     def fold(self):
-        '''If the SI was previously unfolded, folds it back'''
+        """If the SI was previously unfolded, folds it back"""
         if self._shape_before_unfolding is not None:
             self.data = self.data.reshape(self._shape_before_unfolding)
             self.axes_manager = self._axes_manager_before_unfolding
@@ -444,14 +436,14 @@ class Signal(t.HasTraits):
         return axis
 
     def correct_bad_pixels(self, indexes, axis = -1):
-        '''Substitutes the value of a given pixel by the average of the 
+        """Substitutes the value of a given pixel by the average of the 
         adjencent pixels
         
         Parameters
         ----------
         indexes : tuple of int
         axis : -1
-        '''
+        """
         axis = self._get_positive_axis_index_index(axis)
         data = self.data
         for pixel in indexes:
@@ -463,7 +455,7 @@ class Signal(t.HasTraits):
         
     def align_with_array_1D(self, shift_array, axis = -1, 
                             interpolation_method = 'linear'):
-        '''Shift each one dimensional object by the amount specify by a given 
+        """Shift each one dimensional object by the amount specify by a given 
         array
         
         Parameters
@@ -474,7 +466,7 @@ class Signal(t.HasTraits):
             Specifies the kind of interpolation as a string ('linear',
             'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an integer
             specifying the order of the spline interpolator to use.
-        '''
+        """
         
         axis = self._get_positive_axis_index_index(axis)
         coord = self.axes_manager.axes[axis]
@@ -540,7 +532,7 @@ class Signal(t.HasTraits):
                                    reference_indexes = None, max_shift = None, 
                                    interpolate = True, 
                                    number_of_interpolation_points = 5):
-        '''Estimate the shifts in a given axis using cross-correlation
+        """Estimate the shifts in a given axis using cross-correlation
         
         This method can only estimate the shift by comparing unidimensional 
         features that should not change the position in the given axis. To 
@@ -571,7 +563,7 @@ class Signal(t.HasTraits):
         Return
         ------
         An array with the result of the estimation
-        '''
+        """
         
         ip = number_of_interpolation_points + 1
         axis = self.axes_manager.axes[axis]
@@ -608,7 +600,7 @@ class Signal(t.HasTraits):
                                    axis = -1, reference_indexes = None, 
                                    max_shift = None, interpolate = True, 
                                    number_of_interpolation_points = 5):
-        '''Estimate the shifts in a given axis using cross-correlation. The 
+        """Estimate the shifts in a given axis using cross-correlation. The 
         values are given in the units of the selected axis.
         
         This method can only estimate the shift by comparing unidimensional 
@@ -645,7 +637,7 @@ class Signal(t.HasTraits):
         See also
         --------
         estimate_shift_in_index_1D, align_with_array_1D and align_1D
-        '''
+        """
         axis = self.axes_manager.axes[axis]
         i1 = axis.value2index(range_in_units[0])
         i2 = axis.value2index(range_in_units[1])
@@ -662,7 +654,7 @@ class Signal(t.HasTraits):
     def align_1D(self, range_in_units = (None,None), axis = -1, 
                  reference_indexes = None, max_shift = None, interpolate = True, 
                  number_of_interpolation_points = 5, also_align = None):
-        '''Estimates the shifts in a given axis using cross-correlation and uses
+        """Estimates the shifts in a given axis using cross-correlation and uses
          the estimation to align the data over that axis.
         
         This method can only estimate the shift by comparing unidimensional 
@@ -707,7 +699,7 @@ class Signal(t.HasTraits):
         See also
         --------
         estimate_shift_in_units_1D, estimate_shift_in_index_1D
-        '''
+        """
         
         shift_array = self.estimate_shift_in_units_1D(axis = axis, 
         range_in_units = range_in_units, reference_indexes = reference_indexes,  
@@ -720,7 +712,7 @@ class Signal(t.HasTraits):
             signal.align_with_array_1D(shift_array = shift_array, axis = axis)
         
     def sum(self, axis, return_signal = False):
-        '''Sum the data over the specify axis
+        """Sum the data over the specify axis
         
         Parameters
         ----------
@@ -751,7 +743,7 @@ class Signal(t.HasTraits):
         (64,64)
         # If we just want to plot the result of the operation
         s.sum(-1, True).plot()
-        '''
+        """
         if return_signal is True:
             s = self.deepcopy()
         else:
@@ -766,7 +758,7 @@ class Signal(t.HasTraits):
             return s
             
     def mean(self, axis, return_signal = False):
-        '''Average the data over the specify axis
+        """Average the data over the specify axis
         
         Parameters
         ----------
@@ -797,7 +789,7 @@ class Signal(t.HasTraits):
         (64,64)
         # If we just want to plot the result of the operation
         s.mean(-1, True).plot()
-        '''
+        """
         if return_signal is True:
             s = self.deepcopy()
         else:
@@ -819,8 +811,7 @@ class Signal(t.HasTraits):
 
     def peakfind_1D(self, xdim=None,slope_thresh=0.5, amp_thresh=None, subchannel=True, 
                     medfilt_radius=5, maxpeakn=30000, peakgroup=10):
-        """
-        Find peaks along a 1D line (peaks in spectrum/spectra).
+        """Find peaks along a 1D line (peaks in spectrum/spectra).
 
         Function to locate the positive peaks in a noisy x-y data set.
     
@@ -910,8 +901,7 @@ class Signal(t.HasTraits):
 
     def peakfind_2D(self, subpixel=False, peak_width=10, medfilt_radius=5,
                         maxpeakn=30000):
-            """
-            Find peaks in a 2D array (peaks in an image).
+            """Find peaks in a 2D array (peaks in an image).
 
             Function to locate the positive peaks in a noisy x-y data set.
     
@@ -936,8 +926,7 @@ class Signal(t.HasTraits):
 
             maxpeakn : int (optional)
                     number of maximum detectable peaks
-                    default is set to 30000
-                            
+                    default is set to 30000             
             """
             from peak_char import two_dim_findpeaks
             if len(self.data.shape)==2:
@@ -970,7 +959,7 @@ class Signal(t.HasTraits):
                 self.peaks=self.peaks[:trim_id,:,:,:]
 
 #    def sum_in_mask(self, mask):
-#        '''Returns the result of summing all the spectra in the mask.
+#        """Returns the result of summing all the spectra in the mask.
 #        
 #        Parameters
 #        ----------
@@ -979,7 +968,7 @@ class Signal(t.HasTraits):
 #        Returns
 #        -------
 #        Spectrum
-#        '''
+#        """
 #        dc = self.data_cube.copy()
 #        mask3D = mask.reshape([1,] + list(mask.shape)) * np.ones(dc.shape)
 #        dc = (mask3D*dc).sum(1).sum(1) / mask.sum()
@@ -990,12 +979,12 @@ class Signal(t.HasTraits):
 #        return s
 #
 #    def mean(self, axis):
-#        '''Average the SI over the given axis
+#        """Average the SI over the given axis
 #        
 #        Parameters
 #        ----------
 #        axis : int
-#        '''
+#        """
 #        dc = self.data_cube
 #        dc = dc.mean(axis)
 #        dc = dc.reshape(list(dc.shape) + [1,])
@@ -1003,28 +992,28 @@ class Signal(t.HasTraits):
 #        self.get_dimensions_from_cube()
 #        
 #    def roll(self, axis = 2, shift = 1):
-#        '''Roll the SI. see numpy.roll
+#        """Roll the SI. see numpy.roll
 #        
 #        Parameters
 #        ----------
 #        axis : int
 #        shift : int
-#        '''
+#        """
 #        self.data_cube = np.roll(self.data_cube, shift, axis)
 #        self._replot()
 #        
 
 #        
 #    def get_calibration_from(self, s):
-#        '''Copy the calibration from another Spectrum instance
+#        """Copy the calibration from another Spectrum instance
 #        Parameters
 #        ----------
 #        s : spectrum instance
-#        '''
+#        """
 #        utils.copy_energy_calibration(s, self)
 #    
 #    def estimate_variance(self, dc = None, gaussian_noise_var = None):
-#        '''Variance estimation supposing Poissonian noise
+#        """Variance estimation supposing Poissonian noise
 #        
 #        Parameters
 #        ----------
@@ -1034,7 +1023,7 @@ class Signal(t.HasTraits):
 #        Note
 #        ----
 #        The gain_factor and gain_offset from the aquisition parameters are used
-#        '''
+#        """
 #        print "Variace estimation using the following values:"
 #        print "Gain factor = ", self.acquisition_parameters.gain_factor
 #        print "Gain offset = ", self.acquisition_parameters.gain_offset
@@ -1081,7 +1070,7 @@ class Signal(t.HasTraits):
 #        return s
 #        
 #    def sum_every_n(self,n):
-#        '''Bin a line spectrum
+#        """Bin a line spectrum
 #        
 #        Parameters
 #        ----------
@@ -1095,7 +1084,7 @@ class Signal(t.HasTraits):
 #        See also
 #        --------
 #        sum_every
-#        '''
+#        """
 #        dc = self.data_cube
 #        if dc.shape[1] % n != 0:
 #            messages.warning_exit(
@@ -1106,7 +1095,7 @@ class Signal(t.HasTraits):
 #        return self.sum_every(size_list)
 #    
 #    def sum_every(self,size_list):
-#        '''Sum a line spectrum intervals given in a list and return the 
+#        """Sum a line spectrum intervals given in a list and return the 
 #        resulting SI
 #        
 #        Parameters
@@ -1121,7 +1110,7 @@ class Signal(t.HasTraits):
 #        See also
 #        --------
 #        sum_every_n
-#        '''
+#        """
 #        dc = self.data_cube
 #        dc_shape = self.data_cube.shape
 #        if np.sum(size_list) != dc.shape[1]:
@@ -1165,7 +1154,7 @@ class Signal(t.HasTraits):
 #    history = property(_get_history,_set_treatment)
 #    
 #    def print_history(self):
-#        '''Prints the history of the SI to the stdout'''
+#        """Prints the history of the SI to the stdout"""
 #        i = 0
 #        print
 #        print "Cube\tHistory"
