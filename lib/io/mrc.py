@@ -160,10 +160,10 @@ def file_reader(filename, endianess = '<', **kwds):
         'fei_header' : fei_header,
         }
     #create the axis objects for each axis
-    axes=[DataAxis(data.shape[i],index_in_array=i,name=names[i],scale=scales[i],
-                   offset=0, units=units_list[i],slice_bool=) for i in xrange(3)]
+    axes=[{'size':data.shape[i],'index_in_array':i,'name':names[i],'scale':scales[i],
+                   'offset':0, 'units':units_list[i]} for i in xrange(3)]
     # define the third axis as the slicing axis.
-    axes[2].slice_bool=True
+    axes[2]['slice_bool']=True
     dictionary = {'data_type' : 'Image', 
                   'data':data,
                   'axes':axes,
