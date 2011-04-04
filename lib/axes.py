@@ -36,7 +36,7 @@ class BoundedIndex(t.Int):
         
 
 def generate_axis(offset, scale, size, offset_index=0):
-    '''Creates an axis given the offset, scale and number of channels
+    """Creates an axis given the offset, scale and number of channels
     
     Alternatively, the offset_index of the offset channel can be specified.
     
@@ -51,7 +51,7 @@ def generate_axis(offset, scale, size, offset_index=0):
     Returns
     -------
     Numpy array
-    '''
+    """
     return np.linspace(offset - offset_index * scale, 
                        offset + scale * (size - 1 - offset_index),
                        size)  
@@ -74,8 +74,8 @@ class DataAxis(t.HasTraits):
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
     
-    def __init__(self, name, scale, offset, size, units, index_in_array, 
-                 slice_bool = False):
+    def __init__(self, size, index_in_array, name='', scale=1., offset=0., 
+                 units='undefined', slice_bool = False):
         super(DataAxis, self).__init__()
         
         self.name = name
@@ -131,8 +131,7 @@ class DataAxis(t.HasTraits):
         self.value = self.axis[self.index]
         
     def value2index(self, value):
-        '''
-        Return the closest index to the given value if between the limits,
+        """Return the closest index to the given value if between the limits,
         otherwise it will return either the upper or lower limits
         
         Parameters
@@ -142,7 +141,7 @@ class DataAxis(t.HasTraits):
         Returns
         -------
         int
-        '''
+        """
         if value is None:
             return None
         else:
@@ -233,9 +232,7 @@ class AxesManager(t.HasTraits):
         self.navigation_dim = len(self._non_slicing_axes)
         
     def set_view(self, view = 'hyperspectrum'):
-        '''
-        view : 'hyperspectrum' or 'image'
-        '''
+        """view : 'hyperspectrum' or 'image' """
         if view == 'hyperspectrum':
             # We limit the output_dim to 1 to get a spectrum
             i = 0
