@@ -21,6 +21,7 @@
 # The details of the format were taken from http://www.biochem.mpg.de/tom
 
 import numpy as np
+from silib.axes import DataAxis
 
 # Plugin characteristics
 # ----------------------
@@ -131,15 +132,17 @@ def file_reader(filename, endianess = '<', **kwds):
     f = open(filename, 'rb')
     std_header = np.fromfile(f, dtype = get_std_dtype_list(endianess), 
     count = 1)
+    
+    scales=np.ones(3)
+    units_list=np.array(['undefined']*3)
+    names=['x','y','z']
 
     if std_header['NEXT'] / 1024 == 128:
         print "It seems to contain an extended FEI header"
         fei_header = np.fromfile(f, dtype = get_fei_dtype_list(endianess), 
                                  count = 1024)
-        mapped_parameters['calibration']={
-            'scale':[fei_header['pixel_size'],fei_header['pixel_size']],
-            'units':['m','m'],
-            }
+        scale[0:2]=fei_header['pixel_size']
+        units_list[0:2]='m'
     NX, NY, NZ = std_header['NX'], std_header['NY'], std_header['NZ']
     if f.tell() == 1024 + std_header['NEXT']:
         print "The FEI header was correctly loaded"
@@ -149,14 +152,21 @@ def file_reader(filename, endianess = '<', **kwds):
         
     data = np.memmap(f, mode = 'c', offset = f.tell(), 
                      dtype = get_data_type(std_header['MODE'], endianess)).squeeze().reshape(
-                     (NX, NY, NZ), order = 'F')
+        (NX, NY, NZ), order = 'F')
+    
+                     
     original_parameters = {
         'std_header' : std_header, 
         'fei_header' : fei_header,
         }
-    
+    #create the axis objects for each axis
+    axes=[DataAxis(data.shape[i],index_in_array=i,name=names[i],scale=scales[i],
+                   offset=0, units=units_list[i],slice_bool=) for i in xrange(3)]
+    # define the third axis as the slicing axis.
+    axes[2].slice_bool=True
     dictionary = {'data_type' : 'Image', 
                   'data':data,
+                  'axes':axes,
                   'mapped_parameters' : mapped_parameters,
                   'original_parameters' : original_parameters,
                   }
