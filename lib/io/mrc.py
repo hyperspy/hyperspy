@@ -131,7 +131,7 @@ def file_reader(filename, endianess = '<', **kwds):
     f = open(filename, 'rb')
     std_header = np.fromfile(f, dtype = get_std_dtype_list(endianess), 
     count = 1)
-    
+    fei_header = None
     if std_header['NEXT'] / 1024 == 128:
         print "It seems to contain an extended FEI header"
         fei_header = np.fromfile(f, dtype = get_fei_dtype_list(endianess), 
