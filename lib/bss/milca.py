@@ -24,7 +24,7 @@ from StringIO import StringIO
 
 def milca(x,kneig=12,algo=2,harm=1,finetune=7):
 
-    '''Mutual Information based Least Dependent Component Analysis
+    """Mutual Information based Least Dependent Component Analysis
     References:
     H. Stogbauer, A. Kraskov, S. A. Astakhov, P.Grassberger, 
     Phys. Rev. E 70 (6)  066123, 2004
@@ -44,7 +44,7 @@ def milca(x,kneig=12,algo=2,harm=1,finetune=7):
     most independent components under linear transformation and the 
     transformation matrix x
     
-    '''
+    """
 
     N, M = x.shape
     Nb = 2 ** finetune

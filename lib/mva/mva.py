@@ -56,9 +56,9 @@ def compile_kica():
     os.system('octave %s %s' % (kica_compile, kica_path))
 
 def perform_kica(pc):
-    '''Wrapper for kernel independent components analysis that runs in octave 
+    """Wrapper for kernel independent components analysis that runs in octave 
     (octave is required).
-    '''
+    """
     import subprocess
     # Until I get pytave working, a temporary file is necessary to interact 
     # with octave
@@ -104,9 +104,9 @@ def perform_kica(pc):
     
         
 class MVA():
-    '''
+    """
     Multivariate analysis capabilities for the Spectrum class.
-    '''
+    """
     def __init__(self):
         self.mva_results = MVA_Results()
     
@@ -114,7 +114,7 @@ class MVA():
     algorithm = 'svd', output_dim = None, spatial_mask = None, 
     energy_mask = None, center = False, variance2one = False, var_array = None, 
     var_func = None, polyfit = None):
-        '''Principal components analysis.
+        """Principal components analysis.
         
         The results are stored in self.mva_results
         
@@ -143,16 +143,16 @@ class MVA():
         See also
         --------
         plot_principal_components, plot_principal_components_maps, plot_lev
-        '''
+        """
         
         # Check for conflicting options and correct them when possible   
         if (algorithm == 'mdp' or algorithm == 'NIPALS') and center is False:
             print \
-            '''
+            """
             The PCA algorithms from the MDP toolking (mdp and NIPALS) 
             do not permit desactivating data centering.
             Therefore, the algorithm will proceed to center the data.
-            '''
+            """
             center = True
         if algorithm == 'mlpca':
             if normalize_poissonian_noise is True:
@@ -311,7 +311,7 @@ class MVA():
     def independent_components_analysis(self, number_of_components = None, 
     algorithm = 'CuBICA', diff_order = 1, pc = None, 
     comp_list = None, mask = None, **kwds):
-        '''Independent components analysis.
+        """Independent components analysis.
         
         Available algorithms: FastICA, JADE, CuBICA, TDSEP, kica, MILCA
         
@@ -330,7 +330,7 @@ class MVA():
         mask : numpy boolean array with the same dimension as the PC
             If not None, only the selected channels will be used by the 
             algorithm.
-        '''
+        """
         if hasattr(self.mva_results, 'pc'):
             if pc is None:
                 pc = self.mva_results.pc
@@ -405,7 +405,7 @@ class MVA():
                 self.reverse_ic(i)
         
     def pca_build_SI(self,number_of_components=None, comp_list = None):
-        '''Return the spectrum generated with the selected number of principal 
+        """Return the spectrum generated with the selected number of principal 
         components
         
         Parameters
@@ -418,7 +418,7 @@ class MVA():
         Returns
         -------
         Spectrum instance
-        '''
+        """
         bool_index = np.zeros((self.mva_results.pc.shape[0]), dtype = 'bool')
         if number_of_components is not None:
             bool_index[:number_of_components] = True
@@ -457,7 +457,7 @@ class MVA():
         return recmatrix
         
     def ica_build_SI(self,number_of_components = None, ic2zero = None):
-        '''Return the spectrum generated with the selected number of 
+        """Return the spectrum generated with the selected number of 
         independent components
         
         Parameters
@@ -471,7 +471,7 @@ class MVA():
         Returns
         -------
         Spectrum instance
-        '''
+        """
         recmatrix = self._calculate_recmatrix()
         n = number_of_components
         if not n:
@@ -492,7 +492,7 @@ class MVA():
         return rebuilded_spectrum
         
     def energy_center(self):
-        '''Substract the mean energy pixel by pixel'''
+        """Substract the mean energy pixel by pixel"""
         print "\nCentering the energy axis"
         self._centering_mean = np.mean(self.data_cube, 0)
         data = (self.data_cube - self._energy_mean)
@@ -520,13 +520,13 @@ class MVA():
             self._replot()
         
     def plot_principal_components(self, n = None):
-        '''Plot the principal components up to the given number
+        """Plot the principal components up to the given number
         
         Parameters
         ----------
         n : int
             number of principal components to plot.
-        '''
+        """
         if n is None:
             n = self.mva_results.pc.shape[1]
         for i in range(n):
@@ -536,7 +536,7 @@ class MVA():
             plt.xlabel('Energy (eV)')
             
     def plot_principal_components_maps(self, n, cmap=plt.cm.gray, plot = True):
-        '''Plot the map associated to the principal components up to the given 
+        """Plot the map associated to the principal components up to the given 
         number
         
         Parameters
@@ -550,7 +550,7 @@ class MVA():
         Returns
         -------
         List with the maps as Image instances
-        '''
+        """
         from spectrum import Spectrum
         recmatrix = self.mva_results.v.T[:n, :]
 #        if 'unfolded' in self.history:
@@ -632,12 +632,12 @@ class MVA():
             plt.show()
     
     def plot_lev(self, n=50):
-        '''Plot the principal components LEV up to the given number
+        """Plot the principal components LEV up to the given number
         
         Parameters
         ----------
         n : int
-        '''        
+        """        
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.plot(range(n), self.mva_results.V[:n], 'o')
@@ -649,13 +649,13 @@ class MVA():
         return ax
         
     def plot_explained_variance(self,n=50):
-        '''Plot the principal components explained variance up to the given 
+        """Plot the principal components explained variance up to the given 
         number
         
         Parameters
         ----------
         n : int
-        ''' 
+        """ 
         cumu = np.cumsum(self.mva_results.V) / np.sum(self.mva_results.V)
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -755,7 +755,7 @@ class MVA():
     
     def save_principal_components(self, n, spectrum_prefix = 'pc', 
     image_prefix = 'im', spectrum_format = 'msa', image_format = 'tif'):
-        '''Save the `n` first principal components  and score maps 
+        """Save the `n` first principal components  and score maps 
         in the specified format
         
         Parameters
@@ -769,7 +769,7 @@ class MVA():
         spectrum_format : string
         image_format : string
                  
-        '''
+        """
         from spectrum import Spectrum
         im_list = self.plot_principal_components_maps(n, plot = False)
         s = Spectrum({'calibration' : {'data_cube' : self.mva_results.pc[:,0]}})
@@ -831,7 +831,7 @@ class MVA():
                     pl[i].save('profile_ic-%s.%s' % (element, spectrum_format))
                     
     def snica(self, coordinates = None):
-        '''Stochastic Non-negative Independent Component Analysis.
+        """Stochastic Non-negative Independent Component Analysis.
         
         Is intended to be used with a denoised SI, i.e. by PCA. The method will 
         store the demixed components to self.ic
@@ -846,7 +846,7 @@ class MVA():
         -------
         A 2 rows array. First row are the demixed components in the format 
         (channels, components) and the second row is the mixing matrix.
-        '''
+        """
         if coordinates is None:
             fold_back = utils.unfold_if_2D(self)
             ic = self.data_cube.squeeze()
@@ -861,7 +861,7 @@ class MVA():
         return snica
     
     def als(self, **kwargs):
-        '''Alternate Least Squares imposing positivity constraints 
+        """Alternate Least Squares imposing positivity constraints 
         to the result of a previous ICA
         
         Stores in result in self.als_out
@@ -878,7 +878,7 @@ class MVA():
         See also
         -------
         plot_als_ic_maps, plot_als_ic
-        '''
+        """
         shape = (self.data_cube.shape[2], self.data_cube.shape[1],-1)
         if hasattr(self, 'ic') and (self.ic is not None):
             also = utils.ALS(self, **kwargs)
@@ -887,23 +887,23 @@ class MVA():
             self.als_output = also
             
     def plot_als_ic_maps(self):
-        '''Same as plot_ic_maps for the ALS results'''
+        """Same as plot_ic_maps for the ALS results"""
         return self.plot_independent_components_maps(recmatrix = 
         self.als_output['CList'].T, ic = self.als_ic)
     
     def plot_als_ic(self):
-        '''Same as plot_independent_componets for the ALS results'''
+        """Same as plot_independent_componets for the ALS results"""
         self.plot_independent_components(ic = self.als_ic)
         
     def save_als_ica_results(self, elements = None, 
     format = defaults.file_format, image_format = 'tif'):
-        '''Same as save_ica_results for the ALS results'''
+        """Same as save_ica_results for the ALS results"""
         self.save_ica_results(elements = elements, image_format = image_format, 
         recmatrix = self.als_output['CList'].T, ic = self.als_ic)
                 
     def normalize_poissonian_noise(self, spatial_mask = None, 
     energy_mask = None, return_masks = False):
-        '''
+        """
         Scales the SI following Surf. Interface Anal. 2004; 36: 203–212 to
         "normalize" the poissonian data for PCA analysis
         
@@ -911,7 +911,7 @@ class MVA():
         ----------
         spatial_mask : boolen numpy array
         energy_mask  : boolen numpy array
-        '''
+        """
         refold = unfold_if_2D(self)
         dc = self.data_cube.squeeze()
         spatial_mask = \
@@ -970,7 +970,7 @@ class MVA():
         
     def undo_normalize_poissonian_noise(self, spatial_mask = None, 
     energy_mask = None):
-        '''Undo normalize_poissonian_noise'''
+        """Undo normalize_poissonian_noise"""
         print "Undoing the noise normalization"
         refold = unfold_if_2D(self)
         dc = self.data_cube.squeeze()
@@ -1009,12 +1009,12 @@ class MVA_Results():
         
     
     def save(self, filename):
-        '''Save the result of the PCA analysis
+        """Save the result of the PCA analysis
         
         Parameters
         ----------
         filename : string
-        '''
+        """
         np.savez(filename, pc = self.pc, v = self.v, V = self.V, 
         pca_algorithm = self.pca_algorithm, centered = self.centered, 
         output_dim = self.output_dim, variance2one = self.variance2one, 
@@ -1022,12 +1022,12 @@ class MVA_Results():
         w = self.w, ica_algorithm = self.ica_algorithm)
 
     def load(self, filename):
-        '''Load the result of the PCA analysis
+        """Load the result of the PCA analysis
         
         Parameters
         ----------
         filename : string
-        '''
+        """
         pca = np.load(filename)
         for key in pca.files:
             exec('self.%s = pca[\'%s\']' % (key, key))
@@ -1050,8 +1050,8 @@ class MVA_Results():
         self.summary()
         
     def summary(self):
-        '''Prints a summary of the PCA parameters to the stdout
-        '''
+        """Prints a summary of the PCA parameters to the stdout
+        """
         print
         print "MVA Summary:"
         print "------------"
@@ -1065,9 +1065,9 @@ class MVA_Results():
         print "ICA algorithm : %s" % self.ica_algorithm
         
     def crop_v(self, n):
-        '''
+        """
         Crop the score matrix up to the given number.
         
         It is mainly useful to save memory and redude the storage size
-        '''
+        """
         self.v = self.v[:,:n].copy()

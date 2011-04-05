@@ -42,7 +42,7 @@ platforms = ['Linux','Mac OSX','Windows XP/2000/NT','Windows 95/98/ME']
 keywords = ['eelslab', 'electron', 'energy loss', 'spectroscopy', 'python',
  'numpy', 'scipy', 'electron microscopy', 'tem', 'stem', 'quantification']
 
-info = u'''
+info = u"""
     E E L S L a b
     Version %s
     
@@ -51,4 +51,4 @@ info = u'''
     
     http://www.eelslab.org
     
-    ''' % version
+    """ % version

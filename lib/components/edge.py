@@ -48,12 +48,12 @@ gamma = 1.0 + (e * microscope.E0) / (m0 * pow(c,2.0)) #dimensionless
 T = microscope.E0 * (1.0 + gamma) / (2.0 * pow(gamma, 2.0)) #in eV
 
 class Edge(Component):
-    ''' This class builds a single cross section edge.
+    """ This class builds a single cross section edge.
     Currently it only supports cross sections from Gatan Digital Micrograph(c)
     P. Rez calculations, although hydrogenic cross sections will be available.
     To model the fine structure with a small number of parameters a spline
     is used to fit to the experimental data. 
-    '''
+    """
 
     def __init__(self, element_subshell, intensity=1.,delta=0.):
         # Check if the Peter Rez's Hartree Slater GOS distributed by Gatan 
@@ -267,7 +267,7 @@ class Edge(Component):
         [stop]*4]
         
     def function(self,E) :
-        ''' Calculates the number of counts in barns'''
+        """ Calculates the number of counts in barns"""
         
         if self.delta.value != self.__previous_delta :
             self.__previous_delta = copy.copy(self.delta.value)
@@ -378,7 +378,7 @@ class Edge(Component):
 
     
     def grad_delta(self,E) :
-        ''' Calculates the number of counts in barns'''
+        """ Calculates the number of counts in barns"""
         
         if self.delta.value != self.__previous_delta :
             self.__previous_delta = copy.copy(self.delta.value)

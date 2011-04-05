@@ -63,7 +63,7 @@ class Microscope(object):
         self.name = microscope_name
     
     def __repr__(self):
-        info = '''
+        info = """
         Microscope parameters:
         -----------------------------
         
@@ -73,7 +73,7 @@ class Microscope(object):
         Beam energy: %1.2E eV
         pppc: %1.2f
         Correlation factor: %1.2f
-        ''' % (self.name, self.alpha, self.beta, self.E0, 
+        """ % (self.name, self.alpha, self.beta, self.E0, 
         self.pppc, self.correlation_factor)
         return info
 

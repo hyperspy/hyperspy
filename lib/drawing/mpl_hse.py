@@ -26,8 +26,8 @@ from .. import coordinates
 import copy
 
 class MPL_HyperSpectrum_Explorer(object):
-    '''Plots the current spectrum to the screen and a map with a cursor to 
-    explore the SI.'''
+    """Plots the current spectrum to the screen and a map with a cursor to 
+    explore the SI."""
     
     def __init__(self):
         self.spectrum_data_function = None

@@ -20,13 +20,13 @@
 
 
 class Controls:
-    '''
-    '''
+    """
+    """
     def remove_fine_structure_data(self, edges_list = None):
-        '''
+        """
         Remove the fine structure data from the fitting routine as defined in 
         the fs_emax parameter of each edge
-        '''
+        """
         if edges_list is None:
             edges_list = self.edges
         for edge in edges_list :
@@ -36,21 +36,21 @@ class Controls:
                 self.remove_data_range(start,stop)
        
     def enable_edges(self,edges_list = None):
-        '''
+        """
         Enable the edges listed in edges_list. If edges_list is None (default)
         all the edges with onset in the spectrum energy region will be enabled.
-        '''
+        """
         if edges_list is None :
             edges_list = self.edges
         for edge in edges_list :
             if edge.isbackground is False:
                 edge.active = True
     def disable_edges(self,edges_list = None):
-        '''
+        """
         Disable the edges listed in edges_list. If edges_list is None (default)
         all the edges with onset in the spectrum energy region will be
         disabled.
-        '''
+        """
         if edges_list is None :
             edges_list = self.edges
         for edge in edges_list :
@@ -58,24 +58,24 @@ class Controls:
                 edge.active = False
 
     def enable_background(self):
-        '''
+        """
         Enable the background.
-        '''
+        """
         for component in self.__background_components:
             component.active = True
     def disable_background(self):
-        '''
+        """
         Disable the background.
-        '''
+        """
         for component in self.__background_components:
             component.active = False
 
     def enable_fine_structure(self,edges_list = None):
-        '''
+        """
         Enable the fine structure of the edges listed in edges_list.
         If edges_list is None (default) the fine structure of all the edges
         with onset in the spectrum energy region will be enabled.
-        '''
+        """
         if edges_list is None :
             edges_list = self.edges
         for edge in edges_list :
@@ -83,11 +83,11 @@ class Controls:
                 edge.fs_state = True
                 edge.fslist.free = True
     def disable_fine_structure(self,edges_list = None):
-        '''
+        """
         Disable the fine structure of the edges listed in edges_list.
         If edges_list is None (default) the fine structure of all the edges
         with onset in the spectrum energy region will be disabled.
-        '''
+        """
         if edges_list is None :
             edges_list = self.edges
         for edge in edges_list :
@@ -95,16 +95,16 @@ class Controls:
                 edge.fs_state = False
                 edge.fslist.free = False
     def _enable_ext_bounding(self,components = None):
-        '''
-        '''
+        """
+        """
         if components is None :
             components = self
         for component in components:
             for parameter in component.parameters:
                 parameter.ext_bounded = True
     def _disable_ext_bounding(self,components = None):
-        '''
-        '''
+        """
+        """
         if components is None :
             components = self
         for component in components:
@@ -112,42 +112,42 @@ class Controls:
                 parameter.ext_bounded = False
                 
     def set_all_edges_intensities_positive(self):
-        '''
-        '''
+        """
+        """
 
         for edge in self.edges:
             edge.intensity.ext_force_positive = True
             edge.intensity.ext_bounded = True
             
     def unset_all_edges_intensities_positive(self):
-        '''
-        '''
+        """
+        """
 
         for edge in self.edges:
             edge.intensity.ext_force_positive = False
             edge.intensity.ext_bounded = False
             
     def enable_freedelta(self,edges_list = None):
-        '''
+        """
         Enable the automatic unfixing of the delta parameter during a
         smart fit for the edges listed in edges_list.
         If edges_list is None (default) the delta of all the edges
         with onset in the spectrum energy region will be unfixed.
-        '''
+        """
         if edges_list is None :
             edges_list = self.edges
         for edge in edges_list :
             if edge.isbackground is False:
                 edge.freedelta = True
     def disable_freedelta(self,edges_list = None):
-        '''
+        """
         Disable the automatic unfixing of the delta parameter during a
         smart fit for the edges listed in edges_list.
         If edges_list is None (default) the delta of all the edges
         with onset in the spectrum energy region will not be unfixed.
         Note that if their atribute edge.delta.free is True, the parameter
         will be free during the smart fit.
-        '''
+        """
         if edges_list is None :
             edges_list = self.edges
         for edge in edges_list :
@@ -155,10 +155,10 @@ class Controls:
                 edge.freedelta = True
 
     def fix_edges(self,edges_list = None):
-        '''
+        """
         Fixes all the parameters of the edges given in edges_list.
         If edges_list is None (default) all the edges will be fixed.
-        '''
+        """
         if edges_list is None :
             edges_list = self.edges
         for edge in edges_list :
@@ -168,10 +168,10 @@ class Controls:
                 edge.fslist.free = False
 
     def unfix_edges(self,edges_list = None):
-        '''
+        """
         Unfixes all the parameters of the edges given in edges_list.
         If edges_list is None (default) all the edges will be unfixed.
-        '''
+        """
         if edges_list is None :
             edges_list = self.edges
         for edge in edges_list :
@@ -181,10 +181,10 @@ class Controls:
                 #edge.fslist.free = True
                 
     def fix_fine_structure(self,edges_list = None):
-        '''
+        """
         Fixes all the parameters of the edges given in edges_list.
         If edges_list is None (default) all the edges will be fixed.
-        '''
+        """
         if edges_list is None :
             edges_list = self.edges
         for edge in edges_list :
@@ -192,10 +192,10 @@ class Controls:
                 edge.fslist.free = False
 
     def unfix_fine_structure(self,edges_list = None):
-        '''
+        """
         Unfixes all the parameters of the edges given in edges_list.
         If edges_list is None (default) all the edges will be unfixed.
-        '''
+        """
         if edges_list is None :
             edges_list = self.edges
         for edge in edges_list :

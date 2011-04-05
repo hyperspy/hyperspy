@@ -23,8 +23,8 @@ import numpy as np
 from ..component import Component
 
 class PowerLaw(Component):
-    '''
-    '''
+    """
+    """
 
     def __init__(self, A=10e5, r=3.,origin = 0.):
         Component.__init__(self, ('A', 'r', 'origin'))

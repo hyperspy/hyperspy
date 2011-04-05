@@ -3,7 +3,7 @@
 #
 #class EELSSignal(Signal):
 #    def extract_zero_loss(self, zl = None,right = 0.2,around = 0.05):
-#        '''
+#        """
 #        Zero loss extraction by the reflected-tail or fingerprinting methods.
 #        
 #        Creates a new spectrum instance self.zero_loss with the zero loss 
@@ -26,7 +26,7 @@
 #        -----
 #        It is convenient to align the SI and correct the baseline before using
 #        this method.
-#        '''
+#        """
 #
 #        print "Extracting the zero loss"
 #        if zl is None: # reflected-tail
@@ -86,11 +86,11 @@
 #        gain.normalized_gain = dc
 #
 #    def _process_readout(self):
-#        '''Readout conditioning
+#        """Readout conditioning
 #        
 #        Checks if the readout file provided contains more than one spectrum.
 #        If that is the case, it makes the average and produce a single spectrum
-#        Spectrum object to feed the correct spectrum function'''
+#        Spectrum object to feed the correct spectrum function"""
 #        channels = self.readout.data_cube.shape[0]
 #        if self.readout.data_cube.shape[1:]  > (1, 1):
 #            self.readout.data_cube = np.average(
@@ -102,13 +102,13 @@
 #                self.readout.dark_current_correction()
 #
 #    def _process_dark_current(self):
-#        '''Dark current conditioning.
+#        """Dark current conditioning.
 #        
 #        Checks if the readout file provided contains more than one spectrum.
 #        If that is the case, it makes the average and produce a single spectrum
 #        Spectrum object to feed the correct spectrum function. If 
 #        a readout correction is provided, it corrects the readout in the dark
-#        current spim.'''
+#        current spim."""
 #        if self.dark_current.data_cube.shape[1:]  > (1, 1):
 #            self.dark_current.data_cube = np.average(
 #            np.average(self.dark_current.data_cube,1),1).reshape((-1, 1, 1))
@@ -117,7 +117,7 @@
 #            
 #    # Elements _________________________________________________________________
 #    def add_elements(self, elements, include_pre_edges = False):
-#        '''Declare the elements present in the SI.
+#        """Declare the elements present in the SI.
 #        
 #        Instances of components.edge.Edge for the current energy range will be 
 #        created automatically and add to self.subshell.
@@ -129,13 +129,13 @@
 #        include_pre_edges : bool
 #            If True, the ionization edges with an onset below the lower energy 
 #            limit of the SI will be incluided
-#        '''
+#        """
 #        for element in elements:
 #            self.elements.add(element)
 #        self.generate_subshells(include_pre_edges)
 #        
 #    def generate_subshells(self, include_pre_edges = False):
-#        '''Calculate the subshells for the current energy range for the elements
+#        """Calculate the subshells for the current energy range for the elements
 #         present in self.elements
 #         
 #        Parameters
@@ -143,7 +143,7 @@
 #        include_pre_edges : bool
 #            If True, the ionization edges with an onset below the lower energy 
 #            limit of the SI will be incluided
-#        '''
+#        """
 #        if not include_pre_edges:
 #            start_energy = self.energy_axis[0]
 #        else:
@@ -165,14 +165,14 @@
 #                self.generate_edges(e_shells)
 #    
 #    def generate_edges(self, e_shells, copy2interactive_ns = True):
-#        '''Create the Edge instances and configure them appropiately
+#        """Create the Edge instances and configure them appropiately
 #        Parameters
 #        ----------
 #        e_shells : list of strings
 #        copy2interactive_ns : bool
 #            If True, variables with the format Element_Shell will be created in
 #            IPython's interactive shell
-#        '''
+#        """
 #        e_shells.sort()
 #        master_edge = Edge(e_shells.pop())
 #        self.edges.append(master_edge)
@@ -189,7 +189,7 @@
 #            interactive_ns[element].append(self.edges[-1])
 #            
 #    def remove_background(self, start_energy = None, mask = None):
-#        '''Removes the power law background of the EELS SI if the present 
+#        """Removes the power law background of the EELS SI if the present 
 #        elements were defined.
 #        
 #        It stores the background in self.background.
@@ -199,7 +199,7 @@
 #        start_energy : float
 #            The starting energy for the fitting routine
 #        mask : boolean numpy array
-#        '''
+#        """
 #        from spectrum import Spectrum
 #        if mask is None:
 #            mask = np.ones(self.data_cube.shape[1:], dtype = 'bool')
@@ -218,7 +218,7 @@
 #        self._replot()
 #        
 #    def calculate_I0(self, threshold = None):
-#        '''Estimates the integral of the ZLP from a LL SI
+#        """Estimates the integral of the ZLP from a LL SI
 #        
 #        The value is stored in self.I0 as an Image.
 #        
@@ -229,7 +229,7 @@
 #            of all the counts of the SI until the threshold. If None, it 
 #            calculates the sum of the ZLP previously stored in 
 #            self.zero_loss
-#        '''
+#        """
 #        if threshold is None:
 #            if self.zero_loss is None:
 #                messages.warning_exit(
@@ -243,8 +243,8 @@
 #            self.I0 = Image(dc = self.data_cube[:threshold,:,:].sum(0)) 
 #        
 #    def correct_gain(self):
-#        '''Apply the gain correction stored in self.gain_correction
-#        '''
+#        """Apply the gain correction stored in self.gain_correction
+#        """
 #        if not self.treatments.gain:
 #            self._process_gain_correction()
 #            gain = self.gain_correction
@@ -264,7 +264,7 @@
 #
 #    def correct_baseline(self, kind = 'pixel', positive2zero = True, 
 #    averaged = 10, fix_negative = True):
-#        '''Set the minimum value to zero
+#        """Set the minimum value to zero
 #        
 #        It can calculate the correction globally or pixel by pixel.
 #        
@@ -283,7 +283,7 @@
 #            When averaged, it will take the abs of the data_cube to assure
 #            that no value is negative.
 #        
-#        '''
+#        """
 #        data = copy.copy(self.data_cube)
 #        print "Correcting the baseline of the low loss spectrum/a"
 #        if kind == 'global':
@@ -331,7 +331,7 @@
 #            print "Nothing done, the SI was already readout corrected"
 #
 #    def dark_current_correction(self):
-#        '''Apply the dark_current_correction stored in self.dark_current'''
+#        """Apply the dark_current_correction stored in self.dark_current"""
 #        if self.treatments.dark_current:
 #            print "Nothing done, the dark current was already corrected"
 #        else:
@@ -349,11 +349,11 @@
 #                            exposure = ap.exposure
 #                    else:
 #                        print \
-#    '''Warning: no information about binning and readout frequency found. Please 
+#    """Warning: no information about binning and readout frequency found. Please 
 #    define the following attributes for a correct dark current correction:
 #    exposure, binning, readout_frequency, ccd_height, blanking
 #    The correction proceeds anyway
-#    '''
+#    """
 #                            
 #                        exposure = self.acquisition_parameters.exposure
 #                    data = copy.copy(self.data_cube)
@@ -375,8 +375,8 @@
 #                "attribute")
 #                
 #    def find_low_loss_origin(self, sync_SI = None):
-#        '''Calculate the position of the zero loss origin as the average of the 
-#        postion of the maximum of all the spectra'''
+#        """Calculate the position of the zero loss origin as the average of the 
+#        postion of the maximum of all the spectra"""
 #        old_origin = self.energyorigin
 #        imax = np.mean(np.argmax(self.data_cube,0))
 #        self.energyorigin = generate_axis(0, self.energyscale, 
@@ -387,12 +387,12 @@
 #            sync_SI.updateenergy_axis()
 #
 #    def fourier_log_deconvolution(self):
-#        '''Performs fourier-log deconvolution of the full SI.
+#        """Performs fourier-log deconvolution of the full SI.
 #        
 #        The zero-loss can be specified by defining the parameter 
 #        self.zero_loss that must be an instance of Spectrum. Otherwise the 
 #        zero loss will be extracted by the reflected tail method
-#        '''
+#        """
 #        if self.zero_loss is None:
 #            self.extract_zero_loss()
 #        z = np.fft.fft(self.zero_loss.data_cube, axis=0)
@@ -404,7 +404,7 @@
 #        
 #    def calculate_thickness(self, method = 'threshold', threshold = 3, 
 #    factor = 1):
-#        '''Calculates the thickness from a LL SI.
+#        """Calculates the thickness from a LL SI.
 #        
 #        The resulting thickness map is stored in self.thickness as an image 
 #        instance. To visualize it: self.thickness.plot()
@@ -419,7 +419,7 @@
 #            threshold value.
 #        factor : float
 #            factor by which to multiple the ZLP
-#        '''
+#        """
 #        print "Calculating the thickness"
 #        # Create the thickness array
 #        dc = self.data_cube
@@ -437,7 +437,7 @@
 #        Image({'calibration' : {'data_cube' : np.log( integral / zl_int)}})
 #                
 #    def calculate_FWHM(self, factor = 0.5, channels = 7, der_roots = False):
-#        '''Use a third order spline interpolation to estimate the FWHM of 
+#        """Use a third order spline interpolation to estimate the FWHM of 
 #        the zero loss peak.
 #        
 #        Parameters:
@@ -463,7 +463,7 @@
 #            'der_roots' : tuple
 #                Position in energy units of the roots of the first
 #            derivative if der_roots is True (False by default)
-#        '''
+#        """
 #        ix = self.coordinates.ix
 #        iy = self.coordinates.iy
 #        i0 = np.argmax(self.data_cube[:,ix, iy])
@@ -485,7 +485,7 @@
 #            
 #    def power_law_extension(self, interval, new_size = 1024, 
 #                            to_the = 'right'):
-#        '''Extend the SI with a power law.
+#        """Extend the SI with a power law.
 #        
 #        Fit the SI with a power law in the given interval and use the result 
 #        to extend it to the left of to the right.
@@ -498,7 +498,7 @@
 #            number of channel after the extension.
 #        to_the : {'right', 'left'}
 #            extend the SI to the left or to the right
-#        '''
+#        """
 #        left, right = interval
 #        s = self.data_cube.shape
 #        original_size = s[0]
@@ -518,14 +518,14 @@
 #        self.data_cube[iright:,:,:] = m.model_cube[iright:,:,:]
 #        
 #    def hanning_taper(self, side = 'left', channels = 20,offset = 0):
-#        '''Hanning taper
+#        """Hanning taper
 #        
 #        Parameters
 #        ----------
 #        side : {'left', 'right'}
 #        channels : int
 #        offset : int
-#        '''        
+#        """        
 #        dc = self.data_cube
 #        if side == 'left':
 #            dc[offset:channels+offset,:,:] *= \
@@ -538,7 +538,7 @@
 #        
 #    def remove_spikes(self, threshold = 2200, subst_width = 5, 
 #                      coordinates = None):
-#        '''Remove the spikes in the SI.
+#        """Remove the spikes in the SI.
 #        
 #        Detect the spikes above a given threshold and fix them by interpolating 
 #        in the give interval. If coordinates is given, it will only remove the 
@@ -558,7 +558,7 @@
 #        See also
 #        --------
 #        Spectrum.spikes_diagnosis, Spectrum.plot_spikes
-#        '''
+#        """
 #        int_window = 20
 #        dc = self.data_cube
 #        der = np.diff(dc,1,0)
@@ -610,12 +610,12 @@
 #                index += 1
 #                
 #    def spikes_diagnosis(self):
-#        '''Plots a histogram to help in choosing the threshold for spikes
+#        """Plots a histogram to help in choosing the threshold for spikes
 #        removal.
 #        See also
 #        --------
 #        Spectrum.remove_spikes, Spectrum.plot_spikes
-#        '''
+#        """
 #        dc = self.data_cube
 #        der = np.diff(dc,1,0)
 #        plt.figure()
@@ -625,7 +625,7 @@
 #        plt.draw()
 #        
 #    def plot_spikes(self, threshold = 2200):
-#        '''Plot the spikes in the given threshold
+#        """Plot the spikes in the given threshold
 #        
 #        Parameters
 #        ----------
@@ -638,7 +638,7 @@
 #        See also
 #        --------
 #        Spectrum.remove_spikes, Spectrum.spikes_diagnosis
-#        '''
+#        """
 #        dc = self.data_cube
 #        der = np.diff(dc,1,0)
 #        index = 0
@@ -658,7 +658,7 @@
 #        return spikes
 #                        
 #    def build_SI_from_substracted_zl(self,ch, taper_nch = 20):
-#        '''Modify the SI to have fit with a smoothly decaying ZL
+#        """Modify the SI to have fit with a smoothly decaying ZL
 #        
 #        Parameters
 #        ----------
@@ -666,7 +666,7 @@
 #            channel index to start the ZL decay to 0
 #        taper_nch : int
 #            number of channels in which the ZL will decay to 0 from `ch`
-#        '''
+#        """
 #        sp = copy.deepcopy(self)
 #        dc = self.zl_substracted.data_cube.copy()
 #        dc[0:ch,:,:] *= 0
@@ -679,7 +679,7 @@
 #        return sp
 #        
 #    def jump_ratio(self, left_interval, right_interval):
-#        '''Returns the jump ratio in the given intervals
+#        """Returns the jump ratio in the given intervals
 #        
 #        Parameters
 #        ----------
@@ -691,7 +691,7 @@
 #        Returns
 #        -------
 #        float
-#        '''
+#        """
 #        ilt1 = self.energy2index(left_interval[0])
 #        ilt2 = self.energy2index(left_interval[1])
 #        irt1 = self.energy2index(right_interval[0])
@@ -703,7 +703,7 @@
 #    def correct_dual_camera_step(self, show_lev = False, mean_interval = 3, 
 #                                 pca_interval = 20, pcs = 2, 
 #                                 normalize_poissonian_noise = False):
-#        '''Correct the gain difference in a dual camera using PCA.
+#        """Correct the gain difference in a dual camera using PCA.
 #        
 #        Parameters
 #        ----------
@@ -714,7 +714,7 @@
 #        pcs : int
 #            number of principal components
 #        normalize_poissonian_noise : bool
-#        ''' 
+#        """ 
 #        # The step is between pixels 1023 and 1024
 #        pw = pca_interval
 #        mw = mean_interval

@@ -28,8 +28,8 @@ from ..component import Component
 sqrt2pi = np.sqrt(2*np.pi)
 
 class Erf(Component):
-    '''
-    '''
+    """
+    """
 
     def __init__(self):
         Component.__init__(self, ['A','sigma','origin'])        

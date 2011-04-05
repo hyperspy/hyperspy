@@ -23,8 +23,8 @@ import numpy as np
 from ..component import Component, Parameter
 
 class Bleasdale(Component):
-    '''
-    '''
+    """
+    """
 
     def __init__(self):
         # Define the parameters
@@ -33,18 +33,18 @@ class Bleasdale(Component):
         self.name = 'Bleasdale'
 
     def function(self, x):
-        '''
+        """
         This functions it too complicated to explain
-        '''
+        """
         a = self.a.value
         b = self.b.value
         c = self.c.value
         return (a+b*x)**(-1./c)
     
     def grad_a(self, x):
-        '''
+        """
         Returns d(function)/d(parameter_1)
-        '''
+        """
         a = self.a.value
         b = self.b.value
         c = self.c.value
@@ -52,9 +52,9 @@ class Bleasdale(Component):
         return -(b*x+a)**(-1./c-1.)/c
     
     def grad_b(self, x):
-        '''
+        """
         Returns d(function)/d(parameter_1)
-        '''
+        """
         a = self.a.value
         b = self.b.value
         c = self.c.value
@@ -62,9 +62,9 @@ class Bleasdale(Component):
         return -(x*(b*x+a)**(-1/c-1))/c
     
     def grad_c(self, x):
-        '''
+        """
         Returns d(function)/d(parameter_1)
-        '''
+        """
         a = self.a.value
         b = self.b.value
         c = self.c.value

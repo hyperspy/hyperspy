@@ -24,8 +24,8 @@ from ..component import Component
 
 
 class Exponential(Component):
-    '''
-    '''
+    """
+    """
 
     def __init__(self):
         Component.__init__(self, ['A', 'tau'])
@@ -35,8 +35,8 @@ class Exponential(Component):
         self.tau.grad = self.grad_tau
 
     def function( self, x ) :
-        '''
-        '''
+        """
+        """
         A = self.A.value
         tau = self.tau.value
         return A*np.exp(-x/tau)

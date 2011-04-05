@@ -66,58 +66,58 @@ tagHash = {}
 
 ## reading n bytes functions
 def readLong( file ):
-	'''Read 4 bytes as integer in file'''
+	"""Read 4 bytes as integer in file"""
 	read_bytes = file.read(4)
 	return struct.unpack('>l', read_bytes)[0]
 
 def readShort( file ):
-	'''Read 2 bytes as integer in file'''
+	"""Read 2 bytes as integer in file"""
 	read_bytes = file.read(2)
 	return struct.unpack('>h', read_bytes)[0]
 
 def readByte( file ):
-	'''Read 1 byte as integer in file'''
+	"""Read 1 byte as integer in file"""
 	read_bytes = file.read(1)
 	return struct.unpack('>b', read_bytes)[0]
 
 def readChar( file ):
-	'''Read 1 byte as char in file'''
+	"""Read 1 byte as char in file"""
 	read_bytes = file.read(1)
 	return struct.unpack('c', read_bytes)[0]
 
 def readString( file, len=1 ):
-	'''Read len bytes as a string in file'''
+	"""Read len bytes as a string in file"""
 	read_bytes = file.read(len)
 	str_fmt = '>'+str(len)+'s'
 	return struct.unpack( str_fmt, read_bytes )[0]
 
 def readLEShort( file ):
-	'''Read 2 bytes as *little endian* integer in file'''
+	"""Read 2 bytes as *little endian* integer in file"""
 	read_bytes = file.read(2)
 	return struct.unpack('<h', read_bytes)[0]
 
 def readLELong( file ):
-	'''Read 4 bytes as *little endian* integer in file'''
+	"""Read 4 bytes as *little endian* integer in file"""
 	read_bytes = file.read(4)
 	return struct.unpack('<l', read_bytes)[0]
 
 def readLEUShort( file ):
-	'''Read 2 bytes as *little endian* unsigned integer in file'''
+	"""Read 2 bytes as *little endian* unsigned integer in file"""
 	read_bytes = file.read(2)
 	return struct.unpack('<H', read_bytes)[0]
 
 def readLEULong( file ):
-	'''Read 4 bytes as *little endian* unsigned integer in file'''
+	"""Read 4 bytes as *little endian* unsigned integer in file"""
 	read_bytes = file.read(4)
 	return struct.unpack('<L', read_bytes)[0]
 
 def readLEFloat( file ):
-	'''Read 4 bytes as *little endian* float in file'''
+	"""Read 4 bytes as *little endian* float in file"""
 	read_bytes = file.read(4)
 	return struct.unpack('<f', read_bytes)[0]
 
 def readLEDouble( file ):
-	'''Read 8 bytes as *little endian* double in file'''
+	"""Read 8 bytes as *little endian* double in file"""
 	read_bytes = file.read(8)
 	return struct.unpack('<d', read_bytes)[0]
 
@@ -458,8 +458,8 @@ def storeTag( tagName, tagValue ):
 
 ### parse DM3 file ###
 def parseDM3( filename, dump=False ):
-	'''Function parses DM3 file and returns dict with extracted Tags.
-	Dumps Tags in a txt file if 'dump' set to 'True'.'''
+	"""Function parses DM3 file and returns dict with extracted Tags.
+	Dumps Tags in a txt file if 'dump' set to 'True'."""
 
 	global f
 
@@ -532,8 +532,8 @@ def parseDM3( filename, dump=False ):
 	
 
 def getDM3FileInfo( dm3_file, makePGMtn=False, tn_file='dm3tn_temp.pgm' ):
-	'''Extracts useful experiment info from DM3 file and 
-	exports thumbnail to a PGM file if 'makePGMtn' set to 'True'.'''
+	"""Extracts useful experiment info from DM3 file and 
+	exports thumbnail to a PGM file if 'makePGMtn' set to 'True'."""
 	
 	# define useful information
 	info_keys = {

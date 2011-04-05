@@ -2,13 +2,13 @@
 #
 #class SimulationSignal(Signal):
 #    def add_poissonian_noise(self):
-#        '''Add Poissonian noise to the SI'''
+#        """Add Poissonian noise to the SI"""
 #        self.__new_cube(np.random.poisson(self.data_cube).astype('float64'), 
 #        'poissonian noise')
 #        self._replot()
 #
 #    def add_gaussian_noise(self, std):
-#        '''Add Gaussian noise to the SI
+#        """Add Gaussian noise to the SI
 #        Parameters
 #        ----------
 #        std : float
@@ -16,12 +16,12 @@
 #        See also
 #        --------
 #        Spectrum.simulate
-#        '''
+#        """
 #        self.__new_cube(np.random.normal(self.data_cube,std), 'gaussian_noise')
 #        self._replot()
 #        
 #    def gaussian_filter(self, FWHM):
-#        '''Applies a Gaussian filter in the energy dimension.
+#        """Applies a Gaussian filter in the energy dimension.
 #        
 #        Parameters
 #        ----------
@@ -30,14 +30,14 @@
 #        See also
 #        --------
 #        Spectrum.simulate
-#        '''
+#        """
 #        if FWHM > 0:
 #            self.data_cube = gaussian_filter1d(self.data_cube, axis = 0, 
 #            sigma = FWHM/2.35482)
 #
 #            
 #    def add_energy_instability(self, std):
-#        '''Introduce random energy instability
+#        """Introduce random energy instability
 #        
 #        Parameters
 #        ----------
@@ -46,7 +46,7 @@
 #        See also
 #        --------
 #        Spectrum.simulate
-#        '''
+#        """
 #        if abs(std) > 0:
 #            delta_map = np.random.normal(
 #            size = (self.xdimension, self.ydimension), 
@@ -61,7 +61,7 @@
 #        return delta_map
 #    
 #    def create_data_cube(self):
-#        '''Generate an empty data_cube from the dimension parameters
+#        """Generate an empty data_cube from the dimension parameters
 #        
 #        The parameters self.energydimension, self.xdimension and 
 #        self.ydimension will be used to generate an empty data_cube.
@@ -69,7 +69,7 @@
 #        See also
 #        --------
 #        Spectrum.simulate
-#        '''
+#        """
 #        self.data_cube = np.zeros((self.energydimension, self.xdimension, 
 #        self.ydimension))
 #        self.get_dimensions_from_cube()
@@ -78,7 +78,7 @@
 #        
 #    def simulate(self, maps = None, energy_instability = 0, 
 #    min_intensity = 0., max_intensity = 1.):
-#        '''Create a simulated SI.
+#        """Create a simulated SI.
 #        
 #        If an image is provided, it will use each RGB color channel as the 
 #        intensity map of each three elements that must be previously defined as 
@@ -100,7 +100,7 @@
 #        --------
 #        
 #        If energy_instability != 0 it returns the energy shift map
-#        '''
+#        """
 #        if maps is not None:
 #            self.xdimension = maps[0].shape[0]
 #            self.ydimension = maps[0].shape[1]

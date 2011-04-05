@@ -32,7 +32,7 @@ except:
 import utils
 
 def ica_tests(x,emb_dim = 1,emb_tau = 1,kneig = 5,algo = 2,kmax = 15):
-    '''Reliability test for any ICA output (linear transformation version!)
+    """Reliability test for any ICA output (linear transformation version!)
     Output: Dependency Matrix, Variability Matrix, and MI vs rotation angle
     plot (to check if the components are indeed the most independent one)
 
@@ -44,7 +44,7 @@ def ica_tests(x,emb_dim = 1,emb_tau = 1,kneig = 5,algo = 2,kmax = 15):
     emb_dim:  embedding dimension (default is 1, no embedding)
     emb_tau:  time-delay, only relevant when emb_dim>1 (default is 1)
     
-    '''
+    """
     
     N,Nd = x.shape
     np.savetxt('zwsptests.txt', x)

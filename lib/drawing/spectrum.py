@@ -28,7 +28,7 @@ except:
 import utils
 
 class SpectrumFigure():
-    ''''''
+    """"""
     def __init__(self):
         self.figure = None
         self.left_ax = None
@@ -97,7 +97,7 @@ class SpectrumFigure():
         
 class SpectrumLine():
     def __init__(self):
-        ''''''
+        """"""
         # Data attributes
         self.data_function = None
         self.axis = None
@@ -110,7 +110,7 @@ class SpectrumLine():
     
 
     def line_properties_helper(self, color, type):
-        '''This function provides an easy way of defining some basic line 
+        """This function provides an easy way of defining some basic line 
         properties.
         
         Further customization is possible by adding keys to the line_properties 
@@ -121,7 +121,7 @@ class SpectrumLine():
         
         color : any valid matplotlib color definition, e.g. 'red'
         type : it can be one of 'scatter', 'step', 'line'
-        '''
+        """
         lp = self.line_properties
         if type == 'scatter':
             lp['marker'] = 'o'
@@ -146,7 +146,7 @@ class SpectrumLine():
         self.ax.figure.canvas.draw()
                   
     def update(self):
-        '''Update the current spectrum figure'''            
+        """Update the current spectrum figure"""            
         
         ydata = self.data_function(axes_manager = self.axes_manager)
         self.line.set_ydata(ydata)

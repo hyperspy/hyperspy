@@ -25,7 +25,7 @@ class Coordinates_Controller():
         self.registered_coordinates = []
     
     def assign_coordinates(self, signal):
-        '''Add coordenates to a signal.
+        """Add coordenates to a signal.
         
         Checks if the shape is equal to any other coordinate that has been 
         registered before, if any; if yes it assigns the matching registered 
@@ -36,7 +36,7 @@ class Coordinates_Controller():
         -----------
         signal : Signal instance
         
-        '''
+        """
         shape = self.get_coordinates_shape(signal)
 
         # Check if coordinates with this shape have been registered

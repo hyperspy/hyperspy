@@ -21,8 +21,8 @@
 from ..signal import Signal
 
 class Image(Signal):
-    '''
-    '''    
+    """
+    """    
     def __init__(self, *args, **kwargs):
         Signal.__init__(self, *args, **kwargs)
         self.axes_manager.set_view('image')

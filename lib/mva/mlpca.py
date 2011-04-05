@@ -21,7 +21,7 @@
 import numpy as np
 
 def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000):
-    '''
+    """
     This function performs MLPCA with missing
     data.
     
@@ -38,7 +38,7 @@ def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000):
     ErrFlag indicates exit conditions:
             0 = nkmal termination
             1 = max iterations exceeded.
-    '''
+    """
 
     XX = X
 #    varX = stdX**2

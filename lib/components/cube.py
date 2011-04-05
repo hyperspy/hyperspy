@@ -26,9 +26,9 @@ from ..component import Component
 from .gaussian import Gaussian
 
 class Cube(Component):
-    '''
+    """
     Model for the thickness of a tilted cube
-    '''
+    """
 
     def __init__( self, sigma = 0 ):
         Component.__init__(self, ['onset', 'p1', 'p2', 'height', 'sigma'])

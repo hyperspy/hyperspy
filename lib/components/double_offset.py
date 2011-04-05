@@ -24,10 +24,10 @@ import numpy as np
 from ..component import Component
 
 class DoubleOffset(Component):
-    '''
+    """
     Given an array of the same shape as Spectrum energy_axis, returns it as
     a component that can be added to a model.
-    '''
+    """
 
     def __init__(self):
         Component.__init__(self, ('offset','step'))

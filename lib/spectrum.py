@@ -53,11 +53,11 @@ from exceptions import *
 #TODO Acquisition_Parameters and Treatments must be merged into a more general
 #class to store somewhe else, and to use with the Image class too.
 class Acquisition_Parameters(object):
-    '''
+    """
     Container for the acquisition parameters.
     
     Calling the class prints all the acquisition parameters.
-    '''
+    """
     binning = None
     exposure = None
     readout_frequency = None
@@ -70,9 +70,9 @@ class Acquisition_Parameters(object):
         for item in self.__dict__.items():
             print "%s = %s" % item
     def define(self):
-        '''Prints the already defined acquisiotions parameters and ask you to 
+        """Prints the already defined acquisiotions parameters and ask you to 
         supply the missing ones. 
-        '''
+        """
         for item in self.__class__.__dict__.items():
             if item[0][:2] != '__' and item[0] != 'define':
                 if item[0] in self.__dict__:
@@ -91,7 +91,7 @@ class Treatments(object):
             print "%s = %s" % item
     
 class Spectrum(object, MVA):
-    '''Base class for SI
+    """Base class for SI
     
     This class contains the SI (Spectrum Image) basic methods. It can be used to
     load an SI or to create a monte carlo. It also inherits all the multivariate
@@ -115,7 +115,7 @@ class Spectrum(object, MVA):
     apply_treatments : Bool
         If True, the readout, dark current and gain corrections are applied
         if the corresponding files are provided
-    '''    
+    """    
     
     def __init__(self, dictionary = None,  gain = None, readout = None, 
     dark_current = None, image = None, apply_treatments = True):
@@ -228,26 +228,26 @@ class Spectrum(object, MVA):
 
             
     def updateenergy_axis(self):
-        '''Creates a new energy axis using the defined energyorigin, energyscale
-         and energydimension'''
+        """Creates a new energy axis using the defined energyorigin, energyscale
+         and energydimension"""
         self.energy_axis = generate_axis(self.energyorigin, self.energyscale, 
         self.energydimension)
         self._replot()
 
     def set_new_calibration(self,energy_origin, energy_scale):
-        '''Updates the energy origin and scale and the energy axis with the 
+        """Updates the energy origin and scale and the energy axis with the 
         given values
         Parameters:
         -----------
         energy_origin : float
         energy_scale : float 
-        '''
+        """
         self.energyorigin = energy_origin
         self.energyscale = energy_scale
         self.updateenergy_axis()
         
     def energy2index(self, energy):
-        '''
+        """
         Return the index for the given energy if between the limits,
         otherwise it will return either the upper or lower limits
         
@@ -258,7 +258,7 @@ class Spectrum(object, MVA):
         Returns
         -------
         int
-        '''
+        """
         if energy is None:
             return None
         else :
@@ -291,11 +291,11 @@ class Spectrum(object, MVA):
         self.current_cube = -1
     
     def __call__(self, coordinates = None):
-        '''Returns the spectrum at the coordinates given by the choosen cursor
+        """Returns the spectrum at the coordinates given by the choosen cursor
         Parameters
         ----------
         cursor : 1 or 2
-        '''
+        """
         if coordinates is None:
             coordinates = self.coordinates
 
@@ -303,10 +303,10 @@ class Spectrum(object, MVA):
         return dc
     
     def get_dimensions_from_cube(self):
-        '''Get the dimension parameters from the data_cube. Useful when the 
+        """Get the dimension parameters from the data_cube. Useful when the 
         data_cube was externally modified, or when the SI was not loaded from
         a file
-        '''
+        """
         dc = self.data_cube
         # Make the data_cube 3D if it is not
         if len(dc.shape) == 1:
@@ -323,17 +323,17 @@ class Spectrum(object, MVA):
         
     # Transform ________________________________________________________________
     def delete_spectrum(self, index):
-        '''Remove a spectrum from a Line Spectrum
+        """Remove a spectrum from a Line Spectrum
         Parameters
         ----------
         index: int
             The index of the spectrum to remove
-        '''
+        """
         self.delete_column(index)
         self._replot()
         
     def delete_column(self, index, until = None):
-        '''
+        """
         Removes a column or a range of rows.
         Parameters
         ----------
@@ -341,7 +341,7 @@ class Spectrum(object, MVA):
             Index of the first (or only) column to delete
         until: int
             Index of the last column of the range to delete
-        '''
+        """
         width = 1
         if until:
             if until < index:
@@ -354,7 +354,7 @@ class Spectrum(object, MVA):
         self._replot()
         
     def delete_row(self, index, until = None):
-        '''
+        """
         Removes a row or a range of rows.
         Parameters
         ----------
@@ -362,7 +362,7 @@ class Spectrum(object, MVA):
             Index of the first (or only) row to delete
         until: int
             Index of the last column of the row to delete
-        '''
+        """
         width = 1
         if until:
             if until < index:
@@ -377,12 +377,12 @@ class Spectrum(object, MVA):
         
 
     def spatial_crop(self, ix1 = None, iy1 = None, ix2 = None, iy2 = None):
-        '''Crops the SI with the given indexes.
+        """Crops the SI with the given indexes.
         ix1 : int
         ix2 : int
         iy1 : int
         iy2 : int
-        '''
+        """
         print "Cropping the SI from (%s, %s) to (%s, %s)" % (
         ix1, iy1, ix2, iy2)
         for cube in self.__cubes:
@@ -393,7 +393,7 @@ class Spectrum(object, MVA):
         self._replot()
         
     def energy_crop(self, _from = None, to = None, in_energy_units = False):
-        '''Crop the spectrum on energy
+        """Crop the spectrum on energy
         Parameters
         ----------
         _from : int or float
@@ -403,7 +403,7 @@ class Spectrum(object, MVA):
         in_energy_units : bool
             By default the `from` are `to` are treated as energy index. If 
             `in_energy_units` the values are treated as energy.
-        '''
+        """
         if in_energy_units:
             _from = self.energy2index(_from)
             to = self.energy2index(to)
@@ -415,7 +415,7 @@ class Spectrum(object, MVA):
 
            
     def roll_xy(self, n_x, n_y = 1):
-        '''Roll over the x axis n_x positions and n_y positions the former rows 
+        """Roll over the x axis n_x positions and n_y positions the former rows 
         
         Parameters
         ----------
@@ -424,13 +424,13 @@ class Spectrum(object, MVA):
         
         Note: Useful to correct the SI column storing bug in Marcel's 
         acquisition routines.
-        '''
+        """
         self.data_cube = np.roll(self.data_cube, n_x, 1)
         self.data_cube[:,:n_x,:] = np.roll(self.data_cube[:,:n_x,:],n_y,2)
         self._replot()
     
     def swap_x_y(self):
-        '''Swaps the x and y axes'''
+        """Swaps the x and y axes"""
         
         print "Swapping x and y"
         data = self.data_cube.swapaxes(1,2)
@@ -442,13 +442,13 @@ class Spectrum(object, MVA):
 
         
     def rebin(self, new_shape):
-        '''
+        """
         Rebins the SI to the new shape
         
         Parameters
         ----------
         new_shape: tuple of int of dimension 3
-        '''
+        """
         for cube in self.__cubes:
             cube['data'] = rebin(cube['data'],new_shape)
         if self.image:
@@ -460,7 +460,7 @@ class Spectrum(object, MVA):
     # Process __________________________________________________________________
 
     def extract_zero_loss(self, zl = None,right = 0.2,around = 0.05):
-        '''
+        """
         Zero loss extraction by the reflected-tail or fingerprinting methods.
         
         Creates a new spectrum instance self.zero_loss with the zero loss 
@@ -483,7 +483,7 @@ class Spectrum(object, MVA):
         -----
         It is convenient to align the SI and correct the baseline before using
         this method.
-        '''
+        """
 
         print "Extracting the zero loss"
         if zl is None: # reflected-tail
@@ -543,11 +543,11 @@ class Spectrum(object, MVA):
         gain.normalized_gain = dc
 
     def _process_readout(self):
-        '''Readout conditioning
+        """Readout conditioning
         
         Checks if the readout file provided contains more than one spectrum.
         If that is the case, it makes the average and produce a single spectrum
-        Spectrum object to feed the correct spectrum function'''
+        Spectrum object to feed the correct spectrum function"""
         channels = self.readout.data_cube.shape[0]
         if self.readout.data_cube.shape[1:]  > (1, 1):
             self.readout.data_cube = np.average(
@@ -559,13 +559,13 @@ class Spectrum(object, MVA):
                 self.readout.dark_current_correction()
 
     def _process_dark_current(self):
-        '''Dark current conditioning.
+        """Dark current conditioning.
         
         Checks if the readout file provided contains more than one spectrum.
         If that is the case, it makes the average and produce a single spectrum
         Spectrum object to feed the correct spectrum function. If 
         a readout correction is provided, it corrects the readout in the dark
-        current spim.'''
+        current spim."""
         if self.dark_current.data_cube.shape[1:]  > (1, 1):
             self.dark_current.data_cube = np.average(
             np.average(self.dark_current.data_cube,1),1).reshape((-1, 1, 1))
@@ -575,7 +575,7 @@ class Spectrum(object, MVA):
 
     # Elements _________________________________________________________________
     def add_elements(self, elements, include_pre_edges = False):
-        '''Declare the elements present in the SI.
+        """Declare the elements present in the SI.
         
         Instances of components.edge.Edge for the current energy range will be 
         created automatically and add to self.subshell.
@@ -587,13 +587,13 @@ class Spectrum(object, MVA):
         include_pre_edges : bool
             If True, the ionization edges with an onset below the lower energy 
             limit of the SI will be incluided
-        '''
+        """
         for element in elements:
             self.elements.add(element)
         self.generate_subshells(include_pre_edges)
         
     def generate_subshells(self, include_pre_edges = False):
-        '''Calculate the subshells for the current energy range for the elements
+        """Calculate the subshells for the current energy range for the elements
          present in self.elements
          
         Parameters
@@ -601,7 +601,7 @@ class Spectrum(object, MVA):
         include_pre_edges : bool
             If True, the ionization edges with an onset below the lower energy 
             limit of the SI will be incluided
-        '''
+        """
         if not include_pre_edges:
             start_energy = self.energy_axis[0]
         else:
@@ -623,14 +623,14 @@ class Spectrum(object, MVA):
                 self.generate_edges(e_shells)
     
     def generate_edges(self, e_shells, copy2interactive_ns = True):
-        '''Create the Edge instances and configure them appropiately
+        """Create the Edge instances and configure them appropiately
         Parameters
         ----------
         e_shells : list of strings
         copy2interactive_ns : bool
             If True, variables with the format Element_Shell will be created in
             IPython's interactive shell
-        '''
+        """
         e_shells.sort()
         master_edge = Edge(e_shells.pop())
         self.edges.append(master_edge)
@@ -655,7 +655,7 @@ class Spectrum(object, MVA):
     history = property(_get_history,_set_treatment)
     
     def print_history(self):
-        '''Prints the history of the SI to the stdout'''
+        """Prints the history of the SI to the stdout"""
         i = 0
         print
         print "Cube\tHistory"
@@ -669,7 +669,7 @@ class Spectrum(object, MVA):
     # TODO check!!
     def split_in(self, number_of_parts = None, steps = None, 
     direction = 'rows'):
-        '''Splits the SI
+        """Splits the SI
         
         The split can be defined either by the `number_of_parts` or by the 
         `steps` size.
@@ -686,7 +686,7 @@ class Spectrum(object, MVA):
         Return
         ------
         tuple with the splitted SIs
-        '''
+        """
         if number_of_parts is None and steps is None:
             if not self._splitting_steps:
                 messages.warning_exit(
@@ -728,7 +728,7 @@ class Spectrum(object, MVA):
     # TODO: maybe move to MVA?
             
     def unfold(self):
-        '''If the SI dimension is > 2, it folds it to dimension 2'''
+        """If the SI dimension is > 2, it folds it to dimension 2"""
         if self.xdimension > 1 and self.ydimension > 1:
             self.shape_before_folding = list(self.data_cube.shape)
             for cube in self.__cubes:
@@ -743,7 +743,7 @@ class Spectrum(object, MVA):
             print "Nothing done, cannot unfold an 1D SI"
             
     def fold(self):
-        '''If the SI was previously unfolded, folds it'''
+        """If the SI was previously unfolded, folds it"""
         if 'unfolded' in self.history:
             # Just in case the number of channels have changed...
             self.shape_before_folding[0] = self.energydimension
@@ -756,7 +756,7 @@ class Spectrum(object, MVA):
         else:
             print "Nothing done, the SI was not unfolded"
     def energy_center(self):
-        '''Substract the mean energy pixel by pixel'''
+        """Substract the mean energy pixel by pixel"""
         print "\nCentering the energy axis"
         self._energy_mean = np.mean(self.data_cube, 0)
         data = (self.data_cube - self._energy_mean)
@@ -784,12 +784,12 @@ class Spectrum(object, MVA):
             self._replot()
                     
     def correct_bad_pixels(self, indexes):
-        '''Substitutes the energy channels by the average of the 
+        """Substitutes the energy channels by the average of the 
         adjencent channels
         Parameters
         ----------
         indexes : tuple of int
-        '''
+        """
         data = copy.copy(self.data_cube)
         print "Correcting bad pixels of the spectrometer"
         for channel in indexes:
@@ -799,7 +799,7 @@ class Spectrum(object, MVA):
         self._replot()
     
     def remove_background(self, start_energy = None, mask = None):
-        '''Removes the power law background of the EELS SI if the present 
+        """Removes the power law background of the EELS SI if the present 
         elements were defined.
         
         It stores the background in self.background.
@@ -809,7 +809,7 @@ class Spectrum(object, MVA):
         start_energy : float
             The starting energy for the fitting routine
         mask : boolean numpy array
-        '''
+        """
         from spectrum import Spectrum
         if mask is None:
             mask = np.ones(self.data_cube.shape[1:], dtype = 'bool')
@@ -828,11 +828,11 @@ class Spectrum(object, MVA):
         self._replot()
         
     def normalize(self, value = 1):
-        '''Make the sum of each spectrum equal to a given value
+        """Make the sum of each spectrum equal to a given value
         Parameters:
         -----------
         value : float
-        '''
+        """
         data = copy.copy(self.data_cube)
         print "Normalizing the spectrum/a"
         for ix in range(0,self.xdimension):
@@ -843,7 +843,7 @@ class Spectrum(object, MVA):
         self._replot()
         
     def calculate_I0(self, threshold = None):
-        '''Estimates the integral of the ZLP from a LL SI
+        """Estimates the integral of the ZLP from a LL SI
         
         The value is stored in self.I0 as an Image.
         
@@ -854,7 +854,7 @@ class Spectrum(object, MVA):
             of all the counts of the SI until the threshold. If None, it 
             calculates the sum of the ZLP previously stored in 
             self.zero_loss
-        '''
+        """
         if threshold is None:
             if self.zero_loss is None:
                 messages.warning_exit(
@@ -868,8 +868,8 @@ class Spectrum(object, MVA):
             self.I0 = Image(dc = self.data_cube[:threshold,:,:].sum(0)) 
         
     def correct_gain(self):
-        '''Apply the gain correction stored in self.gain_correction
-        '''
+        """Apply the gain correction stored in self.gain_correction
+        """
         if not self.treatments.gain:
             self._process_gain_correction()
             gain = self.gain_correction
@@ -889,7 +889,7 @@ class Spectrum(object, MVA):
 
     def correct_baseline(self, kind = 'pixel', positive2zero = True, 
     averaged = 10, fix_negative = True):
-        '''Set the minimum value to zero
+        """Set the minimum value to zero
         
         It can calculate the correction globally or pixel by pixel.
         
@@ -908,7 +908,7 @@ class Spectrum(object, MVA):
             When averaged, it will take the abs of the data_cube to assure
             that no value is negative.
         
-        '''
+        """
         data = copy.copy(self.data_cube)
         print "Correcting the baseline of the low loss spectrum/a"
         if kind == 'global':
@@ -956,7 +956,7 @@ class Spectrum(object, MVA):
             print "Nothing done, the SI was already readout corrected"
 
     def dark_current_correction(self):
-        '''Apply the dark_current_correction stored in self.dark_current'''
+        """Apply the dark_current_correction stored in self.dark_current"""
         if self.treatments.dark_current:
             print "Nothing done, the dark current was already corrected"
         else:
@@ -974,11 +974,11 @@ class Spectrum(object, MVA):
                             exposure = ap.exposure
                     else:
                         print \
-    '''Warning: no information about binning and readout frequency found. Please 
+    """Warning: no information about binning and readout frequency found. Please 
     define the following attributes for a correct dark current correction:
     exposure, binning, readout_frequency, ccd_height, blanking
     The correction proceeds anyway
-    '''
+    """
                             
                         exposure = self.acquisition_parameters.exposure
                     data = copy.copy(self.data_cube)
@@ -1000,13 +1000,13 @@ class Spectrum(object, MVA):
                 "attribute")
     
     def add_poissonian_noise(self):
-        '''Add Poissonian noise to the SI'''
+        """Add Poissonian noise to the SI"""
         self.__new_cube(np.random.poisson(self.data_cube).astype('float64'), 
         'poissonian noise')
         self._replot()
 
     def add_gaussian_noise(self, std):
-        '''Add Gaussian noise to the SI
+        """Add Gaussian noise to the SI
         Parameters
         ----------
         std : float
@@ -1014,13 +1014,13 @@ class Spectrum(object, MVA):
         See also
         --------
         Spectrum.simulate
-        '''
+        """
         self.__new_cube(np.random.normal(self.data_cube,std), 'gaussian_noise')
         self._replot()
         
     def align_with_map(self, shift_map, cut = 'left', 
     interpolation_kind = 'linear'):
-        '''Shift each spectrum by the energy increment indicated in an array.
+        """Shift each spectrum by the energy increment indicated in an array.
         
         The shifts are relative. The direction of the shift will be determined 
         by wether we prefer to crop the SI on the left or on the right
@@ -1033,7 +1033,7 @@ class Spectrum(object, MVA):
             Specifies the kind of interpolation as a string ('linear',
             'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an integer
             specifying the order of the spline interpolator to use.
-        '''
+        """
         
         dc = self.data_cube
         ea = np.empty(dc.shape)
@@ -1089,7 +1089,7 @@ class Spectrum(object, MVA):
     def align(self, energy_range = (None,None), 
     reference_spectrum_coordinates = (0,0), max_energy_shift = None, 
     sync_SI = None, interpolate = True, interp_points = 5, progress_bar = True):
-        ''' Align the SI by cross-correlation.
+        """ Align the SI by cross-correlation.
                 
         Parameters
         ----------
@@ -1108,7 +1108,7 @@ class Spectrum(object, MVA):
         interp_points : int
             Number of interpolation points. Warning: making this number too big 
             can saturate the memory   
-        '''
+        """
         
         print "Aligning the SI"
         activate_replot = self._replot_activated
@@ -1196,8 +1196,8 @@ class Spectrum(object, MVA):
         return shift_map
 
     def find_low_loss_origin(self, sync_SI = None):
-        '''Calculate the position of the zero loss origin as the average of the 
-        postion of the maximum of all the spectra'''
+        """Calculate the position of the zero loss origin as the average of the 
+        postion of the maximum of all the spectra"""
         old_origin = self.energyorigin
         imax = np.mean(np.argmax(self.data_cube,0))
         self.energyorigin = generate_axis(0, self.energyscale, 
@@ -1208,12 +1208,12 @@ class Spectrum(object, MVA):
             sync_SI.updateenergy_axis()
 
     def fourier_log_deconvolution(self):
-        '''Performs fourier-log deconvolution of the full SI.
+        """Performs fourier-log deconvolution of the full SI.
         
         The zero-loss can be specified by defining the parameter 
         self.zero_loss that must be an instance of Spectrum. Otherwise the 
         zero loss will be extracted by the reflected tail method
-        '''
+        """
         if self.zero_loss is None:
             self.extract_zero_loss()
         z = np.fft.fft(self.zero_loss.data_cube, axis=0)
@@ -1227,7 +1227,7 @@ class Spectrum(object, MVA):
     
     def save(self, filename, format = defaults.file_format, msa_format = 'Y', 
     **kwds):
-        '''Saves the SI in the specified format.
+        """Saves the SI in the specified format.
         
         Supported formats: netCDF, msa and bin. netCDF is the default. msa does 
         not support SI, only the current spectrum will be saved. bin produce a 
@@ -1244,7 +1244,7 @@ class Spectrum(object, MVA):
             'Y' will produce a file without the energy axis. 'XY' will also 
             save another column with the energy axis. For compatibility with 
             Gatan Digital Micrograph 'Y' is the default.
-        '''
+        """
         file_io.save(filename, self, **kwds)
 
     def load_data_from_dictionary(self, dictionary):
@@ -1274,7 +1274,7 @@ class Spectrum(object, MVA):
     # Info _____________________________________________________________________
     def calculate_thickness(self, method = 'threshold', threshold = 3, 
     factor = 1):
-        '''Calculates the thickness from a LL SI.
+        """Calculates the thickness from a LL SI.
         
         The resulting thickness map is stored in self.thickness as an image 
         instance. To visualize it: self.thickness.plot()
@@ -1289,7 +1289,7 @@ class Spectrum(object, MVA):
             threshold value.
         factor : float
             factor by which to multiple the ZLP
-        '''
+        """
         print "Calculating the thickness"
         # Create the thickness array
         dc = self.data_cube
@@ -1307,7 +1307,7 @@ class Spectrum(object, MVA):
         Image({'calibration' : {'data_cube' : np.log( integral / zl_int)}})
                 
     def calculate_FWHM(self, factor = 0.5, channels = 7, der_roots = False):
-        '''Use a third order spline interpolation to estimate the FWHM of 
+        """Use a third order spline interpolation to estimate the FWHM of 
         the zero loss peak.
         
         Parameters:
@@ -1333,7 +1333,7 @@ class Spectrum(object, MVA):
             'der_roots' : tuple
                 Position in energy units of the roots of the first
             derivative if der_roots is True (False by default)
-        '''
+        """
         ix = self.coordinates.ix
         iy = self.coordinates.iy
         i0 = np.argmax(self.data_cube[:,ix, iy])
@@ -1354,7 +1354,7 @@ class Spectrum(object, MVA):
             return {'FWHM' : fwhm, 'FWHM_E' : pair_fwhm}
         
     def gaussian_filter(self, FWHM):
-        '''Applies a Gaussian filter in the energy dimension.
+        """Applies a Gaussian filter in the energy dimension.
         
         Parameters
         ----------
@@ -1363,14 +1363,14 @@ class Spectrum(object, MVA):
         See also
         --------
         Spectrum.simulate
-        '''
+        """
         if FWHM > 0:
             self.data_cube = gaussian_filter1d(self.data_cube, axis = 0, 
             sigma = FWHM/2.35482)
 
             
     def add_energy_instability(self, std):
-        '''Introduce random energy instability
+        """Introduce random energy instability
         
         Parameters
         ----------
@@ -1379,7 +1379,7 @@ class Spectrum(object, MVA):
         See also
         --------
         Spectrum.simulate
-        '''
+        """
         if abs(std) > 0:
             delta_map = np.random.normal(
             size = (self.xdimension, self.ydimension), 
@@ -1394,7 +1394,7 @@ class Spectrum(object, MVA):
         return delta_map
     
     def create_data_cube(self):
-        '''Generate an empty data_cube from the dimension parameters
+        """Generate an empty data_cube from the dimension parameters
         
         The parameters self.energydimension, self.xdimension and 
         self.ydimension will be used to generate an empty data_cube.
@@ -1402,7 +1402,7 @@ class Spectrum(object, MVA):
         See also
         --------
         Spectrum.simulate
-        '''
+        """
         self.data_cube = np.zeros((self.energydimension, self.xdimension, 
         self.ydimension))
         self.get_dimensions_from_cube()
@@ -1411,7 +1411,7 @@ class Spectrum(object, MVA):
         
     def simulate(self, maps = None, energy_instability = 0, 
     min_intensity = 0., max_intensity = 1.):
-        '''Create a simulated SI.
+        """Create a simulated SI.
         
         If an image is provided, it will use each RGB color channel as the 
         intensity map of each three elements that must be previously defined as 
@@ -1433,7 +1433,7 @@ class Spectrum(object, MVA):
         --------
         
         If energy_instability != 0 it returns the energy shift map
-        '''
+        """
         if maps is not None:
             self.xdimension = maps[0].shape[0]
             self.ydimension = maps[0].shape[1]
@@ -1491,7 +1491,7 @@ class Spectrum(object, MVA):
             
     def power_law_extension(self, interval, new_size = 1024, 
     to_the = 'right'):
-        '''Extend the SI with a power law.
+        """Extend the SI with a power law.
         
         Fit the SI with a power law in the given interval and use the result 
         to extend it to the left of to the right.
@@ -1504,7 +1504,7 @@ class Spectrum(object, MVA):
             number of channel after the extension.
         to_the : {'right', 'left'}
             extend the SI to the left or to the right
-        '''
+        """
         left, right = interval
         s = self.data_cube.shape
         original_size = s[0]
@@ -1524,14 +1524,14 @@ class Spectrum(object, MVA):
         self.data_cube[iright:,:,:] = m.model_cube[iright:,:,:]
         
     def hanning_taper(self, side = 'left', channels = 20,offset = 0):
-        '''Hanning taper
+        """Hanning taper
         
         Parameters
         ----------
         side : {'left', 'right'}
         channels : int
         offset : int
-        '''        
+        """        
         dc = self.data_cube
         if side == 'left':
             dc[offset:channels+offset,:,:] *= \
@@ -1544,7 +1544,7 @@ class Spectrum(object, MVA):
         
     def remove_spikes(self, threshold = 2200, subst_width = 5, 
     coordinates = None):
-        '''Remove the spikes in the SI.
+        """Remove the spikes in the SI.
         
         Detect the spikes above a given threshold and fix them by interpolating 
         in the give interval. If coordinates is given, it will only remove the 
@@ -1564,7 +1564,7 @@ class Spectrum(object, MVA):
         See also
         --------
         Spectrum.spikes_diagnosis, Spectrum.plot_spikes
-        '''
+        """
         int_window = 20
         dc = self.data_cube
         der = np.diff(dc,1,0)
@@ -1616,12 +1616,12 @@ class Spectrum(object, MVA):
                 index += 1
                 
     def spikes_diagnosis(self):
-        '''Plots a histogram to help in choosing the threshold for spikes
+        """Plots a histogram to help in choosing the threshold for spikes
         removal.
         See also
         --------
         Spectrum.remove_spikes, Spectrum.plot_spikes
-        '''
+        """
         dc = self.data_cube
         der = np.diff(dc,1,0)
         plt.figure()
@@ -1631,7 +1631,7 @@ class Spectrum(object, MVA):
         plt.draw()
         
     def plot_spikes(self, threshold = 2200):
-        '''Plot the spikes in the given threshold
+        """Plot the spikes in the given threshold
         
         Parameters
         ----------
@@ -1644,7 +1644,7 @@ class Spectrum(object, MVA):
         See also
         --------
         Spectrum.remove_spikes, Spectrum.spikes_diagnosis
-        '''
+        """
         dc = self.data_cube
         der = np.diff(dc,1,0)
         index = 0
@@ -1664,7 +1664,7 @@ class Spectrum(object, MVA):
         return spikes
                         
     def build_SI_from_substracted_zl(self,ch, taper_nch = 20):
-        '''Modify the SI to have fit with a smoothly decaying ZL
+        """Modify the SI to have fit with a smoothly decaying ZL
         
         Parameters
         ----------
@@ -1672,7 +1672,7 @@ class Spectrum(object, MVA):
             channel index to start the ZL decay to 0
         taper_nch : int
             number of channels in which the ZL will decay to 0 from `ch`
-        '''
+        """
         sp = copy.deepcopy(self)
         dc = self.zl_substracted.data_cube.copy()
         dc[0:ch,:,:] *= 0
@@ -1685,7 +1685,7 @@ class Spectrum(object, MVA):
         return sp
                 
     def sum_every_n(self,n):
-        '''Bin a line spectrum
+        """Bin a line spectrum
         
         Parameters
         ----------
@@ -1699,7 +1699,7 @@ class Spectrum(object, MVA):
         See also
         --------
         sum_every
-        '''
+        """
         dc = self.data_cube
         if dc.shape[1] % n != 0:
             messages.warning_exit(
@@ -1710,7 +1710,7 @@ class Spectrum(object, MVA):
         return self.sum_every(size_list)
     
     def sum_every(self,size_list):
-        '''Sum a line spectrum intervals given in a list and return the 
+        """Sum a line spectrum intervals given in a list and return the 
         resulting SI
         
         Parameters
@@ -1725,7 +1725,7 @@ class Spectrum(object, MVA):
         See also
         --------
         sum_every_n
-        '''
+        """
         dc = self.data_cube
         dc_shape = self.data_cube.shape
         if np.sum(size_list) != dc.shape[1]:
@@ -1743,7 +1743,7 @@ class Spectrum(object, MVA):
         return sp
     
     def jump_ratio(self, left_interval, right_interval):
-        '''Returns the jump ratio in the given intervals
+        """Returns the jump ratio in the given intervals
         
         Parameters
         ----------
@@ -1755,7 +1755,7 @@ class Spectrum(object, MVA):
         Returns
         -------
         float
-        '''
+        """
         ilt1 = self.energy2index(left_interval[0])
         ilt2 = self.energy2index(left_interval[1])
         irt1 = self.energy2index(right_interval[0])
@@ -1765,12 +1765,12 @@ class Spectrum(object, MVA):
         return jump_ratio
     
     def sum(self, axis):
-        '''Sum the SI over the given axis
+        """Sum the SI over the given axis
         
         Parameters
         ----------
         axis : int
-        '''
+        """
         dc = self.data_cube
         dc = dc.sum(axis)
         dc = dc.reshape(list(dc.shape) + [1,])
@@ -1778,12 +1778,12 @@ class Spectrum(object, MVA):
         self.get_dimensions_from_cube()
 
     def mean(self, axis):
-        '''Average the SI over the given axis
+        """Average the SI over the given axis
         
         Parameters
         ----------
         axis : int
-        '''
+        """
         dc = self.data_cube
         dc = dc.mean(axis)
         dc = dc.reshape(list(dc.shape) + [1,])
@@ -1791,18 +1791,18 @@ class Spectrum(object, MVA):
         self.get_dimensions_from_cube()
         
     def roll(self, axis = 2, shift = 1):
-        '''Roll the SI. see numpy.roll
+        """Roll the SI. see numpy.roll
         
         Parameters
         ----------
         axis : int
         shift : int
-        '''
+        """
         self.data_cube = np.roll(self.data_cube, shift, axis)
         self._replot()
         
     def remove_Shirley_background(self, max_iter = 10, eps = 1e-6):
-        '''Remove the inelastic background of photoemission SI by the shirley 
+        """Remove the inelastic background of photoemission SI by the shirley 
         iterative method.
         
         Parameters
@@ -1811,7 +1811,7 @@ class Spectrum(object, MVA):
             maximum number of iterations
         eps : float
             convergence limit
-        '''
+        """
         bg_list = []
         iter = 0
         s = self.data_cube.copy()
@@ -1839,7 +1839,7 @@ class Spectrum(object, MVA):
         return epsilon, bg_list
     
     def sum_in_mask(self, mask):
-        '''Returns the result of summing all the spectra in the mask.
+        """Returns the result of summing all the spectra in the mask.
         
         Parameters
         ----------
@@ -1848,7 +1848,7 @@ class Spectrum(object, MVA):
         Returns
         -------
         Spectrum
-        '''
+        """
         dc = self.data_cube.copy()
         mask3D = mask.reshape([1,] + list(mask.shape)) * np.ones(dc.shape)
         dc = (mask3D*dc).sum(1).sum(1) / mask.sum()
@@ -1860,7 +1860,7 @@ class Spectrum(object, MVA):
     
     def correct_dual_camera_step(self, show_lev = False, mean_interval = 3, 
     pca_interval = 20, pcs = 2, normalize_poissonian_noise = False):
-        '''Correct the gain difference in a dual camera using PCA.
+        """Correct the gain difference in a dual camera using PCA.
         
         Parameters
         ----------
@@ -1871,7 +1871,7 @@ class Spectrum(object, MVA):
         pcs : int
             number of principal components
         normalize_poissonian_noise : bool
-        ''' 
+        """ 
         # The step is between pixels 1023 and 1024
         pw = pca_interval
         mw = mean_interval
@@ -1890,15 +1890,15 @@ class Spectrum(object, MVA):
         return step
     
     def get_calibration_from(self, s):
-        '''Copy the calibration from another Spectrum instance
+        """Copy the calibration from another Spectrum instance
         Parameters
         ----------
         s : spectrum instance
-        '''
+        """
         utils.copy_energy_calibration(s, self)
     
     def estimate_variance(self, dc = None, gaussian_noise_var = None):
-        '''Variance estimation supposing Poissonian noise
+        """Variance estimation supposing Poissonian noise
         
         Parameters
         ----------
@@ -1908,7 +1908,7 @@ class Spectrum(object, MVA):
         Note
         ----
         The gain_factor and gain_offset from the aquisition parameters are used
-        '''
+        """
         print "Variace estimation using the following values:"
         print "Gain factor = ", self.acquisition_parameters.gain_factor
         print "Gain offset = ", self.acquisition_parameters.gain_offset
@@ -1986,9 +1986,9 @@ class Spectrum(object, MVA):
             return data[spectral_range,:,:].sum(0)
     
     def plot(self):
-        '''Plots the current spectrum to the screen and a map with a cursor to 
+        """Plots the current spectrum to the screen and a map with a cursor to 
         explore the SI.
-        '''
+        """
         
         # If new coordinates are assigned
         controllers.coordinates_controller.assign_coordinates(self)

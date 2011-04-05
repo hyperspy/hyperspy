@@ -30,9 +30,9 @@ from .. import spectrum
 r2 = math.sqrt(2)
 
 class CubeProjection(Component):
-    '''
+    """
     Model for the thickness of a tilted cube
-    '''
+    """
 
     def __init__( self, sigma = 0 ):
         Component.__init__(self, ['edge_length', 'center', 'angle', 'mfp', 

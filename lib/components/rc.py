@@ -23,8 +23,8 @@ import numpy as np
 from ..component import Component
 
 class RC(Component):
-    '''
-    '''
+    """
+    """
 
     def __init__(self, V=1, V0= 0, tau=1.):
         Component.__init__(self, ('Vmax', 'V0', 'tau'))
@@ -32,8 +32,8 @@ class RC(Component):
         self.Vmax.value, self.V0.value, self.tau.value = Vmax, V0, tau
 
     def function( self, x ) :
-        '''
-        '''
+        """
+        """
         Vmax = self.Vmax.value
         V0 = self.V0.value
         tau = self.tau.value

@@ -3,7 +3,7 @@
 #
 #class PESSignal(Signal):
 #    def remove_Shirley_background(self, max_iter = 10, eps = 1e-6):
-#        '''Remove the inelastic background of photoemission SI by the shirley 
+#        """Remove the inelastic background of photoemission SI by the shirley 
 #        iterative method.
 #        
 #        Parameters
@@ -12,7 +12,7 @@
 #            maximum number of iterations
 #        eps : float
 #            convergence limit
-#        '''
+#        """
 #        bg_list = []
 #        iter = 0
 #        s = self.data_cube.copy()

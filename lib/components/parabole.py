@@ -24,8 +24,8 @@ from ..component import Component
 
 
 class Parabole(Component):
-    '''
-    '''
+    """
+    """
 
     def __init__(self, a=0, b=1.,c = 1., origin = 0):
         Component.__init__(self, ['a', 'b', 'c', 'origin'])
@@ -40,27 +40,27 @@ class Parabole(Component):
 
 
     def function( self, x ) :
-        '''
+        """
         Given an one dimensional array x containing the energies at which
         you want to evaluate the background model, returns the background
         model for the current parameters.
-        '''
+        """
         return self.a.value + self.b.value * (x - self.origin.value)**2
     def grad_a(self, x):
-        '''
+        """
         Given an one dimensional array x containing the energies at which
         you want to evaluate the gradient of the background model,
         returns the gradient of parameter A for the current value of the
         parameters.
-        '''
+        """
         return  np.ones(len(x))
     def grad_b(self,x):
-        '''
+        """
         Given an one dimensional array x containing the energies at which
         you want to evaluate the gradient of the background model,
         returns the gradient of parameter sigma for the current value of
         the parameters.
-        '''
+        """
         return (x - self.origin.value)**2
 
     def grad_origin(self,x):

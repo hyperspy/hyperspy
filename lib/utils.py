@@ -46,7 +46,7 @@ except:
     import matplotlib.pyplot as plt
     
 def generate_axis(origin,step,N,index=0):
-    '''Creates an axis given the origin, step and number of channels
+    """Creates an axis given the origin, step and number of channels
     
     Alternatively, the index of the origin channel can be specified.
     
@@ -61,13 +61,13 @@ def generate_axis(origin,step,N,index=0):
     Returns
     -------
     Numpy array
-    '''
+    """
     return np.linspace(origin-index*step, origin+step*(N-1-index),
 N)    
 
 
 def two_area_powerlaw_estimation(SI, E1, E2, only_current_spectrum = False):
-    '''Estimate a power law fit by the two area method
+    """Estimate a power law fit by the two area method
     
     Parameters
     ----------
@@ -81,7 +81,7 @@ def two_area_powerlaw_estimation(SI, E1, E2, only_current_spectrum = False):
     -------
     Dictionary
     keys: r, A
-    '''
+    """
     
     energy2index = SI.energy2index
     i1 = energy2index(E1)
@@ -104,7 +104,7 @@ def two_area_powerlaw_estimation(SI, E1, E2, only_current_spectrum = False):
     return {'r': r, 'A': A}
     
 def gaussian_estimation(SI, E1, E2):
-    '''Estimates the parameters of a gaussian by calculating the moments
+    """Estimates the parameters of a gaussian by calculating the moments
     
     fit = lambda t : max*exp(-(t-x)**2/(2*width**2))
     (From scipy cookbook)
@@ -124,7 +124,7 @@ def gaussian_estimation(SI, E1, E2):
     origin : float
     FWHM : float
     height : float 
-    '''
+    """
     i1 = SI.energy2index(E1)
     i2 = SI.energy2index(E2)
     data = np.swapaxes(np.swapaxes(SI.data_cube[i1:i2],0,1),1,2)
@@ -135,7 +135,7 @@ def gaussian_estimation(SI, E1, E2):
     return {'origin': x, 'FWHM': width, 'height': max}
 
 def check_cube_dimensions(sp1, sp2, warn = True):
-    '''Checks if the given SIs has the same dimensions.
+    """Checks if the given SIs has the same dimensions.
     
     Parameters
     ----------
@@ -146,7 +146,7 @@ def check_cube_dimensions(sp1, sp2, warn = True):
     Returns
     -------
     Boolean
-    '''
+    """
     if sp1.data_cube.shape == sp2.data_cube.shape:
         return True
     else:
@@ -156,7 +156,7 @@ def check_cube_dimensions(sp1, sp2, warn = True):
         return False
 
 def check_energy_dimensions(sp1, sp2, warn = True, sp2_name = None):
-    '''Checks if sp2 is a single spectrum with the same energy dimension as sp1
+    """Checks if sp2 is a single spectrum with the same energy dimension as sp1
     
     Parameters
     ----------
@@ -168,7 +168,7 @@ def check_energy_dimensions(sp1, sp2, warn = True, sp2_name = None):
     Returns
     -------
     Boolean
-    '''
+    """
     sp2_dim = len(sp2.data_cube.squeeze().shape)
     sp1_Edim = sp1.data_cube.shape[0]
     sp2_Edim = sp2.data_cube.shape[0]
@@ -186,7 +186,7 @@ def check_energy_dimensions(sp1, sp2, warn = True, sp2_name = None):
         return False
 
 def unfold_if_2D(spectrum):
-    '''Unfold the SI if it is 2D
+    """Unfold the SI if it is 2D
     
     Parameters
     ----------
@@ -196,7 +196,7 @@ def unfold_if_2D(spectrum):
     -------
     
     Boolean. True if the SI was unfolded by the function.
-    '''
+    """
     if spectrum.xdimension > 1 and spectrum.ydimension > 1:
         print "Automatically unfolding the SI"
         spectrum.unfold()
@@ -206,7 +206,7 @@ def unfold_if_2D(spectrum):
     
 def estimate_gain(noisy_SI, clean_SI, mask = None, pol_order = 1, 
 higher_than = None):
-    '''Find the scale and offset of the Poissonian noise
+    """Find the scale and offset of the Poissonian noise
     
     By comparing an SI with its denoised version (i.e. by PCA), this plots an 
     estimation of the variance as a function of the number of counts and fits a 
@@ -226,7 +226,7 @@ higher_than = None):
     -------
     Dictionary with the result of a linear fit to estimate the offset and 
     scale factor
-    '''
+    """
     ns = noisy_SI.data_cube.copy()
     cl = clean_SI.data_cube.copy()
 
@@ -262,7 +262,7 @@ higher_than = None):
         clean_SI.fold()
         
 def rebin(a, new_shape):
-    '''Rebin SI
+    """Rebin SI
     
     rebin ndarray data into a smaller ndarray of the same rank whose dimensions
     are factors of the original dimensions. eg. An array with 6 columns and 4 
@@ -281,7 +281,7 @@ def rebin(a, new_shape):
     Returns
     -------
     numpy array
-    '''
+    """
     shape = a.shape
     lenShape = len(shape)
     factor = np.asarray(shape)/np.asarray(new_shape)
@@ -291,7 +291,7 @@ def rebin(a, new_shape):
     return eval(''.join(evList))
     
 def estimate_drift(im1,im2):
-    '''Estimate the drift  between two images by cross-correlation
+    """Estimate the drift  between two images by cross-correlation
     
     
     It preprocess the images by applying a median filter (to smooth the images) 
@@ -304,7 +304,7 @@ def estimate_drift(im1,im2):
     Output
     ------
     array with the coordinates of the translation of im2 in respect to im1.
-    '''
+    """
     print "Estimating the spatial drift"
     im1 = im1.data_cube.squeeze()
     im2 = im2.data_cube.squeeze()
@@ -420,7 +420,7 @@ def resub(D, rhs):
    
 
 def calc_coeff(num_points, pol_degree, diff_order=0):
-    '''Calculates filter coefficients for symmetric savitzky-golay filter.
+    """Calculates filter coefficients for symmetric savitzky-golay filter.
     http://www.procoders.net
     see: http://www.nrbook.com/a/bookcpdf/c14-8.pdf
 
@@ -434,7 +434,7 @@ def calc_coeff(num_points, pol_degree, diff_order=0):
                  1 means that filter results in smoothing the first 
                                              derivative of function.
                  and so on ...
-    '''
+    """
 
     # setup normal matrix
     A = np.zeros((2*num_points+1, pol_degree+1), float)
@@ -480,9 +480,9 @@ def smooth(data, coeff):
     return res[N:-N][len(leftpad):-len(rightpad)]
 
 def sg(data, num_points, pol_degree, diff_order=0):
-    '''Savitzky-Golay filter
+    """Savitzky-Golay filter
     http://www.procoders.net
-    '''
+    """
     coeff = calc_coeff(num_points, pol_degree, diff_order)
     return smooth(data, coeff)
     
@@ -543,7 +543,7 @@ def lowess(x, y, f=2/3., iter=3):
 
     
 def wavelet_poissonian_denoising(spectrum):
-    '''Denoise data with pure Poissonian noise using wavelets
+    """Denoise data with pure Poissonian noise using wavelets
     
     Wrapper around the R packages EbayesThresh and wavethresh
     
@@ -554,7 +554,7 @@ def wavelet_poissonian_denoising(spectrum):
     Returns
     -------
     Spectrum instance.
-    '''
+    """
     import_rpy()
     rpy.r.library('EbayesThresh')
     rpy.r.library('wavethresh')
@@ -567,7 +567,7 @@ def wavelet_poissonian_denoising(spectrum):
     return XHFest
 
 def wavelet_gaussian_denoising(spectrum):
-    '''Denoise data with pure Gaussian noise using wavelets
+    """Denoise data with pure Gaussian noise using wavelets
     
     Wrapper around the R packages EbayesThresh and wavethresh
     
@@ -578,7 +578,7 @@ def wavelet_gaussian_denoising(spectrum):
     Returns
     -------
     Spectrum instance.
-    '''
+    """
     import_rpy()
     rpy.r.library('EbayesThresh')
     rpy.r.library('wavethresh')
@@ -589,7 +589,7 @@ def wavelet_gaussian_denoising(spectrum):
     return Xdn
 
 def wavelet_dd_denoising(spectrum):
-    '''Denoise data with arbitraty noise using wavelets
+    """Denoise data with arbitraty noise using wavelets
     
     Wrapper around the R packages EbayesThresh, wavethresh and DDHFm
     
@@ -600,7 +600,7 @@ def wavelet_dd_denoising(spectrum):
     Returns
     -------
     Spectrum instance.
-    '''
+    """
     import_rpy()
     rpy.r.library('EbayesThresh')
     rpy.r.library('wavethresh')
@@ -615,7 +615,7 @@ def wavelet_dd_denoising(spectrum):
     return XHFest
 
 def loess(y,x = None, span = 0.2):
-    '''locally weighted scatterplot smoothing
+    """locally weighted scatterplot smoothing
     
     Wrapper around the R funcion loess
     
@@ -628,7 +628,7 @@ def loess(y,x = None, span = 0.2):
     Returns
     -------
     Spectrum instance.
-    '''
+    """
     import_rpy()
     if x is None:
         x = np.arange(0,len(y))
@@ -641,7 +641,7 @@ def loess(y,x = None, span = 0.2):
 
     
 def ALS(s, thresh =.001, nonnegS = True, nonnegC = True):
-    '''Alternate least squares
+    """Alternate least squares
     
     Wrapper around the R's ALS package
     
@@ -658,7 +658,7 @@ def ALS(s, thresh =.001, nonnegS = True, nonnegC = True):
     Returns
     -------
     Dictionary   
-    '''
+    """
     import_rpy()
 #    Format
 #    ic format (channels, components)
@@ -694,7 +694,7 @@ def ALS(s, thresh =.001, nonnegS = True, nonnegC = True):
     return als_result
 
 def snica(to_demix):
-    '''Stochastic Non-negative Independent Component Analysis
+    """Stochastic Non-negative Independent Component Analysis
     Wrapper around the SNICA ICA algorithm by Sergey Astakhov.
     http://www.klab.caltech.edu/~kraskov/MILCA/
     
@@ -706,7 +706,7 @@ def snica(to_demix):
     Returns
     -------
     tuple : demixed spectra and mixing matrix    
-    '''
+    """
     import snica_b
     # High temperature T=0.02 step
     y, ae = snica_b.snica_b(to_demix.T, np.eye(to_demix.shape[1]), 0.2, 0.02, 500, 10)
@@ -715,14 +715,14 @@ def snica(to_demix):
     return y.T,ae
 
 def amari(C,A):
-    '''Amari test for ICA
+    """Amari test for ICA
     Adapted from the MILCA package http://www.klab.caltech.edu/~kraskov/MILCA/
     
     Parameters
     ----------
     C : numpy array
     A : numpy array
-    '''
+    """
     b,a = C.shape
 
     dummy= np.dot(np.linalg.pinv(A),C)
@@ -742,7 +742,7 @@ def _ntu(C):
     return CN
 
 def center_and_scale(data):
-    '''Center and scale SI
+    """Center and scale SI
     
     Parameters
     ----------
@@ -753,7 +753,7 @@ def center_and_scale(data):
     Dictionary:
         data : array
         invsqcovmat : array
-    '''
+    """
     N = data.shape[1]
     data = data - np.average(data,0).reshape(1,-1)
     data = data.T
@@ -765,7 +765,7 @@ def center_and_scale(data):
     return {'data' : data, 'invsqcovmat' : invsqcovmat}
     
 def analyze_readout(spectrum):
-    '''Readout diagnostic tool
+    """Readout diagnostic tool
     
     Parameters
     ----------
@@ -774,7 +774,7 @@ def analyze_readout(spectrum):
     Returns
     -------
     tuple of float : (variance, mean, normalized mean as a function of time)
-    '''
+    """
     s = spectrum
     # If it is 2D, sum the first axis.
     if s.data_cube.shape[2] > 1:
@@ -789,7 +789,7 @@ def analyze_readout(spectrum):
     return variance, channel_mean, norm_time_mean
 
 def multi_readout_analyze(folder, ccd_height = 100., plot = True, freq = None):
-    '''Analyze several readout measurements in different files for readout 
+    """Analyze several readout measurements in different files for readout 
     diagnosys
     
     The readout files in dm3 format must be contained in a folder, preferentely 
@@ -807,7 +807,7 @@ def multi_readout_analyze(folder, ccd_height = 100., plot = True, freq = None):
     Returns
     -------
     Dictionary
-    '''    
+    """    
     from spectrum import Spectrum
     files = glob.glob1(folder, '*.nc')
     if not files:
@@ -850,7 +850,7 @@ def multi_readout_analyze(folder, ccd_height = 100., plot = True, freq = None):
 
 def chrono_align_and_sum(spectrum, energy_range = (None, None), 
                          spatial_shape = None):
-    '''Alignment and sum of a chrono-spim SI
+    """Alignment and sum of a chrono-spim SI
     
     Parameters
     ----------
@@ -859,7 +859,7 @@ def chrono_align_and_sum(spectrum, energy_range = (None, None),
     energy_range : tuple of floats
         energy interval in which to perform the alignment in energy units
     axis : int
-    '''
+    """
     from spectrum import Spectrum
     dc = spectrum.data_cube
     min_energy_size = dc.shape[0]
@@ -901,12 +901,12 @@ def chrono_align_and_sum(spectrum, energy_range = (None, None),
         spectrum.get_dimensions_from_cube()
 
 def copy_energy_calibration(from_spectrum, to_spectrum):
-    '''Copy the energy calibration between two SIs
+    """Copy the energy calibration between two SIs
     
     Parameters
     ----------
     from_spectrum, to spectrum : Spectrum instances
-    '''
+    """
     f = from_spectrum
     t = to_spectrum
     t.energyscale = f.energyscale
@@ -918,7 +918,7 @@ def copy_energy_calibration(from_spectrum, to_spectrum):
 
 
 def str2num(string, **kargs):
-    '''Transform a a table in string form into a numpy array
+    """Transform a a table in string form into a numpy array
     
     Parameters
     ----------
@@ -927,23 +927,23 @@ def str2num(string, **kargs):
     Returns
     -------
     numpy array
-    '''
+    """
     stringIO = StringIO(string)
     return np.loadtxt(stringIO, **kargs)
 
 def PL_signal_ratio(E, delta = 1000., exponent = -1.96):
-    '''Ratio between the intensity at E and E+delta in a powerlaw
+    """Ratio between the intensity at E and E+delta in a powerlaw
     
     Parameters:
     -----------
     E : float or array
     delta : float
     exponent :  float 
-    '''  
+    """  
     return ((E+float(delta))/E)**exponent
 
 def order_of_magnitude(number):
-    '''Order of magnitude of the given number
+    """Order of magnitude of the given number
     
     Parameters
     ----------
@@ -952,11 +952,11 @@ def order_of_magnitude(number):
     Returns
     -------
     Float
-    '''
+    """
     return math.floor(math.log10(number))
 
 def bragg_scattering_angle(d, E0 = 100):
-    '''
+    """
     Parameters
     ----------
     d : float
@@ -968,7 +968,7 @@ def bragg_scattering_angle(d, E0 = 100):
     -------
     float : Semiangle of scattering of the first order difracted beam. This is 
     two times the bragg angle. 
-    '''
+    """
     
     gamma = 1 + E0 / 511.
     v_rel = np.sqrt(1-1/gamma**2)
@@ -978,7 +978,7 @@ def bragg_scattering_angle(d, E0 = 100):
     return e_lambda / d
 
 def effective_Z(Z_list, exponent = 2.94):
-    '''Effective atomic number of a compound or mixture
+    """Effective atomic number of a compound or mixture
     
     exponent = 2.94 for X-ray absorption
     
@@ -991,7 +991,7 @@ def effective_Z(Z_list, exponent = 2.94):
     Return
     ------
     float
-    '''
+    """
     exponent = float(exponent)
     temp = 0
     total_e = 0
