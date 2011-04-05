@@ -31,15 +31,15 @@ import mmap
 import re
 import numpy as np
 
-from silib.axes import DataAxis
+from ..axes import DataAxis
 
 # relative imports are discouraged (PEP0008)
-from silib.utils_readfile import *
+from ..utils_readfile import *
 #from ..utils_readfile import *
-from silib.exceptions import *
+from ..exceptions import *
 #from ..exceptions import *
-from silib.utils_varia import overwrite, swapelem
-from silib.utils_varia import DictBrowser, fsdict
+from ..utils_varia import overwrite, swapelem
+from ..utils_varia import DictBrowser, fsdict
 #from ..utils_varia import overwrite, swapelem
 #from ..utils_varia import DictBrowser, fsdict
 

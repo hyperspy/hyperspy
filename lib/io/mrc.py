@@ -21,7 +21,7 @@
 # The details of the format were taken from http://www.biochem.mpg.de/tom
 
 import numpy as np
-from silib.axes import DataAxis
+from ..axes import DataAxis
 
 # Plugin characteristics
 # ----------------------
