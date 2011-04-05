@@ -24,8 +24,8 @@ import numpy as np
 from ..component import Component
 
 class Logistic(Component):
-    '''
-    '''
+    """
+    """
 
     def __init__(self):
         # Define the parameters
@@ -38,9 +38,9 @@ class Logistic(Component):
         self.origin.grad = self.grad_origin
 
     def function(self, x):
-        '''
+        """
         This functions it too complicated to explain
-        '''
+        """
         a = self.a.value
         b = self.b.value
         c = self.c.value
@@ -48,9 +48,9 @@ class Logistic(Component):
         return a/(1+b*np.exp(-c*(x-origin)))
     
     def grad_a(self, x):
-        '''
+        """
         Returns d(function)/d(parameter_1)
-        '''
+        """
         a = self.a.value
         b = self.b.value
         c = self.c.value
@@ -59,9 +59,9 @@ class Logistic(Component):
         return 1/(1+b*np.exp(-c*(x-origin)))
     
     def grad_b(self, x):
-        '''
+        """
         Returns d(function)/d(parameter_1)
-        '''
+        """
         a = self.a.value
         b = self.b.value
         c = self.c.value
@@ -70,9 +70,9 @@ class Logistic(Component):
         return -(a*np.exp(-c*(x-origin)))/(b*np.exp(-c*(x-origin))+1)**2
     
     def grad_c(self, x):
-        '''
+        """
         Returns d(function)/d(parameter_1)
-        '''
+        """
         a = self.a.value
         b = self.b.value
         c = self.c.value
@@ -82,9 +82,9 @@ class Logistic(Component):
     (b*np.exp(-c*(x-origin))+1)**2
     
     def grad_origin(self, x):
-        '''
+        """
         Returns d(function)/d(parameter_1)
-        '''
+        """
         a = self.a.value
         b = self.b.value
         c = self.c.value

@@ -30,17 +30,17 @@ def vst(x, kind = 'ascombe'):
         return 2*np.sqrt(x+3/8.)
 
 class Optimizers(Estimators):
-    '''
-    '''
+    """
+    """
 
     def fit(self, fitter = defaults.fitter, method = 'ls', grad = False, 
     weights = None, ext_bounding = False, ascombe = True, update_plot = False, 
     **kwargs):
-        '''
+        """
         Fits the model to the experimental data using the fitter e
         The covariance matrix calculated by the 'leastsq' fitter is not always
         reliable
-        '''
+        """
         switch_aap = (update_plot != self.auto_update_plot)
         if switch_aap is True:
             self.set_auto_update_plot(update_plot)
@@ -143,7 +143,7 @@ class Optimizers(Estimators):
                 approx_grad = approx_grad, **kwargs)[0]
             else:
                 print \
-                '''
+                """
                 The %s optimizer is not available.
 
                 Available optimizers:
@@ -155,7 +155,7 @@ class Optimizers(Estimators):
                 Cosntrained:
                 ------------
                 tnc and l_bfgs_b
-                ''' % fitter
+                """ % fitter
                 
         
         if np.iterable(self.p0) == 0:

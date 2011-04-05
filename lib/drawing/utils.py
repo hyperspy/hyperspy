@@ -26,8 +26,8 @@ except:
     import matplotlib.pyplot as plt
 
 def does_figure_object_exists(fig_obj):
-    '''Test if a figure really exist
-    '''
+    """Test if a figure really exist
+    """
     if fig_obj is None:
         return False
     else:
@@ -50,14 +50,14 @@ def create_figure(window_title = None, _on_window_close = None):
     return fig
                 
 def on_window_close(figure, function):
-    '''Connects a close figure signal to a given function
+    """Connects a close figure signal to a given function
     
     Parameters
     ----------
     
     figure : mpl figure instance
     function : function
-    '''
+    """
     window = figure.canvas.manager.window
     backend = plt.get_backend()
     if backend == 'GTKAgg':
@@ -96,7 +96,7 @@ def on_window_close(figure, function):
         # disable until I have the time to study it.
 
 def plot_RGB_map(im_list, normalization = 'single', dont_plot = False):
-    '''Plots 2 or 3 maps in RGB
+    """Plots 2 or 3 maps in RGB
     
     Parameters
     ----------
@@ -107,7 +107,7 @@ def plot_RGB_map(im_list, normalization = 'single', dont_plot = False):
     Returns
     -------
     array: RGB matrix
-    '''
+    """
 #    from widgets import cursors
     width, height = im_list[0].data_cube.shape[:2]
     rgb = np.zeros((height, width,3))
@@ -133,7 +133,7 @@ def plot_RGB_map(im_list, normalization = 'single', dont_plot = False):
         return rgb
         
 def subplot_parameters(fig):
-    '''Returns a list of the subplot paramters of a mpl figure
+    """Returns a list of the subplot paramters of a mpl figure
     
     Parameters
     ----------
@@ -142,7 +142,7 @@ def subplot_parameters(fig):
     Returns
     -------
     tuple : (left, bottom, right, top, wspace, hspace)
-    '''
+    """
     wspace = fig.subplotpars.wspace
     hspace = fig.subplotpars.hspace
     left = fig.subplotpars.left

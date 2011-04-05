@@ -25,10 +25,10 @@ from ..component import Component
 from .gaussian import Gaussian
 
 class Vignetting(Component):
-    '''
+    """
     Model the vignetting of the lens with a cos^4 law multiplied by lines on
     the edges
-    '''
+    """
 
     def __init__(self):
         Component.__init__(self, ['optical_center', 'height', 'period', 

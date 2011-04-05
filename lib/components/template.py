@@ -21,8 +21,8 @@
 from ..component import Component
 
 class My_Component(Component):
-    '''
-    '''
+    """
+    """
 
     def __init__(self, parameter_1 = 1, parameter_2 = 2):
         # Define the parameters
@@ -58,23 +58,23 @@ class My_Component(Component):
     # Define the function as a function of the already defined parameters, x 
     # being the independent variable value
     def function(self, x):
-        '''
+        """
         This functions it too complicated to explain
-        '''
+        """
         p1 = self.parameter_1.value
         p2 = self.parameter_2.value
         return p1 + x*p2
     
     # Optionally define the gradients of each parameter
 #    def grad_parameter_1(self, x):
-#        '''
+#        """
 #        Returns d(function)/d(parameter_1)
-#        '''
+#        """
 #        return 0
 #    def grad_parameter_2(self, x):
-#        '''
+#        """
 #        Returns d(function)/d(parameter_2)
-#        '''
+#        """
 #        return x
 
 

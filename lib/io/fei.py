@@ -57,12 +57,12 @@ data_types = {
 }
 
 def readLELong(file):
-    '''Read 4 bytes as *little endian* integer in file'''
+    """Read 4 bytes as *little endian* integer in file"""
     read_bytes = file.read(4)
     return struct.unpack('<L', read_bytes)[0]
 
 def readLEShort(file):
-    '''Read 2 bytes as *little endian* integer in file'''
+    """Read 2 bytes as *little endian* integer in file"""
     read_bytes = file.read(2)
     return struct.unpack('<H', read_bytes)[0]
 
@@ -258,8 +258,8 @@ def get_xml_info_from_emi(emi_file):
     return objects[:-1]
     
 def ser_reader(filename, *args, **kwds):
-    '''Reads the information from the file and returns it in the EELSLab 
-    required format'''
+    """Reads the information from the file and returns it in the EELSLab 
+    required format"""
     # Determine if it is an emi or a ser file.
     
     header, data = load_ser_file(filename)

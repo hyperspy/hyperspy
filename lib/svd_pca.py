@@ -21,13 +21,13 @@
 import numpy as np
 
 def pca(data):
-    '''Perform PCA using SVD.
+    """Perform PCA using SVD.
     data - MxN matrix of input data
     (M dimensions, N trials)
     signals - MxN matrix of projected data
     PC - each column is a PC
     V - Mx1 matrix of variances
-    '''
+    """
     print "Performing PCA with a SVD based algorithm"
     N, M = data.shape
     Y = data

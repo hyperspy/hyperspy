@@ -26,8 +26,8 @@ from ..component import Component
 sqrt2pi = np.sqrt(2*np.pi)
 
 class Gaussian4SEM(Component):
-    '''
-    '''
+    """
+    """
 
     def __init__(self, A=1., FWHM=1.,origin = 0.):
         Component.__init__(self, ['A', 'FWHM', 'origin', 'ab', 'shirley'])
@@ -60,11 +60,11 @@ class Gaussian4SEM(Component):
 
 
     def function( self, x ) :
-        '''
+        """
         Given an one dimensional array x containing the energies at which
         you want to evaluate the background model, returns the background
         model for the current parameters.
-        '''
+        """
         a0 = self.A.value
         a1 = self.origin.value
         a2 = self.FWHM.value

@@ -41,8 +41,8 @@ def approx_hessian(xk,f,*args):
     return hess  
 
 class Estimators:
-    '''
-    '''
+    """
+    """
     def calculate_p_std(self, p0, method, *args):
         print "Estimating the standard deviation"
         f = self._poisson_likelihood_function if method == 'ml' \
@@ -53,9 +53,9 @@ class Estimators:
         return p_std
 
     def _poisson_likelihood_function(self,param,y, weights = None):
-        '''Returns the likelihood function of the model for the given
+        """Returns the likelihood function of the model for the given
         data and parameters
-        '''
+        """
         mf = self._model_function(param)
         return -(y*np.log(mf) - mf).sum()
 

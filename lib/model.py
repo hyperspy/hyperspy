@@ -36,7 +36,7 @@ import drawing.spectrum
 import progressbar
 
 class Model(list, Optimizers, Estimators, Controls):
-    '''Build a fit a model
+    """Build a fit a model
     
     Parameters
     ----------
@@ -47,7 +47,7 @@ class Model(list, Optimizers, Estimators, Controls):
     auto_add_edges : boolen
         If True (default), it will automatically add the ionization edges as 
         defined in the Spectrum instance.
-    '''
+    """
     
     __firstimetouch = True
 
@@ -134,14 +134,14 @@ class Model(list, Optimizers, Estimators, Controls):
             self._touch() 
 
     def _touch(self):
-        '''Run model setup tasks
+        """Run model setup tasks
         
         This function must be called everytime that we add or remove components
         from the model.
         It creates the bookmarks self.edges and sef.__background_components and 
         configures the edges by setting the dispersion attribute and setting 
         the fine structure.
-        '''
+        """
         self.edges = []
         self.__background_components = []
         for component in self:
@@ -203,10 +203,10 @@ class Model(list, Optimizers, Estimators, Controls):
         self.auto_update_plot = tof
                     
     def generate_cube(self):
-        '''Generate a SI with the current model
+        """Generate a SI with the current model
         
         The SI is stored in self.model_cube
-        '''
+        """
         for iy in range(self.model_cube.shape[2]):
             for ix in range(self.model_cube.shape[1]):
                 print "x = %i\ty = %i" % (ix, iy)
@@ -219,7 +219,7 @@ class Model(list, Optimizers, Estimators, Controls):
 
     def resolve_fine_structure(self,preedge_safe_window_width = 
         defaults.preedge_safe_window_width, i1 = 0):
-        '''Adjust the fine structure of all edges to avoid overlapping
+        """Adjust the fine structure of all edges to avoid overlapping
         
         This function is called automatically everytime the position of an edge
         changes
@@ -229,7 +229,7 @@ class Model(list, Optimizers, Estimators, Controls):
         preedge_safe_window_width : float
             minimum distance between the fine structure of an ionization edge 
             and that of the following one.
-        '''
+        """
 
         while (self.edges[i1].fs_state is False or  
         self.edges[i1].active is False) and i1 < len(self.edges)-1 :
@@ -285,10 +285,10 @@ class Model(list, Optimizers, Estimators, Controls):
         self.p0 = tuple(p0)
     
     def set_boundaries(self):
-        '''Generate the boundary list.
+        """Generate the boundary list.
         
         Necessary before fitting with a boundary awared optimizer
-        '''
+        """
         self.free_parameters_boundaries = []
         for component in self:
             component.refresh_free_parameters()
@@ -302,24 +302,24 @@ class Model(list, Optimizers, Estimators, Controls):
                         param._bounds))
 
     def set(self):
-        ''' Store the parameters of the current coordinates into the 
+        """ Store the parameters of the current coordinates into the 
         parameters array.
         
         If the parameters array has not being defined yet it creates it filling 
-        it with the current parameters.'''
+        it with the current parameters."""
         for component in self:
             component.store_current_parameters_in_map(
             *self.coordinates.coordinates)
 
     def charge(self, only_fixed = False):
-        '''Charge the parameters for the current spectrum from the parameters 
+        """Charge the parameters for the current spectrum from the parameters 
         array
         
         Parameters
         ----------
         only_fixed : bool
             If True, only the fixed parameters will be charged.
-        '''
+        """
         switch_aap = (False != self.auto_update_plot)
         if switch_aap is True:
             self.set_auto_update_plot(False)
@@ -333,14 +333,14 @@ class Model(list, Optimizers, Estimators, Controls):
                 line.update()
 
     def _charge_p0(self, p_std = None):
-        '''Charge the free data for the current coordinates (x,y) from the
+        """Charge the free data for the current coordinates (x,y) from the
         p0 array.
         
         Parameters
         ----------
         p_std : array
             array containing the corresponding standard deviation
-        '''
+        """
         comp_p_std = None
         counter = 0
         for component in self: # Cut the parameters list
@@ -369,7 +369,7 @@ class Model(list, Optimizers, Estimators, Controls):
         return ns
     
     def __call__(self,non_convolved=False, onlyactive=False) :
-        '''Returns the corresponding model for the current coordinates
+        """Returns the corresponding model for the current coordinates
         
         Parameters
         ----------
@@ -383,7 +383,7 @@ class Model(list, Optimizers, Estimators, Controls):
         Returns
         -------
         numpy array
-        '''
+        """
             
         if self.convolved is False or non_convolved is True:
             axis = self.hl.energy_axis[self.channel_switches]
@@ -432,7 +432,7 @@ class Model(list, Optimizers, Estimators, Controls):
 
 
     def set_energy_region(self, E1=None, E2=None):
-        '''Use only the selected area in the fitting routine.
+        """Use only the selected area in the fitting routine.
         
         Parameters
         ----------
@@ -442,7 +442,7 @@ class Model(list, Optimizers, Estimators, Controls):
         Notes
         -----
         To use the full energy range call the function without arguments.
-        '''
+        """
         if E1 is not None :
             if E1 > self.hl.energy_axis[0]:
                 start_index = self.hl.energy2index(E1)
@@ -462,7 +462,7 @@ class Model(list, Optimizers, Estimators, Controls):
         self.channel_switches[start_index:stop_index] = True
 
     def remove_data_range(self,E1 = None,E2= None):
-        '''Do not use the data in the selected range in the fitting rountine
+        """Do not use the data in the selected range in the fitting rountine
         
         Parameters
         ----------
@@ -472,7 +472,7 @@ class Model(list, Optimizers, Estimators, Controls):
         Notes
         -----
         To use the full energy range call the function without arguments.
-        '''
+        """
         if E1 is not None :
             start_index = self.hl.energy2index(E1)
         else :
@@ -587,7 +587,7 @@ class Model(list, Optimizers, Estimators, Controls):
         return self._jacobian(param, x)
 
     def smart_fit(self, background_fit_E1 = None, **kwards):
-        ''' Fits everything in a cascade style.'''
+        """ Fits everything in a cascade style."""
 
         # Fit background
         self.fit_background(background_fit_E1, **kwards)
@@ -597,14 +597,14 @@ class Model(list, Optimizers, Estimators, Controls):
             self.fit_edge(i,background_fit_E1, **kwards)
                 
     def fit_background(self,startenergy = None, kind = 'single', **kwards):
-        '''Fit an EELS spectrum ionization edge by ionization edge from left 
+        """Fit an EELS spectrum ionization edge by ionization edge from left 
         to right to optimize convergence.
         
         Parameters
         ----------
         startenergy : float
         kind : {'single', 
-        '''
+        """
         ea = self.hl.energy_axis[self.channel_switches]
 
         print "Fitting the", self.__backgroundtype, "background"
@@ -632,10 +632,10 @@ class Model(list, Optimizers, Estimators, Controls):
         
     def two_area_background_estimation(self, E1 = None, 
     E2 = None):
-        '''
+        """
         Estimates the parameters of a power law background with the two
         area method.
-        '''
+        """
         ea = self.hl.energy_axis[self.channel_switches]
         if E1 is None or E1 < ea[0]:
             E1 = ea[0]
@@ -822,7 +822,7 @@ class Model(list, Optimizers, Estimators, Controls):
             print "The red_chisq could not been calculated"
             
     def save_parameters2file(self,filename):
-        '''Save the parameters array in binary format'''
+        """Save the parameters array in binary format"""
         value_array = None
         std_array = None
         asm_array = None
@@ -845,8 +845,8 @@ class Model(list, Optimizers, Estimators, Controls):
                  asm_array = asm_array,)
 
     def load_parameters_from_file(self,filename):
-        '''Loads the parameters array from  a binary file written with the
-        'save_parameters2file' function'''
+        """Loads the parameters array from  a binary file written with the
+        'save_parameters2file' function"""
         
         f = np.load(filename)
         counter = 0
@@ -894,9 +894,9 @@ class Model(list, Optimizers, Estimators, Controls):
                     elements[element][subshell])
        
     def plot(self, auto_update_plot = True):
-        '''Plots the current spectrum to the screen and a map with a cursor to 
+        """Plots the current spectrum to the screen and a map with a cursor to 
         explore the SI.
-        '''
+        """
         
         # If new coordinates are assigned
         self.hl.plot()

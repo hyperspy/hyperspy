@@ -58,8 +58,8 @@ def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
     return scale*V.real
 
 class Voigt(Component):
-    '''
-    '''
+    """
+    """
 
     def __init__(self):
         Component.__init__(self, ('area', 'origin', 'FWHM', 'gamma', 'resolution', 
@@ -85,11 +85,11 @@ class Voigt(Component):
         self.convolved = True
 
     def function(self, x):
-        '''
+        """
         Given an one dimensional array x containing the energies at which
         you want to evaluate the background model, returns the background
         model for the current parameters.
-        '''
+        """
         area = self.area.value * self.transmission_function.value
         origin = self.origin.value
         ab = self.non_isochromaticity.value

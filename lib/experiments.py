@@ -85,7 +85,7 @@ class Experiments:
             plt.ylabel('Correction factor')
 
     def fourier_ratio_deconvolution(self, fwhm = None):
-        '''Performs Fourier-ratio deconvolution
+        """Performs Fourier-ratio deconvolution
         
         The kernel is eds.hl and the psf is defined in eds.psf.
         
@@ -96,7 +96,7 @@ class Experiments:
             exists, otherwise it is calculated using the extract_zero_loss 
             Spectrum method. Otherwise if float, a gaussian of the given FWHM 
             will be used.
-        '''
+        """
         
         if fwhm is None:
             if self.ll.zero_loss is None:
@@ -118,7 +118,7 @@ class Experiments:
             
     def richardson_lucy_deconvolution(self, iterations = 15, 
     to_dec = 'self.hl', kernel = 'self.psf', mask = None):
-        '''
+        """
     Performs 1D Richardson-Lucy Poissonian deconvolution of the to_dec by
     the psf. The deconvolved spim will be stored in the to_dec as a new cube.
     
@@ -129,7 +129,7 @@ class Experiments:
     
     to_dec: a spectrum object.
     psf: a 1D spectrum object containing the Point Spread Function
-        '''
+        """
         if to_dec == 'self.hl':
             to_dec = self.hl
         if kernel == 'self.psf':
@@ -142,9 +142,9 @@ class Experiments:
             kernel_data[...] = kernel.data_cube[:,0,0]
             kernel_data = kernel_data.swapaxes(0,2)
         else:
-            print '''
+            print """
     The kernel must have either the same dimensions as the to_dec or be an
-    unidimensional spectrum with the same number of channels'''
+    unidimensional spectrum with the same number of channels"""
             sys.exit()
         to_dec_data = copy.copy(to_dec.data_cube)
         length = kernel_data.shape[0]
@@ -173,10 +173,10 @@ class Experiments:
         'poissonian R-L deconvolution %i iterations' % iterations)
         
     def correct_spatial_drift(self):
-        '''Corrects the spatial drift between the CL and LL. It estimates 
+        """Corrects the spatial drift between the CL and LL. It estimates 
         the drift by cross-correlation and crops the ll and cl SI and images to 
         the overlapping area
-        '''
+        """
         
         if not self.hl.HADF or not self.ll.HADF:
             print "To correct the spatial drift, an (hadf) image of hl and ll \
@@ -233,8 +233,8 @@ class Experiments:
         self.__set_convolution_axis()
 
     def correct_bad_pixels(self, channels_list):
-        '''Substitutes the offending channels values by the average of the 
-        adjencent channels'''
+        """Substitutes the offending channels values by the average of the 
+        adjencent channels"""
         
         self.hl.correct_bad_pixels(channels_list)
         self.ll.correct_bad_pixels(channels_list)

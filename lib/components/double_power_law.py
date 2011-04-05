@@ -25,8 +25,8 @@ import numpy as np
 from ..component import Component
 
 class DoublePowerLaw(Component):
-    '''
-    '''
+    """
+    """
     def __init__(self, A=10e5, r=3.,origin = 0.,):
         Component.__init__(self, ('A', 'r', 'origin','shift', 'ratio'))
         self.name = 'Double power law'
@@ -49,11 +49,11 @@ class DoublePowerLaw(Component):
         self.convolved = False
 
     def function(self, x):
-        '''
+        """
         Given an one dimensional array x containing the energies at which
         you want to evaluate the background model, returns the background
         model for the current parameters.
-        '''
+        """
         a = self.A.value
         b = self.ratio.value
         s = self.shift.value

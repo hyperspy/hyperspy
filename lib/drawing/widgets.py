@@ -150,7 +150,7 @@ class DraggablePatch(object):
                     self.coordinates.ix = round(event.ydata)
         
     def update_patch_position(self):
-        '''This method must be provided by the subclass'''
+        """This method must be provided by the subclass"""
         pass
     
     def button_release(self, event):
@@ -197,7 +197,7 @@ class ResizebleDraggablePatch(DraggablePatch):
             self.set_size(self.size - 1)
             
     def update_patch_size(self):
-        '''This method must be provided by the subclass'''
+        """This method must be provided by the subclass"""
         pass
     
     def on_key_press(self, event):
@@ -353,8 +353,8 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self.range = None
 
     def release(self, event):
-        '''When the button is realeased, the span stays in the screen and the 
-        iteractivity machinery passes to modify mode'''
+        """When the button is realeased, the span stays in the screen and the 
+        iteractivity machinery passes to modify mode"""
         if self.pressv is None or (self.ignore(event) and not self.buttonDown): return
         self.buttonDown = False
         self.update_range()
