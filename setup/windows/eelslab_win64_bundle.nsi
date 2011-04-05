@@ -1,5 +1,5 @@
 ; These are the programs that are needed by ACME Suite.
-!define PRODUCT_NAME "EELSLab 0.2.6 bundle installer"
+!define PRODUCT_NAME "EELSLab 0.2.11 bundle installer"
 !define PRODUCT_VERSION "0.1"
 
 ; !include "UserManagement.nsh"
@@ -24,7 +24,7 @@
 ; MUI end ------
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
-OutFile "EELSLab_bundle.exe"
+OutFile "eelslab_bundle_0.2.11_w64.exe"
 ShowInstDetails show
  
 Section -Prerequisites
@@ -94,12 +94,17 @@ Section -Prerequisites
         ExecWait "$INSTDIR\ETS-3.6.0.win-amd64-py2.7.exe"
         Goto endETS
   endETS:
+    MessageBox MB_YESNO "Install distribute?" /SD IDYES IDNO endETS
+        File ".\requires\distribute-0.6.15.win-amd64-py2.7.exe"
+        ExecWait "$INSTDIR\distribute-0.6.15.win-amd64-py2.7.exe"
+        Goto endDistribute
+  endDistribute:
 SectionEnd
 Section EELSLab
 	SetOutPath $INSTDIR
     MessageBox MB_YESNO "Install EELSLab" /SD IDYES IDNO endEELSLab
-        File "eelslab-0.2.10.win-amd64.exe"
-        ExecWait "$INSTDIR\eelslab-0.2.10.win-amd64.exe"
+        File "eelslab-0.2.12.win-amd64.exe"
+        ExecWait "$INSTDIR\eelslab-0.2.12.win-amd64.exe"
         Goto endEELSLab
   endEELSLab:
 SectionEnd
