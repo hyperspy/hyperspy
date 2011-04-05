@@ -51,7 +51,7 @@ setup(
     name = "eelslab",
     package_dir = {'eelslab': 'lib'},
     version = version,
-    py_modules = [, ],
+    #py_modules = ['', ],
     packages = ['eelslab', 'eelslab.components', 'eelslab.io', 'eelslab.drawing', 
                 'eelslab.mva', 'eelslab.signals','eelslab.bss','eelslab.gui',
                 'eelslab.test'],
