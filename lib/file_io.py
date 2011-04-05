@@ -22,18 +22,18 @@ import os
 
 import messages
 from defaults_parser import defaults
-from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple, img_stack
+from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple, hdf5
 
-io_plugins = (netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple)
+io_plugins = (netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple,
+              hdf5)
 
 def load(filename, data_type = None, **kwds):
     """
     Load any supported file into an EELSLab structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
-    FEI ser and emi.
+    FEI ser and emi and hdf5.
 
     Parameters
-cd
     ----------
 
     filename : string
@@ -44,9 +44,6 @@ cd
         If 'Image' the file will be loaded as an Image object
     """
     extension = os.path.splitext(filename)[1][1:]
-    if '*' in filename:
-	reader=img_stack
-        return load_with_reader(filename, reader, data_type, **kwds)
     
     i = 0
     while extension not in io_plugins[i].file_extensions and \
@@ -64,28 +61,33 @@ cd
         
 def load_with_reader(filename, reader, data_type = None, **kwds):
     from spectrum import Spectrum
-    from image import Image
+    from signals.image import Image
+    from signal import Signal
     messages.information(reader.description)    
-    dictionary_list = reader.file_reader(filename,
+    file_data_list = reader.file_reader(filename,
                                          data_type=data_type,
-                                         **kwds)
+                                        **kwds)
     objects = []
-    for dictionary in dictionary_list:
-        data_type = dictionary['data_type']
+    for file_data_dict in file_data_list:
+        data_type = file_data_dict['data_type']
         if data_type == 'SI':
-            s = Spectrum(dictionary)
+            s = Signal(file_data_dict)
         elif data_type == 'Image':
-            s = Image(dictionary)        
+            s = Signal(file_data_dict)  
+        elif data_type == 'Signal':
+            s = Signal(file_data_dict)
         if defaults.plot_on_load is True:
-                s.plot()
+            s.plot()
         objects.append(s)
+        
     if len(objects) == 1:
         objects = objects[0]
     return objects
     
-def save(filename, object2save, format = 'nc', **kwds):
+def save(filename, object2save, format = 'hdf5', **kwds):
     from spectrum import Spectrum
     from image import Image
+    from signal import Signal
     
     extension = os.path.splitext(filename)[1][1:]
     i = 0
@@ -119,25 +121,10 @@ def save(filename, object2save, format = 'nc', **kwds):
                 ' in the %s format' % writer.format_name)
             else:
                 writer.file_writer(filename, object2save, **kwds)
+        elif isinstance(object2save, Signal):
+            writer.file_writer(filename, object2save, **kwds)
     
-def save_data_array_in_netcdf(filename, array,dim_list = ['x','y','z']):
-    """Save 3D array in netCDF format
-    
-    Parameters
-    ----------
-    filename : string
-    array : 3D numpy array
-    dim_list : tuple of strings
-        dimension names
-    """
-    ncfile = Dataset(filename+'.nc','w')
-    ndim = len(array.shape)
-    d_dtype = array.dtype.char
-    for i in range(ndim):
-        exec('ncfile.createDimension(\'%s\', data_cube.shape[i])' % dim_list[i])
-    dc = ncfile.createVariable('data_cube', d_dtype,tuple(dim_list[:ndim]))
-    dc[:] = array
-    ncfile.close()
+
 ## if file_extension in msa_extensions:
 ##     spectrum_dict, acquisition_dict = io.msa_reader(filename)
 ##     for key in spectrum_dict:

@@ -23,6 +23,7 @@ import numpy as np
 import widgets
 import spectrum, image, utils
 from .. import coordinates
+import copy
 
 class MPL_HyperSpectrum_Explorer(object):
     '''Plots the current spectrum to the screen and a map with a cursor to 
@@ -31,12 +32,12 @@ class MPL_HyperSpectrum_Explorer(object):
     def __init__(self):
         self.spectrum_data_function = None
         self.image_data_function = None
-        self.coordinates = None
+        self.axes_manager = None
         self.spectrum_title = ''
         self.xlabel = ''
         self.ylabel = ''
         self.image_title = ''
-        self.image_plot = None
+        self.navigator_plot = None
         self.spectrum_plot = None
         self.pixel_size = None
         self.pixel_units =  None
@@ -64,30 +65,28 @@ class MPL_HyperSpectrum_Explorer(object):
         return utils.does_figure_object_exists(self.spectrum_plot.figure)
     
     def assign_pointer(self):
-
-        shape = self.coordinates.shape
-        if shape[0] > 1:
-            if shape[1] > 1:
-                Pointer = widgets.DraggableSquare
-            else:
-                Pointer = widgets.DraggableHorizontalLine
-            return Pointer
+        nav_dim = self.axes_manager.navigation_dim
+        if nav_dim == 2:
+            Pointer = widgets.DraggableSquare
+        elif nav_dim == 1:
+            Pointer = widgets.DraggableHorizontalLine
         else:
-            return None    
-        
+            Pointer = None
+        return Pointer
+   
     def plot(self):
         if self.pointer is None:
             pointer = self.assign_pointer()  
             if pointer is not None:
-                self.pointer = pointer(self.coordinates)
+                self.pointer = pointer(self.axes_manager)
                 self.pointer.color = 'red'
         if self.pointer is not None:
-            self.plot_image()
+            self.plot_navigator()
         self.plot_spectrum()
         
-    def plot_image(self):
-        if self.image_plot is not None:
-            self.image_plot.plot()
+    def plot_navigator(self):
+        if self.navigator_plot is not None:
+            self.navigator_plot.plot()
             return
         imf = image.ImagePlot()
         imf.data_function = self.image_data_function
@@ -95,7 +94,7 @@ class MPL_HyperSpectrum_Explorer(object):
         imf.pixel_size = self.pixel_size
         imf.plot()
         self.pointer.add_axes(imf.ax)
-        self.image_plot = imf
+        self.navigator_plot = imf
         
     def plot_spectrum(self):
         if self.spectrum_plot is not None:
@@ -108,7 +107,7 @@ class MPL_HyperSpectrum_Explorer(object):
         sf.ylabel = self.ylabel
         sf.title = self.spectrum_title
         sf.axis = self.axis
-        sf.left_coordinates = self.coordinates
+        sf.left_axes_manager = self.axes_manager
         self.spectrum_plot = sf
         # Create a line to the left axis with the default coordinates
         sl = spectrum.SpectrumLine()
@@ -123,15 +122,15 @@ class MPL_HyperSpectrum_Explorer(object):
         sf.add_line(sl)
         self.spectrum_plot = sf
         sf.plot()
-        if self.image_plot is not None and sf.figure is not None:
-            utils.on_window_close(sf.figure, self.image_plot.close)
+        if self.navigator_plot is not None and sf.figure is not None:
+            utils.on_window_close(sf.figure, self.navigator_plot.close)
             self._key_nav_cid = self.spectrum_plot.figure.canvas.mpl_connect(
-            'key_press_event', self.coordinates.key_navigator)
-            self._key_nav_cid = self.image_plot.figure.canvas.mpl_connect(
-            'key_press_event', self.coordinates.key_navigator)
+            'key_press_event', self.axes_manager.key_navigator)
+            self._key_nav_cid = self.navigator_plot.figure.canvas.mpl_connect(
+            'key_press_event', self.axes_manager.key_navigator)
             self.spectrum_plot.figure.canvas.mpl_connect(
                 'key_press_event', self.key2switch_right_pointer)
-            self.image_plot.figure.canvas.mpl_connect(
+            self.navigator_plot.figure.canvas.mpl_connect(
                 'key_press_event', self.key2switch_right_pointer)
             
     def key2switch_right_pointer(self, event):
@@ -139,14 +138,14 @@ class MPL_HyperSpectrum_Explorer(object):
             self.right_pointer_on = not self.right_pointer_on
             
     def add_right_pointer(self):
-        if self.spectrum_plot.right_coordinates is None:
-            self.spectrum_plot.right_coordinates = coordinates.Coordinates(
-            self.coordinates.shape)
+        if self.spectrum_plot.right_axes_manager is None:
+            self.spectrum_plot.right_axes_manager = \
+            copy.deepcopy(self.axes_manager)
         if self.right_pointer is None:
             pointer = self.assign_pointer()
-            self.right_pointer = pointer(self.spectrum_plot.right_coordinates)
+            self.right_pointer = pointer(self.spectrum_plot.right_axes_manager)
             self.right_pointer.color = 'blue'
-            self.right_pointer.add_axes(self.image_plot.ax)
+            self.right_pointer.add_axes(self.navigator_plot.ax)
         rl = spectrum.SpectrumLine()
         rl.data_function = self.spectrum_data_function
         rl.line_properties_helper(self.right_pointer.color, 'step')
@@ -161,10 +160,8 @@ class MPL_HyperSpectrum_Explorer(object):
             line.close()
         self.right_pointer.close()
         self.right_pointer = None
-        self.image_plot.update_image()
+        self.navigator_plot.update_image()
+    
     def close(self):         
         self.spectrum_plot.close()
-        self.image_plot.close()
-
-          
-
+        self.navigator_plot.close()

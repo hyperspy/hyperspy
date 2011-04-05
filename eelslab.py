@@ -29,12 +29,14 @@ elif matplotlib.get_backend() == 'WXAgg':
 else:
     ETSConfig.toolkit ='null'
 
+
 import silib.Release
 import silib.components as components
 
 from silib.spectrum import Spectrum
 from silib.image import Image
 from silib.experiments import Experiments
+from silib.signal import Signal
 from silib.model import Model
 from silib.file_io import load
 from silib.edges_db import edges_dict
