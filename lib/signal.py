@@ -36,6 +36,7 @@ class Parameters(object):
 
 
 class Signal(t.HasTraits):
+    name = t.Str()
     data = t.Array()
     axes_manager = t.Instance(AxesManager)
     original_parameters = t.Dict()
@@ -96,12 +97,12 @@ class Signal(t.HasTraits):
         axes = []
         for i in range(len(self.data.shape)):
             axes.append(
-            {'name' : 'undefined',
-             'scale' : 1.,
-             'offset' : 0.,
-             'size' : int(self.data.shape[i]),
-             'units' : 'undefined',
-             'index_in_array' : i,})
+			{'name' : 'undefined',
+-            'scale' : 1.,
+-            'offset' : 0.,
+-            'size' : int(self.data.shape[i]),
+-            'units' : 'undefined',
+-            'index_in_array' : i,})
         return axes
                 
     def __call__(self, axes_manager = None):
