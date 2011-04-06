@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from silib.signal import Signal
+from eelslab.signal import Signal
 import numpy as np
 
 def three_d_image():

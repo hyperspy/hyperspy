@@ -54,7 +54,7 @@ setup(
     #py_modules = ['', ],
     packages = ['eelslab', 'eelslab.components', 'eelslab.io', 'eelslab.drawing', 
                 'eelslab.mva', 'eelslab.signals','eelslab.bss','eelslab.gui',
-                'eelslab.test'],
+                'eelslab.tests', 'eelslab.tests.io'],
     requires = install_req,
     scripts = scripts,
     package_data = 
@@ -68,6 +68,9 @@ setup(
                 'data/kica/*.m',
                 'data/kica/*.c',
                 'data/kica/distributions/*.m',
+		'lib/tests/io/dm3_1D_data/*.dm3',
+		'lib/tests/io/dm3_2D_data/*.dm3',
+		'lib/tests/io/dm3_3D_data/*.dm3',
             ],
     },
     author = Release.authors['F_DLP'][0],
