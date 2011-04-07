@@ -22,10 +22,12 @@ import os
 
 import messages
 from defaults_parser import defaults
-from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple, hdf5
+from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple#, hdf5
+from signals.image import Image
+from signal import Signal
 
 io_plugins = (netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple,
-              hdf5)
+              )#hdf5)
 
 def load(filename, data_type = None, **kwds):
     """
@@ -60,9 +62,7 @@ def load(filename, data_type = None, **kwds):
         return load_with_reader(filename, reader, data_type, **kwds)
         
 def load_with_reader(filename, reader, data_type = None, **kwds):
-    from spectrum import Spectrum
-    from signals.image import Image
-    from signal import Signal
+
     messages.information(reader.description)    
     file_data_list = reader.file_reader(filename,
                                          data_type=data_type,
@@ -73,7 +73,7 @@ def load_with_reader(filename, reader, data_type = None, **kwds):
         if data_type == 'SI':
             s = Signal(file_data_dict)
         elif data_type == 'Image':
-            s = Signal(file_data_dict)  
+            s = signals.image.Image(file_data_dict)  
         elif data_type == 'Signal':
             s = Signal(file_data_dict)
         if defaults.plot_on_load is True:
@@ -85,10 +85,7 @@ def load_with_reader(filename, reader, data_type = None, **kwds):
     return objects
     
 def save(filename, object2save, format = 'hdf5', **kwds):
-    from spectrum import Spectrum
-    from image import Image
-    from signal import Signal
-    
+  
     extension = os.path.splitext(filename)[1][1:]
     i = 0
     if extension == '':
