@@ -880,6 +880,11 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
 
     # Determine the dimensions
     units = [dm3.dimensions[i][3] for i in range(len(dm3.dimensions))]
+    # The units must be strings
+    while None in units: 
+        units[units.index(None)] = ''
+
+    units = [i for i in units ]
     origins = np.asarray([dm3.dimensions[i][1]
                           for i in range(len(dm3.dimensions))],
                          dtype=np.float)
