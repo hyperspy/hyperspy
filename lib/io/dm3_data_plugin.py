@@ -731,19 +731,19 @@ class DM3ImageFile(object):
         else:
             data = read_data_array(self.filename, self.imbytes,
                                    self.byte_offset, self.imdtype)
-            if len(self.dimensions) == 3:
-                order = 'F'
-                # The Bytes in a SI are ordered as
-                # X0, Y0, Z0, X1, Y0, Z0, [...], Xn, Ym, Z0, [...]
-                # X0, Y0, Z1, [...], Xn, Ym, Zk
-                # since X <=> column and Y <=> row
-                # the 1st two axes of the ndarray must be transposed
-                # because its natural order is
-                # row (Y), column (X), E
-                swapelem(self.imsize, 0, 1)
-            else:
-                order = 'C'
-            data = data.reshape(self.imsize, order=order)
+#            if len(self.dimensions) == 3:
+#                order = 'F'
+#                # The Bytes in a SI are ordered as
+#                # X0, Y0, Z0, X1, Y0, Z0, [...], Xn, Ym, Z0, [...]
+#                # X0, Y0, Z1, [...], Xn, Ym, Zk
+#                # since X <=> column and Y <=> row
+#                # the 1st two axes of the ndarray must be transposed
+#                # because its natural order is
+#                # row (Y), column (X), E
+#                swapelem(self.imsize, 0, 1)
+#            else:
+#                order = 'C'
+            data = data.reshape(self.imsize)
             return data
             
     def read_rgb(self):
