@@ -79,7 +79,6 @@ class Signal(t.HasTraits):
                     from the original data file.
         """
         self.data = file_data_dict['data']
-        self.mapped_parameters.load_dictionary(file_data_dict['mapped_parameters'])
         if not file_data_dict.has_key('axes'):
             file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(
@@ -92,6 +91,8 @@ class Signal(t.HasTraits):
             for key, value in file_data_dict['attributes'].iteritems():
                 self.__setattr__(key, value)
         self.original_parameters = file_data_dict['original_parameters']
+        self.mapped_parameters.load_dictionary(
+            file_data_dict['mapped_parameters'])
         
     def _get_undefined_axes_list(self):
         axes = []
