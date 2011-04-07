@@ -34,8 +34,6 @@ else:
 import Release
 import components
 
-#from spectrum import Spectrum
-#from image import Image
 from experiments import Experiments
 from signal import Signal
 from model import Model
@@ -56,7 +54,8 @@ print(Release.info)
 def get_configuration_directory_path():
     print(eelslab.config_dir.config_path)
 
-if ETSConfig.toolkit != 'null':
-    import eelslab.gui.main_window
-    def gui():
-        eelslab.gui.main_window.MainWindow().configure_traits()
+
+def start_gui():
+    if ETSConfig.toolkit != 'null':
+        import gui.main_window
+        gui.main_window.MainWindow().configure_traits()
