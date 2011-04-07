@@ -19,6 +19,18 @@ def test_1D_content():
         s = load("dm3_1D_data/test-%s.dm3" % key, old = old)
         yield check_content, s.data, dat, key
 
+def test_2D_content():
+    for key in data_types.iterkeys():
+        dat = np.arange(1,5, dtype = data_types[key]).reshape(2,2)
+        s = load("dm3_2D_data/test-%s.dm3" % key, old = old)
+        yield check_content, s.data, dat, key
+
+def test_3D_content():
+    for key in data_types.iterkeys():
+        dat = np.arange(1,9, dtype = data_types[key]).reshape(2,2,2)
+        s = load("dm3_3D_data/test-%s.dm3" % key, old = old)
+        yield check_content, s.data, dat, key
+
 def check_dtype(d1, d2, i):
     assert_true(d1 == d2, msg = 'test_dtype-%i' % i)
 
