@@ -745,7 +745,7 @@ class DM3ImageFile(object):
         self.imsize.append(4)
         self.imsize = tuple(self.imsize)
         data = read_data_array(self.filename, self.imbytes,
-                               self.byte_offset, mode='r')
+                               self.byte_offset)
         data = data.reshape(self.imsize, order='C') # (B, G, R, A)
         if self.imdtype == 'rgb':
             data = data[:, :, -2::-1] # (R, G, B)
@@ -772,7 +772,7 @@ class DM3ImageFile(object):
         N = int(self.imsize[0] / 2)      # think about a 2Nx2N matrix
         # read all the bytes as 1D array of 4-Byte float
         tmpdata = read_data_array(self.filename, self.imbytes,
-                                   self.byte_offset, 'float32', mode='r')
+                                   self.byte_offset, 'float32')
         # tmpdata =  np.ndarray( (self.imbytes/4, ), 'float32',
         #                        fmap.read(self.imbytes), order='C')
         
