@@ -18,12 +18,13 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
 
-# The following code was commented because it does not work with
-# ETS 3.6.0 , to investigate...
+# There is an incompatibility between matplolib 1.0.1 and enthought 0.3.6 
+# because matplotlib uses QString 1 api and ETS QString 2. Therefore, the 
+# traits toolkit is set to 'null' for QT4. 
 from enthought.etsconfig.api import ETSConfig
 import matplotlib
 if matplotlib.get_backend() == 'Qt4Agg':
-    ETSConfig.toolkit ='qt4'
+    ETSConfig.toolkit ='null'
 elif matplotlib.get_backend() == 'WXAgg':
     ETSConfig.toolkit ='wx'
 else:
@@ -40,7 +41,7 @@ from signal import Signal
 from model import Model
 from file_io import load
 from edges_db import edges_dict
-from microscope import microscope
+#from microscope import microscope
 from defaults_parser import defaults
 import utils
 
@@ -55,12 +56,7 @@ print(Release.info)
 def get_configuration_directory_path():
     print(eelslab.config_dir.config_path)
 
-# The gui can produce a crash for certain toolkits and certain versions of
-# python-traits. There, until we find out which is the right configuration for
-# each platform, its availability will depend on the user luck:
-try:   
+if ETSConfig.toolkit != 'null':
     import eelslab.gui.main_window
     def gui():
         eelslab.gui.main_window.MainWindow().configure_traits()
-except:
-    pass
