@@ -1,8 +1,8 @@
 import numpy as np
 from generate_dm_testing_files import data_types
-from eelslab import load
-from nose.tools import assert_true
 
+from nose.tools import assert_true
+from ...file_io import load
 
 # TODO: use fixtures to load the data
 
