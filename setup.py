@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+try:
+    import setuptools
+except:
+    print "Setuptools unavailable.  setup.py develop and test commands not available."
 from distutils.core import setup
 
 import os
@@ -8,7 +12,7 @@ import sys
 
 import lib.Release as Release
 
-install_req = ['scipy', 'ipython', 'matplotlib', 'numpy', 'mdp', 'netcdf',]
+install_req = ['scipy', 'ipython', 'matplotlib', 'numpy', 'mdp', 'netcdf','nose']
 
 
 def are_we_building4windows():
@@ -45,16 +49,17 @@ if Release.revision != '':
 
 setup(
     name = "eelslab",
-    package_dir = {'silib': 'lib'},
+    package_dir = {'eelslab': 'lib'},
     version = version,
-    py_modules = ['eelslab', ],
-    packages = ['silib', 'silib.components', 'silib.io', 'silib.drawing',
-    'silib.gui'],
+    #py_modules = ['', ],
+    packages = ['eelslab', 'eelslab.components', 'eelslab.io', 'eelslab.drawing', 
+                'eelslab.mva', 'eelslab.signals','eelslab.bss','eelslab.gui',
+                'eelslab.tests', 'eelslab.tests.io'],
     requires = install_req,
     scripts = scripts,
     package_data = 
     {
-        'silib': 
+        'eelslab': 
             [
                 'data/eelslabrc',
                 'data/*.m', 
@@ -63,6 +68,9 @@ setup(
                 'data/kica/*.m',
                 'data/kica/*.c',
                 'data/kica/distributions/*.m',
+		'lib/tests/io/dm3_1D_data/*.dm3',
+		'lib/tests/io/dm3_2D_data/*.dm3',
+		'lib/tests/io/dm3_3D_data/*.dm3',
             ],
     },
     author = Release.authors['F_DLP'][0],
@@ -72,4 +80,5 @@ setup(
     license = Release.license,
     platforms = Release.platforms,
     url = Release.url,
+    test_suite = 'nose.collector',
     )

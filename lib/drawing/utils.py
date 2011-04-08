@@ -62,10 +62,9 @@ def on_window_close(figure, function):
     backend = plt.get_backend()
     if backend == 'GTKAgg':
         def function_wrapper(*args):
-                # This wrapper is needed for the destroying process to carry on
-                # after the function call
                 function()
         window.connect('destroy', function_wrapper)
+
     elif backend == 'WXAgg':
         # In linux the following code produces a segmentation fault
         # so it is enabled only for Windows
@@ -73,27 +72,25 @@ def on_window_close(figure, function):
             import wx
             def function_wrapper(event):
                 # This wrapper is needed for the destroying process to carry on
-                # after the function call
-                function()
+                # after the function call and to prevent errors from the fact 
+                # that the signal seems to trigger two calls to the function
+                try:
+                    function()
+                except:
+                    pass
                 event.Skip()
             window.Bind(wx.EVT_WINDOW_DESTROY, function_wrapper)
         
     elif backend == 'TkAgg':
-        # Tkinter does not return the window when sending the closing
-        # signal. Furthermore, for some reason that I don't understand,
-        # it blocks ipython. For this reason it is now disable until I find a
-        # way around the problem.
         def function_wrapper(*args):
-                # This wrapper is needed for the destroying process to carry on
-                # after the function call
                 function()
         figure.canvas.manager.window.bind("<Destroy>", function_wrapper)
-#    elif matplotlib.get_backend() == 'Qt4Agg':
-#        from PyQt4.QtCore import SIGNAL
-#        window = figure.canvas.manager.window
-#        window.connect(window, SIGNAL('destroyed()'), function)
-        # I don't understand the qt syntax for connecting. Therefore, it is 
-        # disable until I have the time to study it.
+
+    elif backend == 'Qt4Agg':
+        from PyQt4.QtCore import SIGNAL
+        window = figure.canvas.manager.window
+        window.connect(window, SIGNAL('destroyed()'), function)
+
 
 def plot_RGB_map(im_list, normalization = 'single', dont_plot = False):
     """Plots 2 or 3 maps in RGB
