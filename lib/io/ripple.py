@@ -111,6 +111,7 @@ def parse_ripple(fp):
                 raise IOError, err
             line = line.split(sep) # now it's a list
             if rpl_keys.has_key(line[0]) is True:
+                # is rpl_keys[line[0]] an iterable?
                 if hasattr(rpl_keys[line[0]],'__iter__'):
                     if line[1] not in rpl_keys[line[0]]:
                         err = \
