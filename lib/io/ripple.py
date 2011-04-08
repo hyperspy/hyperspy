@@ -156,12 +156,6 @@ def read_raw(rpl_info, fp):
     endian = rpl_info['byte-order']
     record_by = rpl_info['record-by']
 
-    if 'signed' in data_type:
-        # data cubes of int give misleading results
-        convert2float = True
-    else:
-        convert2float = False
-
     if data_type == 'signed':
         data_type = 'int'
     elif data_type == 'unsigned':
@@ -185,8 +179,6 @@ def read_raw(rpl_info, fp):
     data = read_data_array(fp,
                            byte_address=offset,
                            data_type=data_type)
-    if convert2float:
-        data = data.astype(np.float32)
 
     if record_by == 'vector':   # spectral image
         size = (height, width, depth)
@@ -387,9 +379,6 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
         'imported_parameters' : calibration_dict}
     
     return [dictionary, ]
-
-
-
 
 def file_writer(filename, object2save, *args, **kwds):
     from .. import spectrum
