@@ -735,9 +735,10 @@ class DM3ImageFile(object):
                 # because its natural order is
                 # row (Y), column (X), E
                 swapelem(self.imsize, 0, 1)
+                data = data.reshape(self.imsize, order=order).transpose(1,0,2)
             else:
                 order = 'C'
-            data = data.reshape(self.imsize, order=order)
+                data = data.reshape(self.imsize, order=order)
             return data
             
     def read_rgb(self):
@@ -871,7 +872,11 @@ def file_reader(filename, data_type=None, data_id=1, old=False):
     else:
         calibration_dict['title'] =  os.path.splitext(filename)[0]
 
-    data_cube = dm3.data
+    if len(dm3.data.shape) == 3:
+        # transpose back for compatibility with the plotting code
+        data_cube = dm3.data.transpose((1, 0, 2))
+    else:
+        data_cube = dm3.data
 
     # Determine the dimensions
     units = [dm3.dimensions[i][3] for i in range(len(dm3.dimensions))]
