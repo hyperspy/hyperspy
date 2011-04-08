@@ -188,10 +188,10 @@ def read_raw(rpl_info, fp):
         size = (height, width, depth)
         data = data.reshape(size)
         # old EELSLab; energy first (this will hopefully be changed)
-        data = np.rollaxis(data, 2, 0)
+        data = data.T
     elif record_by == 'image':  # stack of images
         size = (depth, height, width)
-        data = data.reshape(size)
+        data = data.reshape(size).T
 
     return data
 
