@@ -1,3 +1,17 @@
+v0.2.12 beta
+
+Enhancements
+------------
+* Writting support for the ripple format
+* Spectrum method 'reverse_ic' can now reverse more than one IC at once
+
+Bugs fixed
+----------
+* Fixed several bugs that were affecting the ripple io plugin reading features
+* Fixed a bug in the new dm3 reader io plugin that was raising an error when loading RGB files
+* Fixed a bug in the mrc reader plugin that was failing to load standard mrc files
+* Various bug/compatibility fixes in MSA plugin
+
 v0.2.11a 31/03/2011
 
 Enhancements
