@@ -183,11 +183,9 @@ def read_raw(rpl_info, fp):
     if record_by == 'vector':   # spectral image
         size = (height, width, depth)
         data = data.reshape(size)
-        # old EELSLab; energy first (this will hopefully be changed)
-        data = data.T
     elif record_by == 'image':  # stack of images
         size = (depth, height, width)
-        data = data.reshape(size).T
+        data = data.reshape(size)
 
     return data
 
@@ -301,6 +299,13 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
     else:
         print 'Loading as Image'
         data_type = 'Image'
+
+    if rpl_info['record-by'] == 'vector':
+        # old EELSLab; energy first (this will hopefully be changed)
+        data_cube = np.rollaxis(data_cube, 2, 0)
+        # transpose for compatibility with plotting
+        data_cube = data_cube.transpose((0, 2, 1))
+    # something should be done for image stacks too, but I have no test files
 
     if rpl_info.has_key('ev-per-chan'):
         energyscale = rpl_info['ev-per-chan']
