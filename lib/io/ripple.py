@@ -25,8 +25,9 @@
 #  http://www.nist.gov/lispix/doc/image-file-formats/raw-file-format.htm
 
 import numpy as np
-import os
+import os.path
 from ..utils_readfile import *
+from .. import Release
 
 # Plugin characteristics
 # ----------------------
@@ -41,17 +42,31 @@ file_extensions = ['rpl','RPL']
 default_extension = 0
 # Reading capabilities
 reads_images = True
-reads_spectrum = False          # but maybe True
+reads_spectrum = True          # but maybe True
 reads_spectrum_image = True
 # Writing capabilities
-writes_images = False           # but maybe True
-writes_spectrum = False
+writes_images = True           # but maybe True
+writes_spectrum = True
 writes_spectrum_image = True
 # ----------------------
 
+# The format only support the followng data types
 newline = ('\n', '\r\n')
 comment = ';'
 sep = '\t'
+
+dtype2keys = {
+                'float64' : ('float', 8),
+                'float32' : ('float', 4),
+                'uint8' : ('unsigned', 1),
+                'uint16' : ('unsigned', 2),
+                'int32' : ('signed', 4),
+                'int64' : ('signed', 8),}
+
+endianess2rpl = {
+                    '=' : 'dont-care',
+                    '<' : 'little-endian',
+                    '>' : 'big-endian'}
 
 rpl_keys = {
     # spectrum/image keys
@@ -377,9 +392,107 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
     
     return [dictionary, ]
 
+
+
+
+def file_writer(filename, object2save, *args, **kwds):
+    from .. import spectrum
+    from .. import image
     
+    # Set the optional keys to None    
+    ev_per_chan = None
+    
+    # Check if the dtype is supported
+    dc = object2save.data_cube
+    dtype_name = object2save.data_cube.dtype.name
+    if  dtype_name not in dtype2keys.keys():
+        err = 'The ripple format does not support writting data of %s type' % (
+        dtype_name)
+        raise IOError, err
+    # Check if the dimensions are supported
+    dim = len(object2save.data_cube.shape)
+    if  dim > 3:
+        err = 'This file format does not support %i dimension data' % (
+        dim)
+        raise IOError, err
         
+    # Gather the information to write the rpl        
+    data_type, data_length = dtype2keys[dc.dtype.name]
+    byte_order = endianess2rpl[dc.dtype.byteorder]
+    offset = 0
+    if isinstance(object2save,spectrum.Spectrum) is True:
+        record_by = 'vector'
+        ev_per_chan = int(round(object2save.energyscale))
+        if dim == 3:
+            depth, width, height = dc.shape
+        elif dim == 2:
+            depth, width, height = list(dc.shape) + [1,]
+        elif dim == 1:
+            record_by == 'dont-care'
+            depth, width, height = list(dc.shape) + [1,1]
 
+    elif isinstance(object2save, image.Image) is True: 
+        if dim == 3:
+            record_by = 'image'
+            width, height, depth = dc.shape
+        elif dim == 2:
+            record_by == 'dont-care'
+            width, height, depth = list(dc.shape) + [1,]
+        elif dim == 1:
+            record_by == 'dont-care'
+            depth, width, height = list(dc.shape) + [1,1]
+    else:
+        print("Only Spectrum and Image objects can be saved")
+        return
+            
+    # Fill the keys dictionary
+    keys_dictionary = {
+                         'width' : width,
+                         'height' : height,
+                         'depth' : depth,
+                         'offset' : offset,
+                         'data-type' : data_type,
+                         'data-length' : data_length,
+                         'byte-order' : byte_order,
+                         'record-by' : record_by,
+                         }
+    if ev_per_chan is not None:
+        keys_dictionary['ev-per-chan'] = ev_per_chan
+        
+    write_rpl(filename, keys_dictionary)
+    write_raw(filename, dc, record_by)
+        
+def write_rpl(filename, keys_dictionary):
+    f = open(filename, 'w')
+    f.write(';File created by EELSLab version %s\n' % Release.version)
+    f.write('key\tvalue\n')
+    for key, value in keys_dictionary.iteritems():
+        f.write(key + '\t' + str(value) + '\n')
+    f.close()
+    
+def write_raw(filename, data_cube, record_by):
+    """Writes the raw file object
 
-
-
+    Parameters:
+    -----------
+    filename : string
+        the filename, either with the extension or without it
+    record_by : string
+     'vector' or 'image'
+         
+        """
+    filename = os.path.splitext(filename)[0] + '.raw'
+    dshape = data_cube.shape
+    if len(dshape) == 3:
+        if record_by == 'vector':
+            data_cube.T.ravel().tofile(filename)
+        elif record_by == 'image':
+            data_cube.swapaxes(1,2).ravel().tofile(filename)
+    elif len(dshape) == 2:
+        if record_by == 'vector':
+            data_cube.ravel().tofile(filename)
+        elif record_by in ('image' or 'dont-care'):
+            data_cube.T.ravel().tofile(filename)
+    elif len(dshape) == 1:
+        data_cube.ravel().tofile(filename)
+        
