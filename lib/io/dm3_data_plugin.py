@@ -707,6 +707,7 @@ class DM3ImageFile(object):
             self.data = 'UNAVAILABLE'
             return None
 
+        self.imsize = list(self.imsize)
         if 1 in self.data.shape:
             # remove dimensions of lenght 1, they are useless
             for i in range(len(self.data.shape)):
@@ -931,9 +932,13 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
     else:
         raise TypeError, "could not identify the file data_type"
 
-    axes=[{'size':int(data.shape[i]), 'index_in_array':i, 'name':names[i], 'scale':scales[i],
-                   'offset':origins[i], 'units':units[i],} \
-                   for i in xrange(len(data.shape))]
+    axes=[{'size' : int(data.shape[i]), 
+           'index_in_array' : i ,
+           'name' : names[i],
+           'scale': scales[i],
+           'offset' : origins[i],
+           'units' : units[i],} \
+           for i in xrange(len(data.shape))]
 
     if len(data.shape)==4:
         # define the first two axes as the slicing axes.
