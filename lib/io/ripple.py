@@ -98,7 +98,6 @@ def parse_ripple(fp):
     Accepts file object 'fp. Returns dictionary rpl_info.
     """
     rpl_info = {}
-    first_non_comment = False
     for line in fp.readlines():
         line = line.replace(' ', '')
         if line[:2] not in newline and line[0] != comment:
@@ -111,24 +110,21 @@ def parse_ripple(fp):
                 err += 'it should be a <TAB> ("\\t")'
                 raise IOError, err
             line = line.split(sep) # now it's a list
-            if not rpl_keys.has_key(line[0]):
-                first_non_comment = True
-            else:
-                if not first_non_comment:
-                    err = 'The first non-comment line MUST have two column'
-                    err += 'names of type "name1<TAB>name2" '
-                    err += '(any name would do, e.g. key<TAB>value).'
-                    raise IOError, err
-                try:
-                    line[1] = rpl_keys[line[0]](line[1])
-                except TypeError:
-                    if not line[1] in rpl_keys[line[0]]:
-                        err = 'Wrong value for key %s.\n' % line[0]
-                        err += 'Value read is %s' % line[1]
-                        err += ' but it should be one of', rpl_keys[line[0]]
+            if rpl_keys.has_key(line[0]) is True:
+                if hasattr(rpl_keys[line[0]],'__iter__'):
+                    if line[1] not in rpl_keys[line[0]]:
+                        err = \
+                        'Wrong value for key %s.\n' \
+                        'Value read is %s'  \
+                        ' but it should be one of %s' % \
+                        (line[0], line[1], str(rpl_keys[line[0]]))
                         raise IOError, err
-                rpl_info[line[0]] = line[1]
-
+                else:
+                    # rpl_keys[line[0]] must then be a type
+                    line[1] = rpl_keys[line[0]](line[1])
+            
+            rpl_info[line[0]] = line[1]
+            
     if rpl_info['depth'] == 1 and rpl_info['record-by'] != 'dont-care':
         err = '"depth" and "record-by" keys mismatch.\n'
         err += '"depth" cannot be "1" if "record-by" is "dont-care" '
