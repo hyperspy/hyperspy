@@ -22,7 +22,7 @@
 name = 'eelslab'
 
 revision = ''
-version = '0.2.12 beta'
+version = '0.2.13 alpha'
 
 description = "EELS data analysis for Python."
 
