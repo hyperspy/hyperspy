@@ -97,13 +97,12 @@ class Signal(t.HasTraits):
     def _get_undefined_axes_list(self):
         axes = []
         for i in range(len(self.data.shape)):
-            axes.append(
-			{'name' : 'undefined',
--            'scale' : 1.,
--            'offset' : 0.,
--            'size' : int(self.data.shape[i]),
--            'units' : 'undefined',
--            'index_in_array' : i,})
+            axes.append({   'name' : 'undefined',
+                            'scale' : 1.,
+                            'offset' : 0.,
+                            'size' : int(self.data.shape[i]),
+                            'units' : 'undefined',
+                            'index_in_array' : i,})
         return axes
                 
     def __call__(self, axes_manager = None):
