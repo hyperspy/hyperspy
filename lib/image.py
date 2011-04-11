@@ -82,8 +82,8 @@ class Image():
         shape = self.data_cube.squeeze().shape
         if len(shape) == 2:
             try:
-                if 'FFT' in self.mode:
-                    # display the log of the norm
+                if self.data_cube.dtype in (np.dtype('c8'), np.dtype('c16')):
+                    # complex data: display the log of the norm
                     dc = np.log(np.abs(self.data_cube))
                 else:
                     dc = self.data_cube
