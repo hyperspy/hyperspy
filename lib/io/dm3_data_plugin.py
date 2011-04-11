@@ -675,14 +675,26 @@ class DM3ImageFile(object):
         units.sort()
         swapelem(units, 0, 1)
         
-        self.dimensions = [ (sizes[i][1][1][1],
+        dimensions = [ (sizes[i][1][1][1],
                         origins[i][1][1][1],
                         scales[i][1][1][1],
                         units[i][1][1][1])
                        for i in range(len(sizes))]
-
-        self.imsize = [self.dimensions[i][0]
-                       for i in range(len(self.dimensions))]
+        # create a structured array:
+        # self.dimensions['sizes'] -> integer
+        # self.dimensions['origins'] -> float
+        # self.dimensions['scales'] -> float
+        # self.dimensions['units'] -> string
+        self.dimensions = np.asarray(dimensions,
+                                     dtype={'names':['sizes',
+                                                     'origins',
+                                                     'scales',
+                                                     'units'],
+                                            'formats':['i8',
+                                                       'f4',
+                                                       'f4',
+                                                       'S8']})
+        self.imsize = self.dimensions['sizes']
        
         br_orig = self.data_dict.ls(DM3ImageFile.brightdir
                                     + DM3ImageFile.origin)[1][1]
@@ -690,7 +702,7 @@ class DM3ImageFile(object):
                                      + DM3ImageFile.scale)[1][1]
         br_units = self.data_dict.ls(DM3ImageFile.brightdir
                                      + DM3ImageFile.units)[1][1]
-        self.brightness = (br_orig, br_scale, br_units)
+        self.brightness = np.array((br_orig, br_scale, br_units))
 
         # self.data = self.read_image_data()
         try:
@@ -700,17 +712,16 @@ class DM3ImageFile(object):
             print('Error. Could not read data.')
             self.data = 'UNAVAILABLE'
             return None
-
-        if 1 in self.data.shape:
-            # remove dimensions of lenght 1, they are useless
-            for i in range(len(self.data.shape)):
-                if self.data.shape[i] == 1:
-                    self.dimensions.pop(i)
-                    self.imsize.pop(i)
+        
+        # remove axes whose dimension is 1, they are useless:
+        while 1 in self.data.shape:
+            i = self.data.shape.index(1)
+            self.dimensions = np.delete(self.dimensions, i)
+            self.imsize = np.delete(self.imsize, i)
             self.data = self.data.squeeze()
 
         d = len(self.dimensions)
-        if d == 0: # could also implement a dictionary...
+        if d == 0: # could also implement a 'mode' dictionary...
             raise ImageModeError(d)
         else:
             self.mode += str(d) + 'D'
@@ -840,7 +851,8 @@ def file_reader(filename, data_type=None, data_id=1, old=False):
     contains more than one dataset.
 
     If 'old' is True, will use the old DM3 reader from digital_micrograph.py
-    module. Hopefully, this option will be removed soon.
+    module. That's way less powerful, but more reliable.
+    Hopefully, this option will be removed soon.
     """
     if old:
         import digital_micrograph as dm_old
@@ -853,10 +865,10 @@ def file_reader(filename, data_type=None, data_id=1, old=False):
 
     if '2D' in dm3.mode:
         # gotta find a better way to do this
-        if 'm' in dm3.units:
-            data_type = 'Image'
-        else:
+        if 'eV' in dm3.units:
             data_type = 'SI'
+        else:
+            data_type = 'Image'
     elif '3D' in dm3.mode:
         data_type = 'SI'
     elif '1D' in dm3.mode:
@@ -879,29 +891,22 @@ def file_reader(filename, data_type=None, data_id=1, old=False):
         data_cube = dm3.data
 
     # Determine the dimensions
-    units = [dm3.dimensions[i][3] for i in range(len(dm3.dimensions))]
-    origins = np.asarray([dm3.dimensions[i][1]
-                          for i in range(len(dm3.dimensions))],
-                         dtype=np.float)
-    scales =np.asarray([dm3.dimensions[i][2]
-                        for i in range(len(dm3.dimensions))],
-                       dtype=np.float)    
+    units = list(dm3.dimensions['units'])
+    origins = dm3.dimensions['origins']
+    scales = dm3.dimensions['scales']
     # Scale the origins
-    origins = origins * scales
-    
+    origins = origins * scales    
     if data_type == 'SI': 
         print("Treating the data as an SI")
-
         # only Orsay Spim is supported for now
         # does anyone have other kinds of SIs for testing?
         if dm3.exposure:
             acquisition_dict['exposure'] = dm3.exposure            
         if dm3.vsm:
             calibration_dict['vsm'] = float(dm3.vsm)
-
-        # In EELSLab1 the first index must be the energy
-        # (this will change in EELSLab2)
-        if 'eV' in units: # could use regular expressions or compare to a 'energy units' dictionary/list
+        # In EELSLab v. 0.2 the first index must be the energy,
+        # this will change in EELSLab 0.3
+        if 'eV' in units: # could use reexp or match to a 'energy units' dict?
             energy_index = units.index('eV')
         elif 'keV' in units:
             energy_index = units.index('keV')
