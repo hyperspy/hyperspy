@@ -82,13 +82,13 @@ rpl_keys = {
     'ev-per-chan' : float,    # usually 5 or 10 eV
     'detector-peak-width-ev' : float, # usually 150 eV
     # EELSLab-specific keys
-    'depth-origin' : int,
+    'depth-origin' : float,
     'depth-scale' : float,
     'depth-units' : str,
-    'width-origin' : int,
+    'width-origin' : float,
     'width-scale' : float,
     'width-units' : str,
-    'height-origin' : int,
+    'height-origin' : float,
     'height-scale' : float,
     'height-units' : str,
     }
