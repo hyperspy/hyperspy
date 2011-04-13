@@ -82,15 +82,15 @@ rpl_keys = {
     'ev-per-chan' : float,    # usually 5 or 10 eV
     'detector-peak-width-ev' : float, # usually 150 eV
     # EELSLab-specific keys
-    'energy-origin' : int,
-    'energy-scale' : float,
-    'energy-units' : str,
-    'x-origin' : int,
-    'x-scale' : float,
-    'x-units' : str,
-    'y-origin' : int,
-    'y-scale' : float,
-    'y-units' : str,
+    'depth-origin' : int,
+    'depth-scale' : float,
+    'depth-units' : str,
+    'width-origin' : int,
+    'width-scale' : float,
+    'width-units' : str,
+    'height-origin' : int,
+    'height-scale' : float,
+    'height-units' : str,
     }
 
 def parse_ripple(fp):
@@ -235,15 +235,15 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
       ev-per-chan      int      # optional, eV per channel
       detector-peak-width-ev  int   # optional, FWHM for the Mn K-alpha line
       # EELSLab-specific keys
-      energy-origin    int      # energy offset in pixels          
-      energy-scale     float    # energy scaling (units per pixel) 
-      energy-units     str      # energy units, usually eV
-      x-origin         int      # column offset in pixels
-      x-scale          float    # column scaling (units per pixel)
-      x-units          str      # column units, usually nm         
-      y-origin         int      # row offset in pixels          
-      y-scale          float    # row scaling (units per pixel) 
-      y-units          str      # row units, usually nm
+      depth-origin    int      # energy offset in pixels          
+      depth-scale     float    # energy scaling (units per pixel) 
+      depth-units     str      # energy units, usually eV
+      width-origin         int      # column offset in pixels
+      width-scale          float    # column scaling (units per pixel)
+      width-units          str      # column units, usually nm         
+      height-origin         int      # row offset in pixels          
+      height-scale          float    # row scaling (units per pixel) 
+      height-units          str      # row units, usually nm
      
     NOTES
 
@@ -310,9 +310,9 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
 
     if rpl_info.has_key('ev-per-chan'):
         energyscale = rpl_info['ev-per-chan']
-    elif rpl_info.has_key('energy-scale'):
+    elif rpl_info.has_key('depth-scale'):
         # superseed previous key
-        energyscale = rpl_info['energy-scale']
+        energyscale = rpl_info['depth-scale']
     else:
         energyscale = 1.
 
@@ -321,43 +321,43 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
     else:
         det_fwhm = None
 
-    if rpl_info.has_key('energy-origin'):
-        energyorigin = rpl_info['energy-origin']
+    if rpl_info.has_key('depth-origin'):
+        energyorigin = rpl_info['depth-origin']
     else:
         energyorigin = 0
         
-    if rpl_info.has_key('energy-units'):
-        energyunits = rpl_info['energy-units']
+    if rpl_info.has_key('depth-units'):
+        energyunits = rpl_info['depth-units']
     else:
         energyunits = ''
 
-    if rpl_info.has_key('x-origin'):
-        xorigin = rpl_info['x-origin']
+    if rpl_info.has_key('width-origin'):
+        xorigin = rpl_info['width-origin']
     else:
         xorigin = 0
 
-    if rpl_info.has_key('x-scale'):
-        xscale = rpl_info['x-scale']
+    if rpl_info.has_key('width-scale'):
+        xscale = rpl_info['width-scale']
     else:
         xscale = 1.
         
-    if rpl_info.has_key('x-units'):
-        xunits = rpl_info['x-units']
+    if rpl_info.has_key('width-units'):
+        xunits = rpl_info['width-units']
     else:
         xunits = ''
 
-    if rpl_info.has_key('y-origin'):
-        yorigin = rpl_info['y-origin']
+    if rpl_info.has_key('height-origin'):
+        yorigin = rpl_info['height-origin']
     else:
         yorigin = 0
 
-    if rpl_info.has_key('y-scale'):
-        yscale = rpl_info['y-scale']
+    if rpl_info.has_key('height-scale'):
+        yscale = rpl_info['height-scale']
     else:
         yscale = 1.
         
-    if rpl_info.has_key('y-units'):
-        yunits = rpl_info['y-units']
+    if rpl_info.has_key('height-units'):
+        yunits = rpl_info['height-units']
     else:
         yunits = ''
         
