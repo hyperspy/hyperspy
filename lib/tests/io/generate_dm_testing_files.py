@@ -1,4 +1,3 @@
-import numpy as np
 data_types = {
     1 :  '<i2', # 2 byte integer signed ("short")
     2 :  '<f4', # 4 byte real (IEEE 754)
@@ -14,8 +13,8 @@ data_types = {
     12 : '<f8', # 8 byte real
     13 : '<c16', # byte complex
     14 : 'bool', # 1 byte binary (ie 0 or 1)
-    23 :  (np.float32, 
-    {'R':('<u1',0), 'G':('<u1',1), 'B':('<u1',2), 'A':('<u1',3)}),
+#    23 :  (np.float32, 
+#    {'R':('<u1',0), 'G':('<u1',1), 'B':('<u1',2), 'A':('<u1',3)}),
      }
 # TODO: write correctely the path
 # 1D
