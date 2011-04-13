@@ -37,16 +37,16 @@ except:
     import matplotlib.pyplot as plt
 
 import mdp
-import utils
+from .. import utils
 from svd_pca import pca    
-from utils import unfold_if_2D
+from ..utils import unfold_if_2D
 from mlpca import mlpca
-from image import Image
-from utils import center_and_scale
-from defaults_parser import defaults
-import messages
-import config_dir
-import drawing.widgets
+from ..image import Image
+from ..utils import center_and_scale
+from ..defaults_parser import defaults
+from .. import messages
+from .. import config_dir
+from ..drawing import widgets
 from exceptions import *
 
 def compile_kica():
@@ -491,6 +491,34 @@ class MVA():
             rebuilded_spectrum.fold()
         return rebuilded_spectrum
         
+    def energy_center(self):
+        """Substract the mean energy pixel by pixel"""
+        print "\nCentering the energy axis"
+        self._centering_mean = np.mean(self.data_cube, 0)
+        data = (self.data_cube - self._energy_mean)
+        self.__new_cube(data, 'energy centering')
+        self._replot()
+        
+    def undo_energy_center(self):
+        if hasattr(self,'_energy_mean'):
+            data = (self.data_cube + self._energy_mean)
+            self.__new_cube(data, 'undo energy centering')
+            self._replot()
+        
+    def variance2one(self):
+        # Whitening
+        data = copy.deepcopy(self.data_cube)
+        self._std = np.std(data, 0)
+        data /= self._std
+        self.__new_cube(data, 'variance2one')
+        self._replot()
+        
+    def undo_variance2one(self):
+        if hasattr(self,'_std'):
+            data = (self.data_cube * self._std)
+            self.__new_cube(data, 'undo variance2one')
+            self._replot()
+        
     def plot_principal_components(self, n = None):
         """Plot the principal components up to the given number
         
@@ -544,7 +572,7 @@ class MVA():
                     mapa = ax.matshow(toplot, cmap = cmap)
                     figure.colorbar(mapa)
                     figure.canvas.draw()
-                    pointer = drawing.widgets.DraggableSquare(self.coordinates)
+                    pointer = widgets.DraggableSquare(self.coordinates)
                     pointer.add_axes(ax)
             else:
                 im_list.append(Spectrum())
@@ -706,7 +734,7 @@ class MVA():
                         ax2.set_xlabel('Energy (eV)')
                     figure.colorbar(mapa)
                     figure.canvas.draw()
-                    pointer = drawing.widgets.DraggableSquare(self.coordinates)
+                    pointer = widgets.DraggableSquare(self.coordinates)
                     pointer.add_axes(ax)
             else:
                 toplot = recmatrix[i,:]

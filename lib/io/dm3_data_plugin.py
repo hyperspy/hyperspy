@@ -31,11 +31,17 @@ import mmap
 import re
 import numpy as np
 
+from ..axes import DataAxis
+
 # relative imports are discouraged (PEP0008)
 from ..utils_readfile import *
+#from ..utils_readfile import *
 from ..exceptions import *
+#from ..exceptions import *
 from ..utils_varia import overwrite, swapelem
 from ..utils_varia import DictBrowser, fsdict
+#from ..utils_varia import overwrite, swapelem
+#from ..utils_varia import DictBrowser, fsdict
 
 # Plugin characteristics
 # ----------------------
@@ -736,20 +742,19 @@ class DM3ImageFile(object):
         else:
             data = read_data_array(self.filename, self.imbytes,
                                    self.byte_offset, self.imdtype)
-            if len(self.dimensions) == 3:
-                order = 'F'
-                # The Bytes in a SI are ordered as
-                # X0, Y0, Z0, X1, Y0, Z0, [...], Xn, Ym, Z0, [...]
-                # X0, Y0, Z1, [...], Xn, Ym, Zk
-                # since X <=> column and Y <=> row
-                # the 1st two axes of the ndarray must be transposed
-                # because its natural order is
-                # row (Y), column (X), E
-                swapelem(self.imsize, 0, 1)
-                data = data.reshape(self.imsize, order=order).transpose(1,0,2)
-            else:
-                order = 'C'
-                data = data.reshape(self.imsize, order=order)
+#            if len(self.dimensions) == 3:
+#                order = 'F'
+#                # The Bytes in a SI are ordered as
+#                # X0, Y0, Z0, X1, Y0, Z0, [...], Xn, Ym, Z0, [...]
+#                # X0, Y0, Z1, [...], Xn, Ym, Zk
+#                # since X <=> column and Y <=> row
+#                # the 1st two axes of the ndarray must be transposed
+#                # because its natural order is
+#                # row (Y), column (X), E
+#                swapelem(self.imsize, 0, 1)
+#            else:
+#                order = 'C'
+            data = data.reshape(self.imsize)
             return data
             
     def read_rgb(self):
@@ -785,8 +790,6 @@ class DM3ImageFile(object):
         # read all the bytes as 1D array of 4-Byte float
         tmpdata = read_data_array(self.filename, self.imbytes,
                                    self.byte_offset, 'float32')
-        # tmpdata =  np.ndarray( (self.imbytes/4, ), 'float32',
-        #                        fmap.read(self.imbytes), order='C')
         
         # create an empty 2Nx2N ndarray of complex
         data = np.zeros(self.imsize, 'complex64', 'C')
@@ -845,7 +848,7 @@ class DM3ImageFile(object):
 
         return data
 
-def file_reader(filename, data_type=None, data_id=1, old=False):
+def file_reader(filename, data_type=None, data_id=1, old = False):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
@@ -860,8 +863,7 @@ def file_reader(filename, data_type=None, data_id=1, old=False):
         
     dm3 = DM3ImageFile(filename, data_id)
 
-    calibration_dict = {}
-    acquisition_dict = {}
+    mapped_parameters={}
 
     if '2D' in dm3.mode:
         # gotta find a better way to do this
@@ -876,24 +878,21 @@ def file_reader(filename, data_type=None, data_id=1, old=False):
     else:
         raise IOError, 'data type "%s" not recognized' % dm3.mode
 
-    calibration_dict['dimensions'] = dm3.dimensions
-    calibration_dict['mode'] = dm3.mode
+    mapped_parameters['dimensions'] = dm3.dimensions
+    mapped_parameters['mode'] = dm3.mode
 
     if dm3.name:
-        calibration_dict['title'] = dm3.name
+        mapped_parameters['title'] = dm3.name
     else:
-        calibration_dict['title'] =  os.path.splitext(filename)[0]
+        mapped_parameters['title'] =  os.path.splitext(filename)[0]
 
-    if len(dm3.data.shape) == 3:
-        # transpose back for compatibility with the plotting code
-        data_cube = dm3.data.transpose((1, 0, 2))
-    else:
-        data_cube = dm3.data
+    data = dm3.data
 
     # Determine the dimensions
     units = list(dm3.dimensions['units'])
-    origins = dm3.dimensions['origins']
-    scales = dm3.dimensions['scales']
+    # The units must be strings
+    while None in units: 
+        units[units.index(None)] = ''
     # Scale the origins
     origins = origins * scales    
     if data_type == 'SI': 
@@ -901,9 +900,9 @@ def file_reader(filename, data_type=None, data_id=1, old=False):
         # only Orsay Spim is supported for now
         # does anyone have other kinds of SIs for testing?
         if dm3.exposure:
-            acquisition_dict['exposure'] = dm3.exposure            
+            mapped_parameters['exposure'] = dm3.exposure            
         if dm3.vsm:
-            calibration_dict['vsm'] = float(dm3.vsm)
+            mapped_parameters['vsm'] = float(dm3.vsm)
         # In EELSLab v. 0.2 the first index must be the energy,
         # this will change in EELSLab 0.3
         if 'eV' in units: # could use reexp or match to a 'energy units' dict?
@@ -915,52 +914,49 @@ def file_reader(filename, data_type=None, data_id=1, old=False):
 
         # In DM the origin is negative. Change it to positive
         origins[energy_index] *= -1
-        
-        # Rearrange the data_cube and parameters to have the energy first
-        # THIS MAY NOT WORK WITH SPLIs/ChronoSPLIS
-        data_cube = np.rollaxis(data_cube, energy_index, 0)
-        origins = np.roll(origins, 1)
-        scales = np.roll(scales, 1)
-        units = np.roll(units, 1)
 
         # Store the calibration in the calibration dict
-        origins_keys = ['energyorigin', 'yorigin', 'xorigin']
-        scales_keys = ['energyscale', 'yscale', 'xscale']
-        units_keys = ['energyunits', 'yunits', 'xunits']
-
-        for value in origins:
-            calibration_dict.__setitem__(origins_keys.pop(0), value)
-
-        for value in scales:
-            calibration_dict.__setitem__(scales_keys.pop(0), value)
-
-        for value in units:
-            calibration_dict.__setitem__(units_keys.pop(0), value)
+        origins_keys = ['xorigin','yorigin','energyorigin']
+        scales_keys = ['xscale','yscale','energyscale']
+        units_keys = ['xunits','yunits','energyunits']
+        names = ['x','y','Energy']
 
     elif data_type == 'Image':
         print("Treating the data as an image")
-        
+
         origins_keys = ['xorigin', 'yorigin', 'zorigin']
         scales_keys = ['xscale', 'yscale', 'zscale']
         units_keys = ['xunits', 'yunits', 'zunits']
+        names = ['x','y','z']
 
-        for value in origins:
-            calibration_dict.__setitem__(origins_keys.pop(0), value)
-
-        for value in scales:
-            calibration_dict.__setitem__(scales_keys.pop(0), value)
-
-        for value in units:
-            calibration_dict.__setitem__(units_keys.pop(0), value)
     else:
         raise TypeError, "could not identify the file data_type"
 
-    calibration_dict['data_cube'] = data_cube
+    axes=[{'size' : int(data.shape[i]), 
+           'index_in_array' : i ,
+           'name' : names[i],
+           'scale': scales[i],
+           'offset' : origins[i],
+           'units' : units[i],} \
+           for i in xrange(len(data.shape))]
 
+    if len(data.shape)==4:
+        # define the first two axes as the slicing axes.
+        axes[0]['slice_bool']=True
+        axes[1]['slice_bool']=True
+    elif len(data.shape)==3 and data_type=='Image':
+        # define the last axis as the slicing axis
+        axes[-1]['slice_bool']=True
+    elif len(data.shape)==3 and (data_type=='Spectrum' or data_type=='SI'):
+        # define the first two axes as the slicing axes.
+        axes[0]['slice_bool']=True
+        axes[1]['slice_bool']=True
+    
     dictionary = {
         'data_type' : data_type, 
-        'calibration' : calibration_dict, 
-        'acquisition' : acquisition_dict,
-        'imported_parameters' : calibration_dict}
+        'data' : data,
+        'axes' : axes,
+        'mapped_parameters': mapped_parameters,
+        }
     
     return [dictionary, ]
