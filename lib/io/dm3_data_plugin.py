@@ -890,6 +890,12 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
 
     # Determine the dimensions
     units = list(dm3.dimensions['units'])
+    origins = np.asarray([dm3.dimensions[i][1]
+                          for i in range(len(dm3.dimensions))],
+                         dtype=np.float)
+    scales =np.asarray([dm3.dimensions[i][2]
+                        for i in range(len(dm3.dimensions))],
+                       dtype=np.float) 
     # The units must be strings
     while None in units: 
         units[units.index(None)] = ''
@@ -916,17 +922,12 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
         origins[energy_index] *= -1
 
         # Store the calibration in the calibration dict
-        origins_keys = ['xorigin','yorigin','energyorigin']
-        scales_keys = ['xscale','yscale','energyscale']
-        units_keys = ['xunits','yunits','energyunits']
+
         names = ['x','y','Energy']
 
     elif data_type == 'Image':
         print("Treating the data as an image")
 
-        origins_keys = ['xorigin', 'yorigin', 'zorigin']
-        scales_keys = ['xscale', 'yscale', 'zscale']
-        units_keys = ['xunits', 'yunits', 'zunits']
         names = ['x','y','z']
 
     else:
