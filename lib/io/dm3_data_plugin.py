@@ -941,18 +941,6 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
            'units' : units[i],} \
            for i in xrange(len(data.shape))]
 
-    if len(data.shape)==4:
-        # define the first two axes as the slicing axes.
-        axes[0]['slice_bool']=True
-        axes[1]['slice_bool']=True
-    elif len(data.shape)==3 and data_type=='Image':
-        # define the last axis as the slicing axis
-        axes[-1]['slice_bool']=True
-    elif len(data.shape)==3 and (data_type=='Spectrum' or data_type=='SI'):
-        # define the first two axes as the slicing axes.
-        axes[0]['slice_bool']=True
-        axes[1]['slice_bool']=True
-    
     dictionary = {
         'data_type' : data_type, 
         'data' : data,
