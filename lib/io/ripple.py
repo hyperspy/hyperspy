@@ -307,12 +307,10 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
         # transpose for compatibility with plotting
         data_cube = data_cube.transpose((0, 2, 1))
     # something should be done for image stacks too, but I have no test files
-
-    if rpl_info.has_key('ev-per-chan'):
-        energyscale = rpl_info['ev-per-chan']
-    elif rpl_info.has_key('depth-scale'):
-        # superseed previous key
+    if rpl_info.has_key('depth-scale'):
         energyscale = rpl_info['depth-scale']
+    elif rpl_info.has_key('ev-per-chan'):
+        energyscale = rpl_info['ev-per-chan']
     else:
         energyscale = 1.
 
