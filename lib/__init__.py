@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright © 2007 Francisco Javier de la Peña
+# Copyright Â© 2007 Francisco Javier de la PeÃ±a
 #
 # This file is part of EELSLab.
 #
@@ -42,6 +42,7 @@ from edges_db import edges_dict
 #from microscope import microscope
 from defaults_parser import defaults
 import utils
+import tests
 
 __version__ = Release.version
 __revision__ = Release.revision

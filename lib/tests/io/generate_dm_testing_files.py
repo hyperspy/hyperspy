@@ -6,8 +6,8 @@ data_types = {
     5 :  '<c8', # 8 byte complex (packed)
     6 :  '<u1', # 1 byte integer unsigned ("byte")
     7 :  '<i4', # 4 byte integer signed ("long")
-    8 : (np.float32, 
-    {'R':('<u1',0), 'G':('<u1',1), 'B':('<u1',2), 'A':('<u1',3)}),
+#    8 : (np.float32, 
+#    {'R':('<u1',0), 'G':('<u1',1), 'B':('<u1',2), 'A':('<u1',3)}),
     9 :  '<i1', # byte integer signed
     10 : '<u2', # 2 byte integer unsigned
     11 : '<u4', # 4 byte integer unsigned
