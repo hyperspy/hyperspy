@@ -277,6 +277,7 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
 
     Any number of spaces can go along with each tab.
     """
+    original_parameters = {}
     if not rpl_info:
         if filename[-3:] in file_extensions:
             with open(filename) as f:
@@ -304,186 +305,169 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
     if rpl_info['record-by'] == 'vector':
         # old EELSLab; energy first (this will hopefully be changed)
         data_cube = np.rollaxis(data_cube, 2, 0)
-        # transpose for compatibility with plotting
-        data_cube = data_cube.transpose((0, 2, 1))
-    # something should be done for image stacks too, but I have no test files
-    if rpl_info.has_key('depth-scale'):
-        energyscale = rpl_info['depth-scale']
-    elif rpl_info.has_key('ev-per-chan'):
-        energyscale = rpl_info['ev-per-chan']
-    else:
-        energyscale = 1.
-
+    scales = [1, 1, 1]
+    origins = [0, 0, 0]
+    units = ['', '', '']
+    names = ['depth', 'height', 'width']
+    sizes = [rpl_info[names[i]] for i in range(3)]
+    
     if rpl_info.has_key('detector-peak-width-ev'):
-        det_fwhm = rpl_info['detector-peak-width-ev']
-    else:
-        det_fwhm = None
+        original_parameters['detector-peak-width-ev'] = \
+        rpl_info['detector-peak-width-ev']
+        
+    if rpl_info.has_key('depth-scale'):
+        scales[0] = rpl_info['depth-scale']
+    # ev-per-chan is the only calibration supported by the original ripple
+    # format
+    elif rpl_info.has_key('ev-per-chan'):
+        scales[0] = rpl_info['ev-per-chan']
 
     if rpl_info.has_key('depth-origin'):
-        energyorigin = rpl_info['depth-origin']
-    else:
-        energyorigin = 0
-        
+        origins[0] = rpl_info['depth-origin']
+
     if rpl_info.has_key('depth-units'):
-        energyunits = rpl_info['depth-units']
-    else:
-        energyunits = ''
+        units[0] = rpl_info['depth-units']
 
     if rpl_info.has_key('width-origin'):
-        xorigin = rpl_info['width-origin']
-    else:
-        xorigin = 0
+        origins[2] = rpl_info['width-origin']
 
     if rpl_info.has_key('width-scale'):
-        xscale = rpl_info['width-scale']
-    else:
-        xscale = 1.
+        scales[2] = rpl_info['width-scale']
         
     if rpl_info.has_key('width-units'):
-        xunits = rpl_info['width-units']
-    else:
-        xunits = ''
+        units[2] = rpl_info['width-units']
 
     if rpl_info.has_key('height-origin'):
-        yorigin = rpl_info['height-origin']
-    else:
-        yorigin = 0
+        origins[1] = rpl_info['height-origin']
 
     if rpl_info.has_key('height-scale'):
-        yscale = rpl_info['height-scale']
-    else:
-        yscale = 1.
+        scales[1] = rpl_info['height-scale']
         
     if rpl_info.has_key('height-units'):
-        yunits = rpl_info['height-units']
-    else:
-        yunits = ''
-        
-    calibration_dict = {
-        'title' : filename,
-        'data_cube' : data_cube,
-        'energyorigin' : energyorigin,
-        'energyscale' : energyscale,
-        'energyunits' : energyunits, 
-        'xorigin' : xorigin,
-        'xscale' : xscale,
-        'xunits' : xunits,
-        'yorigin' : yorigin,
-        'yscale' : yscale,
-        'yunits' : yunits,
-        'detector_fwhm' : det_fwhm,
-        }
+        units[1] = rpl_info['height-units']
 
-    acquisition_dict = {}
+    axes = []
+    index_in_array = 0
+    for i in xrange(3):
+        if sizes[i] > 1:
+            axes.append({
+                            'size' : sizes[i], 
+                            'index_in_array' : index_in_array ,
+                            'name' : names[i],
+                            'scale': scales[i],
+                            'offset' : origins[i],
+                            'units' : units[i],
+                        })
 
     dictionary = {
         'data_type' : data_type, 
-        'calibration' : calibration_dict, 
-        'acquisition' : acquisition_dict,
-        'imported_parameters' : calibration_dict}
-    
+        'data' : data,
+        'axes' : axes,
+        'mapped_parameters': {},
+        'original_parameters' : orginal_parameters
+        }
     return [dictionary, ]
-
-def file_writer(filename, object2save, *args, **kwds):
-    from .. import spectrum
-    from .. import image
     
-    # Set the optional keys to None    
-    ev_per_chan = None
-    
-    # Check if the dtype is supported
-    dc = object2save.data_cube
-    dtype_name = object2save.data_cube.dtype.name
-    if  dtype_name not in dtype2keys.keys():
-        err = 'The ripple format does not support writting data of %s type' % (
-        dtype_name)
-        raise IOError, err
-    # Check if the dimensions are supported
-    dim = len(object2save.data_cube.shape)
-    if  dim > 3:
-        err = 'This file format does not support %i dimension data' % (
-        dim)
-        raise IOError, err
-        
-    # Gather the information to write the rpl        
-    data_type, data_length = dtype2keys[dc.dtype.name]
-    byte_order = endianess2rpl[dc.dtype.byteorder]
-    offset = 0
-    if isinstance(object2save,spectrum.Spectrum) is True:
-        record_by = 'vector'
-        ev_per_chan = int(round(object2save.energyscale))
-        if dim == 3:
-            depth, width, height = dc.shape
-        elif dim == 2:
-            depth, width, height = list(dc.shape) + [1,]
-        elif dim == 1:
-            record_by == 'dont-care'
-            depth, width, height = list(dc.shape) + [1,1]
-
-    elif isinstance(object2save, image.Image) is True: 
-        if dim == 3:
-            record_by = 'image'
-            width, height, depth = dc.shape
-        elif dim == 2:
-            record_by == 'dont-care'
-            width, height, depth = list(dc.shape) + [1,]
-        elif dim == 1:
-            record_by == 'dont-care'
-            depth, width, height = list(dc.shape) + [1,1]
-    else:
-        print("Only Spectrum and Image objects can be saved")
-        return
-            
-    # Fill the keys dictionary
-    keys_dictionary = {
-                         'width' : width,
-                         'height' : height,
-                         'depth' : depth,
-                         'offset' : offset,
-                         'data-type' : data_type,
-                         'data-length' : data_length,
-                         'byte-order' : byte_order,
-                         'record-by' : record_by,
-                         }
-    if ev_per_chan is not None:
-        keys_dictionary['ev-per-chan'] = ev_per_chan
-        keys_dictionary['depth-scale'] = object2save.energyscale
-        keys_dictionary['depth-origin'] = object2save.energyorigin
-        
-        
-    write_rpl(filename, keys_dictionary)
-    write_raw(filename, dc, record_by)
-        
-def write_rpl(filename, keys_dictionary):
-    f = open(filename, 'w')
-    f.write(';File created by EELSLab version %s\n' % Release.version)
-    f.write('key\tvalue\n')
-    for key, value in keys_dictionary.iteritems():
-        f.write(key + '\t' + str(value) + '\n')
-    f.close()
-    
-def write_raw(filename, data_cube, record_by):
-    """Writes the raw file object
-
-    Parameters:
-    -----------
-    filename : string
-        the filename, either with the extension or without it
-    record_by : string
-     'vector' or 'image'
-         
-        """
-    filename = os.path.splitext(filename)[0] + '.raw'
-    dshape = data_cube.shape
-    if len(dshape) == 3:
-        if record_by == 'vector':
-            data_cube.T.ravel().tofile(filename)
-        elif record_by == 'image':
-            data_cube.swapaxes(1,2).ravel().tofile(filename)
-    elif len(dshape) == 2:
-        if record_by == 'vector':
-            data_cube.ravel().tofile(filename)
-        elif record_by in ('image' or 'dont-care'):
-            data_cube.T.ravel().tofile(filename)
-    elif len(dshape) == 1:
-        data_cube.ravel().tofile(filename)
+#def file_writer(filename, object2save, *args, **kwds):
+#    from .. import spectrum
+#    from .. import image
+#    
+#    # Set the optional keys to None    
+#    ev_per_chan = None
+#    
+#    # Check if the dtype is supported
+#    dc = object2save.data_cube
+#    dtype_name = object2save.data_cube.dtype.name
+#    if  dtype_name not in dtype2keys.keys():
+#        err = 'The ripple format does not support writting data of %s type' % (
+#        dtype_name)
+#        raise IOError, err
+#    # Check if the dimensions are supported
+#    dim = len(object2save.data_cube.shape)
+#    if  dim > 3:
+#        err = 'This file format does not support %i dimension data' % (
+#        dim)
+#        raise IOError, err
+#        
+#    # Gather the information to write the rpl        
+#    data_type, data_length = dtype2keys[dc.dtype.name]
+#    byte_order = endianess2rpl[dc.dtype.byteorder]
+#    offset = 0
+#    if isinstance(object2save,spectrum.Spectrum) is True:
+#        record_by = 'vector'
+#        ev_per_chan = int(round(object2save.energyscale))
+#        if dim == 3:
+#            depth, width, height = dc.shape
+#        elif dim == 2:
+#            depth, width, height = list(dc.shape) + [1,]
+#        elif dim == 1:
+#            record_by == 'dont-care'
+#            depth, width, height = list(dc.shape) + [1,1]
+#
+#    elif isinstance(object2save, image.Image) is True: 
+#        if dim == 3:
+#            record_by = 'image'
+#            width, height, depth = dc.shape
+#        elif dim == 2:
+#            record_by == 'dont-care'
+#            width, height, depth = list(dc.shape) + [1,]
+#        elif dim == 1:
+#            record_by == 'dont-care'
+#            depth, width, height = list(dc.shape) + [1,1]
+#    else:
+#        print("Only Spectrum and Image objects can be saved")
+#        return
+#            
+#    # Fill the keys dictionary
+#    keys_dictionary = {
+#                         'width' : width,
+#                         'height' : height,
+#                         'depth' : depth,
+#                         'offset' : offset,
+#                         'data-type' : data_type,
+#                         'data-length' : data_length,
+#                         'byte-order' : byte_order,
+#                         'record-by' : record_by,
+#                         }
+#    if ev_per_chan is not None:
+#        keys_dictionary['ev-per-chan'] = ev_per_chan
+#        keys_dictionary['depth-scale'] = object2save.energyscale
+#        keys_dictionary['depth-origin'] = object2save.energyorigin
+#        
+#        
+#    write_rpl(filename, keys_dictionary)
+#    write_raw(filename, dc, record_by)
+#        
+#def write_rpl(filename, keys_dictionary):
+#    f = open(filename, 'w')
+#    f.write(';File created by EELSLab version %s\n' % Release.version)
+#    f.write('key\tvalue\n')
+#    for key, value in keys_dictionary.iteritems():
+#        f.write(key + '\t' + str(value) + '\n')
+#    f.close()
+#    
+#def write_raw(filename, data_cube, record_by):
+#    """Writes the raw file object
+#
+#    Parameters:
+#    -----------
+#    filename : string
+#        the filename, either with the extension or without it
+#    record_by : string
+#     'vector' or 'image'
+#         
+#        """
+#    filename = os.path.splitext(filename)[0] + '.raw'
+#    dshape = data_cube.shape
+#    if len(dshape) == 3:
+#        if record_by == 'vector':
+#            data_cube.T.ravel().tofile(filename)
+#        elif record_by == 'image':
+#            data_cube.swapaxes(1,2).ravel().tofile(filename)
+#    elif len(dshape) == 2:
+#        if record_by == 'vector':
+#            data_cube.ravel().tofile(filename)
+#        elif record_by in ('image' or 'dont-care'):
+#            data_cube.T.ravel().tofile(filename)
+#    elif len(dshape) == 1:
+#        data_cube.ravel().tofile(filename)
