@@ -23,19 +23,12 @@ Copyright (C) 2011 by Michael Sarahan
 """
 
 import sys
-try:
-    import cv
-except:
-    # commented out because just need one_dim_findpeks
-    # print "OpenCV not available!  Exiting."
-    # sys.exit()
-    print 'Module %s:' % sys.modules[__name__]
-    print 'OpenCV is not available, most of the functions will not work.'
+
 import numpy as np
 from scipy.signal import medfilt
 
 def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
-              medfilt_radius=5, maxpeakn=30000, peakgroup=10, subpix=True):
+              medfilt_radius=5, maxpeakn=30000, peakgroup=10, subchannel=True):
     """
     Find peaks along a 1D line.
 
@@ -48,8 +41,6 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
 
     'slope_thresh' and 'amp_thresh', control sensitivity: higher values will
     neglect smaller features.
-    
-    peakgroup is the
 
     Parameters
     ---------
@@ -83,7 +74,7 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
               number of maximum detectable peaks
               default is set to 30000
                 
-    subpix : bool (optional)
+    subchannel : bool (optional)
              default is set to True
 
     Returns
@@ -118,9 +109,9 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
                 if y[j] > amp_thresh:  
                     # the next section is very slow, and actually messes
                     # things up for images (discrete pixels),
-                    # so by default, don't do subpixel precision in the
+                    # so by default, don't do subchannel precision in the
                     # 1D peakfind step.
-                    if subpix:
+                    if subchannel:
 			xx = np.zeros(peakgroup)
 			yy = np.zeros(peakgroup)
 			s = 0
@@ -180,20 +171,45 @@ def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5):
     then in Y direction, and see where they overlay.
 
     Code based on Dan Masiel's matlab functions
+	
+	Parameters
+    ---------
+    arr : array
+        2D input array, e.g. an image
+        
+    medfilt_radius : int (optional)
+                     median filter window to apply to smooth the data
+                     (see scipy.signal.medfilt)
+                     if 0, no filter will be applied.
+                     default is set to 5
+
+    peak_width : int (optional)
+                expected peak width.  Affects subpixel precision fitting window,
+				which takes the center of gravity of a box that has sides equal
+				to this parameter.  Too big, and you'll include other peaks.
+                default is set to 10
+                
+    subpixel : bool (optional)
+             default is set to True
+
+    Returns
+    -------
+    P : array of shape (npeaks, 3)
+        contains position, height, and width of each peak
     """
     #
     mapX=np.zeros_like(arr)
     mapY=np.zeros_like(arr)
     arr=medfilt(arr,medfilt_radius)
     xc = [one_dim_findpeaks(arr[i], medfilt_radius=None,
-                             peakgroup=boxsize,
-                             subpix=False)[:,0] for i in xrange(arr.shape[1])]
+                             peakgroup=peak_width,
+                             subchannel=False)[:,0] for i in xrange(arr.shape[1])]
     for row in xrange(len(xc)):
         for col in xrange(xc[row].shape[0]):
             mapX[row,int(xc[row][col])]=1
     yc = [one_dim_findpeaks(arr[:,i], medfilt_radius=None,
-                             peakgroup=boxsize,
-                             subpix=False)[:,0] for i in xrange(arr.shape[0])]
+                             peakgroup=peak_width,
+                             subchannel=False)[:,0] for i in xrange(arr.shape[0])]
     for row in xrange(len(yc)):
         for col in xrange(yc[row].shape[0]):
             mapY[row,int(yc[row][col])]=1
@@ -203,27 +219,27 @@ def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5):
     nonzeros=np.nonzero(Fmap)
     coords=np.vstack((nonzeros[1],nonzeros[0])).T
     if subpixel:
-        coords=subpix_locate(arr,coords,boxsize)
+        coords=subpix_locate(arr,coords,peak_width)
     coords=np.ma.fix_invalid(coords,fill_value=-1)
-    coords=np.ma.masked_outside(coords,boxsize/2+1,arr.shape[0]-boxsize/2-1)
+    coords=np.ma.masked_outside(coords,peak_width/2+1,arr.shape[0]-peak_width/2-1)
     coords=np.ma.masked_less(coords,0)
     coords=np.ma.compress_rows(coords)
     return coords 
 
-def subpix_locate(data,points,boxsize,scale=None):
+def subpix_locate(data,points,peak_width,scale=None):
     from scipy.ndimage.measurements import center_of_mass as CofM
-    top=left=boxsize/2
+    top=left=peak_width/2
     centers=np.array(points,dtype=np.float32)
     for i in xrange(points.shape[0]):
         pt=points[i]
         center=np.array(CofM(data[(pt[0]-left):(pt[0]+left),(pt[1]-top):(pt[1]+top)]))
-        center=center[0]-boxsize/2,center[1]-boxsize/2
+        center=center[0]-peak_width/2,center[1]-peak_width/2
         centers[i]=np.array([pt[0]+center[0],pt[1]+center[1]])
     if scale:
         centers=centers*scale
     return centers
     
-def stack_coords(stack,peakwidth,subpixel=False):
+def stack_coords(stack,peak_width,subpixel=False):
     """
     A rough location of all peaks in the image stack.  This can be fed into the
     best_match function with a list of specific peak locations to find the best
@@ -233,7 +249,7 @@ def stack_coords(stack,peakwidth,subpixel=False):
     coords=np.ones((5000,2,depth))*10000
     for i in xrange(depth):
         ctmp=two_dim_findpeaks(stack[:,:,i], subpixel=subpixel,
-                               boxsize=peakwidth)
+                               peak_width=peak_width)
         for row in xrange(ctmp.shape[0]):
             coords[row,:,i]=ctmp[row]
     return coords
@@ -275,6 +291,12 @@ Warning! Peak for image %i at target (%i,%i) was outside specified neighborhood!
     return rlt
   
 def peak_attribs(image,locations,peakwidth,medfilt_radius=5):
+    try:
+        import cv
+    except:
+        print 'Module %s:' % sys.modules[__name__]
+        print 'OpenCV is not available, the peak characterization functions will not work.'
+        return None
     rlt=np.zeros((locations.shape[0],5))
     r=peakwidth/2
     imsize=image.shape[0]
@@ -310,6 +332,12 @@ def peak_attribs_stack(stack, locations, peakwidth, medfilt_radius=5, imcoords=N
     peak and the relative difference in position of the peak from the average, 
     peak orientation angle and eccentricity.
     """
+    try:
+        import cv
+    except:
+        print 'Module %s:' % sys.modules[__name__]
+        print 'OpenCV is not available, the peak characterization functions will not work.'
+        return None
     # pre-allocate result array.  7 rows for each peak, 1 column for each image
     if imcoords:
         # an extra row for keeping track of image coordinates
@@ -343,17 +371,35 @@ def normalize(arr,lower=0.0,upper=1.0):
     return arr
 
 def center_of_mass(moments):
+    try:
+        import cv
+    except:
+        print 'Module %s:' % sys.modules[__name__]
+        print 'OpenCV is not available, the peak characterization functions will not work.'
+        return None
     x = cv.GetCentralMoment(moments,1,0)/cv.GetCentralMoment(moments,0,0)
     y = cv.GetCentralMoment(moments,0,1)/cv.GetCentralMoment(moments,0,0)
     return x,y
             
 def orientation(moments):
+    try:
+        import cv
+    except:
+        print 'Module %s:' % sys.modules[__name__]
+        print 'OpenCV is not available, the peak characterization functions will not work.'
+        return None
     mu11p = cv.GetCentralMoment(moments,1,1)/cv.GetCentralMoment(moments,0,0)
     mu02p = cv.GetCentralMoment(moments,2,0)/cv.GetCentralMoment(moments,0,0)
     mu20p = cv.GetCentralMoment(moments,0,2)/cv.GetCentralMoment(moments,0,0)
     return 0.5*np.arctan(2*mu11p/(mu20p-mu02p))
 
 def eccentricity(moments):
+    try:
+        import cv
+    except:
+        print 'Module %s:' % sys.modules[__name__]
+        print 'OpenCV is not available, the peak characterization functions will not work.'
+        return None
     mu11p = cv.GetCentralMoment(moments,1,1)/cv.GetCentralMoment(moments,0,0)
     mu02p = cv.GetCentralMoment(moments,2,0)/cv.GetCentralMoment(moments,0,0)
     mu20p = cv.GetCentralMoment(moments,0,2)/cv.GetCentralMoment(moments,0,0)

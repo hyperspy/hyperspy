@@ -44,7 +44,7 @@ from defaults_parser import defaults
 from interactive_ns import interactive_ns
 from utils import generate_axis
 from utils import rebin
-from mva import MVA, MVA_Results
+from mva.mva import MVA, MVA_Results
 import drawing.mpl_hse
 import controllers
 from exceptions import *
@@ -1967,7 +1967,7 @@ class Spectrum(object, MVA):
                 spatial_mask.reshape((-1,), order = 'F')
         return spatial_mask
 
-    def get_image(self, spectral_range = slice(None), background_range = None):
+    def _get_explorer(self, spectral_range = slice(None), background_range = None):
         data = self.data_cube
         if self.is_spectrum_line() is True:
             return self.data_cube.squeeze()
@@ -2012,7 +2012,7 @@ class Spectrum(object, MVA):
         self.hse.axis = self.energy_axis
         
         # Image properties
-        self.hse.image_data_function = self.get_image
+        self.hse.image_data_function = self._get_explorer
         self.hse.image_title = ''
         self.hse.pixel_size = self.xscale
         self.hse.pixel_units = self.xunits
