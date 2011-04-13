@@ -70,11 +70,9 @@ def load_with_reader(filename, reader, data_type = None, **kwds):
     objects = []
     for file_data_dict in file_data_list:
         data_type = file_data_dict['data_type']
-        if data_type == 'SI':
-            s = Signal(file_data_dict)
-        elif data_type == 'Image':
-            s = signals.image.Image(file_data_dict)  
-        elif data_type == 'Signal':
+        if data_type == 'Image':
+            s = Image(file_data_dict)  
+        else:
             s = Signal(file_data_dict)
         if defaults.plot_on_load is True:
             s.plot()
@@ -97,29 +95,7 @@ def save(filename, object2save, format = 'hdf5', **kwds):
         messages.warning_exit('File type not supported')
     else:
         writer = io_plugins[i]
-        if isinstance(object2save, Spectrum):
-            if object2save.is_spectrum_image() is True and \
-                writer.writes_spectrum_image is False:
-                messages.warning_exit('SIs writing is not currently supported '
-                'in the %s format' % writer.format_name) 
-            elif object2save.is_spectrum_line() is True and \
-                writer.writes_spectrum_image is False:
-                messages.warning_exit('Spectrum line writing is not currently '
-                'supported in the %s format' % writer.format_name) 
-            elif object2save.is_single_spectrum() is True and \
-                writer.writes_spectrum is False:
-                messages.warning_exit('Spectrum writing is not currently '
-                'supported in the %s format' % writer.format_name) 
-            else:
-                writer.file_writer(filename, object2save, **kwds)
-        elif isinstance(object2save, Image):
-            if writer.writes_images is False:
-                messages.warning_exit('Image writing is not currently supported'
-                ' in the %s format' % writer.format_name)
-            else:
-                writer.file_writer(filename, object2save, **kwds)
-        elif isinstance(object2save, Signal):
-            writer.file_writer(filename, object2save, **kwds)
+        writer.file_writer(filename, object2save, **kwds)
     
 
 ## if file_extension in msa_extensions:
