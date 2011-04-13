@@ -447,6 +447,9 @@ def file_writer(filename, object2save, *args, **kwds):
                          }
     if ev_per_chan is not None:
         keys_dictionary['ev-per-chan'] = ev_per_chan
+        keys_dictionary['depth-scale'] = object2save.energyscale
+        keys_dictionary['depth-origin'] = object2save.energyorigin
+        
         
     write_rpl(filename, keys_dictionary)
     write_raw(filename, dc, record_by)
@@ -484,4 +487,3 @@ def write_raw(filename, data_cube, record_by):
             data_cube.T.ravel().tofile(filename)
     elif len(dshape) == 1:
         data_cube.ravel().tofile(filename)
-        
