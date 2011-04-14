@@ -458,7 +458,9 @@ def write_rpl(filename, keys_dictionary):
     f = open(filename, 'w')
     f.write(';File created by EELSLab version %s\n' % Release.version)
     f.write('key\tvalue\n')
-    for key, value in keys_dictionary.iteritems():
+    # Even if it is not necessary, we sort the keywords when writing
+    # to make the rpl file more human friendly
+    for key, value in iter(sorted(keys_dictionary.iteritems())):
         f.write(key + '\t' + str(value) + '\n')
     f.close()
     
