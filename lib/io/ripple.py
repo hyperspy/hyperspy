@@ -238,12 +238,15 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
       depth-origin    int      # energy offset in pixels          
       depth-scale     float    # energy scaling (units per pixel) 
       depth-units     str      # energy units, usually eV
+      depth-name      str      # Name of the magnitude stored as depth        
       width-origin         int      # column offset in pixels
       width-scale          float    # column scaling (units per pixel)
-      width-units          str      # column units, usually nm         
+      width-units          str      # column units, usually nm
+      width-name      str           # Name of the magnitude stored as width      
       height-origin         int      # row offset in pixels          
       height-scale          float    # row scaling (units per pixel) 
       height-units          str      # row units, usually nm
+      height-name      str           # Name of the magnitude stored as height
      
     NOTES
 
@@ -334,6 +337,9 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
     if rpl_info.has_key('depth-units'):
         units[0] = rpl_info['depth-units']
 
+    if rpl_info.has_key('depth-name'):
+        names[0] = rpl_info['depth-name']
+
     if rpl_info.has_key('width-origin'):
         origins[2] = rpl_info['width-origin']
 
@@ -342,6 +348,9 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
         
     if rpl_info.has_key('width-units'):
         units[2] = rpl_info['width-units']
+    
+    if rpl_info.has_key('width-name'):
+        names[2] = rpl_info['width-name']
 
     if rpl_info.has_key('height-origin'):
         origins[1] = rpl_info['height-origin']
@@ -351,6 +360,9 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
         
     if rpl_info.has_key('height-units'):
         units[1] = rpl_info['height-units']
+
+    if rpl_info.has_key('height-name'):
+        names[1] = rpl_info['height-name']
 
     axes = []
     index_in_array = 0
@@ -452,6 +464,7 @@ def file_writer(filename, signal, *args, **kwds):
             keys_dictionary['%s-scale' % key] = eval('%s_axis.scale' % key)
             keys_dictionary['%s-origin' % key] = eval('%s_axis.offset' % key)
             keys_dictionary['%s-units' % key] = eval('%s_axis.units' % key)
+            keys_dictionary['%s-name' % key] = eval('%s_axis.name' % key)
         
     write_rpl(filename, keys_dictionary)
     write_raw(filename, signal, record_by)
