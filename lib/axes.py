@@ -205,9 +205,9 @@ class AxesManager(t.HasTraits):
         self.axes = [None] * ncoord
         for axis_dict in axes_list:
             self.axes[axis_dict['index_in_array']] = DataAxis(**axis_dict)
-        slices = [i.slice_bool for i in self.axes]
+        slices = [i.slice_bool for i in self.axes if hasattr(i, 'slice_bool')]
         # set_view is called only if there is no current view
-        if np.all(np.array(slices) == False):
+        if not slices or np.all(np.array(slices) == False):
             self.set_view()
         self.set_output_dim()
         self.on_trait_change(self.set_output_dim, 'axes.slice')
