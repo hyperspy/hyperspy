@@ -270,10 +270,9 @@ def ser_reader(filename, *args, **kwds):
     header, data = load_ser_file(filename)
     data_type = guess_data_type(header['DataTypeID'])
     axes = []
-    ndim = header['NumberDimensions']
-    array_shape = [None,] * int(ndim)
-    
+    ndim = int(header['NumberDimensions'])
     if data_type == 'SI':
+        array_shape = [None,] * int(ndim)
         i_array = range(ndim)
         if len(data['PositionY']) > 1 and \
         (data['PositionY'][0] == data['PositionY'][1]):
@@ -318,7 +317,7 @@ def ser_reader(filename, *args, **kwds):
         array_shape.append(data['ArrayLength'][0])
         
     elif data_type == 'Image':
-        
+        array_shape = [None,] * int(ndim - 1)
         # Y axis
         axes.append({
             'name' : 'y',
@@ -327,7 +326,7 @@ def ser_reader(filename, *args, **kwds):
             'scale' : data['CalibrationDeltaY'][0],
             'units' : 'Unknown',
             'size' : data['ArraySizeY'][0],
-            'index_in_array' : 0
+            'index_in_array' : ndim - 1
             })
         array_shape.append(data['ArraySizeY'][0])
         
@@ -339,21 +338,21 @@ def ser_reader(filename, *args, **kwds):
             'scale' : data['CalibrationDeltaX'][0],
             'units' : 'undefined',
             'size' : data['ArraySizeX'][0],
-            'index_in_array' : 1
+            'index_in_array' : ndim
             })
         array_shape.append(data['ArraySizeX'][0])
         
         # Extra dimensions
-        for i in range(1, header['NumberDimensions'] + 1):
+        for i in range(ndim - 1):
             axes.append({
             'name' : 'undefined%s' % i,
-            'offset' : header['Dim-%i_CalibrationOffset' % i][0],
-            'scale' : header['Dim-%i_CalibrationDelta' % i][0],
-            'units' : header['Dim-%i_Units' % i][0],
-            'size' : header['Dim-%i_DimensionSize' % i][0],
-            'index_in_array' : 1 + i
+            'offset' : header['Dim-%i_CalibrationOffset' % i + 1][0],
+            'scale' : header['Dim-%i_CalibrationDelta' % i + 1][0],
+            'units' : header['Dim-%i_Units' % i + 1][0],
+            'size' : header['Dim-%i_DimensionSize' % i + 1][0],
+            'index_in_array' : ndim - 1 -i
             })
-            array_shape.append(header['Dim-%i_DimensionSize' % i][0])
+            array_shape.append(header['Dim-%i_DimensionSize' % i + 1][0])
 
     # If the acquisition stops before finishing the job, the stored file will 
     # report the requested size even though no values are recorded. Therefore if
@@ -361,7 +360,7 @@ def ser_reader(filename, *args, **kwds):
     # dimensions we must fill the rest with zeros or (better) nans if the 
     # dtype is float
     if np.cumprod(array_shape)[-1] != np.cumprod(data['Array'].shape)[-1]:
-        dc = np.zeros((array_shape[0] * array_shape[1], array_shape[2]), 
+        dc = np.zeros(np.cumprod(array_shape)[-1], 
                       dtype = data['Array'].dtype)
         if dc.dtype is np.dtype('f') or dc.dtype is np.dtype('f8'):
             dc[:] = np.nan
@@ -374,7 +373,7 @@ def ser_reader(filename, *args, **kwds):
         dc = dc[::-1]
       
     dictionary = {
-    'data_type' : 'Signal',
+    'data_type' : data_type,
     'filename' : filename,
     'data' : dc,
     'parameters' : {},
