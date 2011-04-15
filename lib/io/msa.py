@@ -160,7 +160,18 @@ def file_reader(filename, **kwds):
         else:
             clean_par, units = parameter, None
         if clean_par in keywords:
-            parameters[parameter] = keywords[clean_par]['dtype'](value)
+            try:
+                parameters[parameter] = keywords[clean_par]['dtype'](value)
+            except:
+                # Normally the offending mispelling is a space in the scientic
+                # notation, e.g. 2.0 E-06, so we try to correct for it
+                try:
+                    parameters[parameter] = keywords[clean_par]['dtype'](
+                    value.replace(' ', ''))
+                except:
+                    print("The %s keyword value, %s " % (parameter, value) +
+                    "could not be converted to the right type" )
+                
             if keywords[clean_par]['mapped_to'] is not None:
                 mapped[keywords[clean_par]['mapped_to']] = parameters[parameter]
                 if units is not None:
