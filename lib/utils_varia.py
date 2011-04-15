@@ -26,6 +26,7 @@
 from __future__ import with_statement # for Python versions < 2.6
 
 import re
+import os
 
 try:
     import matplotlib.pyplot as plt
@@ -55,22 +56,18 @@ def overwrite(fname):
     """ If file exists, ask for overwriting and return True or False,
     else return True.
     """
-    try:
-        f = open(fname, 'r')
+    if os.path.isfile(fname):
         message = 'File ' + fname + ' exists. Overwrite (y/n)?\n'
         answer = raw_input(message)
         while (answer != 'y') and (answer != 'n'):
             print('Please answer y or n.')
             answer = raw_input(message)
         if answer == 'y':
-            print('Writing data to', fname)
-            f.close()
             return True
         elif answer == 'n':
             print('Operation canceled.')
-            f.close()
             return False
-    except IOError: # file does not exist
+    else:
         return True
 
 def saveTags(dic, outfile='dm3dataTags.py', val=False):
