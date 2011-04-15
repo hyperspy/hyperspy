@@ -174,10 +174,13 @@ class Signal(t.HasTraits):
             self._plot.axis = self.axes_manager._slicing_axes[0].axis
             
             # Image properties
-            self._plot.image_data_function = self._get_explorer
-            self._plot.image_title = ''
-            self._plot.pixel_size = self.axes_manager._non_slicing_axes[0].scale
-            self._plot.pixel_units = self.axes_manager._non_slicing_axes[0].units
+            if self.axes_manager._non_slicing_axes:
+                self._plot.image_data_function = self._get_explorer
+                self._plot.image_title = ''
+                self._plot.pixel_size = \
+                self.axes_manager._non_slicing_axes[0].scale
+                self._plot.pixel_units = \
+                self.axes_manager._non_slicing_axes[0].units
             
         elif axes_manager.output_dim == 2:
 #            self._plot = drawing.mpl_hie.MPL_HyperImage_Explorer()
