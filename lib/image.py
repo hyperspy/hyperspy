@@ -62,11 +62,13 @@ class Image():
         return s
 
     def save(self, filename, **kwds):
-        """"""
+        """
+        """
         file_io.save(filename, self, **kwds)        
                 
     def load(self, dictionary):
-        """"""
+        """
+        """
         calibration_dict = dictionary['calibration']
         for key in calibration_dict:
             exec('self.%s = calibration_dict[\'%s\']' % (key, key))
