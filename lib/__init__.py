@@ -30,28 +30,8 @@ elif matplotlib.get_backend() == 'WXAgg':
 else:
     ETSConfig.toolkit ='null'
 
-
-import Release
-import components
-
-from experiments import Experiments
-from signal import Signal
-from model import Model
-from file_io import load
-from edges_db import edges_dict
-#from microscope import microscope
-from defaults_parser import defaults
-import utils
-import tests
-
-__version__ = Release.version
-__revision__ = Release.revision
-
-print(Release.info)
-
 def get_configuration_directory_path():
     print(eelslab.config_dir.config_path)
-
 
 def start_gui():
     if ETSConfig.toolkit != 'null':

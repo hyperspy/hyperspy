@@ -1,12 +1,14 @@
-#!/usr/bin/python
+##!/usr/bin/python
 
 import os
+import eelslab
+eelslab_module_path=os.path.dirname(eelslab.__file__)
 
 if os.name in ['nt','dos']:
     # The -wthread forces matplotlib to use the WXAgg backend
     # This is necessary to support traits visualisation
     # In windows is the default because it the only one that works correctly
-    os.system('ipython -pylab -wthread -c "from eelslab import *" -i')
+    os.system('ipython -wthread -p eelslab')
 else:
     # When not running in Windows the backend is defined by matplotlib
-    os.system('ipython -pylab -c "from eelslab import *" -i')
+    os.system('ipython -p eelslab')
