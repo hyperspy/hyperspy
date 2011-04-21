@@ -15,7 +15,7 @@ import messages
 from axes import AxesManager
 import file_io
 import drawing
-import drawing.mpl_hie
+#import drawing.mpl_hie
 import utils
 import progressbar
 
@@ -183,12 +183,15 @@ class Signal(t.HasTraits):
                 self.axes_manager._non_slicing_axes[0].units
             
         elif axes_manager.output_dim == 2:
+            if len(self.data.shape)==2:
+                from drawing.guiqwt_hie import image_plot_2D
+                image_plot_2D(self)
 #            self._plot = drawing.mpl_hie.MPL_HyperImage_Explorer()
-            self._plot = drawing.mpl_hie.MPL_HyperImage_Explorer()
-            self._plot.image_data_function = self.__call__
-            self._plot.navigator_data_function = self._get_explorer
-            self._plot.axes_manager = axes_manager
-            self._plot.plot()
+            #self._plot = drawing.mpl_hie.MPL_HyperImage_Explorer()
+            #self._plot.image_data_function = self.__call__
+            #self._plot.navigator_data_function = self._get_explorer
+            #self._plot.axes_manager = axes_manager
+            #self._plot.plot()
         else:
             messages.warning_exit('Plotting is not supported for this view')
         
