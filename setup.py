@@ -5,6 +5,7 @@ try:
     import setuptools
 except:
     print "Setuptools unavailable.  setup.py develop and test commands not available."
+
 from distutils.core import setup
 
 import distutils.dir_util
@@ -15,7 +16,8 @@ import shutil
 
 import lib.Release as Release
 # clean the build directory so we aren't mixing Windows and Linux installations carelessly.
-distutils.dir_util.remove_tree('build')
+if os.path.exists('build'):
+    distutils.dir_util.remove_tree('build')
 
 install_req = ['scipy', 'ipython', 'matplotlib', 'numpy', 'mdp', 'netcdf','nose']
 
@@ -44,15 +46,6 @@ if are_we_building4windows() or os.name in ['nt','dos']:
         f.close()
         batch_files.append(batch_file)
     scripts.extend(batch_files)
-    ipy_dir=os.path.expanduser('~\_ipython')
-    if not os.path.exists(ipy_dir):
-        os.mkdir(ipy_dir)
-    shutil.copy('ipython_profile\ipy_profile_eelslab.py',ipy_dir)
-else:
-    ipy_dir=os.path.expanduser('~/.ipython')
-    if not os.path.exists(ipy_dir):
-        os.mkdir(ipy_dir)
-    shutil.copy('ipython_profile/ipy_profile_eelslab.py',ipy_dir)
     
 version = Release.version
 if Release.revision != '':
@@ -72,6 +65,7 @@ setup(
     {
         'eelslab': 
             [
+                'ipython_profile/*',
                 'data/eelslabrc',
                 'data/*.m', 
                 'data/*.csv',
@@ -79,9 +73,9 @@ setup(
                 'data/kica/*.m',
                 'data/kica/*.c',
                 'data/kica/distributions/*.m',
-		'lib/tests/io/dm3_1D_data/*.dm3',
-		'lib/tests/io/dm3_2D_data/*.dm3',
-		'lib/tests/io/dm3_3D_data/*.dm3',
+		'tests/io/dm3_1D_data/*.dm3',
+		'tests/io/dm3_2D_data/*.dm3',
+		'tests/io/dm3_3D_data/*.dm3',
             ],
     },
     author = Release.authors['F_DLP'][0],
