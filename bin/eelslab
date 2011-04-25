@@ -19,4 +19,4 @@ else:
         os.mkdir(ipy_dir)
     shutil.copy('%s/ipython_profile/ipy_profile_eelslab.py'%eelslab_module_path,ipy_dir)
     # When not running in Windows the backend is defined by matplotlib
-    os.system('ipython  -p eelslab')
+    os.system('ipython -wthread -p eelslab')
