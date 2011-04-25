@@ -14,8 +14,7 @@ import enthought.traits.ui.api as tui
 import messages
 from axes import AxesManager
 import file_io
-import drawing
-import drawing.mpl_hie
+from drawing import mpl_hie, mpl_hse
 import utils
 import progressbar
 
@@ -163,7 +162,7 @@ class Signal(t.HasTraits):
         if axes_manager.output_dim == 1:
             # Hyperspectrum
                             
-            self._plot = drawing.mpl_hse.MPL_HyperSpectrum_Explorer()
+            self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
             self._plot.spectrum_data_function = self.__call__
             self._plot.spectrum_title = self.name
             self._plot.xlabel = '%s (%s)' % (
@@ -183,17 +182,23 @@ class Signal(t.HasTraits):
                 self.axes_manager._non_slicing_axes[0].units
             
         elif axes_manager.output_dim == 2:
-            '''
+            
             # Mike's playground with new plotting toolkits - needs to be a branch.
+            """
             if len(self.data.shape)==2:
                 from drawing.guiqwt_hie import image_plot_2D
                 image_plot_2D(self)
-            '''
-            self._plot = drawing.mpl_hie.MPL_HyperImage_Explorer()
+            
+            import drawing.chaco_hie
+            self._plot = drawing.chaco_hie.Chaco_HyperImage_Explorer(self)
+            self._plot.configure_traits()
+            """
+            self._plot = mpl_hie.MPL_HyperImage_Explorer()
             self._plot.image_data_function = self.__call__
             self._plot.navigator_data_function = self._get_explorer
             self._plot.axes_manager = axes_manager
             self._plot.plot()
+            
         else:
             messages.warning_exit('Plotting is not supported for this view')
         
@@ -876,6 +881,7 @@ class Signal(t.HasTraits):
                                          medfilt_radius=medfilt_radius, maxpeakn=maxpeakn, 
                                          peakgroup=peakgroup, subchannel=subchannel)
         elif len(self.data.shape)==2:
+            pbar=progressbar.ProgressBar(maxval=self.data.shape[1]).start()
             # preallocate a large array for the results
             # the third dimension is for the number of rows in your data.
             # assumes spectra are rows of the 2D array, each col is a channel.
@@ -888,24 +894,31 @@ class Signal(t.HasTraits):
                                                     peakgroup=peakgroup, 
                                                     subchannel=subchannel)
                 self.peaks[:tmp.shape[0],:,i]=tmp
+                pbar.update(i+1)
             # trim any extra blank space
             # works by summing along axes to compress to a 1D line, then finds
             # the first 0 along that line.
-            trim_id=np.min(np.nonzero(np.sum(np.sum(self.peaks,axis=2),axis=1)==0))
+            trim_id=np.min(np.nonzero(np.sum(np.sum(self.peaks,axis=2),
+                                             axis=1)==0))
+            pbar.finish()
             self.peaks=self.peaks[:trim_id,:,:]
         elif len(self.data.shape)==3:
             # preallocate a large array for the results
-            self.peaks=np.zeros((maxpeakn,3,self.data.shape[0],self.data.shape[1]))
+            self.peaks=np.zeros((maxpeakn,3,self.data.shape[0],
+                                 self.data.shape[1]))
+            pbar=progressbar.ProgressBar(maxval=self.data.shape[0]).start()
             for i in xrange(self.data.shape[0]):
                 for j in xrange(self.data.shape[1]):
                     tmp=one_dim_findpeaks(self.data[i,j], slope_thresh=slope_thresh, amp_thresh=amp_thresh,
                                          medfilt_radius=medfilt_radius, maxpeakn=maxpeakn, 
                                          peakgroup=peakgroup, subchannel=subchannel)
                     self.peaks[:tmp.shape[0],:,i,j]=tmp
+                pbar.update(i+1)
             # trim any extra blank space
             # works by summing along axes to compress to a 1D line, then finds
             # the first 0 along that line.
             trim_id=np.min(np.nonzero(np.sum(np.sum(np.sum(self.peaks,axis=3),axis=2),axis=1)==0))
+            pbar.finish()
             self.peaks=self.peaks[:trim_id,:,:,:]
 
     def peakfind_2D(self, subpixel=False, peak_width=10, medfilt_radius=5,
