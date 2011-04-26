@@ -39,7 +39,6 @@ except:
 import mdp
 from .. import utils
 from svd_pca import pca    
-from ..utils import unfold_if_2D
 from mlpca import mlpca
 from ..image import Image
 from ..utils import center_and_scale
@@ -144,7 +143,8 @@ class MVA():
         --------
         plot_principal_components, plot_principal_components_maps, plot_lev
         """
-        
+        # backup the original data
+        self._data_before_treatments=self.data
         # Check for conflicting options and correct them when possible   
         if (algorithm == 'mdp' or algorithm == 'NIPALS') and center is False:
             print \
@@ -186,19 +186,27 @@ class MVA():
         # Variance normalization
         if variance2one is True:
             self.variance2one()
-        # Transform the data in a line spectrum    
-        self._unfolded4pca = unfold_if_2D(self)
-        dc = self.data_cube.squeeze()
+        # Transform the data in a line spectrum
+        self._unfolded4pca=self.unfold_if_multidim()
         # Normalize the poissonian noise
         # Note that this function can change the masks
         if normalize_poissonian_noise is True:
             spatial_mask, energy_mask = \
-            self.normalize_poissonian_noise(spatial_mask = spatial_mask, 
-            energy_mask = energy_mask, return_masks = True)
+                self.normalize_poissonian_noise(spatial_mask = spatial_mask, 
+                                                energy_mask = energy_mask, 
+                                                return_masks = True)
 
-        spatial_mask = self._correct_spatial_mask_when_unfolded(spatial_mask)            
+        spatial_mask = self._correct_spatial_mask_when_unfolded(spatial_mask)
 
         messages.information('Performing principal components analysis')
+        dc_transposed=False
+        last_axis_units=self.axes_manager.axes[-1].units
+        if last_axis_units=='eV' or last_axis_units=='keV':
+            print "Transposing data so that energy axis makes up rows."
+            dc = self.data.T.squeeze()
+            dc_transposed=True
+        else:
+            dc = self.data.squeeze()
         # Transform the None masks in slices to get the right behaviour
         if spatial_mask is None:
             spatial_mask = slice(None)
@@ -215,11 +223,12 @@ class MVA():
             print "\nPerforming the PCA node training"
             print "This include variance normalizing"
             self.mva_results.pca_node.train(
-            dc[energy_mask,:][:,spatial_mask])
+                dc[energy_mask,:][:,spatial_mask])
             print "Performing PCA projection"
             pc = self.mva_results.pca_node.execute(dc[:,spatial_mask])
             pca_v = self.mva_results.pca_node.v
             pca_V = self.mva_results.pca_node.d
+            self.mva_results.dc_transposed=dc_transposed
             self.mva_results.output_dim = output_dim
             
         elif algorithm == 'svd':
@@ -267,13 +276,24 @@ class MVA():
         self.mva_results.pca_algorithm = algorithm
         self.mva_results.centered = center
         self.mva_results.poissonian_noise_normalized = \
-        normalize_poissonian_noise
+            normalize_poissonian_noise
         self.mva_results.output_dim = output_dim
         self.mva_results.unfolded = self._unfolded4pca
         self.mva_results.variance2one = variance2one
         
         if self._unfolded4pca is True:
-            self.mva_results.original_shape = self.shape_before_folding
+            self.mva_results.original_shape = self._shape_before_unfolding
+
+        """
+        # Rescale the results if the noise was normalized
+        if normalize_poissonian_noise is True:
+            self.mva_results.pc[energy_mask,:] *= self._root_bH
+            self.mva_results.v *= self._root_aG.T
+            if isinstance(spatial_mask, slice):
+                spatial_mask = None
+            if isinstance(energy_mask, slice):
+                energy_mask = None
+            self.undo_normalize_poissonian_noise()
             
         if variance2one is True:
             self.undo_variance2one()
@@ -284,18 +304,10 @@ class MVA():
             self.undo_energy_center()
             if self._unfolded4pca is True:
                 self.unfold()
-        
-        # Rescale the results if the noise was normalized
-        if normalize_poissonian_noise is True:
-            self.mva_results.pc[energy_mask,:] *= self._root_bH
-            self.mva_results.v *= self._root_aG.T
-            if isinstance(spatial_mask, slice):
-                spatial_mask = None
-            if isinstance(energy_mask, slice):
-                energy_mask = None
-            self.undo_normalize_poissonian_noise(spatial_mask = spatial_mask,
-            energy_mask = energy_mask)
-        
+        """
+        #undo any pre-treatments
+        self.undo_treatments()
+
         # Set the pixels that were not processed to nan
         if spatial_mask is not None or not isinstance(spatial_mask, slice):
             v = np.zeros((dc.shape[1], self.mva_results.v.shape[1]), 
@@ -306,7 +318,7 @@ class MVA():
                 
         if self._unfolded4pca is True:
             self.fold()
-            self._unfolded4pca is False
+            assert(self._unfolded4pca is False)
             
     def independent_components_analysis(self, number_of_components = None, 
     algorithm = 'CuBICA', diff_order = 1, pc = None, 
@@ -417,7 +429,7 @@ class MVA():
         
         Returns
         -------
-        Spectrum instance
+        Signal instance
         """
         bool_index = np.zeros((self.mva_results.pc.shape[0]), dtype = 'bool')
         if number_of_components is not None:
@@ -426,9 +438,9 @@ class MVA():
             for ipc in comp_list:
                 bool_index[ipc] = True
             number_of_components = len(comp_list)
-        self._unfolded4pca = unfold_if_2D(self)
+        self._unfolded4pca = self.unfold_if_multidim()
         a = np.atleast_3d(np.dot(self.mva_results.pc[:,bool_index], 
-        self.mva_results.v.T[bool_index, :]))
+                                 self.mva_results.v.T[bool_index, :]))
 #        rebuilded_spectrum = copy.deepcopy(self)
 #        rebuilded_spectrum._Spectrum__new_cube(a, 
 #        'rebuilded from PCA with %s components' % number_of_components)
@@ -437,14 +449,18 @@ class MVA():
 #            rebuilded_spectrum.undo_variance2one()        
 #        if self.mva_results.centered is True:
 #            rebuilded_spectrum.undo_energy_center()
-        from spectrum import Spectrum
-        sc = Spectrum({'calibration': {'data_cube' : a}})
+        sc = copy.copy(self)
+        dc_transposed=False
+        last_axis_units=self.axes_manager.axes[-1].units
+        if last_axis_units=='eV' or last_axis_units=='keV':
+            print "Transposing data so that energy axis makes up rows."
+            sc.data = a.T.squeeze()
+        else:
+            sc.data = a.squeeze()
         if self._unfolded4pca is True:
             self.fold()
-            sc.shape_before_folding = copy.copy(self.shape_before_folding)
-            sc.history.append('unfolded')
+            sc.history=['unfolded']
             sc.fold()
-        sc.get_calibration_from(self)
         
         return sc
     
@@ -480,7 +496,7 @@ class MVA():
         if ic2zero is not None:
             for comp in ic2zero:
                 ic[:,comp] *= 0
-        self._unfolded4pca = unfold_if_2D(self)
+        self._unfolded4pca = self.unfold_if_multidim()
         a = np.dot(ic[:,:n], 
         recmatrix[:n, :])
         rebuilded_spectrum = copy.deepcopy(self)
@@ -492,31 +508,26 @@ class MVA():
         return rebuilded_spectrum
         
     def energy_center(self):
-        """Substract the mean energy pixel by pixel"""
+        """Subtract the mean energy pixel by pixel"""
         print "\nCentering the energy axis"
-        self._centering_mean = np.mean(self.data_cube, 0)
-        data = (self.data_cube - self._energy_mean)
-        self.__new_cube(data, 'energy centering')
+        self._energy_mean = np.mean(self.data, 0)
+        self.data = (self.data - self._energy_mean)
         self._replot()
         
     def undo_energy_center(self):
         if hasattr(self,'_energy_mean'):
-            data = (self.data_cube + self._energy_mean)
-            self.__new_cube(data, 'undo energy centering')
+            self.data = (self.data + self._energy_mean)
             self._replot()
         
     def variance2one(self):
         # Whitening
-        data = copy.deepcopy(self.data_cube)
-        self._std = np.std(data, 0)
-        data /= self._std
-        self.__new_cube(data, 'variance2one')
+        self._std = np.std(self.data, 0)
+        self.data /= self._std
         self._replot()
         
     def undo_variance2one(self):
         if hasattr(self,'_std'):
-            data = (self.data_cube * self._std)
-            self.__new_cube(data, 'undo variance2one')
+            data = (self.data * self._std)
             self._replot()
         
     def plot_principal_components(self, n = None):
@@ -531,7 +542,7 @@ class MVA():
             n = self.mva_results.pc.shape[1]
         for i in range(n):
             plt.figure()
-            plt.plot(self.energy_axis, self.mva_results.pc[:,i])
+            plt.plot(self.axes_manager.axes[-1].axis, self.mva_results.pc[:,i])
             plt.title('Principal component %s' % i)
             plt.xlabel('Energy (eV)')
             
@@ -555,7 +566,7 @@ class MVA():
         recmatrix = self.mva_results.v.T[:n, :]
 #        if 'unfolded' in self.history:
 #            self.fold()
-        shape = (self.data_cube.shape[1], self.data_cube.shape[2])
+        shape = (self.data.shape[1], self.data.shape[2])
         im_list = []
         for i in range(n):
             print i
@@ -712,7 +723,7 @@ class MVA():
             if no_nans:
                 print 'Removing NaNs for a visually prettier plot.'
                 recmatrix = np.nan_to_num(recmatrix) # remove ugly NaN pixels
-        shape = self.data_cube.shape[1], self.data_cube.shape[2]
+        shape = self.data.shape[1], self.data.shape[2]
         im_list = []
         for i in range(n):
             if plot is True:
@@ -807,7 +818,7 @@ class MVA():
                                                    no_nans=True)
         if ic is None:
             ic = self.ic
-        if self.data_cube.shape[2] > 1:
+        if self.data.shape[2] > 1:
             maps = True
         else:
             maps = False
@@ -848,12 +859,12 @@ class MVA():
         (channels, components) and the second row is the mixing matrix.
         """
         if coordinates is None:
-            fold_back = utils.unfold_if_2D(self)
-            ic = self.data_cube.squeeze()
+            fold_back = utils.self.unfold_if_multidim()
+            ic = self.data.squeeze()
         else:
             clist = []
             for coord in coordinates:
-                clist.append(self.data_cube[:,coord[0], coord[1]])
+                clist.append(self.data[:,coord[0], coord[1]])
             ic = np.array(clist).T
         snica = utils.snica(ic)
         self.ic = snica[0]
@@ -879,7 +890,7 @@ class MVA():
         -------
         plot_als_ic_maps, plot_als_ic
         """
-        shape = (self.data_cube.shape[2], self.data_cube.shape[1],-1)
+        shape = (self.data.shape[2], self.data.shape[1],-1)
         if hasattr(self, 'ic') and (self.ic is not None):
             also = utils.ALS(self, **kwargs)
             self.als_ic = also['S']
@@ -902,7 +913,7 @@ class MVA():
         recmatrix = self.als_output['CList'].T, ic = self.als_ic)
                 
     def normalize_poissonian_noise(self, spatial_mask = None, 
-    energy_mask = None, return_masks = False):
+                                   energy_mask = None, return_masks = False):
         """
         Scales the SI following Surf. Interface Anal. 2004; 36: 203–212 to
         "normalize" the poissonian data for PCA analysis
@@ -912,10 +923,21 @@ class MVA():
         spatial_mask : boolen numpy array
         energy_mask  : boolen numpy array
         """
-        refold = unfold_if_2D(self)
-        dc = self.data_cube.squeeze()
+        messages.information(
+            "Scaling the data to normalize the (presumably) Poissonian noise")
+        # If energy axis is not first, it needs to be for MVA.
+        refold = self.unfold_if_multidim()
+        dc_transposed=False
+        last_axis_units=self.axes_manager.axes[-1].units
+        if last_axis_units=='eV' or last_axis_units=='keV':
+            # don't print this here, since PCA will have already printed it.
+            # print "Transposing data so that energy axis makes up rows."
+            dc = self.data.T.squeeze()
+            dc_transposed=True
+        else:
+            dc = self.data.squeeze()
         spatial_mask = \
-        self._correct_spatial_mask_when_unfolded(spatial_mask)
+            self._correct_spatial_mask_when_unfolded(spatial_mask)
         if spatial_mask is None:
             spatial_mask = slice(None)
         if energy_mask is None:
@@ -935,29 +957,36 @@ class MVA():
         if aG0.any():
             if isinstance(spatial_mask, slice):
                 # Convert the slice into a mask before setting its values
-                spatial_mask = np.ones((self.data_cube.shape[1]),dtype = 'bool')
+                spatial_mask = np.ones((self.data.shape[1]),dtype = 'bool')
             # Set colums summing zero as masked
             spatial_mask[aG0] = False
             aG = aG[aG0 == False]
         if bH0.any():
             if isinstance(energy_mask, slice):
                 # Convert the slice into a mask before setting its values
-                energy_mask = np.ones((self.data_cube.shape[0]), dtype = 'bool')
+                energy_mask = np.ones((self.data.shape[0]), dtype = 'bool')
             # Set rows summing zero as masked
             energy_mask[bH0] = False
             bH = bH[bH0 == False]
-        messages.information(
-            "Scaling the data to normalize the (presumably) Poissonian noise")
         self._root_aG = np.sqrt(aG)[np.newaxis,:]
         self._root_bH = np.sqrt(bH)[:, np.newaxis]
         temp = (dc[energy_mask,:][:,spatial_mask] / 
-        (self._root_aG * self._root_bH))
+                (self._root_aG * self._root_bH))
         if  isinstance(energy_mask,slice) or isinstance(spatial_mask,slice):
             dc[energy_mask,spatial_mask] = temp
         else:
             mask3D = energy_mask[:, np.newaxis] * \
-            spatial_mask[np.newaxis, :]
+                spatial_mask[np.newaxis, :]
             dc[mask3D] = temp.ravel()
+        # TODO - dc was never modifying self.data - was normalization ever
+        # really getting applied?  Comment next lines as necessary.
+        if dc_transposed:
+            # don't print this here, since PCA will print it.
+            # print "Undoing data transpose."
+            self.data=dc.T
+        else:
+            self.data=dc
+        # end normalization write to self.data.
         if refold is True:
             print "Automatically refolding the SI after scaling"
             self.fold()
@@ -968,29 +997,11 @@ class MVA():
                 energy_mask = None
             return spatial_mask, energy_mask
         
-    def undo_normalize_poissonian_noise(self, spatial_mask = None, 
-    energy_mask = None):
+    def undo_treatments(self):
         """Undo normalize_poissonian_noise"""
-        print "Undoing the noise normalization"
-        refold = unfold_if_2D(self)
-        dc = self.data_cube.squeeze()
-        spatial_mask = \
-        self._correct_spatial_mask_when_unfolded(spatial_mask)
-        if spatial_mask is None:
-            spatial_mask = slice(None)
-        if energy_mask is None:
-            energy_mask = slice(None)
-        temp = (dc[energy_mask,:][:,spatial_mask] * 
-        (self._root_aG * self._root_bH))
-        if  isinstance(energy_mask,slice) or isinstance(spatial_mask,slice):
-            dc[energy_mask,spatial_mask] = temp
-        else:
-            mask3D = energy_mask[:, np.newaxis] * \
-            spatial_mask[np.newaxis, :]
-            dc[mask3D] = temp.ravel()
-        if refold is True:
-            print "Automatically refolding the SI after scaling"
-            self.fold()
+        print "Undoing data pre-treatments"
+        self.data=self._data_before_treatments
+        del self._data_before_treatments
         
 class MVA_Results():
     def __init__(self):

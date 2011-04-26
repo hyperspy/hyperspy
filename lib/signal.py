@@ -17,6 +17,7 @@ import file_io
 from drawing import mpl_hie, mpl_hse
 import utils
 import progressbar
+from mva.mva import MVA, MVA_Results
 
 class Parameters(object):
     """A class to comfortably access some parameters as attributes"""
@@ -34,7 +35,7 @@ class Parameters(object):
                 print("%s = %s") % item
 
 
-class Signal(t.HasTraits):
+class Signal(t.HasTraits, MVA):
     name = t.Str()
     data = t.Array()
     axes_manager = t.Instance(AxesManager)
@@ -55,6 +56,7 @@ class Signal(t.HasTraits):
         self.mapped_parameters=Parameters()
         self.load_dictionary(file_data_dict)
         self._plot = None
+        self.mva_results=MVA_Results()
         self._shape_before_unfolding = None
         
     def load_dictionary(self, file_data_dict):
@@ -145,8 +147,7 @@ class Signal(t.HasTraits):
                 return None
         else:
             return None
-        
-    
+            
     def plot(self, axes_manager = None):
         if self._plot is not None:
                 try:
@@ -180,6 +181,7 @@ class Signal(t.HasTraits):
                 self.axes_manager._non_slicing_axes[0].scale
                 self._plot.pixel_units = \
                 self.axes_manager._non_slicing_axes[0].units
+            self._plot.plot()
             
         elif axes_manager.output_dim == 2:
             
@@ -201,8 +203,6 @@ class Signal(t.HasTraits):
             
         else:
             messages.warning_exit('Plotting is not supported for this view')
-        
-        self._plot.plot()
         
     traits_view = tui.View(
         tui.Item('name'),
@@ -391,6 +391,21 @@ class Signal(t.HasTraits):
             splitted.append(s)
         return splitted
 
+    def unfold_if_multidim(self):
+        """Unfold the datacube if it is >2D
+    
+        Returns
+        -------
+    
+        Boolean. True if the data was unfolded by the function.
+        """
+        if len(self.axes_manager.axes)>2:
+            print "Automatically unfolding the data"
+            self.unfold()
+            return True
+        else:
+            return False
+
     def unfold(self, steady_axis = -1, unfolded_axis = -2):
         """Modify the shape of the data to obtain a 2D object
         
@@ -420,20 +435,18 @@ class Signal(t.HasTraits):
         new_shape[unfolded_axis] = -1
         self.data = self.data.reshape(new_shape).squeeze()
         self.axes_manager = AxesManager(
-        self._get_undefined_axes_list())
+            self._get_undefined_axes_list())
         if steady_axis > unfolded_axis:
             index = 1
         else:
             index = 0
-        nc = self.axes_manager.axes[
-        steady_axis].get_axis_dictionary()
-        nc['index_in_array'] = index 
-        # TODO: get some axes data
-        self.axes_manager.axes[index].__init__(
-       **nc)
+        nc = self._axes_manager_before_unfolding.axes[
+            steady_axis].get_axis_dictionary()
+        nc['index_in_array'] = index
+        self.axes_manager.axes[index].__init__(**nc)
         self.axes_manager.axes[index].slice = slice(None)
         self.axes_manager.axes[index - 1].slice = None
-        self._replot()            
+        self._replot()
             
     def fold(self):
         """If the SI was previously unfolded, folds it back"""
@@ -442,6 +455,7 @@ class Signal(t.HasTraits):
             self.axes_manager = self._axes_manager_before_unfolding
             self._shape_before_unfolding = None
             self._axes_manager_before_unfolding = None
+            self._unfolded4pca=False
             self._replot()
 
     def _get_positive_axis_index_index(self, axis):
@@ -1079,12 +1093,12 @@ class Signal(t.HasTraits):
 #            self.set_new_calibration(origin, dispersion)
 #        return origin, dispersion
 #    
-#    def _correct_spatial_mask_when_unfolded(self, spatial_mask = None,):
-#        if 'unfolded' in self.history:
-#            if spatial_mask is not None:
-#                spatial_mask = \
-#                spatial_mask.reshape((-1,), order = 'F')
-#        return spatial_mask
+    def _correct_spatial_mask_when_unfolded(self, spatial_mask = None,):
+        #if 'unfolded' in self.history:
+        if spatial_mask is not None:
+           spatial_mask = \
+               spatial_mask.reshape((-1,))
+        return spatial_mask
 #        
 #    def get_single_spectrum(self):
 #        s = Spectrum({'calibration' : {'data_cube' : self()}})

@@ -28,7 +28,8 @@ except:
 import utils
 
 class SpectrumFigure():
-    """"""
+    """
+    """
     def __init__(self):
         self.figure = None
         self.left_ax = None
@@ -97,7 +98,8 @@ class SpectrumFigure():
         
 class SpectrumLine():
     def __init__(self):
-        """"""
+        """
+        """
         # Data attributes
         self.data_function = None
         self.axis = None

@@ -22,7 +22,6 @@ import numpy as np
 
 import widgets
 import spectrum, image, utils
-from .. import coordinates
 import copy
 
 class MPL_HyperSpectrum_Explorer(object):

@@ -185,21 +185,21 @@ def check_energy_dimensions(sp1, sp2, warn = True, sp2_name = None):
             print "The %s should be unidimensional" % sp2_name
         return False
 
-def unfold_if_2D(spectrum):
+def unfold_if_multidim(signal):
     """Unfold the SI if it is 2D
     
     Parameters
     ----------
-    spectrum : Spectrum instance
+    signal : Signal instance
     
     Returns
     -------
     
     Boolean. True if the SI was unfolded by the function.
     """
-    if spectrum.xdimension > 1 and spectrum.ydimension > 1:
+    if len(signal.axes_manager.axes)>2:
         print "Automatically unfolding the SI"
-        spectrum.unfold()
+        signal.unfold()
         return True
     else:
         return False
