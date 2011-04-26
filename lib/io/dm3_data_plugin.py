@@ -680,7 +680,6 @@ class DM3ImageFile(object):
                                                 + DM3ImageFile.units)))
         units.sort()
         swapelem(units, 0, 1)
-        
         dimensions = [ (sizes[i][1][1][1],
                         origins[i][1][1][1],
                         scales[i][1][1][1],
@@ -701,6 +700,7 @@ class DM3ImageFile(object):
                                                        'f4',
                                                        'S8']})
         self.imsize = self.dimensions['sizes']
+        self.units = self.dimensions['units']
        
         br_orig = self.data_dict.ls(DM3ImageFile.brightdir
                                     + DM3ImageFile.origin)[1][1]
@@ -742,8 +742,8 @@ class DM3ImageFile(object):
         else:
             data = read_data_array(self.filename, self.imbytes,
                                    self.byte_offset, self.imdtype)
-#            if len(self.dimensions) == 3:
-#                order = 'F'
+            if (len(self.dimensions) == 3) and (('eV' in self.units) or ('keV' in self.units)):
+                order = 'F'
 #                # The Bytes in a SI are ordered as
 #                # X0, Y0, Z0, X1, Y0, Z0, [...], Xn, Ym, Z0, [...]
 #                # X0, Y0, Z1, [...], Xn, Ym, Zk
@@ -751,10 +751,14 @@ class DM3ImageFile(object):
 #                # the 1st two axes of the ndarray must be transposed
 #                # because its natural order is
 #                # row (Y), column (X), E
-#                swapelem(self.imsize, 0, 1)
-#            else:
-#                order = 'C'
-            data = data.reshape(self.imsize)
+                swapelem(self.imsize, 0, 1)
+                data = data.reshape(self.imsize,order=order)
+                # switch the y, x axes of the ndarray back so that order is x,y,z 
+                # (natural numpy order)
+                data=np.swapaxes(data,0,1)
+            else:
+                order = 'C'
+                data = data.reshape(self.imsize,order=order)
             return data
             
     def read_rgb(self):
@@ -867,12 +871,15 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
 
     if '2D' in dm3.mode:
         # gotta find a better way to do this
-        if 'eV' in dm3.units:
+        if ('eV' in dm3.units) or ('keV' in dm3.units):
             data_type = 'SI'
         else:
             data_type = 'Image'
     elif '3D' in dm3.mode:
-        data_type = 'SI'
+        if ('eV' in dm3.units) or ('keV' in dm3.units):
+            data_type = 'SI'
+        else:
+            data_type = 'Image'
     elif '1D' in dm3.mode:
         data_type = 'SI'
     else:
@@ -900,7 +907,7 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
     while None in units: 
         units[units.index(None)] = ''
     # Scale the origins
-    origins = origins * scales    
+    origins = origins * scales
     if data_type == 'SI': 
         print("Treating the data as an SI")
         # only Orsay Spim is supported for now
