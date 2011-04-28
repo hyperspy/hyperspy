@@ -286,14 +286,18 @@ def ls(dic, pwd, sep='.'):
         else:
             try:
                 if type(dic[cdir]) is dict:
-                    return dic[cdir].keys()
+                    out = dic[cdir].keys()
+                    out.sort()
+                    return out
                 else:
                     return [cdir, ]
             except:
                 print("object has no key '%s'" % str(cdir))
     else:
         try:
-            return dic.keys()
+            out = dic.keys()
+            out.sort()
+            return out
         except:
             pass
 
@@ -432,7 +436,9 @@ class DictBrowser(object):
                 try:
                     if type(self.dic[cdir]) is dict:
                         # 'sub-directory' (return content)
-                        return self.dic[cdir].keys()
+                        out = self.dic[cdir].keys()
+                        out.sort()
+                        return out
                     else:
                         # 'file' (return name (key) and value)
                         return cdir, self.dic[cdir]
@@ -443,7 +449,9 @@ class DictBrowser(object):
                     return None
         else:
             try:
-                return self.dic.keys()
+                out = self.dic.keys()
+                out.sort()
+                return out
             except:
                 if dbg:
                     msg = 'An error occurred processing '
