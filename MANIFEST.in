@@ -1,7 +1,4 @@
 include *.txt
-include *.rst
 recursive-include docs *.txt *.rst
-include eelslab/data/eelslabrc
-recursive-include eelslab/data/*.m *.c *.csv *.tar.gz
 
 
