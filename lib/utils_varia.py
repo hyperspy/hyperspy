@@ -539,3 +539,43 @@ class DictBrowser(object):
                 self.dic = self.home.copy()
                 self.oldpwd = self.pwd[:]
                 self.pwd = []
+                
+    def interactive_browsing(self, path=''):
+        """Interactively browse the contents of a path.
+
+        The operation can be interrupted by typing Ctl-D (Unix) or
+        Ctl-Z+Return (Windows)
+
+        Parameters
+        ----------
+        path : string or list (optional)
+               if not given, the current path (pwd) is explored
+
+        """
+        if type(path) is str:
+            path = path.split(self.sep) # turn path into a list
+        for i in range(len(path)):
+            if path[i] == '':
+                path.pop(i)
+                
+        contents = self.ls(path)
+        
+        if type(contents) is tuple:
+            print(contents)
+            print('done')
+            return
+        else:
+            contents =  iter(contents)
+            
+        print("Starting interactive browsing, hit 'Return' to continue.")
+        try:
+            while not raw_input():
+                try:
+                    browse =  path + [contents.next(),]
+                    print(browse)
+                    print(self.ls(browse))
+                except StopIteration:
+                    raise KeyboardInterrupt
+        except KeyboardInterrupt:
+            pass
+            
