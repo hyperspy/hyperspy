@@ -542,6 +542,10 @@ class DM3ImageFile(object):
     imdatadir = ['ImageData',]
     imtagsdir = imdatadir + ['ImageTags',]
     imname = imtagsdir + ['Name',]
+    Gatan_SI_dir = imtagsdir + ['Acquisition','DataBar','DigiScan',]
+    Gatan_EELS_SI_dir=Gatan_SI_dir + ['EELS']
+    # EFTEM not tested! MCS May 2011
+    Gatan_EFTEM_SI_dir=Gatan_SI_dir + ['EFTEM']
     orsaydir = imtagsdir + ['Orsay', 'spim', 'detectors', 'eels']
     vsm = orsaydir + ['vsm',]
     dwelltime = orsaydir + ['dwell time',]
@@ -632,6 +636,30 @@ class DM3ImageFile(object):
             self.vsm =  self.data_dict.ls(DM3ImageFile.vsm)[1][1]
         except:
             self.vsm = None
+
+        try:
+            self.SI_format = self.data_dict.ls(DM3ImageFile.Gatan_EELS_SI_dir+['Meta Data','Format'])[1][1]
+        except:
+            try:
+                self.SI_format = self.data_dict.ls(DM3ImageFile.Gatan_EFTEM_SI_dir+['Meta Data','Format'])[1][1]
+            except:
+                try:
+                    # Fall-back for images that have been manually converted to SIs
+                    self.SI_format = self.data_dict.ls(DM3ImageFile.imtagsdir+['Meta Data','Format'])[1][1]
+                except:
+                    self.SI_format = None
+
+        try:
+            self.signal = self.data_dict.ls(DM3ImageFile.Gatan_EELS_SI_dir+['Meta Data','Signal'])[1][1]
+        except:
+            try:
+                self.signal=self.data_dict.ls(DM3ImageFile.Gatan_EFTEM_SI_dir+['Meta Data','Format'])[1][1]
+            except:
+                try:
+                    # Fall-back for images that have been manually converted to SIs
+                    self.signal = self.data_dict.ls(DM3ImageFile.imtagsdir+['Meta Data','Signal'])[1]
+                except:
+                    self.signal = None
 
         imdtype =  self.data_dict.ls(DM3ImageFile.imdtype)[1][1]
         self.imdtype = DM3ImageFile.imdtype_dict[imdtype]
@@ -742,7 +770,7 @@ class DM3ImageFile(object):
         else:
             data = read_data_array(self.filename, self.imbytes,
                                    self.byte_offset, self.imdtype)
-            if (len(self.dimensions) == 3) and (('eV' in self.units) or ('keV' in self.units)):
+            if (len(self.dimensions) == 3) and (self.signal=='EELS'):
                 order = 'F'
 #                # The Bytes in a SI are ordered as
 #                # X0, Y0, Z0, X1, Y0, Z0, [...], Xn, Ym, Z0, [...]
@@ -894,6 +922,9 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
         mapped_parameters['title'] =  os.path.splitext(filename)[0]
 
     data = dm3.data
+    # set dm3 object's data attribute to None so it doesn't
+    #   get passed in the original_parameters dict (to save memory)
+    dm3.data=None
 
     # Determine the dimensions
     units = list(dm3.dimensions['units'])
@@ -953,6 +984,7 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
         'data' : data,
         'axes' : axes,
         'mapped_parameters': mapped_parameters,
+        'original_parameters':dm3.__dict__,
         }
     
     return [dictionary, ]
