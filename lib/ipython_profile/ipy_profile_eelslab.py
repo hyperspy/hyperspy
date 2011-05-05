@@ -24,23 +24,12 @@ def main():
     ip=ipapi.get()
     o=ip.options
     
-    ip.ex("import eelslab.Release as Release")
-    ip.ex("import eelslab.components as components")
-
-    ip.ex("from eelslab.experiments import Experiments")
-    ip.ex("from eelslab.signal import Signal")
-    ip.ex("from eelslab.model import Model")
-    ip.ex("from eelslab.file_io import load")
-    ip.ex("from eelslab.edges_db import edges_dict")
-    #from microscope import microscope
-    ip.ex("from eelslab.defaults_parser import defaults")
-    ip.ex("import eelslab.utils as utils")
-    ip.ex("import eelslab.tests as tests")
+    ip.ex("from eelslab.EELSlab import *")
 
     #Matplotlib imports
-    ip.ex("import pylab")
-    ip.ex("pylab.ion()")
     ip.ex("import matplotlib.pyplot as plt")
+    ip.ex("plt.ion()")
+    
 
     # Numpy import
     ip.ex('import numpy as np')

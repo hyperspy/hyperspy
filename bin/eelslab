@@ -4,6 +4,9 @@ import os, shutil
 import eelslab
 eelslab_module_path=os.path.dirname(eelslab.__file__)
 
+import matplotlib as mpl
+backend=mpl.rcParams['backend']
+
 if os.name in ['nt','dos']:
     ipy_dir=os.path.expanduser('~/_ipython')
     if not os.path.exists(ipy_dir):
@@ -19,4 +22,9 @@ else:
         os.mkdir(ipy_dir)
     shutil.copy('%s/ipython_profile/ipy_profile_eelslab.py'%eelslab_module_path,ipy_dir)
     # When not running in Windows the backend is defined by matplotlib
-    os.system('ipython -wthread -p eelslab')
+    if 'WX' in backend:
+        os.system('ipython -wthread -p eelslab')
+    elif 'GTK' in backend:
+        os.system('ipython -gthread -p eelslab')
+    elif 'Qt4' in backend:
+        os.system('ipython -q4thread -p eelslab')
