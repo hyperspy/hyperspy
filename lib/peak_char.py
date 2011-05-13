@@ -203,14 +203,14 @@ def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5):
     if medfilt_radius > 0:
         arr = medfilt(arr,medfilt_radius)
     xc = [one_dim_findpeaks(arr[i], medfilt_radius=None,
-                             peakgroup=peak_width,
-                             subchannel=False)[:,0] for i in xrange(arr.shape[1])]
+                            peakgroup=peak_width,
+                            subchannel=False)[:,0] for i in xrange(arr.shape[1])]
     for row in xrange(len(xc)):
         for col in xrange(xc[row].shape[0]):
             mapX[row,int(xc[row][col])]=1
     yc = [one_dim_findpeaks(arr[:,i], medfilt_radius=None,
-                             peakgroup=peak_width,
-                             subchannel=False)[:,0] for i in xrange(arr.shape[0])]
+                            peakgroup=peak_width,
+                            subchannel=False)[:,0] for i in xrange(arr.shape[0])]
     for row in xrange(len(yc)):
         for col in xrange(yc[row].shape[0]):
             mapY[row,int(yc[row][col])]=1
