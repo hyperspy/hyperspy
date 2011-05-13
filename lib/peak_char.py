@@ -190,7 +190,7 @@ def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5):
                 default is set to 10
                 
     subpixel : bool (optional)
-             default is set to True
+               default is set to False
 
     Returns
     -------
