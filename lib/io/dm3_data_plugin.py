@@ -814,9 +814,9 @@ class DM3ImageFile(object):
             msg += " -> width == height"
             print msg
             raise ImageModeError('FFT')
-        print "This image is likely a FFT and each pixel is a complex number"
-        print "You might want to display its complex norm"
-        print "with a logarithmic intensity scale: log(abs(IMAGE))"
+        # print "This image is likely a FFT and each pixel is a complex number"
+        # print "You might want to display its complex norm"
+        # print "with a logarithmic intensity scale: log(abs(IMAGE))"
         self.mode += 'FFT_'
         N = int(self.imsize[0] / 2)      # think about a 2Nx2N matrix
         # read all the bytes as 1D array of 4-Byte float
