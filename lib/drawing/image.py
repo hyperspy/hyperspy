@@ -51,7 +51,7 @@ class ImagePlot:
             # check if it's an RGB structured array
             dc = dc['R']
         except ValueError, msg:
-            if 'field named R not found' in msg:
+            if 'field named R not found.' in msg:
                 pass
             else:
                 raise
@@ -110,7 +110,7 @@ class ImagePlot:
             # modify the data so that it can be read by matplotlib
             data = np.rollaxis(np.array((data_r, data_g, data_b)), 0, 3)
         except ValueError, msg:
-            if 'field named R not found' in msg:
+            if 'field named R not found.' in msg:
                 pass
             else:
                 raise
