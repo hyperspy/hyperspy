@@ -897,6 +897,16 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
 
     mapped_parameters={}
 
+    if 'rgb' in dm3.mode:
+        # create a structured array (see issue #25)
+        buf = np.zeros(dm3.data.shape[:-1],
+                       dtype={'names' : ['R', 'G', 'B'],
+                              'formats' : ['u4', 'u4', 'u4']})
+        buf['R'] = dm3.data[..., 0]
+        buf['G'] = dm3.data[..., 1]
+        buf['B'] = dm3.data[..., 2]
+        dm3.data = buf
+
     if '2D' in dm3.mode:
         # gotta find a better way to do this
         if ('eV' in dm3.units) or ('keV' in dm3.units):
