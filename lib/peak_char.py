@@ -172,10 +172,10 @@ def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5):
 
     Code based on Dan Masiel's matlab functions
 	
-	Parameters
+    Parameters
     ---------
     arr : array
-        2D input array, e.g. an image
+    2D input array, e.g. an image
         
     medfilt_radius : int (optional)
                      median filter window to apply to smooth the data
@@ -185,8 +185,8 @@ def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5):
 
     peak_width : int (optional)
                 expected peak width.  Affects subpixel precision fitting window,
-				which takes the center of gravity of a box that has sides equal
-				to this parameter.  Too big, and you'll include other peaks.
+		which takes the center of gravity of a box that has sides equal
+		to this parameter.  Too big, and you'll include other peaks.
                 default is set to 10
                 
     subpixel : bool (optional)
@@ -200,7 +200,8 @@ def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5):
     #
     mapX=np.zeros_like(arr)
     mapY=np.zeros_like(arr)
-    arr=medfilt(arr,medfilt_radius)
+    if medfilt_radius > 0:
+        arr = medfilt(arr,medfilt_radius)
     xc = [one_dim_findpeaks(arr[i], medfilt_radius=None,
                              peakgroup=peak_width,
                              subchannel=False)[:,0] for i in xrange(arr.shape[1])]
