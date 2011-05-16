@@ -364,7 +364,7 @@ def ser_reader(filename, *args, **kwds):
                       dtype = data['Array'].dtype)
         if dc.dtype is np.dtype('f') or dc.dtype is np.dtype('f8'):
             dc[:] = np.nan
-        dc[:data['Array'].shape[0],...] = data['Array']
+        dc[:data['Array'].ravel().shape[0]] = data['Array'].ravel()
     else:
         dc = data['Array']
     
