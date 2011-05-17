@@ -613,7 +613,7 @@ class MVA():
         """
         if ic is None:
             ic = self.ic
-            x = self.energy_axis
+            x = self.axes_manager.axes[-1].axis
         else:
             if len(ic.shape) != 2:
                 raise ShapeError(ic)
@@ -1059,6 +1059,13 @@ class MVA_Results():
             if not hasattr(self, attrib):
                 exec('self.%s = %s' % (attrib, defaults[attrib]))
         self.summary()
+
+    def peak_pca(self):
+        self.principal_component_analysis(self.peak_chars)
+        pass
+
+    def peak_ica(self, number_of_components):
+        pass
         
     def summary(self):
         """Prints a summary of the PCA parameters to the stdout
