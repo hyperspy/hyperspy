@@ -423,7 +423,7 @@ def peak_attribs_stack(stack, peak_width, subpixel=False, target_locations=None,
         peak_locations=np.array([[best_match(peaks[:,:,i], 
                                              target_locations[j], 
                                              target_neighborhood) \
-               for i in xrange(peaks.shape[])] \
+               for i in xrange(peaks.shape[2])] \
                for j in xrange(target_locations.shape[0])])
 
     # pre-allocate result array.  7 rows for each peak, 1 column for each image

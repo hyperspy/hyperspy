@@ -19,7 +19,7 @@
 # USA
 
 from ..signal import Signal
-import ..peak_char as pc
+from ..peak_char import *
 import matplotlib.pyplot as plt
 
 class Image(Signal):
@@ -84,7 +84,7 @@ class Image(Signal):
                 default is set to 5
         
         """
-        self.peak_chars=pc.peak_attribs_stack(self.data, 
+        self.peak_chars=peak_attribs_stack(self.data, 
                                               peak_width,
                                               subpixel=subpixel, 
                                               target_locations=target_locations,
@@ -98,7 +98,7 @@ class Image(Signal):
                        medfilt_radius=5):
         # TODO: replace with hyperimage explorer
         plt.imshow(self.data[:,:,index],cmap=plt.gray())
-        peaks=pc.two_dim_peakfind(self.data[:,:,index], subpixel=subpixel,
+        peaks=two_dim_peakfind(self.data[:,:,index], subpixel=subpixel,
                                   peak_width=peak_width, 
                                   medfilt_radius=medfilt_radius)
         plt.scatter(peaks[:,0],peaks[:,1])
