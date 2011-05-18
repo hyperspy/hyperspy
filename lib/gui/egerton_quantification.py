@@ -15,6 +15,7 @@ from .. import components
 from .. import utils
 from .. import drawing
 from ..spectrum import Spectrum
+from ..image import Image
 from ..interactive_ns import interactive_ns
 
 
@@ -154,17 +155,28 @@ class EgertonPanel(t.HasTraits):
                     self.map, = self.map_ax.plot(self.signal_map.squeeze())
             if len(self.signal_map.squeeze().shape) == 2:
                     self.map.set_data(self.signal_map.T)
+                    self.map.autoscale()
+                    
             else:
                 self.map.set_ydata(self.signal_map.squeeze())
             self.map_ax.figure.canvas.draw()
             
     def _extract_signal_fired(self):
         if self.signal_map is None: return
-        s = Spectrum(
-        {'calibration' : {'data_cube' : self.signal_map.squeeze()}})
-        s.energyscale = self.SI.xscale
-        s.energyunits = self.SI.xunits
-        interactive_ns[self.signal_name] = s
+        if len(self.signal_map.squeeze().shape) == 2:
+            s = Image(
+            {'calibration' : {'data_cube' : self.signal_map.squeeze()}})
+            s.xscale = self.SI.xscale
+            s.yscale = self.SI.yscale
+            s.xunits = self.SI.xunits
+            s.yunits = self.SI.yunits
+            interactive_ns[self.signal_name] = s
+        else:
+            s = Spectrum(
+            {'calibration' : {'data_cube' : self.signal_map.squeeze()}})
+            s.energyscale = self.SI.xscale
+            s.energyunits = self.SI.xunits
+            interactive_ns[self.signal_name] = s
     
 
 def energy_window_dependency(s, left, right, min_width = 10):
@@ -187,7 +199,5 @@ def energy_window_dependency(s, left, right, min_width = 10):
     ax2.set_title('As')
     ax2.set_xlabel('Energy')
     return rs, As
-
-   
 
 plt.show()
