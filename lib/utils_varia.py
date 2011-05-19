@@ -53,23 +53,42 @@ def swapelem(obj, i, j):
         obj[j] = buf
     
 def overwrite(fname):
-    """ If file exists, ask for overwriting and return True or False,
+    """ If file exists 'fname', ask for overwriting and return True or False,
     else return True.
+    
     """
     if os.path.isfile(fname):
-        message = 'File ' + fname + ' exists. Overwrite (y/n)?\n'
+        message = "Overwrite '%s' (y/n)?\n" % fname
         answer = raw_input(message)
+        answer = answer.lower()
         while (answer != 'y') and (answer != 'n'):
             print('Please answer y or n.')
             answer = raw_input(message)
-        if answer == 'y':
+        if answer.lower() == 'y':
             return True
-        elif answer == 'n':
-            print('Operation canceled.')
+        elif answer.lower() == 'n':
+            # print('Operation canceled.')
             return False
     else:
         return True
-
+    
+def saveas(fname):
+    """If file 'fname' exists, ask for a new (base)name and, of course, return it.
+    
+    """
+    cdir = os.path.split(fname)[0]
+    base = os.path.split(fname)[1]
+    if os.path.isfile(fname):
+        if overwrite(fname):
+            return fname
+        else:
+            message = 'Please choose a new name.\n'
+            answer = raw_input(message)
+            newname = os.path.join(cdir, answer)
+            return rename(newname)
+    else:
+        return fname
+    
 def saveTags(dic, outfile='dm3dataTags.py', val=False):
     """Save keys of dictionary 'dic' in Python format (list)
     into outfile (default: dm3dataTags.py).
