@@ -95,27 +95,26 @@ def saveTags(dic, outfile='dm3dataTags.py', val=False):
     If val == True, the key : value pair is saved.
     """
     print('Saving Tags to', outfile)
-    exists = overwrite(outfile)
-    if exists:
-        if val == False:
-            dataList = [ key for key in dic]
-            dataList.sort()
-        elif val == True:
-            dataList = [ (key, dic[key]) for key in dic]
-            dataList.sort()
-        else:
-            print('Invalid option, val=%s' % repr(val))
-            return
-        with open(outfile, 'w') as fout:
-            encoding = 'latin-1'
-            print >> fout, '#!/usr/bin/env python'
-            print >> fout, '# -*- coding: ' + encoding + ' -*-'
-            print >> fout, 'dataTags = ['
-            for i in dataList:
-                line = "    " + repr(i) + ",\n"
-                print >> fout, line.encode(encoding)
-            print >> fout, ']'
-            print 'Done.'
+    outfile = saveas(outfile)
+    if val == False:
+        dataList = [ key for key in dic]
+        dataList.sort()
+    elif val == True:
+        dataList = [ (key, dic[key]) for key in dic]
+        dataList.sort()
+    else:
+        print('Invalid option, val=%s' % repr(val))
+        return
+    with open(outfile, 'w') as fout:
+        encoding = 'latin-1'
+        fout.write('#!/usr/bin/env python\n')
+        fout.write('# -*- coding: %s -*-\n' % encoding)
+        fout.write('dataTags = [\n')
+        for i in dataList:
+            line = "    " + repr(i) + ",\n"
+            fout.write(line.encode(encoding))
+        fout.write(']\n')
+        print 'Done.'
 
 def findInDict(pattern, dic, ig_case=0): # improved from scipy
     """Return a sub-dictionary of dictionary 'dic'
