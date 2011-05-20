@@ -133,18 +133,18 @@ class EgertonPanel(t.HasTraits):
     def plot_signal_map(self, *args, **kwargs):
         if self.define_signal_window is True and \
         self.signal_span_selector.range is not None:
-            pars = utils.two_area_powerlaw_estimation(
-        self.SI, *self.bg_span_selector.range, only_current_spectrum = False)
             ileft = self.SI.energy2index(self.signal_span_selector.range[0])
             iright = self.SI.energy2index(self.signal_span_selector.range[1])
-            x = self.SI.energy_axis[ileft:iright, np.newaxis, np.newaxis]
-            A = pars['A'][np.newaxis,...]
-            r = pars['r'][np.newaxis,...]
-            self.bg_cube = (A*x**(-r)).squeeze()
-            ileft = self.SI.energy2index(self.signal_span_selector.range[0])
-            iright = self.SI.energy2index(self.signal_span_selector.range[1])
-            self.signal_map = (self.SI.data_cube[ileft:iright,...].squeeze() - 
-                               self.bg_cube).sum(0)
+            signal_sp = self.SI.data_cube[ileft:iright,...].squeeze()
+            if self.define_background_window is True:
+                pars = utils.two_area_powerlaw_estimation(
+                self.SI, *self.bg_span_selector.range, only_current_spectrum = False)
+                x = self.SI.energy_axis[ileft:iright, np.newaxis, np.newaxis]
+                A = pars['A'][np.newaxis,...]
+                r = pars['r'][np.newaxis,...]
+                self.bg_sp = (A*x**(-r)).squeeze()
+                signal_sp -= self.bg_sp
+            self.signal_map = signal_sp.sum(0)
             if self.map_ax is None:
                 f = plt.figure()
                 self.map_ax = f.add_subplot(111)
