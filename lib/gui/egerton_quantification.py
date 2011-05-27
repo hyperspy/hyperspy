@@ -135,7 +135,7 @@ class EgertonPanel(t.HasTraits):
         self.signal_span_selector.range is not None:
             ileft = self.SI.energy2index(self.signal_span_selector.range[0])
             iright = self.SI.energy2index(self.signal_span_selector.range[1])
-            signal_sp = self.SI.data_cube[ileft:iright,...].squeeze()
+            signal_sp = self.SI.data_cube[ileft:iright,...].squeeze().copy()
             if self.define_background_window is True:
                 pars = utils.two_area_powerlaw_estimation(
                 self.SI, *self.bg_span_selector.range, only_current_spectrum = False)
