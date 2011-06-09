@@ -57,11 +57,11 @@ if defaults_dict['GOS_dir'] == 'None':
         gos_path = os.path.join(program_files, gos)
         
         # Else, use the default location in the .eelslab forlder
-        if os.path.isdir(gos_path) is False:
-			program_files = os.environ['PROGRAMFILES(X86)']
-			gos_path = os.path.join(program_files, gos)
-			if os.path.isdir(gos_path) is False:
-				gos_path = os.path.join(config_path, 'GOS')
+        if os.path.isdir(gos_path) is False and 'PROGRAMFILES(X86)' in os.environ:
+            program_files = os.environ['PROGRAMFILES(X86)']
+            gos_path = os.path.join(program_files, gos)
+            if os.path.isdir(gos_path) is False:
+                    gos_path = os.path.join(config_path, 'GOS')
     else:
         gos_path = os.path.join(config_path, 'GOS')
     

@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-try:
-    import setuptools
-except:
-    print "Setuptools unavailable.  setup.py develop and test commands not available."
-
 from distutils.core import setup
 
 import os
