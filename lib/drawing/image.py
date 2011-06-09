@@ -46,13 +46,21 @@ class ImagePlot:
         self.auto_contrast = True
         
     def optimize_contrast(self, data, perc = 0.01):
-        
         dc = data[np.isnan(data) == False]
-        dc.sort()
+        try:
+            # check if it's an RGB structured array
+            dc = dc['R']
+        except ValueError, msg:
+            if 'field named R not found.' in msg:
+                pass
+            else:
+                raise
+        if 'complex' in dc.dtype.name:
+            dc = np.log(np.abs(dc))
         i = int(round(len(dc)*perc/100.))
         i = i if i > 0 else 1
-        vmin = dc[i]
-        vmax = dc[-i]
+        vmin = np.min(dc)
+        vmax = np.max(dc)
         print "Automatically setting the constrast values"
         self.vmin = vmin
         self.vmax = vmax
@@ -82,8 +90,8 @@ class ImagePlot:
                  pixel_size = self.pixel_size)
         
         # Adjust the size of the window
-        size = [ 6,  6.* data.shape[1] / data.shape[0]]
-        self.figure.set_size_inches(size, forward = True)        
+        #size = [ 6,  6.* data.shape[0] / data.shape[1]]
+        #self.figure.set_size_inches(size, forward = True)        
         self.figure.canvas.draw()
         self.connect()
         
@@ -91,7 +99,21 @@ class ImagePlot:
         ims = self.ax.images
         if ims:
             ims.remove(ims[0])
-        data = self.data_function().T
+        data = self.data_function()
+        if 'complex' in data.dtype.name:
+            data = np.log(np.abs(data))
+        try:
+            # check if it's an RGB structured array
+            data_r = data['R']
+            data_g = data['G']
+            data_b = data['B']
+            # modify the data so that it can be read by matplotlib
+            data = np.rollaxis(np.array((data_r, data_g, data_b)), 0, 3)
+        except ValueError, msg:
+            if 'field named R not found.' in msg:
+                pass
+            else:
+                raise
         self.ax.imshow(data, interpolation='nearest', vmin = self.vmin, 
                        vmax = self.vmax)
         self.figure.canvas.draw()

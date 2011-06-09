@@ -53,50 +53,68 @@ def swapelem(obj, i, j):
         obj[j] = buf
     
 def overwrite(fname):
-    """ If file exists, ask for overwriting and return True or False,
+    """ If file exists 'fname', ask for overwriting and return True or False,
     else return True.
+    
     """
     if os.path.isfile(fname):
-        message = 'File ' + fname + ' exists. Overwrite (y/n)?\n'
+        message = "Overwrite '%s' (y/n)?\n" % fname
         answer = raw_input(message)
+        answer = answer.lower()
         while (answer != 'y') and (answer != 'n'):
             print('Please answer y or n.')
             answer = raw_input(message)
-        if answer == 'y':
+        if answer.lower() == 'y':
             return True
-        elif answer == 'n':
-            print('Operation canceled.')
+        elif answer.lower() == 'n':
+            # print('Operation canceled.')
             return False
     else:
         return True
-
+    
+def saveas(fname):
+    """If file 'fname' exists, ask for a new (base)name and, of course, return it.
+    
+    """
+    cdir = os.path.split(fname)[0]
+    base = os.path.split(fname)[1]
+    if os.path.isfile(fname):
+        if overwrite(fname):
+            return fname
+        else:
+            message = 'Please choose a new name.\n'
+            answer = raw_input(message)
+            newname = os.path.join(cdir, answer)
+            return rename(newname)
+    else:
+        return fname
+    
 def saveTags(dic, outfile='dm3dataTags.py', val=False):
     """Save keys of dictionary 'dic' in Python format (list)
     into outfile (default: dm3dataTags.py).
     If val == True, the key : value pair is saved.
     """
     print('Saving Tags to', outfile)
-    exists = overwrite(outfile)
-    if exists:
-        if val == False:
-            dataList = [ key for key in dic]
-            dataList.sort()
-        elif val == True:
-            dataList = [ (key, dic[key]) for key in dic]
-            dataList.sort()
-        else:
-            print('Invalid option, val=%s' % repr(val))
-            return
-        with open(outfile, 'w') as fout:
-            encoding = 'latin-1'
-            print >> fout, '#!/usr/bin/env python'
-            print >> fout, '# -*- coding: ' + encoding + ' -*-'
-            print >> fout, 'dataTags = ['
-            for i in dataList:
-                line = "    " + repr(i) + ",\n"
-                print >> fout, line.encode(encoding)
-            print >> fout, ']'
-            print 'Done.'
+    outfile = saveas(outfile)
+    if val == False:
+        dataList = [ key for key in dic]
+        dataList.sort()
+    elif val == True:
+        dataList = [ (key, dic[key]) for key in dic]
+        dataList.sort()
+    else:
+        print('Invalid option, val=%s' % repr(val))
+        return
+    with open(outfile, 'w') as fout:
+        encoding = 'latin-1'
+        fout.write('#!/usr/bin/env python\n')
+        fout.write('# -*- coding: %s -*-\n' % encoding)
+        fout.write('dataTags = [\n')
+        for i in dataList:
+            line = "    " + repr(i) + ",\n"
+            fout.write(line.encode(encoding))
+        fout.write(']\n')
+        print 'Done.'
 
 def findInDict(pattern, dic, ig_case=0): # improved from scipy
     """Return a sub-dictionary of dictionary 'dic'

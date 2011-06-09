@@ -23,19 +23,12 @@ Copyright (C) 2011 by Michael Sarahan
 """
 
 import sys
-try:
-    import cv
-except:
-    # commented out because just need one_dim_findpeks
-    # print "OpenCV not available!  Exiting."
-    # sys.exit()
-    print 'Module %s:' % sys.modules[__name__]
-    print 'OpenCV is not available, most of the functions will not work.'
+
 import numpy as np
 from scipy.signal import medfilt
 
 def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
-              medfilt_radius=5, maxpeakn=30000, peakgroup=10, subpix=True):
+              medfilt_radius=5, maxpeakn=30000, peakgroup=10, subchannel=True):
     """
     Find peaks along a 1D line.
 
@@ -48,8 +41,6 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
 
     'slope_thresh' and 'amp_thresh', control sensitivity: higher values will
     neglect smaller features.
-    
-    peakgroup is the
 
     Parameters
     ---------
@@ -83,7 +74,7 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
               number of maximum detectable peaks
               default is set to 30000
                 
-    subpix : bool (optional)
+    subchannel : bool (optional)
              default is set to True
 
     Returns
@@ -118,9 +109,9 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
                 if y[j] > amp_thresh:  
                     # the next section is very slow, and actually messes
                     # things up for images (discrete pixels),
-                    # so by default, don't do subpixel precision in the
+                    # so by default, don't do subchannel precision in the
                     # 1D peakfind step.
-                    if subpix:
+                    if subchannel:
 			xx = np.zeros(peakgroup)
 			yy = np.zeros(peakgroup)
 			s = 0
@@ -180,20 +171,46 @@ def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5):
     then in Y direction, and see where they overlay.
 
     Code based on Dan Masiel's matlab functions
+	
+    Parameters
+    ---------
+    arr : array
+    2D input array, e.g. an image
+        
+    medfilt_radius : int (optional)
+                     median filter window to apply to smooth the data
+                     (see scipy.signal.medfilt)
+                     if 0, no filter will be applied.
+                     default is set to 5
+
+    peak_width : int (optional)
+                expected peak width.  Affects subpixel precision fitting window,
+		which takes the center of gravity of a box that has sides equal
+		to this parameter.  Too big, and you'll include other peaks.
+                default is set to 10
+                
+    subpixel : bool (optional)
+               default is set to False
+
+    Returns
+    -------
+    P : array of shape (npeaks, 3)
+        contains position, height, and width of each peak
     """
     #
     mapX=np.zeros_like(arr)
     mapY=np.zeros_like(arr)
-    arr=medfilt(arr,medfilt_radius)
+    if medfilt_radius > 0:
+        arr = medfilt(arr,medfilt_radius)
     xc = [one_dim_findpeaks(arr[i], medfilt_radius=None,
-                             peakgroup=boxsize,
-                             subpix=False)[:,0] for i in xrange(arr.shape[1])]
+                            peakgroup=peak_width,
+                            subchannel=False)[:,0] for i in xrange(arr.shape[1])]
     for row in xrange(len(xc)):
         for col in xrange(xc[row].shape[0]):
             mapX[row,int(xc[row][col])]=1
     yc = [one_dim_findpeaks(arr[:,i], medfilt_radius=None,
-                             peakgroup=boxsize,
-                             subpix=False)[:,0] for i in xrange(arr.shape[0])]
+                            peakgroup=peak_width,
+                            subchannel=False)[:,0] for i in xrange(arr.shape[0])]
     for row in xrange(len(yc)):
         for col in xrange(yc[row].shape[0]):
             mapY[row,int(yc[row][col])]=1
@@ -203,78 +220,108 @@ def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5):
     nonzeros=np.nonzero(Fmap)
     coords=np.vstack((nonzeros[1],nonzeros[0])).T
     if subpixel:
-        coords=subpix_locate(arr,coords,boxsize)
+        coords=subpix_locate(arr,coords,peak_width)
     coords=np.ma.fix_invalid(coords,fill_value=-1)
-    coords=np.ma.masked_outside(coords,boxsize/2+1,arr.shape[0]-boxsize/2-1)
+    coords=np.ma.masked_outside(coords,peak_width/2+1,arr.shape[0]-peak_width/2-1)
     coords=np.ma.masked_less(coords,0)
     coords=np.ma.compress_rows(coords)
     return coords 
 
-def subpix_locate(data,points,boxsize,scale=None):
+def subpix_locate(data,points,peak_width,scale=None):
     from scipy.ndimage.measurements import center_of_mass as CofM
-    top=left=boxsize/2
+    top=left=peak_width/2
     centers=np.array(points,dtype=np.float32)
     for i in xrange(points.shape[0]):
         pt=points[i]
         center=np.array(CofM(data[(pt[0]-left):(pt[0]+left),(pt[1]-top):(pt[1]+top)]))
-        center=center[0]-boxsize/2,center[1]-boxsize/2
+        center=center[0]-peak_width/2,center[1]-peak_width/2
         centers[i]=np.array([pt[0]+center[0],pt[1]+center[1]])
     if scale:
         centers=centers*scale
     return centers
     
-def stack_coords(stack,peakwidth,subpixel=False):
+def stack_coords(stack,peak_width,subpixel=False,maxpeakn=5000):
     """
     A rough location of all peaks in the image stack.  This can be fed into the
     best_match function with a list of specific peak locations to find the best
     matching peak location in each image.
     """
     depth=stack.shape[2]
-    coords=np.ones((5000,2,depth))*10000
+    coords=np.ones((maxpeakn,2,depth))*10000
     for i in xrange(depth):
         ctmp=two_dim_findpeaks(stack[:,:,i], subpixel=subpixel,
-                               boxsize=peakwidth)
+                               peak_width=peak_width)
         for row in xrange(ctmp.shape[0]):
             coords[row,:,i]=ctmp[row]
     return coords
     
 def best_match(arr,target,neighborhood=None):
     """
-    Attempts to find the best match for target in array arr.  Assumes a 3D array,
-    consisting of peak coordinates from each image.  Each row is a peak coordinate, 
-    the first column is x, the second column is y, and each layer of depth
-    is a separate image.
+    Attempts to find the best match (least distance) for target coordinates 
+    in array of coordinates arr. 
 
-    Returns an array with the best matching coordinates for each image.
-    
     Usage:
         best_match(arr, target)
     """
-    depth=arr.shape[2]
-    rlt=np.zeros((depth,2))
     arr_sub=arr.copy()
-    for d in xrange(depth):
-        arr_sub[:,:,d]=arr[:,:,d]-target
+    arr_sub=arr-target
     if neighborhood:
+        # mask any peaks outside the neighborhood
         arr_sub=np.ma.masked_outside(arr_sub,-neighborhood,neighborhood)
+        # set the masked pixel values to 10000, so that they won't be the nearest peak.
         arr_sub=np.ma.filled(arr_sub,10000)
-    # Calculate euclidean distance for each peak in arr_sub; locate minimum
-    matches=[np.argmin(
-                np.sqrt(np.sum(
-                    np.power(arr_sub[:,:,i],2),
-                    axis=1))
-                ) for i in xrange(depth)]
-    # Fill result array with found minima
-    for i in xrange(depth):
-        rlt[i]=arr[matches[i],:,i]
-        if neighborhood:
-            if np.sqrt(np.sum(np.power(rlt[i]-target,2)))>neighborhood:
-                print """
-Warning! Peak for image %i at target (%i,%i) was outside specified neighborhood!
-"""%(i,target[0],target[1])
+    # locate the peak with the smallest euclidean distance to the target
+    match=np.argmin(np.sqrt(np.sum(
+                    np.power(arr_sub,2),
+                    axis=1)))
+    rlt=arr[match]
+    # TODO: this neighborhood warning doesn't work well.
+    #if neighborhood and np.sum(rlt)>2*neighborhood:
+    #    print "Warning! Didn't find a peak within your neighborhood! Watch for fishy peaks."
     return rlt
   
-def peak_attribs(image,locations,peakwidth,medfilt_radius=5):
+def peak_attribs_image(image,peakwidth, subpixel=False, 
+                       target_locations=None, medfilt_radius=5):
+    """
+    Characterizes the peaks in an image.  Returns a 2D array of the following form:
+        - One column per image
+        - 5 rows per peak located
+        - optionally, 2 additional rows at the end containing the coordinates
+           from which the image was cropped (should be passed as the imcoords 
+           parameter)  These should be excluded from any MVA.
+
+        Parameters:
+        ----------
+
+        peak_width : int (required)
+                expected peak width.  Affects subpixel precision fitting window,
+		which takes the center of gravity of a box that has sides equal
+		to this parameter.  Too big, and you'll include other peaks.
+        
+        subpixel : bool (optional)
+                default is set to False
+
+        target_locations : numpy array (n x 2)
+                array of n target locations.  If left as None, will create 
+                target locations by locating peaks on the average image of the stack.
+                default is None (peaks detected from average image)
+
+        medfilt_radius : int (optional)
+                median filter window to apply to smooth the data
+                (see scipy.signal.medfilt)
+                if 0, no filter will be applied.
+                default is set to 5
+
+    """
+    try:
+        import cv
+    except:
+        print 'Module %s:' % sys.modules[__name__]
+        print 'OpenCV is not available, the peak characterization functions will not work.'
+        return None
+    if not target_locations:
+        target_locations=two_dim_findpeaks(image, subpixel=subpixel,
+                                         boxsize=peakwidth)
     rlt=np.zeros((locations.shape[0],5))
     r=peakwidth/2
     imsize=image.shape[0]
@@ -301,24 +348,93 @@ def peak_attribs(image,locations,peakwidth,medfilt_radius=5):
         rlt[loc,3]=orient
         rlt[loc,4]=ecc
     return rlt
+        
+def peak_attribs_stack(stack, peak_width, subpixel=False, target_locations=None,
+                       peak_locations=None, imcoords=None, target_neighborhood=20,
+                       medfilt_radius=5):
+    """
+    Characterizes the peaks in a stack of images.  Creates a class member
+    "peak_chars" that is a 2D array of the following form:
+        - One column per image
+        - 7 rows per peak located
+        - optionally, 2 additional rows at the end containing the coordinates
+           from which the image was cropped (should be passed as the imcoords 
+           parameter)  These should be excluded from any MVA.
 
-def peak_attribs_stack(stack, locations, peakwidth, medfilt_radius=5, imcoords=None):
+        Parameters:
+        ----------
+
+        peak_width : int (required)
+                expected peak width.  Affects subpixel precision fitting window,
+		which takes the center of gravity of a box that has sides equal
+		to this parameter.  Too big, and you'll include other peaks.
+        
+        subpixel : bool (optional)
+                default is set to False
+
+        target_locations : numpy array (n x 2)
+                array of n target locations.  If left as None, will create 
+                target locations by locating peaks on the average image of the stack.
+                default is None (peaks detected from average image)
+
+        peak_locations : numpy array (n x m x 2)
+                array of n peak locations for m images.  If left as None,
+                will find all peaks on all images, and keep only the ones closest to
+                the peaks specified in target_locations.
+                default is None (peaks detected from average image)
+
+        imcoords : numpy array (n x 2)
+                array of n coordinates, to keep track of locations from which
+                sub-images were cropped.  Critical for plotting results.
+
+        img_size : tuple, 2 elements
+                (width, height) of images in image stack.
+
+        target_neighborhood : int
+                pixel neighborhood to limit peak search to.  Peaks outside the
+                square defined by 2x this value around the peak will be excluded
+                from any fitting.  
+  
+        medfilt_radius : int (optional)
+                median filter window to apply to smooth the data
+                (see scipy.signal.medfilt)
+                if 0, no filter will be applied.
+                default is set to 5
     """
-    Given a stack of images and a list of locations and window sizes (defined by
-    the peak width), measure the peak attributes of the peaks of interest in
-    each image.  These attributes currently include the height, location of the 
-    peak and the relative difference in position of the peak from the average, 
-    peak orientation angle and eccentricity.
-    """
+
+    try:
+        import cv
+    except:
+        print 'Module %s:' % sys.modules[__name__]
+        print 'OpenCV is not available, the peak characterization functions will not work.'
+        return None
+
+    if target_locations is None:
+        # get peak locations from the average image
+        avgImage=np.average(stack,axis=2)
+        target_locations=two_dim_findpeaks(avgImage, subpixel=subpixel,
+                                         boxsize=peak_width)
+
+    if peak_locations is None:
+        # get all peaks on all images
+        peaks=stack_coords(stack, peak_width=peakwith, subpixel=subpixel)
+        # two loops here - outer loop loops over images (i index)
+        # inner loop loops over target peak locations (j index)
+        peak_locations=np.array([[best_match(peaks[:,:,i], 
+                                             target_locations[j], 
+                                             target_neighborhood) \
+               for i in xrange(peaks.shape[2])] \
+               for j in xrange(target_locations.shape[0])])
+
     # pre-allocate result array.  7 rows for each peak, 1 column for each image
     if imcoords:
-        # an extra row for keeping track of image coordinates
-        rlt=np.zeros((7*avg_locations.shape[0],stack.shape[1]+1))
+        # an extra 2 rows for keeping track of image coordinates
+        rlt=np.zeros((7*peak_locations.shape[0]+2,stack.shape[1]))
     else:
         rlt=np.zeros((7*avg_locations.shape[0],stack.shape[1]))
     rlt_tmp=np.zeros(locations.shape[0],5)
     for i in xrange(stack.shape[2]):
-        rlt_tmp=peak_attribs(stack[:,:,i], locations, peakwidth, medfilt_radius)
+        rlt_tmp=peak_attribs_image(stack[:,:,i], locations, peak_width, medfilt_radius)
         diff_coords=locations-rlt_tmp[:,:2]
         for j in xrange(locations.shape[0]):
             rlt[j*7:j*7+2,i]=rlt_tmp[j,:2]
@@ -331,8 +447,9 @@ def peak_attribs_stack(stack, locations, peakwidth, medfilt_radius=5, imcoords=N
             pass
         else:
             imcoords=imcoords.T
+        # paste the image coordinates into the last two rows of each column
         for im in xrange(imcoords.shape[0]):
-            rlt[0,im*7:im*7+2]=imcoords[im]
+            rlt[-2:,im]=imcoords[im]
     return rlt
     
 def normalize(arr,lower=0.0,upper=1.0):
@@ -343,17 +460,35 @@ def normalize(arr,lower=0.0,upper=1.0):
     return arr
 
 def center_of_mass(moments):
+    try:
+        import cv
+    except:
+        print 'Module %s:' % sys.modules[__name__]
+        print 'OpenCV is not available, the peak characterization functions will not work.'
+        return None
     x = cv.GetCentralMoment(moments,1,0)/cv.GetCentralMoment(moments,0,0)
     y = cv.GetCentralMoment(moments,0,1)/cv.GetCentralMoment(moments,0,0)
     return x,y
             
 def orientation(moments):
+    try:
+        import cv
+    except:
+        print 'Module %s:' % sys.modules[__name__]
+        print 'OpenCV is not available, the peak characterization functions will not work.'
+        return None
     mu11p = cv.GetCentralMoment(moments,1,1)/cv.GetCentralMoment(moments,0,0)
     mu02p = cv.GetCentralMoment(moments,2,0)/cv.GetCentralMoment(moments,0,0)
     mu20p = cv.GetCentralMoment(moments,0,2)/cv.GetCentralMoment(moments,0,0)
     return 0.5*np.arctan(2*mu11p/(mu20p-mu02p))
 
 def eccentricity(moments):
+    try:
+        import cv
+    except:
+        print 'Module %s:' % sys.modules[__name__]
+        print 'OpenCV is not available, the peak characterization functions will not work.'
+        return None
     mu11p = cv.GetCentralMoment(moments,1,1)/cv.GetCentralMoment(moments,0,0)
     mu02p = cv.GetCentralMoment(moments,2,0)/cv.GetCentralMoment(moments,0,0)
     mu20p = cv.GetCentralMoment(moments,0,2)/cv.GetCentralMoment(moments,0,0)

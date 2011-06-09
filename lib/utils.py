@@ -24,6 +24,7 @@ from StringIO import StringIO
 
 import numpy as np
 import scipy as sp
+import scipy.interpolate
 import scipy.signal
 import scipy.ndimage
 import matplotlib
@@ -184,21 +185,21 @@ def check_energy_dimensions(sp1, sp2, warn = True, sp2_name = None):
             print "The %s should be unidimensional" % sp2_name
         return False
 
-def unfold_if_2D(spectrum):
+def unfold_if_multidim(signal):
     """Unfold the SI if it is 2D
     
     Parameters
     ----------
-    spectrum : Spectrum instance
+    signal : Signal instance
     
     Returns
     -------
     
     Boolean. True if the SI was unfolded by the function.
     """
-    if spectrum.xdimension > 1 and spectrum.ydimension > 1:
+    if len(signal.axes_manager.axes)>2:
         print "Automatically unfolding the SI"
-        spectrum.unfold()
+        signal.unfold()
         return True
     else:
         return False
@@ -1020,42 +1021,28 @@ def ratio(edge_A, edge_B):
     print "Ratio %s/%s %1.3f +- %1.3f " % (edge_A.name, edge_B.name, a/b, 
     1.96*ratio_std )
     return ratio, ratio_std
-
-def sum_dc(dc, *axes):
-    """Return the sum of datacube 'dc' along the specified axes.
-    Uses the numpy 'sum' function recursively.
-
-    Parameters
-    ---------
-    dc : array
-         data cube
-    *axes : int
-            axes along which one want to sum
+    
+def iterate_axis(data, axis = -1):
+        # We make a copy to guarantee that the data in contiguous, otherwise
+        # it will not return a view of the data
+#        data = data.copy()
+        if axis < 0:
+            axis = len(data.shape) + axis
+        unfolded_axis = axis - 1
+        new_shape = [1] * len(data.shape)
+        new_shape[axis] = data.shape[axis]
+        new_shape[unfolded_axis] = -1
+        data = data.reshape(new_shape)
+        for i in range(data.shape[unfolded_axis]):
+            getitem = [0] * len(data.shape)
+            getitem[axis] = slice(None)
+            getitem[unfolded_axis] = i
+            yield(data[getitem])
             
-    Returns
-    -------
-    output : array
-             sum along the specified axes
-
-    Examples:
-    ---------
-    >>> a = array([[0,1,2],[3,4,5],[6,7,8]])
-    >>> a.shape
-        (3, 3)
-    >>> sum_dc(a, 0)
-        array([ 9, 12, 15])
-    >>> sum_dc(a, 1)
-        array([ 3, 12, 21])
-    >>> sum_dc(a, 0, 1)
-        36
-    >>> sum_dc(a, 1, 0)
-        36
-    """
-    axes = list(axes)
-    axes.sort()
-    if len(axes) == 1:
-        return np.sum(dc, axes[0])
-    else:
-        dc = np.sum(dc, axes[-1])        
-        axes = axes[:-1]
-        return sum_dc(dc, *axes) # recursion
+def interpolate_1D(number_of_interpolation_points, data):
+    ip = number_of_interpolation_points
+    ch = len(data)
+    old_ax = np.linspace(0, 100, ch)
+    new_ax = np.linspace(0, 100, ch * ip - (ip-1))
+    interpolator = sp.interpolate.interp1d(old_ax,data)
+    return interpolator(new_ax)

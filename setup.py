@@ -1,15 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+try:
+    import setuptools
+except:
+    print "Setuptools unavailable.  setup.py develop and test commands not available."
+
 from distutils.core import setup
+
+import distutils.dir_util
 
 import os
 import sys
+import shutil
 
 import lib.Release as Release
+# clean the build directory so we aren't mixing Windows and Linux installations carelessly.
+if os.path.exists('build'):
+    distutils.dir_util.remove_tree('build')
 
-install_req = ['scipy', 'ipython', 'matplotlib', 'numpy', 'mdp', 'netcdf',]
-
+install_req = ['scipy', 'ipython', 'matplotlib', 'numpy', 'mdp', 'netcdf','nose']
 
 def are_we_building4windows():
     for arg in sys.argv:
@@ -35,25 +45,25 @@ if are_we_building4windows() or os.name in ['nt','dos']:
         batch_files.append(batch_file)
     scripts.extend(batch_files)
     
-    
-
 version = Release.version
 if Release.revision != '':
     version += ('-rev' + Release.revision)
 
 setup(
     name = "eelslab",
-    package_dir = {'silib': 'lib'},
+    package_dir = {'eelslab': 'lib'},
     version = version,
-    py_modules = ['eelslab', ],
-    packages = ['silib', 'silib.components', 'silib.io', 'silib.drawing',
-    'silib.gui'],
+    #py_modules = ['', ],
+    packages = ['eelslab', 'eelslab.components', 'eelslab.io', 'eelslab.drawing', 
+                'eelslab.mva', 'eelslab.signals','eelslab.bss','eelslab.gui',
+                'eelslab.tests', 'eelslab.tests.io'],
     requires = install_req,
     scripts = scripts,
     package_data = 
     {
-        'silib': 
+        'eelslab': 
             [
+                'ipython_profile/*',
                 'data/eelslabrc',
                 'data/*.m', 
                 'data/*.csv',
@@ -61,6 +71,9 @@ setup(
                 'data/kica/*.m',
                 'data/kica/*.c',
                 'data/kica/distributions/*.m',
+		'tests/io/dm3_1D_data/*.dm3',
+		'tests/io/dm3_2D_data/*.dm3',
+		'tests/io/dm3_3D_data/*.dm3',
             ],
     },
     author = Release.authors['F_DLP'][0],
@@ -70,4 +83,5 @@ setup(
     license = Release.license,
     platforms = Release.platforms,
     url = Release.url,
+    test_suite = 'nose.collector',
     )

@@ -28,7 +28,8 @@ except:
 import utils
 
 class SpectrumFigure():
-    """"""
+    """
+    """
     def __init__(self):
         self.figure = None
         self.left_ax = None
@@ -38,8 +39,8 @@ class SpectrumFigure():
         self.autoscale = True
         self.blit = False
         self.lines = list()
-        self.left_coordinates = None
-        self.right_coordinates = None
+        self.left_axes_manager = None
+        self.right_axes_manager = None
         
         
         # Labels
@@ -54,6 +55,7 @@ class SpectrumFigure():
     def create_figure(self):
         self.figure = utils.create_figure()
         utils.on_window_close(self.figure, self.close)
+
         
     def create_left_axis(self):
         self.left_ax = self.figure.add_subplot(111)
@@ -71,14 +73,14 @@ class SpectrumFigure():
     def add_line(self, line, ax = 'left'):
         if ax == 'left':
             line.ax = self.left_ax
-            if line.coordinates is None:
-                line.coordinates = self.left_coordinates
+            if line.axes_manager is None:
+                line.axes_manager = self.left_axes_manager
             self.left_ax_lines.append(line)
         elif ax == 'right':
             line.ax = self.right_ax
             self.right_ax_lines.append(line)
-            if line.coordinates is None:
-                line.coordinates = self.right_coordinates
+            if line.axes_manager is None:
+                line.axes_manager = self.right_axes_manager
         line.axis = self.axis
         line.autoscale = self.autoscale
         line.blit = self.blit
@@ -96,11 +98,12 @@ class SpectrumFigure():
         
 class SpectrumLine():
     def __init__(self):
-        """"""
+        """
+        """
         # Data attributes
         self.data_function = None
         self.axis = None
-        self.coordinates = None
+        self.axes_manager = None
         
         # Properties
         self.line = None
@@ -140,14 +143,14 @@ class SpectrumLine():
     def plot(self, data = 1):
         f = self.data_function
         self.line, = self.ax.plot(
-        self.axis, f(coordinates = self.coordinates), **self.line_properties)
-        self.coordinates.connect(self.update)
+        self.axis, f(axes_manager = self.axes_manager), **self.line_properties)
+        self.axes_manager.connect(self.update)
         self.ax.figure.canvas.draw()
                   
     def update(self):
         """Update the current spectrum figure"""            
         
-        ydata = self.data_function(coordinates = self.coordinates)
+        ydata = self.data_function(axes_manager = self.axes_manager)
         self.line.set_ydata(ydata)
         
         if self.autoscale is True:
@@ -164,7 +167,7 @@ class SpectrumLine():
     def close(self):
         if self.line in self.ax.lines:
             self.ax.lines.remove(self.line)
-        self.coordinates.disconnect(self.update)
+        self.axes_manager.disconnect(self.update)
         try:
             self.ax.figure.canvas.draw()
         except:

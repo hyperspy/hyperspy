@@ -21,6 +21,7 @@
 # The details of the format were taken from http://www.biochem.mpg.de/tom
 
 import numpy as np
+from ..axes import DataAxis
 
 # Plugin characteristics
 # ----------------------
@@ -125,17 +126,23 @@ def get_data_type(index, endianess = '<'):
     ]
     return data_type[index]
                         
-
 def file_reader(filename, endianess = '<', **kwds):
+    mapped_parameters={}
     dtype_list = get_std_dtype_list(endianess) + get_fei_dtype_list(endianess)
     f = open(filename, 'rb')
     std_header = np.fromfile(f, dtype = get_std_dtype_list(endianess), 
     count = 1)
     fei_header = None
+    scales=np.ones(3)
+    units_list=np.array(['undefined']*3)
+    names=['x','y','z']
+
     if std_header['NEXT'] / 1024 == 128:
         print "It seems to contain an extended FEI header"
         fei_header = np.fromfile(f, dtype = get_fei_dtype_list(endianess), 
-    count = 1024)
+                                 count = 1024)
+        scale[0:2]=fei_header['pixel_size']
+        units_list[0:2]='m'
     NX, NY, NZ = std_header['NX'], std_header['NY'], std_header['NZ']
     if f.tell() == 1024 + std_header['NEXT']:
         print "The FEI header was correctly loaded"
@@ -144,18 +151,24 @@ def file_reader(filename, endianess = '<', **kwds):
         f.seek(1024 + std_header['NEXT'])
         
     data = np.memmap(f, mode = 'c', offset = f.tell(), 
-    dtype = get_data_type(std_header['MODE'], endianess)).squeeze().reshape(
-    (NX, NY, NZ), order = 'F')
-    calibration_dict, acquisition_dict , treatments_dict= {}, {}, {}
-    calibration_dict['data_cube'] = data
-    mrc_data = {
-    'std_header' : std_header, 
-    'fei_header' : fei_header,
-    }
+                     dtype = get_data_type(std_header['MODE'], endianess)).squeeze().reshape(
+        (NX, NY, NZ), order = 'F')
+    
+                     
+    original_parameters = {
+        'std_header' : std_header, 
+        'fei_header' : fei_header,
+        }
+    #create the axis objects for each axis
+    axes=[{'size':data.shape[i],'index_in_array':i,'name':names[i],'scale':scales[i],
+                   'offset':0, 'units':units_list[i]} for i in xrange(3)]
+    # define the third axis as the slicing axis.
+    axes[2]['slice_bool']=True
     dictionary = {'data_type' : 'Image', 
-                  'calibration' : calibration_dict, 
-                  'acquisition' : acquisition_dict,
-                  'mrc_data' : mrc_data
+                  'data':data,
+                  'axes':axes,
+                  'mapped_parameters' : mapped_parameters,
+                  'original_parameters' : original_parameters,
                   }
     
     return [dictionary,]

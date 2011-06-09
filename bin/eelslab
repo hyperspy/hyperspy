@@ -1,12 +1,30 @@
-#!/usr/bin/python
+##!/usr/bin/python
 
-import os
+import os, shutil
+import eelslab
+eelslab_module_path=os.path.dirname(eelslab.__file__)
+
+import matplotlib as mpl
+backend=mpl.rcParams['backend']
 
 if os.name in ['nt','dos']:
+    ipy_dir=os.path.expanduser('~/_ipython')
+    if not os.path.exists(ipy_dir):
+        os.mkdir(ipy_dir)
+    shutil.copy('%s/ipython_profile/ipy_profile_eelslab.py'%eelslab_module_path,ipy_dir)
     # The -wthread forces matplotlib to use the WXAgg backend
     # This is necessary to support traits visualisation
     # In windows is the default because it the only one that works correctly
-    os.system('ipython -pylab -wthread -c "from eelslab import *" -i')
+    os.system('ipython -wthread -p eelslab')
 else:
+    ipy_dir=os.path.expanduser('~/.ipython')
+    if not os.path.exists(ipy_dir):
+        os.mkdir(ipy_dir)
+    shutil.copy('%s/ipython_profile/ipy_profile_eelslab.py'%eelslab_module_path,ipy_dir)
     # When not running in Windows the backend is defined by matplotlib
-    os.system('ipython -pylab -c "from eelslab import *" -i')
+    if 'WX' in backend:
+        os.system('ipython -wthread -p eelslab')
+    elif 'GTK' in backend:
+        os.system('ipython -gthread -p eelslab')
+    elif 'Qt4' in backend:
+        os.system('ipython -q4thread -p eelslab')

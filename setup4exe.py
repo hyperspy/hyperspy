@@ -14,9 +14,9 @@ includes.append('wx.*')
 #includes.append('mdp')
 #includes.append('netCDF4')
 
-data_files = [('silib/data', ['d:\\Python/eelslab/src/data/edges_db.csv']),
-              ('silib/data', ['d:\\Python/eelslab/src/data/microscopes.csv']),
-              ('silib/data', ['d:\\Python/eelslab/src/data/eelslabrc']),
+data_files = [('eelslab/data', ['d:\\Python/eelslab/src/data/edges_db.csv']),
+              ('eelslab/data', ['d:\\Python/eelslab/src/data/microscopes.csv']),
+              ('eelslab/data', ['d:\\Python/eelslab/src/data/eelslabrc']),
               ('', ['c:\\Python27/Lib/site-packages/HDF5DLL.DLL']),
               ('', ['c:\\Python27/Lib/site-packages/HDF5_HLDLL.DLL']),
               ('', ['c:\\Python27/Lib/site-packages/NETCDF.DLL']),

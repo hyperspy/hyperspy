@@ -18,44 +18,40 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
 
-# The following code was commented because it does not work with
-# ETS 3.6.0 , to investigate...
+# There is an incompatibility between matplolib 1.0.1 and enthought 0.3.6 
+# because matplotlib uses QString 1 api and ETS QString 2. Therefore, the 
+# traits toolkit is set to 'null' for QT4. 
 from enthought.etsconfig.api import ETSConfig
 import matplotlib
 if matplotlib.get_backend() == 'Qt4Agg':
-    ETSConfig.toolkit ='qt4'
+    ETSConfig.toolkit ='null'
 elif matplotlib.get_backend() == 'WXAgg':
     ETSConfig.toolkit ='wx'
 else:
     ETSConfig.toolkit ='null'
 
-import silib.Release
-import silib.components as components
+import Release
+import components
 
-from silib.spectrum import Spectrum
-from silib.image import Image
-from silib.experiments import Experiments
-from silib.model import Model
-from silib.file_io import load
-from silib.edges_db import edges_dict
-from silib.microscope import microscope
-from silib.defaults_parser import defaults
-from silib import utils
+from spectrum import Spectrum
+from image import Image
+from experiments import Experiments
+from signal import Signal
+from model import Model
+from file_io import load
+from edges_db import edges_dict
+#from microscope import microscope
+from defaults_parser import defaults
+import utils
+import tests
 
-__version__ = silib.Release.version
-__revision__ = silib.Release.revision
-
-print(silib.Release.info)
+__version__ = Release.version
+__revision__ = Release.revision
 
 def get_configuration_directory_path():
-    print(silib.config_dir.config_path)
+    print(eelslab.config_dir.config_path)
 
-# The gui can produce a crash for certain toolkits and certain versions of
-# python-traits. There, until we find out which is the right configuration for
-# each platform, its availability will depend on the user luck:
-try:   
-    import silib.gui.main_window
-    def gui():
-        silib.gui.main_window.MainWindow().configure_traits()
-except:
-    pass
+def start_gui():
+    if ETSConfig.toolkit != 'null':
+        import gui.main_window
+        gui.main_window.MainWindow().configure_traits()
