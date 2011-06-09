@@ -30,9 +30,7 @@ if are_we_building4windows() or os.name in ['nt','dos']:
     # (code adapted from scitools)
     install_req.append('pyreadline')
     scripts.append('bin/win_post_installation.py')
-    # For the moment we must add an ipython.bat script because the ipython
-    # post install script seems to be broken at least in Windows 7
-    scripts.append('bin/ipython')
+
     batch_files = []
     for script in scripts:
         batch_file = os.path.splitext(script)[0] + '.bat'
