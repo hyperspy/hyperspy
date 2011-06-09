@@ -1,3 +1,21 @@
+v0.2.13 beta
+
+Enhancements
+-----------
+
+* The egerton quantification gui now supports signal integratal mapping when the background is not defined
+* The keywords in the rpl file are now sorted
+* Changes to the eelslab specific ripple keyword names to make them less EELSish: the x-*,y-* and energy-* keys are now width-*, height-* and energy-*
+* New method: 'interactive_browsing' for class DictBrowser
+* DictBrowser returns a sorted list when using ls()
+
+BUGS Fixed:
+-----------
+* When reading ripple files the depth-scale now superseds ev-per-channel
+* eelslab was overwriting the ipython script
+* In win32 with no DM installed an error was raised when running eelslab for the first time
+
+
 v0.2.12 beta
 
 Enhancements

@@ -22,7 +22,7 @@
 name = 'eelslab'
 
 revision = ''
-version = '0.2.13_alpha'
+version = '0.2.13_beta'
 
 description = "EELS data analysis for Python."
 
@@ -51,4 +51,4 @@ info = u"""
     
     http://www.eelslab.org
     
-    """ % version
+    """ % version.replace('_', ' ')
