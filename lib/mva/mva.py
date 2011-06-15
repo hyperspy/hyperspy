@@ -415,41 +415,57 @@ class MVA():
         for i in range(n):
             if np.all(self.ic[:,i] <= 0):
                 self.reverse_ic(i)
-        
-    def pca_build_SI(self,number_of_components=None, comp_list = None):
-        """Return the spectrum generated with the selected number of principal 
-        components
-        
+
+    def _get_ica_scores(self):
+        """
+        Returns the ICA score matrix (formerly known as the recmatrix)
+        """
+        W = self.mva_results.v.T[:self.ic.shape[1],:]
+        Q = np.linalg.inv(self.mva_results.w.T)
+        return np.dot(Q,W)
+          
+    def _calculate_recmatrix(self, components = None, mva_type=None):
+        """
+        Rebuilds SIs from selected components
+
         Parameters
         ------------
-        number_of_components : int
-        comp_list : boolen numpy array
-            choose the components to use by the boolen list. It permits to 
-            choose non contiguous components.
-        
+        components : None, int, or list of ints
+             if None, rebuilds SI from all components
+             if int, rebuilds SI from components in range 0-given int
+             if list of ints, rebuilds SI from only components in given list
+        mva_type : string, currently either 'pca' or 'ica'
+             (not case sensitive)
+
         Returns
         -------
         Signal instance
         """
-        bool_index = np.zeros((self.mva_results.pc.shape[0]), dtype = 'bool')
-        if number_of_components is not None:
-            bool_index[:number_of_components] = True
-        if comp_list is not None:
-            for ipc in comp_list:
-                bool_index[ipc] = True
-            number_of_components = len(comp_list)
+
+        if mva_type.lower()=='pca':
+            factors = self.mva_results.pc
+            scores     = self.mva_results.v.T
+        elif mva_type.lower()=='ica':
+            factors = self.ic
+            scores     = self._get_ica_scores()
+        if components is None:
+            a=np.atleast_3d(np.dot(factors,scores))
+            signal_name='rebuilt from %s with %i components'%(mva_type,factors.shape[1])
+        elif type(components).__name__ is 'list':
+            tfactors=np.zeros((factors.shape[0],len(components)))
+            tscores=np.zeros((len(components),scores.shape[1]))
+            for i in xrange(len(components)):
+                tfactors[:,i]=factors[:,components[i]]
+                tscores[i,:]=scores[components[i],:]
+            a=np.atleast_3d(np.dot(tfactors,tscores))
+            signal_name='rebuilt from %s with components %s'%(mva_type,components)
+        else:
+            a=np.atleast_3d(np.dot(factors[:,:components],scores[:components,:]))
+            signal_name='rebuilt from %s with %i components'%(mva_type,components)
+
         self._unfolded4pca = self.unfold_if_multidim()
-        a = np.atleast_3d(np.dot(self.mva_results.pc[:,bool_index], 
-                                 self.mva_results.v.T[bool_index, :]))
-#        rebuilded_spectrum = copy.deepcopy(self)
-#        rebuilded_spectrum._Spectrum__new_cube(a, 
-#        'rebuilded from PCA with %s components' % number_of_components)
-#            rebuilded_spectrum.fold()
-#        if self.mva_results.variance2one is True:
-#            rebuilded_spectrum.undo_variance2one()        
-#        if self.mva_results.centered is True:
-#            rebuilded_spectrum.undo_energy_center()
-        sc = copy.copy(self)
+
+        sc = copy.deepcopy(self)
         dc_transposed=False
         last_axis_units=self.axes_manager.axes[-1].units
         if last_axis_units=='eV' or last_axis_units=='keV':
@@ -457,55 +473,46 @@ class MVA():
             sc.data = a.T.squeeze()
         else:
             sc.data = a.squeeze()
+        sc.name=signal_name
         if self._unfolded4pca is True:
             self.fold()
             sc.history=['unfolded']
             sc.fold()
-        
         return sc
-    
-    def _calculate_recmatrix(self, n = None):
-        if not n:
-            n = self.ic.shape[1]
-        W = self.mva_results.v.T[:n, :]
-        Q = np.linalg.inv(self.mva_results.w.T)
-        recmatrix = np.dot(Q,W)
-        return recmatrix
+
+    def pca_build_SI(self,components=None):
+        """Return the spectrum generated with the selected number of principal 
+        components
         
-    def ica_build_SI(self,number_of_components = None, ic2zero = None):
+        Parameters
+        ------------
+        components : None, int, or list of ints
+             if None, rebuilds SI from all components
+             if int, rebuilds SI from components in range 0-given int
+             if list of ints, rebuilds SI from only components in given list
+        
+        Returns
+        -------
+        Signal instance
+        """
+        return self._calculate_recmatrix(components=components, mva_type='pca')
+        
+    def ica_build_SI(self,components = None):
         """Return the spectrum generated with the selected number of 
         independent components
         
         Parameters
         ------------
-        number_of_components : int
-        ic2zero : tuple of ints
-            tuple of index of independent components that must be excluded 
-            although they are in the range.  It permits to choose non 
-            contiguous components.
+        components : None, int, or list of ints
+             if None, rebuilds SI from all components
+             if int, rebuilds SI from components in range 0-given int
+             if list of ints, rebuilds SI from only components in given list        
         
         Returns
         -------
-        Spectrum instance
+        Signal instance
         """
-        recmatrix = self._calculate_recmatrix()
-        n = number_of_components
-        if not n:
-            n = self.ic.shape[1]
-        ic = copy.copy(self.ic)
-        if ic2zero is not None:
-            for comp in ic2zero:
-                ic[:,comp] *= 0
-        self._unfolded4pca = self.unfold_if_multidim()
-        a = np.dot(ic[:,:n], 
-        recmatrix[:n, :])
-        rebuilded_spectrum = copy.deepcopy(self)
-        rebuilded_spectrum._Spectrum__new_cube(np.atleast_3d(a), 
-        'rebuilded from PCA with %s components' % n)
-        if self._unfolded4pca:
-            self.fold()
-            rebuilded_spectrum.fold()
-        return rebuilded_spectrum
+        return self._calculate_recmatrix(components=components, mva_type='ica')
         
     def energy_center(self):
         """Subtract the mean energy pixel by pixel"""
@@ -529,7 +536,46 @@ class MVA():
         if hasattr(self,'_std'):
             data = (self.data * self._std)
             self._replot()
+
+    def plot_lev(self, n=50):
+        """Plot the principal components LEV up to the given number
         
+        Parameters
+        ----------
+        n : int
+        """       
+	if n>self.mva_results.V.shape[0]:
+            n=self.mva_results.V.shape[0]
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.plot(range(n), self.mva_results.V[:n], 'o')
+        ax.semilogy()
+        ax.set_title('Log(eigenvalues)')
+        ax.set_xlabel('Principal component')
+        plt.draw()
+        plt.show()
+        return ax
+        
+    def plot_explained_variance(self,n=50):
+        """Plot the principal components explained variance up to the given 
+        number
+        
+        Parameters
+        ----------
+        n : int
+        """ 
+	if n>self.mva_results.V.shape[0]:
+            n=self.mva_results.V.shape[0]
+        cumu = np.cumsum(self.mva_results.V) / np.sum(self.mva_results.V)
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.scatter(range(n), cumu[:n])
+        ax.set_xlabel('Principal component')
+        ax.set_ylabel('Explained variance')
+        plt.draw()
+        plt.show()
+        return ax
+
     def plot_principal_components(self, n = None):
         """Plot the principal components up to the given number
         
@@ -545,57 +591,6 @@ class MVA():
             plt.plot(self.axes_manager.axes[-1].axis, self.mva_results.pc[:,i])
             plt.title('Principal component %s' % i)
             plt.xlabel('Energy (eV)')
-            
-    def plot_principal_components_maps(self, n, cmap=plt.cm.gray, plot = True):
-        """Plot the map associated to the principal components up to the given 
-        number
-        
-        Parameters
-        ----------
-        n : int
-            number of principal component maps to plot
-        cmap : plt.cm object
-        plot : Bool
-            If True it actually plots the maps, otherwise it only returns them
-        
-        Returns
-        -------
-        List with the maps as Image instances
-        """
-        from spectrum import Spectrum
-        recmatrix = self.mva_results.v.T[:n, :]
-#        if 'unfolded' in self.history:
-#            self.fold()
-        shape = (self.data.shape[1], self.data.shape[2])
-        im_list = []
-        for i in range(n):
-            print i
-            if plot is True:
-                figure = plt.figure()
-                ax = figure.add_subplot(111)
-            if shape[1] != 1:
-                toplot = recmatrix[i,:].reshape(shape, 
-                order = 'F').T
-                im_list.append(Image({'calibration' : {'data_cube': toplot.T}}))
-#                if np.all(toplot <= 0):
-#                    toplot *= -1
-                if plot is True:
-                    mapa = ax.matshow(toplot, cmap = cmap)
-                    figure.colorbar(mapa)
-                    figure.canvas.draw()
-                    pointer = widgets.DraggableSquare(self.coordinates)
-                    pointer.add_axes(ax)
-            else:
-                im_list.append(Spectrum())
-                toplot = recmatrix[i,:]
-                im_list.append(Spectrum())
-                im_list[-1].data_cube = toplot
-                im_list[-1].get_dimensions_from_cube()
-                if plot is True:
-                    plt.step(range(len(toplot)), toplot)
-            if plot is True:
-                plt.title('Principal component number %s map' % i)
-        return im_list
             
     def plot_independent_components(self, ic=None, same_window=False):
         """Plot the independent components.
@@ -641,45 +636,131 @@ class MVA():
             ax.set_title('Independent components')
             plt.draw()
             plt.show()
-    
-    def plot_lev(self, n=50):
-        """Plot the principal components LEV up to the given number
+
+    def plot_maps(self, components, mva_type=None, scores=None, factors=None, cmap=plt.cm.gray,
+                  no_nans=False, with_components=True, plot=True):
+        """
+        Plot component maps for the different MSA types
+
+        Parameters
+        ----------
+        components : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+        mva_type: string, currently either 'pca' or 'ica'
+        scores: numpy array, the array of score maps
+        factors: numpy array, the array of components, with each column as a component.
+        cmap: matplotlib colormap instance
+        no_nans: bool, 
+        with_components: bool,
+        plot: bool, 
+        """
+        from ..signal import Signal
+
+        if scores is None or (factors is None and with_components is True):
+            print "Either recmatrix or components were not provided."
+            print "Loading existing values from object."
+            if mva_type is None:
+                print "No scores nor analysis type specified.  Cannot proceed."
+                return
+            
+            elif mva_type.lower() == 'pca':
+                scores=self.mva_results.v.T
+                factors=self.mva_results.pc
+            elif mva_type.lower() == 'ica':
+                scores = self._get_ica_scores()
+                factors=self.ic
+                if no_nans:
+                    print 'Removing NaNs for a visually prettier plot.'
+                    scores = np.nan_to_num(scores) # remove ugly NaN pixels
+            else:
+                print "No scores provided and analysis type '%s' unrecognized. Cannot proceed."%mva_type
+                return
+
+        if len(self.axes_manager.axes)==2:
+            shape=self.data.shape[0],1
+        else:
+            shape=self.data.shape[0],self.data.shape[1]
+        im_list = []
+        
+        if components is None:
+            components=xrange(factors.shape[1])
+
+        elif type(components).__name__!='list':
+            components=xrange(components)
+
+        for i in components:
+            if plot is True:
+                figure = plt.figure()
+                if with_components:
+                    ax = figure.add_subplot(121)
+                    ax2 = figure.add_subplot(122)
+                else:
+                    ax = figure.add_subplot(111)
+            if shape[1] != 1:
+                toplot = scores[i,:].reshape(shape)
+                im_list.append(Signal({'data' : toplot}))
+                if plot is True:
+                    mapa = ax.matshow(toplot, cmap = cmap)
+                    if with_components:
+                        ax2.plot(self.axes_manager.axes[-1].axis, factors[:,i])
+                        ax2.set_title('%s component %i' % (mva_type.upper(),i))
+                        ax2.set_xlabel('Energy (eV)')
+                    figure.colorbar(mapa)
+                    figure.canvas.draw()
+                    #pointer = widgets.DraggableSquare(self.coordinates)
+                    #pointer.add_axes(ax)
+            else:
+                toplot = scores[i,:]
+                im_list.append(Signal({"data":toplot}))
+                im_list[-1].get_dimensions_from_data()
+                if plot is True:
+                    ax.step(range(len(toplot)), toplot)
+                    
+                    if with_components:
+                        ax2.plot(self.axes_manager.axes[-1].axis, factors[:,i])
+                        ax2.set_title('%s component %s' % (mva_type.upper(),i))
+                        ax2.set_xlabel('Energy (eV)')
+            if plot is True:
+                ax.set_title('%s component number %s map' % (mva_type.upper(),i))
+                figure.canvas.draw()
+        return im_list
+
+    def plot_principal_components_maps(self, comp_ids=None, cmap=plt.cm.gray, recmatrix=None,
+                                         with_pc=True, plot=True, pc=None):
+        """Plot the map associated to each independent component
         
         Parameters
         ----------
-        n : int
-        """        
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.plot(range(n), self.mva_results.V[:n], 'o')
-        ax.semilogy()
-        ax.set_title('Log(eigenvalues)')
-        ax.set_xlabel('Principal component')
-        plt.draw()
-        plt.show()
-        return ax
+        comp_ids : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+        cmap : plt.cm object
+        recmatrix : numpy array
+            externally suplied recmatrix
+        with_ic : bool
+            If True, plots also the corresponding independent component in the 
+            same figure
+        plot : bool
+            If True it will plot the figures. Otherwise it will only return the 
+            images.
+        ic : numpy array
+            externally supplied independent components
+        no_nans : bool (optional)
+             whether substituting NaNs with zeros for a visually prettier plot
+             (default is False)
+
+        Returns
+        -------
+        List with the maps as MVA instances
+        """
+        return self.plot_maps(components=comp_ids,mva_type='pca',cmap=cmap,scores=recmatrix,
+                        with_components=with_pc,plot=plot, factors=pc)
         
-    def plot_explained_variance(self,n=50):
-        """Plot the principal components explained variance up to the given 
-        number
-        
-        Parameters
-        ----------
-        n : int
-        """ 
-        cumu = np.cumsum(self.mva_results.V) / np.sum(self.mva_results.V)
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.scatter(range(n), cumu[:n])
-        ax.set_xlabel('Principal component')
-        ax.set_ylabel('Explained variance')
-        plt.draw()
-        plt.show()
-        return ax
-        
-    def plot_independent_components_maps(self, cmap=plt.cm.gray, recmatrix=None,
-                                         comp_list=None, with_ic=True,
-                                         plot=True, ic=None, no_nans=False):
+    def plot_independent_components_maps(self, comp_ids=None, cmap=plt.cm.gray, recmatrix=None,
+                                         with_ic=True, plot=True, ic=None, no_nans=False):
         """Plot the map associated to each independent component
         
         Parameters
@@ -687,9 +768,10 @@ class MVA():
         cmap : plt.cm object
         recmatrix : numpy array
             externally suplied recmatrix
-        comp_list : boolen numpy array
-            choose the components to use by the boolen list. It permits to 
-            choose non contiguous components.
+        comp_ids : int or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
         with_ic : bool
             If True, plots also the corresponding independent component in the 
             same figure
@@ -703,66 +785,11 @@ class MVA():
              (default is False)
         Returns
         -------
-        List with the maps as Image instances
+        List with the maps as MVA instances
         """
-        from spectrum import Spectrum
-        if ic is None:
-            ic = self.ic
-        n = ic.shape[1]
-        bool_index = np.zeros((self.mva_results.pc.shape[0]), dtype = 'bool')
-        if comp_list is None:
-            bool_index[:n] = True
-        else:
-            for ipc in comp_list:
-                bool_index[ipc] = True
-            n = len(comp_list)
-        if recmatrix is None:
-            W = self.mva_results.v.T[bool_index, :]
-            Q = np.linalg.inv(self.mva_results.w.T)
-            recmatrix = np.dot(Q,W)
-            if no_nans:
-                print 'Removing NaNs for a visually prettier plot.'
-                recmatrix = np.nan_to_num(recmatrix) # remove ugly NaN pixels
-        shape = self.data.shape[1], self.data.shape[2]
-        im_list = []
-        for i in range(n):
-            if plot is True:
-                figure = plt.figure()
-                if with_ic:
-                    ax = figure.add_subplot(121)
-                    ax2 = figure.add_subplot(122)
-                else:
-                    ax = figure.add_subplot(111)
-            if shape[1] != 1:
-                toplot = recmatrix[i,:].reshape(shape, 
-                order = 'F').T
-                im_list.append(Image({'calibration' : {'data_cube': toplot.T}}))
-                if plot is True:
-                    mapa = ax.matshow(toplot, cmap = cmap)
-                    if with_ic:
-                        ax2.plot(self.energy_axis, ic[:,i])
-                        ax2.set_title('Independent component %s' % i)
-                        ax2.set_xlabel('Energy (eV)')
-                    figure.colorbar(mapa)
-                    figure.canvas.draw()
-                    pointer = widgets.DraggableSquare(self.coordinates)
-                    pointer.add_axes(ax)
-            else:
-                toplot = recmatrix[i,:]
-                im_list.append(Spectrum())
-                im_list[-1].data_cube = toplot
-                im_list[-1].get_dimensions_from_cube()
-                if plot is True:
-                    ax.step(range(len(toplot)), toplot)
-                    
-                    if with_ic:
-                        ax2.plot(self.energy_axis, ic[:,i])
-                        ax2.set_title('Independent component %s' % i)
-                        ax2.set_xlabel('Energy (eV)')
-            if plot is True:
-                ax.set_title('Independent component number %s map' % i)
-                figure.canvas.draw()
-        return im_list
+        return self.plot_maps(components=comp_ids,mva_type='ica',cmap=cmap,scores=recmatrix,
+                        with_components=with_ic,plot=plot, factors=ic, no_nans=no_nans)
+
     
     def save_principal_components(self, n, spectrum_prefix = 'pc', 
     image_prefix = 'im', spectrum_format = 'msa', image_format = 'tif'):
