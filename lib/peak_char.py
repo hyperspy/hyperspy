@@ -27,6 +27,19 @@ import sys
 import numpy as np
 from scipy.signal import medfilt
 
+class trait_comparison(object):
+    def __init__(self,peak_chars_stack,trait_col_id, peak_indices):
+        self.trait_col_id=trait_col_id
+        self.peak_indices=peak_indices
+        self.peak_chars_stack=peak_chars_stack
+    
+    """
+    def distance(self):
+        d=self.peak_chars_stack
+        pk1=self.peak_indices
+        return np.sqrt(d[7*:7*,
+    """
+
 def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
               medfilt_radius=5, maxpeakn=30000, peakgroup=10, subchannel=True):
     """
@@ -280,15 +293,10 @@ def best_match(arr,target,neighborhood=None):
     #    print "Warning! Didn't find a peak within your neighborhood! Watch for fishy peaks."
     return rlt
   
-def peak_attribs_image(image,peakwidth, subpixel=False, 
+def peak_attribs_image(image, peak_width, subpixel=False, 
                        target_locations=None, medfilt_radius=5):
     """
-    Characterizes the peaks in an image.  Returns a 2D array of the following form:
-        - One column per image
-        - 5 rows per peak located
-        - optionally, 2 additional rows at the end containing the coordinates
-           from which the image was cropped (should be passed as the imcoords 
-           parameter)  These should be excluded from any MVA.
+    Characterizes the peaks in an image.
 
         Parameters:
         ----------
@@ -312,6 +320,17 @@ def peak_attribs_image(image,peakwidth, subpixel=False,
                 if 0, no filter will be applied.
                 default is set to 5
 
+        Returns:
+        -------
+
+        2D numpy array:
+        - One row per image
+        - 5 columns:
+          0,1 - location
+          2 - height
+          3 - orientation
+          4 - eccentricity
+
     """
     try:
         import cv
@@ -319,25 +338,25 @@ def peak_attribs_image(image,peakwidth, subpixel=False,
         print 'Module %s:' % sys.modules[__name__]
         print 'OpenCV is not available, the peak characterization functions will not work.'
         return None
-    if not target_locations:
+    if target_locations is None:
         target_locations=two_dim_findpeaks(image, subpixel=subpixel,
-                                         boxsize=peakwidth)
-    rlt=np.zeros((locations.shape[0],5))
-    r=peakwidth/2
+                                         peak_width=peak_width)
+    rlt=np.zeros((target_locations.shape[0],5))
+    r=peak_width/2
     imsize=image.shape[0]
-    roi=np.zeros((peakwidth,peakwidth))
+    roi=np.zeros((peak_width,peak_width))
     if medfilt_radius:
         image=medfilt(image,medfilt_radius)
-    for loc in xrange(locations.shape[0]):
-        c=locations[loc]
+    for loc in xrange(target_locations.shape[0]):
+        c=target_locations[loc]
         bxmin=c[0]-r
         bymin=c[1]-r
         bxmax=c[0]+r
         bymax=c[1]+r
-        if bxmin<0: bxmin=0; bxmax=peakwidth
-        if bymin<0: bymin=0; bymax=peakwidth
-        if bxmax>imsize: bxmax=imsize; bxmin=imsize-peakwidth
-        if bymax>imsize: bymax=imsize; bymin=imsize-peakwidth
+        if bxmin<0: bxmin=0; bxmax=peak_width
+        if bymin<0: bymin=0; bymax=peak_width
+        if bxmax>imsize: bxmax=imsize; bxmin=imsize-peak_width
+        if bymax>imsize: bymax=imsize; bymin=imsize-peak_width
         roi[:,:]=image[bxmin:bxmax,bymin:bymax]
         ms=cv.Moments(cv.fromarray(roi))
         height=np.max(roi)
@@ -349,17 +368,11 @@ def peak_attribs_image(image,peakwidth, subpixel=False,
         rlt[loc,4]=ecc
     return rlt
         
-def peak_attribs_stack(stack, peak_width, subpixel=False, target_locations=None,
+def peak_attribs_stack(stack, peak_width, subpixel=True, target_locations=None,
                        peak_locations=None, imcoords=None, target_neighborhood=20,
                        medfilt_radius=5):
     """
-    Characterizes the peaks in a stack of images.  Creates a class member
-    "peak_chars" that is a 2D array of the following form:
-        - One column per image
-        - 7 rows per peak located
-        - optionally, 2 additional rows at the end containing the coordinates
-           from which the image was cropped (should be passed as the imcoords 
-           parameter)  These should be excluded from any MVA.
+    Characterizes the peaks in a stack of images.
 
         Parameters:
         ----------
@@ -370,7 +383,7 @@ def peak_attribs_stack(stack, peak_width, subpixel=False, target_locations=None,
 		to this parameter.  Too big, and you'll include other peaks.
         
         subpixel : bool (optional)
-                default is set to False
+                default is set to True
 
         target_locations : numpy array (n x 2)
                 array of n target locations.  If left as None, will create 
@@ -400,6 +413,21 @@ def peak_attribs_stack(stack, peak_width, subpixel=False, target_locations=None,
                 (see scipy.signal.medfilt)
                 if 0, no filter will be applied.
                 default is set to 5
+
+       Returns:
+       -------
+       2D  numpy array:
+        - One column per image
+        - 7 rows per peak located
+            0,1 - location
+            2,3 - difference between location and target location
+            4 - height
+            5 - orientation
+            6 - eccentricity
+        - optionally, 2 additional rows at the end containing the coordinates
+           from which the image was cropped (should be passed as the imcoords 
+           parameter)  These should be excluded from any MVA.
+
     """
 
     try:
@@ -413,11 +441,11 @@ def peak_attribs_stack(stack, peak_width, subpixel=False, target_locations=None,
         # get peak locations from the average image
         avgImage=np.average(stack,axis=2)
         target_locations=two_dim_findpeaks(avgImage, subpixel=subpixel,
-                                         boxsize=peak_width)
+                                         peak_width=peak_width)
 
     if peak_locations is None:
         # get all peaks on all images
-        peaks=stack_coords(stack, peak_width=peakwith, subpixel=subpixel)
+        peaks=stack_coords(stack, peak_width=peak_width, subpixel=subpixel)
         # two loops here - outer loop loops over images (i index)
         # inner loop loops over target peak locations (j index)
         peak_locations=np.array([[best_match(peaks[:,:,i], 
@@ -429,14 +457,19 @@ def peak_attribs_stack(stack, peak_width, subpixel=False, target_locations=None,
     # pre-allocate result array.  7 rows for each peak, 1 column for each image
     if imcoords:
         # an extra 2 rows for keeping track of image coordinates
-        rlt=np.zeros((7*peak_locations.shape[0]+2,stack.shape[1]))
+        rlt=np.zeros((7*peak_locations.shape[0]+2,stack.shape[2]))
     else:
-        rlt=np.zeros((7*avg_locations.shape[0],stack.shape[1]))
-    rlt_tmp=np.zeros(locations.shape[0],5)
+        rlt=np.zeros((7*peak_locations.shape[0],stack.shape[2]))
+    rlt_tmp=np.zeros((peak_locations.shape[0],5))
     for i in xrange(stack.shape[2]):
-        rlt_tmp=peak_attribs_image(stack[:,:,i], locations, peak_width, medfilt_radius)
-        diff_coords=locations-rlt_tmp[:,:2]
-        for j in xrange(locations.shape[0]):
+        rlt_tmp=peak_attribs_image(stack[:,:,i], 
+                                   target_locations=peak_locations[:,i,:], 
+                                   peak_width=peak_width, 
+                                   medfilt_radius=medfilt_radius, 
+                                   subpixel=subpixel)
+        
+        diff_coords=target_locations-rlt_tmp[:,:2]
+        for j in xrange(target_locations.shape[0]):
             rlt[j*7:j*7+2,i]=rlt_tmp[j,:2]
             rlt[j*7+2:j*7+4,i]=diff_coords[j]
             rlt[j*7+4]=rlt_tmp[j,2]
