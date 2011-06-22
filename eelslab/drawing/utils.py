@@ -68,18 +68,11 @@ def on_window_close(figure, function):
     elif backend == 'WXAgg':
         # In linux the following code produces a segmentation fault
         # so it is enabled only for Windows
-        if os.name in ['nt','dos']:
-            import wx
-            def function_wrapper(event):
-                # This wrapper is needed for the destroying process to carry on
-                # after the function call and to prevent errors from the fact 
-                # that the signal seems to trigger two calls to the function
-                try:
-                    function()
-                except:
-                    pass
-                event.Skip()
-            window.Bind(wx.EVT_WINDOW_DESTROY, function_wrapper)
+        import wx
+        def function_wrapper(event):
+            function()
+            plt.close(figure)
+        window.Bind(wx.EVT_CLOSE, function_wrapper)
         
     elif backend == 'TkAgg':
         def function_wrapper(*args):
