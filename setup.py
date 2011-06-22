@@ -14,7 +14,7 @@ import os
 import sys
 import shutil
 
-import lib.Release as Release
+import eelslab.Release as Release
 # clean the build directory so we aren't mixing Windows and Linux installations carelessly.
 if os.path.exists('build'):
     distutils.dir_util.remove_tree('build')
@@ -51,7 +51,7 @@ if Release.revision != '':
 
 setup(
     name = "eelslab",
-    package_dir = {'eelslab': 'lib'},
+    package_dir = {'eelslab': 'eelslab'},
     version = version,
     #py_modules = ['', ],
     packages = ['eelslab', 'eelslab.components', 'eelslab.io', 'eelslab.drawing', 
