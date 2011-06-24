@@ -7,7 +7,7 @@ matplotlib.use('WXAgg')
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_wx import NavigationToolbar2Wx
-from enthought.traits.api import Any, Instance, Str
+from enthought.traits.api import Instance, Str
 from enthought.traits.ui.wx.editor import Editor
 from enthought.traits.ui.basic_editor_factory import BasicEditorFactory
 

@@ -27,25 +27,17 @@ import tempfile
 
 import numpy as np
 import scipy as sp
-import scipy.io
 
-try:
-    import matplotlib.pyplot as plt
-except:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 import mdp
 from .. import utils
 from svd_pca import pca    
 from mlpca import mlpca
-from ..image import Image
 from ..utils import center_and_scale
 from ..defaults_parser import defaults
 from .. import messages
 from .. import config_dir
-from ..drawing import widgets
 from exceptions import *
 
 def compile_kica():
@@ -58,7 +50,7 @@ def perform_kica(pc):
     """Wrapper for kernel independent components analysis that runs in octave 
     (octave is required).
     """
-    import subprocess
+#    import subprocess
     # Until I get pytave working, a temporary file is necessary to interact 
     # with octave
     fd, temp_file = tempfile.mkstemp(suffix = '.mat')
@@ -534,7 +526,7 @@ class MVA():
         
     def undo_variance2one(self):
         if hasattr(self,'_std'):
-            data = (self.data * self._std)
+            self.data *= self._std
             self._replot()
 
     def plot_lev(self, n=50):

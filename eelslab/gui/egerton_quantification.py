@@ -1,11 +1,4 @@
-try:
-    import matplotlib.pyplot as plt
-except:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-    
-from matplotlib.widgets import SpanSelector, MultiCursor, Cursor
+import matplotlib.pyplot as plt
 
 import numpy as np
 import enthought.traits.api as t

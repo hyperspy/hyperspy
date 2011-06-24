@@ -1,19 +1,7 @@
 # -*- coding: utf-8 -*-
-try:
-    import matplotlib.pyplot as plt
-except:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-    
-from matplotlib.widgets import SpanSelector, MultiCursor, Cursor
-
-import numpy as np
 import enthought.traits.api as t
 import enthought.traits.ui.api as tu
 
-from .. import file_io
-from .. import components
 from .. import utils
 from .. import drawing
 from ..spectrum import Spectrum

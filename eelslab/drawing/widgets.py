@@ -21,14 +21,7 @@
 from __future__ import division
 import copy
 
-try:
-    import matplotlib
-    import matplotlib.pyplot as plt
-except:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-
+import matplotlib
 import numpy as np
 
 from utils import on_window_close

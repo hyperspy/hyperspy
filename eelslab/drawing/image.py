@@ -19,14 +19,8 @@
 # USA
 import math
 import numpy as np
-try:
-    import matplotlib.pyplot as plt
-    import matplotlib.widgets
-except:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-    import matplotlib.widgets
+import matplotlib.pyplot as plt
+import matplotlib.widgets
 
 import widgets
 import utils

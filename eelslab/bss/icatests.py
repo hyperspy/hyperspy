@@ -22,12 +22,7 @@ import commands
 from StringIO import StringIO
 
 import numpy as np
-try:
-    import matplotlib.pyplot as plt
-except:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
     
 import utils
 

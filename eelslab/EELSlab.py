@@ -21,14 +21,13 @@
 # There is an incompatibility between matplolib 1.0.1 and enthought 0.3.6 
 # because matplotlib uses QString 1 api and ETS QString 2. Therefore, the 
 # traits toolkit is set to 'null' for QT4. 
+
 from enthought.etsconfig.api import ETSConfig
 import matplotlib
-if matplotlib.get_backend() == 'Qt4Agg':
+if matplotlib.get_backend() != 'WXAgg':
     ETSConfig.toolkit ='null'
-elif matplotlib.get_backend() == 'WXAgg':
-    ETSConfig.toolkit ='wx'
 else:
-    ETSConfig.toolkit ='null'
+    ETSConfig.toolkit ='wx'
 
 import Release
 import components
@@ -49,6 +48,7 @@ __version__ = Release.version
 __revision__ = Release.revision
 
 def get_configuration_directory_path():
+    import eelslab.config_dir.config_path
     print(eelslab.config_dir.config_path)
 
 def start_gui():

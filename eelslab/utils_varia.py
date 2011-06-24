@@ -28,12 +28,8 @@ from __future__ import with_statement # for Python versions < 2.6
 import re
 import os
 
-try:
-    import matplotlib.pyplot as plt
-except:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+
 
 # from pylab import figure, show, cm
 

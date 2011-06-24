@@ -2,12 +2,8 @@ import copy
 import sys
 
 import numpy as np
-try:
-    import matplotlib.pyplot as plt
-except:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
+
+import matplotlib.pyplot as plt
 from utils import generate_axis, check_cube_dimensions, check_energy_dimensions
 from spectrum import Spectrum
 from utils import estimate_drift

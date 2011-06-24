@@ -1,30 +1,33 @@
 ##!/usr/bin/python
 
+import argparse
+
 import os, shutil
 import eelslab
+import eelslab.Release
 eelslab_module_path=os.path.dirname(eelslab.__file__)
 
 import matplotlib as mpl
-backend=mpl.rcParams['backend']
 
 if os.name in ['nt','dos']:
     ipy_dir=os.path.expanduser('~/_ipython')
-    if not os.path.exists(ipy_dir):
-        os.mkdir(ipy_dir)
-    shutil.copy('%s/ipython_profile/ipy_profile_eelslab.py'%eelslab_module_path,ipy_dir)
-    # The -wthread forces matplotlib to use the WXAgg backend
-    # This is necessary to support traits visualisation
-    # In windows is the default because it the only one that works correctly
-    os.system('ipython -wthread -p eelslab')
 else:
     ipy_dir=os.path.expanduser('~/.ipython')
-    if not os.path.exists(ipy_dir):
-        os.mkdir(ipy_dir)
-    shutil.copy('%s/ipython_profile/ipy_profile_eelslab.py'%eelslab_module_path,ipy_dir)
-    # When not running in Windows the backend is defined by matplotlib
-    if 'WX' in backend:
-        os.system('ipython -wthread -p eelslab')
-    elif 'GTK' in backend:
-        os.system('ipython -gthread -p eelslab')
-    elif 'Qt4' in backend:
-        os.system('ipython -q4thread -p eelslab')
+
+if not os.path.exists(ipy_dir):
+    os.mkdir(ipy_dir)
+shutil.copy('%s/ipython_profile/ipy_profile_eelslab.py'%eelslab_module_path,ipy_dir)
+
+parser = argparse.ArgumentParser(add_help = True, 
+version = eelslab.Release.version)
+# The -wthread forces matplotlib to use the WXAgg backend
+# This is necessary to support traits visualisation
+parser.add_argument('-backend', action="store", dest='backend', choices = (
+'gthread', 'qthread', 'q4thread', 'wthread'), default = 'wthread')
+# If the headless argument is passed, no threading is used and the backend
+# is defined by matplotlibrc, that for a headless system should be 
+# Agg or similar.
+parser.add_argument('-headless', action="store_true", default=False)
+args = parser.parse_args()
+backend = (' -' + args.backend if args.headless is False else '')
+os.system('ipython%s -pylab -p eelslab' % backend)

@@ -38,12 +38,8 @@ def import_rpy():
     except:
         print "python-rpy is not installed"
 
-try:
-    import matplotlib.pyplot as plt
-except:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+
     
 def generate_axis(origin,step,N,index=0):
     """Creates an axis given the origin, step and number of channels
