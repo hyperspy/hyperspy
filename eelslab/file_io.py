@@ -22,11 +22,11 @@ import os
 
 import messages
 from defaults_parser import defaults
-from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple#, hdf5
+from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, image, ripple#, hdf5
 from signals.image import Image
 from signal import Signal
 
-io_plugins = (netcdf, msa, dm3_data_plugin, fei, bin, mrc, pil, ripple,
+io_plugins = (netcdf, msa, dm3_data_plugin, fei, bin, mrc, image, ripple,
               )#hdf5)
 
 def load(filename, data_type = None, **kwds):

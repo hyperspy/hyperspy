@@ -30,7 +30,7 @@ except:
 # Plugin characteristics
 # ----------------------
 format_name = 'image'
-description = 'Import/Export standard image formats using PIL'
+description = 'Import/Export standard image formats using PIL or freeimage'
 full_suport = False
 file_extensions = ['bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg', 'msp', 'pcx', 
                    'png', 'ppm', "pbm", "pgm", 'tiff', 'tif', 'xbm', 'spi',]
