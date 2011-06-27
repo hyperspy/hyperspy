@@ -21,9 +21,10 @@ from IPython import ipapi
 from eelslab import Release
 
 def main():
+    import ipy_user_conf
     ip=ipapi.get()
     o=ip.options
-    
+    o.pylab_import_all = 0
     ip.ex("from eelslab.EELSlab import *")
 
     #Matplotlib imports
