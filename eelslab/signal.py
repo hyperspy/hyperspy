@@ -211,7 +211,7 @@ class Signal(t.HasTraits, MVA):
         tui.Item('offset'),
         tui.Item('scale'),)
     
-    def save(self, filename, **kwds):
+    def save(self, filename, only_view = False, **kwds):
         """Saves the signal in the specified format.
         
         The function gets the format from the extension. You can use:
@@ -219,6 +219,10 @@ class Signal(t.HasTraits, MVA):
             - nc for NetCDF
             - msa for EMSA/MSA single spectrum saving.
             - bin to produce a raw binary file
+            - Many image formats such as png, tiff, jpeg...
+        
+        Please note that not all the formats supports saving datasets of 
+        arbitrary dimensions, e.g. msa only suports 1D data.
         
         Parameters
         ----------
@@ -227,6 +231,10 @@ class Signal(t.HasTraits, MVA):
             'Y' will produce a file without the energy axis. 'XY' will also 
             save another column with the energy axis. For compatibility with 
             Gatan Digital Micrograph 'Y' is the default.
+        only_view : bool
+            If True, only the current view will be saved. Otherwise the full 
+            dataset is saved. Please note that not all the formats support this 
+            option at the moment.
         """
         file_io.save(filename, self, **kwds)
         
