@@ -52,7 +52,7 @@ def file_writer(filename, object2save, rescale=None, file_format='tif',**kwds):
         elif rescale==16:
             dc=np.array(dc*65535,dtype=np.uint16)
         elif rescale==32:
-            dc=np.array(dc*(2**32),dtype=np.uint32)
+            dc=np.array(dc*(2**32 - 1),dtype=np.uint32)
     if len(dc.shape)==3:
         for i in xrange(dc.shape[2]):
             img=Image.fromarray(dc[:,:,i])
