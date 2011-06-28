@@ -29,20 +29,21 @@ if matplotlib.get_backend() != 'WXAgg':
 else:
     ETSConfig.toolkit ='wx'
 
-import Release
-import components
+matplotlib.rcParams['image.cmap'] = 'gray'
+from eelslab import Release
+from eelslab import components
 
-from spectrum import Spectrum
-from image import Image
-from experiments import Experiments
-from signal import Signal
-from model import Model
-from file_io import load
-from edges_db import edges_dict
+from eelslab.spectrum import Spectrum
+from eelslab.image import Image
+from eelslab.experiments import Experiments
+from eelslab.signal import Signal
+from eelslab.model import Model
+from eelslab.file_io import load
+from eelslab.edges_db import edges_dict
 #from microscope import microscope
-from defaults_parser import defaults
-import utils
-import tests
+from eelslab.defaults_parser import defaults
+from eelslab import utils
+from eelslab import tests
 
 __version__ = Release.version
 __revision__ = Release.revision

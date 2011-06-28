@@ -74,7 +74,6 @@ try:
     import termios
 except ImportError:
     pass
-import signal
 
 class ProgressBarWidget(object):
     """This is an element of ProgressBar formatting.

@@ -27,12 +27,12 @@ from scipy.interpolate import splev,splrep,splint
 from numpy import log, exp
 from scipy.signal import cspline1d_eval
 
-from ..defaults_parser import defaults
-from ..component import Component
-from ..microscope import microscope
-from ..effectiveangle import EffectiveAngle
-from ..edges_db import edges_dict
-from .. import messages
+from eelslab.defaults_parser import defaults
+from eelslab.component import Component
+from eelslab.microscope import microscope
+from eelslab.effectiveangle import EffectiveAngle
+from eelslab.edges_db import edges_dict
+from eelslab import messages
 
 
 # Global constants

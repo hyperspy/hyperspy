@@ -18,9 +18,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
 
-from ..component import Component
+from eelslab.component import Component
 from scipy.interpolate import interp1d
-from .. import messages
+from eelslab import messages
 
 class FixedPattern(Component):
     """

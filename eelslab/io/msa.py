@@ -24,12 +24,12 @@ import datetime
 
 import numpy as np
 
-from ..config_dir import os_name
-from ..utils import generate_axis
-from ..microscope import microscope
-from .. import messages
-from ..utils_varia import overwrite
-from .. import Release
+from eelslab.config_dir import os_name
+from eelslab.utils import generate_axis
+from eelslab.microscope import microscope
+from eelslab import messages
+from eelslab.utils_varia import overwrite
+from eelslab import Release
 
 # Plugin characteristics
 # ----------------------

@@ -65,8 +65,8 @@ def file_reader(filename, shape, data_type = None, **kwds):
 'acquisition' : acquisition_dict},]  
     
 def file_writer(filename, object2save, *args, **kwds):
-    from .. import spectrum
-    from .. import image
+    from eelslab import spectrum
+    from eelslab import image
     if isinstance(object2save,spectrum.Spectrum):
         dc = object2save.data_cube
         depth, width, height = dc.shape

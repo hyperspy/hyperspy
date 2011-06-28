@@ -28,7 +28,7 @@ import scipy.interpolate
 import scipy.signal
 import scipy.ndimage
 
-import messages
+from eelslab import messages
 
 def import_rpy():
     try:

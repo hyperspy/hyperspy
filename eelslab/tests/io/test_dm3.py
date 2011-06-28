@@ -4,7 +4,7 @@ import numpy as np
 from generate_dm_testing_files import data_types
 
 from nose.tools import assert_true
-from ...file_io import load
+from eelslab.file_io import load
 
 my_path = os.path.dirname(__file__)
 old = False

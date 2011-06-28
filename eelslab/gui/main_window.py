@@ -5,14 +5,14 @@ import enthought.traits.api as t
 import enthought.traits.ui.api as tui
 from enthought.traits.ui.menu import OKButton, CancelButton, Action, MenuBar, Menu
 
-from .. import file_io
+from eelslab import file_io
 from microscope import Microscope
 from egerton_quantification import EgertonPanel
 
 import messages
 import tools
-from ..interactive_ns import interactive_ns
-from .. import Release
+from eelslab.interactive_ns import interactive_ns
+from eelslab import Release
 
 microscope = Microscope()
 

@@ -1,4 +1,4 @@
-#from .. import Signal
+#from eelslab import Signal
 #
 #
 #class PESSignal(Signal):

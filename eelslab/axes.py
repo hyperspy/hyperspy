@@ -24,7 +24,7 @@ import numpy as np
 import enthought.traits.api as t
 import enthought.traits.ui.api as tui 
 
-import messages
+from eelslab import messages
 
     
 class BoundedIndex(t.Int):

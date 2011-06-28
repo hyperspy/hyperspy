@@ -21,7 +21,7 @@
 import numpy as np
 import math
 
-from ..component import Component
+from eelslab.component import Component
 
 def voigt(x, FWHM=1, gamma=1, center=0, scale=1): 
     """ 

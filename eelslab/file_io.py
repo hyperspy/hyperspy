@@ -20,11 +20,9 @@
 
 import os
 
-import messages
-from defaults_parser import defaults
-from io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, image, ripple#, hdf5
-from signals.image import Image
-from signal import Signal
+from eelslab import messages
+from eelslab.defaults_parser import defaults
+from eelslab.io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, image, ripple#, hdf5
 
 io_plugins = (netcdf, msa, dm3_data_plugin, fei, bin, mrc, image, ripple,
               )#hdf5)
@@ -52,7 +50,7 @@ def load(filename, data_type = None, **kwds):
         i < len(io_plugins) - 1: i += 1
     if i == len(io_plugins):
         # Try to load it with the python imaging library
-        reader = pil
+        reader = image
         try:
             return load_with_reader(filename, reader, data_type, **kwds)
         except:
@@ -62,7 +60,8 @@ def load(filename, data_type = None, **kwds):
         return load_with_reader(filename, reader, data_type, **kwds)
         
 def load_with_reader(filename, reader, data_type = None, **kwds):
-
+    from eelslab.signals.image import Image
+    from eelslab.signal import Signal
     messages.information(reader.description)    
     file_data_list = reader.file_reader(filename,
                                          data_type=data_type,

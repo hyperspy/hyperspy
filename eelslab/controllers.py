@@ -17,8 +17,8 @@
 # along with EELSLab; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301
 # USA
-import coordinates
-import drawing
+from eelslab import coordinates
+from eelslab import drawing
 
 class Coordinates_Controller():
     def __init__(self):

@@ -21,7 +21,7 @@
 import os
 import os.path
 import shutil
-import messages
+from eelslab import messages
 
 config_files = ['eelslabrc', 'microscopes.csv', 'edges_db.csv']
 data_path = os.sep.join([os.path.dirname(__file__), 'data'])

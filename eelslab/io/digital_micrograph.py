@@ -23,7 +23,7 @@ import os.path
 import numpy as np
 
 from dm3reader_eelslab import parseDM3
-from .. import messages
+from eelslab import messages
 
 # Plugin characteristics
 # ----------------------

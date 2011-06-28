@@ -23,9 +23,9 @@
 import math
 
 import numpy as np
-from ..component import Component
-from .gaussian import Gaussian
-from .. import spectrum
+from eelslab.component import Component
+from eelslab.components.gaussian import Gaussian
+from eelslab import spectrum
 
 r2 = math.sqrt(2)
 

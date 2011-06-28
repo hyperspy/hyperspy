@@ -20,7 +20,7 @@
 
 from xml.dom import minidom
 
-import Experiments
+from eelslab import Experiments
 
 def get_data(node):
     if node.firstChild is not None:

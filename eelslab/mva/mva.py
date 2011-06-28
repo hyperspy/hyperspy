@@ -31,13 +31,13 @@ import scipy as sp
 import matplotlib.pyplot as plt
 
 import mdp
-from .. import utils
+from eelslab import utils
 from svd_pca import pca    
 from mlpca import mlpca
-from ..utils import center_and_scale
-from ..defaults_parser import defaults
-from .. import messages
-from .. import config_dir
+from eelslab.utils import center_and_scale
+from eelslab.defaults_parser import defaults
+from eelslab import messages
+from eelslab import config_dir
 from exceptions import *
 
 def compile_kica():
@@ -648,7 +648,7 @@ class MVA():
         with_components: bool,
         plot: bool, 
         """
-        from ..signal import Signal
+        from eelslab.signal import Signal
 
         if scores is None or (factors is None and with_components is True):
             print "Either recmatrix or components were not provided."

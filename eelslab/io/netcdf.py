@@ -22,9 +22,9 @@
 import numpy as np
 
 no_netcdf = False
-from .. import Release
-from .. import messages
-from ..microscope import microscope
+from eelslab import Release
+from eelslab import messages
+from eelslab.microscope import microscope
 no_netcdf_message = 'Warning! In order to enjoy the netCDF Read/Write feature, '
 'at least one of this packages must be installed: '
 'python-pupynere, python-netcdf or python-netcdf4'
@@ -156,8 +156,8 @@ def nc_eelslab_reader_0dot1(ncfile, *args, **kwds):
     return dictionary
     
 def file_writer(filename, object2save, *args, **kwds):
-    from .. import spectrum
-    from .. import image
+    from eelslab import spectrum
+    from eelslab import image
     if isinstance(object2save, spectrum.Spectrum):
         netcdf_spectrum_writer(filename, object2save, *args, **kwds)
     elif isinstance(object2save, image.Image):

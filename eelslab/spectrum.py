@@ -25,24 +25,24 @@ from scipy.interpolate import UnivariateSpline, interp1d
 from scipy.ndimage import  gaussian_filter1d
 import matplotlib.pyplot as plt
 # Set the matplotlib cmap to gray (the default is jet)
-plt.rcParams['image.cmap'] = 'gray'
-import file_io
-import messages
-import utils
-from microscope import microscope
-from image import Image
-from components.power_law import PowerLaw
-from edges_db import edges_dict
-from model import Model
-from components.edge import Edge
-from defaults_parser import defaults
-from interactive_ns import interactive_ns
-from utils import generate_axis
-from utils import rebin
-from mva.mva import MVA, MVA_Results
-import drawing.mpl_hse
-import controllers
-from exceptions import *
+
+
+from eelslab import file_io
+from eelslab import messages
+from eelslab import utils
+from eelslab.image import Image
+from eelslab.components.power_law import PowerLaw
+from eelslab.edges_db import edges_dict
+from eelslab.model import Model
+from eelslab.components.edge import Edge
+from eelslab.defaults_parser import defaults
+from eelslab.interactive_ns import interactive_ns
+from eelslab.utils import generate_axis
+from eelslab.utils import rebin
+from eelslab.mva.mva import MVA, MVA_Results
+import eelslab.drawing.mpl_hse
+from eelslab import controllers
+from eelslab.exceptions import *
 
 
 #TODO Acquisition_Parameters and Treatments must be merged into a more general
@@ -1998,7 +1998,7 @@ class Spectrum(object, MVA):
             
                     
         # Spectrum properties
-        self.hse = drawing.mpl_hse.MPL_HyperSpectrum_Explorer()
+        self.hse = eelslab.drawing.mpl_hse.MPL_HyperSpectrum_Explorer()
         self.hse.spectrum_data_function = self.__call__
         self.hse.spectrum_title = 'EELS Spectrum'
         self.hse.xlabel = 'Energy Loss (%s)' % self.energyunits

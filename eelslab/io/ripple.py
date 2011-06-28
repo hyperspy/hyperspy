@@ -26,8 +26,8 @@
 
 import numpy as np
 import os.path
-from ..utils_readfile import *
-from .. import Release
+from eelslab.utils_readfile import *
+from eelslab import Release
 
 # Plugin characteristics
 # ----------------------

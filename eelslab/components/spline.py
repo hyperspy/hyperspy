@@ -21,7 +21,7 @@
 
 from  scipy.interpolate import splev
 
-from ..component import Component
+from eelslab.component import Component
 
 class Spline(Component):
 

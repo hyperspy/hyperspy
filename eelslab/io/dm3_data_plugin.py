@@ -31,17 +31,17 @@ import mmap
 import re
 import numpy as np
 
-from ..axes import DataAxis
+from eelslab.axes import DataAxis
 
 # relative imports are discouraged (PEP0008)
-from ..utils_readfile import *
-#from ..utils_readfile import *
-from ..exceptions import *
-#from ..exceptions import *
-from ..utils_varia import overwrite, swapelem
-from ..utils_varia import DictBrowser, fsdict
-#from ..utils_varia import overwrite, swapelem
-#from ..utils_varia import DictBrowser, fsdict
+from eelslab.utils_readfile import *
+#from eelslab.utils_readfile import *
+from eelslab.exceptions import *
+#from eelslab.exceptions import *
+from eelslab.utils_varia import overwrite, swapelem
+from eelslab.utils_varia import DictBrowser, fsdict
+#from eelslab.utils_varia import overwrite, swapelem
+#from eelslab.utils_varia import DictBrowser, fsdict
 
 # Plugin characteristics
 # ----------------------

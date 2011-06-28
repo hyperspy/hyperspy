@@ -19,7 +19,7 @@
 # USA
 
 
-from ..component import Component
+from eelslab.component import Component
 from scipy.interpolate import interp1d
 
 class ZLPFingerprinting(Component):

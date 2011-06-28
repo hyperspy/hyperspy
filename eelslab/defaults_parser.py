@@ -21,8 +21,8 @@
 import os.path
 import tarfile
 
-from config_dir import config_path, os_name, data_path
-import messages
+from eelslab.config_dir import config_path, os_name, data_path
+from eelslab import messages
 
 defaults_file = os.path.join(config_path, 'eelslabrc')
 bool_keys = ['fs_state', 'synchronize_cl_with_ll', 'plot_on_load']

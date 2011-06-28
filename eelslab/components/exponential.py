@@ -20,7 +20,7 @@
 
 import numpy as np
 
-from ..component import Component
+from eelslab.component import Component
 
 
 class Exponential(Component):

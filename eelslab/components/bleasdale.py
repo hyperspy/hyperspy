@@ -20,7 +20,7 @@
 
 import numpy as np
 
-from ..component import Component, Parameter
+from eelslab.component import Component, Parameter
 
 class Bleasdale(Component):
     """

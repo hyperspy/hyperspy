@@ -22,7 +22,7 @@
 import csv
 import os
 
-from config_dir import config_path
+from eelslab.config_dir import config_path
 
 
 file_path = os.path.join(config_path, 'edges_db.csv') 

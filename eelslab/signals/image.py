@@ -18,8 +18,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
 
-from ..signal import Signal
-from ..peak_char import *
+from eelslab.signal import Signal
+from eelslab.peak_char import *
 import matplotlib.pyplot as plt
 
 class Image(Signal):

@@ -22,7 +22,7 @@
 
 
 import numpy as np
-from ..component import Component
+from eelslab.component import Component
 from .gaussian import Gaussian
 
 class Cube(Component):

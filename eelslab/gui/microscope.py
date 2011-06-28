@@ -1,4 +1,4 @@
-from .. import microscope
+from eelslab import microscope
 
 import enthought.traits.api as t
 import enthought.traits.ui.api as tui

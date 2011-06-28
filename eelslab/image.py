@@ -20,10 +20,10 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import file_io
-import messages
-import coordinates
-import drawing.utils
+from eelslab import file_io
+from eelslab import messages
+from eelslab import coordinates
+from eelslab.drawing import utils
 
 class Image():
     """
@@ -133,7 +133,7 @@ class Image():
             return True
             
         self.image_figure = plt.figure()
-        drawing.utils.on_window_close(self.image_figure, self._on_figure_close)
+        utils.on_window_close(self.image_figure, self._on_figure_close)
         if hasattr(self, 'title'):
             title = self.title
         else:

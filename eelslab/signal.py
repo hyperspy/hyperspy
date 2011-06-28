@@ -11,13 +11,13 @@ import scipy as sp
 import enthought.traits.api as t
 import enthought.traits.ui.api as tui 
 
-import messages
-from axes import AxesManager
-import file_io
-from drawing import mpl_hie, mpl_hse
-import utils
-import progressbar
-from mva.mva import MVA, MVA_Results
+from eelslab import messages
+from eelslab.axes import AxesManager
+from eelslab import file_io
+from eelslab.drawing import mpl_hie, mpl_hse
+from eelslab import utils
+from eelslab import progressbar
+from eelslab.mva.mva import MVA, MVA_Results
 
 class Parameters(object):
     """A class to comfortably access some parameters as attributes"""

@@ -23,7 +23,7 @@ import math
 import numpy as np
 from scipy.special import erf
 
-from ..component import Component
+from eelslab.component import Component
 
 sqrt2pi = np.sqrt(2*np.pi)
 

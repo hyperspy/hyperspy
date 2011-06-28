@@ -22,8 +22,9 @@ import numpy as np
 import scipy.odr as odr
 from scipy.optimize import leastsq,fmin, fmin_cg, fmin_ncg, fmin_bfgs, \
 fmin_cobyla, fmin_l_bfgs_b, fmin_tnc, fmin_powell
-from defaults_parser import defaults
-from estimators import Estimators
+
+from eelslab.defaults_parser import defaults
+from eelslab.estimators import Estimators
 
 def vst(x, kind = 'ascombe'):
     if kind == 'ascombe':

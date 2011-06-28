@@ -2,10 +2,10 @@
 import enthought.traits.api as t
 import enthought.traits.ui.api as tu
 
-from .. import utils
-from .. import drawing
-from ..spectrum import Spectrum
-from ..interactive_ns import interactive_ns
+from eelslab import utils
+from eelslab import drawing
+from eelslab.spectrum import Spectrum
+from eelslab.interactive_ns import interactive_ns
 
 
 class Calibration(t.HasTraits):

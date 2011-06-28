@@ -21,7 +21,7 @@ import h5py
 
 import numpy as np
 
-from .. import messages
+from eelslab import messages
 
 # Plugin characteristics
 # ----------------------

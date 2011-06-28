@@ -4,11 +4,11 @@ import sys
 import numpy as np
 
 import matplotlib.pyplot as plt
-from utils import generate_axis, check_cube_dimensions, check_energy_dimensions
-from spectrum import Spectrum
-from utils import estimate_drift
-from file_io import load
-from progressbar import progressbar
+from eelslab.utils import generate_axis, check_cube_dimensions, check_energy_dimensions
+from eelslab.spectrum import Spectrum
+from eelslab.utils import estimate_drift
+from eelslab.file_io import load
+from eelslab.progressbar import progressbar
 
 class Experiments:
     def __init__(self, hl, ll=None):

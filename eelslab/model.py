@@ -23,17 +23,18 @@ import os
 import tempfile
 
 import numpy as np
-from components.edge import Edge
-from components.power_law import PowerLaw
-from interactive_ns import interactive_ns
-from defaults_parser import defaults
-from utils import two_area_powerlaw_estimation
-from estimators import Estimators
-from optimizers import Optimizers
-from model_controls import Controls
-import messages
-import drawing.spectrum
-import progressbar
+
+from eelslab.components.edge import Edge
+from eelslab.components.power_law import PowerLaw
+from eelslab.interactive_ns import interactive_ns
+from eelslab.defaults_parser import defaults
+from eelslab.utils import two_area_powerlaw_estimation
+from eelslab.estimators import Estimators
+from eelslab.optimizers import Optimizers
+from eelslab.model_controls import Controls
+from eelslab import messages
+import eelslab.drawing.spectrum
+from eelslab import progressbar
 
 class Model(list, Optimizers, Estimators, Controls):
     """Build a fit a model
@@ -906,7 +907,7 @@ class Model(list, Optimizers, Estimators, Controls):
         l1.line_properties_helper(color, 'scatter')
         l1.set_properties()
         
-        l2 = drawing.spectrum.SpectrumLine()
+        l2 = eelslab.drawing.spectrum.SpectrumLine()
         l2.data_function = self.model2plot
         l2.line_properties_helper('blue', 'line')        
         # Add the line to the figure
