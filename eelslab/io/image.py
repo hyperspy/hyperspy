@@ -100,7 +100,7 @@ def file_writer(filename, signal, rescale = False, file_format='tif',
     if rescale is True:
         dc = rescale(dc, bits)
 
-    imsave(filename, dc.T)
+    imsave(filename, dc.T.astype('uint%s' % bits))
     print "Image saved"
     
 def file_reader(filename, **kwds):
