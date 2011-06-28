@@ -5,7 +5,7 @@ import math
 
 import wx
 import scipy.optimize
-import pylab
+import matplotlib.pyplot as plt
 import numpy
 
 from enthought.traits.api import HasTraits, File, String, Bool, List, ListBool
@@ -68,8 +68,8 @@ class Main():
                 self.__picked_vline.set_xdata(event.xdata)
                 self.__picked_vline.label._x = event.xdata
 #                self.core_loss.sp_ax1.draw()
-                pylab.figure(self.core_loss.sp_figure.number)
-                pylab.draw()
+                plt.figure(self.core_loss.sp_figure.number)
+                plt.draw()
             
         def unclick(event) :
             if self.__cid_on_move is not None:
@@ -98,9 +98,9 @@ class Main():
         # Connecting
         self.core_loss.sp_figure.canvas.mpl_connect('button_release_event',unclick)
         self.core_loss.sp_figure.canvas.mpl_connect('pick_event',on_vline_pick)
-        pylab.figure(self.core_loss.sp_figure.number)
-        pylab.draw()
-        pylab.show()
+        plt.figure(self.core_loss.sp_figure.number)
+        plt.draw()
+        plt.show()
     
     def multi_edge_calibration(self):
         x_data = []

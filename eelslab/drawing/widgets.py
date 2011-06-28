@@ -21,7 +21,8 @@
 from __future__ import division
 import copy
 
-import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.widgets
 import numpy as np
 
 from utils import on_window_close

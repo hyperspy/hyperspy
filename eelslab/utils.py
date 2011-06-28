@@ -27,7 +27,6 @@ import scipy as sp
 import scipy.interpolate
 import scipy.signal
 import scipy.ndimage
-import matplotlib
 
 import messages
 

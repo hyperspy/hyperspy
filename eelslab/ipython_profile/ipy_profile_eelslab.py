@@ -26,15 +26,6 @@ def main():
     o=ip.options
     o.pylab_import_all = 0
     ip.ex("from eelslab.EELSlab import *")
-
-    #Matplotlib imports
-#    ip.ex("import matplotlib.pyplot as plt")
-#    ip.ex("plt.ion()")
-#    
-#
-#    # Numpy import
-#    ip.ex('import numpy as np')
-
     ip.ex("__version__ = Release.version")
     ip.ex("__revision__ = Release.revision")
     o.banner=Release.info
