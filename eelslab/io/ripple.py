@@ -187,7 +187,9 @@ def read_raw(rpl_info, fp):
     elif record_by == 'image':  # stack of images
         size = (depth, height, width)
         data = data.reshape(size)
-
+    elif record_by == 'dont-care':  # stack of images
+        size = (height, width)
+        data = data.reshape(size)
     return data
 
 def file_reader(filename, rpl_info=None, *args, **kwds):
