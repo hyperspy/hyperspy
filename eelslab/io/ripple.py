@@ -411,7 +411,7 @@ def file_writer(filename, signal, *args, **kwds):
         
     # Gather the information to write the rpl        
     data_type, data_length = dtype2keys[dc.dtype.name]
-    byte_order = endianess2rpl[dc.dtype.byteorder]
+    byte_order = endianess2rpl[dc.dtype.byteorder.replace('|', '=')]
     offset = 0
     if signal.axes_manager.output_dim == 1:
         record_by = 'vector'
