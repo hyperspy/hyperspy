@@ -498,7 +498,7 @@ def write_raw(filename, signal, record_by):
     if len(dshape) == 3:
         if record_by == 'vector':
             np.rollaxis(
-                data, signal.axes_manager._slicing_axes[0].index_in_array, 0
+                data, signal.axes_manager._slicing_axes[0].index_in_array, 3
                         ).ravel().tofile(filename)
         elif record_by == 'image':
             data.ravel().tofile(filename)
