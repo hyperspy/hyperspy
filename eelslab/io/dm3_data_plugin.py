@@ -971,23 +971,23 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
 
         # Store the calibration in the calibration dict
 
-        names = ['x','y','Energy']
+        names = ['y','x','Energy']
 
     elif data_type == 'Image':
         print("Treating the data as an image")
 
-        names = ['x','y','z']
+        names = ['z','y','x']
 
     else:
         raise TypeError, "could not identify the file data_type"
-
+    dim = len(data.shape)
     axes=[{'size' : int(data.shape[i]), 
            'index_in_array' : i ,
-           'name' : names[i],
+           'name' : names[3 - dim + i],
            'scale': scales[i],
            'offset' : origins[i],
            'units' : units[i],} \
-           for i in xrange(len(data.shape))]
+           for i in xrange(dim)]
 
     dictionary = {
         'data_type' : data_type, 
