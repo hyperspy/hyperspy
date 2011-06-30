@@ -315,7 +315,7 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
             data_type = 'image'
 
     if rpl_info['record-by'] == 'vector':
-        data = np.rollaxis(data, 0, -1)
+        data = np.rollaxis(data, -1, 0)
     scales = [1, 1, 1]
     origins = [0, 0, 0]
     units = ['', '', '']
