@@ -505,7 +505,7 @@ def write_raw(filename, signal, record_by):
     elif len(dshape) == 2:
         if record_by == 'vector':
             data.T.ravel().tofile(filename)
-        elif record_by in ('image' or 'dont-care'):
+        elif record_by in ('image', 'dont-care'):
             data.ravel().tofile(filename)
     elif len(dshape) == 1:
         data.ravel().tofile(filename)
