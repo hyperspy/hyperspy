@@ -236,21 +236,21 @@ class AxesManager(t.HasTraits):
         if view == 'hyperspectrum':
             # We limit the output_dim to 1 to get a spectrum
             i = 0
-            for axis in self.axes[::-1]:
+            for axis in self.axes:
                 if i < 1:
                     axis.slice_bool = True
-                    i += 1
                 else:
                     axis.slice_bool = False
+                i += 1
         elif view == 'image':
             # We limit the output_dim to 2 to get a spectrum
             i = 0
-            for axis in self.axes:
+            for axis in self.axes[::-1]:
                 if i < 2:
                     axis.slice_bool = True
-                    i += 1
                 else:
                     axis.slice_bool = False
+                i += 1
                     
     def connect(self, f):
         for axis in self.axes:
