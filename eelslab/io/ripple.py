@@ -436,10 +436,10 @@ def file_writer(filename, signal, *args, **kwds):
             depth, width, height =  \
                             depth_axis.size, width_axis.size, height_axis.size
         elif dimension == 2:
-            record_by == 'dont-care'
+            record_by = 'dont-care'
             width, height, depth = width_axis.size, height_axis.size, 1
         elif dimension == 1:
-            record_by == 'dont-care'
+            record_by = 'dont-care'
             depth, width, height = width_axis.size, 1, 1
     else:
         print("Only Spectrum and Image objects can be saved")
