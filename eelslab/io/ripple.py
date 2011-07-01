@@ -315,11 +315,15 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
             data_type = 'image'
 
     if rpl_info['record-by'] == 'vector':
-        data = np.rollaxis(data, -1, 0)
+        idepth, iheight, iwidth = 2, 0, 1
+        names = ['height', 'width', 'depth', ]
+    else:
+        idepth, iheight, iwidth = 0, 1, 2
+        names = ['depth', 'height', 'width']
+        
     scales = [1, 1, 1]
     origins = [0, 0, 0]
     units = ['', '', '']
-    names = ['depth', 'height', 'width']
     sizes = [rpl_info[names[i]] for i in range(3)]
     
     if rpl_info.has_key('detector-peak-width-ev'):
@@ -327,44 +331,44 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
         rpl_info['detector-peak-width-ev']
         
     if rpl_info.has_key('depth-scale'):
-        scales[0] = rpl_info['depth-scale']
+        scales[idepth] = rpl_info['depth-scale']
     # ev-per-chan is the only calibration supported by the original ripple
     # format
     elif rpl_info.has_key('ev-per-chan'):
-        scales[0] = rpl_info['ev-per-chan']
+        scales[idepth] = rpl_info['ev-per-chan']
 
     if rpl_info.has_key('depth-origin'):
-        origins[0] = rpl_info['depth-origin']
+        origins[idepth] = rpl_info['depth-origin']
 
     if rpl_info.has_key('depth-units'):
-        units[0] = rpl_info['depth-units']
+        units[idepth] = rpl_info['depth-units']
 
     if rpl_info.has_key('depth-name'):
-        names[0] = rpl_info['depth-name']
+        names[idepth] = rpl_info['depth-name']
 
     if rpl_info.has_key('width-origin'):
-        origins[2] = rpl_info['width-origin']
+        origins[iwidth] = rpl_info['width-origin']
 
     if rpl_info.has_key('width-scale'):
-        scales[2] = rpl_info['width-scale']
+        scales[iwidth] = rpl_info['width-scale']
         
     if rpl_info.has_key('width-units'):
-        units[2] = rpl_info['width-units']
+        units[iwidth] = rpl_info['width-units']
     
     if rpl_info.has_key('width-name'):
-        names[2] = rpl_info['width-name']
+        names[iwidth] = rpl_info['width-name']
 
     if rpl_info.has_key('height-origin'):
-        origins[1] = rpl_info['height-origin']
+        origins[iheight] = rpl_info['height-origin']
 
     if rpl_info.has_key('height-scale'):
-        scales[1] = rpl_info['height-scale']
+        scales[iheight] = rpl_info['height-scale']
         
     if rpl_info.has_key('height-units'):
-        units[1] = rpl_info['height-units']
+        units[iheight] = rpl_info['height-units']
 
     if rpl_info.has_key('height-name'):
-        names[1] = rpl_info['height-name']
+        names[iheight] = rpl_info['height-name']
 
     axes = []
     index_in_array = 0
