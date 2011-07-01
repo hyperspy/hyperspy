@@ -251,7 +251,23 @@ class AxesManager(t.HasTraits):
                 else:
                     axis.slice_bool = False
                 i += 1
-                    
+
+    def set_slicing_axes(self, slicing_axes):
+        '''Easily choose which axes are slicing
+        
+        Parameters
+        ----------
+        
+        slicing_axes: tuple of ints
+            A list of the axis indexes that we want to slice
+            
+        '''
+        for axis in self.axes:
+            if axis.index_in_array in slicing_axes:
+                axis.slice_bool = True
+            else:
+                axis.slice_bool = False
+              
     def connect(self, f):
         for axis in self.axes:
             if axis.slice is None:
