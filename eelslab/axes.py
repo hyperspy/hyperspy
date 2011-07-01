@@ -233,24 +233,15 @@ class AxesManager(t.HasTraits):
         
     def set_view(self, view = 'hyperspectrum'):
         """view : 'hyperspectrum' or 'image' """
+        tl = [False] * len(self.axes)
         if view == 'hyperspectrum':
             # We limit the output_dim to 1 to get a spectrum
-            i = 0
-            for axis in self.axes:
-                if i < 1:
-                    axis.slice_bool = True
-                else:
-                    axis.slice_bool = False
-                i += 1
+            tl[0] = True
         elif view == 'image':
-            # We limit the output_dim to 2 to get a spectrum
-            i = 0
-            for axis in self.axes[::-1]:
-                if i < 2:
-                    axis.slice_bool = True
-                else:
-                    axis.slice_bool = False
-                i += 1
+            tl[:2] = True, True
+            
+        for axis in self.axes:
+            axis.slice_bool = tl.pop()
 
     def set_slicing_axes(self, slicing_axes):
         '''Easily choose which axes are slicing
