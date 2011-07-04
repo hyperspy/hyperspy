@@ -312,7 +312,7 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
             data_type = 'SI'
         else:
             print 'Loading as image'
-            data_type = 'image'
+            data_type = 'Image'
 
     if rpl_info['record-by'] == 'vector':
         idepth, iheight, iwidth = 2, 0, 1
@@ -387,7 +387,7 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
 
     dictionary = {
         'data_type' : data_type, 
-        'data' : data,
+        'data' : data.squeeze(),
         'axes' : axes,
         'mapped_parameters': {},
         'original_parameters' : original_parameters
@@ -505,10 +505,14 @@ def write_raw(filename, signal, record_by):
                 data, signal.axes_manager._slicing_axes[0].index_in_array, 3
                         ).ravel().tofile(filename)
         elif record_by == 'image':
-            data.ravel().tofile(filename)
+            data = np.rollaxis(
+                data, signal.axes_manager._non_slicing_axes[0].index_in_array, 0
+                        ).ravel().tofile(filename)
     elif len(dshape) == 2:
         if record_by == 'vector':
-            data.T.ravel().tofile(filename)
+            np.rollaxis(
+                data, signal.axes_manager._slicing_axes[0].index_in_array, 2
+                        ).ravel().tofile(filename)
         elif record_by in ('image', 'dont-care'):
             data.ravel().tofile(filename)
     elif len(dshape) == 1:
