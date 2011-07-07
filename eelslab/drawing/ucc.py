@@ -123,7 +123,7 @@ class TemplatePicker(HasTraits):
         tmp_plot_data=ArrayPlotData(imagedata=self.sig.data[self.top:self.top+self.tmp_size,self.left:self.left+self.tmp_size])
         tmp_plot=Plot(tmp_plot_data,default_origin="top left")
         tmp_plot.img_plot("imagedata", colormap=jet)
-        tmp_plot.aspect_ratio=float(self.sig.data.shape[0])/self.sig.data.shape[1]
+        tmp_plot.aspect_ratio=1.0
         self.tmp_plot=tmp_plot
         self.tmp_plotdata=tmp_plot_data
         self.img_plotdata=ArrayPlotData(imagedata=self.sig.data)
@@ -134,7 +134,7 @@ class TemplatePicker(HasTraits):
     def render_image(self):
         plot = Plot(self.img_plotdata,default_origin="top left")
         img=plot.img_plot("imagedata", colormap=gray)[0]
-        plot.aspect_ratio=float(self.sig.data.shape[0])/self.sig.data.shape[1]
+        plot.aspect_ratio=float(self.sig.data.shape[1])/float(self.sig.data.shape[0])
 
         if not self.ShowCC:
             csr = CursorTool(img, drag_button='left', color='white',
@@ -145,7 +145,7 @@ class TemplatePicker(HasTraits):
 
         # attach the rectangle tool
         plot.tools.append(PanTool(plot,drag_button="right"))
-        zoom = ZoomTool(plot, tool_mode="box", always_on=False, aspect_ratio=1.0, auto_center=True)
+        zoom = ZoomTool(plot, tool_mode="box", always_on=False, aspect_ratio=plot.aspect_ratio)
         plot.overlays.append(zoom)
         self.img_plot=plot
         return plot
@@ -155,7 +155,7 @@ class TemplatePicker(HasTraits):
         peakdata.set_data("index",self.peaks[:,0])
         peakdata.set_data("value",self.peaks[:,1])
         peakdata.set_data("color",self.peaks[:,2])
-        scatplot=Plot(peakdata,aspect_ratio=1.0,default_origin="top left")
+        scatplot=Plot(peakdata,aspect_ratio=self.img_plot.aspect_ratio,default_origin="top left")
         scatplot.plot(("index", "value", "color"),
                       type="cmap_scatter",
                       name="my_plot",
@@ -267,10 +267,10 @@ class TemplatePicker(HasTraits):
 
     @on_trait_change('tmp_size')
     def update_max_pos(self):
-        max_pos_x=self.sig.data.shape[1]-self.tmp_size-1
+        max_pos_x=self.sig.data.shape[0]-self.tmp_size-1
         if self.left>max_pos_x: self.left=max_pos_x
         self.max_pos_x=max_pos_x
-        max_pos_y=self.sig.data.shape[0]-self.tmp_size-1
+        max_pos_y=self.sig.data.shape[1]-self.tmp_size-1
         if self.top>max_pos_y: self.top=max_pos_y
         self.max_pos_y=max_pos_y
         return

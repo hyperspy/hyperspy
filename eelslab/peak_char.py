@@ -229,20 +229,20 @@ def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5,maxpeakn
     xc = [one_dim_findpeaks(arr[i], medfilt_radius=None,
                             peakgroup=peak_width,
                             subchannel=False,
-                            peak_array=peak_array).copy()[:,0] for i in xrange(arr.shape[1])]
+                            peak_array=peak_array).copy()[:,0] for i in xrange(arr.shape[0])]
     for row in xrange(len(xc)):
         for col in xrange(xc[row].shape[0]):
             mapX[row,int(xc[row][col])]=1
     yc = [one_dim_findpeaks(arr[:,i], medfilt_radius=None,
                             peakgroup=peak_width,
                             subchannel=False,
-                            peak_array=peak_array).copy()[:,0] for i in xrange(arr.shape[0])]
-    for row in xrange(len(yc)):
-        for col in xrange(yc[row].shape[0]):
-            mapY[row,int(yc[row][col])]=1
+                            peak_array=peak_array).copy()[:,0] for i in xrange(arr.shape[1])]
+    for col in xrange(len(yc)):
+        for row in xrange(yc[col].shape[0]):
+            mapY[int(yc[col][row]),col]=1
     # Dan's comment from Matlab code, left in for curiosity:
     #% wow! lame!
-    Fmap = mapX*mapY.T
+    Fmap = mapX*mapY
     nonzeros=np.nonzero(Fmap)
     coords=np.vstack((nonzeros[1],nonzeros[0])).T
     if subpixel:
