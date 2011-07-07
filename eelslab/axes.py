@@ -216,18 +216,21 @@ class AxesManager(t.HasTraits):
     def set_output_dim(self):
         getitem_tuple = []
         indexes = []
+        values = []
         self._slicing_axes = []
         self._non_slicing_axes = []
         for axis in self.axes:
             if axis.slice is None:
                 getitem_tuple.append(axis.index)
                 indexes.append(axis.index)
+                values.append(axis.value)
                 self._non_slicing_axes.append(axis)
             else:
                 getitem_tuple.append(axis.slice)
                 self._slicing_axes.append(axis)
         self._getitem_tuple = getitem_tuple
         self._indexes = np.array(indexes)
+        self._values = np.array(values)
         self.output_dim = len(self._slicing_axes)
         self.navigation_dim = len(self._non_slicing_axes)
         

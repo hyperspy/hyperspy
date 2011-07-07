@@ -57,7 +57,8 @@ class MPL_HyperImage_Explorer():
             self._key_nav_cid = self.navigator_plot.figure.canvas.mpl_connect(
             'key_press_event', self.axes_manager.key_navigator)
 
-        
+    def is_active(self):
+        return utils.does_figure_object_exists(self.image_plot.figure)        
     def plot(self):
         self.pointer = self.assign_pointer()
         if self.pointer is not None:
