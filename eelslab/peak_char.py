@@ -41,7 +41,8 @@ class trait_comparison(object):
     """
 
 def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
-              medfilt_radius=5, maxpeakn=30000, peakgroup=10, subchannel=True):
+              medfilt_radius=5, maxpeakn=30000, peakgroup=10, subchannel=True,
+              peak_array=None):
     """
     Find peaks along a 1D line.
 
@@ -90,6 +91,10 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
     subchannel : bool (optional)
              default is set to True
 
+    peak_array : array of shape (n, 3) (optional)
+             A pre-allocated numpy array to fill with peaks.  Saves memory,
+             especially when using the 2D peakfinder.
+
     Returns
     -------
     P : array of shape (npeaks, 3)
@@ -110,8 +115,12 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
     else:
         d = np.gradient(y)
     n = np.round(peakgroup / 2 + 1)
-    # allocate a result array for 'maxpeakn' peaks
-    P = np.zeros((maxpeakn, 3))
+    if peak_array is None:
+        # allocate a result array for 'maxpeakn' peaks
+        P = np.zeros((maxpeakn, 3))
+    else:
+        maxpeakn=peak_array.shape[0]
+        P=peak_array
     peak = 0
     for j in xrange(len(y) - 4):
         if np.sign(d[j]) > np.sign(d[j+1]): # Detects zero-crossing
@@ -178,7 +187,7 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
     # (not the whole maxpeakn x 3 array)
     return P[:peak,:]
 
-def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5):
+def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5,maxpeakn=10000):
     """
     Locate peaks on a 2-D image.  Basic idea is to locate peaks in X direction,
     then in Y direction, and see where they overlay.
@@ -213,17 +222,21 @@ def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5):
     #
     mapX=np.zeros_like(arr)
     mapY=np.zeros_like(arr)
+    peak_array=np.zeros((maxpeakn,3))
+    
     if medfilt_radius > 0:
         arr = medfilt(arr,medfilt_radius)
     xc = [one_dim_findpeaks(arr[i], medfilt_radius=None,
                             peakgroup=peak_width,
-                            subchannel=False)[:,0] for i in xrange(arr.shape[1])]
+                            subchannel=False,
+                            peak_array=peak_array).copy()[:,0] for i in xrange(arr.shape[1])]
     for row in xrange(len(xc)):
         for col in xrange(xc[row].shape[0]):
             mapX[row,int(xc[row][col])]=1
     yc = [one_dim_findpeaks(arr[:,i], medfilt_radius=None,
                             peakgroup=peak_width,
-                            subchannel=False)[:,0] for i in xrange(arr.shape[0])]
+                            subchannel=False,
+                            peak_array=peak_array).copy()[:,0] for i in xrange(arr.shape[0])]
     for row in xrange(len(yc)):
         for col in xrange(yc[row].shape[0]):
             mapY[row,int(yc[row][col])]=1
