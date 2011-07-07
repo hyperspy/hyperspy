@@ -43,8 +43,8 @@ from exceptions import *
 def compile_kica():
     kica_path = os.path.join(config_dir.data_path, 'kica')
     kica_compile = os.path.join(config_dir.data_path, 'kica_compile.m')
-    print('octave %s %s' % (kica_compile, kica_path))
-    os.system('octave %s %s' % (kica_compile, kica_path))
+    # print('Running "octave -q %s %s"' % (kica_compile, kica_path))
+    return os.system('octave -q %s %s' % (kica_compile, kica_path))
 
 def perform_kica(pc):
     """Wrapper for kernel independent components analysis that runs in octave 
