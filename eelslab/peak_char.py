@@ -208,7 +208,7 @@ def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5):
     Returns
     -------
     P : array of shape (npeaks, 3)
-        contains position, height, and width of each peak
+        contains position and height of each peak
     """
     #
     mapX=np.zeros_like(arr)
@@ -238,6 +238,9 @@ def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5):
     coords=np.ma.masked_outside(coords,peak_width/2+1,arr.shape[0]-peak_width/2-1)
     coords=np.ma.masked_less(coords,0)
     coords=np.ma.compress_rows(coords)
+    # add in the heights
+    heights=np.array([arr[coords[i,1],coords[i,0]] for i in xrange(coords.shape[0])]).reshape((-1,1))
+    coords=np.hstack((coords,heights))
     return coords 
 
 def subpix_locate(data,points,peak_width,scale=None):

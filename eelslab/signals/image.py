@@ -103,4 +103,8 @@ class Image(Signal):
                                   medfilt_radius=medfilt_radius)
         plt.scatter(peaks[:,0],peaks[:,1])
         
-    
+    def cell_cropper(self):
+        import eelslab.drawing.ucc as ucc
+        picker=ucc.TemplatePicker(self)
+        picker.configure_traits()
+        return picker.crop_sig
