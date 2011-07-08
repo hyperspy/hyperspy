@@ -906,22 +906,22 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
         buf['G'] = dm3.data[..., 1]
         buf['B'] = dm3.data[..., 2]
         dm3.data = buf
-
-    if '2D' in dm3.mode:
-        # gotta find a better way to do this
-        if ('eV' in dm3.units) or ('keV' in dm3.units):
+    if data_type is None:
+        if '2D' in dm3.mode:
+            # gotta find a better way to do this
+            if ('eV' in dm3.units) or ('keV' in dm3.units):
+                data_type = 'SI'
+            else:
+                data_type = 'Image'
+        elif '3D' in dm3.mode:
+            if ('eV' in dm3.units) or ('keV' in dm3.units):
+                data_type = 'SI'
+            else:
+                data_type = 'Image'
+        elif '1D' in dm3.mode:
             data_type = 'SI'
         else:
-            data_type = 'Image'
-    elif '3D' in dm3.mode:
-        if ('eV' in dm3.units) or ('keV' in dm3.units):
-            data_type = 'SI'
-        else:
-            data_type = 'Image'
-    elif '1D' in dm3.mode:
-        data_type = 'SI'
-    else:
-        raise IOError, 'data type "%s" not recognized' % dm3.mode
+            raise IOError, 'data type "%s" not recognized' % dm3.mode
 
     mapped_parameters['dimensions'] = dm3.dimensions
     mapped_parameters['mode'] = dm3.mode
