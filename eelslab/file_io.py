@@ -27,7 +27,51 @@ from eelslab.io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, image, rippl
 io_plugins = (netcdf, msa, dm3_data_plugin, fei, bin, mrc, image, ripple,
               )#hdf5)
 
-def load(filename, data_type = None, **kwds):
+def load(*filenames, **kwds):
+    """
+    Load potentially multiple supported file into an EELSLab structure
+    Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
+    FEI ser and emi and hdf5.
+        
+    *filenames : if multiple file names are passed in, they get aggregated to a Signal class
+        that has members for each file, plus a data set that consists of stacked input files.
+        That stack has one dimension more than the input files.
+        All files must match in size, number of dimensions, and type/extension.
+
+    *kwds : any specified parameters.  Currently, the only interesting one here is
+        data_type, to manually force the outcome Signal to a particular type.
+
+    Example usage:
+        Loading a single file:
+            d=load('file.dm3')
+        Loading a single file and overriding its default data_type:
+            d=load('file.dm3',data_type='Image')
+        Loading multiple files:
+            d=load('file1.dm3','file2.dm3')
+
+    """
+    if len(filenames)<1:
+        messages.warning_exit('No file provided to reader.')
+        return None
+    elif len(filenames)==1:
+        return load_single_file(filenames[0],**kwds)
+    else:
+        objects=[load_single_file(filename,**kwds) for filename in filenames]
+
+        obj_type=objects[0].__class__.__name__
+        if obj_type=='Image':
+            # create a blank Image instance that will get filled by its aggregator function
+            agg_sig=Image()
+        elif obj_type=='Spectrum':
+            # create a blank Spectrum instance that will get filled by its aggregator function
+            agg_sig=Spectrum()
+        else:
+            # create a blank Signal instance that will get filled by its aggregator function
+            agg_sig=Signal()
+        agg_sig.aggregate(objects)
+        return agg_sig            
+        
+def load_single_file(filename, **kwds):
     """
     Load any supported file into an EELSLab structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
@@ -43,8 +87,10 @@ def load(filename, data_type = None, **kwds):
         if 'SI' the file will be loaded as an Spectrum object
         If 'Image' the file will be loaded as an Image object
     """
+    if not 'data_type' in kwds.keys():
+        kwds['data_type']=None
     extension = os.path.splitext(filename)[1][1:]
-    
+
     i = 0
     while extension not in io_plugins[i].file_extensions and \
         i < len(io_plugins) - 1: i += 1
@@ -52,15 +98,16 @@ def load(filename, data_type = None, **kwds):
         # Try to load it with the python imaging library
         reader = image
         try:
-            return load_with_reader(filename, reader, data_type, **kwds)
+            return load_with_reader(filename, reader, **kwds)
         except:
             messages.warning_exit('File type not supported')
     else:
         reader = io_plugins[i]
-        return load_with_reader(filename, reader, data_type, **kwds)
+        return load_with_reader(filename, reader, **kwds)
         
 def load_with_reader(filename, reader, data_type = None, **kwds):
     from eelslab.signals.image import Image
+    from eelslab.signals.spectrum import Spectrum
     from eelslab.signal import Signal
     messages.information(reader.description)    
     file_data_list = reader.file_reader(filename,
@@ -68,10 +115,14 @@ def load_with_reader(filename, reader, data_type = None, **kwds):
                                         **kwds)
     objects = []
     for file_data_dict in file_data_list:
-        data_type = file_data_dict['data_type']
-        if data_type == 'Image':
+        if data_type==None:
+            data_type = file_data_dict['data_type']
+        if data_type is 'Image':
             s = Image(file_data_dict)  
+        elif data_type is 'Spectrum':
+            s=Spectrum(file_data_dict)
         else:
+            print "defaulting to Signal"
             s = Signal(file_data_dict)
         if defaults.plot_on_load is True:
             s.plot()
