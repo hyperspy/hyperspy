@@ -20,9 +20,9 @@
 //  It is used to easy data transit between DigitalMicrograph and EELSLab. 
 //  The script will ask for 2 files: 
 //          1- the riple file with the data  format and calibrations 
-//          2- the data itselft in raw format.
+//          2- the data itself in raw format.
 //          IF a file with the same name and path as the riple file exits
-//          with raw or bin extention it is opened directly without prompting
+//          with raw or bin extension it is opened directly without prompting
 
 
 
@@ -195,7 +195,7 @@ img := RealImage("ImportedRiple", pixel_size, size_x, size_y, size_z)
 if(data_type_value=="unsigned")
 img := IntegerImage("ImportedRiple", pixel_size, 0, size_x, size_y, size_z)          
 
-//if data-type was not given or recognazed
+//if data-type was not given or recognized
 if(!ImageIsValid(img))
 {
 result(" Unregonazed data-type value. Data-type formats are:sined, unsigned and float. Using float by default."+"\n")
