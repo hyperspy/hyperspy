@@ -564,10 +564,11 @@ class DM3ImageFile(object):
     origin = ['Origin',]        # in dimtagdir + 'Data[X]
     scale = ['Scale',]          # in dimtagdir + 'Data[X]
 
-    def __init__(self, fname, data_id=1):
+    def __init__(self, fname, data_id=1, order = None):
         self.filename = fname
         self.info = '' # should be a dictionary with the microscope info
         self.mode = ''
+        self.order = order
         if data_id < 0:
             raise ImageIDError(data_id)
         else:
@@ -785,8 +786,8 @@ class DM3ImageFile(object):
                 # (natural numpy order)
                 data=np.swapaxes(data,0,1)
             else:
-                order = 'C'
-                data = data.reshape(self.imsize,order=order)
+                if self.order is None: self.order = 'C'
+                data = data.reshape(self.imsize,order=self.order)
             return data
             
     def read_rgb(self):
@@ -880,7 +881,7 @@ class DM3ImageFile(object):
 
         return data
 
-def file_reader(filename, data_type=None, data_id=1, old = False):
+def file_reader(filename, data_type=None, data_id=1, order = None, old = False):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
@@ -889,11 +890,12 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
     module. That's way less powerful, but more reliable.
     Hopefully, this option will be removed soon.
     """
+    print order
     if old:
         import digital_micrograph as dm_old
         return dm_old.file_reader(filename, data_type=data_type)  
         
-    dm3 = DM3ImageFile(filename, data_id)
+    dm3 = DM3ImageFile(filename, data_id, order = order)
 
     mapped_parameters={}
 
@@ -906,22 +908,22 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
         buf['G'] = dm3.data[..., 1]
         buf['B'] = dm3.data[..., 2]
         dm3.data = buf
-
-    if '2D' in dm3.mode:
-        # gotta find a better way to do this
-        if ('eV' in dm3.units) or ('keV' in dm3.units):
+    if data_type is None:
+        if '2D' in dm3.mode:
+            # gotta find a better way to do this
+            if ('eV' in dm3.units) or ('keV' in dm3.units):
+                data_type = 'SI'
+            else:
+                data_type = 'Image'
+        elif '3D' in dm3.mode:
+            if ('eV' in dm3.units) or ('keV' in dm3.units):
+                data_type = 'SI'
+            else:
+                data_type = 'Image'
+        elif '1D' in dm3.mode:
             data_type = 'SI'
         else:
-            data_type = 'Image'
-    elif '3D' in dm3.mode:
-        if ('eV' in dm3.units) or ('keV' in dm3.units):
-            data_type = 'SI'
-        else:
-            data_type = 'Image'
-    elif '1D' in dm3.mode:
-        data_type = 'SI'
-    else:
-        raise IOError, 'data type "%s" not recognized' % dm3.mode
+            raise IOError, 'data type "%s" not recognized' % dm3.mode
 
     mapped_parameters['dimensions'] = dm3.dimensions
     mapped_parameters['mode'] = dm3.mode
