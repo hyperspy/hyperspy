@@ -91,17 +91,18 @@ def file_reader(filename, data_type, mode = 'r', driver = 'core',
             exg = f['Experiments'][experiment]
             exp = {}
             exp['data'] = exg['data'][:]
-            coordinates = []
+            axes = []
             for i in range(len(exp['data'].shape)):
                 try:
-                    print('coordinate-%i' % i)
-                    coordinates.append(dict(exg['coordinate-%i' % i].attrs))
+                    print('axis-%i' % i)
+                    axes.append(dict(exg['axis-%i' % i].attrs))
                 except KeyError:
                     f.close()
                     raise IOError(not_valid_format)
-            exp['parameters'] = dict(exg.attrs)
-            exp['extra_parameters'] = dict(exg['extra_parameters'].attrs)
-            exp['coordinates'] = coordinates
+            exp['mapped_parameters'] = dict(exg['mapped_parameters'].attrs)
+            exp['original_parameters'] = dict(exg['original_parameters'].attrs)
+            exp['axes'] = axes
+            exp['attributes'] = dict(exg['attributes'].attrs)
             exp['data_type'] = 'Signal'
             exp_dict_list.append(exp)
             
@@ -118,18 +119,61 @@ def file_writer(filename, signal, *args, **kwds):
     expg = exps.create_group(signal.name)
     expg.create_dataset('data', data = signal.data)
     i = 0
-    for coordinate in signal.coordinates.coordinates:
-        coord_group = expg.create_group('coordinate-%s' % i)
-        coord_group.attrs['name'] =  str(coordinate.name)
-        coord_group.attrs['offset'] =  coordinate.offset
-        coord_group.attrs['scale'] =  coordinate.scale
-        coord_group.attrs['units'] =  coordinate.units
-        coord_group.attrs['size'] = coordinate.size
-        coord_group.attrs['index_in_array'] = coordinate.index_in_array
+    for axis in signal.axes_manager.axes:
+        coord_group = expg.create_group('axis-%s' % i)
+        coord_group.attrs['name'] =  str(axis.name)
+        coord_group.attrs['offset'] =  axis.offset
+        coord_group.attrs['scale'] =  axis.scale
+        coord_group.attrs['units'] =  axis.units
+        coord_group.attrs['size'] = axis.size
+        coord_group.attrs['index_in_array'] = axis.index_in_array
         i += 1
-    extra_par = expg.create_group('extra_parameters')
-    for key, value in signal.extra_parameters.iteritems():
-        extra_par.attrs[key] = value
-        
+    mapped_par = expg.create_group('mapped_parameters')
+    for key, value in signal.mapped_parameters.__dict__.iteritems():
+        try:
+            mapped_par.attrs[key] = value
+        except:
+            if value is not None:
+                print "HDF5 File saver: WARNING: could not save data at: "
+                print "  mapped_parameters.%s"%key
+                print "    value:"
+                print "      ",value
+                print "    type:"
+                print "      ",type(value)
+                print "The saved HDF5 file has lost information from your original data.  \
+Please make sure it is not something important.\n"            
+    original_par = expg.create_group('original_parameters')
+    for key, value in signal.original_parameters.iteritems():
+        try:
+            original_par.attrs[key] = value
+        except:
+            if value is not None:
+                print "HDF5 File saver: WARNING: could not save data at: "
+                print "  original_parameters.%s"%key
+                print "    value:"
+                print "      ",value
+                print "    type:"
+                print "      ",type(value)
+                print "The saved HDF5 file has lost information from your original data.  \
+Please make sure it is not something important.\n"
+    omit_keys=['data', 'axes_manager', 'mapped_parameters', 'original_parameters']
+    attributes = expg.create_group('attributes')
+    for key, value in signal.__dict__.iteritems():
+        # store only attributes that we don't handle another way.
+
+        if key not in omit_keys:
+            try:
+                attributes.attrs[key] = value
+            except:
+                if value is not None:
+                    print "HDF5 File saver: WARNING: could not save attribue: "
+                    print "  %s"%key
+                    print "    value:"
+                    print "      ",value
+                    print "    type:"
+                    print "      ",type(value)
+                    print "The saved HDF5 file has lost information from your original data.  \
+Please make sure it is not something important.\n"                
     f.close()
     
+

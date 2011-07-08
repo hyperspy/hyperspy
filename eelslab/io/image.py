@@ -130,5 +130,5 @@ def file_reader(filename, **kwds):
     else:
         dc = imread(filename)
     dt = 'Image'    
-    return [{'data_type' : dt, 'data':dc}]
+    return [{'data_type' : dt, 'data':dc, 'attributes':{'name':filename}}]
 

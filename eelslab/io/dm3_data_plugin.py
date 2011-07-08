@@ -994,6 +994,7 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
         'data' : data,
         'axes' : axes,
         'mapped_parameters': mapped_parameters,
+        'attributes':{'name':filename},
         'original_parameters':dm3.__dict__,
         }
     

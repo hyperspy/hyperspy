@@ -22,10 +22,10 @@ import os
 
 from eelslab import messages
 from eelslab.defaults_parser import defaults
-from eelslab.io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, image, ripple#, hdf5
+from eelslab.io import netcdf, msa, dm3_data_plugin, fei, bin, mrc, image, ripple, hdf5
 
 io_plugins = (netcdf, msa, dm3_data_plugin, fei, bin, mrc, image, ripple,
-              )#hdf5)
+              hdf5)
 
 def load(filename, data_type = None, **kwds):
     """

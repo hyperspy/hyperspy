@@ -36,7 +36,7 @@ class Parameters(object):
 
 
 class Signal(t.HasTraits, MVA):
-    name = t.Str()
+    name = t.Str("UnnamedFile")
     data = t.Array()
     axes_manager = t.Instance(AxesManager)
     original_parameters = t.Dict()
