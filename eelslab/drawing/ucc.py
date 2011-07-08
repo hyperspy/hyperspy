@@ -70,6 +70,7 @@ class TemplatePicker(HasTraits):
     OK_custom=OK_custom_handler
     cbar_selection = Any
     cbar_selected = Event
+    thresh=Tuple(0.0,1.0)
 
     csr=Instance(BaseCursorTool)
 
@@ -136,12 +137,12 @@ class TemplatePicker(HasTraits):
         img=plot.img_plot("imagedata", colormap=gray)[0]
         plot.aspect_ratio=float(self.sig.data.shape[1])/float(self.sig.data.shape[0])
 
-        if not self.ShowCC:
-            csr = CursorTool(img, drag_button='left', color='white',
+        #if not self.ShowCC:
+        csr = CursorTool(img, drag_button='left', color='white',
                          line_width=2.0)
-            self.csr=csr
-            csr.current_position=self.left, self.top
-            img.overlays.append(csr)
+        self.csr=csr
+        csr.current_position=self.left, self.top
+        img.overlays.append(csr)
 
         # attach the rectangle tool
         plot.tools.append(PanTool(plot,drag_button="right"))
@@ -216,15 +217,9 @@ class TemplatePicker(HasTraits):
                                                    border_color="white",
                                                    alpha=0.8,
                                                    fill_color="lightgray"))
+        colorbar_selection.selection=self.thresh
         self.cbar_selection=colorbar_selection
         return colorbar
-
-    @on_trait_change('cbar_selection:selection_completed')
-    def _get_threshold(self):
-        if self.cbar_selection.selection <> []:
-            return self.cbar_selection.selection
-        else:
-            return (0,1)
 
     @on_trait_change('ShowCC')
     def toggle_cc_view(self):
@@ -311,6 +306,8 @@ class TemplatePicker(HasTraits):
             thresh=[]
         if thresh==[]:
             thresh=(0,1)
+        self.thresh=thresh
+        print self.thresh
         try:
             self.numpeaks=np.sum(np.ma.masked_inside(self.peaks[:,2],thresh[0],thresh[1]).mask)
         except:
