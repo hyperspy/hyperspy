@@ -564,11 +564,14 @@ class DM3ImageFile(object):
     origin = ['Origin',]        # in dimtagdir + 'Data[X]
     scale = ['Scale',]          # in dimtagdir + 'Data[X]
 
-    def __init__(self, fname, data_id=1, order = None):
+    def __init__(self, fname, data_id=1, order = None, SI = None, 
+                 data_type = None):
         self.filename = fname
         self.info = '' # should be a dictionary with the microscope info
         self.mode = ''
+        self.data_type = data_type
         self.order = order
+        self.SI = SI
         if data_id < 0:
             raise ImageIDError(data_id)
         else:
@@ -678,7 +681,7 @@ class DM3ImageFile(object):
                               self.data_dict.ls(DM3ImageFile.dimdir
                                                 + [i,])))
         sizes.sort()
-        swapelem(sizes, 0, 1)
+#        swapelem(sizes, 0, 1)
 
         origins = []
         for i in self.data_dict.ls(DM3ImageFile.dimtagdir):
@@ -688,7 +691,7 @@ class DM3ImageFile(object):
                                                   + [i,]
                                                   + DM3ImageFile.origin)))
         origins.sort()
-        swapelem(origins, 0, 1)
+#        swapelem(origins, 0, 1)
         
         scales = []
         for i in self.data_dict.ls(DM3ImageFile.dimtagdir):
@@ -698,7 +701,7 @@ class DM3ImageFile(object):
                                                     + [i,]
                                                     + DM3ImageFile.scale)))
         scales.sort()
-        swapelem(scales, 0, 1)
+#        swapelem(scales, 0, 1)
 
         units = []
         for i in self.data_dict.ls(DM3ImageFile.dimtagdir):
@@ -708,26 +711,64 @@ class DM3ImageFile(object):
                                                 + [i,]
                                                 + DM3ImageFile.units)))
         units.sort()
-        swapelem(units, 0, 1)
-        dimensions = [ (sizes[i][1][1][1],
-                        origins[i][1][1][1],
-                        scales[i][1][1][1],
-                        units[i][1][1][1])
-                       for i in range(len(sizes))]
+#        swapelem(units, 0, 1)
+        
+    
+        # Determine the dimensions of the data
+        self.dim = 0
+        for i in range(len(sizes)):
+            if sizes[i][1][1][1] > 1:
+                self.dim += 1
+            if units[i][1][1][1] in ('eV', 'keV'):
+                eV_in = True
+        
+        # Try to guess the order if not given
+        # (there must be a better way!!)
+        if self.order is None:
+            if self.signal == 'EELS':
+                self.order = 'F'
+            else:
+                self.order = 'C'
+        # Try to guess the data_type if not given
+        # (there must be a better way!!)        
+        if self.data_type is None:
+            if (self.dim > 1 and eV_in) or dim == 1 or self.signal == 'EELS':
+                self.data_type = 'SI'
+            else:
+                self.data_type = 'Image'
+                
+        names = ['X', 'Y', 'Z'] if self.data_type == 'Image' \
+        else ['X', 'Y', 'Energy']
+        to_swap = [sizes, origins, scales, units, names]       
+        for l in to_swap:
+            if self.data_type == 'SI':
+                swapelem(l,0,1)
+            elif self.data_type == 'Image':
+                l.reverse()
+            
+        dimensions = [(
+                sizes[i][1][1][1],
+                origins[i][1][1][1],
+                scales[i][1][1][1],
+                units[i][1][1][1],
+                names[i])
+               for i in range(len(sizes))]
         # create a structured array:
         # self.dimensions['sizes'] -> integer
         # self.dimensions['origins'] -> float
         # self.dimensions['scales'] -> float
-        # self.dimensions['units'] -> string
+        # self.dimensions['units'] -> string     
         self.dimensions = np.asarray(dimensions,
                                      dtype={'names':['sizes',
                                                      'origins',
                                                      'scales',
-                                                     'units'],
+                                                     'units',
+                                                     'names',],
                                             'formats':['i8',
                                                        'f4',
                                                        'f4',
-                                                       'S8']})
+                                                       'S8',
+                                                       'S8',]})
         self.imsize = self.dimensions['sizes']
         self.units = self.dimensions['units']
        
@@ -740,13 +781,13 @@ class DM3ImageFile(object):
         self.brightness = np.array((br_orig, br_scale, br_units))
 
         # self.data = self.read_image_data()
-        try:
-            self.data = self.read_image_data()
+#        try:
+        self.data = self.read_image_data()
 
-        except AttributeError:
-            print('Error. Could not read data.')
-            self.data = 'UNAVAILABLE'
-            return None
+#        except AttributeError:
+#            print('Error. Could not read data.')
+#            self.data = 'UNAVAILABLE'
+#            return None
         
         # remove axes whose dimension is 1, they are useless:
         while 1 in self.data.shape:
@@ -771,23 +812,18 @@ class DM3ImageFile(object):
         else:
             data = read_data_array(self.filename, self.imbytes,
                                    self.byte_offset, self.imdtype)
-            if (len(self.dimensions) == 3) and (self.signal=='EELS'):
-                order = 'F'
-#                # The Bytes in a SI are ordered as
-#                # X0, Y0, Z0, X1, Y0, Z0, [...], Xn, Ym, Z0, [...]
-#                # X0, Y0, Z1, [...], Xn, Ym, Zk
-#                # since X <=> column and Y <=> row
-#                # the 1st two axes of the ndarray must be transposed
-#                # because its natural order is
-#                # row (Y), column (X), E
-                swapelem(self.imsize, 0, 1)
-                data = data.reshape(self.imsize,order=order)
-                # switch the y, x axes of the ndarray back so that order is x,y,z 
-                # (natural numpy order)
-                data=np.swapaxes(data,0,1)
-            else:
-                if self.order is None: self.order = 'C'
-                data = data.reshape(self.imsize,order=self.order)
+            if self.order == 'F':
+                data = data.reshape(self.imsize.T, order = self.order)
+                if self.data_type == 'SI':
+                    data = np.swapaxes(data, 0, 1).copy()
+                elif self.data_type == 'Image':
+                    data = data.T.copy()
+            elif self.order == 'C':
+                if self.data_type == 'SI':
+                    data = data.reshape(np.roll(self.imsize,1), order = self.order)
+                    data = np.rollaxis(data, 0, self.dim).copy()
+                elif self.data_type == 'Image':
+                    data = data.reshape(self.imsize, order = self.order)                    
             return data
             
     def read_rgb(self):
@@ -881,7 +917,7 @@ class DM3ImageFile(object):
 
         return data
 
-def file_reader(filename, data_type=None, data_id=1, order = None, old = False):
+def file_reader(filename, data_type=None, order = None, data_id=1, ):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
@@ -891,11 +927,8 @@ def file_reader(filename, data_type=None, data_id=1, order = None, old = False):
     Hopefully, this option will be removed soon.
     """
     print order
-    if old:
-        import digital_micrograph as dm_old
-        return dm_old.file_reader(filename, data_type=data_type)  
-        
-    dm3 = DM3ImageFile(filename, data_id, order = order)
+         
+    dm3 = DM3ImageFile(filename, data_id, order = order, data_type = data_type)
 
     mapped_parameters={}
 
@@ -908,22 +941,7 @@ def file_reader(filename, data_type=None, data_id=1, order = None, old = False):
         buf['G'] = dm3.data[..., 1]
         buf['B'] = dm3.data[..., 2]
         dm3.data = buf
-    if data_type is None:
-        if '2D' in dm3.mode:
-            # gotta find a better way to do this
-            if ('eV' in dm3.units) or ('keV' in dm3.units):
-                data_type = 'SI'
-            else:
-                data_type = 'Image'
-        elif '3D' in dm3.mode:
-            if ('eV' in dm3.units) or ('keV' in dm3.units):
-                data_type = 'SI'
-            else:
-                data_type = 'Image'
-        elif '1D' in dm3.mode:
-            data_type = 'SI'
-        else:
-            raise IOError, 'data type "%s" not recognized' % dm3.mode
+
 
     mapped_parameters['dimensions'] = dm3.dimensions
     mapped_parameters['mode'] = dm3.mode
@@ -931,27 +949,28 @@ def file_reader(filename, data_type=None, data_id=1, order = None, old = False):
     if dm3.name:
         mapped_parameters['title'] = dm3.name
     else:
-        mapped_parameters['title'] =  os.path.splitext(filename)[0]
+        mapped_parameters['title'] = os.path.splitext(filename)[0]
 
     data = dm3.data
     # set dm3 object's data attribute to None so it doesn't
     #   get passed in the original_parameters dict (to save memory)
-    dm3.data=None
+    dm3.data = None
 
     # Determine the dimensions
+    names = list(dm3.dimensions['names'])
     units = list(dm3.dimensions['units'])
     origins = np.asarray([dm3.dimensions[i][1]
                           for i in range(len(dm3.dimensions))],
                          dtype=np.float)
     scales =np.asarray([dm3.dimensions[i][2]
                         for i in range(len(dm3.dimensions))],
-                       dtype=np.float) 
+                       dtype=np.float)
     # The units must be strings
     while None in units: 
         units[units.index(None)] = ''
     # Scale the origins
     origins = origins * scales
-    if data_type == 'SI': 
+    if dm3.data_type == 'SI': 
         print("Treating the data as an SI")
         # only Orsay Spim is supported for now
         # does anyone have other kinds of SIs for testing?
@@ -959,8 +978,8 @@ def file_reader(filename, data_type=None, data_id=1, order = None, old = False):
             mapped_parameters['exposure'] = dm3.exposure            
         if dm3.vsm:
             mapped_parameters['vsm'] = float(dm3.vsm)
-        # In EELSLab v. 0.2 the first index must be the energy,
-        # this will change in EELSLab 0.3
+
+
         if 'eV' in units: # could use reexp or match to a 'energy units' dict?
             energy_index = units.index('eV')
         elif 'keV' in units:
@@ -973,26 +992,21 @@ def file_reader(filename, data_type=None, data_id=1, order = None, old = False):
 
         # Store the calibration in the calibration dict
 
-        names = ['y','x','Energy']
-
-    elif data_type == 'Image':
+    elif dm3.data_type == 'Image':
         print("Treating the data as an image")
-
-        names = ['z','y','x']
-
     else:
         raise TypeError, "could not identify the file data_type"
     dim = len(data.shape)
     axes=[{'size' : int(data.shape[i]), 
            'index_in_array' : i ,
-           'name' : names[3 - dim + i],
+           'name' : names[i],
            'scale': scales[i],
            'offset' : origins[i],
            'units' : units[i],} \
            for i in xrange(dim)]
 
     dictionary = {
-        'data_type' : data_type, 
+        'data_type' : dm3.data_type, 
         'data' : data,
         'axes' : axes,
         'mapped_parameters': mapped_parameters,
