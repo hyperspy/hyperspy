@@ -343,7 +343,7 @@ class TemplatePicker(HasTraits):
             data[:,:,i]=self.sig.data[peaks[i,1]:peaks[i,1]+tmp_sz,peaks[i,0]:peaks[i,0]+tmp_sz]
         self.crop_sig=Image({'data_type':'Image','data':data})
         # attach a class member that has the locations from which the images were cropped
-        self.crop_sig.locations=self.peakdata
+        self.crop_sig.locations=peaks
         print "Complete.  "
 
 if __name__=="__main__":

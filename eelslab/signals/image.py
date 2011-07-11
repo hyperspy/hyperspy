@@ -29,6 +29,8 @@ class Image(Signal):
         Signal.__init__(self, *args, **kwargs)
         self.axes_manager.set_view('image')
 
+
+
     def peak_char_stack(self, peak_width, subpixel=False, target_locations=None,
                         peak_locations=None, imcoords=None, target_neighborhood=20,
                         medfilt_radius=5):
@@ -108,3 +110,45 @@ class Image(Signal):
         picker=ucc.TemplatePicker(self)
         picker.configure_traits()
         return picker.crop_sig
+
+    def kmeans_cluster_stack(self, clusters=None):
+        if len(self.data.shape)<>3:
+            print "Sorry, this function only works on image stacks (3 dimensions)."
+            print " Your data appears to be ", len(self.data.shape), "dimensions."
+            return None
+        import mdp
+        # if clusters not given, try to determine what it should be.
+        if clusters is None:
+            pass
+        d=self.data
+        kmeans=mdp.nodes.KMeansClassifier(clusters)
+        cluster_arrays=[]
+        avg_stack=np.zeros((d.shape[0],d.shape[1],clusters))
+        kmeans.train(d.reshape((-1,d.shape[2])).T)
+        kmeans.stop_training()
+        groups=kmeans.label(d.reshape((-1,d.shape[2])).T)
+        for i in xrange(clusters):
+            # get number of members of this cluster
+            nmembers=groups.count(i)
+            cluster_array=np.zeros((d.shape[0],d.shape[1],members))
+            cluster_idx=0
+            positions=np.zeros((nmembers,3))
+            for j in xrange(len(groups)):
+                if groups[j]==i:
+                    cluster_array[:,:,cluster_idx]=d[:,:,j]
+                    positions[cluster_idx]=self.locations[j]
+                    cluster_idx+=1
+            cluster_array_Image=Image({'data':avg_stack,
+                    'mapped_parameters':{
+                        'name':'Cluster %s from crops of %s'%(i,self.name),
+                        'locations':positions
+                        }
+                    })
+            cluster_arrays.append(cluster_array_Image)
+            avg_stack[:,:,i]=np.sum(cluster_array,axis=2)
+        avg_stack_Image=Image({'data':avg_stack,
+                    'mapped_parameters':{
+                        'name':'Cluster averages from crops of %s'%self.name,
+                        }
+                    })
+        return avg_stack_Image, cluster_arrays
