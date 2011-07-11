@@ -25,8 +25,8 @@ import matplotlib.pyplot as plt
 class Image(Signal):
     """
     """    
-    def __init__(self, *args, **kwargs):
-        Signal.__init__(self, *args, **kwargs)
+    def __init__(self, *args, **kw):
+        super(Image,self).__init__(*args, **kw)
 
     def peak_char_stack(self, peak_width, subpixel=False, target_locations=None,
                         peak_locations=None, imcoords=None, target_neighborhood=20,
