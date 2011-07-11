@@ -27,9 +27,6 @@ class Image(Signal):
     """    
     def __init__(self, *args, **kwargs):
         Signal.__init__(self, *args, **kwargs)
-        self.axes_manager.set_view('image')
-
-
 
     def peak_char_stack(self, peak_width, subpixel=False, target_locations=None,
                         peak_locations=None, imcoords=None, target_neighborhood=20,
@@ -127,28 +124,40 @@ class Image(Signal):
         kmeans.train(d.reshape((-1,d.shape[2])).T)
         kmeans.stop_training()
         groups=kmeans.label(d.reshape((-1,d.shape[2])).T)
+        try:
+            # test if location data is available
+            self.mapped_parameters.locations[0]
+        except:
+            print "Warning: No cell location information was available."
         for i in xrange(clusters):
             # get number of members of this cluster
-            nmembers=groups.count(i)
+            members=groups.count(i)
             cluster_array=np.zeros((d.shape[0],d.shape[1],members))
             cluster_idx=0
-            positions=np.zeros((nmembers,3))
+            positions=np.zeros((members,3))
             for j in xrange(len(groups)):
                 if groups[j]==i:
                     cluster_array[:,:,cluster_idx]=d[:,:,j]
-                    positions[cluster_idx]=self.locations[j]
+                    try:
+                        positions[cluster_idx]=self.mapped_parameters.locations[j]
+                    except:
+                        pass
                     cluster_idx+=1
             cluster_array_Image=Image({'data':avg_stack,
                     'mapped_parameters':{
-                        'name':'Cluster %s from crops of %s'%(i,self.name),
-                        'locations':positions
+                        'name':'Cluster %s from %s'%(i,
+                                         self.mapped_parameters.name),
+                        'locations':positions,
+                        'members':members,
                         }
                     })
             cluster_arrays.append(cluster_array_Image)
             avg_stack[:,:,i]=np.sum(cluster_array,axis=2)
+        members_list=[groups.count(i) for i in xrange(clusters)]
         avg_stack_Image=Image({'data':avg_stack,
                     'mapped_parameters':{
-                        'name':'Cluster averages from crops of %s'%self.name,
+                        'name':'Cluster averages from %s'%self.mapped_parameters.name,
+                        'member_counts':members_list,
                         }
                     })
         return avg_stack_Image, cluster_arrays
