@@ -159,12 +159,17 @@ def file_reader(filename, endianess = '<', **kwds):
         'std_header' : std_header, 
         'fei_header' : fei_header,
         }
+		
+    mapped_parameters = {
+		'name' : filename,
+		'data_type' : 'Image',
+		}
     #create the axis objects for each axis
     axes=[{'size':data.shape[i],'index_in_array':i,'name':names[i],'scale':scales[i],
                    'offset':0, 'units':units_list[i]} for i in xrange(3)]
     # define the third axis as the slicing axis.
     axes[2]['slice_bool']=True
-    dictionary = {'data_type' : 'Image', 
+    dictionary = {
                   'data':data,
                   'axes':axes,
                   'mapped_parameters' : mapped_parameters,

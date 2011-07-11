@@ -2,6 +2,8 @@ syntax: glob
 *.pyc
 *~
 *.bak
+*.mex
+*.o
 dist
 *.deb
 build/*

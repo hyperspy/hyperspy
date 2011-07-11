@@ -341,9 +341,14 @@ class TemplatePicker(HasTraits):
         for i in xrange(peaks.shape[0]):
             # crop the cells from the given locations
             data[:,:,i]=self.sig.data[peaks[i,1]:peaks[i,1]+tmp_sz,peaks[i,0]:peaks[i,0]+tmp_sz]
-        self.crop_sig=Image({'data_type':'Image','data':data})
+        self.crop_sig=Image({'data':data,
+                 'mapped_parameters':{
+                     'name':'Cropped cells from %s'%self.sig.mapped_parameters.name,
+                     'data_type':'Image',
+                     'locations':peaks,
+                     }
+                })
         # attach a class member that has the locations from which the images were cropped
-        self.crop_sig.locations=self.peakdata
         print "Complete.  "
 
 if __name__=="__main__":
