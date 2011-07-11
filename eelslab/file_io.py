@@ -126,6 +126,7 @@ data_dict['mapped_parameters']['data_type']"
             except:
                 data_type=None
                 print "No data type provided.  Defaulting to Signal."
+        if data_type == 'Image':
             s = Image(file_data_dict)  
         elif data_type is 'Spectrum':
             s=Spectrum(file_data_dict)
