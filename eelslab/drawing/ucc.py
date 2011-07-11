@@ -346,6 +346,7 @@ class TemplatePicker(HasTraits):
                      'name':'Cropped cells from %s'%self.sig.mapped_parameters.name,
                      'data_type':'Image',
                      'locations':peaks,
+                     'parent':self.sig.mapped_parameters.name,
                      }
                 })
         # attach a class member that has the locations from which the images were cropped
