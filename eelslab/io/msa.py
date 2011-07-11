@@ -210,8 +210,8 @@ def file_reader(filename, **kwds):
             'units' : parameters['XUNITS'] if 'XUNITS' in parameters else '',
                 })
 
-	mapped['name']=filename
-	mapped['data_type']='SI'
+    mapped['name']=filename
+    mapped['data_type']='SI'
 
     dictionary = {
                     'data' : np.array(y),

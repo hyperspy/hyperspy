@@ -160,7 +160,7 @@ def file_reader(filename, endianess = '<', **kwds):
         'fei_header' : fei_header,
         }
 		
-	mapped_parameters = {
+    mapped_parameters = {
 		'name' : filename,
 		'data_type' : 'Image',
 		}
