@@ -373,10 +373,11 @@ def ser_reader(filename, *args, **kwds):
         dc = dc[::-1]
       
     dictionary = {
-    'data_type' : data_type,
-    'filename' : filename,
     'data' : dc,
-    'parameters' : {},
+    'mapped_parameters' : {
+		'name' : filename,
+		'data_type':data_type,
+		},
     'axes' : axes,
-    'extra_parameters' : {'header' : header, 'data' : data}}
+    'original_parameters' : {'header' : header, 'data' : data}}
     return dictionary

@@ -68,8 +68,20 @@ def load_with_reader(filename, reader, data_type = None, **kwds):
                                         **kwds)
     objects = []
     for file_data_dict in file_data_list:
-        data_type = file_data_dict['data_type']
+        try:
+            data_type = file_data_dict['mapped_parameters']['data_type']
+        except:
+            try:
+                data_type = file_data_dict['data_type']
+                print "Deprecation warning: the file reader passed data_type \
+as a member of the data \ndict.  It should store it as \
+data_dict['mapped_parameters']['data_type']"
+            except:
+                data_type=None
+                print "No data type provided.  Defaulting to Signal."
+        print data_type
         if data_type == 'Image':
+            print "  file type: Image"
             s = Image(file_data_dict)  
         else:
             s = Signal(file_data_dict)

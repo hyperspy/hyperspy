@@ -989,12 +989,13 @@ def file_reader(filename, data_type=None, data_id=1, old = False):
            'units' : units[i],} \
            for i in xrange(dim)]
 
+    mapped_parameters['name'] = filename
+    mapped_parameters['data_type'] = data_type, 
+
     dictionary = {
-        'data_type' : data_type, 
         'data' : data,
         'axes' : axes,
         'mapped_parameters': mapped_parameters,
-        'attributes':{'name':filename},
         'original_parameters':dm3.__dict__,
         }
     

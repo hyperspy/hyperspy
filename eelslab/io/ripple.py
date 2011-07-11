@@ -386,10 +386,12 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
 
 
     dictionary = {
-        'data_type' : data_type, 
         'data' : data.squeeze(),
         'axes' : axes,
-        'mapped_parameters': {},
+        'mapped_parameters': {
+			'data_type':data_type,
+			'name': filename,
+			},
         'original_parameters' : original_parameters
         }
     return [dictionary, ]

@@ -19,9 +19,12 @@ from eelslab import utils
 from eelslab import progressbar
 from eelslab.mva.mva import MVA, MVA_Results
 
-class Parameters(object):
+class Parameters(t.HasTraits,object):
     """A class to comfortably access some parameters as attributes"""
+    name = t.Str("UnnamedFile")
+
     def __init__(self, dictionary={}):
+        super(Parameters, self).__init__()
         self.load_dictionary(dictionary)
         
     def load_dictionary(self, dictionary):
@@ -34,9 +37,7 @@ class Parameters(object):
             if type(item) != types.MethodType:
                 print("%s = %s") % item
 
-
 class Signal(t.HasTraits, MVA):
-    name = t.Str("UnnamedFile")
     data = t.Array()
     axes_manager = t.Instance(AxesManager)
     original_parameters = t.Dict()
@@ -165,7 +166,7 @@ class Signal(t.HasTraits, MVA):
                             
             self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
             self._plot.spectrum_data_function = self.__call__
-            self._plot.spectrum_title = self.name
+            self._plot.spectrum_title = self.mapped_parameters.name
             self._plot.xlabel = '%s (%s)' % (
                 self.axes_manager._slicing_axes[0].name, 
                 self.axes_manager._slicing_axes[0].units)

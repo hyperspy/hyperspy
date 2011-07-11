@@ -59,10 +59,12 @@ def file_reader(filename, shape, data_type = None, **kwds):
         dc = dc.reshape(shape).T
         if data_type is None:
             data_type = 'Image'
-    calibration_dict = {'data_cube' : dc}
-    acquisition_dict = {}
-    return [{'data_type' : data_type, 'calibration' : calibration_dict, 
-'acquisition' : acquisition_dict},]  
+    return [{'mapped_parameters':{
+				'data_type' : data_type,
+				'name' : filename,
+				}, 
+			'data':dc,
+			},]  
     
 def file_writer(filename, object2save, *args, **kwds):
     from eelslab import spectrum

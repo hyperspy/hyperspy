@@ -102,8 +102,6 @@ def file_reader(filename, data_type, mode = 'r', driver = 'core',
             exp['mapped_parameters'] = dict(exg['mapped_parameters'].attrs)
             exp['original_parameters'] = dict(exg['original_parameters'].attrs)
             exp['axes'] = axes
-            exp['attributes'] = dict(exg['attributes'].attrs)
-            exp['data_type'] = 'Signal'
             exp_dict_list.append(exp)
             
     else:
@@ -116,7 +114,7 @@ def file_reader(filename, data_type, mode = 'r', driver = 'core',
 def file_writer(filename, signal, *args, **kwds):
     f = h5py.File(filename, mode = 'w-')
     exps = f.create_group('Experiments')
-    expg = exps.create_group(signal.name)
+    expg = exps.create_group(signal.mapped_parameters.name)
     expg.create_dataset('data', data = signal.data)
     i = 0
     for axis in signal.axes_manager.axes:
@@ -160,10 +158,15 @@ Please make sure it is not something important.\n"
     attributes = expg.create_group('attributes')
     for key, value in signal.__dict__.iteritems():
         # store only attributes that we don't handle another way.
+        # These attributes are obsolete - everything mapped should be stored
+        # under mapped_parameters.
 
         if key not in omit_keys:
             try:
                 attributes.attrs[key] = value
+                print "Warning - deprecated use of attribute on Signal object."
+                print "  Developer message: consider moving %s to the \
+mapped_parameters attribute of the Signal class or derived subclass."%key
             except:
                 if value is not None:
                     print "HDF5 File saver: WARNING: could not save attribue: "
