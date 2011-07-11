@@ -38,7 +38,7 @@ class Parameters(t.HasTraits,object):
                 print("%s = %s") % item
 
 class Signal(t.HasTraits, MVA):
-    data = t.Array()
+    data = t.Any()
     axes_manager = t.Instance(AxesManager)
     original_parameters = t.Dict()
     mapped_parameters = t.Instance(Parameters)
