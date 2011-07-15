@@ -721,6 +721,8 @@ class DM3ImageFile(object):
                 self.dim += 1
             if units[i][1][1][1] in ('eV', 'keV'):
                 eV_in = True
+            else:
+                eV_in = False
         
         # Try to guess the order if not given
         # (there must be a better way!!)
@@ -732,7 +734,7 @@ class DM3ImageFile(object):
         # Try to guess the data_type if not given
         # (there must be a better way!!)        
         if self.data_type is None:
-            if (self.dim > 1 and eV_in) or dim == 1 or self.signal == 'EELS':
+            if (self.dim > 1 and eV_in) or self.dim == 1 or self.signal == 'EELS':
                 self.data_type = 'SI'
             else:
                 self.data_type = 'Image'
