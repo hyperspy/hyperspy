@@ -716,6 +716,7 @@ class DM3ImageFile(object):
     
         # Determine the dimensions of the data
         self.dim = 0
+        eV_in=False
         for i in range(len(sizes)):
             if sizes[i][1][1][1] > 1:
                 self.dim += 1
@@ -732,7 +733,7 @@ class DM3ImageFile(object):
         # Try to guess the data_type if not given
         # (there must be a better way!!)        
         if self.data_type is None:
-            if (self.dim > 1 and eV_in) or dim == 1 or self.signal == 'EELS':
+            if (self.dim > 1 and eV_in) or self.dim == 1 or self.signal == 'EELS':
                 self.data_type = 'SI'
             else:
                 self.data_type = 'Image'
