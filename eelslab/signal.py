@@ -44,7 +44,7 @@ class Signal(t.HasTraits, MVA):
     mapped_parameters = t.Instance(Parameters)
     physical_property = t.Str()
     
-    def __init__(self, file_data_dict):
+    def __init__(self, file_data_dict=None, *args, **kw):
         """All data interaction is made through this class or its subclasses
             
         
@@ -55,7 +55,8 @@ class Signal(t.HasTraits, MVA):
         """    
         super(Signal, self).__init__()
         self.mapped_parameters=Parameters()
-        self.load_dictionary(file_data_dict)
+        if type(file_data_dict).__name__ == "dict":
+            self.load_dictionary(file_data_dict)
         self._plot = None
         self.mva_results=MVA_Results()
         self._shape_before_unfolding = None
@@ -455,6 +456,7 @@ class Signal(t.HasTraits, MVA):
         self.axes_manager.axes[index].__init__(**nc)
         self.axes_manager.axes[index].slice = slice(None)
         self.axes_manager.axes[index - 1].slice = None
+        self._unfolded=True
         self._replot()
             
     def fold(self):
@@ -465,6 +467,7 @@ class Signal(t.HasTraits, MVA):
             self._shape_before_unfolding = None
             self._axes_manager_before_unfolding = None
             self._unfolded4pca=False
+            self._unfolded=False
             self._replot()
 
     def _get_positive_axis_index_index(self, axis):
