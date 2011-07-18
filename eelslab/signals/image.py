@@ -103,27 +103,28 @@ class Image(Signal):
         plt.scatter(peaks[:,0],peaks[:,1])
         
     def cell_cropper(self):
-        import eelslab.drawing.ucc as ucc
-        picker=ucc.TemplatePicker(self)
-        picker.configure_traits()
-        return picker.crop_sig
+        if not hasattr(self.mapped_parameters,"picker"):
+            import eelslab.drawing.ucc as ucc
+            self.mapped_parameters.picker=ucc.TemplatePicker(self)
+        self.mapped_parameters.picker.configure_traits()
+        return self.mapped_parameters.picker.crop_sig
 
     def kmeans_cluster_stack(self, clusters=None):
-        if len(self.data.shape)<>3:
-            print "Sorry, this function only works on image stacks (3 dimensions)."
-            print " Your data appears to be ", len(self.data.shape), "dimensions."
-            return None
         import mdp
+        if self._unfolded:
+            self.fold()
+        avg_stack=np.zeros((d.shape[0],d.shape[1],clusters))
+        kmeans.train(d.reshape((-1,d.shape[2])).T)
+        kmeans.stop_training()
+        groups=kmeans.label(d.reshape((-1,d.shape[2])).T)
+
         # if clusters not given, try to determine what it should be.
         if clusters is None:
             pass
         d=self.data
         kmeans=mdp.nodes.KMeansClassifier(clusters)
         cluster_arrays=[]
-        avg_stack=np.zeros((d.shape[0],d.shape[1],clusters))
-        kmeans.train(d.reshape((-1,d.shape[2])).T)
-        kmeans.stop_training()
-        groups=kmeans.label(d.reshape((-1,d.shape[2])).T)
+
         try:
             # test if location data is available
             self.mapped_parameters.locations[0]
