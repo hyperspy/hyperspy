@@ -952,7 +952,6 @@ def file_reader(filename, data_type=None, order = None, data_id=1,
     dump: Bool
         If True it dumps the tags into a txt file
     """
-    print order
          
     dm3 = DM3ImageFile(filename, data_id, order = order, data_type = data_type)
     if dump is True:
