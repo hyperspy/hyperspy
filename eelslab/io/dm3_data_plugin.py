@@ -30,7 +30,6 @@ import os
 import mmap
 import re
 from types import StringType
-
 import numpy as np
 
 from eelslab.axes import DataAxis
@@ -40,6 +39,7 @@ from eelslab.utils_readfile import *
 #from eelslab.utils_readfile import *
 from eelslab.exceptions import *
 #from eelslab.exceptions import *
+import eelslab.utils
 from eelslab.utils_varia import overwrite, swapelem
 from eelslab.utils_varia import DictBrowser, fsdict
 #from eelslab.utils_varia import overwrite, swapelem
@@ -933,7 +933,8 @@ class DM3ImageFile(object):
 
         return data
 
-def file_reader(filename, data_type=None, order = None, data_id=1, ):
+def file_reader(filename, data_type=None, order = None, data_id=1, 
+                dump = False):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
@@ -941,11 +942,24 @@ def file_reader(filename, data_type=None, order = None, data_id=1, ):
     If 'old' is True, will use the old DM3 reader from digital_micrograph.py
     module. That's way less powerful, but more reliable.
     Hopefully, this option will be removed soon.
+    
+    Parameters
+    ----------
+    data_type: Str
+        One of: SI, Image
+    order: Str
+        One of 'C' or 'F'
+    dump: Bool
+        If True it dumps the tags into a txt file
     """
     print order
          
     dm3 = DM3ImageFile(filename, data_id, order = order, data_type = data_type)
-
+    if dump is True:
+        import codecs
+        f = codecs.open(filename.replace('.dm3', '_tags_dumped.txt'), 'w')
+        eelslab.utils.dump_dictionary(f, dm3.data_dict.dic)
+        f.close()
     mapped_parameters={}
 
     if 'rgb' in dm3.mode:
