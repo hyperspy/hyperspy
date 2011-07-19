@@ -29,6 +29,8 @@ from __future__ import division
 import os
 import mmap
 import re
+from types import StringType
+
 import numpy as np
 
 from eelslab.axes import DataAxis
@@ -381,6 +383,18 @@ def crawl_dm3(f, data_dict, endian, ntags, group_name='root',
             else:
                 data_dict[data_key] = parse_tag_data(f, infoarray,
                                                        endian, skip)
+
+            # We convert all the strings to unicode
+            # In the case that the encoding is not ASCII we try with
+            # latin-1
+            if isinstance(data_dict[data_key][1], StringType):
+                try:
+                    data_dict[data_key] = (data_dict[data_key][0], 
+                    unicode(data_dict[data_key][1]))
+                except:
+                    data_dict[data_key] = (data_dict[data_key][0], 
+                    data_dict[data_key][1].decode('latin-1'))
+
             if debug > 10:
                 try:
                     if not raw_input('(debug) Press "Enter" to continue\n'):
@@ -769,8 +783,8 @@ class DM3ImageFile(object):
                                             'formats':['i8',
                                                        'f4',
                                                        'f4',
-                                                       'S8',
-                                                       'S8',]})
+                                                       'U8',
+                                                       'U8',]})
         self.imsize = self.dimensions['sizes']
         self.units = self.dimensions['units']
        
