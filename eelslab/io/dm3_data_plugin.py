@@ -42,6 +42,7 @@ from eelslab.exceptions import *
 import eelslab.utils
 from eelslab.utils_varia import overwrite, swapelem
 from eelslab.utils_varia import DictBrowser, fsdict
+from eelslab.io.dm3reader_eelslab import parseDM3
 #from eelslab.utils_varia import overwrite, swapelem
 #from eelslab.utils_varia import DictBrowser, fsdict
 
@@ -654,30 +655,39 @@ class DM3ImageFile(object):
             self.vsm =  self.data_dict.ls(DM3ImageFile.vsm)[1][1]
         except:
             self.vsm = None
+            
+        old_code_tags = parseDM3(self.filename)
+        self.SI_format = None
+        self.signal = None
+        for tag, value in old_code_tags.iteritems():
+            if 'Format' in tag and 'Spectrum image' in value:
+                self.SI_format = value
+            if 'Signal' in tag and 'EELS' in value:
+                self.signal = value
+                
+#        try:
+#            self.SI_format = self.data_dict.ls(DM3ImageFile.Gatan_EELS_SI_dir+['Meta Data','Format'])[1][1]
+#        except:
+#            try:
+#                self.SI_format = self.data_dict.ls(DM3ImageFile.Gatan_EFTEM_SI_dir+['Meta Data','Format'])[1][1]
+#            except:
+#                try:
+#                    # Fall-back for images that have been manually converted to SIs
+#                    self.SI_format = self.data_dict.ls(DM3ImageFile.imtagsdir+['Meta Data','Format'])[1][1]
+#                except:
+#                    self.SI_format = None
 
-        try:
-            self.SI_format = self.data_dict.ls(DM3ImageFile.Gatan_EELS_SI_dir+['Meta Data','Format'])[1][1]
-        except:
-            try:
-                self.SI_format = self.data_dict.ls(DM3ImageFile.Gatan_EFTEM_SI_dir+['Meta Data','Format'])[1][1]
-            except:
-                try:
-                    # Fall-back for images that have been manually converted to SIs
-                    self.SI_format = self.data_dict.ls(DM3ImageFile.imtagsdir+['Meta Data','Format'])[1][1]
-                except:
-                    self.SI_format = None
-
-        try:
-            self.signal = self.data_dict.ls(DM3ImageFile.Gatan_EELS_SI_dir+['Meta Data','Signal'])[1][1]
-        except:
-            try:
-                self.signal=self.data_dict.ls(DM3ImageFile.Gatan_EFTEM_SI_dir+['Meta Data','Format'])[1][1]
-            except:
-                try:
-                    # Fall-back for images that have been manually converted to SIs
-                    self.signal = self.data_dict.ls(DM3ImageFile.imtagsdir+['Meta Data','Signal'])[1]
-                except:
-                    self.signal = None
+#        try:
+#            self.signal = self.data_dict.ls(DM3ImageFile.Gatan_EELS_SI_dir+['Meta Data','Signal'])[1][1]
+#        except:
+#            try:
+#                self.signal=self.data_dict.ls(DM3ImageFile.Gatan_EFTEM_SI_dir+['Meta Data','Format'])[1][1]
+#            except:
+#                try:
+#                    # Fall-back for images that have been manually converted to SIs
+#                    self.signal = self.data_dict.ls(DM3ImageFile.imtagsdir+['Meta Data','Signal'])[1]
+#                except:
+#                    self.signal = None
 
         imdtype =  self.data_dict.ls(DM3ImageFile.imdtype)[1][1]
         self.imdtype = DM3ImageFile.imdtype_dict[imdtype]
@@ -741,14 +751,15 @@ class DM3ImageFile(object):
         # Try to guess the order if not given
         # (there must be a better way!!)
         if self.order is None:
-            if self.signal == 'EELS':
+            if self.SI_format == 'Spectrum image':
                 self.order = 'F'
             else:
                 self.order = 'C'
         # Try to guess the data_type if not given
         # (there must be a better way!!)        
         if self.data_type is None:
-            if (self.dim > 1 and eV_in) or self.dim == 1 or self.signal == 'EELS':
+            if (self.dim > 1 and eV_in) or self.dim == 1 or \
+            self.signal == 'EELS' or self.SI_format == 'Spectrum image':
                 self.data_type = 'SI'
             else:
                 self.data_type = 'Image'
@@ -828,6 +839,7 @@ class DM3ImageFile(object):
         else:
             data = read_data_array(self.filename, self.imbytes,
                                    self.byte_offset, self.imdtype)
+            print self.order
             if self.order == 'F':
                 data = data.reshape(self.imsize.T, order = self.order)
                 if self.data_type == 'SI':

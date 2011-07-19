@@ -45,7 +45,7 @@ def dump_dictionary(file, dic, string = 'root'):
         if isinstance(dic[key], dict):
             dump_dictionary(file, dic[key], string)
         else:
-            file.write(string + '\n')
+            file.write("%s = %s\n" % (string, dic[key]))
     
 def generate_axis(origin,step,N,index=0):
     """Creates an axis given the origin, step and number of channels
