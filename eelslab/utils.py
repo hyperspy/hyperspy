@@ -41,11 +41,10 @@ import matplotlib.pyplot as plt
 
 def dump_dictionary(file, dic, string = 'root'):
     for key in dic.keys():
-        string += ('.' + key)
         if isinstance(dic[key], dict):
-            dump_dictionary(file, dic[key], string)
+            dump_dictionary(file, dic[key], string + '.' + key)
         else:
-            file.write("%s = %s\n" % (string, dic[key]))
+            file.write("%s.%s = %s\n" % (string, key, dic[key]))
     
 def generate_axis(origin,step,N,index=0):
     """Creates an axis given the origin, step and number of channels
