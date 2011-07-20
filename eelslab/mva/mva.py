@@ -443,7 +443,7 @@ class MVA():
         if components is None:
             a=np.atleast_3d(np.dot(factors,scores))
             signal_name='rebuilt from %s with %i components'%(mva_type,factors.shape[1])
-        elif type(components).__name__ is 'list':
+        elif type(components).__name__ == 'list':
             tfactors=np.zeros((factors.shape[0],len(components)))
             tscores=np.zeros((len(components),scores.shape[1]))
             for i in xrange(len(components)):
