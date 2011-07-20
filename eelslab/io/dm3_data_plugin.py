@@ -1048,7 +1048,7 @@ def file_reader(filename, data_type=None, order = None, data_id=1,
            for i in xrange(dim)]
 
     mapped_parameters['name'] = filename
-    mapped_parameters['data_type'] = dm3.data_type, 
+    mapped_parameters['data_type'] = dm3.data_type
 
     dictionary = {
         'data' : data,
