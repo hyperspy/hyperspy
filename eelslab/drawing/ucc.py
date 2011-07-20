@@ -24,7 +24,7 @@
 
 from enthought.traits.api \
     import HasTraits, Array, Int, Float, Range, Instance, on_trait_change, \
-    Bool, Button, Property, Event, Tuple, Any
+    Bool, Button, Property, Event, Tuple, Any, List
 from enthought.traits.ui.api import View, Item, Group, HFlow, VGroup, Tabbed, \
     BooleanEditor, ButtonEditor, CancelButton, Handler, Action, Spring, \
     HGroup
@@ -35,6 +35,7 @@ from enthought.chaco.api import Plot, ArrayPlotData, jet, gray, \
     OverlayPlotContainer
 from enthought.enable.api import ComponentEditor, KeySpec, Component
 from enthought.chaco.tools.cursor_tool import CursorTool, BaseCursorTool
+from enthought.traits.ui.key_bindings import KeyBinding, KeyBindings
 
 
 from eelslab import cv_funcs
@@ -43,13 +44,24 @@ import numpy as np
 class OK_custom_handler(Handler):
     def close(self,info, is_ok):
         if is_ok:
-            info.object.crop_cells()
+            info.object.crop_cells_stack()
         return True      
 
+key_bindings = KeyBindings(
+    KeyBinding( binding1    = 'Left',
+                description = 'Step left through images',
+                method_name = 'decrease_img_idx' ),
+    KeyBinding( binding1    = 'Right',
+                description = 'Step right through images',
+                method_name = 'increase_img_idx' ),
+)
+
+#(value=[Array(dtype=np.float32,value=np.zeros((64,64)))])
+# (value=[Array(shape=(None,3), value=np.array(([[0,0,0]])))])
 class TemplatePicker(HasTraits):
     template = Array
-    CC = Array(dtype=np.float32,value=np.zeros((64,64)))
-    peaks = Array(shape=(None,3), value=np.array(([[0,0,0]])))
+    CC = List
+    peaks = List
     zero=Int(0)
     tmp_size = Range(low=2, high=512, value=64, cols=4)
     max_pos_x=Int(1023)
@@ -66,11 +78,15 @@ class TemplatePicker(HasTraits):
     img_container = Instance(Component)
     container = Instance(Component)
     colorbar= Instance(Component)
-    numpeaks = Int(0)
+    numpeaks_total = Int(0)
+    numpeaks_img = Int(0)
     OK_custom=OK_custom_handler
-    cbar_selection = Any
+    cbar_selection = Instance(RangeSelection)
     cbar_selected = Event
     thresh=Tuple(0.0,1.0)
+    numfiles=Int(1)
+    img_idx=Int(0)
+    tmp_img_idx=Int(0)
 
     csr=Instance(BaseCursorTool)
 
@@ -101,15 +117,17 @@ class TemplatePicker(HasTraits):
                         ),
                     Group(
                         Spring(),
-                        Item("numpeaks",label="Number of Cells selected",style='readonly'),
+                        Item("numpeaks_img",label="Number of Cells selected (this image)",style='readonly'),
+                        Item("numpeaks_total",label="Total",style='readonly'),                        
                         ),
                     label="Peak parameters", show_border=True),
                 )
             ),
-        buttons = [ Action(name='OK', enabled_when = 'numpeaks > 0' ),
+        buttons = [ Action(name='OK', enabled_when = 'numpeaks_total > 0' ),
             CancelButton ],
         title="Template Picker",
         handler=OK_custom, kind='livemodal',
+        key_bindings = key_bindings,
         width=870, height=540)        
 
     def __init__(self, signal_instance):
@@ -121,13 +139,19 @@ class TemplatePicker(HasTraits):
             return None
         self.OK_custom=OK_custom_handler()
         self.sig=signal_instance
-        tmp_plot_data=ArrayPlotData(imagedata=self.sig.data[self.top:self.top+self.tmp_size,self.left:self.left+self.tmp_size])
+        if not hasattr(self.sig.mapped_parameters,"original_files"):
+            self.sig.data=np.atleast_3d(self.sig.data)
+            self.titles=[self.sig.mapped_parameters.name]
+        else:
+            self.numfiles=len(self.sig.mapped_parameters.original_files.keys())
+            self.titles=self.sig.mapped_parameters.original_files.keys()
+        tmp_plot_data=ArrayPlotData(imagedata=self.sig.data[self.top:self.top+self.tmp_size,self.left:self.left+self.tmp_size,self.img_idx])
         tmp_plot=Plot(tmp_plot_data,default_origin="top left")
         tmp_plot.img_plot("imagedata", colormap=jet)
         tmp_plot.aspect_ratio=1.0
         self.tmp_plot=tmp_plot
         self.tmp_plotdata=tmp_plot_data
-        self.img_plotdata=ArrayPlotData(imagedata=self.sig.data)
+        self.img_plotdata=ArrayPlotData(imagedata=self.sig.data[:,:,self.img_idx])
         self.img_container=self._image_plot_container()
 
         self.crop_sig=None
@@ -135,6 +159,7 @@ class TemplatePicker(HasTraits):
     def render_image(self):
         plot = Plot(self.img_plotdata,default_origin="top left")
         img=plot.img_plot("imagedata", colormap=gray)[0]
+        plot.title="%s of %s: "%(self.img_idx+1,self.numfiles)+self.titles[self.img_idx]
         plot.aspect_ratio=float(self.sig.data.shape[1])/float(self.sig.data.shape[0])
 
         #if not self.ShowCC:
@@ -153,9 +178,9 @@ class TemplatePicker(HasTraits):
 
     def render_scatplot(self):
         peakdata=ArrayPlotData()
-        peakdata.set_data("index",self.peaks[:,0])
-        peakdata.set_data("value",self.peaks[:,1])
-        peakdata.set_data("color",self.peaks[:,2])
+        peakdata.set_data("index",self.peaks[self.img_idx][:,0])
+        peakdata.set_data("value",self.peaks[self.img_idx][:,1])
+        peakdata.set_data("color",self.peaks[self.img_idx][:,2])
         scatplot=Plot(peakdata,aspect_ratio=self.img_plot.aspect_ratio,default_origin="top left")
         scatplot.plot(("index", "value", "color"),
                       type="cmap_scatter",
@@ -182,7 +207,7 @@ class TemplatePicker(HasTraits):
         self.img_container.add(self.container)
         self.img_container.bgcolor = "white"
 
-        if self.numpeaks>0:
+        if self.numpeaks_img>0:
             scatplot = self.render_scatplot()
             self.container.add(scatplot)
             colorbar = self.draw_colorbar()
@@ -216,20 +241,29 @@ class TemplatePicker(HasTraits):
         colorbar.overlays.append(RangeSelectionOverlay(component=colorbar,
                                                    border_color="white",
                                                    alpha=0.8,
-                                                   fill_color="lightgray"))
+                                                   fill_color="lightgray",
+                                                   metadata_name='selections'))
         colorbar_selection.selection=self.thresh
+        colorbar.selections=self.thresh
+        print colorbar_selection.selection
         self.cbar_selection=colorbar_selection
         return colorbar
 
     @on_trait_change('ShowCC')
     def toggle_cc_view(self):
         if self.ShowCC:
-            self.CC = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
-                                                   self.left:self.left+self.tmp_size],
+            self.CC[self.img_idx] = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
+                                                   self.left:self.left+self.tmp_size,self.img_idx],
                                      self.sig.data)
-            self.img_plotdata.set_data("imagedata",self.CC)
+            self.img_plotdata.set_data("imagedata",self.CC[self.img_idx])
         else:
-            self.img_plotdata.set_data("imagedata",self.sig.data)
+            self.img_plotdata.set_data("imagedata",self.sig.data[:,:,self.img_idx])
+        self.redraw_plots()
+
+    @on_trait_change("img_idx")
+    def update_img_depth(self):
+        self.img_plotdata.set_data("imagedata",self.sig.data[:,:,self.img_idx])
+        self.img_plot.title="%s of %s: "%(self.img_idx+1,self.numfiles)+self.titles[self.img_idx]
         self.redraw_plots()
 
     @on_trait_change("peaks")
@@ -249,7 +283,7 @@ class TemplatePicker(HasTraits):
         except:
             pass
 
-        if self.numpeaks>0:
+        if self.numpeaks_img>0:
             newscat=self.render_scatplot()
             self.container.add(newscat)
             self.scatplot=newscat
@@ -270,6 +304,18 @@ class TemplatePicker(HasTraits):
         self.max_pos_y=max_pos_y
         return
 
+    def increase_img_idx(self,info):
+        if self.img_idx==(self.numfiles-1):
+            self.img_idx=0
+        else:
+            self.img_idx+=1
+
+    def decrease_img_idx(self,info):
+        if self.img_idx==0:
+            self.img_idx=self.numfiles-1
+        else:
+            self.img_idx-=1
+
     @on_trait_change('left, top')
     def update_csr_position(self):
         self.csr.current_position=self.left,self.top
@@ -281,22 +327,24 @@ class TemplatePicker(HasTraits):
     @on_trait_change('left, top, tmp_size')
     def update_tmp_plot(self):
         self.tmp_plotdata.set_data("imagedata", 
-                                   self.sig.data[self.top:self.top+self.tmp_size,self.left:self.left+self.tmp_size])
+                                   self.sig.data[self.top:self.top+self.tmp_size,self.left:self.left+self.tmp_size,self.img_idx])
         grid_data_source = self.tmp_plot.range2d.sources[0]
         grid_data_source.set_data(np.arange(self.tmp_size), np.arange(self.tmp_size))
+        self.tmp_img_idx=self.img_idx
         return
 
     @on_trait_change('left, top, tmp_size')
     def update_CC(self):
         if self.ShowCC:
-            self.CC = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
-                                                   self.left:self.left+self.tmp_size],
-                                     self.sig.data)
-            self.img_plotdata.set_data("imagedata",self.CC)
+            self.CC[self.img_idx] = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
+                                                   self.left:self.left+self.tmp_size,self.tmp_img_idx],
+                                     self.sig.data[:,:,self.img_idx])
+            self.img_plotdata.set_data("imagedata",self.CC[self.img_idx])
             grid_data_source = self.img_plot.range2d.sources[0]
-            grid_data_source.set_data(np.arange(self.CC.shape[1]), np.arange(self.CC.shape[0]))
-        if self.numpeaks>0:
-            self.peaks=np.array([[0,0,-1]])
+            grid_data_source.set_data(np.arange(self.CC[self.img_idx].shape[1]), 
+                                      np.arange(self.CC[self.img_idx].shape[0]))
+        if self.numpeaks_total>0:
+            self.peaks=[np.array([[0,0,-1]])]
 
     @on_trait_change('peaks,cbar_selection:selection_completed')
     def calc_numpeaks(self):
@@ -307,48 +355,69 @@ class TemplatePicker(HasTraits):
         if thresh==[]:
             thresh=(0,1)
         self.thresh=thresh
-        print self.thresh
-        try:
-            self.numpeaks=np.sum(np.ma.masked_inside(self.peaks[:,2],thresh[0],thresh[1]).mask)
-        except:
-            pass
+        self.numpeaks_total=np.sum([np.sum(np.ma.masked_inside(self.peaks[i][:,2],thresh[0],thresh[1]).mask) for i in xrange(len(self.peaks))])
+        self.numpeaks_img=np.sum(np.ma.masked_inside(self.peaks[self.img_idx][:,2],thresh[0],thresh[1]).mask)
+        #except:
+        #    pass
 
     @on_trait_change('findpeaks')
     def locate_peaks(self):
         from eelslab import peak_char as pc
-        self.CC = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
-                                               self.left:self.left+self.tmp_size],
-                                 self.sig.data)
-        peaks=pc.two_dim_findpeaks(self.CC*255, peak_width=self.peak_width, medfilt_radius=None)
-        peaks[:,2]=peaks[:,2]/255
+        peaks=[]
+        for idx in xrange(self.numfiles):
+            try:
+                self.CC[idx] = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
+                                               self.left:self.left+self.tmp_size,self.tmp_img_idx],
+                                 self.sig.data[:,:,idx])
+            except:
+                self.CC.append(cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
+                                               self.left:self.left+self.tmp_size,self.tmp_img_idx],
+                                 self.sig.data[:,:,idx]))
+            pks=pc.two_dim_findpeaks(self.CC[idx]*255, peak_width=self.peak_width, medfilt_radius=None)
+            pks[:,2]=pks[:,2]/255
+            peaks.append(pks)
         self.peaks=peaks
         
-    def mask_peaks(self):
+    def mask_peaks(self,idx):
         thresh=self.cbar_selection.selection
         if thresh==[]:
             thresh=(0,1)
-        mpeaks=np.ma.asarray(self.peaks)
+        mpeaks=np.ma.asarray(self.peaks[idx])
         mpeaks[:,2]=np.ma.masked_outside(mpeaks[:,2],thresh[0],thresh[1])
         return mpeaks
 
-    def crop_cells(self):
+    def crop_cells_stack(self):
+        from eelslab.signals.aggregate import AggregateCells
+        if self.numfiles==1:
+            self.crop_sig=self.crop_cells()
+            return
+        else:
+            crop_agg=[]
+            for idx in xrange(self.numfiles):
+                crop_agg.append(self.crop_cells(idx))
+                crop_agg[idx].mapped_parameters.print_items()
+            self.crop_sig=AggregateCells(*crop_agg)
+            return
+
+    def crop_cells(self,idx=0):
         print "cropping cells..."
         from eelslab.signals.image import Image
         # filter the peaks that are outside the selected threshold
-        peaks=np.ma.compress_rows(self.mask_peaks())
+        peaks=np.ma.compress_rows(self.mask_peaks(idx))
         tmp_sz=self.tmp_size
         data=np.zeros((tmp_sz,tmp_sz,peaks.shape[0]))
         for i in xrange(peaks.shape[0]):
             # crop the cells from the given locations
-            data[:,:,i]=self.sig.data[peaks[i,1]:peaks[i,1]+tmp_sz,peaks[i,0]:peaks[i,0]+tmp_sz]
-        self.crop_sig=Image({'data':data,
-                 'mapped_parameters':{
-                     'name':'Cropped cells from %s'%self.sig.mapped_parameters.name,
-                     'data_type':'Image',
-                     'locations':peaks,
-                     'parent':self.sig.mapped_parameters.name,
-                     }
-                })
+            data[:,:,i]=self.sig.data[peaks[i,1]:peaks[i,1]+tmp_sz,peaks[i,0]:peaks[i,0]+tmp_sz,idx]
+            crop_sig=Image({'data':data,
+                            'mapped_parameters':{
+                                'name':'Cropped cells from %s'%self.titles[idx],
+                                'data_type':'Image',
+                                'locations':peaks,
+                                'parent':self.titles[idx],
+                                }
+                         })
+        return crop_sig
         # attach a class member that has the locations from which the images were cropped
         print "Complete.  "
 

@@ -25,9 +25,18 @@ from eelslab.mva.mva import MVA_Results
 from eelslab.axes import AxesManager
 
 import numpy as np
+import mdp
+
+from collections import OrderedDict
 
 class Aggregate(Signal):
-    pass
+    mapped_parameters=t.Instance(Parameters)
+
+    def __init__(self, *args, **kw):
+        super(Aggregate, self).__init__(*args, **kw)
+        self.data=None
+        self.mapped_parameters.original_files=OrderedDict()
+
     """
     def plot(self):
         print "Plotting not yet supported for aggregate objects"
@@ -42,30 +51,78 @@ Perhaps you'd like to instead access its component members?"
         print "Folding not supported for Aggregate objects."
         return None
     """
+    def print_keys(self):
+        smp=self.mapped_parameters
+        print smp.locations.keys()
+
+    def append(self):
+        print "sorry, append method not implemented generally yet."
+
 
 class AggregateImage(Aggregate,Image):
+    def __init__(self, *args, **kw):
+        super(AggregateImage, self).__init__(*args,**kw)
+        if len(args)>0:
+            self.append(*args)
+
+    def append(self, *args):
+        if len(args)<1:
+            pass
+        else:
+            smp=self.mapped_parameters
+            print args
+            for arg in args:
+                #object parameters
+                mp=arg.mapped_parameters
+                
+                if mp.name not in smp.original_files.keys():
+                    smp.original_files[mp.name]=mp.name
+                    # add the data to the aggregate array
+                    if self.data==None:
+                        self.data=np.atleast_3d(arg.data)
+                    else:
+                        self.data=np.append(self.data,np.atleast_3d(arg.data),axis=2)
+                else:
+                    print "Data from file %s already in this aggregate. \n \
+    Delete it first if you want to update it."%mp.parent
+            # refresh the axes for the new sized data
+            self.axes_manager=AxesManager(self._get_undefined_axes_list())
+            smp.name="Aggregate Image: %s"%smp.original_files.keys()
+
+    def remove(self,*keys):
+        smp=self.mapped_parameters
+        for key in keys:
+            idx=smp.original_files.keys().index(key)
+            self.data=np.delete(self.data,np.s_[idx:idx+1:1],2)
+            del smp.original_files[key]
+        self.axes_manager=AxesManager(self._get_undefined_axes_list())
+        smp.name="Aggregate Image: %s"%smp.original_files.keys()
+
+    def cell_cropper(self):
+        if not hasattr(self.mapped_parameters,"picker"):
+            import eelslab.drawing.ucc as ucc
+            self.mapped_parameters.picker=ucc.TemplatePicker(self)
+        self.mapped_parameters.picker.configure_traits()
+        return self.mapped_parameters.picker.crop_sig
+
+class AggregateCells(Aggregate,Image):
     """ A class to deal with several image stacks, each consisting of cropped
     sub-images from a template-matched experimental image.
     """
-    mapped_parameters=t.Instance(Parameters)
 
     def __init__(self, *args, **kw):
-        #super(AggregateImage,self).__init__(*args, **kw)
-        super(t.HasTraits,self).__init__()
-        self._plot = None
-        self.mva_results=MVA_Results()
+        super(AggregateCells,self).__init__(*args, **kw)
         self._shape_before_unfolding = None
-        self.mapped_parameters=Parameters()
-        self.mapped_parameters.locations={}
-        self.mapped_parameters.original_files={}
-        self.mapped_parameters.image_stacks={}
-        self.mapped_parameters.aggregate_address={}
+        self.mapped_parameters.locations=OrderedDict()
+        self.mapped_parameters.original_files=OrderedDict()
+        self.mapped_parameters.image_stacks=OrderedDict()
+        self.mapped_parameters.aggregate_address=OrderedDict()
         self.mapped_parameters.aggregate_end_pointer=0
-        self.data=None
+        self.mapped_parameters.name="Aggregate: no data"
         if len(args)>0:
-            self.append_stacks(*args)
+            self.append(*args)
 
-    def append_stacks(self,*args):
+    def append(self,*args):
         if len(args)<1:
             pass
         else:
@@ -79,28 +136,118 @@ class AggregateImage(Aggregate,Image):
                     smp.original_files[mp.parent]=mp.parent
                     smp.image_stacks[mp.parent]=arg
                     smp.aggregate_address[mp.parent]=(
-                        smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[-1])
+                        smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[-1]-1)
                     # add the data to the aggregate array
                     if self.data==None:
-                        self.data=arg.data
+                        self.data=np.atleast_3d(arg.data)
                     else:
                         self.data=np.append(self.data,arg.data,axis=2)
+                    smp.aggregate_end_pointer=self.data.shape[2]
                 else:
                     print "Data from file %s already in this aggregate. \n \
     Delete it first if you want to update it."%mp.parent
             # refresh the axes for the new sized data
             self.axes_manager=AxesManager(self._get_undefined_axes_list())
+            smp.name="Aggregate Cells: %s"%smp.locations.keys()
 
-    def remove_stacks(self,*keys):
+    def remove(self,*keys):
         smp=self.mapped_parameters
         for key in keys:
             del smp.locations[key]
             del smp.original_files[key]
             del smp.image_stacks[key]
             address=smp.aggregate_address[key]
-            smp.data=np.delete(smp.data,np.s_[address[0]:address[1]:1],2)
-        smp.axes_manager=AxesManager(smp._get_undefined_axes_list())
+            self.data=np.delete(self.data,np.s_[address[0]:address[1]:1],2)
+        self.axes_manager=AxesManager(self._get_undefined_axes_list())
+        smp.name="Aggregate Cells: %s"%smp.locations.keys()
 
-    def print_keys(self):
+    def kmeans_cluster_stack(self, clusters=None):
         smp=self.mapped_parameters
-        print smp.locations.keys()
+        d=self.data
+        # if clusters not given, try to determine what it should be.
+        if clusters is None:
+            pass
+        kmeans=mdp.nodes.KMeansClassifier(clusters)
+        avg_stack=np.zeros((d.shape[0],d.shape[1],clusters))
+        kmeans.train(d.reshape((-1,d.shape[2])).T)
+        kmeans.stop_training()
+        groups=kmeans.label(d.reshape((-1,d.shape[2])).T)
+        cluster_arrays=[]
+
+        try:
+            # test if location data is available
+            smp.locations.values()[0]
+        except:
+            print "Warning: No cell location information was available."
+        for i in xrange(clusters):
+            # which file are we pulling from?
+            file_index=0
+            address=smp.aggregate_address.values()[file_index]
+            fname=smp.locations.keys()[file_index]
+            # get number of members of this cluster
+            members=groups.count(i)
+            cluster_array=np.zeros((d.shape[0],d.shape[1],members))
+            cluster_idx=0
+            # positions is a recarray, with each row consisting of a filename and the position from
+            # which the crop was taken.
+            positions=np.zeros((members,1),dtype=[('filename','a256'),('position','i4',(1,2))])
+            for j in xrange(len(groups)):
+                if j>(address[1]) and fname<>smp.locations.keys()[-1]:
+                    file_index+=1
+                    fname=smp.locations.keys()[file_index]
+                    address=self.mapped_parameters.aggregate_address.values()[file_index]
+                file_j=j-address[0]
+                if groups[j]==i:
+                    cluster_array[:,:,cluster_idx]=d[:,:,j]
+                    try:
+                        positions[cluster_idx]=(fname,smp.locations[fname][file_j,:2])
+                    except:
+                        pass
+                    cluster_idx+=1
+            cluster_array_Image=Image({'data':avg_stack,
+                    'mapped_parameters':{
+                        'name':'Cluster %s from %s'%(i,
+                                         self.mapped_parameters.name),
+                        'locations':positions,
+                        'members':members,
+                        }
+                    })
+            cluster_arrays.append(cluster_array_Image)
+            avg_stack[:,:,i]=np.sum(cluster_array,axis=2)
+        members_list=[groups.count(i) for i in xrange(clusters)]
+        avg_stack_Image=Image({'data':avg_stack,
+                    'mapped_parameters':{
+                        'name':'Cluster averages from %s'%self.mapped_parameters.name,
+                        'member_counts':members_list,
+                        }
+                    })
+        self.mapped_parameters.avgs=avg_stack_Image
+        self.mapped_parameters.clusters=cluster_arrays
+        return avg_stack_Image, cluster_arrays
+
+    def plot_cell_overlays(self):
+        if hasattr(self,mapped_parameters.clusters):
+            figs={}
+            # come up with the color map for the scatter plot
+
+            for key in self.mapped_parameters.original_files.keys():
+                figs[key]=plt.figure()
+                # plot the initial images
+                
+            for cluster in xrange(len(self.mapped_parameters.clusters)):
+                for loc_id in xrange(cluster.mapped_parameters.locations.shape[0]):
+                    # get the right figure
+                    fig=figs[cluster.mapped_paramters.locations[loc_id][0][0]]
+                    # add scatter point
+                    
+
+    def save_avgs(self):
+        avgs=self.mapped_parameters.avgs
+        f=plt.figure()
+        for i in xrange(avgs.data.shape[2]):
+            
+            img=plt.imshow(avgs.data[:,:,i],title="Class avg %02i, %02i members"%(i,avgs.mapped_parameters.member_counts[i]))
+            f.savefig('class_avg_%02i_[%02i].png'%(i,avg.mapped_parameters.member_counts[i]))
+        plt.close(f)
+
+                

@@ -56,19 +56,20 @@ def load(*filenames, **kwds):
     elif len(filenames)==1:
         return load_single_file(filenames[0],**kwds)
     else:
+        from eelslab.signals.aggregate import AggregateImage, AggregateCells
         objects=[load_single_file(filename,**kwds) for filename in filenames]
 
         obj_type=objects[0].__class__.__name__
         if obj_type=='Image':
-            # create a blank Image instance that will get filled by its aggregator function
-            agg_sig=Image()
+            if len(objects[0].data.shape)==3:
+                # feeding 3d objects creates cell stacks
+                agg_sig=AggregateCells(*objects)
+            else:
+                agg_sig=AggregateImage(*objects)
         elif obj_type=='Spectrum':
-            # create a blank Spectrum instance that will get filled by its aggregator function
             agg_sig=Spectrum()
         else:
-            # create a blank Signal instance that will get filled by its aggregator function
             agg_sig=Signal()
-        agg_sig.aggregate(objects)
         return agg_sig            
         
 def load_single_file(filename, **kwds):
