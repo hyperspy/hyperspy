@@ -307,6 +307,13 @@ class AxesManager(t.HasTraits):
         for axis in self.axes:
             axes_dict_list.append(axis.get_axis_dictionary())
         return AxesManager(axes_dict_list)
+        
+    def _get_axes_dicts(self):
+        axes_dicts = []
+        for axis in self.axes:
+            axes_dicts.append(axis.get_axis_dictionary())
+        return axes_dicts
+            
             
     traits_view = tui.View(tui.Item('axes', style = 'custom'))
     

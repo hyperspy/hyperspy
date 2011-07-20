@@ -18,9 +18,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
 
+import matplotlib.pyplot as plt
+
 from eelslab.signal import Signal
 from eelslab.peak_char import *
-import matplotlib.pyplot as plt
+from eelslab import utils_varia
 
 class Image(Signal):
     """
@@ -221,3 +223,13 @@ class Image(Signal):
                         self.peaks[:tmp.shape[0],:,i,j]=tmp
                 trim_id=np.min(np.nonzero(np.sum(np.sum(np.sum(self.peaks,axis=3),axis=2),axis=1)==0))
                 self.peaks=self.peaks[:trim_id,:,:,:]
+                
+    def to_spectrum(self):
+        from eelslab.signals.spectrum import Spectrum
+        dic = self._get_signal_dict()
+        dic['mapped_parameters']['data_type'] = 'SI'
+        dic['data'] = np.swapaxes(dic['data'], 0, -1)
+        utils_varia.swapelem(dic['axes'],0,-1)
+        dic['axes'][0]['index_in_array'] = 0
+        dic['axes'][-1]['index_in_array'] = len(dic['axes']) - 1
+        return Spectrum(dic)
