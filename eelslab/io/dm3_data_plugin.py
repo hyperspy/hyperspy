@@ -839,12 +839,14 @@ class DM3ImageFile(object):
         else:
             data = read_data_array(self.filename, self.imbytes,
                                    self.byte_offset, self.imdtype)
+            imsize = self.imsize.tolist()
             if self.order == 'F':
-                data = data.reshape(self.imsize.T, order = self.order)
                 if self.data_type == 'SI':
+                    swapelem(imsize, 0, 1)
+                    data = data.reshape(imsize, order = self.order)
                     data = np.swapaxes(data, 0, 1).copy()
                 elif self.data_type == 'Image':
-                    data = data.T.copy()
+                    data = data.reshape(imsize, order = 'C')
             elif self.order == 'C':
                 if self.data_type == 'SI':
                     data = data.reshape(np.roll(self.imsize,1), order = self.order)
