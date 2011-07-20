@@ -61,7 +61,7 @@ def load(filename, data_type = None, **kwds):
         
 def load_with_reader(filename, reader, data_type = None, **kwds):
     from eelslab.signals.image import Image
-    from eelslab.signal import Signal
+    from eelslab.signals.spectrum import Spectrum
     messages.information(reader.description)    
     file_data_list = reader.file_reader(filename,
                                          data_type=data_type,
@@ -82,7 +82,7 @@ data_dict['mapped_parameters']['data_type']"
         if data_type == 'Image':
             s = Image(file_data_dict)  
         else:
-            s = Signal(file_data_dict)
+            s = Spectrum(file_data_dict)
         if defaults.plot_on_load is True:
             s.plot()
         objects.append(s)
