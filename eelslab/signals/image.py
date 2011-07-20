@@ -27,6 +27,7 @@ class Image(Signal):
     """    
     def __init__(self, *args, **kwargs):
         Signal.__init__(self, *args, **kwargs)
+        self.axes_manager.set_view('image')
 
     def peak_char_stack(self, peak_width, subpixel=False, target_locations=None,
                         peak_locations=None, imcoords=None, target_neighborhood=20,
