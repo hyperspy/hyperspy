@@ -839,7 +839,6 @@ class DM3ImageFile(object):
         else:
             data = read_data_array(self.filename, self.imbytes,
                                    self.byte_offset, self.imdtype)
-            print self.order
             if self.order == 'F':
                 data = data.reshape(self.imsize.T, order = self.order)
                 if self.data_type == 'SI':

@@ -39,12 +39,14 @@ def import_rpy():
 
 import matplotlib.pyplot as plt
 
-def dump_dictionary(file, dic, string = 'root'):
+def dump_dictionary(file, dic, string = 'root', node_separator = '.', 
+                    value_separator = ' = '):
     for key in dic.keys():
         if isinstance(dic[key], dict):
-            dump_dictionary(file, dic[key], string + '.' + key)
+            dump_dictionary(file, dic[key], string + node_separator + key)
         else:
-            file.write("%s.%s = %s\n" % (string, key, dic[key]))
+            file.write(string + node_separator + key + value_separator + 
+            str(dic[key]) + '\n')
     
 def generate_axis(origin,step,N,index=0):
     """Creates an axis given the origin, step and number of channels
