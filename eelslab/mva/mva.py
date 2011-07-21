@@ -404,7 +404,7 @@ class MVA():
         w = self.mva_results.w
         n = len(w)
         self.ic = np.dot(self.mva_results.pc[:,:n], w.T)
-        for i in range(n):
+        for i in xrange(n):
             if np.all(self.ic[:,i] <= 0):
                 self.reverse_ic(i)
 
@@ -578,7 +578,7 @@ class MVA():
         """
         if n is None:
             n = self.mva_results.pc.shape[1]
-        for i in range(n):
+        for i in xrange(n):
             plt.figure()
             plt.plot(self.axes_manager.axes[-1].axis, self.mva_results.pc[:,i])
             plt.title('Principal component %s' % i)
@@ -609,7 +609,7 @@ class MVA():
         n = ic.shape[1]
 
         if not same_window:
-            for i in range(n):
+            for i in xrange(n):
                 plt.figure()
                 plt.plot(x, ic[:, i])
                 plt.title('Independent component %s' % i)
@@ -617,7 +617,7 @@ class MVA():
         else:
             fig = plt.figure()
             ax = fig.add_subplot(111)
-            for i in range(n):
+            for i in xrange(n):
                 # ic = ic / ic.sum(axis=0) # normalize
                 lbl = 'IC %i' % i
                 # print 'plotting %s' % lbl
@@ -804,7 +804,7 @@ class MVA():
         im_list = self.plot_principal_components_maps(n, plot = False)
         s = Spectrum({'calibration' : {'data_cube' : self.mva_results.pc[:,0]}})
         s.get_calibration_from(self)
-        for i in range(n):
+        for i in xrange(n):
             s.data_cube = self.mva_results.pc[:,i]
             s.get_dimensions_from_cube()
             s.save('%s-%i.%s' % (spectrum_prefix, i, spectrum_format))
@@ -841,7 +841,7 @@ class MVA():
             maps = True
         else:
             maps = False
-        for i in range(ic.shape[1]):
+        for i in xrange(ic.shape[1]):
             sp = Spectrum()
             sp.data_cube = ic[:,i].reshape((-1,1,1))
             sp.get_dimensions_from_cube()

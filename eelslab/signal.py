@@ -115,7 +115,7 @@ class Signal(t.HasTraits, MVA):
         
     def _get_undefined_axes_list(self):
         axes = []
-        for i in range(len(self.data.shape)):
+        for i in xrange(len(self.data.shape)):
             axes.append({   'name' : 'undefined',
                             'scale' : 1.,
                             'offset' : 0.,
@@ -407,7 +407,7 @@ class Signal(t.HasTraits, MVA):
             cut_node = range(0,rounded+step,step)
         else:
             cut_node = np.array([0] + steps).cumsum()
-        for i in range(len(cut_node)-1):
+        for i in xrange(len(cut_node)-1):
             data = self.data[
             (slice(None),)*axis + (slice(cut_node[i],cut_node[i+1]), Ellipsis)]
             s = Signal({'data' : data})
@@ -502,7 +502,7 @@ class Signal(t.HasTraits, MVA):
         new_shape[unfolded_axis] = -1
         # Warning! if the data is not contigous it will make a copy!!
         data = self.data.reshape(new_shape)
-        for i in range(data.shape[unfolded_axis]):
+        for i in xrange(data.shape[unfolded_axis]):
             getitem = [0] * len(data.shape)
             getitem[axis] = slice(None)
             getitem[unfolded_axis] = i
@@ -769,7 +769,7 @@ class Signal(t.HasTraits, MVA):
 #            " of the line spectrum")
 #        new_dc = np.zeros((dc_shape[0], len(size_list), 1))
 #        ch = 0
-#        for i in range(len(size_list)):
+#        for i in xrange(len(size_list)):
 #            new_dc[:,i,0] = dc[:,ch:ch + size_list[i], 0].sum(1)
 #            ch += size_list[i]
 #        sp = Spectrum()

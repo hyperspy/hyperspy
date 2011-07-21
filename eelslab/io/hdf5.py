@@ -92,7 +92,7 @@ def file_reader(filename, data_type, mode = 'r', driver = 'core',
             exp = {}
             exp['data'] = exg['data'][:]
             axes = []
-            for i in range(len(exp['data'].shape)):
+            for i in xrange(len(exp['data'].shape)):
                 try:
                     print('axis-%i' % i)
                     axes.append(dict(exg['axis-%i' % i].attrs))

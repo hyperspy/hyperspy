@@ -159,7 +159,7 @@ def getCalibratedPixel(img, *indx):
     getCalibratedPixel(img, 10.2, 3.2, 50.3)
     will give you the intensity of img @ (10.2 nm, 3.2 nm, 50.3 eV)    
     """
-    cpixel = [Unit2Channel(indx[i], img.origin[i], img.scale[i]) for i in range(len(indx))]
+    cpixel = [Unit2Channel(indx[i], img.origin[i], img.scale[i]) for i in xrange(len(indx))]
     
     cpixel = tuple(cpixel)
 
@@ -568,7 +568,7 @@ class DictBrowser(object):
         """
         if type(path) is str:
             path = path.split(self.sep) # turn path into a list
-        for i in range(len(path)):
+        for i in xrange(len(path)):
             if path[i] == '':
                 path.pop(i)
                 

@@ -428,8 +428,8 @@ class Spectrum(Signal):
         n_ch = E_ax.size
         index = 0
         if coordinates is None:
-            for i in range(dc.shape[0]):
-                for j in range(dc.shape[1]):
+            for i in xrange(dc.shape[0]):
+                for j in xrange(dc.shape[1]):
                     if der[i,j,:].max() >= threshold:
                         print "Spike detected in (%s, %s)" % (i, j)
                         argmax = der[i,j,:].argmax()

@@ -51,10 +51,10 @@ f=''
 # track currently read group
 MAXDEPTH = 64
 curGroupLevel = -1
-curGroupAtLevelX = [ 0 for x in range(MAXDEPTH) ]
-curGroupNameAtLevelX = [ "" for x in range(MAXDEPTH) ]
+curGroupAtLevelX = [ 0 for x in xrange(MAXDEPTH) ]
+curGroupNameAtLevelX = [ "" for x in xrange(MAXDEPTH) ]
 # track current tag
-curTagAtLevelX = [ "" for x in range(MAXDEPTH) ]
+curTagAtLevelX = [ "" for x in xrange(MAXDEPTH) ]
 curTagName = ""
 storedTags = []
 tagHash = {}
@@ -127,7 +127,7 @@ def makeGroupString():
 	global curGroupLevel, curGroupAtLevelX
 
 	tString = curGroupAtLevelX[0]
-	for i in range( 1, curGroupLevel+1 ):
+	for i in xrange( 1, curGroupLevel+1 ):
 		tString += "."+curGroupAtLevelX[i]
 	return tString
 
@@ -135,7 +135,7 @@ def makeGroupNameString():
 	global curGroupLevel, curGroupNameAtLevelX
 
 	tString = curGroupNameAtLevelX[0]
-	for i in range( 1, curGroupLevel+1 ):
+	for i in xrange( 1, curGroupLevel+1 ):
 		tString += "." + str( curGroupNameAtLevelX[i] )
 		
 	return tString
@@ -175,7 +175,7 @@ def readTagGroup():
 		print "rTG: Iterating over the", nTags, "tag entries in this group"
 
 	# read Tags
-	for i in range( nTags ):
+	for i in xrange( nTags ):
 		readTagEntry()
 	
 	# go back up one level as reading group is finished
@@ -372,7 +372,7 @@ def readArrayData(arrayTypes):
 	itemSize = 0
 	encodedType = 0
 	
-	for i in range( len(arrayTypes) ):
+	for i in xrange( len(arrayTypes) ):
 		encodedType = int( arrayTypes[i] )
 		etSize = encodedTypeSize(encodedType)
 		itemSize += etSize
@@ -420,7 +420,7 @@ def readStructTypes():
 		
 	fieldTypes = []	
 	nameLength = 0
-	for i in range( nFields ):
+	for i in xrange( nFields ):
 		nameLength = readLong(f)
 		if ( debugLevel > 9 ):
 			print i + "th namelength = " + nameLength
@@ -432,7 +432,7 @@ def readStructTypes():
 	
 def readStructData( structTypes ):
 	# reads struct data based on type info in structType
-	for i in range( len(structTypes) ):
+	for i in xrange( len(structTypes) ):
 		encodedType = structTypes[i]
 		etSize = encodedTypeSize(encodedType)
 
@@ -589,8 +589,8 @@ def getDM3FileInfo( dm3_file, makePGMtn=False, tn_file='dm3tn_temp.pgm' ):
 			
 			# read tn image data
 			dm3.seek( tn_offset )
-			for i in range( tn_height ):
-				for ii in range( tn_width ):
+			for i in xrange( tn_height ):
+				for ii in xrange( tn_width ):
 					data_bytes = dm3.read(4)
 					pgm_data = struct.unpack('<L', data_bytes)[0]
 					pgm_data = int( pgm_data/65536 )

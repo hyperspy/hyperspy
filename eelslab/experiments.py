@@ -148,8 +148,8 @@ class Experiments:
         dcshape = to_dec.data_cube.shape
         pbar = progressbar(maxval = (dcshape[1] * dcshape[2]))
         index = 0
-        for ix in range(to_dec.data_cube.shape[1]):
-            for iy in range(to_dec.data_cube.shape[2]):
+        for ix in xrange(to_dec.data_cube.shape[1]):
+            for iy in xrange(to_dec.data_cube.shape[2]):
                 if mask is None or mask[ix,iy]:
 #                    print "\n(%s, %s)" % (ix, iy)
                     kernel_ = kernel_data[:, ix, iy]
@@ -157,7 +157,7 @@ class Experiments:
                     mimax = length -1 - imax
                     D = to_dec.data_cube[:, ix, iy]
                     O = copy.copy(D)
-                    for i in range(iterations):
+                    for i in xrange(iterations):
                         first = np.convolve(kernel_,O)[imax: imax + length]
                         O = O * (np.convolve(kernel_[::-1], 
                         D / first)[mimax: mimax + length])

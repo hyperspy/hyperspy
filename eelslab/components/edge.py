@@ -215,7 +215,7 @@ class Edge(Component):
             microscope.alpha, microscope.beta)
             self.__previous_effective_angle = self.effective_angle.value
         effective_angle = self.effective_angle.value
-        for i in range(0,self.__nrow):
+        for i in xrange(0,self.__nrow):
             qtck = splrep(self.__logsqa0qaxis, self.__gos_array[i, :], s=0)
             qa0sqmin = (emax(self.edgeenergy + self.delta.value, i)**2) / (
             4.0 * R * T) + (emax(self.edgeenergy + self.delta.value, 

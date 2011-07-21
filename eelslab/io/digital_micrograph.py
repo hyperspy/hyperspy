@@ -109,7 +109,7 @@ def file_reader(filename, data_type = None):
         messages.warning_exit("The given dm3 file doesn't contain valid data")
    
     if number_of_images > 1:
-        image_id = [str(i) for i in range(0, number_of_images)] 
+        image_id = [str(i) for i in xrange(0, number_of_images)] 
         # Find the index of the thumbnail if any and set image_id to the other one
         if 'Thumbnails' in tags_dict['root']:
             for thumbnail in  tags_dict['root']['Thumbnails']:
@@ -130,7 +130,7 @@ def file_reader(filename, data_type = None):
     # Determine the dimensions
     dimensions = len(image_dict['ImageData']['Dimensions'])
     shape = np.ones((dimensions), dtype = np.int)
-    units = ['' for i in range(dimensions)]
+    units = ['' for i in xrange(dimensions)]
     origins = np.zeros((dimensions), dtype = np.float)
     scales =  np.ones((dimensions), dtype = np.float)
 

@@ -80,7 +80,7 @@ def read_infoarray(f):
     """Read the infoarray from file f and return it.
     """
     infoarray_size = read_long(f, 'big')
-    infoarray = [read_long(f, 'big') for index in range(infoarray_size)]
+    infoarray = [read_long(f, 'big') for index in xrange(infoarray_size)]
     infoarray = tuple(infoarray)
     return infoarray
 
@@ -92,7 +92,7 @@ def _infoarray_databytes(iarray):
         if iarray[0] == 18: # it's a string
             nbytes = iarray[1]
         elif iarray[0] == 15:   # it's a struct
-            field_type =  [iarray[i] for i in range(4, len(iarray), 2)]
+            field_type =  [iarray[i] for i in xrange(4, len(iarray), 2)]
             field_bytes = [_data_type[i][1] for i in field_type]
             nbytes = reduce(lambda x, y: x +y, field_bytes)
         elif iarray[0] == 20:   # it's an array            
@@ -131,7 +131,7 @@ def read_string(f, iarray, endian):
             s = L_char
         elif endian == 'big':
             s = B_char
-        for char in range(iarray[1]):
+        for char in xrange(iarray[1]):
             data += s.unpack(f.read(1))[0]
         if '\x00' in data:      # it's a Unicode string (TagData)
             uenc = 'utf_16_'+endian[0]+'e'
@@ -155,10 +155,10 @@ def read_struct(f, iarray, endian):
         # name_length = iarray[1]
         # name_length always 0?
         # n_fields = iarray[2]
-        # field_name_length = [iarray[i] for i in range(3, len(iarray), 2)]
+        # field_name_length = [iarray[i] for i in xrange(3, len(iarray), 2)]
         # field_name_length always 0?
-        field_type =  [iarray[i] for i in range(4, len(iarray), 2)]
-        # field_ctype = [_data_type[iarray[i]][2] for i in range(4, len(iarray), 2)]
+        field_type =  [iarray[i] for i in xrange(4, len(iarray), 2)]
+        # field_ctype = [_data_type[iarray[i]][2] for i in xrange(4, len(iarray), 2)]
         field_addr = []
         # field_bytes = [_data_type[i][1] for i in field_type]
         field_value = []
@@ -191,12 +191,12 @@ def read_array(f, iarray, endian):
         if len(iarray) > 3:  # complex type
             subiarray = iarray[1:-1]
             data = [eltype(f, subiarray, endian)
-                    for element in range(arraysize)]
+                    for element in xrange(arraysize)]
         else: # simple type
-            data = [eltype(f, endian) for element in range(arraysize)]
+            data = [eltype(f, endian) for element in xrange(arraysize)]
             if iarray[1] == 4: # it's actually a string
                 # disregard values that are not characters:
-                data = [chr(i) for i in data if i in range(256)]
+                data = [chr(i) for i in data if i in xrange(256)]
                 data = reduce(lambda x, y: x + y, data)
         return data
     
@@ -343,7 +343,7 @@ def crawl_dm3(f, data_dict, endian, ntags, group_name='root',
     If skip != 0 the data reading is actually skipped.
     If debug > 0, 3, 5, 10 useful debug information is printed on screen.
     """
-    for tag in range(ntags):
+    for tag in xrange(ntags):
         if debug > 3 and debug < 10:
             print('Crawling at address:', f.tell())
 
@@ -740,7 +740,7 @@ class DM3ImageFile(object):
     
         # Determine the dimensions of the data
         self.dim = 0
-        for i in range(len(sizes)):
+        for i in xrange(len(sizes)):
             if sizes[i][1][1][1] > 1:
                 self.dim += 1
             if units[i][1][1][1] in ('eV', 'keV'):
@@ -779,7 +779,7 @@ class DM3ImageFile(object):
                 scales[i][1][1][1],
                 units[i][1][1][1],
                 names[i])
-               for i in range(len(sizes))]
+               for i in xrange(len(sizes))]
         # create a structured array:
         # self.dimensions['sizes'] -> integer
         # self.dimensions['origins'] -> float
@@ -900,7 +900,7 @@ class DM3ImageFile(object):
                 
         # fill in the non-redundant complex values:
         # top right quarter, except 1st column
-        for i in range(N): # this could be optimized
+        for i in xrange(N): # this could be optimized
             start = 2 * i * N + 2
             stop = start + 2 * (N - 1) - 1
             step = 2
@@ -1002,10 +1002,10 @@ def file_reader(filename, data_type=None, order = None, data_id=1,
     names = list(dm3.dimensions['names'])
     units = list(dm3.dimensions['units'])
     origins = np.asarray([dm3.dimensions[i][1]
-                          for i in range(len(dm3.dimensions))],
+                          for i in xrange(len(dm3.dimensions))],
                          dtype=np.float)
     scales =np.asarray([dm3.dimensions[i][2]
-                        for i in range(len(dm3.dimensions))],
+                        for i in xrange(len(dm3.dimensions))],
                        dtype=np.float)
     # The units must be strings
     while None in units: 

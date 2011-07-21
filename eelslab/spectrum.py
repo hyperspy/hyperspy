@@ -506,8 +506,8 @@ class Spectrum(object, MVA):
             # 2 overlapping channels
             ch = i0 + width
             ratio = np.mean(data[ch: ch + 2] / canvas[ch: ch + 2], 0)
-            for ix in range(data.shape[1]):
-                for iy in range(data.shape[2]):
+            for ix in xrange(data.shape[1]):
+                for iy in xrange(data.shape[2]):
                     canvas[:,ix,iy] *= ratio[ix,iy]
             # Copy the extension
             data[i0 + width:] = canvas[i0 + width:]
@@ -700,7 +700,7 @@ class Spectrum(object, MVA):
                 cut_node = range(0,rounded+step,step)
             else:
                 cut_node = np.array([0] + steps).cumsum()
-            for i in range(len(cut_node)-1):
+            for i in xrange(len(cut_node)-1):
                 s = copy.deepcopy(self)
                 for cube in s.__cubes:
                     cube['data'] = cube['data'][:,:,cut_node[i]:cut_node[i+1]]
@@ -714,7 +714,7 @@ class Spectrum(object, MVA):
                 cut_node = range(0,rounded+step,step)
             else:
                 cut_node = np.array([0] + steps).cumsum()
-            for i in range(len(cut_node)-1):
+            for i in xrange(len(cut_node)-1):
                 s = copy.deepcopy(self)
                 s.data_cube = self.data_cube[:,cut_node[i]:cut_node[i+1], :]
                 s.get_dimensions_from_cube()
@@ -830,8 +830,8 @@ class Spectrum(object, MVA):
         """
         data = copy.copy(self.data_cube)
         print "Normalizing the spectrum/a"
-        for ix in range(0,self.xdimension):
-            for iy in range(0,self.ydimension):
+        for ix in xrange(0,self.xdimension):
+            for iy in xrange(0,self.ydimension):
                 sum_ = np.sum(data[:,ix,iy])
                 data[:,ix,iy] *= (value / sum_)
         self.__new_cube(data, 'normalization')
@@ -871,8 +871,8 @@ class Spectrum(object, MVA):
             print "Applying gain correction"
             # Gain correction
             data = np.zeros(self.data_cube.shape)
-            for ix in range(0, self.xdimension):
-                for iy in range(0, self.ydimension):
+            for ix in xrange(0, self.xdimension):
+                for iy in xrange(0, self.ydimension):
                     np.divide(self.data_cube[:,ix,iy], 
                     gain.normalized_gain, 
                     data[:,ix,iy])
@@ -939,8 +939,8 @@ class Spectrum(object, MVA):
             if hasattr(self, 'readout'):
                 data = copy.copy(self.data_cube)
                 print "Correcting the readout"
-                for ix in range(0,self.xdimension):
-                    for iy in range(0,self.ydimension):
+                for ix in xrange(0,self.xdimension):
+                    for iy in xrange(0,self.ydimension):
                         data[:, ix, iy] -= self.readout.data_cube[:,0,0]
                 self.__new_cube(data, 'readout correction')
                 self.treatments.readout = 1
@@ -1042,8 +1042,8 @@ class Spectrum(object, MVA):
         ea[:] = self.energy_axis.reshape((-1,1,1)) + shift_map.reshape(
         (1, dc.shape[1], dc.shape[2]))
         new_dc = np.empty(dc.shape)
-        for j in range(dc.shape[2]):
-            for  i in range(dc.shape[1]):
+        for j in xrange(dc.shape[2]):
+            for  i in xrange(dc.shape[1]):
                 print "(%s, %s)" % (i, j)
                 sp = interp1d(self.energy_axis ,dc[:,i,j], bounds_error = False, 
                 fill_value = 0, kind = interpolation_kind)
@@ -1066,8 +1066,8 @@ class Spectrum(object, MVA):
         ix2 = self.energy2index(E2)
         ix0 = np.clip(ix1 - xch, 0, np.inf)
         ix3 = np.clip(ix2 + xch, 0, len(self.energy_axis)+1)
-        for iy in range(dc.shape[2]):
-            for ix in range(dc.shape[1]):
+        for iy in xrange(dc.shape[2]):
+            for ix in xrange(dc.shape[1]):
                 sp = interp1d(range(ix0,ix1) + range(ix2,ix3),
                 dc[ix0:ix1,ix,iy].tolist() + dc[ix2:ix3,ix,iy].tolist(), 
                 kind = kind)
@@ -1160,8 +1160,8 @@ class Spectrum(object, MVA):
                 maxval = max(1,size_x) * max(1,size_y)
                 pbar = progressbar(maxval = maxval)
             i = 0
-            for iy in range(size_y):
-                for ix in range(size_x):
+            for iy in xrange(size_y):
+                for ix in xrange(size_x):
                     if progress_bar is True:
                         pbar.update(i)
                         i += 1
@@ -1567,8 +1567,8 @@ class Spectrum(object, MVA):
         n_ch = len(E_ax)
         index = 0
         if coordinates is None:
-            for i in range(dc.shape[1]):
-                for j in range(dc.shape[2]):
+            for i in xrange(dc.shape[1]):
+                for j in xrange(dc.shape[2]):
                     if der[:,i,j].max() >= threshold:
                         print "Spike detected in (%s, %s)" % (i, j)
                         argmax = der[:,i,j].argmax()
@@ -1644,8 +1644,8 @@ class Spectrum(object, MVA):
         der = np.diff(dc,1,0)
         index = 0
         spikes =[]
-        for i in range(dc.shape[1]):
-            for j in range(dc.shape[2]):
+        for i in xrange(dc.shape[1]):
+            for j in xrange(dc.shape[2]):
                 if der[:,i,j].max() >= threshold:
                     print "Spike detected in (%s, %s)" % (i, j)
                     spikes.append((i,j))
@@ -1671,8 +1671,8 @@ class Spectrum(object, MVA):
         sp = copy.deepcopy(self)
         dc = self.zl_substracted.data_cube.copy()
         dc[0:ch,:,:] *= 0
-        for i in range(dc.shape[1]):
-            for j in range(dc.shape[2]):
+        for i in xrange(dc.shape[1]):
+            for j in xrange(dc.shape[2]):
                 dc[ch:ch+taper_nch,i,j] *= np.hanning(2 * taper_nch)[:taper_nch]
         sp.zl_substracted.data_cube = dc.copy()
         dc += self.zero_loss.data_cube
@@ -1729,7 +1729,7 @@ class Spectrum(object, MVA):
             " of the line spectrum")
         new_dc = np.zeros((dc_shape[0], len(size_list), 1))
         ch = 0
-        for i in range(len(size_list)):
+        for i in xrange(len(size_list)):
             new_dc[:,i,0] = dc[:,ch:ch + size_list[i], 0].sum(1)
             ch += size_list[i]
         sp = Spectrum()

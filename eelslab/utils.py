@@ -289,8 +289,8 @@ def rebin(a, new_shape):
     lenShape = len(shape)
     factor = np.asarray(shape)/np.asarray(new_shape)
     evList = ['a.reshape('] + \
-             ['new_shape[%d],factor[%d],'%(i,i) for i in range(lenShape)] + \
-             [')'] + ['.sum(%d)'%(i+1) for i in range(lenShape)]
+             ['new_shape[%d],factor[%d],'%(i,i) for i in xrange(lenShape)] + \
+             [')'] + ['.sum(%d)'%(i+1) for i in xrange(lenShape)]
     return eval(''.join(evList))
     
 def estimate_drift(im1,im2):
@@ -357,7 +357,7 @@ def savitzky_golay(data, kernel = 11, order = 4):
     # a second order polynomal has 3 coefficients
     order_range = range(order+1)
     N = (kernel -1) // 2
-    b = np.mat([[k**i for i in order_range] for k in range(-N, 
+    b = np.mat([[k**i for i in order_range] for k in xrange(-N, 
     N+1)])
     # since we don't want the derivative, else choose [1] or [2], respectively
     m = np.linalg.pinv(b).A[0]
@@ -387,7 +387,7 @@ def savitzky_golay(data, kernel = 11, order = 4):
     data = np.concatenate((data, rightpad))
 
 #    data = np.concatenate((np.zeros(N), data, np.zeros(N)))
-    for i in range(N, len(data) - N):
+    for i in xrange(N, len(data) - N):
             value = 0.0
             for offset, weight in offset_data:
                 value += weight * data[i + offset]
@@ -406,16 +406,16 @@ def resub(D, rhs):
     x2= np.zeros((M,),float)
 
     # resub step 1
-    for l in range(M): 
+    for l in xrange(M): 
         sum_ = rhs[l]
-        for n in range(l):
+        for n in xrange(l):
             sum_ -= D[l,n]*x1[n]
         x1[l] = sum_/D[l,l]
 
     # resub step 2
-    for l in range(M-1,-1,-1): 
+    for l in xrange(M-1,-1,-1): 
         sum_ = x1[l]
-        for n in range(l+1,M):
+        for n in xrange(l+1,M):
             sum_ -= D[n,l]*x2[n]
         x2[l] = sum_/D[l,l]
 
@@ -441,8 +441,8 @@ def calc_coeff(num_points, pol_degree, diff_order=0):
 
     # setup normal matrix
     A = np.zeros((2*num_points+1, pol_degree+1), float)
-    for i in range(2*num_points+1):
-        for j in range(pol_degree+1):
+    for i in xrange(2*num_points+1):
+        for j in xrange(pol_degree+1):
             A[i,j] = math.pow(i-num_points, j)
         
     # calculate diff_order-th row of inv(A^T A)
@@ -454,9 +454,9 @@ def calc_coeff(num_points, pol_degree, diff_order=0):
 
     # calculate filter-coefficients
     coeff = np.zeros((2*num_points+1,), float)
-    for n in range(-num_points, num_points+1):
+    for n in xrange(-num_points, num_points+1):
         x = 0.0
-        for m in range(pol_degree+1):
+        for m in xrange(pol_degree+1):
             x += wvec[m]*pow(n, m)
         coeff[n+num_points] = x
     return coeff
@@ -523,14 +523,14 @@ def lowess(x, y, f=2/3., iter=3):
     """
     n = len(x)
     r = int(np.ceil(f*n))
-    h = [np.sort(abs(x-x[i]))[r] for i in range(n)]
+    h = [np.sort(abs(x-x[i]))[r] for i in xrange(n)]
     w = np.clip(abs(([x]-np.transpose([x]))/h),0.0,1.0)
     w = 1-w*w*w
     w = w*w*w
     yest = np.zeros(n,'d')
     delta = np.ones(n,'d')
-    for iteration in range(iter):
-        for i in range(n):
+    for iteration in xrange(iter):
+        for i in xrange(n):
             weights = delta * w[:,i]
             b = np.array([np.sum(weights*y), np.sum(weights*y*x)])
             A = np.array([[np.sum(weights), np.sum(weights*x)],
@@ -740,7 +740,7 @@ def amari(C,A):
 def _ntu(C):
     m, n = C.shape
     CN = C.copy() * 0
-    for t in range(n):
+    for t in xrange(n):
         CN[:,t] = C[:,t] / np.max(np.abs(C[:,t]))
     return CN
 
@@ -877,7 +877,7 @@ def chrono_align_and_sum(spectrum, energy_range = (None, None),
     
     from progressbar import progressbar
     pbar = progressbar(maxval = dc.shape[2] - 1)
-    for i in range(dc.shape[2]):
+    for i in xrange(dc.shape[2]):
         pbar.update(i)
         sys.stdout = capture_output
         s = Spectrum({'calibration': {'data_cube' : dc[:,:,i]}})
@@ -1036,7 +1036,7 @@ def iterate_axis(data, axis = -1):
         new_shape[axis] = data.shape[axis]
         new_shape[unfolded_axis] = -1
         data = data.reshape(new_shape)
-        for i in range(data.shape[unfolded_axis]):
+        for i in xrange(data.shape[unfolded_axis]):
             getitem = [0] * len(data.shape)
             getitem[axis] = slice(None)
             getitem[unfolded_axis] = i

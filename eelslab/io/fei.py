@@ -113,7 +113,7 @@ def get_header_dtype_list(file):
     total_number_of_elements = get_total_number_of_elements(file)
     # Go to the beginning of the dimension array section
     file.seek(30) 
-    for n in range(1, number_of_dimensions + 1):
+    for n in xrange(1, number_of_dimensions + 1):
         description_length, unit_length = get_lengths(file)
         header_list += dimension_array_dtype(
         n, description_length, unit_length)
@@ -280,7 +280,7 @@ def ser_reader(filename, *args, **kwds):
             # We reverse the shape
             i_array.reverse()
         # Extra dimensions
-        for i in range(ndim):
+        for i in xrange(ndim):
             if i_array[i] == ndim - 1:
                 name = 'x'
             elif i_array[i] == ndim - 2:
@@ -343,7 +343,7 @@ def ser_reader(filename, *args, **kwds):
         array_shape.append(data['ArraySizeX'][0])
         
         # Extra dimensions
-        for i in range(ndim - 1):
+        for i in xrange(ndim - 1):
             axes.append({
             'name' : 'undefined%s' % i,
             'offset' : header['Dim-%i_CalibrationOffset' % i + 1][0],

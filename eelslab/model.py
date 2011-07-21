@@ -208,8 +208,8 @@ class Model(list, Optimizers, Estimators, Controls):
         
         The SI is stored in self.model_cube
         """
-        for iy in range(self.model_cube.shape[2]):
-            for ix in range(self.model_cube.shape[1]):
+        for iy in xrange(self.model_cube.shape[2]):
+            for ix in xrange(self.model_cube.shape[1]):
                 print "x = %i\ty = %i" % (ix, iy)
                 self.coordinates.ix = ix
                 self.coordinates.iy = iy
@@ -594,7 +594,7 @@ class Model(list, Optimizers, Estimators, Controls):
         self.fit_background(background_fit_E1, **kwards)
 
         # Fit the edges
-        for i in range(0,len(self.edges)) :
+        for i in xrange(0,len(self.edges)) :
             self.fit_edge(i,background_fit_E1, **kwards)
                 
     def fit_background(self,startenergy = None, kind = 'single', **kwards):

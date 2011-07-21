@@ -35,8 +35,8 @@ def approx_fprime_k(xk,f,k,*args):
 def approx_hessian(xk,f,*args):
     num_par = len(xk)
     hess = np.zeros((num_par, num_par))
-    for k in range(num_par):
-        for l in range(num_par):
+    for k in xrange(num_par):
+        for l in xrange(num_par):
             hess[k,l] = approx_fprime_k(xk, approx_fprime_k,k,f,l,*args)
     return hess  
 
