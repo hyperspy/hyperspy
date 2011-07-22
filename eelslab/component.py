@@ -31,7 +31,7 @@ class Parameter(object):
     def __init__(self, value=0., free=True, bmin=None, 
     bmax=None, twin = None):
         
-        self.connection_activated = False
+        self.connection_active = False
         self.connected_functions = []
         self.ext_bounded = False
         self._number_of_elements = 1
@@ -69,7 +69,7 @@ class Parameter(object):
         else:
             return self.twin_function(self.twin.value)
     def _decoerce(self, arg):
-        if self.connection_activated is True:
+        if self.connection_active is True:
             for f in self.connected_functions:
                 try:
                     f()
@@ -140,20 +140,22 @@ class Parameter(object):
             self._bounds = [(self.bmin, arg)] * self._number_of_elements
     bmax = property(_get_bmax,_set_bmax)
 
-    def copy_current_value_to_map(self,ix,iy) :
-        self.map[ix,iy] = self.value
-        self.already_set_map[ix,iy] = True
+    def store_current_value_in_array(self,indexes):
+        self.map['values'][indexes] = self.value
+        self.map['is_set'][indexes] = True
         if self.std is not None:
-            self.std_map[ix,iy] = self.std
-    def set_current_value_to(self, mask = None):
-        dim = len(self.map.shape)
+            self.map['std'][indexes] = self.std
+    def assign_current_value_to_all(self, mask = None):
+        '''Stores in the map the current value for all the rest of the pixels
+        
+        Parameters
+        ----------
+        mask: numpy array
+        '''
         if mask is None:
-            mask = np.ones(self.map.shape[:2], dtype = 'bool')
-        if dim == 2:
-            self.map[mask] = self.value
-        elif dim == 3:
-            self.map[mask,:] = self.value
-        self.already_set_map = mask
+            mask = np.zeros(self.map.shape, dtype = 'bool')
+        self.map['values'][mask == False] = self.value
+        self.map['is_set'][mask == False] = True
                     
 
 class Component:
@@ -171,11 +173,14 @@ class Component:
             exec('self.%s = Parameter()' % par)
             exec('self.%s.name = \'%s\'' % (par, par))
             exec('self.parameters.append(self.%s)' % par)
-            exec('try:\n    self.%s.grad = self.grad_%s\nexcept:\n    self.%s.grad = None' % (par, par,par))
+            exec('try:\n    self.%s.grad = self.grad_%s\nexcept:\n    '
+            'self.%s.grad = None' % (par, par, par))
+    
     def __repr__(self):
         return self.name
+
     def refresh_free_parameters(self):
-        self.free_parameters=set()
+        self.free_parameters = set()
         for parameter in self.parameters:
             if parameter.free:
                 self.free_parameters.add(parameter)
@@ -193,84 +198,53 @@ class Component:
             i += parameter._number_of_elements
         self.nparam=i
 
-    def charge( self, p, onlyfree = False, p_std = None):
-        if onlyfree :
+    def charge( self, p, p_std = None, onlyfree = False):
+        if onlyfree is True:
             parameters = self.free_parameters
-        else :
-            parameters = self.parameters
-        i=0
-        if p_std is None:
-            for parameter in parameters:
-                lenght = parameter._number_of_elements
-                parameter.value = (p[i] if lenght == 1 else 
-                p[i:i+lenght].tolist())
-                i+=lenght
         else:
-            for parameter in parameters:
-                lenght = parameter._number_of_elements
-                parameter.value = (p[i] if lenght == 1 else 
-                p[i:i+lenght].tolist())
-                parameter.std = (p_std[i] if lenght == 1 else 
-                p_std[i:i+lenght].tolist())
-                i+=lenght
-            
-    def charge2map(self, p, onlyfree = False, array = 'value'):
-        if onlyfree :
-            parameters = self.free_parameters
-        else :
             parameters = self.parameters
         i=0
         for parameter in parameters:
-            if array == 'value':
-                lenght = parameter._number_of_elements
-                parameter.map = (p[:,:,i] if lenght == 1 else p[:,:,i:i+lenght])
-                i+=lenght
-            if array == 'std':
-                lenght = parameter._number_of_elements
-                parameter.std_map = (
-                p[:,:,i] if lenght == 1 else p[:,:,i:i+lenght])
-                i+=lenght
-            if array == 'asm':
-                parameter.already_set_map = p[:,:,i]
+            lenght = parameter._number_of_elements
+            parameter.value = (p[i] if lenght == 1 else 
+            p[i:i+lenght].tolist())
+            if p_std is not None:
+                parameter.map['std'] = (p_std[i] if lenght == 1 else 
+                p_std[i:i+lenght].tolist())
+            
+            i+=lenght           
                 
-    def create_arrays(self, xdimension, ydimension):
+    def create_arrays(self, shape):
         for parameter in self.parameters:
             # It will overwrite the arrays if the dimension changes.
             # This is only useful if the number of knots of the fine structure
             # component has changed
-            if parameter.map is None  or \
-            (parameter.map.shape[0], parameter.map.shape[1]) !=(xdimension,
-             ydimension):
-                dim = parameter._number_of_elements
-                parameter.map = (np.zeros((xdimension, ydimension)) if dim == 1 
-                else np.zeros((xdimension, ydimension, dim)))
-                parameter.already_set_map = np.zeros((
-                    xdimension, ydimension), dtype = bool)
-                parameter.std_map = (np.zeros((xdimension, ydimension))
-                if dim == 1 else np.zeros((xdimension, ydimension, dim)))
-                parameter.std_map[:] = np.nan
+            if parameter.map is None  or parameter.map.shape != shape:
+                parameter.map = np.zeros(shape, 
+                dtype = [
+                ('values','float', parameter._number_of_elements), 
+                ('std', 'float', parameter._number_of_elements), 
+                ('is_set', 'bool', 1)])
+                parameter.map['std'][:] = np.nan
     
-    def store_current_parameters_in_map(self,ix,iy):
+    def store_current_parameters_in_map(self, indexes):
         for parameter in self.parameters:
-            parameter.copy_current_value_to_map(ix,iy)
+            parameter.store_current_value_in_array(indexes)
         
-    def charge_value_from_map(self,ix,iy, only_fixed = False) :
-        if only_fixed :
+    def charge_value_from_map(self, indexes, only_fixed = False):
+        if only_fixed is True:
             parameters = set(self.parameters) - set(self.free_parameters)
-        else :
+        else:
             parameters = self.parameters
 
         for parameter in parameters:
-            if parameter.already_set_map is not None :
-                if parameter.already_set_map[ix,iy] :
-                    if parameter.map.ndim == 2 :
-                        parameter.value = parameter.map[ix,iy]
-                        if parameter.std is not None:
-                            parameter.std = parameter.std_map[ix,iy]
-                    elif parameter.map.ndim == 3 :
-                        parameter.value = parameter.map[ix,iy,:].tolist()
-                        if parameter.std is not None:
-                           parameter.std = parameter.std_map[ix,iy,:].tolist()
+            if parameter.map['is_set'][indexes]:
+                parameter.value = parameter.map['values'][indexes]
+                parameter.std = parameter.map['std'][indexes]
+                if parameter._number_of_elements > 1:
+                    parameter.value = parameter.value.tolist()
+                    parameter.value = parameter.std.tolist()
+
 #    def plot_maps(self):
 #        for parameter in self.parameters:
 #            if (parameter.map is not None) and (parameter.twin is None):
@@ -306,5 +280,5 @@ class Component:
                     parameter.std, parameter.units)
 
     def __call__(self, p, x, onlyfree = True) :
-        self.charge(p , onlyfree)
+        self.charge(p , onlyfree = onlyfree)
         return self.function(x)

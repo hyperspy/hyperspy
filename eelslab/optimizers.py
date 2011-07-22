@@ -64,24 +64,24 @@ class Optimizers(Estimators):
         if method == 'ml':
             weights = None
         if weights is True:
-            print "weighted"
-            if self.hl.variance is None:
-                self.hl.estimate_variance()
-            weights = 1. / np.sqrt(
-            self.hl.variance[self.channel_switches, self.coordinates.ix, self.coordinates.iy])
+            if self.spectrum.variance is None:
+                self.spectrum.estimate_variance()
+            weights = 1. / np.sqrt(self.spectrum.variance.__getitem__(
+            self.axes_manager._getitem_tuple)[self.channel_switches])
         elif weights is not None:
-            print "weighted"
-            weights = weights[self.channel_switches, self.coordinates.ix, self.coordinates.iy]
-        args = (self.hl.data_cube[self.channel_switches, self.coordinates.ix, self.coordinates.iy], 
+            weights = weights.__getitem__(self.axes_manager._getitem_tuple)[
+            self.channel_switches]
+        args = (self.spectrum()[self.channel_switches], 
         weights)
         
         # Least squares "dedicated" fitters
         if fitter == "leastsq":
-            self.least_squares_fit_output[self.coordinates.ix][self.coordinates.iy] = \
+            output = \
             leastsq(self._errfunc, self.p0[:], Dfun = jacobian,
             col_deriv=1, args = args, full_output = True, **kwargs)
-            self.p0 = self.least_squares_fit_output[self.coordinates.ix][self.coordinates.iy][0]
-            var_matrix = self.least_squares_fit_output[self.coordinates.ix][self.coordinates.iy][1]
+            
+            self.p0 = output[0]
+            var_matrix = output[1]
             # In Scipy 0.7 sometimes the variance matrix is None (maybe a 
             # bug?) so...
             if var_matrix is not None:
@@ -90,8 +90,8 @@ class Optimizers(Estimators):
         elif fitter == "odr":
             modelo = odr.Model(fcn = self._function4odr, 
             fjacb = odr_jacobian)
-            mydata = odr.RealData(self.hl.energy_axis[self.channel_switches],
-            self.hl.data_cube[self.channel_switches,self.coordinates.ix,self.coordinates.iy],
+            mydata = odr.RealData(self.axis.axis[self.channel_switches],
+            self.spectrum()[self.channel_switches],
             sx = None,
             sy = (1/weights if weights is not None else None))
             myodr = odr.ODR(mydata, modelo, beta0=self.p0[:])
@@ -99,9 +99,7 @@ class Optimizers(Estimators):
             result = myoutput.beta
             self.p_std = myoutput.sd_beta
             self.p0 = result
-            std = True
-        else:
-            
+        else:          
         # General optimizers (incluiding constrained ones(tnc,l_bfgs_b)
         # Least squares or maximum likelihood
             if method == 'ml':
@@ -165,13 +163,13 @@ class Optimizers(Estimators):
 #            self.p_std = self.calculate_p_std(self.p0, method, *args)
         self._charge_p0(p_std = self.p_std)
         self.set()
-        self.model_cube[self.channel_switches, 
-                        self.coordinates.ix, self.coordinates.iy] = \
-                        self.__call__(not self.convolved, onlyactive = True)
-        if ext_bounding:
+#        self.model_cube[self.channel_switches, 
+#                        self.coordinates.ix, self.coordinates.iy] = \
+#                        self.__call__(not self.convolved, onlyactive = True)
+        if ext_bounding is True:
             self._disable_ext_bounding()
         if switch_aap is True:
             self.set_auto_update_plot(not update_plot)
-            if not update_plot and self.hl.hse is not None:
-                for line in self.hl.hse.spectrum_plot.left_ax_lines:
+            if not update_plot and self.spectrum._plot is not None:
+                for line in self.spectrum._plot.spectrum_plot.left_ax_lines:
                     line.update()
