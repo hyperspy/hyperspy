@@ -660,9 +660,9 @@ class DM3ImageFile(object):
         self.SI_format = None
         self.signal = None
         for tag, value in old_code_tags.iteritems():
-            if 'Format' in tag and 'Spectrum image' in value:
+            if 'Format' in tag and 'Spectrum image' in str(value):
                 self.SI_format = value
-            if 'Signal' in tag and 'EELS' in value:
+            if 'Signal' in tag and 'EELS' in str(value):
                 self.signal = value
                 
 #        try:
