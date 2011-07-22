@@ -219,7 +219,7 @@ _data_type = {
     20 : (read_array, None, 'array'),  # 0x14
     }
                           
-_complex_type = (10, 15, 18, 20)
+_complex_type = (15, 18, 20)
 _simple_type =  (2, 3, 4, 5, 6, 7, 8, 9, 10)
 
 def parse_tag_group(f, endian='big'):
