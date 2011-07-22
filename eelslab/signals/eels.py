@@ -1,7 +1,7 @@
-#import Signal
-#
-#
-#class EELSSignal(Signal):
+from eelslab.signal import Signal
+
+class EELSSignal(Signal):
+    pass
 #    def extract_zero_loss(self, zl = None,right = 0.2,around = 0.05):
 #        """
 #        Zero loss extraction by the reflected-tail or fingerprinting methods.
