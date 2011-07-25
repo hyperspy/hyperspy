@@ -1,7 +1,45 @@
-from eelslab.signal import Signal
+import numpy as np
+import scipy.interpolate
+import matplotlib.pyplot as plt
 
-class EELSSignal(Signal):
-    pass
+from eelslab.signals.spectrum import Spectrum
+from eelslab.signals.image import Image
+
+from eelslab.edges_db import edges_dict
+import eelslab.axes
+
+class EELSSignal(Spectrum):
+    
+    def __init__(self, *args, **kwards):
+        Spectrum.__init__(self, *args, **kwards)
+        # Attributes defaults
+        self.subshells = set()
+        self.elements = set()
+        self.edges = list()
+#        self.readout = None
+#        self.dark_current = None
+#        self.gain_correction = None
+
+        # Perform treatments if pretreatments is True
+#        if apply_treatments:
+#            # Corrects the readout if the readout file is provided
+#            if dark_current is not None:
+#                self.dark_current = Spectrum(dark_current, 
+#                apply_treatments = False)
+#                self._process_dark_current()
+#                self.dark_current_correction()
+#            
+#            if readout is not None:
+#                self.readout = Spectrum(readout, 
+#                dark_current = dark_current)
+#                self._process_readout()
+#                self.readout_correction()
+#
+#            if gain is not None:
+#                self.gain_correction = Spectrum(gain, apply_treatments = False)
+#                self.correct_gain()
+            # Corrects the gain of the acquisition system
+
 #    def extract_zero_loss(self, zl = None,right = 0.2,around = 0.05):
 #        """
 #        Zero loss extraction by the reflected-tail or fingerprinting methods.
@@ -116,77 +154,54 @@ class EELSSignal(Signal):
 #            self.dark_current.set_new_calibration(0,1)
 #            
 #    # Elements _________________________________________________________________
-#    def add_elements(self, elements, include_pre_edges = False):
-#        """Declare the elements present in the SI.
-#        
-#        Instances of components.edge.Edge for the current energy range will be 
-#        created automatically and add to self.subshell.
-#        
-#        Parameters
-#        ----------
-#        elements : tuple of strings
-#            The strings must represent a chemical element.
-#        include_pre_edges : bool
-#            If True, the ionization edges with an onset below the lower energy 
-#            limit of the SI will be incluided
-#        """
-#        for element in elements:
-#            self.elements.add(element)
-#        self.generate_subshells(include_pre_edges)
-#        
-#    def generate_subshells(self, include_pre_edges = False):
-#        """Calculate the subshells for the current energy range for the elements
-#         present in self.elements
-#         
-#        Parameters
-#        ----------
-#        include_pre_edges : bool
-#            If True, the ionization edges with an onset below the lower energy 
-#            limit of the SI will be incluided
-#        """
-#        if not include_pre_edges:
-#            start_energy = self.energy_axis[0]
-#        else:
-#            start_energy = 0.
-#        end_energy = self.energy_axis[-1]
-#        for element in self.elements:
-#            e_shells = list()
-#            for shell in edges_dict[element]['subshells']:
-#                if shell[-1] != 'a':
-#                    if start_energy <= \
-#                    edges_dict[element]['subshells'][shell]['onset_energy'] \
-#                    <= end_energy :
-#                        subshell = '%s_%s' % (element, shell)
-#                        if subshell not in self.subshells:
-#                            print "Adding %s subshell" % (subshell)
-#                            self.subshells.add('%s_%s' % (element, shell))
-#                            e_shells.append(subshell)
-#            if len(e_shells) > 0: 
-#                self.generate_edges(e_shells)
-#    
-#    def generate_edges(self, e_shells, copy2interactive_ns = True):
-#        """Create the Edge instances and configure them appropiately
-#        Parameters
-#        ----------
-#        e_shells : list of strings
-#        copy2interactive_ns : bool
-#            If True, variables with the format Element_Shell will be created in
-#            IPython's interactive shell
-#        """
-#        e_shells.sort()
-#        master_edge = Edge(e_shells.pop())
-#        self.edges.append(master_edge)
-#        interactive_ns[self.edges[-1].__repr__()] = self.edges[-1]
-#        element = self.edges[-1].__repr__().split('_')[0]
-#        interactive_ns[element] = []
-#        interactive_ns[element].append(self.edges[-1])
-#        while len(e_shells) > 0:
-#            self.edges.append(Edge(e_shells.pop()))
-#            self.edges[-1].intensity.twin = master_edge.intensity
-#            self.edges[-1].delta.twin = master_edge.delta
-#            self.edges[-1].freedelta = False
-#            interactive_ns[self.edges[-1].__repr__()] = self.edges[-1]
-#            interactive_ns[element].append(self.edges[-1])
+    def add_elements(self, elements, include_pre_edges = False):
+        """Declare the elements present in the SI.
+        
+        Instances of components.edge.Edge for the current energy range will be 
+        created automatically and add to self.subshell.
+        
+        Parameters
+        ----------
+        elements : tuple of strings
+            The strings must represent a chemical element.
+        include_pre_edges : bool
+            If True, the ionization edges with an onset below the lower energy 
+            limit of the SI will be incluided
+        """
+        for element in elements:
+            self.elements.add(element)
+        self.generate_subshells(include_pre_edges)
+        
+    def generate_subshells(self, include_pre_edges = False):
+        """Calculate the subshells for the current energy range for the elements
+         present in self.elements
+         
+        Parameters
+        ----------
+        include_pre_edges : bool
+            If True, the ionization edges with an onset below the lower energy 
+            limit of the SI will be incluided
+        """
+        Eaxis = self.axes_manager._slicing_axes[0].axis
+        if not include_pre_edges:
+            start_energy = Eaxis[0]
+        else:
+            start_energy = 0.
+        end_energy = Eaxis[-1]
+        for element in self.elements:
+            e_shells = list()
+            for shell in edges_dict[element]['subshells']:
+                if shell[-1] != 'a':
+                    if start_energy <= \
+                    edges_dict[element]['subshells'][shell]['onset_energy'] \
+                    <= end_energy :
+                        subshell = '%s_%s' % (element, shell)
+                        if subshell not in self.subshells:
+                            print "Adding %s subshell" % (subshell)
+                            self.subshells.add('%s_%s' % (element, shell))
+                            e_shells.append(subshell)
+
+    
 #            
 #    def remove_background(self, start_energy = None, mask = None):
 #        """Removes the power law background of the EELS SI if the present 
@@ -252,7 +267,7 @@ class EELSSignal(Signal):
 #            # Gain correction
 #            data = np.zeros(self.data_cube.shape)
 #            for ix in xrange(0, self.xdimension):
-#                for iy in xrange(0, self.ydimension):
+#                for iy self.energy_in xrange(0, self.ydimension):
 #                    np.divide(self.data_cube[:,ix,iy], 
 #                    gain.normalized_gain, 
 #                    data[:,ix,iy])
@@ -374,114 +389,118 @@ class EELSSignal(Signal):
 #               "To correct the readout, please define the dark_current " \
 #                "attribute")
 #                
-#    def find_low_loss_origin(self, sync_SI = None):
-#        """Calculate the position of the zero loss origin as the average of the 
-#        postion of the maximum of all the spectra"""
-#        old_origin = self.energyorigin
-#        imax = np.mean(np.argmax(self.data_cube,0))
-#        self.energyorigin = generate_axis(0, self.energyscale, 
-#            self.energydimension, imax)[0]
-#        self.updateenergy_axis()
-#        if sync_SI:
-#            sync_SI.energyorigin += self.energyorigin - old_origin
-#            sync_SI.updateenergy_axis()
-#
-#    def fourier_log_deconvolution(self):
-#        """Performs fourier-log deconvolution of the full SI.
-#        
-#        The zero-loss can be specified by defining the parameter 
-#        self.zero_loss that must be an instance of Spectrum. Otherwise the 
-#        zero loss will be extracted by the reflected tail method
-#        """
-#        if self.zero_loss is None:
-#            self.extract_zero_loss()
-#        z = np.fft.fft(self.zero_loss.data_cube, axis=0)
-#        j = np.fft.fft(self.data_cube, axis=0)
-#        j1 = z*np.log(j/z)
-#        self.__new_cube(np.fft.ifft(j1, axis = 0).real, 
-#        'fourier-log deconvolution')
-#        self._replot()
-#        
-#    def calculate_thickness(self, method = 'threshold', threshold = 3, 
-#    factor = 1):
-#        """Calculates the thickness from a LL SI.
-#        
-#        The resulting thickness map is stored in self.thickness as an image 
-#        instance. To visualize it: self.thickness.plot()
-#        
-#        Parameters
-#        ----------
-#        method : {'threshold', 'zl'}
-#            If 'threshold', it will extract the zero loss by just splittin the 
-#            spectrum at the threshold value. If 'zl', it will use the 
-#            self.zero_loss SI (if defined) to perform the calculation.
-#        threshold : float
-#            threshold value.
-#        factor : float
-#            factor by which to multiple the ZLP
-#        """
-#        print "Calculating the thickness"
-#        # Create the thickness array
-#        dc = self.data_cube
-#        integral = dc.sum(0)
-#        if method == 'zl':
-#            if self.zero_loss is None:
-#                self.extract_zero_loss()
-#            zl = self.zero_loss.data_cube
-#            zl_int = zl.sum(0)
-#            
-#        elif method == 'threshold':
-#            ti =self.energy2index(threshold)
-#            zl_int = dc[:ti,...].sum(0) * factor 
-#        self.thickness = \
-#        Image({'calibration' : {'data_cube' : np.log( integral / zl_int)}})
-#                
-#    def calculate_FWHM(self, factor = 0.5, channels = 7, der_roots = False):
-#        """Use a third order spline interpolation to estimate the FWHM of 
-#        the zero loss peak.
-#        
-#        Parameters:
-#        -----------
-#        factor : float < 1
-#            By default is 0.5 to give FWHM. Choose any other float to give
-#            find the position of a different fraction of the peak.
-#        channels : int
-#            radius of the interval around the origin were the algorithm will 
-#            perform the estimation.
-#        der_roots: bool
-#            If True, compute the roots of the first derivative
-#            (2 times slower).  
-#        
-#        Returns:
-#        --------
-#        dictionary. Keys:
-#            'FWHM' : float
-#                 width, at half maximum or other fraction as choosen by
-#            `factor`. 
-#            'FWHM_E' : tuple of floats
-#                Coordinates in energy units of the FWHM points.
-#            'der_roots' : tuple
-#                Position in energy units of the roots of the first
-#            derivative if der_roots is True (False by default)
-#        """
-#        ix = self.coordinates.ix
-#        iy = self.coordinates.iy
-#        i0 = np.argmax(self.data_cube[:,ix, iy])
-#        data = self.data_cube[i0 - channels:i0 + channels + 1, ix, iy]
-#        x = self.energy_axis[i0 - channels:i0 + channels + 1]
-#        height = np.max(data)
-#        spline_fwhm = UnivariateSpline(x, data - factor * height)
-#        pair_fwhm = spline_fwhm.roots()[0:2]
-#        print spline_fwhm.roots()
-#        fwhm = pair_fwhm[1] - pair_fwhm[0]
-#        if der_roots:
-#            der_x = np.arange(x[0], x[-1] + 1, (x[1] - x[0]) * 0.2)
-#            derivative = spline_fwhm(der_x, 1)
-#            spline_der = UnivariateSpline(der_x, derivative)
-#            return {'FWHM' : fwhm, 'pair' : pair_fwhm, 
-#            'der_roots': spline_der.roots()}
-#        else:
-#            return {'FWHM' : fwhm, 'FWHM_E' : pair_fwhm}
+    def find_low_loss_centre(self, sync_signal = None):
+        """Calculate the position of the zero loss origin as the average of the 
+        postion of the maximum of all the spectra"""
+        axis = self.axes_manager._slicing_axes[0] 
+        old_offset = axis.offset
+        imax = np.mean(np.argmax(self.data,axis.index_in_array))
+        axis.offset = eelslab.axes.generate_axis(0, axis.scale, 
+            axis.size, imax)[0]
+        print('Energy offset applied: %f %s' % ((axis.offset - old_offset), 
+              axis.units))
+        if sync_signal is not None:
+            saxis = sync_signal.axes_manager.axes[axis.index_in_array]
+            saxis.offset += axis.offset - old_offset
+
+    def fourier_log_deconvolution(self):
+        """Performs fourier-log deconvolution of the full SI.
+        
+        The zero-loss can be specified by defining the parameter 
+        self.zero_loss that must be an instance of Spectrum. Otherwise the 
+        zero loss will be extracted by the reflected tail method
+        """
+        axis = self.axes_manager._slicing_axes[0]
+        if self.zero_loss is None:
+            self.extract_zero_loss()
+        z = np.fft.fft(self.zero_loss.data, axis = axis.index_in_array)
+        j = np.fft.fft(self.data, axis = axis.index_in_array)
+        j1 = z*np.log(j/z)
+        self.data = np.fft.ifft(j1, axis = 0).real
+        
+    def calculate_thickness(self, method = 'threshold', threshold = 3, 
+    factor = 1):
+        """Calculates the thickness from a LL SI.
+        
+        The resulting thickness map is stored in self.thickness as an image 
+        instance. To visualize it: self.thickness.plot()
+        
+        Parameters
+        ----------
+        method : {'threshold', 'zl'}
+            If 'threshold', it will extract the zero loss by just splittin the 
+            spectrum at the threshold value. If 'zl', it will use the 
+            self.zero_loss SI (if defined) to perform the calculation.
+        threshold : float
+            threshold value.
+        factor : float
+            factor by which to multiple the ZLP
+        """
+        print "Calculating the thickness"
+        # Create the thickness array
+        dc = self.data
+        axis = self.axes_manager._slicing_axes[0]
+        integral = dc.sum(axis.index_in_array)
+        if method == 'zl':
+            if self.zero_loss is None:
+                eelslab.messages.warning_exit('To use this method the zero_loss'
+                'attribute must be defined')
+            zl = self.zero_loss.data
+            zl_int = zl.sum(axis.index_in_array)            
+        elif method == 'threshold':
+            ti = axis.value2index(threshold)
+            zl_int = self.data[
+            (slice(None),) * axis.index_in_array + (slice(None, ti), Ellipsis,)
+            ].sum(axis.index_in_array) * factor 
+        self.thickness = \
+        Image({'data' : np.log(integral / zl_int)})
+                
+    def calculate_FWHM(self, factor = 0.5, energy_range = (-2,2), der_roots = False):
+        """Use a third order spline interpolation to estimate the FWHM of 
+        the zero loss peak.
+        
+        Parameters:
+        -----------
+        factor : float < 1
+            By default is 0.5 to give FWHM. Choose any other float to give
+            find the position of a different fraction of the peak.
+        channels : int
+            radius of the interval around the origin were the algorithm will 
+            perform the estimation.
+        der_roots: bool
+            If True, compute the roots of the first derivative
+            (2 times slower).  
+        
+        Returns:
+        --------
+        dictionary. Keys:
+            'FWHM' : float
+                 width, at half maximum or other fraction as choosen by
+            `factor`. 
+            'FWHM_E' : tuple of floats
+                Coordinates in energy units of the FWHM points.
+            'der_roots' : tuple
+                Position in energy units of the roots of the first
+            derivative if der_roots is True (False by default)
+        """
+        axis = self.axes_manager._slicing_axes[0]
+        i0, i1 = axis.value2index(energy_range[0]), axis.value2index(
+        energy_range[1])
+        data = self()[i0:i1]
+        x = axis.axis[i0:i1]
+        height = np.max(data)
+        spline_fwhm = scipy.interpolate.UnivariateSpline(x, 
+                                                         data - factor * height)
+        pair_fwhm = spline_fwhm.roots()[0:2]
+        fwhm = pair_fwhm[1] - pair_fwhm[0]
+        if der_roots:
+            der_x = np.arange(x[0], x[-1] + 1, (x[1] - x[0]) * 0.2)
+            derivative = spline_fwhm(der_x, 1)
+            spline_der = scipy.interpolate.UnivariateSpline(der_x, derivative)
+            return {'FWHM' : fwhm, 'pair' : pair_fwhm, 
+            'der_roots': spline_der.roots()}
+        else:
+            return {'FWHM' : fwhm, 'FWHM_E' : pair_fwhm}
 #            
 #    def power_law_extension(self, interval, new_size = 1024, 
 #                            to_the = 'right'):
@@ -536,126 +555,126 @@ class EELSSignal(Signal):
 #            (np.hanning(2*channels)[-channels:]).reshape((-1,1,1))
 #            dc[-offset:,:,:] *= 0. 
 #        
-#    def remove_spikes(self, threshold = 2200, subst_width = 5, 
-#                      coordinates = None):
-#        """Remove the spikes in the SI.
-#        
-#        Detect the spikes above a given threshold and fix them by interpolating 
-#        in the give interval. If coordinates is given, it will only remove the 
-#        spikes for the specified spectra.
-#        
-#        Paramerters:
-#        ------------
-#        threshold : float
-#            A suitable threshold can be determined with 
-#            Spectrum.spikes_diagnosis
-#        subst_width : tuple of int or int
-#            radius of the interval around the spike to substitute with the 
-#            interpolation. If a tuple, the dimension must be equal to the 
-#            number of spikes in the threshold. If int the same value will be 
-#            applied to all the spikes.
-#        
-#        See also
-#        --------
-#        Spectrum.spikes_diagnosis, Spectrum.plot_spikes
-#        """
-#        int_window = 20
-#        dc = self.data_cube
-#        der = np.diff(dc,1,0)
-#        E_ax = self.energy_axis
-#        n_ch = len(E_ax)
-#        index = 0
-#        if coordinates is None:
-#            for i in xrange(dc.shape[1]):
-#                for j in xrange(dc.shape[2]):
-#                    if der[:,i,j].max() >= threshold:
-#                        print "Spike detected in (%s, %s)" % (i, j)
-#                        argmax = der[:,i,j].argmax()
-#                        if hasattr(subst_width, '__iter__'):
-#                            subst__width = subst_width[index]
-#                        else:
-#                            subst__width = subst_width
-#                        lp1 = np.clip(argmax - int_window, 0, n_ch)
-#                        lp2 = np.clip(argmax - subst__width, 0, n_ch)
-#                        rp2 = np.clip(argmax + int_window, 0, n_ch)
-#                        rp1 = np.clip(argmax + subst__width, 0, n_ch)
-#                        x = np.hstack((E_ax[lp1:lp2], E_ax[rp1:rp2]))
-#                        y = np.hstack((dc[lp1:lp2,i,j], dc[rp1:rp2,i,j])) 
-#                        # The weights were commented because the can produce nans
-#                        # Maybe it should be an option?
-#                        intp =UnivariateSpline(x,y) #,w = 1/np.sqrt(y))
-#                        x_int = E_ax[lp2:rp1+1]
-#                        dc[lp2:rp1+1,i,j] = intp(x_int)
-#                        index += 1
-#        else:
-#            for spike_spectrum in coordinates:
-#                i, j = spike_spectrum
-#                print "Spike detected in (%s, %s)" % (i, j)
-#                argmax = der[:,i,j].argmax()
-#                if hasattr(subst_width, '__iter__'):
-#                    subst__width = subst_width[index]
-#                else:
-#                    subst__width = subst_width
-#                lp1 = np.clip(argmax - int_window, 0, n_ch)
-#                lp2 = np.clip(argmax - subst__width, 0, n_ch)
-#                rp2 = np.clip(argmax + int_window, 0, n_ch)
-#                rp1 = np.clip(argmax + subst__width, 0, n_ch)
-#                x = np.hstack((E_ax[lp1:lp2], E_ax[rp1:rp2]))
-#                y = np.hstack((dc[lp1:lp2,i,j], dc[rp1:rp2,i,j])) 
-#                # The weights were commented because the can produce nans
-#                # Maybe it should be an option?
-#                intp =UnivariateSpline(x,y) # ,w = 1/np.sqrt(y))
-#                x_int = E_ax[lp2:rp1+1]
-#                dc[lp2:rp1+1,i,j] = intp(x_int)
-#                index += 1
-#                
-#    def spikes_diagnosis(self):
-#        """Plots a histogram to help in choosing the threshold for spikes
-#        removal.
-#        See also
-#        --------
-#        Spectrum.remove_spikes, Spectrum.plot_spikes
-#        """
-#        dc = self.data_cube
-#        der = np.diff(dc,1,0)
-#        plt.figure()
-#        plt.hist(np.ravel(der.max(0)),100)
-#        plt.xlabel('Threshold')
-#        plt.ylabel('Counts')
-#        plt.draw()
-#        
-#    def plot_spikes(self, threshold = 2200):
-#        """Plot the spikes in the given threshold
-#        
-#        Parameters
-#        ----------
-#        threshold : float
-#        
-#        Returns
-#        -------
-#        list of spikes coordinates
-#        
-#        See also
-#        --------
-#        Spectrum.remove_spikes, Spectrum.spikes_diagnosis
-#        """
-#        dc = self.data_cube
-#        der = np.diff(dc,1,0)
-#        index = 0
-#        spikes =[]
-#        for i in xrange(dc.shape[1]):
-#            for j in xrange(dc.shape[2]):
-#                if der[:,i,j].max() >= threshold:
-#                    print "Spike detected in (%s, %s)" % (i, j)
-#                    spikes.append((i,j))
-#                    argmax = der[:,i,j].argmax()
-#                    toplot = dc[np.clip(argmax-100,0,dc.shape[0]-1): 
-#                    np.clip(argmax+100,0,dc.shape[0]-1), i, j]
-#                    plt.figure()
-#                    plt.step(range(len(toplot)), toplot)
-#                    plt.title(str(index))
-#                    index += 1
-#        return spikes
+    def remove_spikes(self, threshold = 2200, subst_width = 5, 
+                      coordinates = None):
+        """Remove the spikes in the SI.
+        
+        Detect the spikes above a given threshold and fix them by interpolating 
+        in the give interval. If coordinates is given, it will only remove the 
+        spikes for the specified spectra.
+        
+        Paramerters:
+        ------------
+        threshold : float
+            A suitable threshold can be determined with 
+            Spectrum.spikes_diagnosis
+        subst_width : tuple of int or int
+            radius of the interval around the spike to substitute with the 
+            interpolation. If a tuple, the dimension must be equal to the 
+            number of spikes in the threshold. If int the same value will be 
+            applied to all the spikes.
+        
+        See also
+        --------
+        Spectrum.spikes_diagnosis, Spectrum.plot_spikes
+        """
+        axis = self.axes_manager._slicing_axes[0]
+        int_window = 20
+        dc = self.data
+        der = np.diff(dc, 1, axis.index_in_array)
+        E_ax = axis.axis
+        n_ch = len(E_ax)
+        i = 0
+        if coordinates is None:
+            coordinates = []
+            for index in np.ndindex(tuple(self.axes_manager.navigation_shape)):
+                coordinates.append(index)
+            for index in coordinates:
+                lindex = list(index)
+                lindex.insert(axis.index_in_array, slice(None))
+                if der[lindex].max() >= threshold:
+                    print "Spike detected in ", index
+                    argmax = der[lindex].argmax()
+                    if hasattr(subst_width, '__iter__'):
+                        subst__width = subst_width[index]
+                    else:
+                        subst__width = subst_width
+                    lp1 = np.clip(argmax - int_window, 0, n_ch)
+                    lp2 = np.clip(argmax - subst__width, 0, n_ch)
+                    rp2 = np.clip(argmax + int_window, 0, n_ch)
+                    rp1 = np.clip(argmax + subst__width, 0, n_ch)
+                    x = np.hstack((E_ax[lp1:lp2], E_ax[rp1:rp2]))
+                    nlindex1 = list(index)
+                    nlindex1.insert(axis.index_in_array, 
+                                      slice(lp1, lp2))
+                    nlindex2 = list(index)
+                    nlindex2.insert(axis.index_in_array, 
+                                      slice(rp1, rp2))                
+                    
+                    y = np.hstack((dc[nlindex1], dc[nlindex2])) 
+                    # The weights were commented because the can produce 
+                    # nans, maybe it should be an option?
+                    intp = scipy.interpolate.UnivariateSpline(x, y) 
+                    #,w = 1/np.sqrt(y))
+                    x_int = E_ax[lp2:rp1 + 1]
+                    nlindex3 = list(index)
+                    nlindex3.insert(axis.index_in_array, slice(lp2, rp1 + 1))
+                    dc[nlindex3]  = intp(x_int)
+                    i += 1
+                
+    def spikes_diagnosis(self):
+        """Plots a histogram to help in choosing the threshold for spikes
+        removal.
+        See also
+        --------
+        Spectrum.remove_spikes, Spectrum.plot_spikes
+        """
+        dc = self.data
+        axis = self.axes_manager._slicing_axes[0]
+        der = np.diff(dc, 1, axis.index_in_array)
+        plt.figure()
+        plt.hist(np.ravel(der.max(axis.index_in_array)),100)
+        plt.xlabel('Threshold')
+        plt.ylabel('Counts')
+        plt.draw()
+        
+    def plot_spikes(self, threshold = 2200):
+        """Plot the spikes in the given threshold
+        
+        Parameters
+        ----------
+        threshold : float
+        
+        Returns
+        -------
+        list of spikes coordinates
+        
+        See also
+        --------
+        Spectrum.remove_spikes, Spectrum.spikes_diagnosis
+        """
+        dc = self.data
+        axis = self.axes_manager._slicing_axes[0]
+        der = np.diff(dc,1,axis.index_in_array)
+        i = 0
+        spikes = []
+        for index in np.ndindex(tuple(self.axes_manager.navigation_shape)):
+            lindex = list(index)
+            lindex.insert(axis.index_in_array, slice(None))
+            if der[lindex].max() >= threshold:
+                print "Spike detected in ", index
+                spikes.append(index)
+                argmax = der[lindex].argmax()
+                nlindex = list(index)
+                i1 = np.clip(argmax-100,0, dc.shape[axis.index_in_array]-1)
+                i2 = np.clip(argmax+100,0, dc.shape[axis.index_in_array]-1)
+                nlindex.insert(axis.index_in_array, slice(i1, i2))
+                toplot = dc[nlindex]
+                plt.figure()
+                plt.step(range(len(toplot)), toplot)
+                plt.title(str(index))
+                i += 1
+        return spikes
 #                        
 #    def build_SI_from_substracted_zl(self,ch, taper_nch = 20):
 #        """Modify the SI to have fit with a smoothly decaying ZL
