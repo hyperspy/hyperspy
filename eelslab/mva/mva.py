@@ -461,7 +461,7 @@ class MVA():
 
         self._unfolded4pca = self.unfold_if_multidim()
 
-        sc = copy.deepcopy(self)
+        sc = self.deepcopy()
         dc_transposed = False
         last_axis_units = self.axes_manager.axes[-1].units
         if last_axis_units == 'eV' or last_axis_units == 'keV':
