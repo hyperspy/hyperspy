@@ -61,7 +61,7 @@ class Signal(t.HasTraits, MVA):
         super(Signal, self).__init__()
         self.mapped_parameters=Parameters()
         self.original_parameters=Parameters()
-        if file_data_dict is not None:
+        if type(file_data_dict).__name__ == "dict":
             self.load_dictionary(file_data_dict)
         self._plot = None
         self.mva_results=MVA_Results()
