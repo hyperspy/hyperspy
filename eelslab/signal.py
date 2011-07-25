@@ -49,7 +49,7 @@ class Signal(t.HasTraits, MVA):
     mapped_parameters = t.Instance(Parameters)
     physical_property = t.Str()
     
-    def __init__(self, file_data_dict):
+    def __init__(self, file_data_dict=None,*args,**kw):
         """All data interaction is made through this class or its subclasses
             
         
@@ -61,7 +61,8 @@ class Signal(t.HasTraits, MVA):
         super(Signal, self).__init__()
         self.mapped_parameters=Parameters()
         self.original_parameters=Parameters()
-        self.load_dictionary(file_data_dict)
+        if file_data_dict is not None:
+            self.load_dictionary(file_data_dict)
         self._plot = None
         self.mva_results=MVA_Results()
         self._shape_before_unfolding = None
