@@ -434,41 +434,45 @@ class MVA():
         Signal instance
         """
 
-        if mva_type.lower()=='pca':
+        if mva_type.lower() == 'pca':
             factors = self.mva_results.pc
-            scores     = self.mva_results.v.T
-        elif mva_type.lower()=='ica':
+            scores = self.mva_results.v.T
+        elif mva_type.lower() == 'ica':
             factors = self.ic
-            scores     = self._get_ica_scores()
+            scores = self._get_ica_scores()
         if components is None:
-            a=np.atleast_3d(np.dot(factors,scores))
-            signal_name='rebuilt from %s with %i components'%(mva_type,factors.shape[1])
-        elif type(components).__name__ == 'list':
-            tfactors=np.zeros((factors.shape[0],len(components)))
-            tscores=np.zeros((len(components),scores.shape[1]))
+            a = np.atleast_3d(np.dot(factors,scores))
+            signal_name = 'rebuilt from %s with %i components' % (
+            mva_type,factors.shape[1])
+        elif hasattr(components, '__iter__'):
+            tfactors = np.zeros((factors.shape[0],len(components)))
+            tscores = np.zeros((len(components),scores.shape[1]))
             for i in xrange(len(components)):
-                tfactors[:,i]=factors[:,components[i]]
-                tscores[i,:]=scores[components[i],:]
-            a=np.atleast_3d(np.dot(tfactors,tscores))
-            signal_name='rebuilt from %s with components %s'%(mva_type,components)
+                tfactors[:,i] = factors[:,components[i]]
+                tscores[i,:] = scores[components[i],:]
+            a = np.atleast_3d(np.dot(tfactors, tscores))
+            signal_name = 'rebuilt from %s with components %s' % (
+            mva_type,components)
         else:
-            a=np.atleast_3d(np.dot(factors[:,:components],scores[:components,:]))
-            signal_name='rebuilt from %s with %i components'%(mva_type,components)
+            a = np.atleast_3d(np.dot(factors[:,:components], 
+                                     scores[:components,:]))
+            signal_name = 'rebuilt from %s with %i components' % (
+            mva_type,components)
 
         self._unfolded4pca = self.unfold_if_multidim()
 
         sc = copy.deepcopy(self)
-        dc_transposed=False
-        last_axis_units=self.axes_manager.axes[-1].units
-        if last_axis_units=='eV' or last_axis_units=='keV':
+        dc_transposed = False
+        last_axis_units = self.axes_manager.axes[-1].units
+        if last_axis_units == 'eV' or last_axis_units == 'keV':
             print "Transposing data so that energy axis makes up rows."
             sc.data = a.T.squeeze()
         else:
             sc.data = a.squeeze()
-        sc.name=signal_name
+        sc.name = signal_name
         if self._unfolded4pca is True:
             self.fold()
-            sc.history=['unfolded']
+            sc.history = ['unfolded']
             sc.fold()
         return sc
 
