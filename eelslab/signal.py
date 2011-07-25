@@ -7,7 +7,6 @@ import types
 import copy
 
 import numpy as np
-import scipy as sp
 import enthought.traits.api as t
 import enthought.traits.ui.api as tui 
 
@@ -16,7 +15,6 @@ from eelslab.axes import AxesManager
 from eelslab import file_io
 from eelslab.drawing import mpl_hie, mpl_hse
 from eelslab import utils
-from eelslab import progressbar
 from eelslab.mva.mva import MVA, MVA_Results
 
 class Parameters(t.HasTraits,object):
@@ -36,7 +34,7 @@ class Parameters(t.HasTraits,object):
         for item in self.__dict__.items():
             if type(item) != types.MethodType:
                 print("%s = %s") % item
-
+                
     def _get_parameters_dictionary(self):
         par_dict = {}
         for item in self.__dict__.items():
@@ -51,7 +49,7 @@ class Signal(t.HasTraits, MVA):
     mapped_parameters = t.Instance(Parameters)
     physical_property = t.Str()
     
-    def __init__(self, file_data_dict=None, *args, **kw):
+    def __init__(self, file_data_dict):
         """All data interaction is made through this class or its subclasses
             
         
@@ -63,8 +61,7 @@ class Signal(t.HasTraits, MVA):
         super(Signal, self).__init__()
         self.mapped_parameters=Parameters()
         self.original_parameters=Parameters()
-        if type(file_data_dict).__name__ == "dict":
-            self.load_dictionary(file_data_dict)
+        self.load_dictionary(file_data_dict)
         self._plot = None
         self.mva_results=MVA_Results()
         self._shape_before_unfolding = None
@@ -102,10 +99,10 @@ class Signal(t.HasTraits, MVA):
             for key, value in file_data_dict['attributes'].iteritems():
                 self.__setattr__(key, value)
         self.original_parameters.load_dictionary(
-            file_data_dict['original_parameters'])
+        file_data_dict['original_parameters'])
         self.mapped_parameters.load_dictionary(
             file_data_dict['mapped_parameters'])
-
+            
     def _get_signal_dict(self):
         dic = {}
         dic['data'] = self.data.copy()
@@ -475,7 +472,6 @@ class Signal(t.HasTraits, MVA):
         self.axes_manager.axes[index].__init__(**nc)
         self.axes_manager.axes[index].slice = slice(None)
         self.axes_manager.axes[index - 1].slice = None
-        self._unfolded=True
         self._replot()
             
     def fold(self):
@@ -486,13 +482,14 @@ class Signal(t.HasTraits, MVA):
             self._shape_before_unfolding = None
             self._axes_manager_before_unfolding = None
             self._unfolded4pca=False
-            self._unfolded=False
             self._replot()
 
     def _get_positive_axis_index_index(self, axis):
         if axis < 0:
             axis = len(self.data.shape) + axis
         return axis
+
+
 
     def iterate_axis(self, axis = -1):
         # We make a copy to guarantee that the data in contiguous, otherwise
@@ -510,6 +507,8 @@ class Signal(t.HasTraits, MVA):
             getitem[axis] = slice(None)
             getitem[unfolded_axis] = i
             yield(data[getitem])
+
+
         
     def sum(self, axis, return_signal = False):
         """Sum the data over the specify axis
@@ -608,242 +607,6 @@ class Signal(t.HasTraits, MVA):
         
     def deepcopy(self):
         return(copy.deepcopy(self))
-
-    def peakfind_1D(self, xdim=None,slope_thresh=0.5, amp_thresh=None, subchannel=True, 
-                    medfilt_radius=5, maxpeakn=30000, peakgroup=10):
-        """Find peaks along a 1D line (peaks in spectrum/spectra).
-
-        Function to locate the positive peaks in a noisy x-y data set.
-    
-        Detects peaks by looking for downward zero-crossings in the first
-        derivative that exceed 'slope_thresh'.
-    
-        Returns an array containing position, height, and width of each peak.
-
-        'slope_thresh' and 'amp_thresh', control sensitivity: higher values will
-        neglect smaller features.
-    
-        peakgroup is the number of points around the top peak to search around
-
-        Parameters
-        ---------
-
-        slope_thresh : float (optional)
-                       1st derivative threshold to count the peak
-                       default is set to 0.5
-                       higher values will neglect smaller features.
-                   
-        amp_thresh : float (optional)
-                     intensity threshold above which   
-                     default is set to 10% of max(y)
-                     higher values will neglect smaller features.
-                                  
-        medfilt_radius : int (optional)
-                     median filter window to apply to smooth the data
-                     (see scipy.signal.medfilt)
-                     if 0, no filter will be applied.
-                     default is set to 5
-
-        peakgroup : int (optional)
-                    number of points around the "top part" of the peak
-                    default is set to 10
-
-        maxpeakn : int (optional)
-                   number of maximum detectable peaks
-                   default is set to 5000
-                
-        subpix : bool (optional)
-                 default is set to True
-
-        Returns
-        -------
-        P : array of shape (npeaks, 3)
-            contains position, height, and width of each peak
-        """
-        from peak_char import one_dim_findpeaks
-        if len(self.data.shape)==1:
-            # preallocate a large array for the results
-            self.peaks=one_dim_findpeaks(self.data, slope_thresh=slope_thresh, amp_thresh=amp_thresh,
-                                         medfilt_radius=medfilt_radius, maxpeakn=maxpeakn, 
-                                         peakgroup=peakgroup, subchannel=subchannel)
-        elif len(self.data.shape)==2:
-            pbar=progressbar.ProgressBar(maxval=self.data.shape[1]).start()
-            # preallocate a large array for the results
-            # the third dimension is for the number of rows in your data.
-            # assumes spectra are rows of the 2D array, each col is a channel.
-            self.peaks=np.zeros((maxpeakn,3,self.data.shape[0]))
-            for i in xrange(self.data.shape[1]):
-                tmp=one_dim_findpeaks(self.data[i], slope_thresh=slope_thresh, 
-                                                    amp_thresh=amp_thresh, 
-                                                    medfilt_radius=medfilt_radius, 
-                                                    maxpeakn=maxpeakn, 
-                                                    peakgroup=peakgroup, 
-                                                    subchannel=subchannel)
-                self.peaks[:tmp.shape[0],:,i]=tmp
-                pbar.update(i+1)
-            # trim any extra blank space
-            # works by summing along axes to compress to a 1D line, then finds
-            # the first 0 along that line.
-            trim_id=np.min(np.nonzero(np.sum(np.sum(self.peaks,axis=2),
-                                             axis=1)==0))
-            pbar.finish()
-            self.peaks=self.peaks[:trim_id,:,:]
-        elif len(self.data.shape)==3:
-            # preallocate a large array for the results
-            self.peaks=np.zeros((maxpeakn,3,self.data.shape[0],
-                                 self.data.shape[1]))
-            pbar=progressbar.ProgressBar(maxval=self.data.shape[0]).start()
-            for i in xrange(self.data.shape[0]):
-                for j in xrange(self.data.shape[1]):
-                    tmp=one_dim_findpeaks(self.data[i,j], slope_thresh=slope_thresh, amp_thresh=amp_thresh,
-                                         medfilt_radius=medfilt_radius, maxpeakn=maxpeakn, 
-                                         peakgroup=peakgroup, subchannel=subchannel)
-                    self.peaks[:tmp.shape[0],:,i,j]=tmp
-                pbar.update(i+1)
-            # trim any extra blank space
-            # works by summing along axes to compress to a 1D line, then finds
-            # the first 0 along that line.
-            trim_id=np.min(np.nonzero(np.sum(np.sum(np.sum(self.peaks,axis=3),axis=2),axis=1)==0))
-            pbar.finish()
-            self.peaks=self.peaks[:trim_id,:,:,:]
-
-    def peakfind_2D(self, subpixel=False, peak_width=10, medfilt_radius=5,
-                        maxpeakn=30000):
-            """Find peaks in a 2D array (peaks in an image).
-
-            Function to locate the positive peaks in a noisy x-y data set.
-    
-            Returns an array containing pixel position of each peak.
-            
-            Parameters
-            ---------
-            subpixel : bool (optional)
-                    default is set to True
-
-            peak_width : int (optional)
-                    expected peak width.  Affects subpixel precision fitting window,
-                    which takes the center of gravity of a box that has sides equal
-                    to this parameter.  Too big, and you'll include other peaks.
-                    default is set to 10
-
-            medfilt_radius : int (optional)
-                     median filter window to apply to smooth the data
-                     (see scipy.signal.medfilt)
-                     if 0, no filter will be applied.
-                     default is set to 5
-
-            maxpeakn : int (optional)
-                    number of maximum detectable peaks
-                    default is set to 30000             
-            """
-            from peak_char import two_dim_findpeaks
-            if len(self.data.shape)==2:
-                self.peaks=two_dim_findpeaks(self.data, subpixel=subpixel,
-                                             peak_width=peak_width, 
-                                             medfilt_radius=medfilt_radius)
-                
-            elif len(self.data.shape)==3:
-                # preallocate a large array for the results
-                self.peaks=np.zeros((maxpeakn,2,self.data.shape[2]))
-                for i in xrange(self.data.shape[2]):
-                    tmp=two_dim_findpeaks(self.data[:,:,i], 
-                                             subpixel=subpixel,
-                                             peak_width=peak_width, 
-                                             medfilt_radius=medfilt_radius)
-                    self.peaks[:tmp.shape[0],:,i]=tmp
-                trim_id=np.min(np.nonzero(np.sum(np.sum(self.peaks,axis=2),axis=1)==0))
-                self.peaks=self.peaks[:trim_id,:,:]
-            elif len(self.data.shape)==4:
-                # preallocate a large array for the results
-                self.peaks=np.zeros((maxpeakn,2,self.data.shape[0],self.data.shape[1]))
-                for i in xrange(self.data.shape[0]):
-                    for j in xrange(self.data.shape[1]):
-                        tmp=two_dim_findpeaks(self.data[i,j,:,:], 
-                                             subpixel=subpixel,
-                                             peak_width=peak_width, 
-                                             medfilt_radius=medfilt_radius)
-                        self.peaks[:tmp.shape[0],:,i,j]=tmp
-                trim_id=np.min(np.nonzero(np.sum(np.sum(np.sum(self.peaks,axis=3),axis=2),axis=1)==0))
-                self.peaks=self.peaks[:trim_id,:,:,:]
-
-    def remove_spikes(self, threshold = 2200, subst_width = 5, 
-                      coordinates = None):
-        """Remove the spikes in the SI.
-        
-        Detect the spikes above a given threshold and fix them by interpolating 
-        in the give interval. If coordinates is given, it will only remove the 
-        spikes for the specified spectra.
-        
-        Parameters:
-        ------------
-        threshold : float
-            A suitable threshold can be determined with 
-            Spectrum.spikes_diagnosis
-        subst_width : tuple of int or int
-            radius of the interval around the spike to substitute with the 
-            interpolation. If a tuple, the dimension must be equal to the 
-            number of spikes in the threshold. If int the same value will be 
-            applied to all the spikes.
-        
-        See also
-        --------
-        Spectrum.spikes_diagnosis, Spectrum.plot_spikes
-        (These two functions not yet ported to Signal class)
-        """
-        from scipy.interpolate import UnivariateSpline
-
-        int_window = 20
-        dc = self.data
-        # differentiate the last axis
-        der = np.diff(dc,1)
-        E_ax = self.axes_manager.axes[-1].axis
-        n_ch = E_ax.size
-        index = 0
-        if coordinates is None:
-            for i in xrange(dc.shape[0]):
-                for j in xrange(dc.shape[1]):
-                    if der[i,j,:].max() >= threshold:
-                        print "Spike detected in (%s, %s)" % (i, j)
-                        argmax = der[i,j,:].argmax()
-                        if hasattr(subst_width, '__iter__'):
-                            subst__width = subst_width[index]
-                        else:
-                            subst__width = subst_width
-                        lp1 = np.clip(argmax - int_window, 0, n_ch)
-                        lp2 = np.clip(argmax - subst__width, 0, n_ch)
-                        rp2 = np.clip(argmax + int_window, 0, n_ch)
-                        rp1 = np.clip(argmax + subst__width, 0, n_ch)
-                        x = np.hstack((E_ax[lp1:lp2], E_ax[rp1:rp2]))
-                        y = np.hstack((dc[i,j,lp1:lp2], dc[i,j,rp1:rp2])) 
-                        # The weights were commented because the can produce nans
-                        # Maybe it should be an option?
-                        intp =UnivariateSpline(x,y) #,w = 1/np.sqrt(y))
-                        x_int = E_ax[lp2:rp1+1]
-                        dc[i,j,lp2:rp1+1] = intp(x_int)
-                        index += 1
-        else:
-            for spike_spectrum in coordinates:
-                i, j = spike_spectrum
-                print "Spike detected in (%s, %s)" % (i, j)
-                argmax = der[:,i,j].argmax()
-                if hasattr(subst_width, '__iter__'):
-                    subst__width = subst_width[index]
-                else:
-                    subst__width = subst_width
-                lp1 = np.clip(argmax - int_window, 0, n_ch)
-                lp2 = np.clip(argmax - subst__width, 0, n_ch)
-                rp2 = np.clip(argmax + int_window, 0, n_ch)
-                rp1 = np.clip(argmax + subst__width, 0, n_ch)
-                x = np.hstack((E_ax[lp1:lp2], E_ax[rp1:rp2]))
-                y = np.hstack((dc[lp1:lp2,i,j], dc[rp1:rp2,i,j])) 
-                # The weights were commented because the can produce nans
-                # Maybe it should be an option?
-                intp =UnivariateSpline(x,y) # ,w = 1/np.sqrt(y))
-                x_int = E_ax[lp2:rp1+1]
-                dc[lp2:rp1+1,i,j] = intp(x_int)
-                index += 1
-        self.data=dc
-
 
 #    def sum_in_mask(self, mask):
 #        """Returns the result of summing all the spectra in the mask.
