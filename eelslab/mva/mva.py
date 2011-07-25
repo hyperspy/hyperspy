@@ -136,7 +136,7 @@ class MVA():
         plot_principal_components, plot_principal_components_maps, plot_lev
         """
         # backup the original data
-        self._data_before_treatments=self.data
+        self._data_before_treatments = self.data.copy()
         # Check for conflicting options and correct them when possible   
         if (algorithm == 'mdp' or algorithm == 'NIPALS') and center is False:
             print \
@@ -179,7 +179,7 @@ class MVA():
         if variance2one is True:
             self.variance2one()
         # Transform the data in a line spectrum
-        self._unfolded4pca=self.unfold_if_multidim()
+        self._unfolded4pca = self.unfold_if_multidim()
         # Normalize the poissonian noise
         # Note that this function can change the masks
         if normalize_poissonian_noise is True:
