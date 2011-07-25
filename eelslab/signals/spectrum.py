@@ -481,3 +481,8 @@ class Spectrum(Signal):
         dic['axes'][-1]['index_in_array'] = len(dic['axes']) - 1
         return Image(dic)
         
+    def to_EELS(self):
+        from eelslab.signals.eels import EELSSignal
+        dic = self._get_signal_dict()
+        return EELSSignal(dic)
+        
