@@ -1,7 +1,7 @@
-#import Signal
-#
-#
-#class EELSSignal(Signal):
+from eelslab.signal import Signal
+
+class EELSSignal(Signal):
+    pass
 #    def extract_zero_loss(self, zl = None,right = 0.2,around = 0.05):
 #        """
 #        Zero loss extraction by the reflected-tail or fingerprinting methods.
@@ -54,8 +54,8 @@
 #            # 2 overlapping channels
 #            ch = i0 + width
 #            ratio = np.mean(data[ch: ch + 2] / canvas[ch: ch + 2], 0)
-#            for ix in range(data.shape[1]):
-#                for iy in range(data.shape[2]):
+#            for ix in xrange(data.shape[1]):
+#                for iy in xrange(data.shape[2]):
 #                    canvas[:,ix,iy] *= ratio[ix,iy]
 #            # Copy the extension
 #            data[i0 + width:] = canvas[i0 + width:]
@@ -251,8 +251,8 @@
 #            print "Applying gain correction"
 #            # Gain correction
 #            data = np.zeros(self.data_cube.shape)
-#            for ix in range(0, self.xdimension):
-#                for iy in range(0, self.ydimension):
+#            for ix in xrange(0, self.xdimension):
+#                for iy in xrange(0, self.ydimension):
 #                    np.divide(self.data_cube[:,ix,iy], 
 #                    gain.normalized_gain, 
 #                    data[:,ix,iy])
@@ -319,8 +319,8 @@
 #            if hasattr(self, 'readout'):
 #                data = copy.copy(self.data_cube)
 #                print "Correcting the readout"
-#                for ix in range(0,self.xdimension):
-#                    for iy in range(0,self.ydimension):
+#                for ix in xrange(0,self.xdimension):
+#                    for iy in xrange(0,self.ydimension):
 #                        data[:, ix, iy] -= self.readout.data_cube[:,0,0]
 #                self.__new_cube(data, 'readout correction')
 #                self.treatments.readout = 1
@@ -566,8 +566,8 @@
 #        n_ch = len(E_ax)
 #        index = 0
 #        if coordinates is None:
-#            for i in range(dc.shape[1]):
-#                for j in range(dc.shape[2]):
+#            for i in xrange(dc.shape[1]):
+#                for j in xrange(dc.shape[2]):
 #                    if der[:,i,j].max() >= threshold:
 #                        print "Spike detected in (%s, %s)" % (i, j)
 #                        argmax = der[:,i,j].argmax()
@@ -643,8 +643,8 @@
 #        der = np.diff(dc,1,0)
 #        index = 0
 #        spikes =[]
-#        for i in range(dc.shape[1]):
-#            for j in range(dc.shape[2]):
+#        for i in xrange(dc.shape[1]):
+#            for j in xrange(dc.shape[2]):
 #                if der[:,i,j].max() >= threshold:
 #                    print "Spike detected in (%s, %s)" % (i, j)
 #                    spikes.append((i,j))
@@ -670,8 +670,8 @@
 #        sp = copy.deepcopy(self)
 #        dc = self.zl_substracted.data_cube.copy()
 #        dc[0:ch,:,:] *= 0
-#        for i in range(dc.shape[1]):
-#            for j in range(dc.shape[2]):
+#        for i in xrange(dc.shape[1]):
+#            for j in xrange(dc.shape[2]):
 #                dc[ch:ch+taper_nch,i,j] *= np.hanning(2 * taper_nch)[:taper_nch]
 #        sp.zl_substracted.data_cube = dc.copy()
 #        dc += self.zero_loss.data_cube

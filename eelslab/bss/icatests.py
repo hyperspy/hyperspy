@@ -90,8 +90,8 @@ def ica_tests(x,emb_dim = 1,emb_tau = 1,kneig = 5,algo = 2,kmax = 15):
         ymin = mivsangle.min()
         ymax = mivsangle.max()
         print Nd
-        for i in range(1,Nd+1):
-            for j in range(1,Nd+1):
+        for i in xrange(1,Nd+1):
+            for j in xrange(1,Nd+1):
                 if i<j:
                     plt.subplot(Nd,Nd,j+(i-1)*Nd)
                     plt.plot(mivsangle[count,:],'.-')

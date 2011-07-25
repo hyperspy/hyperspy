@@ -86,9 +86,9 @@ class Coordinates(object):
                         self._eval_functions((x,y), function_list, mask)
             elif mode == 'zigzag':
                 inverter = 1
-                for y in range(self.shape[1]) :
+                for y in xrange(self.shape[1]) :
                     if inverter == 1 :
-                        for x in range(self.shape[0]):
+                        for x in xrange(self.shape[0]):
                             self._eval_functions((x,y), function_list, mask)
                     if inverter == -1 :
                         for x in reversed(range(self.shape[0])):

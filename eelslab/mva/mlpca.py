@@ -47,8 +47,8 @@ def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000):
     # Generate initial estimates
     print "Generating initial estimates"
 #    CV = np.zeros((X.shape[0], X.shape[0]))
-#    for i in range(X.shape[0]):
-#        for j in range(X.shape[0]):
+#    for i in xrange(X.shape[0]):
+#        for j in xrange(X.shape[0]):
 #            denom = np.min((len(np.where(X[i,:] != 0)), 
 #            len(np.where(X[j,:] != 0))))
 #            CV[i,j] = np.dot(X[i,:], (X[j,:]).T) / denom
@@ -65,7 +65,7 @@ def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000):
         count += 1
         Sobj = 0
         MLX = np.zeros(XX.shape)
-        for i in range(n):
+        for i in xrange(n):
 #            Q = sp.sparse.lil_matrix((varX.shape[0] ,varX.shape[0]))
 #            Q.setdiag((1/(varX[:,i])).squeeze())
 #            Q.tocsc()

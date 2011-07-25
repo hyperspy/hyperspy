@@ -336,7 +336,7 @@ def progressbar(text="calculating", maxval=100):
     Usage:
 
         pbar=progressbar(maxval=10000)
-        for i in range(10000):
+        for i in xrange(10000):
             pbar.update(i)
             #do some heavy calculation in each step
         pbar.finish()
@@ -354,7 +354,7 @@ if __name__=='__main__':
         widgets = ['Test: ', Percentage(), ' ', Bar(marker=RotatingMarker()),
                    ' ', ETA(), ' ', FileTransferSpeed()]
         pbar = ProgressBar(widgets=widgets, maxval=10000000).start()
-        for i in range(1000000):
+        for i in xrange(1000000):
             # do something
             pbar.update(10*i+1)
         pbar.finish()
@@ -373,7 +373,7 @@ if __name__=='__main__':
         pbar = ProgressBar(widgets=widgets, maxval=10000000)
         # maybe do something
         pbar.start()
-        for i in range(2000000):
+        for i in xrange(2000000):
             # do something
             pbar.update(5*i+1)
         pbar.finish()
@@ -382,7 +382,7 @@ if __name__=='__main__':
     def example3():
         widgets = [Bar('>'), ' ', ETA(), ' ', ReverseBar('<')]
         pbar = ProgressBar(widgets=widgets, maxval=10000000).start()
-        for i in range(1000000):
+        for i in xrange(1000000):
             # do something
             pbar.update(10*i+1)
         pbar.finish()
@@ -394,7 +394,7 @@ if __name__=='__main__':
                    ' ', ETA(), ' ', FileTransferSpeed()]
         pbar = ProgressBar(widgets=widgets, maxval=500)
         pbar.start()
-        for i in range(100,500+1,50):
+        for i in xrange(100,500+1,50):
             time.sleep(0.2)
             pbar.update(i)
         pbar.finish()

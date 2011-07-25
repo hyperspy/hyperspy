@@ -94,8 +94,6 @@ class DataAxis(t.HasTraits):
         self.on_trait_change(self.set_index_from_value, 'value')
         self.on_trait_change(self._update_slice, 'slice_bool')
         self.slice_bool = slice_bool
-
-        
         
     def __repr__(self):
         if self.name is not None:
@@ -233,7 +231,12 @@ class AxesManager(t.HasTraits):
         self._values = np.array(values)
         self.output_dim = len(self._slicing_axes)
         self.navigation_dim = len(self._non_slicing_axes)
-        
+        self.navigation_shape = [axis.size for axis in self._non_slicing_axes]
+    
+    def set_not_slicing_indexes(self, nsi):
+        for index,axis in zip(nsi, self.axes):
+            axis.index = index
+    
     def set_view(self, view = 'hyperspectrum'):
         """view : 'hyperspectrum' or 'image' """
         tl = [False] * len(self.axes)
@@ -307,6 +310,13 @@ class AxesManager(t.HasTraits):
         for axis in self.axes:
             axes_dict_list.append(axis.get_axis_dictionary())
         return AxesManager(axes_dict_list)
+        
+    def _get_axes_dicts(self):
+        axes_dicts = []
+        for axis in self.axes:
+            axes_dicts.append(axis.get_axis_dictionary())
+        return axes_dicts
+            
             
     traits_view = tui.View(tui.Item('axes', style = 'custom'))
     

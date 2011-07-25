@@ -136,7 +136,7 @@ class MVA():
         plot_principal_components, plot_principal_components_maps, plot_lev
         """
         # backup the original data
-        self._data_before_treatments=self.data
+        self._data_before_treatments = self.data.copy()
         # Check for conflicting options and correct them when possible   
         if (algorithm == 'mdp' or algorithm == 'NIPALS') and center is False:
             print \
@@ -179,7 +179,7 @@ class MVA():
         if variance2one is True:
             self.variance2one()
         # Transform the data in a line spectrum
-        self._unfolded4pca=self.unfold_if_multidim()
+        self._unfolded4pca = self.unfold_if_multidim()
         # Normalize the poissonian noise
         # Note that this function can change the masks
         if normalize_poissonian_noise is True:
@@ -276,7 +276,6 @@ class MVA():
         if self._unfolded4pca is True:
             self.mva_results.original_shape = self._shape_before_unfolding
 
-        """
         # Rescale the results if the noise was normalized
         if normalize_poissonian_noise is True:
             self.mva_results.pc[energy_mask,:] *= self._root_bH
@@ -285,18 +284,7 @@ class MVA():
                 spatial_mask = None
             if isinstance(energy_mask, slice):
                 energy_mask = None
-            self.undo_normalize_poissonian_noise()
-            
-        if variance2one is True:
-            self.undo_variance2one()
-        
-        if center is True:
-            if self._unfolded4pca is True:
-                self.fold()
-            self.undo_energy_center()
-            if self._unfolded4pca is True:
-                self.unfold()
-        """
+
         #undo any pre-treatments
         self.undo_treatments()
 
@@ -404,7 +392,7 @@ class MVA():
         w = self.mva_results.w
         n = len(w)
         self.ic = np.dot(self.mva_results.pc[:,:n], w.T)
-        for i in range(n):
+        for i in xrange(n):
             if np.all(self.ic[:,i] <= 0):
                 self.reverse_ic(i)
 
@@ -434,41 +422,45 @@ class MVA():
         Signal instance
         """
 
-        if mva_type.lower()=='pca':
+        if mva_type.lower() == 'pca':
             factors = self.mva_results.pc
-            scores     = self.mva_results.v.T
-        elif mva_type.lower()=='ica':
+            scores = self.mva_results.v.T
+        elif mva_type.lower() == 'ica':
             factors = self.ic
-            scores     = self._get_ica_scores()
+            scores = self._get_ica_scores()
         if components is None:
-            a=np.atleast_3d(np.dot(factors,scores))
-            signal_name='rebuilt from %s with %i components'%(mva_type,factors.shape[1])
-        elif type(components).__name__ == 'list':
-            tfactors=np.zeros((factors.shape[0],len(components)))
-            tscores=np.zeros((len(components),scores.shape[1]))
+            a = np.atleast_3d(np.dot(factors,scores))
+            signal_name = 'rebuilt from %s with %i components' % (
+            mva_type,factors.shape[1])
+        elif hasattr(components, '__iter__'):
+            tfactors = np.zeros((factors.shape[0],len(components)))
+            tscores = np.zeros((len(components),scores.shape[1]))
             for i in xrange(len(components)):
-                tfactors[:,i]=factors[:,components[i]]
-                tscores[i,:]=scores[components[i],:]
-            a=np.atleast_3d(np.dot(tfactors,tscores))
-            signal_name='rebuilt from %s with components %s'%(mva_type,components)
+                tfactors[:,i] = factors[:,components[i]]
+                tscores[i,:] = scores[components[i],:]
+            a = np.atleast_3d(np.dot(tfactors, tscores))
+            signal_name = 'rebuilt from %s with components %s' % (
+            mva_type,components)
         else:
-            a=np.atleast_3d(np.dot(factors[:,:components],scores[:components,:]))
-            signal_name='rebuilt from %s with %i components'%(mva_type,components)
+            a = np.atleast_3d(np.dot(factors[:,:components], 
+                                     scores[:components,:]))
+            signal_name = 'rebuilt from %s with %i components' % (
+            mva_type,components)
 
         self._unfolded4pca = self.unfold_if_multidim()
 
-        sc = copy.deepcopy(self)
-        dc_transposed=False
-        last_axis_units=self.axes_manager.axes[-1].units
-        if last_axis_units=='eV' or last_axis_units=='keV':
+        sc = self.deepcopy()
+        dc_transposed = False
+        import eelslab.signals.spectrum
+        if isinstance(self, eelslab.signals.spectrum.Spectrum):
             print "Transposing data so that energy axis makes up rows."
             sc.data = a.T.squeeze()
         else:
             sc.data = a.squeeze()
-        sc.name=signal_name
+        sc.name = signal_name
         if self._unfolded4pca is True:
             self.fold()
-            sc.history=['unfolded']
+            sc.history = ['unfolded']
             sc.fold()
         return sc
 
@@ -578,7 +570,7 @@ class MVA():
         """
         if n is None:
             n = self.mva_results.pc.shape[1]
-        for i in range(n):
+        for i in xrange(n):
             plt.figure()
             plt.plot(self.axes_manager.axes[-1].axis, self.mva_results.pc[:,i])
             plt.title('Principal component %s' % i)
@@ -609,7 +601,7 @@ class MVA():
         n = ic.shape[1]
 
         if not same_window:
-            for i in range(n):
+            for i in xrange(n):
                 plt.figure()
                 plt.plot(x, ic[:, i])
                 plt.title('Independent component %s' % i)
@@ -617,7 +609,7 @@ class MVA():
         else:
             fig = plt.figure()
             ax = fig.add_subplot(111)
-            for i in range(n):
+            for i in xrange(n):
                 # ic = ic / ic.sum(axis=0) # normalize
                 lbl = 'IC %i' % i
                 # print 'plotting %s' % lbl
@@ -804,7 +796,7 @@ class MVA():
         im_list = self.plot_principal_components_maps(n, plot = False)
         s = Spectrum({'calibration' : {'data_cube' : self.mva_results.pc[:,0]}})
         s.get_calibration_from(self)
-        for i in range(n):
+        for i in xrange(n):
             s.data_cube = self.mva_results.pc[:,i]
             s.get_dimensions_from_cube()
             s.save('%s-%i.%s' % (spectrum_prefix, i, spectrum_format))
@@ -841,7 +833,7 @@ class MVA():
             maps = True
         else:
             maps = False
-        for i in range(ic.shape[1]):
+        for i in xrange(ic.shape[1]):
             sp = Spectrum()
             sp.data_cube = ic[:,i].reshape((-1,1,1))
             sp.get_dimensions_from_cube()

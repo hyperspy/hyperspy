@@ -324,7 +324,7 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
     scales = [1, 1, 1]
     origins = [0, 0, 0]
     units = ['', '', '']
-    sizes = [rpl_info[names[i]] for i in range(3)]
+    sizes = [rpl_info[names[i]] for i in xrange(3)]
     
     if rpl_info.has_key('detector-peak-width-ev'):
         original_parameters['detector-peak-width-ev'] = \
