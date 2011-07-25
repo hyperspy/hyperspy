@@ -276,7 +276,6 @@ class MVA():
         if self._unfolded4pca is True:
             self.mva_results.original_shape = self._shape_before_unfolding
 
-        """
         # Rescale the results if the noise was normalized
         if normalize_poissonian_noise is True:
             self.mva_results.pc[energy_mask,:] *= self._root_bH
@@ -285,18 +284,7 @@ class MVA():
                 spatial_mask = None
             if isinstance(energy_mask, slice):
                 energy_mask = None
-            self.undo_normalize_poissonian_noise()
-            
-        if variance2one is True:
-            self.undo_variance2one()
-        
-        if center is True:
-            if self._unfolded4pca is True:
-                self.fold()
-            self.undo_energy_center()
-            if self._unfolded4pca is True:
-                self.unfold()
-        """
+
         #undo any pre-treatments
         self.undo_treatments()
 
@@ -463,8 +451,8 @@ class MVA():
 
         sc = self.deepcopy()
         dc_transposed = False
-        last_axis_units = self.axes_manager.axes[-1].units
-        if last_axis_units == 'eV' or last_axis_units == 'keV':
+        import eelslab.signals.spectrum
+        if isinstance(self, eelslab.signals.spectrum.Spectrum):
             print "Transposing data so that energy axis makes up rows."
             sc.data = a.T.squeeze()
         else:
