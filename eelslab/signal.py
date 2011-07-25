@@ -43,7 +43,7 @@ class Parameters(t.HasTraits,object):
         return par_dict
 
 class Signal(t.HasTraits, MVA):
-    data = t.Array()
+    data = t.Any()
     axes_manager = t.Instance(AxesManager)
     original_parameters = t.Instance(Parameters)
     mapped_parameters = t.Instance(Parameters)

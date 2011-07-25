@@ -30,9 +30,14 @@ import mdp
 from collections import OrderedDict
 
 class Aggregate(Signal):
-    mapped_parameters=t.Instance(Parameters)
-
     def __init__(self, *args, **kw):
+        # this axes_manager isn't really ideal for Aggregates.
+        self.axes_manager=AxesManager([{   'name' : 'undefined',
+                            'scale' : 1.,
+                            'offset' : 0.,
+                            'size' : 1,
+                            'units' : 'undefined',
+                            'index_in_array' : 0,}])
         super(Aggregate, self).__init__(*args, **kw)
         self.data=None
         self.mapped_parameters.original_files=OrderedDict()
