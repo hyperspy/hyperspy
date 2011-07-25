@@ -37,9 +37,9 @@ from enthought.enable.api import ComponentEditor, KeySpec, Component
 from enthought.chaco.tools.cursor_tool import CursorTool, BaseCursorTool
 from enthought.traits.ui.key_bindings import KeyBinding, KeyBindings
 
-
 from eelslab import cv_funcs
-import numpy as np  
+import numpy as np
+from collections import OrderedDict
 
 class OK_custom_handler(Handler):
     def close(self,info, is_ok):
@@ -60,7 +60,7 @@ key_bindings = KeyBindings(
 # (value=[Array(shape=(None,3), value=np.array(([[0,0,0]])))])
 class TemplatePicker(HasTraits):
     template = Array
-    CC = List
+    CC = Instance(OrderedDict)
     peaks = List
     zero=Int(0)
     tmp_size = Range(low=2, high=512, value=64, cols=4)
@@ -153,6 +153,7 @@ class TemplatePicker(HasTraits):
         self.tmp_plotdata=tmp_plot_data
         self.img_plotdata=ArrayPlotData(imagedata=self.sig.data[:,:,self.img_idx])
         self.img_container=self._image_plot_container()
+        self.CC=OrderedDict()
 
         self.crop_sig=None
 
@@ -245,7 +246,6 @@ class TemplatePicker(HasTraits):
                                                    metadata_name='selections'))
         colorbar_selection.selection=self.thresh
         colorbar.selections=self.thresh
-        print colorbar_selection.selection
         self.cbar_selection=colorbar_selection
         return colorbar
 
@@ -254,7 +254,7 @@ class TemplatePicker(HasTraits):
         if self.ShowCC:
             self.CC[self.img_idx] = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
                                                    self.left:self.left+self.tmp_size,self.img_idx],
-                                     self.sig.data)
+                                                   self.sig.data[:,:,self.img_idx])
             self.img_plotdata.set_data("imagedata",self.CC[self.img_idx])
         else:
             self.img_plotdata.set_data("imagedata",self.sig.data[:,:,self.img_idx])
@@ -357,24 +357,18 @@ class TemplatePicker(HasTraits):
         self.thresh=thresh
         self.numpeaks_total=np.sum([np.sum(np.ma.masked_inside(self.peaks[i][:,2],thresh[0],thresh[1]).mask) for i in xrange(len(self.peaks))])
         self.numpeaks_img=np.sum(np.ma.masked_inside(self.peaks[self.img_idx][:,2],thresh[0],thresh[1]).mask)
-        #except:
-        #    pass
 
     @on_trait_change('findpeaks')
     def locate_peaks(self):
         from eelslab import peak_char as pc
         peaks=[]
         for idx in xrange(self.numfiles):
-            try:
-                self.CC[idx] = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
+            self.CC[idx] = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
                                                self.left:self.left+self.tmp_size,self.tmp_img_idx],
-                                 self.sig.data[:,:,idx])
-            except:
-                self.CC.append(cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
-                                               self.left:self.left+self.tmp_size,self.tmp_img_idx],
-                                 self.sig.data[:,:,idx]))
+                                               self.sig.data[:,:,idx])
+            # peak finder needs peaks greater than 1.  Multiply by 255 to scale them.
             pks=pc.two_dim_findpeaks(self.CC[idx]*255, peak_width=self.peak_width, medfilt_radius=None)
-            pks[:,2]=pks[:,2]/255
+            pks[:,2]=pks[:,2]/255.
             peaks.append(pks)
         self.peaks=peaks
         
