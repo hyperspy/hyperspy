@@ -207,7 +207,7 @@ def unfold_if_multidim(signal):
     else:
         return False
     
-def estimate_gain(noisy_SI, clean_SI, mask = None, pol_order = 1, 
+def estimate_gain(noisy_signal, clean_signal, mask = None, pol_order = 1, 
 higher_than = None):
     """Find the scale and offset of the Poissonian noise
     
@@ -230,39 +230,36 @@ higher_than = None):
     Dictionary with the result of a linear fit to estimate the offset and 
     scale factor
     """
-    ns = noisy_SI.data_cube.copy()
-    cl = clean_SI.data_cube.copy()
-
-    fold_back_noisy =  unfold_if_2D(noisy_SI)
-    fold_back_clean =  unfold_if_2D(clean_SI)
-    ns = noisy_SI.data_cube.copy()
-    cs = clean_SI.data_cube.copy()
+    fold_back_noisy =  unfold_if_multidim(noisy_signal)
+    fold_back_clean =  unfold_if_multidim(clean_signal)
+    ns = noisy_signal.data.copy()
+    cs = clean_signal.data.copy()
     
     if mask is not None:
         ns = ns[mask]
         cs = cs[mask]
-    if check_cube_dimensions(noisy_SI, clean_SI):
-        noise = ns - cs
-        variance = np.var(noise, 1)
-        average = np.mean(cs, 1)
-        plt.figure()
-        plt.scatter(average.squeeze(), variance.squeeze())
-        plt.xlabel('Counts')
-        plt.ylabel('Variance')
-        ave = average.squeeze()
-        so = np.argsort(ave)
-        aveso = ave[so]
-        avesoh = aveso > higher_than
-        varso = variance.squeeze()[so]
-        fit = np.polyfit(aveso[avesoh], varso[avesoh], pol_order)
-        plt.plot(ave[so], np.polyval(fit,ave[so]))
-        dic = {'fit' : fit, 'variance' : variance.squeeze(), 
-        'counts' : average.squeeze()}
-        return dic
+
+    noise = ns - cs
+    variance = np.var(noise, 0)
+    average = np.mean(cs, 0)
+    plt.figure()
+    plt.scatter(average.squeeze(), variance.squeeze())
+    plt.xlabel('Counts')
+    plt.ylabel('Variance')
+    ave = average.squeeze()
+    so = np.argsort(ave)
+    aveso = ave[so]
+    avesoh = aveso > higher_than
+    varso = variance.squeeze()[so]
+    fit = np.polyfit(aveso[avesoh], varso[avesoh], pol_order)
+    plt.plot(ave[so], np.polyval(fit,ave[so]), color = 'red')
+    dic = {'fit' : fit, 'variance' : variance.squeeze(), 
+    'counts' : average.squeeze()}
+    return dic
     if fold_back_noisy is True:
-        noisy_SI.fold()
+        noisy_signal.fold()
     if fold_back_clean is True:
-        clean_SI.fold()
+        clean_signal.fold()
         
 def rebin(a, new_shape):
     """Rebin SI
