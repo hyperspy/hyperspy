@@ -45,7 +45,7 @@ class Parameters(t.HasTraits,object):
 class Signal(t.HasTraits, MVA):
     data = t.Array()
     axes_manager = t.Instance(AxesManager)
-    original_parameters = t.Instance(Parameters)
+    original_parameters = t.Dict
     mapped_parameters = t.Instance(Parameters)
     physical_property = t.Str()
     
@@ -60,7 +60,6 @@ class Signal(t.HasTraits, MVA):
         """    
         super(Signal, self).__init__()
         self.mapped_parameters=Parameters()
-        self.original_parameters=Parameters()
         self.load_dictionary(file_data_dict)
         self._plot = None
         self.mva_results=MVA_Results()
@@ -98,8 +97,7 @@ class Signal(t.HasTraits, MVA):
         if file_data_dict.has_key('attributes'):
             for key, value in file_data_dict['attributes'].iteritems():
                 self.__setattr__(key, value)
-        self.original_parameters.load_dictionary(
-        file_data_dict['original_parameters'])
+        self.original_parameters = file_data_dict['original_parameters']
         self.mapped_parameters.load_dictionary(
             file_data_dict['mapped_parameters'])
             
@@ -110,7 +108,7 @@ class Signal(t.HasTraits, MVA):
         dic['mapped_parameters'] = \
         self.mapped_parameters._get_parameters_dictionary()
         dic['original_parameters'] = \
-        self.original_parameters._get_parameters_dictionary()
+        self.original_parameters
         return dic
         
     def _get_undefined_axes_list(self):
