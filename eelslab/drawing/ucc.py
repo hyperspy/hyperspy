@@ -253,11 +253,7 @@ class TemplatePicker(HasTraits):
         cmap_renderer.overlays.append(selection)
         if self.thresh is not None:
             cmap_renderer.color_data.metadata['selections']=self.thresh
-            #cmap_renderer.color_data.metadata['selection_masks']=self.thresh
             cmap_renderer.color_data.metadata_changed={'selections':self.thresh}
-            #cmap_renderer.color_data.metadata_changed={'selection_masks':self.thresh}
-            print self.thresh
-        #ipshell('scatplot, cmap_renderer and selection available:')
         # Create the colorbar, handing in the appropriate range and colormap
         colormap=scatplot.color_mapper
         colorbar = ColorBar(index_mapper=LinearMapper(range=DataRange1D(low = 0.0,
@@ -282,9 +278,6 @@ class TemplatePicker(HasTraits):
         self.colorbar=colorbar
         return colorbar
 
-
-
-
     @on_trait_change('ShowCC')
     def toggle_cc_view(self):
         if self.ShowCC:
@@ -298,7 +291,13 @@ class TemplatePicker(HasTraits):
 
     @on_trait_change("img_idx")
     def update_img_depth(self):
-        self.img_plotdata.set_data("imagedata",self.sig.data[:,:,self.img_idx])
+        if self.ShowCC:
+            self.CC[self.img_idx] = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
+                                                   self.left:self.left+self.tmp_size,self.img_idx],
+                                                   self.sig.data[:,:,self.img_idx])
+            self.img_plotdata.set_data("imagedata",self.CC[self.img_idx])
+        else:
+            self.img_plotdata.set_data("imagedata",self.sig.data[:,:,self.img_idx])
         self.img_plot.title="%s of %s: "%(self.img_idx+1,self.numfiles)+self.titles[self.img_idx]
         self.redraw_plots()        
 
@@ -367,17 +366,20 @@ class TemplatePicker(HasTraits):
         except:
             pass
 
-    @on_trait_change('peaks,cbar_selection:selection_completed')
+    @on_trait_change('peaks,cbar_selection:selection,img_idx')
     def calc_numpeaks(self):
         try:
             thresh=self.cbar_selection.selection
             self.thresh=thresh
         except:
             thresh=[]
-        if thresh==[]:
+        if thresh==[] or thresh==() or thresh==None:
             thresh=(0,1)
-        self.numpeaks_total=np.sum([np.sum(np.ma.masked_inside(self.peaks[i][:,2],thresh[0],thresh[1]).mask) for i in xrange(len(self.peaks))])
-        self.numpeaks_img=np.sum(np.ma.masked_inside(self.peaks[self.img_idx][:,2],thresh[0],thresh[1]).mask)
+        self.numpeaks_total=int(np.sum([np.sum(np.ma.masked_inside(self.peaks[i][:,2],thresh[0],thresh[1]).mask) for i in xrange(len(self.peaks))]))
+        try:
+            self.numpeaks_img=int(np.sum(np.ma.masked_inside(self.peaks[self.img_idx][:,2],thresh[0],thresh[1]).mask))
+        except:
+            self.numpeaks_img=0
 
     @on_trait_change('findpeaks')
     def locate_peaks(self):
