@@ -823,7 +823,7 @@ class MVA():
         ic : None or numpy array 
             externally supplied IC
         """
-        from spectrum import Spectrum
+        from eelslab.signals.spectrum import Spectrum
         pl = self.plot_independent_components_maps(plot=False, 
                                                    recmatrix=recmatrix,
                                                    ic=ic,
@@ -835,10 +835,11 @@ class MVA():
         else:
             maps = False
         for i in xrange(ic.shape[1]):
-            sp = Spectrum()
+            axes = (self.axes_manager._slicing_axes[0].get_axis_dictionary(),)
+            axes[0]['index_in_array'] = 0
+            sp = Spectrum({'data' : ic[:,i], 'axes' : axes})
             sp.data_cube = ic[:,i].reshape((-1,1,1))
-            sp.get_dimensions_from_cube()
-            utils.copy_energy_calibration(self,sp)
+
             if elements is None:
                 sp.save('ic-%s.%s' % (i, spectrum_format))
                 if maps is True:
