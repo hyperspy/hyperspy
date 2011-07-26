@@ -316,6 +316,24 @@ class AxesManager(t.HasTraits):
         for axis in self.axes:
             axes_dicts.append(axis.get_axis_dictionary())
         return axes_dicts
+        
+    def _get_slicing_axes_dicts(self):
+        axes_dicts = []
+        i = 0
+        for axis in self._slicing_axes:
+            axes_dicts.append(axis.get_axis_dictionary())
+            axes_dicts[-1]['index_in_array'] = i
+            i += 1
+        return axes_dicts
+        
+    def _get_non_slicing_axes_dicts(self):
+        axes_dicts = []
+        i = 0
+        for axis in self._non_slicing_axes:
+            axes_dicts.append(axis.get_axis_dictionary())
+            axes_dicts[-1]['index_in_array'] = i
+            i += 1
+        return axes_dicts
             
             
     traits_view = tui.View(tui.Item('axes', style = 'custom'))

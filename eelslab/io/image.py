@@ -94,6 +94,7 @@ def file_writer(filename, signal, _rescale = True, file_format='tif',
         raise IOError("This format also support writing of 2D data")
         
     if file_format in ('tif', 'tiff') and mahotas_installed is True:
+        
         bits = 16    
     else:
         # Only tiff supports 16-bits

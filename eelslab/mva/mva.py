@@ -642,6 +642,7 @@ class MVA():
         plot: bool, 
         """
         from eelslab.signals.image import Image
+        from eelslab.signals.spectrum import Spectrum
 
         if scores is None or (factors is None and with_components is True):
             print "Either recmatrix or components were not provided."
@@ -663,10 +664,10 @@ class MVA():
                 print "No scores provided and analysis type '%s' unrecognized. Cannot proceed."%mva_type
                 return
 
-        if len(self.axes_manager.axes)==2:
-            shape=self.data.shape[0],1
-        else:
-            shape=self.data.shape[0],self.data.shape[1]
+#        if len(self.axes_manager.axes)==2:
+#            shape=self.data.shape[0],1
+#        else:
+#            shape=self.data.shape[0],self.data.shape[1]
         im_list = []
         
         if components is None:
@@ -683,9 +684,10 @@ class MVA():
                     ax2 = figure.add_subplot(122)
                 else:
                     ax = figure.add_subplot(111)
-            if shape[1] != 1:
-                toplot = scores[i,:].reshape(shape)
-                im_list.append(Image({'data' : toplot}))
+            if self.axes_manager.navigation_dim == 2:
+                toplot = scores[i,:].reshape(self.axes_manager.navigation_shape)
+                im_list.append(Image({'data' : toplot, 
+                    'axes' : self.axes_manager._get_non_slicing_axes_dicts()}))
                 if plot is True:
                     mapa = ax.matshow(toplot, cmap = cmap)
                     if with_components:
@@ -696,9 +698,10 @@ class MVA():
                     figure.canvas.draw()
                     #pointer = widgets.DraggableSquare(self.coordinates)
                     #pointer.add_axes(ax)
-            else:
+            elif self.axes_manager.navigation_dim == 1:
                 toplot = scores[i,:]
-                im_list.append(Signal({"data":toplot}))
+                im_list.append(Spectrum({"data" : toplot, 
+                    'axes' : self.axes_manager._get_non_slicing_axes_dicts()}))
                 im_list[-1].get_dimensions_from_data()
                 if plot is True:
                     ax.step(range(len(toplot)), toplot)
@@ -707,6 +710,8 @@ class MVA():
                         ax2.plot(self.axes_manager.axes[-1].axis, factors[:,i])
                         ax2.set_title('%s component %s' % (mva_type.upper(),i))
                         ax2.set_xlabel('Energy (eV)')
+            else:
+                messages.warning_exit('View not supported')
             if plot is True:
                 ax.set_title('%s component number %s map' % (mva_type.upper(),i))
                 figure.canvas.draw()
