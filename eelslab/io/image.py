@@ -54,17 +54,19 @@ def rescale(data, bits):
         if bits == 8 and ('16' not in dtn or '32' not in dtn):
             return data
         elif bits == 16 and '32' not in dtn:
-            data
+            return data
     data = data - data.min()
     data = data / data.max()
     if bits == 8:
-        data = 255 * data.astype(np.uint8)
+        data = 255 * data
+        data = data.astype(np.uint8)
     elif bits == 16:
-        data = 65535 * data.astype(np.uint16)
+        data = 65535 * data
+        data = data.astype(np.uint16)
     return data
         
 # TODO Extend it to support SI
-def file_writer(filename, signal, rescale = False, file_format='tif', 
+def file_writer(filename, signal, _rescale = True, file_format='tif', 
                 only_view = False, **kwds):
     '''Writes data to any format supported by PIL or freeimage if mahotas is 
         installed
@@ -97,7 +99,7 @@ def file_writer(filename, signal, rescale = False, file_format='tif',
         # Only tiff supports 16-bits
         bits = 8
         
-    if rescale is True:
+    if _rescale is True:
         dc = rescale(dc, bits)
 
     imsave(filename, dc.astype('uint%s' % bits))
