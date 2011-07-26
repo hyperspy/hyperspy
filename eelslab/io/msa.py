@@ -236,7 +236,7 @@ def file_writer(filename, signal, format = None, separator = ', '):
                 format = keywords['DATATYPE']
     else:
         if format is None:
-            format = 'X'
+            format = 'Y'
         if hasattr(signal.mapped_parameters, "date"):
             loc = locale.getlocale(locale.LC_TIME)
             if os_name == 'posix':
@@ -316,7 +316,7 @@ def file_writer(filename, signal, format = None, separator = ', '):
             f.write('%f%s' % (y, separator))
             f.write(u'\u000D\u000A')
     else:
-        raise ValueError('format must be one of: None, \'X\' or \'Y\'')
+        raise ValueError('format must be one of: None, \'XY\' or \'Y\'')
 
     f.write(u'#%-12s: End Of Data and File' % 'ENDOFDATA')
     f.close()   
