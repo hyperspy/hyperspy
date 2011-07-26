@@ -20,6 +20,7 @@
 
 from eelslab.signal import Signal, Parameters
 from eelslab.signals.image import Image
+from eelslab.signals.spectrum import Spectrum
 import enthought.traits.api as t
 from eelslab.mva.mva import MVA_Results
 from eelslab.axes import AxesManager
@@ -64,6 +65,74 @@ Perhaps you'd like to instead access its component members?"
         print "sorry, append method not implemented generally yet."
 
 
+class AggregateSpectrum(Aggregate,Spectrum):
+    def __init__(self, *args, **kw):
+        super(AggregateSpectrum,self).__init__(*args,**kw)
+        self.mapped_parameters.aggregate_address=OrderedDict()
+        self.mapped_parameters.aggregate_end_pointer=0
+        if len(args)>0:
+            self.append(*args)
+
+    def unfold(self):
+        print "AggregateSpectrum objects are already unfolded, and cannot be folded. \
+Perhaps you'd like to instead access its component members, or try the split_results method?"
+        return None
+
+    def fold(self):
+        print "Folding not supported for AggregateSpectrum objects."
+        return None
+
+    def append(self,*args):
+        if len(args)<1:
+            pass
+        else:
+            smp=self.mapped_parameters
+            for arg in args:
+                #object parameters
+                mp=arg.mapped_parameters
+                if mp.name not in smp.locations.keys():
+                    smp.original_files[mp.name]=arg
+                    arg.unfold()
+                    smp.aggregate_address[mp.name]=(
+                        smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[-1]-1)
+                    # add the data to the aggregate array
+                    if self.data==None:
+                        self.data=np.atleast_3d(arg.data)
+                    else:
+                        self.data=np.append(self.data,arg.data,axis=2)
+                    smp.aggregate_end_pointer=self.data.shape[2]
+                else:
+                    print "Data from file %s already in this aggregate. \n \
+    Delete it first if you want to update it."%mp.parent
+            # refresh the axes for the new sized data
+            self.axes_manager=AxesManager(self._get_undefined_axes_list())
+            smp.name="Aggregate Cells: %s"%smp.locations.keys()
+
+    def remove(self,*keys):
+        smp=self.mapped_parameters
+        for key in keys:
+            del smp.locations[key]
+            del smp.original_files[key]
+            del smp.image_stacks[key]
+            address=smp.aggregate_address[key]
+            self.data=np.delete(self.data,np.s_[address[0]:address[1]:1],2)
+        self.axes_manager=AxesManager(self._get_undefined_axes_list())
+        smp.aggregate_end_pointer=self.data.shape[2]
+        smp.name="Aggregate Cells: %s"%smp.locations.keys()
+
+    def split_results(self):
+        """Method to take any multivariate analysis results from the aggregate and
+        split them into the constituent SI's.  Required before the individual mva_results
+        can be made sense of.
+
+        Note: this method is called automatically at the end of PCA or ICA on AggregateSpectrum
+        objects.
+
+        """
+        for f in self.mapped_parameters.original_files.keys():
+            pass
+            
+
 class AggregateImage(Aggregate,Image):
     def __init__(self, *args, **kw):
         super(AggregateImage, self).__init__(*args,**kw)
@@ -81,7 +150,7 @@ class AggregateImage(Aggregate,Image):
                 mp=arg.mapped_parameters
                 
                 if mp.name not in smp.original_files.keys():
-                    smp.original_files[mp.name]=mp.name
+                    smp.original_files[mp.name]=arg
                     # add the data to the aggregate array
                     if self.data==None:
                         self.data=np.atleast_3d(arg.data)
@@ -135,12 +204,13 @@ class AggregateCells(Aggregate,Image):
             for arg in args:
                 #object parameters
                 mp=arg.mapped_parameters
+                pmp=mp.parent.mapped_parameters
                 
-                if mp.parent not in smp.locations.keys():
-                    smp.locations[mp.parent]=mp.locations
-                    smp.original_files[mp.parent]=mp.parent
-                    smp.image_stacks[mp.parent]=arg
-                    smp.aggregate_address[mp.parent]=(
+                if pmp.name not in smp.locations.keys():
+                    smp.locations[pmp.name]=mp.locations
+                    smp.original_files[pmp.name]=mp.parent
+                    smp.image_stacks[pmp.name]=arg
+                    smp.aggregate_address[pmp.name]=(
                         smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[-1]-1)
                     # add the data to the aggregate array
                     if self.data==None:
@@ -164,6 +234,7 @@ class AggregateCells(Aggregate,Image):
             address=smp.aggregate_address[key]
             self.data=np.delete(self.data,np.s_[address[0]:address[1]:1],2)
         self.axes_manager=AxesManager(self._get_undefined_axes_list())
+        smp.aggregate_end_pointer=self.data.shape[2]
         smp.name="Aggregate Cells: %s"%smp.locations.keys()
 
     def kmeans_cluster_stack(self, clusters=None):
@@ -228,7 +299,10 @@ class AggregateCells(Aggregate,Image):
                     })
         self.mapped_parameters.avgs=avg_stack_Image
         self.mapped_parameters.clusters=cluster_arrays
-        return avg_stack_Image, cluster_arrays
+        print "Averages and classes stored in mapped_parameters.  Access them as: \n\n\
+your_object.mapped_parameters.avgs \n\n\
+or \n\n\
+your_object.mapped_parameters.clusters\n"
 
     def plot_cell_overlays(self):
         if hasattr(self,mapped_parameters.clusters):
