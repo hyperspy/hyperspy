@@ -24,7 +24,7 @@
 
 from enthought.traits.api \
     import HasTraits, Array, Int, Float, Range, Instance, on_trait_change, \
-    Bool, Button, Property, Event, Tuple, Any, List
+    Bool, Button, Property, Event, Tuple, Any, List, Trait
 from enthought.traits.ui.api import View, Item, Group, HFlow, VGroup, Tabbed, \
     BooleanEditor, ButtonEditor, CancelButton, Handler, Action, Spring, \
     HGroup
@@ -37,10 +37,39 @@ from enthought.enable.api import ComponentEditor, KeySpec, Component
 from enthought.chaco.tools.cursor_tool import CursorTool, BaseCursorTool
 from enthought.traits.ui.key_bindings import KeyBinding, KeyBindings
 
+from enthought.chaco.data_range_1d import DataRange1D
+
+from types import ListType, TupleType
+
 from eelslab import cv_funcs
 import numpy as np
 from collections import OrderedDict
 
+"""
+try:
+    __IPYTHON__
+except NameError:
+    nested = 0
+    args = ['']
+else:
+    print "Running nested copies of IPython."
+    print "The prompts for the nested copy have been modified"
+    nested = 1
+    # what the embedded instance will see as sys.argv:
+    args = ['-pi1','In <\\#>: ','-pi2','   .\\D.: ',
+            '-po','Out<\\#>: ','-nosep']
+
+# First import the embeddable shell class
+from IPython.Shell import IPShellEmbed
+
+# Now create an instance of the embeddable shell. The first argument is a
+# string with options exactly as you would type them if you were starting
+# IPython at the system command line. Any parameters you want to define for
+# configuration can thus be specified here.
+ipshell = IPShellEmbed(args,
+                       banner = 'Dropping into IPython',
+                       exit_msg = 'Leaving Interpreter, back to program.')
+"""
 class OK_custom_handler(Handler):
     def close(self,info, is_ok):
         if is_ok:
@@ -83,7 +112,7 @@ class TemplatePicker(HasTraits):
     OK_custom=OK_custom_handler
     cbar_selection = Instance(RangeSelection)
     cbar_selected = Event
-    thresh=Tuple(0.0,1.0)
+    thresh=Trait(None,None,List,Tuple,Array)
     numfiles=Int(1)
     img_idx=Int(0)
     tmp_img_idx=Int(0)
@@ -186,7 +215,8 @@ class TemplatePicker(HasTraits):
         scatplot.plot(("index", "value", "color"),
                       type="cmap_scatter",
                       name="my_plot",
-                      color_mapper=jet,
+                      color_mapper=jet(DataRange1D(low = 0.0,
+                                       high = 1.0)),
                       marker = "circle",
                       fill_alpha = 0.5,
                       marker_size = 6,
@@ -219,35 +249,41 @@ class TemplatePicker(HasTraits):
         scatplot=self.scatplot
         cmap_renderer = scatplot.plots["my_plot"][0]
         selection = ColormappedSelectionOverlay(cmap_renderer, fade_alpha=0.35, 
-                                                selection_type="mask")
+                                                selection_type="range")
         cmap_renderer.overlays.append(selection)
-
+        if self.thresh is not None:
+            cmap_renderer.color_data.metadata['selections']=self.thresh
+            #cmap_renderer.color_data.metadata['selection_masks']=self.thresh
+            cmap_renderer.color_data.metadata_changed={'selections':self.thresh}
+            #cmap_renderer.color_data.metadata_changed={'selection_masks':self.thresh}
+            print self.thresh
+        #ipshell('scatplot, cmap_renderer and selection available:')
         # Create the colorbar, handing in the appropriate range and colormap
-        colorbar = self.create_colorbar(scatplot.color_mapper)
-        colorbar.plot = cmap_renderer
-        colorbar.padding_top = scatplot.padding_top
-        colorbar.padding_bottom = scatplot.padding_bottom
-        self.colorbar=colorbar
-        return colorbar
-
-    def create_colorbar(self,colormap):
-        colorbar = ColorBar(index_mapper=LinearMapper(range=colormap.range),
-                        color_mapper=colormap,
+        colormap=scatplot.color_mapper
+        colorbar = ColorBar(index_mapper=LinearMapper(range=DataRange1D(low = 0.0,
+                                       high = 1.0)),
                         orientation='v',
                         resizable='v',
                         width=30,
                         padding=20)
         colorbar_selection=RangeSelection(component=colorbar)
         colorbar.tools.append(colorbar_selection)
-        colorbar.overlays.append(RangeSelectionOverlay(component=colorbar,
+        ovr=colorbar.overlays.append(RangeSelectionOverlay(component=colorbar,
                                                    border_color="white",
                                                    alpha=0.8,
                                                    fill_color="lightgray",
                                                    metadata_name='selections'))
-        colorbar_selection.selection=self.thresh
-        colorbar.selections=self.thresh
+        #ipshell('colorbar, colorbar_selection and ovr available:')
         self.cbar_selection=colorbar_selection
+        self.cmap_renderer=cmap_renderer
+        colorbar.plot = cmap_renderer
+        colorbar.padding_top = scatplot.padding_top
+        colorbar.padding_bottom = scatplot.padding_bottom
+        self.colorbar=colorbar
         return colorbar
+
+
+
 
     @on_trait_change('ShowCC')
     def toggle_cc_view(self):
@@ -264,35 +300,7 @@ class TemplatePicker(HasTraits):
     def update_img_depth(self):
         self.img_plotdata.set_data("imagedata",self.sig.data[:,:,self.img_idx])
         self.img_plot.title="%s of %s: "%(self.img_idx+1,self.numfiles)+self.titles[self.img_idx]
-        self.redraw_plots()
-
-    @on_trait_change("peaks")
-    def redraw_plots(self):
-        oldplot=self.img_plot
-        self.container.remove(oldplot)
-        newplot=self.render_image()
-        self.container.add(newplot)
-        self.img_plot=newplot
-
-        try:
-            # if these haven't been created before, this will fail.  wrap in try to prevent that.
-            oldscat=self.scatplot
-            self.container.remove(oldscat)
-            oldcolorbar = self.colorbar
-            self.img_container.remove(oldcolorbar)
-        except:
-            pass
-
-        if self.numpeaks_img>0:
-            newscat=self.render_scatplot()
-            self.container.add(newscat)
-            self.scatplot=newscat
-            colorbar = self.draw_colorbar()
-            self.img_container.add(colorbar)
-            self.colorbar=colorbar
-
-        self.container.request_redraw()
-        self.img_container.request_redraw()        
+        self.redraw_plots()        
 
     @on_trait_change('tmp_size')
     def update_max_pos(self):
@@ -346,15 +354,28 @@ class TemplatePicker(HasTraits):
         if self.numpeaks_total>0:
             self.peaks=[np.array([[0,0,-1]])]
 
+    @on_trait_change('cbar_selection:selection')
+    def update_thresh(self):
+        try:
+            thresh=self.cbar_selection.selection
+            self.thresh=thresh
+            self.cmap_renderer.color_data.metadata['selections']=thresh
+            #cmap_renderer.color_data.metadata['selection_masks']=self.thresh
+            self.cmap_renderer.color_data.metadata_changed={'selections':thresh}
+            self.container.request_redraw()
+            self.img_container.request_redraw()
+        except:
+            pass
+
     @on_trait_change('peaks,cbar_selection:selection_completed')
     def calc_numpeaks(self):
         try:
             thresh=self.cbar_selection.selection
+            self.thresh=thresh
         except:
             thresh=[]
         if thresh==[]:
             thresh=(0,1)
-        self.thresh=thresh
         self.numpeaks_total=np.sum([np.sum(np.ma.masked_inside(self.peaks[i][:,2],thresh[0],thresh[1]).mask) for i in xrange(len(self.peaks))])
         self.numpeaks_img=np.sum(np.ma.masked_inside(self.peaks[self.img_idx][:,2],thresh[0],thresh[1]).mask)
 
@@ -380,6 +401,34 @@ class TemplatePicker(HasTraits):
         mpeaks[:,2]=np.ma.masked_outside(mpeaks[:,2],thresh[0],thresh[1])
         return mpeaks
 
+    @on_trait_change("peaks")
+    def redraw_plots(self):
+        oldplot=self.img_plot
+        self.container.remove(oldplot)
+        newplot=self.render_image()
+        self.container.add(newplot)
+        self.img_plot=newplot
+
+        try:
+            # if these haven't been created before, this will fail.  wrap in try to prevent that.
+            oldscat=self.scatplot
+            self.container.remove(oldscat)
+            oldcolorbar = self.colorbar
+            self.img_container.remove(oldcolorbar)
+        except:
+            pass
+
+        if self.numpeaks_img>0:
+            newscat=self.render_scatplot()
+            self.container.add(newscat)
+            self.scatplot=newscat
+            colorbar = self.draw_colorbar()
+            self.img_container.add(colorbar)
+            self.colorbar=colorbar
+
+        self.container.request_redraw()
+        self.img_container.request_redraw()
+
     def crop_cells_stack(self):
         from eelslab.signals.aggregate import AggregateCells
         if self.numfiles==1:
@@ -389,7 +438,6 @@ class TemplatePicker(HasTraits):
             crop_agg=[]
             for idx in xrange(self.numfiles):
                 crop_agg.append(self.crop_cells(idx))
-                crop_agg[idx].mapped_parameters.print_items()
             self.crop_sig=AggregateCells(*crop_agg)
             return
 
@@ -400,6 +448,10 @@ class TemplatePicker(HasTraits):
         peaks=np.ma.compress_rows(self.mask_peaks(idx))
         tmp_sz=self.tmp_size
         data=np.zeros((tmp_sz,tmp_sz,peaks.shape[0]))
+        if not hasattr(self.sig.mapped_parameters,"original_files"):
+            parent=self.sig
+        else:
+            parent=self.sig.mapped_parameters.original_files[self.titles[idx]]
         for i in xrange(peaks.shape[0]):
             # crop the cells from the given locations
             data[:,:,i]=self.sig.data[peaks[i,1]:peaks[i,1]+tmp_sz,peaks[i,0]:peaks[i,0]+tmp_sz,idx]
@@ -408,7 +460,7 @@ class TemplatePicker(HasTraits):
                                 'name':'Cropped cells from %s'%self.titles[idx],
                                 'data_type':'Image',
                                 'locations':peaks,
-                                'parent':self.titles[idx],
+                                'parent':parent,
                                 }
                          })
         return crop_sig
