@@ -641,7 +641,7 @@ class MVA():
         with_components: bool,
         plot: bool, 
         """
-        from eelslab.signal import Signal
+        from eelslab.signals.image import Image
 
         if scores is None or (factors is None and with_components is True):
             print "Either recmatrix or components were not provided."
@@ -685,7 +685,7 @@ class MVA():
                     ax = figure.add_subplot(111)
             if shape[1] != 1:
                 toplot = scores[i,:].reshape(shape)
-                im_list.append(Signal({'data' : toplot}))
+                im_list.append(Image({'data' : toplot}))
                 if plot is True:
                     mapa = ax.matshow(toplot, cmap = cmap)
                     if with_components:
