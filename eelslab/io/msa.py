@@ -222,8 +222,6 @@ def file_reader(filename, **kwds):
     return [dictionary,]
 
 def file_writer(filename, signal, format = None, separator = ', '):
-    if not overwrite(filename): # we do not want to blindly overwrite, do we?
-        return 0
     keywords = {}
     FORMAT = "EMSA/MAS Spectral Data File"
     if 'FORMAT' in signal.original_parameters and \
