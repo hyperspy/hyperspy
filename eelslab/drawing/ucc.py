@@ -27,7 +27,7 @@ from enthought.traits.api \
     Bool, Button, Property, Event, Tuple, Any, List, Trait
 from enthought.traits.ui.api import View, Item, Group, HFlow, VGroup, Tabbed, \
     BooleanEditor, ButtonEditor, CancelButton, Handler, Action, Spring, \
-    HGroup, CompoundEditor
+    HGroup, TextEditor
 from enthought.chaco.tools.api import PanTool, ZoomTool, RangeSelection, \
                                        RangeSelectionOverlay
 from enthought.chaco.api import Plot, ArrayPlotData, jet, gray, \
@@ -147,8 +147,10 @@ class TemplatePicker(HasTraits):
                         Spring(),
                         ),
                     HGroup(
-                        Item("thresh_lower",label="Threshold Lower Value"),
-                        Item("thresh_upper",label="Threshold Upper Value"),
+                        Item("thresh_lower",label="Threshold Lower Value", editor=TextEditor(evaluate=float,
+                                                                                             format_str='%1.4f')),
+                        Item("thresh_upper",label="Threshold Upper Value", editor=TextEditor(evaluate=float,
+                                                                                             format_str='%1.4f')),
                     ),
                     HGroup(
                         Item("numpeaks_img",label="Number of Cells selected (this image)",style='readonly'),
@@ -163,7 +165,7 @@ class TemplatePicker(HasTraits):
         title="Template Picker",
         handler=OK_custom, kind='livemodal',
         key_bindings = key_bindings,
-        width=900, height=600)        
+        width=960, height=600)        
 
     def __init__(self, signal_instance):
         super(TemplatePicker, self).__init__()
