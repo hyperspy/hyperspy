@@ -124,8 +124,8 @@ def file_reader(filename, **kwds):
         flist=glob(filename)
         flist.sort()
         imsample = imread(flist[0])
-        w=imsample.size[0]
-        h=imsample.size[1]
+        w=imsample.shape[0]
+        h=imsample.shape[1]
         d=len(flist)
         dc=np.zeros((w,h,d))
         for i in xrange(d):

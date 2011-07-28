@@ -10,5 +10,6 @@ User's Guide
     intro.rst
     installing.rst
     quick_start.rst
+    file_io.rst
     eelslab_tutorials.rst
     credits.rst

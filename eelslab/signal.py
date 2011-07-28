@@ -43,13 +43,13 @@ class Parameters(t.HasTraits,object):
         return par_dict
 
 class Signal(t.HasTraits, MVA):
-    data = t.Array()
+    data = t.Any()
     axes_manager = t.Instance(AxesManager)
     original_parameters = t.Dict
     mapped_parameters = t.Instance(Parameters)
     physical_property = t.Str()
     
-    def __init__(self, file_data_dict):
+    def __init__(self, file_data_dict=None,*args,**kw):
         """All data interaction is made through this class or its subclasses
             
         
@@ -60,7 +60,8 @@ class Signal(t.HasTraits, MVA):
         """    
         super(Signal, self).__init__()
         self.mapped_parameters=Parameters()
-        self.load_dictionary(file_data_dict)
+        if type(file_data_dict).__name__ == "dict":
+            self.load_dictionary(file_data_dict)
         self._plot = None
         self.mva_results=MVA_Results()
         self._shape_before_unfolding = None
