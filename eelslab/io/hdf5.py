@@ -50,7 +50,7 @@ writes_spectrum_image = True
 # Each subgroup must contain at least one dataset called data
 # The data is an array of arbitrary dimension
 # In addition a number equal to the number of dimensions of the data dataset
-# + 1 of empty groups called coordinates followed by a number must exists 
+# + 1 of empty groups called axes followed by a number must exists 
 # with the following attributes:
 #    'name' 
 #    'offset' 
@@ -60,8 +60,8 @@ writes_spectrum_image = True
 #    'index_in_array' : 1
 # The experiment group contains a number of attributes that will be directly 
 # assigned as class attributes of the Signal instance. In addition the 
-# experiment groups may contain an 'extra_parameters' subgroup that will be 
-# assigned to the 'extra_parameters' attribute of the Signal instance as a 
+# experiment groups may contain an 'original_parameters' subgroup that will be 
+# assigned to the 'original_parameters' attribute of the Signal instance as a 
 # dictionary
 # The Experiments group can contain attributes that may be common to all the 
 # experiments and that will be accessible as attribures of the Experiments
@@ -69,11 +69,34 @@ writes_spectrum_image = True
 
 not_valid_format = 'The file is not a valid EELSLab hdf5 file'
 
+def load_signal_group_to_dict(group, parent):
+    exp={}
+    exp['data'] = group['data'][:]
+    axes = []
+    for i in xrange(len(exp['data'].shape)):
+        try:
+            print('axis-%i' % i)
+            axes.append(dict(group['axis-%i' % i].attrs))
+        except KeyError:
+            f.close()
+            raise IOError(not_valid_format)
+    print group['mapped_parameters'].attrs
+    """
+    # check the mapped parameters for any child Signal classes
+    if 'data' in group['mapped_parameters'][key]:
+        # convert those children to dicts (recurse)
+        eval("group['mapped_parameters'].%s=load_signal_group_to_dict()"%key)
+        """
+    exp['mapped_parameters'] = dict(group['mapped_parameters'].attrs)
+    exp['original_parameters'] = dict(group['original_parameters'].attrs)
+    exp['axes'] = axes
+    return exp
+
 def file_reader(filename, data_type, mode = 'r', driver = 'core', 
                 backing_store = False, **kwds):
             
     f = h5py.File(filename, mode = mode, driver = driver)
-    # If the file has been created with EELSLab it should cointain a folder 
+    # If the file has been created with EELSLab it should contain a folder 
     # Experiments.
     experiments = []
     exp_dict_list = []
@@ -88,33 +111,21 @@ def file_reader(filename, data_type, mode = 'r', driver = 'core',
             raise IOError(not_valid_format)
         # Parse the file
         for experiment in experiments:
+            parent=f['Experiments']
             exg = f['Experiments'][experiment]
             exp = {}
-            exp['data'] = exg['data'][:]
-            axes = []
-            for i in xrange(len(exp['data'].shape)):
-                try:
-                    print('axis-%i' % i)
-                    axes.append(dict(exg['axis-%i' % i].attrs))
-                except KeyError:
-                    f.close()
-                    raise IOError(not_valid_format)
-            exp['mapped_parameters'] = dict(exg['mapped_parameters'].attrs)
-            exp['original_parameters'] = dict(exg['original_parameters'].attrs)
-            exp['axes'] = axes
+            exp=load_signal_group_to_dict(exg,parent)
             exp_dict_list.append(exp)
-            
+
     else:
         # Eventually there will be the possibility of loading the datasets of 
         # any hdf5 file
         pass
     f.close()
     return exp_dict_list
-                                    
-def file_writer(filename, signal, *args, **kwds):
-    f = h5py.File(filename, mode = 'w-')
-    exps = f.create_group('Experiments')
-    expg = exps.create_group(signal.mapped_parameters.name)
+
+def create_signal_group(signal, parent):
+    expg = parent.create_group(signal.mapped_parameters.name)
     expg.create_dataset('data', data = signal.data)
     i = 0
     for axis in signal.axes_manager.axes:
@@ -131,6 +142,9 @@ def file_writer(filename, signal, *args, **kwds):
         try:
             mapped_par.attrs[key] = value
         except:
+            # do we have a Signal class as a member (aggregates, for example)?
+            # if so, recurse
+            create_Signal_group(value,expg)
             if value is not None:
                 print "HDF5 File saver: WARNING: could not save data at: "
                 print "  mapped_parameters.%s"%key
@@ -176,7 +190,12 @@ mapped_parameters attribute of the Signal class or derived subclass."%key
                     print "    type:"
                     print "      ",type(value)
                     print "The saved HDF5 file has lost information from your original data.  \
-Please make sure it is not something important.\n"                
+Please make sure it is not something important.\n"         
+                                    
+def file_writer(filename, signal, *args, **kwds):
+    f = h5py.File(filename, mode = 'w-')
+    exps = f.create_group('Experiments')
+    create_signal_group(signal, exps)
     f.close()
     
 
