@@ -56,20 +56,20 @@ def load(*filenames, **kwds):
     elif len(filenames)==1:
         return load_single_file(filenames[0],**kwds)
     else:
-        from eelslab.signals.aggregate import AggregateImage, AggregateCells
+        import eelslab.signals.aggregate as agg
         objects=[load_single_file(filename,**kwds) for filename in filenames]
 
         obj_type=objects[0].__class__.__name__
         if obj_type=='Image':
             if len(objects[0].data.shape)==3:
                 # feeding 3d objects creates cell stacks
-                agg_sig=AggregateCells(*objects)
+                agg_sig=agg.AggregateCells(*objects)
             else:
-                agg_sig=AggregateImage(*objects)
+                agg_sig=agg.AggregateImage(*objects)
         elif obj_type=='Spectrum':
-            agg_sig=Spectrum()
+            agg_sig=agg.AggregateSpectrum(*objects)
         else:
-            agg_sig=Signal()
+            agg_sig=agg.Aggregate(*objects)
         return agg_sig            
         
 def load_single_file(filename, **kwds):
@@ -122,16 +122,16 @@ def load_with_reader(filename, reader, data_type = None, **kwds):
         # The data_type can still be None if it was not defined by the reader
         if data_type is None:
                 print "No data type provided.  Defaulting to Signal."
-                data_type = 'SI'
+                data_type = 'signal'
                 
         # We write the data type to the mapped_parameters to guarantee that it 
         # is coherent with the asigned class. Note that the original_parameters 
         # dict is not modified
         file_data_dict['mapped_parameters']['data_type'] = data_type
-        
+
         if data_type == 'Image':
-            s = Image(file_data_dict)  
-        elif data_type is 'Spectrum':
+            s = Image(file_data_dict)
+        elif data_type is 'SI':
             s=Spectrum(file_data_dict)
         else:
             print "defaulting to Signal"

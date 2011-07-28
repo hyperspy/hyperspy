@@ -28,6 +28,7 @@ from eelslab.axes import AxesManager
 import numpy as np
 import mdp
 
+from copy import deepcopy
 from collections import OrderedDict
 
 class Aggregate(Signal):
@@ -43,9 +44,15 @@ class Aggregate(Signal):
         self.data=None
         self.mapped_parameters.original_files=OrderedDict()
 
-    """
+    def summary(self):
+        smp=self.mapped_parameters
+        print "Aggregate Contents: "
+        for f in smp.original_files.keys():
+            print f
+        print "Total size: %s"%(str(self.data.shape))
+
     def plot(self):
-        print "Plotting not yet supported for aggregate objects"
+        print "Plotting not yet supported for generic aggregate objects"
         return None
 
     def unfold(self):
@@ -56,14 +63,18 @@ Perhaps you'd like to instead access its component members?"
     def fold(self):
         print "Folding not supported for Aggregate objects."
         return None
-    """
+
     def print_keys(self):
         smp=self.mapped_parameters
         print smp.locations.keys()
 
     def append(self):
-        print "sorry, append method not implemented generally yet."
+        print "sorry, append method not implemented generally yet.  Try either \
+the AggregateImage, AggregateCells, or AggregateSpectrum classes"
 
+    def remove(self):
+        print "sorry, remove method not implemented generally yet.  Try either \
+the AggregateImage, AggregateCells, or AggregateSpectrum classes"
 
 class AggregateSpectrum(Aggregate,Spectrum):
     def __init__(self, *args, **kw):
@@ -75,13 +86,16 @@ class AggregateSpectrum(Aggregate,Spectrum):
 
     def unfold(self):
         print "AggregateSpectrum objects are already unfolded, and cannot be folded. \
-Perhaps you'd like to instead access its component members, or try the split_results method?"
+Perhaps you'd like to instead access its component members, as \n\n\
+f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         return None
 
     def fold(self):
-        print "Folding not supported for AggregateSpectrum objects."
+        print "Folding not supported for AggregateSpectrum objects. \n\
+Perhaps you'd like to instead access its component members, as \n\n\
+f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         return None
-
+        
     def append(self,*args):
         if len(args)<1:
             pass
@@ -90,37 +104,116 @@ Perhaps you'd like to instead access its component members, or try the split_res
             for arg in args:
                 #object parameters
                 mp=arg.mapped_parameters
-                if mp.name not in smp.locations.keys():
+                if mp.name not in smp.original_files.keys():
                     smp.original_files[mp.name]=arg
+                    # save the original data shape to the mva_results for later use
+                    smp.original_files[mp.name].mva_results.original_shape = arg.data.shape[:-1]
                     arg.unfold()
                     smp.aggregate_address[mp.name]=(
-                        smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[-1]-1)
+                        smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
                     # add the data to the aggregate array
                     if self.data==None:
-                        self.data=np.atleast_3d(arg.data)
+                        self.data=np.atleast_2d(arg.data)
+                        # copy the axes for the sake of calibration
+                        self.axes_manager=deepcopy(arg.axes_manager)
                     else:
-                        self.data=np.append(self.data,arg.data,axis=2)
-                    smp.aggregate_end_pointer=self.data.shape[2]
+                        self.data=np.append(self.data,arg.data,axis=0)
+                    smp.aggregate_end_pointer=self.data.shape[0]
+                    print "File %s added to aggregate."%mp.name
                 else:
                     print "Data from file %s already in this aggregate. \n \
     Delete it first if you want to update it."%mp.parent
+
             # refresh the axes for the new sized data
-            self.axes_manager=AxesManager(self._get_undefined_axes_list())
-            smp.name="Aggregate Cells: %s"%smp.locations.keys()
+            self.axes_manager.axes[0].size=self.data.shape[0]
+            smp.name="Aggregate Spectra: %s"%smp.original_files.keys()
+            self.summary()
 
     def remove(self,*keys):
         smp=self.mapped_parameters
         for key in keys:
-            del smp.locations[key]
             del smp.original_files[key]
-            del smp.image_stacks[key]
             address=smp.aggregate_address[key]
-            self.data=np.delete(self.data,np.s_[address[0]:address[1]:1],2)
-        self.axes_manager=AxesManager(self._get_undefined_axes_list())
-        smp.aggregate_end_pointer=self.data.shape[2]
-        smp.name="Aggregate Cells: %s"%smp.locations.keys()
+            self.data=np.delete(self.data,np.s_[address[0]:(address[1]+1):1],0)
+            print "File %s removed from aggregate."%key
+        self.axes_manager.axes[0].size=self.data.shape[0]
+        smp.aggregate_end_pointer=self.data.shape[0]
+        smp.name="Aggregate Spectra: %s"%smp.original_files.keys()
+        self.summary()
 
-    def split_results(self):
+    def principal_components_analysis(self, normalize_poissonian_noise = False, 
+                                     algorithm = 'svd', output_dim = None, spatial_mask = None, 
+                                     energy_mask = None, center = False, variance2one = False, var_array = None, 
+                                     var_func = None, polyfit = None):
+        """Principal components analysis for Aggregate Spectra.
+        Different from normal PCA only in that it operates on your
+        aggregate data as a whole, and splits the results into
+        your constituent files afterwards.
+        
+        The results are stored in self.mva_results
+        
+        Parameters
+        ----------
+        normalize_poissonian_noise : bool
+            If True, scale the SI to normalize Poissonian noise
+        algorithm : {'svd', 'mlpca', 'mdp', 'NIPALS'}
+        output_dim : None or int
+            number of PCA to keep
+        spatial_mask : boolean numpy array
+        energy_mask : boolean numpy array
+        center : bool
+            Perform energy centering before PCA
+        variance2one : bool
+            Perform whitening before PCA
+        var_array : numpy array
+            Array of variance for the maximum likelihood PCA algorithm
+        var_func : function or numpy array
+            If function, it will apply it to the dataset to obtain the 
+            var_array. Alternatively, it can a an array with the coefficients 
+            of a polynomy.
+        polyfit : 
+            
+            
+        See also
+        --------
+        plot_principal_components, plot_principal_components_maps, plot_lev
+        """
+        super(AggregateSpectrum,self).principal_components_analysis(normalize_poissonian_noise, 
+                                     algorithm, output_dim, spatial_mask, 
+                                     energy_mask, center, variance2one, var_array, 
+                                     var_func, polyfit)
+        self._split_mva_results()
+
+    def independent_components_analysis(self, number_of_components = None, 
+                                       algorithm = 'CuBICA', diff_order = 1, pc = None, 
+                                       comp_list = None, mask = None, **kwds):
+        """Independent components analysis.
+        
+        Available algorithms: FastICA, JADE, CuBICA, TDSEP, kica, MILCA
+        
+        Parameters
+        ----------
+        number_of_components : int
+            number of principal components to pass to the ICA algorithm
+        algorithm : {FastICA, JADE, CuBICA, TDSEP, kica, milca}
+        diff : bool
+        diff_order : int
+        pc : numpy array
+            externally provided components
+        comp_list : boolen numpy array
+            choose the components to use by the boolen list. It permits to 
+            choose non contiguous components.
+        mask : numpy boolean array with the same dimension as the PC
+            If not None, only the selected channels will be used by the 
+            algorithm.
+        """
+        super(AggregateSpectrum,self).independent_components_analysis(number_of_components, 
+                                       algorithm, diff_order, pc, 
+                                       comp_list, mask, **kwds)
+        self._split_mva_results()
+
+
+    def _split_mva_results(self):
         """Method to take any multivariate analysis results from the aggregate and
         split them into the constituent SI's.  Required before the individual mva_results
         can be made sense of.
@@ -129,10 +222,31 @@ Perhaps you'd like to instead access its component members, or try the split_res
         objects.
 
         """
-        for f in self.mapped_parameters.original_files.keys():
-            pass
+        smp=self.mapped_parameters
+        # shorter handle on the origin
+        smvar=self.mva_results
+        for key in smp.original_files.keys():
+            # get a shorter handle on the destination
+            mvar=smp.original_files[key].mva_results
+            # copy the principal components
+            mvar.pc = smvar.pc
+            # copy the appropriate section of the aggregate scores
+            agg_address = smp.aggregate_address[key]
+            mvar.v  = smvar.v[agg_address[0]:(agg_address[1]+1)]
+            # copy eigenvalues (though really, these don't make much 
+            # sense on this object, now separate from the whole.)
+            mvar.V  = smvar.V
+            mvar.pca_algorithm = smvar.pca_algorithm
+            mvar.ica_algorithm = smvar.ica_algorithm
+            mvar.centered = smvar.centered
+            mvar.poissonian_noise_normalized = smvar.poissonian_noise_normalized
+            # number of independent components derived
+            mvar.output_dim = smvar.output_dim
+            mvar.unfolded = True
+            # Demixing matrix
+            mvar.w = smvar.w
+            smp.original_files[key].fold()
             
-
 class AggregateImage(Aggregate,Image):
     def __init__(self, *args, **kw):
         super(AggregateImage, self).__init__(*args,**kw)
@@ -156,12 +270,14 @@ class AggregateImage(Aggregate,Image):
                         self.data=np.atleast_3d(arg.data)
                     else:
                         self.data=np.append(self.data,np.atleast_3d(arg.data),axis=2)
+                    print "File %s added to aggregate."%mp.name
                 else:
                     print "Data from file %s already in this aggregate. \n \
     Delete it first if you want to update it."%mp.parent
             # refresh the axes for the new sized data
             self.axes_manager=AxesManager(self._get_undefined_axes_list())
             smp.name="Aggregate Image: %s"%smp.original_files.keys()
+            self.summary()
 
     def remove(self,*keys):
         smp=self.mapped_parameters
@@ -169,8 +285,10 @@ class AggregateImage(Aggregate,Image):
             idx=smp.original_files.keys().index(key)
             self.data=np.delete(self.data,np.s_[idx:idx+1:1],2)
             del smp.original_files[key]
+            print "File %s removed from aggregate."%key
         self.axes_manager=AxesManager(self._get_undefined_axes_list())
         smp.name="Aggregate Image: %s"%smp.original_files.keys()
+        self.summary()
 
     def cell_cropper(self):
         if not hasattr(self.mapped_parameters,"picker"):
@@ -217,6 +335,7 @@ class AggregateCells(Aggregate,Image):
                         self.data=np.atleast_3d(arg.data)
                     else:
                         self.data=np.append(self.data,arg.data,axis=2)
+                    print "File %s added to aggregate."%mp.name
                     smp.aggregate_end_pointer=self.data.shape[2]
                 else:
                     print "Data from file %s already in this aggregate. \n \
@@ -224,6 +343,7 @@ class AggregateCells(Aggregate,Image):
             # refresh the axes for the new sized data
             self.axes_manager=AxesManager(self._get_undefined_axes_list())
             smp.name="Aggregate Cells: %s"%smp.locations.keys()
+            self.summary()
 
     def remove(self,*keys):
         smp=self.mapped_parameters
@@ -233,9 +353,11 @@ class AggregateCells(Aggregate,Image):
             del smp.image_stacks[key]
             address=smp.aggregate_address[key]
             self.data=np.delete(self.data,np.s_[address[0]:address[1]:1],2)
+            print "File %s removed from aggregate."%key
         self.axes_manager=AxesManager(self._get_undefined_axes_list())
         smp.aggregate_end_pointer=self.data.shape[2]
         smp.name="Aggregate Cells: %s"%smp.locations.keys()
+        self.summary()
 
     def kmeans_cluster_stack(self, clusters=None):
         smp=self.mapped_parameters
