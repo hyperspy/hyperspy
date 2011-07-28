@@ -27,7 +27,7 @@ from enthought.traits.api \
     Bool, Button, Property, Event, Tuple, Any, List, Trait
 from enthought.traits.ui.api import View, Item, Group, HFlow, VGroup, Tabbed, \
     BooleanEditor, ButtonEditor, CancelButton, Handler, Action, Spring, \
-    HGroup
+    HGroup, CompoundEditor
 from enthought.chaco.tools.api import PanTool, ZoomTool, RangeSelection, \
                                        RangeSelectionOverlay
 from enthought.chaco.api import Plot, ArrayPlotData, jet, gray, \
@@ -113,6 +113,8 @@ class TemplatePicker(HasTraits):
     cbar_selection = Instance(RangeSelection)
     cbar_selected = Event
     thresh=Trait(None,None,List,Tuple,Array)
+    thresh_upper=Float(1.0)
+    thresh_lower=Float(0.0)
     numfiles=Int(1)
     img_idx=Int(0)
     tmp_img_idx=Int(0)
@@ -144,10 +146,14 @@ class TemplatePicker(HasTraits):
                         Item("findpeaks",editor=ButtonEditor(label="Find Peaks"),show_label=False),
                         Spring(),
                         ),
-                    Group(
-                        Spring(),
+                    HGroup(
+                        Item("thresh_lower",label="Threshold Lower Value"),
+                        Item("thresh_upper",label="Threshold Upper Value"),
+                    ),
+                    HGroup(
                         Item("numpeaks_img",label="Number of Cells selected (this image)",style='readonly'),
-                        Item("numpeaks_total",label="Total",style='readonly'),                        
+                        Spring(),
+                        Item("numpeaks_total",label="Total",style='readonly'),                          Spring(),
                         ),
                     label="Peak parameters", show_border=True),
                 )
@@ -157,7 +163,7 @@ class TemplatePicker(HasTraits):
         title="Template Picker",
         handler=OK_custom, kind='livemodal',
         key_bindings = key_bindings,
-        width=870, height=540)        
+        width=900, height=600)        
 
     def __init__(self, signal_instance):
         super(TemplatePicker, self).__init__()
@@ -359,12 +365,22 @@ class TemplatePicker(HasTraits):
             thresh=self.cbar_selection.selection
             self.thresh=thresh
             self.cmap_renderer.color_data.metadata['selections']=thresh
+            self.thresh_lower=thresh[0]
+            self.thresh_upper=thresh[1]
             #cmap_renderer.color_data.metadata['selection_masks']=self.thresh
             self.cmap_renderer.color_data.metadata_changed={'selections':thresh}
             self.container.request_redraw()
             self.img_container.request_redraw()
         except:
             pass
+
+    @on_trait_change('thresh_upper,thresh_lower')
+    def manual_thresh_update(self):
+        self.thresh=[self.thresh_lower,self.thresh_upper]
+        self.cmap_renderer.color_data.metadata['selections']=self.thresh
+        self.cmap_renderer.color_data.metadata_changed={'selections':self.thresh}
+        self.container.request_redraw()
+        self.img_container.request_redraw()
 
     @on_trait_change('peaks,cbar_selection:selection,img_idx')
     def calc_numpeaks(self):
