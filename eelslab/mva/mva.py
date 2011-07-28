@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt
 
 import mdp
 from eelslab import utils
-from svd_pca import pca    
+from svd_pca import pca
 from mlpca import mlpca
 from eelslab.utils import center_and_scale
 from eelslab.defaults_parser import defaults
@@ -143,7 +143,7 @@ class MVA():
             print \
             """
             The PCA algorithms from the MDP toolking (mdp and NIPALS) 
-            do not permit desactivating data centering.
+            do not permit deactivating data centering.
             Therefore, the algorithm will proceed to center the data.
             """
             center = True
@@ -223,11 +223,11 @@ class MVA():
             pca_V = self.mva_results.pca_node.d
             self.mva_results.dc_transposed=dc_transposed
             self.mva_results.output_dim = output_dim
-            
+
         elif algorithm == 'svd':
             pca_v, pca_V = pca(dc[energy_mask,:][:,spatial_mask])
             pc = np.dot(dc[:,spatial_mask], pca_v)
-            
+
         elif algorithm == 'mlpca':
             print "Performing the MLPCA training"
             if output_dim is None:
@@ -263,6 +263,12 @@ class MVA():
             pca_v = V
             pca_V = S ** 2
             
+        if output_dim:
+            print "trimming to %i dimensions"%output_dim
+            pca_v = pca_v[:,:output_dim]
+            pca_V = pca_V[:output_dim]
+            pc = pc[:,:output_dim]
+
         self.mva_results.pc = pc
         self.mva_results.v = pca_v
         self.mva_results.V = pca_V
@@ -648,7 +654,7 @@ class MVA():
             print "Either recmatrix or components were not provided."
             print "Loading existing values from object."
             if mva_type is None:
-                print "No scores nor analysis type specified.  Cannot proceed."
+                print "Neither scores nor analysis type specified.  Cannot proceed."
                 return
             
             elif mva_type.lower() == 'pca':
