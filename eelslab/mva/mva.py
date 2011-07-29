@@ -101,11 +101,20 @@ class MVA():
     """
     def __init__(self):
         self.mva_results = MVA_Results()
+        self.peak_mva_results = MVA_Results()
+        self.peak_chars=None
+
+    def _get_target(self,on_peaks):
+        if on_peaks:
+            target=self.peak_mva_results
+        else:
+            target=self.mva_results
+        return target
     
     def principal_components_analysis(self, normalize_poissonian_noise = False, 
     algorithm = 'svd', output_dim = None, spatial_mask = None, 
     energy_mask = None, center = False, variance2one = False, var_array = None, 
-    var_func = None, polyfit = None):
+    var_func = None, polyfit = None, on_peaks=False):
         """Principal components analysis.
         
         The results are stored in self.mva_results
@@ -137,7 +146,10 @@ class MVA():
         plot_principal_components, plot_principal_components_maps, plot_lev
         """
         # backup the original data
-        self._data_before_treatments = self.data.copy()
+        if on_peaks:
+            self._data_before_treatments = self.peak_chars.copy()
+        else:
+            self._data_before_treatments = self.data.copy()
         # Check for conflicting options and correct them when possible   
         if (algorithm == 'mdp' or algorithm == 'NIPALS') and center is False:
             print \
@@ -172,7 +184,6 @@ class MVA():
             variance2one = False
         
         # Apply pre-treatments
-        
         # Centering
         if center is True:
             self.energy_center()
@@ -193,13 +204,19 @@ class MVA():
 
         messages.information('Performing principal components analysis')
         dc_transposed=False
-        last_axis_units=self.axes_manager.axes[-1].units
-        if last_axis_units=='eV' or last_axis_units=='keV':
-            print "Transposing data so that energy axis makes up rows."
-            dc = self.data.T.squeeze()
-            dc_transposed=True
+
+        if on_peaks:
+            dc=self.peak_chars
         else:
-            dc = self.data.squeeze()
+            last_axis_units=self.axes_manager.axes[-1].units
+            if last_axis_units=='eV' or last_axis_units=='keV':
+                print "Transposing data so that energy axis makes up rows."
+                dc = self.data.T.squeeze()
+                dc_transposed=True
+            else:
+                dc = self.data.squeeze()
+        #set the output target (peak results or not?)
+        target=self._get_target(on_peaks)
         # Transform the None masks in slices to get the right behaviour
         if spatial_mask is None:
             spatial_mask = slice(None)
@@ -207,22 +224,22 @@ class MVA():
             energy_mask = slice(None)
         if algorithm == 'mdp' or algorithm == 'NIPALS':
             if algorithm == 'mdp':
-                self.mva_results.pca_node = mdp.nodes.PCANode(
+                target.pca_node = mdp.nodes.PCANode(
                 output_dim=output_dim, svd = True)
             elif algorithm == 'NIPALS':
-                self.mva_results.pca_node = mdp.nodes.NIPALSNode(
+                target.pca_node = mdp.nodes.NIPALSNode(
                 output_dim=output_dim)
             # Train the node
             print "\nPerforming the PCA node training"
             print "This include variance normalizing"
-            self.mva_results.pca_node.train(
+            target.pca_node.train(
                 dc[energy_mask,:][:,spatial_mask])
             print "Performing PCA projection"
-            pc = self.mva_results.pca_node.execute(dc[:,spatial_mask])
-            pca_v = self.mva_results.pca_node.v
-            pca_V = self.mva_results.pca_node.d
-            self.mva_results.dc_transposed=dc_transposed
-            self.mva_results.output_dim = output_dim
+            pc = target.pca_node.execute(dc[:,spatial_mask])
+            pca_v = target.pca_node.v
+            pca_V = target.pca_node.d
+            target.dc_transposed=dc_transposed
+            target.output_dim = output_dim
 
         elif algorithm == 'svd':
             pca_v, pca_V = pca(dc[energy_mask,:][:,spatial_mask])
@@ -253,11 +270,11 @@ class MVA():
                         'var_func must be either a function or an array'
                         'defining the coefficients of a polynom')             
                 
-            self.mva_results.mlpca_output = mlpca(
+            target.mlpca_output = mlpca(
                 dc.squeeze()[energy_mask,:][:,spatial_mask], 
                 var_array.squeeze(), 
                 output_dim)
-            U,S,V,Sobj, ErrFlag  = self.mva_results.mlpca_output
+            U,S,V,Sobj, ErrFlag  = target.mlpca_output
             print "Performing PCA projection"
             pc = np.dot(dc[:,spatial_mask], V)
             pca_v = V
@@ -269,39 +286,39 @@ class MVA():
             pca_V = pca_V[:output_dim]
             pc = pc[:,:output_dim]
 
-        self.mva_results.pc = pc
-        self.mva_results.v = pca_v
-        self.mva_results.V = pca_V
-        self.mva_results.pca_algorithm = algorithm
-        self.mva_results.centered = center
-        self.mva_results.poissonian_noise_normalized = \
+        target.pc = pc
+        target.v = pca_v
+        target.V = pca_V
+        target.pca_algorithm = algorithm
+        target.centered = center
+        target.poissonian_noise_normalized = \
             normalize_poissonian_noise
-        self.mva_results.output_dim = output_dim
-        self.mva_results.unfolded = self._unfolded4pca
-        self.mva_results.variance2one = variance2one
+        target.output_dim = output_dim
+        target.unfolded = self._unfolded4pca
+        target.variance2one = variance2one
         
         if self._unfolded4pca is True:
-            self.mva_results.original_shape = self._shape_before_unfolding
+            target.original_shape = self._shape_before_unfolding
 
         # Rescale the results if the noise was normalized
         if normalize_poissonian_noise is True:
-            self.mva_results.pc[energy_mask,:] *= self._root_bH
-            self.mva_results.v *= self._root_aG.T
+            target.pc[energy_mask,:] *= self._root_bH
+            target.v *= self._root_aG.T
             if isinstance(spatial_mask, slice):
                 spatial_mask = None
             if isinstance(energy_mask, slice):
                 energy_mask = None
 
         #undo any pre-treatments
-        self.undo_treatments()
+        self.undo_treatments(on_peaks)
 
         # Set the pixels that were not processed to nan
         if spatial_mask is not None or not isinstance(spatial_mask, slice):
-            v = np.zeros((dc.shape[1], self.mva_results.v.shape[1]), 
-                    dtype = self.mva_results.v.dtype)
+            v = np.zeros((dc.shape[1], target.v.shape[1]), 
+                    dtype = target.v.dtype)
             v[spatial_mask == False,:] = np.nan
-            v[spatial_mask,:] = self.mva_results.v
-            self.mva_results.v = v
+            v[spatial_mask,:] = target.v
+            target.v = v
                 
         if self._unfolded4pca is True:
             self.fold()
@@ -309,7 +326,7 @@ class MVA():
             
     def independent_components_analysis(self, number_of_components = None, 
     algorithm = 'CuBICA', diff_order = 1, pc = None, 
-    comp_list = None, mask = None, **kwds):
+    comp_list = None, mask = None, on_peaks=False, **kwds):
         """Independent components analysis.
         
         Available algorithms: FastICA, JADE, CuBICA, TDSEP, kica, MILCA
@@ -330,9 +347,11 @@ class MVA():
             If not None, only the selected channels will be used by the 
             algorithm.
         """
-        if hasattr(self.mva_results, 'pc'):
+        target=self._get_target(on_peaks)
+
+        if hasattr(target, 'pc'):
             if pc is None:
-                pc = self.mva_results.pc
+                pc = target.pc
             bool_index = np.zeros((pc.shape[0]), dtype = 'bool')
             if number_of_components is not None:
                 bool_index[:number_of_components] = True
@@ -351,7 +370,7 @@ class MVA():
             if mask is not None:
                 pc = pc[mask, :]
             if algorithm == 'kica':
-                self.mva_results.w = perform_kica(pc)
+                target.w = perform_kica(pc)
             elif algorithm == 'milca':
                 try:
                     import milca
@@ -359,17 +378,18 @@ class MVA():
                     messages.warning_exit('MILCA is not installed')
                 # first centers and scales data
                 invsqcovmat, pc = center_and_scale(pc).itervalues()
-                self.mva_results.w = np.dot(milca.milca(pc, **kwds), invsqcovmat)
+                target.w = np.dot(milca.milca(pc, **kwds), invsqcovmat)
             else:
                 # first centers and scales data
                 invsqcovmat, pc = center_and_scale(pc).itervalues()
                 exec('self.ica_node = mdp.nodes.%sNode(white_parm = \
                 {\'svd\' : True})' % algorithm)
-                self.ica_node.variance2oneed = True
-                self.ica_node.train(pc)
-                self.mva_results.w = np.dot(self.ica_node.get_recmatrix(), invsqcovmat)
-            self._ic_from_w()
-            self.mva_results.ica_algorithm = algorithm
+                target.ica_node.variance2oneed = True
+                target.ica_node.train(pc)
+                target.w = np.dot(self.ica_node.get_recmatrix(), invsqcovmat)
+            self._ic_from_w(target)
+            target.icascores=self._get_ica_scores(target)
+            target.ica_algorithm = algorithm
             self.output_dim = number_of_components
         else:
             "You have to perform Principal Components Analysis before"
@@ -391,32 +411,38 @@ class MVA():
         >>> s.reverse_ic(1) # reverse IC 1
         >>> s.reverse_ic(0, 2) # reverse ICs 0 and 2
         """
+        if on_peaks:
+            target=self.peak_mva_results
+        else:
+            target=self.mva_results
         for i in ic_n:
-            self.ic[:,i] *= -1
-            self.mva_results.w[i,:] *= -1
+            target.ic[:,i] *= -1
+            target.w[i,:] *= -1
     
-    def _ic_from_w(self):
-        w = self.mva_results.w
+    def _ic_from_w(self,target):
+        w = target.w
         n = len(w)
-        self.ic = np.dot(self.mva_results.pc[:,:n], w.T)
+        target.ic = np.dot(target.pc[:,:n], w.T)
         for i in xrange(n):
-            if np.all(self.ic[:,i] <= 0):
+            if np.all(target.ic[:,i] <= 0):
                 self.reverse_ic(i)
 
-    def _get_ica_scores(self):
+    def _get_ica_scores(self,target):
         """
         Returns the ICA score matrix (formerly known as the recmatrix)
         """
-        W = self.mva_results.v.T[:self.ic.shape[1],:]
-        Q = np.linalg.inv(self.mva_results.w.T)
+        W = target.v.T[:target.ic.shape[1],:]
+        Q = np.linalg.inv(target.w.T)
         return np.dot(Q,W)
           
-    def _calculate_recmatrix(self, components = None, mva_type=None):
+    def _calculate_recmatrix(self, components = None, mva_type=None, 
+                             on_peaks=False):
         """
         Rebuilds SIs from selected components
 
         Parameters
         ------------
+        target : target or self.peak_mva_results
         components : None, int, or list of ints
              if None, rebuilds SI from all components
              if int, rebuilds SI from components in range 0-given int
@@ -429,12 +455,14 @@ class MVA():
         Signal instance
         """
 
+        target=self._get_target(on_peaks)
+
         if mva_type.lower() == 'pca':
-            factors = self.mva_results.pc
-            scores = self.mva_results.v.T
+            factors = target.pc
+            scores = target.v.T
         elif mva_type.lower() == 'ica':
-            factors = self.ic
-            scores = self._get_ica_scores()
+            factors = target.ic
+            scores = self._get_ica_scores(target)
         if components is None:
             a = np.atleast_3d(np.dot(factors,scores))
             signal_name = 'rebuilt from %s with %i components' % (
@@ -471,7 +499,7 @@ class MVA():
             sc.fold()
         return sc
 
-    def pca_build_SI(self,components=None):
+    def pca_build_SI(self, components=None, on_peaks=False):
         """Return the spectrum generated with the selected number of principal 
         components
         
@@ -486,9 +514,10 @@ class MVA():
         -------
         Signal instance
         """
-        return self._calculate_recmatrix(components=components, mva_type='pca')
+        return self._calculate_recmatrix(components=components, mva_type='pca',
+                                         on_peaks=on_peaks)
         
-    def ica_build_SI(self,components = None):
+    def ica_build_SI(self,components = None, on_peaks=False):
         """Return the spectrum generated with the selected number of 
         independent components
         
@@ -503,7 +532,8 @@ class MVA():
         -------
         Signal instance
         """
-        return self._calculate_recmatrix(components=components, mva_type='ica')
+        return self._calculate_recmatrix(components=components, mva_type='ica',
+                                         on_peaks=on_peaks)
         
     def energy_center(self):
         """Subtract the mean energy pixel by pixel"""
@@ -517,29 +547,38 @@ class MVA():
             self.data = (self.data + self._energy_mean)
             self._replot()
         
-    def variance2one(self):
+    def variance2one(self, on_peaks=False):
         # Whitening
-        self._std = np.std(self.data, 0)
-        self.data /= self._std
+        if on_peaks:
+            d=self.peak_chars
+        else:
+            d=self.data
+        self._std = np.std(d, 0)
+        d /= self._std
         self._replot()
         
-    def undo_variance2one(self):
+    def undo_variance2one(self, on_peaks=False):
+        if on_peaks:
+            d=self.peak_chars
+        else:
+            d=self.data
         if hasattr(self,'_std'):
-            self.data *= self._std
+            d *= self._std
             self._replot()
 
-    def plot_lev(self, n=50):
+    def plot_lev(self, n=50, on_peaks=False):
         """Plot the principal components LEV up to the given number
         
         Parameters
         ----------
         n : int
-        """       
-	if n>self.mva_results.V.shape[0]:
-            n=self.mva_results.V.shape[0]
+        """
+        target=self._get_target(on_peaks)
+	if n>target.V.shape[0]:
+            n=target.V.shape[0]
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.plot(range(n), self.mva_results.V[:n], 'o')
+        ax.plot(range(n), target.V[:n], 'o')
         ax.semilogy()
         ax.set_title('Log(eigenvalues)')
         ax.set_xlabel('Principal component')
@@ -547,17 +586,18 @@ class MVA():
         plt.show()
         return ax
         
-    def plot_explained_variance(self,n=50):
+    def plot_explained_variance(self,n=50,on_peaks=False):
         """Plot the principal components explained variance up to the given 
         number
         
         Parameters
         ----------
         n : int
-        """ 
-	if n>self.mva_results.V.shape[0]:
-            n=self.mva_results.V.shape[0]
-        cumu = np.cumsum(self.mva_results.V) / np.sum(self.mva_results.V)
+        """
+        target=self._get_target(on_peaks)
+	if n>target.V.shape[0]:
+            n=target.V.shape[0]
+        cumu = np.cumsum(target.V) / np.sum(target.V)
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.scatter(range(n), cumu[:n])
@@ -567,7 +607,7 @@ class MVA():
         plt.show()
         return ax
 
-    def plot_principal_components(self, n = None):
+    def plot_principal_components(self, n = None, on_peaks=False):
         """Plot the principal components up to the given number
         
         Parameters
@@ -575,15 +615,17 @@ class MVA():
         n : int
             number of principal components to plot.
         """
+        target=self._get_target(on_peaks)
         if n is None:
-            n = self.mva_results.pc.shape[1]
+            n = target.pc.shape[1]
         for i in xrange(n):
             plt.figure()
-            plt.plot(self.axes_manager.axes[-1].axis, self.mva_results.pc[:,i])
+            plt.plot(self.axes_manager.axes[-1].axis, target.pc[:,i])
             plt.title('Principal component %s' % i)
             plt.xlabel('Energy (eV)')
             
-    def plot_independent_components(self, ic=None, same_window=False):
+    def plot_independent_components(self, ic=None, same_window=False, 
+                                    on_peaks=False):
         """Plot the independent components.
         
         Parameters
@@ -597,8 +639,9 @@ class MVA():
                     if 'True', the components will be plotted in the
                     same window. Default is 'False'.
         """
+        target=self._get_target(on_peaks)
         if ic is None:
-            ic = self.ic
+            ic = target.ic
             x = self.axes_manager.axes[-1].axis
         else:
             if len(ic.shape) != 2:
@@ -628,8 +671,9 @@ class MVA():
             plt.draw()
             plt.show()
 
-    def plot_maps(self, components, mva_type=None, scores=None, factors=None, cmap=plt.cm.gray,
-                  no_nans=False, with_components=True, plot=True):
+    def plot_maps(self, components, mva_type=None, scores=None, factors=None, 
+                  cmap=plt.cm.gray, no_nans=False, with_components=True, 
+                  plot=True, on_peaks=False):
         """
         Plot component maps for the different MSA types
 
@@ -650,6 +694,8 @@ class MVA():
         from eelslab.signals.image import Image
         from eelslab.signals.spectrum import Spectrum
 
+        target=self._get_target(on_peaks)
+
         if scores is None or (factors is None and with_components is True):
             print "Either recmatrix or components were not provided."
             print "Loading existing values from object."
@@ -658,11 +704,11 @@ class MVA():
                 return
             
             elif mva_type.lower() == 'pca':
-                scores=self.mva_results.v.T
-                factors=self.mva_results.pc
+                scores=target.v.T
+                factors=target.pc
             elif mva_type.lower() == 'ica':
-                scores = self._get_ica_scores()
-                factors=self.ic
+                scores = self._get_ica_scores(target)
+                factors=target.ic
                 if no_nans:
                     print 'Removing NaNs for a visually prettier plot.'
                     scores = np.nan_to_num(scores) # remove ugly NaN pixels
@@ -723,8 +769,9 @@ class MVA():
                 figure.canvas.draw()
         return im_list
 
-    def plot_principal_components_maps(self, comp_ids=None, cmap=plt.cm.gray, recmatrix=None,
-                                         with_pc=True, plot=True, pc=None):
+    def plot_principal_components_maps(self, comp_ids=None, cmap=plt.cm.gray, 
+                                       recmatrix=None, with_pc=True, 
+                                       plot=True, pc=None, on_peaks=False):
         """Plot the map associated to each independent component
         
         Parameters
@@ -752,11 +799,14 @@ class MVA():
         -------
         List with the maps as MVA instances
         """
-        return self.plot_maps(components=comp_ids,mva_type='pca',cmap=cmap,scores=recmatrix,
-                        with_components=with_pc,plot=plot, factors=pc)
+        return self.plot_maps(components=comp_ids,mva_type='pca',cmap=cmap,
+                              scores=recmatrix, with_components=with_pc,
+                              plot=plot, factors=pc, on_peaks=on_peaks)
         
-    def plot_independent_components_maps(self, comp_ids=None, cmap=plt.cm.gray, recmatrix=None,
-                                         with_ic=True, plot=True, ic=None, no_nans=False):
+    def plot_independent_components_maps(self, comp_ids=None, cmap=plt.cm.gray,
+                                         recmatrix=None, with_ic=True, 
+                                         plot=True, ic=None, no_nans=False,
+                                         on_peaks=False):
         """Plot the map associated to each independent component
         
         Parameters
@@ -783,12 +833,15 @@ class MVA():
         -------
         List with the maps as MVA instances
         """
-        return self.plot_maps(components=comp_ids,mva_type='ica',cmap=cmap,scores=recmatrix,
-                        with_components=with_ic,plot=plot, factors=ic, no_nans=no_nans)
+        return self.plot_maps(components=comp_ids,mva_type='ica',cmap=cmap,
+                              scores=recmatrix, with_components=with_ic,
+                              plot=plot, factors=ic, no_nans=no_nans, 
+                              on_peaks=on_peaks)
 
     
     def save_principal_components(self, n, spectrum_prefix = 'pc', 
-    image_prefix = 'im', spectrum_format = 'msa', image_format = 'tif'):
+    image_prefix = 'im', spectrum_format = 'msa', image_format = 'tif',
+                                  on_peaks=False):
         """Save the `n` first principal components  and score maps 
         in the specified format
         
@@ -805,11 +858,13 @@ class MVA():
                  
         """
         from spectrum import Spectrum
-        im_list = self.plot_principal_components_maps(n, plot = False)
-        s = Spectrum({'calibration' : {'data_cube' : self.mva_results.pc[:,0]}})
+        target=self._get_target(on_peaks)
+        im_list = self.plot_principal_components_maps(n, plot = False, 
+                                                      on_peaks=on_peaks)
+        s = Spectrum({'calibration' : {'data_cube' : target.pc[:,0]}})
         s.get_calibration_from(self)
         for i in xrange(n):
-            s.data_cube = self.mva_results.pc[:,i]
+            s.data_cube = target.pc[:,i]
             s.get_dimensions_from_cube()
             s.save('%s-%i.%s' % (spectrum_prefix, i, spectrum_format))
             im_list[i].save('%s-%i.%s' % (image_prefix, i, image_format))
@@ -817,7 +872,8 @@ class MVA():
     def save_independent_components(self, elements=None, 
                                     spectrum_format='msa',
                                     image_format='tif',
-                                    recmatrix=None, ic=None):
+                                    recmatrix=None, ic=None,
+                                    on_peaks=False):
         """Saves the result of the ICA in image and spectrum format.
         Note that to save the image, the NaNs in the map will be converted
         to zeros.
@@ -835,12 +891,14 @@ class MVA():
             externally supplied IC
         """
         from eelslab.signals.spectrum import Spectrum
+        target=self._get_target(on_peaks)
         pl = self.plot_independent_components_maps(plot=False, 
                                                    recmatrix=recmatrix,
                                                    ic=ic,
-                                                   no_nans=True)
+                                                   no_nans=True,
+                                                   on_peaks=on_peaks)
         if ic is None:
-            ic = self.ic
+            ic = target.ic
         if self.data.shape[2] > 1:
             maps = True
         else:
@@ -891,7 +949,7 @@ class MVA():
                 clist.append(self.data[:,coord[0], coord[1]])
             ic = np.array(clist).T
         snica = utils.snica(ic)
-        self.ic = snica[0]
+        target.ic = snica[0]
         if fold_back is True: self.fold()
         return snica
     
@@ -915,7 +973,7 @@ class MVA():
         plot_als_ic_maps, plot_als_ic
         """
         shape = (self.data.shape[2], self.data.shape[1],-1)
-        if hasattr(self, 'ic') and (self.ic is not None):
+        if hasattr(self, 'ic') and (target.ic is not None):
             also = utils.ALS(self, **kwargs)
             self.als_ic = also['S']
             self.als_maps = also['CList'].reshape(shape, order = 'C')
@@ -1021,11 +1079,21 @@ class MVA():
                 energy_mask = None
             return spatial_mask, energy_mask
         
-    def undo_treatments(self):
+    def undo_treatments(self, on_peaks=False):
         """Undo normalize_poissonian_noise"""
         print "Undoing data pre-treatments"
-        self.data=self._data_before_treatments
-        del self._data_before_treatments
+        if on_peaks:
+            self.peak_chars=self._data_before_treatments
+            del self._data_before_treatments
+        else:
+            self.data=self._data_before_treatments
+            del self._data_before_treatments
+
+    def peak_pca(self):
+        self.principal_components_analysis(on_peaks=True)
+
+    def peak_ica(self, number_of_components):
+        self.independent_components_analysis(number_of_components, on_peaks=True)
         
 class MVA_Results():
     def __init__(self):
@@ -1054,7 +1122,7 @@ class MVA_Results():
         pca_algorithm = self.pca_algorithm, centered = self.centered, 
         output_dim = self.output_dim, variance2one = self.variance2one, 
         poissonian_noise_normalized = self.poissonian_noise_normalized, 
-        w = self.w, ica_algorithm = self.ica_algorithm)
+        w = self.w, ica_algorithm = target.ica_algorithm)
 
     def load(self, filename):
         """Load the result of the PCA analysis
@@ -1083,13 +1151,6 @@ class MVA_Results():
             if not hasattr(self, attrib):
                 exec('self.%s = %s' % (attrib, defaults[attrib]))
         self.summary()
-
-    def peak_pca(self):
-        self.principal_component_analysis(self.peak_chars)
-        pass
-
-    def peak_ica(self, number_of_components):
-        pass
         
     def summary(self):
         """Prints a summary of the PCA parameters to the stdout
