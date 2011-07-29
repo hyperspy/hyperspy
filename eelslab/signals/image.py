@@ -21,8 +21,10 @@
 import matplotlib.pyplot as plt
 
 from eelslab.signal import Signal
-from eelslab.peak_char import *
+import eelslab.peak_char as pc
 from eelslab import utils_varia
+
+import numpy as np
 
 class Image(Signal):
     """
@@ -30,6 +32,8 @@ class Image(Signal):
     def __init__(self, *args, **kw):
         super(Image,self).__init__(*args, **kw)
         self.axes_manager.set_view('image')
+        self.target_locations=None
+        self.peak_width=None
 
     def peak_char_stack(self, peak_width, subpixel=False, target_locations=None,
                         peak_locations=None, imcoords=None, target_neighborhood=20,
@@ -86,7 +90,9 @@ class Image(Signal):
                 default is set to 5
         
         """
-        self.peak_chars=peak_attribs_stack(self.data, 
+        self.target_locations=target_locations
+        self.peak_width=peak_width
+        self.peak_chars=pc.peak_attribs_stack(self.data, 
                                               peak_width,
                                               subpixel=subpixel, 
                                               target_locations=target_locations,
@@ -96,14 +102,197 @@ class Image(Signal):
                                               medfilt_radius=medfilt_radius
                                               )
 
-    def plot_img_peaks(self, index=0, peak_width=10, subpixel=False,
+    def plot_image_peaks(self, index=0, peak_width=10, subpixel=False,
                        medfilt_radius=5):
         # TODO: replace with hyperimage explorer
         plt.imshow(self.data[:,:,index],cmap=plt.gray())
-        peaks=two_dim_peakfind(self.data[:,:,index], subpixel=subpixel,
+        peaks=pc.two_dim_peakfind(self.data[:,:,index], subpixel=subpixel,
                                   peak_width=peak_width, 
                                   medfilt_radius=medfilt_radius)
         plt.scatter(peaks[:,0],peaks[:,1])
+
+    def plot_peak_ids(self):
+        """Overlays id numbers for identified peaks on an average image of the
+        stack.  Identified peaks are either those you specified as 
+        target_locations, or if not specified, those automatically 
+        identified from the average image.
+
+        Use this function to identify a peak to overlay a characteristic of
+        onto the original experimental image using the plot_image_overlay
+        function.
+        """
+        f=plt.figure()
+        imgavg=np.average(self.data,axis=2)
+        plt.imshow(imgavg)
+        plt.gray()
+        if self.target_locations is None:
+            # identify the peaks on the average image
+            if self.peak_width is None:
+                self.peak_width=10
+            self.target_locations=pc.peak_attribs_image(imgavg, self.peak_width)[:,:2]
+        # plot the peak labels
+        for pk_id in xrange(self.target_locations.shape[0]):
+            plt.text(self.target_locations[pk_id,0], self.target_locations[pk_id,1], 
+                     "%s"%pk_id, size=10, rotation=0.,
+                     ha="center", va="center",
+                     bbox = dict(boxstyle="round",
+                                 ec=(1., 0.5, 0.5),
+                                 fc=(1., 0.8, 0.8),
+                                 )
+                     )
+        return f
+
+    def plot_image_overlay(self, plot_component=None, mva_type='PCA', 
+                           peak_id=None, plot_char=None, plot_shift=False):
+        """Overlays scores, or some peak characteristic on top of an image
+        plot of the original experimental image.  Useful for obtaining a 
+        bird's-eye view of some image characteristic.
+
+        plot_component - None or int 
+        (optional, but required to plot score overlays)
+            The integer index of the component to plot scores for.
+            Creates a scatter plot that is colormapped according to 
+            score values.
+
+        component_type - string, either 'PCA' or 'ICA' (case insensitive)
+        (optional, but required to plot score overlays)
+            Choose between the components that will be used for plotting
+            component maps.  Note that whichever analysis you choose
+            here has to actually have already been performed.
+
+        peak_id - None or int
+        (optional, but required to plot peak characteristic and shift overlays)
+            If int, the peak id for plotting characteristics of.
+            To identify peak id's, use the plot_peak_ids function, which will
+            overlay the average image with the identified peaks used
+            throughout the image series.
+
+        plot_char - None or int
+        (optional, but required to plot peak characteristic overlays)
+            If int, the id of the characteristic to plot as the colored 
+            scatter plot.
+            Possible components are:
+               4: peak height
+               5: peak orientation
+               6: peak eccentricity
+
+        plot_shift - bool, optional
+            If True, plots shift overlays for given peak_id onto the parent image(s)
+
+        """
+        if not hasattr(self, "mapped_parameters.original_files"):
+            print "No original files available.  Can't map anything to nothing."
+            print "If you use the cell_cropper function to crop your cells, \n\
+the cell locations and original files will be tracked for you."
+            return None
+        if peak_id is not None and (plot_shift is False and plot_char is None):
+            print "Peak ID provided, but no plot_char given , and plot_shift disabled."
+            print "  Nothing to plot.  Try again."
+            return None
+        if plot_char is not None and plot_component is not None:
+            print "Both plot_char and plot_component provided.  Can only plot one\n\
+of these at a time.  Try again.\n\n\
+Note that you can actually plot shifts and component scores simultaneously."
+            return None
+        figs=[]
+        for key in self.mapped_parameters.original_files.keys():
+            f=plt.figure()
+            plt.imshow(self.mapped_parameters.original_files[key].data)
+            # get a shorter handle on the peak locations on THIS image
+            locs=self.mapped_parameters.locations
+            # binary mask to exclude peaks from other images
+            mask=locs['filename']==key
+            # grab the array of peak locations, only from THIS image
+            locs=locs[mask]['position'].squeeze()
+            char=[]
+            if plot_component is not None:
+                # get the mva_results for the peaks
+                if mva_type.upper()=='PCA':
+                    scores=self.peak_mva_results.v[:,plot_component]
+                elif mva_type.upper()=='ICA':
+                    scores=self.peak_mva_results.icascores[:,plot_component]
+                scores=scores[mask]
+                plt.scatter(locs[:,0],locs[:,1],c=scores)                
+            if peak_id is not None and plot_char is not None :
+                # list comprehension to obtain the peak characteristic
+                # peak_id selects the peak
+                # multiply by 7 because each peak has 7 characteristics
+                # add the index of the characteristic of interest
+                # mask.nonzero() identifies the indices corresponding to peaks from
+                #     this image (if many origins are present for this stack)
+                #     This selects the column, only plotting peak characteristics that are
+                #     from this image.
+                char=np.array([char.append(self.peak_chars[peak_id*7+plot_char,
+                               mask.nonzero()[x]]) for x in xrange(locs.shape[0])])
+                plt.scatter(locs[:,0],locs[:,1],c=char)
+            if peak_id is not None and plot_shift is not None:
+                # list comprehension to obtain the peak shifts
+                # peak_id selects the peak
+                # multiply by 7 because each peak has 7 characteristics
+                # add the indices of the peak shift [2:4]
+                # mask.nonzero() identifies the indices corresponding to peaks from
+                #    this image (if many origins are present for this stack)
+                #    This selects the column, only plotting shifts for peaks that are 
+                #    from this image.
+                shifts=np.array([char.append(self.peak_chars[peak_id*7+2:peak_id*7+4,
+                               mask.nonzero()[x]]) for x in xrange(locs.shape[0])])
+                plt.quiver(locs[:,0],locs[:,1],
+                           shifts[:,0], shifts[:,1],
+                           units='xy', color='white'
+                           )
+
+            figs.append(f)
+        return figs
+        
+
+    def plot_cell_peak_overlays(self, plot_shifts=True, plot_char=None):
+        """Overlays peak characteristics on an image plot of the average image.
+
+        Only appropriate for Image objects that consist of 3D stacks of cropped
+        data.
+
+        Parameters:
+        plot_shifts - bool
+            If true, plots a quiver (arrow) plot showing the shifts for each
+            peak present in the component being plotted.
+
+        plot_char - None or int
+            If int, the id of the characteristic to plot as the colored 
+            scatter plot.
+            Possible components are:
+               4: peak height
+               5: peak orientation
+               6: peak eccentricity
+        """
+        f=plt.figure()
+        vec_comps=np.zeros((avg_positions.shape[0],2))
+        char=np.zeros(avg_positions.shape[0])
+        for pos in xrange(avg_positions.shape[0]):
+            vec_comps[pos]=factor[pos*7+2:pos*7+4]
+            char[pos]=factor[pos*7+4]
+        plt.imshow(avg_data)
+        plt.gray()
+        plt.quiver(avg_positions[:,0], avg_positions[:,1],
+                   vec_comps[:,0], vec_comps[:,1], units='xy',color='white')
+        plt.scatter(avg_positions[:,0], avg_positions[:,1],c=composition)
+        plt.jet()
+        plt.colorbar()
+        return f
+
+        if hasattr(self,mapped_parameters.clusters):
+            figs={}
+            # come up with the color map for the scatter plot
+
+            for key in self.mapped_parameters.original_files.keys():
+                figs[key]=plt.figure()
+                # plot the initial images
+                
+            for cluster in xrange(len(self.mapped_parameters.clusters)):
+                for loc_id in xrange(cluster.mapped_parameters.locations.shape[0]):
+                    # get the right figure
+                    fig=figs[cluster.mapped_paramters.locations[loc_id][0][0]]
+                    # add scatter point
+
         
     def cell_cropper(self):
         if not hasattr(self.mapped_parameters,"picker"):
