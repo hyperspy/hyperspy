@@ -340,7 +340,7 @@ def peak_attribs_image(image, peak_width, subpixel=False,
         -------
 
         2D numpy array:
-        - One row per image
+        - One row per peak
         - 5 columns:
           0,1 - location
           2 - height
@@ -375,10 +375,10 @@ def peak_attribs_image(image, peak_width, subpixel=False,
         if bymax>imsize: bymax=imsize; bymin=imsize-peak_width
         roi[:,:]=image[bxmin:bxmax,bymin:bymax]
         ms=cv.Moments(cv.fromarray(roi))
-        height=np.max(roi)
+        height=c[2]
         orient=orientation(ms)
         ecc=eccentricity(ms)
-        rlt[loc,:2]=c
+        rlt[loc,:2]=c[:2]
         rlt[loc,2]=height
         rlt[loc,3]=orient
         rlt[loc,4]=ecc
