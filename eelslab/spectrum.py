@@ -516,7 +516,7 @@ class Spectrum(object, MVA):
             fp = components.ZL_Fingerprinting(zl)
             m = Model(self,False)
             m.append(fp)
-            m.set_energy_region(None,right)
+            m.set_data_region(None,right)
             m.remove_data_range(-around,around)
             m.multifit()
             self.zero_loss = copy.deepcopy(self)
@@ -1514,7 +1514,7 @@ class Spectrum(object, MVA):
         m = Model(self, False, auto_add_edges = False)
         pl = PowerLaw()
         m.append(pl)
-        m.set_energy_region(left,right)
+        m.set_data_region(left,right)
         m.multifit(grad = True)
         self.data_cube[iright:,:,:] = m.model_cube[iright:,:,:]
         

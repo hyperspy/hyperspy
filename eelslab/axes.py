@@ -306,10 +306,7 @@ class AxesManager(t.HasTraits):
         return(copy.deepcopy(self))
         
     def __deepcopy__(self, *args):
-        axes_dict_list = []
-        for axis in self.axes:
-            axes_dict_list.append(axis.get_axis_dictionary())
-        return AxesManager(axes_dict_list)
+        return AxesManager(self._get_axes_dicts())
         
     def _get_axes_dicts(self):
         axes_dicts = []
@@ -337,4 +334,3 @@ class AxesManager(t.HasTraits):
             
             
     traits_view = tui.View(tui.Item('axes', style = 'custom'))
-    

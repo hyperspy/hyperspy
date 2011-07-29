@@ -171,5 +171,4 @@ class Optimizers(Estimators):
         if switch_aap is True:
             self.set_auto_update_plot(not update_plot)
             if not update_plot and self.spectrum._plot is not None:
-                for line in self.spectrum._plot.spectrum_plot.left_ax_lines:
-                    line.update()
+                self.update_plot()
