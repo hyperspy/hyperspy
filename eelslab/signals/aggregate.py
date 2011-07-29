@@ -31,6 +31,8 @@ import mdp
 from copy import deepcopy
 from collections import OrderedDict
 
+from matplotlib import pyplot as plt
+
 class Aggregate(Signal):
     def __init__(self, *args, **kw):
         # this axes_manager isn't really ideal for Aggregates.
@@ -50,7 +52,7 @@ class Aggregate(Signal):
         for f in smp.original_files.keys():
             print f
         print "Total size: %s"%(str(self.data.shape))
-
+    """
     def plot(self):
         print "Plotting not yet supported for generic aggregate objects"
         return None
@@ -63,7 +65,7 @@ Perhaps you'd like to instead access its component members?"
     def fold(self):
         print "Folding not supported for Aggregate objects."
         return None
-
+    """
     def print_keys(self):
         smp=self.mapped_parameters
         print smp.locations.keys()
@@ -290,13 +292,6 @@ class AggregateImage(Aggregate,Image):
         smp.name="Aggregate Image: %s"%smp.original_files.keys()
         self.summary()
 
-    def cell_cropper(self):
-        if not hasattr(self.mapped_parameters,"picker"):
-            import eelslab.drawing.ucc as ucc
-            self.mapped_parameters.picker=ucc.TemplatePicker(self)
-        self.mapped_parameters.picker.configure_traits()
-        return self.mapped_parameters.picker.crop_sig
-
 class AggregateCells(Aggregate,Image):
     """ A class to deal with several image stacks, each consisting of cropped
     sub-images from a template-matched experimental image.
@@ -426,7 +421,25 @@ your_object.mapped_parameters.avgs \n\n\
 or \n\n\
 your_object.mapped_parameters.clusters\n"
 
-    def plot_cell_overlays(self):
+    def plot_cell_overlays(self, plot_shifts=True, plot_other=None):
+        """
+        Overlays peak characteristics on an image plot of the average image.
+        This the AggregateCells version of this function, which creates plots 
+        for all of the classes obtained from kmeans clustering.
+
+        Parameters:
+        plot_shifts - bool
+            If true, plots a quiver (arrow) plot showing the shifts for each
+            peak present in the component being plotted.
+
+        plot_char - None or int
+            If int, the id of the characteristic to plot as the colored 
+            scatter plot.
+            Possible components are:
+               4: peak height
+               5: peak orientation
+               6: peak eccentricity
+        """
         if hasattr(self,mapped_parameters.clusters):
             figs={}
             # come up with the color map for the scatter plot
@@ -446,9 +459,9 @@ your_object.mapped_parameters.clusters\n"
         avgs=self.mapped_parameters.avgs
         f=plt.figure()
         for i in xrange(avgs.data.shape[2]):
-            
-            img=plt.imshow(avgs.data[:,:,i],title="Class avg %02i, %02i members"%(i,avgs.mapped_parameters.member_counts[i]))
-            f.savefig('class_avg_%02i_[%02i].png'%(i,avg.mapped_parameters.member_counts[i]))
+            img=plt.imshow(avgs.data[:,:,i])
+            #plt.title(title="Class avg %02i, %02i members"%(i,avgs.mapped_parameters.member_counts[i]))
+            f.savefig('class_avg_%02i_[%02i].png'%(i,avgs.mapped_parameters.member_counts[i]))
         plt.close(f)
 
                 
