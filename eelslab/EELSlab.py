@@ -33,8 +33,6 @@ matplotlib.rcParams['image.cmap'] = 'gray'
 from eelslab import Release
 from eelslab import components
 
-from eelslab.spectrum import Spectrum
-from eelslab.image import Image
 from eelslab.experiments import Experiments
 from eelslab.signal import Signal
 from eelslab.model import Model

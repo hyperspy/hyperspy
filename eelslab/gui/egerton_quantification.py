@@ -7,8 +7,8 @@ import enthought.traits.ui.api as tu
 from eelslab import components
 from eelslab import utils
 from eelslab import drawing
-from eelslab.spectrum import Spectrum
-from eelslab.image import Image
+from eelslab.signals.spectrum import Spectrum
+from eelslab.signals.image import Image
 from eelslab.interactive_ns import interactive_ns
 
 
