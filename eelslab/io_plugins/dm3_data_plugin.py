@@ -762,15 +762,15 @@ class DM3ImageFile(object):
             self.signal == 'EELS' or self.SI_format == 'Spectrum image':
                 self.record_by = 'spectrum'
             else:
-                self.record_by = 'Image'
+                self.record_by = 'image'
                 
-        names = ['X', 'Y', 'Z'] if self.record_by == 'Image' \
+        names = ['X', 'Y', 'Z'] if self.record_by == 'image' \
         else ['X', 'Y', 'Energy']
         to_swap = [sizes, origins, scales, units, names]       
         for l in to_swap:
             if self.record_by == 'spectrum':
                 swapelem(l,0,1)
-            elif self.record_by == 'Image':
+            elif self.record_by == 'image':
                 l.reverse()
             
         dimensions = [(
@@ -845,13 +845,13 @@ class DM3ImageFile(object):
                     swapelem(imsize, 0, 1)
                     data = data.reshape(imsize, order = self.order)
                     data = np.swapaxes(data, 0, 1).copy()
-                elif self.record_by == 'Image':
+                elif self.record_by == 'image':
                     data = data.reshape(imsize, order = 'C')
             elif self.order == 'C':
                 if self.record_by == 'spectrum':
                     data = data.reshape(np.roll(self.imsize,1), order = self.order)
                     data = np.rollaxis(data, 0, self.dim).copy()
-                elif self.record_by == 'Image':
+                elif self.record_by == 'image':
                     data = data.reshape(self.imsize, order = self.order)                    
             return data
             
@@ -1034,7 +1034,7 @@ def file_reader(filename, record_by=None, order = None, data_id=1,
 
         # Store the calibration in the calibration dict
 
-    elif dm3.record_by == 'Image':
+    elif dm3.record_by == 'image':
         print("Treating the data as an image")
     else:
         raise TypeError, "could not identify the file record_by"

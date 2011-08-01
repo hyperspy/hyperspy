@@ -176,7 +176,7 @@ def netcdf_image_writer(filename, image, *args, **kwds):
         setattr(ncfile, 'eelslab_version', Release.version)
         setattr(ncfile, 'Conventions', 'http://www.eelslab.org')
 #        setattr(ncfile, 'title', image.title)
-        setattr(ncfile, 'type', 'Image')
+        setattr(ncfile, 'type', 'image')
         # Create the dimensions
         ncfile.createDimension('x', x_dimension)
         ncfile.createDimension('y', y_dimension)
@@ -204,7 +204,7 @@ def netcdf_image_writer(filename, image, *args, **kwds):
         setattr(ncfile, 'file_format_version', 'EELSLab 0.1')
         setattr(ncfile, 'Conventions', 'http://www.eelslab.org')
         setattr(ncfile, 'title', image.title)
-        setattr(ncfile, 'type', 'Image')
+        setattr(ncfile, 'type', 'image')
         # Create the dimensions
         ncfile.createDimension('x', x_dimension)
         ncfile.createDimension('y', y_dimension)

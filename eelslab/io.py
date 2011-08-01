@@ -38,10 +38,10 @@ def load(filename, record_by = None, **kwds):
 
     filename : string
         File name (including the extension)
-    record_by : {None, 'spectrum', 'Image'}
+    record_by : {None, 'spectrum', 'image'}
         If None (default) it will try to guess the data type from the file,
         if 'spectrum' the file will be loaded as an Spectrum object
-        If 'Image' the file will be loaded as an Image object
+        If 'image' the file will be loaded as an Image object
     """
     extension = os.path.splitext(filename)[1][1:]
     
@@ -81,7 +81,7 @@ def load_with_reader(filename, reader, record_by = None, **kwds):
         # dict is not modified
         file_data_dict['mapped_parameters']['record_by'] = record_by
         
-        if record_by == 'Image':
+        if record_by == 'image':
             s = Image(file_data_dict)  
         else:
             s = Spectrum(file_data_dict)

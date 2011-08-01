@@ -132,7 +132,7 @@ def file_reader(filename, **kwds):
             dc[:,:,i] = imread(flist[i])
     else:
         dc = imread(filename)
-    dt = 'Image'    
+    dt = 'image'    
     return [{'data':dc, 
              'mapped_parameters': {
                 'name': filename,

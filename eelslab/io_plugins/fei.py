@@ -139,7 +139,7 @@ def get_data_dtype_list(file, offset, record_by):
         ("ArrayLength", "<u4"),
         ("Array", (data_types[str(data_type)], array_size)),
         ]
-    elif record_by == 'Image':  # Untested
+    elif record_by == 'image':  # Untested
         file.seek(offset + 40)
         data_type = readLEShort(file)
         array_size_x = readLELong(file)
@@ -189,7 +189,7 @@ def guess_record_by(record_by_id):
     if record_by_id == 16672:
         return 'spectrum'
     else:
-        return 'Image'
+        return 'image'
         
 def emi_reader(filename, dump_xml = False, **kwds):
     # TODO: recover the tags from the emi file. It is easy: just look for 
@@ -316,7 +316,7 @@ def ser_reader(filename, *args, **kwds):
         
         array_shape.append(data['ArrayLength'][0])
         
-    elif record_by == 'Image':
+    elif record_by == 'image':
         array_shape = [None,] * int(ndim - 1)
         # Y axis
         axes.append({
@@ -369,7 +369,7 @@ def ser_reader(filename, *args, **kwds):
         dc = data['Array']
     
     dc = dc.reshape(array_shape)
-    if record_by == 'Image':
+    if record_by == 'image':
         dc = dc[::-1]
       
     dictionary = {

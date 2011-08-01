@@ -170,7 +170,7 @@ def file_reader(filename, record_by = None):
         if 'eV' in units or 'keV' in units:
             record_by = 'spectrum'
         else:
-            record_by = 'Image'
+            record_by = 'image'
     if record_by == 'spectrum': 
         print "Treating the data as an SI"
 
