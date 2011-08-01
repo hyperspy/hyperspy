@@ -5,7 +5,7 @@ import enthought.traits.ui.api as tu
 from eelslab.misc import utils
 from eelslab import drawing
 from eelslab.signals.spectrum import Spectrum
-from eelslab.interactive_ns import interactive_ns
+from eelslab.misc.interactive_ns import interactive_ns
 
 
 class Calibration(t.HasTraits):

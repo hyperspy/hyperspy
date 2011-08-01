@@ -6,7 +6,7 @@ import numpy as np
 from eelslab.model import Model
 from eelslab.components.edge import Edge
 from eelslab.components import PowerLaw
-from eelslab.interactive_ns import interactive_ns
+from eelslab.misc.interactive_ns import interactive_ns
 from eelslab.defaults_parser import defaults
 import eelslab.messages as messages
 import eelslab.misc.utils as utils

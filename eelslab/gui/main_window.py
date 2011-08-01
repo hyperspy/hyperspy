@@ -11,7 +11,7 @@ from egerton_quantification import EgertonPanel
 
 import messages
 import tools
-from eelslab.interactive_ns import interactive_ns
+from eelslab.misc.interactive_ns import interactive_ns
 from eelslab import Release
 
 microscope = Microscope()
