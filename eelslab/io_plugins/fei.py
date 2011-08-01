@@ -127,7 +127,7 @@ def get_header_dtype_list(file):
     
     
 def get_data_dtype_list(file, offset, record_by):
-    if record_by == 'SI':
+    if record_by == 'spectrum':
         file.seek(offset + 20)
         data_type = readLEShort(file)
         array_size = readLELong(file)
@@ -187,7 +187,7 @@ def print_struct_array_values(struct_array):
             
 def guess_record_by(record_by_id):
     if record_by_id == 16672:
-        return 'SI'
+        return 'spectrum'
     else:
         return 'Image'
         
@@ -271,7 +271,7 @@ def ser_reader(filename, *args, **kwds):
     record_by = guess_record_by(header['DataTypeID'])
     axes = []
     ndim = int(header['NumberDimensions'])
-    if record_by == 'SI':
+    if record_by == 'spectrum':
         array_shape = [None,] * int(ndim)
         i_array = range(ndim)
         if len(data['PositionY']) > 1 and \

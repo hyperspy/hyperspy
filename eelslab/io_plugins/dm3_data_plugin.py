@@ -760,7 +760,7 @@ class DM3ImageFile(object):
         if self.record_by is None:
             if (self.dim > 1 and eV_in) or self.dim == 1 or \
             self.signal == 'EELS' or self.SI_format == 'Spectrum image':
-                self.record_by = 'SI'
+                self.record_by = 'spectrum'
             else:
                 self.record_by = 'Image'
                 
@@ -768,7 +768,7 @@ class DM3ImageFile(object):
         else ['X', 'Y', 'Energy']
         to_swap = [sizes, origins, scales, units, names]       
         for l in to_swap:
-            if self.record_by == 'SI':
+            if self.record_by == 'spectrum':
                 swapelem(l,0,1)
             elif self.record_by == 'Image':
                 l.reverse()
@@ -841,14 +841,14 @@ class DM3ImageFile(object):
                                    self.byte_offset, self.imdtype)
             imsize = self.imsize.tolist()
             if self.order == 'F':
-                if self.record_by == 'SI':
+                if self.record_by == 'spectrum':
                     swapelem(imsize, 0, 1)
                     data = data.reshape(imsize, order = self.order)
                     data = np.swapaxes(data, 0, 1).copy()
                 elif self.record_by == 'Image':
                     data = data.reshape(imsize, order = 'C')
             elif self.order == 'C':
-                if self.record_by == 'SI':
+                if self.record_by == 'spectrum':
                     data = data.reshape(np.roll(self.imsize,1), order = self.order)
                     data = np.rollaxis(data, 0, self.dim).copy()
                 elif self.record_by == 'Image':
@@ -1012,7 +1012,7 @@ def file_reader(filename, record_by=None, order = None, data_id=1,
         units[units.index(None)] = ''
     # Scale the origins
     origins = origins * scales
-    if dm3.record_by == 'SI': 
+    if dm3.record_by == 'spectrum': 
         print("Treating the data as an SI")
         # only Orsay Spim is supported for now
         # does anyone have other kinds of SIs for testing?

@@ -168,10 +168,10 @@ def file_reader(filename, record_by = None):
     # Determine wether this is an image of SI and extract parameters
     if record_by is None:
         if 'eV' in units or 'keV' in units:
-            record_by = 'SI'
+            record_by = 'spectrum'
         else:
             record_by = 'Image'
-    if record_by == 'SI': 
+    if record_by == 'spectrum': 
         print "Treating the data as an SI"
 
         # Try to determine the format (if known) to extract some parameters

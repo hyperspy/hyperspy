@@ -210,7 +210,7 @@ def file_reader(filename, **kwds):
                 })
 
     mapped['name']=filename
-    mapped['record_by']='SI'
+    mapped['record_by']='spectrum'
 
     dictionary = {
                     'data' : np.array(y),

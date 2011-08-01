@@ -238,7 +238,7 @@ def netcdf_spectrum_writer(filename, spectrum, *args, **kwds):
         setattr(ncfile, 'Conventions', 'http://www.eelslab.org')
 #        setattr(ncfile, 'history', str(spectrum.history))
         setattr(ncfile, 'title', spectrum.title)
-        setattr(ncfile, 'type', 'SI')
+        setattr(ncfile, 'type', 'spectrum')
         # Create the dimensions
         ncfile.createDimension('energy', energy_dimension)
         ncfile.createDimension('x', x_dimension)

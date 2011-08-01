@@ -38,9 +38,9 @@ def load(filename, record_by = None, **kwds):
 
     filename : string
         File name (including the extension)
-    record_by : {None, 'SI', 'Image'}
+    record_by : {None, 'spectrum', 'Image'}
         If None (default) it will try to guess the data type from the file,
-        if 'SI' the file will be loaded as an Spectrum object
+        if 'spectrum' the file will be loaded as an Spectrum object
         If 'Image' the file will be loaded as an Image object
     """
     extension = os.path.splitext(filename)[1][1:]
@@ -74,7 +74,7 @@ def load_with_reader(filename, reader, record_by = None, **kwds):
         # The record_by can still be None if it was not defined by the reader
         if record_by is None:
                 print "No data type provided.  Defaulting to Signal."
-                record_by = 'SI'
+                record_by = 'spectrum'
                 
         # We write the data type to the mapped_parameters to guarantee that it 
         # is coherent with the asigned class. Note that the original_parameters 

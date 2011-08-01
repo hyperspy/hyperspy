@@ -302,14 +302,14 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
 
     if rpl_info['record-by'] == 'vector':
         print 'Loading as spectrum'
-        record_by = 'SI'
+        record_by = 'spectrum'
     elif rpl_info['record-by'] == 'image':
         print 'Loading as Image'
         record_by = 'Image'
     else:
         if len(data.shape) == 1:
             print 'Loading as spectrum'
-            record_by = 'SI'
+            record_by = 'spectrum'
         else:
             print 'Loading as image'
             record_by = 'Image'
