@@ -12,7 +12,7 @@ from enthought.traits.api import HasTraits, File, String, Bool, List, ListBool
 from enthought.traits.ui.api import View, Handler, Group, Item,SetEditor
 
 from eelslab import *
-from eelslab.edges_db import edges_dict
+from eelslab.components.eels_cl_edge import edges_dict
 
 # Mine
 

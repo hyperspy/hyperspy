@@ -19,7 +19,7 @@
 # USA
 
 
-import math, copy, os
+import math, copy, os, csv
 
 import numpy as np
 import scipy as sp
@@ -30,9 +30,8 @@ from scipy.signal import cspline1d_eval
 from eelslab.defaults_parser import defaults
 from eelslab.component import Component
 from eelslab.microscope import microscope
-from eelslab.edges_db import edges_dict
 from eelslab import messages
-
+from eelslab.config_dir import config_path
 
 # Global constants
 # Fundamental constants
@@ -45,6 +44,58 @@ c = 2997.92458e8 #speed of light in m/s
 # Relativistic correction factors
 gamma = 1.0 + (e * microscope.E0) / (m0 * pow(c,2.0)) #dimensionless
 T = microscope.E0 * (1.0 + gamma) / (2.0 * pow(gamma, 2.0)) #in eV
+
+file_path = os.path.join(config_path, 'edges_db.csv') 
+f = open(file_path, 'r')
+reader = csv.reader(f)
+edges_dict = {}
+
+for row in reader:
+    twin_subshell = None
+    element, subshell = row[0].split('.')
+    Z = row[1]
+    if edges_dict.has_key(element) is not True :
+        edges_dict[element]={}
+        edges_dict[element]['subshells'] = {}
+        edges_dict[element]['Z'] = Z
+    if row[3] is not '':
+        if subshell == "L3":
+            twin_subshell = "L2"
+            factor = 0.5
+        if subshell == "M3":
+            twin_subshell = "M2"
+            factor = 0.5
+        if subshell == "M5":
+            twin_subshell = "M4"
+            factor = 4/6.
+        if subshell == "N3":
+            twin_subshell = "N2"
+            factor = 2/4.
+        if subshell == "N5":
+            twin_subshell = "N4"
+            factor = 4/6.
+        if subshell == "N7":
+            twin_subshell = "N6"
+            factor = 6/8.
+        if subshell == "O5":
+            twin_subshell = "O4"
+            factor = 4/6.
+            
+    edges_dict[element]['subshells'][subshell] = {}
+    edges_dict[element]['subshells'][subshell]['onset_energy'] = float(row[2])
+    edges_dict[element]['subshells'][subshell]['filename'] = row[0]
+    edges_dict[element]['subshells'][subshell]['relevance'] = row[4]
+    edges_dict[element]['subshells'][subshell]['factor'] = 1
+    
+    if twin_subshell is not None :
+        edges_dict[element]['subshells'][twin_subshell] = {}
+        edges_dict[element]['subshells'][twin_subshell]['onset_energy'] = \
+        float(row[3])
+        edges_dict[element]['subshells'][twin_subshell]['filename'] = row[0]
+        edges_dict[element]['subshells'][twin_subshell]['relevance'] = row[4]
+        edges_dict[element]['subshells'][twin_subshell]['factor'] = factor
+
+
 
 def EffectiveAngle(E0,E,alpha,beta):
     """Calculates the effective collection angle

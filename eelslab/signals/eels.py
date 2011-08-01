@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from eelslab.signals.spectrum import Spectrum
 from eelslab.signals.image import Image
 
-from eelslab.edges_db import edges_dict
+from eelslab.components.eels_cl_edge import edges_dict
 import eelslab.axes
 
 class EELSSignal(Spectrum):
