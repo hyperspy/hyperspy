@@ -22,7 +22,7 @@ import csv
 import os
 import os.path
 
-from eelslab.config_dir import config_path
+from eelslab.misc.config_dir import config_path
 from eelslab.defaults_parser import defaults
 
 microscopes_file = os.path.join(config_path, 'microscopes.csv')

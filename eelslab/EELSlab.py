@@ -47,8 +47,8 @@ __version__ = Release.version
 __revision__ = Release.revision
 
 def get_configuration_directory_path():
-    import eelslab.config_dir.config_path
-    print(eelslab.config_dir.config_path)
+    import eelslab.misc.config_dir.config_path
+    print(eelslab.misc.config_dir.config_path)
 
 def start_gui():
     if ETSConfig.toolkit != 'null':

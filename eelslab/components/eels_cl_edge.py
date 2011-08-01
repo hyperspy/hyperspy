@@ -31,7 +31,7 @@ from eelslab.defaults_parser import defaults
 from eelslab.component import Component
 from eelslab.microscope import microscope
 from eelslab import messages
-from eelslab.config_dir import config_path
+from eelslab.misc.config_dir import config_path
 
 # Global constants
 # Fundamental constants

@@ -21,7 +21,7 @@
 import os.path
 import tarfile
 
-from eelslab.config_dir import config_path, os_name, data_path
+from eelslab.misc.config_dir import config_path, os_name, data_path
 from eelslab import messages
 
 defaults_file = os.path.join(config_path, 'eelslabrc')

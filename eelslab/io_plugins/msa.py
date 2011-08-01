@@ -24,7 +24,7 @@ import datetime
 
 import numpy as np
 
-from eelslab.config_dir import os_name
+from eelslab.misc.config_dir import os_name
 from eelslab.misc.utils import generate_axis
 from eelslab.microscope import microscope
 from eelslab import messages
