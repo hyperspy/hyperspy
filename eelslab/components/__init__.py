@@ -18,25 +18,25 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
 
-from bleasdale import Bleasdale
-from double_offset import DoubleOffset
-from double_power_law import DoublePowerLaw
-from edge import Edge
-from error_function import Erf
-from exponential import Exponential
-from fixed_pattern import FixedPattern
-from gaussian import Gaussian
-from line import Line
-from logistic import Logistic
-from lorentzian import Lorentzian
-from offset import Offset
-from parabole import Parabole
-from power_law import PowerLaw
-from see import SEE
-from rc import RC
-from spline import Spline
-from vignetting import Vignetting
-from voigt import Voigt
-from zl_fingerprinting import ZLPFingerprinting
+from eelslab.components.bleasdale import Bleasdale
+from eelslab.components.double_offset import DoubleOffset
+from eelslab.components.double_power_law import DoublePowerLaw
+from eelslab.components.eels_cl_edge import Edge
+from eelslab.components.error_function import Erf
+from eelslab.components.exponential import Exponential
+from eelslab.components.fixed_pattern import FixedPattern
+from eelslab.components.gaussian import Gaussian
+from eelslab.components.line import Line
+from eelslab.components.logistic import Logistic
+from eelslab.components.lorentzian import Lorentzian
+from eelslab.components.offset import Offset
+from eelslab.components.parabole import Parabole
+from eelslab.components.power_law import PowerLaw
+from eelslab.components.see import SEE
+from eelslab.components.rc import RC
+from eelslab.components.spline import Spline
+from eelslab.components.vignetting import Vignetting
+from eelslab.components.voigt import Voigt
+from eelslab.components.zl_fingerprinting import ZLPFingerprinting
 
 

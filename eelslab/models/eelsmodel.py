@@ -4,7 +4,7 @@ import copy
 import numpy as np
 
 from eelslab.model import Model
-from eelslab.components.edge import Edge
+from eelslab.components.eels_cl_edge import Edge
 from eelslab.components import PowerLaw
 from eelslab.misc.interactive_ns import interactive_ns
 from eelslab.defaults_parser import defaults
