@@ -38,7 +38,6 @@ from eelslab.signal import Signal
 from eelslab.model import Model
 from eelslab.io import load
 from eelslab.components.eels_cl_edge import edges_dict
-#from microscope import microscope
 from eelslab.defaults_parser import defaults
 from eelslab.misc import utils
 from eelslab import tests

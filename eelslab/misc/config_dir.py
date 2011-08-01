@@ -23,7 +23,7 @@ import os.path
 import shutil
 from eelslab import messages
 
-config_files = ['eelslabrc', 'microscopes.csv', 'edges_db.csv']
+config_files = ['eelslabrc', 'edges_db.csv']
 data_path = os.sep.join([os.path.dirname(__file__), 'data'])
 
 if os.name == 'posix':

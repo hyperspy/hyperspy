@@ -24,7 +24,6 @@ import numpy as np
 no_netcdf = False
 from eelslab import Release
 from eelslab import messages
-from eelslab.microscope import microscope
 no_netcdf_message = 'Warning! In order to enjoy the netCDF Read/Write feature, '
 'at least one of this packages must be installed: '
 'python-pupynere, python-netcdf or python-netcdf4'
@@ -227,8 +226,7 @@ def netcdf_image_writer(filename, image, *args, **kwds):
         print "This image has dimension ", len(image.data_cube.squeeze().shape)
 
 
-def netcdf_spectrum_writer(filename, spectrum, 
-    write_microscope_parameters = True, *args, **kwds):
+def netcdf_spectrum_writer(filename, spectrum, *args, **kwds):
     if no_netcdf is True:
         messages.warning_exit(no_netcdf_message)
     else:
@@ -279,18 +277,6 @@ def netcdf_spectrum_writer(filename, spectrum,
             else:
                 print "Warning: the \'%s\' attribute is not defined" \
                 % attrib[0]
-        if write_microscope_parameters is True:
-            print "\nWarning: the microscope attributes will be written to the \
-            file"
-            print microscope
-            print
-            setattr(data_cube, 'convergence_angle', microscope.alpha)
-            setattr(data_cube, 'collection_angle', microscope.beta)
-            setattr(data_cube, 'beam_energy', microscope.E0)
-            setattr(data_cube, 'collection_angle', microscope.beta)
-            setattr(data_cube, 'pppc', microscope.pppc)
-            setattr(data_cube, 'correlation_factor', 
-            microscope.correlation_factor)
         # write data to variable.
         data_cube[:] = spectrum.data_cube
         # close the file.

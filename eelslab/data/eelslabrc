@@ -17,12 +17,6 @@
 #---------------------------------------------------------------------------
 
 
-# Default microscope as defined in the file microscopes.csv. This file can
-# be edited with any spreadsheet programme of with a text editor. Its default
-# location in ~/.eelslab in Linux (and other UNIXES) and %APPDATA/eelslab in 
-# windows.
-microscope Default
-
 # Default path for the GATAN GOS files. If 'None' EELSLab will try to find
 # the files in the standard locations ( GATAN tree for windows, ~/.eelslab
 # folder in UNIXes. If it fails, it will exit and ask to define the path in

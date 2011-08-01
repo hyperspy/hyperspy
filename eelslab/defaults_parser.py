@@ -26,7 +26,7 @@ from eelslab import messages
 
 defaults_file = os.path.join(config_path, 'eelslabrc')
 bool_keys = ['fs_state', 'synchronize_cl_with_ll', 'plot_on_load']
-str_keys = ['microscope', 'GOS_dir', 'fitter', 'file_format']
+str_keys = ['GOS_dir', 'fitter', 'file_format']
 float_keys = ['fs_emax', 'preedge_safe_window_width', 
 'knots_factor', 'min_distance_between_edges_for_fine_structure' ]
 

@@ -29,7 +29,6 @@ from scipy.signal import cspline1d_eval
 
 from eelslab.defaults_parser import defaults
 from eelslab.component import Component
-from eelslab.microscope import microscope
 from eelslab import messages
 from eelslab.misc.config_dir import config_path
 
@@ -40,10 +39,6 @@ e = 1.602176487e-19 #electron charge in C
 m0 = 9.10938215e-31 #electron rest mass in kg
 a0 = 5.2917720859e-11 #Bohr radius in m
 c = 2997.92458e8 #speed of light in m/s
-
-# Relativistic correction factors
-gamma = 1.0 + (e * microscope.E0) / (m0 * pow(c,2.0)) #dimensionless
-T = microscope.E0 * (1.0 + gamma) / (2.0 * pow(gamma, 2.0)) #in eV
 
 file_path = os.path.join(config_path, 'edges_db.csv') 
 f = open(file_path, 'r')
@@ -140,6 +135,7 @@ def EffectiveAngle(E0,E,alpha,beta):
         F2=F1*A2/B2
     BSTAR=thetaE*math.sqrt(math.exp(F2*math.log(1.+B2/T2))-1.)
     return BSTAR*10**-3 # In rad
+
 class EELSCLEdge(Component):
     """ This class builds a single cross section edge.
     Currently it only supports cross sections from Gatan Digital Micrograph(c)
@@ -162,7 +158,12 @@ class EELSCLEdge(Component):
         self.name = element_subshell
         # Set initial values
         self.__element, self.__subshell = element_subshell.split('_')
-        self.dispersion = 0.1
+        self.energy_scale = None
+        self.T = None
+        self.gamma = None
+        self.alpha = None
+        self.beta = None
+        self.E0 = None
         self.effective_angle.value = 0
         self.effective_angle.free = False
         self.fs_state = defaults.fs_state
@@ -186,8 +187,6 @@ class EELSCLEdge(Component):
 
         # Set initial actions
         self.readgosfile()
-        self.integrategos(self.delta.value)
-
         
     # Automatically fix the fine structure when the fine structure is disable.
     # This way we avoid a common source of problems when fitting
@@ -211,9 +210,9 @@ class EELSCLEdge(Component):
     def edge_position(self):
         return self.edgeenergy + self.delta.value
         
-    def setfslist(self) :
+    def setfslist(self):
         self.fslist._number_of_elements = \
-        int(round(self.knots_factor*self.fs_emax / self.dispersion)) + 4
+        int(round(self.knots_factor*self.fs_emax / self.energy_scale)) + 4
         self.fslist.bmin, self.fslist.bmax = None, None
         self.fslist.value=np.zeros(self.fslist._number_of_elements).tolist()
         self.calculate_knots()
@@ -223,6 +222,16 @@ class EELSCLEdge(Component):
             [self.fslist._number_of_elements,])
             self.fslist.std_map = np.zeros(xy_shape + 
             [self.fslist._number_of_elements,])
+            
+    def set_microscope_parameters(self, E0, alpha, beta, energy_scale):
+        # Relativistic correction factors
+        self.gamma = 1.0 + (e * E0) / (m0 * pow(c,2.0)) #dimensionless
+        self.T = E0 * (1.0 + self.gamma) / (2.0 * pow(self.gamma, 2.0)) #in eV
+        self.alpha = alpha
+        self.beta = beta
+        self.energy_scale = energy_scale
+        self.E0 = E0
+        self.integrategos(self.delta.value)
         
     def readgosfile(self): 
         element = self.__element
@@ -249,8 +258,6 @@ class EELSCLEdge(Component):
         print "Element: ", element
         print "Subshell: ", subshell
         print "Onset Energy = ", self.edgeenergy
-        print "Convergence angle = ", microscope.alpha
-        print "Collection angle = ", microscope.beta
         #Read file
         file = os.path.join(defaults.GOS_dir, 
         edges_dict[element]['subshells'][subshell]['filename'])
@@ -304,16 +311,16 @@ class EELSCLEdge(Component):
         # Integration over q using splines
         if self.effective_angle.value == 0:
             self.effective_angle.value = \
-            EffectiveAngle(microscope.E0, self.edgeenergy, 
-            microscope.alpha, microscope.beta)
+            EffectiveAngle(self.E0, self.edgeenergy, 
+            self.alpha, self.beta)
             self.__previous_effective_angle = self.effective_angle.value
         effective_angle = self.effective_angle.value
         for i in xrange(0,self.__nrow):
             qtck = splrep(self.__logsqa0qaxis, self.__gos_array[i, :], s=0)
             qa0sqmin = (emax(self.edgeenergy + self.delta.value, i)**2) / (
-            4.0 * R * T) + (emax(self.edgeenergy + self.delta.value, 
-            i)**3) / (8.0 * gamma ** 3.0 * R * T**2)
-            qa0sqmax = qa0sqmin + 4.0 * gamma**2 * (T/R) * math.sin(
+            4.0 * R * self.T) + (emax(self.edgeenergy + self.delta.value, 
+            i)**3) / (8.0 * self.gamma ** 3.0 * R * self.T**2)
+            qa0sqmax = qa0sqmin + 4.0 * self.gamma**2 * (self.T/R) * math.sin(
             effective_angle / 2.0)**2.0
             qmin = math.sqrt(qa0sqmin) / a0
             qmax=math.sqrt(qa0sqmax) / a0
@@ -342,10 +349,10 @@ class EELSCLEdge(Component):
         # Calculate extrapolation powerlaw extrapolation parameters
         E1 = self.energyaxis[-2] + self.edgeenergy + self.delta.value
         E2 = self.energyaxis[-1] + self.edgeenergy + self.delta.value
-        factor = 4.0 * np.pi * a0 ** 2.0 * R**2.0 / E1 / T
+        factor = 4.0 * np.pi * a0 ** 2.0 * R**2.0 / E1 / self.T
         y1 = factor * splev((E1 - self.edgeenergy - self.delta.value), 
         self.__goscoeff) # in m**2/bin */
-        factor = 4.0 * np.pi * a0 ** 2.0 * R ** 2.0 / E2 / T
+        factor = 4.0 * np.pi * a0 ** 2.0 * R ** 2.0 / E2 / self.T
         y2 = factor * splev((E2 - self.edgeenergy - self.delta.value), 
         self.__goscoeff) # in m**2/bin */
         self.r = math.log(y2 / y1) / math.log(E1 / E2)
@@ -370,7 +377,7 @@ class EELSCLEdge(Component):
         if self.__previous_effective_angle != self.effective_angle.value:
             self.integrategos()
             
-        factor = 4.0 * np.pi * a0 ** 2.0 * R**2 / E / T #to convert to m**2/bin
+        factor = 4.0 * np.pi * a0 ** 2.0 * R**2 / E / self.T #to convert to m**2/bin
         Emax = self.energyaxis[-1] + self.edgeenergy + \
         self.delta.value #maximum tabulated energy
         cts = np.zeros((len(E)))
@@ -390,14 +397,14 @@ class EELSCLEdge(Component):
                 cts = np.where(fine_structure_indices, 
                 cspline1d_eval(self.fslist.value, 
                 E, 
-                dx = self.dispersion / self.knots_factor, 
+                dx = self.energy_scale / self.knots_factor, 
                 x0 = self.edgeenergy+self.delta.value), 
                 cts)
             elif self.fs_mode == "spline_times_edge" :
                 cts = np.where(fine_structure_indices, 
                 factor*splev((E-self.edgeenergy-self.delta.value), 
                 self.__goscoeff)*cspline1d_eval(self.fslist.value, 
-                E,dx = self.dispersion / self.knots_factor, 
+                E,dx = self.energy_scale / self.knots_factor, 
                 x0 = self.edgeenergy+self.delta.value), 
                 cts )
         else:
@@ -413,7 +420,7 @@ class EELSCLEdge(Component):
         #Note: The R factor is introduced in order to give the same value
         # as DM, although it is not in the equations.
         cts = np.where(powerlaw_indices, self.A * E**-self.r, cts) 
-        return (self.__subshell_factor * self.intensity.value * self.dispersion 
+        return (self.__subshell_factor * self.intensity.value * self.energy_scale 
         * 1.0e28 / R) * cts       
     
     def grad_intensity(self,E) :
@@ -424,7 +431,7 @@ class EELSCLEdge(Component):
             self.calculate_knots()
             
         factor = 4.0 * np.pi * a0 ** 2.0 * \
-        (R ** 2.0) / (E * T) #to convert to m**2/bin
+        (R ** 2.0) / (E * self.T) #to convert to m**2/bin
         Emax = self.energyaxis[-1] + self.edgeenergy + \
         self.delta.value #maximum tabulated energy
         cts = np.zeros((len(E)))
@@ -444,14 +451,14 @@ class EELSCLEdge(Component):
                 cts = np.where(fine_structure_indices, 
                 cspline1d_eval(self.fslist.value, 
                 E, 
-                dx = self.dispersion / self.knots_factor, 
+                dx = self.energy_scale / self.knots_factor, 
                 x0 = self.edgeenergy+self.delta.value), 
                 cts)
             elif self.fs_mode == "spline_times_edge" :
                 cts = np.where(fine_structure_indices, 
                 factor*splev((E-self.edgeenergy-self.delta.value), 
                 self.__goscoeff)*cspline1d_eval(self.fslist.value, 
-                E,dx = self.dispersion / self.knots_factor, 
+                E,dx = self.energy_scale / self.knots_factor, 
                 x0 = self.edgeenergy+self.delta.value), 
                 cts )
         else:
@@ -467,7 +474,7 @@ class EELSCLEdge(Component):
         #Note: The R factor is introduced in order to give the same value
         # as DM, although it is not in the equations.
         cts = np.where(powerlaw_indices, self.A * pow(E,-self.r), cts)
-        return ((1.0e28 *self.__subshell_factor * self.dispersion)/R)*cts        
+        return ((1.0e28 *self.__subshell_factor * self.energy_scale)/R)*cts        
 
     
     def grad_delta(self,E) :
@@ -478,7 +485,7 @@ class EELSCLEdge(Component):
             self.integrategos(self.delta.value)
             self.calculate_knots()
         factor = 4.0 * np.pi * (a0**2.0) * (
-        R**2.0) / (E * T) #to convert to m**2/bin
+        R**2.0) / (E * self.T) #to convert to m**2/bin
         Emax = self.energyaxis[-1] + self.edgeenergy + \
         self.delta.value #maximum tabulated energy
         cts = np.zeros((len(E)))
@@ -509,7 +516,7 @@ class EELSCLEdge(Component):
         cts = np.where(powerlaw_indices, -self.r * self.A *\
          (E**-self.r-1), cts)
         return - ((1.0e28 *self.__subshell_factor * self.intensity.value 
-    * self.dispersion)/R) * cts         
+    * self.energy_scale)/R) * cts         
 
     def fslist_to_txt(self,filename) :
         np.savetxt(filename + '.dat', self.fslist.value, fmt="%12.6G")

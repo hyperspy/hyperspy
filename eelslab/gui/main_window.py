@@ -6,15 +6,12 @@ import enthought.traits.ui.api as tui
 from enthought.traits.ui.menu import OKButton, CancelButton, Action, MenuBar, Menu
 
 from eelslab import io
-from microscope import Microscope
 from egerton_quantification import EgertonPanel
 
 import messages
 import tools
 from eelslab.misc.interactive_ns import interactive_ns
 from eelslab import Release
-
-microscope = Microscope()
 
 # File ###################################################
   
@@ -76,10 +73,6 @@ menu_tools_lowess = Action(name = "Lowess Smoothing",
                 action = "lowess",
                 toolip = "",)
                 
-menu_edit_microscope = Action(name = "Microscope parameters",
-                action = "edit_microscope",
-                toolip = "",)
-                
 menu_edit_acquisition_parameters = Action(name = "Acquisition parameters",
                 action = "edit_acquisition_parameters",
                 toolip = "",)
@@ -109,9 +102,7 @@ class MainWindowHandler(tui.Handler):
     
     def save_file(self, *args, **kw):
         pass
-    
-    def edit_microscope(self, *args, **kw):
-        microscope.edit_traits()
+   
         
     def egerton_quantification(self, *args, **kw):
         if interactive_ns.has_key('s'):
@@ -146,7 +137,6 @@ class MainWindow(t.HasTraits):
                             menu_file_save,
                             name = 'File'),
                             Menu(
-                            menu_edit_microscope, 
                             menu_edit_acquisition_parameters,
                             name = 'Edit'),
                             Menu(

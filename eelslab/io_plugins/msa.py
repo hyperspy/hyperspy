@@ -26,7 +26,6 @@ import numpy as np
 
 from eelslab.misc.config_dir import os_name
 from eelslab.misc.utils import generate_axis
-from eelslab.microscope import microscope
 from eelslab import messages
 from eelslab.misc.utils_varia import overwrite
 from eelslab import Release
