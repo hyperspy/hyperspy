@@ -9,7 +9,7 @@ from eelslab.components import PowerLaw
 from eelslab.interactive_ns import interactive_ns
 from eelslab.defaults_parser import defaults
 import eelslab.messages as messages
-import eelslab.utils as utils
+import eelslab.misc.utils as utils
 
 
 class EELSModel(Model):

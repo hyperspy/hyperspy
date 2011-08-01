@@ -14,7 +14,7 @@ from eelslab import messages
 from eelslab.axes import AxesManager
 from eelslab import file_io
 from eelslab.drawing import mpl_hie, mpl_hse
-from eelslab import utils
+from eelslab.misc import utils
 from eelslab.mva.mva import MVA, MVA_Results
 
 class Parameters(t.HasTraits,object):

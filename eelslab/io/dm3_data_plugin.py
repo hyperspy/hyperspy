@@ -35,16 +35,16 @@ import numpy as np
 from eelslab.axes import DataAxis
 
 # relative imports are discouraged (PEP0008)
-from eelslab.utils_readfile import *
-#from eelslab.utils_readfile import *
+from eelslab.misc.utils_readfile import *
+#from eelslab.misc.utils_readfile import *
 from eelslab.exceptions import *
 #from eelslab.exceptions import *
-import eelslab.utils
-from eelslab.utils_varia import overwrite, swapelem
-from eelslab.utils_varia import DictBrowser, fsdict
+import eelslab.misc.utils
+from eelslab.misc.utils_varia import overwrite, swapelem
+from eelslab.misc.utils_varia import DictBrowser, fsdict
 from eelslab.io.dm3reader_eelslab import parseDM3
-#from eelslab.utils_varia import overwrite, swapelem
-#from eelslab.utils_varia import DictBrowser, fsdict
+#from eelslab.misc.utils_varia import overwrite, swapelem
+#from eelslab.misc.utils_varia import DictBrowser, fsdict
 
 # Plugin characteristics
 # ----------------------
@@ -970,7 +970,7 @@ def file_reader(filename, data_type=None, order = None, data_id=1,
     if dump is True:
         import codecs
         f = codecs.open(filename.replace('.dm3', '_tags_dumped.txt'), 'w')
-        eelslab.utils.dump_dictionary(f, dm3.data_dict.dic)
+        eelslab.misc.utils.dump_dictionary(f, dm3.data_dict.dic)
         f.close()
     mapped_parameters={}
 

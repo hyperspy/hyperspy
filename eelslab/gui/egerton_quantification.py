@@ -5,7 +5,7 @@ import enthought.traits.api as t
 import enthought.traits.ui.api as tu
 
 from eelslab import components
-from eelslab import utils
+from eelslab.misc import utils
 from eelslab import drawing
 from eelslab.signals.spectrum import Spectrum
 from eelslab.signals.image import Image

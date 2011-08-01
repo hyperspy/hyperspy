@@ -32,10 +32,10 @@ import scipy.io
 import matplotlib.pyplot as plt
 
 import mdp
-from eelslab import utils
+from eelslab.misc import utils
 from svd_pca import pca    
 from mlpca import mlpca
-from eelslab.utils import center_and_scale
+from eelslab.misc.utils import center_and_scale
 from eelslab.defaults_parser import defaults
 from eelslab import messages
 from eelslab import config_dir

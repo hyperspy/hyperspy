@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 
 from eelslab.signal import Signal
 from eelslab.peak_char import *
-from eelslab import utils_varia
+from eelslab.misc import utils_varia
 
 class Image(Signal):
     """

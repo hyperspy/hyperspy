@@ -28,8 +28,8 @@ import scipy as sp
 
 from eelslab.signal import Signal
 from eelslab import progressbar
-from eelslab import utils
-from eelslab import utils_varia
+from eelslab.misc import utils
+from eelslab.misc import utils_varia
 
 class Spectrum(Signal):
     """

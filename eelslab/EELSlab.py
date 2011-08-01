@@ -40,7 +40,7 @@ from eelslab.file_io import load
 from eelslab.edges_db import edges_dict
 #from microscope import microscope
 from eelslab.defaults_parser import defaults
-from eelslab import utils
+from eelslab.misc import utils
 from eelslab import tests
 
 __version__ = Release.version
