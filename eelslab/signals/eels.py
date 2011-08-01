@@ -157,8 +157,8 @@ class EELSSignal(Spectrum):
     def add_elements(self, elements, include_pre_edges = False):
         """Declare the elements present in the SI.
         
-        Instances of components.edge.Edge for the current energy range will be 
-        created automatically and add to self.subshell.
+        Instances of components.eels_cl_edge.EELSCLEdge for the current energy 
+        range will be created automatically and add to self.subshell.
         
         Parameters
         ----------

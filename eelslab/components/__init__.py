@@ -17,11 +17,18 @@
 # along with EELSLab; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
+'''Components that can be used to define a model
 
+There are some components that are only useful for one particular kind of signal
+and therefore their name are preceded by the signal name: eg. eels_cl_edge.
+
+Writing a new template is really easy, just edit _template.py and maybe take a 
+look to the other components.
+'''
 from eelslab.components.bleasdale import Bleasdale
-from eelslab.components.double_offset import DoubleOffset
-from eelslab.components.double_power_law import DoublePowerLaw
-from eelslab.components.eels_cl_edge import Edge
+from eelslab.components.eels_double_offset import DoubleOffset
+from eelslab.components.eels_double_power_law import DoublePowerLaw
+from eelslab.components.eels_cl_edge import EELSCLEdge
 from eelslab.components.error_function import Erf
 from eelslab.components.exponential import Exponential
 from eelslab.components.fixed_pattern import FixedPattern
@@ -32,11 +39,11 @@ from eelslab.components.lorentzian import Lorentzian
 from eelslab.components.offset import Offset
 from eelslab.components.parabole import Parabole
 from eelslab.components.power_law import PowerLaw
-from eelslab.components.see import SEE
+from eelslab.components.pes_see import SEE
 from eelslab.components.rc import RC
 from eelslab.components.spline import Spline
-from eelslab.components.vignetting import Vignetting
+from eelslab.components.eels_vignetting import Vignetting
 from eelslab.components.voigt import Voigt
-from eelslab.components.zl_fingerprinting import ZLPFingerprinting
+from eelslab.components.resizeble_fixed_pattern import ResizebleFixedPattern
 
 

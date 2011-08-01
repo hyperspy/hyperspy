@@ -22,14 +22,14 @@
 from eelslab.component import Component
 from scipy.interpolate import interp1d
 
-class ZLPFingerprinting(Component):
+class ResizebleFixedPattern(Component):
     """
 
     """
 
     def __init__(self, zl):
         Component.__init__(self, ['intensity', 'xscale', 'origin', 'offset'])
-        self.name = 'ZL_fingerprinting'
+        self.name = 'ResizebleFixedPattern'
         self.zl = zl
         self.intensity.free = True
         self.intensity.value = 1.

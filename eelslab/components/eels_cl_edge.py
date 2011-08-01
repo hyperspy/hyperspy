@@ -140,7 +140,7 @@ def EffectiveAngle(E0,E,alpha,beta):
         F2=F1*A2/B2
     BSTAR=thetaE*math.sqrt(math.exp(F2*math.log(1.+B2/T2))-1.)
     return BSTAR*10**-3 # In rad
-class Edge(Component):
+class EELSCLEdge(Component):
     """ This class builds a single cross section edge.
     Currently it only supports cross sections from Gatan Digital Micrograph(c)
     P. Rez calculations, although hydrogenic cross sections will be available.

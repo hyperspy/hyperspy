@@ -4,7 +4,7 @@ import copy
 import numpy as np
 
 from eelslab.model import Model
-from eelslab.components.eels_cl_edge import Edge
+from eelslab.components.eels_cl_edge import EELSCLEdge
 from eelslab.components import PowerLaw
 from eelslab.misc.interactive_ns import interactive_ns
 from eelslab.defaults_parser import defaults
@@ -54,7 +54,7 @@ class EELSModel(Model):
         self.edges = []
         self.__background_components = []
         for component in self:
-            if isinstance(component,Edge):
+            if isinstance(component,EELSCLEdge):
                 component.dispersion = self.spectrum.energyscale
                 component.setfslist()
                 if component.edge_position() < \
@@ -74,7 +74,7 @@ class EELSModel(Model):
         if not self.edges:
             messages.warning("The model contains no edges")
         else:
-            self.edges.sort(key = Edge.edge_position)
+            self.edges.sort(key = EELSCLEdge.edge_position)
             self.resolve_fine_structure()
         if len(self.__background_components) > 1 :
             self.__backgroundtype = "mix"
@@ -98,14 +98,14 @@ class EELSModel(Model):
         """
         
         e_shells.sort()
-        master_edge = Edge(e_shells.pop())
+        master_edge = EELSCLEdge(e_shells.pop())
         self.edges.append(master_edge)
         interactive_ns[self.edges[-1].__repr__()] = self.edges[-1]
         element = self.edges[-1].__repr__().split('_')[0]
         interactive_ns[element] = []
         interactive_ns[element].append(self.edges[-1])
         while len(e_shells) > 0:
-            self.edges.append(Edge(e_shells.pop()))
+            self.edges.append(EELSCLEdge(e_shells.pop()))
             self.edges[-1].intensity.twin = master_edge.intensity
             self.edges[-1].delta.twin = master_edge.delta
             self.edges[-1].freedelta = False
