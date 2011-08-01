@@ -8,7 +8,7 @@ from eelslab.signals.image import Image
 from eelslab.components.eels_cl_edge import edges_dict
 import eelslab.axes
 
-class EELSSignal(Spectrum):
+class EELSSpectrum(Spectrum):
     
     def __init__(self, *args, **kwards):
         Spectrum.__init__(self, *args, **kwards)

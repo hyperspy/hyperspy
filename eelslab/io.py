@@ -59,32 +59,33 @@ def load(filename, record_by = None, **kwds):
         reader = io_plugins[i]
         return load_with_reader(filename, reader, record_by, **kwds)
         
-def load_with_reader(filename, reader, record_by = None, **kwds):
+def load_with_reader(filename, reader, record_by = None, signal = None, **kwds):
     from eelslab.signals.image import Image
     from eelslab.signals.spectrum import Spectrum
+    from eelslab.signals.eels import EELSSpectrum
     messages.information(reader.description)    
     file_data_list = reader.file_reader(filename,
                                          record_by=record_by,
                                         **kwds)
     objects = []
     for file_data_dict in file_data_list:
-        if record_by is None:
-            record_by = file_data_dict['mapped_parameters']['record_by']
-
+        if record_by is not None:
+            file_data_dict['mapped_parameters']['record_by'] = record_by
         # The record_by can still be None if it was not defined by the reader
-        if record_by is None:
-                print "No data type provided.  Defaulting to Signal."
-                record_by = 'spectrum'
+        if file_data_dict['mapped_parameters']['record_by'] is None:
+            print "No data type provided.  Defaulting to image."
+            file_data_dict['mapped_parameters']['record_by']  = 'image'
+            
+        if signal is not None:
+            file_data_dict['mapped_parameters']['signal'] = signal
                 
-        # We write the data type to the mapped_parameters to guarantee that it 
-        # is coherent with the asigned class. Note that the original_parameters 
-        # dict is not modified
-        file_data_dict['mapped_parameters']['record_by'] = record_by
-        
-        if record_by == 'image':
+        if file_data_dict['mapped_parameters']['record_by'] == 'image':
             s = Image(file_data_dict)  
         else:
-            s = Spectrum(file_data_dict)
+            if file_data_dict['mapped_parameters']['signal'] == 'EELS':
+                s = EELSSpectrum(file_data_dict)
+            else:
+                s = Spectrum(file_data_dict)
         if defaults.plot_on_load is True:
             s.plot()
         objects.append(s)

@@ -91,6 +91,7 @@ rpl_keys = {
     'height-origin' : float,
     'height-scale' : float,
     'height-units' : str,
+    'signal' : str,
     }
 
 def parse_ripple(fp):
@@ -249,6 +250,7 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
       height-scale          float    # row scaling (units per pixel) 
       height-units          str      # row units, usually nm
       height-name      str           # Name of the magnitude stored as height
+      signal            str        # Name of the signal stored, e.g. HAADF
      
     NOTES
 
@@ -326,6 +328,9 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
     units = ['', '', '']
     sizes = [rpl_info[names[i]] for i in xrange(3)]
     
+    if 'signal' not in rpl_info:
+        rpl_info['signal'] = None
+    
     if rpl_info.has_key('detector-peak-width-ev'):
         original_parameters['detector-peak-width-ev'] = \
         rpl_info['detector-peak-width-ev']
@@ -390,7 +395,8 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
         'axes' : axes,
         'mapped_parameters': {
 			'record_by':record_by,
-			'name': filename,
+			'original_filename': filename,
+                               'signal' : rpl_info['signal'],
 			},
         'original_parameters' : original_parameters
         }
@@ -463,6 +469,7 @@ def file_writer(filename, signal, *args, **kwds):
                          'data-length' : data_length,
                          'byte-order' : byte_order,
                          'record-by' : record_by,
+                         'signal' : signal.mapped_parameters.signal
                          }
     if ev_per_chan is not None:
         keys_dictionary['ev-per-chan'] = ev_per_chan

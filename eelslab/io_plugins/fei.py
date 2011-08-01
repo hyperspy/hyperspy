@@ -375,8 +375,9 @@ def ser_reader(filename, *args, **kwds):
     dictionary = {
     'data' : dc,
     'mapped_parameters' : {
-		'name' : filename,
-		'record_by':record_by,
+                            'original_filename' : filename,
+                            'record_by' : record_by,
+                            'signal' : None
 		},
     'axes' : axes,
     'original_parameters' : {'header' : header, 'data' : data}}

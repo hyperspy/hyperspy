@@ -51,10 +51,10 @@ def start_gui():
         gui.main_window.MainWindow().configure_traits()
         
 def create_model(signal):
-    from eelslab.signals.eels import EELSSignal
+    from eelslab.signals.eels import EELSSpectrum
     from eelslab.models.eelsmodel import EELSModel
     from eelslab.model import Model
-    if isinstance(signal, EELSSignal):
+    if isinstance(signal, EELSSpectrum):
         return EELSModel(signal)
     else:
         return Model(signal)

@@ -178,5 +178,3 @@ mapped_parameters attribute of the Signal class or derived subclass."%key
                     print "The saved HDF5 file has lost information from your original data.  \
 Please make sure it is not something important.\n"                
     f.close()
-    
-

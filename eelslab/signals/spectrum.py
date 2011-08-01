@@ -482,7 +482,7 @@ class Spectrum(Signal):
         return Image(dic)
         
     def to_EELS(self):
-        from eelslab.signals.eels import EELSSignal
+        from eelslab.signals.eels import EELSSpectrum
         dic = self._get_signal_dict()
-        return EELSSignal(dic)
+        return EELSSpectrum(dic)
         

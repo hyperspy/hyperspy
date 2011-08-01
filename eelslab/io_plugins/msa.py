@@ -66,7 +66,7 @@ keywords = {
                 'OFFSET' : {'dtype' : float, 'mapped_to': None},
                 # Optional parameters
                 ## Spectrum characteristics
-                'SIGNALTYPE' : {'dtype' : str, 'mapped_to': None},
+                'SIGNALTYPE' : {'dtype' : str, 'mapped_to': 'signal'},
                 'XLABEL' : {'dtype' : str, 'mapped_to': None},
                 'YLABEL' : {'dtype' : str, 'mapped_to': None},
                 'XUNITS' : {'dtype' : str, 'mapped_to': None},
@@ -209,8 +209,14 @@ def file_reader(filename, **kwds):
             'units' : parameters['XUNITS'] if 'XUNITS' in parameters else '',
                 })
 
-    mapped['name']=filename
+    mapped['original_filename'] = filename
     mapped['record_by']='spectrum'
+    if 'signal' in mapped:
+        if mapped['signal'] == 'ELS':
+            mapped['signal'] = 'EELS'
+    else:
+        # Defaulting to EELS looks reasonable
+        mapped['signal'] = 'EELS'
 
     dictionary = {
                     'data' : np.array(y),

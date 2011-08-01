@@ -26,9 +26,9 @@ class EELSModel(Model):
         defined in the Spectrum instance.
     """
     
-    def __init__(self, auto_background = True, auto_add_edges = True, 
+    def __init__(self, spectrum, auto_background = True, auto_add_edges = True, 
                  *args, **kwargs):
-        Model.__init__(self, *args, **kwargs)
+        Model.__init__(self, spectrum, *args, **kwargs)
         if auto_background is True:
             bg = PowerLaw()
             interactive_ns['bg'] = bg

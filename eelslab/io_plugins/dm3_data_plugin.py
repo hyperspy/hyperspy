@@ -984,14 +984,10 @@ def file_reader(filename, record_by=None, order = None, data_id=1,
         buf['B'] = dm3.data[..., 2]
         dm3.data = buf
 
-
-    mapped_parameters['dimensions'] = dm3.dimensions
-    mapped_parameters['mode'] = dm3.mode
-
     if dm3.name:
         mapped_parameters['title'] = dm3.name
     else:
-        mapped_parameters['title'] = os.path.splitext(filename)[0]
+        mapped_parameters['title'] = ''
 
     data = dm3.data
     # set dm3 object's data attribute to None so it doesn't
@@ -1013,14 +1009,13 @@ def file_reader(filename, record_by=None, order = None, data_id=1,
     # Scale the origins
     origins = origins * scales
     if dm3.record_by == 'spectrum': 
-        print("Treating the data as an SI")
-        # only Orsay Spim is supported for now
-        # does anyone have other kinds of SIs for testing?
         if dm3.exposure:
             mapped_parameters['exposure'] = dm3.exposure            
         if dm3.vsm:
+            if 'EELS' not in mapped_parameters:
+                mapped_parameters['EELS'] = {}
+            mapped_parameters['EELS']['vsm'] = dm3.vsm
             mapped_parameters['vsm'] = float(dm3.vsm)
-
 
         if 'eV' in units: # could use reexp or match to a 'energy units' dict?
             energy_index = units.index('eV')
@@ -1034,10 +1029,6 @@ def file_reader(filename, record_by=None, order = None, data_id=1,
 
         # Store the calibration in the calibration dict
 
-    elif dm3.record_by == 'image':
-        print("Treating the data as an image")
-    else:
-        raise TypeError, "could not identify the file record_by"
     dim = len(data.shape)
     axes=[{'size' : int(data.shape[i]), 
            'index_in_array' : i ,
@@ -1047,8 +1038,9 @@ def file_reader(filename, record_by=None, order = None, data_id=1,
            'units' : units[i],} \
            for i in xrange(dim)]
 
-    mapped_parameters['name'] = filename
+    mapped_parameters['original_filename'] = filename
     mapped_parameters['record_by'] = dm3.record_by
+    mapped_parameters['signal'] = dm3.signal
 
     dictionary = {
         'data' : data,

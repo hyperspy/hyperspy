@@ -141,7 +141,7 @@ def file_reader(filename, endianess = '<', **kwds):
         print "It seems to contain an extended FEI header"
         fei_header = np.fromfile(f, dtype = get_fei_dtype_list(endianess), 
                                  count = 1024)
-        scale[0:2]=fei_header['pixel_size']
+        scales[0:2]=fei_header['pixel_size']
         units_list[0:2]='m'
     NX, NY, NZ = std_header['NX'], std_header['NY'], std_header['NZ']
     if f.tell() == 1024 + std_header['NEXT']:
@@ -161,8 +161,9 @@ def file_reader(filename, endianess = '<', **kwds):
         }
 		
     mapped_parameters = {
-		'name' : filename,
-		'record_by' : 'image',
+                            'name' : filename,
+                            'record_by' : 'image',
+                            'signal' : None,
 		}
     #create the axis objects for each axis
     axes=[{'size':data.shape[i],'index_in_array':i,'name':names[i],'scale':scales[i],
