@@ -33,11 +33,7 @@ matplotlib.rcParams['image.cmap'] = 'gray'
 from eelslab import Release
 from eelslab import components
 
-from eelslab.experiments import Experiments
-from eelslab.signal import Signal
-from eelslab.model import Model
 from eelslab.io import load
-from eelslab.components.eels_cl_edge import edges_dict
 from eelslab.defaults_parser import defaults
 from eelslab.misc import utils
 from eelslab import tests
@@ -53,3 +49,12 @@ def start_gui():
     if ETSConfig.toolkit != 'null':
         import gui.main_window
         gui.main_window.MainWindow().configure_traits()
+        
+def create_model(signal):
+    from eelslab.signals.eels import EELSSignal
+    from eelslab.models.eelsmodel import EELSModel
+    from eelslab.model import Model
+    if isinstance(signal, EELSSignal):
+        return EELSModel(signal)
+    else:
+        return Model(signal)

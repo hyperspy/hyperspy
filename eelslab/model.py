@@ -30,6 +30,7 @@ from eelslab import messages
 import eelslab.drawing.spectrum
 from eelslab.drawing.utils import on_window_close
 from eelslab.misc import progressbar
+from eelslab.signals.eels import EELSSignal
 
 class Model(list, Optimizers, Estimators):
     """Build and fit a model
