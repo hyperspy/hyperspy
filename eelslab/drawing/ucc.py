@@ -37,7 +37,7 @@ from enthought.enable.api import ComponentEditor, KeySpec, Component
 from enthought.chaco.tools.cursor_tool import CursorTool, BaseCursorTool
 
 
-from eelslab import cv_funcs
+from eelslab.misc import cv_funcs
 import numpy as np  
 
 class OK_custom_handler(Handler):
