@@ -27,7 +27,7 @@ import numpy as np
 import scipy as sp
 
 from eelslab.signal import Signal
-from eelslab import progressbar
+from eelslab.misc import progressbar
 from eelslab.misc import utils
 from eelslab.misc import utils_varia
 

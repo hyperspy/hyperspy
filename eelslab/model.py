@@ -29,7 +29,7 @@ from eelslab.optimizers import Optimizers
 from eelslab import messages
 import eelslab.drawing.spectrum
 from eelslab.drawing.utils import on_window_close
-from eelslab import progressbar
+from eelslab.misc import progressbar
 
 class Model(list, Optimizers, Estimators):
     """Build and fit a model

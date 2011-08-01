@@ -872,7 +872,7 @@ def chrono_align_and_sum(spectrum, energy_range = (None, None),
     import sys
     capture_output = cStringIO.StringIO()
     
-    from progressbar import progressbar
+    from eelslab.misc.progressbar import progressbar
     pbar = progressbar(maxval = dc.shape[2] - 1)
     for i in xrange(dc.shape[2]):
         pbar.update(i)
