@@ -17,7 +17,7 @@ from eelslab.drawing import mpl_hie, mpl_hse
 from eelslab.misc import utils
 from eelslab.mva.mva import MVA, MVA_Results
 
-class Parameters(t.HasTraits,object):
+class Parameters(t.HasTraits, object):
     """A class to comfortably access some parameters as attributes"""
     name = t.Str("UnnamedFile")
 
@@ -27,19 +27,27 @@ class Parameters(t.HasTraits,object):
         
     def load_dictionary(self, dictionary):
         for key, value in dictionary.iteritems():
+            if isinstance(value, dict):
+                value = Parameters(value)
             self.__setattr__(key, value)
  
-    def print_items(self):
+    def print_items(self, depth = 0):
         """Prints only the attributes that are not methods"""
-        for item in self.__dict__.items():
+        for item,value in self.__dict__.iteritems():
             if type(item) != types.MethodType:
-                print("%s = %s") % item
+                if isinstance(value, Parameters):
+                    print('%s%s ---->' % (depth * '\t', item))
+                    value.print_items(depth + 1)
+                else:
+                    print("%s%s = %s") % (depth * '\t', item, value)
                 
     def _get_parameters_dictionary(self):
         par_dict = {}
-        for item in self.__dict__.items():
+        for item, value in self.__dict__.iteritems():
             if type(item) != types.MethodType:
-                par_dict.__setitem__(*item)
+                if isinstance(value, Parameters):
+                    value = value._get_parameters_dictionary()
+                par_dict.__setitem__(item, value)
         return par_dict
 
 class Signal(t.HasTraits, MVA):
