@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from eelslab.misc.utils import generate_axis, check_cube_dimensions, check_energy_dimensions
 from eelslab.signals.spectrum import Spectrum
 from eelslab.misc.utils import estimate_drift
-from eelslab.file_io import load
+from eelslab.io import load
 from eelslab.misc.progressbar import progressbar
 
 class Experiments:

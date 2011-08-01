@@ -554,7 +554,7 @@ def characterize_stack(stack, peak_width, neighborhood=None, locs=None,
     return attribs
 
 if __name__=='__main__':
-    from io import image_stack
+    from eelslab.io_plugins import image_stack
     from glob import glob
     flist=glob('*.png')
     peak_width=8

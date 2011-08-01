@@ -12,7 +12,7 @@ import enthought.traits.ui.api as tui
 
 from eelslab import messages
 from eelslab.axes import AxesManager
-from eelslab import file_io
+from eelslab import io
 from eelslab.drawing import mpl_hie, mpl_hse
 from eelslab.misc import utils
 from eelslab.mva.mva import MVA, MVA_Results
@@ -252,7 +252,7 @@ class Signal(t.HasTraits, MVA):
             dataset is saved. Please note that not all the formats support this 
             option at the moment.
         """
-        file_io.save(filename, self, **kwds)
+        io.save(filename, self, **kwds)
         
     def _replot(self):
         if self._plot is not None:

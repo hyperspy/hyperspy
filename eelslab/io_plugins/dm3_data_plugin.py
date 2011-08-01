@@ -42,7 +42,7 @@ from eelslab.exceptions import *
 import eelslab.misc.utils
 from eelslab.misc.utils_varia import overwrite, swapelem
 from eelslab.misc.utils_varia import DictBrowser, fsdict
-from eelslab.io.dm3reader_eelslab import parseDM3
+from eelslab.io_plugins.dm3reader_eelslab import parseDM3
 #from eelslab.misc.utils_varia import overwrite, swapelem
 #from eelslab.misc.utils_varia import DictBrowser, fsdict
 

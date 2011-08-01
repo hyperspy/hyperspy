@@ -5,7 +5,7 @@ import enthought.traits.api as t
 import enthought.traits.ui.api as tui
 from enthought.traits.ui.menu import OKButton, CancelButton, Action, MenuBar, Menu
 
-from eelslab import file_io
+from eelslab import io
 from microscope import Microscope
 from egerton_quantification import EgertonPanel
 
@@ -103,7 +103,7 @@ class MainWindowHandler(tui.Handler):
         S = LoadSpectrum()
         S.edit_traits()
         if S.sp_file is not t.Undefined:
-            s = file_io.load(S.sp_file)
+            s = io.load(S.sp_file)
             s.plot()
             interactive_ns['s'] = s
     
