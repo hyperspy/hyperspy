@@ -344,7 +344,7 @@ class TemplatePicker(HasTraits):
         self.crop_sig=Image({'data':data,
                  'mapped_parameters':{
                      'name':'Cropped cells from %s'%self.sig.mapped_parameters.name,
-                     'data_type':'Image',
+                     'record_by':'Image',
                      'locations':peaks,
                      }
                 })

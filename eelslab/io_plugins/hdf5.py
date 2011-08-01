@@ -69,7 +69,7 @@ writes_spectrum_image = True
 
 not_valid_format = 'The file is not a valid EELSLab hdf5 file'
 
-def file_reader(filename, data_type, mode = 'r', driver = 'core', 
+def file_reader(filename, record_by, mode = 'r', driver = 'core', 
                 backing_store = False, **kwds):
             
     f = h5py.File(filename, mode = mode, driver = driver)

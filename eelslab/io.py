@@ -27,7 +27,7 @@ from eelslab.io_plugins import netcdf, msa, dm3_data_plugin, fei, mrc, image, ri
 io_plugins = (netcdf, msa, dm3_data_plugin, fei, mrc, image, ripple)#,
              # hdf5)
 
-def load(filename, data_type = None, **kwds):
+def load(filename, record_by = None, **kwds):
     """
     Load any supported file into an EELSLab structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
@@ -38,7 +38,7 @@ def load(filename, data_type = None, **kwds):
 
     filename : string
         File name (including the extension)
-    data_type : {None, 'SI', 'Image'}
+    record_by : {None, 'SI', 'Image'}
         If None (default) it will try to guess the data type from the file,
         if 'SI' the file will be loaded as an Spectrum object
         If 'Image' the file will be loaded as an Image object
@@ -52,36 +52,36 @@ def load(filename, data_type = None, **kwds):
         # Try to load it with the python imaging library
         reader = image
         try:
-            return load_with_reader(filename, reader, data_type, **kwds)
+            return load_with_reader(filename, reader, record_by, **kwds)
         except:
             messages.warning_exit('File type not supported')
     else:
         reader = io_plugins[i]
-        return load_with_reader(filename, reader, data_type, **kwds)
+        return load_with_reader(filename, reader, record_by, **kwds)
         
-def load_with_reader(filename, reader, data_type = None, **kwds):
+def load_with_reader(filename, reader, record_by = None, **kwds):
     from eelslab.signals.image import Image
     from eelslab.signals.spectrum import Spectrum
     messages.information(reader.description)    
     file_data_list = reader.file_reader(filename,
-                                         data_type=data_type,
+                                         record_by=record_by,
                                         **kwds)
     objects = []
     for file_data_dict in file_data_list:
-        if data_type is None:
-            data_type = file_data_dict['mapped_parameters']['data_type']
+        if record_by is None:
+            record_by = file_data_dict['mapped_parameters']['record_by']
 
-        # The data_type can still be None if it was not defined by the reader
-        if data_type is None:
+        # The record_by can still be None if it was not defined by the reader
+        if record_by is None:
                 print "No data type provided.  Defaulting to Signal."
-                data_type = 'SI'
+                record_by = 'SI'
                 
         # We write the data type to the mapped_parameters to guarantee that it 
         # is coherent with the asigned class. Note that the original_parameters 
         # dict is not modified
-        file_data_dict['mapped_parameters']['data_type'] = data_type
+        file_data_dict['mapped_parameters']['record_by'] = record_by
         
-        if data_type == 'Image':
+        if record_by == 'Image':
             s = Image(file_data_dict)  
         else:
             s = Spectrum(file_data_dict)

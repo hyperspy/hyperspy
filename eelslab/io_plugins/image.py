@@ -136,7 +136,7 @@ def file_reader(filename, **kwds):
     return [{'data':dc, 
              'mapped_parameters': {
                 'name': filename,
-                'data_type': dt,
+                'record_by': dt,
                 }
              }]
 

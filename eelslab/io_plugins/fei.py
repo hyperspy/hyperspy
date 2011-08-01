@@ -126,8 +126,8 @@ def get_header_dtype_list(file):
     return header_list
     
     
-def get_data_dtype_list(file, offset, data_type):
-    if data_type == 'SI':
+def get_data_dtype_list(file, offset, record_by):
+    if record_by == 'SI':
         file.seek(offset + 20)
         data_type = readLEShort(file)
         array_size = readLELong(file)
@@ -139,7 +139,7 @@ def get_data_dtype_list(file, offset, data_type):
         ("ArrayLength", "<u4"),
         ("Array", (data_types[str(data_type)], array_size)),
         ]
-    elif data_type == 'Image':  # Untested
+    elif record_by == 'Image':  # Untested
         file.seek(offset + 40)
         data_type = readLEShort(file)
         array_size_x = readLELong(file)
@@ -185,8 +185,8 @@ def print_struct_array_values(struct_array):
         else:
             print "%s : Array" % key
             
-def guess_data_type(data_type_id):
-    if data_type_id == 16672:
+def guess_record_by(record_by_id):
+    if record_by_id == 16672:
         return 'SI'
     else:
         return 'Image'
@@ -236,7 +236,7 @@ def load_ser_file(filename, print_info = False):
     except:
         pass
     data_dtype_list = get_data_dtype_list(file, data_offsets, 
-    guess_data_type(header['DataTypeID']))
+    guess_record_by(header['DataTypeID']))
     tag_dtype_list =  get_data_tag_dtype_list(header['TagTypeID'])
     file.seek(data_offsets)
     data = np.fromfile(file, dtype=np.dtype(data_dtype_list + tag_dtype_list), 
@@ -268,10 +268,10 @@ def ser_reader(filename, *args, **kwds):
     # Determine if it is an emi or a ser file.
     
     header, data = load_ser_file(filename)
-    data_type = guess_data_type(header['DataTypeID'])
+    record_by = guess_record_by(header['DataTypeID'])
     axes = []
     ndim = int(header['NumberDimensions'])
-    if data_type == 'SI':
+    if record_by == 'SI':
         array_shape = [None,] * int(ndim)
         i_array = range(ndim)
         if len(data['PositionY']) > 1 and \
@@ -316,7 +316,7 @@ def ser_reader(filename, *args, **kwds):
         
         array_shape.append(data['ArrayLength'][0])
         
-    elif data_type == 'Image':
+    elif record_by == 'Image':
         array_shape = [None,] * int(ndim - 1)
         # Y axis
         axes.append({
@@ -369,14 +369,14 @@ def ser_reader(filename, *args, **kwds):
         dc = data['Array']
     
     dc = dc.reshape(array_shape)
-    if data_type == 'Image':
+    if record_by == 'Image':
         dc = dc[::-1]
       
     dictionary = {
     'data' : dc,
     'mapped_parameters' : {
 		'name' : filename,
-		'data_type':data_type,
+		'record_by':record_by,
 		},
     'axes' : axes,
     'original_parameters' : {'header' : header, 'data' : data}}

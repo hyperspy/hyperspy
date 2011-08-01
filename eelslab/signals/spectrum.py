@@ -474,7 +474,7 @@ class Spectrum(Signal):
     def to_image(self):
         from eelslab.signals.image import Image
         dic = self._get_signal_dict()
-        dic['mapped_parameters']['data_type'] = 'Image'
+        dic['mapped_parameters']['record_by'] = 'Image'
         dic['data'] = np.swapaxes(dic['data'], 0, -1)
         utils_varia.swapelem(dic['axes'],0,-1)
         dic['axes'][0]['index_in_array'] = 0

@@ -580,11 +580,11 @@ class DM3ImageFile(object):
     scale = ['Scale',]          # in dimtagdir + 'Data[X]
 
     def __init__(self, fname, data_id=1, order = None, SI = None, 
-                 data_type = None):
+                 record_by = None):
         self.filename = fname
         self.info = '' # should be a dictionary with the microscope info
         self.mode = ''
-        self.data_type = data_type
+        self.record_by = record_by
         self.order = order
         self.SI = SI
         if data_id < 0:
@@ -755,22 +755,22 @@ class DM3ImageFile(object):
                 self.order = 'F'
             else:
                 self.order = 'C'
-        # Try to guess the data_type if not given
+        # Try to guess the record_by if not given
         # (there must be a better way!!)        
-        if self.data_type is None:
+        if self.record_by is None:
             if (self.dim > 1 and eV_in) or self.dim == 1 or \
             self.signal == 'EELS' or self.SI_format == 'Spectrum image':
-                self.data_type = 'SI'
+                self.record_by = 'SI'
             else:
-                self.data_type = 'Image'
+                self.record_by = 'Image'
                 
-        names = ['X', 'Y', 'Z'] if self.data_type == 'Image' \
+        names = ['X', 'Y', 'Z'] if self.record_by == 'Image' \
         else ['X', 'Y', 'Energy']
         to_swap = [sizes, origins, scales, units, names]       
         for l in to_swap:
-            if self.data_type == 'SI':
+            if self.record_by == 'SI':
                 swapelem(l,0,1)
-            elif self.data_type == 'Image':
+            elif self.record_by == 'Image':
                 l.reverse()
             
         dimensions = [(
@@ -841,17 +841,17 @@ class DM3ImageFile(object):
                                    self.byte_offset, self.imdtype)
             imsize = self.imsize.tolist()
             if self.order == 'F':
-                if self.data_type == 'SI':
+                if self.record_by == 'SI':
                     swapelem(imsize, 0, 1)
                     data = data.reshape(imsize, order = self.order)
                     data = np.swapaxes(data, 0, 1).copy()
-                elif self.data_type == 'Image':
+                elif self.record_by == 'Image':
                     data = data.reshape(imsize, order = 'C')
             elif self.order == 'C':
-                if self.data_type == 'SI':
+                if self.record_by == 'SI':
                     data = data.reshape(np.roll(self.imsize,1), order = self.order)
                     data = np.rollaxis(data, 0, self.dim).copy()
-                elif self.data_type == 'Image':
+                elif self.record_by == 'Image':
                     data = data.reshape(self.imsize, order = self.order)                    
             return data
             
@@ -946,7 +946,7 @@ class DM3ImageFile(object):
 
         return data
 
-def file_reader(filename, data_type=None, order = None, data_id=1, 
+def file_reader(filename, record_by=None, order = None, data_id=1, 
                 dump = False):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
@@ -958,7 +958,7 @@ def file_reader(filename, data_type=None, order = None, data_id=1,
     
     Parameters
     ----------
-    data_type: Str
+    record_by: Str
         One of: SI, Image
     order: Str
         One of 'C' or 'F'
@@ -966,7 +966,7 @@ def file_reader(filename, data_type=None, order = None, data_id=1,
         If True it dumps the tags into a txt file
     """
          
-    dm3 = DM3ImageFile(filename, data_id, order = order, data_type = data_type)
+    dm3 = DM3ImageFile(filename, data_id, order = order, record_by = record_by)
     if dump is True:
         import codecs
         f = codecs.open(filename.replace('.dm3', '_tags_dumped.txt'), 'w')
@@ -1012,7 +1012,7 @@ def file_reader(filename, data_type=None, order = None, data_id=1,
         units[units.index(None)] = ''
     # Scale the origins
     origins = origins * scales
-    if dm3.data_type == 'SI': 
+    if dm3.record_by == 'SI': 
         print("Treating the data as an SI")
         # only Orsay Spim is supported for now
         # does anyone have other kinds of SIs for testing?
@@ -1034,10 +1034,10 @@ def file_reader(filename, data_type=None, order = None, data_id=1,
 
         # Store the calibration in the calibration dict
 
-    elif dm3.data_type == 'Image':
+    elif dm3.record_by == 'Image':
         print("Treating the data as an image")
     else:
-        raise TypeError, "could not identify the file data_type"
+        raise TypeError, "could not identify the file record_by"
     dim = len(data.shape)
     axes=[{'size' : int(data.shape[i]), 
            'index_in_array' : i ,
@@ -1048,7 +1048,7 @@ def file_reader(filename, data_type=None, order = None, data_id=1,
            for i in xrange(dim)]
 
     mapped_parameters['name'] = filename
-    mapped_parameters['data_type'] = dm3.data_type
+    mapped_parameters['record_by'] = dm3.record_by
 
     dictionary = {
         'data' : data,

@@ -149,7 +149,7 @@ def nc_eelslab_reader_0dot1(ncfile, *args, **kwds):
                 "Warning: the \'%s\' attribute is not defined in the file\
             " % attrib[0]
     print "EELSLab NetCDF file correctly loaded" 
-    dictionary = {'data_type' : ncfile.type, 'calibration' : calibration_dict, 
+    dictionary = {'record_by' : ncfile.type, 'calibration' : calibration_dict, 
     'acquisition' : acquisition_dict, 'treatments' : treatments_dict}
     ncfile.close()
     return dictionary

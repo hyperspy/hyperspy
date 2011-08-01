@@ -162,7 +162,7 @@ def file_reader(filename, endianess = '<', **kwds):
 		
     mapped_parameters = {
 		'name' : filename,
-		'data_type' : 'Image',
+		'record_by' : 'Image',
 		}
     #create the axis objects for each axis
     axes=[{'size':data.shape[i],'index_in_array':i,'name':names[i],'scale':scales[i],

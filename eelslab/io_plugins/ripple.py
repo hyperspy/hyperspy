@@ -302,17 +302,17 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
 
     if rpl_info['record-by'] == 'vector':
         print 'Loading as spectrum'
-        data_type = 'SI'
+        record_by = 'SI'
     elif rpl_info['record-by'] == 'image':
         print 'Loading as Image'
-        data_type = 'Image'
+        record_by = 'Image'
     else:
         if len(data.shape) == 1:
             print 'Loading as spectrum'
-            data_type = 'SI'
+            record_by = 'SI'
         else:
             print 'Loading as image'
-            data_type = 'Image'
+            record_by = 'Image'
 
     if rpl_info['record-by'] == 'vector':
         idepth, iheight, iwidth = 2, 0, 1
@@ -389,7 +389,7 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
         'data' : data.squeeze(),
         'axes' : axes,
         'mapped_parameters': {
-			'data_type':data_type,
+			'record_by':record_by,
 			'name': filename,
 			},
         'original_parameters' : original_parameters

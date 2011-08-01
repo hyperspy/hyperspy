@@ -88,7 +88,7 @@ def list2dict(list_of_keys):
         dict_keys_string += '[\'%s\']' % key
     return dict_keys_string
               
-def file_reader(filename, data_type = None):
+def file_reader(filename, record_by = None):
     dimensions_pth = ['ImageData', 'Calibrations', 'Dimension']
     calibration_dict = {}
     acquisition_dict = {}
@@ -166,12 +166,12 @@ def file_reader(filename, data_type = None):
     print "Data cube correctly loaded"
     
     # Determine wether this is an image of SI and extract parameters
-    if data_type is None:
+    if record_by is None:
         if 'eV' in units or 'keV' in units:
-            data_type = 'SI'
+            record_by = 'SI'
         else:
-            data_type = 'Image'
-    if data_type == 'SI': 
+            record_by = 'Image'
+    if record_by == 'SI': 
         print "Treating the data as an SI"
 
         # Try to determine the format (if known) to extract some parameters
@@ -270,7 +270,7 @@ def file_reader(filename, data_type = None):
     calibration_dict['data_cube'] = data_cube.squeeze()
     dm3.close()
     dictionary = {
-        'data_type' : data_type, 
+        'record_by' : record_by, 
         'calibration' : calibration_dict, 
         'acquisition' : acquisition_dict,
         'imported_parameters' : calibration_dict}
