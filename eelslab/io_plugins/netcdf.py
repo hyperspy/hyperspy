@@ -54,9 +54,9 @@ reads_images = True
 reads_spectrum = True
 reads_spectrum_image = True
 # Writing features
-writes_images = True
-writes_spectrum = True
-writes_spectrum_image = True
+writes_images = False
+writes_spectrum = False
+writes_spectrum_image = False
 # ----------------------
 
 
@@ -107,17 +107,17 @@ def file_reader(filename, *args, **kwds):
     
     if hasattr(ncfile, 'file_format_version'):
         if ncfile.file_format_version == 'EELSLab 0.1':
-            dictionary = nc_eelslab_reader_0dot1(ncfile, *args, **kwds)
+            dictionary = nc_eelslab_reader_0dot1(ncfile, filename, *args, **kwds)
     else:
         ncfile.close()
         messages.warning_exit('Unsupported netCDF file')
         
     return (dictionary,)
         
-def nc_eelslab_reader_0dot1(ncfile, *args, **kwds):
+def nc_eelslab_reader_0dot1(ncfile, filename, *args, **kwds):
     calibration_dict, acquisition_dict , treatments_dict= {}, {}, {}
     dc = ncfile.variables['data_cube']
-    calibration_dict['data_cube'] = dc[:]
+    data = dc[:]
     if 'history' in calibration_dict:
         calibration_dict['history'] = eval(ncfile.history)
     for attrib in attrib2netcdf.items():
@@ -148,137 +148,58 @@ def nc_eelslab_reader_0dot1(ncfile, *args, **kwds):
                 print \
                 "Warning: the \'%s\' attribute is not defined in the file\
             " % attrib[0]
-    print "EELSLab NetCDF file correctly loaded" 
-    dictionary = {'record_by' : ncfile.type, 'calibration' : calibration_dict, 
+    print "EELSLab NetCDF file correctly loaded"
+    original_parameters = {'record_by' : ncfile.type, 'calibration' : calibration_dict, 
     'acquisition' : acquisition_dict, 'treatments' : treatments_dict}
     ncfile.close()
-    return dictionary
-    
-def file_writer(filename, object2save, *args, **kwds):
-    from eelslab import spectrum
-    from eelslab import image
-    if isinstance(object2save, spectrum.Spectrum):
-        netcdf_spectrum_writer(filename, object2save, *args, **kwds)
-    elif isinstance(object2save, image.Image):
-        netcdf_image_writer(filename, object2save, *args, **kwds)
-    else:
-        messages.warning_exit('The object cannot be saved in the NetCDF format')
-
-def netcdf_image_writer(filename, image, *args, **kwds):
-    if no_netcdf:
-        messages.warning_exit(no_netcdf_message)
-    elif len(image.data_cube.squeeze().shape) == 3:
-        x_dimension, y_dimension, z_dimension = image.data_cube.shape
-        d_dtype = image.data_cube.dtype.char
-        print "Saving the image in EELSLab netCDF format"
-        ncfile = Dataset(filename,'w')
-        setattr(ncfile, 'file_format_version', 'EELSLab 0.1')
-        setattr(ncfile, 'eelslab_version', Release.version)
-        setattr(ncfile, 'Conventions', 'http://www.eelslab.org')
-#        setattr(ncfile, 'title', image.title)
-        setattr(ncfile, 'type', 'image')
-        # Create the dimensions
-        ncfile.createDimension('x', x_dimension)
-        ncfile.createDimension('y', y_dimension)
-        ncfile.createDimension('z', z_dimension)
-        data_cube = ncfile.createVariable('data_cube', d_dtype, ('x', 'y', 'z'))
+    # Now we'll map some parameters
+    record_by = 'image' if original_parameters['record_by'] == 'Image' else 'spectrum'
+    if record_by == 'image':
+        dim = len(data.shape)
+        names = ['Z', 'Y', 'X'][3 - dim:]
+        scaleskeys = ['zscale', 'yscale', 'xscale']
+        originskeys = ['zorigin', 'yorigin', 'xorigin']
+        unitskeys = ['zunits', 'yunits', 'xunits']
         
-        for attrib in attrib2netcdf.items():
-            if hasattr(image, attrib[0]):
-                print "%s = %s" % (attrib[1], eval('image.' + attrib[0]))
-                setattr(data_cube, attrib[1], eval('image.' + attrib[0]))
-            else:
-                print "Warning: the \'%s\' attribute is not defined" \
-                % attrib[0]
-        # write data to variable.
-        data_cube[:] = image.data_cube
-        # close the file.
-        ncfile.close()
-        print 'File saved'
-    elif len(image.data_cube.squeeze().shape) == 2:
-        dc = image.data_cube.squeeze()
-        x_dimension, y_dimension = dc.shape
-        d_dtype = dc.dtype.char
-        print "Saving the image in EELSLab netCDF format"
-        ncfile = Dataset(filename, 'w')
-        setattr(ncfile, 'file_format_version', 'EELSLab 0.1')
-        setattr(ncfile, 'Conventions', 'http://www.eelslab.org')
-        setattr(ncfile, 'title', image.title)
-        setattr(ncfile, 'type', 'image')
-        # Create the dimensions
-        ncfile.createDimension('x', x_dimension)
-        ncfile.createDimension('y', y_dimension)
-        data_cube = ncfile.createVariable('data_cube', d_dtype, ('x', 'y'))
-        for attrib in attrib2netcdf.items():
-            if hasattr(image, attrib[0]):
-                print "%s = %s" % (attrib[1], eval('image.' + attrib[0]))
-                setattr(data_cube, attrib[1], eval('image.' + attrib[0]))
-            else:
-                print "Warning: the \'%s\' attribute is not defined" \
-                % attrib[0]
-        # write data to variable.
-        data_cube[:] = image.data_cube
-        # close the file.
-        ncfile.close()
-        print 'File saved'
-    else:
-        print "The images of dimension 2 or 3 are supported"
-        print "This image has dimension ", len(image.data_cube.squeeze().shape)
+    elif record_by == 'spectrum':
+        dim = len(data.shape)
+        names = ['Y', 'X', 'Energy'][3 - dim:]
+        scaleskeys = ['yscale', 'xscale', 'energyscale']
+        originskeys = ['yorigin', 'xorigin', 'energyorigin']
+        unitskeys = ['yunits', 'xunits','energyunits']
 
-
-def netcdf_spectrum_writer(filename, spectrum, *args, **kwds):
-    if no_netcdf is True:
-        messages.warning_exit(no_netcdf_message)
-    else:
-        energy_dimension, x_dimension, y_dimension = spectrum.data_cube.shape
-        d_dtype = spectrum.data_cube.dtype.char
-        print "Writing to file in EELSLab netCDF format"
-        ncfile = Dataset(filename, 'w')
-        setattr(ncfile, 'file_format_version', 'EELSLab 0.1')
-        setattr(ncfile, 'Conventions', 'http://www.eelslab.org')
-#        setattr(ncfile, 'history', str(spectrum.history))
-        setattr(ncfile, 'title', spectrum.title)
-        setattr(ncfile, 'type', 'spectrum')
-        # Create the dimensions
-        ncfile.createDimension('energy', energy_dimension)
-        ncfile.createDimension('x', x_dimension)
-        ncfile.createDimension('y', y_dimension)
-        data_cube = ncfile.createVariable('data_cube', d_dtype, ('energy', 
-        'x', 'y'))
-        
-        for attrib in attrib2netcdf.items():
-            if hasattr(spectrum, attrib[0]):
-                print "%s = %s" % (attrib[1], eval('spectrum.' + attrib[0]))
-                setattr(data_cube, attrib[1], eval('spectrum.' + attrib[0]))
-            else:
-                print "Warning: the \'%s\' attribute is not defined" \
-                % attrib[0]
+    # The images are recorded in the Fortran order    
+    data = data.T.copy()
+    try:
+        scales = [calibration_dict[key] for key in scaleskeys[3-dim:]]
+    except KeyError:
+        scales = [1,1,1][3-dim:]
+    try:
+        origins = [calibration_dict[key] for key in originskeys[3-dim:]]
+    except KeyError:
+        origins = [0,0,0][3-dim:]
+    try:
+        units = [calibration_dict[key] for key in unitskeys[3-dim:]]
+    except KeyError:
+        units = ['','','']    
+    axes=[
+            {
+                'size' : int(data.shape[i]), 
+                'index_in_array' : i ,
+                'name' : names[i],
+                'scale': scales[i],
+                'offset' : origins[i],
+                'units' : units[i],} \
+            for i in xrange(dim)]
+    mapped_parameters = {}
+    mapped_parameters['original_filename'] = filename
+    mapped_parameters['record_by'] = record_by
+    mapped_parameters['signal'] = None            
+    dictionary = {
+        'data' : data,
+        'axes' : axes,
+        'mapped_parameters' : mapped_parameters,
+        'original_parameters' : original_parameters,
+        }    
                 
-        for attrib in acquisition2netcdf.items():
-            if hasattr(spectrum.acquisition_parameters, attrib[0]):
-                value = \
-                spectrum.acquisition_parameters.__getattribute__(attrib[0])
-                print "%s = %s" % (attrib[1], 
-                value)
-                if type(value) is bool:
-                    value = int(value)
-                if value is not None:
-                    setattr(data_cube, attrib[1], value)
-                else:
-                    print(attrib[1] + ' undefined')
-                    
-        for attrib in treatments2netcdf.items():
-            if hasattr(spectrum.treatments, attrib[0]):
-                value = eval('spectrum.treatments.' + attrib[0])
-                print "%s = %s" % (attrib[1], 
-                value)
-                if value is not None:
-                    setattr(data_cube, attrib[1], value)
-            else:
-                print "Warning: the \'%s\' attribute is not defined" \
-                % attrib[0]
-        # write data to variable.
-        data_cube[:] = spectrum.data_cube
-        # close the file.
-        ncfile.close()
-        print 'File saved'
+    return dictionary
