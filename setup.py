@@ -54,9 +54,10 @@ setup(
     package_dir = {'eelslab': 'eelslab'},
     version = version,
     #py_modules = ['', ],
-    packages = ['eelslab', 'eelslab.components', 'eelslab.io', 'eelslab.drawing', 
-                'eelslab.mva', 'eelslab.signals','eelslab.bss','eelslab.gui',
-                'eelslab.tests', 'eelslab.tests.io'],
+    packages = ['eelslab', 'eelslab.components', 'eelslab.io_plugins', 
+                'eelslab.drawing', 'eelslab.mva', 'eelslab.signals', 
+                'eelslab.bss','eelslab.gui', 'eelslab.tests', 
+                'eelslab.tests.io'],
     requires = install_req,
     scripts = scripts,
     package_data = 
