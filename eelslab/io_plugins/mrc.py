@@ -18,7 +18,9 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
 
-# The details of the format were taken from http://www.biochem.mpg.de/tom
+# The details of the format were taken from 
+# http://www.biochem.mpg.de/doc_tom/TOM_Release_2008/IOfun/tom_mrcread.html
+# and http://ami.scripps.edu/software/mrctools/mrc_specification.php
 
 import numpy as np
 from eelslab.axes import DataAxis
@@ -133,48 +135,62 @@ def file_reader(filename, endianess = '<', **kwds):
     std_header = np.fromfile(f, dtype = get_std_dtype_list(endianess), 
     count = 1)
     fei_header = None
-    scales=np.ones(3)
-    units_list=np.array(['undefined']*3)
-    names=['x','y','z']
-
     if std_header['NEXT'] / 1024 == 128:
         print "It seems to contain an extended FEI header"
         fei_header = np.fromfile(f, dtype = get_fei_dtype_list(endianess), 
-                                 count = 1024)
-        scales[0:2]=fei_header['pixel_size']
-        units_list[0:2]='m'
-    NX, NY, NZ = std_header['NX'], std_header['NY'], std_header['NZ']
+                                 count = 1024)    
     if f.tell() == 1024 + std_header['NEXT']:
         print "The FEI header was correctly loaded"
     else:
         print "There was a problem reading the extended header"
         f.seek(1024 + std_header['NEXT'])
-        
+        fei_header = None
+    NX, NY, NZ = std_header['NX'], std_header['NY'], std_header['NZ']    
     data = np.memmap(f, mode = 'c', offset = f.tell(), 
-                     dtype = get_data_type(std_header['MODE'], endianess)).squeeze().reshape(
-        (NX, NY, NZ), order = 'F')
-    
+                     dtype = get_data_type(std_header['MODE'], endianess)
+                     ).squeeze().reshape((NX, NY, NZ), order = 'F').T
                      
-    original_parameters = {
-        'std_header' : std_header, 
-        'fei_header' : fei_header,
-        }
-		
-    mapped_parameters = {
-                            'name' : filename,
+    original_parameters = { 'std_header' : std_header, 
+                            'fei_header' : fei_header,}
+    
+    dim = len(data.shape)
+    if fei_header is None:
+        # The scale is in Amstrongs, we convert it to nm
+        scales = [   10 * float(std_header['Zlen']/std_header['MZ'])
+                        if float(std_header['MZ']) != 0 else 1,
+                     10 *  float(std_header['Ylen']/std_header['MY'])
+                        if float(std_header['MY']) != 0 else 1,
+                     10 *  float(std_header['Xlen']/std_header['MX'])
+                     if float(std_header['MX']) != 0 else 1,]
+        offsets = [   10 * float(std_header['ZORIGIN']),
+                      10 * float(std_header['YORIGIN']),
+                      10 * float(std_header['XORIGIN']),]
+        
+    else:
+        # FEI does not use the standard header to store the scale
+        # It does store the spatial scale in pixel_size, one per angle in meters
+        scales = [1, ] + [fei_header['pixel_size'][0] * 10**9,] * 2 
+        offsets = [0,] * 3
+    
+    units = ['undefined', 'nm', 'nm']
+    names = ['z', 'y', 'x']
+    mapped_parameters = {   'original_filename' : filename,
                             'record_by' : 'image',
-                            'signal' : None,
-		}
+                            'signal' : None,}
     #create the axis objects for each axis
-    axes=[{'size':data.shape[i],'index_in_array':i,'name':names[i],'scale':scales[i],
-                   'offset':0, 'units':units_list[i]} for i in xrange(3)]
-    # define the third axis as the slicing axis.
-    axes[2]['slice_bool']=True
-    dictionary = {
-                  'data':data,
-                  'axes':axes,
-                  'mapped_parameters' : mapped_parameters,
-                  'original_parameters' : original_parameters,
-                  }
+    axes=[
+            {
+                'size': data.shape[i], 
+                'index_in_array' : i, 
+                'name' : names[i + 3 - dim], 
+                'scale' : scales[i + 3 - dim], 
+                'offset': offsets[i + 3 - dim], 
+                'units' : units[i + 3 - dim],} 
+            for i in xrange(dim)]
+
+    dictionary = {    'data' : data,
+                      'axes' : axes,
+                      'mapped_parameters' : mapped_parameters,
+                      'original_parameters' : original_parameters,}
     
     return [dictionary,]
