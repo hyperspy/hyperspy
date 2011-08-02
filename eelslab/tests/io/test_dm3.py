@@ -7,7 +7,6 @@ from nose.tools import assert_true
 from eelslab.io import load
 
 my_path = os.path.dirname(__file__)
-old = False
 
 # When running the loading test the data of the files that passes it are 
 # stored in the following dict. 
@@ -45,7 +44,7 @@ def test_content():
 
 def check_load(filename, subfolder, key):
     try:
-        s = load(filename, old = old)
+        s = load(filename)
         ok = True
         # Store the data for the next tests
         data_dict[subfolder][key] = s.data
