@@ -49,6 +49,15 @@ class Parameters(t.HasTraits, object):
                     value = value._get_parameters_dictionary()
                 par_dict.__setitem__(item, value)
         return par_dict
+        
+    def add_node(self, node_path):
+        keys = node_path.split('/')
+        current_dict = self.__dict__
+        for key in keys:
+            if key not in current_dict:
+                current_dict[key] = Parameters()
+            current_dict = current_dict[key].__dict__
+        
 
 class Signal(t.HasTraits, MVA):
     data = t.Array()
