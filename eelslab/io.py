@@ -94,7 +94,7 @@ def load_with_reader(filename, reader, record_by = None, signal = None, **kwds):
         objects = objects[0]
     return objects
     
-def save(filename, signal, format = 'hdf5', only_view = False, **kwds):
+def save(filename, signal, format = 'hdf5', **kwds):
     extension = os.path.splitext(filename)[1][1:]
     i = 0
     if extension == '':

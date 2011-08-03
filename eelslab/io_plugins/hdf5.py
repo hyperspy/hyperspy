@@ -30,8 +30,8 @@ description = 'The default file format for EELSLab based on the HDF5 standard'
 
 full_suport = False
 # Recognised file extension
-file_extensions = ['hdf5', 'hdf', 'h5', 'he5']
-default_extension = 0
+file_extensions = ['hdf', 'h4', 'hdf4', 'h5', 'hdf5', 'he4', 'he5']
+default_extension = 4
 # Reading capabilities
 reads_images = True
 reads_spectrum = True
@@ -77,7 +77,6 @@ def file_reader(filename, record_by, mode = 'r', driver = 'core',
     # Experiments.
     experiments = []
     exp_dict_list = []
-    datasets = []
     if 'Experiments' in f:
         for ds in f['Experiments']:
             if isinstance(f['Experiments'][ds], h5py.Group):
@@ -99,82 +98,50 @@ def file_reader(filename, record_by, mode = 'r', driver = 'core',
                 except KeyError:
                     f.close()
                     raise IOError(not_valid_format)
-            exp['mapped_parameters'] = dict(exg['mapped_parameters'].attrs)
-            exp['original_parameters'] = dict(exg['original_parameters'].attrs)
+            exp['mapped_parameters'] = hdfgroup2dict(
+            exg['mapped_parameters'], {})
+            exp['original_parameters'] = hdfgroup2dict(
+            exg['original_parameters'], {})
             exp['axes'] = axes
             exp_dict_list.append(exp)
-            
     else:
         # Eventually there will be the possibility of loading the datasets of 
         # any hdf5 file
         pass
     f.close()
     return exp_dict_list
+
+def dict2hdfgroup(dictionary, group):
+    for key, value in dictionary.iteritems():
+        if isinstance(value, dict):
+            dict2hdfgroup(value, group.create_group(key))
+        else:
+            group.attrs[key] = value
+            
+def hdfgroup2dict(group, dictionary = {}):
+    for key, value in group.attrs.iteritems():
+        dictionary[key] = value
+    for _group in group:
+        dictionary[_group] = {}
+        hdfgroup2dict(group[_group], dictionary[_group])
+    return dictionary
                                     
 def file_writer(filename, signal, *args, **kwds):
-    f = h5py.File(filename, mode = 'w-')
+    f = h5py.File(filename, mode = 'w')
     exps = f.create_group('Experiments')
     expg = exps.create_group(signal.mapped_parameters.name)
     expg.create_dataset('data', data = signal.data)
-    i = 0
     for axis in signal.axes_manager.axes:
-        coord_group = expg.create_group('axis-%s' % i)
+        coord_group = expg.create_group('axis-%s' % axis.index_in_array)
         coord_group.attrs['name'] =  str(axis.name)
         coord_group.attrs['offset'] =  axis.offset
         coord_group.attrs['scale'] =  axis.scale
         coord_group.attrs['units'] =  axis.units
         coord_group.attrs['size'] = axis.size
         coord_group.attrs['index_in_array'] = axis.index_in_array
-        i += 1
     mapped_par = expg.create_group('mapped_parameters')
-    for key, value in signal.mapped_parameters.__dict__.iteritems():
-        try:
-            mapped_par.attrs[key] = value
-        except:
-            if value is not None:
-                print "HDF5 File saver: WARNING: could not save data at: "
-                print "  mapped_parameters.%s"%key
-                print "    value:"
-                print "      ",value
-                print "    type:"
-                print "      ",type(value)
-                print "The saved HDF5 file has lost information from your original data.  \
-Please make sure it is not something important.\n"            
+    dict2hdfgroup(signal.mapped_parameters._get_parameters_dictionary(), 
+                  mapped_par)
     original_par = expg.create_group('original_parameters')
-    for key, value in signal.original_parameters.iteritems():
-        try:
-            original_par.attrs[key] = value
-        except:
-            if value is not None:
-                print "HDF5 File saver: WARNING: could not save data at: "
-                print "  original_parameters.%s"%key
-                print "    value:"
-                print "      ",value
-                print "    type:"
-                print "      ",type(value)
-                print "The saved HDF5 file has lost information from your original data.  \
-Please make sure it is not something important.\n"
-    omit_keys=['data', 'axes_manager', 'mapped_parameters', 'original_parameters']
-    attributes = expg.create_group('attributes')
-    for key, value in signal.__dict__.iteritems():
-        # store only attributes that we don't handle another way.
-        # These attributes are obsolete - everything mapped should be stored
-        # under mapped_parameters.
-
-        if key not in omit_keys:
-            try:
-                attributes.attrs[key] = value
-                print "Warning - deprecated use of attribute on Signal object."
-                print "  Developer message: consider moving %s to the \
-mapped_parameters attribute of the Signal class or derived subclass."%key
-            except:
-                if value is not None:
-                    print "HDF5 File saver: WARNING: could not save attribue: "
-                    print "  %s"%key
-                    print "    value:"
-                    print "      ",value
-                    print "    type:"
-                    print "      ",type(value)
-                    print "The saved HDF5 file has lost information from your original data.  \
-Please make sure it is not something important.\n"                
+    dict2hdfgroup(signal.original_parameters, original_par)
     f.close()
