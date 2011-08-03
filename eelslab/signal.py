@@ -31,15 +31,19 @@ class Parameters(t.HasTraits, object):
                 value = Parameters(value)
             self.__setattr__(key, value)
  
-    def print_items(self, depth = 0):
+    def _get_print_items(self, depth = 0, string = ''):
         """Prints only the attributes that are not methods"""
         for item,value in self.__dict__.iteritems():
             if type(item) != types.MethodType:
                 if isinstance(value, Parameters):
-                    print('%s%s ---->' % (depth * '\t', item))
-                    value.print_items(depth + 1)
+                    string += '%s%s ---->\n' % (depth * '\t', item)
+                    string += value._get_print_items(depth + 1, string = string)
                 else:
-                    print("%s%s = %s") % (depth * '\t', item, value)
+                    string += "%s%s = %s\n" % (depth * '\t', item, value)
+        return string
+                    
+    def __repr__(self):
+        return self._get_print_items()
                 
     def _get_parameters_dictionary(self):
         par_dict = {}
