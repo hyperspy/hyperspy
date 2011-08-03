@@ -156,8 +156,16 @@ class Parameter(object):
             mask = np.zeros(self.map.shape, dtype = 'bool')
         self.map['values'][mask == False] = self.value
         self.map['is_set'][mask == False] = True
+        
+    def create_array(self, shape):
+        if self.map is None  or self.map.shape != shape:
+            self.map = np.zeros(shape, 
+            dtype = [
+            ('values','float', self._number_of_elements), 
+            ('std', 'float', self._number_of_elements), 
+            ('is_set', 'bool', 1)])
+            self.map['std'][:] = np.nan
                     
-
 class Component:
     def __init__(self, parameter_name_list):
         self.parameters = []
@@ -216,16 +224,7 @@ class Component:
                 
     def create_arrays(self, shape):
         for parameter in self.parameters:
-            # It will overwrite the arrays if the dimension changes.
-            # This is only useful if the number of knots of the fine structure
-            # component has changed
-            if parameter.map is None  or parameter.map.shape != shape:
-                parameter.map = np.zeros(shape, 
-                dtype = [
-                ('values','float', parameter._number_of_elements), 
-                ('std', 'float', parameter._number_of_elements), 
-                ('is_set', 'bool', 1)])
-                parameter.map['std'][:] = np.nan
+            parameter.create_array(shape)
     
     def store_current_parameters_in_map(self, indexes):
         for parameter in self.parameters:

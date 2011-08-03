@@ -18,6 +18,18 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
 
+# Proposal for when we start using configparser
+#[Plotting]
+#plot_on_load 0
+#
+#[EELSModel]
+#GOS_dir None 
+#fs_emax 30
+#fs_state 1
+#knots_factor 0.3
+#min_distance_between_edges_for_fine_structure 0.
+#preedge_safe_window_width 2
+
 import os.path
 import tarfile
 

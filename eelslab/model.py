@@ -40,7 +40,7 @@ class Model(list, Optimizers, Estimators):
     spectrum : an Spectrum (or any Spectrum subclass) instance
     """
     
-    __firstimetouch = True
+    _firstimetouch = True
 
     def __init__(self, spectrum):
         self.convolved = False
@@ -89,6 +89,9 @@ class Model(list, Optimizers, Estimators):
         for component in self:
             component.create_arrays(self.axes_manager.navigation_shape)
         self.connect_parameters2update_plot()
+        
+    __touch = _touch
+
                 
     def connect_parameters2update_plot(self):   
         for component in self:

@@ -112,7 +112,7 @@ def EffectiveAngle(E0,E,alpha,beta):
     
     Notes
     -----
-    Code from Egerton (SE) page 420
+    Code translated to Python from Egerton (second edition) page 420
     """	   
     if alpha == 0:
         return beta * 10**-3
@@ -161,8 +161,8 @@ class EELSCLEdge(Component):
         self.energy_scale = None
         self.T = None
         self.gamma = None
-        self.alpha = None
-        self.beta = None
+        self.convergence_angle = None
+        self.collection_angle = None
         self.E0 = None
         self.effective_angle.value = 0
         self.effective_angle.free = False
@@ -176,7 +176,7 @@ class EELSCLEdge(Component):
         self.delta.ext_force_positive = False
         self.delta.grad = self.grad_delta
         self.freedelta = False
-        self.__previous_delta = delta
+        self._previous_delta = delta
                                 
         self.intensity.grad = self.grad_intensity
         self.intensity.value = intensity
@@ -212,23 +212,19 @@ class EELSCLEdge(Component):
         
     def setfslist(self):
         self.fslist._number_of_elements = \
-        int(round(self.knots_factor*self.fs_emax / self.energy_scale)) + 4
+        int(round(self.knots_factor * self.fs_emax / self.energy_scale)) + 4        
         self.fslist.bmin, self.fslist.bmax = None, None
-        self.fslist.value=np.zeros(self.fslist._number_of_elements).tolist()
+        self.fslist.value = np.zeros(self.fslist._number_of_elements).tolist()
         self.calculate_knots()
         if self.fslist.map is not None:
-            xy_shape = list(self.fslist.map.shape[:2])    
-            self.fslist.map = np.zeros(xy_shape + 
-            [self.fslist._number_of_elements,])
-            self.fslist.std_map = np.zeros(xy_shape + 
-            [self.fslist._number_of_elements,])
+            self.fslist.create_array(self.fslist.map.shape)
             
     def set_microscope_parameters(self, E0, alpha, beta, energy_scale):
         # Relativistic correction factors
         self.gamma = 1.0 + (e * E0) / (m0 * pow(c,2.0)) #dimensionless
         self.T = E0 * (1.0 + self.gamma) / (2.0 * pow(self.gamma, 2.0)) #in eV
-        self.alpha = alpha
-        self.beta = beta
+        self.convergence_angle = alpha
+        self.collection_angle = beta
         self.energy_scale = energy_scale
         self.E0 = E0
         self.integrategos(self.delta.value)
@@ -288,7 +284,7 @@ class EELSCLEdge(Component):
         self.__sqa0qaxis = (a0 * self.__qaxis)**2
         self.__logsqa0qaxis = log((a0 * self.__qaxis)**2)
         
-    def integrategos(self,delta = 0):
+    def integrategos(self, delta = 0):
         """
         Calculates the knots of the spline interpolation of the cross section 
         after integrating q. It calculates it for Ek in the range 
@@ -309,11 +305,9 @@ class EELSCLEdge(Component):
         qint = sp.zeros((self.__nrow))
         
         # Integration over q using splines
-        if self.effective_angle.value == 0:
-            self.effective_angle.value = \
-            EffectiveAngle(self.E0, self.edgeenergy, 
-            self.alpha, self.beta)
-            self.__previous_effective_angle = self.effective_angle.value
+        self.effective_angle.value = EffectiveAngle(self.E0, self.edgeenergy, 
+            self.convergence_angle, self.collection_angle)
+        self._previous_effective_angle = self.effective_angle.value
         effective_angle = self.effective_angle.value
         for i in xrange(0,self.__nrow):
             qtck = splrep(self.__logsqa0qaxis, self.__gos_array[i, :], s=0)
@@ -369,12 +363,12 @@ class EELSCLEdge(Component):
     def function(self,E) :
         """ Calculates the number of counts in barns"""
         
-        if self.delta.value != self.__previous_delta :
-            self.__previous_delta = copy.copy(self.delta.value)
+        if self.delta.value != self._previous_delta:
+            self._previous_delta = copy.copy(self.delta.value)
             self.integrategos(self.delta.value)
             self.calculate_knots()
 
-        if self.__previous_effective_angle != self.effective_angle.value:
+        if self._previous_effective_angle != self.effective_angle.value:
             self.integrategos()
             
         factor = 4.0 * np.pi * a0 ** 2.0 * R**2 / E / self.T #to convert to m**2/bin
@@ -425,8 +419,8 @@ class EELSCLEdge(Component):
     
     def grad_intensity(self,E) :
         
-        if self.delta.value != self.__previous_delta :
-            self.__previous_delta = copy.copy(self.delta.value)
+        if self.delta.value != self._previous_delta :
+            self._previous_delta = copy.copy(self.delta.value)
             self.integrategos(self.delta.value)
             self.calculate_knots()
             
@@ -480,8 +474,8 @@ class EELSCLEdge(Component):
     def grad_delta(self,E) :
         """ Calculates the number of counts in barns"""
         
-        if self.delta.value != self.__previous_delta :
-            self.__previous_delta = copy.copy(self.delta.value)
+        if self.delta.value != self._previous_delta :
+            self._previous_delta = copy.copy(self.delta.value)
             self.integrategos(self.delta.value)
             self.calculate_knots()
         factor = 4.0 * np.pi * (a0**2.0) * (

@@ -27,8 +27,10 @@ class EELSModel(Model):
     """
     
     def __init__(self, spectrum, auto_background = True, auto_add_edges = True, 
-                 *args, **kwargs):
+                 ll = None, *args, **kwargs):
         Model.__init__(self, spectrum, *args, **kwargs)
+        self.ll = ll
+        
         if auto_background is True:
             bg = PowerLaw()
             interactive_ns['bg'] = bg
@@ -39,23 +41,29 @@ class EELSModel(Model):
                 self.experiments.set_convolution_axis()
         else:
             self.convolved = False
-        if self.spectrum.edges and auto_add_edges is True:
-            self.extend(self.spectrum.edges)
+        if self.spectrum.subshells and auto_add_edges is True:
+            self._add_edges_from_subshells_names()
             
     def _touch(self):
         """Run model setup tasks
         
         This function must be called everytime that we add or remove components
         from the model.
-        It creates the bookmarks self.edges and sef.__background_components and 
-        configures the edges by setting the dispersion attribute and setting 
+        It creates the bookmarks self.edges and sef._background_components and 
+        configures the edges by setting the energy_scale attribute and setting 
         the fine structure.
         """
+        self._Model__touch()
         self.edges = []
-        self.__background_components = []
+        self._background_components = []
         for component in self:
             if isinstance(component,EELSCLEdge):
-                component.dispersion = self.spectrum.energyscale
+                component.set_microscope_parameters(
+                E0 = self.spectrum.mapped_parameters.TEM.beam_energy, 
+                alpha = self.spectrum.mapped_parameters.TEM.convergence_angle,
+                beta = self.spectrum.mapped_parameters.TEM.EELS.collection_angle, 
+                energy_scale = self.axis.scale)
+                component.energy_scale = self.axis.scale
                 component.setfslist()
                 if component.edge_position() < \
                 self.axis.axis[self.channel_switches][0]:
@@ -66,28 +74,29 @@ class EELSModel(Model):
                     component.fs_state = False
                     component.fslist.free = False
                     component.backgroundtype = "edge"
-                    self.__background_components.append(component)
+                    self._background_components.append(component)
 
             elif isinstance(component,PowerLaw) or component.isbackground is True:
-                self.__background_components.append(component)
+                self._background_components.append(component)
 
         if not self.edges:
             messages.warning("The model contains no edges")
         else:
             self.edges.sort(key = EELSCLEdge.edge_position)
             self.resolve_fine_structure()
-        if len(self.__background_components) > 1 :
-            self.__backgroundtype = "mix"
-        elif not self.__background_components:
+        if len(self._background_components) > 1 :
+            self._backgroundtype = "mix"
+        elif not self._background_components:
             messages.warning("No background model has been defined")
         else :
-            self.__backgroundtype = \
-            self.__background_components[0].__repr__()
-            if self.__firstimetouch and self.edges:
+            self._backgroundtype = \
+            self._background_components[0].__repr__()
+            if self._firstimetouch and self.edges:
                 self.two_area_background_estimation()
-                self.__firstimetouch = False
+                self._firstimetouch = False
         
-    def generate_edges(self, e_shells, copy2interactive_ns = True):
+    def _add_edges_from_subshells_names(self, e_shells = None, 
+                                        copy2interactive_ns = True):
         """Create the Edge instances and configure them appropiately
         Parameters
         ----------
@@ -96,22 +105,23 @@ class EELSModel(Model):
             If True, variables with the format Element_Shell will be created in
             IPython's interactive shell
         """
-        
+        if e_shells is None:
+            e_shells = list(self.spectrum.subshells)
         e_shells.sort()
         master_edge = EELSCLEdge(e_shells.pop())
-        self.edges.append(master_edge)
-        interactive_ns[self.edges[-1].__repr__()] = self.edges[-1]
-        element = self.edges[-1].__repr__().split('_')[0]
+        self.append(master_edge)
+        interactive_ns[self[-1].__repr__()] = self[-1]
+        element = self[-1].__repr__().split('_')[0]
         interactive_ns[element] = []
-        interactive_ns[element].append(self.edges[-1])
+        interactive_ns[element].append(self[-1])
         while len(e_shells) > 0:
-            self.edges.append(EELSCLEdge(e_shells.pop()))
-            self.edges[-1].intensity.twin = master_edge.intensity
-            self.edges[-1].delta.twin = master_edge.delta
-            self.edges[-1].freedelta = False
+            self.append(EELSCLEdge(e_shells.pop()))
+            self[-1].intensity.twin = master_edge.intensity
+            self[-1].delta.twin = master_edge.delta
+            self[-1].freedelta = False
             if copy2interactive_ns is True:
-                interactive_ns[self.edges[-1].__repr__()] = self.edges[-1]
-                interactive_ns[element].append(self.edges[-1])
+                interactive_ns[self[-1].__repr__()] = self[-1]
+                interactive_ns[element].append(self[-1])
                 
     def resolve_fine_structure(self,preedge_safe_window_width = 
         defaults.preedge_safe_window_width, i1 = 0):
@@ -191,7 +201,7 @@ class EELSModel(Model):
         """
         ea = self.axis.axis[self.channel_switches]
 
-        print "Fitting the", self.__backgroundtype, "background"
+        print "Fitting the", self._backgroundtype, "background"
         edges = copy.copy(self.edges)
         edge = edges.pop(0)
         if startenergy is None:
@@ -241,19 +251,17 @@ class EELSModel(Model):
         print "E1 = %s\t E2 = %s" % (E1, E2)
 
         try:
-            estimation = utils.two_area_powerlaw_estimation(self.spectrum, E1, E2)
-            bg = self.__background_components[0]
-            bg.A.already_set_map = np.ones(
-                (self.spectrum.xdimension,self.spectrum.ydimension))
-            bg.r.already_set_map = np.ones(
-                (self.spectrum.xdimension, self.spectrum.ydimension))
-            bg.r.map = estimation['r']
-            bg.A.map = estimation['A']
-            bg.charge_value_from_map(self.coordinates.ix,self.coordinates.iy)
+            estimation = utils.two_area_powerlaw_estimation(self.spectrum,E1,E2)
+            bg = self._background_components[0]
+            bg.A.map['is_set'][:] = True
+            bg.r.map['is_set'][:] = True
+            bg.r.map['values'] = estimation['r']
+            bg.A.map['values'] = estimation['A']
+            self.charge()
         except ValueError:
             messages.warning(
             "The power law background parameters could not be estimated\n"
-            "Try choosing an energy range for the estimation")
+            "Try choosing a different energy range for the estimation")
 
     def fit_edge(self, edgenumber, startenergy = None, **kwards):
         backup_channel_switches = self.channel_switches.copy()
@@ -312,7 +320,7 @@ class EELSModel(Model):
             self.fit(**kwards)
             edge.delta.free = False
             print "delta = ", edge.delta.value
-            self._touch()
+            self.__touch()
         elif edge.intensity.free is True:
             print "Fit without fine structure"
             self.enable_fine_structure(to_activate_fs)
@@ -391,13 +399,13 @@ class EELSModel(Model):
         """
         Enable the background.
         """
-        for component in self.__background_components:
+        for component in self._background_components:
             component.active = True
     def disable_background(self):
         """
         Disable the background.
         """
-        for component in self.__background_components:
+        for component in self._background_components:
             component.active = False
 
     def enable_fine_structure(self,edges_list = None):
