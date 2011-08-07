@@ -101,7 +101,6 @@ class MVA():
     """
     def __init__(self):
         self.mva_results = MVA_Results()
-        self.peak_mva_results = MVA_Results()
         self.peak_chars=None
 
     def _get_target(self,on_peaks):
@@ -382,13 +381,13 @@ class MVA():
             else:
                 # first centers and scales data
                 invsqcovmat, pc = center_and_scale(pc).itervalues()
-                exec('self.ica_node = mdp.nodes.%sNode(white_parm = \
+                exec('target.ica_node=mdp.nodes.%sNode(white_parm = \
                 {\'svd\' : True})' % algorithm)
                 target.ica_node.variance2oneed = True
                 target.ica_node.train(pc)
-                target.w = np.dot(self.ica_node.get_recmatrix(), invsqcovmat)
+                target.w = np.dot(target.ica_node.get_recmatrix(), invsqcovmat)
             self._ic_from_w(target)
-            target.icascores=self._get_ica_scores(target)
+            target.ica_scores=self._get_ica_scores(target)
             target.ica_algorithm = algorithm
             self.output_dim = number_of_components
         else:
@@ -1107,6 +1106,7 @@ class MVA_Results():
         self.output_dim = None
         self.unfolded = None
         self.original_shape = None
+        self.ica_node=None
         # Demixing matrix
         self.w = None
         
