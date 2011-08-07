@@ -89,7 +89,7 @@ key_bindings = KeyBindings(
 # (value=[Array(shape=(None,3), value=np.array(([[0,0,0]])))])
 class TemplatePicker(HasTraits):
     template = Array
-    CC = Instance(OrderedDict)
+    CC = Array
     peaks = List
     zero=Int(0)
     tmp_size = Range(low=2, high=512, value=64, cols=4)
@@ -190,7 +190,6 @@ class TemplatePicker(HasTraits):
         self.tmp_plotdata=tmp_plot_data
         self.img_plotdata=ArrayPlotData(imagedata=self.sig.data[:,:,self.img_idx])
         self.img_container=self._image_plot_container()
-        self.CC=OrderedDict()
 
         self.crop_sig=None
 
@@ -289,10 +288,10 @@ class TemplatePicker(HasTraits):
     @on_trait_change('ShowCC')
     def toggle_cc_view(self):
         if self.ShowCC:
-            self.CC[self.img_idx] = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
+            self.CC = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
                                                    self.left:self.left+self.tmp_size,self.img_idx],
                                                    self.sig.data[:,:,self.img_idx])
-            self.img_plotdata.set_data("imagedata",self.CC[self.img_idx])
+            self.img_plotdata.set_data("imagedata",self.CC)
         else:
             self.img_plotdata.set_data("imagedata",self.sig.data[:,:,self.img_idx])
         self.redraw_plots()
@@ -300,10 +299,10 @@ class TemplatePicker(HasTraits):
     @on_trait_change("img_idx")
     def update_img_depth(self):
         if self.ShowCC:
-            self.CC[self.img_idx] = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
+            self.CC = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
                                                    self.left:self.left+self.tmp_size,self.img_idx],
                                                    self.sig.data[:,:,self.img_idx])
-            self.img_plotdata.set_data("imagedata",self.CC[self.img_idx])
+            self.img_plotdata.set_data("imagedata",self.CC)
         else:
             self.img_plotdata.set_data("imagedata",self.sig.data[:,:,self.img_idx])
         self.img_plot.title="%s of %s: "%(self.img_idx+1,self.numfiles)+self.titles[self.img_idx]
@@ -351,13 +350,13 @@ class TemplatePicker(HasTraits):
     @on_trait_change('left, top, tmp_size')
     def update_CC(self):
         if self.ShowCC:
-            self.CC[self.img_idx] = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
+            self.CC = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
                                                    self.left:self.left+self.tmp_size,self.tmp_img_idx],
                                      self.sig.data[:,:,self.img_idx])
-            self.img_plotdata.set_data("imagedata",self.CC[self.img_idx])
+            self.img_plotdata.set_data("imagedata",self.CC)
             grid_data_source = self.img_plot.range2d.sources[0]
-            grid_data_source.set_data(np.arange(self.CC[self.img_idx].shape[1]), 
-                                      np.arange(self.CC[self.img_idx].shape[0]))
+            grid_data_source.set_data(np.arange(self.CC.shape[1]), 
+                                      np.arange(self.CC.shape[0]))
         if self.numpeaks_total>0:
             self.peaks=[np.array([[0,0,-1]])]
 
@@ -404,11 +403,11 @@ class TemplatePicker(HasTraits):
         from eelslab import peak_char as pc
         peaks=[]
         for idx in xrange(self.numfiles):
-            self.CC[idx] = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
+            self.CC = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
                                                self.left:self.left+self.tmp_size,self.tmp_img_idx],
                                                self.sig.data[:,:,idx])
             # peak finder needs peaks greater than 1.  Multiply by 255 to scale them.
-            pks=pc.two_dim_findpeaks(self.CC[idx]*255, peak_width=self.peak_width, medfilt_radius=None)
+            pks=pc.two_dim_findpeaks(self.CC*255, peak_width=self.peak_width, medfilt_radius=None)
             pks[:,2]=pks[:,2]/255.
             peaks.append(pks)
         self.peaks=peaks
