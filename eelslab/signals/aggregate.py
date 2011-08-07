@@ -397,12 +397,20 @@ class AggregateCells(Aggregate,Image):
                     except:
                         pass
                     cluster_idx+=1
-            cluster_array_Image=Image({'data':avg_stack,
+            # create a trimmed dict of the original files for this particular
+            # cluster.  Only include files that thie cluster includes members
+            # from.
+            constrained_orig_files={}
+            for key in self.mapped_parameters.original_files.keys():
+                if key in positions['filename']:
+                    constrained_orig_files[key]=self.mapped_parameters.original_files[key]
+            cluster_array_Image=Image({'data':cluster_array,
                     'mapped_parameters':{
                         'name':'Cluster %s from %s'%(i,
                                          self.mapped_parameters.name),
                         'locations':positions,
                         'members':members,
+                        'original_files':self.mapped_parameters.original_files,
                         }
                     })
             cluster_arrays.append(cluster_array_Image)
@@ -412,6 +420,7 @@ class AggregateCells(Aggregate,Image):
                     'mapped_parameters':{
                         'name':'Cluster averages from %s'%self.mapped_parameters.name,
                         'member_counts':members_list,
+                        'original_files':self.mapped_parameters.original_files,
                         }
                     })
         self.mapped_parameters.avgs=avg_stack_Image
@@ -440,7 +449,7 @@ your_object.mapped_parameters.clusters\n"
                5: peak orientation
                6: peak eccentricity
         """
-        if hasattr(self,mapped_parameters.clusters):
+        if hasattr(self.mapped_parameters,"clusters"):
             figs={}
             # come up with the color map for the scatter plot
 
