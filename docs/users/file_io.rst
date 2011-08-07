@@ -35,6 +35,11 @@ aggregate, you can do something like this:
 from glob import glob
 d=load(*glob('*.tif'))
 
+glob('*.tif') returns a python list of the files.  Preceding the
+function with the * transforms that list into a comma-separated
+collection of the files - effectively imitating the previous code
+block of comma-separated filenames.
+
 Files can be added to aggregates in one of two ways, both using the
 append function on any existing Aggregate object.
 
@@ -55,13 +60,85 @@ Of course, the object types must match - you cannot aggregate spectrum
 images with normal images.
 
 Notes:
-THIS IS THE GOAL, NOT HOW THINGS CURRENTLY OPERATE!
-Spectrum images are aggregated spectrally.  They must share at least
-some part of their energy range.  The aggregate energy range will be
-automatically truncated to include only the union of all energy
-ranges.  
+Presently, aggregate spectra are not checked for any energy
+alignment.  You must have similar energy ranges, with similar numbers
+of channels on all files you wish to aggregate.
 
 Images are stacked along the 3rd dimension.  Any images you aggregate must
 have similar dimensions in terms of pixel size.  The aggregator does
 not check for calibrated size.  It does not physically make sense to
 aggregate images with differing fields of view.
+
+For the future of aggregate spectra, the goal is that each file must
+share at least some part of their energy range.  The aggregate energy
+range will be automatically truncated to include only the union of all
+energy ranges.  Interpolation will be used in case of any channel mismatch
+between data sets.
+
+Saving Files
+===============
+
+Data can be saved to several file formats.  The format is specified by
+the extension of the filename.
+
+
+.. code-block:: python
+
+# load the data
+d=load('example.tif')
+# save the data as a tiff
+d.save('example_processed.tif')
+# save the data as a png
+d.save('example_processed.png')
+# save the data as an hdf5 file
+d.save('example_processed.hdf5')
+
+Some file formats are much better at maintaining the information about
+how you processed your data.  The preferred format in EELSlab is hdf5,
+the hierarchical data format.  This format keeps the most information
+possible.  However, viewing HDF5 files outside of EELSlab is less easy
+than say, working with well-known image formats.
+
+There are optional flags that may be passed to the save function.
+First, the only_view flag, if passed as True, will only save the
+current (possibly cropped or edited somehow) view of the data.  When
+false (default), the complete data set is saved.  Not all file formats
+support this feature (TODO: Which ones do?)
+
+For the MSA format (commonly used for saving single spectra), the
+msa_format argument is used to specify whether the energy axis should
+also be saved with the data.  The default, 'Y' omits the energy axis
+in the file.  The alternative, 'XY', saves a second column with the
+calibrated energy data.
+
+Saving Aggregate files
+-------------------------
+
+Aggregate files are saved similarly to other Signal based classes,
+however, depending on the file format, several files will be created.
+HDF5, the preferred format, will save one file containing the entire
+hierarchy of the aggregate.  Other formats will create folder
+structures, placing files of the desired format in folders according
+to their place in the aggregate hierarchy.
+
+Loading Saved Aggregate Files
+--------------------------------
+
+Please, please use the HDF5 file format.  It will make your life
+easier.  To load an hdf5 aggregate data set, use the simple load
+command:
+
+.. code-block:: python
+
+d=load('filename.hdf5')
+
+For all other formats, the folder hierarchy created when the aggregate
+was saved must remain exactly the same, or the aggregate will no
+longer load properly.  Do not delete, move, or edit files from the
+automatically created folders.  When saved, a file consisting of a
+table of contents of the aggregate is created.  To load the aggregate, 
+provide this file to the load function:
+
+.. code-block:: python
+
+d=load('filename_agg_contents.txt')

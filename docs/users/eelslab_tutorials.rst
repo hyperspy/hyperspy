@@ -81,6 +81,14 @@ If later on you want to load the PCA file:
 
     s.mva_results.load('filename.npz')
 
+.. NOTE::
+
+The saving and loading examples above create files that are only
+useful to EELSlab, or to people interested in learning Python/Numpy.
+MVA results can be saved to a format that can be loaded into Digital
+Micrograph or several other programs using the
+save_principal_components and save_independent_components functions.
+
 
 To obtain a model of the SI using only the first four principal components:
 
@@ -99,6 +107,13 @@ To save the new Spectrum file in EELSLab's netCDF file format:
 .. code-block:: python
 
     sc.save('filename')
+
+Independent Component Analysis
+---------------------------------
+
+.. NOTE::
+
+You must have performed PCA before trying to perform ICA.
 
 To perform independent components analysis on the principal components
 
