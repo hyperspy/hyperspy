@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright © 2007 Francisco Javier de la Peña
+# Copyright 2011 Michael Sarahan
 #
 # This file is part of EELSLab.
 #
@@ -23,6 +24,8 @@ import matplotlib.pyplot as plt
 from eelslab.signal import Signal
 import eelslab.peak_char as pc
 from eelslab import utils_varia
+from eelslab.mva.mva import MVA_Results
+
 
 import numpy as np
 
@@ -34,6 +37,7 @@ class Image(Signal):
         self.axes_manager.set_view('image')
         self.target_locations=None
         self.peak_width=None
+        self.peak_mva_results=MVA_Results()
 
     def peak_char_stack(self, peak_width, subpixel=False, target_locations=None,
                         peak_locations=None, imcoords=None, target_neighborhood=20,
@@ -143,7 +147,8 @@ class Image(Signal):
         return f
 
     def plot_image_overlay(self, plot_component=None, mva_type='PCA', 
-                           peak_id=None, plot_char=None, plot_shift=False):
+                           peak_mva=True, peak_id=None, plot_char=None, 
+                           plot_shift=False):
         """Overlays scores, or some peak characteristic on top of an image
         plot of the original experimental image.  Useful for obtaining a 
         bird's-eye view of some image characteristic.
@@ -154,11 +159,16 @@ class Image(Signal):
             Creates a scatter plot that is colormapped according to 
             score values.
 
-        component_type - string, either 'PCA' or 'ICA' (case insensitive)
+        mva_type - string, either 'PCA' or 'ICA' (case insensitive)
         (optional, but required to plot score overlays)
             Choose between the components that will be used for plotting
             component maps.  Note that whichever analysis you choose
             here has to actually have already been performed.
+
+        peak_mva - bool (default is False)
+        (optional, if True, the peak characteristics, shifts, and components
+            are drawn from the mva_results done on the peak characteristics.
+            Namely, these are the self.peak_mva_results attribute.
 
         peak_id - None or int
         (optional, but required to plot peak characteristic and shift overlays)
@@ -180,7 +190,7 @@ class Image(Signal):
             If True, plots shift overlays for given peak_id onto the parent image(s)
 
         """
-        if not hasattr(self, "mapped_parameters.original_files"):
+        if not hasattr(self.mapped_parameters, "original_files"):
             print "No original files available.  Can't map anything to nothing."
             print "If you use the cell_cropper function to crop your cells, \n\
 the cell locations and original files will be tracked for you."
@@ -189,6 +199,9 @@ the cell locations and original files will be tracked for you."
             print "Peak ID provided, but no plot_char given , and plot_shift disabled."
             print "  Nothing to plot.  Try again."
             return None
+        if peak_mva and not (plot_char is not None or plot_shift or plot_component):
+            print " peak_mva specified, but no peak characteristic, peak \
+shift, or component score selected for plotting.  Nothing to plot."
         if plot_char is not None and plot_component is not None:
             print "Both plot_char and plot_component provided.  Can only plot one\n\
 of these at a time.  Try again.\n\n\
@@ -197,31 +210,26 @@ Note that you can actually plot shifts and component scores simultaneously."
         figs=[]
         for key in self.mapped_parameters.original_files.keys():
             f=plt.figure()
+            plt.title(key)
             plt.imshow(self.mapped_parameters.original_files[key].data)
+            plt.gray()
             # get a shorter handle on the peak locations on THIS image
             locs=self.mapped_parameters.locations
             # binary mask to exclude peaks from other images
             mask=locs['filename']==key
+            mask=mask.squeeze()
             # grab the array of peak locations, only from THIS image
             locs=locs[mask]['position'].squeeze()
-            char=[]
-            if plot_component is not None:
-                # get the mva_results for the peaks
-                if mva_type.upper()=='PCA':
-                    scores=self.peak_mva_results.v[:,plot_component]
-                elif mva_type.upper()=='ICA':
-                    scores=self.peak_mva_results.icascores[:,plot_component]
-                scores=scores[mask]
-                plt.scatter(locs[:,0],locs[:,1],c=scores)                
+            char=[]                
             if peak_id is not None and plot_char is not None :
                 # list comprehension to obtain the peak characteristic
                 # peak_id selects the peak
                 # multiply by 7 because each peak has 7 characteristics
                 # add the index of the characteristic of interest
-                # mask.nonzero() identifies the indices corresponding to peaks from
-                #     this image (if many origins are present for this stack)
-                #     This selects the column, only plotting peak characteristics that are
-                #     from this image.
+                # mask.nonzero() identifies the indices corresponding to peaks 
+                #     from this image (if many origins are present for this 
+                #     stack).  This selects the column, only plotting peak 
+                #     characteristics that are from this image.
                 char=np.array([char.append(self.peak_chars[peak_id*7+plot_char,
                                mask.nonzero()[x]]) for x in xrange(locs.shape[0])])
                 plt.scatter(locs[:,0],locs[:,1],c=char)
@@ -230,29 +238,71 @@ Note that you can actually plot shifts and component scores simultaneously."
                 # peak_id selects the peak
                 # multiply by 7 because each peak has 7 characteristics
                 # add the indices of the peak shift [2:4]
-                # mask.nonzero() identifies the indices corresponding to peaks from
-                #    this image (if many origins are present for this stack)
-                #    This selects the column, only plotting shifts for peaks that are 
-                #    from this image.
+                # mask.nonzero() identifies the indices corresponding to peaks 
+                #    from this image (if many origins are present for this 
+                #    stack).  This selects the column, only plotting shifts 
+                #    for peaks that are from this image.
                 shifts=np.array([char.append(self.peak_chars[peak_id*7+2:peak_id*7+4,
                                mask.nonzero()[x]]) for x in xrange(locs.shape[0])])
                 plt.quiver(locs[:,0],locs[:,1],
                            shifts[:,0], shifts[:,1],
                            units='xy', color='white'
                            )
-
+            if plot_component is not None:
+                if peak_mva: target=self.peak_mva_results
+                else: target=self.mva_results
+                if mva_type.upper() == 'PCA':
+                    scores=target.v[plot_component][mask]
+                elif mva_type.upper() == 'ICA':
+                    scores=target.ica_scores[plot_component][mask]
+                else:
+                    print "Unrecognized MVA type.  Currently supported MVA types are \
+PCA and ICA (case insensitive)"
+                    return None
+                print mask
+                print locs
+                print scores
+                plt.scatter(locs[:,0],locs[:,1],c=scores)
+                plt.jet()
+                plt.colorbar()
             figs.append(f)
         return figs
         
-
-    def plot_cell_peak_overlays(self, plot_shifts=True, plot_char=None):
+    def plot_cell_peak_overlays(self, plot_component=None, mva_type='PCA', peak_mva=True,
+                                plot_shifts=True, plot_char=None):
         """Overlays peak characteristics on an image plot of the average image.
 
         Only appropriate for Image objects that consist of 3D stacks of cropped
         data.
 
         Parameters:
-        plot_shifts - bool
+
+        plot_component - None or int
+            The integer index of the component to plot scores for.
+            If specified, the values plotted for the shifts (if enabled by the plot_shifts flag)
+            and the values plotted for the plot characteristics (if enabled by the plot_char flag)
+            will be drawn from the given component resulting from MVA on the peak characteristics.
+            NOTE: only makes sense right now for examining results of MVA on peak characteristics,
+                NOT MVA results on the images themselves (factor images).
+
+        mva_type - str, 'PCA' or 'ICA', case insensitive. default is 'PCA'
+            Choose between the components that will be used for plotting
+            component maps.  Note that whichever analysis you choose
+            here has to actually have already been performed.            
+
+        peak_mva - bool, default is True
+            If True, draws the information to be plotted from the mva results derived
+            from peak characteristics.  If False, does the following with Factor images:
+            - Reconstructs the data using all available components
+            - locates peaks on all images in reconstructed data
+            - reconstructs the data using all components EXCEPT the component specified
+                by the plot_component parameter
+            - locates peaks on all images in reconstructed data
+            - subtracts the peak characteristics of the first (complete) data from the
+                data without the component included.  This difference data is what gets
+                plotted.
+
+        plot_shifts - bool, default is True
             If true, plots a quiver (arrow) plot showing the shifts for each
             peak present in the component being plotted.
 
@@ -263,36 +313,48 @@ Note that you can actually plot shifts and component scores simultaneously."
                4: peak height
                5: peak orientation
                6: peak eccentricity
+
         """
         f=plt.figure()
-        vec_comps=np.zeros((avg_positions.shape[0],2))
-        char=np.zeros(avg_positions.shape[0])
-        for pos in xrange(avg_positions.shape[0]):
-            vec_comps[pos]=factor[pos*7+2:pos*7+4]
-            char[pos]=factor[pos*7+4]
-        plt.imshow(avg_data)
+
+        imgavg=np.average(self.data,axis=2)
+
+        if self.target_locations is None:
+            # identify the peaks on the average image
+            if self.peak_width is None:
+                self.peak_width=10
+            self.target_locations=pc.peak_attribs_image(imgavg, self.peak_width)[:,:2]
+
+        stl=self.target_locations
+
+        shifts=np.zeros((stl.shape[0],2))
+        char=np.zeros(stl.shape[0])
+
+        if plot_component is not None:
+            # get the mva_results (components) for the peaks
+            if mva_type.upper()=='PCA':
+                component=self.peak_mva_results.pc[:,plot_component]
+            elif mva_type.upper()=='ICA':
+                component=self.peak_mva_results.ic[:,plot_component]          
+
+        for pos in xrange(stl.shape[0]):
+            shifts[pos]=component[pos*7+2:pos*7+4]
+            if plot_char:
+                char[pos]=component[pos*7+plot_char]
+
+        plt.imshow(imgavg)
         plt.gray()
-        plt.quiver(avg_positions[:,0], avg_positions[:,1],
-                   vec_comps[:,0], vec_comps[:,1], units='xy',color='white')
-        plt.scatter(avg_positions[:,0], avg_positions[:,1],c=composition)
-        plt.jet()
-        plt.colorbar()
+
+        if plot_shifts:
+            plt.quiver(stl[:,0],stl[:,1],
+                       shifts[:,0], shifts[:,1],
+                       units='xy', color='white'
+                       )
+        if plot_char is not None :
+            plt.scatter(stl[:,0],stl[:,1],c=char)
+            plt.jet()
+            plt.colorbar()
         return f
-
-        if hasattr(self,mapped_parameters.clusters):
-            figs={}
-            # come up with the color map for the scatter plot
-
-            for key in self.mapped_parameters.original_files.keys():
-                figs[key]=plt.figure()
-                # plot the initial images
-                
-            for cluster in xrange(len(self.mapped_parameters.clusters)):
-                for loc_id in xrange(cluster.mapped_parameters.locations.shape[0]):
-                    # get the right figure
-                    fig=figs[cluster.mapped_paramters.locations[loc_id][0][0]]
-                    # add scatter point
-
         
     def cell_cropper(self):
         if not hasattr(self.mapped_parameters,"picker"):
