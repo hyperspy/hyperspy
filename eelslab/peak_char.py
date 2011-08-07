@@ -281,7 +281,7 @@ def stack_coords(stack,peak_width,subpixel=False,maxpeakn=5000):
         ctmp=two_dim_findpeaks(stack[:,:,i], subpixel=subpixel,
                                peak_width=peak_width)
         for row in xrange(ctmp.shape[0]):
-            coords[row,:,i]=ctmp[row]
+            coords[row,:,i]=ctmp[row,:2]
     return coords
     
 def best_match(arr,target,neighborhood=None):
@@ -375,7 +375,7 @@ def peak_attribs_image(image, peak_width, subpixel=False,
         if bymax>imsize: bymax=imsize; bymin=imsize-peak_width
         roi[:,:]=image[bxmin:bxmax,bymin:bymax]
         ms=cv.Moments(cv.fromarray(roi))
-        height=c[2]
+        height=image[c[0],c[1]]
         orient=orientation(ms)
         ecc=eccentricity(ms)
         rlt[loc,:2]=c[:2]
@@ -465,7 +465,7 @@ def peak_attribs_stack(stack, peak_width, subpixel=True, target_locations=None,
         # two loops here - outer loop loops over images (i index)
         # inner loop loops over target peak locations (j index)
         peak_locations=np.array([[best_match(peaks[:,:,i], 
-                                             target_locations[j], 
+                                             target_locations[j,:2], 
                                              target_neighborhood) \
                for i in xrange(peaks.shape[2])] \
                for j in xrange(target_locations.shape[0])])
@@ -484,7 +484,7 @@ def peak_attribs_stack(stack, peak_width, subpixel=True, target_locations=None,
                                    medfilt_radius=medfilt_radius, 
                                    subpixel=subpixel)
         
-        diff_coords=target_locations-rlt_tmp[:,:2]
+        diff_coords=target_locations[:,:2]-rlt_tmp[:,:2]
         for j in xrange(target_locations.shape[0]):
             rlt[j*7:j*7+2,i]=rlt_tmp[j,:2]
             rlt[j*7+2:j*7+4,i]=diff_coords[j]
