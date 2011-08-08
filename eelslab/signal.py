@@ -66,7 +66,7 @@ class Parameters(t.HasTraits, object):
 class Signal(t.HasTraits, MVA):
     data = t.Array()
     axes_manager = t.Instance(AxesManager)
-    original_parameters = t.Dict
+    original_parameters = t.Instance(Parameters)
     mapped_parameters = t.Instance(Parameters)
     physical_property = t.Str()
     
@@ -118,7 +118,8 @@ class Signal(t.HasTraits, MVA):
         if file_data_dict.has_key('attributes'):
             for key, value in file_data_dict['attributes'].iteritems():
                 self.__setattr__(key, value)
-        self.original_parameters = file_data_dict['original_parameters']
+        self.original_parameters = Parameters(
+            file_data_dict['original_parameters'])
         self.mapped_parameters.load_dictionary(
             file_data_dict['mapped_parameters'])
             

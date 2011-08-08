@@ -229,9 +229,9 @@ def file_reader(filename, **kwds):
 def file_writer(filename, signal, format = None, separator = ', '):
     keywords = {}
     FORMAT = "EMSA/MAS Spectral Data File"
-    if 'FORMAT' in signal.original_parameters and \
-    signal.original_parameters['FORMAT'] == FORMAT:
-        keywords = signal.original_parameters
+    if hasattr(signal.original_parameters, 'FORMAT') and \
+    signal.original_parameters.FORMAT == FORMAT:
+        keywords = signal.original_parameters._get_parameters_dictionary()
         if format is not None:
             keywords['DATATYPE'] = format
         else:
