@@ -115,14 +115,27 @@ def dict2hdfgroup(dictionary, group):
     for key, value in dictionary.iteritems():
         if isinstance(value, dict):
             dict2hdfgroup(value, group.create_group(key))
-        elif value is None:
-            group.attrs[key] = 'None'
         else:
-            group.attrs[key] = value
+            if value is None:
+                value = '_None_'
+            try:
+                group.attrs[key] = value
+            except:
+                if type(value) is unicode:
+                    try:
+                        group.attrs[key] = str(value)
+                    except:
+                        print("The hdf5 writer could not write the following "
+                        "information in the file")
+                        print('%s : %s' % (key, value))
+                else:
+                    print("The hdf5 writer could not write the following "
+                    "information in the file")
+                    print('%s : %s' % (key, value))
             
 def hdfgroup2dict(group, dictionary = {}):
     for key, value in group.attrs.iteritems():
-        dictionary[key] = value
+        dictionary[key] = value if value != '_None_' else None
     for _group in group:
         dictionary[_group] = {}
         hdfgroup2dict(group[_group], dictionary[_group])
@@ -143,5 +156,6 @@ def file_writer(filename, signal, *args, **kwds):
     dict2hdfgroup(signal.mapped_parameters._get_parameters_dictionary(), 
                   mapped_par)
     original_par = expg.create_group('original_parameters')
-    dict2hdfgroup(signal.original_parameters, original_par)
+    dict2hdfgroup(signal.original_parameters._get_parameters_dictionary(), 
+                  original_par)
     f.close()
