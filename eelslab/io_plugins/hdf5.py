@@ -132,13 +132,11 @@ def file_writer(filename, signal, *args, **kwds):
     expg = exps.create_group(signal.mapped_parameters.name)
     expg.create_dataset('data', data = signal.data)
     for axis in signal.axes_manager.axes:
+        axis_dict = axis.get_axis_dictionary()
+        # For the moment we don't store the slice_bool
+        del(axis_dict['slice_bool'])
         coord_group = expg.create_group('axis-%s' % axis.index_in_array)
-        coord_group.attrs['name'] =  str(axis.name)
-        coord_group.attrs['offset'] =  axis.offset
-        coord_group.attrs['scale'] =  axis.scale
-        coord_group.attrs['units'] =  axis.units
-        coord_group.attrs['size'] = axis.size
-        coord_group.attrs['index_in_array'] = axis.index_in_array
+        dict2hdfgroup(axis_dict, coord_group)
     mapped_par = expg.create_group('mapped_parameters')
     dict2hdfgroup(signal.mapped_parameters._get_parameters_dictionary(), 
                   mapped_par)
