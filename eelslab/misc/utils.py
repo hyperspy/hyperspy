@@ -21,14 +21,14 @@ import  math
 import glob
 import os
 from StringIO import StringIO
+from collections import OrderedDict
+
 
 import numpy as np
 import scipy as sp
 import scipy.interpolate
 import scipy.signal
 import scipy.ndimage
-
-from eelslab import messages
 
 def import_rpy():
     try:
@@ -47,6 +47,27 @@ def dump_dictionary(file, dic, string = 'root', node_separator = '.',
         else:
             file.write(string + node_separator + key + value_separator + 
             str(dic[key]) + '\n')
+            
+def sarray2dict(sarray, dictionary = None):
+    '''Converts a struct array to an ordered dictionary
+    
+    Parameters
+    ----------
+    sarray: struct array
+    dictionary: None or dic
+        If dictionary is not None the content of sarray will be appended to the 
+        given dictonary
+    
+    Returns
+    -------
+    Ordered dictionary    
+    
+    '''
+    if dictionary is None:
+        dictionary = OrderedDict()
+    for name in sarray.dtype.names:
+        dictionary[name] = sarray[name]
+    return dictionary
     
 def generate_axis(origin,step,N,index=0):
     """Creates an axis given the origin, step and number of channels

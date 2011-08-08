@@ -17,10 +17,11 @@
 # along with EELSLab; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
-
 import struct
 import os
 import numpy as np
+
+from eelslab.misc.utils import sarray2dict
 
 ser_extensions = ('ser', 'SER')
 emi_extensions = ('emi', 'EMI')
@@ -41,7 +42,6 @@ writes_images = False
 writes_spectrum = False
 writes_spectrum_image = False
 # ----------------------
-
 
 data_types = {
 '1' : '<u1',	
@@ -371,7 +371,12 @@ def ser_reader(filename, *args, **kwds):
     dc = dc.reshape(array_shape)
     if record_by == 'image':
         dc = dc[::-1]
-      
+    
+    original_parameters = sarray2dict(header)
+    sarray2dict(data, original_parameters)
+    
+    # We remove the Array key to save memory avoiding duplication
+    del original_parameters['Array']
     dictionary = {
     'data' : dc,
     'mapped_parameters' : {
@@ -380,5 +385,5 @@ def ser_reader(filename, *args, **kwds):
                             'signal' : None
 		},
     'axes' : axes,
-    'original_parameters' : {'header' : header, 'data' : data}}
+    'original_parameters' : original_parameters}
     return dictionary

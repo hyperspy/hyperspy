@@ -115,6 +115,8 @@ def dict2hdfgroup(dictionary, group):
     for key, value in dictionary.iteritems():
         if isinstance(value, dict):
             dict2hdfgroup(value, group.create_group(key))
+        elif value is None:
+            group.attrs[key] = 'None'
         else:
             group.attrs[key] = value
             
