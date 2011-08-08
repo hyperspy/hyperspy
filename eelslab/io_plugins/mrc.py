@@ -23,7 +23,9 @@
 # and http://ami.scripps.edu/software/mrctools/mrc_specification.php
 
 import numpy as np
-from eelslab.axes import DataAxis
+
+from eelslab.misc.utils import sarray2dict
+
 
 # Plugin characteristics
 # ----------------------
@@ -150,9 +152,12 @@ def file_reader(filename, endianess = '<', **kwds):
                      dtype = get_data_type(std_header['MODE'], endianess)
                      ).squeeze().reshape((NX, NY, NZ), order = 'F').T
                      
-    original_parameters = { 'std_header' : std_header, 
-                            'fei_header' : fei_header,}
-    
+    original_parameters = { 'std_header' : sarray2dict(std_header)}
+    if fei_header is not None:
+        fei_dict = sarray2dict(fei_header,)
+        del fei_dict['empty']
+        original_parameters['fei_header'] = fei_dict
+        
     dim = len(data.shape)
     if fei_header is None:
         # The scale is in Amstrongs, we convert it to nm
