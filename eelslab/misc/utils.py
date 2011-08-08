@@ -66,7 +66,8 @@ def sarray2dict(sarray, dictionary = None):
     if dictionary is None:
         dictionary = OrderedDict()
     for name in sarray.dtype.names:
-        dictionary[name] = sarray[name]
+        dictionary[name] = sarray[name][0] if len(sarray[name]) == 1 \
+        else sarray[name]
     return dictionary
     
 def generate_axis(origin,step,N,index=0):
