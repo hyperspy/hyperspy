@@ -212,7 +212,13 @@ def emi_reader(filename, dump_xml = False, **kwds):
     sers = []
     for f in ser_files:
         print "Opening ", f
-        sers.append(ser_reader(f, objects))
+        try:
+            sers.append(ser_reader(f, objects))
+        except:
+            "The file could not be read. This version of EELSLab cannot read "
+            "single spectra stored in FEI's format. If you think that this file"
+            " does not contain a single spectrum file please fill a bug report "
+            "to help us improve the IO functionalities of EELSLab"
     return sers
     
 def file_reader(filename, *args, **kwds):
