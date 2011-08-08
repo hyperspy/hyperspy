@@ -19,9 +19,12 @@
 # USA
 import struct
 import os
+from collections import OrderedDict
+
 import numpy as np
 
 from eelslab.misc.utils import sarray2dict
+from eelslab.misc import xmlreader
 
 ser_extensions = ('ser', 'SER')
 emi_extensions = ('emi', 'EMI')
@@ -209,7 +212,7 @@ def emi_reader(filename, dump_xml = False, **kwds):
     sers = []
     for f in ser_files:
         print "Opening ", f
-        sers.append(ser_reader(f))
+        sers.append(ser_reader(f, objects))
     return sers
     
 def file_reader(filename, *args, **kwds):
@@ -262,7 +265,7 @@ def get_xml_info_from_emi(emi_file):
         objects.append(tx[i_start:i_end + 13]) 
     return objects[:-1]
     
-def ser_reader(filename, *args, **kwds):
+def ser_reader(filename, objects = None, *args, **kwds):
     """Reads the information from the file and returns it in the EELSLab 
     required format"""
     # Determine if it is an emi or a ser file.
@@ -371,12 +374,18 @@ def ser_reader(filename, *args, **kwds):
     dc = dc.reshape(array_shape)
     if record_by == 'image':
         dc = dc[::-1]
-    
-    original_parameters = sarray2dict(header)
-    sarray2dict(data, original_parameters)
+    original_parameters = OrderedDict()
+    header_parameters = sarray2dict(header)
+    sarray2dict(data, header_parameters)
+    if objects is not None:
+        i = 0
+        for obj in objects:
+            original_parameters['emi_xml%i' % i] = xmlreader.readConfig(obj)
+            
     
     # We remove the Array key to save memory avoiding duplication
-    del original_parameters['Array']
+    del header_parameters['Array']
+    original_parameters['ser_header_parameters'] = header_parameters
     dictionary = {
     'data' : dc,
     'mapped_parameters' : {
