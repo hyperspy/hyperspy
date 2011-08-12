@@ -1,5 +1,8 @@
-Quickstart
-==========
+Getting started
+***************
+
+First steps with eelslab
+========================
 
 Starting eelslab
 ----------------
@@ -20,8 +23,9 @@ To start eelslab type in a console:
    recommended to install `Console2 <http://sourceforge.net/projects/console/>`_
 
 
-Loading a file
---------------
+Loading and saving data
+-----------------------
+
 
 To load a supported file (e.g. NetCDF, dm3, MSA, MRC, ser, emi or many image 
 files) simply type:
@@ -52,6 +56,7 @@ values :guilabel:`SI` or :guilabel:`Image`, e.g.:
 
 Configuring eelslab
 -------------------
+
 You can configure some parameters of eelslab by editing the :file:`eelslabrc` 
 file. The location of the configuration file depends on the system. 
 You can find its path by calling the ```get_configuration_directory_path``` 
@@ -98,12 +103,13 @@ Please note that the documentation of the code is a work in progress, so not all
 Autocompletion
 --------------
 
+
 Another useful `IPython <http://ipython.scipy.org/moin/>`_ feature is the 
 autocompletion of commands and filenames. It is highly recommended to read the 
 `Ipython documentation <http://ipython.scipy.org/moin/Documentation>`_.
 
-Exploring the data
-------------------
+Data visualisation
+==================
 
 The Spectrum and Image objects have a ``plot`` method.
 

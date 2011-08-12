@@ -10,7 +10,7 @@ Welcome to EELSLab's documentation!
 .. toctree::
     :maxdepth: 2
    
-    users/index.rst
+    user_guide/index.rst
     api/index.rst
 
 

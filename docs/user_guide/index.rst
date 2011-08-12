@@ -8,7 +8,10 @@ User's Guide
     :maxdepth: 2
     
     intro.rst
-    installing.rst
-    quick_start.rst
-    eelslab_tutorials.rst
+    install.rst
+    getting_started.rst
+    mva.rst
+    model.rst
+    eels.rst
+    tutorials.rst
     credits.rst
