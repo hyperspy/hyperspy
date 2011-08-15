@@ -11,6 +11,7 @@ Welcome to EELSLab's documentation!
     :maxdepth: 2
    
     user_guide/index.rst
+    tutorials/tutorials.rst
     api/index.rst
 
 

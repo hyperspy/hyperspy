@@ -13,5 +13,4 @@ User's Guide
     mva.rst
     model.rst
     eels.rst
-    tutorials.rst
     credits.rst

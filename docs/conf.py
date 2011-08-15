@@ -43,7 +43,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'EELSLab'
-copyright = u'2010, Francisco DE LA PEÑA'
+copyright = u'2007-2010, Francisco DE LA PEÑA\n 2010-2011 Francisco de la Peña,'
+'Stefano Mazzucco, Michael Sarahan'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -117,7 +118,7 @@ html_logo = '_static/hyperspy_logo.png'
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-#html_favicon = None
+html_favicon = 'hyperspy_logo.ico'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -181,7 +182,7 @@ htmlhelp_basename = 'EELSLabdoc'
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'EELSLab.tex', u'EELSLab Documentation',
-   u'Francisco DE LA PEÑA', 'manual'),
+   u'The EELSLab Developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -214,5 +215,5 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'eelslab', u'EELSLab Documentation',
-     [u'Francisco DE LA PEÑA'], 1)
+     [u'The EELSLab developers'], 1)
 ]
