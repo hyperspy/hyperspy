@@ -1,27 +1,32 @@
-Introduction
-============
+﻿Introduction
+=========
 
 What is EELSLab
----------------
+-----------------------
 
-EELSLab is a hyperspectra data analysis software. It was started in 
-the domain of Electron Energy Loss Spectroscopy (EELS), but it is useful for any 
-other spectroscopy domain.
+EELSLab is a hyperspectral data analysis toolbox. Specifically, it provides easy access to (between others) multidimensional curve fitting, peak analysis and machine learning algorithms, as well as a visualisation framework for navigating data and reading and writing capabilities for several popular hyperspectral formats.
 
-Why is it different?
---------------------
 
-EELSLab has been written by the scientists that use it in their daily research, 
-a particularity that sets its character. Scientist do indeed write a lot of 
-code, but (with remarkable exceptions) many times they are in the form of 
-scripts that, once they do their job (normally producing some publishable 
-results) are rarely distributed. Therefore, reinventing the wheel is 
-commonplace in casual scientific programming.
+Our vision
+-------------
 
-When writing EELSLab we wanted to provide a framework for hyperspectral data 
-analysis that makes it easy for scientists to add their contributions. 
-In other words, the code must be as simple and feel as natural as possible.
-With this view we have chosen to write it in Python, a high level programming 
-language with very high quality scientific libraries. When coding, every 
-increase in complexity must provide a clear benefit.
+To us this program is a research tool, much like a screw driver or a Green function. We believe that the better our tools are the better our research will be. We also think that it is beneficial for the advance of knowledge to share our research tools and to forge them in a collaborative way. This is because by collaborating we advance faster mainly by avoiding reinventing the wheel. Idealistic as it may sound, many other people think like this and it is thanks to them that this project exists.
+
+How is it different?
+-----------------------
+
+EELSLab has been written by researchers who use it for their own research, a particularity that sets its character:
+  
+* The main way of interacting with the program is through the command line. This is because:
+
+    * With a command line interface it is very easy to automatise the data analysis, and therefore boost the productivity. Of course the drawback is that the learning curve is steeper, but we have tried to keep it as gentle as we possible. 
+    * Writing and maintaining GUIs require time from the developers and the current ones prefer to spend their time adding new features. Maybe in the future we will provide a fully featured GUI, but EELSLab will always remain fully scriptable.
+
+* That said, GUIs are provided when there is a clear productivity advantage in doing so (and therefore the developers find the motivation to work on it).  For example, there is a GUI to perform windows quantification and there is another one for data smoothing. 
+* We see EELSLab as a collaborative research project, and therefore we care about making it easy for others to contribute to the project. In other words, we want to minimise the “user becomes developer” threshold. To achieve this goal we:
+    * Use an open-source license, the `GPL v3 <http://www.gnu.org/licenses/gpl-3.0-standalone.html>`_
+    * Try to keep the code as simple and natural as possible.
+    * Have chosen to write in `Python <http://www.python.org/>`_, a high level programming language with `high quality scientific libraries <http://www.scipy.org/>`_.
+
+
 
