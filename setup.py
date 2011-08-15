@@ -46,8 +46,6 @@ if are_we_building4windows() or os.name in ['nt','dos']:
     scripts.extend(batch_files)
     
 version = Release.version
-if Release.revision != '':
-    version += ('-rev' + Release.revision)
 
 setup(
     name = "eelslab",

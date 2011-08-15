@@ -15,8 +15,6 @@ import os
 from subprocess import call
 import lib.Release as Release
 release_name = 'eelslab-' + Release.version
-if Release.revision != '':
-    release_name +=  ('-rev' + Release.revision)
 os.system('python setup.py --command-packages=stdeb.command bdist_deb')
 
 if args.install is True:

@@ -21,14 +21,13 @@
 
 name = 'eelslab'
 
-revision = ''
-version = '0.3.0a'
+version = '0.3.0'
 
-description = "EELS data analysis for Python."
+description = "Hyperspectral data analysis toolbox"
 
-license = 'GPL'
+license = 'GPL v3'
 
-authors = {'F_DLP' : (u'Francisco Javier de la Peña','delapena@lps.u-psud.fr'),
+authors = {'F_DLP' : (u'Francisco Javier de la Peña'),
            'S_M'    : ('Stefano Mazzucco'),
            'M_S'    : ('Michael Sarahan'),
            }
@@ -39,8 +38,10 @@ download_url = 'http://www.eelslab.org'
 
 platforms = ['Linux','Mac OSX','Windows XP/2000/NT','Windows 95/98/ME']
 
-keywords = ['eelslab', 'electron', 'energy loss', 'spectroscopy', 'python',
- 'numpy', 'scipy', 'electron microscopy', 'tem', 'stem', 'quantification']
+keywords = [
+    'eelslab', 'hyperspectral', 'data analysis', 'electron', 'spectroscopy', 
+    'python', 'numpy', 'scipy', 'microscopy', 'TEM', 'STEM', 'quantification',
+    'EDX', 'EELS', 'EFTEM', 'PES', 'PCA', 'ICA', 'curve fitting', 'model']
 
 info = u"""
     E E L S L a b

@@ -39,7 +39,6 @@ from eelslab.misc import utils
 from eelslab import tests
 
 __version__ = Release.version
-__revision__ = Release.revision
 
 def get_configuration_directory_path():
     import eelslab.misc.config_dir.config_path

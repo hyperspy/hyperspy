@@ -27,7 +27,6 @@ def main():
     o.pylab_import_all = 0
     ip.ex("from eelslab.EELSlab import *")
     ip.ex("__version__ = Release.version")
-    ip.ex("__revision__ = Release.revision")
     o.banner=Release.info
 
 main()
