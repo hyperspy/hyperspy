@@ -1,0 +1,39 @@
+#!/usr/bin/python
+
+import os
+import sys
+
+try:
+    from hyperspy.mva import mva
+except ImportError, msg:
+    print('ERROR:\n %s' % msg)
+
+hyperspy_path = sys.modules['hyperspy'].__file__
+user = os.environ['HOME']
+
+print('\nCompiling KICA for hyperspy.\n')
+
+if user in hyperspy_path:        # local install
+    try:
+        ext = mva.compile_kica()
+    except:
+        print('\nERROR:\n%s\n' % str(sys.exc_info()[1]))
+        sys.exit(1)
+else:
+    if os.geteuid() != 0:
+        print('FAILED: you need to run this as root.\n')
+        sys.exit(1)
+    else:
+        try:
+            ext = mva.compile_kica()
+        except:
+            print('\nERROR:\n%s\n' % str(sys.exc_info()[1]))
+            sys.exit(1)
+
+if ext == 0:
+    print('\nDone.\n')
+else:
+    print('\nError while compiling KICA.\n')
+            
+sys.exit(ext)
+

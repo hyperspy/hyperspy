@@ -7,14 +7,15 @@ syntax: glob
 dist
 *.deb
 build/*
-eelslab.egg-info/*
+hyperspy.egg-info/*
 deb_dist/*
 ~.vimrc
 data/octave-core
 .spyderproject
 docs/_build/*
-docs/_static/*
 docs/.build/*
+docs/user_guide/_build/*
+docs/user_guide/.build/*
 bin/*.bat
 setup/windows/requires/*
 setup/windows/reccomends/*

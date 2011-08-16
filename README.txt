@@ -1,9 +1,9 @@
 
 ===========
-EELSLab
+Hyperspy
 ===========
 
-EELSLab is a program for hyperspectral data analysis written in Python.
+Hyperspy is a program for hyperspectral data analysis written in Python.
  
 Main features:
 ==============

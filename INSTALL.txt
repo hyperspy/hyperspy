@@ -1,9 +1,9 @@
 Linux
 -------
 
-In any Debian, install the eelslab package.
+In any Debian, install the hyperspy package.
 
-To run eelslab open a terminal, write eelslab and press enter.
+To run hyperspy open a terminal, write hyperspy and press enter.
 
 Optional:
 
@@ -12,7 +12,7 @@ Optional:
 	
 	- Install octave
 	- If you want it to run faster, execute the following code (just once) 
-	in a terminal with root privileges type: eelslab_compile_kica()
+	in a terminal with root privileges type: hyperspy_compile_kica()
 
 Note: the recommend matplotlib backend in Linux is GTKAgg.
 
@@ -26,11 +26,11 @@ following packages:
     Others -> Console2
 
 - Change the default matplotlib backend to WXAgg by editing the matplotlibrc file.
-- Install the eelslab package
+- Install the hyperspy package
 
-To run eelslab open Start Menu -> PythonXY -> Improved consoles -> Ipython(mlab)
+To run hyperspy open Start Menu -> PythonXY -> Improved consoles -> Ipython(mlab)
 and from the ipython prompt type:
-from eelslab import *
+from hyperspy import *
 
 Optional:
 
@@ -43,10 +43,10 @@ Optional:
 	- If you want it to run faster, execute the following code in a python 
 	console just once:
 	
-	from eelslab import mva
+	from hyperspy import mva
 	mva.compile_kica()
     
-Note: Currently the WXAgg is not fully supported by EELSLab. Therefore, 
+Note: Currently the WXAgg is not fully supported by Hyperspy. Therefore, 
 for a better experience it might be possible to install pygtk 
 http://www.pygtk.org and use the GTKAgg matplotlib backend. However, this 
 option has not been tested by the author.

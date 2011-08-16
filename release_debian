@@ -14,12 +14,10 @@ args = parser.parse_args()
 import os
 from subprocess import call
 import lib.Release as Release
-release_name = 'eelslab-' + Release.version
-if Release.revision != '':
-    release_name +=  ('-rev' + Release.revision)
+release_name = 'hyperspy-' + Release.version
 os.system('python setup.py --command-packages=stdeb.command bdist_deb')
 
 if args.install is True:
     os.system('sudo dpkg -i deb_dist/python-%s-1_all.deb' % 
-    release_name.replace('eelslab-', 'eelslab_'))
+    release_name.replace('hyperspy-', 'hyperspy_'))
     

@@ -1,6 +1,6 @@
-//Last update on 09/jul/2011
+//Last update on 10/Ago/2011
 //
-// Copyright © 2011 Luiz-Fernando Zagonel
+// Copyright ï¿½ 2011 Luiz Fernando Zagonel
 // ImportRPL is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -12,12 +12,12 @@
 // GNU General Public License for more details.
 
 // You should have received a copy of the GNU General Public License
-// along with EELSLab; if not, write to the Free Software
+// along with Hyperspy; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 // USA
 
 //  This script is designed to import Ripple files into Digital Micrograph. 
-//  It is used to easy data transit between DigitalMicrograph and EELSLab. 
+//  It is used to easy data transit between DigitalMicrograph and Hyperspy. 
 //  The script will ask for 2 files: 
 //          1- the riple file with the data  format and calibrations 
 //          2- the data itself in raw format.
@@ -36,6 +36,7 @@ Number file_RPL, file_RAW
 Number index
 string textline,value,data_type_value,recorded_by_value
 string width_name_value, height_name_value, depth_name_value
+string imagename
 
 size_x = size_y = size_z = 1 
 
@@ -153,11 +154,19 @@ if(textline.find("record-by")!=-1)
 //Riple file reading is finished
 CloseFile(file_RPL)
 
+
+if(data_type_value=="signed")
+if(pixel_size>4)
+{
+
 //Give some info on the information obtained from the riple file. 
-//Result( "Data dimentions:" + size_x + " x " + size_y + " x " +size_z + " x " + pixel_size + " \n" )  
-//Result( "Scales:" + scale_x + " x " + scale_y + " x " + scale_z + " \n" )  
-//Result( "Origins:" + origin_x + " x " + origin_y + " x " + origin_z +" \n" )  
-//Result("Data type is "+ data_type_value + ".\n")
+Result( "Data dimentions:" + size_x + " x " + size_y + " x " +size_z + " x " + pixel_size + " \n" )  
+Result( "Scales:" + scale_x + " x " + scale_y + " x " + scale_z + " \n" )  
+Result( "Origins:" + origin_x + " x " + origin_y + " x " + origin_z +" \n" )  
+Result("Data type is "+ data_type_value + ".\n")
+Result( "This script can not open data with data type integer and pixel size higher than 4. \n")
+Exit(0)
+}
 
 
 // Check for a file with same name of riple but with raw extension
@@ -184,22 +193,24 @@ If (!OpenDialog(filenameRAW)) Exit(0)
 file_RAW = OpenFileForReading(filenameRAW)
 file_stream = NewStreamFromFileReference(file_RAW, 1)
 
+imagename = PathExtractFileName(filenameRAW,0)
+
 
 //Create an image depending on the data-type
 if(data_type_value=="signed")
-img := IntegerImage("ImportedRiple", pixel_size, 1, size_x, size_y, size_z)
+img := IntegerImage(imagename, pixel_size, 1, size_x, size_y, size_z)
 
 if(data_type_value=="float")
-img := RealImage("ImportedRiple", pixel_size, size_x, size_y, size_z)          
+img := RealImage(imagename, pixel_size, size_x, size_y, size_z)          
 
 if(data_type_value=="unsigned")
-img := IntegerImage("ImportedRiple", pixel_size, 0, size_x, size_y, size_z)          
+img := IntegerImage(imagename, pixel_size, 0, size_x, size_y, size_z)          
 
 //if data-type was not given or recognized
 if(!ImageIsValid(img))
 {
 result(" Unregonazed data-type value. Data-type formats are:sined, unsigned and float. Using float by default."+"\n")
-img := RealImage("ImportedRiple", pixel_size, size_x, size_y, size_z)
+img := RealImage(imagename, pixel_size, size_x, size_y, size_z)
 }
 
 //if the data is recorded by vector, create another image to change the data order
@@ -207,23 +218,24 @@ if(recorded_by_value=="vector")
 {
 
 if(data_type_value=="signed")
-img2 := IntegerImage("ImportedRiple", pixel_size, 1, size_z, size_x, size_y)
+img2 := IntegerImage(imagename, pixel_size, 1, size_z, size_x, size_y)
 
 if(data_type_value=="float")
-img2 := RealImage("ImportedRiple", pixel_size, size_z, size_x, size_y)          
+img2 := RealImage(imagename, pixel_size, size_z, size_x, size_y)          
 
 if(data_type_value=="unsigned")
-img2 := IntegerImage("ImportedRiple", pixel_size, 0, size_z, size_x, size_y)          
+img2 := IntegerImage(imagename, pixel_size, 0, size_z, size_x, size_y)          
 
-if(!ImageIsValid(img))
+if(!ImageIsValid(img2))
 {
-result(" Unregonazed data-type value. Data-type formats are:sined, unsigned and float. Using float by default."+"\n")
-img2 := RealImage("ImportedRiple", pixel_size, size_z, size_x, size_y)
+img2 := RealImage(imagename, pixel_size, size_z, size_x, size_y)
 }
+
 }
+
 
 if(recorded_by_value=="vector")
-{
+{	
   if(size_x>1) // if it is an spectrum-image
   {
   ImageReadImageDataFromStream(img2, file_stream, 0)
@@ -268,6 +280,8 @@ img.ImageSetDimensionOrigin(2, origin_z )
 img.ImageSetDimensionScale( 2, scale_z )  
 img.ImageSetDimensionUnitString(2, depth_name_value )  
 }
+
+
 
 
 img.ShowImage()
