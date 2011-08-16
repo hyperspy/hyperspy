@@ -331,7 +331,7 @@ def parse_header(f, data_dict, endian='big', debug=0):
     return bool(is_little_endian[1])
 
 def crawl_dm3(f, data_dict, endian, ntags, group_name='root',
-             skip=0, debug=0):
+             skip=0, debug=0,depth=1):
     """Recursively scan the ntags TagEntrys in DM3 file f
     with a given endianness (byte order) looking for
     TagTypes (data) or TagGroups (groups).
@@ -343,6 +343,8 @@ def crawl_dm3(f, data_dict, endian, ntags, group_name='root',
     If skip != 0 the data reading is actually skipped.
     If debug > 0, 3, 5, 10 useful debug information is printed on screen.
     """
+    depth+=1
+    group_name='.'.join(group_name.split('.')[:depth])
     for tag in xrange(ntags):
         if debug > 3 and debug < 10:
             print('Crawling at address:', f.tell())
@@ -370,16 +372,22 @@ def crawl_dm3(f, data_dict, endian, ntags, group_name='root',
             # Don't overwrite duplicate keys, just rename them
             while data_dict.has_key(data_key):
                 data_search = tag_data_pattern.search(data_key)
-                tag_name = data_search.group()
-                j = int(tag_name.strip('.Data'))
-                data_key = tag_data_pattern.sub('', data_key)
-                if debug > 5 and debug < 10:
-                    print('key exists... renaming')
-                tag_name = '.Data' + str(j+1)
-                data_key = data_key + tag_name
-
+                try:
+                    tag_name = data_search.group()
+                    j = int(tag_name.strip('.Data'))
+                    data_key = tag_data_pattern.sub('', data_key)
+                    if debug > 5 and debug < 10:
+                        print('key exists... renaming')
+                    tag_name = '.Data' + str(j+1)
+                    data_key = data_key + tag_name
+                except:
+                    if debug >3:
+                        print "duplicate key found: %s"%data_key
+                        print "renaming failed."
+                    break
+                
             if image_data_pattern.search(data_key):
-                # don't read the data now            
+                # don't read the data now          
                 data_dict[data_key] = parse_image_data(f, infoarray)
             else:
                 data_dict[data_key] = parse_tag_data(f, infoarray,
@@ -436,17 +444,23 @@ def crawl_dm3(f, data_dict, endian, ntags, group_name='root',
                     o = 'Orsay' + orsay_search.group()
                     r = image_tags_pattern.search(group_name).group()
                     group_name = r + o
+                
                 micinfo_search = micinfo_pattern.search(group_name)
                 if micinfo_search: # move Microscope Info in the ImageTags dir
                     m = micinfo_search.group()[1:]
-                    r = image_tags_pattern.search(group_name).group()
+                    r = image_tags_pattern.search(group_name)
+                    if r is not None:
+                        r=r.group()
+                    else:
+                        r='DM3.DocumentObjectList.DocumentTags.Group1.ImageData.ImageTags'
                     group_name = r + m
+                
                 group_name += '.' + tag_name
             if debug > 3 and debug < 10:
                 print('Crawling at address:', f.tell())
             ntags = parse_tag_group(f)[2]
             crawl_dm3(f, data_dict, endian, ntags, group_name,
-                      skip, debug) # recursion
+                      skip, debug, depth) # recursion
         else:
             print('File address:', f.tell())
             raise DM3TagIDError(tag_id)
@@ -512,7 +526,7 @@ def open_dm3(fname, skip=0, debug=0, log=''):
         for nodes in data_dict.items():
             fsdict(nodes[0].split('.'), nodes[1], datadict_fs)
         fsbrowser =  DictBrowser(datadict_fs) # browsable dictionary'
-        return fsbrowser    
+        return fsbrowser
    
 class DM3ImageFile(object):
     """ Class to handle Gatan Digital Micrograph (TM) files.
@@ -543,23 +557,23 @@ class DM3ImageFile(object):
         23 : 'rgb', # not numpy: 4-Byte RGB (0, R, G, B)
         }
     
-    rootdir = ['DM3',]
+    rootdir = ['DM3']
     endian = rootdir + ['isLittleEndian',]
     version = rootdir + ['Version',]
     micinfodir = rootdir + ['Microscope Info',]
     rootdir = rootdir + ['DocumentObjectList',] # DocumentTags, Group0..
-    imlistdir = rootdir + ['DocumentTags', 'Image Behavior', 'ImageList']
+    imlistdir = rootdir + ['DocumentTags']
     # imlistdir contains ImageSourceList, Group0, Group1, ... Group[N]
     # "GroupX" dirs contain the useful info in subdirs
     # Group0 is always THUMBNAIL (?)
     # imdisplaydir = ['AnnotationGroupList', 'ImageDisplayInfo']
     # clutname = imdisplaydir + ['CLUTName',] # Greyscale, Rainbow or Temperature
-    imdatadir = ['ImageData',]
+    imdatadir = imlistdir+['Group1','ImageData',]
     imtagsdir = imdatadir + ['ImageTags',]
     imname = imtagsdir + ['Name',]
     Gatan_SI_dir = imtagsdir + ['Acquisition','DataBar','DigiScan',]
     Gatan_EELS_SI_dir=Gatan_SI_dir + ['EELS']
-    # EFTEM not tested! MCS May 2011
+    # TODO: EFTEM not tested! MCS May 2011
     Gatan_EFTEM_SI_dir=Gatan_SI_dir + ['EFTEM']
     orsaydir = imtagsdir + ['Orsay', 'spim', 'detectors', 'eels']
     vsm = orsaydir + ['vsm',]
@@ -570,14 +584,12 @@ class DM3ImageFile(object):
     im = calibdir + ['Data',]     # file addres and size of image
     imdtype = calibdir + ['DataType',] # data type to compare with imdtype_dict
     brightdir = calibdir + ['Brightness',]
-    dimdir = calibdir + ['Dimensions',] # contains 'Data[X]' where
-                                        # X is the dimension
-    pixdepth = dimdir + ['PixelDepth', ]
-    dimtagdir = brightdir + ['Dimension',] # contains 'Data[X]' where
-                                           # X is the dimension
-    units = ['Units',]          # in dimtagdir + 'Data[X]
-    origin = ['Origin',]        # in dimtagdir + 'Data[X]
-    scale = ['Scale',]          # in dimtagdir + 'Data[X]
+
+    pixdepth = calibdir + ['Dimensions','PixelDepth', ]
+
+    units = ['Units',]          # in brightdir + 'Group[X]
+    origin = ['Origin',]        # in brightdir + 'Group[X]
+    scale = ['Scale',]          # in brightdir + 'Group[X]
 
     def __init__(self, fname, data_id=1, order = None, SI = None, 
                  data_type = None):
@@ -689,6 +701,7 @@ class DM3ImageFile(object):
 #                except:
 #                    self.signal = None
 
+        self.data_dict.cd()
         imdtype =  self.data_dict.ls(DM3ImageFile.imdtype)[1][1]
         self.imdtype = DM3ImageFile.imdtype_dict[imdtype]
 
@@ -699,39 +712,43 @@ class DM3ImageFile(object):
         self.pixel_depth =  self.data_dict.ls(DM3ImageFile.pixdepth)[1][1]
 
         sizes = []
-        for i in self.data_dict.ls(DM3ImageFile.dimdir):
+        for i in self.data_dict.ls(DM3ImageFile.calibdir):
             if 'Data' in i:
-                sizes.append((i,
-                              self.data_dict.ls(DM3ImageFile.dimdir
+                try:
+                    int(i[-1])
+                    sizes.append((i,
+                              self.data_dict.ls(DM3ImageFile.calibdir
                                                 + [i,])))
+                except:
+                    pass
         sizes.sort()
 #        swapelem(sizes, 0, 1)
 
         origins = []
-        for i in self.data_dict.ls(DM3ImageFile.dimtagdir):
+        for i in self.data_dict.ls(DM3ImageFile.brightdir):
             if 'Group' in i:
                 origins.append((i,
-                                self.data_dict.ls(DM3ImageFile.dimtagdir
+                                self.data_dict.ls(DM3ImageFile.brightdir
                                                   + [i,]
                                                   + DM3ImageFile.origin)))
         origins.sort()
 #        swapelem(origins, 0, 1)
         
         scales = []
-        for i in self.data_dict.ls(DM3ImageFile.dimtagdir):
+        for i in self.data_dict.ls(DM3ImageFile.brightdir):
             if 'Group' in i:
                 scales.append((i,
-                               self.data_dict.ls(DM3ImageFile.dimtagdir
+                               self.data_dict.ls(DM3ImageFile.brightdir
                                                     + [i,]
                                                     + DM3ImageFile.scale)))
         scales.sort()
 #        swapelem(scales, 0, 1)
 
         units = []
-        for i in self.data_dict.ls(DM3ImageFile.dimtagdir):
+        for i in self.data_dict.ls(DM3ImageFile.brightdir):
             if 'Group' in i:
                 units.append((i,
-                              self.data_dict.ls(DM3ImageFile.dimtagdir
+                              self.data_dict.ls(DM3ImageFile.brightdir
                                                 + [i,]
                                                 + DM3ImageFile.units)))
         units.sort()
