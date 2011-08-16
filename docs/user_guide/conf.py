@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# EELSLab User Guide documentation build configuration file, created by
+# Hyperspy User Guide documentation build configuration file, created by
 # sphinx-quickstart on Mon Aug 15 15:42:05 2011.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -15,7 +15,7 @@ import sys, os
 
 import sys, os
 sys.path.append('../../')
-from eelslab import Release
+from hyperspy import Release
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -44,7 +44,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'EELSLab User Guide'
+project = u'Hyperspy User Guide'
 copyright = u'2011, Francisco de la Peña, Michael Sarahan'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -107,7 +107,7 @@ html_theme = 'default'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-html_title = "EELSLab User Guide v%s" % Release.version
+html_title = "Hyperspy User Guide v%s" % Release.version
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #html_short_title = None
@@ -168,7 +168,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'EELSLabUserGuidedoc'
+htmlhelp_basename = 'HyperspyUserGuidedoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -182,7 +182,7 @@ htmlhelp_basename = 'EELSLabUserGuidedoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'EELSLabUserGuide.tex', u'EELSLab User Guide',
+  ('index', 'HyperspyUserGuide.tex', u'Hyperspy User Guide',
    u'Francisco de la Peña, Michael Sarahan', 'manual'),
 ]
 
@@ -215,7 +215,7 @@ latex_logo = '_static/hyperspy_logo.png'
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'eelslabuserguide', u'EELSLab User Guide Documentation',
+    ('index', 'hyperspyuserguide', u'Hyperspy User Guide Documentation',
      [u'Francisco de la Peña, Michael Sarahan'], 1)
 ]
 
@@ -223,7 +223,7 @@ man_pages = [
 # -- Options for Epub output ---------------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = u'EELSLab User Guide'
+epub_title = u'Hyperspy User Guide'
 epub_author = u'Francisco de la Peña, Michael Sarahan'
 epub_publisher = u'Francisco de la Peña, Michael Sarahan'
 epub_copyright = u'2011, Francisco de la Peña, Michael Sarahan'

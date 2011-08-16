@@ -1,7 +1,7 @@
 Tutorials
 ++++++++++++++++
 
-The tutorial files are in the tutorial folder of your home directory that will be generated the first time that you start EELSLab.
+The tutorial files are in the tutorial folder of your home directory that will be generated the first time that you start Hyperspy.
 
 In GNOME you can directly start the terminal in the mva folder or, alternatively, navigate to that folder by typing the following in the terminal prompt
 
@@ -18,13 +18,13 @@ Multivariate analysis
 Tutorial 1: Basic PCA/ICA workflow
 -------------------------------------------------------
 
-For this example we will use the file `CL1_eelslab.nc` that contains a simulated EELS SI.
+For this example we will use the file `CL1_hyperspy.nc` that contains a simulated EELS SI.
 
 We start by loading and plotting the data:
 
 .. code-block:: python
 
-    s = load('CL1_eelslab.nc')
+    s = load('CL1_hyperspy.nc')
     s.plot()
 
 
@@ -94,7 +94,7 @@ You can plot the new Spectrum object sc too see how your PCA model looks like.
     
     If you did not close the `s` plots you may have noticed that their cursors are synchronised
 
-To save the new Spectrum file in EELSLab's netCDF file format:
+To save the new Spectrum file in Hyperspy's netCDF file format:
 
 .. code-block:: python
 
@@ -116,7 +116,7 @@ And to see the result:
 
 Tutorial 2: Better SNR -> Better ICA
 -------------------------------------
-For this example we will use the file `CL2_eelslab.nc` that contains a simulated EELS SI.
+For this example we will use the file `CL2_hyperspy.nc` that contains a simulated EELS SI.
 
 The SI is identical to the former one, but with higher SNR. Do the full treatment as in :ref:`example1-label`. Is the ICA result any better?
 
@@ -129,21 +129,21 @@ Tutorial 3: Correcting energy instabilities
 --------------------------------------------
 Real data (unlike simulated ones) use to suffer from energy instabilities. In this tutorial we will see how to partially correct its effect by aligning the SI using an spectral feature that is known to be fixed in energy, ideally the zero loss peak (ZLP).
 
-For this example we will use the files `CL3_eelslab.nc` and `LL3_eelslab.nc` that contais a simulated EELS SIs.
+For this example we will use the files `CL3_hyperspy.nc` and `LL3_hyperspy.nc` that contais a simulated EELS SIs.
 
-The SI is identical to `CL1_eelslab.nc`, but it suffers from poor energy stability.
+The SI is identical to `CL1_hyperspy.nc`, but it suffers from poor energy stability.
 
-If we perform the PCA analysis as in :ref:`example1-label` we can observe in the scree plot that the number of principal components has increased. Fortunatelly, we had acquired a low loss SI simultaneously ( LL3_eelslab.nc ) that we will use to correct the energy instability.
+If we perform the PCA analysis as in :ref:`example1-label` we can observe in the scree plot that the number of principal components has increased. Fortunatelly, we had acquired a low loss SI simultaneously ( LL3_hyperspy.nc ) that we will use to correct the energy instability.
 
 First load the data:
 
 .. code-block:: python
 
     # Load the CL
-    cl = load('CL3_eelslab.nc')
+    cl = load('CL3_hyperspy.nc')
 
     # Load the LL
-    ll = load('LL3_eelslab.nc')
+    ll = load('LL3_hyperspy.nc')
 
 
 .. NOTE::
@@ -179,14 +179,14 @@ Once aligned you can perform again the PCA and check that the scree plot gets cl
 
 Tutorial 4: Removing spikes
 ----------------------------
-For this example we will use the file `CL4_eelslab.nc` and  `LL3_eelslab.nc` that contain a simulated EELS SIs.
+For this example we will use the file `CL4_hyperspy.nc` and  `LL3_hyperspy.nc` that contain a simulated EELS SIs.
 
-The SI is identical to `CL1_eelslab.nc`, but it suffers from X-rays spikes and
+The SI is identical to `CL1_hyperspy.nc`, but it suffers from X-rays spikes and
 the same energy instabilities found in  :ref:`tutorial3-label`.
 
 If we perform the PCA analysis as in :ref:`example1-label` we can observe in the scree plot that the number of principal components has increased.
 
-EELSLab has three Spectrum methods to deal with spikes: `spikes_diagnosis`, `plot_spikes` and `remove_spikes`.
+Hyperspy has three Spectrum methods to deal with spikes: `spikes_diagnosis`, `plot_spikes` and `remove_spikes`.
 
 The workflow for spikes removal is as follows:
 
@@ -223,11 +223,11 @@ To quantify EEL spectra it is important to accurately define certain
 experimental parameters. The microscope parameters are stored in the 
 ``silib.microscope.microscope`` class.
 The parameters by default are defined in the :file:`microscopes.csv` file that is
-placed in the configuration directory (see :ref:`configuring-eelslab-label` to
+placed in the configuration directory (see :ref:`configuring-hyperspy-label` to
 find out where is your configuration directory). Each microscope has a name
-associated to it and you can define the default microscope in the :file:`eelslabrc`
-file (see :ref:`configuring-eelslab-label`).
-To modify the parameters from an eelslab interactive session simply change the
+associated to it and you can define the default microscope in the :file:`hyperspyrc`
+file (see :ref:`configuring-hyperspy-label`).
+To modify the parameters from an hyperspy interactive session simply change the
 attributes of the microscope class, e.g.:
 
 .. code-block:: python

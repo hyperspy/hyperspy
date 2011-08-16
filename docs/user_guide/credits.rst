@@ -5,7 +5,7 @@ Credits
 *******
 
 
-The project was started by Francisco de la Peña in 2007 under the EELSLab name.
+The project was started by Francisco de la Peña in 2007 under the Hyperspy name.
 
 In 2010 Stefano Mazzucco joined the project.
 

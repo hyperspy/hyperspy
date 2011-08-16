@@ -1,4 +1,4 @@
-Installing EELSLab
+Installing Hyperspy
 ==================
 
 

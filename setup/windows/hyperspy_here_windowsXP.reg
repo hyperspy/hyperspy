@@ -1,0 +1,5 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_LOCAL_MACHINE\Software\Classes\Folder\Shell\Hyperspy here]
+[HKEY_LOCAL_MACHINE\Software\Classes\Folder\Shell\Hyperspy here\Command]
+@="C:\Program Files\Console 2 Beta\Console2\console.exe -d %1"

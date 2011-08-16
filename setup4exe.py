@@ -14,9 +14,9 @@ includes.append('wx.*')
 #includes.append('mdp')
 #includes.append('netCDF4')
 
-data_files = [('eelslab/data', ['d:\\Python/eelslab/src/data/edges_db.csv']),
-              ('eelslab/data', ['d:\\Python/eelslab/src/data/microscopes.csv']),
-              ('eelslab/data', ['d:\\Python/eelslab/src/data/eelslabrc']),
+data_files = [('hyperspy/data', ['d:\\Python/hyperspy/src/data/edges_db.csv']),
+              ('hyperspy/data', ['d:\\Python/hyperspy/src/data/microscopes.csv']),
+              ('hyperspy/data', ['d:\\Python/hyperspy/src/data/hyperspyrc']),
               ('', ['c:\\Python27/Lib/site-packages/HDF5DLL.DLL']),
               ('', ['c:\\Python27/Lib/site-packages/HDF5_HLDLL.DLL']),
               ('', ['c:\\Python27/Lib/site-packages/NETCDF.DLL']),
@@ -36,7 +36,7 @@ data_files.extend(matplotlib.get_py2exe_datafiles())
 includes.extend(["matplotlib.backends", "matplotlib.backends.backend_wxagg",])
 
 
-setup(console=['eelslab.py'],
+setup(console=['hyperspy.py'],
       options = {
           "py2exe": 
               {"includes": includes,

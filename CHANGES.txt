@@ -5,15 +5,15 @@ Enhancements
 
 * The egerton quantification gui now supports signal integratal mapping when the background is not defined
 * The keywords in the rpl file are now sorted
-* Changes to the eelslab specific ripple keyword names to make them less EELSish: the x-*,y-* and energy-* keys are now width-*, height-* and energy-*
+* Changes to the hyperspy specific ripple keyword names to make them less EELSish: the x-*,y-* and energy-* keys are now width-*, height-* and energy-*
 * New method: 'interactive_browsing' for class DictBrowser
 * DictBrowser returns a sorted list when using ls()
 
 BUGS Fixed:
 -----------
 * When reading ripple files the depth-scale now superseds ev-per-channel
-* eelslab was overwriting the ipython script
-* In win32 with no DM installed an error was raised when running eelslab for the first time
+* hyperspy was overwriting the ipython script
+* In win32 with no DM installed an error was raised when running hyperspy for the first time
 
 
 v0.2.12 beta
@@ -39,7 +39,7 @@ Enhancements
 
 Bugs fixed
 ----------
-* EELSLab was not finding the DM path when a 32 bits DM was installed in a 64-bits Windows
+* Hyperspy was not finding the DM path when a 32 bits DM was installed in a 64-bits Windows
 * The new dm3reader was suffering from some bugs, the default reader is back to the old code until the issues are fixed
 
 
@@ -158,7 +158,7 @@ v0.2.4, 03/11/2010
 * The poissonian noise normalization uses a masks to avoid errors with rows or columns that are always zero
 * The dm3 reader was improved and should now read most of the data types.
 * The load function got a new option, data_type, that can be used to force the file to be read as a spectrum or image instead of using the autodetection (default)
-* In windows it is now possible (as it always has been in linux) to start eelslab by simply typing eelslab in the command prompt
+* In windows it is now possible (as it always has been in linux) to start hyperspy by simply typing hyperspy in the command prompt
 * Several bugs fixed
 
 v0.2.3b, 31/10/2010 -- Initial release.

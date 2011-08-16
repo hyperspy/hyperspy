@@ -1,17 +1,17 @@
 Getting started
 ***************
 
-First steps with eelslab
+First steps with hyperspy
 ========================
 
-Starting eelslab
+Starting hyperspy
 ----------------
 
-To start eelslab type in a console:
+To start hyperspy type in a console:
 
 .. code-block:: bash
 
-    eelslab
+    hyperspy
 
 .. NOTE::
 
@@ -43,7 +43,7 @@ files) simply type:
    The filename *must* include the extension
 
 If the loading was successful, the variable :guilabel:`s` now contains a python object 
-that can be an ``Image`` or ``Spectrum`` instance. EELSLab will try to guess the 
+that can be an ``Image`` or ``Spectrum`` instance. Hyperspy will try to guess the 
 most convenient data type. However, you can force it to read the data as 
 a particular data type by providing the keyword ``data_type`` that can take the 
 values :guilabel:`SI` or :guilabel:`Image`, e.g.:
@@ -52,15 +52,15 @@ values :guilabel:`SI` or :guilabel:`Image`, e.g.:
 
     s = load('filename', data_type = 'SI')
 
-.. _configuring-eelslab-label:
+.. _configuring-hyperspy-label:
 
-Configuring eelslab
+Configuring hyperspy
 -------------------
 
-You can configure some parameters of eelslab by editing the :file:`eelslabrc` 
+You can configure some parameters of hyperspy by editing the :file:`hyperspyrc` 
 file. The location of the configuration file depends on the system. 
 You can find its path by calling the ```get_configuration_directory_path``` 
-function in the eelslab prompt:
+function in the hyperspy prompt:
 
 .. code-block:: bash
 
@@ -76,7 +76,7 @@ data when loading it:
     # First we load some data
     s = load('YourDataFilenameHere')
     # (in the defaults setting nothing is plotted, unless you can changed the 
-    # defaults in the eelslabrc file)
+    # defaults in the hyperspyrc file)
     #
     # Now we will change the setting at runtime
     defaults.plot_on_load = True
@@ -161,7 +161,7 @@ To close all the figures type:
 
 
 This is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command. 
-Matplotlib is the library that eelslab uses to produce the plots. To learn how 
+Matplotlib is the library that hyperspy uses to produce the plots. To learn how 
 to pan/zoom and more a matplotlib plot 
 `check here <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
 

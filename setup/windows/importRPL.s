@@ -1,6 +1,6 @@
 //Last update on 10/Ago/2011
 //
-// Copyright © 2011 Luiz Fernando Zagonel
+// Copyright ï¿½ 2011 Luiz Fernando Zagonel
 // ImportRPL is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
@@ -12,12 +12,12 @@
 // GNU General Public License for more details.
 
 // You should have received a copy of the GNU General Public License
-// along with EELSLab; if not, write to the Free Software
+// along with Hyperspy; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 // USA
 
 //  This script is designed to import Ripple files into Digital Micrograph. 
-//  It is used to easy data transit between DigitalMicrograph and EELSLab. 
+//  It is used to easy data transit between DigitalMicrograph and Hyperspy. 
 //  The script will ask for 2 files: 
 //          1- the riple file with the data  format and calibrations 
 //          2- the data itself in raw format.

@@ -14,7 +14,7 @@ import os
 import sys
 import shutil
 
-import eelslab.Release as Release
+import hyperspy.Release as Release
 # clean the build directory so we aren't mixing Windows and Linux installations carelessly.
 if os.path.exists('build'):
     distutils.dir_util.remove_tree('build')
@@ -26,7 +26,7 @@ def are_we_building4windows():
         if 'wininst' in arg:
             return True
 
-scripts = ['bin/eelslab_compile_kica', 'bin/eelslab']
+scripts = ['bin/hyperspy_compile_kica', 'bin/hyperspy']
 
 if are_we_building4windows() or os.name in ['nt','dos']:
     # In the Windows command prompt we can't execute Python scripts 
@@ -48,22 +48,22 @@ if are_we_building4windows() or os.name in ['nt','dos']:
 version = Release.version
 
 setup(
-    name = "eelslab",
-    package_dir = {'eelslab': 'eelslab'},
+    name = "hyperspy",
+    package_dir = {'hyperspy': 'hyperspy'},
     version = version,
     #py_modules = ['', ],
-    packages = ['eelslab', 'eelslab.components', 'eelslab.io_plugins', 
-                'eelslab.drawing', 'eelslab.mva', 'eelslab.signals', 
-                'eelslab.bss','eelslab.gui', 'eelslab.tests', 
-                'eelslab.tests.io'],
+    packages = ['hyperspy', 'hyperspy.components', 'hyperspy.io_plugins', 
+                'hyperspy.drawing', 'hyperspy.mva', 'hyperspy.signals', 
+                'hyperspy.bss','hyperspy.gui', 'hyperspy.tests', 
+                'hyperspy.tests.io'],
     requires = install_req,
     scripts = scripts,
     package_data = 
     {
-        'eelslab': 
+        'hyperspy': 
             [
                 'ipython_profile/*',
-                'data/eelslabrc',
+                'data/hyperspyrc',
                 'data/*.m', 
                 'data/*.csv',
                 'data/*.tar.gz',
@@ -75,8 +75,8 @@ setup(
 		'tests/io/dm3_3D_data/*.dm3',
             ],
     },
-    author = Release.authors['F_DLP'][0],
-    author_email = Release.authors['F_DLP'][1],
+#    author = Release.authors['F_DLP'][0],
+#    author_email = Release.authors['F_DLP'][1],
     description = Release.description,
     long_description = open('README.txt').read(),
     license = Release.license,
