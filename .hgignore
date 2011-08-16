@@ -7,7 +7,7 @@ syntax: glob
 dist
 *.deb
 build/*
-eelslab.egg-info/*
+hyperspy.egg-info/*
 deb_dist/*
 ~.vimrc
 data/octave-core
