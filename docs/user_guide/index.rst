@@ -1,8 +1,8 @@
-.. _users-guide-index:
+.. _user-guide-index:
 
-############
-User's Guide
-############
+###########################
+Hyperspy User Guide (DRAFT)
+###########################
 
 .. toctree::
     :maxdepth: 2
