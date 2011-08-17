@@ -10,6 +10,7 @@ User's Guide
     intro.rst
     install.rst
     getting_started.rst
+    aggregate.rst
     mva.rst
     model.rst
     eels.rst
