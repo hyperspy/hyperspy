@@ -8,6 +8,7 @@ Hyperspy User Guide (DRAFT)
     :maxdepth: 2
     
     intro.rst
+    what_is_new.rst
     install.rst
     getting_started.rst
     aggregate.rst
