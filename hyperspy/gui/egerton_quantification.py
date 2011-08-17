@@ -192,5 +192,3 @@ def energy_window_dependency(s, left, right, min_width = 10):
     ax2.set_title('As')
     ax2.set_xlabel('Energy')
     return rs, As
-
-plt.show()

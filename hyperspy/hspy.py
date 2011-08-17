@@ -24,10 +24,10 @@
 
 from enthought.etsconfig.api import ETSConfig
 import matplotlib
-if matplotlib.get_backend() != 'WXAgg':
-    ETSConfig.toolkit ='null'
-else:
-    ETSConfig.toolkit ='wx'
+#if matplotlib.get_backend() != 'WXAgg':
+#    ETSConfig.toolkit ='null'
+#else:
+#    ETSConfig.toolkit ='wx'
 
 matplotlib.rcParams['image.cmap'] = 'gray'
 from hyperspy import Release

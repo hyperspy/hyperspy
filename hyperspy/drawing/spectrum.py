@@ -167,5 +167,3 @@ class SpectrumLine():
             self.ax.figure.canvas.draw()
         except:
             pass
-        
-plt.show()
