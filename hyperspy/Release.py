@@ -27,10 +27,11 @@ description = "Hyperspectral data analysis toolbox"
 
 license = 'GPL v3'
 
-authors = {'F_DLP' : (u'Francisco de la Peña'),
-           'S_M'    : ('Stefano Mazzucco'),
-           'M_S'    : ('Michael Sarahan'),
-           }
+authors = {
+    'F_DLP' : (u'Francisco de la Peña', 'hyperspy-devel@googlegroups.com'),
+    'S_M'    : ('Stefano Mazzucco', 'hyperspy-devel@googlegroups.com'),
+    'M_S'    : ('Michael Sarahan', 'hyperspy-devel@googlegroups.com'),
+    'all'    : ('The Hyperspy developers', 'hyperspy-devel@googlegroups.com'),}
 
 url = 'http://www.hyperspy.org'
 
