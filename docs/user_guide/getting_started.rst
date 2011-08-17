@@ -13,27 +13,42 @@ To start hyperspy type in a console:
 
     hyperspy
 
+If everythig goes well Hyperspy should welcome you with a message similar to:
+
+.. code-block:: ipython
+    
+    H y p e r s p y
+    Version 0.3.0
+    
+    Copyright (C) 2007-2010 Francisco de la Peña
+    Copyright (C) 2010-2011 F. de la Peña, S. Mazzucco, M. Sarahan
+    
+    http://www.hyperspy.org
+
+
 .. NOTE::
 
    If you are using GNOME in Linux, you can open a terminal in a folder by 
-   choosing "open terminal" in the file menu if nautilus-open-terminal is 
+   choosing :menuselection:`open terminal` in the file menu if 
+   :program:`nautilus-open-terminal` is 
    installed in your system.
-   A similar feature is available in Windows 7 and Windows Vista when pressing 
-   the Shift key and the right mouse button. For more comfort in Windows it is 
-   recommended to install `Console2
-   <http://sourceforge.net/projects/console/>`_
-   Alternatively, in Windows Vista and 7, you can navigate to the
+   A similar feature is available in :program:`Windows Vista` or newer when pressing :kbd:`Shift Right-Mouse-Button`.
+
+   Alternatively, if you are using :program:`Windows Vista` or newer, you can navigate to the
    folder with your data files, and then click in the address bar.
    Enter cmd, then press enter.  A command prompt will be opened in
-   the folder with your data.
+   that folder.
+   
+.. NOTE::
+       For more comfort in Windows it is recommended to use 
+       `Console2 <http://sourceforge.net/projects/console/>`_ instead of the default terminal of that platform.    
 
 
 Loading data
 -----------------------
 
 
-To load a supported file (e.g. NetCDF, dm3, MSA, MRC, ser, emi or many image 
-files) simply type:
+To load from a supported file format (see :ref:`supported-file-formats`) simply type:
 
 .. code-block:: python
 
