@@ -12,7 +12,7 @@ Welcome to Hyperspy's documentation!
    
     user_guide/index.rst
     tutorials/tutorials.rst
-    api/index.rst
+    api/modules.rst
     credits.rst
 
 
