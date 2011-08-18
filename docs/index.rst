@@ -9,14 +9,17 @@ Welcome to Hyperspy's documentation!
 
 .. toctree::
     :maxdepth: 2
-   
+
     user_guide/index.rst
     tutorials/tutorials.rst
-    examples.rst
     api/modules.rst
     credits.rst
+    
+.. htmlonly::
+   - `Examples <examples/index.html>`_ 
 
 
+   
 Indices and tables
 ==================
 

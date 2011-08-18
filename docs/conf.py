@@ -14,6 +14,7 @@
 import sys, os
 sys.path.append('../')
 from hyperspy import Release
+sys.path.append(os.path.abspath('sphinxext'))
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -27,7 +28,8 @@ from hyperspy import Release
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc'] #, 'rst2pdf.pdfbuilder']
+extensions = ['sphinx.ext.autodoc', 'gen_rst', 
+'matplotlib.sphinxext.only_directives'] #, 'rst2pdf.pdfbuilder']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
