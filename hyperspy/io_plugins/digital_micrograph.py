@@ -22,7 +22,7 @@ import os.path
 
 import numpy as np
 
-from dm3reader_hyperspy import parseDM3
+from hyperspy.misc.dm3reader import parseDM3
 from hyperspy import messages
 
 # Plugin characteristics

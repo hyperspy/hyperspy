@@ -1,4 +1,10 @@
-s = Signal({'data' : np.random.random((16,32,32))})
-s.axes_manager.axes[1].slice_bool = True
-s.plot()
+import numpy as np
+import matplotlib.pyplot as plt
+
+from hyperspy.signals.image import Image
+
+if __name__ == '__main__':
+    s = Image({'data' : np.random.random((16,32,32))})
+    s.plot()
+    plt.show()
 

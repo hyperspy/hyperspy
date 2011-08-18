@@ -42,7 +42,7 @@ from hyperspy.exceptions import *
 import hyperspy.misc.utils
 from hyperspy.misc.utils_varia import overwrite, swapelem
 from hyperspy.misc.utils_varia import DictBrowser, fsdict
-from hyperspy.io_plugins.dm3reader_hyperspy import parseDM3
+from hyperspy.misc.dm3reader import parseDM3
 #from hyperspy.misc.utils_varia import overwrite, swapelem
 #from hyperspy.misc.utils_varia import DictBrowser, fsdict
 
