@@ -1,29 +1,29 @@
 # -*- coding: utf-8 -*-
 # Copyright © 2011 Michael Sarahan
 #
-# This file is part of EELSLab.
+# This file is part of hyperspy.
 #
-# EELSLab is free software; you can redistribute it and/or modify
+# hyperspy is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 #
-# EELSLab is distributed in the hope that it will be useful,
+# hyperspy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with EELSLab; if not, write to the Free Software
+# along with hyperspy; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
 # USA
 
-from eelslab.signal import Signal, Parameters
-from eelslab.signals.image import Image
-from eelslab.signals.spectrum import Spectrum
+from hyperspy.signal import Signal, Parameters
+from hyperspy.signals.image import Image
+from hyperspy.signals.spectrum import Spectrum
 import enthought.traits.api as t
-from eelslab.mva.mva import MVA_Results
-from eelslab.axes import AxesManager
+from hyperspy.mva.mva import MVA_Results
+from hyperspy.axes import AxesManager
 
 import numpy as np
 import mdp
