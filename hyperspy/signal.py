@@ -254,6 +254,19 @@ class Signal(t.HasTraits, MVA):
         tui.Item('units'),
         tui.Item('offset'),
         tui.Item('scale'),)
+
+    def plot_residual(self, axes_manager=None):
+        """Plot the residual between original data and reconstructed data
+
+        Requires you to have already run PCA or ICA, and to reconstruct data 
+        using either the pca_build_SI or ica_build_SI methods.
+        """
+        
+        if hasattr(self, 'residual'):
+            self.residual.plot(axes_manager)
+        else:
+            print "Object does not have any residual information.  Is it a \
+reconstruction created using either pca_build_SI or ica_build_SI methods?"
     
     def save(self, filename, only_view = False, **kwds):
         """Saves the signal in the specified format.

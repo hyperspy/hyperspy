@@ -513,8 +513,11 @@ class MVA():
         -------
         Signal instance
         """
-        return self._calculate_recmatrix(components=components, mva_type='pca',
+        rec=self._calculate_recmatrix(components=components, mva_type='pca',
                                          on_peaks=on_peaks)
+        rec.residual=rec.copy()
+        rec.residual.data=self.data-rec.data
+        return rec
         
     def ica_build_SI(self,components = None, on_peaks=False):
         """Return the spectrum generated with the selected number of 
@@ -884,7 +887,7 @@ class MVA():
             the will be name ic-0, ic-1 ...
         image_format : string
         spectrum_format : string
-        rectmatrix : None or numpy array
+        recmatrix : None or numpy array
             externally supplied recmatrix
         ic : None or numpy array 
             externally supplied IC
