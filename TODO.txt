@@ -1,2 +1,0 @@
-- Add a Churazov variance estimator (spatial an/or spectral) 
-    https://astrophysics.gsfc.nasa.gov/XSPECwiki/low_count_spectra
