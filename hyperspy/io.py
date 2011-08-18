@@ -22,10 +22,10 @@ import os
 
 from hyperspy import messages
 from hyperspy.defaults_parser import defaults
-from hyperspy.io_plugins import (netcdf, msa, dm3_data_plugin, fei, mrc, image, 
+from hyperspy.io_plugins import (netcdf, msa, digital_micrograph, fei, mrc, image, 
 ripple, hdf5)
 
-io_plugins = (netcdf, msa, dm3_data_plugin, fei, mrc, image, ripple, hdf5)
+io_plugins = (netcdf, msa, digital_micrograph, fei, mrc, image, ripple, hdf5)
 def load(*filenames, **kwds):
     """
     Load potentially multiple supported file into an EELSLab structure
