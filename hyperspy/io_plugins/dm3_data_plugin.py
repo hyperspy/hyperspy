@@ -23,6 +23,162 @@
 
 # Plugin to read the Gatan Digital Micrograph(TM) file format
 
+# Tags structure
+#DM3
+# |---ApplicationBounds*
+# |---Version* {custom}
+# |---isLittleEndian* {custom}
+# |---FileSize* {custom}
+# |---DocumentObjectList
+#     |---DocumentTags
+#          |---HasWindowPosition*
+#          |---Image Behavior
+#          |   |---UnscaledTransform
+#          |   |   |---[...]
+#          |   |
+#          |   |---IsZoomedToWindow*
+#          |   |---ImageDisplayBounds*
+#          |   |---DoIntegralZoom*
+#          |   |---ImageList
+#          |       |---ImageSourceList
+#          |       |   |---[...]
+#          |       |   |---[...]
+#          |       |
+#          |       |---Group[ID]
+#          |           |---ImageData
+#          |               |---ImageTags
+#          |               |   |---Camera {ASU - JEOL2010 - EELS}
+#          |               |   |   |---Device
+#          |               |   |   |   |---Camera Number*
+#          |               |   |   |   |---Active Size (pixels)*
+#          |               |   |   |   |---CCD
+#          |               |   |   |   |   |---Pixel Size (um)*
+#          |               |   |   |   |   |---Configuration
+#          |               |   |   |   |       |---Source*
+#          |               |   |   |   |       |---Name*
+#          |               |   |   |   |       |---Transpose
+#          |               |   |   |   |           |---[...]
+#          |               |   |   |   |---Frame
+#          |               |   |   |       |---Parameters
+#          |               |   |   |       |   |---Acquisition Write Flags*
+#          |               |   |   |       |   |---Base Detector
+#          |               |   |   |       |       |---[...]
+#          |               |   |   |       | 
+#          |               |   |   |       |---Area
+#          |               |   |   |           |---Transform
+#          |               |   |   |           |   |---[...]
+#          |               |   |   |           | 
+#          |               |   |   |           |---CCD
+#          |               |   |   |               |---Intensity
+#          |               |   |   |               |---Pixel Size (um)
+#          |               |   |   |---EELS
+#          |               |   |       |---Meta Data
+#          |               |   |       |   |---Signal*
+#          |               |   |       |   |---Format*
+#          |               |   |       |   |---Acquisition Mode*
+#          |               |   |       |   |---Microscope Info
+#          |               |   |       |       |---Imaging Mode*
+#          |               |   |       |       |---Emission Current (uA)*
+#          |               |   |       |       |---Illumination Mode*
+#          |               |   |       |       |---Cs(mm)*
+#          |               |   |       |       |---Items
+#          |               |   |       |           |---Voltage*
+#          |               |   |       |           |---Specimen*
+#          |               |   |       |           |---Microscope*
+#          |               |   |       |           |---Operation Mode*
+#          |               |   |       |           |---Probe Current (nA)*
+#          |               |   |       |           |---Operator*
+#          |               |   |       |           |---Probe Size (nm)*
+#          |               |   |       |           |---Group[X]
+#          |               |   |       |               |---[...]
+#          |               |   |       |---Acquisition
+#          |               |   |           |---Number of frames
+#          |               |   |           |---Integration time (s)
+#          |               |   |           |---End time
+#          |               |   |           |---Experimental Conditions
+#          |               |   |           |---Saturation fraction
+#          |               |   |           |---Exposure (s)
+#          |               |   |           |---Date
+#          |               |   |           |---Spectrometer
+#          |               |   |   
+#          |               |   |---Microscope Info {ORSAY}
+#          |               |   |   |---Microscope*
+#          |               |   |   |---Private
+#          |               |   |       |---DataBar
+#          |               |   |       |   |---Applied*
+#          |               |   |       |
+#          |               |   |       |---Processing
+#          |               |   |           |---3 windows
+#          |               |   |           |   |---dispaly bgd*
+#          |               |   |           |   |---fit*
+#          |               |   |           |
+#          |               |   |           |---spim
+#          |               |   |               |---detectors
+#          |               |   |                   |---1*
+#          |               |   |                   |---eels
+#          |               |   |                       |---gain ID*
+#          |               |   |                       |---energy shift*
+#          |               |   |                       |---dwell time*
+#          |               |   |                       |---version*
+#          |               |   |                       |---data type*
+#          |               |   |                       |---nb spectra per pixel*
+#          |               |   |                       |---label x*
+#          |               |   |---Private
+#          |               |   |   |---DataBar
+#          |               |   |       |---Applied*
+#          |               |   |
+#          |               |   |---Name*
+#          |               |   |---UniqueID
+#          |               |       |---Data0*
+#          |               |       |---Data1*
+#          |               |       |---Data2*
+#          |               | 
+#          |               |---Calibrations
+#          |                   |---DataType*
+#          |                   |---Data*
+#          |                   |---Dimensions
+#          |                   |   |---PixelDepth
+#          |                   |   |---Data[X]*
+#          |                   |
+#          |                   |---Brightness
+#          |                       |---Units*
+#          |                       |---Origin*
+#          |                       |---Scale*
+#          |                       |---Dimension
+#          |                           |---DisplayCalibratedUnits*
+#          |                           |---Group[X]
+#          |                               |---Origin*
+#          |                               |---Units*
+#          |                               |---Scale*
+#          |---Group[ID]
+#              |---AnnotationGroupList
+#                  |---AnnotationType*
+#                  |---ForegroundColor*
+#                  |---HasBackground*
+#                  |---FillMode*
+#                  |---BackgroundMode*
+#                  |---BackgroundColor*
+#                  |---ImageDisplayInfo
+#                      |---CaptionOn*
+#                      |---Contrast*
+#                      |---ImageDisplayType*
+#                      |---ComplexRange*
+#                      |---Brightness*
+#                      |---ContrastMode*
+#                      |---CLUTName*
+#                      |---CLUT*
+#                      |---ObjectTags*
+#                      |---IsTranslatable*
+#                      |---IsVisible*
+#                      |---IsSelectable*
+#                      |---BrightColor*
+#                      |---ImageSource*
+#                      |---IsResizable*
+#                      |---IsMoveable*
+#                      |---ComplexMode*
+#                      |---DimensionLabels
+#                          |---[...]
+
 from __future__ import with_statement #for Python versions < 2.6
 from __future__ import division
 
