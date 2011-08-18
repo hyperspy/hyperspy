@@ -8,7 +8,7 @@ import scipy.optimize
 import matplotlib.pyplot as plt
 import numpy
 
-from enthought.traits.api import HasTraits, File, String, Bool, List, ListBool
+from enthought.traits.api import HasTraits, File, Bool, List
 from enthought.traits.ui.api import View, Handler, Group, Item,SetEditor
 
 from hyperspy import *
