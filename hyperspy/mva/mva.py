@@ -40,60 +40,6 @@ from hyperspy.defaults_parser import defaults
 from hyperspy import messages
 from hyperspy.misc import config_dir
 from exceptions import *
-
-def compile_kica():
-    kica_path = os.path.join(config_dir.data_path, 'kica')
-    kica_compile = os.path.join(config_dir.data_path, 'kica_compile.m')
-    # print('Running "octave -q %s %s"' % (kica_compile, kica_path))
-    return os.system('octave -q %s %s' % (kica_compile, kica_path))
-
-def perform_kica(pc):
-    """Wrapper for kernel independent components analysis that runs in octave 
-    (octave is required).
-    """
-#    import subprocess
-    # Until I get pytave working, a temporary file is necessary to interact 
-    # with octave
-    fd, temp_file = tempfile.mkstemp(suffix = '.mat')
-#    subprocess.call('command --output %s' % temp_file)
-    kica_file = os.path.join(config_dir.data_path, 'kica.m')
-    kica_path = os.path.join(config_dir.data_path, 'kica')
-    print('octave %s %s %s' % (kica_file, temp_file, kica_path))
-    # The recommend parameters for kica depend on the number of energy channels
-    sp.io.savemat(temp_file, {'x' : pc.T})
-    def call_kica():
-        os.system('octave %s %s %s' % (kica_file, temp_file, kica_path)) 
-        w = sp.io.loadmat(temp_file)['w']
-        os.close(fd)
-        os.remove(temp_file)
-        # TODO: although it works, there is an annoying warning that someone 
-        # should investigate
-        return w
-    try:
-        return call_kica()
-    except:
-        try:
-            # Try to compile
-            compile_kica()
-            return call_kica()
-        except:
-            messages.warning('It is not possible to run the KICA algorithm.\n'
-            'Verify that:'
-            '- Octave is istalled\n'
-            '- If you are running Windows, define the octave path\n'
-            '- kica has been compiled for your platform:\n'
-            '   call the hyperspy function mva.compile_kica().'
-            '   (Note that root privilages may be required)'
-            '   In Linux you can simple run \'sudo hyperspy_compile_kica\' in a'
-            '    terminal')
-    try:
-
-        # Delete the temporary file if it still exists.
-        if os.path.isfile(temp_file):
-            os.remove(temp_file)
-    except:
-        pass
-    
         
 class MVA():
     """
@@ -328,13 +274,13 @@ class MVA():
     comp_list = None, mask = None, on_peaks=False, **kwds):
         """Independent components analysis.
         
-        Available algorithms: FastICA, JADE, CuBICA, TDSEP, kica, MILCA
+        Available algorithms: FastICA, JADE, CuBICA, and TDSEP
         
         Parameters
         ----------
         number_of_components : int
             number of principal components to pass to the ICA algorithm
-        algorithm : {FastICA, JADE, CuBICA, TDSEP, kica, milca}
+        algorithm : {FastICA, JADE, CuBICA, TDSEP}
         diff : bool
         diff_order : int
         pc : numpy array
@@ -368,16 +314,7 @@ class MVA():
                 pc = np.diff(pc, diff_order, axis = 0)
             if mask is not None:
                 pc = pc[mask, :]
-            if algorithm == 'kica':
-                target.w = perform_kica(pc)
-            elif algorithm == 'milca':
-                try:
-                    import milca
-                except:
-                    messages.warning_exit('MILCA is not installed')
-                # first centers and scales data
-                invsqcovmat, pc = center_and_scale(pc).itervalues()
-                target.w = np.dot(milca.milca(pc, **kwds), invsqcovmat)
+
             else:
                 # first centers and scales data
                 invsqcovmat, pc = center_and_scale(pc).itervalues()
