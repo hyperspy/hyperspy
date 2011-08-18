@@ -858,37 +858,7 @@ class MVA():
                     pl[i].save('map_ic-%s.%s' % (element, image_format))
                 else:
                     pl[i].save('profile_ic-%s.%s' % (element, spectrum_format))
-                    
-    def snica(self, coordinates = None):
-        """Stochastic Non-negative Independent Component Analysis.
-        
-        Is intended to be used with a denoised SI, i.e. by PCA. The method will 
-        store the demixed components to self.ic
-        
-        Parameters
-        -----------
-        coordinates: tuple of 2 integral tuples or None
-            If None, all the SI will be analyzed. Otherwise only the coordinates 
-            defined by the tuples.
-        
-        Returns
-        -------
-        A 2 rows array. First row are the demixed components in the format 
-        (channels, components) and the second row is the mixing matrix.
-        """
-        if coordinates is None:
-            fold_back = utils.self.unfold_if_multidim()
-            ic = self.data.squeeze()
-        else:
-            clist = []
-            for coord in coordinates:
-                clist.append(self.data[:,coord[0], coord[1]])
-            ic = np.array(clist).T
-        snica = utils.snica(ic)
-        target.ic = snica[0]
-        if fold_back is True: self.fold()
-        return snica
-    
+                        
     def als(self, **kwargs):
         """Alternate Least Squares imposing positivity constraints 
         to the result of a previous ICA

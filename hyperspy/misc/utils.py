@@ -720,26 +720,7 @@ def ALS(s, thresh =.001, nonnegS = True, nonnegC = True):
     exec('als_result = rpy.r.test%s' % i)
     return als_result
 
-def snica(to_demix):
-    """Stochastic Non-negative Independent Component Analysis
-    Wrapper around the SNICA ICA algorithm by Sergey Astakhov.
-    http://www.klab.caltech.edu/~kraskov/MILCA/
-    
-    Parameters
-    ---------
-    to_demix : array
-        spectra to demix
-     
-    Returns
-    -------
-    tuple : demixed spectra and mixing matrix    
-    """
-    import snica_b
-    # High temperature T=0.02 step
-    y, ae = snica_b.snica_b(to_demix.T, np.eye(to_demix.shape[1]), 0.2, 0.02, 500, 10)
-    # Annealing at T=1e-7
-    y, ae = snica_b.snica_b(y, ae, 0.2, 1e-7, 500, 10)
-    return y.T,ae
+
 
 def amari(C,A):
     """Amari test for ICA

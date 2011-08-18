@@ -191,13 +191,13 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
                                        comp_list = None, mask = None, **kwds):
         """Independent components analysis.
         
-        Available algorithms: FastICA, JADE, CuBICA, TDSEP, kica, MILCA
+        Available algorithms: FastICA, JADE, CuBICA, TDSEP
         
         Parameters
         ----------
         number_of_components : int
             number of principal components to pass to the ICA algorithm
-        algorithm : {FastICA, JADE, CuBICA, TDSEP, kica, milca}
+        algorithm : {FastICA, JADE, CuBICA, TDSEP}
         diff : bool
         diff_order : int
         pc : numpy array
