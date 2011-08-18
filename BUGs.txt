@@ -1,3 +1,0 @@
-- The position of the rectable cursor is not correct after resizing
-- The the navigation with the keyboard is not "blit awared"
-- The spectrum plotting does not update the axis when using blit
