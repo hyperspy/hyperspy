@@ -190,17 +190,13 @@ import numpy as np
 
 from hyperspy.axes import DataAxis
 
-# relative imports are discouraged (PEP0008)
 from hyperspy.misc.utils_readfile import *
-#from hyperspy.misc.utils_readfile import *
 from hyperspy.exceptions import *
-#from hyperspy.exceptions import *
 import hyperspy.misc.utils
 from hyperspy.misc.utils_varia import overwrite, swapelem
 from hyperspy.misc.utils_varia import DictBrowser, fsdict
 from hyperspy.misc.dm3reader import parseDM3
-#from hyperspy.misc.utils_varia import overwrite, swapelem
-#from hyperspy.misc.utils_varia import DictBrowser, fsdict
+
 
 # Plugin characteristics
 # ----------------------
@@ -228,6 +224,8 @@ micinfo_pattern = re.compile('\.Microscope Info$')
 orsay_pattern = re.compile('\.spim$')
 # root_pattern = re.compile('^\w{1,}\.')
 image_tags_pattern = re.compile('.*ImageTags\.')
+document_tags_pattern = re.compile('.*DocumentTags\.')
+
 ####
 
 read_char = read_byte # dm3 uses chars for 1-Byte signed integers
@@ -598,7 +596,7 @@ def crawl_dm3(f, data_dict, endian, ntags, group_name='root',
                 orsay_search = orsay_pattern.search(group_name)
                 if orsay_search: # move orsay-specific dir in the ImageTags dir
                     o = 'Orsay' + orsay_search.group()
-                    r = image_tags_pattern.search(group_name).group()
+                    r = document_tags_pattern.search(group_name).group()
                     group_name = r + o
                 
                 micinfo_search = micinfo_pattern.search(group_name)
