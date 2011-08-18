@@ -26,7 +26,7 @@ def are_we_building4windows():
         if 'wininst' in arg:
             return True
 
-scripts = ['bin/hyperspy_compile_kica', 'bin/hyperspy']
+scripts = ['bin/hyperspy',]
 
 if are_we_building4windows() or os.name in ['nt','dos']:
     # In the Windows command prompt we can't execute Python scripts 
@@ -67,9 +67,6 @@ setup(
                 'data/*.m', 
                 'data/*.csv',
                 'data/*.tar.gz',
-                'data/kica/*.m',
-                'data/kica/*.c',
-                'data/kica/distributions/*.m',
 		'tests/io/dm3_1D_data/*.dm3',
 		'tests/io/dm3_2D_data/*.dm3',
 		'tests/io/dm3_3D_data/*.dm3',
