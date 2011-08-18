@@ -968,10 +968,6 @@ def file_reader(filename, record_by=None, order = None, data_id=1,
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
-
-    If 'old' is True, will use the old DM3 reader from digital_micrograph.py
-    module. That's way less powerful, but more reliable.
-    Hopefully, this option will be removed soon.
     
     Parameters
     ----------
