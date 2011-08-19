@@ -19,7 +19,7 @@ docs/user_guide/.build/*
 bin/*.bat
 setup/windows/requires/*
 setup/windows/reccomends/*
-examples/*.rst
-examples/data_navigation/*.rst
+docs/examples/*.rst
+docs/examples/data_navigation/*.rst
 
 
