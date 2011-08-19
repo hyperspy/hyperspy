@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright © 2007 Francisco Javier de la Peña
-# Copyright © 2010 Francisco Javier de la Peña & Stefano Mazzucco
+# Copyright 2010 Stefano Mazzucco
 #
-# This file is part of Hyperspy.
+# This file is part of dm3_data_plugin.
 #
-# Hyperspy is free software; you can redistribute it and/or modify
+# dm3_data_plugin is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 #
-# Hyperspy is distributed in the hope that it will be useful,
+# dm3_data_plugin is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.

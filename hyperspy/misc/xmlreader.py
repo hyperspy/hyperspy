@@ -2,6 +2,7 @@
 # http://code.activestate.com/recipes/116539/
 # which author is Christoph Dietze
 # In its original form it was distributed under the PSF license
+# and the same license applies to this file.
 
 from xml.dom.minidom import parseString
 

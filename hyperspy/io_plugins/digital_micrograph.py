@@ -1,27 +1,26 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-# Copyright © 2007 Francisco Javier de la Peña
-# Copyright © 2010 Francisco Javier de la Peña & Stefano Mazzucco
+# Copyright 2010 Stefano Mazzucco
+# Copyright 2011 The Hyperspy developers
 #
-# This file is part of Hyperspy.
+# This file is part of  Hyperspy. It is a fork of the original PIL dm3 plugin 
+# written by Stefano Mazzucco.
 #
-# Hyperspy is free software; you can redistribute it and/or modify
+#  Hyperspy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Hyperspy is distributed in the hope that it will be useful,
+#  Hyperspy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Hyperspy; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
-# USA
+# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 # Plugin to read the Gatan Digital Micrograph(TM) file format
+
+
 
 # Tags structure
 #DM3

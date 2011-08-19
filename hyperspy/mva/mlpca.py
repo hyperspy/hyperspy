@@ -1,22 +1,27 @@
 # -*- coding: utf-8 -*-
-# Copyright © 2007 Francisco Javier de la Peña
+# This file is a transcription of a MATLAB code obtained from the  
+# following research paper: Darren T. Andrews and Peter D. Wentzell, 
+# “Applications of maximum likelihood principal component analysis: 
+# incomplete data sets and calibration transfer,” 
+# Analytica Chimica Acta 350, no. 3 (September 19, 1997): 341-352.
+# 
+# Copyright 1997 Darren T. Andrews and Peter D. Wentzell
+# Copyright 2007-2011 The Hyperspy developers
 #
-# This file is part of Hyperspy.
+# This file is part of  Hyperspy.
 #
-# Hyperspy is free software; you can redistribute it and/or modify
+#  Hyperspy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Hyperspy is distributed in the hope that it will be useful,
+#  Hyperspy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Hyperspy; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
-# USA
+# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 

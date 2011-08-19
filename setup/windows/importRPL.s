@@ -1,6 +1,6 @@
 //Last update on 10/Ago/2011
 //
-// Copyright � 2011 Luiz Fernando Zagonel
+// Copyright 2011 Luiz Fernando Zagonel
 // ImportRPL is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
