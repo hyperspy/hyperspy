@@ -16,3 +16,4 @@ Hyperspy User Guide (DRAFT)
     model.rst
     eels.rst
     credits.rst
+    bibliography.rst

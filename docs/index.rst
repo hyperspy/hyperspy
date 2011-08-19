@@ -14,6 +14,7 @@ Welcome to Hyperspy's documentation!
     tutorials/tutorials.rst
     api/modules.rst
     credits.rst
+    citing.rst
     
 .. htmlonly::
    - `Examples <examples/index.html>`_ 
