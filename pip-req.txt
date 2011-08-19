@@ -1,0 +1,17 @@
+Chaco<=3.4.0
+ETS<=3.6.0
+EnthoughtBase<=3.1.0
+MDP==3.1
+PIL
+Traits<=3.6.0
+TraitsBackendWX<=3.6.0
+TraitsGUI<=3.6.0
+h5py>=2.0.0
+mahotas
+matplotlib
+netCDF4
+nose
+numpy
+python-dateutil
+scipy
+wxPython==2.8.10.1
