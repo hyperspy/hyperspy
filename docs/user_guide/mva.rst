@@ -76,6 +76,44 @@ To obtain a scree plot, run the following command:
 
     s.plot_lev()
 
+Reconstructing data from a partial set of components
+=====================================================
+
+As we mentioned before, the primary purpose of PCA is often to filter
+noise.  To reconstruct your data using a limited set of components,
+omitting the later components that ideally contain only noise, do the
+following:
+
+.. code-block:: python
+
+    s2=s.pca_build_SI(components)
+
+.. NOTE:: 
+    The components argument can be one of several things (None, int,
+    or list of ints):
+
+    * if None, rebuilds SI from all components
+    * if int, rebuilds SI from components in range 0-given int
+    * if list of ints, rebuilds SI from only components in given list
+
+.. NOTE::
+    Unlike most of the analysis functions, this function returns a new
+    object.  The new object is something that you have to give a
+    handle to, so that you can perform analysis on that object later.
+    That is why we use the **s2=s.pca_build_SI()** syntax.
+
+It is very important to examine the residuals between your original
+data and your reconstructed data before you go any further.  If you
+have any recognizable structure in either the image space or the
+spectral space, that means you did not include enough components in
+your reconstruction, and you have lost important experimental
+information.  To examine residuals, use the plot_residual method on
+the reconstructed object.
+
+.. code-block:: python
+
+    s2.plot_residual()
+
 
 ICA workflow
 ============
@@ -84,9 +122,9 @@ ICA is advantageous over PCA for its ability to return components that
 are often more physically meaningful.  The reasons behind this are
 that ICA relaxes the orthogonality requirement among components, and
 that ICA seeks non-Gaussian components.  These work out to better
-results because in
-reality, data are often correlated in observation space
-(non-orthogonal), and the distributions of real data are not Gaussian.
+results because in reality, data are often correlated in observation
+space (non-orthogonal), and the distributions of real data are not
+Gaussian.
 
 To perform ICA on your data, run the following command:
 
@@ -100,6 +138,10 @@ To perform ICA on your data, run the following command:
     set of components.
 
 .. NOTE::
+    If you reconstructed an SI from principal components, you need to
+    run PCA again before you can run ICA.
+
+.. NOTE::
     You must pass an integer number of components to ICA.  The best
     way to estimate this number is by looking at the Scree plot, as
     described above in the PCA workflow.
@@ -108,7 +150,47 @@ To perform ICA on your data, run the following command:
 Visualising results
 ===================
 
+Plot methods exist for both components and score maps.  Most of these
+methods begin with plot.  Most of these methods take at least one
+argument - the number of components or score maps to plot.
+
+To explore the plot methods available for an object (we'll use s for
+this example), type the following, and hit the tab key.
+
+.. code-block:: python
+
+    s.plot
+
+You can then start typing whichever plot method you want, then hit the
+tab key again.  It will auto-complete up to the point where there is
+more than one match.
+
+.. code-block:: python
+
+    s.plot_pr (hit tab)
+    s.plot_principal_components_ (hit tab)
+    s.plot_principal_components_maps(number_of_components)
 
 Saving and loading results
 ==========================
+
+You can save the entire object on which you've done MVA (this saves
+the data along with the MVA results).  For this, just use the base
+**save** method.  Alternatively, to save just the MVA results, you can use
+the specialized **save_independent_components** and
+**save_principal_components** methods.  This has the advantage of being
+easier to import into other data analysis programs, such as Digital
+Micrograph.
+
+.. code-block:: python
+
+    # save the entire object
+    s.save(filename)
+    # save the principal components and maps to files themselves
+    s.save_principal_components()
+    # save the independent components to the rpl format, which is
+    #   easily importable into Digital Micrograph
+    s.save_independent_components(spectrum_format='rpl', image_format='rpl')
+
+
 
