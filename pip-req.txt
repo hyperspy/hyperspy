@@ -1,11 +1,9 @@
-Chaco<=3.4.0
-ETS<=3.6.0
-EnthoughtBase<=3.1.0
-MDP==3.1
+Chaco
+ETS
+http://sourceforge.net/projects/mdp-toolkit/files/mdp-toolkit/3.1/MDP-3.1.tar.gz/download
 PIL
-Traits<=3.6.0
-TraitsBackendWX<=3.6.0
-TraitsGUI<=3.6.0
+Traits
+TraitsUI
 h5py>=2.0.0
 mahotas
 matplotlib
@@ -14,4 +12,5 @@ nose
 numpy
 python-dateutil
 scipy
-wxPython==2.8.10.1
+wxPython
+ipython<=0.10.2
