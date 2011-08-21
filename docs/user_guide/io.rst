@@ -11,9 +11,10 @@ Loading and saving data
 Loading files: the load function
 ================================
 
-Hyperspy can read and write to multiple formats (see :ref:`supported-formats`). To load data use the :py:func:`~.io.load` that it is available by default in the main namespace. For example, to load a ``jpg`` image from :file:`lena` you can type
+Hyperspy can read and write to multiple formats (see :ref:`supported-formats`). To load data use the :py:func:`~.io.load` that it is available by default in the main namespace. For example, to load a ``jpg`` image from :file:`lena` you can type:
 
-.. code-block:python
+.. code-block:: python
+
     s = load('lena.jpg')
     
 If the loading was successful, the variable :guilabel:`s` contains a generic :py:class:`~.signal.Signal, a :py:class:`~.signals.spectrum.Spectrum or a :py:class:`~.signals.image.Image. In any case, the data is stored in a numpy array in the :py:attr:`~.signal.Signal.data` attribute, but you will not normally need to access it there.
