@@ -11,7 +11,6 @@ Welcome to Hyperspy's documentation!
     :maxdepth: 2
 
     user_guide/index.rst
-    tutorials/tutorials.rst
     api/modules.rst
     credits.rst
     citing.rst
