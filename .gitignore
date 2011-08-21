@@ -19,7 +19,6 @@ docs/user_guide/.build/*
 bin/*.bat
 setup/windows/requires/*
 setup/windows/reccomends/*
-docs/examples/*.rst
-docs/examples/data_navigation/*.rst
-
+docs/examples
+docs/gh-pages
 
