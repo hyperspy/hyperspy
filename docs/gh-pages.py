@@ -28,9 +28,9 @@ from subprocess import Popen, PIPE, CalledProcessError, check_call
 #-----------------------------------------------------------------------------
 
 pages_dir = 'gh-pages'
-html_dir = 'build/html'
+html_dir = '_build/html'
 pdf_dir = 'build/latex'
-pages_repo = 'git@github.com:ipython/ipython-doc.git'
+pages_repo = 'git@github.com:hyperspy/hyperspy-doc.git'
 
 #-----------------------------------------------------------------------------
 # Functions
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     # directory, and then copy the html tree in there
     shutil.rmtree(dest, ignore_errors=True)
     shutil.copytree(html_dir, dest)
-    shutil.copy(pjoin(pdf_dir, 'ipython.pdf'), pjoin(dest, 'ipython.pdf'))
+    #shutil.copy(pjoin(pdf_dir, 'ipython.pdf'), pjoin(dest, 'ipython.pdf'))
 
     try:
         cd(pages_dir)
@@ -123,7 +123,7 @@ if __name__ == '__main__':
         print
         print 'Most recent 3 commits:'
         sys.stdout.flush()
-        sh('git --no-pager log --oneline HEAD~3..')
+        #sh('git --no-pager log --oneline HEAD~3..')
     finally:
         cd(startdir)
 

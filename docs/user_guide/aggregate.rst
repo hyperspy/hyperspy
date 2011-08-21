@@ -1,8 +1,45 @@
+.. _io:
+
+=======================
+Loading and saving data
+=======================
+
+
+
+.. _supported-formats:
+
+Supported formats
+*****************
+
+
++--------------------+-----------+----------+
+| Format             | Read      | Write    |
++====================+===========+==========+
+| Gatan's dm3        | Partial   | -        |
++--------------------+-----------+----------+
+| FEI's emi and ser  | Partial   | -        |
++--------------------+-----------+----------+
+| HSPY HDF5          | Complete  | Complete |
++--------------------+-----------+----------+
+| Image              | Complete  | Complete |
++--------------------+-----------+----------+
+| MRC                | Complete  | -        |
++--------------------+-----------+----------+
+| EMSA/MSA           | Complete  | Complete |
++--------------------+-----------+----------+
+| EELSLab NetCDF     | Complete  | -        |
++--------------------+-----------+----------+
+| Ripple             | Complete  | Complete |
++--------------------+-----------+----------+
+
+
+
+
 Aggregating data
-******************************
+****************
 
 Loading Aggregate Files
----------------------------
+------------------------
 
 Rather than loading and working with files individually, several files
 can be loaded simultaneously, creating an aggregate object.  In
