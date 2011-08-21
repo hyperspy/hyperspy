@@ -11,7 +11,7 @@ To start hyperspy type in a console:
 
 .. code-block:: bash
 
-    hyperspy
+    $ hyperspy
 
 If everythig goes well Hyperspy should welcome you with a message similar to:
 
@@ -48,37 +48,23 @@ Loading data
 -----------------------
 
 
-To load from a supported file format (see :ref:`supported-file-formats`) simply type:
+To load from a supported file format (see :ref:`supported-formats`) simply type:
 
 .. code-block:: python
 
     s = load('filename')
 
-.. NOTE::
+.. HINT::
 
    We use the variable :guilabel:`s` but you can choose any (valid) variable name
 
-.. NOTE::
-
-   The filename *must* include the extension
-
-If the loading was successful, the variable :guilabel:`s` now contains a python object 
-that can be an ``Image`` or ``Spectrum`` instance. Hyperspy will try to guess the 
-most convenient data type. However, you can force it to read the data as 
-a particular data type by providing the keyword ``data_type`` that can take the 
-values :guilabel:`SI` or :guilabel:`Image`, e.g.:
-
-.. code-block:: python
-
-    s = load('filename', data_type = 'SI')
-
-.. _configuring-hyperspy-label:
+For more details read :ref:`loading_files`
 
 
 Saving Files
 ------------
 
-Data can be saved to several file formats.  The format is specified by
+The data can be saved to several file formats.  The format is specified by
 the extension of the filename.
 
 .. code-block:: python
@@ -95,17 +81,12 @@ the extension of the filename.
 Some file formats are much better at maintaining the information about
 how you processed your data.  The preferred format in EELSlab is hdf5,
 the hierarchical data format.  This format keeps the most information
-possible.  However, viewing HDF5 files outside of EELSlab is less easy
-than say, working with well-known image formats.
+possible.
 
-There are optional flags that may be passed to the save function.
+There are optional flags that may be passed to the save function. See :ref:`saving_files` for more details.
 
-For the MSA format (commonly used for saving single spectra), the
-msa_format argument is used to specify whether the energy axis should
-also be saved with the data.  The default, 'Y' omits the energy axis
-in the file.  The alternative, 'XY', saves a second column with the
-calibrated energy data.
 
+.. _configuring-hyperspy-label:
 
 Configuring hyperspy
 -------------------
@@ -115,7 +96,7 @@ file. The location of the configuration file depends on the system.
 You can find its path by calling the ```get_configuration_directory_path``` 
 function in the hyperspy prompt:
 
-.. code-block:: bash
+.. code-block:: pythons
 
     get_configuration_directory_path()
 
@@ -149,22 +130,21 @@ The documentation can be accessed by adding a question mark to the name of a fun
     
     load?
 
-This syntax is one of the many features of `IPython <http://ipython.scipy.org/moin/>`_
+This syntax is one of the many features of `IPython <http://ipython.scipy.org/moin/>`_ that is the interactive python shell that Hyperspy uses under the hood.
 
 Please note that the documentation of the code is a work in progress, so not all the objects are documented yet.
 
 Autocompletion
 --------------
 
-
 Another useful `IPython <http://ipython.scipy.org/moin/>`_ feature is the 
 autocompletion of commands and filenames. It is highly recommended to read the 
-`Ipython documentation <http://ipython.scipy.org/moin/Documentation>`_.
+`Ipython documentation <http://ipython.scipy.org/moin/Documentation>`_ for many more useful features that will boost efficiency when working with Hyperspy/Python.
 
 Data visualisation
 ==================
 
-The Spectrum and Image objects have a ``plot`` method.
+:py:class:`~.signal.Signal` has a ``plot`` method.
 
 .. code-block:: python
     
@@ -176,17 +156,15 @@ the plot method. If the object is a 2D or 3D SI two figures will appear,
 one containing a plot of a spectrum of the dataset and the other a 2D 
 representation of the data. 
 
-To explore an SI drag the cursor present in the 2D data representation 
-(it can be a line for 2D SIs or a square for 3D SIs). 
+To explore a hyperspectrum drag the cursor present in the 2D data representation 
+(it can be a line for 1D data exploration or a square for 2D data exploration). 
 An extra cursor can be added by pressing the ``e`` key. Pressing ``e`` once more will 
 disable the extra cursor.
 
-When exploring a 2D SI of high spatial resolution the default size of the
-rectangular cursors can be too small to be dragged or even seen. It is possible to change
-the size of the cursors by pressing the ``+`` and ``-`` keys  **when the navigator
+When exploring a 2D hyperspectral object of high spatial resolution the default size of the rectangular cursors can be too small to be dragged or even seen. It is possible to change the size of the cursors by pressing the ``+`` and ``-`` keys  **when the navigator
 windows is on focus**.
 
-It is also possible to explore an SI by using the numpad arrows 
+It is also possible to move the pointer by using the numpad arrows 
 **when numlock is on and the spectrum or navigator figure is on focus**. 
 When using the numpad arrows the PageUp and PageDown keys change the size of the step.
 
@@ -210,12 +188,12 @@ To close all the figures type:
 
 .. code-block:: python
 
-    close('all')
+    plt.close('all')
 
 
 This is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command. 
-Matplotlib is the library that hyperspy uses to produce the plots. To learn how 
-to pan/zoom and more a matplotlib plot 
-`check here <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
+Matplotlib is the library that hyperspy uses to produce the plots. You can learn how 
+to pan/zoom and more  
+`in the matplotlib documentation <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
 
 

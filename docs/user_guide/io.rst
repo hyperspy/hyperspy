@@ -16,7 +16,14 @@ Hyperspy can read and write to multiple formats (see :ref:`supported-formats`). 
 .. code-block:python
     s = load('lena.jpg')
     
-:py:func:`~.io.load` returns a :py:class:`~.signal.Signal` or one of its subclasses. The data is stored in a numpy array in the :py:attr:`~.signal.Signal.data` attribute, but you will not normally need to access it there.
+If the loading was successful, the variable :guilabel:`s` contains a generic :py:class:`~.signal.Signal, a :py:class:`~.signals.spectrum.Spectrum or a :py:class:`~.signals.image.Image. In any case, the data is stored in a numpy array in the :py:attr:`~.signal.Signal.data` attribute, but you will not normally need to access it there.
+
+Hyperspy will try to guess the 
+most convenient object for the corresponding file. However, you can force it to read the data as a particular data type by providing the ``signal`` keyword that has to be one of: ``spectrum``, ``image`` or ``EELS``, e.g.:
+
+.. code-block:: python
+
+    s = load('filename', signal = 'EELS')
 
 Some file formats store some extra information about the data. If Hyperspy was able to read some extra information it stores it in :py:attr:`~.signal.Signal.original_parameters` attribute. Also, it is possible that some information was mapped by Hyperspy to a standard location where it can be used by some standard routines, the :py:attr:`~.signal.Signal.mapped_parameters` attribute.
 
@@ -103,6 +110,14 @@ EMSA/MSA
 
 This `open standard format <http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/XEDS/EMMFF/EMMFF.IBM/Emmff.Total>`_ is widely used to exchange single spectrum data, but it does not support multidimensional data. It can be used to exchange single spectrum with Gatan Digital Micrograph.
 
+Extra arguments
+^^^^^^^^^^^^^^^
+For the MSA format the msa_format argument is used to specify whether the energy axis should also be saved with the data.  The default, 'Y' omits the energy axis in the file.  The alternative, 'XY', saves a second column with the calibrated energy data. Also it  is possible to personalise the separator with the `separator` keyword. 
+
+.. Warning::
+
+    However, if a different separator is chosen the resulting file will not comply with the MSA/EMSA standard and Hyperspy and other software may not be able to read it.
+
 .. _ripple-format:
 
 Ripple
@@ -178,6 +193,7 @@ Adding files that are not yet loaded (passing filenames):
 .. code-block:: python
 
     d.append('file3.ext')
+
 
 Adding files that are already loaded (passing objects):
 
