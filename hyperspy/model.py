@@ -58,14 +58,18 @@ class Model(list, Optimizers, Estimators):
         
     # Extend the list methods to call the _touch when the model is modified
     def append(self, object):
+        object.create_arrays(self.axes_manager.navigation_shape)
         list.append(self,object)
         self._touch()
     
     def insert(self, object):
+        object.create_arrays(self.axes_manager.navigation_shape)
         list.insert(self,object)
         self._touch()
    
     def extend(self, iterable):
+        for object in iterable:
+            object.create_arrays(self.axes_manager.navigation_shape)
         list.extend(self,iterable)
         self._touch()
                 
@@ -84,8 +88,6 @@ class Model(list, Optimizers, Estimators):
         This function is called everytime that we add or remove components
         from the model.
         """
-        for component in self:
-            component.create_arrays(self.axes_manager.navigation_shape)
         self.connect_parameters2update_plot()
         
     __touch = _touch
