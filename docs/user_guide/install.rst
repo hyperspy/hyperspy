@@ -27,8 +27,8 @@ To install from source grab a tar.gz release and in Linux/Mac:
 
 .. code-block:: bash
 
-    $ tar -xzf Hyperspy.tar.gz
-    $ cd Hyperspy
+    $ tar -xzf hyperspy.tar.gz
+    $ cd hyperspy
     $ python setup.py install
 
 .. _install-dev:
@@ -37,21 +37,23 @@ Install the development version
 -------------------------------
 
 
-To get the development version from our mercurial repository you need to install `mercurial <http://mercurial.selenic.com/>`_. Then just do:
+To get the development version from our git repository you need to install `git <http://git-scm.com//>`_. Then just do:
 
 .. code-block:: bash
 
-    $ hg clone https://bitbucket.org/Hyperspy
+    $ git clone https://github.com/hyperspy/hyperspy.git
 
 To install Hyperspy you could proceed like in :ref:`install-source`. However, if you are installing from the development version most likely you will prefer to install Hyperspy using  `pip <http://www.pip-installer.org>`_ development mode: 
 
 
 .. code-block:: bash
 
-    $ cd Hyperspy
-    $ pip install -e ./
+    $ cd hyperspy
+    $ pip install -r -e ./
     
 In any case, like when installing from source you must be sure to have all the dependencies installed, see :ref:`install-dependencies`
+ 
+.. _create-debian-binary: 
     
 Creating Debian/Ubuntu binaries
 -------------------------------
@@ -76,7 +78,7 @@ To create a Windows binary run the `release_windows.bat` script in a windows mac
 Installing the dependencies
 ---------------------------
 
-If you use a Debian/Ubuntu binary to install Hyperspy all the dependencies should install automatically. Otherwise you must install the following packages: scipy, ipython, matplotlib, numpy, mdp, netcdf4-python, nose and h5py.
+If you use a Debian/Ubuntu binary to install Hyperspy all the dependencies should install automatically. Otherwise you must install the following packages (note that we use the Debian/Ubuntu package names): ``python-numpy``, ``python-scipy``, ``python-matplotlib``, ``ipython``, ``python-mdp``, ``python-netcdf``, ``python-h5py``, ``python-traits``, ``python-traitsgui``, ``python-h5py``, ``python-nose``, ``python-opencv``, ``python-chaco``.
 
 The easiest way to install these packages is by installing the `enthough python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that comes with most Hyperspy dependencies installed by default. When using EPD the only extra package that you will need to install is MDP. If you have an internet connection you can install as follows:
 
@@ -87,6 +89,14 @@ The easiest way to install these packages is by installing the `enthough python 
 
 .. Warning::
     Hyperspy does not yet support the last version of Ipython 0.11 that is istalled by default in the last EPD release. Therefore, use EPD <= 7.0 to run Hyperspy.
+    
+.. Warning::
+    In EPD 0.7 h5py is compiled against the wrong HDF5 libraries and trying to execute Hyperspy produces a system error. It is possible to walkaround this issue by reinstalling the h5py libraries as follows::
+        # Install pip
+        easy_install pip
+        # Reinstall h5py
+        pip install h5py --upgrade 
+
 
 Another option in Windows is to install `pythonxy <http://www.pythonxy.com/>`_.
 
