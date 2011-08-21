@@ -1,42 +1,146 @@
 .. _io:
 
-=======================
+***********************
 Loading and saving data
-=======================
+***********************
 
+.. contents::
+
+.. _loading_files:
+
+Loading files: the load function
+================================
+
+Hyperspy can read and write to multiple formats (see :ref:`supported-formats`). To load data use the :py:func:`~.io.load` that it is available by default in the main namespace. For example, to load a ``jpg`` image from :file:`lena` you can type
+
+.. code-block:python
+    s = load('lena.jpg')
+    
+:py:func:`~.io.load` returns a :py:class:`~.signal.Signal` or one of its subclasses. The data is stored in a numpy array in the :py:attr:`~.signal.Signal.data` attribute, but you will not normally need to access it there.
+
+Some file formats store some extra information about the data. If Hyperspy was able to read some extra information it stores it in :py:attr:`~.signal.Signal.original_parameters` attribute. Also, it is possible that some information was mapped by Hyperspy to a standard location where it can be used by some standard routines, the :py:attr:`~.signal.Signal.mapped_parameters` attribute.
+
+In addition Hyperspy supports reading collections of files, see :ref:`aggregate`
+
+.. _saving_files:
+
+Saving data to files
+====================
+
+To save data to a file use the :py:meth:`~.signal.Signal.save` method of the :py:class:`~.signal.Signal` class or its subclasses. The first argument is the filename and the format is defined by the filename extension. If the filename does not contain the extension the default format (:ref:`hdf5-format`) is used. For example, if the :py:const:`s` variable contains the :py:class:`~.signal.Signal` that you want to write to a file, the following will write the data to a file called :file:`spectrum.hdf5` in the default :ref:`hdf5-format` format::
+    
+    s.save('spectrum')
+    
+If instead you want to save in the :ref:`ripple-format` write instead::
+
+    s.save('spectrum.rpl')
+
+Some formats take extra arguments. See the relevant subsection of :ref:`supported-formats` for more information.
 
 
 .. _supported-formats:
 
 Supported formats
-*****************
+=================
+
+In :ref:`supported-file-formats-table` we summarise the different formats that are currently supported by Hyperspy.
+
+.. _supported-file-formats-table:
+
+.. table:: Supported file formats
+
+    +--------------------+-----------+----------+
+    | Format             | Read      | Write    |
+    +====================+===========+==========+
+    | Gatan's dm3        | Partial   | -        |
+    +--------------------+-----------+----------+
+    | FEI's emi and ser  | Partial   | -        |
+    +--------------------+-----------+----------+
+    | HDF5               | Complete  | Complete |
+    +--------------------+-----------+----------+
+    | Image              | Complete  | Complete |
+    +--------------------+-----------+----------+
+    | MRC                | Complete  | -        |
+    +--------------------+-----------+----------+
+    | EMSA/MSA           | Complete  | Complete |
+    +--------------------+-----------+----------+
+    | NetCDF             | Complete  | -        |
+    +--------------------+-----------+----------+
+    | Ripple             | Complete  | Complete |
+    +--------------------+-----------+----------+
+
+.. _hdf5-format:
+
+HDF5
+----
+
+It is the default format and it is the only one that guarantees that no information will be lost in the writing process and that support saving data of arbitrary dimensions. It is based in the `HDF5 open standard <http://www.hdfgroup.org/HDF5/>`_. The HDF5 file format is supported by `many applications <http://www.hdfgroup.org/products/hdf5_tools/SWSummarybyName.htm>`_.
+
+Note that only HDF5 files written by Hyperspy are supported.
+
+.. _netcdf-format:
+
+NetCDF
+------
+
+It was the default format in EELSLab but it has been superseeded by :ref:`HDF5` in Hyperspy. We provide only reading capabilities but we do not support writing to this format.
+
+Note that only NetCDF files written by EELSLab are supported.
 
 
-+--------------------+-----------+----------+
-| Format             | Read      | Write    |
-+====================+===========+==========+
-| Gatan's dm3        | Partial   | -        |
-+--------------------+-----------+----------+
-| FEI's emi and ser  | Partial   | -        |
-+--------------------+-----------+----------+
-| HSPY HDF5          | Complete  | Complete |
-+--------------------+-----------+----------+
-| Image              | Complete  | Complete |
-+--------------------+-----------+----------+
-| MRC                | Complete  | -        |
-+--------------------+-----------+----------+
-| EMSA/MSA           | Complete  | Complete |
-+--------------------+-----------+----------+
-| EELSLab NetCDF     | Complete  | -        |
-+--------------------+-----------+----------+
-| Ripple             | Complete  | Complete |
-+--------------------+-----------+----------+
+.. _mrc-format:
 
+MRC
+---
 
+It is a format widely used for tomographic data. Our implementation is based on 
+`this specification <http://ami.scripps.edu/software/mrctools/mrc_specification.php>`_. We also partly support FEI's custom header. We do not provide writing features for this format, but, being an open format, we may implement this feature in the future if it is demanded by the users.
 
+.. _msa-format:
+
+EMSA/MSA
+--------
+
+This `open standard format <http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/XEDS/EMMFF/EMMFF.IBM/Emmff.Total>`_ is widely used to exchange single spectrum data, but it does not support multidimensional data. It can be used to exchange single spectrum with Gatan Digital Micrograph.
+
+.. _ripple-format:
+
+Ripple
+------
+
+This `open standard format <http://www.nist.gov/lispix/doc/image-file-formats/raw-file-format.htm>`_ is widely used to exchange hyperspectra data. However, it only support data of up to three dimensions. It can be used to exchange data with Bruker and Lispix. Installing the :ref:`import-rpl` it is very useful to export data to Gatan Digital Micrograph.
+
+.. _image-format:
+
+Image
+-----
+
+Hyperspy is able to read and write data too all the image formats supported by `the Python Image Library <http://www.pythonware.com/products/pil/>`_ (PIL). 
+
+It is important to note that all the image formats only support 8-bit files, what may incur in dynamic range loss in most cases.
+
+It is possible (and strongly reccommend if saving to an image format is required) to read and write 16-bit images in the TIFF format by installing `mahotas <http://pypi.python.org/pypi/mahotas>`_ and the `freeimage library <http://freeimage.sourceforge.net/>`_.
+ 
+.. _dm3-format:
+
+Gatan Digital Micrograph
+------------------------
+
+Hyperspy only support reading dm3 files and the reading features are not complete (and probably they will never be because it is not an open standard format). That said we know that this is an important feature and if loading a particular dm3 file fails for you, please report an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make us aware of the problem. 
+
+.. _fei-format:
+
+FEI TIA ser and emi
+-------------------
+
+Hyperspy only support reading ``ser`` and ``emi`` files and the reading features are not complete (and probably they will never be because it is not an open standard format). That said we know that this is an important feature and if loading a particular ser or emi file fails for you, please report an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make us aware of the problem.
+
+In Hyperspy (and unlike in TIA) it is possible to read the data directly from the ``.ser`` files. However, by doing so, the experiment information that is stored in the emi file is lost. Therefore it is reccommend to load using the ``.emi`` file.
+
+.. _aggregate:
 
 Aggregating data
-****************
+================
 
 Loading Aggregate Files
 ------------------------
