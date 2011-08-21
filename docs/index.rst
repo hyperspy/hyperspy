@@ -11,13 +11,8 @@ Welcome to Hyperspy's documentation!
     :maxdepth: 2
 
     user_guide/index.rst
-    api/modules.rst
     credits.rst
-    citing.rst
-    
-.. htmlonly::
-   - `Examples <examples/index.html>`_ 
-
+    citing.rst    
 
    
 Indices and tables
