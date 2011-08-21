@@ -35,7 +35,7 @@ from hyperspy import tests
 __version__ = Release.version
 
 def get_configuration_directory_path():
-    import hyperspy.misc.config_dir.config_path
+    import hyperspy.misc.config_dir
     print(hyperspy.misc.config_dir.config_path)
 
 def start_gui():
