@@ -1,7 +1,7 @@
 """Creates a 4D image and plots it
 """
 # If running from hyperspy's interactive the next two imports can be omitted 
-# omitted (i.e. the next 4 lines)
+# omitted (i.e. the next 2 lines)
 import numpy as np
 import matplotlib.pyplot as plt
 
