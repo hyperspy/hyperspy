@@ -5,8 +5,7 @@ Use:
 
   gh-pages.py [tag]
 
-If no tag is given, the current output of 'git describe' is used.  If given,
-that is how the resulting directory will be named.
+If no tag is given, 'dev' is used instead
 
 In practice, you should use either actual clean tags from a current build or
 something like 'current' as a stable URL for the most current version of the """
@@ -82,10 +81,7 @@ if __name__ == '__main__':
     try:
         tag = sys.argv[1]
     except IndexError:
-        try:
-            tag = sh2('git describe')
-        except CalledProcessError:
-            tag = "dev"   # Fallback
+        tag = "dev"   # Fallback
     
     startdir = os.getcwdu()
     if not os.path.exists(pages_dir):
