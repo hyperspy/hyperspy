@@ -11,7 +11,7 @@ Hyperspy User Guide (DRAFT)
     what_is_new.rst
     install.rst
     getting_started.rst
-    aggregate.rst
+    io.rst
     mva.rst
     model.rst
     eels.rst
