@@ -62,7 +62,7 @@ You can create binaries for Debian/Ubuntu running the `release_debian` script
 
 .. code-block:: bash
 
-    ./release_debian
+    $ ./release_debian
     
 .. Warning::
 
@@ -84,18 +84,21 @@ The easiest way to install these packages is by installing the `enthough python 
 
 .. code-block:: bash
 
-    easy_install http://sourceforge.net/projects/mdp-toolkit/files/mdp-toolkit/3.1/MDP-3.1.tar.gz/download
+    $ easy_install http://sourceforge.net/projects/mdp-toolkit/files/mdp-toolkit/3.1/MDP-3.1.tar.gz/download
 
 
 .. Warning::
     Hyperspy does not yet support the last version of Ipython 0.11 that is istalled by default in the last EPD release. Therefore, use EPD <= 7.0 to run Hyperspy.
     
 .. Warning::
-    In EPD 0.7 h5py is compiled against the wrong HDF5 libraries and trying to execute Hyperspy produces a system error. It is possible to walkaround this issue by reinstalling the h5py libraries as follows::
-        # Install pip
-        easy_install pip
-        # Reinstall h5py
-        pip install h5py --upgrade 
+    In EPD 0.7, h5py is compiled against the wrong HDF5 libraries and trying to execute Hyperspy produces a system error. It is possible to walkaround this issue by reinstalling the h5py libraries as follows:
+    
+    .. code-block:: bash
+
+        $ # Install pip
+        $ easy_install pip
+        $ # Reinstall h5py
+        $ pip install h5py --upgrade 
 
 
 Another option in Windows is to install `pythonxy <http://www.pythonxy.com/>`_.
