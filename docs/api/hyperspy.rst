@@ -126,7 +126,6 @@ Subpackages
 
 .. toctree::
 
-    hyperspy.bss
     hyperspy.components
     hyperspy.drawing
     hyperspy.gui

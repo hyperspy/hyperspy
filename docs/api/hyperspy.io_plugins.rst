@@ -1,26 +1,18 @@
 io_plugins Package
 ==================
 
+:mod:`io_plugins` Package
+-------------------------
+
+.. automodule:: hyperspy.io_plugins
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`digital_micrograph` Module
 --------------------------------
 
 .. automodule:: hyperspy.io_plugins.digital_micrograph
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`dm3_data_plugin` Module
------------------------------
-
-.. automodule:: hyperspy.io_plugins.dm3_data_plugin
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`dm3reader_hyperspy` Module
---------------------------------
-
-.. automodule:: hyperspy.io_plugins.dm3reader_hyperspy
     :members:
     :undoc-members:
     :show-inheritance:

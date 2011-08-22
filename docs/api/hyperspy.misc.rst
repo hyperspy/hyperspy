@@ -1,6 +1,14 @@
 misc Package
 ============
 
+:mod:`misc` Package
+-------------------
+
+.. automodule:: hyperspy.misc
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`config_dir` Module
 ------------------------
 
@@ -13,6 +21,14 @@ misc Package
 ----------------------
 
 .. automodule:: hyperspy.misc.cv_funcs
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`dm3reader` Module
+-----------------------
+
+.. automodule:: hyperspy.misc.dm3reader
     :members:
     :undoc-members:
     :show-inheritance:

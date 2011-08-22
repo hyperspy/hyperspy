@@ -1,10 +1,10 @@
 drawing Package
 ===============
 
-:mod:`demos` Module
--------------------
+:mod:`drawing` Package
+----------------------
 
-.. automodule:: hyperspy.drawing.demos
+.. automodule:: hyperspy.drawing
     :members:
     :undoc-members:
     :show-inheritance:

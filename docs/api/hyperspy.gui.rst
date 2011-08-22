@@ -1,6 +1,14 @@
 gui Package
 ===========
 
+:mod:`gui` Package
+------------------
+
+.. automodule:: hyperspy.gui
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`egerton_quantification` Module
 ------------------------------------
 
@@ -21,14 +29,6 @@ gui Package
 ----------------------
 
 .. automodule:: hyperspy.gui.messages
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`spectrum_calibration` Module
-----------------------------------
-
-.. automodule:: hyperspy.gui.spectrum_calibration
     :members:
     :undoc-members:
     :show-inheritance:

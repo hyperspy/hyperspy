@@ -1,6 +1,14 @@
 mva Package
 ===========
 
+:mod:`mva` Package
+------------------
+
+.. automodule:: hyperspy.mva
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`mlpca` Module
 -------------------
 

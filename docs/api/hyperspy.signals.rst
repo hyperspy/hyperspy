@@ -1,6 +1,14 @@
 signals Package
 ===============
 
+:mod:`signals` Package
+----------------------
+
+.. automodule:: hyperspy.signals
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`aggregate` Module
 -----------------------
 

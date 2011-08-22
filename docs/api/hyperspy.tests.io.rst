@@ -1,6 +1,14 @@
 io Package
 ==========
 
+:mod:`io` Package
+-----------------
+
+.. automodule:: hyperspy.tests.io
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`generate_dm_testing_files` Module
 ---------------------------------------
 
