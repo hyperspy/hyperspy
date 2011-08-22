@@ -410,7 +410,6 @@ class Spectrum(Signal):
         See also
         --------
         Spectrum.spikes_diagnosis, Spectrum.plot_spikes
-        (These two functions not yet ported to Signal class)
         """
         from scipy.interpolate import UnivariateSpline
 

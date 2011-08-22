@@ -28,7 +28,7 @@ sys.path.append(os.path.abspath('sphinxext'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'gen_rst', 
+extensions = ['sphinx.ext.autodoc', 'gen_rst', 'numpydoc',
 'matplotlib.sphinxext.only_directives', 'sphinx.ext.intersphinx'] #, 'rst2pdf.pdfbuilder']
 
 # Add any paths that contain templates here, relative to this directory.
