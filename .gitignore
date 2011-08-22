@@ -12,13 +12,13 @@ deb_dist/*
 ~.vimrc
 data/octave-core
 .spyderproject
-docs/_build/*
-docs/.build/*
-docs/user_guide/_build/*
-docs/user_guide/.build/*
+doc/_build/*
+doc/.build/*
+doc/user_guide/_build/*
+doc/user_guide/.build/*
 bin/*.bat
 setup/windows/requires/*
 setup/windows/reccomends/*
-docs/examples
-docs/gh-pages
+doc/examples
+doc/gh-pages
 

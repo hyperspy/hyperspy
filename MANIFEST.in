@@ -1,5 +1,5 @@
 include *.txt
-recursive-include docs *.txt *.rst
+recursive-include doc *.txt *.rst
 recursive-include examples *.py *.rst *.txt
 
 
