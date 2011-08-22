@@ -57,8 +57,6 @@ class ImagePlot:
         print "Automatically setting the constrast values"
         self.vmin = vmin
         self.vmax = vmax
-        print "Min = ", vmin
-        print "Max = ", vmax
         
     def create_figure(self):
         self.figure = utils.create_figure()
@@ -93,6 +91,8 @@ class ImagePlot:
         if ims:
             ims.remove(ims[0])
         data = self.data_function()
+        if self.auto_contrast is True:
+            self.optimize_contrast(data)
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
         try:
