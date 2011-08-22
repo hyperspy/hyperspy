@@ -468,10 +468,12 @@ class Spectrum(Signal):
         from hyperspy.signals.image import Image
         dic = self._get_signal_dict()
         dic['mapped_parameters']['record_by'] = 'image'
-        dic['data'] = np.swapaxes(dic['data'], 0, -1)
-        utils_varia.swapelem(dic['axes'],0,-1)
-        dic['axes'][0]['index_in_array'] = 0
-        dic['axes'][-1]['index_in_array'] = len(dic['axes']) - 1
+        dic['data'] = np.rollaxis(dic['data'], -1, 0)
+        dic['axes'] = utils_varia.rollelem(dic['axes'],-1,0)
+        i = 0
+        for axis in dic['axes']:
+            axis['index_in_array'] = i
+            i += 1
         return Image(dic)
         
     def to_EELS(self):

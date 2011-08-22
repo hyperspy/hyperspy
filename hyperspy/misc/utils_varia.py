@@ -24,6 +24,7 @@
 
 from __future__ import with_statement # for Python versions < 2.6
 
+import copy
 import re
 import os
 
@@ -46,6 +47,31 @@ def swapelem(obj, i, j):
         buf = obj[i]
         obj[i] = obj[j]
         obj[j] = buf
+        
+def rollelem(a, index, start = 0):
+    """Roll the specified axis backwards, until it lies in a given position.
+    
+    Parameters
+    ----------
+    a : list
+        Input list.
+    index : int
+        The index of the item to roll backwards.  The positions of the items 
+        do not change relative to one another.
+    start : int, optional
+        The item is rolled until it lies before this position.  The default,
+        0, results in a "complete" roll.
+    
+    Returns
+    -------
+    res : list
+        Output list.
+
+    """
+
+    res = copy.copy(a) 
+    res.insert(start, res.pop(index))
+    return res
     
 def overwrite(fname):
     """ If file exists 'fname', ask for overwriting and return True or False,
