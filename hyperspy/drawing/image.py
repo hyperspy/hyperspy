@@ -54,7 +54,6 @@ class ImagePlot:
         i = i if i > 0 else 1
         vmin = np.min(dc)
         vmax = np.max(dc)
-        print "Automatically setting the constrast values"
         self.vmin = vmin
         self.vmax = vmax
         
