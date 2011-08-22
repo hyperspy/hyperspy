@@ -149,7 +149,7 @@ class Signal(t.HasTraits, MVA):
         dic['mapped_parameters'] = \
         self.mapped_parameters._get_parameters_dictionary()
         dic['original_parameters'] = \
-        self.original_parameters
+        self.original_parameters._get_parameters_dictionary()
         return dic
         
     def _get_undefined_axes_list(self):
