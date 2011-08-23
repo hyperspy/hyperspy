@@ -26,7 +26,7 @@ ripple, hdf5)
 io_plugins = (netcdf, msa, digital_micrograph, fei, mrc, image, ripple, hdf5)
 def load(*filenames, **kwds):
     """
-    Load potentially multiple supported file into an EELSLab structure
+    Load potentially multiple supported file into an hyperspy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
     FEI ser and emi and hdf5.
         
@@ -47,27 +47,32 @@ def load(*filenames, **kwds):
             d=load('file1.dm3','file2.dm3')
 
     """
+
     if len(filenames)<1:
         messages.warning_exit('No file provided to reader.')
         return None
     elif len(filenames)==1:
-        return load_single_file(filenames[0],**kwds)
-    else:
-        import eelslab.signals.aggregate as agg
-        objects=[load_single_file(filename,**kwds) for filename in filenames]
-
-        obj_type=objects[0].__class__.__name__
-        if obj_type=='Image':
-            if len(objects[0].data.shape)==3:
-                # feeding 3d objects creates cell stacks
-                agg_sig=agg.AggregateCells(*objects)
-            else:
-                agg_sig=agg.AggregateImage(*objects)
-        elif obj_type=='Spectrum':
-            agg_sig=agg.AggregateSpectrum(*objects)
+        if '*' in filenames[0]:
+            from glob import glob
+            filenames=glob(filenames[0])
+            print filenames
         else:
-            agg_sig=agg.Aggregate(*objects)
-        return agg_sig            
+            return load_single_file(filenames[0],**kwds)
+    import hyperspy.signals.aggregate as agg
+    objects=[load_single_file(filename,**kwds) for filename in filenames]
+
+    obj_type=objects[0].__class__.__name__
+    if obj_type=='Image':
+        if len(objects[0].data.shape)==3:
+            # feeding 3d objects creates cell stacks
+            agg_sig=agg.AggregateCells(*objects)
+        else:
+            agg_sig=agg.AggregateImage(*objects)
+    elif 'Spectrum' in obj_type:
+        agg_sig=agg.AggregateSpectrum(*objects)
+    else:
+        agg_sig=agg.Aggregate(*objects)
+    return agg_sig            
         
 def load_single_file(filename, record_by=None, **kwds):
     """

@@ -24,10 +24,11 @@ import enthought.traits.api as t
 from hyperspy.mva.mva import MVA_Results
 from hyperspy.axes import AxesManager
 
+from hyperspy.io import load
+
 import numpy as np
 import mdp
 
-from copy import deepcopy
 from collections import OrderedDict
 
 from matplotlib import pyplot as plt
@@ -103,32 +104,49 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         else:
             smp=self.mapped_parameters
             for arg in args:
-                #object parameters
-                mp=arg.mapped_parameters
-                if mp.name not in smp.original_files.keys():
-                    smp.original_files[mp.name]=arg
-                    # save the original data shape to the mva_results for later use
-                    smp.original_files[mp.name].mva_results.original_shape = arg.data.shape[:-1]
-                    arg.unfold()
-                    smp.aggregate_address[mp.name]=(
-                        smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
-                    # add the data to the aggregate array
-                    if self.data==None:
-                        self.data=np.atleast_2d(arg.data)
-                        # copy the axes for the sake of calibration
-                        self.axes_manager=deepcopy(arg.axes_manager)
+                if arg.__class__.__name__=='str':
+                    if '*' in arg:
+                        from glob import glob
+                        flist=glob(arg)
+                        for f in flist:
+                            d=load(f)
+                            self._add_object(d)
                     else:
-                        self.data=np.append(self.data,arg.data,axis=0)
-                    smp.aggregate_end_pointer=self.data.shape[0]
-                    print "File %s added to aggregate."%mp.name
+                        arg=load(arg)
+                        self._add_object(arg)
                 else:
-                    print "Data from file %s already in this aggregate. \n \
-    Delete it first if you want to update it."%mp.parent
+                    self._add_object(arg)
+
 
             # refresh the axes for the new sized data
-            self.axes_manager.axes[0].size=self.data.shape[0]
-            smp.name="Aggregate Spectra: %s"%smp.original_files.keys()
+            self.axes_manager.axes[0].size=int(self.data.shape[0])
+            smp.original_filename="Aggregate Spectra: %s"%smp.original_files.keys()
             self.summary()
+
+    def _add_object(self,arg):
+        #object parameters
+        mp=arg.mapped_parameters
+        smp=self.mapped_parameters
+        if mp.original_filename not in smp.original_files.keys():
+            smp.original_files[mp.original_filename]=arg
+            # save the original data shape to the mva_results for later use
+            smp.original_files[mp.original_filename].mva_results.original_shape = arg.data.shape[:-1]
+            arg.unfold()
+            smp.aggregate_address[mp.original_filename]=(
+                smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
+            # add the data to the aggregate array
+            if self.data==None:
+                self.data=np.atleast_2d(arg.data)
+                # copy the axes for the sake of calibration
+                axes=[arg.axes_manager.axes[i].get_axis_dictionary() for i in xrange(len(arg.axes_manager.axes))]
+                self.axes_manager=AxesManager(axes)
+            else:
+                self.data=np.append(self.data,arg.data,axis=0)
+                smp.aggregate_end_pointer=self.data.shape[0]
+                print "File %s added to aggregate."%mp.original_filename
+        else:
+            print "Data from file %s already in this aggregate. \n \
+    Delete it first if you want to update it."%mp.original_filename
 
     def remove(self,*keys):
         smp=self.mapped_parameters
@@ -137,9 +155,9 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
             address=smp.aggregate_address[key]
             self.data=np.delete(self.data,np.s_[address[0]:(address[1]+1):1],0)
             print "File %s removed from aggregate."%key
-        self.axes_manager.axes[0].size=self.data.shape[0]
+        self.axes_manager.axes[0].size=int(self.data.shape[0])
         smp.aggregate_end_pointer=self.data.shape[0]
-        smp.name="Aggregate Spectra: %s"%smp.original_files.keys()
+        smp.original_filename="Aggregate Spectra: %s"%smp.original_files.keys()
         self.summary()
 
     def principal_components_analysis(self, normalize_poissonian_noise = False, 
@@ -264,20 +282,20 @@ class AggregateImage(Aggregate,Image):
                 #object parameters
                 mp=arg.mapped_parameters
                 
-                if mp.name not in smp.original_files.keys():
-                    smp.original_files[mp.name]=arg
+                if mp.original_filename not in smp.original_files.keys():
+                    smp.original_files[mp.original_filename]=arg
                     # add the data to the aggregate array
                     if self.data==None:
                         self.data=np.atleast_3d(arg.data)
                     else:
                         self.data=np.append(self.data,np.atleast_3d(arg.data),axis=2)
-                    print "File %s added to aggregate."%mp.name
+                    print "File %s added to aggregate."%mp.original_filename
                 else:
                     print "Data from file %s already in this aggregate. \n \
-    Delete it first if you want to update it."%mp.parent
+    Delete it first if you want to update it."%mp.original_filename
             # refresh the axes for the new sized data
             self.axes_manager=AxesManager(self._get_undefined_axes_list())
-            smp.name="Aggregate Image: %s"%smp.original_files.keys()
+            smp.original_filename="Aggregate Image: %s"%smp.original_files.keys()
             self.summary()
 
     def remove(self,*keys):
@@ -288,7 +306,7 @@ class AggregateImage(Aggregate,Image):
             del smp.original_files[key]
             print "File %s removed from aggregate."%key
         self.axes_manager=AxesManager(self._get_undefined_axes_list())
-        smp.name="Aggregate Image: %s"%smp.original_files.keys()
+        smp.original_filename="Aggregate Image: %s"%smp.original_files.keys()
         self.summary()
 
 class AggregateCells(Aggregate,Image):
@@ -318,25 +336,25 @@ class AggregateCells(Aggregate,Image):
                 mp=arg.mapped_parameters
                 pmp=mp.parent.mapped_parameters
                 
-                if pmp.name not in smp.locations.keys():
-                    smp.locations[pmp.name]=mp.locations
-                    smp.original_files[pmp.name]=mp.parent
-                    smp.image_stacks[pmp.name]=arg
-                    smp.aggregate_address[pmp.name]=(
+                if pmp.original_filename not in smp.locations.keys():
+                    smp.locations[pmp.original_filename]=mp.locations
+                    smp.original_files[pmp.original_filename]=mp.parent
+                    smp.image_stacks[pmp.original_filename]=arg
+                    smp.aggregate_address[pmp.original_filename]=(
                         smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[-1]-1)
                     # add the data to the aggregate array
                     if self.data==None:
                         self.data=np.atleast_3d(arg.data)
                     else:
                         self.data=np.append(self.data,arg.data,axis=2)
-                    print "File %s added to aggregate."%mp.name
+                    print "File %s added to aggregate."%mp.original_filename
                     smp.aggregate_end_pointer=self.data.shape[2]
                 else:
                     print "Data from file %s already in this aggregate. \n \
-    Delete it first if you want to update it."%mp.parent
+    Delete it first if you want to update it."%mp.original_filename
             # refresh the axes for the new sized data
             self.axes_manager=AxesManager(self._get_undefined_axes_list())
-            smp.name="Aggregate Cells: %s"%smp.locations.keys()
+            smp.original_filename="Aggregate Cells: %s"%smp.locations.keys()
             self.summary()
 
     def remove(self,*keys):
@@ -350,7 +368,7 @@ class AggregateCells(Aggregate,Image):
             print "File %s removed from aggregate."%key
         self.axes_manager=AxesManager(self._get_undefined_axes_list())
         smp.aggregate_end_pointer=self.data.shape[2]
-        smp.name="Aggregate Cells: %s"%smp.locations.keys()
+        smp.original_filename="Aggregate Cells: %s"%smp.locations.keys()
         self.summary()
 
     def kmeans_cluster_stack(self, clusters=None):

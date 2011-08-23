@@ -177,13 +177,7 @@ aggregate, you can do something like this:
 
 .. code-block:: python
 
-    from glob import glob
-    d=load(*glob('*.tif'))
-
-glob('*.tif') returns a python list of the files.  Preceding the
-function with the * transforms that list into a comma-separated
-collection of the files - effectively imitating the previous code
-block of comma-separated filenames.
+    d=load('*.tif')
 
 Files can be added to aggregates in one of two ways, both using the
 append function on any existing Aggregate object.
