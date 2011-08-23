@@ -49,7 +49,7 @@ To install Hyperspy you could proceed like in :ref:`install-source`. However, if
 .. code-block:: bash
 
     $ cd hyperspy
-    $ pip install -r -e ./
+    $ pip install -e ./
     
 In any case, like when installing from source you must be sure to have all the dependencies installed, see :ref:`install-dependencies`
  
