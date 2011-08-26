@@ -82,16 +82,10 @@ If you use a Debian/Ubuntu binary to install Hyperspy all the dependencies shoul
 
 The easiest way to install these packages is by installing the `enthough python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that comes with most Hyperspy dependencies installed by default. When using EPD the only extra package that you will need to install is MDP. If you have an internet connection you can install as follows:
 
-.. code-block:: bash
 
-    $ easy_install http://sourceforge.net/projects/mdp-toolkit/files/mdp-toolkit/3.1/MDP-3.1.tar.gz/download
-
-
-.. Warning::
-    Hyperspy does not yet support the last version of Ipython 0.11 that is istalled by default in the last EPD release. Therefore, use EPD <= 7.0 to run Hyperspy.
     
 .. Warning::
-    In EPD 0.7, h5py is compiled against the wrong HDF5 libraries and trying to execute Hyperspy produces a system error. It is possible to walkaround this issue by reinstalling the h5py libraries as follows:
+    In EPD 0.7, h5py is compiled against the wrong HDF5 libraries and trying to execute Hyperspy produces a system error. Although it is better to install a newer version it is possible to walkaround this issue by reinstalling the h5py libraries as follows:
     
     .. code-block:: bash
 
@@ -99,6 +93,13 @@ The easiest way to install these packages is by installing the `enthough python 
         $ easy_install pip
         $ # Reinstall h5py
         $ pip install h5py --upgrade 
+        
+   Also, EPD ships MDP only since version 0.7.1. If you have an older version 
+   you must install MDP manually:
+    
+    .. code-block:: bash
+
+        $ easy_install http://sourceforge.net/projects/mdp-toolkit/files/mdp-toolkit/3.1/MDP-3.1.tar.gz/download
 
 
 Another option in Windows is to install `pythonxy <http://www.pythonxy.com/>`_.

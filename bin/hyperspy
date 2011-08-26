@@ -23,7 +23,7 @@
 
 import sys
 import os, shutil
-
+from distutils.version import StrictVersion
 try:
     import argparse             # new in Python 2.7
     argp = True
@@ -31,51 +31,62 @@ except ImportError:
     argp = False
     import optparse
 
+import IPython
 
 import hyperspy
 import hyperspy.Release
 
 hyperspy_module_path=os.path.dirname(hyperspy.__file__)
-
-try:
-    import matplotlib as mpl
-except ImportError:
-    print('matplotlib is not available, exiting.')
-    sys.exit(1)
-
-if os.name in ['nt','dos']:
-    ipy_dir=os.path.expanduser('~/_ipython')
+ipy_hspy = os.path.join(hyperspy_module_path, 'ipython_profile')
+ipy_version = StrictVersion(IPython.__version__)
+ipy_011 = StrictVersion('0.11')
+if ipy_version < ipy_011:
+    if os.name in ['nt','dos']:
+        ipy_dir=os.path.expanduser('~/_ipython')
+    else:
+        ipy_dir=os.path.expanduser('~/.ipython')
+    to_copy = [os.path.join(ipy_hspy, 'ipy_profile_hyperspy.py') ,]
+    destination = ipy_dir
+    if not os.path.isdir(ipy_dir):
+        os.mkdir(ipy_dir)
 else:
-    ipy_dir=os.path.expanduser('~/.ipython')
-
-if not os.path.exists(ipy_dir):
-    os.mkdir(ipy_dir)
-shutil.copy('%s/ipython_profile/ipy_profile_hyperspy.py' % hyperspy_module_path, ipy_dir)
+    ipy_dir = IPython.utils.path.get_ipython_dir()
+    to_copy = [ os.path.join(ipy_hspy, 'ipython_config.py') ,
+                os.path.join(ipy_hspy, 'ipython_qtconsole_config.py'), ]
+    destination = os.path.join(ipy_dir, 'profile_hyperspy')
+    if not os.path.isdir(ipy_dir) or not os.path.isdir(destination):
+        os.system('ipython profile create hyperspy')
+        
+for f in to_copy:
+    shutil.copy(f, destination)
 
 if argp:
     parser = argparse.ArgumentParser(add_help=True, 
                                      version=hyperspy.Release.version)
     # The -wthread forces matplotlib to use the WXAgg backend
     # This is necessary to support traits visualisation
-    parser.add_argument('-backend', action="store", dest='backend', choices=(
-            'gthread', 'qthread', 'q4thread', 'wthread'), default='wthread')
+#    parser.add_argument('-backend', action="store", dest='backend', choices=(
+#            'gthread', 'qthread', 'q4thread', 'wthread'), default='wthread')
     # If the headless argument is passed, no threading is used and the backend
     # is defined by matplotlibrc, that for a headless system should be 
     # Agg or similar.
     parser.add_argument('-headless', action="store_true", default=False)
     args = parser.parse_args()
-    backend = (' -' + args.backend if args.headless is False else '')
 else:
     parser = optparse.OptionParser()
-    # The -wthread forces matplotlib to use the WXAgg backend
+    #m The -wthread forces matplotlib to use the WXAgg backend
     # This is necessary to support traits visualisation
-    parser.add_option('--backend', action="store", dest='backend', choices=(
-            'gthread', 'qthread', 'q4thread', 'wthread'), default='wthread')
+#    parser.add_option('--backend', action="store", dest='backend', choices=(
+#            'gthread', 'qthread', 'q4thread', 'wthread'), default='wthread')
     # If the headless argument is passed, no threading is used and the backend
     # is defined by matplotlibrc, that for a headless system should be 
     # Agg or similar.
     parser.add_option('--headless', action="store_true", default=False)
     (options, args) = parser.parse_args()
-    backend = (' -' + options.backend if options.headless is False else '')
 
-os.system('ipython%s -pylab -p hyperspy' % backend)
+if ipy_version < ipy_011:
+    pylab = ' -pylab -wthread' if args.headless is False else ''
+    os.system('ipython%s -p hyperspy' % pylab)
+else:
+    pylab = ' --pylab=wx' if args.headless is False else ''
+    os.system('ipython%s --profile=hyperspy' % pylab)
