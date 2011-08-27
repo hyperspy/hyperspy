@@ -143,7 +143,7 @@
 #            self.create_data_cube()
 #            self.model = Model(self, auto_background=False)
 #            self.model.charge()
-#            self.model.generate_cube()
+#            self.model.generate_data_from_model()
 #            self.data_cube = self.model.model_cube
 #            self.type = 'simulation'
 #        else:
@@ -169,7 +169,7 @@
 #                    i += 1
 #            self.create_data_cube()
 #            self.model = Model(self, auto_background=False)
-#            self.model.generate_cube()
+#            self.model.generate_data_from_model()
 #            self.data_cube = self.model.model_cube
 #            self.type = 'simulation'
 #        if energy_instability != 0:

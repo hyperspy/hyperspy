@@ -52,7 +52,7 @@ gs2.A.map['values'][:] = 20000 * np.random.random((32,32))
 gs2.A.map['is_set'][:] = True
 
 # Create the dataset
-m.generate_cube()
+m.generate_data_from_model()
 
 # Assign the data generated to the Spectrum with some poissonian noise
 s.data = np.random.poisson(m.model_cube)

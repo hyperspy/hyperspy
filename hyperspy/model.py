@@ -115,7 +115,7 @@ class Model(list, Optimizers, Estimators):
                 parameter.connection_active = tof
         self.auto_update_plot = tof
 
-    def generate_cube(self, out_of_range_to_nan = True):
+    def generate_data_from_model(self, out_of_range_to_nan = True):
         """Generate a SI with the current model
         
         The SI is stored in self.model_cube
