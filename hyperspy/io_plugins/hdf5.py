@@ -92,7 +92,6 @@ def file_reader(filename, record_by, mode = 'r', driver = 'core',
             axes = []
             for i in xrange(len(exp['data'].shape)):
                 try:
-                    print('axis-%i' % i)
                     axes.append(dict(exg['axis-%i' % i].attrs))
                 except KeyError:
                     f.close()
