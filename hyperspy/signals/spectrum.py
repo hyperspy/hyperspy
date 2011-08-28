@@ -479,5 +479,6 @@ class Spectrum(Signal):
     def to_EELS(self):
         from hyperspy.signals.eels import EELSSpectrum
         dic = self._get_signal_dict()
+        dic['mapped_parameters']['signal'] = 'EELS'
         return EELSSpectrum(dic)
         
