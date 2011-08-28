@@ -1032,7 +1032,7 @@ class MVA_Results():
         pca_algorithm = self.pca_algorithm, centered = self.centered, 
         output_dim = self.output_dim, variance2one = self.variance2one, 
         poissonian_noise_normalized = self.poissonian_noise_normalized, 
-        w = self.w, ica_algorithm = target.ica_algorithm)
+        w = self.w, ica_algorithm = self.ica_algorithm)
 
     def load(self, filename):
         """Load the result of the PCA analysis
