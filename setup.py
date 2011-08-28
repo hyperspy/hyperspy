@@ -71,7 +71,7 @@ setup(
     #py_modules = ['', ],
     packages = ['hyperspy', 'hyperspy.components', 'hyperspy.io_plugins', 
                 'hyperspy.drawing', 'hyperspy.mva', 'hyperspy.signals', 
-                'hyperspy.gui', 'hyperspy.tests', 
+                'hyperspy.gui', 'hyperspy.tests', 'hyperspy.models',
                 'hyperspy.tests.io', 'hyperspy.misc'],
     requires = install_req,
     scripts = scripts,
