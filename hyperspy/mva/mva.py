@@ -330,13 +330,13 @@ class MVA():
             "You have to perform Principal Components Analysis before"
             sys.exit(0)
     
-    def reverse_ic(self, *ic_n, on_peaks = False):
+    def reverse_ic(self, ic_n, on_peaks = False):
         """Reverse the independent component
         
         Parameters
         ----------
-        ic_n : int
-            component indexes
+        ic_n : list or int
+            component index/es
 
         Examples
         -------
@@ -344,13 +344,14 @@ class MVA():
         >>> s.principal_components_analysis(True) # perform PCA
         >>> s.independent_components_analysis(3)  # perform ICA on 3 PCs
         >>> s.reverse_ic(1) # reverse IC 1
-        >>> s.reverse_ic(0, 2) # reverse ICs 0 and 2
+        >>> s.reverse_ic((0, 2)) # reverse ICs 0 and 2
         """
         if on_peaks:
             target=self.peak_mva_results
         else:
             target=self.mva_results
-        for i in ic_n:
+        
+        for i in [ic_n,]:
             target.ic[:,i] *= -1
             target.w[i,:] *= -1
     
