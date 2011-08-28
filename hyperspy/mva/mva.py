@@ -330,7 +330,7 @@ class MVA():
             "You have to perform Principal Components Analysis before"
             sys.exit(0)
     
-    def reverse_ic(self, *ic_n):
+    def reverse_ic(self, *ic_n, on_peaks = False):
         """Reverse the independent component
         
         Parameters
