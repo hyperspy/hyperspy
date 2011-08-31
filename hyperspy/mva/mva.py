@@ -675,7 +675,7 @@ class MVA():
                     ax2 = figure.add_subplot(122)
                 else:
                     ax = figure.add_subplot(111)
-            if self.axes_manager.navigation_dim == 2:
+            if self.axes_manager.navigation_dimension == 2:
                 toplot = scores[i,:].reshape(self.axes_manager.navigation_shape)
                 im_list.append(Image({'data' : toplot, 
                     'axes' : self.axes_manager._get_non_slicing_axes_dicts()}))
@@ -689,7 +689,7 @@ class MVA():
                     figure.canvas.draw()
                     #pointer = widgets.DraggableSquare(self.coordinates)
                     #pointer.add_axes(ax)
-            elif self.axes_manager.navigation_dim == 1:
+            elif self.axes_manager.navigation_dimension == 1:
                 toplot = scores[i,:]
                 im_list.append(Spectrum({"data" : toplot, 
                     'axes' : self.axes_manager._get_non_slicing_axes_dicts()}))
