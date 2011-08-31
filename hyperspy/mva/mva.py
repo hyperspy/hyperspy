@@ -56,7 +56,7 @@ class MVA():
         return target
     
     def principal_components_analysis(self, normalize_poissonian_noise = False, 
-    algorithm = 'svd', output_dim = None, spatial_mask = None, 
+    algorithm = 'svd', output_dimension = None, spatial_mask = None, 
     energy_mask = None, center = False, variance2one = False, var_array = None, 
     var_func = None, polyfit = None, on_peaks=False):
         """Principal components analysis.
@@ -68,7 +68,7 @@ class MVA():
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
         algorithm : {'svd', 'mlpca', 'mdp', 'NIPALS'}
-        output_dim : None or int
+        output_dimension : None or int
             number of PCA to keep
         spatial_mask : boolean numpy array
         energy_mask : boolean numpy array
@@ -110,9 +110,9 @@ class MVA():
                 "the MLPCA algorithm. Therefore, "
                 "normalize_poissonian_noise is set to False")
                 normalize_poissonian_noise = False
-            if output_dim is None:
+            if output_dimension is None:
                 messages.warning_exit(
-                "With the mlpca algorithm the output_dim must be expecified")
+                "With the mlpca algorithm the output_dimension must be expecified")
         
         if center is True and normalize_poissonian_noise is True:
             messages.warning(
@@ -169,10 +169,10 @@ class MVA():
         if algorithm == 'mdp' or algorithm == 'NIPALS':
             if algorithm == 'mdp':
                 target.pca_node = mdp.nodes.PCANode(
-                output_dim=output_dim, svd = True)
+                output_dimension=output_dimension, svd = True)
             elif algorithm == 'NIPALS':
                 target.pca_node = mdp.nodes.NIPALSNode(
-                output_dim=output_dim)
+                output_dimension=output_dimension)
             # Train the node
             print "\nPerforming the PCA node training"
             print "This include variance normalizing"
@@ -183,7 +183,7 @@ class MVA():
             pca_v = target.pca_node.v
             pca_V = target.pca_node.d
             target.dc_transposed=dc_transposed
-            target.output_dim = output_dim
+            target.output_dimension = output_dimension
 
         elif algorithm == 'svd':
             pca_v, pca_V = pca(dc[energy_mask,:][:,spatial_mask])
@@ -191,9 +191,9 @@ class MVA():
 
         elif algorithm == 'mlpca':
             print "Performing the MLPCA training"
-            if output_dim is None:
+            if output_dimension is None:
                 messages.warning_exit(
-                "For MLPCA it is mandatory to define the output_dim")
+                "For MLPCA it is mandatory to define the output_dimension")
             if var_array is None and polyfit is None:
                 messages.warning_exit(
                 "For MLPCA it is mandatory to define either the variance array "
@@ -217,18 +217,18 @@ class MVA():
             target.mlpca_output = mlpca(
                 dc.squeeze()[energy_mask,:][:,spatial_mask], 
                 var_array.squeeze(), 
-                output_dim)
+                output_dimension)
             U,S,V,Sobj, ErrFlag  = target.mlpca_output
             print "Performing PCA projection"
             pc = np.dot(dc[:,spatial_mask], V)
             pca_v = V
             pca_V = S ** 2
             
-        if output_dim:
-            print "trimming to %i dimensions"%output_dim
-            pca_v = pca_v[:,:output_dim]
-            pca_V = pca_V[:output_dim]
-            pc = pc[:,:output_dim]
+        if output_dimension:
+            print "trimming to %i dimensions"%output_dimension
+            pca_v = pca_v[:,:output_dimension]
+            pca_V = pca_V[:output_dimension]
+            pc = pc[:,:output_dimension]
 
         target.pc = pc
         target.v = pca_v
@@ -237,7 +237,7 @@ class MVA():
         target.centered = center
         target.poissonian_noise_normalized = \
             normalize_poissonian_noise
-        target.output_dim = output_dim
+        target.output_dimension = output_dimension
         target.unfolded = self._unfolded4pca
         target.variance2one = variance2one
         
@@ -300,8 +300,8 @@ class MVA():
             if number_of_components is not None:
                 bool_index[:number_of_components] = True
             else:
-                if self.output_dim is not None:
-                    number_of_components = self.output_dim
+                if self.output_dimension is not None:
+                    number_of_components = self.output_dimension
                     bool_index[:number_of_components] = True
                     
             if comp_list is not None:
@@ -325,7 +325,7 @@ class MVA():
             self._ic_from_w(target)
             target.ica_scores=self._get_ica_scores(target)
             target.ica_algorithm = algorithm
-            self.output_dim = number_of_components
+            self.output_dimension = number_of_components
         else:
             "You have to perform Principal Components Analysis before"
             sys.exit(0)
@@ -1013,7 +1013,7 @@ class MVA_Results():
         self.ica_algorithm = None
         self.centered = None
         self.poissonian_noise_normalized = None
-        self.output_dim = None
+        self.output_dimension = None
         self.unfolded = None
         self.original_shape = None
         self.ica_node=None
@@ -1030,7 +1030,7 @@ class MVA_Results():
         """
         np.savez(filename, pc = self.pc, v = self.v, V = self.V, 
         pca_algorithm = self.pca_algorithm, centered = self.centered, 
-        output_dim = self.output_dim, variance2one = self.variance2one, 
+        output_dimension = self.output_dimension, variance2one = self.variance2one, 
         poissonian_noise_normalized = self.poissonian_noise_normalized, 
         w = self.w, ica_algorithm = self.ica_algorithm)
 
@@ -1054,7 +1054,7 @@ class MVA_Results():
         'centered' : False,
         'variance2one' : False,
         'poissonian_noise_normalized' : False,
-        'output_dim' : None,
+        'output_dimension' : None,
         'last_used_pca_algorithm' : None
         }
         for attrib in defaults.keys():
@@ -1074,7 +1074,7 @@ class MVA_Results():
         self.poissonian_noise_normalized
         print "Energy centered : %s" % self.centered
         print "Variance normalized : %s" % self.variance2one
-        print "Output dimension : %s" % self.output_dim
+        print "Output dimension : %s" % self.output_dimension
         print "ICA algorithm : %s" % self.ica_algorithm
         
     def crop_v(self, n):

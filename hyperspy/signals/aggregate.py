@@ -161,7 +161,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         self.summary()
 
     def principal_components_analysis(self, normalize_poissonian_noise = False, 
-                                     algorithm = 'svd', output_dim = None, spatial_mask = None, 
+                                     algorithm = 'svd', output_dimension = None, spatial_mask = None, 
                                      energy_mask = None, center = False, variance2one = False, var_array = None, 
                                      var_func = None, polyfit = None):
         """Principal components analysis for Aggregate Spectra.
@@ -176,7 +176,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
         algorithm : {'svd', 'mlpca', 'mdp', 'NIPALS'}
-        output_dim : None or int
+        output_dimension : None or int
             number of PCA to keep
         spatial_mask : boolean numpy array
         energy_mask : boolean numpy array
@@ -198,7 +198,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         plot_principal_components, plot_principal_components_maps, plot_lev
         """
         super(AggregateSpectrum,self).principal_components_analysis(normalize_poissonian_noise, 
-                                     algorithm, output_dim, spatial_mask, 
+                                     algorithm, output_dimension, spatial_mask, 
                                      energy_mask, center, variance2one, var_array, 
                                      var_func, polyfit)
         self._split_mva_results()
@@ -260,7 +260,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
             mvar.centered = smvar.centered
             mvar.poissonian_noise_normalized = smvar.poissonian_noise_normalized
             # number of independent components derived
-            mvar.output_dim = smvar.output_dim
+            mvar.output_dimension = smvar.output_dimension
             mvar.unfolded = True
             # Demixing matrix
             mvar.w = smvar.w
