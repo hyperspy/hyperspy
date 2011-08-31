@@ -152,8 +152,8 @@ class MVA():
         if on_peaks:
             dc=self.peak_chars
         else:
-            last_axis_units=self.axes_manager.axes[-1].units
-            if last_axis_units=='eV' or last_axis_units=='keV':
+            import hyperspy.signals.spectrum
+            if isinstance(self, hyperspy.signals.spectrum.Spectrum):
                 print "Transposing data so that energy axis makes up rows."
                 dc = self.data.T.squeeze()
                 dc_transposed=True
@@ -921,7 +921,8 @@ class MVA():
         refold = self.unfold_if_multidim()
         dc_transposed=False
         last_axis_units=self.axes_manager.axes[-1].units
-        if last_axis_units=='eV' or last_axis_units=='keV':
+        import hyperspy.signals.spectrum
+        if isinstance(self, hyperspy.signals.spectrum.Spectrum):
             # don't print this here, since PCA will have already printed it.
             # print "Transposing data so that energy axis makes up rows."
             dc = self.data.T.squeeze()
