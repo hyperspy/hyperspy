@@ -205,11 +205,11 @@ class AxesManager(t.HasTraits):
         # set_view is called only if there is no current view
         if not slices or np.all(np.array(slices) == False):
             self.set_view()
-        self.set_output_dimension()
-        self.on_trait_change(self.set_output_dimension, 'axes.slice')
-        self.on_trait_change(self.set_output_dimension, 'axes.index')
+        self.set_signal_dimension()
+        self.on_trait_change(self.set_signal_dimension, 'axes.slice')
+        self.on_trait_change(self.set_signal_dimension, 'axes.index')
 
-    def set_output_dimension(self):
+    def set_signal_dimension(self):
         getitem_tuple = []
         indexes = []
         values = []
@@ -227,7 +227,7 @@ class AxesManager(t.HasTraits):
         self._getitem_tuple = getitem_tuple
         self._indexes = np.array(indexes)
         self._values = np.array(values)
-        self.output_dimension = len(self._slicing_axes)
+        self.signal_dimension = len(self._slicing_axes)
         self.navigation_dimension = len(self._non_slicing_axes)
         self.navigation_shape = [axis.size for axis in self._non_slicing_axes]
     
@@ -239,7 +239,7 @@ class AxesManager(t.HasTraits):
         """view : 'hyperspectrum' or 'image' """
         tl = [False] * len(self.axes)
         if view == 'hyperspectrum':
-            # We limit the output_dimension to 1 to get a spectrum
+            # We limit the signal_dimension to 1 to get a spectrum
             tl[0] = True
         elif view == 'image':
             tl[:2] = True, True

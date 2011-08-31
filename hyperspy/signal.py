@@ -190,14 +190,14 @@ class Signal(t.HasTraits, MVA):
          
     def _get_explorer(self, *args, **kwargs):
         nav_dim = self.axes_manager.navigation_dimension
-        if self.axes_manager.output_dimension == 1:
+        if self.axes_manager.signal_dimension == 1:
             if nav_dim == 1:
                 return self._get_hse_1D_explorer(*args, **kwargs)
             elif nav_dim == 2:
                 return self._get_hse_2D_explorer(*args, **kwargs)
             else:
                 return None
-        if self.axes_manager.output_dimension == 2:
+        if self.axes_manager.signal_dimension == 2:
             if nav_dim == 1 or nav_dim == 2:
                 return self._get_hie_explorer(*args, **kwargs)
             else:
@@ -217,7 +217,7 @@ class Signal(t.HasTraits, MVA):
         if axes_manager is None:
             axes_manager = self.axes_manager
             
-        if axes_manager.output_dimension == 1:
+        if axes_manager.signal_dimension == 1:
             # Hyperspectrum
                             
             self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
@@ -240,7 +240,7 @@ class Signal(t.HasTraits, MVA):
                 self.axes_manager._non_slicing_axes[0].units
             self._plot.plot()
             
-        elif axes_manager.output_dimension == 2:
+        elif axes_manager.signal_dimension == 2:
             
             # Mike's playground with new plotting toolkits - needs to be a branch.
             """
@@ -403,7 +403,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             c2.index_in_array, c1.index_in_array
         self.axes_manager.axes[axis1] = c2
         self.axes_manager.axes[axis2] = c1
-        self.axes_manager.set_output_dimension()
+        self.axes_manager.set_signal_dimension()
         self._replot()
         
     def rebin(self, new_shape):
@@ -604,7 +604,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         for _axis in s.axes_manager.axes:
             if _axis.index_in_array > axis:
                 _axis.index_in_array -= 1
-        s.axes_manager.set_output_dimension()
+        s.axes_manager.set_signal_dimension()
         if return_signal is True:
             return s
             
@@ -650,7 +650,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         for _axis in s.axes_manager.axes:
             if _axis.index_in_array > axis:
                 _axis.index_in_array -= 1
-        s.axes_manager.set_output_dimension()
+        s.axes_manager.set_signal_dimension()
         if return_signal is True:
             return s 
             

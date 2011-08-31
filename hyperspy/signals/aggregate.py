@@ -162,7 +162,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
 
     def principal_components_analysis(self, normalize_poissonian_noise = False, 
                                      algorithm = 'svd', output_dimension = None, navigation_mask = None, 
-                                     energy_mask = None, center = False, variance2one = False, var_array = None, 
+                                     signal_mask = None, center = False, variance2one = False, var_array = None, 
                                      var_func = None, polyfit = None):
         """Principal components analysis for Aggregate Spectra.
         Different from normal PCA only in that it operates on your
@@ -179,7 +179,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         output_dimension : None or int
             number of PCA to keep
         navigation_mask : boolean numpy array
-        energy_mask : boolean numpy array
+        signal_mask : boolean numpy array
         center : bool
             Perform energy centering before PCA
         variance2one : bool
@@ -199,7 +199,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         """
         super(AggregateSpectrum,self).principal_components_analysis(normalize_poissonian_noise, 
                                      algorithm, output_dimension, navigation_mask, 
-                                     energy_mask, center, variance2one, var_array, 
+                                     signal_mask, center, variance2one, var_array, 
                                      var_func, polyfit)
         self._split_mva_results()
 

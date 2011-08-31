@@ -84,7 +84,7 @@ def file_writer(filename, signal, _rescale = True, file_format='tif',
             The fileformat defined by its extension that is any one supported by 
             PIL of mahotas if installed.  
     '''
-    if only_view is True and signal.axes_manager.output_dimension == 2:
+    if only_view is True and signal.axes_manager.signal_dimension == 2:
         dc = signal()
     elif only_view is False and len(signal.data.squeeze().shape) == 2:
         dc = signal.data.squeeze()
