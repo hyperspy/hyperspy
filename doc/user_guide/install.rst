@@ -78,31 +78,13 @@ To create a Windows binary run the `release_windows.bat` script in a windows mac
 Installing the dependencies
 ---------------------------
 
-If you use a Debian/Ubuntu binary to install Hyperspy all the dependencies should install automatically. Otherwise you must install the following packages (note that we use the Debian/Ubuntu package names): ``python-numpy``, ``python-scipy``, ``python-matplotlib``, ``ipython``, ``python-mdp``, ``python-netcdf``, ``python-h5py``, ``python-traits``, ``python-traitsgui``, ``python-h5py``, ``python-nose``, ``python-opencv``, ``python-chaco``.
-
-The easiest way to install these packages is by installing the `enthough python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that comes with most Hyperspy dependencies installed by default. When using EPD the only extra package that you will need to install is MDP. If you have an internet connection you can install as follows:
-
-
-    
-.. Warning::
-    In EPD 0.7, h5py is compiled against the wrong HDF5 libraries and trying to execute Hyperspy produces a system error. Although it is better to install a newer version it is possible to walkaround this issue by reinstalling the h5py libraries as follows:
-    
-    .. code-block:: bash
-
-        $ # Install pip
-        $ easy_install pip
-        $ # Reinstall h5py
-        $ pip install h5py --upgrade 
-        
-   Also, EPD ships MDP only since version 0.7.1. If you have an older version 
-   you must install MDP manually:
-    
-    .. code-block:: bash
-
-        $ easy_install http://sourceforge.net/projects/mdp-toolkit/files/mdp-toolkit/3.1/MDP-3.1.tar.gz/download
-
+The easiest way to install these packages is by installing the `enthough python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with most Hyperspy dependencies installed by default.
 
 Another option in Windows is to install `pythonxy <http://www.pythonxy.com/>`_.
+
+If you use a Debian/Ubuntu binary to install Hyperspy all the dependencies should install automatically. Otherwise you must install the following packages (note that we use the Debian/Ubuntu package names): ``python-numpy``  ``python-scipy`` ``python-matplotlib`` ``ipython`` ``python-mdp`` ``python-netcdf`` ``python-h5py`` ``python-traits`` ``python-traitsgui`` ``python-nose`` ``python-opencv`` ``python-chaco``.
+
+
 
 
 
