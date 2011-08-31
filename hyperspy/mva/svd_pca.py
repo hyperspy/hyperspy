@@ -17,7 +17,7 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import numpy as np
+import scipy.linalg
 
 def pca(data):
     """Perform PCA using SVD.
@@ -30,7 +30,7 @@ def pca(data):
     print "Performing PCA with a SVD based algorithm"
     N, M = data.shape
     Y = data
-    u, S, PC = np.linalg.svd(Y, full_matrices = False)
+    u, S, PC = scipy.linalg.svd(Y, full_matrices = False)
     v = PC.T
     V = S ** 2
     return v,V
