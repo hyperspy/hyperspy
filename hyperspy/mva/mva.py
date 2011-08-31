@@ -56,7 +56,7 @@ class MVA():
         return target
     
     def principal_components_analysis(self, normalize_poissonian_noise = False, 
-    algorithm = 'svd', output_dimension = None, spatial_mask = None, 
+    algorithm = 'svd', output_dimension = None, navigation_mask = None, 
     energy_mask = None, center = False, variance2one = False, var_array = None, 
     var_func = None, polyfit = None, on_peaks=False):
         """Principal components analysis.
@@ -70,7 +70,7 @@ class MVA():
         algorithm : {'svd', 'mlpca', 'mdp', 'NIPALS'}
         output_dimension : None or int
             number of PCA to keep
-        spatial_mask : boolean numpy array
+        navigation_mask : boolean numpy array
         energy_mask : boolean numpy array
         center : bool
             Perform energy centering before PCA
@@ -139,12 +139,12 @@ class MVA():
         # Normalize the poissonian noise
         # Note that this function can change the masks
         if normalize_poissonian_noise is True:
-            spatial_mask, energy_mask = \
-                self.normalize_poissonian_noise(spatial_mask = spatial_mask, 
+            navigation_mask, energy_mask = \
+                self.normalize_poissonian_noise(navigation_mask = navigation_mask, 
                                                 energy_mask = energy_mask, 
                                                 return_masks = True)
 
-        spatial_mask = self._correct_spatial_mask_when_unfolded(spatial_mask)
+        navigation_mask = self._correct_navigation_mask_when_unfolded(navigation_mask)
 
         messages.information('Performing principal components analysis')
         dc_transposed=False
@@ -162,8 +162,8 @@ class MVA():
         #set the output target (peak results or not?)
         target=self._get_target(on_peaks)
         # Transform the None masks in slices to get the right behaviour
-        if spatial_mask is None:
-            spatial_mask = slice(None)
+        if navigation_mask is None:
+            navigation_mask = slice(None)
         if energy_mask is None:
             energy_mask = slice(None)
         if algorithm == 'mdp' or algorithm == 'NIPALS':
@@ -177,17 +177,17 @@ class MVA():
             print "\nPerforming the PCA node training"
             print "This include variance normalizing"
             target.pca_node.train(
-                dc[energy_mask,:][:,spatial_mask])
+                dc[energy_mask,:][:,navigation_mask])
             print "Performing PCA projection"
-            pc = target.pca_node.execute(dc[:,spatial_mask])
+            pc = target.pca_node.execute(dc[:,navigation_mask])
             pca_v = target.pca_node.v
             pca_V = target.pca_node.d
             target.dc_transposed=dc_transposed
             target.output_dimension = output_dimension
 
         elif algorithm == 'svd':
-            pca_v, pca_V = pca(dc[energy_mask,:][:,spatial_mask])
-            pc = np.dot(dc[:,spatial_mask], pca_v)
+            pca_v, pca_V = pca(dc[energy_mask,:][:,navigation_mask])
+            pc = np.dot(dc[:,navigation_mask], pca_v)
 
         elif algorithm == 'mlpca':
             print "Performing the MLPCA training"
@@ -197,7 +197,7 @@ class MVA():
             if var_array is None:
                 messages.information('No variance array provided.'
                 'Supposing poissonian data')
-                var_array = dc.squeeze()[energy_mask,:][:,spatial_mask]
+                var_array = dc.squeeze()[energy_mask,:][:,navigation_mask]
 
             if var_array is not None and var_func is not None:
                 messages.warning_exit(
@@ -205,23 +205,23 @@ class MVA():
                 "Please, define just one of them")
             if var_func is not None:
                 if hasattr(var_func, '__call__'):
-                    var_array = var_func(dc[energy_mask,...][:,spatial_mask])
+                    var_array = var_func(dc[energy_mask,...][:,navigation_mask])
                 else:
                     try:
                         var_array = np.polyval(polyfit,dc[energy_mask, 
-                        spatial_mask])
+                        navigation_mask])
                     except:
                         messages.warning_exit(
                         'var_func must be either a function or an array'
                         'defining the coefficients of a polynom')             
                 
             target.mlpca_output = mlpca(
-                dc.squeeze()[energy_mask,:][:,spatial_mask], 
+                dc.squeeze()[energy_mask,:][:,navigation_mask], 
                 var_array.squeeze(), 
                 output_dimension)
             U,S,V,Sobj, ErrFlag  = target.mlpca_output
             print "Performing PCA projection"
-            pc = np.dot(dc[:,spatial_mask], V)
+            pc = np.dot(dc[:,navigation_mask], V)
             pca_v = V
             pca_V = S ** 2
             
@@ -249,8 +249,8 @@ class MVA():
         if normalize_poissonian_noise is True:
             target.pc[energy_mask,:] *= self._root_bH
             target.v *= self._root_aG.T
-            if isinstance(spatial_mask, slice):
-                spatial_mask = None
+            if isinstance(navigation_mask, slice):
+                navigation_mask = None
             if isinstance(energy_mask, slice):
                 energy_mask = None
 
@@ -258,11 +258,11 @@ class MVA():
         self.undo_treatments(on_peaks)
 
         # Set the pixels that were not processed to nan
-        if spatial_mask is not None or not isinstance(spatial_mask, slice):
+        if navigation_mask is not None or not isinstance(navigation_mask, slice):
             v = np.zeros((dc.shape[1], target.v.shape[1]), 
                     dtype = target.v.dtype)
-            v[spatial_mask == False,:] = np.nan
-            v[spatial_mask,:] = target.v
+            v[navigation_mask == False,:] = np.nan
+            v[navigation_mask,:] = target.v
             target.v = v
                 
         if self._unfolded4pca is True:
@@ -904,7 +904,7 @@ class MVA():
         self.save_ica_results(elements = elements, image_format = image_format, 
         recmatrix = self.als_output['CList'].T, ic = self.als_ic)
                 
-    def normalize_poissonian_noise(self, spatial_mask = None, 
+    def normalize_poissonian_noise(self, navigation_mask = None, 
                                    energy_mask = None, return_masks = False):
         """
         Scales the SI following Surf. Interface Anal. 2004; 36: 203–212 to
@@ -912,7 +912,7 @@ class MVA():
         
         Parameters
         ----------
-        spatial_mask : boolen numpy array
+        navigation_mask : boolen numpy array
         energy_mask  : boolen numpy array
         """
         messages.information(
@@ -929,15 +929,15 @@ class MVA():
             dc_transposed=True
         else:
             dc = self.data.squeeze()
-        spatial_mask = \
-            self._correct_spatial_mask_when_unfolded(spatial_mask)
-        if spatial_mask is None:
-            spatial_mask = slice(None)
+        navigation_mask = \
+            self._correct_navigation_mask_when_unfolded(navigation_mask)
+        if navigation_mask is None:
+            navigation_mask = slice(None)
         if energy_mask is None:
             energy_mask = slice(None)
         # Rescale the data to gaussianize the poissonian noise
-        aG = dc[energy_mask,:][:,spatial_mask].sum(0).squeeze()
-        bH = dc[energy_mask,:][:,spatial_mask].sum(1).squeeze()
+        aG = dc[energy_mask,:][:,navigation_mask].sum(0).squeeze()
+        bH = dc[energy_mask,:][:,navigation_mask].sum(1).squeeze()
         # Checks if any is negative
         if (aG < 0).any() or (bH < 0).any():
             messages.warning_exit(
@@ -948,11 +948,11 @@ class MVA():
         aG0 = (aG == 0)
         bH0 = (bH == 0)
         if aG0.any():
-            if isinstance(spatial_mask, slice):
+            if isinstance(navigation_mask, slice):
                 # Convert the slice into a mask before setting its values
-                spatial_mask = np.ones((self.data.shape[1]),dtype = 'bool')
+                navigation_mask = np.ones((self.data.shape[1]),dtype = 'bool')
             # Set colums summing zero as masked
-            spatial_mask[aG0] = False
+            navigation_mask[aG0] = False
             aG = aG[aG0 == False]
         if bH0.any():
             if isinstance(energy_mask, slice):
@@ -963,13 +963,13 @@ class MVA():
             bH = bH[bH0 == False]
         self._root_aG = np.sqrt(aG)[np.newaxis,:]
         self._root_bH = np.sqrt(bH)[:, np.newaxis]
-        temp = (dc[energy_mask,:][:,spatial_mask] / 
+        temp = (dc[energy_mask,:][:,navigation_mask] / 
                 (self._root_aG * self._root_bH))
-        if  isinstance(energy_mask,slice) or isinstance(spatial_mask,slice):
-            dc[energy_mask,spatial_mask] = temp
+        if  isinstance(energy_mask,slice) or isinstance(navigation_mask,slice):
+            dc[energy_mask,navigation_mask] = temp
         else:
             mask3D = energy_mask[:, np.newaxis] * \
-                spatial_mask[np.newaxis, :]
+                navigation_mask[np.newaxis, :]
             dc[mask3D] = temp.ravel()
         # TODO - dc was never modifying self.data - was normalization ever
         # really getting applied?  Comment next lines as necessary.
@@ -984,11 +984,11 @@ class MVA():
             print "Automatically refolding the SI after scaling"
             self.fold()
         if return_masks is True:
-            if isinstance(spatial_mask, slice):
-                spatial_mask = None
+            if isinstance(navigation_mask, slice):
+                navigation_mask = None
             if isinstance(energy_mask, slice):
                 energy_mask = None
-            return spatial_mask, energy_mask
+            return navigation_mask, energy_mask
         
     def undo_treatments(self, on_peaks=False):
         """Undo normalize_poissonian_noise"""

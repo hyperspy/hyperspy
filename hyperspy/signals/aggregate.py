@@ -161,7 +161,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         self.summary()
 
     def principal_components_analysis(self, normalize_poissonian_noise = False, 
-                                     algorithm = 'svd', output_dimension = None, spatial_mask = None, 
+                                     algorithm = 'svd', output_dimension = None, navigation_mask = None, 
                                      energy_mask = None, center = False, variance2one = False, var_array = None, 
                                      var_func = None, polyfit = None):
         """Principal components analysis for Aggregate Spectra.
@@ -178,7 +178,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         algorithm : {'svd', 'mlpca', 'mdp', 'NIPALS'}
         output_dimension : None or int
             number of PCA to keep
-        spatial_mask : boolean numpy array
+        navigation_mask : boolean numpy array
         energy_mask : boolean numpy array
         center : bool
             Perform energy centering before PCA
@@ -198,7 +198,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         plot_principal_components, plot_principal_components_maps, plot_lev
         """
         super(AggregateSpectrum,self).principal_components_analysis(normalize_poissonian_noise, 
-                                     algorithm, output_dimension, spatial_mask, 
+                                     algorithm, output_dimension, navigation_mask, 
                                      energy_mask, center, variance2one, var_array, 
                                      var_func, polyfit)
         self._split_mva_results()
