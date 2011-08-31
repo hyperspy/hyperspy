@@ -24,6 +24,7 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+from scipy.linalg import svd
 
 def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000):
     """
@@ -58,7 +59,7 @@ def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000):
 #            len(np.where(X[j,:] != 0))))
 #            CV[i,j] = np.dot(X[i,:], (X[j,:]).T) / denom
     CV = np.cov(X)
-    U, S, Vh = np.linalg.svd(CV, 0)
+    U, S, Vh = svd(CV, full_matrices = False)
     U0 = U[:,:p]
 
     # Loop for alternating least squares
@@ -91,7 +92,7 @@ def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000):
         
         if ErrFlag < 0:
             Sold = Sobj
-            U,S,Vh = np.linalg.svd(MLX, 0)
+            U,S,Vh = svd(MLX, full_matrices = False)
             V = Vh.T
             XX = XX.T
             varX = varX.T
@@ -99,7 +100,7 @@ def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000):
             U0 = V[:,:p]
     # Finished
     
-    U, S, Vh = np.linalg.svd(MLX, 0)
+    U, S, Vh = svd(MLX, full_matrices = False)
     V = Vh.T
     U = U[:,:p]
 #    S = S[:p]

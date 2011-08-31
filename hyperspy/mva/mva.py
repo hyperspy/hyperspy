@@ -194,10 +194,11 @@ class MVA():
             if output_dimension is None:
                 messages.warning_exit(
                 "For MLPCA it is mandatory to define the output_dimension")
-            if var_array is None and polyfit is None:
-                messages.warning_exit(
-                "For MLPCA it is mandatory to define either the variance array "
-                "or the polyfit functions")
+            if var_array is None:
+                messages.information('No variance array provided.'
+                'Supposing poissonian data')
+                var_array = dc.squeeze()[energy_mask,:][:,spatial_mask]
+
             if var_array is not None and var_func is not None:
                 messages.warning_exit(
                 "You have defined both the var_func and var_array keywords"
