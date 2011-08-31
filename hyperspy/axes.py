@@ -228,7 +228,7 @@ class AxesManager(t.HasTraits):
         self._indexes = np.array(indexes)
         self._values = np.array(values)
         self.output_dimension = len(self._slicing_axes)
-        self.navigation_dim = len(self._non_slicing_axes)
+        self.navigation_dimension = len(self._non_slicing_axes)
         self.navigation_shape = [axis.size for axis in self._non_slicing_axes]
     
     def set_not_slicing_indexes(self, nsi):

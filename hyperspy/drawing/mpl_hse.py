@@ -62,7 +62,7 @@ class MPL_HyperSpectrum_Explorer(object):
         return utils.does_figure_object_exists(self.spectrum_plot.figure)
     
     def assign_pointer(self):
-        nav_dim = self.axes_manager.navigation_dim
+        nav_dim = self.axes_manager.navigation_dimension
         if nav_dim == 2:
             Pointer = widgets.DraggableSquare
         elif nav_dim == 1:

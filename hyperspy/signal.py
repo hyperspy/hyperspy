@@ -189,7 +189,7 @@ class Signal(t.HasTraits, MVA):
         return data
          
     def _get_explorer(self, *args, **kwargs):
-        nav_dim = self.axes_manager.navigation_dim
+        nav_dim = self.axes_manager.navigation_dimension
         if self.axes_manager.output_dimension == 1:
             if nav_dim == 1:
                 return self._get_hse_1D_explorer(*args, **kwargs)

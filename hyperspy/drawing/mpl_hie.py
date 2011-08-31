@@ -67,7 +67,7 @@ class MPL_HyperImage_Explorer():
         self.axes_manager.connect(self.image_plot.update_image)
             
     def assign_pointer(self):
-        nav_dim = self.axes_manager.navigation_dim
+        nav_dim = self.axes_manager.navigation_dimension
         if nav_dim == 2:
             Pointer = widgets.DraggableSquare
         elif nav_dim == 1:
@@ -80,7 +80,7 @@ class MPL_HyperImage_Explorer():
         if self.navigator_plot is not None:
             self.navigator_plot.plot()
             return
-        if self.axes_manager.navigation_dim == 2:
+        if self.axes_manager.navigation_dimension == 2:
             imf = image.ImagePlot()
             imf.data_function = self.navigator_data_function
             imf.pixel_units = self.axes_manager._non_slicing_axes[0].units
@@ -89,7 +89,7 @@ class MPL_HyperImage_Explorer():
             self.pointer.add_axes(imf.ax)
             self.navigator_plot = imf
             
-        if self.axes_manager.navigation_dim == 1:
+        if self.axes_manager.navigation_dimension == 1:
             
             # Create the figure
             sf = spectrum.SpectrumFigure()
