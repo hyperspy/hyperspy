@@ -14,7 +14,7 @@ args = parser.parse_args()
 import os
 from subprocess import call
 import hyperspy.Release as Release
-release_name = 'hyperspy-' + Release.version
+release_name = 'hyperspy-' + Release.version.replace('.dev','~dev')
 os.system('python setup.py --command-packages=stdeb.command bdist_deb')
 
 if args.install is True:
