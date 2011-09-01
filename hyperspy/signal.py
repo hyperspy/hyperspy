@@ -98,7 +98,8 @@ class Signal(t.HasTraits, MVA):
            see load_dictionary for the format
         """    
         super(Signal, self).__init__()
-        self.mapped_parameters=Parameters()
+        self.mapped_parameters = Parameters()
+        self.original_parameters = Parameters()
         if type(file_data_dict).__name__ == "dict":
             self.load_dictionary(file_data_dict)
         self._plot = None
@@ -137,7 +138,7 @@ class Signal(t.HasTraits, MVA):
         if file_data_dict.has_key('attributes'):
             for key, value in file_data_dict['attributes'].iteritems():
                 self.__setattr__(key, value)
-        self.original_parameters = Parameters(
+        self.original_parameters.load_dictionary(
             file_data_dict['original_parameters'])
         self.mapped_parameters.load_dictionary(
             file_data_dict['mapped_parameters'])
