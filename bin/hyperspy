@@ -36,57 +36,104 @@ import IPython
 import hyperspy
 import hyperspy.Release
 
+# First we split the argv items in two: the firsts for hyperspy, the rest for
+# ipython
+ipy_argv = [sys.argv[0],]
+if '--ipython_args' in sys.argv:
+    ipy_argv += sys.argv[sys.argv.index('--ipython_args') + 1:]
+    sys.argv = sys.argv[:sys.argv.index('--ipython_args')]
+    
 hyperspy_module_path=os.path.dirname(hyperspy.__file__)
 ipy_hspy = os.path.join(hyperspy_module_path, 'ipython_profile')
 ipy_version = StrictVersion(IPython.__version__)
 ipy_011 = StrictVersion('0.11')
 if ipy_version < ipy_011:
-    if os.name in ['nt','dos']:
-        ipy_dir=os.path.expanduser('~/_ipython')
-    else:
-        ipy_dir=os.path.expanduser('~/.ipython')
+    from IPython.genutils import get_home_dir, get_ipython_dir
+    from IPython.iplib import user_setup
+    ipy_dir = get_ipython_dir()
     to_copy = [os.path.join(ipy_hspy, 'ipy_profile_hyperspy.py') ,]
     destination = ipy_dir
     if not os.path.isdir(ipy_dir):
-        os.mkdir(ipy_dir)
+        # Platform-dependent suffix.
+        if os.name == 'posix':
+            rc_suffix = ''
+        else:
+            rc_suffix = '.ini'
+        # Ise the IPython function to create the ipy_dir
+        user_setup(ipy_dir, rc_suffix, mode='install', interactive=False)
+        sys.argv.append('--overwrite_profile')
 else:
     ipy_dir = IPython.utils.path.get_ipython_dir()
     to_copy = [ os.path.join(ipy_hspy, 'ipython_config.py') ,
                 os.path.join(ipy_hspy, 'ipython_qtconsole_config.py'), ]
     destination = os.path.join(ipy_dir, 'profile_hyperspy')
+    # The ipy_dir may not exist if it is the first time that the user runs
+    # ipython, therefore we must create it, what is done automatically when 
+    # creating a profile
     if not os.path.isdir(ipy_dir) or not os.path.isdir(destination):
-        os.system('ipython profile create hyperspy')
+        # Use the IPython routines to create the directory and profile
+        import IPython.core.profileapp
+        ipy_create_profile = IPython.core.profileapp.ProfileCreate()
+        ipy_create_profile.parse_command_line(['hyperspy',])
+        ipy_create_profile.init_config_files()
+        sys.argv.append('--overwrite_profile')
         
-for f in to_copy:
-    shutil.copy(f, destination)
-
-if argp:
+if argp is True:
     parser = argparse.ArgumentParser(add_help=True, 
-                                     version=hyperspy.Release.version)
-    # The -wthread forces matplotlib to use the WXAgg backend
-    # This is necessary to support traits visualisation
-#    parser.add_argument('-backend', action="store", dest='backend', choices=(
-#            'gthread', 'qthread', 'q4thread', 'wthread'), default='wthread')
-    # If the headless argument is passed, no threading is used and the backend
-    # is defined by matplotlibrc, that for a headless system should be 
-    # Agg or similar.
-    parser.add_argument('-headless', action="store_true", default=False)
+                                     version=hyperspy.Release.version,
+                                     description = hyperspy.Release.description)
+    parser.add_argument('--no_pylab', action="store_true", default=False)
+    parser.add_argument('--overwrite_profile', action="store_true", 
+    default=False, help = 'Overwrite the Ipython profile with the default one')
+    parser.add_argument('--ipython_args', nargs='*', 
+    help='Arguments to be passed to IPython. This option must be the last one.' 
+    'Look at the IPython documentation for available options.')
     args = parser.parse_args()
 else:
-    parser = optparse.OptionParser()
-    #m The -wthread forces matplotlib to use the WXAgg backend
-    # This is necessary to support traits visualisation
-#    parser.add_option('--backend', action="store", dest='backend', choices=(
-#            'gthread', 'qthread', 'q4thread', 'wthread'), default='wthread')
-    # If the headless argument is passed, no threading is used and the backend
-    # is defined by matplotlibrc, that for a headless system should be 
-    # Agg or similar.
-    parser.add_option('--headless', action="store_true", default=False)
+    parser = optparse.OptionParser( version=hyperspy.Release.version,
+                                    description = hyperspy.Release.description)
+    parser.add_option('--no_pylab', action="store_true", default=False)
+    parser.add_option('--overwrite_profile', action="store_true", 
+    default=False, help = 'Overwrite the Ipython profile with the default one')
+    parser.add_option('--ipython_args', nargs='*', 
+    help='Arguments to be passed to IPython. This option must be the last one.' 
+    'Look at the IPython documentation for available options.')
     (options, args) = parser.parse_args()
 
+for f in to_copy:
+    if not os.path.isfile(os.path.join(destination, f)) or \
+    args.overwrite_profile is True:
+        shutil.copy(f, destination)
+
+# Now that the hspy arguments are parsed, we can delete them from sys.argv
+sys.argv = ipy_argv
+
+# By default Hyperspy uses the wx backend, but if the user tries to choose a 
+# different one using --pylab= , then we grant him the control        
+add_pylab = True
+if args.no_pylab is True:
+    add_pylab = False
+
 if ipy_version < ipy_011:
-    pylab = ' -pylab -wthread' if args.headless is False else ''
-    os.system('ipython%s -p hyperspy' % pylab)
+    if add_pylab is True:
+        sys.argv.append('-pylab')
+    add_wx = True
+    for arg in sys.argv:
+        if 'thread' in arg:
+            add_wx = False
+            break
+    if add_wx is True:
+        sys.argv.append('-wthread') 
+    sys.argv.extend(('-p', 'hyperspy'))       
+    from IPython.ipapi import launch_new_instance
+    sys.exit(launch_new_instance())
 else:
-    pylab = ' --pylab=wx' if args.headless is False else ''
-    os.system('ipython%s --profile=hyperspy' % pylab)
+    from IPython.frontend.terminal.ipapp import launch_new_instance
+    sys.argv.append('--profile=hyperspy')
+    for arg in sys.argv:
+        if 'pylab' in arg:
+            add_pylab = False
+    if add_pylab is True:
+        sys.argv.append('--pylab=wx')
+    sys.exit(launch_new_instance())
+    
