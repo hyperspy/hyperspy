@@ -17,11 +17,21 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import __main__
+from distutils.version import StrictVersion
+import IPython
 
-try:
-    import IPython.ipapi
-    ip = IPython.ipapi.get()
-    interactive_ns = ip.user_ns
-except:
-    # Ipython is not installed
+ipy_version = StrictVersion(IPython.__version__)
+ipy_011 = StrictVersion('0.11')
+
+if ipy_version < ipy_011:
+    from IPython import ipapi
+else:
+    from IPython.core import ipapi
+ip = ipapi.get()
+if ip is None:
+    # Ipython is not installed, using Python's namespace
+    # TODO: this does not work with IPython > 0.11
     interactive_ns = __main__.__dict__
+else:
+    interactive_ns = ip.user_ns
+
