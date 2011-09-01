@@ -229,6 +229,16 @@ document_tags_pattern = re.compile('.*DocumentTags\.')
 
 read_char = read_byte # dm3 uses chars for 1-Byte signed integers
 
+def node_valve(nodes, value, dictionary):
+    node = nodes.pop(0)
+    if node not in dictionary:
+        dictionary[node] = {}
+    if len(nodes) != 0:
+        node_valve(nodes,value, dictionary[node])
+    else:
+        dictionary[node] = value
+        return
+    
 def read_infoarray(f):
     """Read the infoarray from file f and return it.
     """
@@ -821,10 +831,10 @@ class DM3ImageFile(object):
         except:
             self.vsm = None
             
-        old_code_tags = parseDM3(self.filename)
+        self.old_code_tags = parseDM3(self.filename)
         self.SI_format = None
         self.signal = None
-        for tag, value in old_code_tags.iteritems():
+        for tag, value in self.old_code_tags.iteritems():
             if 'Format' in tag and 'Spectrum image' in str(value):
                 self.SI_format = value
             if 'Signal' in tag and 'EELS' in str(value):
@@ -1207,12 +1217,14 @@ def file_reader(filename, record_by=None, order = None, data_id=1,
     mapped_parameters['original_filename'] = filename
     mapped_parameters['record_by'] = dm3.record_by
     mapped_parameters['signal'] = dm3.signal
-
+    original_parameters = {}
+    for tag in dm3.old_code_tags.items():
+        node_valve(tag[0].split('.'), tag[1], original_parameters)
     dictionary = {
         'data' : data,
         'axes' : axes,
         'mapped_parameters': mapped_parameters,
-        'original_parameters':dm3.__dict__,
+        'original_parameters':original_parameters,
         }
     
     return [dictionary, ]
