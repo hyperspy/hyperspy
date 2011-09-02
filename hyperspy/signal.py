@@ -44,7 +44,7 @@ class Parameters(t.HasTraits, object):
                 value = Parameters(value)
             self.__setattr__(key, value)
  
-    def _get_print_items(self, depth = 0, max_len = 20):
+    def _get_print_items(self, depth=0, max_len=20):
         """Prints only the attributes that are not methods"""
         string = ''
         for item,value in self.__dict__.iteritems():
@@ -88,7 +88,7 @@ class Signal(t.HasTraits, MVA):
     mapped_parameters = t.Instance(Parameters)
     physical_property = t.Str()
     
-    def __init__(self, file_data_dict=None,*args,**kw):
+    def __init__(self, file_data_dict=None, *args, **kw):
         """All data interaction is made through this class or its subclasses
             
         
@@ -105,6 +105,7 @@ class Signal(t.HasTraits, MVA):
         self._plot = None
         self.mva_results=MVA_Results()
         self._shape_before_unfolding = None
+        self._axes_manager_before_unfolding = None
         
     def load_dictionary(self, file_data_dict):
         """Parameters:
@@ -164,7 +165,7 @@ class Signal(t.HasTraits, MVA):
                             'index_in_array' : i,})
         return axes
                 
-    def __call__(self, axes_manager = None):
+    def __call__(self, axes_manager=None):
         if axes_manager is None:
             axes_manager = self.axes_manager
         return self.data.__getitem__(axes_manager._getitem_tuple)
@@ -206,7 +207,7 @@ class Signal(t.HasTraits, MVA):
         else:
             return None
             
-    def plot(self, axes_manager = None):
+    def plot(self, axes_manager=None):
         if self._plot is not None:
                 try:
                     self._plot.close()
@@ -485,16 +486,18 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         else:
             return False
 
-    def unfold(self, steady_axis = -1, unfolded_axis = -2):
-        """Modify the shape of the data to obtain a 2D object
+    def _unfold(self, steady_axes, unfolded_axis):
+        """Modify the shape of the data by specifying the axes the axes which 
+        dimension do not change and the axis over which the remaining axes will
+        be unfolded
         
         Parameters
         ----------
-        steady_axis : int
-            The index of the axis which dimension does not change
+        steady_axes : list
+            The indexes of the axes which dimensions do not change
         unfolded_axis : int
             The index of the axis over which all the rest of the axes (except 
-            the steady axis) will be projected
+            the steady axes) will be unfolded
             
         See also
         --------
@@ -502,47 +505,91 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         """
         
         # It doesn't make sense unfolding when dim < 3
-        if len(self.data.squeeze().shape) < 3: return
+        if len(self.data.squeeze().shape) < 3:
+            return False
         
         # We need to store the original shape and coordinates to be used by
-        # the fold function
-        self._shape_before_unfolding = self.data.shape
-        self._axes_manager_before_unfolding = self.axes_manager
+        # the fold function only if it has not been already stored by a previous
+        # unfold
+        if self._shape_before_unfolding is None:
+            self._shape_before_unfolding = self.data.shape
+            self._axes_manager_before_unfolding = self.axes_manager
         
         new_shape = [1] * len(self.data.shape)
-        new_shape[steady_axis] = self.data.shape[steady_axis]
+        for index in steady_axes:
+            new_shape[index] = self.data.shape[index]
         new_shape[unfolded_axis] = -1
-        self.data = self.data.reshape(new_shape).squeeze()
-        self.axes_manager = AxesManager(
-            self._get_undefined_axes_list())
-        if steady_axis > unfolded_axis:
-            index = 1
-        else:
-            index = 0
-        nc = self._axes_manager_before_unfolding.axes[
-            steady_axis].get_axis_dictionary()
-        nc['index_in_array'] = index
-        self.axes_manager.axes[index].__init__(**nc)
-        self.axes_manager.axes[index].slice = slice(None)
-        self.axes_manager.axes[index - 1].slice = None
+        self.data = self.data.reshape(new_shape)
+        self.axes_manager = self.axes_manager.deepcopy()
+        i = 0
+        uname = ''
+        uunits = ''
+        to_remove = [] 
+        for axis, dim in zip(self.axes_manager.axes, new_shape):
+            if dim == 1:
+                uname += ',' + axis.name
+                uunits = ',' + axis.units
+                to_remove.append(axis)
+            else:
+                axis.index_in_array = i
+                i += 1
+        self.axes_manager.axes[unfolded_axis].name += uname
+        self.axes_manager.axes[unfolded_axis].units += uunits
+        self.axes_manager.axes[unfolded_axis].size = \
+                                                self.data.shape[unfolded_axis]
+        for axis in to_remove:
+            self.axes_manager.axes.remove(axis)
+            
+        self.data = self.data.squeeze()
         self._replot()
+        
+    def unfold(self):
+        """Modifies the shape of the data by unfolding the signal and navigation
+        dimensions separaterly
+        """
+        self.unfold_navigation_space()
+        self.unfold_signal_space()
+        
+    def unfold_navigation_space(self):
+        """Modify the shape of the data to obtain a navigation space of 
+        dimension 1
+        """
+
+        if self.axes_manager.navigation_dimension < 2:
+            message.information('Nothing done, the navigation dimension was ' 
+                                'already 1')
+            return False
+        steady_axes = [ axis.index_in_array for axis in 
+                        self.axes_manager._slicing_axes]
+        unfolded_axis = self.axes_manager._non_slicing_axes[-1].index_in_array
+        self._unfold(steady_axes, unfolded_axis)
+    
+    def unfold_signal_space(self):
+        """Modify the shape of the data to obtain a signal space of 
+        dimension 1
+        """
+        if self.axes_manager.signal_dimension < 2:
+            message.information('Nothing done, the signal dimension was ' 
+                                'already 1')
+            return False
+        steady_axes = [ axis.index_in_array for axis in 
+                        self.axes_manager._non_slicing_axes]
+        unfolded_axis = self.axes_manager._slicing_axes[-1].index_in_array
+        self._unfold(steady_axes, unfolded_axis)
             
     def fold(self):
-        """If the SI was previously unfolded, folds it back"""
+        """If the signal was previously unfolded, folds it back"""
         if self._shape_before_unfolding is not None:
             self.data = self.data.reshape(self._shape_before_unfolding)
             self.axes_manager = self._axes_manager_before_unfolding
             self._shape_before_unfolding = None
             self._axes_manager_before_unfolding = None
-            self._unfolded4pca=False
             self._replot()
 
     def _get_positive_axis_index_index(self, axis):
         if axis < 0:
             axis = len(self.data.shape) + axis
         return axis
-
-
 
     def iterate_axis(self, axis = -1):
         # We make a copy to guarantee that the data in contiguous, otherwise
