@@ -1208,10 +1208,10 @@ def file_reader(filename, record_by=None, order = None, data_id=1,
     dim = len(data.shape)
     axes=[{'size' : int(data.shape[i]), 
            'index_in_array' : i ,
-           'name' : names[i],
+           'name' : unicode(names[i]),
            'scale': scales[i],
            'offset' : origins[i],
-           'units' : units[i],} \
+           'units' : unicode(units[i]),} \
            for i in xrange(dim)]
 
     mapped_parameters['original_filename'] = filename
