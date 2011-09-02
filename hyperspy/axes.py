@@ -91,6 +91,7 @@ class DataAxis(t.HasTraits):
         self.on_trait_change(self.update_value, 'index')
         self.on_trait_change(self.set_index_from_value, 'value')
         self.on_trait_change(self._update_slice, 'slice_bool')
+        self.on_trait_change(self.update_index_bounds, 'slice_bool')
         self.slice_bool = slice_bool
         
     def __repr__(self):
