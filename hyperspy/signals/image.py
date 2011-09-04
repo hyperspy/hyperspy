@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 from hyperspy.signal import Signal
 import hyperspy.peak_char as pc
 from hyperspy.misc import utils_varia
-from hyperspy.mva.mva import MVA_Results
+from hyperspy.learn.mva import MVA_Results
 
 
 import numpy as np

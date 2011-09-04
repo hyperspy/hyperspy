@@ -28,7 +28,7 @@ from hyperspy.axes import AxesManager
 from hyperspy import io
 from hyperspy.drawing import mpl_hie, mpl_hse
 from hyperspy.misc import utils
-from hyperspy.mva.mva import MVA, MVA_Results
+from hyperspy.learn.mva import MVA, MVA_Results
 
 class Parameters(t.HasTraits, object):
     """A class to comfortably access some parameters as attributes"""

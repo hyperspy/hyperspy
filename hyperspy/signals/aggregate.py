@@ -21,7 +21,7 @@ from hyperspy.signal import Signal, Parameters
 from hyperspy.signals.image import Image
 from hyperspy.signals.spectrum import Spectrum
 import enthought.traits.api as t
-from hyperspy.mva.mva import MVA_Results
+from hyperspy.learn.mva import MVA_Results
 from hyperspy.axes import AxesManager
 
 from hyperspy.io import load
