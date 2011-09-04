@@ -70,7 +70,7 @@ setup(
     version = version,
     #py_modules = ['', ],
     packages = ['hyperspy', 'hyperspy.components', 'hyperspy.io_plugins', 
-                'hyperspy.drawing', 'hyperspy.mva', 'hyperspy.signals', 
+                'hyperspy.drawing', 'hyperspy.learn', 'hyperspy.signals', 
                 'hyperspy.gui', 'hyperspy.tests', 'hyperspy.models',
                 'hyperspy.tests.io', 'hyperspy.misc'],
     requires = install_req,
