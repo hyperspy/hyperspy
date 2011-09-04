@@ -514,7 +514,7 @@ class MVA():
         n : int
         """
         target=self._get_target(on_peaks)
-	if n>target.V.shape[0]:
+	    if n>target.V.shape[0]:
             n=target.V.shape[0]
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -535,7 +535,7 @@ class MVA():
         n : int
         """
         target=self._get_target(on_peaks)
-	if n>target.V.shape[0]:
+	    if n>target.V.shape[0]:
             n=target.V.shape[0]
         cumu = np.cumsum(target.V) / np.sum(target.V)
         fig = plt.figure()
