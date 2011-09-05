@@ -18,37 +18,31 @@
 
 
 from __future__ import division
-import copy
-import os
 import sys
-import tempfile
-
 
 import numpy as np
-import scipy as sp
-import scipy.io
-
 import matplotlib.pyplot as plt
-
 import mdp
+
 from hyperspy.misc import utils
-from svd_pca import pca
-from mlpca import mlpca
+from hyperspy.learn.svd_pca import pca
+from hyperspy.learn.mlpca import mlpca
 from hyperspy.misc.utils import center_and_scale
 from hyperspy.defaults_parser import defaults
 from hyperspy import messages
-from hyperspy.misc import config_dir
-from exceptions import *
+
         
 class MVA():
     """
     Multivariate analysis capabilities for the Spectrum class.
+    
     """
+    
     def __init__(self):
         self.mva_results = MVA_Results()
-        self.peak_chars=None
+        self.peak_chars = None
 
-    def _get_target(self,on_peaks):
+    def _get_target(self, on_peaks):
         if on_peaks:
             target=self.peak_mva_results
         else:
@@ -88,6 +82,7 @@ class MVA():
         See also
         --------
         plot_principal_components, plot_principal_components_maps, plot_lev
+        
         """
         # backup the original data
         if on_peaks:
@@ -267,7 +262,7 @@ class MVA():
                 
         if self._unfolded4pca is True:
             self.fold()
-            assert(self._unfolded4pca is False)
+            self._unfolded4pca is False
             
     def independent_components_analysis(self, number_of_components = None, 
     algorithm = 'CuBICA', diff_order = 1, pc = None, 
@@ -422,7 +417,7 @@ class MVA():
         self._unfolded4pca = self.unfold_if_multidim()
 
         sc = self.deepcopy()
-        dc_transposed = False
+
         import hyperspy.signals.spectrum
         if isinstance(self, hyperspy.signals.spectrum.Spectrum):
             print "Transposing data so that energy axis makes up rows."
@@ -583,9 +578,6 @@ class MVA():
         if ic is None:
             ic = target.ic
             x = self.axes_manager.axes[-1].axis
-        else:
-            if len(ic.shape) != 2:
-                raise ShapeError(ic)
             x = ic.shape[1]     # no way that we know the calibration
             
         n = ic.shape[1]
@@ -846,18 +838,18 @@ class MVA():
         for i in xrange(ic.shape[1]):
             axes = (self.axes_manager._slicing_axes[0].get_axis_dictionary(),)
             axes[0]['index_in_array'] = 0
-            sp = Spectrum({'data' : ic[:,i], 'axes' : axes})
-            sp.data_cube = ic[:,i].reshape((-1,1,1))
+            spectrum = Spectrum({'data' : ic[:,i], 'axes' : axes})
+            spectrum.data_cube = ic[:,i].reshape((-1,1,1))
 
             if elements is None:
-                sp.save('ic-%s.%s' % (i, spectrum_format))
+                spectrum.save('ic-%s.%s' % (i, spectrum_format))
                 if maps is True:
                     pl[i].save('map_ic-%s.%s' % (i, image_format))
                 else:
                     pl[i].save('profile_ic-%s.%s' % (i, spectrum_format))
             else:
                 element = elements[i]
-                sp.save('ic-%s.%s' % (element, spectrum_format))
+                spectrum.save('ic-%s.%s' % (element, spectrum_format))
                 if maps:
                     pl[i].save('map_ic-%s.%s' % (element, image_format))
                 else:
@@ -883,7 +875,7 @@ class MVA():
         plot_als_ic_maps, plot_als_ic
         """
         shape = (self.data.shape[2], self.data.shape[1],-1)
-        if hasattr(self, 'ic') and (target.ic is not None):
+        if hasattr(self, 'ic') and (self.ic is not None):
             also = utils.ALS(self, **kwargs)
             self.als_ic = also['S']
             self.als_maps = also['CList'].reshape(shape, order = 'C')
@@ -920,7 +912,6 @@ class MVA():
         # If energy axis is not first, it needs to be for MVA.
         refold = self.unfold_if_multidim()
         dc_transposed=False
-        last_axis_units=self.axes_manager.axes[-1].units
         import hyperspy.signals.spectrum
         if isinstance(self, hyperspy.signals.spectrum.Spectrum):
             # don't print this here, since PCA will have already printed it.
