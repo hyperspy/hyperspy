@@ -61,7 +61,7 @@ class MVA():
         ----------
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
-        algorithm : {'svd', 'mlpca', 'mdp', 'NIPALS'}
+        algorithm : {'svd', 'fast_svd', 'mlpca', 'mdp', 'NIPALS'}
         output_dimension : None or int
             number of PCA to keep
         navigation_mask : boolean numpy array
@@ -176,6 +176,10 @@ class MVA():
         elif algorithm == 'svd':
             pca_v, pca_V = pca(dc[signal_mask,:][:,navigation_mask])
             pc = np.dot(dc[:,navigation_mask], pca_v)
+        elif algorithm == 'fast_svd':
+            pca_v, pca_V = pca(dc[signal_mask,:][:,navigation_mask], 
+            fast = True, output_dimension = output_dimension)
+            pc = np.dot(dc[:,navigation_mask], pca_v)            
 
         elif algorithm == 'mlpca':
             print "Performing the MLPCA training"
