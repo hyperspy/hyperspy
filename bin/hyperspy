@@ -89,6 +89,10 @@ if argp is True:
     help='Arguments to be passed to IPython. This option must be the last one.' 
     'Look at the IPython documentation for available options.')
     args = parser.parse_args()
+    for f in to_copy:
+        if not os.path.isfile(os.path.join(destination, f)) or \
+                args.overwrite_profile is True:
+            shutil.copy(f, destination)
 else:
     parser = optparse.OptionParser( version=hyperspy.Release.version,
                                     description = hyperspy.Release.description)
@@ -99,11 +103,10 @@ else:
     help='Arguments to be passed to IPython. This option must be the last one.' 
     'Look at the IPython documentation for available options.')
     (options, args) = parser.parse_args()
-
-for f in to_copy:
-    if not os.path.isfile(os.path.join(destination, f)) or \
-    args.overwrite_profile is True:
-        shutil.copy(f, destination)
+    for f in to_copy:
+        if not os.path.isfile(os.path.join(destination, f)) or \
+                options.overwrite_profile is True:
+            shutil.copy(f, destination)
 
 # Now that the hspy arguments are parsed, we can delete them from sys.argv
 sys.argv = ipy_argv
@@ -111,8 +114,12 @@ sys.argv = ipy_argv
 # By default Hyperspy uses the wx backend, but if the user tries to choose a 
 # different one using --pylab= , then we grant him the control        
 add_pylab = True
-if args.no_pylab is True:
-    add_pylab = False
+if argp is True:
+    if args.no_pylab is True:
+        add_pylab = False
+else:
+    if options.no_pylab is True:
+        add_pylab = False
 
 if ipy_version < ipy_011:
     if add_pylab is True:
