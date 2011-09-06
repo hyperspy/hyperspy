@@ -1,4 +1,4 @@
 #!/bin/sh
 # hyperspy-here
-epd-hyperspy --ipython_args qtconsole
+hyperspy --ipython_args qtconsole
 
