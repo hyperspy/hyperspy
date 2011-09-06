@@ -164,10 +164,10 @@ class MVA():
         if algorithm == 'mdp' or algorithm == 'NIPALS':
             if algorithm == 'mdp':
                 target.pca_node = mdp.nodes.PCANode(
-                output_dimension=output_dimension, svd = True)
+                output_dim=output_dimension, svd = True)
             elif algorithm == 'NIPALS':
                 target.pca_node = mdp.nodes.NIPALSNode(
-                output_dimension=output_dimension)
+                output_dim=output_dimension)
             # Train the node
             print "\nPerforming the PCA node training"
             print "This include variance normalizing"
