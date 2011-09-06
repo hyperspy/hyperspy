@@ -61,7 +61,7 @@ class MVA():
         ----------
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
-        algorithm : {'svd', 'fast_svd', 'mlpca', 'mdp', 'NIPALS'}
+        algorithm : {'svd', 'fast_svd', 'mlpca', 'fast_mlpca', 'mdp', 'NIPALS'}
         output_dimension : None or int
             number of PCA to keep
         navigation_mask : boolean numpy array
@@ -181,12 +181,12 @@ class MVA():
             fast = True, output_dimension = output_dimension)
             pc = np.dot(dc[:,navigation_mask], pca_v)            
 
-        elif algorithm == 'mlpca':
+        elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
             print "Performing the MLPCA training"
             if output_dimension is None:
                 messages.warning_exit(
                 "For MLPCA it is mandatory to define the output_dimension")
-            if var_array is None:
+            if var_array is None and var_func is None:
                 messages.information('No variance array provided.'
                 'Supposing poissonian data')
                 var_array = dc.squeeze()[signal_mask,:][:,navigation_mask]
@@ -206,11 +206,13 @@ class MVA():
                         messages.warning_exit(
                         'var_func must be either a function or an array'
                         'defining the coefficients of a polynom')             
-                
+            if algorithm == 'mlpca':
+                fast = False
+            else:
+                fast = True   
             target.mlpca_output = mlpca(
                 dc.squeeze()[signal_mask,:][:,navigation_mask], 
-                var_array.squeeze(), 
-                output_dimension)
+                var_array.squeeze(), output_dimension, fast = fast)
             U,S,V,Sobj, ErrFlag  = target.mlpca_output
             print "Performing PCA projection"
             pc = np.dot(dc[:,navigation_mask], V)
