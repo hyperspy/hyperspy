@@ -142,18 +142,12 @@ class MVA():
         navigation_mask = self._correct_navigation_mask_when_unfolded(navigation_mask)
 
         messages.information('Performing principal components analysis')
-        dc_transposed=False
 
         if on_peaks:
             dc=self.peak_chars
         else:
-            import hyperspy.signals.spectrum
-            if isinstance(self, hyperspy.signals.spectrum.Spectrum):
-                print "Transposing data so that energy axis makes up rows."
-                dc = self.data.T.squeeze()
-                dc_transposed=True
-            else:
-                dc = self.data.squeeze()
+            # The data must be transposed both for Images and Spectra
+            dc = self.data.T.squeeze()
         #set the output target (peak results or not?)
         target=self._get_target(on_peaks)
         # Transform the None masks in slices to get the right behaviour
@@ -177,7 +171,6 @@ class MVA():
             pc = target.pca_node.execute(dc[:,navigation_mask])
             pca_v = target.pca_node.v
             pca_V = target.pca_node.d
-            target.dc_transposed=dc_transposed
             target.output_dimension = output_dimension
 
         elif algorithm == 'svd':
@@ -911,15 +904,7 @@ class MVA():
             "Scaling the data to normalize the (presumably) Poissonian noise")
         # If energy axis is not first, it needs to be for MVA.
         refold = self.unfold_if_multidim()
-        dc_transposed=False
-        import hyperspy.signals.spectrum
-        if isinstance(self, hyperspy.signals.spectrum.Spectrum):
-            # don't print this here, since PCA will have already printed it.
-            # print "Transposing data so that energy axis makes up rows."
-            dc = self.data.T.squeeze()
-            dc_transposed=True
-        else:
-            dc = self.data.squeeze()
+        dc = self.data.T.squeeze().copy()
         navigation_mask = \
             self._correct_navigation_mask_when_unfolded(navigation_mask)
         if navigation_mask is None:
@@ -964,12 +949,7 @@ class MVA():
             dc[mask3D] = temp.ravel()
         # TODO - dc was never modifying self.data - was normalization ever
         # really getting applied?  Comment next lines as necessary.
-        if dc_transposed:
-            # don't print this here, since PCA will print it.
-            # print "Undoing data transpose."
-            self.data=dc.T
-        else:
-            self.data=dc
+        self.data = dc.T.copy()
         # end normalization write to self.data.
         if refold is True:
             print "Automatically refolding the SI after scaling"
