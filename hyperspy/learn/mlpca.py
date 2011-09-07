@@ -24,9 +24,15 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from scipy.linalg import svd
+import scipy.linalg
 
-def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000):
+try:
+    from scikits.learn.utils.extmath import fast_svd
+    sklearn = True
+except:
+    sklearn = False
+
+def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000, fast = False):
     """
     This function performs MLPCA with missing
     data.
@@ -45,7 +51,12 @@ def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000):
             0 = nkmal termination
             1 = max iterations exceeded.
     """
-
+    if fast is True and sklearn is True:
+        def svd(X):
+            return fast_svd(X, p, q = 3)
+    else:
+        def svd(X):
+            return scipy.linalg.svd(X, full_matrices = False)
     XX = X
 #    varX = stdX**2
     n = XX.shape[1]
@@ -59,8 +70,8 @@ def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000):
 #            len(np.where(X[j,:] != 0))))
 #            CV[i,j] = np.dot(X[i,:], (X[j,:]).T) / denom
     CV = np.cov(X)
-    U, S, Vh = svd(CV, full_matrices = False)
-    U0 = U[:,:p]
+    U, S, Vh = svd(CV)
+    U0 = U
 
     # Loop for alternating least squares
     print "Optimization iteration loop"
@@ -92,17 +103,15 @@ def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000):
         
         if ErrFlag < 0:
             Sold = Sobj
-            U,S,Vh = svd(MLX, full_matrices = False)
+            U,S,Vh = svd(MLX)
             V = Vh.T
             XX = XX.T
             varX = varX.T
             n = XX.shape[1]
-            U0 = V[:,:p]
+            U0 = V[:]
     # Finished
     
-    U, S, Vh = svd(MLX, full_matrices = False)
+    U, S, Vh = svd(MLX)
     V = Vh.T
-    U = U[:,:p]
 #    S = S[:p]
-    V = V[:,:p]
     return U,S,V,Sobj, ErrFlag
