@@ -18,37 +18,31 @@
 
 
 from __future__ import division
-import copy
-import os
 import sys
-import tempfile
-
 
 import numpy as np
-import scipy as sp
-import scipy.io
-
 import matplotlib.pyplot as plt
-
 import mdp
+
 from hyperspy.misc import utils
-from svd_pca import pca
-from mlpca import mlpca
+from hyperspy.learn.svd_pca import pca
+from hyperspy.learn.mlpca import mlpca
 from hyperspy.misc.utils import center_and_scale
 from hyperspy.defaults_parser import defaults
 from hyperspy import messages
-from hyperspy.misc import config_dir
-from exceptions import *
+
         
 class MVA():
     """
     Multivariate analysis capabilities for the Spectrum class.
+    
     """
+    
     def __init__(self):
         self.mva_results = MVA_Results()
-        self.peak_chars=None
+        self.peak_chars = None
 
-    def _get_target(self,on_peaks):
+    def _get_target(self, on_peaks):
         if on_peaks:
             target=self.peak_mva_results
         else:
@@ -67,7 +61,7 @@ class MVA():
         ----------
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
-        algorithm : {'svd', 'mlpca', 'mdp', 'NIPALS'}
+        algorithm : {'svd', 'fast_svd', 'mlpca', 'fast_mlpca', 'mdp', 'NIPALS'}
         output_dimension : None or int
             number of PCA to keep
         navigation_mask : boolean numpy array
@@ -88,6 +82,7 @@ class MVA():
         See also
         --------
         plot_principal_components, plot_principal_components_maps, plot_lev
+        
         """
         # backup the original data
         if on_peaks:
@@ -147,18 +142,12 @@ class MVA():
         navigation_mask = self._correct_navigation_mask_when_unfolded(navigation_mask)
 
         messages.information('Performing principal components analysis')
-        dc_transposed=False
 
         if on_peaks:
             dc=self.peak_chars
         else:
-            import hyperspy.signals.spectrum
-            if isinstance(self, hyperspy.signals.spectrum.Spectrum):
-                print "Transposing data so that energy axis makes up rows."
-                dc = self.data.T.squeeze()
-                dc_transposed=True
-            else:
-                dc = self.data.squeeze()
+            # The data must be transposed both for Images and Spectra
+            dc = self.data.T.squeeze()
         #set the output target (peak results or not?)
         target=self._get_target(on_peaks)
         # Transform the None masks in slices to get the right behaviour
@@ -169,10 +158,10 @@ class MVA():
         if algorithm == 'mdp' or algorithm == 'NIPALS':
             if algorithm == 'mdp':
                 target.pca_node = mdp.nodes.PCANode(
-                output_dimension=output_dimension, svd = True)
+                output_dim=output_dimension, svd = True)
             elif algorithm == 'NIPALS':
                 target.pca_node = mdp.nodes.NIPALSNode(
-                output_dimension=output_dimension)
+                output_dim=output_dimension)
             # Train the node
             print "\nPerforming the PCA node training"
             print "This include variance normalizing"
@@ -182,19 +171,22 @@ class MVA():
             pc = target.pca_node.execute(dc[:,navigation_mask])
             pca_v = target.pca_node.v
             pca_V = target.pca_node.d
-            target.dc_transposed=dc_transposed
             target.output_dimension = output_dimension
 
         elif algorithm == 'svd':
             pca_v, pca_V = pca(dc[signal_mask,:][:,navigation_mask])
             pc = np.dot(dc[:,navigation_mask], pca_v)
+        elif algorithm == 'fast_svd':
+            pca_v, pca_V = pca(dc[signal_mask,:][:,navigation_mask], 
+            fast = True, output_dimension = output_dimension)
+            pc = np.dot(dc[:,navigation_mask], pca_v)            
 
-        elif algorithm == 'mlpca':
+        elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
             print "Performing the MLPCA training"
             if output_dimension is None:
                 messages.warning_exit(
                 "For MLPCA it is mandatory to define the output_dimension")
-            if var_array is None:
+            if var_array is None and var_func is None:
                 messages.information('No variance array provided.'
                 'Supposing poissonian data')
                 var_array = dc.squeeze()[signal_mask,:][:,navigation_mask]
@@ -214,11 +206,13 @@ class MVA():
                         messages.warning_exit(
                         'var_func must be either a function or an array'
                         'defining the coefficients of a polynom')             
-                
+            if algorithm == 'mlpca':
+                fast = False
+            else:
+                fast = True   
             target.mlpca_output = mlpca(
                 dc.squeeze()[signal_mask,:][:,navigation_mask], 
-                var_array.squeeze(), 
-                output_dimension)
+                var_array.squeeze(), output_dimension, fast = fast)
             U,S,V,Sobj, ErrFlag  = target.mlpca_output
             print "Performing PCA projection"
             pc = np.dot(dc[:,navigation_mask], V)
@@ -267,7 +261,7 @@ class MVA():
                 
         if self._unfolded4pca is True:
             self.fold()
-            assert(self._unfolded4pca is False)
+            self._unfolded4pca is False
             
     def independent_components_analysis(self, number_of_components = None, 
     algorithm = 'CuBICA', diff_order = 1, pc = None, 
@@ -422,7 +416,7 @@ class MVA():
         self._unfolded4pca = self.unfold_if_multidim()
 
         sc = self.deepcopy()
-        dc_transposed = False
+
         import hyperspy.signals.spectrum
         if isinstance(self, hyperspy.signals.spectrum.Spectrum):
             print "Transposing data so that energy axis makes up rows."
@@ -513,8 +507,8 @@ class MVA():
         ----------
         n : int
         """
-        target=self._get_target(on_peaks)
-	if n>target.V.shape[0]:
+        target = self._get_target(on_peaks)
+        if n>target.V.shape[0]: 
             n=target.V.shape[0]
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -534,8 +528,8 @@ class MVA():
         ----------
         n : int
         """
-        target=self._get_target(on_peaks)
-	if n>target.V.shape[0]:
+        target = self._get_target(on_peaks)
+        if n > target.V.shape[0]:
             n=target.V.shape[0]
         cumu = np.cumsum(target.V) / np.sum(target.V)
         fig = plt.figure()
@@ -583,9 +577,6 @@ class MVA():
         if ic is None:
             ic = target.ic
             x = self.axes_manager.axes[-1].axis
-        else:
-            if len(ic.shape) != 2:
-                raise ShapeError(ic)
             x = ic.shape[1]     # no way that we know the calibration
             
         n = ic.shape[1]
@@ -846,18 +837,18 @@ class MVA():
         for i in xrange(ic.shape[1]):
             axes = (self.axes_manager._slicing_axes[0].get_axis_dictionary(),)
             axes[0]['index_in_array'] = 0
-            sp = Spectrum({'data' : ic[:,i], 'axes' : axes})
-            sp.data_cube = ic[:,i].reshape((-1,1,1))
+            spectrum = Spectrum({'data' : ic[:,i], 'axes' : axes})
+            spectrum.data_cube = ic[:,i].reshape((-1,1,1))
 
             if elements is None:
-                sp.save('ic-%s.%s' % (i, spectrum_format))
+                spectrum.save('ic-%s.%s' % (i, spectrum_format))
                 if maps is True:
                     pl[i].save('map_ic-%s.%s' % (i, image_format))
                 else:
                     pl[i].save('profile_ic-%s.%s' % (i, spectrum_format))
             else:
                 element = elements[i]
-                sp.save('ic-%s.%s' % (element, spectrum_format))
+                spectrum.save('ic-%s.%s' % (element, spectrum_format))
                 if maps:
                     pl[i].save('map_ic-%s.%s' % (element, image_format))
                 else:
@@ -883,7 +874,7 @@ class MVA():
         plot_als_ic_maps, plot_als_ic
         """
         shape = (self.data.shape[2], self.data.shape[1],-1)
-        if hasattr(self, 'ic') and (target.ic is not None):
+        if hasattr(self, 'ic') and (self.ic is not None):
             also = utils.ALS(self, **kwargs)
             self.als_ic = also['S']
             self.als_maps = also['CList'].reshape(shape, order = 'C')
@@ -919,16 +910,7 @@ class MVA():
             "Scaling the data to normalize the (presumably) Poissonian noise")
         # If energy axis is not first, it needs to be for MVA.
         refold = self.unfold_if_multidim()
-        dc_transposed=False
-        last_axis_units=self.axes_manager.axes[-1].units
-        import hyperspy.signals.spectrum
-        if isinstance(self, hyperspy.signals.spectrum.Spectrum):
-            # don't print this here, since PCA will have already printed it.
-            # print "Transposing data so that energy axis makes up rows."
-            dc = self.data.T.squeeze()
-            dc_transposed=True
-        else:
-            dc = self.data.squeeze()
+        dc = self.data.T.squeeze().copy()
         navigation_mask = \
             self._correct_navigation_mask_when_unfolded(navigation_mask)
         if navigation_mask is None:
@@ -973,12 +955,7 @@ class MVA():
             dc[mask3D] = temp.ravel()
         # TODO - dc was never modifying self.data - was normalization ever
         # really getting applied?  Comment next lines as necessary.
-        if dc_transposed:
-            # don't print this here, since PCA will print it.
-            # print "Undoing data transpose."
-            self.data=dc.T
-        else:
-            self.data=dc
+        self.data = dc.T.copy()
         # end normalization write to self.data.
         if refold is True:
             print "Automatically refolding the SI after scaling"

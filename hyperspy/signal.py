@@ -21,7 +21,7 @@ import copy
 
 import numpy as np
 import enthought.traits.api as t
-import enthought.traits.ui.api as tui 
+import enthought.traits.ui.api as tui
 
 from hyperspy import messages
 from hyperspy.axes import AxesManager
@@ -30,6 +30,7 @@ from hyperspy.drawing import mpl_hie, mpl_hse
 from hyperspy.misc import utils
 from hyperspy.learn.mva import MVA, MVA_Results
 
+
 class Parameters(t.HasTraits, object):
     """A class to comfortably access some parameters as attributes"""
     name = t.Str("UnnamedFile")
@@ -37,17 +38,17 @@ class Parameters(t.HasTraits, object):
     def __init__(self, dictionary={}):
         super(Parameters, self).__init__()
         self.load_dictionary(dictionary)
-        
+
     def load_dictionary(self, dictionary):
         for key, value in dictionary.iteritems():
             if isinstance(value, dict):
                 value = Parameters(value)
             self.__setattr__(key, value)
- 
+
     def _get_print_items(self, depth=0, max_len=20):
         """Prints only the attributes that are not methods"""
         string = ''
-        for item,value in self.__dict__.iteritems():
+        for item, value in self.__dict__.iteritems():
             if type(item) != types.MethodType:
                 if isinstance(value, Parameters):
                     string += '%s%s ---->\n' % (depth * '\t', item)
@@ -116,27 +117,28 @@ class Signal(t.HasTraits, MVA):
             following keys:
                 axes: a dictionary that defines the axes (see the 
                     AxesManager class)
-                attributes: a dictionary which keywords are stored as attributes 
-                of the signal class
-                mapped_parameters: a dictionary containing a set of parameters that 
-                    will be stored as attributes of a Parameters class. 
+                attributes: a dictionary which keywords are stored as 
+                    attributes of the signal class
+                mapped_parameters: a dictionary containing a set of parameters 
+                    that will be stored as attributes of a Parameters class. 
                     For some subclasses some particular parameters might be 
                     mandatory.
                 original_parameters: a dictionary that will be accesible in the 
                     original_parameters attribute of the signal class and that 
-                    typically contains all the parameters that has been imported
-                    from the original data file.
+                    typically contains all the parameters that has been 
+                    imported from the original data file.
+        
         """
         self.data = file_data_dict['data']
-        if not file_data_dict.has_key('axes'):
+        if 'axes' in file_data_dict:
             file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(
             file_data_dict['axes'])
-        if not file_data_dict.has_key('mapped_parameters'):
+        if not 'mapped_parameters' in file_data_dict:
             file_data_dict['mapped_parameters'] = {}
-        if not file_data_dict.has_key('original_parameters'):
+        if not 'original_parameters' in file_data_dict:
             file_data_dict['original_parameters'] = {}
-        if file_data_dict.has_key('attributes'):
+        if 'attributes' in file_data_dict:
             for key, value in file_data_dict['attributes'].iteritems():
                 self.__setattr__(key, value)
         self.original_parameters.load_dictionary(
@@ -157,12 +159,13 @@ class Signal(t.HasTraits, MVA):
     def _get_undefined_axes_list(self):
         axes = []
         for i in xrange(len(self.data.shape)):
-            axes.append({   'name' : 'undefined',
-                            'scale' : 1.,
-                            'offset' : 0.,
-                            'size' : int(self.data.shape[i]),
-                            'units' : 'undefined',
-                            'index_in_array' : i,})
+            axes.append({
+                        'name': 'undefined',
+                        'scale': 1.,
+                        'offset': 0.,
+                        'size': int(self.data.shape[i]),
+                        'units': 'undefined',
+                        'index_in_array': i, })
         return axes
                 
     def __call__(self, axes_manager=None):
@@ -244,7 +247,8 @@ class Signal(t.HasTraits, MVA):
             
         elif axes_manager.signal_dimension == 2:
             
-            # Mike's playground with new plotting toolkits - needs to be a branch.
+            # Mike's playground with new plotting toolkits - needs to be a
+            # branch.
             """
             if len(self.data.shape)==2:
                 from drawing.guiqwt_hie import image_plot_2D
@@ -327,8 +331,6 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             (axis.name, dc.shape[axis.index_in_array]))
         self._replot()
         
-    # Transform ________________________________________________________________
-        
     def crop_in_pixels(self, axis, i1 = None, i2 = None):
         """Crops the data in a given axis. The range is given in pixels
         axis : int
@@ -386,7 +388,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         acquisition routines.
         """
         self.data = np.roll(self.data, n_x, 0)
-        self.data[:n_x,...] = np.roll(self.data[:n_x,...],n_y,1)
+        self.data[:n_x, ...] = np.roll(self.data[:n_x, ...], n_y, 1)
         self._replot()
 
     # TODO: After using this function the plotting does not work  
@@ -398,7 +400,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         axis1 : positive int
         axis2 : positive int        
         """
-        self.data = self.data.swapaxes(axis1,axis2)
+        self.data = self.data.swapaxes(axis1, axis2)
         c1 = self.axes_manager.axes[axis1]
         c2 = self.axes_manager.axes[axis2]
         c1.index_in_array, c2.index_in_array =  \
@@ -418,7 +420,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             The new shape must be a divisor of the original shape        
         """
         factors = np.array(self.data.shape) / np.array(new_shape)
-        self.data = utils.rebin(self.data,new_shape)
+        self.data = utils.rebin(self.data, new_shape)
         for axis in self.axes_manager.axes:
             axis.scale *= factors[axis.index_in_array]
         self.get_dimensions_from_data()
@@ -457,14 +459,15 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         
         if steps is None:
             rounded = (shape[axis] - (shape[axis] % number_of_parts))
-            step =  rounded / number_of_parts
-            cut_node = range(0,rounded+step,step)
+            step = rounded / number_of_parts
+            cut_node = range(0, rounded+step, step)
         else:
             cut_node = np.array([0] + steps).cumsum()
         for i in xrange(len(cut_node)-1):
             data = self.data[
-            (slice(None),)*axis + (slice(cut_node[i],cut_node[i+1]), Ellipsis)]
-            s = Signal({'data' : data})
+            (slice(None), ) * axis + (slice(cut_node[i], cut_node[i + 1]), 
+            Ellipsis)]
+            s = Signal({'data': data})
             # TODO: When copying plotting does not work
 #            s.axes = copy.deepcopy(self.axes_manager)
             s.get_dimensions_from_data()
@@ -509,8 +512,8 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             return False
         
         # We need to store the original shape and coordinates to be used by
-        # the fold function only if it has not been already stored by a previous
-        # unfold
+        # the fold function only if it has not been already stored by a 
+        # previous unfold
         if self._shape_before_unfolding is None:
             self._shape_before_unfolding = self.data.shape
             self._axes_manager_before_unfolding = self.axes_manager
@@ -544,8 +547,9 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         self._replot()
         
     def unfold(self):
-        """Modifies the shape of the data by unfolding the signal and navigation
-        dimensions separaterly
+        """Modifies the shape of the data by unfolding the signal and 
+        navigation dimensions separaterly
+        
         """
         self.unfold_navigation_space()
         self.unfold_signal_space()
@@ -556,10 +560,11 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         """
 
         if self.axes_manager.navigation_dimension < 2:
-            message.information('Nothing done, the navigation dimension was ' 
+            messages.information('Nothing done, the navigation dimension was ' 
                                 'already 1')
             return False
-        steady_axes = [ axis.index_in_array for axis in 
+        steady_axes = [
+                        axis.index_in_array for axis in 
                         self.axes_manager._slicing_axes]
         unfolded_axis = self.axes_manager._non_slicing_axes[-1].index_in_array
         self._unfold(steady_axes, unfolded_axis)
@@ -569,10 +574,11 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         dimension 1
         """
         if self.axes_manager.signal_dimension < 2:
-            message.information('Nothing done, the signal dimension was ' 
+            messages.information('Nothing done, the signal dimension was ' 
                                 'already 1')
             return False
-        steady_axes = [ axis.index_in_array for axis in 
+        steady_axes = [
+                        axis.index_in_array for axis in 
                         self.axes_manager._non_slicing_axes]
         unfolded_axis = self.axes_manager._slicing_axes[-1].index_in_array
         self._unfold(steady_axes, unfolded_axis)
@@ -607,8 +613,6 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             getitem[axis] = slice(None)
             getitem[unfolded_axis] = i
             yield(data[getitem])
-
-
         
     def sum(self, axis, return_signal = False):
         """Sum the data over the specify axis
@@ -619,13 +623,13 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             The axis over which the operation will be performed
         return_signal : bool
             If False the operation will be performed on the current object. If
-            True, the current object will not be modified and the operation will
-             be performed in a new signal object that will be returned.
+            True, the current object will not be modified and the operation
+             will be performed in a new signal object that will be returned.
              
         Returns
         -------
-        Depending on the value of the return_signal keyword, nothing or a signal
-         instance
+        Depending on the value of the return_signal keyword, nothing or a 
+        signal instance
          
         See also
         --------
@@ -665,13 +669,13 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             The axis over which the operation will be performed
         return_signal : bool
             If False the operation will be performed on the current object. If
-            True, the current object will not be modified and the operation will
-             be performed in a new signal object that will be returned.
+            True, the current object will not be modified and the operation 
+            will be performed in a new signal object that will be returned.
              
         Returns
         -------
-        Depending on the value of the return_signal keyword, nothing or a signal
-         instance
+        Depending on the value of the return_signal keyword, nothing or a 
+        signal instance
          
         See also
         --------
@@ -810,8 +814,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
     def _correct_navigation_mask_when_unfolded(self, navigation_mask = None,):
         #if 'unfolded' in self.history:
         if navigation_mask is not None:
-           navigation_mask = \
-               navigation_mask.reshape((-1,))
+            navigation_mask = navigation_mask.reshape((-1,))
         return navigation_mask
 #        
 #    def get_single_spectrum(self):

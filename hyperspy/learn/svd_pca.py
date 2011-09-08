@@ -18,8 +18,13 @@
 
 
 import scipy.linalg
+try:
+    from scikits.learn.utils.extmath import fast_svd
+    sklearn = True
+except:
+    sklearn = False
 
-def pca(data):
+def pca(data, fast = False, output_dimension = None):
     """Perform PCA using SVD.
     data - MxN matrix of input data
     (M dimensions, N trials)
@@ -30,7 +35,14 @@ def pca(data):
     print "Performing PCA with a SVD based algorithm"
     N, M = data.shape
     Y = data
-    u, S, PC = scipy.linalg.svd(Y, full_matrices = False)
+    if fast is True and sklearn is True:
+        if output_dimension is None:
+            messages.warning_exit('When using fast_svd it is necessary to '
+                                  'define the output_dimension')
+        u, S, PC = fast_svd(Y, output_dimension, q = 3)
+    else:
+        u, S, PC = scipy.linalg.svd(Y, full_matrices = False)
+    
     v = PC.T
     V = S ** 2
     return v,V
