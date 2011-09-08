@@ -18,7 +18,11 @@
 
 import struct
 import os
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+    ordict = True
+except ImportError:
+    ordict = False
 
 import numpy as np
 
@@ -379,7 +383,13 @@ def ser_reader(filename, objects = None, *args, **kwds):
     dc = dc.reshape(array_shape)
     if record_by == 'image':
         dc = dc[::-1]
-    original_parameters = OrderedDict()
+    if ordict:
+        original_parameters = OrderedDict()
+    else:
+        print("\nWARNING:")
+        print("FEI plugin")
+        print("OrderedDict is not available, using a standard dictionary.\n")
+        original_parameters = {}
     header_parameters = sarray2dict(header)
     sarray2dict(data, header_parameters)
     if objects is not None:
