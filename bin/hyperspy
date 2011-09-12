@@ -51,10 +51,8 @@ if ipy_version < ipy_011:
     from IPython.genutils import get_home_dir, get_ipython_dir
     from IPython.iplib import user_setup
     ipy_dir = get_ipython_dir()
-    print ipy_dir
     to_copy = [os.path.join(ipy_hspy, 'ipy_profile_hyperspy.py') ,]
     destination = ipy_dir
-    print destination
     if not os.path.isdir(ipy_dir):
         # Platform-dependent suffix.
         if os.name == 'posix':
