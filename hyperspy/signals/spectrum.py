@@ -421,27 +421,50 @@ class Spectrum(Signal):
         n_ch = E_ax.size
         index = 0
         if coordinates is None:
-            for i in xrange(dc.shape[0]):
-                for j in xrange(dc.shape[1]):
-                    if der[i,j,:].max() >= threshold:
-                        print "Spike detected in (%s, %s)" % (i, j)
-                        argmax = der[i,j,:].argmax()
-                        if hasattr(subst_width, '__iter__'):
-                            subst__width = subst_width[index]
-                        else:
-                            subst__width = subst_width
-                        lp1 = np.clip(argmax - int_window, 0, n_ch)
-                        lp2 = np.clip(argmax - subst__width, 0, n_ch)
-                        rp2 = np.clip(argmax + int_window, 0, n_ch)
-                        rp1 = np.clip(argmax + subst__width, 0, n_ch)
-                        x = np.hstack((E_ax[lp1:lp2], E_ax[rp1:rp2]))
-                        y = np.hstack((dc[i,j,lp1:lp2], dc[i,j,rp1:rp2])) 
-                        # The weights were commented because the can produce nans
-                        # Maybe it should be an option?
-                        intp =UnivariateSpline(x,y) #,w = 1/np.sqrt(y))
-                        x_int = E_ax[lp2:rp1+1]
-                        dc[i,j,lp2:rp1+1] = intp(x_int)
-                        index += 1
+            if len(dc.shape)==3:
+                for i in xrange(dc.shape[0]):
+                    for j in xrange(dc.shape[1]):
+                        if der[i,j,:].max() >= threshold:
+                            print "Spike detected in (%s, %s)" % (i, j)
+                            argmax = der[i,j,:].argmax()
+                            if hasattr(subst_width, '__iter__'):
+                                subst__width = subst_width[index]
+                            else:
+                                subst__width = subst_width
+                            lp1 = np.clip(argmax - int_window, 0, n_ch)
+                            lp2 = np.clip(argmax - subst__width, 0, n_ch)
+                            rp2 = np.clip(argmax + int_window, 0, n_ch)
+                            rp1 = np.clip(argmax + subst__width, 0, n_ch)
+                            x = np.hstack((E_ax[lp1:lp2], E_ax[rp1:rp2]))
+                            y = np.hstack((dc[i,j,lp1:lp2], dc[i,j,rp1:rp2])) 
+                            # The weights were commented because the can produce nans
+                            # Maybe it should be an option?
+                            intp =UnivariateSpline(x,y) #,w = 1/np.sqrt(y))
+                            x_int = E_ax[lp2:rp1+1]
+                            dc[i,j,lp2:rp1+1] = intp(x_int)
+                            index += 1
+            elif len(dc.shape)==2:
+                for i in xrange(dc.shape[0]):
+                        if der[i,:].max() >= threshold:
+                            print "Spike detected in (%s)" % (i)
+                            argmax = der[i,:].argmax()
+                            if hasattr(subst_width, '__iter__'):
+                                subst__width = subst_width[index]
+                            else:
+                                subst__width = subst_width
+                            lp1 = np.clip(argmax - int_window, 0, n_ch)
+                            lp2 = np.clip(argmax - subst__width, 0, n_ch)
+                            rp2 = np.clip(argmax + int_window, 0, n_ch)
+                            rp1 = np.clip(argmax + subst__width, 0, n_ch)
+                            x = np.hstack((E_ax[lp1:lp2], E_ax[rp1:rp2]))
+                            y = np.hstack((dc[i,lp1:lp2], dc[i,rp1:rp2])) 
+                            # The weights were commented because the can produce nans
+                            # Maybe it should be an option?
+                            intp =UnivariateSpline(x,y) #,w = 1/np.sqrt(y))
+                            x_int = E_ax[lp2:rp1+1]
+                            dc[i,lp2:rp1+1] = intp(x_int)
+                            index += 1
+                
         else:
             for spike_spectrum in coordinates:
                 i, j = spike_spectrum
@@ -464,6 +487,7 @@ class Spectrum(Signal):
                 dc[lp2:rp1+1,i,j] = intp(x_int)
                 index += 1
         self.data=dc
+
     def to_image(self):
         from hyperspy.signals.image import Image
         dic = self._get_signal_dict()
