@@ -51,8 +51,10 @@ if ipy_version < ipy_011:
     from IPython.genutils import get_home_dir, get_ipython_dir
     from IPython.iplib import user_setup
     ipy_dir = get_ipython_dir()
+    print ipy_dir
     to_copy = [os.path.join(ipy_hspy, 'ipy_profile_hyperspy.py') ,]
     destination = ipy_dir
+    print destination
     if not os.path.isdir(ipy_dir):
         # Platform-dependent suffix.
         if os.name == 'posix':
@@ -90,8 +92,8 @@ if argp is True:
     'Look at the IPython documentation for available options.')
     args = parser.parse_args()
     for f in to_copy:
-        if not os.path.isfile(os.path.join(destination, f)) or \
-                args.overwrite_profile is True:
+        if not os.path.isfile(os.path.join(destination, os.path.split(f)[-1]))\
+                or args.overwrite_profile:
             shutil.copy(f, destination)
 else:
     parser = optparse.OptionParser( version=hyperspy.Release.version,
@@ -104,8 +106,8 @@ else:
     'Look at the IPython documentation for available options.')
     (options, args) = parser.parse_args()
     for f in to_copy:
-        if not os.path.isfile(os.path.join(destination, f)) or \
-                options.overwrite_profile is True:
+        if not os.path.isfile(os.path.join(destination, os.path.split(f)[-1]))\
+                or options.overwrite_profile:
             shutil.copy(f, destination)
 
 # Now that the hspy arguments are parsed, we can delete them from sys.argv
