@@ -148,7 +148,7 @@ class Signal(t.HasTraits, MVA):
 
         """
         self.data = file_data_dict['data']
-        if 'axes' in file_data_dict:
+        if 'axes' not in file_data_dict:
             file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(
             file_data_dict['axes'])

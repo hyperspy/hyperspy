@@ -121,9 +121,9 @@ def parse_ripple(fp):
                 else:
                     # rpl_keys[line[0]] must then be a type
                     line[1] = rpl_keys[line[0]](line[1])
-            
+
             rpl_info[line[0]] = line[1]
-            
+
     if rpl_info['depth'] == 1 and rpl_info['record-by'] != 'dont-care':
         err = '"depth" and "record-by" keys mismatch.\n'
         err += '"depth" cannot be "1" if "record-by" is "dont-care" '
@@ -141,7 +141,7 @@ def parse_ripple(fp):
         err += 'Check %s' % fp.name
         raise IOError, err
     return rpl_info
-        
+
 def read_raw(rpl_info, fp):
     """Read the raw file object 'fp' based on the information given in the
     'rpl_info' dictionary.
@@ -192,11 +192,11 @@ def read_raw(rpl_info, fp):
 
 def file_reader(filename, rpl_info=None, *args, **kwds):
     """Parses a Lispix (http://www.nist.gov/lispix/) ripple (.rpl) file
-    and reads the data from the corresponding raw (.raw) file;    
+    and reads the data from the corresponding raw (.raw) file;
     or, read a raw file if the dictionary rpl_info is provided.
 
     This format is often uses in EDS/EDX experiments.
-    
+
     Images and spectral images or data cubes that are written in the
     (Lispix) raw file format are just a continuous string of numbers.
 
@@ -206,7 +206,7 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
 
     All of the numbers are in the same format, such as 16 bit signed integer,
     IEEE 8-byte real, 8-bit unsigned byte, etc.
-    
+
     The "raw" file should be accompanied by text file with the same name and
     ".rpl" extension. This file lists the characteristics of the raw file so
     that it can be loaded without human intervention.
@@ -215,19 +215,19 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
     be given.
 
     Some keys are specific to Hyperspy and will be ignored by other software.
-    
+
     RPL stands for "Raw Parameter List", an ASCII text, tab delimited file in
     which Hyperspy reads the image parameters for a raw file.
 
                     TABLE OF RPL PARAMETERS
-        key             type     description            
+        key             type     description
       ----------   ------------ --------------------
       # Mandatory      keys:
-      width            int      # pixels per row 
+      width            int      # pixels per row
       height           int      # number of rows
       depth            int      # number of images or spectral pts
       offset           int      # bytes to skip
-      data-type        str      # 'signed', 'unsigned', or 'float' 
+      data-type        str      # 'signed', 'unsigned', or 'float'
       data-length      str      # bytes per pixel  '1', '2', '4', or '8'
       byte-order       str      # 'big-endian', 'little-endian', or 'dont-care'
       record-by        str      # 'image', 'vector', or 'dont-care'
@@ -235,53 +235,52 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
       ev-per-chan      int      # optional, eV per channel
       detector-peak-width-ev  int   # optional, FWHM for the Mn K-alpha line
       # Hyperspy-specific keys
-      depth-origin    int      # energy offset in pixels          
-      depth-scale     float    # energy scaling (units per pixel) 
+      depth-origin    int      # energy offset in pixels
+      depth-scale     float    # energy scaling (units per pixel)
       depth-units     str      # energy units, usually eV
-      depth-name      str      # Name of the magnitude stored as depth        
+      depth-name      str      # Name of the magnitude stored as depth
       width-origin         int      # column offset in pixels
       width-scale          float    # column scaling (units per pixel)
       width-units          str      # column units, usually nm
-      width-name      str           # Name of the magnitude stored as width      
-      height-origin         int      # row offset in pixels          
-      height-scale          float    # row scaling (units per pixel) 
+      width-name      str           # Name of the magnitude stored as width
+      height-origin         int      # row offset in pixels
+      height-scale          float    # row scaling (units per pixel)
       height-units          str      # row units, usually nm
       height-name      str           # Name of the magnitude stored as height
       signal            str        # Name of the signal stored, e.g. HAADF
-     
+
     NOTES
 
     When 'data-length' is 1, the 'byte order' is not relevant as there is only
     one byte per datum, and 'byte-order' should be 'dont-care'.
-    
+
     When 'depth' is 1, the file has one image, 'record-by' is not relevant and
     should be 'dont-care'. For spectral images, 'record-by' is 'vector'.
     For stacks of images, 'record-by' is 'image'.
-    
+
     Floating point numbers can be IEEE 4-byte, or IEEE 8-byte. Therefore if
     data-type is float, data-length MUST be 4 or 8.
-    
+
     The rpl file is read in a case-insensitive manner. However, when providing
     a dictionary as input, the keys MUST be lowercase.
-    
+
     Comment lines, beginning with a semi-colon ';' are allowed anywhere.
 
     The first non-comment in the rpl file line MUST have two column names:
     'name_1'<TAB>'name_2'; any name would do e.g. 'key'<TAB>'value'.
 
     Parameters can be in ANY order.
-    
+
     In the rpl file, the parameter name is followed by ONE tab (spaces are
     ignored) e.g.: 'data-length'<TAB>'2'
-    
+
     In the rpl file, other data and more tabs can follow the two items on
     each row, and are ignored.
-    
+
     Other keys and values can be included and are ignored.
 
     Any number of spaces can go along with each tab.
     """
-    original_parameters = {}
     if not rpl_info:
         if filename[-3:] in file_extensions:
             with open(filename) as f:
@@ -319,19 +318,19 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
     else:
         idepth, iheight, iwidth = 0, 1, 2
         names = ['depth', 'height', 'width']
-        
+
     scales = [1, 1, 1]
     origins = [0, 0, 0]
     units = ['', '', '']
     sizes = [rpl_info[names[i]] for i in xrange(3)]
-    
+
     if 'signal' not in rpl_info:
         rpl_info['signal'] = None
-    
+
     if rpl_info.has_key('detector-peak-width-ev'):
         original_parameters['detector-peak-width-ev'] = \
         rpl_info['detector-peak-width-ev']
-        
+
     if rpl_info.has_key('depth-scale'):
         scales[idepth] = rpl_info['depth-scale']
     # ev-per-chan is the only calibration supported by the original ripple
@@ -353,10 +352,10 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
 
     if rpl_info.has_key('width-scale'):
         scales[iwidth] = rpl_info['width-scale']
-        
+
     if rpl_info.has_key('width-units'):
         units[iwidth] = rpl_info['width-units']
-    
+
     if rpl_info.has_key('width-name'):
         names[iwidth] = rpl_info['width-name']
 
@@ -365,7 +364,7 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
 
     if rpl_info.has_key('height-scale'):
         scales[iheight] = rpl_info['height-scale']
-        
+
     if rpl_info.has_key('height-units'):
         units[iheight] = rpl_info['height-units']
 
@@ -377,7 +376,7 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
     for i in xrange(3):
         if sizes[i] > 1:
             axes.append({
-                            'size' : sizes[i], 
+                            'size' : sizes[i],
                             'index_in_array' : index_in_array ,
                             'name' : names[i],
                             'scale': scales[i],
@@ -386,24 +385,23 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
                         })
             index_in_array += 1
 
-
     dictionary = {
-        'data' : data.squeeze(),
-        'axes' : axes,
+        'data': data.squeeze(),
+        'axes': axes,
         'mapped_parameters': {
-			'record_by':record_by,
+			'record_by': record_by,
 			'original_filename': filename,
-                               'signal' : rpl_info['signal'],
+            'signal': rpl_info['signal'],
 			},
-        'original_parameters' : original_parameters
+        'original_parameters': rpl_info
         }
     return [dictionary, ]
-    
+
 def file_writer(filename, signal, *args, **kwds):
-    
-    # Set the optional keys to None    
+
+    # Set the optional keys to None
     ev_per_chan = None
-    
+
     # Check if the dtype is supported
     dc = signal.data
     dtype_name = signal.data.dtype.name
@@ -417,8 +415,8 @@ def file_writer(filename, signal, *args, **kwds):
         err = 'This file format does not support %i dimension data' % (
         dimension)
         raise IOError, err
-        
-    # Gather the information to write the rpl        
+
+    # Gather the information to write the rpl
     data_type, data_length = dtype2keys[dc.dtype.name]
     byte_order = endianess2rpl[dc.dtype.byteorder.replace('|', '=')]
     offset = 0
@@ -433,7 +431,7 @@ def file_writer(filename, signal, *args, **kwds):
                             depth_axis.size, width_axis.size, height_axis.size
         elif dimension == 2:
             width_axis = signal.axes_manager._non_slicing_axes[0]
-            depth, width, height = depth_axis.size, width_axis.size,1 
+            depth, width, height = depth_axis.size, width_axis.size,1
         elif dimension == 1:
             record_by == 'dont-care'
             depth, width, height = depth_axis.size, 1, 1
@@ -455,7 +453,7 @@ def file_writer(filename, signal, *args, **kwds):
     else:
         print("Only Spectrum and Image objects can be saved")
         return
-            
+
     # Fill the keys dictionary
     keys_dictionary = {
                          'width' : width,
@@ -477,10 +475,10 @@ def file_writer(filename, signal, *args, **kwds):
             keys_dictionary['%s-origin' % key] = eval('%s_axis.offset' % key)
             keys_dictionary['%s-units' % key] = eval('%s_axis.units' % key)
             keys_dictionary['%s-name' % key] = eval('%s_axis.name' % key)
-        
+
     write_rpl(filename, keys_dictionary)
     write_raw(filename, signal, record_by)
-        
+
 def write_rpl(filename, keys_dictionary):
     f = open(filename, 'w')
     f.write(';File created by Hyperspy version %s\n' % Release.version)
@@ -490,7 +488,7 @@ def write_rpl(filename, keys_dictionary):
     for key, value in iter(sorted(keys_dictionary.iteritems())):
         f.write(key + '\t' + str(value) + '\n')
     f.close()
-    
+
 def write_raw(filename, signal, record_by):
     """Writes the raw file object
 
@@ -500,7 +498,7 @@ def write_raw(filename, signal, record_by):
         the filename, either with the extension or without it
     record_by : string
      'vector' or 'image'
-         
+
         """
     filename = os.path.splitext(filename)[0] + '.raw'
     dshape = signal.data.shape
