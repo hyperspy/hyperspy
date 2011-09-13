@@ -19,6 +19,7 @@
 
 from __future__ import division
 import sys
+import os
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -31,13 +32,13 @@ from hyperspy.misc.utils import center_and_scale
 from hyperspy.defaults_parser import defaults
 from hyperspy import messages
 
-        
+
 class MVA():
     """
     Multivariate analysis capabilities for the Spectrum class.
-    
+
     """
-    
+
     def __init__(self):
         self.mva_results = MVA_Results()
         self.peak_chars = None
@@ -48,15 +49,15 @@ class MVA():
         else:
             target=self.mva_results
         return target
-    
-    def principal_components_analysis(self, normalize_poissonian_noise = False, 
-    algorithm = 'svd', output_dimension = None, navigation_mask = None, 
-    signal_mask = None, center = False, variance2one = False, var_array = None, 
+
+    def principal_components_analysis(self, normalize_poissonian_noise = False,
+    algorithm = 'svd', output_dimension = None, navigation_mask = None,
+    signal_mask = None, center = False, variance2one = False, var_array = None,
     var_func = None, polyfit = None, on_peaks=False):
         """Principal components analysis.
-        
+
         The results are stored in self.mva_results
-        
+
         Parameters
         ----------
         normalize_poissonian_noise : bool
@@ -73,27 +74,27 @@ class MVA():
         var_array : numpy array
             Array of variance for the maximum likelihood PCA algorithm
         var_func : function or numpy array
-            If function, it will apply it to the dataset to obtain the 
-            var_array. Alternatively, it can a an array with the coefficients 
+            If function, it will apply it to the dataset to obtain the
+            var_array. Alternatively, it can a an array with the coefficients
             of a polynomy.
-        polyfit : 
-            
-            
+        polyfit :
+
+
         See also
         --------
         plot_principal_components, plot_principal_components_maps, plot_lev
-        
+
         """
         # backup the original data
         if on_peaks:
             self._data_before_treatments = self.peak_chars.copy()
         else:
             self._data_before_treatments = self.data.copy()
-        # Check for conflicting options and correct them when possible   
+        # Check for conflicting options and correct them when possible
         if (algorithm == 'mdp' or algorithm == 'NIPALS') and center is False:
             print \
             """
-            The PCA algorithms from the MDP toolking (mdp and NIPALS) 
+            The PCA algorithms from the MDP toolking (mdp and NIPALS)
             do not permit deactivating data centering.
             Therefore, the algorithm will proceed to center the data.
             """
@@ -108,20 +109,20 @@ class MVA():
             if output_dimension is None:
                 messages.warning_exit(
                 "With the mlpca algorithm the output_dimension must be expecified")
-        
+
         if center is True and normalize_poissonian_noise is True:
             messages.warning(
             "Centering is not compatible with poissonian noise normalization\n"
             "Disabling centering")
             center = False
-        
+
         if variance2one is True and normalize_poissonian_noise is True:
             messages.warning(
-            "Variance normalization is not compatible with poissonian noise" 
+            "Variance normalization is not compatible with poissonian noise"
             "normalization.\n"
             "Disabling variance2one")
             variance2one = False
-        
+
         # Apply pre-treatments
         # Centering
         if center is True:
@@ -135,8 +136,8 @@ class MVA():
         # Note that this function can change the masks
         if normalize_poissonian_noise is True:
             navigation_mask, signal_mask = \
-                self.normalize_poissonian_noise(navigation_mask = navigation_mask, 
-                                                signal_mask = signal_mask, 
+                self.normalize_poissonian_noise(navigation_mask = navigation_mask,
+                                                signal_mask = signal_mask,
                                                 return_masks = True)
 
         navigation_mask = self._correct_navigation_mask_when_unfolded(navigation_mask)
@@ -177,9 +178,9 @@ class MVA():
             pca_v, pca_V = pca(dc[signal_mask,:][:,navigation_mask])
             pc = np.dot(dc[:,navigation_mask], pca_v)
         elif algorithm == 'fast_svd':
-            pca_v, pca_V = pca(dc[signal_mask,:][:,navigation_mask], 
+            pca_v, pca_V = pca(dc[signal_mask,:][:,navigation_mask],
             fast = True, output_dimension = output_dimension)
-            pc = np.dot(dc[:,navigation_mask], pca_v)            
+            pc = np.dot(dc[:,navigation_mask], pca_v)
 
         elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
             print "Performing the MLPCA training"
@@ -200,25 +201,25 @@ class MVA():
                     var_array = var_func(dc[signal_mask,...][:,navigation_mask])
                 else:
                     try:
-                        var_array = np.polyval(polyfit,dc[signal_mask, 
+                        var_array = np.polyval(polyfit,dc[signal_mask,
                         navigation_mask])
                     except:
                         messages.warning_exit(
                         'var_func must be either a function or an array'
-                        'defining the coefficients of a polynom')             
+                        'defining the coefficients of a polynom')
             if algorithm == 'mlpca':
                 fast = False
             else:
-                fast = True   
+                fast = True
             target.mlpca_output = mlpca(
-                dc.squeeze()[signal_mask,:][:,navigation_mask], 
+                dc.squeeze()[signal_mask,:][:,navigation_mask],
                 var_array.squeeze(), output_dimension, fast = fast)
             U,S,V,Sobj, ErrFlag  = target.mlpca_output
             print "Performing PCA projection"
             pc = np.dot(dc[:,navigation_mask], V)
             pca_v = V
             pca_V = S ** 2
-            
+
         if output_dimension:
             print "trimming to %i dimensions"%output_dimension
             pca_v = pca_v[:,:output_dimension]
@@ -235,7 +236,7 @@ class MVA():
         target.output_dimension = output_dimension
         target.unfolded = self._unfolded4pca
         target.variance2one = variance2one
-        
+
         if self._unfolded4pca is True:
             target.original_shape = self._shape_before_unfolding
 
@@ -253,23 +254,23 @@ class MVA():
 
         # Set the pixels that were not processed to nan
         if navigation_mask is not None or not isinstance(navigation_mask, slice):
-            v = np.zeros((dc.shape[1], target.v.shape[1]), 
+            v = np.zeros((dc.shape[1], target.v.shape[1]),
                     dtype = target.v.dtype)
             v[navigation_mask == False,:] = np.nan
             v[navigation_mask,:] = target.v
             target.v = v
-                
+
         if self._unfolded4pca is True:
             self.fold()
             self._unfolded4pca is False
-            
-    def independent_components_analysis(self, number_of_components = None, 
-    algorithm = 'CuBICA', diff_order = 1, pc = None, 
+
+    def independent_components_analysis(self, number_of_components = None,
+    algorithm = 'CuBICA', diff_order = 1, pc = None,
     comp_list = None, mask = None, on_peaks=False, **kwds):
         """Independent components analysis.
-        
+
         Available algorithms: FastICA, JADE, CuBICA, and TDSEP
-        
+
         Parameters
         ----------
         number_of_components : int
@@ -280,10 +281,10 @@ class MVA():
         pc : numpy array
             externally provided components
         comp_list : boolen numpy array
-            choose the components to use by the boolen list. It permits to 
+            choose the components to use by the boolen list. It permits to
             choose non contiguous components.
         mask : numpy boolean array with the same dimension as the PC
-            If not None, only the selected channels will be used by the 
+            If not None, only the selected channels will be used by the
             algorithm.
         """
         target=self._get_target(on_peaks)
@@ -298,7 +299,7 @@ class MVA():
                 if self.output_dimension is not None:
                     number_of_components = self.output_dimension
                     bool_index[:number_of_components] = True
-                    
+
             if comp_list is not None:
                 for ipc in comp_list:
                     bool_index[ipc] = True
@@ -324,10 +325,10 @@ class MVA():
         else:
             "You have to perform Principal Components Analysis before"
             sys.exit(0)
-    
+
     def reverse_ic(self, ic_n, on_peaks = False):
         """Reverse the independent component
-        
+
         Parameters
         ----------
         ic_n : list or int
@@ -345,11 +346,11 @@ class MVA():
             target=self.peak_mva_results
         else:
             target=self.mva_results
-        
+
         for i in [ic_n,]:
             target.ic[:,i] *= -1
             target.w[i,:] *= -1
-    
+
     def _ic_from_w(self,target):
         w = target.w
         n = len(w)
@@ -365,8 +366,8 @@ class MVA():
         W = target.v.T[:target.ic.shape[1],:]
         Q = np.linalg.inv(target.w.T)
         return np.dot(Q,W)
-          
-    def _calculate_recmatrix(self, components = None, mva_type=None, 
+
+    def _calculate_recmatrix(self, components = None, mva_type=None,
                              on_peaks=False):
         """
         Rebuilds SIs from selected components
@@ -408,7 +409,7 @@ class MVA():
             signal_name = 'rebuilt from %s with components %s' % (
             mva_type,components)
         else:
-            a = np.atleast_3d(np.dot(factors[:,:components], 
+            a = np.atleast_3d(np.dot(factors[:,:components],
                                      scores[:components,:]))
             signal_name = 'rebuilt from %s with %i components' % (
             mva_type,components)
@@ -431,16 +432,16 @@ class MVA():
         return sc
 
     def pca_build_SI(self, components=None, on_peaks=False):
-        """Return the spectrum generated with the selected number of principal 
+        """Return the spectrum generated with the selected number of principal
         components
-        
+
         Parameters
         ------------
         components : None, int, or list of ints
              if None, rebuilds SI from all components
              if int, rebuilds SI from components in range 0-given int
              if list of ints, rebuilds SI from only components in given list
-        
+
         Returns
         -------
         Signal instance
@@ -450,37 +451,37 @@ class MVA():
         rec.residual=rec.copy()
         rec.residual.data=self.data-rec.data
         return rec
-        
+
     def ica_build_SI(self,components = None, on_peaks=False):
-        """Return the spectrum generated with the selected number of 
+        """Return the spectrum generated with the selected number of
         independent components
-        
+
         Parameters
         ------------
         components : None, int, or list of ints
              if None, rebuilds SI from all components
              if int, rebuilds SI from components in range 0-given int
-             if list of ints, rebuilds SI from only components in given list        
-        
+             if list of ints, rebuilds SI from only components in given list
+
         Returns
         -------
         Signal instance
         """
         return self._calculate_recmatrix(components=components, mva_type='ica',
                                          on_peaks=on_peaks)
-        
+
     def energy_center(self):
         """Subtract the mean energy pixel by pixel"""
         print "\nCentering the energy axis"
         self._energy_mean = np.mean(self.data, 0)
         self.data = (self.data - self._energy_mean)
         self._replot()
-        
+
     def undo_energy_center(self):
         if hasattr(self,'_energy_mean'):
             self.data = (self.data + self._energy_mean)
             self._replot()
-        
+
     def variance2one(self, on_peaks=False):
         # Whitening
         if on_peaks:
@@ -490,7 +491,7 @@ class MVA():
         self._std = np.std(d, 0)
         d /= self._std
         self._replot()
-        
+
     def undo_variance2one(self, on_peaks=False):
         if on_peaks:
             d=self.peak_chars
@@ -502,13 +503,13 @@ class MVA():
 
     def plot_lev(self, n=50, on_peaks=False):
         """Plot the principal components LEV up to the given number
-        
+
         Parameters
         ----------
         n : int
         """
         target = self._get_target(on_peaks)
-        if n>target.V.shape[0]: 
+        if n>target.V.shape[0]:
             n=target.V.shape[0]
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -519,11 +520,11 @@ class MVA():
         plt.draw()
         plt.show()
         return ax
-        
+
     def plot_explained_variance(self,n=50,on_peaks=False):
-        """Plot the principal components explained variance up to the given 
+        """Plot the principal components explained variance up to the given
         number
-        
+
         Parameters
         ----------
         n : int
@@ -543,7 +544,7 @@ class MVA():
 
     def plot_principal_components(self, n = None, on_peaks=False):
         """Plot the principal components up to the given number
-        
+
         Parameters
         ----------
         n : int
@@ -557,11 +558,11 @@ class MVA():
             plt.plot(self.axes_manager.axes[-1].axis, target.pc[:,i])
             plt.title('Principal component %s' % i)
             plt.xlabel('Energy (eV)')
-            
-    def plot_independent_components(self, ic=None, same_window=False, 
+
+    def plot_independent_components(self, ic=None, same_window=False,
                                     on_peaks=False):
         """Plot the independent components.
-        
+
         Parameters
         ----------
         ic : numpy array (optional)
@@ -578,7 +579,7 @@ class MVA():
             ic = target.ic
             x = self.axes_manager.axes[-1].axis
             x = ic.shape[1]     # no way that we know the calibration
-            
+
         n = ic.shape[1]
 
         if not same_window:
@@ -602,9 +603,9 @@ class MVA():
             plt.draw()
             plt.show()
 
-    def plot_maps(self, components, mva_type=None, scores=None, factors=None, 
-                  cmap=plt.cm.gray, no_nans=False, with_components=True, 
-                  plot=True, on_peaks=False):
+    def plot_maps(self, components, mva_type=None, scores=None, factors=None,
+                  cmap=plt.cm.gray, no_nans=False, with_components=True,
+                  plot=True, on_peaks=False, directory = None):
         """
         Plot component maps for the different MSA types
 
@@ -618,9 +619,9 @@ class MVA():
         scores: numpy array, the array of score maps
         factors: numpy array, the array of components, with each column as a component.
         cmap: matplotlib colormap instance
-        no_nans: bool, 
+        no_nans: bool,
         with_components: bool,
-        plot: bool, 
+        plot: bool,
         """
         from hyperspy.signals.image import Image
         from hyperspy.signals.spectrum import Spectrum
@@ -633,7 +634,7 @@ class MVA():
             if mva_type is None:
                 print "Neither scores nor analysis type specified.  Cannot proceed."
                 return
-            
+
             elif mva_type.lower() == 'pca':
                 scores=target.v.T
                 factors=target.pc
@@ -652,7 +653,7 @@ class MVA():
 #        else:
 #            shape=self.data.shape[0],self.data.shape[1]
         im_list = []
-        
+
         if components is None:
             components=xrange(factors.shape[1])
 
@@ -669,7 +670,7 @@ class MVA():
                     ax = figure.add_subplot(111)
             if self.axes_manager.navigation_dimension == 2:
                 toplot = scores[i,:].reshape(self.axes_manager.navigation_shape)
-                im_list.append(Image({'data' : toplot, 
+                im_list.append(Image({'data' : toplot,
                     'axes' : self.axes_manager._get_non_slicing_axes_dicts()}))
                 if plot is True:
                     mapa = ax.matshow(toplot, cmap = cmap)
@@ -683,12 +684,12 @@ class MVA():
                     #pointer.add_axes(ax)
             elif self.axes_manager.navigation_dimension == 1:
                 toplot = scores[i,:]
-                im_list.append(Spectrum({"data" : toplot, 
+                im_list.append(Spectrum({"data" : toplot,
                     'axes' : self.axes_manager._get_non_slicing_axes_dicts()}))
                 im_list[-1].get_dimensions_from_data()
                 if plot is True:
                     ax.step(range(len(toplot)), toplot)
-                    
+
                     if with_components:
                         ax2.plot(self.axes_manager.axes[-1].axis, factors[:,i])
                         ax2.set_title('%s component %s' % (mva_type.upper(),i))
@@ -698,13 +699,18 @@ class MVA():
             if plot is True:
                 ax.set_title('%s component number %s map' % (mva_type.upper(),i))
                 figure.canvas.draw()
+                if directory is not None:
+                    if not os.path.isdir(directory):
+                        os.makedirs(directory)
+                    figure.savefig(os.path.join(directory, 'IC-%i.png' % i),
+                              dpi = 600)
         return im_list
 
-    def plot_principal_components_maps(self, comp_ids=None, cmap=plt.cm.gray, 
-                                       recmatrix=None, with_pc=True, 
+    def plot_principal_components_maps(self, comp_ids=None, cmap=plt.cm.gray,
+                                       recmatrix=None, with_pc=True,
                                        plot=True, pc=None, on_peaks=False):
         """Plot the map associated to each independent component
-        
+
         Parameters
         ----------
         comp_ids : None, int, or list of ints
@@ -715,10 +721,10 @@ class MVA():
         recmatrix : numpy array
             externally suplied recmatrix
         with_ic : bool
-            If True, plots also the corresponding independent component in the 
+            If True, plots also the corresponding independent component in the
             same figure
         plot : bool
-            If True it will plot the figures. Otherwise it will only return the 
+            If True it will plot the figures. Otherwise it will only return the
             images.
         ic : numpy array
             externally supplied independent components
@@ -733,13 +739,13 @@ class MVA():
         return self.plot_maps(components=comp_ids,mva_type='pca',cmap=cmap,
                               scores=recmatrix, with_components=with_pc,
                               plot=plot, factors=pc, on_peaks=on_peaks)
-        
+
     def plot_independent_components_maps(self, comp_ids=None, cmap=plt.cm.gray,
-                                         recmatrix=None, with_ic=True, 
+                                         recmatrix=None, with_ic=True,
                                          plot=True, ic=None, no_nans=False,
-                                         on_peaks=False):
+                                         on_peaks=False, directory = None):
         """Plot the map associated to each independent component
-        
+
         Parameters
         ----------
         cmap : plt.cm object
@@ -750,10 +756,10 @@ class MVA():
             if int, returns maps of components with ids from 0 to given int.
             if list of ints, returns maps of components with ids in given list.
         with_ic : bool
-            If True, plots also the corresponding independent component in the 
+            If True, plots also the corresponding independent component in the
             same figure
         plot : bool
-            If True it will plot the figures. Otherwise it will only return the 
+            If True it will plot the figures. Otherwise it will only return the
             images.
         ic : numpy array
             externally supplied independent components
@@ -766,16 +772,16 @@ class MVA():
         """
         return self.plot_maps(components=comp_ids,mva_type='ica',cmap=cmap,
                               scores=recmatrix, with_components=with_ic,
-                              plot=plot, factors=ic, no_nans=no_nans, 
-                              on_peaks=on_peaks)
+                              plot=plot, factors=ic, no_nans=no_nans,
+                              on_peaks=on_peaks, directory = directory)
 
-    
-    def save_principal_components(self, n, spectrum_prefix = 'pc', 
+
+    def save_principal_components(self, n, spectrum_prefix = 'pc',
     image_prefix = 'im', spectrum_format = 'msa', image_format = 'tif',
                                   on_peaks=False):
-        """Save the `n` first principal components  and score maps 
+        """Save the `n` first principal components  and score maps
         in the specified format
-        
+
         Parameters
         ----------
         n : int
@@ -786,11 +792,11 @@ class MVA():
             Prefix for the spectrum file names
         spectrum_format : string
         image_format : string
-                 
+
         """
         from spectrum import Spectrum
         target=self._get_target(on_peaks)
-        im_list = self.plot_principal_components_maps(n, plot = False, 
+        im_list = self.plot_principal_components_maps(n, plot = False,
                                                       on_peaks=on_peaks)
         s = Spectrum({'calibration' : {'data_cube' : target.pc[:,0]}})
         s.get_calibration_from(self)
@@ -799,8 +805,8 @@ class MVA():
             s.get_dimensions_from_cube()
             s.save('%s-%i.%s' % (spectrum_prefix, i, spectrum_format))
             im_list[i].save('%s-%i.%s' % (image_prefix, i, image_format))
-        
-    def save_independent_components(self, elements=None, 
+
+    def save_independent_components(self, elements=None,
                                     spectrum_format='msa',
                                     image_format='tif',
                                     recmatrix=None, ic=None,
@@ -808,22 +814,22 @@ class MVA():
         """Saves the result of the ICA in image and spectrum format.
         Note that to save the image, the NaNs in the map will be converted
         to zeros.
-        
+
         Parameters
         ----------
         elements : None or tuple of strings
-            a list of names (normally an element) to be assigned to IC. If not 
+            a list of names (normally an element) to be assigned to IC. If not
             the will be name ic-0, ic-1 ...
         image_format : string
         spectrum_format : string
         recmatrix : None or numpy array
             externally supplied recmatrix
-        ic : None or numpy array 
+        ic : None or numpy array
             externally supplied IC
         """
         from hyperspy.signals.spectrum import Spectrum
         target=self._get_target(on_peaks)
-        pl = self.plot_independent_components_maps(plot=False, 
+        pl = self.plot_independent_components_maps(plot=False,
                                                    recmatrix=recmatrix,
                                                    ic=ic,
                                                    no_nans=True,
@@ -853,13 +859,13 @@ class MVA():
                     pl[i].save('map_ic-%s.%s' % (element, image_format))
                 else:
                     pl[i].save('profile_ic-%s.%s' % (element, spectrum_format))
-                        
+
     def als(self, **kwargs):
-        """Alternate Least Squares imposing positivity constraints 
+        """Alternate Least Squares imposing positivity constraints
         to the result of a previous ICA
-        
+
         Stores in result in self.als_out
-        
+
         Parameters
         ----------
         thresh : float
@@ -868,7 +874,7 @@ class MVA():
             Impose non-negative constraint of the components. Default: True
         nonnegC : bool
             Impose non-negative constraint of the maps. Default: True
-        
+
         See also
         -------
         plot_als_ic_maps, plot_als_ic
@@ -879,28 +885,28 @@ class MVA():
             self.als_ic = also['S']
             self.als_maps = also['CList'].reshape(shape, order = 'C')
             self.als_output = also
-            
+
     def plot_als_ic_maps(self):
         """Same as plot_ic_maps for the ALS results"""
-        return self.plot_independent_components_maps(recmatrix = 
+        return self.plot_independent_components_maps(recmatrix =
         self.als_output['CList'].T, ic = self.als_ic)
-    
+
     def plot_als_ic(self):
         """Same as plot_independent_componets for the ALS results"""
         self.plot_independent_components(ic = self.als_ic)
-        
-    def save_als_ica_results(self, elements = None, 
+
+    def save_als_ica_results(self, elements = None,
     format = defaults.file_format, image_format = 'tif'):
         """Same as save_ica_results for the ALS results"""
-        self.save_ica_results(elements = elements, image_format = image_format, 
+        self.save_ica_results(elements = elements, image_format = image_format,
         recmatrix = self.als_output['CList'].T, ic = self.als_ic)
-                
-    def normalize_poissonian_noise(self, navigation_mask = None, 
+
+    def normalize_poissonian_noise(self, navigation_mask = None,
                                    signal_mask = None, return_masks = False):
         """
         Scales the SI following Surf. Interface Anal. 2004; 36: 203–212 to
         "normalize" the poissonian data for PCA analysis
-        
+
         Parameters
         ----------
         navigation_mask : boolen numpy array
@@ -945,7 +951,7 @@ class MVA():
             bH = bH[bH0 == False]
         self._root_aG = np.sqrt(aG)[np.newaxis,:]
         self._root_bH = np.sqrt(bH)[:, np.newaxis]
-        temp = (dc[signal_mask,:][:,navigation_mask] / 
+        temp = (dc[signal_mask,:][:,navigation_mask] /
                 (self._root_aG * self._root_bH))
         if  isinstance(signal_mask,slice) or isinstance(navigation_mask,slice):
             dc[signal_mask,navigation_mask] = temp
@@ -966,7 +972,7 @@ class MVA():
             if isinstance(signal_mask, slice):
                 signal_mask = None
             return navigation_mask, signal_mask
-        
+
     def undo_treatments(self, on_peaks=False):
         """Undo normalize_poissonian_noise"""
         print "Undoing data pre-treatments"
@@ -982,7 +988,7 @@ class MVA():
 
     def peak_ica(self, number_of_components):
         self.independent_components_analysis(number_of_components, on_peaks=True)
-        
+
 class MVA_Results():
     def __init__(self):
         self.pc = None
@@ -998,24 +1004,24 @@ class MVA_Results():
         self.ica_node=None
         # Demixing matrix
         self.w = None
-        
-    
+
+
     def save(self, filename):
         """Save the result of the PCA analysis
-        
+
         Parameters
         ----------
         filename : string
         """
-        np.savez(filename, pc = self.pc, v = self.v, V = self.V, 
-        pca_algorithm = self.pca_algorithm, centered = self.centered, 
-        output_dimension = self.output_dimension, variance2one = self.variance2one, 
-        poissonian_noise_normalized = self.poissonian_noise_normalized, 
+        np.savez(filename, pc = self.pc, v = self.v, V = self.V,
+        pca_algorithm = self.pca_algorithm, centered = self.centered,
+        output_dimension = self.output_dimension, variance2one = self.variance2one,
+        poissonian_noise_normalized = self.poissonian_noise_normalized,
         w = self.w, ica_algorithm = self.ica_algorithm)
 
     def load(self, filename):
         """Load the result of the PCA analysis
-        
+
         Parameters
         ----------
         filename : string
@@ -1024,7 +1030,7 @@ class MVA_Results():
         for key in pca.files:
             exec('self.%s = pca[\'%s\']' % (key, key))
         print "\n%s loaded correctly" %  filename
-        
+
         # For compatibility with old version
         if hasattr(self, 'algorithm'):
             self.pca_algorithm = self.algorithm
@@ -1040,7 +1046,7 @@ class MVA_Results():
             if not hasattr(self, attrib):
                 exec('self.%s = %s' % (attrib, defaults[attrib]))
         self.summary()
-        
+
     def summary(self):
         """Prints a summary of the PCA parameters to the stdout
         """
@@ -1055,11 +1061,11 @@ class MVA_Results():
         print "Variance normalized : %s" % self.variance2one
         print "Output dimension : %s" % self.output_dimension
         print "ICA algorithm : %s" % self.ica_algorithm
-        
+
     def crop_v(self, n):
         """
         Crop the score matrix up to the given number.
-        
+
         It is mainly useful to save memory and redude the storage size
         """
         self.v = self.v[:,:n].copy()
