@@ -18,7 +18,7 @@
 
 import enthought.traits.api as t
 import enthought.traits.ui.api as tu
-from enthought.traits.ui.menu import OKButton, ApplyButton, CancelButton
+from enthought.traits.ui.menu import OKButton, ApplyButton, CancelButton, ModalButtons
 
 from hyperspy.misc import utils
 from hyperspy import drawing
@@ -129,75 +129,57 @@ class Calibration(t.HasTraits):
         self.offset, self.scale = self.axis.calibrate(
             (self.left_value, self.right_value), (lc,rc),
             modify_calibration = False)
-ored = False
+
+class SmoothingSavitzkyGolay(t.HasTraits):
+    polynomial_order = t.Int(3)
+    number_of_points = t.Int(5)
+    differential_order = t.Int(0)
+    view = tu.View(
+        tu.Group(
+            'polynomial_order',
+            'number_of_points',
+            'differential_order',),
+            kind = 'nonmodal',
+            buttons= ModalButtons)
+
+    def __init__(self, signal):
+        self.ax = None
+        self.data_line = None
+        self.smooth_line = None
+        self.signal = signal
+        self.plot()
+                   
+    def _polynomial_order_changed(self, old, new):
+        self.smooth_line.update()
         
-
-
-    
-#class SavitzkyGolay(t.HasTraits):
-#    input_signal_name = t.Str
-#    polynomial_order = t.Range(1,10,3)
-#    number_of_points = t.Int(5)
-#    differential_order = t.Int(0)
-#    signal_name = t.Str('signal')
-#    extract_signal = t.Button()    
-#    view = tu.View(
-#        tu.Group(
-#            'input_signal_name',
-#            'polynomial_order',
-#            'number_of_points',
-#            'differential_order',
-#            'signal_name',
-#            tu.Item('extract_signal', show_label=False),),)
-#            
-#    def _polynomial_order_changed(self, old, new):
-#        self.smooth_line.update()
-#        
-#    def _number_of_points_changed(self, old, new):
-#        self.smooth_line.update()
-#        
-#    def _differential_order_changed(self, old, new):
-#        self.smooth_line.update()
-#            
-#    def init(self):
-#        self.ax = None
-#        self.data_line = None
-#        self.smooth_line = None
-#        self.signal = None
-#        
-#    def _input_signal_name_changed(self, old, new):
-#        if interactive_ns.has_key(new):
-#            self.signal = interactive_ns[new]
-#            self.plot()
-#            
-#    def model2plot(self, coordinates = None):
-#        smoothed = utils.sg(self.signal(), self.number_of_points, 
-#                            self.polynomial_order, self.differential_order)
-#        return smoothed
-#        
-#            
-#    def plot(self):
-#        self.signal.plot()
-#        hse = self.signal.hse
-#        l1 = hse.spectrum_plot.left_ax_lines[0]
-#        color = l1.line.get_color()
-#        l1.line_properties_helper(color, 'scatter')
-#        l1.set_properties()
-#        
-#        l2 = drawing.spectrum.SpectrumLine()
-#        l2.data_function = self.model2plot
-#        l2.line_properties_helper('blue', 'line')        
-#        # Add the line to the figure
-#          
-#        hse.spectrum_plot.add_line(l2)
-#        l2.plot()
-#        self.data_line = l1
-#        self.smooth_line = l2
-#        
-#    def _extract_signal_fired(self):
-#        s = Spectrum({'calibration' : {'data_cube' : self.model2plot()}})
-#        s.get_calibration_from(self.signal)
-#        interactive_ns[self.signal_name] = s
+    def _number_of_points_changed(self, old, new):
+        self.smooth_line.update()
+        
+    def _differential_order_changed(self, old, new):
+        self.smooth_line.update()
+            
+    def model2plot(self, axes_manager = None):
+        smoothed = utils.sg(self.signal(), self.number_of_points, 
+                            self.polynomial_order, self.differential_order)
+        return smoothed
+            
+    def plot(self):
+        self.signal.plot()
+        hse = self.signal._plot
+        l1 = hse.spectrum_plot.left_ax_lines[0]
+        color = l1.line.get_color()
+        l1.line_properties_helper(color, 'scatter')
+        l1.set_properties()
+        
+        l2 = drawing.spectrum.SpectrumLine()
+        l2.data_function = self.model2plot
+        l2.line_properties_helper('blue', 'line')        
+        # Add the line to the figure
+          
+        hse.spectrum_plot.add_line(l2)
+        l2.plot()
+        self.data_line = l1
+        self.smooth_line = l2
 #        
 #class Lowess(t.HasTraits):
 #    input_signal_name = t.Str

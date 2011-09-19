@@ -24,7 +24,7 @@ from hyperspy.signal import Signal
 from hyperspy.misc import progressbar
 from hyperspy.misc import utils
 from hyperspy.misc import utils_varia
-from hyperspy.gui.tools import Calibration
+from hyperspy.gui.tools import Calibration, SmoothingSavitzkyGolay
 
 class Spectrum(Signal):
     """
@@ -522,3 +522,8 @@ class Spectrum(Signal):
         '''
         calibration = Calibration(self)
         calibration.edit_traits()
+
+    def smooth_savitzky_golay(self):
+        '''Savitzky-Golay data smoothing using a gui'''
+        sg = SmoothingSavitzkyGolay(self)
+        sg.edit_traits()
