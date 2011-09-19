@@ -47,13 +47,12 @@ class CalibrationHandler(tu.Handler):
         axis.units = obj.units
 
         obj.last_calibration_stored = True
-        obj.roi_selection = False
+        obj.span_selector(active = False)
         obj.signal._replot()
-        obj.roi_selection = True
+        obj.span_selector(active = True)
         return
 
 class Calibration(t.HasTraits):
-    roi_selection = t.Bool(False)
     left_value = t.Float()
     right_value = t.Float()
     offset = t.Float()
@@ -64,11 +63,13 @@ class Calibration(t.HasTraits):
         tu.Group(
             'left_value',
             'right_value',
-            'offset',
-            'scale',
+            tu.Item(name = 'offset', style = 'readonly'),
+            tu.Item(name = 'scale', style = 'readonly'),
             'units',),
             handler = CalibrationHandler,
-            buttons = [OKButton, ApplyButton, CancelButton])
+            buttons = [OKButton, ApplyButton, CancelButton],
+        kind = 'nonmodal',
+        title = 'Calibration parameters')
             
     def __init__(self, signal):
         if signal.axes_manager.signal_dimension != 1:
@@ -79,11 +80,11 @@ class Calibration(t.HasTraits):
         self.units = self.axis.units
         self.bg_span_selector = None
         self.signal.plot()
-        self.roi_selection = True
+        self.span_selector(active = True)
         self.last_calibration_stored = True
             
-    def _roi_selection_changed(self, old, new):
-        if new is True:
+    def span_selector(self, active):
+        if active is True:
             self.bg_span_selector = \
             drawing.widgets.ModifiableSpanSelector(
             self.signal._plot.spectrum_plot.left_ax,
