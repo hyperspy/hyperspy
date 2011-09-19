@@ -24,7 +24,31 @@ import enthought.traits.ui.api as tui
 
 from hyperspy import messages
 
-
+def get_axis_group(n , label = ''):
+    group = tui.Group(
+            tui.Group(
+                tui.Item('axis%i.name' % n),
+                tui.Item('axis%i.size' % n, style = 'readonly'),
+                tui.Item('axis%i.index_in_array' % n, style = 'readonly'),
+                tui.Item('axis%i.low_index' % n, style = 'readonly'),
+                tui.Item('axis%i.high_index' % n, style = 'readonly'),
+                # The style of the index is chosen to be readonly because of 
+                # a bug in Traits 4.0.0 when using context with a Range traits
+                # where the limits are defined by another traits_view
+                tui.Item('axis%i.index' % n, style = 'readonly'),
+                tui.Item('axis%i.value' % n, style = 'readonly'),
+                tui.Item('axis%i.units' % n),
+                tui.Item('axis%i.slice_bool' % n, label = 'slice'),
+            show_border = True,),
+            tui.Group(
+                tui.Item('axis%i.scale' % n),
+                tui.Item('axis%i.offset' % n),
+            label = 'Calibration',
+            show_border = True,),
+        label = label,
+        show_border = True,)
+    return group
+    
 class BoundedIndex(t.Int):
     def validate(self, object, name, value):
         value = super(BoundedIndex, self).validate(object, name, value)
@@ -68,7 +92,6 @@ class DataAxis(t.HasTraits):
     high_index = t.Int()
     slice = t.Instance(slice)
     slice_bool = t.Bool(False)
-
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
 
@@ -197,6 +220,7 @@ class AxesManager(t.HasTraits):
     _slicing_axes = t.List()
     _non_slicing_axes = t.List()
     _step = t.Int(1)
+    
     def __init__(self, axes_list):
         super(AxesManager, self).__init__()
         ncoord = len(axes_list)
@@ -331,6 +355,13 @@ class AxesManager(t.HasTraits):
             axes_dicts[-1]['index_in_array'] = i
             i += 1
         return axes_dicts
+        
+    def show(self):
+        context = {}
+        ag = []
+        for n in range(0,len(self.axes)):
+            ag.append(get_axis_group(n, self.axes[n].name))
+            context['axis%i' % n] = self.axes[n]
+        ag = tuple(ag)
+        self.edit_traits(view = tui.View(*ag), context = context)
 
-
-    traits_view = tui.View(tui.Item('axes', style = 'custom'))
