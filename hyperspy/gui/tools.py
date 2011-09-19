@@ -26,11 +26,31 @@ from hyperspy.misc.interactive_ns import interactive_ns
 from hyperspy.exceptions import SignalOutputDimensionError
 from hyperspy.gui import messages
 
+import sys
+
 class CalibrationHandler(tu.Handler):
     def close(self, info, is_ok):
         # Removes the span selector from the plot
+        if is_ok is True:
+            self.apply(info)
         info.object.roi_selection = False
         return True
+
+    def apply(self, info, *args, **kwargs):
+        """Handles the **Apply** button being clicked.
+        """
+        obj = info.object
+        if obj.signal is None: return
+        axis = obj.axis
+        axis.scale = obj.scale
+        axis.offset = obj.offset
+        axis.units = obj.units
+
+        obj.last_calibration_stored = True
+        obj.roi_selection = False
+        obj.signal._replot()
+        obj.roi_selection = True
+        return
 
 class Calibration(t.HasTraits):
     roi_selection = t.Bool(False)
@@ -39,7 +59,6 @@ class Calibration(t.HasTraits):
     offset = t.Float()
     scale = t.Float()
     units = t.Unicode()
-    apply_ = t.Button()
     ok = t.Button()   
     view = tu.View(
         tu.Group(
@@ -47,10 +66,9 @@ class Calibration(t.HasTraits):
             'right_value',
             'offset',
             'scale',
-            'units',
-            tu.Item('set_calibration', show_label=False),),
+            'units',),
             handler = CalibrationHandler,
-            buttons = ['apply', 'ok', CancelButton])
+            buttons = [OKButton, ApplyButton, CancelButton])
             
     def __init__(self, signal):
         if signal.axes_manager.signal_dimension != 1:
@@ -84,17 +102,18 @@ class Calibration(t.HasTraits):
             self._update_calibration()
             
     def _left_value_changed(self, old, new):
-        if self.bg_span_selector.range is None:
-            information('Please select a range in the spectrum figure by '
-            'dragging the mouse over it')
+        if self.bg_span_selector is not None and \
+        self.bg_span_selector.range is None:
+            messages.information('Please select a range in the spectrum figure' 
+            'by dragging the mouse over it')
             return
         else:
             self._update_calibration()
     
     def _right_value_changed(self, old, new):
         if self.bg_span_selector.range is None:
-            information('Please select a range in the spectrum figure by '
-            'dragging the mouse over it')
+            messages.information('Please select a range in the spectrum figure' 
+            'by dragging the mouse over it')
             return
         else:
             self._update_calibration()
@@ -110,21 +129,10 @@ class Calibration(t.HasTraits):
         self.offset, self.scale = self.axis.calibrate(
             (self.left_value, self.right_value), (lc,rc),
             modify_calibration = False)
-        self.last_calibration_stored = False
-            
-    def _apply__fired(self):
-        if self.signal is not None:
-            self.axis.scale = self.scale
-            self.axis.offset = self.offset
-            self.axis.units = self.units
-            self.last_calibration_stored = True
-            self.roi_selection = False
-            self.signal._replot()
-            self.roi_selection = True
+ored = False
+        
 
-    def _ok_fired(self):
-        self._apply_fired(self)
-        self._cancel_fired(self)
+
     
 #class SavitzkyGolay(t.HasTraits):
 #    input_signal_name = t.Str
