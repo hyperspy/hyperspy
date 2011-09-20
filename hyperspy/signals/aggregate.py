@@ -347,11 +347,11 @@ class AggregateCells(Aggregate,Image):
                         self.data=np.atleast_3d(arg.data)
                     else:
                         self.data=np.append(self.data,arg.data,axis=2)
-                    print "File %s added to aggregate."%mp.original_filename
+                    print "File %s added to aggregate."%pmp.original_filename
                     smp.aggregate_end_pointer=self.data.shape[2]
                 else:
                     print "Data from file %s already in this aggregate. \n \
-    Delete it first if you want to update it."%mp.original_filename
+    Delete it first if you want to update it."%pmp.original_filename
             # refresh the axes for the new sized data
             self.axes_manager=AxesManager(self._get_undefined_axes_list())
             smp.original_filename="Aggregate Cells: %s"%smp.locations.keys()
@@ -405,7 +405,7 @@ class AggregateCells(Aggregate,Image):
                 if j>(address[1]) and fname<>smp.locations.keys()[-1]:
                     file_index+=1
                     fname=smp.locations.keys()[file_index]
-                    address=self.mapped_parameters.aggregate_address.values()[file_index]
+                    address=smp.aggregate_address.values()[file_index]
                 file_j=j-address[0]
                 if groups[j]==i:
                     cluster_array[:,:,cluster_idx]=d[:,:,j]
@@ -420,14 +420,14 @@ class AggregateCells(Aggregate,Image):
             constrained_orig_files={}
             for key in self.mapped_parameters.original_files.keys():
                 if key in positions['filename']:
-                    constrained_orig_files[key]=self.mapped_parameters.original_files[key]
+                    constrained_orig_files[key]=smp.original_files[key]
             cluster_array_Image=Image({'data':cluster_array,
                     'mapped_parameters':{
                         'name':'Cluster %s from %s'%(i,
-                                         self.mapped_parameters.name),
+                                         smp.name),
                         'locations':positions,
                         'members':members,
-                        'original_files':self.mapped_parameters.original_files,
+                        'original_files':smp.original_files,
                         }
                     })
             cluster_arrays.append(cluster_array_Image)
@@ -435,13 +435,13 @@ class AggregateCells(Aggregate,Image):
         members_list=[groups.count(i) for i in xrange(clusters)]
         avg_stack_Image=Image({'data':avg_stack,
                     'mapped_parameters':{
-                        'name':'Cluster averages from %s'%self.mapped_parameters.name,
+                        'name':'Cluster averages from %s'%smp.name,
                         'member_counts':members_list,
-                        'original_files':self.mapped_parameters.original_files,
+                        'original_files':smp.original_files,
                         }
                     })
-        self.mapped_parameters.avgs=avg_stack_Image
-        self.mapped_parameters.clusters=cluster_arrays
+        smp.avgs=avg_stack_Image
+        smp.clusters=cluster_arrays
         print "Averages and classes stored in mapped_parameters.  Access them as: \n\n\
 your_object.mapped_parameters.avgs \n\n\
 or \n\n\
