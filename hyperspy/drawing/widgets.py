@@ -238,19 +238,19 @@ class DraggableHorizontalLine(DraggablePatch):
 
     def update_patch_position(self):
         if self.patch is not None:
-            self.patch.set_ydata(self.axes_manager._values[0])
+            self.patch.set_ydata(self.axes_manager._indexes[0])
             self.draw_patch()
 
     def set_patch(self):
         ax = self.ax
-        self.patch = ax.axhline(self.axes_manager._values[0],
+        self.patch = ax.axhline(self.axes_manager._indexes[0],
                                 color = self.color,
                                picker = 5, animated = self.blit)
 
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
-            self.axes_manager._non_slicing_axes[0].value = event.ydata
+            self.axes_manager._non_slicing_axes[0].index = event.ydata
 
 class DraggableVerticalLine(DraggablePatch):
     def __init__(self, axes_manager):
