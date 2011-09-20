@@ -18,7 +18,7 @@
 
 from enthought.traits.api \
     import HasTraits, Array, Int, Float, Range, Instance, on_trait_change, \
-    Bool, Button, Property, Event, Tuple, Any, List, Trait
+    Bool, Button, Property, Event, Tuple, Any, List, Trait, CInt
 from enthought.traits.ui.api import View, Item, Group, HFlow, VGroup, Tabbed, \
     BooleanEditor, ButtonEditor, CancelButton, Handler, Action, Spring, \
     HGroup, TextEditor
@@ -87,14 +87,16 @@ class TemplatePicker(HasTraits):
     peaks = List
     zero=Int(0)
     tmp_size = Range(low=2, high=512, value=64, cols=4)
-    max_pos_x=Int(1023)
-    max_pos_y=Int(1023)
+    max_pos_x=CInt(1023)
+    max_pos_y=CInt(1023)
     top = Range(low='zero',high='max_pos_x', value=20, cols=4)
     left = Range(low='zero',high='max_pos_y', value=20, cols=4)
     is_square = Bool
     img_plot = Instance(Plot)
     tmp_plot = Instance(Plot)
     findpeaks = Button
+    next_img = Button
+    prev_img = Button
     peak_width = Range(low=2, high=200, value=10)
     tab_selected = Event
     ShowCC = Bool
@@ -119,9 +121,12 @@ class TemplatePicker(HasTraits):
         HFlow(
             VGroup(
                 Item("img_container",editor=ComponentEditor(), show_label=False),
-                Group(
+                HGroup(
+                    Item("ShowCC", editor=BooleanEditor(), label="Show cross correlation image"),
                     Spring(),
-                    Item("ShowCC", editor=BooleanEditor(), label="Show cross correlation image")),
+                    Item("prev_img",editor=ButtonEditor(label="<"),show_label=False),
+                    Item("next_img",editor=ButtonEditor(label=">"),show_label=False),
+                    ),
                 label="Original image", show_border=True, trait_modified="tab_selected"
                 ),
             VGroup(
@@ -193,7 +198,6 @@ class TemplatePicker(HasTraits):
         plot.title="%s of %s: "%(self.img_idx+1,self.numfiles)+self.titles[self.img_idx]
         plot.aspect_ratio=float(self.sig.data.shape[1])/float(self.sig.data.shape[0])
 
-        #if not self.ShowCC:
         csr = CursorTool(img, drag_button='left', color='white',
                          line_width=2.0)
         self.csr=csr
@@ -282,10 +286,7 @@ class TemplatePicker(HasTraits):
     @on_trait_change('ShowCC')
     def toggle_cc_view(self):
         if self.ShowCC:
-            self.CC = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
-                                                   self.left:self.left+self.tmp_size,self.img_idx],
-                                                   self.sig.data[:,:,self.img_idx])
-            self.img_plotdata.set_data("imagedata",self.CC)
+            self.update_CC()
         else:
             self.img_plotdata.set_data("imagedata",self.sig.data[:,:,self.img_idx])
         self.redraw_plots()
@@ -293,10 +294,7 @@ class TemplatePicker(HasTraits):
     @on_trait_change("img_idx")
     def update_img_depth(self):
         if self.ShowCC:
-            self.CC = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
-                                                   self.left:self.left+self.tmp_size,self.img_idx],
-                                                   self.sig.data[:,:,self.img_idx])
-            self.img_plotdata.set_data("imagedata",self.CC)
+            self.update_CC()
         else:
             self.img_plotdata.set_data("imagedata",self.sig.data[:,:,self.img_idx])
         self.img_plot.title="%s of %s: "%(self.img_idx+1,self.numfiles)+self.titles[self.img_idx]
@@ -312,12 +310,13 @@ class TemplatePicker(HasTraits):
         self.max_pos_y=max_pos_y
         return
 
+    @on_trait_change('next_img')
     def increase_img_idx(self,info):
         if self.img_idx==(self.numfiles-1):
             self.img_idx=0
         else:
             self.img_idx+=1
-
+    @on_trait_change('prev_img')
     def decrease_img_idx(self,info):
         if self.img_idx==0:
             self.img_idx=self.numfiles-1
@@ -339,6 +338,8 @@ class TemplatePicker(HasTraits):
         grid_data_source = self.tmp_plot.range2d.sources[0]
         grid_data_source.set_data(np.arange(self.tmp_size), np.arange(self.tmp_size))
         self.tmp_img_idx=self.img_idx
+        if self.numpeaks_total>0:
+            self.peaks=[np.array([[0,0,-1]])]
         return
 
     @on_trait_change('left, top, tmp_size')
@@ -351,8 +352,7 @@ class TemplatePicker(HasTraits):
             grid_data_source = self.img_plot.range2d.sources[0]
             grid_data_source.set_data(np.arange(self.CC.shape[1]), 
                                       np.arange(self.CC.shape[0]))
-        if self.numpeaks_total>0:
-            self.peaks=[np.array([[0,0,-1]])]
+
 
     @on_trait_change('cbar_selection:selection')
     def update_thresh(self):
@@ -443,7 +443,7 @@ class TemplatePicker(HasTraits):
         self.img_container.request_redraw()
 
     def crop_cells_stack(self):
-        from eelslab.signals.aggregate import AggregateCells
+        from hyperspy.signals.aggregate import AggregateCells
         if self.numfiles==1:
             self.crop_sig=self.crop_cells()
             return
