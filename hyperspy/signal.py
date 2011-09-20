@@ -33,7 +33,6 @@ from hyperspy.learn.mva import MVA, MVA_Results
 
 class Parameters(t.HasTraits, object):
     """A class to comfortably access some parameters as attributes"""
-    name = t.Str("UnnamedFile")
 
     def __init__(self, dictionary={}):
         super(Parameters, self).__init__()
@@ -163,6 +162,8 @@ class Signal(t.HasTraits, MVA):
             file_data_dict['original_parameters'])
         self.mapped_parameters.load_dictionary(
             file_data_dict['mapped_parameters'])
+        if not hasattr(self.mapped_parameters,'name') and hasattr(self.mapped_parameters,'original_filename'):
+            self.mapped_parameters.name=self.mapped_parameters.original_filename
 
     def _get_signal_dict(self):
         dic = {}
@@ -264,7 +265,7 @@ class Signal(t.HasTraits, MVA):
                 self._plot.pixel_size = scalebar_axis.scale
                 self._plot.pixel_units = scalebar_axis.units
             self._plot.plot()
-
+            
         elif axes_manager.signal_dimension == 2:
 
             # Mike's playground with new plotting toolkits - needs to be a
