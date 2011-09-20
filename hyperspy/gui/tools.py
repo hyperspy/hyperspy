@@ -58,7 +58,6 @@ class Calibration(t.HasTraits):
     offset = t.Float()
     scale = t.Float()
     units = t.Unicode()
-    ok = t.Button()   
     view = tu.View(
         tu.Group(
             'left_value',
