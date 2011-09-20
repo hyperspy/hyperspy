@@ -20,10 +20,34 @@ import copy
 
 import numpy as np
 import enthought.traits.api as t
-import enthought.traits.ui.api as tui 
+import enthought.traits.ui.api as tui
 
 from hyperspy import messages
 
+def get_axis_group(n , label = ''):
+    group = tui.Group(
+            tui.Group(
+                tui.Item('axis%i.name' % n),
+                tui.Item('axis%i.size' % n, style = 'readonly'),
+                tui.Item('axis%i.index_in_array' % n, style = 'readonly'),
+                tui.Item('axis%i.low_index' % n, style = 'readonly'),
+                tui.Item('axis%i.high_index' % n, style = 'readonly'),
+                # The style of the index is chosen to be readonly because of 
+                # a bug in Traits 4.0.0 when using context with a Range traits
+                # where the limits are defined by another traits_view
+                tui.Item('axis%i.index' % n, style = 'readonly'),
+                tui.Item('axis%i.value' % n, style = 'readonly'),
+                tui.Item('axis%i.units' % n),
+                tui.Item('axis%i.slice_bool' % n, label = 'slice'),
+            show_border = True,),
+            tui.Group(
+                tui.Item('axis%i.scale' % n),
+                tui.Item('axis%i.offset' % n),
+            label = 'Calibration',
+            show_border = True,),
+        label = label,
+        show_border = True,)
+    return group
     
 class BoundedIndex(t.Int):
     def validate(self, object, name, value):
@@ -31,13 +55,13 @@ class BoundedIndex(t.Int):
         if abs(value) >= object.size:
             value = value % object.size
         return value
-        
+
 
 def generate_axis(offset, scale, size, offset_index=0):
     """Creates an axis given the offset, scale and number of channels
-    
+
     Alternatively, the offset_index of the offset channel can be specified.
-    
+
     Parameters
     ----------
     offset : float
@@ -45,14 +69,14 @@ def generate_axis(offset, scale, size, offset_index=0):
     size : number of channels
     offset_index : int
         offset_index number of the offset
-    
+
     Returns
     -------
     Numpy array
     """
-    return np.linspace(offset - offset_index * scale, 
+    return np.linspace(offset - offset_index * scale,
                        offset + scale * (size - 1 - offset_index),
-                       size)  
+                       size)
 
 class DataAxis(t.HasTraits):
     name = t.Str()
@@ -68,14 +92,13 @@ class DataAxis(t.HasTraits):
     high_index = t.Int()
     slice = t.Instance(slice)
     slice_bool = t.Bool(False)
-    
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
-    
-    def __init__(self, size, index_in_array, name='', scale=1., offset=0., 
+
+    def __init__(self, size, index_in_array, name='', scale=1., offset=0.,
                  units='undefined', slice_bool = False):
         super(DataAxis, self).__init__()
-        
+
         self.name = name
         self.units = units
         self.scale = scale
@@ -86,21 +109,21 @@ class DataAxis(t.HasTraits):
         self.index = 0
         self.index_in_array = index_in_array
         self.update_axis()
-                
+
         self.on_trait_change(self.update_axis, ['scale', 'offset', 'size'])
         self.on_trait_change(self.update_value, 'index')
         self.on_trait_change(self.set_index_from_value, 'value')
         self.on_trait_change(self._update_slice, 'slice_bool')
         self.on_trait_change(self.update_index_bounds, 'size')
         self.slice_bool = slice_bool
-        
+
     def __repr__(self):
         if self.name is not None:
             return self.name + ' index: ' + str(self.index_in_array)
-          
+
     def update_index_bounds(self):
         self.high_index = self.size - 1
-    
+
     def update_axis(self):
         self.axis = generate_axis(self.offset, self.scale, self.size)
         self.low_value, self.high_value = self.axis.min(), self.axis.max()
@@ -111,7 +134,7 @@ class DataAxis(t.HasTraits):
             self.slice = slice(None)
         else:
             self.slice = None
-        
+
     def get_axis_dictionary(self):
         adict = {
             'name' : self.name,
@@ -123,18 +146,18 @@ class DataAxis(t.HasTraits):
             'slice_bool' : self.slice_bool
         }
         return adict
-        
+
     def update_value(self):
         self.value = self.axis[self.index]
-        
+
     def value2index(self, value):
         """Return the closest index to the given value if between the limits,
         otherwise it will return either the upper or lower limits
-        
+
         Parameters
         ----------
         value : float
-        
+
         Returns
         -------
         int
@@ -144,7 +167,7 @@ class DataAxis(t.HasTraits):
         else:
             index = int(round((value - self.offset) / \
             self.scale))
-            if self.size > index >= 0: 
+            if self.size > index >= 0:
                 return index
             elif index < 0:
                 messages.warning("The given value is below the axis limits")
@@ -152,24 +175,25 @@ class DataAxis(t.HasTraits):
             else:
                 messages.warning("The given value is above the axis limits")
                 return int(self.size - 1)
-        
+
     def index2value(self, index):
         return self.axis[index]
-    
+
     def set_index_from_value(self, value):
         self.index = self.value2index(value)
         # If the value is above the limits we must correct the value
         self.value = self.index2value(self.index)
-        
-    def calibrate(self, value_tuple, index_tuple):
+
+    def calibrate(self, value_tuple, index_tuple, modify_calibration = True):
         scale = (value_tuple[1] - value_tuple[0]) /\
         (index_tuple[1] - index_tuple[0])
         offset = value_tuple[0] - scale * index_tuple[0]
-        print "Scale = ", scale
-        print "Offset = ", offset
-        self.offset = offset
-        self.scale = scale
-        
+        if modify_calibration is True:
+            self.offset = offset
+            self.scale = scale
+        else:
+            return offset, scale
+
     traits_view = \
     tui.View(
         tui.Group(
@@ -190,12 +214,13 @@ class DataAxis(t.HasTraits):
         label = "Data Axis properties",
         show_border = True,),
     )
-    
+
 class AxesManager(t.HasTraits):
     axes = t.List(DataAxis)
     _slicing_axes = t.List()
     _non_slicing_axes = t.List()
     _step = t.Int(1)
+    
     def __init__(self, axes_list):
         super(AxesManager, self).__init__()
         ncoord = len(axes_list)
@@ -231,11 +256,11 @@ class AxesManager(t.HasTraits):
         self.signal_dimension = len(self._slicing_axes)
         self.navigation_dimension = len(self._non_slicing_axes)
         self.navigation_shape = [axis.size for axis in self._non_slicing_axes]
-    
+
     def set_not_slicing_indexes(self, nsi):
         for index,axis in zip(nsi, self.axes):
             axis.index = index
-    
+
     def set_view(self, view = 'hyperspectrum'):
         """view : 'hyperspectrum' or 'image' """
         tl = [False] * len(self.axes)
@@ -244,36 +269,36 @@ class AxesManager(t.HasTraits):
             tl[0] = True
         elif view == 'image':
             tl[:2] = True, True
-            
+
         for axis in self.axes:
             axis.slice_bool = tl.pop()
 
     def set_slicing_axes(self, slicing_axes):
         '''Easily choose which axes are slicing
-        
+
         Parameters
         ----------
-        
+
         slicing_axes: tuple of ints
             A list of the axis indexes that we want to slice
-            
+
         '''
         for axis in self.axes:
             if axis.index_in_array in slicing_axes:
                 axis.slice_bool = True
             else:
                 axis.slice_bool = False
-              
+
     def connect(self, f):
         for axis in self.axes:
             if axis.slice is None:
                 axis.on_trait_change(f, 'index')
-                
+
     def disconnect(self, f):
         for axis in self.axes:
             if axis.slice is None:
                 axis.on_trait_change(f, 'index', remove = True)
-                
+
     def key_navigator(self, event):
         if len(self._non_slicing_axes) not in (1,2): return
         x = self._non_slicing_axes[-1]
@@ -293,26 +318,26 @@ class AxesManager(t.HasTraits):
                 y.index -= self._step
             elif event.key == "down" or event.key == "2":
                 y.index += self._step
-                
+
     def edit_axes_traits(self):
         for axis in self.axes:
             axis.edit_traits()
-            
+
     def copy(self):
         return(copy.copy(self))
-        
+
     def deepcopy(self):
         return(copy.deepcopy(self))
-        
+
     def __deepcopy__(self, *args):
         return AxesManager(self._get_axes_dicts())
-        
+
     def _get_axes_dicts(self):
         axes_dicts = []
         for axis in self.axes:
             axes_dicts.append(axis.get_axis_dictionary())
         return axes_dicts
-        
+
     def _get_slicing_axes_dicts(self):
         axes_dicts = []
         i = 0
@@ -321,7 +346,7 @@ class AxesManager(t.HasTraits):
             axes_dicts[-1]['index_in_array'] = i
             i += 1
         return axes_dicts
-        
+
     def _get_non_slicing_axes_dicts(self):
         axes_dicts = []
         i = 0
@@ -330,6 +355,13 @@ class AxesManager(t.HasTraits):
             axes_dicts[-1]['index_in_array'] = i
             i += 1
         return axes_dicts
-            
-            
-    traits_view = tui.View(tui.Item('axes', style = 'custom'))
+        
+    def show(self):
+        context = {}
+        ag = []
+        for n in range(0,len(self.axes)):
+            ag.append(get_axis_group(n, self.axes[n].name))
+            context['axis%i' % n] = self.axes[n]
+        ag = tuple(ag)
+        self.edit_traits(view = tui.View(*ag), context = context)
+

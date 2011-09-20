@@ -28,35 +28,35 @@ class ByteOrderError(Exception):
 class DM3FileVersionError(Exception):
     def __init__(self, value=''):
         self.dm3_version = value
-    
+
     def __str__(self):
-        return repr(self.dm3_version)    
+        return repr(self.dm3_version)
 
 class DM3TagError(Exception):
     def __init__(self, value=''):
         self.dm3_tag = value
-    
+
     def __str__(self):
         return repr(self.dm3_tag)
 
 class DM3DataTypeError(Exception):
     def __init__(self, value=''):
         self.dm3_dtype = value
-    
+
     def __str__(self):
         return repr(self.dm3_dtype)
 
 class DM3TagTypeError(Exception):
     def __init__(self, value=''):
         self.dm3_tagtype = value
-    
+
     def __str__(self):
         return repr(self.dm3_tagtype)
 
 class DM3TagIDError(Exception):
     def __init__(self, value=''):
         self.dm3_tagID = value
-    
+
     def __str__(self):
         return repr(self.dm3_tagID)
 
@@ -80,3 +80,13 @@ class ShapeError(Exception):
 
     def __str__(self):
         return repr(self.error)
+
+class SignalOutputDimensionError(Exception):
+    def __init__(self, output_dimension, expected_output_dimension):
+        self.output_dimension = output_dimension
+        self.expected_output_dimension = expected_output_dimension
+        self.msg = 'output dimension  = %i, %i expected' % (
+        self.output_dimension, self.expected_output_dimension)
+
+    def __str__(self):
+     return repr(self.msg)

@@ -258,10 +258,12 @@ class Signal(t.HasTraits, MVA):
             if self.axes_manager._non_slicing_axes:
                 self._plot.image_data_function = self._get_explorer
                 self._plot.image_title = ''
-                self._plot.pixel_size = \
-                self.axes_manager._non_slicing_axes[0].scale
-                self._plot.pixel_units = \
-                self.axes_manager._non_slicing_axes[0].units
+                if self.axes_manager.navigation_dimension == 1:
+                    scalebar_axis = self.axes_manager._slicing_axes[0]
+                else:
+                    scalebar_axis = self.axes_manager._non_slicing_axes[-1]
+                self._plot.pixel_size = scalebar_axis.scale
+                self._plot.pixel_units = scalebar_axis.units
             self._plot.plot()
             
         elif axes_manager.signal_dimension == 2:
