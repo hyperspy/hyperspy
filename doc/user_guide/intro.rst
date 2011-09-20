@@ -10,7 +10,7 @@ Hyperspy is a hyperspectral data analysis toolbox. Specifically, it provides eas
 Our vision
 ----------
 
-To us this program is a research tool, much like a screw driver or a Green function. We believe that the better our tools are the better our research will be. We also think that it is beneficial for the advance of knowledge to share our research tools and to forge them in a collaborative way. This is because by collaborating we advance faster mainly by avoiding reinventing the wheel. Idealistic as it may sound, many other people think like this and it is thanks to them that this project exists.
+To us this program is a research tool, much like a screw driver or a Green's function. We believe that the better our tools are, the better our research will be. We also think that it is beneficial for the advance of knowledge to share our research tools and to forge them in a collaborative way. This is because by collaborating we advance faster mainly by avoiding reinventing the wheel. Idealistic as it may sound, many other people think like this and it is thanks to them that this project exists.
 
 How is it different?
 --------------------
