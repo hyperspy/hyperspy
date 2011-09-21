@@ -537,7 +537,7 @@ class Spectrum(Signal):
         lw.edit_traits()
 
     def remove_background(self):
-        '''Lowess data smoothing using a gui'''
+        '''Remove the background using a gui'''
         br = BackgroundRemoval(self)
         br.edit_traits()
 

@@ -26,7 +26,7 @@ from hyperspy.components import PowerLaw
 from hyperspy.misc.interactive_ns import interactive_ns
 from hyperspy.defaults_parser import defaults
 import hyperspy.messages as messages
-import hyperspy.misc.utils as utils
+from hyperspy import components
 
 
 class EELSModel(Model):
@@ -241,10 +241,18 @@ class EELSModel(Model):
         self.channel_switches = copy.copy(self.backup_channel_switches)
         self.enable_edges(active_edges)
         
-    def two_area_background_estimation(self, E1 = None, E2 = None):
-        """
-        Estimates the parameters of a power law background with the two
+    def two_area_background_estimation(self, E1 = None, E2 = None, 
+        powerlaw = None):
+        """Estimates the parameters of a power law background with the two
         area method.
+        
+        Parameters
+        ----------
+        E1 : float
+        E2 : float
+        powerlaw : PowerLaw component or None
+            If None, it will try to guess the right component from the 
+            background components of the model
         """
         ea = self.axis.axis[self.channel_switches]
         if E1 is None or E1 < ea[0]:
@@ -266,19 +274,25 @@ class EELSModel(Model):
         print \
         "Estimating the parameters of the background by the two area method"
         print "E1 = %s\t E2 = %s" % (E1, E2)
-
-        try:
-            estimation = utils.two_area_powerlaw_estimation(self.spectrum,E1,E2)
-            bg = self._background_components[0]
-            bg.A.map['is_set'][:] = True
-            bg.r.map['is_set'][:] = True
-            bg.r.map['values'] = estimation['r']
-            bg.A.map['values'] = estimation['A']
+        if powerlaw is None:
+            for component in self._background_components:
+                if isinstance(component, components.PowerLaw):
+                    if powerlaw is None:
+                        powerlaw = component
+                    else:
+                        message.warning('There are more than two power law '
+                        'background components defined in this model, please '
+                        'use the powerlaw keyword to specify one of them')
+                        return
+                        
+        
+        if powerlaw.estimate_parameters(self.spectrum, E1, E2, False) is True:
             self.charge()
-        except ValueError:
+        else:
             messages.warning(
             "The power law background parameters could not be estimated\n"
             "Try choosing a different energy range for the estimation")
+            return
 
     def fit_edge(self, edgenumber, startenergy = None, **kwards):
         backup_channel_switches = self.channel_switches.copy()

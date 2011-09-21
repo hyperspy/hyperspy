@@ -91,9 +91,9 @@ class SpanSelectorInSpectrum(t.HasTraits):
             onmove_callback = self.update_span_selector_traits)
 
         elif self.span_selector is not None:
+            self.on_disabling_span_selector()
             self.span_selector.turn_off()
             self.span_selector = None
-            self.on_disabling_span_selector()
 
     def update_span_selector_traits(self, *args, **kwargs):
         self.ss_left_value = self.span_selector.rect.get_x()
