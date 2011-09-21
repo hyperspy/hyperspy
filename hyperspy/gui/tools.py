@@ -28,37 +28,84 @@ from hyperspy.gui import messages
 
 import sys
 
-class CalibrationHandler(tu.Handler):
+class SpanSelectorInSpectrumHandler(tu.Handler):
     def close(self, info, is_ok):
         # Removes the span selector from the plot
         if is_ok is True:
             self.apply(info)
-        info.object.roi_selection = False
+        info.object.span_selector_switch('False')
         return True
 
     def apply(self, info, *args, **kwargs):
         """Handles the **Apply** button being clicked.
+
         """
         obj = info.object
-        if obj.signal is None: return
-        axis = obj.axis
-        axis.scale = obj.scale
-        axis.offset = obj.offset
-        axis.units = obj.units
-
-        obj.last_calibration_stored = True
-        obj.span_selector(active = False)
-        obj.signal._replot()
-        obj.span_selector(active = True)
+        
         return
 
-class Calibration(t.HasTraits):
+class CalibrationHandler(SpanSelectorInSpectrumHandler):
+
+    def apply(self, info, *args, **kwargs):
+        """Handles the **Apply** button being clicked.
+        """
+        if info.object.signal is None: return
+        axis = info.object.axis
+        axis.scale = info.object.scale
+        axis.offset = info.object.offset
+        axis.units = info.object.units
+        info.object.span_selector_switch(on = False)
+        info.object.signal._replot()
+        info.object.span_selector_switch(on = True)
+        info.object.last_calibration_stored = True
+        return
+        
+class SpanSelectorInSpectrum(t.HasTraits):
+    ss_left_value = t.Float()
+    ss_right_value = t.Float()
+            
+    def __init__(self, signal):
+        if signal.axes_manager.signal_dimension != 1:
+         raise SignalOutputDimensionError(signal.axes.signal_dimension, 1)
+        
+        self.signal = signal
+        self.axis = self.signal.axes_manager._slicing_axes[0]
+        self.span_selector = None
+        self.signal.plot()
+        # The next two lines are to walk-around a traitui bug that causes a 
+        # inherited trait to be overwritten by the editor if it was not 
+        # initialized by the parent trait
+        self.ss_left_value = self.axis.axis[0]
+        self.ss_right_value = self.axis.axis[-1]
+        self.span_selector_switch(on = True)
+        
+    def on_disabling_span_selector(self):
+        pass
+            
+    def span_selector_switch(self, on):
+        if on is True:
+            self.span_selector = \
+            drawing.widgets.ModifiableSpanSelector(
+            self.signal._plot.spectrum_plot.left_ax,
+            onselect = self.update_span_selector_traits,
+            onmove_callback = self.update_span_selector_traits)
+
+        elif self.span_selector is not None:
+            self.span_selector.turn_off()
+            self.span_selector = None
+            self.on_disabling_span_selector()
+
+    def update_span_selector_traits(self, *args, **kwargs):
+        self.ss_left_value = self.span_selector.rect.get_x()
+        self.ss_right_value = self.ss_left_value + \
+            self.span_selector.rect.get_width()
+
+class SpectrumCalibration(SpanSelectorInSpectrum):
     left_value = t.Float()
     right_value = t.Float()
     offset = t.Float()
     scale = t.Float()
     units = t.Unicode()
-    ok = t.Button()   
     view = tu.View(
         tu.Group(
             'left_value',
@@ -72,39 +119,15 @@ class Calibration(t.HasTraits):
         title = 'Calibration parameters')
             
     def __init__(self, signal):
+        super(SpectrumCalibration, self).__init__(signal)
         if signal.axes_manager.signal_dimension != 1:
-         raise SignalOutputDimensionError(signal.axes.signal_dimension, 1)
-            
-        self.signal = signal
-        self.axis = self.signal.axes_manager._slicing_axes[0]
+            raise SignalOutputDimensionError(signal.axes.signal_dimension, 1)
         self.units = self.axis.units
-        self.bg_span_selector = None
-        self.signal.plot()
-        self.span_selector(active = True)
         self.last_calibration_stored = True
             
-    def span_selector(self, active):
-        if active is True:
-            self.bg_span_selector = \
-            drawing.widgets.ModifiableSpanSelector(
-            self.signal._plot.spectrum_plot.left_ax,
-            onselect = self._update_calibration,
-            onmove_callback = self._update_calibration)
-        elif self.bg_span_selector is not None:
-            self.bg_span_selector.turn_off()
-            self.bg_span_selector = None
-
     def _left_value_changed(self, old, new):
-        if self.bg_span_selector.range is None:
-            messages.information('Please select a range in the spectrum '
-            'figure by dragging the mouse over it')
-            return
-        else:
-            self._update_calibration()
-            
-    def _left_value_changed(self, old, new):
-        if self.bg_span_selector is not None and \
-        self.bg_span_selector.range is None:
+        if self.span_selector is not None and \
+        self.span_selector.range is None:
             messages.information('Please select a range in the spectrum figure' 
             'by dragging the mouse over it')
             return
@@ -112,7 +135,7 @@ class Calibration(t.HasTraits):
             self._update_calibration()
     
     def _right_value_changed(self, old, new):
-        if self.bg_span_selector.range is None:
+        if self.span_selector.range is None:
             messages.information('Please select a range in the spectrum figure' 
             'by dragging the mouse over it')
             return
@@ -122,11 +145,8 @@ class Calibration(t.HasTraits):
     def _update_calibration(self, *args, **kwargs):
         if self.left_value == self.right_value:
             return
-            
-        left = self.bg_span_selector.rect.get_x()
-        right = left + self.bg_span_selector.rect.get_width()
-        lc = self.axis.value2index(left)
-        rc = self.axis.value2index(right)
+        lc = self.axis.value2index(self.ss_left_value)
+        rc = self.axis.value2index(self.ss_right_value)
         self.offset, self.scale = self.axis.calibrate(
             (self.left_value, self.right_value), (lc,rc),
             modify_calibration = False)

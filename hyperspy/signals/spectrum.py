@@ -24,8 +24,9 @@ from hyperspy.signal import Signal
 from hyperspy.misc import progressbar
 from hyperspy.misc import utils
 from hyperspy.misc import utils_varia
-from hyperspy.gui.tools import (Calibration, SmoothingSavitzkyGolay,
-    SmoothingLowess)
+from hyperspy.gui.tools import (SpectrumCalibration, SmoothingSavitzkyGolay,
+    SmoothingLowess, )
+from hyperspy.gui.egerton_quantification import BackgroundRemoval
 
 class Spectrum(Signal):
     """
@@ -521,7 +522,7 @@ class Spectrum(Signal):
         For this method to work the output_dimension must be 1. Set the view
         accordingly
         '''
-        calibration = Calibration(self)
+        calibration = SpectrumCalibration(self)
         calibration.edit_traits()
 
     def smooth_savitzky_golay(self):
@@ -533,3 +534,8 @@ class Spectrum(Signal):
         '''Lowess data smoothing using a gui'''
         lw = SmoothingLowess(self)
         lw.edit_traits()
+
+    def remove_background(self):
+        '''Lowess data smoothing using a gui'''
+        br = BackgroundRemoval(self)
+        br.edit_traits()

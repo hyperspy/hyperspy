@@ -162,8 +162,13 @@ class Signal(t.HasTraits, MVA):
             file_data_dict['original_parameters'])
         self.mapped_parameters.load_dictionary(
             file_data_dict['mapped_parameters'])
-        if not hasattr(self.mapped_parameters,'name') and hasattr(self.mapped_parameters,'original_filename'):
-            self.mapped_parameters.name=self.mapped_parameters.original_filename
+        if not hasattr(self.mapped_parameters,'name'):
+            if hasattr(self.mapped_parameters,'original_filename'):
+                self.mapped_parameters.name = \
+                    self.mapped_parameters.original_filename
+            # "Synthetic" signals do not have an original filename
+            else:
+                self.mapped_parameters.name = 'Unnamed Signal'
 
     def _get_signal_dict(self):
         dic = {}
