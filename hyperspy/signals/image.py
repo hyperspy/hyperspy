@@ -17,15 +17,13 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import matplotlib.pyplot as plt
-
 from hyperspy.signal import Signal
 import hyperspy.peak_char as pc
 from hyperspy.misc import utils_varia
 from hyperspy.learn.mva import MVA_Results
 
-
 import numpy as np
+import matplotlib.pyplot as plt
 
 class Image(Signal):
     """
@@ -103,6 +101,10 @@ class Image(Signal):
                                               target_neighborhood=target_neighborhood,
                                               medfilt_radius=medfilt_radius
                                               )
+
+#==============================================================================
+# Plotting methods
+#==============================================================================
 
     def plot_image_peaks(self, index=0, peak_width=10, subpixel=False,
                        medfilt_radius=5):
@@ -353,6 +355,387 @@ PCA and ICA (case insensitive)"
             plt.jet()
             plt.colorbar()
         return f
+
+    def _plot_pc(self, idx, on_peaks=False):
+        target=self._get_target(on_peaks)
+        plt.imshow(target.pc[:,idx].reshape(self.axes_manager.axes[1].size,self.axes_manager.axes[2].size))
+        plt.colorbar()
+        plt.title('PC %s' % idx)
+        
+
+    def plot_principal_components(self, n = None, same_window=True, per_row=3, 
+                                  on_peaks=False):
+        """Plot the principal components up to the given number
+
+        Parameters
+        ----------
+        n : int
+            number of principal components to plot.
+
+        same_window : bool (optional)
+                    if 'True', the components will be plotted in the
+                    same window. Default is 'False'.
+
+        per_row : int (optional)
+                    When same_window is True, this is the number of plots
+                    per row in the single window.
+
+        on_peaks : bool (optional)
+        """
+        target=self._get_target(on_peaks)
+        if n is None:
+            n = target.pc.shape[1]
+        if not same_window:
+            for i in xrange(n):
+                plt.figure()
+                self._plot_pc(i,on_peaks)
+
+        else:
+            fig = plt.figure()
+            rows=int(np.ceil(n/float(per_row)))
+            idx=0
+            for i in xrange(rows):
+                for j in xrange(per_row):
+                    if idx<n:
+                        fig.add_subplot(rows,per_row,idx+1)
+                        self._plot_pc(idx,on_peaks)
+                        idx+=1
+            plt.suptitle('Principal components')
+            plt.draw()
+
+    def _plot_ic(self, idx, on_peaks=False):
+        target=self._get_target(on_peaks)
+        plt.imshow(target.ic[:,idx].reshape(self.axes_manager.axes[1].size,self.axes_manager.axes[2].size))
+        plt.colorbar()
+        plt.title('IC %s' % idx)
+
+    def plot_independent_components(self, ic=None, same_window=True,
+                                    per_row=3, on_peaks=False):
+        """Plot the independent components.
+
+        Parameters
+        ----------
+        ic : numpy array (optional)
+             externally provided independent components array
+             The shape of 'ic' must be (channels, n_components),
+             so that e.g. ic[:, 0] is the first independent component.
+
+        same_window : bool (optional)
+                    if 'True', the components will be plotted in the
+                    same window. Default is 'False'.
+
+        per_row : int (optional)
+                    When same_window is True, this is the number of plots
+                    per row in the single window.
+
+        on_peaks : bool (optional)
+        """
+        target=self._get_target(on_peaks)
+        if ic is None:
+            ic = target.ic
+            x = self.axes_manager.axes[-1].axis
+            x = ic.shape[1]     # no way that we know the calibration
+
+        n = ic.shape[1]
+
+        if not same_window:
+            for i in xrange(n):
+                plt.figure()
+                self._plot_ic(i, on_peaks)
+
+        else:
+            fig = plt.figure()
+            rows=int(np.ceil(n/float(per_row)))
+            idx=0
+            for i in xrange(rows):
+                for j in xrange(per_row):
+                    if idx<n:
+                        fig.add_subplot(rows,per_row,idx+1)
+                        self._plot_ic(idx, on_peaks)
+                        idx+=1
+            plt.suptitle('Independent components')
+
+    def plot_maps(self, components, mva_type=None, scores=None, factors=None,
+                  cmap=plt.cm.gray, no_nans=False, per_row=3, on_peaks=False, 
+                  save_figs=False, directory = None):
+        """
+        Plot component maps for the different MSA types
+
+        Parameters
+        ----------
+        components : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+        mva_type: string, currently either 'pca' or 'ica'
+        scores: numpy array, the array of score maps
+        factors: numpy array, the array of components, with each column as a component.
+        cmap: matplotlib colormap instance
+        no_nans: bool,
+        
+        per_row: int (optional)
+
+        on_peaks: bool (optional)
+
+        save_figs: bool (optional)
+            If true, saves figures at 600 dpi to directory.  If directory is None,
+            saves to current working directory.
+        """
+        from hyperspy.signals.image import Image
+        from hyperspy.signals.spectrum import Spectrum
+
+        target=self._get_target(on_peaks)
+
+        if scores is None or (factors is None and with_components is True):
+            print "Either recmatrix or components were not provided."
+            print "Loading existing values from object."
+            if mva_type is None:
+                print "Neither scores nor analysis type specified.  Cannot proceed."
+                return
+
+            elif mva_type.lower() == 'pca':
+                scores=target.v.T
+                factors=target.pc
+            elif mva_type.lower() == 'ica':
+                scores = self._get_ica_scores(target)
+                factors=target.ic
+                if no_nans:
+                    print 'Removing NaNs for a visually prettier plot.'
+                    scores = np.nan_to_num(scores) # remove ugly NaN pixels
+            else:
+                print "No scores provided and analysis type '%s' unrecognized. Cannot proceed."%mva_type
+                return
+
+#        if len(self.axes_manager.axes)==2:
+#            shape=self.data.shape[0],1
+#        else:
+#            shape=self.data.shape[0],self.data.shape[1]
+        im_list = []
+
+        if components is None:
+            components=xrange(factors.shape[1])
+
+        elif type(components).__name__!='list':
+            components=xrange(components)
+
+        for i in components:
+            figure = plt.figure()
+            if self.axes_manager.navigation_dimension == 2:
+                # 4D data - 2D arrays of diffraction patterns?
+                messages.warning_exit('View not supported')
+            elif self.axes_manager.navigation_dimension == 1:
+                if hasattr(self.mapped_parameters,"original_files"):
+                    parents=self.mapped_parameters.original_files
+                    locations=self.mapped_parameters.locations
+                else:
+                    if not hasattr(self.mapped_parameters,'parent'):
+                        messages.warning_exit('No parent image - mapping not possible')
+                    else:
+                        parents={self.mapped_parameters.parent.mapped_parameters.name:self.mapped_parameters.parent}
+                        locations={self.mapped_parameters.parent.mapped_parameters.name:self.mapped_parameters.locations}
+                idx=0
+                keys=parents.keys()
+                rows=int(np.ceil((len(parents)+1)/float(per_row)))
+                if (len(keys)+1)<per_row:
+                    per_row=len(keys)+1
+                # plot factor image first
+                figure.add_subplot(rows,per_row,1)
+                plt.gray()
+                if mva_type.upper()=='PCA':
+                    self._plot_pc(i,on_peaks)
+                elif mva_type.upper()=='ICA':
+                    self._plot_ic(i,on_peaks)
+                for j in xrange(rows):
+                    for k in xrange(per_row):
+                        # plot score maps overlaid on experimental images
+                        if idx<len(parents):
+                            figure.add_subplot(rows,per_row,idx+2)
+                            # p is the parent image that we're working with
+                            p=keys[idx]
+                            # the locations of peaks on that parent
+                            loc=locations[p]
+                            # the range of images in the aggregate from this parent
+                            if hasattr(self.mapped_parameters,'aggregate_address'):
+                                address=self.mapped_parameters.aggregate_address[p]
+                            else:
+                                address=None
+                            plt.imshow(parents[keys[idx]].data)
+                            plt.gray()
+                            if address:
+                                plt.scatter(loc[:,0], loc[:,1],
+                                        c=scores[i,address[0]:(address[1]+1)])
+                            else:
+                                plt.scatter(loc[:,0], loc[:,1],
+                                        c=scores[i])
+                            plt.jet()
+                            plt.colorbar()
+                            shp=parents[keys[idx]].data.shape
+                            plt.xlim(0,shp[1])
+                            plt.ylim(0,shp[0])
+                            idx+=1
+            else:
+                messages.warning_exit('View not supported')
+            if save_figs:
+                ax.set_title('%s component number %s map' % (mva_type.upper(),i))
+                figure.canvas.draw()
+                if directory is not None:
+                    if not os.path.isdir(directory):
+                        os.makedirs(directory)
+                    figure.savefig(os.path.join(directory, '%s-map-%i.png' % (mva_type.upper(),i)),
+                              dpi = 600)
+
+    def plot_principal_components_maps(self, comp_ids=None, cmap=plt.cm.gray,
+                                       recmatrix=None, plot=True, pc=None, on_peaks=False,
+                                       save_figs=False):
+        """Plot the map associated to each independent component
+
+        Parameters
+        ----------
+        comp_ids : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+        cmap : plt.cm object
+        recmatrix : numpy array
+            externally suplied recmatrix
+        plot : bool
+            If True it will plot the figures. Otherwise it will only return the
+            images.
+        ic : numpy array
+            externally supplied independent components
+        no_nans : bool (optional)
+             whether substituting NaNs with zeros for a visually prettier plot
+             (default is False)
+
+        Returns
+        -------
+        List with the maps as MVA instances
+        """
+        return self.plot_maps(components=comp_ids,mva_type='pca',cmap=cmap,
+                              scores=recmatrix, factors=pc, on_peaks=on_peaks,
+                              save_figs=save_figs)
+
+    def plot_independent_components_maps(self, comp_ids=None, cmap=plt.cm.gray,
+                                         recmatrix=None, ic=None, no_nans=False,
+                                         on_peaks=False, save_figs=False, 
+                                         directory = None):
+        """Plot the map associated to each independent component
+
+        Parameters
+        ----------
+        cmap : plt.cm object
+        recmatrix : numpy array
+            externally suplied recmatrix
+        comp_ids : int or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+        with_ic : bool
+            If True, plots also the corresponding independent component in the
+            same figure
+        plot : bool
+            If True it will plot the figures. Otherwise it will only return the
+            images.
+        ic : numpy array
+            externally supplied independent components
+        no_nans : bool (optional)
+             whether substituting NaNs with zeros for a visually prettier plot
+             (default is False)
+        Returns
+        -------
+        List with the maps as MVA instances
+        """
+        return self.plot_maps(components=comp_ids,mva_type='ica',cmap=cmap,
+                              scores=recmatrix, factors=ic, no_nans=no_nans,
+                              on_peaks=on_peaks, save_figs=save_figs, 
+                              directory = directory)
+
+
+    def save_principal_components(self, n, spectrum_prefix = 'pc',
+    image_prefix = 'im', spectrum_format = 'msa', image_format = 'tif',
+                                  on_peaks=False):
+        """Save the `n` first principal components  and score maps
+        in the specified format
+
+        Parameters
+        ----------
+        n : int
+            Number of principal components to save_als_ica_results
+        image_prefix : string
+            Prefix for the image file names
+        spectrum_prefix : string
+            Prefix for the spectrum file names
+        spectrum_format : string
+        image_format : string
+
+        """
+        from spectrum import Spectrum
+        target=self._get_target(on_peaks)
+        im_list = self.plot_principal_components_maps(n, plot = False,
+                                                      on_peaks=on_peaks)
+        s = Spectrum({'calibration' : {'data_cube' : target.pc[:,0]}})
+        s.get_calibration_from(self)
+        for i in xrange(n):
+            s.data_cube = target.pc[:,i]
+            s.get_dimensions_from_cube()
+            s.save('%s-%i.%s' % (spectrum_prefix, i, spectrum_format))
+            im_list[i].save('%s-%i.%s' % (image_prefix, i, image_format))
+
+    def save_independent_components(self, elements=None,
+                                    spectrum_format='msa',
+                                    image_format='tif',
+                                    recmatrix=None, ic=None,
+                                    on_peaks=False):
+        """Saves the result of the ICA in image and spectrum format.
+        Note that to save the image, the NaNs in the map will be converted
+        to zeros.
+
+        Parameters
+        ----------
+        elements : None or tuple of strings
+            a list of names (normally an element) to be assigned to IC. If not
+            the will be name ic-0, ic-1 ...
+        image_format : string
+        spectrum_format : string
+        recmatrix : None or numpy array
+            externally supplied recmatrix
+        ic : None or numpy array
+            externally supplied IC
+        """
+        from hyperspy.signals.spectrum import Spectrum
+        target=self._get_target(on_peaks)
+        pl = self.plot_independent_components_maps(plot=False,
+                                                   recmatrix=recmatrix,
+                                                   ic=ic,
+                                                   no_nans=True,
+                                                   on_peaks=on_peaks)
+        if ic is None:
+            ic = target.ic
+        if self.data.shape[2] > 1:
+            maps = True
+        else:
+            maps = False
+        for i in xrange(ic.shape[1]):
+            axes = (self.axes_manager._slicing_axes[0].get_axis_dictionary(),)
+            axes[0]['index_in_array'] = 0
+            spectrum = Spectrum({'data' : ic[:,i], 'axes' : axes})
+            spectrum.data_cube = ic[:,i].reshape((-1,1,1))
+
+            if elements is None:
+                spectrum.save('ic-%s.%s' % (i, spectrum_format))
+                if maps is True:
+                    pl[i].save('map_ic-%s.%s' % (i, image_format))
+                else:
+                    pl[i].save('profile_ic-%s.%s' % (i, spectrum_format))
+            else:
+                element = elements[i]
+                spectrum.save('ic-%s.%s' % (element, spectrum_format))
+                if maps:
+                    pl[i].save('map_ic-%s.%s' % (element, image_format))
+                else:
+                    pl[i].save('profile_ic-%s.%s' % (element, spectrum_format))
+
+#=============================================================================
         
     def cell_cropper(self):
         if not hasattr(self.mapped_parameters,"picker"):
