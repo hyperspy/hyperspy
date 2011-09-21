@@ -27,11 +27,11 @@ from hyperspy import components
 from hyperspy.misc import utils
 from hyperspy import drawing
 from hyperspy.misc.interactive_ns import interactive_ns
+from hyperspy.gui.tools import SpanSelectorInSpectrum
 
 
-class BackgroundRemoval(t.HasTraits):
-    background_type = t.Enum('Power Law', 'Horizontal Line', 'Line',
-        'Polynomial', default = 'Power Law')
+class BackgroundRemoval(SpanSelectorInSpectrum):
+    background_type = t.Enum('Power Law', 'Polynomial', default = 'Power Law')
     view = tu.View(
         tu.Group(
             'background_type',),
@@ -39,59 +39,40 @@ class BackgroundRemoval(t.HasTraits):
             buttons= [OKButton, ApplyButton, CancelButton],)
                  
     def __init__(self, signal):
-        
-        self.signal = signal
-        self.signal.plot()
+        super(BackgroundRemoval, self).__init__(signal)
         
         # Background
-        self.bg_span_selector = None
         self.pl = components.PowerLaw()
         self.bg_line = None
-        self.bg_cube = None
-        self.span_selector(True)
-        self.axis = self.signal.axes_manager._slicing_axes[0]
-                
-    
+
     def store_current_spectrum_bg_parameters(self, *args, **kwards):
-        if self.bg_span_selector.range is None or \
-        self.bg_span_selector.range is None: return
+        if self.span_selector.range is None or \
+        self.span_selector.range is None: return
         pars = utils.two_area_powerlaw_estimation(
-        self.signal, *self.bg_span_selector.range,only_current_spectrum = True)
+        self.signal, *self.span_selector.range,only_current_spectrum = True)
         self.pl.r.value = pars['r']
         self.pl.A.value = pars['A']
-                     
-    def span_selector(self, active):
-        if active is True:
-            self.bg_span_selector = \
-            drawing.widgets.ModifiableSpanSelector(
-            self.signal._plot.spectrum_plot.left_ax,
-            onselect = self.store_current_spectrum_bg_parameters,
-            onmove_callback = self.plot_bg_removed_spectrum)
-        elif self.bg_span_selector is not None:
-            if self.bg_line is not None:
-                self.bg_span_selector.ax.lines.remove(self.bg_line)
-                self.bg_line = None
-            if self.signal_line is not None:
-                self.bg_span_selector.ax.lines.remove(self.signal_line)
-                self.signal_line = None
-            self.bg_span_selector.turn_off()
-            self.bg_span_selector = None
-                      
-    def _bg_window_size_variation_fired(self):
-        if self.define_background_window is False: return
-        left = self.bg_span_selector.rect.get_x()
-        right = left + self.bg_span_selector.rect.get_width()
-        energy_window_dependency(self.signal, left, right, min_width = 10)
         
+    def on_disabling_span_selector(self):
+        if self.bg_line is not None:
+            self.span_selector.ax.lines.remove(self.bg_line)
+            self.bg_line = None
             
+    def _ss_left_value_changed(self, old, new):
+        self.plot_bg_removed_spectrum()
+        
+    def _ss_right_value_changed(self, old, new):
+        self.plot_bg_removed_spectrum()
+                      
     def plot_bg_removed_spectrum(self, *args, **kwards):
-        if self.bg_span_selector.range is None: return
+        if self.span_selector is None or \
+            self.span_selector.range is None: return
         self.store_current_spectrum_bg_parameters()
-        ileft = self.axis.value2index(self.bg_span_selector.range[0])
-        iright = self.axis.value2index(self.bg_span_selector.range[1])
+        ileft = self.axis.value2index(self.span_selector.range[0])
+        iright = self.axis.value2index(self.span_selector.range[1])
         ea = self.axis.axis[ileft:]
         if self.bg_line is not None:
-            self.bg_span_selector.ax.lines.remove(self.bg_line)
+            self.span_selector.ax.lines.remove(self.bg_line)
         self.bg_line, = self.signal._plot.spectrum_plot.left_ax.plot(
         ea, self.pl.function(ea), color = 'black')
         self.signal._plot.spectrum_plot.left_ax.figure.canvas.draw()
@@ -124,7 +105,7 @@ class BackgroundRemoval(t.HasTraits):
 #        self.signal = signal
 #        
 #        # Background
-#        self.bg_span_selector = None
+#        self.span_selector = None
 #        self.pl = components.PowerLaw()
 #        self.bg_line = None
 #        self.bg_cube = None
@@ -137,9 +118,9 @@ class BackgroundRemoval(t.HasTraits):
 #    
 #    def store_current_spectrum_bg_parameters(self, *args, **kwards):
 #        if self.define_background_window is False or \
-#        self.bg_span_selector.range is None: return
+#        self.span_selector.range is None: return
 #        pars = utils.two_area_powerlaw_estimation(
-#        self.signal, *self.bg_span_selector.range,only_current_spectrum = True)
+#        self.signal, *self.span_selector.range,only_current_spectrum = True)
 #        self.pl.r.value = pars['r']
 #        self.pl.A.value = pars['A']
 #                     
@@ -149,31 +130,31 @@ class BackgroundRemoval(t.HasTraits):
 #                     
 #    def _define_background_window_changed(self, old, new):
 #        if new is True:
-#            self.bg_span_selector = \
+#            self.span_selector = \
 #            drawing.widgets.ModifiableSpanSelector(
 #            self.signal.hse.spectrum_plot.left_ax,
 #            onselect = self.store_current_spectrum_bg_parameters,
 #            onmove_callback = self.plot_bg_removed_spectrum)
-#        elif self.bg_span_selector is not None:
+#        elif self.span_selector is not None:
 #            if self.bg_line is not None:
-#                self.bg_span_selector.ax.lines.remove(self.bg_line)
+#                self.span_selector.ax.lines.remove(self.bg_line)
 #                self.bg_line = None
 #            if self.signal_line is not None:
-#                self.bg_span_selector.ax.lines.remove(self.signal_line)
+#                self.span_selector.ax.lines.remove(self.signal_line)
 #                self.signal_line = None
-#            self.bg_span_selector.turn_off()
-#            self.bg_span_selector = None
+#            self.span_selector.turn_off()
+#            self.span_selector = None
 #                      
 #    def _bg_window_size_variation_fired(self):
 #        if self.define_background_window is False: return
-#        left = self.bg_span_selector.rect.get_x()
-#        right = left + self.bg_span_selector.rect.get_width()
+#        left = self.span_selector.rect.get_x()
+#        right = left + self.span_selector.rect.get_width()
 #        energy_window_dependency(self.signal, left, right, min_width = 10)
 #        
 #    def _extract_background_fired(self):
 #        if self.pl is None: return
 #        signal = self.signal() - self.pl.function(self.signal.energy_axis)
-#        i = self.signal.energy2index(self.bg_span_selector.range[1])
+#        i = self.signal.energy2index(self.span_selector.range[1])
 #        signal[:i] = 0.
 #        s = Spectrum({'calibration' : {'data_cube' : signal}})
 #        s.get_calibration_from(self.signal)
@@ -192,14 +173,14 @@ class BackgroundRemoval(t.HasTraits):
 #            self.signal_span_selector = None
 #            
 #    def plot_bg_removed_spectrum(self, *args, **kwards):
-#        if self.bg_span_selector.range is None: return
+#        if self.span_selector.range is None: return
 #        self.store_current_spectrum_bg_parameters()
-#        ileft = self.signal.energy2index(self.bg_span_selector.range[0])
-#        iright = self.signal.energy2index(self.bg_span_selector.range[1])
+#        ileft = self.signal.energy2index(self.span_selector.range[0])
+#        iright = self.signal.energy2index(self.span_selector.range[1])
 #        ea = self.signal.energy_axis[ileft:]
 #        if self.bg_line is not None:
-#            self.bg_span_selector.ax.lines.remove(self.bg_line)
-#            self.bg_span_selector.ax.lines.remove(self.signal_line)
+#            self.span_selector.ax.lines.remove(self.bg_line)
+#            self.span_selector.ax.lines.remove(self.signal_line)
 #        self.bg_line, = self.signal.hse.spectrum_plot.left_ax.plot(
 #        ea, self.pl.function(ea), color = 'black')
 #        self.signal_line, = self.signal.hse.spectrum_plot.left_ax.plot(
@@ -216,7 +197,7 @@ class BackgroundRemoval(t.HasTraits):
 #            signal_sp = self.signal.data_cube[ileft:iright,...].squeeze().copy()
 #            if self.define_background_window is True:
 #                pars = utils.two_area_powerlaw_estimation(
-#                self.signal, *self.bg_span_selector.range, only_current_spectrum = False)
+#                self.signal, *self.span_selector.range, only_current_spectrum = False)
 #                x = self.signal.energy_axis[ileft:iright, np.newaxis, np.newaxis]
 #                A = pars['A'][np.newaxis,...]
 #                r = pars['r'][np.newaxis,...]

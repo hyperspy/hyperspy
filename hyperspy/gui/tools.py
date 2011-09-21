@@ -33,7 +33,7 @@ class SpanSelectorInSpectrumHandler(tu.Handler):
         # Removes the span selector from the plot
         if is_ok is True:
             self.apply(info)
-        info.object.span_selector('False')
+        info.object.span_selector_switch('False')
         return True
 
     def apply(self, info, *args, **kwargs):
@@ -54,9 +54,9 @@ class CalibrationHandler(SpanSelectorInSpectrumHandler):
         axis.scale = info.object.scale
         axis.offset = info.object.offset
         axis.units = info.object.units
-        info.object.span_selector(active = False)
+        info.object.span_selector_switch(on = False)
         info.object.signal._replot()
-        info.object.span_selector(active = True)
+        info.object.span_selector_switch(on = True)
         info.object.last_calibration_stored = True
         return
         
@@ -70,31 +70,35 @@ class SpanSelectorInSpectrum(t.HasTraits):
         
         self.signal = signal
         self.axis = self.signal.axes_manager._slicing_axes[0]
-        self.bg_span_selector = None
+        self.span_selector = None
         self.signal.plot()
         # The next two lines are to walk-around a traitui bug that causes a 
         # inherited trait to be overwritten by the editor if it was not 
         # initialized by the parent trait
         self.ss_left_value = self.axis.axis[0]
         self.ss_right_value = self.axis.axis[-1]
-        self.span_selector(active = True)
+        self.span_selector_switch(on = True)
+        
+    def on_disabling_span_selector(self):
+        pass
             
-    def span_selector(self, active):
-        if active is True:
-            self.bg_span_selector = \
+    def span_selector_switch(self, on):
+        if on is True:
+            self.span_selector = \
             drawing.widgets.ModifiableSpanSelector(
             self.signal._plot.spectrum_plot.left_ax,
             onselect = self.update_span_selector_traits,
             onmove_callback = self.update_span_selector_traits)
 
-        elif self.bg_span_selector is not None:
-            self.bg_span_selector.turn_off()
-            self.bg_span_selector = None
+        elif self.span_selector is not None:
+            self.span_selector.turn_off()
+            self.span_selector = None
+            self.on_disabling_span_selector()
 
     def update_span_selector_traits(self, *args, **kwargs):
-        self.ss_left_value = self.bg_span_selector.rect.get_x()
+        self.ss_left_value = self.span_selector.rect.get_x()
         self.ss_right_value = self.ss_left_value + \
-            self.bg_span_selector.rect.get_width()
+            self.span_selector.rect.get_width()
 
 class SpectrumCalibration(SpanSelectorInSpectrum):
     left_value = t.Float()
@@ -122,8 +126,8 @@ class SpectrumCalibration(SpanSelectorInSpectrum):
         self.last_calibration_stored = True
             
     def _left_value_changed(self, old, new):
-        if self.bg_span_selector is not None and \
-        self.bg_span_selector.range is None:
+        if self.span_selector is not None and \
+        self.span_selector.range is None:
             messages.information('Please select a range in the spectrum figure' 
             'by dragging the mouse over it')
             return
@@ -131,7 +135,7 @@ class SpectrumCalibration(SpanSelectorInSpectrum):
             self._update_calibration()
     
     def _right_value_changed(self, old, new):
-        if self.bg_span_selector.range is None:
+        if self.span_selector.range is None:
             messages.information('Please select a range in the spectrum figure' 
             'by dragging the mouse over it')
             return
