@@ -63,14 +63,6 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         
     def _ss_right_value_changed(self, old, new):
         self.span_selector_changed()
-
-    def estimate_background_parameters(self):
-        pars = utils.two_area_powerlaw_estimation(
-            self.signal, self.ss_left_value, self.ss_right_value, 
-            only_current_spectrum = True)
-        self.background_estimator.r.value = pars['r']
-        self.background_estimator.A.value = pars['A']
-        return True
         
     def create_background_line(self):
         self.bg_line = drawing.spectrum.SpectrumLine()
@@ -91,12 +83,13 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         if self.background_estimator is None:
             print("No bg estimator")
             return
-        if self.estimate_background_parameters() is True:
+        if self.background_estimator.estimate_parameters(
+            self.signal, self.ss_left_value, self.ss_right_value, 
+            only_current = True) is True:
             if self.bg_line is None:
                 self.create_background_line()
             else:
                 self.bg_line.update()
-
 
         
 #class EgertonPanel(t.HasTraits):

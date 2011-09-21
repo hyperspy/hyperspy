@@ -101,48 +101,6 @@ def generate_axis(origin,step,N,index=0):
     return np.linspace(origin-index*step, origin+step*(N-1-index), N)
 
 
-def two_area_powerlaw_estimation(SI, E1, E2, only_current_spectrum = False):
-    """Estimate a power law fit by the two area method
-
-    Parameters
-    ----------
-    SI : Spectrum instance
-    E1 : float
-        first point in energy units
-    E2 : float
-        second point in energy units
-
-    Returns
-    -------
-    Dictionary
-    keys: r, A
-    """
-    axis = SI.axes_manager._slicing_axes[0]
-    energy2index = axis.value2index
-    i1 = energy2index(E1)
-    if (energy2index(E2) - i1) % 2 == 0:
-        i2 = energy2index(E2)
-    else :
-        i2 = energy2index(E2) - 1
-    E2 = axis.axis[i2]
-    i3 = (i2+i1) / 2
-    E3 = axis.axis[i3]
-    if only_current_spectrum is True:
-        dc = SI()
-        I1 = axis.scale * np.sum(dc[i1:i3], 0)
-        I2 = axis.scale * np.sum(dc[i3:i2],0)
-    else:
-        dc = SI.data
-        gi = [slice(None),] * len(dc.shape)
-        gi[axis.index_in_array] = slice(i1,i3)
-        I1 = axis.scale * np.sum(dc[gi], axis.index_in_array)
-        gi[axis.index_in_array] = slice(i3,i2)
-        I2 = axis.scale * np.sum(dc[gi],axis.index_in_array)
-
-    r = 2*np.log(I1 / I2) / math.log(E2/E1)
-    k = 1 - r
-    A = k * I2 / (E2**k - E3**k)
-    return {'r': r, 'A': A}
 
 def gaussian_estimation(SI, E1, E2):
     """Estimates the parameters of a gaussian by calculating the moments
