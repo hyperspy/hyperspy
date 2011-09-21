@@ -83,7 +83,7 @@ class DataAxis(t.HasTraits):
     units = t.Str()
     scale = t.Float()
     offset = t.Float()
-    size = t.Int()
+    size = t.CInt()
     index_in_array = t.Int()
     low_value = t.Float()
     high_value = t.Float()

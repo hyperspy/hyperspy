@@ -359,6 +359,7 @@ PCA and ICA (case insensitive)"
             import hyperspy.drawing.ucc as ucc
             self.mapped_parameters.picker=ucc.TemplatePicker(self)
         self.mapped_parameters.picker.configure_traits()
+        self.data=self.data.squeeze()
         return self.mapped_parameters.picker.crop_sig
 
     def kmeans_cluster_stack(self, clusters=None):

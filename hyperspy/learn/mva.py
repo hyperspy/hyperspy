@@ -555,9 +555,14 @@ class MVA():
             n = target.pc.shape[1]
         for i in xrange(n):
             plt.figure()
-            plt.plot(self.axes_manager.axes[-1].axis, target.pc[:,i])
+            if self.mapped_parameters.record_by=='image':
+                plt.imshow(target.pc[:,i].reshape(self.axes_manager.axes[1].size,self.axes_manager.axes[2].size))
+                plt.colorbar()
+            else:
+                plt.plot(self.axes_manager.axes[-1].axis, target.pc[:,i])
+                plt.xlabel('Energy (eV)')
             plt.title('Principal component %s' % i)
-            plt.xlabel('Energy (eV)')
+
 
     def plot_independent_components(self, ic=None, same_window=False,
                                     on_peaks=False):
@@ -585,10 +590,18 @@ class MVA():
         if not same_window:
             for i in xrange(n):
                 plt.figure()
-                plt.plot(x, ic[:, i])
+                if self.mapped_parameters.record_by=='image':
+                    plt.imshow(target.pc[:,i].reshape(self.axes_manager.axes[1].size,self.axes_manager.axes[2].size))
+                    plt.colorbar()
+                else:
+                    plt.plot(x, ic[:, i])
+                    plt.xlabel('Energy (eV)')
                 plt.title('Independent component %s' % i)
-                plt.xlabel('Energy (eV)')
+
         else:
+            if self.mapped_parameters.record_by=='image':
+                print "plotting ICA image factors in one window is not supported, sorry"
+                return None
             fig = plt.figure()
             ax = fig.add_subplot(111)
             for i in xrange(n):
