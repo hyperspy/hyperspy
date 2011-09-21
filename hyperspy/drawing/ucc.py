@@ -133,28 +133,29 @@ class TemplatePicker(HasTraits):
                 Group(
                     HGroup(
                         Item("left", label="Left coordinate", style="custom"),
+                        Spring(),
                         Item("top", label="Top coordinate", style="custom"),
                         ),
                     Item("tmp_size", label="Template size", style="custom"),
                     Item("tmp_plot",editor=ComponentEditor(height=256, width=256), show_label=False, resizable=True),
                     label="Template", show_border=True),
                 Group(
-                    Item("peak_width", label="Peak width", style="custom"),
-                    Group(
+                    HGroup(
+                        Item("peak_width", label="Peak width", style="custom"),
                         Spring(),
                         Item("findpeaks",editor=ButtonEditor(label="Find Peaks"),show_label=False),
-                        Spring(),
                         ),
                     HGroup(
                         Item("thresh_lower",label="Threshold Lower Value", editor=TextEditor(evaluate=float,
                                                                                              format_str='%1.4f')),
+                        Spring(),
                         Item("thresh_upper",label="Threshold Upper Value", editor=TextEditor(evaluate=float,
                                                                                              format_str='%1.4f')),
                     ),
                     HGroup(
                         Item("numpeaks_img",label="Number of Cells selected (this image)",style='readonly'),
                         Spring(),
-                        Item("numpeaks_total",label="Total",style='readonly'),                          Spring(),
+                        Item("numpeaks_total",label="Total",style='readonly'),                          
                         ),
                     label="Peak parameters", show_border=True),
                 )
@@ -176,18 +177,19 @@ class TemplatePicker(HasTraits):
         self.OK_custom=OK_custom_handler()
         self.sig=signal_instance
         if not hasattr(self.sig.mapped_parameters,"original_files"):
-            self.sig.data=np.atleast_3d(self.sig.data)
+            if len(self.sig.data.shape)<3:
+                self.sig.data=self.sig.data[np.newaxis,:,:]
             self.titles=[self.sig.mapped_parameters.name]
         else:
             self.numfiles=len(self.sig.mapped_parameters.original_files.keys())
             self.titles=self.sig.mapped_parameters.original_files.keys()
-        tmp_plot_data=ArrayPlotData(imagedata=self.sig.data[self.top:self.top+self.tmp_size,self.left:self.left+self.tmp_size,self.img_idx])
+        tmp_plot_data=ArrayPlotData(imagedata=self.sig.data[self.img_idx,self.top:self.top+self.tmp_size,self.left:self.left+self.tmp_size])
         tmp_plot=Plot(tmp_plot_data,default_origin="top left")
         tmp_plot.img_plot("imagedata", colormap=jet)
         tmp_plot.aspect_ratio=1.0
         self.tmp_plot=tmp_plot
         self.tmp_plotdata=tmp_plot_data
-        self.img_plotdata=ArrayPlotData(imagedata=self.sig.data[:,:,self.img_idx])
+        self.img_plotdata=ArrayPlotData(imagedata=self.sig.data[self.img_idx,:,:])
         self.img_container=self._image_plot_container()
 
         self.crop_sig=None
@@ -196,7 +198,7 @@ class TemplatePicker(HasTraits):
         plot = Plot(self.img_plotdata,default_origin="top left")
         img=plot.img_plot("imagedata", colormap=gray)[0]
         plot.title="%s of %s: "%(self.img_idx+1,self.numfiles)+self.titles[self.img_idx]
-        plot.aspect_ratio=float(self.sig.data.shape[1])/float(self.sig.data.shape[0])
+        plot.aspect_ratio=float(self.sig.data.shape[2])/float(self.sig.data.shape[1])
 
         csr = CursorTool(img, drag_button='left', color='white',
                          line_width=2.0)
@@ -288,7 +290,7 @@ class TemplatePicker(HasTraits):
         if self.ShowCC:
             self.update_CC()
         else:
-            self.img_plotdata.set_data("imagedata",self.sig.data[:,:,self.img_idx])
+            self.img_plotdata.set_data("imagedata",self.sig.data[self.img_idx,:,:])
         self.redraw_plots()
 
     @on_trait_change("img_idx")
@@ -296,7 +298,7 @@ class TemplatePicker(HasTraits):
         if self.ShowCC:
             self.update_CC()
         else:
-            self.img_plotdata.set_data("imagedata",self.sig.data[:,:,self.img_idx])
+            self.img_plotdata.set_data("imagedata",self.sig.data[self.img_idx,:,:])
         self.img_plot.title="%s of %s: "%(self.img_idx+1,self.numfiles)+self.titles[self.img_idx]
         self.redraw_plots()        
 
@@ -334,7 +336,7 @@ class TemplatePicker(HasTraits):
     @on_trait_change('left, top, tmp_size')
     def update_tmp_plot(self):
         self.tmp_plotdata.set_data("imagedata", 
-                                   self.sig.data[self.top:self.top+self.tmp_size,self.left:self.left+self.tmp_size,self.img_idx])
+                                   self.sig.data[self.img_idx,self.top:self.top+self.tmp_size,self.left:self.left+self.tmp_size])
         grid_data_source = self.tmp_plot.range2d.sources[0]
         grid_data_source.set_data(np.arange(self.tmp_size), np.arange(self.tmp_size))
         self.tmp_img_idx=self.img_idx
@@ -345,9 +347,9 @@ class TemplatePicker(HasTraits):
     @on_trait_change('left, top, tmp_size')
     def update_CC(self):
         if self.ShowCC:
-            self.CC = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
-                                                   self.left:self.left+self.tmp_size,self.tmp_img_idx],
-                                     self.sig.data[:,:,self.img_idx])
+            self.CC = cv_funcs.xcorr(self.sig.data[self.tmp_img_idx,self.top:self.top+self.tmp_size,
+                                                   self.left:self.left+self.tmp_size],
+                                     self.sig.data[self.img_idx,:,:])
             self.img_plotdata.set_data("imagedata",self.CC)
             grid_data_source = self.img_plot.range2d.sources[0]
             grid_data_source.set_data(np.arange(self.CC.shape[1]), 
@@ -397,9 +399,10 @@ class TemplatePicker(HasTraits):
         from hyperspy import peak_char as pc
         peaks=[]
         for idx in xrange(self.numfiles):
-            self.CC = cv_funcs.xcorr(self.sig.data[self.top:self.top+self.tmp_size,
-                                               self.left:self.left+self.tmp_size,self.tmp_img_idx],
-                                               self.sig.data[:,:,idx])
+            self.CC = cv_funcs.xcorr(self.sig.data[self.tmp_img_idx,
+                                                   self.top:self.top+self.tmp_size,
+                                                   self.left:self.left+self.tmp_size],
+                                               self.sig.data[idx,:,:])
             # peak finder needs peaks greater than 1.  Multiply by 255 to scale them.
             pks=pc.two_dim_findpeaks(self.CC*255, peak_width=self.peak_width, medfilt_radius=None)
             pks[:,2]=pks[:,2]/255.
@@ -450,7 +453,9 @@ class TemplatePicker(HasTraits):
         else:
             crop_agg=[]
             for idx in xrange(self.numfiles):
-                crop_agg.append(self.crop_cells(idx))
+                peaks=np.ma.compress_rows(self.mask_peaks(idx))
+                if peaks.any():
+                    crop_agg.append(self.crop_cells(idx))
             self.crop_sig=AggregateCells(*crop_agg)
             return
 
@@ -460,25 +465,25 @@ class TemplatePicker(HasTraits):
         # filter the peaks that are outside the selected threshold
         peaks=np.ma.compress_rows(self.mask_peaks(idx))
         tmp_sz=self.tmp_size
-        data=np.zeros((tmp_sz,tmp_sz,peaks.shape[0]))
+        data=np.zeros((peaks.shape[0],tmp_sz,tmp_sz))
         if not hasattr(self.sig.mapped_parameters,"original_files"):
             parent=self.sig
         else:
             parent=self.sig.mapped_parameters.original_files[self.titles[idx]]
+        
         for i in xrange(peaks.shape[0]):
             # crop the cells from the given locations
-            data[:,:,i]=self.sig.data[peaks[i,1]:peaks[i,1]+tmp_sz,peaks[i,0]:peaks[i,0]+tmp_sz,idx]
+            data[i,:,:]=self.sig.data[idx,peaks[i,1]:peaks[i,1]+tmp_sz,peaks[i,0]:peaks[i,0]+tmp_sz]
             crop_sig=Image({'data':data,
                             'mapped_parameters':{
-                                'name':'Cropped cells from %s'%self.titles[idx],
-	                        'record_by':'image',
-                                'locations':peaks,
-                                'parent':parent,
-                                }
-                         })
+                               'name':'Cropped cells from %s'%self.titles[idx],
+                               'record_by':'image',
+                               'locations':peaks,
+                               'parent':parent,
+                               }
+                            })
+            
         return crop_sig
-        # attach a class member that has the locations from which the images were cropped
-        print "Complete.  "
 
 if __name__=="__main__":
     import sys
