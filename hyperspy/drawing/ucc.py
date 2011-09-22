@@ -398,7 +398,13 @@ class TemplatePicker(HasTraits):
     def locate_peaks(self):
         from hyperspy import peak_char as pc
         peaks=[]
+        from hyperspy.misc.progressbar import ProgressBar, \
+            Percentage, RotatingMarker, ETA, Bar
+        widgets = ['Locating peaks: ', Percentage(), ' ', Bar(marker=RotatingMarker()),
+                   ' ', ETA()]
+        pbar = ProgressBar(widgets=widgets, maxval=100).start()
         for idx in xrange(self.numfiles):
+            pbar.update(float(idx)/self.numfiles*100)
             self.CC = cv_funcs.xcorr(self.sig.data[self.tmp_img_idx,
                                                    self.top:self.top+self.tmp_size,
                                                    self.left:self.left+self.tmp_size],
@@ -407,6 +413,7 @@ class TemplatePicker(HasTraits):
             pks=pc.two_dim_findpeaks(self.CC*255, peak_width=self.peak_width, medfilt_radius=None)
             pks[:,2]=pks[:,2]/255.
             peaks.append(pks)
+        pbar.finish()
         self.peaks=peaks
         
     def mask_peaks(self,idx):

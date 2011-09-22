@@ -352,7 +352,7 @@ class AggregateCells(Aggregate,Image):
                     smp.original_files[pmp.original_filename]=mp.parent
                     smp.image_stacks[pmp.original_filename]=arg
                     smp.aggregate_address[pmp.original_filename]=(
-                        smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[-1]-1)
+                        smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
                     # add the data to the aggregate array
                     if self.data==None:
                         self.axes_manager=arg.axes_manager
