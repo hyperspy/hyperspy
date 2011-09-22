@@ -26,11 +26,11 @@ class Gaussian(Component):
     """A Gaussian component defined by its area, center and sigma
     """
 
-    def __init__(self, A=1., sigma=1.,origin = 0.):
-        Component.__init__(self, ['A','sigma','origin'])
+    def __init__(self, A=1., sigma=1.,centre = 0.):
+        Component.__init__(self, ['A','sigma','centre'])
         self.A.value = A
         self.sigma.value = sigma
-        self.origin.value = origin
+        self.centre.value = centre
 
         # Boundaries
         self.A.bmin = 0.
@@ -45,12 +45,12 @@ class Gaussian(Component):
         # Gradients
         self.A.grad = self.grad_A
         self.sigma.grad = self.grad_sigma
-        self.origin.grad = self.grad_origin
+        self.centre.grad = self.grad_centre
         self.name = 'Normalized Gaussian'
 
     def function(self, x) :
         a0 = self.A.value
-        a1 = self.origin.value
+        a1 = self.centre.value
         a2 = self.sigma.value
         """
         Given an one dimensional array x containing the energies at which
@@ -58,7 +58,7 @@ class Gaussian(Component):
         model for the current parameters.
         """
         return self.A.value * (1 / (self.sigma.value * sqrt2pi)) * np.exp(
-        -(x-self.origin.value)**2 / (2 * self.sigma.value**2))
+        -(x-self.centre.value)**2 / (2 * self.sigma.value**2))
     
     def grad_A(self, x):
         """
@@ -76,19 +76,19 @@ class Gaussian(Component):
         returns the gradient of parameter sigma for the current value of
         the parameters.
         """
-        return ((x - self.origin.value)**2 * np.exp(-(x - self.origin.value)**2 
+        return ((x - self.centre.value)**2 * np.exp(-(x - self.centre.value)**2 
         /(2 * self.sigma.value**2)) * self.A.value) / (sqrt2pi * 
-        self.sigma.value**4)-(np.exp(-(x - self.origin.value)**2 / (2 * 
+        self.sigma.value**4)-(np.exp(-(x - self.centre.value)**2 / (2 * 
         self.sigma.value**2)) * self.A.value) / (sqrt2pi * self.sigma.value**2)
     
-    def grad_origin(self,x):
+    def grad_centre(self,x):
         """
         Given an one dimensional array x containing the energies at which
         you want to evaluate the gradient of the background model,
-        returns the gradient of parameter origin for the current value of
+        returns the gradient of parameter centre for the current value of
         the parameters.
         """
-        return ((x - self.origin.value) * np.exp(-(x - self.origin.value)**2/(2 
+        return ((x - self.centre.value) * np.exp(-(x - self.centre.value)**2/(2 
         * self.sigma.value**2)) * self.A.value) / (sqrt2pi * 
         self.sigma.value**3)
         
@@ -162,7 +162,7 @@ class Gaussian(Component):
         center_shape)) ** 2 * data, i) / np.sum(data, i)))
         height = data.max(i)
         if only_current is True:
-            self.origin.value = center
+            self.centre.value = center
             self.sigma.value = sigma
             self.A.value = height * sigma * sqrt2pi
             return True
@@ -173,6 +173,6 @@ class Gaussian(Component):
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma
             self.sigma.map['is_set'][:] = True
-            self.origin.map['values'][:] = center
-            self.origin.map['is_set'][:] = True
+            self.centre.map['values'][:] = center
+            self.centre.map['is_set'][:] = True
             return True
