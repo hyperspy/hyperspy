@@ -24,7 +24,30 @@ from hyperspy.io_plugins import (netcdf, msa, digital_micrograph, fei, mrc,
                                  image, ripple, hdf5)
 
 
-io_plugins = (netcdf, msa, digital_micrograph, fei, mrc, image, ripple, hdf5)
+io_plugins = [msa, digital_micrograph, fei, mrc, ripple]
+
+#try:
+#    from hyperspy.io_plugins import fits
+#    io_plugins.append(fits)
+#except ImportError:
+#    messages.information('The FITS IO features are not available')
+try:
+    from hyperspy.io_plugins import netcdf
+    io_plugins.append(netcdf)
+except ImportError:
+    messages.information('The NetCDF IO features are not available')
+    
+try:
+    from hyperspy.io_plugins import hdf5
+    io_plugins.append(hdf5)
+except ImportError:
+    messages.information('The HDF5 IO features are not available')
+    
+try:
+    from hyperspy.io_plugins import image
+    io_plugins.append(image)
+except ImportError:
+    messages.information('The Image (PIL) IO features are not available')
 
 
 def load(*filenames, **kwds):
