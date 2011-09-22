@@ -58,7 +58,7 @@ class PowerLaw(Component):
         (x - self.origin.value)**(-self.r.value - 1) * self.A.value, 0)
         
     def estimate_parameters(self, signal, x1, x2, only_current = False):
-        """Estimate a power law fit by the two area method
+        """Estimate the parameters by the two area method
 
         Parameters
         ----------

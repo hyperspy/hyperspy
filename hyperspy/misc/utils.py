@@ -100,39 +100,6 @@ def generate_axis(origin,step,N,index=0):
     """
     return np.linspace(origin-index*step, origin+step*(N-1-index), N)
 
-
-
-def gaussian_estimation(SI, E1, E2):
-    """Estimates the parameters of a gaussian by calculating the moments
-
-    fit = lambda t : max*exp(-(t-x)**2/(2*width**2))
-    (From scipy cookbook)
-
-    Parameters
-    ----------
-    SI : Spectrum instance
-    E1 : float
-        first point of the interval in energy units
-    E2 : float
-        second point of the interval in energy units
-
-    Returns
-    -------
-    Dictionary.
-    keys:
-    origin : float
-    FWHM : float
-    height : float
-    """
-    i1 = SI.energy2index(E1)
-    i2 = SI.energy2index(E2)
-    data = np.swapaxes(np.swapaxes(SI.data_cube[i1:i2],0,1),1,2)
-    X = SI.energy_axis[i1:i2]
-    x = np.sum(X*data, 2)/np.sum(data, 2)
-    width = np.sqrt(np.abs(sum((X-x)**2*data, 2)/sum(data, 2)))
-    max = data.max()
-    return {'origin': x, 'FWHM': width, 'height': max}
-
 def check_cube_dimensions(sp1, sp2, warn = True):
     """Checks if the given SIs has the same dimensions.
 
