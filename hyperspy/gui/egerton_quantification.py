@@ -33,6 +33,84 @@ from hyperspy.gui.tools import (SpanSelectorInSpectrum,
 
 
 class BackgroundRemoval(SpanSelectorInSpectrum):
+    background_type = t.Enum('Power Law', 'Gaussian', default = 'Power Law')
+    background_estimator = t.Instance(Component)
+    bg_line_range = t.Enum('from_left_range', 'full', 'ss_range', 
+        default = 'full')
+    view = tu.View(
+        tu.Group(
+            'background_type',),
+            buttons= [OKButton, CancelButton],
+            handler = SpanSelectorInSpectrumHandler)
+                 
+    def __init__(self, signal):
+        super(BackgroundRemoval, self).__init__(signal)
+        self.set_background_estimator()
+        self.bg_line = None
+
+    def on_disabling_span_selector(self):
+        if self.bg_line is not None:
+            self.bg_line.close()
+            self.bg_line = None
+            
+    def set_background_estimator(self):
+    
+        if self.background_type == 'Power Law':
+            self.background_estimator = components.PowerLaw()
+            self.bg_line_range = 'from_left_range'
+        elif self.background_type == 'Gaussian':
+            self.background_estimator = components.Gaussian()
+            self.bg_line_range = 'full'
+        
+            
+    def _background_type_changed(self, old, new):
+        self.set_background_estimator()
+            
+    def _ss_left_value_changed(self, old, new):
+        self.span_selector_changed()
+        
+    def _ss_right_value_changed(self, old, new):
+        self.span_selector_changed()
+        
+    def create_background_line(self):
+        self.bg_line = drawing.spectrum.SpectrumLine()
+        self.bg_line.data_function = self.bg_to_plot
+        self.bg_line.line_properties_helper('blue', 'line')
+        self.signal._plot.spectrum_plot.add_line(self.bg_line)
+        self.bg_line.plot()
+        
+    def bg_to_plot(self, axes_manager = None):
+        if self.bg_line_range == 'from_left_range':
+            bg_array = np.zeros(self.axis.axis.shape)
+            bg_array[:] = np.nan
+            from_index = self.axis.value2index(self.ss_left_value)
+            bg_array[from_index:] = self.background_estimator.function(
+                self.axis.axis[from_index:])
+            return bg_array
+        elif self.bg_line_range == 'full':
+            return self.background_estimator.function(self.axis.axis)
+        elif self.bg_line_range == 'ss_range':
+            bg_array = np.zeros(self.axis.axis.shape)
+            bg_array[:] = np.nan
+            from_index = self.axis.value2index(self.ss_left_value)
+            to_index = self.axis.value2index(self.ss_right_value)
+            bg_array[from_index:] = self.background_estimator.function(
+                self.axis.axis[from_index:to_index])
+            
+                      
+    def span_selector_changed(self):
+        if self.background_estimator is None:
+            print("No bg estimator")
+            return
+        if self.background_estimator.estimate_parameters(
+            self.signal, self.ss_left_value, self.ss_right_value, 
+            only_current = True) is True:
+            if self.bg_line is None:
+                self.create_background_line()
+            else:
+                self.bg_line.update()
+
+class PeakRemoval(SpanSelectorInSpectrum):
     background_type = t.Enum('Power Law', 'Polynomial', default = 'Power Law')
     background_estimator = t.Instance(Component)
     view = tu.View(
@@ -89,9 +167,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             if self.bg_line is None:
                 self.create_background_line()
             else:
-                self.bg_line.update()
-
-        
+                self.bg_line.update()        
 #class EgertonPanel(t.HasTraits):
 #    define_background_window = t.Bool(False)
 #    bg_window_size_variation = t.Button()
