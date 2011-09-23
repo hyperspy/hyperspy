@@ -92,6 +92,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         self.bg_line.data_function = self.bg_to_plot
         self.bg_line.line_properties_helper('blue', 'line')
         self.signal._plot.spectrum_plot.add_line(self.bg_line)
+        self.bg_line.autoscale = False
         self.bg_line.plot()
         
     def bg_to_plot(self, axes_manager = None):
@@ -111,7 +112,6 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             to_index = self.axis.value2index(self.ss_right_value)
             bg_array[from_index:] = self.background_estimator.function(
                 self.axis.axis[from_index:to_index])
-            
                       
     def span_selector_changed(self):
         if self.background_estimator is None:
