@@ -156,7 +156,13 @@ class SpectrumLine():
         
         if self.autoscale is True:
             self.ax.relim()
-            self.ax.autoscale(enable=True, axis='y', tight=None)
+            y1, y2 = np.searchsorted(self.axis, 
+                                     self.ax.get_xbound())
+            y2 += 2
+            y1, y2 = np.clip((y1,y2),0,len(ydata-1))
+            clipped_ydata = ydata[y1:y2]
+            y_max, y_min = np.nanmax(clipped_ydata), np.nanmin(clipped_ydata)
+            self.ax.set_ylim(y_min, y_max)
             self.ax.figure.canvas.draw()
         
     def close(self):
