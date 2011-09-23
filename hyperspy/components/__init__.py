@@ -45,5 +45,7 @@ from hyperspy.components.spline import Spline
 from hyperspy.components.eels_vignetting import Vignetting
 from hyperspy.components.voigt import Voigt
 from hyperspy.components.resizeble_fixed_pattern import ResizebleFixedPattern
+from hyperspy.components.polynomial import Polynomial
+
 
 

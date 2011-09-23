@@ -34,7 +34,7 @@ from hyperspy.gui.tools import (SpanSelectorInSpectrum,
 
 class BackgroundRemoval(SpanSelectorInSpectrum):
     background_type = t.Enum('Power Law', 'Gaussian', 'Offset',
-    default = 'Power Law')
+    'Polynomial', default = 'Power Law')
     background_estimator = t.Instance(Component)
     bg_line_range = t.Enum('from_left_range', 'full', 'ss_range', 
         default = 'full')
@@ -64,6 +64,9 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             self.bg_line_range = 'full'
         elif self.background_type == 'Offset':
             self.background_estimator = components.Offset()
+            self.bg_line_range = 'full'
+        elif self.background_type == 'Polynomial':
+            self.background_estimator = components.Polynomial()
             self.bg_line_range = 'full'
         
             
