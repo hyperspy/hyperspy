@@ -35,12 +35,17 @@ from hyperspy.gui.tools import (SpanSelectorInSpectrum,
 class BackgroundRemoval(SpanSelectorInSpectrum):
     background_type = t.Enum('Power Law', 'Gaussian', 'Offset',
     'Polynomial', default = 'Power Law')
+    polynomial_order = t.Range(1,10)
     background_estimator = t.Instance(Component)
     bg_line_range = t.Enum('from_left_range', 'full', 'ss_range', 
         default = 'full')
+    hi = t.Int(0)
     view = tu.View(
         tu.Group(
-            'background_type',),
+            'background_type',
+            tu.Group(
+                'polynomial_order', 
+                visible_when = 'background_type == \'Polynomial\''),),
             buttons= [OKButton, CancelButton],
             handler = SpanSelectorInSpectrumHandler)
                  
@@ -53,7 +58,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         if self.bg_line is not None:
             self.bg_line.close()
             self.bg_line = None
-            
+
     def set_background_estimator(self):
     
         if self.background_type == 'Power Law':
@@ -66,9 +71,12 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             self.background_estimator = components.Offset()
             self.bg_line_range = 'full'
         elif self.background_type == 'Polynomial':
-            self.background_estimator = components.Polynomial()
+            self.background_estimator = \
+                components.Polynomial(self.polynomial_order)
             self.bg_line_range = 'full'
-        
+    def _polynomial_order_changed(self, old, new):
+        self.background_estimator = components.Polynomial(new)
+        self.bg_line.update()
             
     def _background_type_changed(self, old, new):
         self.set_background_estimator()
