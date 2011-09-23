@@ -79,9 +79,16 @@ class SpectrumFigure():
         line.autoscale = self.autoscale
         line.blit = self.blit
         
-    def plot(self):   
+    def plot(self):
+        
+        x_axis_upper_lims=[]
+        x_axis_lower_lims=[]
         for line in self.left_ax_lines:
             line.plot()
+            x_axis_lower_lims.append(line.axis[0])
+            x_axis_upper_lims.append(line.axis[-1])
+        plt.xlim(np.min(x_axis_lower_lims),np.max(x_axis_upper_lims))
+            
         
     def close(self):
         for line in self.left_ax_lines + self.right_ax_lines:
@@ -137,7 +144,7 @@ class SpectrumLine():
     def plot(self, data = 1):
         f = self.data_function
         self.line, = self.ax.plot(
-        self.axis, f(axes_manager = self.axes_manager), **self.line_properties)
+            self.axis, f(axes_manager = self.axes_manager), **self.line_properties)
         self.axes_manager.connect(self.update)
         self.ax.figure.canvas.draw()
                   
@@ -150,7 +157,7 @@ class SpectrumLine():
         if self.autoscale is True:
             self.ax.relim()
             y1, y2 = np.searchsorted(self.axis, 
-            self.ax.get_xbound())
+                                     self.ax.get_xbound())
             y2 += 2
             y1, y2 = np.clip((y1,y2),0,len(ydata-1))
             clipped_ydata = ydata[y1:y2]

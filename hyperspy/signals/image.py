@@ -109,8 +109,8 @@ class Image(Signal):
     def plot_image_peaks(self, index=0, peak_width=10, subpixel=False,
                        medfilt_radius=5):
         # TODO: replace with hyperimage explorer
-        plt.imshow(self.data[:,:,index],cmap=plt.gray())
-        peaks=pc.two_dim_peakfind(self.data[:,:,index], subpixel=subpixel,
+        plt.imshow(self.data[index,:,:],cmap=plt.gray())
+        peaks=pc.two_dim_peakfind(self.data[index,:,:], subpixel=subpixel,
                                   peak_width=peak_width, 
                                   medfilt_radius=medfilt_radius)
         plt.scatter(peaks[:,0],peaks[:,1])
@@ -126,7 +126,7 @@ class Image(Signal):
         function.
         """
         f=plt.figure()
-        imgavg=np.average(self.data,axis=2)
+        imgavg=np.average(self.data,axis=0)
         plt.imshow(imgavg)
         plt.gray()
         if self.target_locations is None:
@@ -191,21 +191,23 @@ class Image(Signal):
 
         """
         if not hasattr(self.mapped_parameters, "original_files"):
-            print "No original files available.  Can't map anything to nothing."
-            print "If you use the cell_cropper function to crop your cells, \n\
-the cell locations and original files will be tracked for you."
+            messages.warning("""No original files available.  Can't map anything to nothing.
+If you use the cell_cropper function to crop your cells, the cell locations and original files 
+will be tracked for you.""")
             return None
         if peak_id is not None and (plot_shift is False and plot_char is None):
-            print "Peak ID provided, but no plot_char given , and plot_shift disabled."
-            print "  Nothing to plot.  Try again."
+            messages.warning("""Peak ID provided, but no plot_char given , and plot_shift disabled.
+Nothing to plot.  Try again.""")
             return None
         if peak_mva and not (plot_char is not None or plot_shift or plot_component):
-            print " peak_mva specified, but no peak characteristic, peak \
-shift, or component score selected for plotting.  Nothing to plot."
+            messages.warning("""peak_mva specified, but no peak characteristic, peak \
+shift, or component score selected for plotting.  Nothing to plot.""")
+            return None
         if plot_char is not None and plot_component is not None:
-            print "Both plot_char and plot_component provided.  Can only plot one\n\
-of these at a time.  Try again.\n\n\
-Note that you can actually plot shifts and component scores simultaneously."
+            messages.warning("""Both plot_char and plot_component provided.  Can only plot one
+of these at a time.  Try again.
+
+Note that you can actually plot shifts and component scores simultaneously.""")
             return None
         figs=[]
         for key in self.mapped_parameters.original_files.keys():
@@ -256,8 +258,8 @@ Note that you can actually plot shifts and component scores simultaneously."
                 elif mva_type.upper() == 'ICA':
                     scores=target.ica_scores[plot_component][mask]
                 else:
-                    print "Unrecognized MVA type.  Currently supported MVA types are \
-PCA and ICA (case insensitive)"
+                    messages.warning("Unrecognized MVA type.  Currently supported MVA types are \
+PCA and ICA (case insensitive)")
                     return None
                 print mask
                 print locs
@@ -317,7 +319,7 @@ PCA and ICA (case insensitive)"
         """
         f=plt.figure()
 
-        imgavg=np.average(self.data,axis=2)
+        imgavg=np.average(self.data,axis=0)
 
         if self.target_locations is None:
             # identify the peaks on the average image
@@ -487,10 +489,8 @@ PCA and ICA (case insensitive)"
         target=self._get_target(on_peaks)
 
         if scores is None or (factors is None and with_components is True):
-            print "Either recmatrix or components were not provided."
-            print "Loading existing values from object."
             if mva_type is None:
-                print "Neither scores nor analysis type specified.  Cannot proceed."
+                messages.warning("Neither scores nor analysis type specified.  Cannot proceed.")
                 return
 
             elif mva_type.lower() == 'pca':
@@ -500,10 +500,11 @@ PCA and ICA (case insensitive)"
                 scores = self._get_ica_scores(target)
                 factors=target.ic
                 if no_nans:
-                    print 'Removing NaNs for a visually prettier plot.'
+                    messages.information('Removing NaNs for a visually prettier plot.')
                     scores = np.nan_to_num(scores) # remove ugly NaN pixels
             else:
-                print "No scores provided and analysis type '%s' unrecognized. Cannot proceed."%mva_type
+                messages.warning("No scores provided and analysis type '%s' \
+unrecognized. Cannot proceed."%mva_type)
                 return
 
 #        if len(self.axes_manager.axes)==2:
@@ -522,14 +523,15 @@ PCA and ICA (case insensitive)"
             figure = plt.figure()
             if self.axes_manager.navigation_dimension == 2:
                 # 4D data - 2D arrays of diffraction patterns?
-                messages.warning_exit('View not supported')
+                messages.warning('View not supported')
             elif self.axes_manager.navigation_dimension == 1:
                 if hasattr(self.mapped_parameters,"original_files"):
                     parents=self.mapped_parameters.original_files
                     locations=self.mapped_parameters.locations
                 else:
                     if not hasattr(self.mapped_parameters,'parent'):
-                        messages.warning_exit('No parent image - mapping not possible')
+                        messages.warning('No parent image - mapping not possible')
+                        return None
                     else:
                         parents={self.mapped_parameters.parent.mapped_parameters.name:self.mapped_parameters.parent}
                         locations={self.mapped_parameters.parent.mapped_parameters.name:self.mapped_parameters.locations}
@@ -574,7 +576,7 @@ PCA and ICA (case insensitive)"
                             plt.ylim(0,shp[0])
                             idx+=1
             else:
-                messages.warning_exit('View not supported')
+                messages.warning('View not supported')
             if save_figs:
                 ax.set_title('%s component number %s map' % (mva_type.upper(),i))
                 figure.canvas.draw()
@@ -756,24 +758,24 @@ PCA and ICA (case insensitive)"
         kmeans=mdp.nodes.KMeansClassifier(clusters)
         cluster_arrays=[]
 
-        avg_stack=np.zeros((d.shape[0],d.shape[1],clusters))
-        kmeans.train(d.reshape((-1,d.shape[2])).T)
+        avg_stack=np.zeros((clusters,d.shape[1],d.shape[2]))
+        kmeans.train(d.reshape((-1,d.shape[0])).T)
         kmeans.stop_training()
-        groups=kmeans.label(d.reshape((-1,d.shape[2])).T)
+        groups=kmeans.label(d.reshape((-1,d.shape[0])).T)
         try:
             # test if location data is available
             self.mapped_parameters.locations[0]
         except:
-            print "Warning: No cell location information was available."
+            messages.warning("No cell location information was available.")
         for i in xrange(clusters):
             # get number of members of this cluster
             members=groups.count(i)
-            cluster_array=np.zeros((d.shape[0],d.shape[1],members))
+            cluster_array=np.zeros((members,d.shape[1],d.shape[2]))
             cluster_idx=0
             positions=np.zeros((members,3))
             for j in xrange(len(groups)):
                 if groups[j]==i:
-                    cluster_array[:,:,cluster_idx]=d[:,:,j]
+                    cluster_array[cluster_idx,:,:]=d[j,:,:]
                     try:
                         positions[cluster_idx]=self.mapped_parameters.locations[j]
                     except:
@@ -788,7 +790,7 @@ PCA and ICA (case insensitive)"
                         }
                     })
             cluster_arrays.append(cluster_array_Image)
-            avg_stack[:,:,i]=np.sum(cluster_array,axis=2)
+            avg_stack[i,:,:]=np.sum(cluster_array,axis=0)
         members_list=[groups.count(i) for i in xrange(clusters)]
         avg_stack_Image=Image({'data':avg_stack,
                     'mapped_parameters':{

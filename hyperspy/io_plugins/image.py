@@ -125,9 +125,9 @@ def file_reader(filename, **kwds):
         w=imsample.shape[0]
         h=imsample.shape[1]
         d=len(flist)
-        dc=np.zeros((w,h,d))
+        dc=np.zeros((d,w,h))
         for i in xrange(d):
-            dc[:,:,i] = imread(flist[i])
+            dc[i,:,:] = imread(flist[i])
     else:
         dc = imread(filename)
     dt = 'image'    
