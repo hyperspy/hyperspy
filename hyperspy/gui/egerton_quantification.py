@@ -76,10 +76,11 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             self.bg_line_range = 'full'
     def _polynomial_order_changed(self, old, new):
         self.background_estimator = components.Polynomial(new)
-        self.bg_line.update()
+        self.span_selector_changed()
             
     def _background_type_changed(self, old, new):
         self.set_background_estimator()
+        self.span_selector_changed()
             
     def _ss_left_value_changed(self, old, new):
         self.span_selector_changed()
