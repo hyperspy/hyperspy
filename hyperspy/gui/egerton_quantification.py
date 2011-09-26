@@ -34,13 +34,18 @@ from hyperspy.gui.tools import (SpanSelectorInSpectrum,
 
 class BackgroundRemoval(SpanSelectorInSpectrum):
     background_type = t.Enum('Power Law', 'Gaussian', 'Offset',
-    default = 'Power Law')
+    'Polynomial', default = 'Power Law')
+    polynomial_order = t.Range(1,10)
     background_estimator = t.Instance(Component)
     bg_line_range = t.Enum('from_left_range', 'full', 'ss_range', 
         default = 'full')
+    hi = t.Int(0)
     view = tu.View(
         tu.Group(
-            'background_type',),
+            'background_type',
+            tu.Group(
+                'polynomial_order', 
+                visible_when = 'background_type == \'Polynomial\''),),
             buttons= [OKButton, CancelButton],
             handler = SpanSelectorInSpectrumHandler)
                  
@@ -53,7 +58,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         if self.bg_line is not None:
             self.bg_line.close()
             self.bg_line = None
-            
+
     def set_background_estimator(self):
     
         if self.background_type == 'Power Law':
@@ -65,10 +70,17 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         elif self.background_type == 'Offset':
             self.background_estimator = components.Offset()
             self.bg_line_range = 'full'
-        
+        elif self.background_type == 'Polynomial':
+            self.background_estimator = \
+                components.Polynomial(self.polynomial_order)
+            self.bg_line_range = 'full'
+    def _polynomial_order_changed(self, old, new):
+        self.background_estimator = components.Polynomial(new)
+        self.span_selector_changed()
             
     def _background_type_changed(self, old, new):
         self.set_background_estimator()
+        self.span_selector_changed()
             
     def _ss_left_value_changed(self, old, new):
         self.span_selector_changed()
@@ -81,6 +93,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         self.bg_line.data_function = self.bg_to_plot
         self.bg_line.line_properties_helper('blue', 'line')
         self.signal._plot.spectrum_plot.add_line(self.bg_line)
+        self.bg_line.autoscale = False
         self.bg_line.plot()
         
     def bg_to_plot(self, axes_manager = None):
@@ -100,7 +113,6 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             to_index = self.axis.value2index(self.ss_right_value)
             bg_array[from_index:] = self.background_estimator.function(
                 self.axis.axis[from_index:to_index])
-            
                       
     def span_selector_changed(self):
         if self.background_estimator is None:

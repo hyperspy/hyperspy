@@ -22,8 +22,7 @@ from hyperspy.component import Component
 
 class Line(Component):
     """
-    Given an array of the same shape as Spectrum energy_axis, returns it as
-    a component that can be added to a model.
+    Line component defined by the a and b parameters: f(x) = a + b*x
     """
 
     def __init__( self, a = 0, b = 1 ):
