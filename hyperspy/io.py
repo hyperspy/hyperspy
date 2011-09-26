@@ -83,7 +83,6 @@ def load(*filenames, **kwds):
         if '*' in filenames[0]:
             from glob import glob
             filenames=glob(filenames[0])
-            print filenames
         else:
             return load_single_file(filenames[0], **kwds)
     import hyperspy.signals.aggregate as agg
