@@ -23,6 +23,7 @@ from hyperspy.signals.spectrum import Spectrum
 import enthought.traits.api as t
 from hyperspy.learn.mva import MVA_Results
 from hyperspy.axes import AxesManager, DataAxis
+from hyperspy import messages
 
 from hyperspy.io import load
 
@@ -119,8 +120,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
 
 
             # refresh the axes for the new sized data
-            self.axes_manager.axes[0].size=int(self.data.shape[0])
-            smp.original_filename="Aggregate Spectra: %s"%smp.original_files.keys()
+            smp.name="Aggregate Spectra: %s"%smp.original_files.keys()
             self.summary()
 
     def _add_object(self,arg):
@@ -131,18 +131,42 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
             smp.original_files[mp.original_filename]=arg
             # save the original data shape to the mva_results for later use
             smp.original_files[mp.original_filename].mva_results.original_shape = arg.data.shape[:-1]
-            arg.unfold()
-            smp.aggregate_address[mp.original_filename]=(
-                smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
+            if len(arg.data.shape)==3:
+                arg.unfold()
+                smp.aggregate_address[mp.original_filename]=(
+                    smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
+            if len(arg.data.shape)==2:
+                smp.aggregate_address[mp.original_filename]=(
+                    smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
+            if len(arg.data.shape)==1:
+                arg.data=arg.data[np.newaxis,:]
+                smp.aggregate_address[mp.original_filename]=(
+                    smp.aggregate_end_pointer,smp.aggregate_end_pointer+1)
             # add the data to the aggregate array
             if self.data==None:
-                self.data=np.atleast_2d(arg.data)
                 # copy the axes for the sake of calibration
-                axes=[arg.axes_manager.axes[i].get_axis_dictionary() for i in xrange(len(arg.axes_manager.axes))]
-                self.axes_manager=AxesManager(axes)
+                self.data=arg.data
+                self.axes_manager=arg.axes_manager
+                new_axis=DataAxis(**{
+                            'name': 'Depth',
+                            'scale': 1.,
+                            'offset': 0.,
+                            'size': int(arg.data.shape[0]),
+                            'units': 'undefined',
+                            'index_in_array': 0, })
+                for ax_idx in xrange(len(self.axes_manager.axes)):
+                        self.axes_manager.axes[ax_idx].index_in_array+=1        
+                self.axes_manager.axes.insert(0,new_axis)
             else:
-                self.data=np.append(self.data,arg.data,axis=0)
+                try:
+                    self.data=np.append(self.data,arg.data,axis=0)
+                except:
+                    messages.warning('Adding file %s to aggregate failed.  \
+Are you sure its dimensions agree with all the other files you\'re trying \
+to add?'%arg.mapped_parameters.name)
+                    return None
                 smp.aggregate_end_pointer=self.data.shape[0]
+                self.axes_manager.axes[0].size=self.data.shape[0]
                 print "File %s added to aggregate."%mp.original_filename
         else:
             print "Data from file %s already in this aggregate. \n \
@@ -157,7 +181,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
             print "File %s removed from aggregate."%key
         self.axes_manager.axes[0].size=int(self.data.shape[0])
         smp.aggregate_end_pointer=self.data.shape[0]
-        smp.original_filename="Aggregate Spectra: %s"%smp.original_files.keys()
+        smp.name="Aggregate Spectra: %s"%smp.original_files.keys()
         self.summary()
 
     def principal_components_analysis(self, normalize_poissonian_noise = False, 
