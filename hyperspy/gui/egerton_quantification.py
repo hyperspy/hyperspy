@@ -97,6 +97,11 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         self.bg_line.plot()
         
     def bg_to_plot(self, axes_manager = None):
+        # First try to update the estimation
+        self.background_estimator.estimate_parameters(
+            self.signal, self.ss_left_value, self.ss_right_value, 
+            only_current = True) 
+            
         if self.bg_line_range == 'from_left_range':
             bg_array = np.zeros(self.axis.axis.shape)
             bg_array[:] = np.nan
@@ -118,13 +123,13 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         if self.background_estimator is None:
             print("No bg estimator")
             return
-        if self.background_estimator.estimate_parameters(
-            self.signal, self.ss_left_value, self.ss_right_value, 
-            only_current = True) is True:
-            if self.bg_line is None:
-                self.create_background_line()
-            else:
-                self.bg_line.update()
+        if self.bg_line is None and \
+            self.background_estimator.estimate_parameters(
+                self.signal, self.ss_left_value, self.ss_right_value, 
+                only_current = True) is True:
+            self.create_background_line()
+        else:
+            self.bg_line.update()
 
        
 #class EgertonPanel(t.HasTraits):
