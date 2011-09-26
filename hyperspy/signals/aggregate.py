@@ -49,10 +49,13 @@ class Aggregate(Signal):
 
     def summary(self):
         smp=self.mapped_parameters
-        print "Aggregate Contents: "
+        print "\nAggregate Contents: "
         for f in smp.original_files.keys():
             print f
-        print "Total size: %s"%(str(self.data.shape))
+        print "\nTotal size: %s"%(str(self.data.shape))
+        print "Data representation: %s"%self.mapped_parameters.record_by
+        if hasattr(self.mapped_parameters,'signal'):
+            print "Signal type: %s"%self.mapped_parameters.signal
     """
     def plot(self):
         print "Plotting not yet supported for generic aggregate objects"
@@ -86,6 +89,7 @@ class AggregateSpectrum(Aggregate,Spectrum):
         self.mapped_parameters.aggregate_end_pointer=0
         if len(args)>0:
             self.append(*args)
+            self.summary()
 
     def unfold(self):
         print "AggregateSpectrum objects are already unfolded, and cannot be folded. \
@@ -118,10 +122,8 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
                 else:
                     self._add_object(arg)
 
-
             # refresh the axes for the new sized data
             smp.name="Aggregate Spectra: %s"%smp.original_files.keys()
-            self.summary()
 
     def _add_object(self,arg):
         #object parameters
@@ -147,6 +149,9 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
                 # copy the axes for the sake of calibration
                 self.data=arg.data
                 self.axes_manager=arg.axes_manager
+                self.mapped_parameters.record_by=arg.mapped_parameters.record_by
+                if hasattr(arg.mapped_parameters,'signal'):
+                    self.mapped_parameters.signal=arg.mapped_parameters.signal
                 new_axis=DataAxis(**{
                             'name': 'Depth',
                             'scale': 1.,
@@ -167,7 +172,6 @@ to add?'%arg.mapped_parameters.name)
                     return None
                 smp.aggregate_end_pointer=self.data.shape[0]
                 self.axes_manager.axes[0].size=self.data.shape[0]
-                print "File %s added to aggregate."%mp.original_filename
         else:
             print "Data from file %s already in this aggregate. \n \
     Delete it first if you want to update it."%mp.original_filename
@@ -178,11 +182,9 @@ to add?'%arg.mapped_parameters.name)
             del smp.original_files[key]
             address=smp.aggregate_address[key]
             self.data=np.delete(self.data,np.s_[address[0]:(address[1]+1):1],0)
-            print "File %s removed from aggregate."%key
         self.axes_manager.axes[0].size=int(self.data.shape[0])
         smp.aggregate_end_pointer=self.data.shape[0]
         smp.name="Aggregate Spectra: %s"%smp.original_files.keys()
-        self.summary()
 
     def principal_components_analysis(self, normalize_poissonian_noise = False, 
                                      algorithm = 'svd', output_dimension = None, navigation_mask = None, 
@@ -295,6 +297,7 @@ class AggregateImage(Aggregate,Image):
         super(AggregateImage, self).__init__(*args,**kw)
         if len(args)>0:
             self.append(*args)
+            self.summary()
 
     def append(self, *args):
         if len(args)<1:
@@ -311,6 +314,9 @@ class AggregateImage(Aggregate,Image):
                     if self.data==None:
                         self.data=arg.data[np.newaxis,:,:]
                         self.axes_manager=arg.axes_manager
+                        self.mapped_parameters.record_by=arg.mapped_parameters.record_by
+                        if hasattr(arg.mapped_parameters,'signal'):
+                            self.mapped_parameters.signal=arg.mapped_parameters.signal
                         new_axis=DataAxis(**{
                             'name': 'Depth',
                             'scale': 1.,
@@ -324,14 +330,13 @@ class AggregateImage(Aggregate,Image):
                     else:
                         self.data=np.append(self.data,arg.data[np.newaxis,:,:],axis=0)
                         self.axes_manager.axes[0].size+=1
-                    print "File %s added to aggregate."%mp.original_filename
                 else:
                     print "Data from file %s already in this aggregate. \n \
     Delete it first if you want to update it."%mp.original_filename
             # refresh the axes for the new sized data
             #self.axes_manager=AxesManager(self._get_undefined_axes_list())
             smp.name="Aggregate Image: %s"%smp.original_files.keys()
-            self.summary()
+
 
     def remove(self,*keys):
         smp=self.mapped_parameters
@@ -340,9 +345,7 @@ class AggregateImage(Aggregate,Image):
             self.data=np.delete(self.data,np.s_[idx:idx+1:1],0)
             self.axes_manager.axes[0].size-=1
             del smp.original_files[key]
-            print "File %s removed from aggregate."%key
         smp.name="Aggregate Image: %s"%smp.original_files.keys()
-        self.summary()
 
 class AggregateCells(Aggregate,Image):
     """ A class to deal with several image stacks, each consisting of cropped
@@ -360,6 +363,8 @@ class AggregateCells(Aggregate,Image):
         self.mapped_parameters.name="Aggregate: no data"
         if len(args)>0:
             self.append(*args)
+            self.summary()
+            
 
     def append(self,*args):
         if len(args)<1:
@@ -379,6 +384,9 @@ class AggregateCells(Aggregate,Image):
                         smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
                     # add the data to the aggregate array
                     if self.data==None:
+                        self.mapped_parameters.record_by=arg.mapped_parameters.record_by
+                        if hasattr(arg.mapped_parameters,'signal'):
+                            self.mapped_parameters.signal=arg.mapped_parameters.signal
                         self.axes_manager=arg.axes_manager
                         if len(arg.data.shape)<3:
                             self.data=arg.data[np.newaxis,:,:]
@@ -397,14 +405,12 @@ class AggregateCells(Aggregate,Image):
                     else:
                         self.data=np.append(self.data,arg.data,axis=0)
                         self.axes_manager.axes[0].size+=int(arg.data.shape[0])
-                    print "File %s added to aggregate."%pmp.original_filename
                     smp.aggregate_end_pointer=self.data.shape[0]
                 else:
                     print "Data from file %s already in this aggregate. \n \
     Delete it first if you want to update it."%pmp.original_filename
             # refresh the axes for the new sized data
             smp.name="Aggregate Cells: %s"%smp.locations.keys()
-            self.summary()
 
     def remove(self,*keys):
         smp=self.mapped_parameters
@@ -415,10 +421,8 @@ class AggregateCells(Aggregate,Image):
             address=smp.aggregate_address[key]
             self.data=np.delete(self.data,np.s_[address[0]:address[1]:1],0)
             self.axes_manager.axes[0].size-=int(address[1]-address[0]+1)
-            print "File %s removed from aggregate."%key
         smp.aggregate_end_pointer=self.data.shape[0]
         smp.name="Aggregate Cells: %s"%smp.locations.keys()
-        self.summary()
 
     def kmeans_cluster_stack(self, clusters=None):
         smp=self.mapped_parameters

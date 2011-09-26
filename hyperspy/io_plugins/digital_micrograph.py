@@ -755,11 +755,12 @@ class DM3ImageFile(object):
     scale = ['Scale',]          # in brightdir + 'Group[X]
 
     def __init__(self, fname, data_id=1, order = None, SI = None, 
-                 record_by = None):
+                 record_by = None, output_level=1):
         self.filename = fname
         self.info = '' # should be a dictionary with the microscope info
         self.mode = ''
         self.record_by = record_by
+        self.output_level=output_level
         self.order = order
         self.SI = SI
         if data_id < 0:
@@ -791,7 +792,7 @@ class DM3ImageFile(object):
         #Group0 is THUMBNAIL and GroupX (X !=0) is IMAGE
         image_id.sort()
 
-        if len(image_id) > 1 or self.data_id == 0:
+        if len(image_id) > 1 or self.data_id == 0 and self.output_level>1:
             print 'File "%s" contains %i images:' % (self.filename,
                                                      len(image_id))
             print
@@ -814,7 +815,8 @@ class DM3ImageFile(object):
                 self.name = self.data_dict.ls([im,] + DM3ImageFile.imname)[1][1]
             else:
                 self.name = self.filename
-            print 'Loading image "%s" (ID: %i) from file %s'% (self.name,
+            if self.output_level>1:
+                print 'Loading image "%s" (ID: %i) from file %s'% (self.name,
                                                                self.data_id,
                                                                self.filename)
         except IndexError:
@@ -1127,7 +1129,7 @@ class DM3ImageFile(object):
         return data
 
 def file_reader(filename, record_by=None, order = None, data_id=1, 
-                dump = False):
+                dump = False, output_level=1):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
@@ -1142,7 +1144,9 @@ def file_reader(filename, record_by=None, order = None, data_id=1,
         If True it dumps the tags into a txt file
     """
          
-    dm3 = DM3ImageFile(filename, data_id, order = order, record_by = record_by)
+    dm3 = DM3ImageFile(filename, data_id, order = order, record_by = record_by,
+                       output_level=output_level)
+    
     if dump is True:
         import codecs
         f = codecs.open(filename.replace('.dm3', '_tags_dumped.txt'), 'w')

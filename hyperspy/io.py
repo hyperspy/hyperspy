@@ -50,6 +50,13 @@ except ImportError:
     messages.information('The Image (PIL) IO features are not available')
 
 
+def summary(signal_object):
+    print "\nData size: %s"%(str(signal_object.data.shape))
+    if hasattr(signal_object.mapped_parameters,'record_by'):
+        print "Data representation: %s"%signal_object.mapped_parameters.record_by
+    if hasattr(signal_object.mapped_parameters,'signal'):
+        print "Signal type: %s"%signal_object.mapped_parameters.signal
+
 def load(*filenames, **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
@@ -77,16 +84,18 @@ def load(*filenames, **kwds):
     """
 
     if len(filenames)<1:
-        messages.warning_exit('No file provided to reader.')
+        messages.warning('No file provided to reader.')
         return None
     elif len(filenames)==1:
         if '*' in filenames[0]:
             from glob import glob
             filenames=glob(filenames[0])
         else:
-            return load_single_file(filenames[0], **kwds)
+            f=load_single_file(filenames[0], **kwds)
+            summary(f)
+            return f
     import hyperspy.signals.aggregate as agg
-    objects=[load_single_file(filename, **kwds) for filename in filenames]
+    objects=[load_single_file(filename, output_level=0, **kwds) for filename in filenames]
 
     obj_type=objects[0].__class__.__name__
     if obj_type=='Image':
@@ -102,7 +111,7 @@ def load(*filenames, **kwds):
     return agg_sig
 
 
-def load_single_file(filename, record_by=None, **kwds):
+def load_single_file(filename, record_by=None, output_level=1, **kwds):
     """
     Load any supported file into an Hyperspy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
@@ -117,6 +126,10 @@ def load_single_file(filename, record_by=None, **kwds):
         If None (default) it will try to guess the data type from the file,
         if 'spectrum' the file will be loaded as an Spectrum object
         If 'image' the file will be loaded as an Image object
+    output_level : int
+        If 0, do not output file loading text.
+        If 1, output simple file summary (data type and shape)
+        If 2, output more diagnostic output (e.g. number of tags for DM3 files)
     """
     extension = os.path.splitext(filename)[1][1:]
 
@@ -133,17 +146,21 @@ def load_single_file(filename, record_by=None, **kwds):
             messages.warning_exit('File type not supported')
     else:
         reader = io_plugins[i]
-        return load_with_reader(filename, reader, record_by, **kwds)
+        return load_with_reader(filename, reader, record_by, 
+                                output_level=output_level,
+                                **kwds)
 
 
 def load_with_reader(filename, reader, record_by = None, signal = None,
-                     **kwds):
+                     output_level=1, **kwds):
     from hyperspy.signals.image import Image
     from hyperspy.signals.spectrum import Spectrum
     from hyperspy.signals.eels import EELSSpectrum
-    messages.information(reader.description)
+    if output_level>1:
+        messages.information(reader.description)
     file_data_list = reader.file_reader(filename,
                                          record_by=record_by,
+                                        output_level=output_level,
                                         **kwds)
     objects = []
     for file_data_dict in file_data_list:
@@ -167,9 +184,9 @@ def load_with_reader(filename, reader, record_by = None, signal = None,
         if defaults.plot_on_load is True:
             s.plot()
         objects.append(s)
-
     if len(objects) == 1:
         objects = objects[0]
+    
     return objects
 
 

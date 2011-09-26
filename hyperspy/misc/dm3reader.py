@@ -464,7 +464,6 @@ def parseDM3( filename, dump=False ):
 	global f
 
 	try:
-		print "Accessing file... "
 		f = open( filename, 'rb' )
 		isDM3 = True
 		## read header (first 3 4-byte int)
@@ -491,7 +490,7 @@ def parseDM3( filename, dump=False ):
 			print "lE:", lE
 			print "File size:", FileSize
 
-		print '%s appears to be a DM3 file' % filename,
+		# print '%s appears to be a DM3 file' % filename,
 
 		# set name of root group (contains all data)...
 		curGroupNameAtLevelX[0] = "root"
@@ -503,7 +502,7 @@ def parseDM3( filename, dump=False ):
 		
 		f.close()
 		
-		print "--", len(storedTags), "Tags read"
+		# print "--", len(storedTags), "Tags read"
 		
 		# dump Tags in txt file if requested
 		if dump:
