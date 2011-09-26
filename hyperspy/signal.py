@@ -125,6 +125,15 @@ class Signal(t.HasTraits, MVA):
         self._shape_before_unfolding = None
         self._axes_manager_before_unfolding = None
 
+    def __repr__(self):
+        string="\nData file: %s"%self.mapped_parameters.name
+        string+="\nData size: %s"%(str(self.data.shape))
+        if hasattr(self.mapped_parameters,'record_by'):
+            string+="\nData representation: %s"%self.mapped_parameters.record_by
+        if hasattr(self.mapped_parameters,'signal'):
+            string+="\nSignal type: %s"%self.mapped_parameters.signal
+        return string
+
     def load_dictionary(self, file_data_dict):
         """Parameters:
         -----------

@@ -49,14 +49,6 @@ try:
 except ImportError:
     messages.information('The Image (PIL) IO features are not available')
 
-
-def summary(signal_object):
-    print "\nData size: %s"%(str(signal_object.data.shape))
-    if hasattr(signal_object.mapped_parameters,'record_by'):
-        print "Data representation: %s"%signal_object.mapped_parameters.record_by
-    if hasattr(signal_object.mapped_parameters,'signal'):
-        print "Signal type: %s"%signal_object.mapped_parameters.signal
-
 def load(*filenames, **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
@@ -92,7 +84,7 @@ def load(*filenames, **kwds):
             filenames=glob(filenames[0])
         else:
             f=load_single_file(filenames[0], **kwds)
-            summary(f)
+            print f
             return f
     import hyperspy.signals.aggregate as agg
     objects=[load_single_file(filename, output_level=0, **kwds) for filename in filenames]
