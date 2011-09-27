@@ -151,9 +151,9 @@ def file_writer(filename, signal, *args, **kwds):
         coord_group = expg.create_group('axis-%s' % axis.index_in_array)
         dict2hdfgroup(axis_dict, coord_group)
     mapped_par = expg.create_group('mapped_parameters')
-    dict2hdfgroup(signal.mapped_parameters._get_parameters_dictionary(), 
+    dict2hdfgroup(signal.mapped_parameters.as_dictionary(), 
                   mapped_par)
     original_par = expg.create_group('original_parameters')
-    dict2hdfgroup(signal.original_parameters._get_parameters_dictionary(), 
+    dict2hdfgroup(signal.original_parameters.as_dictionary(), 
                   original_par)
     f.close()

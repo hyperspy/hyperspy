@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-import types
 import copy
 
 import numpy as np
@@ -29,81 +28,14 @@ from hyperspy import io
 from hyperspy.drawing import mpl_hie, mpl_hse
 from hyperspy.misc import utils
 from hyperspy.learn.mva import MVA, MVA_Results
-
-
-class Parameters(t.HasTraits, object):
-    """A class to comfortably access some parameters as attributes"""
-
-    def __init__(self, dictionary={}):
-        super(Parameters, self).__init__()
-        self.load_dictionary(dictionary)
-
-    def load_dictionary(self, dictionary):
-        for key, value in dictionary.iteritems():
-            if isinstance(value, dict):
-                value = Parameters(value)
-            self.__setattr__(key, value)
-
-    def _get_print_items(self, padding = '', max_len=20):
-        """Prints only the attributes that are not methods"""
-        string = ''
-        eon = len([par for par in self.__dict__ if isinstance(
-                   self.__dict__[par], Parameters)])
-        eoi = len(self.__dict__)
-        i = 0
-        j = 0
-        for item, value in self.__dict__.iteritems():
-            if type(item) != types.MethodType:
-                if isinstance(value, Parameters):
-                    if i == eon - 1:
-                        symbol = '└── '
-                    else:
-                        symbol = '├── '
-                    string += '%s%s%s\n' % (padding, symbol, item)
-                    i += 1
-                    if i == eon:
-                        string += value._get_print_items(padding + '    ')
-                    else:
-                        string += value._get_print_items(padding + '│   ')
-                else:
-                    if j == eoi - 1:
-                        symbol = '└── '
-                    else:
-                        symbol = '├── '
-                    strvalue = str(value)
-                    if len(strvalue) > max_len:
-                        value = '%s ... %s' % (strvalue[:max_len],
-                                              strvalue[-max_len:])
-                    string += "%s%s%s = %s\n" % (padding, symbol, item, value)
-            j += 1
-        return string
-
-    def __repr__(self):
-        return self._get_print_items()
-
-    def _get_parameters_dictionary(self):
-        par_dict = {}
-        for item, value in self.__dict__.iteritems():
-            if type(item) != types.MethodType:
-                if isinstance(value, Parameters):
-                    value = value._get_parameters_dictionary()
-                par_dict.__setitem__(item, value)
-        return par_dict
-
-    def add_node(self, node_path):
-        keys = node_path.split('/')
-        current_dict = self.__dict__
-        for key in keys:
-            if key not in current_dict:
-                current_dict[key] = Parameters()
-            current_dict = current_dict[key].__dict__
+from hyperspy.misc.utils import DictionaryBrowser
 
 
 class Signal(t.HasTraits, MVA):
     data = t.Any()
     axes_manager = t.Instance(AxesManager)
-    original_parameters = t.Instance(Parameters)
-    mapped_parameters = t.Instance(Parameters)
+    original_parameters = t.Instance(DictionaryBrowser)
+    mapped_parameters = t.Instance(DictionaryBrowser)
     physical_property = t.Str()
 
     def __init__(self, file_data_dict=None, *args, **kw):
@@ -116,8 +48,8 @@ class Signal(t.HasTraits, MVA):
            see load_dictionary for the format
         """
         super(Signal, self).__init__()
-        self.mapped_parameters = Parameters()
-        self.original_parameters = Parameters()
+        self.mapped_parameters = DictionaryBrowser()
+        self.original_parameters = DictionaryBrowser()
         if type(file_data_dict).__name__ == "dict":
             self.load_dictionary(file_data_dict)
         self._plot = None
@@ -184,9 +116,9 @@ class Signal(t.HasTraits, MVA):
         dic['data'] = self.data.copy()
         dic['axes'] = self.axes_manager._get_axes_dicts()
         dic['mapped_parameters'] = \
-        self.mapped_parameters._get_parameters_dictionary()
+        self.mapped_parameters.as_dictionary()
         dic['original_parameters'] = \
-        self.original_parameters._get_parameters_dictionary()
+        self.original_parameters.as_dictionary()
         return dic
 
     def _get_undefined_axes_list(self):

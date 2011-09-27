@@ -229,7 +229,7 @@ def file_writer(filename, signal, format = None, separator = ', '):
     FORMAT = "EMSA/MAS Spectral Data File"
     if hasattr(signal.original_parameters, 'FORMAT') and \
     signal.original_parameters.FORMAT == FORMAT:
-        keywords = signal.original_parameters._get_parameters_dictionary()
+        keywords = signal.original_parameters.as_dictionary()
         if format is not None:
             keywords['DATATYPE'] = format
         else:
