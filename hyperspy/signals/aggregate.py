@@ -125,6 +125,74 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
             # refresh the axes for the new sized data
             smp.name="Aggregate Spectra: %s"%smp.original_files.keys()
 
+    def _crop_bounds(self,arg,points_to_interpolate=3):
+        argbounds=np.array([arg.axes_manager.axes[-1].low_value,
+                          arg.axes_manager.axes[-1].high_value])
+        selfbounds=np.array([self.axes_manager.axes[-1].low_value,
+                          self.axes_manager.axes[-1].high_value])
+        newlims=selfbounds-argbounds
+        # file to be added is below current spectral range.
+        if argbounds[1]<selfbounds[0]:
+            messages.warning('file to be added is below current spectral range\
+.  Omitting it.')
+            return None
+        # file to be added is above current spectral range.
+        if argbounds[0]>selfbounds[1]:
+            messages.warning('file to be added is above current spectral range\
+.  Omitting it.')
+            return None
+
+        selflims=slice(None,None,1)
+        datalims=slice(None,None,1)
+        if (newlims[0]<0):
+            # trim left of existing bounds.
+            self_idx=np.argmin(np.abs(self.axes_manager.axes[-1].axis-argbounds[0]))
+            selflims=slice(self_idx,None,1)
+            self.axes_manager.axes[-1].offset=argbounds[0]
+        elif newlims[0]>0:
+            # trim left of file to be added.
+            data_idx=np.argmin(np.abs(arg.axes_manager.axes[-1].axis-selfbounds[0]))
+            datalims=slice(data_idx,None,1)
+        if newlims[1]>0:
+            # trim right of existing bounds
+            self_idx=np.argmin(np.abs(self.axes_manager.axes[-1].axis-argbounds[1]))+1
+            selflims=slice(selflims.start,self_idx,1)
+        elif newlims[1]<0:
+            # trim right of file to be added
+            data_idx=np.argmin(np.abs(arg.axes_manager.axes[-1].axis-selfbounds[1]))+1
+            datalims=slice(datalims.start,data_idx,1)
+          
+        # trim to the shorter of the two data sets. (max 2 points)
+        datashape=arg.data[:,datalims].shape
+        selfshape=self.data[:,selflims].shape
+        if (datashape[-1]<selfshape[-1]):
+            print "self data too big.  Cropping."
+            if (datashape[-1]-selfshape[-1])<-2:
+                messages.warning("large array size difference (%i)- are you using similar binning and dispersion?"%(datashape[-1]-selfshape[-1]))
+                return None
+            else:
+                if selflims.start<>None:
+                    selflims=slice(selflims.start-(datashape[-1]-selfshape[-1]),selflims.stop,1)
+                elif selflims.stop<>None:
+                    selflims=slice(selflims.start,selflims.stop+(datashape[-1]-selfshape[-1]),1)
+                else:
+                    selflims=slice(selfshape[-1]-datashape[-1],None,1)
+        if datashape[-1]-selfshape[-1]:
+            if (datashape[-1]-selfshape[-1])>2:
+                messages.warning("large array size difference (%i)- are you using similar binning and dispersion?"%(datashape[-1]-selfshape[-1]))
+                return None
+            else:
+                if datalims.start<>None:
+                    datalims=slice(datalims.start+(datashape[-1]-selfshape[-1]),datalims.stop,1)
+                elif datalims.stop<>None:
+                    datalims=slice(datalims.start,datalims.stop-(datashape[-1]-selfshape[-1]),1)
+                else:
+                    datalims=slice(datashape[-1]-selfshape[-1],None,1)
+        # recalculate the axis size (and bounds) for any future rounds.
+        self.axes_manager.axes[-1].size=self.data.shape[-1]
+        return datalims,selflims
+        
+
     def _add_object(self,arg):
         #object parameters
         mp=arg.mapped_parameters
@@ -163,15 +231,21 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
                         self.axes_manager.axes[ax_idx].index_in_array+=1        
                 self.axes_manager.axes.insert(0,new_axis)
             else:
+                bounds=self._crop_bounds(arg)
+                if bounds:
+                    arglims,selflims=bounds
+                    self.data=self.data[:,selflims]
+                    arg.data=arg.data[:,arglims]
                 try:
                     self.data=np.append(self.data,arg.data,axis=0)
+                    smp.aggregate_end_pointer=self.data.shape[0]
+                    self.axes_manager.axes[0].size=self.data.shape[0]
+                    self.axes_manager.axes[-1].size=self.data.shape[-1]
                 except:
                     messages.warning('Adding file %s to aggregate failed.  \
 Are you sure its dimensions agree with all the other files you\'re trying \
 to add?'%arg.mapped_parameters.name)
                     return None
-                smp.aggregate_end_pointer=self.data.shape[0]
-                self.axes_manager.axes[0].size=self.data.shape[0]
         else:
             print "Data from file %s already in this aggregate. \n \
     Delete it first if you want to update it."%mp.original_filename

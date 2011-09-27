@@ -285,9 +285,10 @@ class Spectrum(Signal):
         """
 
         shift_array = self.estimate_shift_in_units_1D(axis = axis,
-        range_in_units = range_in_units, reference_indexes = reference_indexes,
-        max_shift = max_shift, interpolate = interpolate,
-        number_of_interpolation_points = number_of_interpolation_points)
+                             range_in_units = range_in_units, 
+                             reference_indexes = reference_indexes,
+                             max_shift = max_shift, interpolate = interpolate,
+                             number_of_interpolation_points = number_of_interpolation_points)
         if also_align is None:
             also_align = list()
         also_align.append(self)
