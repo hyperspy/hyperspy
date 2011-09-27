@@ -145,11 +145,12 @@ class EELSCLEdge(Component):
     def __init__(self, element_subshell, intensity=1.,delta=0.):
         # Check if the Peter Rez's Hartree Slater GOS distributed by Gatan 
         # are available. Otherwise exit
-        if defaults.GOS_dir == 'None':
-            messages.warning_exit(
+        if not os.isfile(defaults.EELS.eels_gos_files_path):
+            messages.warning(
             "The path to the GOS files could not be found.\n" \
-            "Please define a valid GOS folder location in the configuration" \
-            " file.")
+            "Please define a valid location for the EELS GOS files in the "
+            "folder location in the configuration file.")
+            raise IOError
         # Declare which are the "real" parameters
         Component.__init__(self, ['delta', 'intensity', 'fslist', 
         'effective_angle'])
@@ -164,8 +165,8 @@ class EELSCLEdge(Component):
         self.E0 = None
         self.effective_angle.value = 0
         self.effective_angle.free = False
-        self.fs_state = defaults.fs_state
-        self.fs_emax = defaults.fs_emax
+        self.fs_state = defaults.EELS.fs_state
+        self.fs_emax = defaults.EELS.fs_emax
         self.fs_mode = "new_spline"
         self.fslist.ext_force_positive = False
         
@@ -181,7 +182,7 @@ class EELSCLEdge(Component):
         self.intensity.bmin = 0.
         self.intensity.bmax = None
 
-        self.knots_factor = defaults.knots_factor
+        self.knots_factor = defaults.EELS.knots_factor
 
         # Set initial actions
         self.readgosfile()
@@ -253,7 +254,7 @@ class EELSCLEdge(Component):
         print "Subshell: ", subshell
         print "Onset Energy = ", self.edgeenergy
         #Read file
-        file = os.path.join(defaults.GOS_dir, 
+        file = os.path.join(defaults.EELS.eels_gos_files_path, 
         edges_dict[element]['subshells'][subshell]['filename'])
         f = open(file)
  

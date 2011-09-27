@@ -578,7 +578,7 @@ class MVA():
         self.plot_independent_components(ic = self.als_ic)
 
     def save_als_ica_results(self, elements = None,
-    format = defaults.file_format, image_format = 'tif'):
+    format = defaults.General.default_file_format, image_format = 'tif'):
         """Same as save_ica_results for the ALS results"""
         self.save_ica_results(elements = elements, image_format = image_format,
         recmatrix = self.als_output['CList'].T, ic = self.als_ic)
