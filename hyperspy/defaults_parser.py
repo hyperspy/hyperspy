@@ -57,7 +57,7 @@ if os.path.isfile(defaults_file):
     if 'Not really' in f.readline():
         # It is the old config file
         f.close()
-        messages.information('Removing obsolated config file')
+        messages.information('Removing obsoleted config file')
         os.remove(defaults_file)
         defaults_file_exists = False
     else:
