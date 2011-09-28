@@ -16,7 +16,6 @@ doc/_build/*
 doc/.build/*
 doc/user_guide/_build/*
 doc/user_guide/.build/*
-bin/*.bat
 setup/windows/requires/*
 setup/windows/reccomends/*
 doc/examples

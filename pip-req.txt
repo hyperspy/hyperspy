@@ -1,9 +1,10 @@
-Chaco
+chaco
 ETS
+etsproxy
 http://sourceforge.net/projects/mdp-toolkit/files/mdp-toolkit/3.1/MDP-3.1.tar.gz/download
 PIL
-Traits
-TraitsUI
+traits
+traitsui
 h5py>=2.0.0
 mahotas
 matplotlib
@@ -13,4 +14,4 @@ numpy
 python-dateutil
 scipy
 wxPython
-ipython<=0.10.2
+ipython
