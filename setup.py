@@ -80,7 +80,6 @@ setup(
         'hyperspy': 
             [
                 'ipython_profile/*',
-                'data/hyperspyrc',
                 'data/*.m', 
                 'data/*.csv',
                 'data/*.tar.gz',

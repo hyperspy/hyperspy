@@ -19,15 +19,34 @@
 import enthought.traits.api as t
 import enthought.traits.ui.api as tui
 from enthought.traits.ui.menu import OKButton
-
-class Message(t.HasTraits):
-    text = t.Str
     
 information_view = tui.View(tui.Item('text', show_label = False, 
                             style = 'readonly', springy = True, width = 300,), 
                             kind = 'modal', buttons = [OKButton,] )
+class Message(t.HasTraits):
+    text = t.Str
+    def __init__(self, text):
+        self.text = text
+    traits_view = information_view
+    
+class Options(t.HasTraits):
+    options = t.Enum(('a'))
+    def __init__(self, options = ['a', 'b', 'c']):
+        self.options = options
+    
+class MessageWithOptions(Message, Options):
+    def __init__(self, text, options):
+        Message.__init__(self, text)
+        Options.__init__(self, options)
+
                                 
 def information(text):
-    message = Message()
+    message = Message(text)
     message.text = text
-    message.edit_traits(view = information_view)
+    message.edit_traits()
+    
+def options(options_):
+    class Options(t.HasTraits):
+        options = t.Enum(options_)
+    return Options
+    

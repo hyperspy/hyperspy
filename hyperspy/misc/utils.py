@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import types
 import  math
 import glob
 import os
@@ -990,3 +990,70 @@ def interpolate_1D(number_of_interpolation_points, data):
     new_ax = np.linspace(0, 100, ch * ip - (ip-1))
     interpolator = sp.interpolate.interp1d(old_ax,data)
     return interpolator(new_ax)
+    
+class DictionaryBrowser(object):
+    """A class to comfortably access some parameters as attributes"""
+
+    def __init__(self, dictionary={}):
+        super(DictionaryBrowser, self).__init__()
+        self.load_dictionary(dictionary)
+
+    def load_dictionary(self, dictionary):
+        for key, value in dictionary.iteritems():
+            if isinstance(value, dict):
+                value = DictionaryBrowser(value)
+            self.__setattr__(key, value)
+
+    def _get_print_items(self, padding = '', max_len=20):
+        """Prints only the attributes that are not methods"""
+        string = ''
+        eon = len([par for par in self.__dict__ if isinstance(
+                   self.__dict__[par], DictionaryBrowser)])
+        eoi = len(self.__dict__)
+        i = 0
+        j = 0
+        for item, value in self.__dict__.iteritems():
+            if type(item) != types.MethodType:
+                if isinstance(value, DictionaryBrowser):
+                    if i == eon - 1:
+                        symbol = '└── '
+                    else:
+                        symbol = '├── '
+                    string += '%s%s%s\n' % (padding, symbol, item)
+                    i += 1
+                    if i == eon:
+                        string += value._get_print_items(padding + '    ')
+                    else:
+                        string += value._get_print_items(padding + '│   ')
+                else:
+                    if j == eoi - 1:
+                        symbol = '└── '
+                    else:
+                        symbol = '├── '
+                    strvalue = str(value)
+                    if len(strvalue) > max_len:
+                        value = '%s ... %s' % (strvalue[:max_len],
+                                              strvalue[-max_len:])
+                    string += "%s%s%s = %s\n" % (padding, symbol, item, value)
+            j += 1
+        return string
+
+    def __repr__(self):
+        return self._get_print_items()
+
+    def as_dictionary(self):
+        par_dict = {}
+        for item, value in self.__dict__.iteritems():
+            if type(item) != types.MethodType:
+                if isinstance(value, DictionaryBrowser):
+                    value = value.as_dictionary()
+                par_dict.__setitem__(item, value)
+        return par_dict
+
+    def add_node(self, node_path):
+        keys = node_path.split('/')
+        current_dict = self.__dict__
+        for key in keys:
+            if key not in current_dict:
+                current_dict[key] = DictionaryBrowser()
+            current_dict = current_dict[key].__dict__

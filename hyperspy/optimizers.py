@@ -32,8 +32,9 @@ class Optimizers(Estimators):
     """
     """
 
-    def fit(self, fitter = defaults.fitter, method = 'ls', grad = False, 
-    weights = None, ext_bounding = False, ascombe = True, update_plot = False, 
+    def fit(self, fitter = defaults.Model.default_fitter, method = 'ls',
+    	    grad = False, weights = None, ext_bounding = False, ascombe = True,
+    	    update_plot = False, 
     **kwargs):
         """
         Fits the model to the experimental data using the fitter e

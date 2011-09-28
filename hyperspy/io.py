@@ -173,7 +173,7 @@ def load_with_reader(filename, reader, record_by = None, signal = None,
                 s = EELSSpectrum(file_data_dict)
             else:
                 s = Spectrum(file_data_dict)
-        if defaults.plot_on_load is True:
+        if defaults.General.plot_on_load is True:
             s.plot()
         objects.append(s)
     if len(objects) == 1:
