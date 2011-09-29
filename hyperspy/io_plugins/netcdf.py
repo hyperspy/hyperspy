@@ -36,7 +36,6 @@ except:
             which_netcdf = 'Scientific Python'
         except :
             raise ImportError
-raise ImportError
     
 # Plugin characteristics
 # ----------------------
