@@ -17,7 +17,7 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy.signal import Signal, Parameters
+from hyperspy.signal import Signal
 from hyperspy.signals.image import Image
 from hyperspy.signals.spectrum import Spectrum
 import enthought.traits.api as t
@@ -115,12 +115,14 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
                         flist=glob(arg)
                         for f in flist:
                             d=load(f)
-                            self._add_object(d)
+                            if d.mapped_parameters.record_by=="spectrum":
+                                self._add_object(d)
                     else:
                         arg=load(arg)
                         self._add_object(arg)
                 else:
                     self._add_object(arg)
+            self.axes_manager.navigation_dimension=1
 
             # refresh the axes for the new sized data
             smp.name="Aggregate Spectra: %s"%smp.original_files.keys()
@@ -133,13 +135,13 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         newlims=selfbounds-argbounds
         # file to be added is below current spectral range.
         if argbounds[1]<selfbounds[0]:
-            messages.warning('file to be added is below current spectral range\
-.  Omitting it.')
+            messages.warning('file "%s" is below current spectral range\
+.  Omitting it.'%arg.mapped_parameters.name)
             return None
         # file to be added is above current spectral range.
         if argbounds[0]>selfbounds[1]:
-            messages.warning('file to be added is above current spectral range\
-.  Omitting it.')
+            messages.warning('file "%s" is above current spectral range\
+.  Omitting it.'%arg.mapped_parameters.name)
             return None
 
         selflims=slice(None,None,1)
@@ -166,9 +168,8 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         datashape=arg.data[:,datalims].shape
         selfshape=self.data[:,selflims].shape
         if (datashape[-1]<selfshape[-1]):
-            print "self data too big.  Cropping."
             if (datashape[-1]-selfshape[-1])<-2:
-                messages.warning("large array size difference (%i)- are you using similar binning and dispersion?"%(datashape[-1]-selfshape[-1]))
+                messages.warning("large array size difference (%i) in file %s - are you using similar binning and dispersion?  File omitted."%(datashape[-1]-selfshape[-1],arg.mapped_parameters.name))
                 return None
             else:
                 if selflims.start<>None:
@@ -179,7 +180,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
                     selflims=slice(selfshape[-1]-datashape[-1],None,1)
         if datashape[-1]-selfshape[-1]:
             if (datashape[-1]-selfshape[-1])>2:
-                messages.warning("large array size difference (%i)- are you using similar binning and dispersion?"%(datashape[-1]-selfshape[-1]))
+                messages.warning("large array size difference (%i) in file %s- are you using similar binning and dispersion? File omitted."%(datashape[-1]-selfshape[-1],arg.mapped_parameters.name))
                 return None
             else:
                 if datalims.start<>None:
@@ -212,14 +213,6 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
                 arg.data=arg.data[np.newaxis,:]
                 smp.aggregate_address[mp.original_filename]=(
                     smp.aggregate_end_pointer,smp.aggregate_end_pointer+1)
-            # add the data to the aggregate array
-            if self.data==None:
-                # copy the axes for the sake of calibration
-                self.data=arg.data
-                self.axes_manager=arg.axes_manager
-                self.mapped_parameters.record_by=arg.mapped_parameters.record_by
-                if hasattr(arg.mapped_parameters,'signal'):
-                    self.mapped_parameters.signal=arg.mapped_parameters.signal
                 new_axis=DataAxis(**{
                             'name': 'Depth',
                             'scale': 1.,
@@ -227,25 +220,33 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
                             'size': int(arg.data.shape[0]),
                             'units': 'undefined',
                             'index_in_array': 0, })
-                for ax_idx in xrange(len(self.axes_manager.axes)):
-                        self.axes_manager.axes[ax_idx].index_in_array+=1        
-                self.axes_manager.axes.insert(0,new_axis)
+                for ax_idx in xrange(len(arg.axes_manager.axes)):
+                        arg.axes_manager.axes[ax_idx].index_in_array+=1
+                arg.axes_manager.axes.insert(0,new_axis)
+            # add the data to the aggregate array
+            if self.data==None:
+                # copy the axes for the sake of calibration
+                self.data=arg.data.squeeze()
+                self.axes_manager=arg.axes_manager
+                self.mapped_parameters.record_by=arg.mapped_parameters.record_by
+                if hasattr(arg.mapped_parameters,'signal'):
+                    self.mapped_parameters.signal=arg.mapped_parameters.signal
             else:
                 bounds=self._crop_bounds(arg)
                 if bounds:
                     arglims,selflims=bounds
                     self.data=self.data[:,selflims]
                     arg.data=arg.data[:,arglims]
-                try:
-                    self.data=np.append(self.data,arg.data,axis=0)
-                    smp.aggregate_end_pointer=self.data.shape[0]
-                    self.axes_manager.axes[0].size=self.data.shape[0]
-                    self.axes_manager.axes[-1].size=self.data.shape[-1]
-                except:
-                    messages.warning('Adding file %s to aggregate failed.  \
+                    try:
+                        self.data=np.append(self.data,arg.data,axis=0)
+                        smp.aggregate_end_pointer=self.data.shape[0]
+                        self.axes_manager.axes[0].size=self.data.shape[0]
+                        self.axes_manager.axes[-1].size=self.data.shape[-1]
+                    except:
+                        messages.warning('Adding file %s to aggregate failed.  \
 Are you sure its dimensions agree with all the other files you\'re trying \
 to add?'%arg.mapped_parameters.name)
-                    return None
+                        return None
         else:
             print "Data from file %s already in this aggregate. \n \
     Delete it first if you want to update it."%mp.original_filename

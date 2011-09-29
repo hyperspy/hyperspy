@@ -84,6 +84,8 @@ def load(*filenames, **kwds):
         else:
             f=load_single_file(filenames[0], **kwds)
             print f
+            if defaults.General.plot_on_load is True:
+                f.plot()
             return f
     import hyperspy.signals.aggregate as agg
     objects=[load_single_file(filename, output_level=0, **kwds) for filename in filenames]
@@ -99,6 +101,8 @@ def load(*filenames, **kwds):
         agg_sig=agg.AggregateSpectrum(*objects)
     else:
         agg_sig=agg.Aggregate(*objects)
+    if defaults.General.plot_on_load is True:
+        agg_sig.plot()
     return agg_sig
 
 
@@ -172,8 +176,6 @@ def load_with_reader(filename, reader, record_by = None, signal = None,
                 s = EELSSpectrum(file_data_dict)
             else:
                 s = Spectrum(file_data_dict)
-        if defaults.General.plot_on_load is True:
-            s.plot()
         objects.append(s)
     if len(objects) == 1:
         objects = objects[0]
