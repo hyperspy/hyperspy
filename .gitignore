@@ -7,6 +7,7 @@ syntax: glob
 dist
 *.deb
 build/*
+PortableInstall/*
 hyperspy.egg-info/*
 deb_dist/*
 ~.vimrc
