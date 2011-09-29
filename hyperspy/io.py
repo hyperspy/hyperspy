@@ -20,8 +20,7 @@ import os
 
 from hyperspy import messages
 from hyperspy.defaults_parser import defaults
-from hyperspy.io_plugins import (netcdf, msa, digital_micrograph, fei, mrc,
-                                 image, ripple, hdf5)
+from hyperspy.io_plugins import msa, digital_micrograph, fei, mrc, ripple
 
 
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple]

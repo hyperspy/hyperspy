@@ -22,9 +22,7 @@ import numpy as np
 no_netcdf = False
 from hyperspy import Release
 from hyperspy import messages
-no_netcdf_message = 'Warning! In order to enjoy the netCDF Read/Write feature, '
-'at least one of this packages must be installed: '
-'python-pupynere, python-netcdf or python-netcdf4'
+
 try:
     from netCDF4 import Dataset
     which_netcdf = 'netCDF4'
@@ -36,8 +34,9 @@ except:
         try:
             from Scientific.IO.NetCDF import NetCDFFile as Dataset
             which_netcdf = 'Scientific Python'
-        except:
-            messages.warning(no_netcdf_message)
+        except :
+            raise ImportError
+raise ImportError
     
 # Plugin characteristics
 # ----------------------
