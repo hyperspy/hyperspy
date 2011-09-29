@@ -79,6 +79,8 @@ class ModelConfig(t.HasTraits):
 class EELSConfig(t.HasTraits):
     eels_gos_files_path = t.CStr(guess_gos_path())
     fs_emax = t.CFloat(30)
+    fs_state = t.CBool(False)
+    knots_factor = t.CFloat(0.3)
     synchronize_cl_with_ll = t.CBool(False)
     preedge_safe_window_width = t.CFloat(2)
     min_distance_between_edges_for_fine_structure = t.CFloat(0)
