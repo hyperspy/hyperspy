@@ -103,6 +103,10 @@ def config2template(template, config):
     for section, traited_class in template.iteritems():
         config_dict = {}
         for name, value in config.items(section):
+            if value == 'True':
+                value = True
+            elif value == 'False':
+                value = False
             config_dict[name] = value
         traited_class.set(True, **config_dict)
         
