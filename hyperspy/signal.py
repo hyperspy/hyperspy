@@ -110,6 +110,21 @@ class Signal(t.HasTraits, MVA):
             # "Synthetic" signals do not have an original filename
             else:
                 self.mapped_parameters.name = 'Unnamed Signal'
+        self.squeeze()
+                
+    def squeeze(self):
+        """Remove single-dimensional entries from the shape of an array and the 
+        axes.
+        """
+        self.data = self.data.squeeze()
+        i = 0
+        for axis in self.axes_manager.axes:
+            if axis.size == 1:
+                self.axes_manager.axes.remove(axis)
+                i += 1
+            else:
+                axis.index_in_array -= 1
+        self.data = self.data.squeeze()
 
     def _get_signal_dict(self):
         dic = {}
@@ -320,6 +335,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         if i1 is not None:
             self.axes_manager.axes[axis].offset = new_offset
         self.get_dimensions_from_data()
+        self.squeeze()
 
     def crop_in_units(self, axis, x1 = None, x2 = None):
         """Crops the data in a given axis. The range is given in the units of

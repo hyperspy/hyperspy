@@ -83,12 +83,10 @@ def load(*filenames, **kwds):
             filenames=glob(filenames[0])
         else:
             f=load_single_file(filenames[0], **kwds)
-            print f
-            if defaults.General.plot_on_load is True:
-                f.plot()
             return f
     import hyperspy.signals.aggregate as agg
-    objects=[load_single_file(filename, output_level=0, **kwds) for filename in filenames]
+    objects=[load_single_file(filename, output_level=0, is_agg = True, **kwds) 
+        for filename in filenames]
 
     obj_type=objects[0].__class__.__name__
     if obj_type=='Image':
@@ -106,7 +104,8 @@ def load(*filenames, **kwds):
     return agg_sig
 
 
-def load_single_file(filename, record_by=None, output_level=1, **kwds):
+def load_single_file(filename, record_by=None, output_level=1, is_agg = False, 
+    **kwds):
     """
     Load any supported file into an Hyperspy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
@@ -142,12 +141,12 @@ def load_single_file(filename, record_by=None, output_level=1, **kwds):
     else:
         reader = io_plugins[i]
         return load_with_reader(filename, reader, record_by, 
-                                output_level=output_level,
+                                output_level=output_level, is_agg = is_agg,
                                 **kwds)
 
 
 def load_with_reader(filename, reader, record_by = None, signal = None,
-                     output_level=1, **kwds):
+                     output_level=1, is_agg = False, **kwds):
     from hyperspy.signals.image import Image
     from hyperspy.signals.spectrum import Spectrum
     from hyperspy.signals.eels import EELSSpectrum
@@ -177,9 +176,11 @@ def load_with_reader(filename, reader, record_by = None, signal = None,
             else:
                 s = Spectrum(file_data_dict)
         objects.append(s)
+        print s
+        if defaults.General.plot_on_load is True and is_agg is False:
+            s.plot()
     if len(objects) == 1:
         objects = objects[0]
-    
     return objects
 
 

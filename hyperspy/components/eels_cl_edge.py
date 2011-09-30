@@ -145,12 +145,12 @@ class EELSCLEdge(Component):
     def __init__(self, element_subshell, intensity=1.,delta=0.):
         # Check if the Peter Rez's Hartree Slater GOS distributed by Gatan 
         # are available. Otherwise exit
-        if not os.isfile(defaults.EELS.eels_gos_files_path):
-            messages.warning(
-            "The path to the GOS files could not be found.\n" \
+        if not os.path.isdir(defaults.EELS.eels_gos_files_path):
+            message = (
+            "The path to the GOS files could not be found. " 
             "Please define a valid location for the EELS GOS files in the "
             "folder location in the configuration file.")
-            raise IOError
+            raise IOError(message)
         # Declare which are the "real" parameters
         Component.__init__(self, ['delta', 'intensity', 'fslist', 
         'effective_angle'])
