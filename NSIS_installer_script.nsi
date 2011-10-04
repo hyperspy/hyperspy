@@ -17,6 +17,8 @@
 !define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\orange-install.ico"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall.ico"
 
+SetCompressor lzma
+
 Name "${S_NAME}"
 OutFile "${S_NAME}.exe"
 
@@ -35,7 +37,6 @@ OutFile "${S_NAME}.exe"
 !macro BUILD_LANGUAGES
 !insertmacro MUI_LANGUAGE "English"
 !macroend
-
 
 /***************************************************
 ** Installer
@@ -98,20 +99,18 @@ ${If} ${UAC_IsInnerInstance}
 ${EndIf}
 FunctionEnd
 
-
-
 Function RemoveNextBtnShield
 GetDlgItem $0 $hwndParent 1
 SendMessage $0 ${BCM_SETSHIELD} 0 0
 FunctionEnd
 
 Function InstModeSelectionPage_Create
-!insertmacro MUI_HEADER_TEXT_PAGE "Select install type" "Blah blah blah blah"
+!insertmacro MUI_HEADER_TEXT_PAGE "Select install type" ""
 GetFunctionAddress $8 InstModeSelectionPage_OnClick
 nsDialogs::Create /NOUNLOAD 1018
 Pop $9
 ${NSD_OnBack} RemoveNextBtnShield
-${NSD_CreateLabel} 0 20u 75% 20u "Blah blah blah blah select install type..."
+${NSD_CreateLabel} 0 20u 75% 20u "Please select install type..."
 Pop $0
 System::Call "advapi32::GetUserName(t.r0,*i${NSIS_MAX_STRLEN})i"
 ${NSD_CreateRadioButton} 0 40u 75% 15u "Single User ($0) (no right-click shortcut)"
@@ -179,10 +178,24 @@ SectionIn RO
   File /r "PortableInstall\*"
   ;File /r "PortableInstall\python.exe"
   ${If} $InstMode > 0
-  	  ${registry::CreateKey} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy" $R0
-      ${registry::Write} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
-      ${registry::CreateKey} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy\command" $R0
-      ${registry::Write} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy\command" "" 'cmd.exe /k cd %1 & "$INSTDIR\Scripts\hyperspy.bat"' "REG_EXPAND_SZ" $R0
+	  ; Create right-click context menu entries for Hyperspy Here
+	  ; This is sloppy, and should be replaced by a shell extension (one day)
+  	  ${registry::CreateKey} "HKEY_CLASSES_ROOT\*\shell\Hyperspy" $R0
+      ${registry::Write} "HKEY_CLASSES_ROOT\*\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
+      ${registry::CreateKey} "HKEY_CLASSES_ROOT\*\shell\Hyperspy\command" $R0
+      ${registry::Write} "HKEY_CLASSES_ROOT\*\shell\Hyperspy\command" "" '$INSTDIR\Scripts\ipython.exe qtconsole --profile=hyperspy --pylab=wx' "REG_EXPAND_SZ" $R0
+      ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy" $R0
+      ;${registry::Write} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
+      ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy\command" $R0
+      ;${registry::Write} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy\command" "" '$INSTDIR\Scripts\ipython.exe qtconsole --profile=hyperspy --pylab=wx' "REG_EXPAND_SZ" $R0
+  	  ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy" $R0
+      ;${registry::Write} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
+      ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy\command" $R0
+      ;${registry::Write} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy\command" "" '$INSTDIR\Scripts\ipython.exe qtconsole --profile=hyperspy --pylab=wx' "REG_EXPAND_SZ" $R0
+  	  ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy" $R0
+      ;${registry::Write} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
+      ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy\command" $R0
+      ;${registry::Write} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy\command" "" '$INSTDIR\Scripts\ipython.exe qtconsole --profile=hyperspy --pylab=wx' "REG_EXPAND_SZ" $R0
   ${EndIf}
   CreateDirectory "$SMPROGRAMS\${APPNAME}"
   createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\Scripts\hyperspy.bat"
@@ -245,6 +258,12 @@ Section -un.Main
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
   RMDir /r /REBOOTOK $instdir
   DeleteRegKey /ifempty HKCU "Software\Hyperspy"
+  DeleteRegKey HKCR "*\shell\Hyperspy\command"
+  DeleteRegKey HKCR "*\shell\Hyperspy"
+  DeleteRegKey HKCR "Folder\shell\Hyperspy\command"
+  DeleteRegKey HKCR "Folder\shell\Hyperspy"
+  DeleteRegKey HKCR "Drive\shell\Hyperspy\command"
+  DeleteRegKey HKCR "Drive\shell\Hyperspy"
   DeleteRegKey HKCR "Directory\shell\Hyperspy\command"
   DeleteRegKey HKCR "Directory\shell\Hyperspy"
 SectionEnd
@@ -279,6 +298,3 @@ File "/oname=${extractTo}" "${UNINSTEXE}.un"
 	SectionEnd
 !endif
 !insertmacro BUILD_LANGUAGES
-
-
-
