@@ -493,7 +493,7 @@ class AggregateCells(Aggregate,Image):
         if clusters is None:
             pass
         kmeans=mdp.nodes.KMeansClassifier(clusters)
-        avg_stack=np.zeros((d.shape[1],d.shape[2],clusters))
+        avg_stack=np.zeros((clusters,d.shape[1],d.shape[2]))
         kmeans.train(d.reshape((-1,d.shape[0])).T)
         kmeans.stop_training()
         groups=kmeans.label(d.reshape((-1,d.shape[0])).T)
@@ -511,7 +511,7 @@ class AggregateCells(Aggregate,Image):
             fname=smp.locations.keys()[file_index]
             # get number of members of this cluster
             members=groups.count(i)
-            cluster_array=np.zeros((d.shape[1],d.shape[2],members))
+            cluster_array=np.zeros((members,d.shape[1],d.shape[2]))
             cluster_idx=0
             # positions is a recarray, with each row consisting of a filename and the position from
             # which the crop was taken.
@@ -523,7 +523,7 @@ class AggregateCells(Aggregate,Image):
                     address=smp.aggregate_address.values()[file_index]
                 file_j=j-address[0]
                 if groups[j]==i:
-                    cluster_array[:,:,cluster_idx]=d[j,:,:]
+                    cluster_array[cluster_idx,:,:]=d[j,:,:]
                     try:
                         positions[cluster_idx]=(fname,smp.locations[fname][file_j,:2])
                     except:
