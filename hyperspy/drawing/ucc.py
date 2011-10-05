@@ -118,8 +118,8 @@ class TemplatePicker(HasTraits):
     csr=Instance(BaseCursorTool)
 
     traits_view = View(
-        HFlow(
-            VGroup(
+        Group(
+            Group(
                 Item("img_container",editor=ComponentEditor(), show_label=False),
                 HGroup(
                     Item("ShowCC", editor=BooleanEditor(), label="Show cross correlation image"),
@@ -127,8 +127,8 @@ class TemplatePicker(HasTraits):
                     Item("prev_img",editor=ButtonEditor(label="<"),show_label=False),
                     Item("next_img",editor=ButtonEditor(label=">"),show_label=False),
                     ),
-                label="Original image", show_border=True, trait_modified="tab_selected"
-                ),
+                label="Original image", show_border=True, trait_modified="tab_selected",
+                orientation='vertical',),
             VGroup(
                 Group(
                     HGroup(
@@ -158,14 +158,14 @@ class TemplatePicker(HasTraits):
                         Item("numpeaks_total",label="Total",style='readonly'),                          
                         ),
                     label="Peak parameters", show_border=True),
-                )
-            ),
+                ),
+            orientation='horizontal'),
         buttons = [ Action(name='OK', enabled_when = 'numpeaks_total > 0' ),
             CancelButton ],
         title="Template Picker",
         handler=OK_custom, kind='livemodal',
         key_bindings = key_bindings,
-        width=960, height=600)        
+        width=940, height=530,resizable=True)        
 
     def __init__(self, signal_instance):
         super(TemplatePicker, self).__init__()
@@ -339,7 +339,6 @@ class TemplatePicker(HasTraits):
 
     @on_trait_change('csr:current_position')
     def update_top_left(self):
-        print self.max_pos_x, self.csr.current_position[0]
         if self.csr.current_position[0]>0:
             if self.csr.current_position[0]>self.max_pos_x:
                 if self.csr.current_position[1]<self.max_pos_y:
