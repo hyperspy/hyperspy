@@ -117,13 +117,11 @@ class Signal(t.HasTraits, MVA):
         axes.
         """
         self.data = self.data.squeeze()
-        i = 0
         for axis in self.axes_manager.axes:
             if axis.size == 1:
                 self.axes_manager.axes.remove(axis)
-                i += 1
-            else:
-                axis.index_in_array -= 1
+                for ax in self.axes_manager.axes:
+                    ax.index_in_array -= 1
         self.data = self.data.squeeze()
 
     def _get_signal_dict(self):
