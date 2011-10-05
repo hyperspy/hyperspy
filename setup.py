@@ -43,7 +43,7 @@ def are_we_building4windows():
         if 'wininst' in arg:
             return True
 
-scripts = ['bin/hyperspy', 'bin/hyperspy-gui',]
+scripts = ['bin/hyperspy', 'bin/hyperspy-gui','bin/hyperspy_ipython_qtconsole',]
 
 if are_we_building4windows() or os.name in ['nt','dos']:
     # In the Windows command prompt we can't execute Python scripts 
@@ -58,7 +58,10 @@ if are_we_building4windows() or os.name in ['nt','dos']:
         batch_file = os.path.splitext(script)[0] + '.bat'
         f = open(batch_file, "w")
         f.write('set path=%~dp0;%~dp0\..\;%PATH%\n')
-        f.write('python "%%~dp0\%s" %%*\n' % os.path.split(script)[1])
+        if script == 'bin/hyperspy_ipython_qtconsole':
+            f.write('ipython.exe qtconsole --profile=hyperspy --pylab=wx\n')
+        else:
+            f.write('python "%%~dp0\%s" %%*\n' % os.path.split(script)[1])
         f.close()
         batch_files.append(batch_file)
     scripts.extend(batch_files)
