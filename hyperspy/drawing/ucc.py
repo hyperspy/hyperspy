@@ -87,8 +87,8 @@ class TemplatePicker(HasTraits):
     peaks = List
     zero=Int(0)
     tmp_size = Range(low=2, high=512, value=64, cols=4)
-    max_pos_x=CInt(1023)
-    max_pos_y=CInt(1023)
+    max_pos_x=Property(depends_on=['tmp_size'])
+    max_pos_y=Property(depends_on=['tmp_size'])
     top = Range(low='zero',high='max_pos_x', value=20, cols=4)
     left = Range(low='zero',high='max_pos_y', value=20, cols=4)
     is_square = Bool
@@ -289,6 +289,9 @@ class TemplatePicker(HasTraits):
     def toggle_cc_view(self):
         if self.ShowCC:
             self.update_CC()
+            grid_data_source = self.img_plot.range2d.sources[0]
+            grid_data_source.set_data(np.arange(self.CC.shape[1]), 
+                                      np.arange(self.CC.shape[0]))
         else:
             self.img_plotdata.set_data("imagedata",self.sig.data[self.img_idx,:,:])
         self.redraw_plots()
@@ -302,15 +305,19 @@ class TemplatePicker(HasTraits):
         self.img_plot.title="%s of %s: "%(self.img_idx+1,self.numfiles)+self.titles[self.img_idx]
         self.redraw_plots()        
 
-    @on_trait_change('tmp_size')
-    def update_max_pos(self):
-        max_pos_x=self.sig.data.shape[0]-self.tmp_size-1
-        if self.left>max_pos_x: self.left=max_pos_x
-        self.max_pos_x=max_pos_x
-        max_pos_y=self.sig.data.shape[1]-self.tmp_size-1
-        if self.top>max_pos_y: self.top=max_pos_y
-        self.max_pos_y=max_pos_y
-        return
+    def _get_max_pos_x(self):
+        max_pos_x=self.sig.data.shape[1]-self.tmp_size-1
+        if max_pos_x>0:
+            return max_pos_x
+        else:
+            return None
+
+    def _get_max_pos_y(self):
+        max_pos_y=self.sig.data.shape[2]-self.tmp_size-1
+        if max_pos_y>0:
+            return max_pos_y
+        else:
+            return None
 
     @on_trait_change('next_img')
     def increase_img_idx(self,info):
@@ -327,11 +334,22 @@ class TemplatePicker(HasTraits):
 
     @on_trait_change('left, top')
     def update_csr_position(self):
-        self.csr.current_position=self.left,self.top
+        if self.left>0:        
+            self.csr.current_position=self.left,self.top
 
     @on_trait_change('csr:current_position')
     def update_top_left(self):
-        self.left,self.top=self.csr.current_position
+        print self.max_pos_x, self.csr.current_position[0]
+        if self.csr.current_position[0]>0:
+            if self.csr.current_position[0]>self.max_pos_x:
+                if self.csr.current_position[1]<self.max_pos_y:
+                    self.top=self.csr.current_position[1]
+                else:
+                    self.csr.current_position=self.max_pos_x, self.max_pos_y
+            elif self.csr.current_position[1]>self.max_pos_y:
+                self.left=self.csr.current_position[0]
+            else:
+                self.left,self.top=self.csr.current_position
         
     @on_trait_change('left, top, tmp_size')
     def update_tmp_plot(self):
@@ -351,10 +369,6 @@ class TemplatePicker(HasTraits):
                                                    self.left:self.left+self.tmp_size],
                                      self.sig.data[self.img_idx,:,:])
             self.img_plotdata.set_data("imagedata",self.CC)
-            grid_data_source = self.img_plot.range2d.sources[0]
-            grid_data_source.set_data(np.arange(self.CC.shape[1]), 
-                                      np.arange(self.CC.shape[0]))
-
 
     @on_trait_change('cbar_selection:selection')
     def update_thresh(self):
