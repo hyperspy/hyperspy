@@ -382,26 +382,19 @@ class AggregateImage(Aggregate,Image):
             for arg in args:
                 #object parameters
                 mp=arg.mapped_parameters
-                
                 if mp.original_filename not in smp.original_files.keys():
                     smp.original_files[mp.original_filename]=arg
                     # add the data to the aggregate array
                     if self.data==None:
                         self.data=arg.data[np.newaxis,:,:]
-                        self.axes_manager=arg.axes_manager
-                        self.mapped_parameters.record_by=arg.mapped_parameters.record_by
-                        if hasattr(arg.mapped_parameters,'signal'):
-                            self.mapped_parameters.signal=arg.mapped_parameters.signal
-                        new_axis=DataAxis(**{
-                            'name': 'Depth',
-                            'scale': 1.,
-                            'offset': 0.,
-                            'size': int(self.data.shape[0]),
-                            'units': 'undefined',
-                            'index_in_array': 0, })
-                        self.axes_manager.axes.insert(0,new_axis)
-                        self.axes_manager.axes[1].index_in_array+=1
-                        self.axes_manager.axes[2].index_in_array+=1
+                        smp.record_by=mp.record_by
+                        if hasattr(mp,'signal'):
+                            smp.signal=mp.signal
+                        self.axes_manager=AxesManager(self._get_undefined_axes_list())
+                        self.axes_manager.axes[1]=arg.axes_manager.axes[0]
+                        self.axes_manager.axes[1].index_in_array=1
+                        self.axes_manager.axes[2]=arg.axes_manager.axes[1]
+                        self.axes_manager.axes[2].index_in_array=2
                     else:
                         self.data=np.append(self.data,arg.data[np.newaxis,:,:],axis=0)
                         self.axes_manager.axes[0].size+=1
@@ -440,7 +433,6 @@ class AggregateCells(Aggregate,Image):
             self.append(*args)
             self.summary()
             
-
     def append(self,*args):
         if len(args)<1:
             pass
@@ -459,22 +451,17 @@ class AggregateCells(Aggregate,Image):
                         smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
                     # add the data to the aggregate array
                     if self.data==None:
-                        self.mapped_parameters.record_by=arg.mapped_parameters.record_by
-                        if hasattr(arg.mapped_parameters,'signal'):
-                            self.mapped_parameters.signal=arg.mapped_parameters.signal
-                        self.axes_manager=arg.axes_manager
+                        smp.record_by=mp.record_by
+                        if hasattr(mp,'signal'):
+                            smp.signal=mp.signal
+                        self.axes_manager=arg.axes_manager.copy()
                         if len(arg.data.shape)<3:
                             self.data=arg.data[np.newaxis,:,:]
-                            new_axis=DataAxis(**{
-                                    'name': 'Depth',
-                                    'scale': 1.,
-                                    'offset': 0.,
-                                    'size': int(self.data.shape[0]),
-                                    'units': 'undefined',
-                                    'index_in_array': 0, })
-                            self.axes_manager.axes.insert(0,new_axis)
-                            self.axes_manager.axes[1].index_in_array+=1
-                            self.axes_manager.axes[2].index_in_array+=1
+                            self.axes_manager=AxesManager(self._get_undefined_axes_list())
+                            self.axes_manager.axes[1]=arg.axes_manager.axes[0]
+                            self.axes_manager.axes[1].index_in_array=1
+                            self.axes_manager.axes[2]=arg.axes_manager.axes[1]
+                            self.axes_manager.axes[2].index_in_array=2
                         else:
                             self.data=arg.data
                     else:
