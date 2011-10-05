@@ -392,9 +392,9 @@ class AggregateImage(Aggregate,Image):
                             smp.signal=mp.signal
                         self.axes_manager=AxesManager(self._get_undefined_axes_list())
                         self.axes_manager.axes[1]=arg.axes_manager.axes[0]
-                        self.axes_manager.axes[1].index_in_array=1
+                        self.axes_manager.axes[1].index_in_array+=1
                         self.axes_manager.axes[2]=arg.axes_manager.axes[1]
-                        self.axes_manager.axes[2].index_in_array=2
+                        self.axes_manager.axes[2].index_in_array+=1
                     else:
                         self.data=np.append(self.data,arg.data[np.newaxis,:,:],axis=0)
                         self.axes_manager.axes[0].size+=1
@@ -459,9 +459,9 @@ class AggregateCells(Aggregate,Image):
                             self.data=arg.data[np.newaxis,:,:]
                             self.axes_manager=AxesManager(self._get_undefined_axes_list())
                             self.axes_manager.axes[1]=arg.axes_manager.axes[0]
-                            self.axes_manager.axes[1].index_in_array=1
+                            self.axes_manager.axes[1].index_in_array+=1
                             self.axes_manager.axes[2]=arg.axes_manager.axes[1]
-                            self.axes_manager.axes[2].index_in_array=2
+                            self.axes_manager.axes[2].index_in_array+=1
                         else:
                             self.data=arg.data
                     else:
