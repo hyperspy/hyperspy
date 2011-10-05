@@ -88,14 +88,14 @@ def load(*filenames, **kwds):
     objects=[load_single_file(filename, output_level=0, is_agg = True, **kwds) 
         for filename in filenames]
 
-    obj_type=objects[0].__class__.__name__
-    if obj_type=='Image':
+    obj_type=objects[0].mapped_parameters.record_by
+    if obj_type=='image':
         if len(objects[0].data.shape)==3:
             # feeding 3d objects creates cell stacks
             agg_sig=agg.AggregateCells(*objects)
         else:
             agg_sig=agg.AggregateImage(*objects)
-    elif 'Spectrum' in obj_type:
+    elif 'spectrum' in obj_type:
         agg_sig=agg.AggregateSpectrum(*objects)
     else:
         agg_sig=agg.Aggregate(*objects)
