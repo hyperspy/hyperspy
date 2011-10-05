@@ -191,12 +191,14 @@ SectionIn RO
   	  ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy" $R0
       ;${registry::Write} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
       ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy\command" $R0
-      ;${registry::Write} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy\command" "" '$INSTDIR\Scripts\ipython.exe qtconsole --profile=hyperspy --pylab=wx' "REG_EXPAND_SZ" $R0
+      ;${registry::Write} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy\command" "" 'cmd.exe /k cd %1 & "$INSTDIR\Scripts\hyperspy_ipython_qtconsole.bat"' "REG_EXPAND_SZ" $R0
   	  ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy" $R0
       ;${registry::Write} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
       ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy\command" $R0
       ;${registry::Write} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy\command" "" '$INSTDIR\Scripts\ipython.exe qtconsole --profile=hyperspy --pylab=wx' "REG_EXPAND_SZ" $R0
   ${EndIf}
+  Exec 'cmd.exe /C ""$INSTDIR\Scripts\easy_install.exe" ipython"'
+  Exec 'cmd.exe /C ""$INSTDIR\Scripts\easy_install.exe" pip"'
   CreateDirectory "$SMPROGRAMS\${APPNAME}"
   createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\Scripts\hyperspy.bat"
   createShortCut "$SMPROGRAMS\${APPNAME}\PyScripter.lnk" "$INSTDIR\PyScripter.exe"
