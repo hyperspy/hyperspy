@@ -1041,6 +1041,9 @@ class DictionaryBrowser(object):
     def __repr__(self):
         return self._get_print_items()
 
+    def keys(self):
+        return self.__dict__.keys()
+
     def as_dictionary(self):
         par_dict = {}
         for item, value in self.__dict__.iteritems():
