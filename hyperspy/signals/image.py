@@ -24,6 +24,7 @@ from hyperspy.learn.mva import MVA_Results
 
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 class Image(Signal):
     """
@@ -525,19 +526,18 @@ unrecognized. Cannot proceed."%mva_type)
                 # 4D data - 2D arrays of diffraction patterns?
                 messages.warning('View not supported')
             elif self.axes_manager.navigation_dimension == 1:
+                locs=self.mapped_parameters.locations
                 if hasattr(self.mapped_parameters,"original_files"):
                     parents=self.mapped_parameters.original_files
-                    locations=self.mapped_parameters.locations
                 else:
                     if not hasattr(self.mapped_parameters,'parent'):
                         messages.warning('No parent image - mapping not possible')
                         return None
                     else:
                         parents={self.mapped_parameters.parent.mapped_parameters.name:self.mapped_parameters.parent}
-                        locations={self.mapped_parameters.parent.mapped_parameters.name:self.mapped_parameters.locations}
                 idx=0
                 keys=parents.keys()
-                rows=int(np.ceil((len(parents)+1)/float(per_row)))
+                rows=int(np.ceil((len(keys)+1)/float(per_row)))
                 if (len(keys)+1)<per_row:
                     per_row=len(keys)+1
                 # plot factor image first
@@ -550,41 +550,40 @@ unrecognized. Cannot proceed."%mva_type)
                 for j in xrange(rows):
                     for k in xrange(per_row):
                         # plot score maps overlaid on experimental images
-                        if idx<len(parents):
+                        if idx<len(keys):
                             figure.add_subplot(rows,per_row,idx+2)
                             # p is the parent image that we're working with
                             p=keys[idx]
                             # the locations of peaks on that parent
-                            loc=locations[p]
-                            # the range of images in the aggregate from this parent
-                            if hasattr(self.mapped_parameters,'aggregate_address'):
-                                address=self.mapped_parameters.aggregate_address[p]
-                            else:
-                                address=None
+                            # binary mask to exclude peaks from other images
+                            mask=locs['filename']==p
+                            mask=mask.squeeze()
+                            # grab the array of peak locations, only from THIS image
+                            loc=locs[mask]['position'].squeeze()
                             plt.imshow(parents[keys[idx]].data)
                             plt.gray()
-                            if address:
-                                plt.scatter(loc[:,0], loc[:,1],
-                                        c=scores[i,address[0]:(address[1]+1)])
-                            else:
-                                plt.scatter(loc[:,0], loc[:,1],
-                                        c=scores[i])
+                            plt.scatter(loc[:,0], loc[:,1],
+                                        c=scores[i].squeeze()[mask])
                             plt.jet()
                             plt.colorbar()
                             shp=parents[keys[idx]].data.shape
                             plt.xlim(0,shp[1])
-                            plt.ylim(0,shp[0])
+                            plt.ylim(shp[0],0)
                             idx+=1
             else:
                 messages.warning('View not supported')
             if save_figs:
-                ax.set_title('%s component number %s map' % (mva_type.upper(),i))
-                figure.canvas.draw()
+                #ax.set_title('%s component number %s map' % (mva_type.upper(),i))
+                #figure.canvas.draw()
                 if directory is not None:
                     if not os.path.isdir(directory):
                         os.makedirs(directory)
                     figure.savefig(os.path.join(directory, '%s-map-%i.png' % (mva_type.upper(),i)),
+                                      dpi = 600)
+                else:
+                    figure.savefig( '%s-map-%i.png' % (mva_type.upper(),i),
                               dpi = 600)
+
 
     def plot_principal_components_maps(self, comp_ids=None, cmap=plt.cm.gray,
                                        recmatrix=None, plot=True, pc=None, on_peaks=False,

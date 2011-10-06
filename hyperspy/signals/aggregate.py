@@ -423,12 +423,12 @@ class AggregateCells(Aggregate,Image):
     def __init__(self, *args, **kw):
         super(AggregateCells,self).__init__(*args, **kw)
         self._shape_before_unfolding = None
-        self.mapped_parameters.locations=OrderedDict()
-        self.mapped_parameters.original_files=OrderedDict()
-        self.mapped_parameters.image_stacks=OrderedDict()
-        self.mapped_parameters.aggregate_address=OrderedDict()
-        self.mapped_parameters.aggregate_end_pointer=0
-        self.mapped_parameters.name="Aggregate: no data"
+        smp=self.mapped_parameters
+        smp.locations=np.zeros((2,1),dtype=[('filename','a256'),('id','i4'),('position','i4',(1,2))])
+        smp.original_files=OrderedDict()
+        smp.image_stacks=OrderedDict()
+        smp.aggregate_end_pointer=0
+        smp.name="Aggregate: no data"
         if len(args)>0:
             self.append(*args)
             self.summary()
@@ -443,15 +443,14 @@ class AggregateCells(Aggregate,Image):
                 mp=arg.mapped_parameters
                 pmp=mp.parent.mapped_parameters
                 
-                if pmp.original_filename not in smp.locations.keys():
-                    smp.locations[pmp.original_filename]=mp.locations
+                if pmp.original_filename not in list(set(smp.locations['filename'].squeeze())):
                     smp.original_files[pmp.original_filename]=mp.parent
                     smp.image_stacks[pmp.original_filename]=arg
-                    smp.aggregate_address[pmp.original_filename]=(
-                        smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
                     # add the data to the aggregate array
                     if self.data==None:
                         smp.record_by=mp.record_by
+                        if hasattr(mp,'locations'):
+                            smp.locations=mp.locations
                         if hasattr(mp,'signal'):
                             smp.signal=mp.signal
                         self.axes_manager=arg.axes_manager.copy()
@@ -465,6 +464,8 @@ class AggregateCells(Aggregate,Image):
                         else:
                             self.data=arg.data
                     else:
+                        mp.locations['id']=mp.locations['id']+smp.aggregate_end_pointer
+                        smp.locations=np.append(smp.locations,mp.locations)
                         self.data=np.append(self.data,arg.data,axis=0)
                         self.axes_manager.axes[0].size+=int(arg.data.shape[0])
                     smp.aggregate_end_pointer=self.data.shape[0]
@@ -472,19 +473,19 @@ class AggregateCells(Aggregate,Image):
                     print "Data from file %s already in this aggregate. \n \
     Delete it first if you want to update it."%pmp.original_filename
             # refresh the axes for the new sized data
-            smp.name="Aggregate Cells: %s"%smp.locations.keys()
+            smp.name="Aggregate Cells: %s"%list(set(smp.locations['filename'].squeeze()))
 
     def remove(self,*keys):
         smp=self.mapped_parameters
         for key in keys:
-            del smp.locations[key]
             del smp.original_files[key]
             del smp.image_stacks[key]
-            address=smp.aggregate_address[key]
-            self.data=np.delete(self.data,np.s_[address[0]:address[1]:1],0)
-            self.axes_manager.axes[0].size-=int(address[1]-address[0]+1)
+            mask=locs['filename']==key
+            self.data=np.delete(self.data,mask,0)
+            smp.locations=np.delete(smp.locations,mask,0)
+            self.axes_manager.axes[0].size=int(self.data.shape[0])
         smp.aggregate_end_pointer=self.data.shape[0]
-        smp.name="Aggregate Cells: %s"%smp.locations.keys()
+        smp.name="Aggregate Cells: %s"%list(set(smp.locations['filename'].squeeze()))
 
     def kmeans_cluster_stack(self, clusters=None):
         smp=self.mapped_parameters
@@ -501,21 +502,20 @@ class AggregateCells(Aggregate,Image):
 
         try:
             # test if location data is available
-            smp.locations.values()[0]
+            smp.locations[0]
         except:
             print "Warning: No cell location information was available."
         for i in xrange(clusters):
             # which file are we pulling from?
             file_index=0
-            address=smp.aggregate_address.values()[file_index]
-            fname=smp.locations.keys()[file_index]
+            fname=smp.original_files.keys()[file_index]
             # get number of members of this cluster
             members=groups.count(i)
             cluster_array=np.zeros((members,d.shape[1],d.shape[2]))
             cluster_idx=0
             # positions is a recarray, with each row consisting of a filename and the position from
             # which the crop was taken.
-            positions=np.zeros((members,1),dtype=[('filename','a256'),('position','i4',(1,2))])
+            positions=np.zeros((members,1),dtype=[('filename','a256'),('id','i4'),('position','i4',(1,2))])
             for j in xrange(len(groups)):
                 if j>(address[1]) and fname<>smp.locations.keys()[-1]:
                     file_index+=1
@@ -532,7 +532,7 @@ class AggregateCells(Aggregate,Image):
             # create a trimmed dict of the original files for this particular
             # cluster.  Only include files that thie cluster includes members
             # from.
-            constrained_orig_files={}
+            constrained_orig_files=OrderedDict()
             for key in self.mapped_parameters.original_files.keys():
                 if key in positions['filename']:
                     constrained_orig_files[key]=smp.original_files[key]
@@ -542,7 +542,7 @@ class AggregateCells(Aggregate,Image):
                                          smp.name),
                         'locations':positions,
                         'members':members,
-                        'original_files':smp.original_files,
+                        'original_files':constrained_orig_files,
                         }
                     })
             cluster_arrays.append(cluster_array_Image)
@@ -564,6 +564,8 @@ your_object.mapped_parameters.clusters\n"
 
     def plot_cell_overlays(self, plot_shifts=True, plot_other=None):
         """
+        (INCOMPLETE)
+
         Overlays peak characteristics on an image plot of the average image.
         This the AggregateCells version of this function, which creates plots 
         for all of the classes obtained from kmeans clustering.

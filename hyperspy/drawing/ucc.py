@@ -33,6 +33,8 @@ from enthought.traits.ui.key_bindings import KeyBinding, KeyBindings
 
 from enthought.chaco.data_range_1d import DataRange1D
 
+from enthought.pyface.api import ProgressDialog
+
 from types import ListType, TupleType
 
 from hyperspy.misc import cv_funcs
@@ -358,6 +360,7 @@ class TemplatePicker(HasTraits):
         grid_data_source.set_data(np.arange(self.tmp_size), np.arange(self.tmp_size))
         self.tmp_img_idx=self.img_idx
         if self.numpeaks_total>0:
+            print "clearing peaks"
             self.peaks=[np.array([[0,0,-1]])]
         return
 
@@ -411,13 +414,15 @@ class TemplatePicker(HasTraits):
     def locate_peaks(self):
         from hyperspy import peak_char as pc
         peaks=[]
-        from hyperspy.misc.progressbar import ProgressBar, \
+        """from hyperspy.misc.progressbar import ProgressBar, \
             Percentage, RotatingMarker, ETA, Bar
         widgets = ['Locating peaks: ', Percentage(), ' ', Bar(marker=RotatingMarker()),
                    ' ', ETA()]
-        pbar = ProgressBar(widgets=widgets, maxval=100).start()
+        pbar = ProgressBar(widgets=widgets, maxval=100).start()"""
+        progress = ProgressDialog(title="Peak finder progress", message="Finding peaks on %s images"%self.numfiles, max=self.numfiles, show_time=True, can_cancel=False)
+        progress.open()
         for idx in xrange(self.numfiles):
-            pbar.update(float(idx)/self.numfiles*100)
+            #pbar.update(float(idx)/self.numfiles*100)
             self.CC = cv_funcs.xcorr(self.sig.data[self.tmp_img_idx,
                                                    self.top:self.top+self.tmp_size,
                                                    self.left:self.left+self.tmp_size],
@@ -426,7 +431,8 @@ class TemplatePicker(HasTraits):
             pks=pc.two_dim_findpeaks(self.CC*255, peak_width=self.peak_width, medfilt_radius=None)
             pks[:,2]=pks[:,2]/255.
             peaks.append(pks)
-        pbar.finish()
+            progress.update(idx+1)
+        #pbar.finish()
         self.peaks=peaks
         
     def mask_peaks(self,idx):
@@ -490,15 +496,16 @@ class TemplatePicker(HasTraits):
             parent=self.sig
         else:
             parent=self.sig.mapped_parameters.original_files[self.titles[idx]]
-        
+        positions=np.zeros((peaks.shape[0],1),dtype=[('filename','a256'),('id','i4'),('position','i4',(1,2))])
         for i in xrange(peaks.shape[0]):
             # crop the cells from the given locations
             data[i,:,:]=self.sig.data[idx,peaks[i,1]:peaks[i,1]+tmp_sz,peaks[i,0]:peaks[i,0]+tmp_sz]
+            positions[i]=(self.titles[idx],i,peaks[i,:2])
             crop_sig=Image({'data':data,
                             'mapped_parameters':{
                                'name':'Cropped cells from %s'%self.titles[idx],
                                'record_by':'image',
-                               'locations':peaks,
+                               'locations':positions,
                                'parent':parent,
                                }
                             })
