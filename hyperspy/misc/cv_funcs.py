@@ -15,8 +15,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
-
-import cv
+try:
+  import cv
+except:
+  raise ImportError('OpenCV could not be imported')
+  
 import numpy as np
 
 def cv2array(cv_im):
@@ -57,7 +60,6 @@ def array2cv(a):
   return cv_im
 
 def xcorr(templateImage,exptImage):
-
   #cloning is for memory alignment issue with numpy/openCV.
   if type(templateImage).__name__=='ndarray':
     # cast array to 8-bit, otherwise cross correlation fails.
