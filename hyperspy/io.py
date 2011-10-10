@@ -80,7 +80,7 @@ def load(*filenames, **kwds):
     elif len(filenames)==1:
         if '*' in filenames[0]:
             from glob import glob
-            filenames=glob(filenames[0])
+            filenames=sorted(glob(filenames[0]))
         else:
             f=load_single_file(filenames[0], **kwds)
             return f
