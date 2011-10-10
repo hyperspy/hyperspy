@@ -1041,6 +1041,12 @@ class DictionaryBrowser(object):
     def __repr__(self):
         return self._get_print_items()
 
+    def __getitem__(self,key):
+        return self.__dict__.__getitem__(key)
+
+    def len(self):
+        return len(self.__dict__.keys())
+
     def keys(self):
         return self.__dict__.keys()
 
