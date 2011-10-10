@@ -26,6 +26,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 class Image(Signal):
     """
     """    
@@ -361,9 +363,13 @@ PCA and ICA (case insensitive)")
 
     def _plot_pc(self, idx, on_peaks=False):
         target=self._get_target(on_peaks)
-        plt.imshow(target.pc[:,idx].reshape(self.axes_manager.axes[1].size,self.axes_manager.axes[2].size))
-        plt.colorbar()
+        ax=plt.gca()
+        im=ax.imshow(target.pc[:,idx].reshape(self.axes_manager.axes[1].size,self.axes_manager.axes[2].size))
         plt.title('PC %s' % idx)
+        div=make_axes_locatable(ax)
+        cax=div.append_axes("right",size="5%",pad=0.05)
+        plt.colorbar(im,cax=cax)
+
         
 
     def plot_principal_components(self, n = None, same_window=True, per_row=3, 
@@ -408,9 +414,13 @@ PCA and ICA (case insensitive)")
 
     def _plot_ic(self, idx, on_peaks=False):
         target=self._get_target(on_peaks)
-        plt.imshow(target.ic[:,idx].reshape(self.axes_manager.axes[1].size,self.axes_manager.axes[2].size))
-        plt.colorbar()
+        ax=plt.gca()
+        im=ax.imshow(target.ic[:,idx].reshape(self.axes_manager.axes[1].size,self.axes_manager.axes[2].size))
         plt.title('IC %s' % idx)
+        div=make_axes_locatable(ax)
+        cax=div.append_axes("right",size="5%",pad=0.05)
+        plt.colorbar(im,cax=cax)
+
 
     def plot_independent_components(self, ic=None, same_window=True,
                                     per_row=3, on_peaks=False):
@@ -551,7 +561,7 @@ unrecognized. Cannot proceed."%mva_type)
                     for k in xrange(per_row):
                         # plot score maps overlaid on experimental images
                         if idx<len(keys):
-                            figure.add_subplot(rows,per_row,idx+2)
+                            ax=figure.add_subplot(rows,per_row,idx+2)
                             # p is the parent image that we're working with
                             p=keys[idx]
                             # the locations of peaks on that parent
@@ -562,13 +572,15 @@ unrecognized. Cannot proceed."%mva_type)
                             loc=locs[mask]['position'].squeeze()
                             plt.imshow(parents[keys[idx]].data)
                             plt.gray()
-                            plt.scatter(loc[:,0], loc[:,1],
-                                        c=scores[i].squeeze()[mask])
-                            plt.jet()
-                            plt.colorbar()
+                            sc=ax.scatter(loc[:,0], loc[:,1],
+                                        c=scores[i].squeeze()[mask],
+                                        cmap='jet')
                             shp=parents[keys[idx]].data.shape
                             plt.xlim(0,shp[1])
                             plt.ylim(shp[0],0)
+                            div=make_axes_locatable(ax)
+                            cax=div.append_axes("right",size="5%",pad=0.05)
+                            plt.colorbar(sc,cax=cax)
                             idx+=1
             else:
                 messages.warning('View not supported')
