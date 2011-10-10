@@ -32,7 +32,28 @@ from hyperspy.defaults_parser import defaults
 from hyperspy.misc import utils
 from hyperspy import tests
 
+import os
+from time import strftime
+
 __version__ = Release.version
+
+# start up the log file
+try:
+    _ip = get_ipython()
+    filename = os.path.join(os.getcwd(), 'hyperspy_log.py')
+    new = not os.path.exists(filename)
+    _ip.logger.logstart(logfname=filename,logmode='append')
+    if new:
+        _ip.logger.log_write("""#!/usr/bin/env python \n""")
+    _ip.logger.log_write("# ============================\n")
+    _ip.logger.log_write("# %s \n" % strftime('%Y-%m-%d'))
+    _ip.logger.log_write("# %s \n")
+    _ip.logger.log_write("# ============================\n" % strftime('%H:%M'))
+    _ip.logger.logstate()
+    _ip.logger.switch_log(True)
+
+except RuntimeError:
+    print " Already logging to "+_ip.logger.logfname
 
 def get_configuration_directory_path():
     import hyperspy.misc.config_dir
