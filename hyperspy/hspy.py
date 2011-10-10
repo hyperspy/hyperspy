@@ -47,10 +47,8 @@ try:
         _ip.logger.log_write("""#!/usr/bin/env python \n""")
     _ip.logger.log_write("# ============================\n")
     _ip.logger.log_write("# %s \n" % strftime('%Y-%m-%d'))
-    _ip.logger.log_write("# %s \n")
-    _ip.logger.log_write("# ============================\n" % strftime('%H:%M'))
-    _ip.logger.logstate()
-    _ip.logger.switch_log(True)
+    _ip.logger.log_write("# %s \n"% strftime('%H:%M'))
+    _ip.logger.log_write("# ============================\n" )
 
 except RuntimeError:
     print " Already logging to "+_ip.logger.logfname
