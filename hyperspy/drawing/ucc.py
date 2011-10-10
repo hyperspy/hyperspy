@@ -126,8 +126,8 @@ class TemplatePicker(HasTraits):
                 HGroup(
                     Item("ShowCC", editor=BooleanEditor(), label="Show cross correlation image"),
                     Spring(),
-                    Item("prev_img",editor=ButtonEditor(label="<"),show_label=False),
-                    Item("next_img",editor=ButtonEditor(label=">"),show_label=False),
+                    Item("prev_img",editor=ButtonEditor(label="<"),show_label=False, enabled_when='numfiles > 1'),
+                    Item("next_img",editor=ButtonEditor(label=">"),show_label=False, enabled_when='numfiles > 1'),
                     ),
                 label="Original image", show_border=True, trait_modified="tab_selected",
                 orientation='vertical',),
