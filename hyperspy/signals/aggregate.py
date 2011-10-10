@@ -497,7 +497,7 @@ class AggregateCells(Aggregate,Image):
         avg_stack=np.zeros((clusters,d.shape[1],d.shape[2]))
         kmeans.train(d.reshape((-1,d.shape[0])).T)
         kmeans.stop_training()
-        groups=kmeans.label(d.reshape((-1,d.shape[0])).T)
+        groups=np.array(kmeans.label(d.reshape((-1,d.shape[0])).T))
         cluster_arrays=[]
 
         try:
@@ -506,29 +506,14 @@ class AggregateCells(Aggregate,Image):
         except:
             print "Warning: No cell location information was available."
         for i in xrange(clusters):
-            # which file are we pulling from?
-            file_index=0
-            fname=smp.original_files.keys()[file_index]
             # get number of members of this cluster
-            members=groups.count(i)
+            members=groups[groups==i].shape[0]
             cluster_array=np.zeros((members,d.shape[1],d.shape[2]))
-            cluster_idx=0
             # positions is a recarray, with each row consisting of a filename and the position from
             # which the crop was taken.
-            positions=np.zeros((members,1),dtype=[('filename','a256'),('id','i4'),('position','i4',(1,2))])
-            for j in xrange(len(groups)):
-                if j>(address[1]) and fname<>smp.locations.keys()[-1]:
-                    file_index+=1
-                    fname=smp.locations.keys()[file_index]
-                    address=smp.aggregate_address.values()[file_index]
-                file_j=j-address[0]
-                if groups[j]==i:
-                    cluster_array[cluster_idx,:,:]=d[j,:,:]
-                    try:
-                        positions[cluster_idx]=(fname,smp.locations[fname][file_j,:2])
-                    except:
-                        pass
-                    cluster_idx+=1
+            positions=smp.locations[groups==i]
+            for j in xrange(positions.shape[0]):
+                cluster_array[j,:,:]=d[positions[j]['id'],:,:]
             # create a trimmed dict of the original files for this particular
             # cluster.  Only include files that thie cluster includes members
             # from.
@@ -547,7 +532,7 @@ class AggregateCells(Aggregate,Image):
                     })
             cluster_arrays.append(cluster_array_Image)
             avg_stack[i,:,:]=np.sum(cluster_array,axis=0)
-        members_list=[groups.count(i) for i in xrange(clusters)]
+        members_list=[groups[groups==i].shape[0] for i in xrange(clusters)]
         avg_stack_Image=Image({'data':avg_stack,
                     'mapped_parameters':{
                         'name':'Cluster averages from %s'%smp.name,
