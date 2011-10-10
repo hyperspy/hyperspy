@@ -226,7 +226,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
             # add the data to the aggregate array
             if self.data==None:
                 # copy the axes for the sake of calibration
-                self.data=arg.data.squeeze()
+                self.data=arg.data
                 self.axes_manager=arg.axes_manager
                 self.mapped_parameters.record_by=arg.mapped_parameters.record_by
                 if hasattr(arg.mapped_parameters,'signal'):
