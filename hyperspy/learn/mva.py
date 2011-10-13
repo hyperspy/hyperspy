@@ -76,7 +76,7 @@ class MVA():
         var_func : function or numpy array
             If function, it will apply it to the dataset to obtain the
             var_array. Alternatively, it can a an array with the coefficients
-            of a polynomy.
+            of a polynomial.
         polyfit :
 
 
@@ -87,7 +87,12 @@ class MVA():
         """
         # backup the original data
         if on_peaks:
-            self._data_before_treatments = self.peak_chars.copy()
+            if hasattr(self,'peak_chars'):
+                self._data_before_treatments = self.peak_chars.copy()
+            else:
+                print """No peak characteristics found.  You must run the 
+                         peak_char_stack function to obtain these before 
+                         you can run PCA or ICA on them."""
         else:
             self._data_before_treatments = self.data.copy()
         # Check for conflicting options and correct them when possible
@@ -265,8 +270,9 @@ class MVA():
             self._unfolded4pca is False
 
     def independent_components_analysis(self, number_of_components = None,
-    algorithm = 'CuBICA', diff_order = 1, pc = None,
-    comp_list = None, mask = None, on_peaks=False, **kwds):
+                                        algorithm = 'CuBICA', diff_order = 1, pc = None,
+                                        comp_list = None, mask = None, on_peaks=False, 
+                                        **kwds):
         """Independent components analysis.
 
         Available algorithms: FastICA, JADE, CuBICA, and TDSEP
@@ -281,7 +287,7 @@ class MVA():
         pc : numpy array
             externally provided components
         comp_list : boolen numpy array
-            choose the components to use by the boolen list. It permits to
+            choose the components to use by the boolean list. It permits to
             choose non contiguous components.
         mask : numpy boolean array with the same dimension as the PC
             If not None, only the selected channels will be used by the
@@ -289,7 +295,10 @@ class MVA():
         """
         target=self._get_target(on_peaks)
 
-        if hasattr(target, 'pc'):
+        if not hasattr(target, 'pc') or target.pc==None:
+            self.principal_components_analysis(on_peaks=on_peaks)
+
+        else:
             if pc is None:
                 pc = target.pc
             bool_index = np.zeros((pc.shape[0]), dtype = 'bool')
@@ -322,9 +331,6 @@ class MVA():
             target.ica_scores=self._get_ica_scores(target)
             target.ica_algorithm = algorithm
             self.output_dimension = number_of_components
-        else:
-            "You have to perform Principal Components Analysis before"
-            sys.exit(0)
 
     def reverse_ic(self, ic_n, on_peaks = False):
         """Reverse the independent component
@@ -508,7 +514,7 @@ class MVA():
         n : int
         """
         target = self._get_target(on_peaks)
-        if not target.V:
+        if target.V==None:
             self.principal_components_analysis()
         if n>target.V.shape[0]:
             n=target.V.shape[0]
@@ -666,11 +672,72 @@ class MVA():
             self.data=self._data_before_treatments
             del self._data_before_treatments
 
-    def peak_pca(self):
-        self.principal_components_analysis(on_peaks=True)
+    def peak_pca(self,normalize_poissonian_noise = False, algorithm = 'svd', 
+                 output_dimension = None, navigation_mask = None, 
+                 signal_mask = None, center = False, variance2one = False, 
+                 var_array = None, var_func = None, polyfit = None):
+        """Performs Principal Component Analysis on peak characteristic data.
 
-    def peak_ica(self, number_of_components):
-        self.independent_components_analysis(number_of_components, on_peaks=True)
+        Requires that you have run the peak_char_stack function on your stack of images.
+
+        Parameters
+        ----------
+
+        normalize_poissonian_noise : bool
+            If True, scale the SI to normalize Poissonian noise
+        algorithm : {'svd', 'fast_svd', 'mlpca', 'fast_mlpca', 'mdp', 'NIPALS'}
+        output_dimension : None or int
+            number of PCA to keep
+        navigation_mask : boolean numpy array
+        signal_mask : boolean numpy array
+        center : bool
+            Perform energy centering before PCA
+        variance2one : bool
+            Perform whitening before PCA
+        var_array : numpy array
+            Array of variance for the maximum likelihood PCA algorithm
+        var_func : function or numpy array
+            If function, it will apply it to the dataset to obtain the
+            var_array. Alternatively, it can a an array with the coefficients
+            of a polynomial.
+        polyfit :
+
+        """
+        self.principal_components_analysis(on_peaks=True,
+                                           normalize_poissonian_noise = normalize_poissonian_noise,
+                                           algorithm = algorithm, output_dimension = output_dimension, 
+                                           navigation_mask = navigation_mask, signal_mask = signal_mask, 
+                                           center = center, variance2one = variance2one, 
+                                           var_array = var_array, var_func = var_func, polyfit = polyfit)
+
+    def peak_ica(self, number_of_components, algorithm = 'CuBICA', diff_order = 1, 
+                 pc = None, comp_list = None, mask = None, on_peaks=False, **kwds):
+        """Independent components analysis on peak characteristic data.
+
+        Requires that you have run the peak_char_stack function on your stack of images.
+
+        Available algorithms: FastICA, JADE, CuBICA, and TDSEP
+
+        Parameters
+        ----------
+        number_of_components : int
+            number of principal components to pass to the ICA algorithm
+        algorithm : {FastICA, JADE, CuBICA, TDSEP}
+        diff : bool
+        diff_order : int
+        pc : numpy array
+            externally provided components
+        comp_list : boolen numpy array
+            choose the components to use by the boolen list. It permits to
+            choose non contiguous components.
+        mask : numpy boolean array with the same dimension as the PC
+            If not None, only the selected channels will be used by the
+            algorithm.
+        """
+        self.independent_components_analysis(number_of_components=number_of_components, 
+                                             on_peaks=True,algorithm = algorithm, 
+                                             diff_order = diff_order, pc = pc, 
+                                             comp_list = comp_list, mask = mask)
 
 class MVA_Results():
     def __init__(self):
