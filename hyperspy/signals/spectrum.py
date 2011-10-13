@@ -672,9 +672,9 @@ class Spectrum(Signal):
                 if plot is True:
                     mapa = ax.matshow(toplot, cmap = cmap)
                     if with_components:
-                        ax.plot(self.axes_manager.axes[-1].axis, factors[:,i])
-                        ax.set_title('%s component %i' % (mva_type.upper(),i))
-                        ax.set_xlabel('Energy (eV)')
+                        ax2.plot(self.axes_manager.axes[-1].axis, factors[:,i])
+                        ax2.set_title('%s component %i' % (mva_type.upper(),i))
+                        ax2.set_xlabel('Energy (eV)')
                     figure.colorbar(mapa)
                     figure.canvas.draw()
                     #pointer = widgets.DraggableSquare(self.coordinates)
@@ -685,16 +685,16 @@ class Spectrum(Signal):
                     'axes' : self.axes_manager._get_non_slicing_axes_dicts()}))
                 im_list[-1].get_dimensions_from_data()
                 if plot is True:
-                    ax2.step(range(len(toplot)), toplot)
+                    ax.step(range(len(toplot)), toplot)
 
                     if with_components:
-                        ax.plot(self.axes_manager.axes[-1].axis, factors[:,i])
-                        ax.set_title('%s component %s' % (mva_type.upper(),i))
-                        ax.set_xlabel('Energy (eV)')
+                        ax2.plot(self.axes_manager.axes[-1].axis, factors[:,i])
+                        ax2.set_title('%s component %s' % (mva_type.upper(),i))
+                        ax2.set_xlabel('Energy (eV)')
             else:
                 messages.warning_exit('View not supported')
             if plot is True:
-                ax2.set_title('%s component number %s map' % (mva_type.upper(),i))
+                ax.set_title('%s component number %s map' % (mva_type.upper(),i))
                 figure.canvas.draw()
                 if directory is not None:
                     if not os.path.isdir(directory):
