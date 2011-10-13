@@ -550,12 +550,11 @@ class Spectrum(Signal):
         n : int
             number of principal components to plot.
         """
-        target=self._get_target(on_peaks)
         if n is None:
-            n = target.pc.shape[1]
+            n = self.mva_results.pc.shape[1]
         for i in xrange(n):
             plt.figure()
-            plt.plot(self.axes_manager.axes[-1].axis, target.pc[:,i])
+            plt.plot(self.axes_manager.axes[-1].axis, self.mva_results.pc[:,i])
             plt.xlabel('Energy (eV)')
             plt.title('Principal component %s' % i)
 
@@ -574,9 +573,8 @@ class Spectrum(Signal):
                     if 'True', the components will be plotted in the
                     same window. Default is 'False'.
         """
-        target=self._get_target(on_peaks)
         if ic is None:
-            ic = target.ic
+            ic = self.mva_results.ic
             x = self.axes_manager.axes[-1].axis
             x = ic.shape[1]     # no way that we know the calibration
 
@@ -627,8 +625,6 @@ class Spectrum(Signal):
         from hyperspy.signals.image import Image
         from hyperspy.signals.spectrum import Spectrum
 
-        target=self._get_target(on_peaks)
-
         if scores is None or (factors is None and with_components is True):
             print "Either recmatrix or components were not provided."
             print "Loading existing values from object."
@@ -637,11 +633,11 @@ class Spectrum(Signal):
                 return
 
             elif mva_type.lower() == 'pca':
-                scores=target.v.T
-                factors=target.pc
+                scores=self.mva_results.v.T
+                factors=self.mva_results.pc
             elif mva_type.lower() == 'ica':
-                scores = self._get_ica_scores(target)
-                factors=target.ic
+                scores = self._get_ica_scores(self.mva_results)
+                factors=self.mva_results.ic
                 if no_nans:
                     print 'Removing NaNs for a visually prettier plot.'
                     scores = np.nan_to_num(scores) # remove ugly NaN pixels
@@ -676,9 +672,9 @@ class Spectrum(Signal):
                 if plot is True:
                     mapa = ax.matshow(toplot, cmap = cmap)
                     if with_components:
-                        ax2.plot(self.axes_manager.axes[-1].axis, factors[:,i])
-                        ax2.set_title('%s component %i' % (mva_type.upper(),i))
-                        ax2.set_xlabel('Energy (eV)')
+                        ax.plot(self.axes_manager.axes[-1].axis, factors[:,i])
+                        ax.set_title('%s component %i' % (mva_type.upper(),i))
+                        ax.set_xlabel('Energy (eV)')
                     figure.colorbar(mapa)
                     figure.canvas.draw()
                     #pointer = widgets.DraggableSquare(self.coordinates)
@@ -689,16 +685,16 @@ class Spectrum(Signal):
                     'axes' : self.axes_manager._get_non_slicing_axes_dicts()}))
                 im_list[-1].get_dimensions_from_data()
                 if plot is True:
-                    ax.step(range(len(toplot)), toplot)
+                    ax2.step(range(len(toplot)), toplot)
 
                     if with_components:
-                        ax2.plot(self.axes_manager.axes[-1].axis, factors[:,i])
-                        ax2.set_title('%s component %s' % (mva_type.upper(),i))
-                        ax2.set_xlabel('Energy (eV)')
+                        ax.plot(self.axes_manager.axes[-1].axis, factors[:,i])
+                        ax.set_title('%s component %s' % (mva_type.upper(),i))
+                        ax.set_xlabel('Energy (eV)')
             else:
                 messages.warning_exit('View not supported')
             if plot is True:
-                ax.set_title('%s component number %s map' % (mva_type.upper(),i))
+                ax2.set_title('%s component number %s map' % (mva_type.upper(),i))
                 figure.canvas.draw()
                 if directory is not None:
                     if not os.path.isdir(directory):
@@ -796,13 +792,11 @@ class Spectrum(Signal):
 
         """
         from spectrum import Spectrum
-        target=self._get_target(on_peaks)
-        im_list = self.plot_principal_components_maps(n, plot = False,
-                                                      on_peaks=on_peaks)
-        s = Spectrum({'calibration' : {'data_cube' : target.pc[:,0]}})
+        im_list = self.plot_principal_components_maps(n, plot = False)
+        s = Spectrum({'calibration' : {'data_cube' : self.mva_results.pc[:,0]}})
         s.get_calibration_from(self)
         for i in xrange(n):
-            s.data_cube = target.pc[:,i]
+            s.data_cube = self.mva_results.pc[:,i]
             s.get_dimensions_from_cube()
             s.save('%s-%i.%s' % (spectrum_prefix, i, spectrum_format))
             im_list[i].save('%s-%i.%s' % (image_prefix, i, image_format))
@@ -829,14 +823,12 @@ class Spectrum(Signal):
             externally supplied IC
         """
         from hyperspy.signals.spectrum import Spectrum
-        target=self._get_target(on_peaks)
         pl = self.plot_independent_components_maps(plot=False,
                                                    recmatrix=recmatrix,
                                                    ic=ic,
-                                                   no_nans=True,
-                                                   on_peaks=on_peaks)
+                                                   no_nans=True)
         if ic is None:
-            ic = target.ic
+            ic = self.mva_results.ic
         if self.data.shape[2] > 1:
             maps = True
         else:
