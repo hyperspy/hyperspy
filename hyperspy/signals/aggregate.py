@@ -600,15 +600,40 @@ your_object.mapped_parameters.avgs \n\n\
 or \n\n\
 your_object.mapped_parameters.clusters\n"
 
-    def plot_cell_overlays(self, plot_shifts=True, plot_other=None):
+    def plot_cell_overlays(self, plot_component=None, mva_type='PCA', peak_mva=True, 
+                           plot_shifts=True, plot_char=None):
         """
-        (INCOMPLETE)
-
         Overlays peak characteristics on an image plot of the average image.
         This the AggregateCells version of this function, which creates plots 
         for all of the classes obtained from kmeans clustering.
 
         Parameters:
+
+        plot_component - None or int
+            The integer index of the component to plot scores for.
+            If specified, the values plotted for the shifts (if enabled by the plot_shifts flag)
+            and the values plotted for the plot characteristics (if enabled by the plot_char flag)
+            will be drawn from the given component resulting from MVA on the peak characteristics.
+            NOTE: only makes sense right now for examining results of MVA on peak characteristics,
+                NOT MVA results on the images themselves (factor images).
+
+        mva_type - str, 'PCA' or 'ICA', case insensitive. default is 'PCA'
+            Choose between the components that will be used for plotting
+            component maps.  Note that whichever analysis you choose
+            here has to actually have already been performed.            
+
+        peak_mva - bool, default is True
+            If True, draws the information to be plotted from the mva results derived
+            from peak characteristics.  If False, does the following with Factor images:
+            - Reconstructs the data using all available components
+            - locates peaks on all images in reconstructed data
+            - reconstructs the data using all components EXCEPT the component specified
+                by the plot_component parameter
+            - locates peaks on all images in reconstructed data
+            - subtracts the peak characteristics of the first (complete) data from the
+                data without the component included.  This difference data is what gets
+                plotted.
+
         plot_shifts - bool
             If true, plots a quiver (arrow) plot showing the shifts for each
             peak present in the component being plotted.
@@ -621,21 +646,15 @@ your_object.mapped_parameters.clusters\n"
                5: peak orientation
                6: peak eccentricity
         """
-        if hasattr(self.mapped_parameters,"clusters"):
-            figs={}
-            # come up with the color map for the scatter plot
-
-            for key in self.mapped_parameters.original_files.keys():
-                figs[key]=plt.figure()
-                # plot the initial images
-                
-            for cluster in xrange(len(self.mapped_parameters.clusters)):
-                for loc_id in xrange(cluster.mapped_parameters.locations.shape[0]):
-                    # get the right figure
-                    fig=figs[cluster.mapped_paramters.locations[loc_id][0][0]]
-                    # add scatter point
-                    
-
+        if hasattr(self.mapped_parameters,"clusters"):               
+            for idx in xrange(len(self.mapped_parameters.clusters)):
+                clusters[idx].plot_cell_overlays(plot_component=plot_component, mva_type=mva_type, 
+                                                 peak_mva=peak_mva, plot_shifts=plot_shifts, 
+                                                 plot_char=plot_char)
+        else:
+            print "No clusters found on aggregate object.  Have you run K-means clustering?"
+            return
+                  
     def save_avgs(self):
         avgs=self.mapped_parameters.avgs
         f=plt.figure()

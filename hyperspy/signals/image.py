@@ -273,7 +273,7 @@ PCA and ICA (case insensitive)")
             figs.append(f)
         return figs
         
-    def plot_cell_peak_overlays(self, plot_component=None, mva_type='PCA', peak_mva=True,
+    def plot_cell_overlays(self, plot_component=None, mva_type='PCA', peak_mva=True,
                                 plot_shifts=True, plot_char=None):
         """Overlays peak characteristics on an image plot of the average image.
 
