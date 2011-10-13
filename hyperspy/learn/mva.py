@@ -419,11 +419,10 @@ class MVA():
         sc = self.deepcopy()
 
         import hyperspy.signals.spectrum
-        if isinstance(self, hyperspy.signals.spectrum.Spectrum):
-            print "Transposing data so that energy axis makes up rows."
-            sc.data = a.T.squeeze()
-        else:
-            sc.data = a.squeeze()
+        #if self.mapped_parameters.record_by==spectrum:
+        sc.data = a.T.squeeze()
+        #else:
+        #    sc.data = a.squeeze()
         sc.name = signal_name
         if self._unfolded4pca is True:
             self.fold()
@@ -509,6 +508,8 @@ class MVA():
         n : int
         """
         target = self._get_target(on_peaks)
+        if not target.V:
+            self.principal_components_analysis()
         if n>target.V.shape[0]:
             n=target.V.shape[0]
         fig = plt.figure()

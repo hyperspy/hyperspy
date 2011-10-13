@@ -17,6 +17,7 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import os.path
 
 import numpy as np
 import enthought.traits.api as t
@@ -106,7 +107,7 @@ class Signal(t.HasTraits, MVA):
         if not hasattr(self.mapped_parameters,'name'):
             if hasattr(self.mapped_parameters,'original_filename'):
                 self.mapped_parameters.name = \
-                    self.mapped_parameters.original_filename
+                    os.path.splitext(self.mapped_parameters.original_filename)[0]
             # "Synthetic" signals do not have an original filename
             else:
                 self.mapped_parameters.name = 'Unnamed Signal'
@@ -132,6 +133,8 @@ class Signal(t.HasTraits, MVA):
         self.mapped_parameters.as_dictionary()
         dic['original_parameters'] = \
         self.original_parameters.as_dictionary()
+        if hasattr(self,'mva_results'):
+            dic['mva_results'] = self.mva_results.__dict__
         return dic
 
     def _get_undefined_axes_list(self):

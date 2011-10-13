@@ -23,10 +23,12 @@ from hyperspy.signals.spectrum import Spectrum
 import enthought.traits.api as t
 from hyperspy.learn.mva import MVA_Results
 from hyperspy.axes import AxesManager, DataAxis
+from hyperspy.misc.utils import DictionaryBrowser
 from hyperspy import messages
 
 from hyperspy.io import load
 
+from copy import deepcopy
 import numpy as np
 import mdp
 
@@ -43,9 +45,11 @@ class Aggregate(Signal):
                             'size' : 1,
                             'units' : 'undefined',
                             'index_in_array' : 0,}])
-        super(Aggregate, self).__init__(*args, **kw)
         self.data=None
+        self.mapped_parameters=DictionaryBrowser()
         self.mapped_parameters.original_files=OrderedDict()
+        super(Aggregate, self).__init__(*args, **kw)
+
 
     def summary(self):
         smp=self.mapped_parameters
@@ -84,9 +88,9 @@ the AggregateImage, AggregateCells, or AggregateSpectrum classes"
 
 class AggregateSpectrum(Aggregate,Spectrum):
     def __init__(self, *args, **kw):
-        super(AggregateSpectrum,self).__init__(*args,**kw)
         self.mapped_parameters.aggregate_address=OrderedDict()
         self.mapped_parameters.aggregate_end_pointer=0
+        super(AggregateSpectrum,self).__init__(*args,**kw)
         if len(args)>0:
             self.append(*args)
             self.summary()
@@ -107,7 +111,6 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         if len(args)<1:
             pass
         else:
-            smp=self.mapped_parameters
             for arg in args:
                 if arg.__class__.__name__=='str':
                     if '*' in arg:
@@ -120,8 +123,11 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
                     else:
                         arg=load(arg)
                         self._add_object(arg)
-                else:
+                elif isinstance(arg,Signal):
                     self._add_object(arg)
+                else:
+                    # skip over appending if something like a dict is passed as arg
+                    return
             self.axes_manager.navigation_dimension=1
 
             # refresh the axes for the new sized data
@@ -199,35 +205,38 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         mp=arg.mapped_parameters
         smp=self.mapped_parameters
         if mp.original_filename not in smp.original_files.keys():
-            smp.original_files[mp.original_filename]=arg
+            smp.original_files[mp.name]=arg
             # save the original data shape to the mva_results for later use
-            smp.original_files[mp.original_filename].mva_results.original_shape = arg.data.shape[:-1]
-            if len(arg.data.shape)==3:
-                arg.unfold()
-                smp.aggregate_address[mp.original_filename]=(
-                    smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
-            if len(arg.data.shape)==2:
-                smp.aggregate_address[mp.original_filename]=(
-                    smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
-            if len(arg.data.shape)==1:
-                arg.data=arg.data[np.newaxis,:]
-                smp.aggregate_address[mp.original_filename]=(
-                    smp.aggregate_end_pointer,smp.aggregate_end_pointer+1)
-                new_axis=DataAxis(**{
+            smp.original_files[mp.name].mva_results.original_shape = arg.data.shape[:-1]
+            if self.data==None:
+                self.axes_manager=arg.axes_manager.copy()
+                if len(arg.data.shape)==1:
+                    new_axis=DataAxis(**{
                             'name': 'Depth',
                             'scale': 1.,
                             'offset': 0.,
                             'size': int(arg.data.shape[0]),
                             'units': 'undefined',
                             'index_in_array': 0, })
-                for ax_idx in xrange(len(arg.axes_manager.axes)):
-                        arg.axes_manager.axes[ax_idx].index_in_array+=1
-                arg.axes_manager.axes.insert(0,new_axis)
+                    for ax_idx in xrange(len(arg.axes_manager.axes)):
+                        self.axes_manager.axes[ax_idx].index_in_array+=1
+                    self.axes_manager.axes.insert(0,new_axis)
+            if len(arg.data.shape)==3:
+                arg.unfold()
+                smp.aggregate_address[mp.name]=(
+                    smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
+            if len(arg.data.shape)==2:
+                smp.aggregate_address[mp.name]=(
+                    smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
+            if len(arg.data.shape)==1:
+                arg.data=arg.data[np.newaxis,:]
+                smp.aggregate_address[mp.name]=(
+                    smp.aggregate_end_pointer,smp.aggregate_end_pointer+1)
+
             # add the data to the aggregate array
             if self.data==None:
                 # copy the axes for the sake of calibration
                 self.data=arg.data
-                self.axes_manager=arg.axes_manager
                 self.mapped_parameters.record_by=arg.mapped_parameters.record_by
                 if hasattr(arg.mapped_parameters,'signal'):
                     self.mapped_parameters.signal=arg.mapped_parameters.signal
@@ -369,7 +378,10 @@ to add?'%arg.mapped_parameters.name)
             
 class AggregateImage(Aggregate,Image):
     def __init__(self, *args, **kw):
+        self.mapped_parameters=DictionaryBrowser()
         super(AggregateImage, self).__init__(*args,**kw)
+        if not hasattr(self.mapped_parameters,'original_files'):
+            self.mapped_parameters.original_files=OrderedDict()
         if len(args)>0:
             self.append(*args)
             self.summary()
@@ -378,32 +390,49 @@ class AggregateImage(Aggregate,Image):
         if len(args)<1:
             pass
         else:
-            smp=self.mapped_parameters
             for arg in args:
-                #object parameters
-                mp=arg.mapped_parameters
-                if mp.original_filename not in smp.original_files.keys():
-                    smp.original_files[mp.original_filename]=arg
-                    # add the data to the aggregate array
-                    if self.data==None:
-                        self.data=arg.data[np.newaxis,:,:]
-                        smp.record_by=mp.record_by
-                        if hasattr(mp,'signal'):
-                            smp.signal=mp.signal
-                        self.axes_manager=AxesManager(self._get_undefined_axes_list())
-                        self.axes_manager.axes[1]=arg.axes_manager.axes[0]
-                        self.axes_manager.axes[1].index_in_array+=1
-                        self.axes_manager.axes[2]=arg.axes_manager.axes[1]
-                        self.axes_manager.axes[2].index_in_array+=1
+                if arg.__class__.__name__=='str':
+                    if '*' in arg:
+                        from glob import glob
+                        flist=glob(arg)
+                        for f in flist:
+                            d=load(f)
+                            if d.mapped_parameters.record_by=="image":
+                                self._add_object(d)
                     else:
-                        self.data=np.append(self.data,arg.data[np.newaxis,:,:],axis=0)
-                        self.axes_manager.axes[0].size+=1
+                        arg=load(arg)
+                        self._add_object(arg)
+                elif isinstance(arg,Signal):
+                    self._add_object(arg)
                 else:
-                    print "Data from file %s already in this aggregate. \n \
+                    # skip over appending if something like a dict is passed as arg
+                    return
+
+    def _add_object(self, arg):
+        smp=self.mapped_parameters
+        mp=arg.mapped_parameters
+        if mp.original_filename not in smp.original_files.keys():
+            smp.original_files[mp.name]=arg
+            # add the data to the aggregate array
+            if self.data==None:
+                self.data=arg.data[np.newaxis,:,:]
+                smp.record_by=mp.record_by
+                if hasattr(mp,'signal'):
+                    smp.signal=mp.signal
+                self.axes_manager=AxesManager(self._get_undefined_axes_list())
+                self.axes_manager.axes[1]=deepcopy(arg.axes_manager.axes[0])
+                self.axes_manager.axes[1].index_in_array+=1
+                self.axes_manager.axes[2]=deepcopy(arg.axes_manager.axes[1])
+                self.axes_manager.axes[2].index_in_array+=1
+            else:
+                self.data=np.append(self.data,arg.data[np.newaxis,:,:],axis=0)
+                self.axes_manager.axes[0].size+=1
+        else:
+            print "Data from file %s already in this aggregate. \n \
     Delete it first if you want to update it."%mp.original_filename
             # refresh the axes for the new sized data
             #self.axes_manager=AxesManager(self._get_undefined_axes_list())
-            smp.name="Aggregate Image: %s"%smp.original_files.keys()
+        smp.name="Aggregate Image: %s"%smp.original_files.keys()
 
 
     def remove(self,*keys):
@@ -422,13 +451,19 @@ class AggregateCells(Aggregate,Image):
 
     def __init__(self, *args, **kw):
         super(AggregateCells,self).__init__(*args, **kw)
-        self._shape_before_unfolding = None
         smp=self.mapped_parameters
-        smp.locations=np.zeros((2,1),dtype=[('filename','a256'),('id','i4'),('position','i4',(1,2))])
-        smp.original_files=OrderedDict()
-        smp.image_stacks=OrderedDict()
-        smp.aggregate_end_pointer=0
-        smp.name="Aggregate: no data"
+        if not hasattr(self,'_shape_before_unfolding'):
+            self._shape_before_unfolding = None
+        if not hasattr(smp,'locations'):
+            smp.locations=np.zeros((2,1),dtype=[('filename','a256'),('id','i4'),('position','i4',(1,2))])
+        if not hasattr(smp,'original_files'):
+            smp.original_files=OrderedDict()
+        if not hasattr(smp,'image_stacks'):
+            smp.image_stacks=OrderedDict()
+        if not hasattr(smp,'aggregate_end_pointer'):
+            smp.aggregate_end_pointer=0
+        if not hasattr(smp,'name'):
+            smp.name="Aggregate: no data"
         if len(args)>0:
             self.append(*args)
             self.summary()
@@ -437,43 +472,61 @@ class AggregateCells(Aggregate,Image):
         if len(args)<1:
             pass
         else:
-            smp=self.mapped_parameters
             for arg in args:
-                #object parameters
-                mp=arg.mapped_parameters
-                pmp=mp.parent.mapped_parameters
-                
-                if pmp.original_filename not in list(set(smp.locations['filename'].squeeze())):
-                    smp.original_files[pmp.original_filename]=mp.parent
-                    smp.image_stacks[pmp.original_filename]=arg
-                    # add the data to the aggregate array
-                    if self.data==None:
-                        smp.record_by=mp.record_by
-                        if hasattr(mp,'locations'):
-                            smp.locations=mp.locations
-                        if hasattr(mp,'signal'):
-                            smp.signal=mp.signal
-                        self.axes_manager=arg.axes_manager.copy()
-                        if len(arg.data.shape)<3:
-                            self.data=arg.data[np.newaxis,:,:]
-                            self.axes_manager=AxesManager(self._get_undefined_axes_list())
-                            self.axes_manager.axes[1]=arg.axes_manager.axes[0]
-                            self.axes_manager.axes[1].index_in_array+=1
-                            self.axes_manager.axes[2]=arg.axes_manager.axes[1]
-                            self.axes_manager.axes[2].index_in_array+=1
-                        else:
-                            self.data=arg.data
+                if arg.__class__.__name__=='str':
+                    if '*' in arg:
+                        from glob import glob
+                        flist=glob(arg)
+                        for f in flist:
+                            d=load(f)
+                            if d.mapped_parameters.record_by=="image":
+                                self._add_object(d)
                     else:
-                        mp.locations['id']=mp.locations['id']+smp.aggregate_end_pointer
-                        smp.locations=np.append(smp.locations,mp.locations)
-                        self.data=np.append(self.data,arg.data,axis=0)
-                        self.axes_manager.axes[0].size+=int(arg.data.shape[0])
-                    smp.aggregate_end_pointer=self.data.shape[0]
+                        arg=load(arg)
+                        self._add_object(arg)
+                elif isinstance(arg,Signal):
+                    self._add_object(arg)
                 else:
-                    print "Data from file %s already in this aggregate. \n \
+                    # skip over appending if something like a dict is passed as arg
+                    return
+
+    def _add_object(self,arg):
+        smp=self.mapped_parameters
+        #object parameters
+        mp=arg.mapped_parameters
+        pmp=mp.parent.mapped_parameters
+                
+        if pmp.original_filename not in list(set(smp.locations['filename'].squeeze())):
+            smp.original_files[pmp.name]=mp.parent
+            smp.image_stacks[pmp.name]=arg
+            # add the data to the aggregate array
+            if self.data==None:
+                smp.record_by=mp.record_by
+                if hasattr(mp,'locations'):
+                    smp.locations=mp.locations
+                if hasattr(mp,'signal'):
+                    smp.signal=mp.signal
+                if len(arg.data.shape)<3:
+                    self.data=arg.data[np.newaxis,:,:]
+                    self.axes_manager=AxesManager(self._get_undefined_axes_list())
+                    self.axes_manager.axes[1]=deepcopy(arg.axes_manager.axes[0])
+                    self.axes_manager.axes[1].index_in_array+=1
+                    self.axes_manager.axes[2]=deepcopy(arg.axes_manager.axes[1])
+                    self.axes_manager.axes[2].index_in_array+=1
+                else:
+                    self.axes_manager=arg.axes_manager.copy()
+                    self.data=arg.data
+            else:
+                mp.locations['id']=mp.locations['id']+smp.aggregate_end_pointer
+                smp.locations=np.append(smp.locations,mp.locations)
+                self.data=np.append(self.data,arg.data,axis=0)
+                self.axes_manager.axes[0].size+=int(arg.data.shape[0])
+                smp.aggregate_end_pointer=self.data.shape[0]
+        else:
+            print "Data from file %s already in this aggregate. \n \
     Delete it first if you want to update it."%pmp.original_filename
             # refresh the axes for the new sized data
-            smp.name="Aggregate Cells: %s"%list(set(smp.locations['filename'].squeeze()))
+        smp.name="Aggregate Cells: %s"%list(set(smp.locations['filename'].squeeze()))
 
     def remove(self,*keys):
         smp=self.mapped_parameters

@@ -87,20 +87,7 @@ def file_reader(filename, record_by, mode = 'r', driver = 'core',
         # Parse the file
         for experiment in experiments:
             exg = f['Experiments'][experiment]
-            exp = {}
-            exp['data'] = exg['data'][:]
-            axes = []
-            for i in xrange(len(exp['data'].shape)):
-                try:
-                    axes.append(dict(exg['axis-%i' % i].attrs))
-                except KeyError:
-                    f.close()
-                    raise IOError(not_valid_format)
-            exp['mapped_parameters'] = hdfgroup2dict(
-            exg['mapped_parameters'], {})
-            exp['original_parameters'] = hdfgroup2dict(
-            exg['original_parameters'], {})
-            exp['axes'] = axes
+            exp=hdfgroup2signaldict(exg)
             exp_dict_list.append(exp)
     else:
         # Eventually there will be the possibility of loading the datasets of 
@@ -109,10 +96,36 @@ def file_reader(filename, record_by, mode = 'r', driver = 'core',
     f.close()
     return exp_dict_list
 
+def hdfgroup2signaldict(group):
+    exp = {}
+    exp['data'] = group['data'][:]
+    axes = []
+    for i in xrange(len(exp['data'].shape)):
+        try:
+            axes.append(dict(group['axis-%i' % i].attrs))
+        except KeyError:
+            raise IOError(not_valid_format)
+        exp['mapped_parameters'] = hdfgroup2dict(
+            group['mapped_parameters'], {})
+        exp['original_parameters'] = hdfgroup2dict(
+            group['original_parameters'], {})
+        exp['axes'] = axes
+        if 'mva_results' in group.keys():
+            exp['attributes'] = {
+                'mva_results':hdfgroup2dict(group['mva_results'],{}),
+                }
+    return exp
+
 def dict2hdfgroup(dictionary, group):
+    from hyperspy.misc.utils import DictionaryBrowser
+    from hyperspy.signal import Signal
     for key, value in dictionary.iteritems():
         if isinstance(value, dict):
             dict2hdfgroup(value, group.create_group(key))
+        elif isinstance(value, DictionaryBrowser):
+            dict2hdfgroup(value.as_dictionary(), group.create_group(key))
+        elif isinstance(value, Signal):
+            write_signal(value,group.create_group('_sig_'+key))
         else:
             if value is None:
                 value = '_None_'
@@ -134,26 +147,35 @@ def dict2hdfgroup(dictionary, group):
 def hdfgroup2dict(group, dictionary = {}):
     for key, value in group.attrs.iteritems():
         dictionary[key] = value if value != '_None_' else None
-    for _group in group:
-        dictionary[_group] = {}
-        hdfgroup2dict(group[_group], dictionary[_group])
+    for _group in group.keys():
+        if _group.startswith('_sig_'):
+            dictionary[_group[5:]] = hdfgroup2signaldict(group[_group])
+        else:
+            dictionary[_group] = {}
+            hdfgroup2dict(group[_group], dictionary[_group])
     return dictionary
+
+def write_signal(signal,group):
+    group.create_dataset('data', data = signal.data)
+    for axis in signal.axes_manager.axes:
+        axis_dict = axis.get_axis_dictionary()
+        # For the moment we don't store the slice_bool
+        del(axis_dict['slice_bool'])
+        coord_group = group.create_group('axis-%s' % axis.index_in_array)
+        dict2hdfgroup(axis_dict, coord_group)
+    mapped_par = group.create_group('mapped_parameters')
+    dict2hdfgroup(signal.mapped_parameters.as_dictionary(), 
+                  mapped_par)
+    original_par = group.create_group('original_parameters')
+    dict2hdfgroup(signal.original_parameters.as_dictionary(), 
+                  original_par)
+    mva_results = group.create_group('mva_results')
+    dict2hdfgroup(signal.mva_results.__dict__, 
+                  mva_results)
                                     
 def file_writer(filename, signal, *args, **kwds):
     f = h5py.File(filename, mode = 'w')
     exps = f.create_group('Experiments')
     expg = exps.create_group(signal.mapped_parameters.name)
-    expg.create_dataset('data', data = signal.data)
-    for axis in signal.axes_manager.axes:
-        axis_dict = axis.get_axis_dictionary()
-        # For the moment we don't store the slice_bool
-        del(axis_dict['slice_bool'])
-        coord_group = expg.create_group('axis-%s' % axis.index_in_array)
-        dict2hdfgroup(axis_dict, coord_group)
-    mapped_par = expg.create_group('mapped_parameters')
-    dict2hdfgroup(signal.mapped_parameters.as_dictionary(), 
-                  mapped_par)
-    original_par = expg.create_group('original_parameters')
-    dict2hdfgroup(signal.original_parameters.as_dictionary(), 
-                  original_par)
+    write_signal(signal,expg)
     f.close()

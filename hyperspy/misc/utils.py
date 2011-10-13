@@ -1001,7 +1001,11 @@ class DictionaryBrowser(object):
     def load_dictionary(self, dictionary):
         for key, value in dictionary.iteritems():
             if isinstance(value, dict):
-                value = DictionaryBrowser(value)
+                if 'mapped_parameters' in value.keys():
+                    from hyperspy.signal import Signal
+                    value=Signal(value)
+                else:
+                    value = DictionaryBrowser(value)
             self.__setattr__(key, value)
 
     def _get_print_items(self, padding = '', max_len=20):
