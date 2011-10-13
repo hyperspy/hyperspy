@@ -89,7 +89,7 @@ def file_writer(filename, signal, _rescale = True, file_format='tif',
     elif only_view is False and len(signal.data.squeeze().shape) == 2:
         dc = signal.data.squeeze()
     else:
-        raise IOError("This format also support writing of 2D data")
+        raise IOError("This format only supports writing of 2D data")
         
     if file_format in ('tif', 'tiff') and mahotas_installed is True:
         
@@ -133,7 +133,6 @@ def file_reader(filename, **kwds):
     dt = 'image'    
     return [{'data':dc, 
              'mapped_parameters': {
-                'name': filename,
                 'original_filename' : filename,
                 'record_by': dt,
                 'signal' : None,

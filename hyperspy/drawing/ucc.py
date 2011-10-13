@@ -181,7 +181,7 @@ class TemplatePicker(HasTraits):
         if not hasattr(self.sig.mapped_parameters,"original_files"):
             if len(self.sig.data.shape)<3:
                 self.sig.data=self.sig.data[np.newaxis,:,:]
-            self.titles=[self.sig.mapped_parameters.name]
+            self.titles=[os.path.splitext(self.sig.mapped_parameters.name)[0]]
         else:
             self.numfiles=len(self.sig.mapped_parameters.original_files.keys())
             self.titles=self.sig.mapped_parameters.original_files.keys()
