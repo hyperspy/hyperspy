@@ -178,29 +178,44 @@ SectionIn RO
   File /r "PortableInstall\*"
   ;File /r "PortableInstall\python.exe"
   ${If} $InstMode > 0
-	  ; Create right-click context menu entries for Hyperspy Here
-	  ; This is sloppy, and should be replaced by a shell extension (one day)
-  	  ${registry::CreateKey} "HKEY_CLASSES_ROOT\*\shell\Hyperspy" $R0
+      ; Create right-click context menu entries for Hyperspy Here
+      ; This is sloppy, and should be replaced by a shell extension (one day)
+      
+      ; For all files
+      ${registry::CreateKey} "HKEY_CLASSES_ROOT\*\shell\Hyperspy" $R0
       ${registry::Write} "HKEY_CLASSES_ROOT\*\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
       ${registry::CreateKey} "HKEY_CLASSES_ROOT\*\shell\Hyperspy\command" $R0
       ${registry::Write} "HKEY_CLASSES_ROOT\*\shell\Hyperspy\command" "" '$INSTDIR\Scripts\ipython.exe qtconsole --profile=hyperspy --pylab=wx' "REG_EXPAND_SZ" $R0
+
+      ; For folders
       ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy" $R0
       ;${registry::Write} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
       ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy\command" $R0
       ;${registry::Write} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy\command" "" '$INSTDIR\Scripts\ipython.exe qtconsole --profile=hyperspy --pylab=wx' "REG_EXPAND_SZ" $R0
-  	  ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy" $R0
+
+      ; For right-clicking on directories
+      ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy" $R0
       ;${registry::Write} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
       ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy\command" $R0
       ;${registry::Write} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy\command" "" 'cmd.exe /k cd %1 & "$INSTDIR\Scripts\hyperspy_ipython_qtconsole.bat"' "REG_EXPAND_SZ" $R0
-  	  ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy" $R0
+
+      ; For right-clicking on drives
+      ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy" $R0
       ;${registry::Write} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
       ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy\command" $R0
       ;${registry::Write} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy\command" "" '$INSTDIR\Scripts\ipython.exe qtconsole --profile=hyperspy --pylab=wx' "REG_EXPAND_SZ" $R0
+
+      ; Make the update script run with admin rights. Since hyperspy
+      ; will be installed as admin, the folder is not writable by normal users.
+      ; Thus, only admins can update.
+      WriteRegStr SHCTX "SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers" '$INSTDIR\Scripts\hyperspy_update.bat' 'RUNASADMIN'
+
   ${EndIf}
   Exec 'cmd.exe /C ""$INSTDIR\Scripts\easy_install.exe" ipython"'
   Exec 'cmd.exe /C ""$INSTDIR\Scripts\easy_install.exe" pip"'
   CreateDirectory "$SMPROGRAMS\${APPNAME}"
   createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\Scripts\hyperspy.bat"
+  createShortCut "$SMPROGRAMS\${APPNAME}\Update ${APPNAME}.lnk" "$INSTDIR\Scripts\hyperspy_update.bat"
   createShortCut "$SMPROGRAMS\${APPNAME}\PyScripter.lnk" "$INSTDIR\PyScripter.exe"
   ;Write uninstall start menu shortcut
   createShortCut "$SMPROGRAMS\${APPNAME}\Uninstall ${APPNAME}.lnk" '"${UNINSTALLER_FULLPATH}"'
@@ -253,13 +268,15 @@ FunctionEnd
 
 Section -un.Main
   Delete "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk"
+  Delete "$SMPROGRAMS\${APPNAME}\Update ${APPNAME}.lnk"
   Delete "$SMPROGRAMS\${APPNAME}\PyScripter.lnk"
   Delete "$SMPROGRAMS\${APPNAME}\Uninstall ${APPNAME}.lnk"
   RMDir "$SMPROGRAMS\${APPNAME}"
   Delete "${UNINSTALLER_FULLPATH}"
-  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
   RMDir /r /REBOOTOK $instdir
   DeleteRegKey /ifempty HKCU "Software\Hyperspy"
+  DeleteRegValue SHCTX "SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers\${INSTDIR}\Scripts\hyperspy_update.bat" $R0
   DeleteRegKey HKCR "*\shell\Hyperspy\command"
   DeleteRegKey HKCR "*\shell\Hyperspy"
   DeleteRegKey HKCR "Folder\shell\Hyperspy\command"
