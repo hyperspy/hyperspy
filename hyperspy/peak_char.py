@@ -269,10 +269,10 @@ def stack_coords(stack,peak_width,subpixel=False,maxpeakn=5000):
     best_match function with a list of specific peak locations to find the best
     matching peak location in each image.
     """
-    depth=stack.shape[2]
+    depth=stack.shape[0]
     coords=np.ones((maxpeakn,2,depth))*10000
     for i in xrange(depth):
-        ctmp=two_dim_findpeaks(stack[:,:,i], subpixel=subpixel,
+        ctmp=two_dim_findpeaks(stack[i,:,:], subpixel=subpixel,
                                peak_width=peak_width)
         for row in xrange(ctmp.shape[0]):
             coords[row,:,i]=ctmp[row,:2]
@@ -449,7 +449,7 @@ def peak_attribs_stack(stack, peak_width, subpixel=True, target_locations=None,
 
     if target_locations is None:
         # get peak locations from the average image
-        avgImage=np.average(stack,axis=2)
+        avgImage=np.average(stack,axis=0)
         target_locations=two_dim_findpeaks(avgImage, subpixel=subpixel,
                                          peak_width=peak_width)
 
@@ -472,7 +472,7 @@ def peak_attribs_stack(stack, peak_width, subpixel=True, target_locations=None,
         rlt=np.zeros((7*peak_locations.shape[0],stack.shape[2]))
     rlt_tmp=np.zeros((peak_locations.shape[0],5))
     for i in xrange(stack.shape[2]):
-        rlt_tmp=peak_attribs_image(stack[:,:,i], 
+        rlt_tmp=peak_attribs_image(stack[i,:,:], 
                                    target_locations=peak_locations[:,i,:], 
                                    peak_width=peak_width, 
                                    medfilt_radius=medfilt_radius, 
