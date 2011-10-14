@@ -35,15 +35,15 @@ def does_figure_object_exists(fig_obj):
             fig_obj = None
             return False
                 
-def create_figure(window_title = None, _on_window_close = None):
+def create_figure(window_title = None, _ = None):
     fig = plt.figure()
     if window_title is not None:
         fig.canvas.set_window_title(window_title)
-    if _on_window_close is not None:
-        on_window_close(fig, _on_window_close)
+    if _ is not None:
+        (fig, _)
     return fig
                 
-def on_window_close(figure, function):
+def (figure, function):
     """Connects a close figure signal to a given function
     
     Parameters
@@ -60,8 +60,6 @@ def on_window_close(figure, function):
         window.connect('destroy', function_wrapper)
 
     elif backend == 'WXAgg':
-        # In linux the following code produces a segmentation fault
-        # so it is enabled only for Windows
         import wx
         def function_wrapper(event):
             function()

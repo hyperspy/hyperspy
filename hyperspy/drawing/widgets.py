@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import matplotlib.widgets
 import numpy as np
 
-from utils import on_window_close
+from utils import 
 #if self.blit is True:
 #                self.patch.set_animated(True)
 #                canvas = self.ax.figure.canvas
@@ -105,7 +105,7 @@ class DraggablePatch(object):
         self.cids.append(canvas.mpl_connect('button_release_event',
         self.button_release))
         self.axes_manager.connect(self.update_patch_position)
-        on_window_close(ax.figure, self.close)
+        (ax.figure, self.close)
 
     def disconnect(self, ax):
         for cid in self.cids:

@@ -26,7 +26,7 @@ from hyperspy.estimators import Estimators
 from hyperspy.optimizers import Optimizers
 from hyperspy import messages
 import hyperspy.drawing.spectrum
-from hyperspy.drawing.utils import on_window_close
+from hyperspy.drawing.utils import 
 from hyperspy.misc import progressbar
 from hyperspy.signals.eels import EELSSpectrum
 
@@ -608,7 +608,7 @@ class Model(list, Optimizers, Estimators):
         _plot.spectrum_plot.add_line(l2)
         l2.plot()
         self.connect_parameters2update_plot()
-#        on_window_close(_plot.spectrum_plot.figure, 
+#        (_plot.spectrum_plot.figure, 
 #                                      self.disconnect_parameters2update_plot)
         self.set_auto_update_plot(True)
         # TODO Set autoupdate to False on close
