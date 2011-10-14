@@ -793,11 +793,12 @@ class Spectrum(Signal):
         """
         from spectrum import Spectrum
         im_list = self.plot_principal_components_maps(n, plot = False)
-        s = Spectrum({'calibration' : {'data_cube' : self.mva_results.pc[:,0]}})
-        s.get_calibration_from(self)
+        axis_dict = self.axes_manager._slicing_axes[0].get_axis_dictionary()
+        axis_dict['index_in_array'] = 0
+        s = Spectrum({'data' : self.mva_results.pc[:,0],
+                      'axes' : [axis_dict,]})
         for i in xrange(n):
             s.data_cube = self.mva_results.pc[:,i]
-            s.get_dimensions_from_cube()
             s.save('%s-%i.%s' % (spectrum_prefix, i, spectrum_format))
             im_list[i].save('%s-%i.%s' % (image_prefix, i, image_format))
 
