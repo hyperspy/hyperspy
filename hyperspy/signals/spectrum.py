@@ -798,7 +798,7 @@ class Spectrum(Signal):
         s = Spectrum({'data' : self.mva_results.pc[:,0],
                       'axes' : [axis_dict,]})
         for i in xrange(n):
-            s.data_cube = self.mva_results.pc[:,i]
+            s.data = self.mva_results.pc[:,i]
             s.save('%s-%i.%s' % (spectrum_prefix, i, spectrum_format))
             im_list[i].save('%s-%i.%s' % (image_prefix, i, image_format))
 
