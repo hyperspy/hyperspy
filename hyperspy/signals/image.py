@@ -770,7 +770,7 @@ PCA and ICA (case insensitive)")
         """
         from hyperspy.signals.spectrum import Spectrum
         target=self._get_target(on_peaks)
-        im_list = self.(n, plot = False,
+        im_list = self.plot_principal_components_maps(n, plot = False,
                                                       on_peaks=on_peaks)
         axis_dict = self.axes_manager._non_slicing_axes[0].get_axis_dictionary()
         axis_dict['index_in_array'] = 0
