@@ -113,7 +113,8 @@ class Image(Signal):
     def plot_image_peaks(self, index=0, peak_width=10, subpixel=False,
                        medfilt_radius=5):
         # TODO: replace with hyperimage explorer
-        plt.imshow(self.data[index,:,:],cmap=plt.gray())
+        plt.imshow(self.data[index,:,:],cmap=plt.gray(), 
+            interpolation = 'nearest')
         peaks=pc.two_dim_peakfind(self.data[index,:,:], subpixel=subpixel,
                                   peak_width=peak_width, 
                                   medfilt_radius=medfilt_radius)
@@ -131,7 +132,7 @@ class Image(Signal):
         """
         f=plt.figure()
         imgavg=np.average(self.data,axis=0)
-        plt.imshow(imgavg)
+        plt.imshow(imgavg, interpolation = 'nearest')
         plt.gray()
         if self.target_locations is None:
             # identify the peaks on the average image
@@ -217,7 +218,8 @@ Note that you can actually plot shifts and component scores simultaneously.""")
         for key in self.mapped_parameters.original_files.keys():
             f=plt.figure()
             plt.title(key)
-            plt.imshow(self.mapped_parameters.original_files[key].data)
+            plt.imshow(self.mapped_parameters.original_files[key].data, 
+                interpolation = 'nearest')
             plt.gray()
             # get a shorter handle on the peak locations on THIS image
             locs=self.mapped_parameters.locations
@@ -348,7 +350,7 @@ PCA and ICA (case insensitive)")
             if plot_char:
                 char[pos]=component[pos*7+plot_char]
 
-        plt.imshow(imgavg)
+        plt.imshow(imgavg, interpolation = 'nearest')
         plt.gray()
 
         if plot_shifts:
@@ -365,8 +367,9 @@ PCA and ICA (case insensitive)")
     def _plot_pc(self, idx, on_peaks=False,cmap=plt.cm.gray):
         target=self._get_target(on_peaks)
         ax=plt.gca()
-        im=ax.imshow(target.pc[:,idx].reshape(self.axes_manager.axes[1].size,self.axes_manager.axes[2].size),
-                     cmap=cmap)
+        im=ax.imshow(target.pc[:,idx].reshape(self.axes_manager.axes[1].size,
+                    self.axes_manager.axes[2].size), cmap=cmap, 
+                    interpolation = 'nearest')
         plt.title('PC %s' % idx)
         div=make_axes_locatable(ax)
         cax=div.append_axes("right",size="5%",pad=0.05)
@@ -417,7 +420,8 @@ PCA and ICA (case insensitive)")
     def _plot_ic(self, idx, on_peaks=False, cmap=plt.cm.gray):
         target=self._get_target(on_peaks)
         ax=plt.gca()
-        im=ax.imshow(target.ic[:,idx].reshape(self.axes_manager.axes[1].size,self.axes_manager.axes[2].size),cmap=cmap)
+        im=ax.imshow(target.ic[:,idx].reshape(self.axes_manager.axes[1].size, 
+        self.axes_manager.axes[2].size),cmap=cmap, interpolation = 'nearest')
         plt.title('IC %s' % idx)
         div=make_axes_locatable(ax)
         cax=div.append_axes("right",size="5%",pad=0.05)
@@ -599,7 +603,8 @@ PCA and ICA (case insensitive)")
                                 mask=mask.squeeze()
                                 # grab the array of peak locations, only from THIS image
                                 loc=locs[mask]['position'].squeeze()
-                                plt.imshow(parents[keys[idx]].data)
+                                plt.imshow(parents[keys[idx]].data, 
+                                    interpolation = 'nearest')
                                 plt.gray()
                                 sc=ax.scatter(loc[:,0], loc[:,1],
                                         c=scores[i].squeeze()[mask],
