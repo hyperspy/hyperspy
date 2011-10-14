@@ -361,10 +361,11 @@ PCA and ICA (case insensitive)")
             plt.colorbar()
         return f
 
-    def _plot_pc(self, idx, on_peaks=False):
+    def _plot_pc(self, idx, on_peaks=False,cmap=plt.cm.gray):
         target=self._get_target(on_peaks)
         ax=plt.gca()
-        im=ax.imshow(target.pc[:,idx].reshape(self.axes_manager.axes[1].size,self.axes_manager.axes[2].size))
+        im=ax.imshow(target.pc[:,idx].reshape(self.axes_manager.axes[1].size,self.axes_manager.axes[2].size),
+                     cmap=cmap)
         plt.title('PC %s' % idx)
         div=make_axes_locatable(ax)
         cax=div.append_axes("right",size="5%",pad=0.05)
@@ -373,7 +374,7 @@ PCA and ICA (case insensitive)")
         
 
     def plot_principal_components(self, n = None, same_window=True, per_row=3, 
-                                  on_peaks=False):
+                                  on_peaks=False, cmap=plt.cm.gray):
         """Plot the principal components up to the given number
 
         Parameters
@@ -397,7 +398,7 @@ PCA and ICA (case insensitive)")
         if not same_window:
             for i in xrange(n):
                 plt.figure()
-                self._plot_pc(i,on_peaks)
+                self._plot_pc(i,on_peaks,cmap=cmap)
 
         else:
             fig = plt.figure()
@@ -407,15 +408,15 @@ PCA and ICA (case insensitive)")
                 for j in xrange(per_row):
                     if idx<n:
                         fig.add_subplot(rows,per_row,idx+1)
-                        self._plot_pc(idx,on_peaks)
+                        self._plot_pc(idx,on_peaks,cmap=cmap)
                         idx+=1
             plt.suptitle('Principal components')
             plt.draw()
 
-    def _plot_ic(self, idx, on_peaks=False):
+    def _plot_ic(self, idx, on_peaks=False, cmap=plt.cm.gray):
         target=self._get_target(on_peaks)
         ax=plt.gca()
-        im=ax.imshow(target.ic[:,idx].reshape(self.axes_manager.axes[1].size,self.axes_manager.axes[2].size))
+        im=ax.imshow(target.ic[:,idx].reshape(self.axes_manager.axes[1].size,self.axes_manager.axes[2].size),cmap=cmap)
         plt.title('IC %s' % idx)
         div=make_axes_locatable(ax)
         cax=div.append_axes("right",size="5%",pad=0.05)
@@ -423,7 +424,7 @@ PCA and ICA (case insensitive)")
 
 
     def plot_independent_components(self, ic=None, same_window=True,
-                                    per_row=3, on_peaks=False):
+                                    per_row=3, on_peaks=False, cmap=plt.cm.gray):
         """Plot the independent components.
 
         Parameters
@@ -454,7 +455,7 @@ PCA and ICA (case insensitive)")
         if not same_window:
             for i in xrange(n):
                 plt.figure()
-                self._plot_ic(i, on_peaks)
+                self._plot_ic(i, on_peaks,cmap=cmap)
 
         else:
             fig = plt.figure()
@@ -464,13 +465,13 @@ PCA and ICA (case insensitive)")
                 for j in xrange(per_row):
                     if idx<n:
                         fig.add_subplot(rows,per_row,idx+1)
-                        self._plot_ic(idx, on_peaks)
+                        self._plot_ic(idx, on_peaks,cmap=cmap)
                         idx+=1
             plt.suptitle('Independent components')
 
     def plot_maps(self, components, mva_type=None, scores=None, factors=None,
                   cmap=plt.cm.gray, no_nans=False, per_row=3, on_peaks=False, 
-                  save_figs=False, directory = None):
+                  scoremap=True, save_figs=False, directory = None):
         """
         Plot component maps for the different MSA types
 
@@ -480,19 +481,38 @@ PCA and ICA (case insensitive)")
             if None, returns maps of all components.
             if int, returns maps of components with ids from 0 to given int.
             if list of ints, returns maps of components with ids in given list.
+
         mva_type: string, currently either 'pca' or 'ica'
+
         scores: numpy array, the array of score maps
+
         factors: numpy array, the array of components, with each column as a component.
+
         cmap: matplotlib colormap instance
+
         no_nans: bool,
         
-        per_row: int (optional)
+        per_row : int (optional)
+            The number of plots per row in the multi-pane window.
 
-        on_peaks: bool (optional)
+        on_peaks : bool (optional)
+            If True, plots factors/score maps based on peak characteristics.
+               You must have first run peak_char_stack to obtain peak characteristics,
+               then run your MVA technique(s) with the on_peaks flag set to True in
+               order to obtain this information.
 
-        save_figs: bool (optional)
+        scoremap : bool (optional)
+            If True, plots scores of subimages overlaid as a scatter plot
+            on the original images.  Not possible unless the cell cropper
+            has been used to obtain your stack of subimages.
+
+        save_figs : bool (optional)
             If true, saves figures at 600 dpi to directory.  If directory is None,
             saves to current working directory.
+
+        directory : string or None
+            The folder to save images to, if save_figs is True.  If None, saves
+            to current working directory.
         """
         from hyperspy.signals.image import Image
         from hyperspy.signals.spectrum import Spectrum
@@ -536,52 +556,62 @@ unrecognized. Cannot proceed."%mva_type)
                 # 4D data - 2D arrays of diffraction patterns?
                 messages.warning('View not supported')
             elif self.axes_manager.navigation_dimension == 1:
-                locs=self.mapped_parameters.locations
-                if hasattr(self.mapped_parameters,"original_files"):
-                    parents=self.mapped_parameters.original_files
-                else:
-                    if not hasattr(self.mapped_parameters,'parent'):
-                        messages.warning('No parent image - mapping not possible')
-                        return None
-                    else:
+                if hasattr(self.mapped_parameters,'locations'):
+                    locs=self.mapped_parameters.locations
+                    if hasattr(self.mapped_parameters,"original_files"):
+                        parents=self.mapped_parameters.original_files
+                    elif hasattr(self.mapped_parameters,'parent'):
                         parents={self.mapped_parameters.parent.mapped_parameters.name:self.mapped_parameters.parent}
-                idx=0
-                keys=parents.keys()
-                rows=int(np.ceil((len(keys)+1)/float(per_row)))
-                if (len(keys)+1)<per_row:
-                    per_row=len(keys)+1
+                else:
+                    scoremap=False
+                    parents=None
+                    locs=None
                 # plot factor image first
-                figure.add_subplot(rows,per_row,1)
+                if scoremap:
+                    idx=0
+                    keys=parents.keys()
+                    rows=int(np.ceil((len(keys)+1)/float(per_row)))
+                    if (len(keys)+1)<per_row:
+                        per_row=len(keys)+1
+                    figure.add_subplot(rows,per_row,1)
+                else:
+                    figure.add_subplot(121)
                 plt.gray()
                 if mva_type.upper()=='PCA':
-                    self._plot_pc(i,on_peaks)
+                    self._plot_pc(i,on_peaks,cmap=cmap)
                 elif mva_type.upper()=='ICA':
-                    self._plot_ic(i,on_peaks)
-                for j in xrange(rows):
-                    for k in xrange(per_row):
-                        # plot score maps overlaid on experimental images
-                        if idx<len(keys):
-                            ax=figure.add_subplot(rows,per_row,idx+2)
-                            # p is the parent image that we're working with
-                            p=keys[idx]
-                            # the locations of peaks on that parent
-                            # binary mask to exclude peaks from other images
-                            mask=locs['filename']==p
-                            mask=mask.squeeze()
-                            # grab the array of peak locations, only from THIS image
-                            loc=locs[mask]['position'].squeeze()
-                            plt.imshow(parents[keys[idx]].data)
-                            plt.gray()
-                            sc=ax.scatter(loc[:,0], loc[:,1],
+                    self._plot_ic(i,on_peaks,cmap=cmap)
+                if scoremap:
+                    for j in xrange(rows):
+                        for k in xrange(per_row):
+                            # plot score maps overlaid on experimental images
+                            if idx<len(keys):
+                                ax=figure.add_subplot(rows,per_row,idx+2)
+                                # p is the parent image that we're working with
+                                p=keys[idx]
+                                # the locations of peaks on that parent
+                                # binary mask to exclude peaks from other images
+                                mask=locs['filename']==p
+                                mask=mask.squeeze()
+                                # grab the array of peak locations, only from THIS image
+                                loc=locs[mask]['position'].squeeze()
+                                plt.imshow(parents[keys[idx]].data)
+                                plt.gray()
+                                sc=ax.scatter(loc[:,0], loc[:,1],
                                         c=scores[i].squeeze()[mask],
-                                        cmap='jet')
-                            shp=parents[keys[idx]].data.shape
-                            plt.xlim(0,shp[1])
-                            plt.ylim(shp[0],0)
-                            div=make_axes_locatable(ax)
-                            cax=div.append_axes("right",size="5%",pad=0.05)
-                            plt.colorbar(sc,cax=cax)
+                                        cmap=cmap)
+                                shp=parents[keys[idx]].data.shape
+                                plt.xlim(0,shp[1])
+                                plt.ylim(shp[0],0)
+                                div=make_axes_locatable(ax)
+                                cax=div.append_axes("right",size="5%",pad=0.05)
+                                plt.colorbar(sc,cax=cax)
                             idx+=1
+                else:
+                    ax=figure.add_subplot(122)
+                    plt.plot(np.arange(scores[i].shape[0]),scores[i],'bo')
+                    plt.xlabel('Image index')
+                    plt.ylabel('Score, component %i'%i)
             else:
                 messages.warning('View not supported')
             if save_figs:
@@ -599,7 +629,8 @@ unrecognized. Cannot proceed."%mva_type)
 
     def plot_principal_components_maps(self, comp_ids=None, cmap=plt.cm.gray,
                                        recmatrix=None, plot=True, pc=None, on_peaks=False,
-                                       save_figs=False):
+                                       per_row=3, scoremap=True, save_figs=False,
+                                       directory=None):
         """Plot the map associated to each independent component
 
         Parameters
@@ -608,17 +639,44 @@ unrecognized. Cannot proceed."%mva_type)
             if None, returns maps of all components.
             if int, returns maps of components with ids from 0 to given int.
             if list of ints, returns maps of components with ids in given list.
-        cmap : plt.cm object
+
+        cmap : plt.cm object, the colormap of the factor image
+
         recmatrix : numpy array
             externally suplied recmatrix
+
         plot : bool
             If True it will plot the figures. Otherwise it will only return the
             images.
-        ic : numpy array
-            externally supplied independent components
+
+        pc : numpy array
+            externally supplied principal components
+
         no_nans : bool (optional)
              whether substituting NaNs with zeros for a visually prettier plot
              (default is False)
+
+        per_row : int (optional)
+            The number of plots per row in the multi-pane window.
+
+        on_peaks : bool (optional)
+            If True, plots factors/score maps based on peak characteristics.
+               You must have first run peak_char_stack to obtain peak characteristics,
+               then run your MVA technique(s) with the on_peaks flag set to True in
+               order to obtain this information.
+
+        scoremap : bool (optional)
+            If True, plots scores of subimages overlaid as a scatter plot
+            on the original images.  Not possible unless the cell cropper
+            has been used to obtain your stack of subimages.
+
+        save_figs : bool (optional)
+            If true, saves figures at 600 dpi to directory.  If directory is None,
+            saves to current working directory.
+
+        directory : string or None
+            The folder to save images to, if save_figs is True.  If None, saves
+            to current working directory.
 
         Returns
         -------
@@ -626,42 +684,64 @@ unrecognized. Cannot proceed."%mva_type)
         """
         return self.plot_maps(components=comp_ids,mva_type='pca',cmap=cmap,
                               scores=recmatrix, factors=pc, on_peaks=on_peaks,
-                              save_figs=save_figs)
+                              scoremap=scoremap,save_figs=save_figs,
+                              per_row=per_row, directory=directory)
 
     def plot_independent_components_maps(self, comp_ids=None, cmap=plt.cm.gray,
                                          recmatrix=None, ic=None, no_nans=False,
-                                         on_peaks=False, save_figs=False, 
-                                         directory = None):
+                                         on_peaks=False, scoremap=True, per_row=3,
+                                         save_figs=False, directory = None):
         """Plot the map associated to each independent component
 
         Parameters
         ----------
         cmap : plt.cm object
+
         recmatrix : numpy array
             externally suplied recmatrix
+
         comp_ids : int or list of ints
             if None, returns maps of all components.
             if int, returns maps of components with ids from 0 to given int.
             if list of ints, returns maps of components with ids in given list.
+
         with_ic : bool
             If True, plots also the corresponding independent component in the
             same figure
+
         plot : bool
             If True it will plot the figures. Otherwise it will only return the
             images.
+
         ic : numpy array
             externally supplied independent components
+
         no_nans : bool (optional)
              whether substituting NaNs with zeros for a visually prettier plot
              (default is False)
+
+        per_row : int (optional)
+            The number of plots per row in the multi-pane window.
+
+        on_peaks : bool (optional)
+            If True, plots factors/score maps based on peak characteristics.
+               You must have first run peak_char_stack to obtain peak characteristics,
+               then run your MVA technique(s) with the on_peaks flag set to True in
+               order to obtain this information.
+
+        scoremap : bool (optional)
+            If True, plots scores of subimages overlaid as a scatter plot
+            on the original images.  Not possible unless the cell cropper
+            has been used to obtain your stack of subimages.
+
         Returns
         -------
         List with the maps as MVA instances
         """
         return self.plot_maps(components=comp_ids,mva_type='ica',cmap=cmap,
                               scores=recmatrix, factors=ic, no_nans=no_nans,
-                              on_peaks=on_peaks, save_figs=save_figs, 
-                              directory = directory)
+                              on_peaks=on_peaks, scoremap=scoremap, per_row=per_row,
+                              save_figs=save_figs, directory = directory)
 
 
     def save_principal_components(self, n, spectrum_prefix = 'pc',
