@@ -229,18 +229,6 @@ class Signal(t.HasTraits, MVA):
             self._plot.plot()
             
         elif axes_manager.signal_dimension == 2:
-
-            # Mike's playground with new plotting toolkits - needs to be a
-            # branch.
-            """
-            if len(self.data.shape)==2:
-                from drawing.guiqwt_hie import image_plot_2D
-                image_plot_2D(self)
-
-            import drawing.chaco_hie
-            self._plot = drawing.chaco_hie.Chaco_HyperImage_Explorer(self)
-            self._plot.configure_traits()
-            """
             self._plot = mpl_hie.MPL_HyperImage_Explorer()
             self._plot.image_data_function = self.__call__
             self._plot.navigator_data_function = self._get_explorer
