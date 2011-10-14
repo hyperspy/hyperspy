@@ -49,7 +49,7 @@ class MPL_HyperImage_Explorer():
         self.image_plot = imf
         
         if self.navigator_plot is not None and imf.figure is not None:
-            utils.(imf.figure, self.navigator_plot.close)
+            utils.on_window_close(imf.figure, self.navigator_plot.close)
             self._key_nav_cid = self.image_plot.figure.canvas.mpl_connect(
             'key_press_event', self.axes_manager.key_navigator)
             self._key_nav_cid = self.navigator_plot.figure.canvas.mpl_connect(

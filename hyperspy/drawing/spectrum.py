@@ -48,7 +48,7 @@ class SpectrumFigure():
         
     def create_figure(self):
         self.figure = utils.create_figure()
-        utils.(self.figure, self.close)
+        utils.on_window_close(self.figure, self.close)
 
         
     def create_left_axis(self):
