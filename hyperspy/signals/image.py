@@ -21,6 +21,7 @@ from hyperspy.signal import Signal
 import hyperspy.peak_char as pc
 from hyperspy.misc import utils_varia
 from hyperspy.learn.mva import MVA_Results
+from hyperspy import messages
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -521,7 +522,8 @@ PCA and ICA (case insensitive)")
 
         if scores is None or (factors is None and with_components is True):
             if mva_type is None:
-                messages.warning("Neither scores nor analysis type specified.  Cannot proceed.")
+                messages.warning(
+                "Neither scores nor analysis type specified.  Cannot proceed.")
                 return
 
             elif mva_type.lower() == 'pca':
@@ -531,11 +533,13 @@ PCA and ICA (case insensitive)")
                 scores = self._get_ica_scores(target)
                 factors=target.ic
                 if no_nans:
-                    messages.information('Removing NaNs for a visually prettier plot.')
+                    messages.information(
+                        'Removing NaNs for a visually prettier plot.')
                     scores = np.nan_to_num(scores) # remove ugly NaN pixels
             else:
-                messages.warning("No scores provided and analysis type '%s' \
-unrecognized. Cannot proceed."%mva_type)
+                messages.warning(
+                    "No scores provided and analysis type '%s' unrecognized"  
+                    % mva_type)
                 return
 
 #        if len(self.axes_manager.axes)==2:
@@ -744,8 +748,8 @@ unrecognized. Cannot proceed."%mva_type)
                               save_figs=save_figs, directory = directory)
 
 
-    def save_principal_components(self, n, spectrum_prefix = 'pc',
-    image_prefix = 'im', spectrum_format = 'msa', image_format = 'tif',
+    def save_principal_components(self, n, pc_prefix = 'pc',
+    score_prefix = 'score', spectrum_format = 'msa', hs_format = 'tif',
                                   on_peaks=False):
         """Save the `n` first principal components  and score maps
         in the specified format
@@ -753,30 +757,33 @@ unrecognized. Cannot proceed."%mva_type)
         Parameters
         ----------
         n : int
-            Number of principal components to save_als_ica_results
-        image_prefix : string
-            Prefix for the image file names
-        spectrum_prefix : string
-            Prefix for the spectrum file names
+            Number of principal components to save
+        score_prefix : string
+            Prefix for the score file names
+        pc_prefix : string
+            Prefix for the principal component file names
         spectrum_format : string
-        image_format : string
+            Any of Hyperspy's supported file formats for spectral data
+        hs_format : string
+            Any of Hyperspy's supported file formats for hyperspectral data
 
         """
-        from spectrum import Spectrum
+        from hyperspy.signals.spectrum import Spectrum
         target=self._get_target(on_peaks)
         im_list = self.plot_principal_components_maps(n, plot = False,
                                                       on_peaks=on_peaks)
-        s = Spectrum({'calibration' : {'data_cube' : target.pc[:,0]}})
-        s.get_calibration_from(self)
+        axis_dict = self.axes_manager._non_slicing_axes[0].get_axis_dictionary()
+        axis_dict['index_in_array'] = 0
+        s = Spectrum({'data' : target.pc[:,0],
+                      'axes' : [axis_dict,]})
         for i in xrange(n):
-            s.data_cube = target.pc[:,i]
-            s.get_dimensions_from_cube()
-            s.save('%s-%i.%s' % (spectrum_prefix, i, spectrum_format))
-            im_list[i].save('%s-%i.%s' % (image_prefix, i, image_format))
+            s.data = target.pc[:,i]
+            s.save('%s-%i.%s' % (pc_prefix, i, spectrum_format))
+            im_list[i].save('%s-%i.%s' % (score_prefix, i, hs_format))
 
     def save_independent_components(self, elements=None,
                                     spectrum_format='msa',
-                                    image_format='tif',
+                                    hs_format='tif',
                                     recmatrix=None, ic=None,
                                     on_peaks=False):
         """Saves the result of the ICA in image and spectrum format.
@@ -788,7 +795,7 @@ unrecognized. Cannot proceed."%mva_type)
         elements : None or tuple of strings
             a list of names (normally an element) to be assigned to IC. If not
             the will be name ic-0, ic-1 ...
-        image_format : string
+        hs_format : string
         spectrum_format : string
         recmatrix : None or numpy array
             externally supplied recmatrix
@@ -817,14 +824,14 @@ unrecognized. Cannot proceed."%mva_type)
             if elements is None:
                 spectrum.save('ic-%s.%s' % (i, spectrum_format))
                 if maps is True:
-                    pl[i].save('map_ic-%s.%s' % (i, image_format))
+                    pl[i].save('map_ic-%s.%s' % (i, hs_format))
                 else:
                     pl[i].save('profile_ic-%s.%s' % (i, spectrum_format))
             else:
                 element = elements[i]
                 spectrum.save('ic-%s.%s' % (element, spectrum_format))
                 if maps:
-                    pl[i].save('map_ic-%s.%s' % (element, image_format))
+                    pl[i].save('map_ic-%s.%s' % (element, hs_format))
                 else:
                     pl[i].save('profile_ic-%s.%s' % (element, spectrum_format))
 

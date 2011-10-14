@@ -773,8 +773,8 @@ class Spectrum(Signal):
                               on_peaks=on_peaks, directory = directory)
 
 
-    def save_principal_components(self, n, spectrum_prefix = 'pc',
-    image_prefix = 'im', spectrum_format = 'msa', image_format = 'tif',
+    def save_principal_components(self, n, pc_prefix = 'pc',
+        score_prefix = 'score', spectrum_format = 'msa', hs_format = 'tif',
                                   on_peaks=False):
         """Save the `n` first principal components  and score maps
         in the specified format
@@ -782,28 +782,37 @@ class Spectrum(Signal):
         Parameters
         ----------
         n : int
-            Number of principal components to save_als_ica_results
-        image_prefix : string
-            Prefix for the image file names
-        spectrum_prefix : string
-            Prefix for the spectrum file names
+            Number of principal components to save
+        score_prefix : string
+            Prefix for the score file names
+        pc_prefix : string
+            Prefix for the principal component file names
         spectrum_format : string
-        image_format : string
-
+            Any of Hyperspy's supported file formats for spectral data
+        hs_format : string
+            Any of Hyperspy's supported file formats for hyperspectral data
+            
         """
-        from spectrum import Spectrum
+        
+        from hyperspy.signals.spectrum import Spectrum
         im_list = self.plot_principal_components_maps(n, plot = False)
-        s = Spectrum({'calibration' : {'data_cube' : self.mva_results.pc[:,0]}})
-        s.get_calibration_from(self)
+        axis_dict = self.axes_manager._slicing_axes[0].get_axis_dictionary()
+        axis_dict['index_in_array'] = 0
+        s = Spectrum({'data' : self.mva_results.pc[:,0],
+                      'axes' : [axis_dict,]})
+        if self.axes_manager.navigation_dimension == 1:
+            score_format = spectrum_format
+        else:
+            score_format = hs_format
+            
         for i in xrange(n):
-            s.data_cube = self.mva_results.pc[:,i]
-            s.get_dimensions_from_cube()
-            s.save('%s-%i.%s' % (spectrum_prefix, i, spectrum_format))
-            im_list[i].save('%s-%i.%s' % (image_prefix, i, image_format))
+            s.data = self.mva_results.pc[:,i]
+            s.save('%s-%i.%s' % (pc_prefix, i, spectrum_format))
+            im_list[i].save('%s-%i.%s' % (score_prefix, i, score_format))
 
     def save_independent_components(self, elements=None,
                                     spectrum_format='msa',
-                                    image_format='tif',
+                                    hs_format='tif',
                                     recmatrix=None, ic=None,
                                     on_peaks=False):
         """Saves the result of the ICA in image and spectrum format.
@@ -815,7 +824,7 @@ class Spectrum(Signal):
         elements : None or tuple of strings
             a list of names (normally an element) to be assigned to IC. If not
             the will be name ic-0, ic-1 ...
-        image_format : string
+        hs_format : string
         spectrum_format : string
         recmatrix : None or numpy array
             externally supplied recmatrix
@@ -842,14 +851,14 @@ class Spectrum(Signal):
             if elements is None:
                 spectrum.save('ic-%s.%s' % (i, spectrum_format))
                 if maps is True:
-                    pl[i].save('map_ic-%s.%s' % (i, image_format))
+                    pl[i].save('map_ic-%s.%s' % (i, hs_format))
                 else:
                     pl[i].save('profile_ic-%s.%s' % (i, spectrum_format))
             else:
                 element = elements[i]
                 spectrum.save('ic-%s.%s' % (element, spectrum_format))
                 if maps:
-                    pl[i].save('map_ic-%s.%s' % (element, image_format))
+                    pl[i].save('map_ic-%s.%s' % (element, hs_format))
                 else:
                     pl[i].save('profile_ic-%s.%s' % (element, spectrum_format))
     
