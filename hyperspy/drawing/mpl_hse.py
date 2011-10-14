@@ -120,7 +120,7 @@ class MPL_HyperSpectrum_Explorer(object):
         self.spectrum_plot = sf
         sf.plot()
         if self.navigator_plot is not None and sf.figure is not None:
-            utils.on_window_close(sf.figure, self.navigator_plot.close)
+            utils.on_figure_window_close(sf.figure, self.navigator_plot.close)
             self._key_nav_cid = self.spectrum_plot.figure.canvas.mpl_connect(
             'key_press_event', self.axes_manager.key_navigator)
             self._key_nav_cid = self.navigator_plot.figure.canvas.mpl_connect(

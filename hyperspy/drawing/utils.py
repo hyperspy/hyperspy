@@ -18,6 +18,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import copy
 
 def does_figure_object_exists(fig_obj):
     """Test if a figure really exist
@@ -35,15 +36,15 @@ def does_figure_object_exists(fig_obj):
             fig_obj = None
             return False
                 
-def create_figure(window_title = None, _on_window_close = None):
+def create_figure(window_title = None, _on_figure_window_close = None):
     fig = plt.figure()
     if window_title is not None:
         fig.canvas.set_window_title(window_title)
-    if _on_window_close is not None:
-        on_window_close(fig, _on_window_close)
+    if _on_figure_window_close is not None:
+        on_figure_window_close(fig, _on_figure_window_close)
     return fig
                 
-def on_window_close(figure, function):
+def on_figure_window_close(figure, function):
     """Connects a close figure signal to a given function
     
     Parameters
@@ -54,6 +55,10 @@ def on_window_close(figure, function):
     """
     window = figure.canvas.manager.window
     backend = plt.get_backend()
+    if not hasattr(figure, '_on_window_close'):
+        figure._on_window_close = set()
+    figure._on_window_close.add(function)
+    
     if backend == 'GTKAgg':
         def function_wrapper(*args):
                 function()
@@ -64,7 +69,8 @@ def on_window_close(figure, function):
         # so it is enabled only for Windows
         import wx
         def function_wrapper(event):
-            function()
+            for f in figure._on_window_close:
+                f()
             plt.close(figure)
         window.Bind(wx.EVT_CLOSE, function_wrapper)
         
