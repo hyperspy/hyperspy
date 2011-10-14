@@ -169,7 +169,7 @@ more than one match.
 
     s.plot_pr (hit tab)
     s.plot_principal_components_ (hit tab)
-    s.(number_of_components)
+    s.plot_principal_components_maps(number_of_components)
 
 Saving and loading results
 ==========================
