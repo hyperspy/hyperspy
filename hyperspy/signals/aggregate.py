@@ -305,7 +305,7 @@ to add?'%arg.mapped_parameters.name)
             
         See also
         --------
-        plot_principal_components, plot_principal_components_maps, plot_lev
+        plot_principal_components, , plot_lev
         """
         super(AggregateSpectrum,self).principal_components_analysis(normalize_poissonian_noise, 
                                      algorithm, output_dimension, navigation_mask, 

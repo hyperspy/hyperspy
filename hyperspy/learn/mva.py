@@ -82,7 +82,7 @@ class MVA():
 
         See also
         --------
-        plot_principal_components, plot_principal_components_maps, plot_lev
+        plot_principal_components, , plot_lev
 
         """
         # backup the original data
