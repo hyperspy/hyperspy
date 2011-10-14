@@ -703,7 +703,7 @@ class Spectrum(Signal):
                               dpi = 600)
         return im_list
 
-    def plot_principal_components_maps(self, comp_ids=None, cmap=plt.cm.gray,
+    def (self, comp_ids=None, cmap=plt.cm.gray,
                                        recmatrix=None, with_pc=True,
                                        plot=True, pc=None, on_peaks=False):
         """Plot the map associated to each independent component
@@ -795,7 +795,7 @@ class Spectrum(Signal):
         """
         
         from hyperspy.signals.spectrum import Spectrum
-        im_list = self.plot_principal_components_maps(n, plot = False)
+        im_list = self.(n, plot = False)
         axis_dict = self.axes_manager._slicing_axes[0].get_axis_dictionary()
         axis_dict['index_in_array'] = 0
         s = Spectrum({'data' : self.mva_results.pc[:,0],

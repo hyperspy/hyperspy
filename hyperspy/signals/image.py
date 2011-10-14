@@ -601,7 +601,7 @@ PCA and ICA (case insensitive)")
                               dpi = 600)
 
 
-    def plot_principal_components_maps(self, comp_ids=None, cmap=plt.cm.gray,
+    def (self, comp_ids=None, cmap=plt.cm.gray,
                                        recmatrix=None, plot=True, pc=None, 
                                        on_peaks=False, save_figs=False):
         """Plot the map associated to each independent component
@@ -690,7 +690,7 @@ PCA and ICA (case insensitive)")
         """
         from hyperspy.signals.spectrum import Spectrum
         target=self._get_target(on_peaks)
-        im_list = self.plot_principal_components_maps(n, plot = False,
+        im_list = self.(n, plot = False,
                                                       on_peaks=on_peaks)
         axis_dict = self.axes_manager._non_slicing_axes[0].get_axis_dictionary()
         axis_dict['index_in_array'] = 0
