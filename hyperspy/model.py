@@ -189,6 +189,25 @@ class Model(list, Optimizers, Estimators):
                     else:
                         self.free_parameters_boundaries.extend((
                         param._bounds))
+                        
+    def set_mpfit_parameters_info(self):
+        self.mpfit_parinfo = []
+        for component in self:
+            component.refresh_free_parameters()
+            if component.active:
+                for param in component.free_parameters:
+                    if param._number_of_elements == 1:
+                        limited = [0,0]
+                        limits = [0,0]
+                        if param.bmin is not None:
+                            limited[0] = 1
+                            limits[0] = param.bmin
+                        if param.bmax is not None:
+                            limited[1] = 1
+                            limits[1] = param.bmax
+                        self.mpfit_parinfo.append(
+                        {'limited' : limited,
+                         'limits' : limits})
 
     def set(self):
         """ Store the parameters of the current coordinates into the 
@@ -523,7 +542,7 @@ class Model(list, Optimizers, Estimators):
                 
     def multifit(self, mask = None, fitter = "leastsq", 
                  charge_only_fixed = False, grad = False, autosave = False, 
-                 autosave_every = 10, **kwargs):
+                 autosave_every = 10, bounded = False, **kwargs):
         if autosave is not False:
             fd, autosave_fn = tempfile.mkstemp(prefix = 'hyperspy_autosave-', 
             dir = '.', suffix = '.npz')
@@ -543,12 +562,26 @@ class Model(list, Optimizers, Estimators):
         pbar = progressbar.progressbar(
         maxval = (np.cumprod(self.axes_manager.navigation_shape)[-1] - 
         masked_elements))
+        if bounded is True:
+            if fitter == 'mpfit':
+                self.set_mpfit_parameters_info()
+                bounded = None
+            elif fitter in ("tnc", "l_bfgs_b"):
+                self.set_boundaries()
+                bounded = None
+            else:
+                messages.information(
+                "The chosen fitter does not suppport bounding."
+                "If you require boundinig please select one of the following"
+                "fitters instead: mpfit, tnc, l_bfgs_b")
+                bounded = False
         i = 0
         for index in np.ndindex(tuple(self.axes_manager.navigation_shape)):
             if mask is None or not mask[index]:
                 self.axes_manager.set_not_slicing_indexes(index)
                 self.charge(only_fixed = charge_only_fixed)
-                self.fit(fitter = fitter, grad = grad, **kwargs)
+                self.fit(fitter = fitter, grad = grad, bounded = bounded, 
+                         **kwargs)
                 i += 1
                 pbar.update(i)
             if autosave is True and i % autosave_every  == 0:

@@ -204,7 +204,7 @@ class Component:
             i += parameter._number_of_elements
         self.nparam=i
 
-    def charge( self, p, p_std = None, onlyfree = False):
+    def charge(self, p, p_std = None, onlyfree = False):
         if onlyfree is True:
             parameters = self.free_parameters
         else:
@@ -215,7 +215,7 @@ class Component:
             parameter.value = (p[i] if lenght == 1 else 
             p[i:i+lenght].tolist())
             if p_std is not None:
-                parameter.map['std'] = (p_std[i] if lenght == 1 else 
+                parameter.std = (p_std[i] if lenght == 1 else 
                 p_std[i:i+lenght].tolist())
             
             i+=lenght           

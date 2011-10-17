@@ -78,5 +78,16 @@ class Estimators:
         gls =(2*self._errfunc(param, y, weights) * 
         self._jacobian(param, y)).sum(1)
         return gls
+        
+    def _errfunc4mpfit(self, p, fjac = None, x = None, y = None, weights = None):
+        if fjac is None:
+            errfunc = self._model_function(p) - y
+            if weights is not None:
+                errfunc *= weights
+            jacobian = None
+            status = 0
+            return [status, errfunc]
+        else:
+            return [0, self._jacobian(p,y).T]
 
             
