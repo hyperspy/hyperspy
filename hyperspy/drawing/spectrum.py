@@ -26,14 +26,14 @@ class SpectrumFigure():
     """
     def __init__(self):
         self.figure = None
-        self.left_ax = None
+        self.ax = None
         self.right_ax = None
-        self.left_ax_lines = list()
+        self.ax_lines = list()
         self.right_ax_lines = list()
         self.autoscale = True
         self.blit = False
         self.lines = list()
-        self.left_axes_manager = None
+        self.axes_manager = None
         self.right_axes_manager = None
         
         
@@ -42,34 +42,32 @@ class SpectrumFigure():
         self.ylabel = ''
         self.title = ''
         self.create_figure()
-        self.create_left_axis()
+        self.create_axis()
 #        self.create_right_axis()
 
-        
     def create_figure(self):
         self.figure = utils.create_figure()
         utils.on_figure_window_close(self.figure, self.close)
-
         
-    def create_left_axis(self):
-        self.left_ax = self.figure.add_subplot(111)
-        ax = self.left_ax
+    def create_axis(self):
+        self.ax = self.figure.add_subplot(111)
+        ax = self.ax
         ax.set_xlabel(self.xlabel)
         ax.set_ylabel(self.ylabel)
         ax.set_title(self.title)
         
     def create_right_axis(self):
-        if self.left_ax is None:
-            self.create_left_axis()
+        if self.ax is None:
+            self.create_axis()
         if self.right_ax is None:
-            self.right_ax = self.left_ax.twinx()
+            self.right_ax = self.ax.twinx()
         
     def add_line(self, line, ax = 'left'):
         if ax == 'left':
-            line.ax = self.left_ax
+            line.ax = self.ax
             if line.axes_manager is None:
-                line.axes_manager = self.left_axes_manager
-            self.left_ax_lines.append(line)
+                line.axes_manager = self.axes_manager
+            self.ax_lines.append(line)
         elif ax == 'right':
             line.ax = self.right_ax
             self.right_ax_lines.append(line)
@@ -83,7 +81,7 @@ class SpectrumFigure():
         
         x_axis_upper_lims=[]
         x_axis_lower_lims=[]
-        for line in self.left_ax_lines:
+        for line in self.ax_lines:
             line.plot()
             x_axis_lower_lims.append(line.axis[0])
             x_axis_upper_lims.append(line.axis[-1])
@@ -91,7 +89,7 @@ class SpectrumFigure():
             
         
     def close(self):
-        for line in self.left_ax_lines + self.right_ax_lines:
+        for line in self.ax_lines + self.right_ax_lines:
             line.close()
         if utils.does_figure_object_exists(self.figure):
             plt.close(self.figure)

@@ -186,7 +186,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
 #        if new is True:
 #            self.span_selector = \
 #            drawing.widgets.ModifiableSpanSelector(
-#            self.signal.hse.spectrum_plot.left_ax,
+#            self.signal.hse.spectrum_plot.ax,
 #            onselect = self.store_current_spectrum_bg_parameters,
 #            onmove_callback = self.background_estimatorot_bg_removed_spectrum)
 #        elif self.span_selector is not None:
@@ -218,7 +218,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
 #        if new is True:
 #            self.signal_span_selector = \
 #            drawing.widgets.ModifiableSpanSelector(
-#            self.signal.hse.spectrum_plot.left_ax, 
+#            self.signal.hse.spectrum_plot.ax, 
 #            onselect = self.store_current_spectrum_bg_parameters,
 #            onmove_callback = self.background_estimatorot_signal_map)
 #            self.signal_span_selector.rect.set_color('blue')
@@ -235,12 +235,12 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
 #        if self.bg_line is not None:
 #            self.span_selector.ax.lines.remove(self.bg_line)
 #            self.span_selector.ax.lines.remove(self.signal_line)
-#        self.bg_line, = self.signal.hse.spectrum_plot.left_ax.plot(
+#        self.bg_line, = self.signal.hse.spectrum_plot.ax.plot(
 #        ea, self.background_estimator.function(ea), color = 'black')
-#        self.signal_line, = self.signal.hse.spectrum_plot.left_ax.plot(
+#        self.signal_line, = self.signal.hse.spectrum_plot.ax.plot(
 #        self.signal.energy_axis[iright:], self.signal()[iright:] - 
 #        self.background_estimator.function(self.signal.energy_axis[iright:]), color = 'black')
-#        self.signal.hse.spectrum_plot.left_ax.figure.canvas.draw()
+#        self.signal.hse.spectrum_plot.ax.figure.canvas.draw()
 
 #        
 #    def plot_signal_map(self, *args, **kwargs):
