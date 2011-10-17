@@ -406,6 +406,7 @@ Perform Levenberg-Marquardt least-squares minimization, based on MINPACK-1.
    Translated from MPFIT (Craig Markwardt's IDL package) to Python,
    August, 2002.  Mark Rivers
    Converted from Numeric to numpy (Sergey Koposov, July 2008)
+   Fixed the analytic derivatives features (The Hyperspy Developers, 2011)
 """
 
 import numpy
@@ -1526,22 +1527,24 @@ class mpfit:
 			mperr = 0
 			fjac = numpy.zeros(nall, dtype=float)
 			fjac[ifree] = 1.0  # Specify which parameters need derivatives
-			[status, fp] = self.call(fcn, xall, functkw, fjac=fjac)
+			[status, fjac] = self.call(fcn, xall, functkw, fjac=fjac)
 
-			if len(fjac) != m*nall:
+			if fjac.shape != (m,nall):
 				print 'ERROR: Derivative matrix was not computed properly.'
+				print fjac.shape
+				print m, nall
 				return None
 
 			# This definition is consistent with CURVEFIT
 			# Sign error found (thanks Jesus Fernandez <fernande@irm.chu-caen.fr>)
-			fjac.shape = [m,nall]
-			fjac = -fjac
+#			fjac.shape = [m,nall]
+#			fjac = -fjac
 
 			# Select only the free parameters
 			if len(ifree) < nall:
 				fjac = fjac[:,ifree]
 				fjac.shape = [m, n]
-				return fjac
+			return fjac
 
 		fjac = numpy.zeros([m, n], dtype=float)
 

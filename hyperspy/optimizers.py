@@ -85,6 +85,7 @@ class Optimizers(Estimators):
             # bug?) so...
             if var_matrix is not None:
                 self.p_std = np.sqrt(np.diag(var_matrix))
+            self.fit_output = output
         
         elif fitter == "odr":
             modelo = odr.Model(fcn = self._function4odr, 
@@ -98,8 +99,13 @@ class Optimizers(Estimators):
             result = myoutput.beta
             self.p_std = myoutput.sd_beta
             self.p0 = result
+            self.fit_output = myoutput
             
         elif fitter == 'mpfit':
+            autoderivative = 1
+            if grad is True:
+                autoderivative = 0
+
             if bounded is True:
                 self.set_mpfit_parameters_info()
             elif bounded is False:
@@ -107,8 +113,10 @@ class Optimizers(Estimators):
             m = mpfit(self._errfunc4mpfit, self.p0[:], 
             parinfo = self.mpfit_parinfo, functkw= {
                 'y': self.spectrum()[self.channel_switches], 
-                'weights' :weights})
+                'weights' :weights}, autoderivative = autoderivative, quiet = 1)
             self.p0 = m.params
+            self.p_std = m.perror
+            self.fit_output = m
             
         else:          
         # General optimizers (incluiding constrained ones(tnc,l_bfgs_b)
@@ -178,13 +186,8 @@ class Optimizers(Estimators):
         
         if np.iterable(self.p0) == 0:
             self.p0 = (self.p0,)
-#        if self.p_std is None:
-#            self.p_std = self.calculate_p_std(self.p0, method, *args)
         self._charge_p0(p_std = self.p_std)
         self.set()
-#        self.model_cube[self.channel_switches, 
-#                        self.coordinates.ix, self.coordinates.iy] = \
-#                        self.__call__(not self.convolved, onlyactive = True)
         if ext_bounding is True:
             self._disable_ext_bounding()
         if switch_aap is True:
