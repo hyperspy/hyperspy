@@ -104,6 +104,7 @@ class MPL_HyperSpectrum_Explorer(object):
         sf.ylabel = self.ylabel
         sf.title = self.spectrum_title
         sf.axis = self.axis
+        sf.create_axis()
         sf.axes_manager = self.axes_manager
         self.spectrum_plot = sf
         # Create a line to the left axis with the default coordinates
