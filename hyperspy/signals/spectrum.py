@@ -619,7 +619,7 @@ class Spectrum(Signal):
 
     def plot_maps(self, components, mva_type=None, scores=None, factors=None,
                   cmap=plt.cm.gray, no_nans=False, with_components=True,
-                  plot=True, on_peaks=False, directory = None):
+                  plot=True, on_peaks=False, directory = None,calibrate=True):
         """
         Plot component maps for the different MSA types
 
@@ -680,34 +680,15 @@ class Spectrum(Signal):
                     ax2 = figure.add_subplot(121)
                 else:
                     ax = figure.add_subplot(111)
-            if self.axes_manager.navigation_dimension == 2:
-                toplot = scores[i,:].reshape(self.axes_manager.navigation_shape)
-                im_list.append(Image({'data' : toplot,
-                    'axes' : self.axes_manager._get_non_slicing_axes_dicts()}))
-                if plot is True:
-                    mapa = ax.matshow(toplot, cmap = cmap)
-                    if with_components:
-                        ax2.plot(self.axes_manager.axes[-1].axis, factors[:,i])
-                        ax2.set_title('%s component %i' % (mva_type.upper(),i))
-                        ax2.set_xlabel('Energy (eV)')
-                    figure.colorbar(mapa)
-                    figure.canvas.draw()
-                    #pointer = widgets.DraggableSquare(self.coordinates)
-                    #pointer.add_axes(ax)
-            elif self.axes_manager.navigation_dimension == 1:
-                toplot = scores[i]
-                im_list.append(Spectrum({"data" : toplot,
-                    'axes' : self.axes_manager._get_non_slicing_axes_dicts()}))
-                im_list[-1].get_dimensions_from_data()
-                if plot is True:
-                    ax.step(range(len(toplot)), toplot)
+            specdraw._plot_score(scores=scores,idx=i,axes_manager=self.axes_manager,
+                                 comp_label=mva_type,no_nans=no_nans, ax=ax,
+                                 calibrate=calibrate,cmap=cmap)                
+            if with_components:
+                specdraw._plot_component(factors=factors,idx=i,ax=ax2,
+                                         cal_axis=self.axes_manager.axes[-1],
+                                         comp_label=mva_type)
+            figure.canvas.draw()
 
-                    if with_components:
-                        ax2.plot(self.axes_manager.axes[-1].axis, factors[:,i])
-                        ax2.set_title('%s component %s' % (mva_type.upper(),i))
-                        ax2.set_xlabel('Energy (eV)')
-            else:
-                messages.warning_exit('View not supported')
             if plot is True:
                 ax.set_title('%s component number %s map' % (mva_type.upper(),i))
                 figure.canvas.draw()

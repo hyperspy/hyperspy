@@ -18,6 +18,9 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+from hyperspy import messages
 
 import utils
 
@@ -185,10 +188,33 @@ def _plot_component(factors, idx, ax=None, cal_axis=None,
     ax.plot(x,factors[:,idx],label='%s %i'%(comp_label,idx))
     return ax
 
-def _plot_score(scores, idx, ax=None, axes_manager=None,
-                comp_label='PC'):
+def _plot_score(scores, idx, axes_manager, ax=None, 
+                comp_label='PC',no_nans=True, calibrate=True,
+                cmap=plt.cm.gray):
     if ax==None:
         ax=plt.gca()
-    if axes_manager <> None:
-        pass
+    if no_nans:
+        scores=np.nan_to_num(scores)
+    if axes_manager.navigation_dimension==2:
+        extent=None
+        # get calibration from a passed axes_manager
+        shape=axes_manager.navigation_shape
+        if calibrate:
+            extent=(axes_manager.axes[0].low_value,
+                    axes_manager.axes[0].high_value,
+                    axes_manager.axes[1].high_value,
+                    axes_manager.axes[1].low_value)
+        im=ax.imshow(scores[idx].reshape(shape),cmap=cmap,extent=extent)
+        div=make_axes_locatable(ax)
+        cax=div.append_axes("right",size="5%",pad=0.05)
+        plt.colorbar(im,cax=cax)
+    elif axes_manager.navigation_dimension ==1:
+        if calibrate:
+            x=axes_manager.axes[0].axis
+        else:
+            x=np.arange(axes_manager.axes[0].size)
+        ax.step(x,scores[idx])
+    else:
+        messages.warning_exit('View not supported')
+            
         
