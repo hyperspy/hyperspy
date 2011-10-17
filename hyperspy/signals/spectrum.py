@@ -24,6 +24,8 @@ from hyperspy.gui.tools import (SpectrumCalibration, SmoothingSavitzkyGolay,
     SmoothingLowess, )
 from hyperspy.gui.egerton_quantification import BackgroundRemoval
 
+from hyperspy.drawing import spectrum as specdraw
+
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
@@ -542,65 +544,78 @@ class Spectrum(Signal):
         br = BackgroundRemoval(self)
         br.edit_traits()
 
-    def plot_principal_components(self, n = None):
+    def _plot_components(self, factors, ax=None, comp_ids = None, 
+                         same_window=True, comp_label='PC'):
+        if comp_ids is None:
+            comp_ids=xrange(factors.shape[1])
+
+        elif type(comp_ids).__name__!='list':
+            comp_ids=xrange(comp_ids)
+
+        if ax==None:
+            ax=plt.gca()
+
+        for i in comp_ids:
+            if not same_window:
+                plt.figure()
+                ax=plt.gca()
+            ax=specdraw._plot_component(factors=factors,
+                                        idx=i,ax=ax,
+                                        cal_axis=self.axes_manager.axes[-1],
+                                        comp_label=comp_label)
+        if same_window:
+            plt.legend(ncol=self.mva_results.pc.shape[1]//2, loc='best')
+        return ax
+
+    def plot_principal_components(self, comp_ids = None, same_window=True,
+                                  comp_label='PC'):
         """Plot the principal components up to the given number
 
         Parameters
         ----------
-        n : int
-            number of principal components to plot.
+
+        comp_ids : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+
+        same_window : bool
+            if True, plots each factor to the same window.  They are not scaled.
+        
+        comp_label : the label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+        
         """
-        if n is None:
-            n = self.mva_results.pc.shape[1]
-        for i in xrange(n):
-            plt.figure()
-            plt.plot(self.axes_manager.axes[-1].axis, self.mva_results.pc[:,i])
-            plt.xlabel('Energy (eV)')
-            plt.title('Principal component %s' % i)
+        factors=self.mva_results.pc
+        return self._plot_components(factors, comp_ids = comp_ids, 
+                                     same_window=same_window, 
+                                     comp_label=comp_label)
 
-
-    def plot_independent_components(self, ic=None, same_window=False):
-        """Plot the independent components.
+    def plot_independent_components(self, comp_ids = None, same_window=True,
+                                  comp_label='IC'):
+        """Plot the independent components up to the given number
 
         Parameters
         ----------
-        ic : numpy array (optional)
-             externally provided independent components array
-             The shape of 'ic' must be (channels, n_components),
-             so that e.g. ic[:, 0] is the first independent component.
 
-        same_window : bool (optional)
-                    if 'True', the components will be plotted in the
-                    same window. Default is 'False'.
+        comp_ids : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+
+        same_window : bool
+            if True, plots each factor to the same window.  They are not scaled.
+        
+        comp_label : the label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+        
         """
-        if ic is None:
-            ic = self.mva_results.ic
-            x = self.axes_manager.axes[-1].axis
-            x = ic.shape[1]     # no way that we know the calibration
-
-        n = ic.shape[1]
-
-        if not same_window:
-            for i in xrange(n):
-                plt.figure()
-                plt.plot(x, ic[:, i])
-                plt.xlabel('Energy (eV)')
-                plt.title('Independent component %s' % i)
-
-        else:
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-            for i in xrange(n):
-                # ic = ic / ic.sum(axis=0) # normalize
-                lbl = 'IC %i' % i
-                # print 'plotting %s' % lbl
-                ax.plot(x, ic[:, i], label=lbl)
-            col = (ic.shape[1]) // 2
-            ax.legend(ncol=col, loc='best')
-            ax.set_xlabel('Energy (eV)')
-            ax.set_title('Independent components')
-            plt.draw()
-            plt.show()
+        factors=self.mva_results.ic
+        return self._plot_components(factors, comp_ids = comp_ids, 
+                                     same_window=same_window, 
+                                     comp_label=comp_label)
 
     def plot_maps(self, components, mva_type=None, scores=None, factors=None,
                   cmap=plt.cm.gray, no_nans=False, with_components=True,
@@ -661,8 +676,8 @@ class Spectrum(Signal):
             if plot is True:
                 figure = plt.figure()
                 if with_components:
-                    ax = figure.add_subplot(121)
-                    ax2 = figure.add_subplot(122)
+                    ax = figure.add_subplot(122)
+                    ax2 = figure.add_subplot(121)
                 else:
                     ax = figure.add_subplot(111)
             if self.axes_manager.navigation_dimension == 2:

@@ -420,6 +420,10 @@ def file_writer(filename, signal, *args, **kwds):
     data_type, data_length = dtype2keys[dc.dtype.name]
     byte_order = endianess2rpl[dc.dtype.byteorder.replace('|', '=')]
     offset = 0
+    if hasattr(signal.mapped_parameters,'signal'):
+        signal_type=signal.mapped_parameters.signal
+    else:
+        signal_type=None
     if signal.axes_manager.signal_dimension == 1:
         record_by = 'vector'
         depth_axis = signal.axes_manager._slicing_axes[0]
@@ -464,7 +468,7 @@ def file_writer(filename, signal, *args, **kwds):
                          'data-length' : data_length,
                          'byte-order' : byte_order,
                          'record-by' : record_by,
-                         'signal' : signal.mapped_parameters.signal
+                         'signal' : signal_type
                          }
     if ev_per_chan is not None:
         keys_dictionary['ev-per-chan'] = ev_per_chan
