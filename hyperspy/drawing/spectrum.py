@@ -171,3 +171,24 @@ class SpectrumLine():
             self.ax.figure.canvas.draw()
         except:
             pass
+
+def _plot_component(factors, idx, ax=None, cal_axis=None, 
+                    comp_label='PC'):
+    if ax==None:
+        ax=plt.gca()
+    if cal_axis <> None:
+        x=cal_axis.axis
+        plt.xlabel(cal_axis.units)
+    else:
+        x=np.arange(factors.shape[0])
+        plt.xlabel('Channel index')
+    ax.plot(x,factors[:,idx],label='%s %i'%(comp_label,idx))
+    return ax
+
+def _plot_score(scores, idx, ax=None, axes_manager=None,
+                comp_label='PC'):
+    if ax==None:
+        ax=plt.gca()
+    if axes_manager <> None:
+        pass
+        
