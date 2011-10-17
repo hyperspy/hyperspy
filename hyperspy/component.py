@@ -30,7 +30,7 @@ class Parameter(object):
     bmax=None, twin = None):
         
         self.connection_active = False
-        self.connected_functions = []
+        self.connected_functions = list()
         self.ext_bounded = False
         self._number_of_elements = 1
         self._bounds = (None, None)
@@ -67,12 +67,7 @@ class Parameter(object):
         else:
             return self.twin_function(self.twin.value)
     def _decoerce(self, arg):
-        if self.connection_active is True:
-            for f in self.connected_functions:
-                try:
-                    f()
-                except:
-                    self.disconnect(f)
+
         if self.ext_bounded is False :
                 self.__value = arg
         else:
@@ -87,7 +82,13 @@ class Parameter(object):
                     else:
                         self.__value=arg
                 else :
-                    self.__value=arg
+                    self.__value=ar
+        if self.connection_active is True:
+            for f in self.connected_functions:
+                try:
+                    f()
+                except:
+                    self.disconnect(f)
     value = property(_coerce, _decoerce)
 
     # Fix the parameter when coupled

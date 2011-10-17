@@ -103,9 +103,7 @@ class Model(list, Optimizers, Estimators):
     def disconnect_parameters2update_plot(self):
         for component in self:
             for parameter in component.parameters:
-                if self.spectrum._plot is not None:
-                    parameter.connect(self.update_plot)
-                    parameter.disconnect(self.update_plot)
+                parameter.disconnect(self.update_plot)
                 parameter.connection_active = False
         self.set_auto_update_plot(False)
                             
