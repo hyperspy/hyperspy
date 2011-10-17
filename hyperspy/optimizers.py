@@ -23,6 +23,7 @@ fmin_cobyla, fmin_l_bfgs_b, fmin_tnc, fmin_powell
 
 from hyperspy.defaults_parser import defaults
 from hyperspy.estimators import Estimators
+from hyperspy.misc.mpfit.mpfit import mpfit
 
 def vst(x, kind = 'ascombe'):
     if kind == 'ascombe':
@@ -34,8 +35,7 @@ class Optimizers(Estimators):
 
     def fit(self, fitter = defaults.Model.default_fitter, method = 'ls',
     	    grad = False, weights = None, ext_bounding = False, ascombe = True,
-    	    update_plot = False, 
-    **kwargs):
+    	    update_plot = False, bounded = False, **kwargs):
         """
         Fits the model to the experimental data using the fitter e
         The covariance matrix calculated by the 'leastsq' fitter is not always
@@ -98,6 +98,18 @@ class Optimizers(Estimators):
             result = myoutput.beta
             self.p_std = myoutput.sd_beta
             self.p0 = result
+            
+        elif fitter == 'mpfit':
+            if bounded is True:
+                self.set_mpfit_parameters_info()
+            elif bounded is False:
+                self.mpfit_parinfo = None
+            m = mpfit(self._errfunc4mpfit, self.p0[:], 
+            parinfo = self.mpfit_parinfo, functkw= {
+                'y': self.spectrum()[self.channel_switches], 
+                'weights' :weights})
+            self.p0 = m.params
+            
         else:          
         # General optimizers (incluiding constrained ones(tnc,l_bfgs_b)
         # Least squares or maximum likelihood
@@ -131,11 +143,19 @@ class Optimizers(Estimators):
             # Constrainded optimizers
             
             # Use gradient
-            elif fitter == "tnc" :
+            elif fitter == "tnc":
+                if bounded is True:
+                    self.set_boundaries()
+                elif bounded is False:
+                    self.self.free_parameters_boundaries = None
                 self.p0 = fmin_tnc(tominimize, self.p0, fprime = fprime,
                 args = args, bounds = self.free_parameters_boundaries, 
                 approx_grad = approx_grad, **kwargs)[0]
-            elif fitter == "l_bfgs_b" :
+            elif fitter == "l_bfgs_b":
+                if bounded is True:
+                    self.set_boundaries()
+                elif bounded is False:
+                    self.self.free_parameters_boundaries = None
                 self.p0 = fmin_l_bfgs_b(tominimize, self.p0, fprime = fprime, 
                 args =  args,  bounds = self.free_parameters_boundaries, 
                 approx_grad = approx_grad, **kwargs)[0]

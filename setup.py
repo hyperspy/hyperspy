@@ -80,7 +80,8 @@ setup(
     packages = ['hyperspy', 'hyperspy.components', 'hyperspy.io_plugins', 
                 'hyperspy.drawing', 'hyperspy.learn', 'hyperspy.signals', 
                 'hyperspy.gui', 'hyperspy.tests', 'hyperspy.models',
-                'hyperspy.tests.io', 'hyperspy.misc'],
+                'hyperspy.tests.io', 'hyperspy.misc', 'hyperespy.misc.mpfit', 
+                'hyperspy.misc.mpfit.tests'],
     requires = install_req,
     scripts = scripts,
     package_data = 
