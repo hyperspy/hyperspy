@@ -88,9 +88,13 @@ the AggregateImage, AggregateCells, or AggregateSpectrum classes"
 
 class AggregateSpectrum(Aggregate,Spectrum):
     def __init__(self, *args, **kw):
-        self.mapped_parameters.aggregate_address=OrderedDict()
-        self.mapped_parameters.aggregate_end_pointer=0
         super(AggregateSpectrum,self).__init__(*args,**kw)
+        if not hasattr(self.mapped_parameters,'aggregate_address'):
+            self.mapped_parameters.aggregate_address=OrderedDict()
+        if not hasattr(self.mapped_parameters,'aggregate_end_pointer'):
+            self.mapped_parameters.aggregate_end_pointer=0
+        if not hasattr(self.mapped_parameters,'original_files'):
+            self.mapped_parameters.original_files=OrderedDict()
         if len(args)>0:
             self.append(*args)
             self.summary()
@@ -108,6 +112,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         return None
         
     def append(self,*args):
+        smp=self.mapped_parameters
         if len(args)<1:
             pass
         else:
@@ -128,9 +133,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
                 else:
                     # skip over appending if something like a dict is passed as arg
                     return
-            self.axes_manager.navigation_dimension=1
-
-            # refresh the axes for the new sized data
+            self.axes_manager.set_signal_dimension()
             smp.name="Aggregate Spectra: %s"%smp.original_files.keys()
 
     def _crop_bounds(self,arg,points_to_interpolate=3):
