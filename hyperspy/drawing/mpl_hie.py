@@ -49,12 +49,18 @@ class MPL_HyperImage_Explorer():
         self.image_plot = imf
         
         if self.navigator_plot is not None and imf.figure is not None:
-            utils.on_figure_window_close(imf.figure, self.navigator_plot.close)
+            utils.on_figure_window_close(self.navigator_plot.figure, 
+            self._close_pointer)
+            utils.on_figure_window_close(imf.figure, self.close_navigator_plot)
             self._key_nav_cid = self.image_plot.figure.canvas.mpl_connect(
             'key_press_event', self.axes_manager.key_navigator)
             self._key_nav_cid = self.navigator_plot.figure.canvas.mpl_connect(
             'key_press_event', self.axes_manager.key_navigator)
-
+    
+    def close_navigator_plot(self):
+        self._close_pointer()
+        self.navigator_plot.close()
+    
     def is_active(self):
         return utils.does_figure_object_exists(self.image_plot.figure)        
     def plot(self):
@@ -98,7 +104,7 @@ class MPL_HyperImage_Explorer():
 #            sf.ylabel = self.ylabel
             sf.title = '1D navigator'
             sf.axis = axis.axis
-            sf.left_axes_manager = self.axes_manager
+            sf.axes_manager = self.axes_manager
             self.navigator_plot = sf
             # Create a line to the left axis with the default coordinates
             sl = spectrum.SpectrumLine()
@@ -110,8 +116,10 @@ class MPL_HyperImage_Explorer():
             sf.add_line(sl)
             self.navigator_plot = sf
             sf.plot()
-            self.pointer.add_axes(sf.left_ax)
-            
+            self.pointer.add_axes(sf.ax)
+    def _close_pointer(self):
+        if self.pointer is not None:
+            self.pointer.disconnect(self.navigator_plot.ax)            
     def close(self):         
         self.image_plot.close()
         self.navigator_plot.close()        

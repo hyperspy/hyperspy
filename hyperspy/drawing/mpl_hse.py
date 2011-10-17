@@ -104,7 +104,7 @@ class MPL_HyperSpectrum_Explorer(object):
         sf.ylabel = self.ylabel
         sf.title = self.spectrum_title
         sf.axis = self.axis
-        sf.left_axes_manager = self.axes_manager
+        sf.axes_manager = self.axes_manager
         self.spectrum_plot = sf
         # Create a line to the left axis with the default coordinates
         sl = spectrum.SpectrumLine()
@@ -120,7 +120,9 @@ class MPL_HyperSpectrum_Explorer(object):
         self.spectrum_plot = sf
         sf.plot()
         if self.navigator_plot is not None and sf.figure is not None:
-            utils.on_figure_window_close(sf.figure, self.navigator_plot.close)
+            utils.on_figure_window_close(self.navigator_plot.figure, 
+            self._close_pointer)
+            utils.on_figure_window_close(sf.figure, self.close_navigator_plot)
             self._key_nav_cid = self.spectrum_plot.figure.canvas.mpl_connect(
             'key_press_event', self.axes_manager.key_navigator)
             self._key_nav_cid = self.navigator_plot.figure.canvas.mpl_connect(
@@ -129,7 +131,11 @@ class MPL_HyperSpectrum_Explorer(object):
                 'key_press_event', self.key2switch_right_pointer)
             self.navigator_plot.figure.canvas.mpl_connect(
                 'key_press_event', self.key2switch_right_pointer)
-            
+    
+    def close_navigator_plot(self):
+        self._close_pointer()
+        self.navigator_plot.close()
+                
     def key2switch_right_pointer(self, event):
         if event.key == "e":
             self.right_pointer_on = not self.right_pointer_on
@@ -158,7 +164,11 @@ class MPL_HyperSpectrum_Explorer(object):
         self.right_pointer.close()
         self.right_pointer = None
         self.navigator_plot.update_image()
+        
+    def _close_pointer(self):
+        if self.pointer is not None:
+            self.pointer.disconnect(self.navigator_plot.ax)
     
-    def close(self):         
+    def close(self):
         self.spectrum_plot.close()
         self.navigator_plot.close()

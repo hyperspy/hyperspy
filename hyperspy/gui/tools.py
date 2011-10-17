@@ -86,7 +86,7 @@ class SpanSelectorInSpectrum(t.HasTraits):
         if on is True:
             self.span_selector = \
             drawing.widgets.ModifiableSpanSelector(
-            self.signal._plot.spectrum_plot.left_ax,
+            self.signal._plot.spectrum_plot.ax,
             onselect = self.update_span_selector_traits,
             onmove_callback = self.update_span_selector_traits)
 
@@ -164,7 +164,7 @@ class Smoothing(t.HasTraits):
     def plot(self):
         self.signal.plot()
         hse = self.signal._plot
-        l1 = hse.spectrum_plot.left_ax_lines[0]
+        l1 = hse.spectrum_plot.ax_lines[0]
         color = l1.line.get_color()
         l1.line_properties_helper(color, 'scatter')
         l1.set_properties()
