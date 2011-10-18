@@ -59,12 +59,15 @@ class Signal(t.HasTraits, MVA):
         self._axes_manager_before_unfolding = None
 
     def __repr__(self):
-        string="\nData file: %s"%self.mapped_parameters.title
-        string+="\nData size: %s"%(str(self.data.shape))
-        if hasattr(self.mapped_parameters,'record_by'):
-            string+="\nData representation: %s"%self.mapped_parameters.record_by
+        string = self.__class__.__name__
+        string+="\n\tTitle: %s"%self.mapped_parameters.title
         if hasattr(self.mapped_parameters,'signal_type'):
-            string+="\nSignal type: %s"%self.mapped_parameters.signal_type
+            string += "\n\tSignal type: %s" % self.mapped_parameters.signal_type
+        string += "\n\tData dimensions: %s" % (str(self.data.shape))
+        if hasattr(self.mapped_parameters, 'record_by'):
+            string += \
+            "\n\tData representation: %s" % self.mapped_parameters.record_by
+
         return string
 
     def load_dictionary(self, file_data_dict):
