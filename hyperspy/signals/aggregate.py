@@ -20,7 +20,7 @@
 from hyperspy.signal import Signal
 from hyperspy.signals.image import Image
 from hyperspy.signals.spectrum import Spectrum
-import enthought.traits.api as t
+import traits.api as t
 from hyperspy.learn.mva import MVA_Results
 from hyperspy.axes import AxesManager, DataAxis
 from hyperspy.misc.utils import DictionaryBrowser

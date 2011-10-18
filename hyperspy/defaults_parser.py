@@ -21,8 +21,8 @@ import os.path
 import tarfile
 import ConfigParser
 
-import enthought.traits.api as t
-import enthought.traits.ui.api as tui
+import traits.api as t
+import traitsui.api as tui
 
 from hyperspy.misc.config_dir import config_path, os_name, data_path
 from hyperspy import messages

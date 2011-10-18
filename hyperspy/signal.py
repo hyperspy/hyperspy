@@ -20,8 +20,8 @@ import copy
 import os.path
 
 import numpy as np
-import enthought.traits.api as t
-import enthought.traits.ui.api as tui
+import traits.api as t
+import traitsui.api as tui
 
 from hyperspy import messages
 from hyperspy.axes import AxesManager

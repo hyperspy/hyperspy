@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-import enthought.traits.api as t
-import enthought.traits.ui.api as tu
-from enthought.traits.ui.menu import OKButton, ApplyButton, CancelButton, ModalButtons
+import traits.api as t
+import traitsui.api as tu
+from traitsui.menu import OKButton, ApplyButton, CancelButton, ModalButtons
 
 from hyperspy.misc import utils
 from hyperspy import drawing

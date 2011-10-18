@@ -19,9 +19,9 @@
 import matplotlib.pyplot as plt
 
 import numpy as np
-import enthought.traits.api as t
-import enthought.traits.ui.api as tu
-from enthought.traits.ui.menu import OKButton, ApplyButton, CancelButton
+import traits.api as t
+import traitsui.api as tu
+from traitsui.menu import OKButton, ApplyButton, CancelButton
 
 from hyperspy import components
 from hyperspy.component import Component

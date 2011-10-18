@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-from enthought.etsconfig.api import ETSConfig
+from traits.etsconfig.api import ETSConfig
 import matplotlib
 #if matplotlib.get_backend() != 'WXAgg':
 #    ETSConfig.toolkit ='null'
@@ -52,6 +52,11 @@ try:
 
 except RuntimeError:
     print " Already logging to "+_ip.logger.logfname
+    
+except NameError:
+    # It is not running in the ipython console or the ipython version does not 
+    # provide the get_ipython function.
+    pass
 
 def get_configuration_directory_path():
     import hyperspy.misc.config_dir
