@@ -406,7 +406,7 @@ def ser_reader(filename, objects = None, *args, **kwds):
     'mapped_parameters' : {
                             'original_filename' : filename,
                             'record_by' : record_by,
-                            'signal' : None
+                            'signal_type' : None
 		},
     'axes' : axes,
     'original_parameters' : original_parameters}

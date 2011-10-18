@@ -487,20 +487,20 @@ class Image(Signal):
                     except:
                         pass
                     cluster_idx+=1
-            cluster_array_Image=Image({'data':avg_stack,
-                    'mapped_parameters':{
-                        'name':'Cluster %s from %s'%(i,
-                                         self.mapped_parameters.name),
-                        'locations':positions,
-                        'members':members,
-                        }
-                    })
+            cluster_array_Image=Image({
+                'data':avg_stack,
+                'mapped_parameters':{
+                    'title' : 'Cluster %s from %s'%(i,
+                        self.mapped_parameters.title),
+                    'locations':positions,
+                    'members':members,}
+            })
             cluster_arrays.append(cluster_array_Image)
             avg_stack[i,:,:]=np.sum(cluster_array,axis=0)
         members_list=[groups.count(i) for i in xrange(clusters)]
         avg_stack_Image=Image({'data':avg_stack,
                     'mapped_parameters':{
-                        'name':'Cluster averages from %s'%self.mapped_parameters.name,
+                        'title':'Cluster averages from %s'%self.mapped_parameters.title,
                         'member_counts':members_list,
                         }
                     })
@@ -1043,7 +1043,7 @@ PCA and ICA (case insensitive)")
                     if hasattr(self.mapped_parameters,"original_files"):
                         parents=self.mapped_parameters.original_files
                     elif hasattr(self.mapped_parameters,'parent'):
-                        parents={self.mapped_parameters.parent.mapped_parameters.name:self.mapped_parameters.parent}
+                        parents={self.mapped_parameters.parent.mapped_parameters.title:self.mapped_parameters.parent}
                 else:
                     scoremap=False
                     parents=None

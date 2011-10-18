@@ -59,12 +59,12 @@ class Signal(t.HasTraits, MVA):
         self._axes_manager_before_unfolding = None
 
     def __repr__(self):
-        string="\nData file: %s"%self.mapped_parameters.name
+        string="\nData file: %s"%self.mapped_parameters.title
         string+="\nData size: %s"%(str(self.data.shape))
         if hasattr(self.mapped_parameters,'record_by'):
             string+="\nData representation: %s"%self.mapped_parameters.record_by
-        if hasattr(self.mapped_parameters,'signal'):
-            string+="\nSignal type: %s"%self.mapped_parameters.signal
+        if hasattr(self.mapped_parameters,'signal_type'):
+            string+="\nSignal type: %s"%self.mapped_parameters.signal_type
         return string
 
     def load_dictionary(self, file_data_dict):
@@ -104,13 +104,13 @@ class Signal(t.HasTraits, MVA):
             file_data_dict['original_parameters'])
         self.mapped_parameters.load_dictionary(
             file_data_dict['mapped_parameters'])
-        if not hasattr(self.mapped_parameters,'name'):
+        if not hasattr(self.mapped_parameters,'title'):
             if hasattr(self.mapped_parameters,'original_filename'):
-                self.mapped_parameters.name = \
+                self.mapped_parameters.title = \
                     os.path.splitext(self.mapped_parameters.original_filename)[0]
             # "Synthetic" signals do not have an original filename
             else:
-                self.mapped_parameters.name = 'Unnamed Signal'
+                self.mapped_parameters.title = ''
         self.squeeze()
                 
     def squeeze(self):
@@ -208,7 +208,7 @@ class Signal(t.HasTraits, MVA):
 
             self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
             self._plot.spectrum_data_function = self.__call__
-            self._plot.spectrum_title = self.mapped_parameters.name
+            self._plot.spectrum_title = self.mapped_parameters.title
             self._plot.xlabel = '%s (%s)' % (
                 self.axes_manager._slicing_axes[0].name,
                 self.axes_manager._slicing_axes[0].units)

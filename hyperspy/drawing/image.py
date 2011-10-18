@@ -652,7 +652,7 @@ def plot_maps(scores, factors=None, comp_ids=None, locations=None,
                 if hasattr(self.mapped_parameters,"original_files"):
                     parents=self.mapped_parameters.original_files
                 elif hasattr(self.mapped_parameters,'parent'):
-                    parents={self.mapped_parameters.parent.mapped_parameters.name:self.mapped_parameters.parent}
+                    parents={self.mapped_parameters.parent.mapped_parameters.title:self.mapped_parameters.parent}
             else:
                 scoremap=False
                 parents=None

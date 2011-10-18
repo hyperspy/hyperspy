@@ -1220,7 +1220,7 @@ def file_reader(filename, record_by=None, order = None, data_id=1,
 
     mapped_parameters['original_filename'] = filename
     mapped_parameters['record_by'] = dm3.record_by
-    mapped_parameters['signal'] = dm3.signal
+    mapped_parameters['signal_type'] = dm3.signal
     original_parameters = {}
     for tag in dm3.old_code_tags.items():
         node_valve(tag[0].split('.'), tag[1], original_parameters)

@@ -429,7 +429,7 @@ class MVA():
         sc.data = a.T.squeeze()
         #else:
         #    sc.data = a.squeeze()
-        sc.name = signal_name
+        sc.mapped_parameters.title += signal_name
         if self._unfolded4pca is True:
             self.fold()
             sc.history = ['unfolded']

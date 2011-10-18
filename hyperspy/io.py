@@ -166,12 +166,12 @@ def load_with_reader(filename, reader, record_by = None, signal = None,
             file_data_dict['mapped_parameters']['record_by']= 'image'
 
         if signal is not None:
-            file_data_dict['mapped_parameters']['signal'] = signal
+            file_data_dict['mapped_parameters']['signal_type'] = signal
 
         if file_data_dict['mapped_parameters']['record_by'] == 'image':
             s = Image(file_data_dict)
         else:
-            if file_data_dict['mapped_parameters']['signal'] == 'EELS':
+            if file_data_dict['mapped_parameters']['signal_type'] == 'EELS':
                 s = EELSSpectrum(file_data_dict)
             else:
                 s = Spectrum(file_data_dict)

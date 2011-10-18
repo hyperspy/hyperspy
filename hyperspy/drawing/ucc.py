@@ -181,7 +181,7 @@ class TemplatePicker(HasTraits):
         if not hasattr(self.sig.mapped_parameters,"original_files"):
             if len(self.sig.data.shape)<3:
                 self.sig.data=self.sig.data[np.newaxis,:,:]
-            self.titles=[os.path.splitext(self.sig.mapped_parameters.name)[0]]
+            self.titles=[os.path.splitext(self.sig.mapped_parameters.title)[0]]
         else:
             self.numfiles=len(self.sig.mapped_parameters.original_files.keys())
             self.titles=self.sig.mapped_parameters.original_files.keys()
@@ -503,7 +503,7 @@ class TemplatePicker(HasTraits):
             positions[i]=(self.titles[idx],i,peaks[i,:2])
             crop_sig=Image({'data':data,
                             'mapped_parameters':{
-                               'name':'Cropped cells from %s'%self.titles[idx],
+                               'title':'Cropped cells from %s'%self.titles[idx],
                                'record_by':'image',
                                'locations':positions,
                                'parent':parent,

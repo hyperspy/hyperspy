@@ -58,8 +58,8 @@ class Aggregate(Signal):
             print f
         print "\nTotal size: %s"%(str(self.data.shape))
         print "Data representation: %s"%self.mapped_parameters.record_by
-        if hasattr(self.mapped_parameters,'signal'):
-            print "Signal type: %s"%self.mapped_parameters.signal
+        if hasattr(self.mapped_parameters,'signal_type'):
+            print "Signal type: %s"%self.mapped_parameters.signal_type
     """
     def plot(self):
         print "Plotting not yet supported for generic aggregate objects"
@@ -134,7 +134,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
                     # skip over appending if something like a dict is passed as arg
                     return
             self.axes_manager.set_signal_dimension()
-            smp.name="Aggregate Spectra: %s"%smp.original_files.keys()
+            smp.title="Aggregate Spectra: %s"%smp.original_files.keys()
 
     def _crop_bounds(self,arg,points_to_interpolate=3):
         argbounds=np.array([arg.axes_manager.axes[-1].low_value,
@@ -145,12 +145,12 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         # file to be added is below current spectral range.
         if argbounds[1]<selfbounds[0]:
             messages.warning('file "%s" is below current spectral range\
-.  Omitting it.'%arg.mapped_parameters.name)
+.  Omitting it.'%arg.mapped_parameters.title)
             return None
         # file to be added is above current spectral range.
         if argbounds[0]>selfbounds[1]:
             messages.warning('file "%s" is above current spectral range\
-.  Omitting it.'%arg.mapped_parameters.name)
+.  Omitting it.'%arg.mapped_parameters.title)
             return None
 
         selflims=slice(None,None,1)
@@ -178,7 +178,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         selfshape=self.data[:,selflims].shape
         if (datashape[-1]<selfshape[-1]):
             if (datashape[-1]-selfshape[-1])<-2:
-                messages.warning("large array size difference (%i) in file %s - are you using similar binning and dispersion?  File omitted."%(datashape[-1]-selfshape[-1],arg.mapped_parameters.name))
+                messages.warning("large array size difference (%i) in file %s - are you using similar binning and dispersion?  File omitted."%(datashape[-1]-selfshape[-1],arg.mapped_parameters.title))
                 return None
             else:
                 if selflims.start<>None:
@@ -189,7 +189,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
                     selflims=slice(selfshape[-1]-datashape[-1],None,1)
         if datashape[-1]-selfshape[-1]:
             if (datashape[-1]-selfshape[-1])>2:
-                messages.warning("large array size difference (%i) in file %s- are you using similar binning and dispersion? File omitted."%(datashape[-1]-selfshape[-1],arg.mapped_parameters.name))
+                messages.warning("large array size difference (%i) in file %s- are you using similar binning and dispersion? File omitted."%(datashape[-1]-selfshape[-1],arg.mapped_parameters.title))
                 return None
             else:
                 if datalims.start<>None:
@@ -208,9 +208,9 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         mp=arg.mapped_parameters
         smp=self.mapped_parameters
         if mp.original_filename not in smp.original_files.keys():
-            smp.original_files[mp.name]=arg
+            smp.original_files[mp.title]=arg
             # save the original data shape to the mva_results for later use
-            smp.original_files[mp.name].mva_results.original_shape = arg.data.shape[:-1]
+            smp.original_files[mp.title].mva_results.original_shape = arg.data.shape[:-1]
             if self.data==None:
                 self.axes_manager=arg.axes_manager.copy()
                 if len(arg.data.shape)==1:
@@ -226,14 +226,14 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
                     self.axes_manager.axes.insert(0,new_axis)
             if len(arg.data.shape)==3:
                 arg.unfold()
-                smp.aggregate_address[mp.name]=(
+                smp.aggregate_address[mp.title]=(
                     smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
             if len(arg.data.shape)==2:
-                smp.aggregate_address[mp.name]=(
+                smp.aggregate_address[mp.title]=(
                     smp.aggregate_end_pointer,smp.aggregate_end_pointer+arg.data.shape[0]-1)
             if len(arg.data.shape)==1:
                 arg.data=arg.data[np.newaxis,:]
-                smp.aggregate_address[mp.name]=(
+                smp.aggregate_address[mp.title]=(
                     smp.aggregate_end_pointer,smp.aggregate_end_pointer+1)
 
             # add the data to the aggregate array
@@ -241,8 +241,8 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
                 # copy the axes for the sake of calibration
                 self.data=arg.data
                 self.mapped_parameters.record_by=arg.mapped_parameters.record_by
-                if hasattr(arg.mapped_parameters,'signal'):
-                    self.mapped_parameters.signal=arg.mapped_parameters.signal
+                if hasattr(arg.mapped_parameters,'signal_type'):
+                    self.mapped_parameters.signal_type = arg.mapped_parameters.signal_type
             else:
                 bounds=self._crop_bounds(arg)
                 if bounds:
@@ -257,7 +257,7 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
                     except:
                         messages.warning('Adding file %s to aggregate failed.  \
 Are you sure its dimensions agree with all the other files you\'re trying \
-to add?'%arg.mapped_parameters.name)
+to add?'%arg.mapped_parameters.title)
                         return None
         else:
             print "Data from file %s already in this aggregate. \n \
@@ -271,7 +271,7 @@ to add?'%arg.mapped_parameters.name)
             self.data=np.delete(self.data,np.s_[address[0]:(address[1]+1):1],0)
         self.axes_manager.axes[0].size=int(self.data.shape[0])
         smp.aggregate_end_pointer=self.data.shape[0]
-        smp.name="Aggregate Spectra: %s"%smp.original_files.keys()
+        smp.title="Aggregate Spectra: %s"%smp.original_files.keys()
 
     def principal_components_analysis(self, normalize_poissonian_noise = False, 
                                      algorithm = 'svd', output_dimension = None, navigation_mask = None, 
@@ -415,13 +415,13 @@ class AggregateImage(Aggregate,Image):
         smp=self.mapped_parameters
         mp=arg.mapped_parameters
         if mp.original_filename not in smp.original_files.keys():
-            smp.original_files[mp.name]=arg
+            smp.original_files[mp.title]=arg
             # add the data to the aggregate array
             if self.data==None:
                 self.data=arg.data[np.newaxis,:,:]
                 smp.record_by=mp.record_by
-                if hasattr(mp,'signal'):
-                    smp.signal=mp.signal
+                if hasattr(mp,'signal_type'):
+                    smp.signal=mp.signal_type
                 self.axes_manager=AxesManager(self._get_undefined_axes_list())
                 self.axes_manager.axes[1]=deepcopy(arg.axes_manager.axes[0])
                 self.axes_manager.axes[1].index_in_array+=1
@@ -435,7 +435,7 @@ class AggregateImage(Aggregate,Image):
     Delete it first if you want to update it."%mp.original_filename
             # refresh the axes for the new sized data
             #self.axes_manager=AxesManager(self._get_undefined_axes_list())
-        smp.name="Aggregate Image: %s"%smp.original_files.keys()
+        smp.title="Aggregate Image: %s"%smp.original_files.keys()
 
 
     def remove(self,*keys):
@@ -445,7 +445,7 @@ class AggregateImage(Aggregate,Image):
             self.data=np.delete(self.data,np.s_[idx:idx+1:1],0)
             self.axes_manager.axes[0].size-=1
             del smp.original_files[key]
-        smp.name="Aggregate Image: %s"%smp.original_files.keys()
+        smp.title="Aggregate Image: %s"%smp.original_files.keys()
 
 class AggregateCells(Aggregate,Image):
     """ A class to deal with several image stacks, each consisting of cropped
@@ -465,8 +465,8 @@ class AggregateCells(Aggregate,Image):
             smp.image_stacks=OrderedDict()
         if not hasattr(smp,'aggregate_end_pointer'):
             smp.aggregate_end_pointer=0
-        if not hasattr(smp,'name'):
-            smp.name="Aggregate: no data"
+        if not hasattr(smp,'title'):
+            smp.title="Aggregate: no data"
         if len(args)>0:
             self.append(*args)
             self.summary()
@@ -500,8 +500,8 @@ class AggregateCells(Aggregate,Image):
         pmp=mp.parent.mapped_parameters
                 
         if pmp.original_filename not in list(set(smp.locations['filename'].squeeze())):
-            smp.original_files[pmp.name]=mp.parent
-            smp.image_stacks[pmp.name]=arg
+            smp.original_files[pmp.title]=mp.parent
+            smp.image_stacks[pmp.title]=arg
             # add the data to the aggregate array
             if self.data==None:
                 smp.record_by=mp.record_by
@@ -529,7 +529,7 @@ class AggregateCells(Aggregate,Image):
             print "Data from file %s already in this aggregate. \n \
     Delete it first if you want to update it."%pmp.original_filename
             # refresh the axes for the new sized data
-        smp.name="Aggregate Cells: %s"%list(set(smp.locations['filename'].squeeze()))
+        smp.title="Aggregate Cells: %s"%list(set(smp.locations['filename'].squeeze()))
 
     def remove(self,*keys):
         smp=self.mapped_parameters
@@ -541,7 +541,7 @@ class AggregateCells(Aggregate,Image):
             smp.locations=np.delete(smp.locations,mask,0)
             self.axes_manager.axes[0].size=int(self.data.shape[0])
         smp.aggregate_end_pointer=self.data.shape[0]
-        smp.name="Aggregate Cells: %s"%list(set(smp.locations['filename'].squeeze()))
+        smp.title="Aggregate Cells: %s"%list(set(smp.locations['filename'].squeeze()))
 
     def kmeans_cluster_stack(self, clusters=None):
         smp=self.mapped_parameters
@@ -579,8 +579,8 @@ class AggregateCells(Aggregate,Image):
                     constrained_orig_files[key]=smp.original_files[key]
             cluster_array_Image=Image({'data':cluster_array,
                     'mapped_parameters':{
-                        'name':'Cluster %s from %s'%(i,
-                                         smp.name),
+                        'title':'Cluster %s from %s'%(i,
+                                         smp.title),
                         'locations':positions,
                         'members':members,
                         'original_files':constrained_orig_files,
@@ -591,7 +591,7 @@ class AggregateCells(Aggregate,Image):
         members_list=[groups[groups==i].shape[0] for i in xrange(clusters)]
         avg_stack_Image=Image({'data':avg_stack,
                     'mapped_parameters':{
-                        'name':'Cluster averages from %s'%smp.name,
+                        'title':'Cluster averages from %s'%smp.title,
                         'member_counts':members_list,
                         'original_files':smp.original_files,
                         }
