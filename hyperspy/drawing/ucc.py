@@ -16,24 +16,24 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-from enthought.traits.api \
+from traits.api \
     import HasTraits, Array, Int, Float, Range, Instance, on_trait_change, \
     Bool, Button, Property, Event, Tuple, Any, List, Trait, CInt
-from enthought.traits.ui.api import View, Item, Group, HFlow, VGroup, Tabbed, \
+from traitsui.api import View, Item, Group, HFlow, VGroup, Tabbed, \
     BooleanEditor, ButtonEditor, CancelButton, Handler, Action, Spring, \
     HGroup, TextEditor
-from enthought.chaco.tools.api import PanTool, ZoomTool, RangeSelection, \
+from chaco.tools.api import PanTool, ZoomTool, RangeSelection, \
                                        RangeSelectionOverlay
-from enthought.chaco.api import Plot, ArrayPlotData, jet, gray, \
+from chaco.api import Plot, ArrayPlotData, jet, gray, \
     ColorBar, ColormappedSelectionOverlay, HPlotContainer, LinearMapper, \
     OverlayPlotContainer
-from enthought.enable.api import ComponentEditor, KeySpec, Component
-from enthought.chaco.tools.cursor_tool import CursorTool, BaseCursorTool
-from enthought.traits.ui.key_bindings import KeyBinding, KeyBindings
+from enable.api import ComponentEditor, KeySpec, Component
+from chaco.tools.cursor_tool import CursorTool, BaseCursorTool
+from traitsui.key_bindings import KeyBinding, KeyBindings
 
-from enthought.chaco.data_range_1d import DataRange1D
+from chaco.data_range_1d import DataRange1D
 
-from enthought.pyface.api import ProgressDialog
+from pyface.api import ProgressDialog
 
 from types import ListType, TupleType
 

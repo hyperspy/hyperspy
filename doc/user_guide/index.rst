@@ -16,5 +16,6 @@ Hyperspy User Guide (DRAFT)
     model.rst
     eels.rst
     image.rst
+    mapped_parameters_structure.rst
     credits.rst
     bibliography.rst

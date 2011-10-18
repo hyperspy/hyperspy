@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-import enthought.traits.api as t
-import enthought.traits.ui.api as tui
-from enthought.traits.ui.menu import OKButton
+import traits.api as t
+import traitsui.api as tui
+from traitsui.menu import OKButton
     
 information_view = tui.View(tui.Item('text', show_label = False, 
                             style = 'readonly', springy = True, width = 300,), 

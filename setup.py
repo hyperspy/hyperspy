@@ -43,7 +43,7 @@ def are_we_building4windows():
         if 'wininst' in arg:
             return True
 
-scripts = ['bin/hyperspy', 'bin/hyperspy-gui','bin/hyperspy_ipython_qtconsole',]
+scripts = ['bin/hyperspy', 'bin/hyperspy-gui',]
 
 if are_we_building4windows() or os.name in ['nt','dos']:
     # In the Windows command prompt we can't execute Python scripts 
@@ -80,7 +80,7 @@ setup(
     packages = ['hyperspy', 'hyperspy.components', 'hyperspy.io_plugins', 
                 'hyperspy.drawing', 'hyperspy.learn', 'hyperspy.signals', 
                 'hyperspy.gui', 'hyperspy.tests', 'hyperspy.models',
-                'hyperspy.tests.io', 'hyperspy.misc', 'hyperespy.misc.mpfit', 
+                'hyperspy.tests.io', 'hyperspy.misc', 'hyperspy.misc.mpfit', 
                 'hyperspy.misc.mpfit.tests'],
     requires = install_req,
     scripts = scripts,

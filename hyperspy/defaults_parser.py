@@ -21,8 +21,8 @@ import os.path
 import tarfile
 import ConfigParser
 
-import enthought.traits.api as t
-import enthought.traits.ui.api as tui
+import traits.api as t
+import traitsui.api as tui
 
 from hyperspy.misc.config_dir import config_path, os_name, data_path
 from hyperspy import messages
@@ -72,6 +72,7 @@ class GeneralConfig(t.HasTraits):
     default_file_format = t.CStr('hdf5')
     plot_on_load = t.CBool(False)
     interactive = t.CBool(False)
+    logger_on = t.CBool(False)
     
 class ModelConfig(t.HasTraits):
     default_fitter = t.CStr('leastsq')

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-from enthought.etsconfig.api import ETSConfig
+from traits.etsconfig.api import ETSConfig
 import matplotlib
 #if matplotlib.get_backend() != 'WXAgg':
 #    ETSConfig.toolkit ='null'
@@ -38,20 +38,30 @@ from time import strftime
 __version__ = Release.version
 
 # start up the log file
-try:
-    _ip = get_ipython()
-    filename = os.path.join(os.getcwd(), 'hyperspy_log.py')
-    new = not os.path.exists(filename)
-    _ip.logger.logstart(logfname=filename,logmode='append')
-    if new:
-        _ip.logger.log_write("""#!/usr/bin/env python \n""")
-    _ip.logger.log_write("# ============================\n")
-    _ip.logger.log_write("# %s \n" % strftime('%Y-%m-%d'))
-    _ip.logger.log_write("# %s \n"% strftime('%H:%M'))
-    _ip.logger.log_write("# ============================\n" )
 
-except RuntimeError:
-    print " Already logging to "+_ip.logger.logfname
+if defaults.General.logger_on is True:
+    print("\nLogging is active")
+    print("The log is stored in the hyperspy_log.py file"
+          " in the current directory")
+    try:
+        _ip = get_ipython()
+        filename = os.path.join(os.getcwd(), 'hyperspy_log.py')
+        new = not os.path.exists(filename)
+        _ip.logger.logstart(logfname=filename,logmode='append')
+        if new:
+            _ip.logger.log_write("""#!/usr/bin/env python \n""")
+        _ip.logger.log_write("# ============================\n")
+        _ip.logger.log_write("# %s \n" % strftime('%Y-%m-%d'))
+        _ip.logger.log_write("# %s \n"% strftime('%H:%M'))
+        _ip.logger.log_write("# ============================\n" )
+
+    except RuntimeError:
+        print " Already logging to "+_ip.logger.logfname
+        
+    except NameError:
+        # It is not running in the ipython console or the ipython version does not 
+        # provide the get_ipython function.
+        pass
 
 def get_configuration_directory_path():
     import hyperspy.misc.config_dir
