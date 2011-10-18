@@ -53,22 +53,32 @@ def load(*filenames, **kwds):
     Load potentially multiple supported file into an hyperspy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
     FEI ser and emi and hdf5.
-
+    
+    Parameters
+    ----------
     *filenames : if multiple file names are passed in, they get aggregated to
     a Signal class that has members for each file, plus a data set that
     consists of stacked input files. That stack has one dimension more than
     the input files. All files must match in size, number of dimensions, and
     type/extension.
 
-    *kwds : any specified parameters.  Currently, the only interesting one
-    here is data_type, to manually force the outcome Signal to a particular
-    type.
+    record_by : Str 
+        Manually set the way in which the data will be read. Possible values are
+        'spectrum' or 'image'. Please note that most of the times it is better 
+        to leave Hyperspy to decide this.
+        
+    signal_type : Str
+        Manually set the signal type of the data. Although only setting signal 
+        type to 'EELS' will currently change the way the data is loaded, it is 
+        good practice to set this parameter so it can be stored when saving the 
+        file. Please note that, if the signal_type is already defined in the 
+        file the information will be overriden without warning.
 
     Example usage:
-        Loading a single file:
-            d=load('file.dm3')
-        Loading a single file and overriding its default data_type:
-            d=load('file.dm3',data_type='Image')
+        Loading a single file providing the signal type:
+            d=load('file.dm3', signal_type = 'XPS')
+        Loading a single file and overriding its default record_by:
+            d=load('file.dm3', record_by='Image')
         Loading multiple files:
             d=load('file1.dm3','file2.dm3')
 
@@ -145,7 +155,7 @@ def load_single_file(filename, record_by=None, output_level=1, is_agg = False,
                                 **kwds)
 
 
-def load_with_reader(filename, reader, record_by = None, signal = None,
+def load_with_reader(filename, reader, record_by = None, signal_type = None,
                      output_level=1, is_agg = False, **kwds):
     from hyperspy.signals.image import Image
     from hyperspy.signals.spectrum import Spectrum
@@ -165,13 +175,14 @@ def load_with_reader(filename, reader, record_by = None, signal = None,
             print "No data type provided.  Defaulting to image."
             file_data_dict['mapped_parameters']['record_by']= 'image'
 
-        if signal is not None:
-            file_data_dict['mapped_parameters']['signal_type'] = signal
+        if signal_type is not None:
+            file_data_dict['mapped_parameters']['signal_type'] = signal_type
 
         if file_data_dict['mapped_parameters']['record_by'] == 'image':
             s = Image(file_data_dict)
         else:
-            if file_data_dict['mapped_parameters']['signal_type'] == 'EELS':
+            if 'signal_type' in file_data_dict['mapped_parameters'] and \
+                file_data_dict['mapped_parameters']['signal_type'] == 'EELS':
                 s = EELSSpectrum(file_data_dict)
             else:
                 s = Spectrum(file_data_dict)
