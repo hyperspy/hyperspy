@@ -288,7 +288,7 @@ def plot_image_overlay(plot_component=None, mva_type='PCA',
     """
     if not hasattr(self.mapped_parameters, "original_files"):
         messages.warning(
-            'No original files available.  Can't map anything to nothing.'
+            "No original files available.  Can't map anything to nothing."
             'If you use the cell_cropper function to crop your cells, the '
             'cell locations and original files will be tracked for you.')
         return None
