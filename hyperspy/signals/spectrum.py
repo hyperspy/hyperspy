@@ -510,7 +510,7 @@ class Spectrum(Signal):
     def to_EELS(self):
         from hyperspy.signals.eels import EELSSpectrum
         dic = self._get_signal_dict()
-        dic['mapped_parameters']['signal'] = 'EELS'
+        dic['mapped_parameters']['signal_type'] = 'EELS'
         return EELSSpectrum(dic)
 
     def calibrate(self):

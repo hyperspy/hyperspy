@@ -13,13 +13,13 @@ from hyperspy.signals.aggregate import AggregateSpectrum
 
 s1 = Spectrum({'data' : np.random.random((64, 64, 1024)), 
                'mapped_parameters' : {
-                    'name':'file1'}})
+                    'title':'file1'}})
 s2 = Spectrum({'data' : np.random.random((64, 64, 1024)),
                'mapped_parameters' : {
-                    'name':'file2'}})
+                    'title':'file2'}})
 s3 = Spectrum({'data' : np.random.random((64, 64, 1024)),
                'mapped_parameters' : {
-                    'name':'file3'}})
+                    'title':'file3'}})
 
 """
 Perhaps a better example (but one that can't be self contained without

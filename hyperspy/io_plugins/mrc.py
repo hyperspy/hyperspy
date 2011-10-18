@@ -179,7 +179,7 @@ def file_reader(filename, endianess = '<', **kwds):
     names = ['z', 'y', 'x']
     mapped_parameters = {   'original_filename' : filename,
                             'record_by' : 'image',
-                            'signal' : None,}
+                            'signal_type' : None,}
     #create the axis objects for each axis
     axes=[
             {

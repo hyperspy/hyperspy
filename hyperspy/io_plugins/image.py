@@ -135,7 +135,7 @@ def file_reader(filename, **kwds):
              'mapped_parameters': {
                 'original_filename' : filename,
                 'record_by': dt,
-                'signal' : None,
+                'signal_type' : None,
                 }
              }]
 

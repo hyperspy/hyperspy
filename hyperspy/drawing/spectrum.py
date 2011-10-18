@@ -204,7 +204,8 @@ def _plot_score(scores, idx, axes_manager, ax=None,
                     axes_manager.axes[0].high_value,
                     axes_manager.axes[1].high_value,
                     axes_manager.axes[1].low_value)
-        im=ax.imshow(scores[idx].reshape(shape),cmap=cmap,extent=extent)
+        im=ax.imshow(scores[idx].reshape(shape),cmap=cmap,extent=extent, 
+                     interpolation = 'nearest')
         div=make_axes_locatable(ax)
         cax=div.append_axes("right",size="5%",pad=0.05)
         plt.colorbar(im,cax=cax)

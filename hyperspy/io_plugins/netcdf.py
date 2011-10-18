@@ -190,7 +190,7 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
     mapped_parameters = {}
     mapped_parameters['original_filename'] = filename
     mapped_parameters['record_by'] = record_by
-    mapped_parameters['signal'] = None            
+    mapped_parameters['signal_type'] = None            
     dictionary = {
         'data' : data,
         'axes' : axes,

@@ -391,7 +391,7 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
         'mapped_parameters': {
 			'record_by': record_by,
 			'original_filename': filename,
-            'signal': rpl_info['signal'],
+                        'signal_type': rpl_info['signal'],
 			},
         'original_parameters': rpl_info
         }
@@ -420,8 +420,8 @@ def file_writer(filename, signal, *args, **kwds):
     data_type, data_length = dtype2keys[dc.dtype.name]
     byte_order = endianess2rpl[dc.dtype.byteorder.replace('|', '=')]
     offset = 0
-    if hasattr(signal.mapped_parameters,'signal'):
-        signal_type=signal.mapped_parameters.signal
+    if hasattr(signal.mapped_parameters,'signal_type'):
+        signal_type=signal.mapped_parameters.signal_type
     else:
         signal_type=None
     if signal.axes_manager.signal_dimension == 1:

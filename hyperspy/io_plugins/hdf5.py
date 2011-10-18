@@ -114,6 +114,17 @@ def hdfgroup2signaldict(group):
             exp['attributes'] = {
                 'mva_results':hdfgroup2dict(group['mva_results'],{}),
                 }
+        # Replace the old signal and name keys with their current names
+        if 'signal' in exp['mapped_parameters']:
+            exp['mapped_parameters']['signal_type'] = \
+                exp['mapped_parameters']['signal']
+            del exp['mapped_parameters']['signal']
+            
+        if 'name' in exp['mapped_parameters']:
+            exp['mapped_parameters']['title'] = \
+                exp['mapped_parameters']['name']
+            del exp['mapped_parameters']['name']
+        
     return exp
 
 def dict2hdfgroup(dictionary, group):
@@ -176,6 +187,6 @@ def write_signal(signal,group):
 def file_writer(filename, signal, *args, **kwds):
     f = h5py.File(filename, mode = 'w')
     exps = f.create_group('Experiments')
-    expg = exps.create_group(signal.mapped_parameters.name)
+    expg = exps.create_group(signal.mapped_parameters.title)
     write_signal(signal,expg)
     f.close()
