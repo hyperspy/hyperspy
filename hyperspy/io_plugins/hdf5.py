@@ -157,7 +157,16 @@ def dict2hdfgroup(dictionary, group):
             
 def hdfgroup2dict(group, dictionary = {}):
     for key, value in group.attrs.iteritems():
-        dictionary[key] = value if value != '_None_' else None
+        try:
+            if value == '_None_':
+                value = None
+        except ValueError:
+            # If the value is an array it will raise a ValueError
+            pass
+        if type(value) == np.ndarray and value.dtype == np.dtype('|S1'):
+            value = value.tolist()
+        dictionary[key] = value
+        
     for _group in group.keys():
         if _group.startswith('_sig_'):
             dictionary[_group[5:]] = hdfgroup2signaldict(group[_group])
