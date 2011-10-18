@@ -97,7 +97,7 @@ def _plot_2D_component(factors, idx, axes_manager,
     if ax==None:
         ax=plt.gca()
     axes=axes_manager._slicing_axes
-    shape=(axes[0].size,axes[1].size)
+    shape=(axes[1].size,axes[0].size)
     extent=None
     if calibrate:
         extent=(axes[0].low_value,
@@ -106,8 +106,7 @@ def _plot_2D_component(factors, idx, axes_manager,
                 axes[1].low_value)
     if comp_label:
         plt.title('%s %s' % (comp_label,idx))
-    im=ax.imshow(factors[:,idx].reshape(shape[1], 
-                                     shape[0]),
+    im=ax.imshow(factors[:,idx].reshape(shape),
                  cmap=cmap, interpolation = 'nearest',
                  extent=extent)
     div=make_axes_locatable(ax)
@@ -117,7 +116,8 @@ def _plot_2D_component(factors, idx, axes_manager,
 
 def _plot_score(scores, idx, axes_manager, ax=None, 
                 comp_label=None, no_nans=True, 
-                calibrate=True, cmap=plt.cm.gray):
+                calibrate=True, cmap=plt.cm.gray,
+                same_window=False):
     if ax==None:
         ax=plt.gca()
     if no_nans:
@@ -150,8 +150,9 @@ def _plot_score(scores, idx, axes_manager, ax=None,
             x=axes[0].axis
         else:
             x=np.arange(axes[0].size)
-        ax.step(x,scores[idx])
-        if comp_label:
+        ax.step(x,scores[idx],
+                label='%s %s'%(comp_label,idx))
+        if comp_label and not same_window:
             plt.title('%s %s'%(comp_label,idx))
         plt.ylabel('Score, Arb. Units')
         if calibrate:

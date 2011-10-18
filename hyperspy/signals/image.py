@@ -279,60 +279,77 @@ class Image(Signal):
                        same_window=True, comp_label='IC', 
                        on_peaks=False, cmap=plt.cm.jet, 
                        no_nans=True,per_row=3):
-        scores=self._get_ica_scores(_get_target(on_peaks))
+        scores=self._get_ica_scores(self._get_target(on_peaks))
         return self._plot_scores(scores, comp_ids=comp_ids,
                                  same_window=same_window, comp_label=comp_label,
                                  on_peaks=on_peaks, cmap=cmap,
                                  no_nans=no_nans,per_row=per_row)
 
-    def save_maps(self, comp_ids, ):
-        pass
+    def exportPca_results(self, comp_ids=None, calibrate=True,
+                          factor_prefix='pc', factor_format='rpl',
+                          score_prefix='PC_score', score_format='rpl', 
+                          on_peaks=False, plot_shifts=True, plot_char=None,
+                          img_data=None,
+                          comp_label='PC',cmap=plt.cm.jet,
+                          same_window=False,
+                          no_nans=True,per_row=3):
+        factors=self._get_target(on_peaks).pc
+        scores=self._get_target(on_peaks).v.T
+        self._export_factors(factors, comp_ids=comp_ids,
+                             calibrate=calibrate,
+                             plot_shifts=plot_shifts,
+                             plot_char=plot_char,
+                             img_data=img_data,
+                             factor_prefix=factor_prefix,
+                             factor_format=factor_format,
+                             comp_label=comp_label,
+                             on_peaks=on_peaks,
+                             cmap=cmap,
+                             no_nans=no_nans,
+                             same_window=same_window,
+                             per_row=per_row)
+        self._export_scores(scores,comp_ids=comp_ids,
+                            calibrate=calibrate,
+                            score_prefix=score_prefix,
+                            score_format=score_format,
+                            comp_label=comp_label,
+                            cmap=cmap,
+                            same_window=same_window,
+                            no_nans=no_nans,
+                            per_row=per_row)
 
-    def save_pca_factors():
-        pass
-
-    def save_pca_scores():
-        pass
-
-    def save_pca_maps(self):
-        pass
-
-    def save_ica_maps(self,comp_ids=None, cmap=plt.cm.gray, factor_prefix = 'pc',
-                      score_prefix = 'score', spectrum_format = 'msa', 
-                      hs_format = 'tif', no_nans=True, on_peaks=False,
-                      scoremap=True, per_row=3, directory = None):
-        """Saves data for both components and scores.  For image
-           formats, saves the plots on the same figure.  To enable 
-           this, make spectrum_format and hs_format the same.
-
-           
-        """
-        img_formats=[]
-        target=self._get_target(on_peaks)
-        scores=self._get_ica_scores(target)
-        ic=target.ic
-        
-        if spectrum_format==hs_format and spectrum_format in img_formats:
-            imgdraw.plot_independent_components_maps(scores=scores,
-                                                    ic=ic,
-                                                    no_nans=no_nans,
-                                                    savefig=True,
-                                                    directory=directory)
-        else:
-            sc = Spectrum({'data' : ic[:,0],
-                      'axes' : [axis_dict,]})
-            fs = Image({'data' : scores[0],
-                        'axes' : [axis_dict,]})
-        for i in xrange(n):
-            s.data = target.pc[:,i]
-            s.save('%s-%i.%s' % (pc_prefix, i, spectrum_format))
-
-
-    def save_ica_factors():
-        pass
-
-    def save_ica_scores():
-        pass
+    def exportIca_results(self, comp_ids=None, calibrate=True,
+                          factor_prefix='ic', factor_format='rpl',
+                          score_prefix='IC_score', score_format='rpl', 
+                          on_peaks=False, plot_shifts=True, plot_char=None,
+                          img_data=None,
+                          comp_label='IC',cmap=plt.cm.jet,
+                          same_window=False,
+                          no_nans=True,per_row=3):
+        factors=self._get_target(on_peaks).ic
+        scores=self._get_ica_scores(self._get_target(on_peaks))
+        self._export_factors(factors, comp_ids=comp_ids,
+                             calibrate=calibrate,
+                             plot_shifts=plot_shifts,
+                             plot_char=plot_char,
+                             img_data=img_data,
+                             factor_prefix=factor_prefix,
+                             factor_format=factor_format,
+                             comp_label=comp_label,
+                             on_peaks=on_peaks,
+                             cmap=cmap,
+                             no_nans=no_nans,
+                             same_window=same_window,
+                             per_row=per_row)
+        self._export_scores(scores,comp_ids=comp_ids,
+                            calibrate=calibrate,
+                            score_prefix=score_prefix,
+                            score_format=score_format,
+                            comp_label=comp_label,
+                            cmap=cmap,
+                            same_window=same_window,
+                            no_nans=no_nans,
+                            per_row=per_row)
 
     def save_principal_components(self, n, pc_prefix = 'pc',
                                   score_prefix = 'score', spectrum_format = 'msa', 

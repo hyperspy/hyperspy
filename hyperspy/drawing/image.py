@@ -201,7 +201,7 @@ def _plot_component(f_pc, idx, cell_data=None, locations=None,
         cax=div.append_axes("right",size="5%",pad=0.05)
         plt.colorbar(im,cax=cax)
         return ax
-
+'''
 def plot_image_peaks(cell_data, peaks=None, index=0, peak_width=10, subpixel=False,
                      medfilt_radius=5):
     # TODO: replace with hyperimage explorer
@@ -375,10 +375,8 @@ def plot_image_overlay(plot_component=None, mva_type='PCA',
 def plot_cell_overlay(cell_data, f_pc, locations, ax=None, plot_shifts=True, 
                       plot_char=None, cmap=plt.cm.jet):
     """Overlays peak characteristics on an image plot of the average image.
-
-Note that you can actually plot shifts and component scores simultaneously.""")
-            return None
-        figs=[]
+    Note that you can actually plot shifts and component scores simultaneously.""")
+    figs=[]
         for key in self.mapped_parameters.original_files.keys():
             f=plt.figure()
             plt.title(key)
@@ -462,103 +460,8 @@ def _plot_pc(idx, on_peaks=False,cmap=plt.cm.gray):
     div=make_axes_locatable(ax)
     cax=div.append_axes("right",size="5%",pad=0.05)
     plt.colorbar(im,cax=cax)
-
+'''
     
-
-def plot_principal_components(n = None, same_window=True, per_row=3, 
-                              on_peaks=False, cmap=plt.cm.gray):
-    """Plot the principal components up to the given number
-
-    Parameters
-    ----------
-    n : int
-        number of principal components to plot.
-
-    same_window : bool (optional)
-                if 'True', the components will be plotted in the
-                same window. Default is 'False'.
-
-    per_row : int (optional)
-                When same_window is True, this is the number of plots
-                per row in the single window.
-
-    on_peaks : bool (optional)
-    """
-    target=self._get_target(on_peaks)
-    if n is None:
-        n = target.pc.shape[1]
-    if not same_window:
-        for i in xrange(n):
-            plt.figure()
-            _plot_pc(i,on_peaks,cmap=cmap)
-
-    else:
-        fig = plt.figure()
-        rows=int(np.ceil(n/float(per_row)))
-        idx=0
-        for i in xrange(rows):
-            for j in xrange(per_row):
-                if idx<n:
-                    fig.add_subplot(rows,per_row,idx+1)
-                    _plot_pc(idx,on_peaks,cmap=cmap)
-                    idx+=1
-        plt.suptitle('Principal components')
-        plt.draw()
-
-def plot_independent_components(ic, same_window=True, per_row=3, 
-                                cell_data=None, on_peaks=False, 
-                                cmap=plt.cm.gray):
-    """Plot the independent components.
-
-    Parameters
-    ----------
-    ic : numpy array
-         externally provided independent components array
-         The shape of 'ic' must be (channels, n_components),
-         so that e.g. ic[:, 0] is the first independent component.
-
-    same_window : bool (optional)
-                if 'True', the components will be plotted in the
-                same window. Default is 'False'.
-
-    per_row : int (optional)
-                When same_window is True, this is the number of plots
-                per row in the single window.
-
-    Image-specific parameters
-    -------------------------
-    cell_data : 2D numpy array (required if on_peaks is True)
-        A cell image from which peak characteristics have been
-        derived.  Most often you would use an average image here.
-        The characteristics are overlaid on this image.
-
-    on_peaks : bool (optional)
-        If True, plots factors/score maps based on peak characteristics.
-        Requires ic to be based on peak characteristic data, and requires
-        cell_data to be the stack from which ic was derived.
-
-    cmap : the matplotlib colormap to apply to the factor image.
-    """
-
-    n = ic.shape[1]
-
-    if not same_window:
-        for i in xrange(n):
-            plt.figure()
-            _plot_ic(i, on_peaks, cmap=cmap)
-
-    else:
-        fig = plt.figure()
-        rows=int(np.ceil(n/float(per_row)))
-        idx=0
-        for i in xrange(rows):
-            for j in xrange(per_row):
-                if idx<n:
-                    fig.add_subplot(rows,per_row,idx+1)
-                    _plot_ic(idx, on_peaks,cmap=cmap)
-                    idx+=1
-        plt.suptitle('Independent components')
-
 def plot_maps(scores, factors=None, comp_ids=None, locations=None,
               original_files=None, mva_type=None,
               cmap=plt.cm.gray, no_nans=False, per_row=3,
