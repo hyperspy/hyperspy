@@ -24,6 +24,7 @@ from hyperspy.learn.mva import MVA_Results
 from hyperspy import messages
 
 from hyperspy.drawing import image as imgdraw
+from hyperspy.drawing import signal as sigdraw
 
 from matplotlib import pyplot as plt
 import numpy as np
@@ -121,62 +122,31 @@ class Image(Signal):
         """
         pass
 
-    def _plot_factors_or_pchars(self, factors, comp_ids=None, 
-                                same_window=True, comp_label='PC', 
-                                on_peaks=False, cell_data=None,
-                                locations=None, plot_shifts=True, 
-                                plot_char=None, cmap=plt.cm.jet, 
-                                per_row=3,ax=None):
-        """Plot components from PCA or ICA, or peak characteristics
+    def _get_pk_shifts_and_char(f_pc,plot_shifts=False,plot_char=None):
+        locations=self.target_locations
 
-        Parameters
-        ----------
+        if plot_shifts:
+            shifts=np.zeros((locations.shape[0]),dtype=[('location','i4',(1,2)),
+                                                        ('shift','i4',(1,2))])
+        else: shifts=None
+        if plot_char:
+            char=np.zeros(locations.shape[0],dtype=[('location','i4',(1,2)),
+                                                          ('char','i4')])
+        else: char=None
 
-        comp_ids : None, int, or list of ints
-            if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given int.
-            if list of ints, returns maps of components with ids in given list.
+        for pos in xrange(locations.shape[0]):
+            if plot_shifts:
+                shifts[pos]=(locations[pos,:2],
+                             f_pc[pos*7+2:pos*7+4])
+            if plot_char:
+                char[pos]=(locations[pos,:2],
+                           f_pc[pos*7+plot_char])
 
-        same_window : bool
-            if True, plots each factor to the same window.  They are not scaled.
-        
-        comp_label : string, the label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting in the 
-            same window)
-            
-        on_peaks : bool
-            Plot peak characteristics (True), or factor images (False)
-        """
-        if comp_ids is None:
-            comp_ids=xrange(factors.shape[1])
+        return shifts, char
 
-        elif type(comp_ids).__name__!='list':
-            comp_ids=xrange(comp_ids)
-
-        n=len(comp_ids)
-        if same_window:
-            rows=int(np.ceil(n/float(per_row)))
-
-        shape=(self.axes_manager.axes[1].size, 
-               self.axes_manager.axes[2].size)
-
-        for i in xrange(n):
-            if same_window:
-                fig=plt.gcf()
-                ax=fig.add_subplot(rows,per_row,i+1)
-            else:
-                f=plt.figure()
-                ax=f.add_subplot(111)
-            imgdraw._plot_component(f_pc=factors, idx=comp_ids[i], cell_data=cell_data, 
-                                  locations=locations, ax=ax, shape=shape,
-                                  on_peaks=on_peaks, plot_shifts=plot_shifts, 
-                                  plot_char=plot_char, 
-                                  cmap=plt.cm.jet)
-        plt.tight_layout()
-
-    def plotPca_factors(self, comp_ids=None, locations=None,
+    def plotPca_factors(self, comp_ids=None, calibrate=True,
                         same_window=True, comp_label='PC', 
-                        on_peaks=False, cell_data=None,
+                        on_peaks=False, img_data=None,
                         plot_shifts=True, plot_char=None, 
                         cmap=plt.cm.jet, per_row=3):
         """Plot components from PCA, either factor images or
@@ -229,14 +199,13 @@ class Image(Signal):
         factors=self._get_target(on_peaks).pc
         return self._plot_factors_or_pchars(factors, comp_ids=comp_ids, 
                                 same_window=same_window, comp_label=comp_label, 
-                                on_peaks=on_peaks, cell_data=cell_data,
-                                plot_shifts=plot_shifts, locations=locations,
-                                plot_char=plot_char, cmap=cmap, 
-                                per_row=per_row)
+                                on_peaks=on_peaks, img_data=img_data,
+                                plot_shifts=plot_shifts, plot_char=plot_char, 
+                                cmap=cmap, per_row=per_row)
 
-    def plotIca_factors(self,comp_ids=None, locations=None,
+    def plotIca_factors(self,comp_ids=None, calibrate=True,
                         same_window=True, comp_label='IC', 
-                        on_peaks=False, cell_data=None,
+                        on_peaks=False, img_data=None,
                         plot_shifts=True, plot_char=None, 
                         cmap=plt.cm.jet, per_row=3):
         """Plot components from ICA, either factor images or
@@ -292,10 +261,29 @@ class Image(Signal):
         factors=self._get_target(on_peaks).ic
         return self._plot_factors_or_pchars(factors, comp_ids=comp_ids, 
                                 same_window=same_window, comp_label=comp_label, 
-                                on_peaks=on_peaks, cell_data=cell_data,
-                                plot_shifts=plot_shifts, locations=locations,
-                                plot_char=plot_char, cmap=cmap, 
-                                per_row=per_row)
+                                on_peaks=on_peaks, img_data=img_data,
+                                plot_shifts=plot_shifts, plot_char=plot_char, 
+                                cmap=cmap, per_row=per_row)
+
+    def plotPca_scores(self, comp_ids=None, calibrate=True,
+                       same_window=True, comp_label='PC', 
+                       on_peaks=False, cmap=plt.cm.jet, 
+                       no_nans=True,per_row=3):
+        scores=self._get_target(on_peaks).v.T
+        return self._plot_scores(scores, comp_ids=comp_ids,
+                                 same_window=same_window, comp_label=comp_label,
+                                 on_peaks=on_peaks, cmap=cmap,
+                                 no_nans=no_nans,per_row=per_row)
+
+    def plotIca_scores(self, comp_ids=None, calibrate=True,
+                       same_window=True, comp_label='IC', 
+                       on_peaks=False, cmap=plt.cm.jet, 
+                       no_nans=True,per_row=3):
+        scores=self._get_ica_scores(_get_target(on_peaks))
+        return self._plot_scores(scores, comp_ids=comp_ids,
+                                 same_window=same_window, comp_label=comp_label,
+                                 on_peaks=on_peaks, cmap=cmap,
+                                 no_nans=no_nans,per_row=per_row)
 
     def save_maps(self, comp_ids, ):
         pass

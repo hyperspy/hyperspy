@@ -30,7 +30,9 @@ from hyperspy.drawing import mpl_hie, mpl_hse
 from hyperspy.misc import utils
 from hyperspy.learn.mva import MVA, MVA_Results
 from hyperspy.misc.utils import DictionaryBrowser
+from hyperspy.drawing import signal as sigdraw
 
+from matplotlib import pyplot as plt
 
 class Signal(t.HasTraits, MVA):
     data = t.Any()
@@ -686,6 +688,183 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
 
     def deepcopy(self):
         return(copy.deepcopy(self))
+
+    def _plot_factors_or_pchars(self, factors, comp_ids=None, 
+                                calibrate=True,
+                                same_window=True, comp_label='PC', 
+                                on_peaks=False, img_data=None,
+                                plot_shifts=True, plot_char=4, 
+                                cmap=plt.cm.jet, quiver_color='white',
+                                vector_scale=100,
+                                per_row=3,ax=None):
+        """Plot components from PCA or ICA, or peak characteristics
+
+        Parameters
+        ----------
+
+        comp_ids : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+
+        calibrate : bool
+            if True, plots are calibrated according to the data in the axes
+            manager.
+
+        same_window : bool
+            if True, plots each factor to the same window.  They are not scaled.
+        
+        comp_label : string, the label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+            
+        on_peaks : bool
+            Plot peak characteristics (True), or factor images (False)
+
+        cmap : a matplotlib colormap
+            The colormap used for factor images or
+            any peak characteristic scatter map
+            overlay.
+
+        Parameters only valid for peak characteristics (or pk char factors):
+        --------------------------------------------------------------------        
+
+        img_data - 2D numpy array, 
+            The array to overlay peak characteristics onto.  If None,
+            defaults to the average image of your stack.
+
+        plot_shifts - bool, default is True
+            If true, plots a quiver (arrow) plot showing the shifts for each
+            peak present in the component being plotted.
+
+        plot_char - None or int
+            If int, the id of the characteristic to plot as the colored 
+            scatter plot.
+            Possible components are:
+               4: peak height
+               5: peak orientation
+               6: peak eccentricity
+
+       quiver_color : any color recognized by matplotlib
+           Determines the color of vectors drawn for 
+           plotting peak shifts.
+
+       vector_scale : integer or None
+           Scales the quiver plot arrows.  The vector 
+           is defined as one data unit along the X axis.  
+           If shifts are small, set vector_scale so 
+           that when they are multiplied by vector_scale, 
+           they are on the scale of the image plot.
+           If None, uses matplotlib's autoscaling.
+               
+        """
+
+        if comp_ids is None:
+            comp_ids=xrange(factors.shape[1])
+
+        elif type(comp_ids).__name__!='list':
+            comp_ids=xrange(comp_ids)
+
+        n=len(comp_ids)
+        if same_window:
+            rows=int(np.ceil(n/float(per_row)))
+
+        shape=(self.axes_manager.axes[2].size, 
+               self.axes_manager.axes[1].size)
+
+        fig_list=[]
+
+        if n<per_row: per_row=n
+
+        for i in xrange(n):
+            if self.axes_manager.signal_dimension==1:
+                if same_window:
+                    f=plt.gcf()
+                    ax=plt.gca()
+                else:
+                    f=plt.figure()
+                    ax=f.add_subplot(111)
+                ax=sigdraw._plot_1D_component(factors=factors,
+                        idx=i,axes_manager=self.axes_manager,
+                        ax=ax, calibrate=calibrate,
+                        comp_label=comp_label,
+                        same_window=same_window)
+                if same_window:
+                    plt.legend(ncol=factors.shape[1]//2, loc='best')
+            elif self.axes_manager.signal_dimension==2:
+                if same_window:
+                    f=plt.gcf()
+                    ax=f.add_subplot(rows,per_row,i+1)
+                else:
+                    f=plt.figure()
+                    ax=f.add_subplot(111)
+                if on_peaks:
+                    if img_data==None:
+                        img_data=np.average(self.data,axis=0)
+                    try:
+                        shifts, char = self.get_pk_shifts_and_char(factors,
+                                             plot_shifts=plot_shifts,
+                                             plot_char=plot_char)
+                    except:
+                        messages.warning('Unable to get peak\
+data.  Are you sure the factors you are trying to use are\
+from peak characteristic data?')
+                    sigdraw._plot_quiver_scatter_overlay(
+                        image=img_data,
+                        axes_manager=self.axes_manager,
+                        shifts=shifts,char=char,ax=ax,
+                        img_cmap=plt.cm.gray,
+                        sc_cmap=cmap,
+                        quiver_color=quiver_color,
+                        vector_scale=vector_scale)                    
+                else:
+                    sigdraw._plot_2D_component(factors=factors, 
+                        idx=comp_ids[i], 
+                        axes_manager=self.axes_manager,
+                        calibrate=calibrate,ax=ax, 
+                        cmap=cmap,comp_label=comp_label)
+            if not same_window:
+                fig_list.append(f)
+        plt.tight_layout()
+        if not same_window:
+            return fig_list
+        else:
+            return f
+
+    def _plot_scores(self, scores, comp_ids=None, calibrate=True,
+                       same_window=True, comp_label=None, 
+                       on_peaks=False, cmap=plt.cm.jet, 
+                       no_nans=True, per_row=3):
+        if comp_ids is None:
+            comp_ids=xrange(scores.shape[0])
+
+        elif type(comp_ids).__name__!='list':
+            comp_ids=xrange(comp_ids)
+
+        n=len(comp_ids)
+        if same_window:
+            rows=int(np.ceil(n/float(per_row)))
+
+        fig_list=[]
+
+        if n<per_row: per_row=n
+
+        for i in xrange(n):
+            if same_window:
+                f=plt.gcf()
+                ax=f.add_subplot(rows,per_row,i+1)
+            else:
+                f=plt.figure()
+                ax=f.add_subplot(111)
+            sigdraw._plot_score(scores,idx=comp_ids[i],
+                                axes_manager=self.axes_manager,
+                                no_nans=no_nans, calibrate=calibrate,
+                                cmap=cmap,comp_label=comp_label)
+        plt.tight_layout()
+        if not same_window:
+            return fig_list
+        else:
+            return f
 
 #    def sum_in_mask(self, mask):
 #        """Returns the result of summing all the spectra in the mask.

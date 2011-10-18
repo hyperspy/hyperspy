@@ -376,60 +376,77 @@ def plot_cell_overlay(cell_data, f_pc, locations, ax=None, plot_shifts=True,
                       plot_char=None, cmap=plt.cm.jet):
     """Overlays peak characteristics on an image plot of the average image.
 
-    Only appropriate for Image objects that consist of 3D stacks of cropped
-    data.
+Note that you can actually plot shifts and component scores simultaneously.""")
+            return None
+        figs=[]
+        for key in self.mapped_parameters.original_files.keys():
+            f=plt.figure()
+            plt.title(key)
+            plt.imshow(self.mapped_parameters.original_files[key].data, 
+                interpolation = 'nearest')
+            plt.gray()
+            # get a shorter handle on the peak locations on THIS image
+            locs=self.mapped_parameters.locations
+            # binary mask to exclude peaks from other images
+            mask=locs['filename']==key
+            mask=mask.squeeze()
+            # grab the array of peak locations, only from THIS image
+            locs=locs[mask]['position'].squeeze()
+            char=[]                
+            if peak_id is not None and plot_char is not None :
+                # list comprehension to obtain the peak characteristic
+                # peak_id selects the peak
+                # multiply by 7 because each peak has 7 characteristics
+                # add the index of the characteristic of interest
+                # mask.nonzero() identifies the indices corresponding to peaks 
+                #     from this image (if many origins are present for this 
+                #     stack).  This selects the column, only plotting peak 
+                #     characteristics that are from this image.
+                char=np.array([char.append(self.peak_chars[peak_id*7+plot_char,
+                               mask.nonzero()[x]]) for x in xrange(locs.shape[0])])
+                plt.scatter(locs[:,0],locs[:,1],c=char)
+            if peak_id is not None and plot_shift is not None:
+                # list comprehension to obtain the peak shifts
+                # peak_id selects the peak
+                # multiply by 7 because each peak has 7 characteristics
+                # add the indices of the peak shift [2:4]
+                # mask.nonzero() identifies the indices corresponding to peaks 
+                #    from this image (if many origins are present for this 
+                #    stack).  This selects the column, only plotting shifts 
+                #    for peaks that are from this image.
+                shifts=np.array([char.append(self.peak_chars[peak_id*7+2:peak_id*7+4,
+                               mask.nonzero()[x]]) for x in xrange(locs.shape[0])])
+                plt.quiver(locs[:,0],locs[:,1],
+                           shifts[:,0], shifts[:,1],
+                           units='xy', color='white'
+                           )
+            if plot_component is not None:
+                if peak_mva: target=self.peak_mva_results
+                else: target=self.mva_results
+                if mva_type.upper() == 'PCA':
+                    scores=target.v[plot_component][mask]
+                elif mva_type.upper() == 'ICA':
+                    scores=target.ica_scores[plot_component][mask]
+                else:
+                    messages.warning("Unrecognized MVA type.  Currently supported MVA types are \
+PCA and ICA (case insensitive)")
+                    return None
+                print mask
+                print locs
+                print scores
+                plt.scatter(locs[:,0],locs[:,1],c=scores)
+                plt.jet()
+                plt.colorbar()
+            figs.append(f)
+        return figs
 
-    Parameters:
-
-    cell_data - numpy array
-        The data array containing a cell image on which to overlay peak characteristics.
-        Generally the average cell from a stack of images.
-
-    f_pc - numpy array (short for factors/peak characteristics)
-        The data array containing either peak characteristics (positions, height, etc.)
-        or the factors derived from such peak characteristics using PCA or ICA.
-        Supplied by the peak_char.peak_char_stack function.
-
-    locations - numpy array
-        The data array containing the locations of peaks that have been characterized.         
-
-    plot_shifts - bool, default is True
-        If true, plots a quiver (arrow) plot showing the shifts for each
-        peak present in the component being plotted.
-
-    plot_char - None or int
-        If int, the id of the characteristic to plot as the colored 
-        scatter plot.
-        Possible components are:
-           4: peak height
-           5: peak orientation
-           6: peak eccentricity
-           
-    cmap : a matplotlib colormap
-        The colormap used for any peak characteristic scatter map
-        overlay.
-    """
-
-    shifts=np.zeros((locations.shape[0],2))
-    char=np.zeros(locations.shape[0])   
-
-    for pos in xrange(locations.shape[0]):
-        shifts[pos]=f_pc[pos*7+2:pos*7+4]
-        if plot_char:
-            char[pos]=f_pc[pos*7+plot_char]
-
-    if ax==None:
+    def _plot_pc(idx, on_peaks=False,cmap=plt.cm.gray):
+        target=self._get_target(on_peaks)
         ax=plt.gca()
-    ax.imshow(cell_data, interpolation = 'nearest',cmap=plt.cm.gray)
-
-    if plot_shifts:
-        ax.quiver(locations[:,0],locations[:,1],
-                   shifts[:,0], shifts[:,1],
-                   units='xy', color='white'
-                   )
-    if plot_char is not None :
-        ax.scatter(locations[:,0],locations[:,1],c=char,
-                    cmap=cmap)
+        im=ax.imshow(target.pc[:,idx].reshape(self.axes_manager.axes[1].size,
+                    self.axes_manager.axes[2].size), cmap=cmap, 
+                    interpolation = 'nearest')
+        plt.title('PC %s' % idx)
         div=make_axes_locatable(ax)
         cax=div.append_axes("right",size="5%",pad=0.05)
         plt.colorbar(im,cax=cax)

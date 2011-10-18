@@ -276,7 +276,7 @@ to add?'%arg.mapped_parameters.title)
     def principal_components_analysis(self, normalize_poissonian_noise = False, 
                                      algorithm = 'svd', output_dimension = None, navigation_mask = None, 
                                      signal_mask = None, center = False, variance2one = False, var_array = None, 
-                                     var_func = None, polyfit = None):
+                                     var_func = None, polyfit = None, **kw):
         """Principal components analysis for Aggregate Spectra.
         Different from normal PCA only in that it operates on your
         aggregate data as a whole, and splits the results into
