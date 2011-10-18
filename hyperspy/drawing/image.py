@@ -366,69 +366,6 @@ PCA and ICA (case insensitive)")
                 plt.colorbar()
             figs.append(f)
         return figs
-        
-    def plot_cell_overlay(cell_data, f_pc, locations, ax=None, plot_shifts=True, 
-                          plot_char=None, cmap=plt.cm.jet):
-        """Overlays peak characteristics on an image plot of the average image.
-
-        Only appropriate for Image objects that consist of 3D stacks of cropped
-        data.
-
-        Parameters:
-
-        cell_data - numpy array
-            The data array containing a cell image on which to overlay peak characteristics.
-            Generally the average cell from a stack of images.
-
-        f_pc - numpy array (short for factors/peak characteristics)
-            The data array containing either peak characteristics (positions, height, etc.)
-            or the factors derived from such peak characteristics using PCA or ICA.
-            Supplied by the peak_char.peak_char_stack function.
-
-        locations - numpy array
-            The data array containing the locations of peaks that have been characterized.         
-
-        plot_shifts - bool, default is True
-            If true, plots a quiver (arrow) plot showing the shifts for each
-            peak present in the component being plotted.
-
-        plot_char - None or int
-            If int, the id of the characteristic to plot as the colored 
-            scatter plot.
-            Possible components are:
-               4: peak height
-               5: peak orientation
-               6: peak eccentricity
-               
-        cmap : a matplotlib colormap
-            The colormap used for any peak characteristic scatter map
-            overlay.
-        """
-
-        shifts=np.zeros((locations.shape[0],2))
-        char=np.zeros(locations.shape[0])   
-
-        for pos in xrange(locations.shape[0]):
-            shifts[pos]=f_pc[pos*7+2:pos*7+4]
-            if plot_char:
-                char[pos]=f_pc[pos*7+plot_char]
-
-        if ax==None:
-            ax=plt.gca()
-        ax.imshow(cell_data, interpolation = 'nearest',cmap=plt.cm.gray)
-
-        if plot_shifts:
-            ax.quiver(locations[:,0],locations[:,1],
-                       shifts[:,0], shifts[:,1],
-                       units='xy', color='white'
-                       )
-        if plot_char is not None :
-            ax.scatter(locations[:,0],locations[:,1],c=char,
-                        cmap=cmap)
-            div=make_axes_locatable(ax)
-            cax=div.append_axes("right",size="5%",pad=0.05)
-            plt.colorbar(im,cax=cax)
-        return f
 
     def _plot_pc(idx, on_peaks=False,cmap=plt.cm.gray):
         target=self._get_target(on_peaks)

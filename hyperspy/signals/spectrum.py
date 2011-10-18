@@ -24,7 +24,7 @@ from hyperspy.gui.tools import (SpectrumCalibration, SmoothingSavitzkyGolay,
     SmoothingLowess, )
 from hyperspy.gui.egerton_quantification import BackgroundRemoval
 
-from hyperspy.drawing import spectrum as specdraw
+from hyperspy.drawing import signal as sigdraw
 
 import numpy as np
 import scipy as sp
@@ -544,8 +544,9 @@ class Spectrum(Signal):
         br = BackgroundRemoval(self)
         br.edit_traits()
 
-    def _plot_components(self, factors, ax=None, comp_ids = None, 
-                         same_window=True, comp_label='PC'):
+    def _plot_components(self, factors, calibrate=True, ax=None, 
+                         comp_ids = None, same_window=True, 
+                         comp_label='PC'):
         if comp_ids is None:
             comp_ids=xrange(factors.shape[1])
 
@@ -559,16 +560,56 @@ class Spectrum(Signal):
             if not same_window:
                 plt.figure()
                 ax=plt.gca()
-            ax=specdraw._plot_component(factors=factors,
-                                        idx=i,ax=ax,
-                                        cal_axis=self.axes_manager.axes[-1],
-                                        comp_label=comp_label)
-        if same_window:
-            plt.legend(ncol=self.mva_results.pc.shape[1]//2, loc='best')
+            ax=sigdraw._plot_1D_component(factors=factors,
+                                          idx=i,axes_manager=self.axes_manager,
+                                          ax=ax, calibrate=calibrate,
+                                          comp_label=comp_label)
         return ax
 
-    def plot_principal_components(self, comp_ids = None, same_window=True,
-                                  comp_label='PC'):
+    def plotPca_factors(self,comp_ids=None, calibrate=True,
+                        same_window=True, comp_label='PC', 
+                        per_row=3):
+        factors=self.mva_results.pc
+        return self._plot_factors_or_pchars(factors, 
+                                            comp_ids=comp_ids, 
+                                            calibrate=calibrate,
+                                            same_window=same_window, 
+                                            comp_label=comp_label, 
+                                            per_row=per_row)
+
+    def plotIca_factors(self,comp_ids=None, calibrate=True,
+                        same_window=True, comp_label='IC',
+                        per_row=3):
+        factors=self.mva_results.ic
+        return self._plot_factors_or_pchars(factors, 
+                                            comp_ids=comp_ids, 
+                                            calibrate=calibrate,
+                                            same_window=same_window, 
+                                            comp_label=comp_label, 
+                                            per_row=per_row)
+
+    def plotPca_scores(self, comp_ids=None, calibrate=True,
+                       same_window=True, comp_label='PC', 
+                       on_peaks=False, cmap=plt.cm.jet, 
+                       no_nans=True,per_row=3):
+        scores=self.mva_results.v.T
+        return self._plot_scores(scores, comp_ids=comp_ids,
+                                 same_window=same_window, comp_label=comp_label,
+                                 on_peaks=on_peaks, cmap=cmap,
+                                 no_nans=no_nans,per_row=per_row)
+
+    def plotIca_scores(self, comp_ids=None, calibrate=True,
+                       same_window=True, comp_label='IC', 
+                       on_peaks=False, cmap=plt.cm.jet, 
+                       no_nans=True,per_row=3):
+        scores=self._get_ica_scores(self.mva_results)
+        return self._plot_scores(scores, comp_ids=comp_ids,
+                                 same_window=same_window, comp_label=comp_label,
+                                 on_peaks=on_peaks, cmap=cmap,
+                                 no_nans=no_nans,per_row=per_row)
+
+    def plot_principal_components(self, comp_ids = None, calibrate=True,
+                                  same_window=True, comp_label='PC'):
         """Plot the principal components up to the given number
 
         Parameters
@@ -579,6 +620,9 @@ class Spectrum(Signal):
             if int, returns maps of components with ids from 0 to given int.
             if list of ints, returns maps of components with ids in given list.
 
+        calibrate : bool
+            if True, calibrates the factor plots according to the axes_manager.
+
         same_window : bool
             if True, plots each factor to the same window.  They are not scaled.
         
@@ -588,12 +632,14 @@ class Spectrum(Signal):
         
         """
         factors=self.mva_results.pc
-        return self._plot_components(factors, comp_ids = comp_ids, 
-                                     same_window=same_window, 
-                                     comp_label=comp_label)
+        return self._plot_factors_or_pchars(factors, 
+                                            comp_ids=comp_ids, 
+                                            calibrate=calibrate,
+                                            same_window=same_window, 
+                                            comp_label=comp_label)
 
-    def plot_independent_components(self, comp_ids = None, same_window=True,
-                                  comp_label='IC'):
+    def plot_independent_components(self, comp_ids = None, calibrate=True,
+                                    same_window=True, comp_label='IC'):
         """Plot the independent components up to the given number
 
         Parameters
@@ -613,95 +659,74 @@ class Spectrum(Signal):
         
         """
         factors=self.mva_results.ic
-        return self._plot_components(factors, comp_ids = comp_ids, 
-                                     same_window=same_window, 
-                                     comp_label=comp_label)
+        return self._plot_factors_or_pchars(factors, 
+                                            comp_ids=comp_ids, 
+                                            calibrate=calibrate,
+                                            same_window=same_window, 
+                                            comp_label=comp_label)
 
-    def plot_maps(self, components, mva_type=None, scores=None, factors=None,
-                  cmap=plt.cm.gray, no_nans=False, with_components=True,
-                  plot=True, on_peaks=False, directory = None,calibrate=True):
+    def plot_maps(self, scores, factors, comp_ids, calibrate=True,
+                  cmap=plt.cm.gray, no_nans=False, savefig=False, 
+                  comp_label=None,directory = None):
         """
         Plot component maps for the different MSA types
 
         Parameters
         ----------
-        components : None, int, or list of ints
+        comp_ids : None, int, or list of ints
             if None, returns maps of all components.
             if int, returns maps of components with ids from 0 to given int.
             if list of ints, returns maps of components with ids in given list.
-        mva_type: string, currently either 'pca' or 'ica'
-        scores: numpy array, the array of score maps
-        factors: numpy array, the array of components, with each column as a component.
+        comp_label: string, currently either 'pca' or 'ica'
         cmap: matplotlib colormap instance
         no_nans: bool,
-        with_components: bool,
-        plot: bool,
+        savefig: bool,
+        directory : string
         """
-        from hyperspy.signals.image import Image
-        from hyperspy.signals.spectrum import Spectrum
 
-        if scores is None or (factors is None and with_components is True):
-            print "Either recmatrix or components were not provided."
-            print "Loading existing values from object."
-            if mva_type is None:
-                print "Neither scores nor analysis type specified.  Cannot proceed."
-                return
+        if no_nans:
+            print 'Removing NaNs for a visually prettier plot.'
+            scores = np.nan_to_num(scores) # remove ugly NaN pixels
 
-            elif mva_type.lower() == 'pca':
-                scores=self.mva_results.v.T
-                factors=self.mva_results.pc
-            elif mva_type.lower() == 'ica':
-                scores = self._get_ica_scores(self.mva_results)
-                factors=self.mva_results.ic
-                if no_nans:
-                    print 'Removing NaNs for a visually prettier plot.'
-                    scores = np.nan_to_num(scores) # remove ugly NaN pixels
-            else:
-                print "No scores provided and analysis type '%s' unrecognized. Cannot proceed."%mva_type
-                return
-
-#        if len(self.axes_manager.axes)==2:
-#            shape=self.data.shape[0],1
-#        else:
-#            shape=self.data.shape[0],self.data.shape[1]
         im_list = []
 
-        if components is None:
-            components=xrange(factors.shape[1])
+        if comp_ids is None:
+            comp_ids=xrange(factors.shape[1])
 
-        elif type(components).__name__!='list':
-            components=xrange(components)
+        elif type(comp_ids).__name__!='list':
+            comp_ids=xrange(comp_ids)
 
-        for i in components:
-            if plot is True:
-                figure = plt.figure()
-                if with_components:
-                    ax = figure.add_subplot(122)
-                    ax2 = figure.add_subplot(121)
-                else:
-                    ax = figure.add_subplot(111)
-            specdraw._plot_score(scores=scores,idx=i,axes_manager=self.axes_manager,
-                                 comp_label=mva_type,no_nans=no_nans, ax=ax,
-                                 calibrate=calibrate,cmap=cmap)                
-            if with_components:
-                specdraw._plot_component(factors=factors,idx=i,ax=ax2,
-                                         cal_axis=self.axes_manager.axes[-1],
-                                         comp_label=mva_type)
+        for i in comp_ids:
+            if savefig:
+                plt.ioff()
+            figure = plt.figure()
+            ax = figure.add_subplot(121)
+            sigdraw._plot_1D_component(factors=factors,idx=i,ax=ax,
+                                         axes_manager=self.axes_manager,
+                                         comp_label=None)
+            ax2 = figure.add_subplot(122)
+            sigdraw._plot_score(scores=scores,idx=i,axes_manager=self.axes_manager,
+                                 comp_label=None,no_nans=no_nans, ax=ax2,
+                                 calibrate=calibrate,cmap=cmap)              
+            plt.suptitle('%s map - component %s:\n%s' % (comp_label,i,
+                                                     self.mapped_parameters.name))
             figure.canvas.draw()
 
-            if plot is True:
-                ax.set_title('%s component number %s map' % (mva_type.upper(),i))
+            im_list.append(figure)
+
+            if savefig:
                 figure.canvas.draw()
                 if directory is not None:
                     if not os.path.isdir(directory):
                         os.makedirs(directory)
-                    figure.savefig(os.path.join(directory, '%s-map-%i.png' % (mva_type.upper(),i)),
+                    figure.savefig(os.path.join(directory, '%s-map-%i.png' % (comp_label,i)),
                               dpi = 600)
+                plt.ion()
         return im_list
 
-    def plot_principal_components_maps(self, comp_ids=None, cmap=plt.cm.gray,
-                                       recmatrix=None, with_pc=True,
-                                       plot=True, pc=None, on_peaks=False):
+    def plot_principal_components_maps(self, comp_ids=None, calibrate=True,
+                                       cmap=plt.cm.gray, no_nans=False, savefig=False, 
+                                       comp_label='PCA',directory = None):
         """Plot the map associated to each independent component
 
         Parameters
@@ -729,14 +754,17 @@ class Spectrum(Signal):
         -------
         List with the maps as MVA instances
         """
-        return self.plot_maps(components=comp_ids,mva_type='pca',cmap=cmap,
-                              scores=recmatrix, with_components=with_pc,
-                              plot=plot, factors=pc, on_peaks=on_peaks)
+        scores=self.mva_results.v.T
+        factors=self.mva_results.pc
+        return self.plot_maps(scores=scores, factors=factors,
+                              calibrate=calibrate, comp_ids=comp_ids,
+                              comp_label=comp_label, cmap=cmap,
+                              no_nans=no_nans, savefig=savefig,
+                              directory=directory)
 
-    def plot_independent_components_maps(self, comp_ids=None, cmap=plt.cm.gray,
-                                         recmatrix=None, with_ic=True,
-                                         plot=True, ic=None, no_nans=False,
-                                         on_peaks=False, directory = None):
+    def plot_independent_components_maps(self, comp_ids=None, calibrate=True,
+                                       cmap=plt.cm.gray, no_nans=False, savefig=False, 
+                                       comp_label='ICA',directory = None):
         """Plot the map associated to each independent component
 
         Parameters
@@ -763,10 +791,13 @@ class Spectrum(Signal):
         -------
         List with the maps as MVA instances
         """
-        return self.plot_maps(components=comp_ids,mva_type='ica',cmap=cmap,
-                              scores=recmatrix, with_components=with_ic,
-                              plot=plot, factors=ic, no_nans=no_nans,
-                              on_peaks=on_peaks, directory = directory)
+        scores = self._get_ica_scores(self.mva_results)
+        factors=self.mva_results.ic
+        return self.plot_maps(scores=scores, factors=factors,
+                              calibrate=calibrate, comp_ids=comp_ids,
+                              comp_label=comp_label, cmap=cmap,
+                              no_nans=no_nans, savefig=savefig,
+                              directory=directory)
 
 
     def save_principal_components(self, n, pc_prefix = 'pc',
