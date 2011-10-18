@@ -72,6 +72,7 @@ class GeneralConfig(t.HasTraits):
     default_file_format = t.CStr('hdf5')
     plot_on_load = t.CBool(False)
     interactive = t.CBool(False)
+    logger_on = t.CBool(False)
     
 class ModelConfig(t.HasTraits):
     default_fitter = t.CStr('leastsq')
