@@ -114,6 +114,40 @@ def _plot_2D_component(factors, idx, axes_manager,
     plt.colorbar(im,cax=cax)
     return ax
 
+def _plot_component(axes_manager,
+                    factors=None, idx=None,
+                    on_peaks=False,
+                    image=None, calibrate=True, 
+                    shifts=None, char=None, 
+                    ax=None, img_cmap=plt.cm.gray,
+                    sc_cmap=plt.cm.jet,
+                    cmap=plt.cm.jet,
+                    quiver_color='white',
+                    vector_scale=100,):
+    if axes_manager.signal_dimension==1:
+        return self._plot_1D_component(factors=factors,
+                        idx=idx,axes_manager=axes_manager,
+                        ax=ax, calibrate=calibrate,
+                        comp_label=comp_label,
+                        same_window=same_window)
+    elif axes_manager.signal_dimension==2:
+        if on_peaks:
+            return self._plot_quiver_scatter_overlay(
+                        image=image,
+                        axes_manager=axes_manager,
+                        shifts=shifts,char=char,ax=ax,
+                        img_cmap=img_cmap,
+                        sc_cmap=sc_cmap,
+                        quiver_color=quiver_color,
+                        vector_scale=vector_scale)
+        else:
+            return _plot_2D_component(factors=factors, 
+                                      idx=idx, 
+                                      axes_manager=axes_manager,
+                                      calibrate=calibrate,ax=ax, 
+                                      cmap=cmap,
+                                      comp_label=comp_label)
+
 def _plot_score(scores, idx, axes_manager, ax=None, 
                 comp_label=None, no_nans=True, 
                 calibrate=True, cmap=plt.cm.gray,

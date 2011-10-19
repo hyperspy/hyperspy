@@ -286,6 +286,7 @@ class Image(Signal):
 
     def plotPca_scores(self, comp_ids=None, calibrate=True,
                        same_window=True, comp_label='PC', 
+                       with_factors=False,
                        on_peaks=False, cmap=plt.cm.jet, 
                        no_nans=True,per_row=3):
         """Plot scores from PCA, either factor images or
@@ -310,6 +311,10 @@ class Image(Signal):
             The label that is either the plot title (if plotting in
             separate windows) or the label in the legend (if plotting in the 
             same window)
+
+        with_factors : bool
+            If True, also returns figure(s) with the factors for the
+            given comp_ids.
 
         on_peaks : bool
             Plot scores from peak characteristics (True), 
@@ -328,16 +333,21 @@ class Image(Signal):
             parameter is True.
         """
         scores=self._get_target(on_peaks).v.T
+        if with_factors:
+            factors=self._get_target(on_peaks).pc
+        else: factors=None
         return self._plot_scores(scores, comp_ids=comp_ids,
+                                 with_factors=with_factors, factors=factors,
                                  same_window=same_window, comp_label=comp_label,
                                  on_peaks=on_peaks, cmap=cmap,
                                  no_nans=no_nans,per_row=per_row)
 
     def plotIca_scores(self, comp_ids=None, calibrate=True,
                        same_window=True, comp_label='IC', 
+                       with_factors=False,
                        on_peaks=False, cmap=plt.cm.jet, 
                        no_nans=True,per_row=3):
-        """Plot scores from PCA, either factor images or
+        """Plot scores from ICA, either factor images or
            peak characteristics.
 
         Parameters
@@ -360,6 +370,10 @@ class Image(Signal):
             separate windows) or the label in the legend (if plotting in the 
             same window)
 
+        with_factors : bool
+            If True, also returns figure(s) with the factors for the
+            given comp_ids.
+
         on_peaks : bool
             Plot scores from peak characteristics (True), 
             or factor images (False)
@@ -377,7 +391,11 @@ class Image(Signal):
             parameter is True.
         """
         scores=self._get_ica_scores(self._get_target(on_peaks))
+        if with_factors:
+            factors=self.get_target(on_peaks).ic
+        else: factors=None
         return self._plot_scores(scores, comp_ids=comp_ids,
+                                 with_factors=with_factors, factors=factors,
                                  same_window=same_window, comp_label=comp_label,
                                  on_peaks=on_peaks, cmap=cmap,
                                  no_nans=no_nans,per_row=per_row)
