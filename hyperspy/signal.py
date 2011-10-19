@@ -60,10 +60,10 @@ class Signal(t.HasTraits, MVA):
         super(Signal, self).__init__()
         self.mapped_parameters = DictionaryBrowser()
         self.original_parameters = DictionaryBrowser()
+        self.mva_results=MVA_Results()
         if type(file_data_dict).__name__ == "dict":
             self.load_dictionary(file_data_dict)
         self._plot = None
-        self.mva_results=MVA_Results()
         self._shape_before_unfolding = None
         self._axes_manager_before_unfolding = None
 
@@ -110,8 +110,14 @@ class Signal(t.HasTraits, MVA):
         if not 'original_parameters' in file_data_dict:
             file_data_dict['original_parameters'] = {}
         if 'attributes' in file_data_dict:
+            print file_data_dict['attributes']
             for key, value in file_data_dict['attributes'].iteritems():
-                self.__setattr__(key, value)
+                if hasattr(self,key):
+                    if isinstance(value,dict):
+                        for k,v in value.iteritems():
+                            eval('self.%s.__setattr__(k,v)'%key)
+                    else:
+                        self.__setattr__(key, value)
         self.original_parameters.load_dictionary(
             file_data_dict['original_parameters'])
         self.mapped_parameters.load_dictionary(
