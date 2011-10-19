@@ -1035,9 +1035,10 @@ class DictionaryBrowser(object):
                     else:
                         symbol = '├── '
                     strvalue = str(value)
-                    if len(strvalue) > max_len:
+                    if len(strvalue) > 2 * max_len:
+                        right_limit = min(max_len, len(strvalue) - max_len)
                         value = '%s ... %s' % (strvalue[:max_len],
-                                              strvalue[-max_len:])
+                                              strvalue[-right_limit:])
                     string += "%s%s%s = %s\n" % (padding, symbol, item, value)
             j += 1
         return string
