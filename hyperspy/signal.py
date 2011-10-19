@@ -34,6 +34,13 @@ from hyperspy.drawing import signal as sigdraw
 
 from matplotlib import pyplot as plt
 
+# MCS - 18/10/11
+# These are here for exporting file formats.  They need a better place.
+multidim_formats = ['rpl']
+img_formats = ['bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg', 'msp', 'pcx', 
+               'png', 'ppm', "pbm", "pgm", 'tiff', 'tif', 'xbm', 'spi',]
+spec_formats =['msa']
+
 class Signal(t.HasTraits, MVA):
     data = t.Any()
     axes_manager = t.Instance(AxesManager)
@@ -832,9 +839,8 @@ from peak characteristic data?')
             return f
 
     def _plot_scores(self, scores, comp_ids=None, calibrate=True,
-                       same_window=True, comp_label=None, 
-                       on_peaks=False, cmap=plt.cm.jet, 
-                       no_nans=True, per_row=3):
+                     same_window=True, comp_label=None, 
+                     cmap=plt.cm.jet, no_nans=True, per_row=3):
         if comp_ids is None:
             comp_ids=xrange(scores.shape[0])
 
@@ -850,21 +856,179 @@ from peak characteristic data?')
         if n<per_row: per_row=n
 
         for i in xrange(n):
-            if same_window:
-                f=plt.gcf()
-                ax=f.add_subplot(rows,per_row,i+1)
-            else:
-                f=plt.figure()
-                ax=f.add_subplot(111)
+            if self.axes_manager.navigation_dimension==1:
+                if same_window:
+                    f=plt.gcf()
+                    ax=plt.gca()
+                else:
+                    f=plt.figure()
+                    ax=f.add_subplot(111)
+            elif self.axes_manager.navigation_dimension==2:
+                if same_window:
+                    f=plt.gcf()
+                    ax=f.add_subplot(rows,per_row,i+1)
+                else:
+                    f=plt.figure()
+                    ax=f.add_subplot(111)
             sigdraw._plot_score(scores,idx=comp_ids[i],
                                 axes_manager=self.axes_manager,
                                 no_nans=no_nans, calibrate=calibrate,
-                                cmap=cmap,comp_label=comp_label)
+                                cmap=cmap,comp_label=comp_label,ax=ax,
+                                same_window=same_window)
         plt.tight_layout()
         if not same_window:
             return fig_list
         else:
+            if self.axes_manager.navigation_dimension==1:
+                plt.legend(ncol=scores.shape[0]//2, loc='best')
             return f
+
+    def _export_factors(self, factors, comp_ids=None,
+                        factor_prefix=None, factor_format='rpl',
+                        comp_label=None,cmap=plt.cm.jet,
+                        on_peaks=False, plot_shifts=True,
+                        plot_char=4,img_data=None,
+                        same_window=False,calibrate=True,
+                        no_nans=True,per_row=3):
+
+        from hyperspy.signals.image import Image
+        from hyperspy.signals.spectrum import Spectrum
+
+        if factor_format not in multidim_formats+img_formats+spec_formats:
+            messages.warning('Format %s not supported for saving.'%factor_format)
+            return None
+
+        if comp_ids is None:
+            comp_ids=xrange(factors.shape[1])
+
+        elif type(comp_ids).__name__!='list':
+            comp_ids=xrange(comp_ids)
+
+        if factor_format in img_formats:
+            fac_plots=self._plot_factors_or_pchars(factors, comp_ids=comp_ids, 
+                                same_window=same_window, comp_label=comp_label, 
+                                on_peaks=on_peaks, img_data=img_data,
+                                plot_shifts=plot_shifts, plot_char=plot_char, 
+                                cmap=cmap, per_row=per_row)
+            for idx in xrange(len(comp_ids)):
+                fac_plots[idx].save('%s_%02i.%s'%(factor_prefix,
+                                                  comp_ids[idx],
+                                                  factor_format))
+        elif factor_format in multidim_formats:
+            if self.axes_manager.signal_dimension==2 and not on_peaks:
+                axes_dicts=[]
+                axes=self.axes_manager._slicing_axes
+                shape=(axes[1].size,axes[0].size)
+                factor_data=np.rollaxis(
+                        factors.reshape((shape[0],shape[1],-1)),2)
+                axes_dicts.append(axes[0].get_axis_dictionary())
+                axes_dicts.append(axes[1].get_axis_dictionary())
+                axes_dicts.append({'name': 'factor_index',
+                        'scale': 1.,
+                        'offset': 0.,
+                        'size': int(factors.shape[1]),
+                        'units': 'factor',
+                        'index_in_array': 0, })
+                s=Image({'data':factor_data,
+                         'axes':axes_dicts})
+            elif self.axes_manager.signal_dimension==1 or on_peaks:
+                axes=[]
+                if not on_peaks:
+                    axes.append(self.axes_manager._slicing_axes[0].get_axis_dictionary())
+                    axes[0]['index_in_array']=1
+                else:
+                    axes.append({'name': 'peak_characteristics',
+                                 'scale': 1.,
+                                 'offset': 0.,
+                                 'size': int(factors.shape[0]),
+                                 'units': 'peak_characteristics',
+                                 'index_in_array': 1, })                    
+
+                axes.append({'name': 'factor_index',
+                        'scale': 1.,
+                        'offset': 0.,
+                        'size': int(factors.shape[1]),
+                        'units': 'factor',
+                        'index_in_array': 0, })
+                s=Spectrum({'data':factors,
+                            'axes':axes})
+            s.save('%ss.%s' % (factor_prefix, factor_format))
+        elif factor_format in spec_formats:
+            axis_dict = self.axes_manager._slicing_axes[0].get_axis_dictionary()
+            sf=None
+            for dim in comp_ids:
+                s=Spectrum({'data':factors[:,dim],
+                            'axes': [axis_dict,]})
+                s.save('%s-%i.%s' % (pc_prefix, i, spectrum_format))
+
+    def _export_scores(self, scores, comp_ids=None,
+                        score_prefix=None, score_format='rpl',
+                        comp_label=None,cmap=plt.cm.jet,
+                        same_window=False,calibrate=True,
+                        no_nans=True,per_row=3):
+
+        from hyperspy.signals.image import Image
+        from hyperspy.signals.spectrum import Spectrum
+
+        if score_format not in multidim_formats+img_formats+spec_formats:
+            messages.warning('Format %s not supported for saving.'%factor_format)
+            return None
+
+        if comp_ids is None:
+            comp_ids=xrange(scores.shape[0])
+
+        elif type(comp_ids).__name__!='list':
+            comp_ids=xrange(comp_ids)
+
+        if score_format in img_formats:
+            sc_plots=self._plot_scores(scores, comp_ids=comp_ids, 
+                                       calibrate=calibrate,
+                                       same_window=same_window, 
+                                       comp_label=comp_label,
+                                       cmap=cmap, no_nans=no_nans,
+                                       per_row=per_row)
+            for idx in xrange(len(comp_ids)):
+                fac_plots[idx].save('%s_%02i.%s'%(score_prefix,
+                                                  comp_ids[idx],
+                                                  score_format))
+        elif score_format in multidim_formats:
+            if self.axes_manager.navigation_dimension==2:
+                axes_dicts=[]
+                axes=self.axes_manager._non_slicing_axes
+                shape=(axes[1].size,axes[0].size)
+                score_data=scores.reshape((-1,shape[0],shape[1]))
+                axes_dicts.append(axes[0].get_axis_dictionary())
+                axes_dicts[0]['index_in_array']=1
+                axes_dicts.append(axes[1].get_axis_dictionary())
+                axes_dicts[1]['index_in_array']=2
+                axes_dicts.append({'name': 'score_index',
+                        'scale': 1.,
+                        'offset': 0.,
+                        'size': int(scores.shape[0]),
+                        'units': 'factor',
+                        'index_in_array': 0, })
+                s=Image({'data':score_data,
+                         'axes':axes_dicts})
+            elif self.axes_manager.navigation_dimension==1:
+                axes=[]
+                axes.append(self.axes_manager._slicing_axes[0].get_axis_dictionary())
+                axes[0]['index_in_array']=1
+                axes.append({'name': 'score_index',
+                        'scale': 1.,
+                        'offset': 0.,
+                        'size': int(scores.shape[0]),
+                        'units': 'score',
+                        'index_in_array': 0, })
+                s=Spectrum({'data':scores,
+                            'axes':axes})
+            s.save('%ss.%s' % (score_prefix, score_format))
+        elif score_format in spec_formats:
+            axis_dict = self.axes_manager._slicing_axes[0].get_axis_dictionary()
+            sf=None
+            for dim in comp_ids:
+                s=Spectrum({'data':scores[dim],
+                            'axes': [axis_dict,]})
+                s.save('%s-%i.%s' % (score_prefix, i, score_format))
 
 #    def sum_in_mask(self, mask):
 #        """Returns the result of summing all the spectra in the mask.

@@ -608,6 +608,64 @@ class Spectrum(Signal):
                                  on_peaks=on_peaks, cmap=cmap,
                                  no_nans=no_nans,per_row=per_row)
 
+    def exportPca_results(self, comp_ids=None, calibrate=True,
+                          factor_prefix='pc', factor_format='rpl',
+                          score_prefix='PC_score', score_format='rpl', 
+                          comp_label='PC',cmap=plt.cm.jet,
+                          same_window=False,
+                          no_nans=True,per_row=3):
+        factors=self.mva_results.pc
+        scores=self.mva_results.v.T
+        self._export_factors(factors, comp_ids=comp_ids,
+                             calibrate=calibrate,
+                             factor_prefix=factor_prefix,
+                             factor_format=factor_format,
+                             comp_label=comp_label,
+                             cmap=cmap,
+                             no_nans=no_nans,
+                             same_window=same_window,
+                             per_row=per_row)
+        self._export_scores(scores,comp_ids=comp_ids,
+                            calibrate=calibrate,
+                            score_prefix=score_prefix,
+                            score_format=score_format,
+                            comp_label=comp_label,
+                            cmap=cmap,
+                            same_window=same_window,
+                            no_nans=no_nans,
+                            per_row=per_row)
+
+    def exportIca_results(self, comp_ids=None, calibrate=True,
+                          factor_prefix='pc', factor_format='rpl',
+                          score_prefix='PC_score', score_format='rpl', 
+                          comp_label='PC',cmap=plt.cm.jet,
+                          same_window=False,
+                          no_nans=True,per_row=3):
+        factors=self.mva_results.ic
+        scores=self._get_ica_scores(self.mva_results)
+        self._export_factors(factors, comp_ids=comp_ids,
+                             calibrate=calibrate,
+                             plot_shifts=plot_shifts,
+                             plot_char=plot_char,
+                             img_data=img_data,
+                             factor_prefix=factor_prefix,
+                             factor_format=factor_format,
+                             comp_label=comp_label,
+                             on_peaks=on_peaks,
+                             cmap=cmap,
+                             no_nans=no_nans,
+                             same_window=same_window,
+                             per_row=per_row)
+        self._export_scores(scores,comp_ids=comp_ids,
+                            calibrate=calibrate,
+                            score_prefix=score_prefix,
+                            score_format=score_format,
+                            comp_label=comp_label,
+                            cmap=cmap,
+                            same_window=same_window,
+                            no_nans=no_nans,
+                            per_row=per_row)
+
     def plot_principal_components(self, comp_ids = None, calibrate=True,
                                   same_window=True, comp_label='PC'):
         """Plot the principal components up to the given number
