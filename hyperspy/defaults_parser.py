@@ -72,7 +72,7 @@ else:
 class GeneralConfig(t.HasTraits):
     default_file_format = t.CStr('hdf5')
     plot_on_load = t.CBool(False)
-    interactive = t.CBool(False)
+    interactive = t.CBool(True)
     logger_on = t.CBool(False)
     
     def _logger_on_changed(self, old, new):

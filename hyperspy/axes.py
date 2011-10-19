@@ -319,7 +319,7 @@ class AxesManager(t.HasTraits):
             elif event.key == "down" or event.key == "2":
                 y.index += self._step
 
-    def edit_axes_traits(self):
+    def gui(self):
         for axis in self.axes:
             axis.edit_traits()
 

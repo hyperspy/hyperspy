@@ -179,9 +179,8 @@ class ImagePlot:
 # Plotting methods from MVA
 #==============================================================================
 
-def plot_image_peaks(img_data, locations,plot_ids=False,
-                     ax=None):
-    if ax=None:
+def plot_image_peaks(img_data, locations, plot_ids=False, ax=None):
+    if ax is None:
         ax=plt.gca()
     ax.imshow(img_data,cmap=plt.gray(), 
             interpolation = 'nearest')
