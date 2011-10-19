@@ -213,6 +213,7 @@ class DataAxis(t.HasTraits):
             show_border = True,),
         label = "Data Axis properties",
         show_border = True,),
+    title = 'Axis configuration',
     )
 
 class AxesManager(t.HasTraits):
