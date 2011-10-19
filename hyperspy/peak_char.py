@@ -523,7 +523,13 @@ def orientation(moments):
     mu11p = cv.GetCentralMoment(moments,1,1)/cv.GetCentralMoment(moments,0,0)
     mu02p = cv.GetCentralMoment(moments,2,0)/cv.GetCentralMoment(moments,0,0)
     mu20p = cv.GetCentralMoment(moments,0,2)/cv.GetCentralMoment(moments,0,0)
-    return 0.5*np.arctan(2*mu11p/(mu20p-mu02p))
+    diff=mu20p-mu02p
+    if mu11p>0 and diff<0:
+        supp=np.pi/2
+    elif mu11p<0 and diff<0:
+        supp=-np.pi/2
+    else: supp=0
+    return 0.5*np.arctan(2*mu11p/(mu20p-mu02p))+supp
 
 def eccentricity(moments):
     try:
