@@ -1019,16 +1019,13 @@ class DictionaryBrowser(object):
         for item, value in self.__dict__.iteritems():
             if type(item) != types.MethodType:
                 if isinstance(value, DictionaryBrowser):
-                    if i == eon - 1:
+                    if i == eon:
                         symbol = '└── '
                     else:
                         symbol = '├── '
                     string += '%s%s%s\n' % (padding, symbol, item)
                     i += 1
-                    if i == eon:
-                        string += value._get_print_items(padding + '    ')
-                    else:
-                        string += value._get_print_items(padding + '│   ')
+                    string += value._get_print_items(padding + '│   ')
                 else:
                     if j == eoi - 1:
                         symbol = '└── '
