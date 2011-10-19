@@ -174,8 +174,11 @@ class TemplatePicker(HasTraits):
         try:
             import cv
         except:
-            print "OpenCV unavailable.  Can't do cross correlation without it.  Aborting."
-            return None
+            try:
+                import cv2.cv as cv
+            except:
+                print "OpenCV unavailable.  Can't do cross correlation without it.  Aborting."
+                return None
         self.OK_custom=OK_custom_handler()
         self.sig=signal_instance
         if not hasattr(self.sig.mapped_parameters,"original_files"):

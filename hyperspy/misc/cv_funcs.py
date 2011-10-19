@@ -18,7 +18,10 @@
 try:
   import cv
 except:
-  raise ImportError('OpenCV could not be imported')
+  try:
+    import cv2.cv as cv
+  except:
+    raise ImportError('OpenCV could not be imported')
   
 import numpy as np
 
