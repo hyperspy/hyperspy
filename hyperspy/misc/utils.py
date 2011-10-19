@@ -28,6 +28,7 @@ except ImportError:
     # happens with Python < 2.7
     ordict = False
 
+from hyperspy import messages
 
 import numpy as np
 import scipy as sp
@@ -1006,7 +1007,18 @@ class DictionaryBrowser(object):
                     value=Signal(value)
                 else:
                     value = DictionaryBrowser(value)
-            self.__setattr__(key, value)
+            # We convert all the strings to unicode
+            # In the case that the encoding is not ASCII we try with
+            # latin-1
+            if isinstance(value, str):
+                try:
+                    value = unicode(value)
+                except:
+                    value = value.decode('latin-1')
+            try:
+                self.__setattr__(key, value)
+            except:
+                messages.warning('Failed to load key %s'%key)
 
     def _get_print_items(self, padding = '', max_len=20):
         """Prints only the attributes that are not methods"""
