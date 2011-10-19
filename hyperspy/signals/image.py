@@ -144,6 +144,12 @@ class Image(Signal):
 
         return shifts, char
 
+    #==============================
+    # MVA plotting routines
+    # These grab the data to be plotted, and pass it to functions
+    # in drawing/signal.py and drawing/image.py
+    #=============================
+
     def plotPca_factors(self, comp_ids=None, calibrate=True,
                         same_window=True, comp_label='PC', 
                         on_peaks=False, img_data=None,
@@ -160,19 +166,34 @@ class Image(Signal):
             if int, returns maps of components with ids from 0 to given int.
             if list of ints, returns maps of components with ids in given list.
 
+        calibrate : bool
+            if True, calibrates plots where calibration is available from
+            the axes_manager.  If False, plots are in pixels/channels.
+
         same_window : bool
             if True, plots each factor to the same window.  They are not scaled.
         
         comp_label : string, the label that is either the plot title (if plotting in
             separate windows) or the label in the legend (if plotting in the 
             same window)
-            
+
         on_peaks : bool
             Plot peak characteristics (True), or factor images (False)
 
-        cell_data : 2D numpy array
+        cmap : The colormap used for the factor image, or for peak 
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        
+        per_row : int, the number of plots in each row, when the same_window
+            parameter is True.
+
+        Peak characteristic-specific functions:
+        ---------------------------------------
+
+        img_data : 2D numpy array
             If on_peaks is specified, this is the image that gets overlaid
-            with the peak information.
+            with the peak information. If not specified, defaults to the
+            average image of your image stack.
 
         plot_char - None or int
         (optional, but required to plot peak characteristic overlays)
@@ -188,13 +209,6 @@ class Image(Signal):
         plot_shift - bool, optional
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
-        
-        cmap : The colormap used for the factor image, or for peak 
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
-        
-        per_row : int, the number of plots in each row, when the same_window
-            parameter is True.
         """
         factors=self._get_target(on_peaks).pc
         return self._plot_factors_or_pchars(factors, comp_ids=comp_ids, 
@@ -219,22 +233,34 @@ class Image(Signal):
             if int, returns maps of components with ids from 0 to given int.
             if list of ints, returns maps of components with ids in given list.
 
+        calibrate : bool
+            if True, calibrates plots where calibration is available from
+            the axes_manager.  If False, plots are in pixels/channels.
+
         same_window : bool
             if True, plots each factor to the same window.  They are not scaled.
         
         comp_label : string, the label that is either the plot title (if plotting in
             separate windows) or the label in the legend (if plotting in the 
             same window)
-            
+
         on_peaks : bool
             Plot peak characteristics (True), or factor images (False)
 
-        cell_data : 2D numpy array
+        cmap : The colormap used for the factor image, or for peak 
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        
+        per_row : int, the number of plots in each row, when the same_window
+            parameter is True.
+
+        Peak characteristic-specific functions:
+        ---------------------------------------
+
+        img_data : 2D numpy array
             If on_peaks is specified, this is the image that gets overlaid
             with the peak information. If not specified, defaults to the
             average image of your image stack.
-
-        locations : nx2 numpy array
 
         plot_char - None or int
         (optional, but required to plot peak characteristic overlays)
@@ -250,13 +276,6 @@ class Image(Signal):
         plot_shift - bool, optional
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
-        
-        cmap : The colormap used for the factor image, or for peak 
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
-        
-        per_row : int, the number of plots in each row, when the same_window
-            parameter is True.
         """
         factors=self._get_target(on_peaks).ic
         return self._plot_factors_or_pchars(factors, comp_ids=comp_ids, 
@@ -269,6 +288,45 @@ class Image(Signal):
                        same_window=True, comp_label='PC', 
                        on_peaks=False, cmap=plt.cm.jet, 
                        no_nans=True,per_row=3):
+        """Plot scores from PCA, either factor images or
+           peak characteristics.
+
+        Parameters
+        ----------
+
+        comp_ids : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+
+        calibrate : bool
+            if True, calibrates plots where calibration is available from
+            the axes_manager.  If False, plots are in pixels/channels.
+
+        same_window : bool
+            if True, plots each factor to the same window.  They are not scaled.
+        
+        comp_label : string, 
+            The label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+
+        on_peaks : bool
+            Plot scores from peak characteristics (True), 
+            or factor images (False)
+
+        cmap : matplotlib colormap
+            The colormap used for the factor image, or for peak 
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        
+        no_nans : bool
+            If True, removes NaN's from the score plots.
+
+        per_row : int 
+            the number of plots in each row, when the same_window
+            parameter is True.
+        """
         scores=self._get_target(on_peaks).v.T
         return self._plot_scores(scores, comp_ids=comp_ids,
                                  same_window=same_window, comp_label=comp_label,
@@ -279,20 +337,149 @@ class Image(Signal):
                        same_window=True, comp_label='IC', 
                        on_peaks=False, cmap=plt.cm.jet, 
                        no_nans=True,per_row=3):
+        """Plot scores from PCA, either factor images or
+           peak characteristics.
+
+        Parameters
+        ----------
+
+        comp_ids : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+
+        calibrate : bool
+            if True, calibrates plots where calibration is available from
+            the axes_manager.  If False, plots are in pixels/channels.
+
+        same_window : bool
+            if True, plots each factor to the same window.  They are not scaled.
+        
+        comp_label : string, 
+            The label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+
+        on_peaks : bool
+            Plot scores from peak characteristics (True), 
+            or factor images (False)
+
+        cmap : matplotlib colormap
+            The colormap used for the factor image, or for peak 
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        
+        no_nans : bool
+            If True, removes NaN's from the score plots.
+
+        per_row : int 
+            the number of plots in each row, when the same_window
+            parameter is True.
+        """
         scores=self._get_ica_scores(self._get_target(on_peaks))
         return self._plot_scores(scores, comp_ids=comp_ids,
                                  same_window=same_window, comp_label=comp_label,
                                  on_peaks=on_peaks, cmap=cmap,
                                  no_nans=no_nans,per_row=per_row)
 
-    def exportPca_results(self, comp_ids=None, calibrate=True,
+    def exportPca_results(self, comp_ids=None, 
                           factor_prefix='pc', factor_format='rpl',
                           score_prefix='PC_score', score_format='rpl', 
-                          on_peaks=False, plot_shifts=True, plot_char=None,
-                          img_data=None,
+                          on_peaks=False,
+                          calibrate=True, same_window=False,
                           comp_label='PC',cmap=plt.cm.jet,
-                          same_window=False,
-                          no_nans=True,per_row=3):
+                          no_nans=True,per_row=3,
+                          plot_shifts=True, 
+                          plot_char=None, img_data=None):
+        """Export results from PCA to any of the supported formats.
+
+        Parameters
+        ----------
+
+        comp_ids : None, int, or list of ints
+            if None, returns all components/scores.
+            if int, returns components/scores with ids from 0 to given int.
+            if list of ints, returns components/scores with ids in given list.
+
+        factor_prefix : string
+            The prefix that any exported filenames for factors/components 
+            begin with
+
+        factor_format : string
+            The extension of the format that you wish to save to.  Determines
+            the kind of output.
+                - For image formats (tif, png, jpg, etc.), plots are created 
+                  using the plotting flags as below, and saved at 600 dpi.
+                  One plot per factor is saved.
+                - For multidimensional formats (rpl, hdf5), arrays are saved
+                  in single files.  All factors are contained in the one
+                  file.
+                - For spectral formats (msa), each factor is saved to a
+                  separate file.
+                
+        score_prefix : string
+            The prefix that any exported filenames for factors/components 
+            begin with
+
+        score_format : string
+            The extension of the format that you wish to save to.  Determines
+            the kind of output.
+                - For image formats (tif, png, jpg, etc.), plots are created 
+                  using the plotting flags as below, and saved at 600 dpi.
+                  One plot per score is saved.
+                - For multidimensional formats (rpl, hdf5), arrays are saved
+                  in single files.  All scores are contained in the one
+                  file.
+                - For spectral formats (msa), each score is saved to a
+                  separate file.
+
+        on_peaks : bool
+            Export peak characteristics (True), or image data (False)
+
+        Plotting options (for image file formats ONLY)
+        ----------------------------------------------
+
+        calibrate : bool
+            if True, calibrates plots where calibration is available from
+            the axes_manager.  If False, plots are in pixels/channels.
+
+        same_window : bool
+            if True, plots each factor to the same window.
+        
+        comp_label : string, the label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+
+        cmap : The colormap used for the factor image, or for peak 
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        
+        per_row : int, the number of plots in each row, when the same_window
+            parameter is True.
+
+        Peak characteristic-specific plotting functions:
+        ---------------------------------------
+
+        img_data : 2D numpy array
+            If on_peaks is specified, this is the image that gets overlaid
+            with the peak information. If not specified, defaults to the
+            average image of your image stack.
+
+        plot_char - None or int
+        (optional, but required to plot peak characteristic overlays)
+            If int, the id of the characteristic to plot as the colored 
+            scatter plot.
+            Possible components are:
+               0 or 1: peak coordinates
+               2 or 3: position difference relative to nearest target location
+               4: peak height
+               5: peak orientation
+               6: peak eccentricity
+
+        plot_shift - bool, optional
+            If True, plots shift overlays from the factor onto the image given in
+            the cell_data parameter
+        """
         factors=self._get_target(on_peaks).pc
         scores=self._get_target(on_peaks).v.T
         self._export_factors(factors, comp_ids=comp_ids,
@@ -318,14 +505,104 @@ class Image(Signal):
                             no_nans=no_nans,
                             per_row=per_row)
 
-    def exportIca_results(self, comp_ids=None, calibrate=True,
+    def exportIca_results(self, comp_ids=None, 
                           factor_prefix='ic', factor_format='rpl',
                           score_prefix='IC_score', score_format='rpl', 
-                          on_peaks=False, plot_shifts=True, plot_char=None,
-                          img_data=None,
+                          on_peaks=False,
+                          calibrate=True, same_window=False,
                           comp_label='IC',cmap=plt.cm.jet,
-                          same_window=False,
-                          no_nans=True,per_row=3):
+                          no_nans=True,per_row=3,
+                          plot_shifts=True, 
+                          plot_char=None, img_data=None):
+        """Export results from ICA to any of the supported formats.
+
+        Parameters
+        ----------
+
+        comp_ids : None, int, or list of ints
+            if None, returns all components/scores.
+            if int, returns components/scores with ids from 0 to given int.
+            if list of ints, returns components/scores with ids in given list.
+
+        factor_prefix : string
+            The prefix that any exported filenames for factors/components 
+            begin with
+
+        factor_format : string
+            The extension of the format that you wish to save to.  Determines
+            the kind of output.
+                - For image formats (tif, png, jpg, etc.), plots are created 
+                  using the plotting flags as below, and saved at 600 dpi.
+                  One plot per factor is saved.
+                - For multidimensional formats (rpl, hdf5), arrays are saved
+                  in single files.  All factors are contained in the one
+                  file.
+                - For spectral formats (msa), each factor is saved to a
+                  separate file.
+                
+        score_prefix : string
+            The prefix that any exported filenames for factors/components 
+            begin with
+
+        score_format : string
+            The extension of the format that you wish to save to.  Determines
+            the kind of output.
+                - For image formats (tif, png, jpg, etc.), plots are created 
+                  using the plotting flags as below, and saved at 600 dpi.
+                  One plot per score is saved.
+                - For multidimensional formats (rpl, hdf5), arrays are saved
+                  in single files.  All scores are contained in the one
+                  file.
+                - For spectral formats (msa), each score is saved to a
+                  separate file.
+
+        on_peaks : bool
+            Export peak characteristics (True), or image data (False)
+
+        Plotting options (for image file formats ONLY)
+        ----------------------------------------------
+
+        calibrate : bool
+            if True, calibrates plots where calibration is available from
+            the axes_manager.  If False, plots are in pixels/channels.
+
+        same_window : bool
+            if True, plots each factor to the same window.
+        
+        comp_label : string, the label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+
+        cmap : The colormap used for the factor image, or for peak 
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        
+        per_row : int, the number of plots in each row, when the same_window
+            parameter is True.
+
+        Peak characteristic-specific plotting functions:
+        ---------------------------------------
+
+        img_data : 2D numpy array
+            If on_peaks is specified, this is the image that gets overlaid
+            with the peak information. If not specified, defaults to the
+            average image of your image stack.
+
+        plot_char - None or int
+        (optional, but required to plot peak characteristic overlays)
+            If int, the id of the characteristic to plot as the colored 
+            scatter plot.
+            Possible components are:
+               0 or 1: peak coordinates
+               2 or 3: position difference relative to nearest target location
+               4: peak height
+               5: peak orientation
+               6: peak eccentricity
+
+        plot_shift - bool, optional
+            If True, plots shift overlays from the factor onto the image given in
+            the cell_data parameter
+        """
         factors=self._get_target(on_peaks).ic
         scores=self._get_ica_scores(self._get_target(on_peaks))
         self._export_factors(factors, comp_ids=comp_ids,
@@ -351,278 +628,50 @@ class Image(Signal):
                             no_nans=no_nans,
                             per_row=per_row)
 
-    def save_principal_components(self, n, pc_prefix = 'pc',
-                                  score_prefix = 'score', spectrum_format = 'msa', 
-                                  hs_format = 'tif', on_peaks=False):
-        """Save the `n` first principal components  and score maps
-        in the specified format
-
-        Parameters
-        ----------
-        n : int
-            Number of principal components to save
-        score_prefix : string
-            Prefix for the score file names
-        pc_prefix : string
-            Prefix for the principal component file names
-        spectrum_format : string
-            Any of Hyperspy's supported file formats for spectral data
-        hs_format : string
-            Any of Hyperspy's supported file formats for hyperspectral data
-        on_peaks : bool
-            If true, saves components/scores for peak characteristic data.
-            Note: the formats supported for peak characteristic data are
-                  more limited - image formats will give you spatial maps 
-                  (for scores) or vector/scatter map overlays (for factors),
-                  while any array-based format will give you the array data
-                  for those plots.  It's up to you to write plotting code
-                  for such array data.
-
-        """
-        from hyperspy.signals.spectrum import Spectrum
-        target=self._get_target(on_peaks)
-        
-        file_ext = []
-        exts=[]
-        if file_ext in exts:
-            pass
-        im_list = imgdraw.plot_pca_scores(n)
-        axis_dict = self.axes_manager._non_slicing_axes[0].get_axis_dictionary()
-        axis_dict['index_in_array'] = 0
-        s = Spectrum({'data' : target.pc[:,0],
-                      'axes' : [axis_dict,]})
-        for i in xrange(n):
-            s.data = target.pc[:,i]
-            s.save('%s-%i.%s' % (pc_prefix, i, spectrum_format))
-            im_list[i].save('%s-%i.%s' % (score_prefix, i, hs_format))
-
-    def save_independent_components(self, elements=None,
-                                    spectrum_format='msa',
-                                    hs_format='tif',
-                                    scores=None, ic=None,
-                                    on_peaks=False):
-        """Saves the result of the ICA in image and spectrum format.
-        Note that to save the image, the NaNs in the map will be converted
-        to zeros.
-
-        Parameters
-        ----------
-        elements : None or tuple of strings
-            a list of names (normally an element) to be assigned to IC. If not
-            the will be name ic-0, ic-1 ...
-        hs_format : string
-        spectrum_format : string
-        recmatrix : None or numpy array
-            externally supplied recmatrix
-        ic : None or numpy array
-            externally supplied IC
-        """
-        from hyperspy.signals.spectrum import Spectrum
-        if ic is None or scores is None:
-            target=self._get_target(on_peaks)
-            ic = target.ic
-            scores = self._get_ica_scores(target)
-        if self.data.shape[2] > 1:
-            maps = True
-        else:
-            maps = False
-
-        pl = imgdraw.plot_independent_components_maps(scores=scores,factors=factors)
-        for i in xrange(ic.shape[1]):
-            axes = (self.axes_manager._slicing_axes[0].get_axis_dictionary(),)
-            axes[0]['index_in_array'] = 0
-            spectrum = Spectrum({'data' : ic[:,i], 'axes' : axes})
-            spectrum.data_cube = ic[:,i].reshape((-1,1,1))
-
-            if elements is None:
-                spectrum.save('ic-%s.%s' % (i, spectrum_format))
-                if maps is True:
-                    pl[i].save('map_ic-%s.%s' % (i, hs_format))
-                else:
-                    pl[i].save('profile_ic-%s.%s' % (i, spectrum_format))
-            else:
-                element = elements[i]
-                spectrum.save('ic-%s.%s' % (element, spectrum_format))
-                if maps:
-                    pl[i].save('map_ic-%s.%s' % (element, hs_format))
-                else:
-                    pl[i].save('profile_ic-%s.%s' % (element, spectrum_format))
-
-#=============================================================================
-        
-    def cell_cropper(self):
-        if not hasattr(self.mapped_parameters,"picker"):
-            import hyperspy.drawing.ucc as ucc
-            self.mapped_parameters.picker=ucc.TemplatePicker(self)
-        self.mapped_parameters.picker.configure_traits()
-        self.data=self.data.squeeze()
-        return self.mapped_parameters.picker.crop_sig
-
-    def kmeans_cluster_stack(self, clusters=None):
-        import mdp
-        if self._unfolded:
-            self.fold()
-        # if clusters not given, try to determine what it should be.
-        if clusters is None:
-            pass
-        d=self.data
-        kmeans=mdp.nodes.KMeansClassifier(clusters)
-        cluster_arrays=[]
-
-        avg_stack=np.zeros((clusters,d.shape[1],d.shape[2]))
-        kmeans.train(d.reshape((-1,d.shape[0])).T)
-        kmeans.stop_training()
-        groups=kmeans.label(d.reshape((-1,d.shape[0])).T)
-        try:
-            # test if location data is available
-            self.mapped_parameters.locations[0]
-        except:
-            messages.warning("No cell location information was available.")
-        for i in xrange(clusters):
-            # get number of members of this cluster
-            members=groups.count(i)
-            cluster_array=np.zeros((members,d.shape[1],d.shape[2]))
-            cluster_idx=0
-            positions=np.zeros((members,3))
-            for j in xrange(len(groups)):
-                if groups[j]==i:
-                    cluster_array[cluster_idx,:,:]=d[j,:,:]
-                    try:
-                        positions[cluster_idx]=self.mapped_parameters.locations[j]
-                    except:
-                        pass
-                    cluster_idx+=1
-            cluster_array_Image=Image({
-                'data':avg_stack,
-                'mapped_parameters':{
-                    'title' : 'Cluster %s from %s'%(i,
-                        self.mapped_parameters.title),
-                    'locations':positions,
-                    'members':members,}
-            })
-            cluster_arrays.append(cluster_array_Image)
-            avg_stack[i,:,:]=np.sum(cluster_array,axis=0)
-        members_list=[groups.count(i) for i in xrange(clusters)]
-        avg_stack_Image=Image({'data':avg_stack,
-                    'mapped_parameters':{
-                        'title':'Cluster averages from %s'%self.mapped_parameters.title,
-                        'member_counts':members_list,
-                        }
-                    })
-        return avg_stack_Image, cluster_arrays
-
-    def peakfind_2D(self, subpixel=False, peak_width=10, medfilt_radius=5,
-                        maxpeakn=30000):
-            """Find peaks in a 2D array (peaks in an image).
-
-            Function to locate the positive peaks in a noisy x-y data set.
-    
-            Returns an array containing pixel position of each peak.
-            
-            Parameters
-            ---------
-            subpixel : bool (optional)
-                    default is set to True
-
-            peak_width : int (optional)
-                    expected peak width.  Affects subpixel precision fitting window,
-                    which takes the center of gravity of a box that has sides equal
-                    to this parameter.  Too big, and you'll include other peaks.
-                    default is set to 10
-
-            medfilt_radius : int (optional)
-                     median filter window to apply to smooth the data
-                     (see scipy.signal.medfilt)
-                     if 0, no filter will be applied.
-                     default is set to 5
-
-            maxpeakn : int (optional)
-                    number of maximum detectable peaks
-                    default is set to 30000             
-            """
-            from peak_char import two_dim_findpeaks
-            if len(self.data.shape)==2:
-                self.peaks=two_dim_findpeaks(self.data, subpixel=subpixel,
-                                             peak_width=peak_width, 
-                                             medfilt_radius=medfilt_radius)
-                
-            elif len(self.data.shape)==3:
-                # preallocate a large array for the results
-                self.peaks=np.zeros((maxpeakn,2,self.data.shape[2]))
-                for i in xrange(self.data.shape[2]):
-                    tmp=two_dim_findpeaks(self.data[:,:,i], 
-                                             subpixel=subpixel,
-                                             peak_width=peak_width, 
-                                             medfilt_radius=medfilt_radius)
-                    self.peaks[:tmp.shape[0],:,i]=tmp
-                trim_id=np.min(np.nonzero(np.sum(np.sum(self.peaks,axis=2),axis=1)==0))
-                self.peaks=self.peaks[:trim_id,:,:]
-            elif len(self.data.shape)==4:
-                # preallocate a large array for the results
-                self.peaks=np.zeros((maxpeakn,2,self.data.shape[0],self.data.shape[1]))
-                for i in xrange(self.data.shape[0]):
-                    for j in xrange(self.data.shape[1]):
-                        tmp=two_dim_findpeaks(self.data[i,j,:,:], 
-                                             subpixel=subpixel,
-                                             peak_width=peak_width, 
-                                             medfilt_radius=medfilt_radius)
-                        self.peaks[:tmp.shape[0],:,i,j]=tmp
-                trim_id=np.min(np.nonzero(np.sum(np.sum(np.sum(self.peaks,axis=3),axis=2),axis=1)==0))
-                self.peaks=self.peaks[:trim_id,:,:,:]
-                
-    def to_spectrum(self):
-        from hyperspy.signals.spectrum import Spectrum
-        dic = self._get_signal_dict()
-        dic['mapped_parameters']['record_by'] = 'spectrum'
-        dic['data'] = np.swapaxes(dic['data'], 0, -1)
-        utils_varia.swapelem(dic['axes'],0,-1)
-        dic['axes'][0]['index_in_array'] = 0
-        dic['axes'][-1]['index_in_array'] = len(dic['axes']) - 1
-        return Spectrum(dic)
-
-#==============================================================================
-# Plotting methods
-#==============================================================================
-
-    def plot_image_peaks(cell_data, peaks=None, index=0, peak_width=10, subpixel=False,
+    def plot_image_peaks(self,img_data=None, locations=None, peak_width=10, subpixel=False,
                        medfilt_radius=5):
-        # TODO: replace with hyperimage explorer
-        plt.imshow(cell_data[index,:,:],cmap=plt.gray(), 
-            interpolation = 'nearest')
-        peaks=pc.two_dim_peakfind(cell_data[index,:,:], subpixel=subpixel,
+        """Overlay an image with a scatter map of peak locations.
+
+        Parameters:
+        -----------
+        img_data : None or 2D numpy array
+            If None, uses the average image (for stacks), or just
+            the image (for 2D images)
+        locations : None or nx2 numpy array
+            If None, function locates peaks on img_data using parameters
+            below.
+        plot_ids : bool
+            If True, plots the peak id instead of a simple scatter map.
+            Use this function to identify a peak to overlay a characteristic of
+            onto the original experimental image using the plot_image_overlay
+            function.
+
+        Peak locator parameters:
+        ------------------------
+        peak_width : int
+            The width of peaks to be found
+         
+        subpixel : bool
+            If True, finds the subpixel center of mass of peaks
+            If False, finds the index at which the peak max occurs.
+
+        medfilt_radius : int or None
+            If int, the radius of a median filter applied to the image
+            prior to peak finding.  NOTE: must be an odd number.
+            If None, no median filter is applied.
+        """
+        if img_data==None:
+            if len(self.data.shape)>2:
+                img_data=np.average(self.data,axis=0)
+            else:
+                img_data=self.data
+            if locations==None and hasattr(self.mapped_parameters,'target_locations'):
+                locations=self.mapped_parameters.target_locations
+        if locations==None:
+            locations=pc.two_dim_peakfind(img_data, subpixel=subpixel,
                                   peak_width=peak_width, 
                                   medfilt_radius=medfilt_radius)
-        plt.scatter(peaks[:,0],peaks[:,1])
-
-    def plot_peak_ids(self, cell_data, target_locations=None, peak_width=10):
-        """Overlays id numbers for identified peaks on an average image of the
-        stack.  Identified peaks are either those you specified as 
-        target_locations, or if not specified, those automatically 
-        identified from the average image.
-
-        Use this function to identify a peak to overlay a characteristic of
-        onto the original experimental image using the plot_image_overlay
-        function.
-
-        
-        """
-        f=plt.figure()
-        imgavg=np.average(cell_data,axis=0)
-        plt.imshow(imgavg, interpolation = 'nearest')
-        if target_locations is None:
-            # identify the peaks on the average image
-            target_locations=pc.peak_attribs_image(imgavg, peak_width)[:,:2]
-        # plot the peak labels
-        for pk_id in xrange(target_locations.shape[0]):
-            plt.text(target_locations[pk_id,0], target_locations[pk_id,1], 
-                     "%s"%pk_id, size=10, rotation=0.,
-                     ha="center", va="center",
-                     bbox = dict(boxstyle="round",
-                                 ec=(1., 0.5, 0.5),
-                                 fc=(1., 0.8, 0.8),
-                                 )
-                     )
-        return f
+        return imgdraw.plot_image_peaks(img_data, locations, plot_ids)
 
     def plot_image_overlay(plot_component=None, mva_type='PCA', 
                            peak_mva=True, peak_id=None, plot_char=None, 
@@ -740,16 +789,13 @@ Note that you can actually plot shifts and component scores simultaneously.""")
                     messages.warning("Unrecognized MVA type.  Currently supported MVA types are \
 PCA and ICA (case insensitive)")
                     return None
-                print mask
-                print locs
-                print scores
                 plt.scatter(locs[:,0],locs[:,1],c=scores)
                 plt.jet()
                 plt.colorbar()
             figs.append(f)
         return figs
         
-    def plot_cell_overlays(cell_data, peak_chars, plot_component=None, 
+    def plot_cell_overlays(self, img_data=None, plot_component=None, 
                            mva_type='PCA', peak_mva=True,
                            plot_shifts=True, plot_char=None):
         """Overlays peak characteristics on an image plot of the average image.
@@ -845,113 +891,6 @@ PCA and ICA (case insensitive)")
             plt.jet()
             plt.colorbar()
         return f
-
-    def _plot_pc(idx, on_peaks=False,cmap=plt.cm.gray):
-        target=self._get_target(on_peaks)
-        ax=plt.gca()
-        im=ax.imshow(target.pc[:,idx].reshape(self.axes_manager.axes[1].size,
-                    self.axes_manager.axes[2].size), cmap=cmap, 
-                    interpolation = 'nearest')
-        plt.title('PC %s' % idx)
-        div=make_axes_locatable(ax)
-        cax=div.append_axes("right",size="5%",pad=0.05)
-        plt.colorbar(im,cax=cax)
-
-        
-
-    def plot_principal_components(n = None, same_window=True, per_row=3, 
-                                  on_peaks=False, cmap=plt.cm.gray):
-        """Plot the principal components up to the given number
-
-        Parameters
-        ----------
-        n : int
-            number of principal components to plot.
-
-        same_window : bool (optional)
-                    if 'True', the components will be plotted in the
-                    same window. Default is 'False'.
-
-        per_row : int (optional)
-                    When same_window is True, this is the number of plots
-                    per row in the single window.
-
-        on_peaks : bool (optional)
-        """
-        target=self._get_target(on_peaks)
-        if n is None:
-            n = target.pc.shape[1]
-        if not same_window:
-            for i in xrange(n):
-                plt.figure()
-                _plot_pc(i,on_peaks,cmap=cmap)
-        else:
-            fig = plt.figure()
-            rows=int(np.ceil(n/float(per_row)))
-            idx=0
-            for i in xrange(rows):
-                for j in xrange(per_row):
-                    if idx<n:
-                        fig.add_subplot(rows,per_row,idx+1)
-                        _plot_pc(idx,on_peaks,cmap=cmap)
-                        idx+=1
-            plt.suptitle('Principal components')
-            plt.draw()
-
-    def _plot_ic(idx, on_peaks=False, cmap=plt.cm.gray):
-        target=self._get_target(on_peaks)
-        ax=plt.gca()
-        im=ax.imshow(target.ic[:,idx].reshape(self.axes_manager.axes[1].size, 
-                                              self.axes_manager.axes[2].size),
-                     cmap=cmap, interpolation = 'nearest')
-        plt.title('IC %s' % idx)
-        div=make_axes_locatable(ax)
-        cax=div.append_axes("right",size="5%",pad=0.05)
-        plt.colorbar(im,cax=cax)
-
-
-    def plot_independent_components(ic=None, same_window=True,
-                                    per_row=3, on_peaks=False, cmap=plt.cm.gray):
-        """Plot the independent components.
-
-        Parameters
-        ----------
-        ic : numpy array (optional)
-             externally provided independent components array
-             The shape of 'ic' must be (channels, n_components),
-             so that e.g. ic[:, 0] is the first independent component.
-
-        same_window : bool (optional)
-                    if 'True', the components will be plotted in the
-                    same window. Default is 'False'.
-
-        per_row : int (optional)
-                    When same_window is True, this is the number of plots
-                    per row in the single window.
-
-        on_peaks : bool (optional)
-        """
-        target=self._get_target(on_peaks)
-        if ic is None:
-            ic = target.ic
-
-        n = ic.shape[1]
-
-        if not same_window:
-            for i in xrange(n):
-                plt.figure()
-                _plot_ic(i, on_peaks,cmap=cmap)
-        else:
-            fig = plt.figure()
-            rows=int(np.ceil(n/float(per_row)))
-            idx=0
-            for i in xrange(rows):
-                for j in xrange(per_row):
-                    if idx<n:
-                        fig.add_subplot(rows,per_row,idx+1)
-                        _plot_ic(idx, on_peaks,cmap=cmap)
-                        idx+=1
-            plt.suptitle('Independent components')
 
     def plot_maps(self, components, mva_type=None, scores=None, factors=None,
                   cmap=plt.cm.gray, no_nans=False, per_row=3, on_peaks=False, 
@@ -1230,3 +1169,141 @@ PCA and ICA (case insensitive)")
                               scores=recmatrix, factors=ic, no_nans=no_nans,
                               on_peaks=on_peaks, scoremap=scoremap, per_row=per_row,
                               save_figs=save_figs, directory = directory)
+
+
+#=============================================================================
+        
+    def cell_cropper(self):
+        if not hasattr(self.mapped_parameters,"picker"):
+            import hyperspy.drawing.ucc as ucc
+            self.mapped_parameters.picker=ucc.TemplatePicker(self)
+        self.mapped_parameters.picker.configure_traits()
+        self.data=self.data.squeeze()
+        return self.mapped_parameters.picker.crop_sig
+
+    def kmeans_cluster_stack(self, clusters=None):
+        import mdp
+        if self._unfolded:
+            self.fold()
+        # if clusters not given, try to determine what it should be.
+        if clusters is None:
+            pass
+        d=self.data
+        kmeans=mdp.nodes.KMeansClassifier(clusters)
+        cluster_arrays=[]
+
+        avg_stack=np.zeros((clusters,d.shape[1],d.shape[2]))
+        kmeans.train(d.reshape((-1,d.shape[0])).T)
+        kmeans.stop_training()
+        groups=kmeans.label(d.reshape((-1,d.shape[0])).T)
+        try:
+            # test if location data is available
+            self.mapped_parameters.locations[0]
+        except:
+            messages.warning("No cell location information was available.")
+        for i in xrange(clusters):
+            # get number of members of this cluster
+            members=groups.count(i)
+            cluster_array=np.zeros((members,d.shape[1],d.shape[2]))
+            cluster_idx=0
+            positions=np.zeros((members,3))
+            for j in xrange(len(groups)):
+                if groups[j]==i:
+                    cluster_array[cluster_idx,:,:]=d[j,:,:]
+                    try:
+                        positions[cluster_idx]=self.mapped_parameters.locations[j]
+                    except:
+                        pass
+                    cluster_idx+=1
+            cluster_array_Image=Image({
+                'data':avg_stack,
+                'mapped_parameters':{
+                    'title' : 'Cluster %s from %s'%(i,
+                        self.mapped_parameters.title),
+                    'locations':positions,
+                    'members':members,}
+            })
+            cluster_arrays.append(cluster_array_Image)
+            avg_stack[i,:,:]=np.sum(cluster_array,axis=0)
+        members_list=[groups.count(i) for i in xrange(clusters)]
+        avg_stack_Image=Image({'data':avg_stack,
+                    'mapped_parameters':{
+                        'title':'Cluster averages from %s'%self.mapped_parameters.title,
+                        'member_counts':members_list,
+                        }
+                    })
+        return avg_stack_Image, cluster_arrays
+
+    def peakfind_2D(self, subpixel=False, peak_width=10, medfilt_radius=5,
+                        maxpeakn=30000):
+            """Find peaks in a 2D array (peaks in an image).
+
+            Function to locate the positive peaks in a noisy x-y data set.
+    
+            Returns an array containing pixel position of each peak.
+            
+            Parameters
+            ---------
+            subpixel : bool (optional)
+                    default is set to True
+
+            peak_width : int (optional)
+                    expected peak width.  Affects subpixel precision fitting window,
+                    which takes the center of gravity of a box that has sides equal
+                    to this parameter.  Too big, and you'll include other peaks.
+                    default is set to 10
+
+            medfilt_radius : int (optional)
+                     median filter window to apply to smooth the data
+                     (see scipy.signal.medfilt)
+                     if 0, no filter will be applied.
+                     default is set to 5
+
+            maxpeakn : int (optional)
+                    number of maximum detectable peaks
+                    default is set to 30000             
+            """
+            from peak_char import two_dim_findpeaks
+            if len(self.data.shape)==2:
+                self.peaks=two_dim_findpeaks(self.data, subpixel=subpixel,
+                                             peak_width=peak_width, 
+                                             medfilt_radius=medfilt_radius)
+                
+            elif len(self.data.shape)==3:
+                # preallocate a large array for the results
+                self.peaks=np.zeros((maxpeakn,2,self.data.shape[2]))
+                for i in xrange(self.data.shape[2]):
+                    tmp=two_dim_findpeaks(self.data[:,:,i], 
+                                             subpixel=subpixel,
+                                             peak_width=peak_width, 
+                                             medfilt_radius=medfilt_radius)
+                    self.peaks[:tmp.shape[0],:,i]=tmp
+                trim_id=np.min(np.nonzero(np.sum(np.sum(self.peaks,axis=2),axis=1)==0))
+                self.peaks=self.peaks[:trim_id,:,:]
+            elif len(self.data.shape)==4:
+                # preallocate a large array for the results
+                self.peaks=np.zeros((maxpeakn,2,self.data.shape[0],self.data.shape[1]))
+                for i in xrange(self.data.shape[0]):
+                    for j in xrange(self.data.shape[1]):
+                        tmp=two_dim_findpeaks(self.data[i,j,:,:], 
+                                             subpixel=subpixel,
+                                             peak_width=peak_width, 
+                                             medfilt_radius=medfilt_radius)
+                        self.peaks[:tmp.shape[0],:,i,j]=tmp
+                trim_id=np.min(np.nonzero(np.sum(np.sum(np.sum(self.peaks,axis=3),axis=2),axis=1)==0))
+                self.peaks=self.peaks[:trim_id,:,:,:]
+                
+    def to_spectrum(self):
+        from hyperspy.signals.spectrum import Spectrum
+        dic = self._get_signal_dict()
+        dic['mapped_parameters']['record_by'] = 'spectrum'
+        dic['data'] = np.swapaxes(dic['data'], 0, -1)
+        utils_varia.swapelem(dic['axes'],0,-1)
+        dic['axes'][0]['index_in_array'] = 0
+        dic['axes'][-1]['index_in_array'] = len(dic['axes']) - 1
+        return Spectrum(dic)
+
+#==============================================================================
+# Plotting methods
+#==============================================================================
+
