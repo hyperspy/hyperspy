@@ -35,6 +35,10 @@ class EELSSpectrum(Spectrum):
         self.subshells = set()
         self.elements = set()
         self.edges = list()
+        if hasattr(self.mapped_parameters, 'Sample') and \
+        hasattr(self.mapped_parameters.Sample, 'elements'):
+            print('Elemental composition read from file')
+            self.add_elements(self.mapped_parameters.Sample.elements)
 #        self.readout = None
 #        self.dark_current = None
 #        self.gain_correction = None
@@ -174,10 +178,10 @@ class EELSSpectrum(Spectrum):
 #            
 #    # Elements _________________________________________________________________
     def add_elements(self, elements, include_pre_edges = False):
-        """Declare the elements present in the SI.
+        """Declare the elemental composition of the sample.
         
-        Instances of components.eels_cl_edge.EELSCLEdge for the current energy 
-        range will be created automatically and add to self.subshell.
+        The ionisation edges of the elements present in the current energy range
+        will be added automatically.
         
         Parameters
         ----------
@@ -189,6 +193,9 @@ class EELSSpectrum(Spectrum):
         """
         for element in elements:
             self.elements.add(element)
+        if not hasattr(self.mapped_parameters, 'Sample'):
+            self.mapped_parameters.add_node('Sample')
+        self.mapped_parameters.Sample.elements = list(self.elements)
         self.generate_subshells(include_pre_edges)
         
     def generate_subshells(self, include_pre_edges = False):
