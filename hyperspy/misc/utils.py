@@ -1011,33 +1011,31 @@ class DictionaryBrowser(object):
     def _get_print_items(self, padding = '', max_len=20):
         """Prints only the attributes that are not methods"""
         string = ''
-        eon = len([par for par in self.__dict__ if isinstance(
-                   self.__dict__[par], DictionaryBrowser)])
         eoi = len(self.__dict__)
-        i = 0
         j = 0
         for item, value in self.__dict__.iteritems():
             if type(item) != types.MethodType:
                 if isinstance(value, DictionaryBrowser):
-                    if i == eon - 1:
+                    if j == eoi - 1:
                         symbol = '└── '
                     else:
                         symbol = '├── '
                     string += '%s%s%s\n' % (padding, symbol, item)
-                    i += 1
-                    if i == eon:
-                        string += value._get_print_items(padding + '    ')
+                    if j == eoi - 1:
+                        extra_padding = '    '
                     else:
-                        string += value._get_print_items(padding + '│   ')
+                        extra_padding = '│   '
+                    string += value._get_print_items(padding + extra_padding)
                 else:
                     if j == eoi - 1:
                         symbol = '└── '
                     else:
                         symbol = '├── '
                     strvalue = str(value)
-                    if len(strvalue) > max_len:
+                    if len(strvalue) > 2 * max_len:
+                        right_limit = min(max_len, len(strvalue) - max_len)
                         value = '%s ... %s' % (strvalue[:max_len],
-                                              strvalue[-max_len:])
+                                              strvalue[-right_limit:])
                     string += "%s%s%s = %s\n" % (padding, symbol, item, value)
             j += 1
         return string
