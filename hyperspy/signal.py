@@ -36,7 +36,7 @@ from matplotlib import pyplot as plt
 
 # MCS - 18/10/11
 # These are here for exporting file formats.  They need a better place.
-multidim_formats = ['rpl','hdf5']
+multidim_formats = ['rpl','hdf', 'h4', 'hdf4', 'h5', 'hdf5', 'he4', 'he5']
 img_formats = ['bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg', 'msp', 'pcx', 
                'png', 'ppm', "pbm", "pgm", 'tiff', 'tif', 'xbm', 'spi',]
 spec_formats =['msa']
