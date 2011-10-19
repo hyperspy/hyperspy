@@ -21,7 +21,7 @@ import scipy.odr as odr
 from scipy.optimize import leastsq,fmin, fmin_cg, fmin_ncg, fmin_bfgs, \
 fmin_cobyla, fmin_l_bfgs_b, fmin_tnc, fmin_powell
 
-from hyperspy.defaults_parser import defaults
+from hyperspy.defaults_parser import preferences
 from hyperspy.estimators import Estimators
 from hyperspy.misc.mpfit.mpfit import mpfit
 
@@ -33,7 +33,7 @@ class Optimizers(Estimators):
     """
     """
 
-    def fit(self, fitter = defaults.Model.default_fitter, method = 'ls',
+    def fit(self, fitter = preferences.Model.default_fitter, method = 'ls',
     	    grad = False, weights = None, ext_bounding = False, ascombe = True,
     	    update_plot = False, bounded = False, **kwargs):
         """

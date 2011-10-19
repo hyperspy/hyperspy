@@ -27,6 +27,7 @@ import traitsui.api as tui
 from hyperspy.misc.config_dir import config_path, os_name, data_path
 from hyperspy import messages
 from hyperspy.misc.utils import DictionaryBrowser
+from hyperspy.misc.interactive_ns import turn_logging_on, turn_logging_off
 
 defaults_file = os.path.join(config_path, 'hyperspyrc')
 eels_gos_files = os.path.join(data_path, 'EELS_GOS.tar.gz')
@@ -73,6 +74,13 @@ class GeneralConfig(t.HasTraits):
     plot_on_load = t.CBool(False)
     interactive = t.CBool(False)
     logger_on = t.CBool(False)
+    
+    def _logger_on_changed(self, old, new):
+        if new is True:
+            turn_logging_on()
+        else:
+            turn_logging_off()
+
     
 class ModelConfig(t.HasTraits):
     default_fitter = t.CStr('leastsq')
@@ -146,7 +154,45 @@ if not defaults_file_exists or rewrite is True:
 # Use the traited classes to cast the content of the ConfigParser
 config2template(template, config)
     
-defaults = DictionaryBrowser(dictionary_from_template(template))
+#preferences = DictionaryBrowser(dictionary_from_template(template))
+
+class PreferencesHandler(tui.Handler):
+    def close(self, info, is_ok):
+        # Removes the span selector from the plot
+        info.object.save()
+        return True
+
+
+class Preferences(t.HasTraits):
+    EELS = t.Instance(EELSConfig)
+    Model = t.Instance(ModelConfig)
+    General = t.Instance(GeneralConfig)
+    view = tui.View(
+        tui.Group(tui.Item('General', style='custom', show_label=False, ),
+            label = 'General'),
+        tui.Group(tui.Item('Model', style='custom', show_label=False, ),
+            label = 'Model'),
+        tui.Group(tui.Item('EELS', style='custom', show_label=False, ),
+            label = 'EELS'),
+        title = 'Preferences',
+        handler = PreferencesHandler,)
+    
+    def gui(self):
+        self.edit_traits()
+        
+    def save(self):
+        config = ConfigParser.SafeConfigParser(allow_no_value = True)
+        template2config(template, config)
+        config.write(open(defaults_file, 'w'))
+
+    
+preferences = Preferences(
+            EELS = template['EELS'],
+            General = template['General'],
+            Model = template['Model'])
+            
+
+    
 
 
 

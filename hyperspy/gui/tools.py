@@ -113,8 +113,8 @@ class SpectrumCalibration(SpanSelectorInSpectrum):
             tu.Item(name = 'offset', style = 'readonly'),
             tu.Item(name = 'scale', style = 'readonly'),
             'units',),
-            handler = CalibrationHandler,
-            buttons = [OKButton, ApplyButton, CancelButton],
+        handler = CalibrationHandler,
+        buttons = [OKButton, ApplyButton, CancelButton],
         kind = 'nonmodal',
         title = 'Calibration parameters')
             

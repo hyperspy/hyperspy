@@ -25,7 +25,7 @@ from scipy.interpolate import splev,splrep,splint
 from numpy import log, exp
 from scipy.signal import cspline1d_eval
 
-from hyperspy.defaults_parser import defaults
+from hyperspy.defaults_parser import preferences
 from hyperspy.component import Component
 from hyperspy import messages
 from hyperspy.misc.config_dir import config_path
@@ -145,7 +145,7 @@ class EELSCLEdge(Component):
     def __init__(self, element_subshell, intensity=1.,delta=0.):
         # Check if the Peter Rez's Hartree Slater GOS distributed by Gatan 
         # are available. Otherwise exit
-        if not os.path.isdir(defaults.EELS.eels_gos_files_path):
+        if not os.path.isdir(preferences.EELS.eels_gos_files_path):
             message = (
             "The path to the GOS files could not be found. " 
             "Please define a valid location for the EELS GOS files in the "
@@ -165,8 +165,8 @@ class EELSCLEdge(Component):
         self.E0 = None
         self.effective_angle.value = 0
         self.effective_angle.free = False
-        self.fs_state = defaults.EELS.fs_state
-        self.fs_emax = defaults.EELS.fs_emax
+        self.fs_state = preferences.EELS.fs_state
+        self.fs_emax = preferences.EELS.fs_emax
         self.fs_mode = "new_spline"
         self.fslist.ext_force_positive = False
         
@@ -182,7 +182,7 @@ class EELSCLEdge(Component):
         self.intensity.bmin = 0.
         self.intensity.bmax = None
 
-        self.knots_factor = defaults.EELS.knots_factor
+        self.knots_factor = preferences.EELS.knots_factor
 
         # Set initial actions
         self.readgosfile()
@@ -254,7 +254,7 @@ class EELSCLEdge(Component):
         print "Subshell: ", subshell
         print "Onset Energy = ", self.edgeenergy
         #Read file
-        file = os.path.join(defaults.EELS.eels_gos_files_path, 
+        file = os.path.join(preferences.EELS.eels_gos_files_path, 
         edges_dict[element]['subshells'][subshell]['filename'])
         f = open(file)
  

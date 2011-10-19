@@ -19,7 +19,7 @@
 import os
 
 from hyperspy import messages
-from hyperspy.defaults_parser import defaults
+from hyperspy.defaults_parser import preferences
 from hyperspy.io_plugins import msa, digital_micrograph, fei, mrc, ripple
 
 
@@ -109,7 +109,7 @@ def load(*filenames, **kwds):
         agg_sig=agg.AggregateSpectrum(*objects)
     else:
         agg_sig=agg.Aggregate(*objects)
-    if defaults.General.plot_on_load is True:
+    if preferences.General.plot_on_load is True:
         agg_sig.plot()
     return agg_sig
 
@@ -188,7 +188,7 @@ def load_with_reader(filename, reader, record_by = None, signal_type = None,
                 s = Spectrum(file_data_dict)
         objects.append(s)
         print s
-        if defaults.General.plot_on_load is True and is_agg is False:
+        if preferences.General.plot_on_load is True and is_agg is False:
             s.plot()
     if len(objects) == 1:
         objects = objects[0]

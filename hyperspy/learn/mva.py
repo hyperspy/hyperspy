@@ -29,7 +29,7 @@ from hyperspy.misc import utils
 from hyperspy.learn.svd_pca import pca
 from hyperspy.learn.mlpca import mlpca
 from hyperspy.misc.utils import center_and_scale
-from hyperspy.defaults_parser import defaults
+from hyperspy.defaults_parser import preferences
 from hyperspy import messages
 
 
@@ -585,7 +585,7 @@ class MVA():
         self.plot_independent_components(ic = self.als_ic)
 
     def save_als_ica_results(self, elements = None,
-    format = defaults.General.default_file_format, image_format = 'tif'):
+    format = preferences.General.default_file_format, image_format = 'tif'):
         """Same as save_ica_results for the ALS results"""
         self.save_ica_results(elements = elements, image_format = image_format,
         recmatrix = self.als_output['CList'].T, ic = self.als_ic)

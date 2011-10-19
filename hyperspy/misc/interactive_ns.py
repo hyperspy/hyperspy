@@ -18,6 +18,9 @@
 
 import __main__
 from distutils.version import StrictVersion
+import os
+from time import strftime
+
 import IPython
 
 ipy_version = StrictVersion(IPython.__version__)
@@ -29,9 +32,45 @@ else:
     from IPython.core import ipapi
 ip = ipapi.get()
 if ip is None:
-    # Ipython is not installed, using Python's namespace
+    # Ipython is not installed, using Python's namespace.
     # TODO: this does not work with IPython > 0.11
     interactive_ns = __main__.__dict__
 else:
     interactive_ns = ip.user_ns
 
+
+def turn_logging_on():
+    
+    if ipy_version < ipy_011:
+        print("Logging is not supported by this version of IPython")
+        return
+    if ip.logger.log_active is True:
+        print "Already logging to " + ip.logger.logfname
+        return
+    
+    filename = os.path.join(os.getcwd(), 'hyperspy_log.py')
+    new = not os.path.exists(filename)
+    ip.logger.logstart(logfname=filename,logmode='append')
+    if new:
+        ip.logger.log_write(
+            "#!/usr/bin/env python \n"
+            "# ============================\n"
+            "# %s \n" % strftime('%Y-%m-%d') +
+            "# %s \n" % strftime('%H:%M') +
+            "# ============================\n" )
+
+    print("\nLogging is active")
+    print("The log is stored in the hyperspy_log.py file"
+          " in the current directory")
+          
+def turn_logging_off():
+    if ipy_version < ipy_011:
+        print("Logging is not supported by this version of IPython")
+        return
+    if ip.logger.log_active is False:
+        return
+        
+    ip.logger.logstop()
+    print("The logger is off")
+
+        

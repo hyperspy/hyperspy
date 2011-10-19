@@ -24,7 +24,7 @@ from hyperspy.model import Model
 from hyperspy.components.eels_cl_edge import EELSCLEdge
 from hyperspy.components import PowerLaw
 from hyperspy.misc.interactive_ns import interactive_ns
-from hyperspy.defaults_parser import defaults
+from hyperspy.defaults_parser import preferences
 import hyperspy.messages as messages
 from hyperspy import components
 
@@ -141,7 +141,7 @@ class EELSModel(Model):
                 interactive_ns[element].append(self[-1])
                 
     def resolve_fine_structure(self,preedge_safe_window_width = 
-        defaults.EELS.preedge_safe_window_width, i1 = 0):
+        preferences.EELS.preedge_safe_window_width, i1 = 0):
         """Adjust the fine structure of all edges to avoid overlapping
         
         This function is called automatically everytime the position of an edge
@@ -170,7 +170,7 @@ class EELSModel(Model):
                 preedge_safe_window_width :
                     if (distance_between_edges - 
                     preedge_safe_window_width) <= \
-                    defaults.EELS.min_distance_between_edges_for_fine_structure:
+                    preferences.EELS.min_distance_between_edges_for_fine_structure:
                         print " Automatically desactivating the fine \
                         structure of edge number",i2+1,"to avoid conflicts\
                          with edge number",i1+1
@@ -228,7 +228,7 @@ class EELSModel(Model):
             i+=1
             edge = edges.pop(0)
         self.set_data_range_in_units(startenergy,edge.edge_position() - \
-        defaults.EELS.preedge_safe_window_width)
+        preferences.EELS.preedge_safe_window_width)
         active_edges = []
         for edge in self.edges[i:]:
             if edge.active:
@@ -266,7 +266,7 @@ class EELSModel(Model):
                 self.edges[i].active is False:
                     i += 1
                 E2 = self.edges[i].edge_position() - \
-                defaults.EELS.preedge_safe_window_width
+                preferences.EELS.preedge_safe_window_width
             else:
                 E2 = ea[-1]
         else:
@@ -299,7 +299,7 @@ class EELSModel(Model):
         ea = self.axis.axis[self.channel_switches]
         if startenergy is None:
             startenergy = ea[0]
-        preedge_safe_window_width = defaults.EELS.preedge_safe_window_width
+        preedge_safe_window_width = preferences.EELS.preedge_safe_window_width
         # Declare variables
         edge = self.edges[edgenumber]
         if edge.intensity.twin is not None or edge.active is False or \
