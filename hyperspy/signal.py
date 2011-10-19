@@ -110,7 +110,6 @@ class Signal(t.HasTraits, MVA):
         if not 'original_parameters' in file_data_dict:
             file_data_dict['original_parameters'] = {}
         if 'attributes' in file_data_dict:
-            print file_data_dict['attributes']
             for key, value in file_data_dict['attributes'].iteritems():
                 if hasattr(self,key):
                     if isinstance(value,dict):
