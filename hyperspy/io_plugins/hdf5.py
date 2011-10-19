@@ -168,9 +168,7 @@ def hdfgroup2dict(group, dictionary = {}):
                 value = None
         except ValueError:
             # If the value is an array it will raise a ValueError
-            # so set the dictionary to the array
-            print "tried to set key %s to array shape %s"&(key,value.shape)
-            dictionary[key] = value
+            pass
         if type(value) == np.ndarray and value.dtype == np.dtype('|S1'):
             value = value.tolist()
         dictionary[key] = value
@@ -178,11 +176,11 @@ def hdfgroup2dict(group, dictionary = {}):
         for key in group.keys():
             if key.startswith('_sig_'):
                 dictionary[key[5:]] = hdfgroup2signaldict(group[key])
-            if not isinstance(group[key],h5py.Dataset):
+            if isinstance(group[key],h5py.Dataset):
+                dictionary[key]=np.array(group[key])
+            else:
                 dictionary[key] = {}
                 hdfgroup2dict(group[key], dictionary[key])
-            else:
-                dictionary[key]=np.array(group[key])
     return dictionary
 
 def write_signal(signal,group):
