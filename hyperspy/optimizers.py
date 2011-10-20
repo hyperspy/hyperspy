@@ -33,7 +33,7 @@ class Optimizers(Estimators):
     """
     """
 
-    def fit(self, fitter = preferences.Model.default_fitter, method = 'ls',
+    def fit(self, fitter = None, method = 'ls',
     	    grad = False, weights = None, ext_bounding = False, ascombe = True,
     	    update_plot = False, bounded = False, **kwargs):
         """
@@ -41,6 +41,9 @@ class Optimizers(Estimators):
         The covariance matrix calculated by the 'leastsq' fitter is not always
         reliable
         """
+        if fitter is None:
+            fitter = preferences.Model.default_fitter
+            print('Fitter: %s' % fitter)
         switch_aap = (update_plot != self.auto_update_plot)
         if switch_aap is True:
             self.set_auto_update_plot(update_plot)

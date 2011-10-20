@@ -280,18 +280,19 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
 
         The function gets the format from the extension. You can use:
             - hdf5 for HDF5
-            - nc for NetCDF
+            - rpl for Ripple (usefult to export to Digital Micrograph)
             - msa for EMSA/MSA single spectrum saving.
-            - bin to produce a raw binary file
             - Many image formats such as png, tiff, jpeg...
 
+        If no extension is provided the default file format as defined in the
+        `preferences` is used.
         Please note that not all the formats supports saving datasets of
         arbitrary dimensions, e.g. msa only suports 1D data.
 
         Parameters
         ----------
         filename : str
-        msa_format : {'Y', 'XY'}
+        msa_format : Str, one of: 'Y', 'XY'
             'Y' will produce a file without the energy axis. 'XY' will also
             save another column with the energy axis. For compatibility with
             Gatan Digital Micrograph 'Y' is the default.
