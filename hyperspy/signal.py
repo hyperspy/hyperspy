@@ -785,8 +785,10 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
 
         if n<per_row: per_row=n
 
-        f=plt.figure()
-
+        if same_window and self.axes_manager.signal_dimension==2:
+            f=plt.figure(figsize=(4*per_row,3*rows))
+        else:
+            f=plt.figure()
         for i in xrange(n):
             if self.axes_manager.signal_dimension==1:
                 if same_window:
@@ -825,7 +827,8 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                                 axes_manager=self.axes_manager,
                                 shifts=shifts,char=char,ax=ax,
                                 img_cmap=plt.cm.gray,
-                                sc_cmap=cmap,
+                                sc_cmap=cmap, 
+                                comp_label='Avg Peak Chars for:\n%s'%self.mapped_parameters.title,
                                 quiver_color=quiver_color,
                                 vector_scale=vector_scale)
                     elif len(img_data.shape)>2:
@@ -836,6 +839,8 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                             plot_char=plot_char)
                     sigdraw._plot_quiver_scatter_overlay(
                         image=image,
+                        comp_label='Peak Chars for %s %i from:\n%s'%(
+                            comp_label,i,self.mapped_parameters.title),
                         axes_manager=self.axes_manager,
                         shifts=shifts,char=char,ax=ax,
                         img_cmap=plt.cm.gray,
@@ -874,7 +879,10 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
 
         if n<per_row: per_row=n
 
-        f=plt.figure()
+        if same_window and self.axes_manager.signal_dimension==2:
+            f=plt.figure(figsize=(4*per_row,3*rows))
+        else:
+            f=plt.figure()
 
         for i in xrange(n):
             if self.axes_manager.navigation_dimension==1:

@@ -29,7 +29,7 @@ import utils
 
 def _plot_quiver_scatter_overlay(image, axes_manager,
                                  calibrate=True, shifts=None, 
-                                 char=None, ax=None,
+                                 char=None, ax=None, comp_label=None,
                                  img_cmap=plt.cm.gray,
                                  sc_cmap=plt.cm.jet,
                                  quiver_color='white',
@@ -66,6 +66,8 @@ def _plot_quiver_scatter_overlay(image, axes_manager,
             clocs[:,1]=clocs[:,1]*axes[1].scale+axes[1].offset
     ax.imshow(image,interpolation='nearest',
               cmap=img_cmap,extent=extent)
+    if comp_label:
+        plt.title(comp_label)
     if shifts <> None:
         ax.quiver(slocs[:,0],slocs[:,1],
                   shifts[:,0], shifts[:,1],
@@ -128,7 +130,7 @@ def _plot_2D_component(factors, idx, axes_manager,
 
 def _plot_component(axes_manager,
                     factors=None, idx=None,
-                    on_peaks=False,
+                    on_peaks=False, comp_label=None,
                     image=None, calibrate=True, 
                     shifts=None, char=None, 
                     ax=None, img_cmap=plt.cm.gray,
@@ -148,6 +150,7 @@ def _plot_component(axes_manager,
                         image=image,
                         axes_manager=axes_manager,
                         shifts=shifts,char=char,ax=ax,
+                        comp_label=comp_label,
                         img_cmap=img_cmap,
                         sc_cmap=sc_cmap,
                         quiver_color=quiver_color,
