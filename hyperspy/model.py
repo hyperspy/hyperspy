@@ -29,6 +29,7 @@ import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.misc import progressbar
 from hyperspy.signals.eels import EELSSpectrum
+from hyperspy.defaults_parser import preferences
 
 class Model(list, Optimizers, Estimators):
     """Build and fit a model
@@ -538,7 +539,7 @@ class Model(list, Optimizers, Estimators):
     def _jacobian4odr(self,param,x):
         return self._jacobian(param, x)
                 
-    def multifit(self, mask = None, fitter = "leastsq", 
+    def multifit(self, mask = None, fitter = preferences.Model.default_fitter, 
                  charge_only_fixed = False, grad = False, autosave = False, 
                  autosave_every = 10, bounded = False, **kwargs):
         if autosave is not False:

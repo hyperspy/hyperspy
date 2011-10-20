@@ -70,10 +70,16 @@ else:
 # This "section" is all that has to be modified to add or remove sections and
 # options from the defaults   
 class GeneralConfig(t.HasTraits):
-    default_file_format = t.CStr('hdf5')
-    plot_on_load = t.CBool(False)
-    interactive = t.CBool(True)
-    logger_on = t.CBool(False)
+    default_file_format = t.Enum('hdf5', 'rpl', default = 'hdf5')
+    plot_on_load = t.CBool(False,
+        desc = 'If enabled, the object will be plot automatically on loading')
+    interactive = t.CBool(True,
+        desc = 'If enabled, Hyperspy will prompt the user when optios are '
+               'available, otherwise it will use the default values if possible')
+    logger_on = t.CBool(False,
+        label = 'Automatic logging',
+        desc = 'If enabled, Hyperspy will store a log in the current directory '
+               'of all the commands typed')
     
     def _logger_on_changed(self, old, new):
         if new is True:
@@ -83,16 +89,39 @@ class GeneralConfig(t.HasTraits):
 
     
 class ModelConfig(t.HasTraits):
-    default_fitter = t.CStr('leastsq')
+    default_fitter = t.Enum('leastsq', 'mpfit', default = 'leastsq')
     
 class EELSConfig(t.HasTraits):
-    eels_gos_files_path = t.CStr(guess_gos_path())
-    fs_emax = t.CFloat(30)
-    fs_state = t.CBool(False)
-    knots_factor = t.CFloat(0.3)
+    eels_gos_files_path = t.Directory(guess_gos_path(),
+        label = 'GOS directory',
+        desc = 'The GOS files are required to create the EELS edge components')
+    fs_emax = t.CFloat(30,
+        label = 'Fine structure lenght',
+        desc = 'The default lenght of the fine structure from the edge onset')
+    fs_state = t.CBool(False,
+        label = 'Enable fine structure',
+        desc = "If enabled, the regions of the EELS spectrum defined as fine "
+               "structure will be fitted with a spline. Please note that it "
+               "enabling this feature only makes sense when the model is "
+               "convolved to account for multiple scattering")
+    knots_factor = t.Range(0., 1., value = 0.3,
+        label = 'Fine structure smoothing factor',
+        desc = 'The lower the value the smoother the fine structure spline fit')
     synchronize_cl_with_ll = t.CBool(False)
-    preedge_safe_window_width = t.CFloat(2)
-    min_distance_between_edges_for_fine_structure = t.CFloat(0)
+    preedge_safe_window_width = t.CFloat(2,
+        label = 'Pre-onset region (in eV)',
+        desc = 'Some functions needs to define the regions between two '
+               'ionisation edges. Due to limited energy resolution or chemical '
+               'shift, the region is limited on its higher energy side by '
+               'the next ionisation edge onset minus an offset defined by this '
+               'parameters')
+    min_distance_between_edges_for_fine_structure = t.CFloat(0,
+        label = 'Minimum distance between edges',
+        desc = 'When automatically setting the fine structure energy regions, '
+               'the fine structure of an EELS edge component is automatically '
+               'disable if the next ionisation edge onset distance to the '
+               'higher energy side of the fine structure region is lower that '
+               'the value of this parameter')
 
 template = {
     'General' : GeneralConfig(),
@@ -100,8 +129,6 @@ template = {
     'EELS' : EELSConfig(),}
 
 # Defaults template definition ends ############################################       
-
-
 
 def template2config(template, config):
     for section, traited_class in template.iteritems():
@@ -118,6 +145,8 @@ def config2template(template, config):
                 value = True
             elif value == 'False':
                 value = False
+            if name == 'knots_factor':
+                value = float(value)
             config_dict[name] = value
         traited_class.set(True, **config_dict)
         
