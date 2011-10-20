@@ -36,7 +36,6 @@ class Image(Signal):
     def __init__(self, *args, **kw):
         super(Image,self).__init__(*args, **kw)
         self.axes_manager.set_view('image')
-        self.peak_mva_results=MVA_Results()
 
     def peak_char_stack(self, peak_width, subpixel=False, target_locations=None,
                         peak_locations=None, imcoords=None, target_neighborhood=20,

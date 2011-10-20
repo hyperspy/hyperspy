@@ -461,8 +461,6 @@ class AggregateCells(Aggregate,Image):
             smp.locations=np.zeros((2,1),dtype=[('filename','a256'),('id','i4'),('position','i4',(1,2))])
         if not hasattr(smp,'original_files'):
             smp.original_files=OrderedDict()
-        if not hasattr(smp,'image_stacks'):
-            smp.image_stacks=OrderedDict()
         if not hasattr(smp,'aggregate_end_pointer'):
             smp.aggregate_end_pointer=0
         if not hasattr(smp,'title'):
@@ -501,7 +499,6 @@ class AggregateCells(Aggregate,Image):
                 
         if pmp.original_filename not in list(set(smp.locations['filename'].squeeze())):
             smp.original_files[pmp.title]=mp.parent
-            smp.image_stacks[pmp.title]=arg
             # add the data to the aggregate array
             if self.data==None:
                 smp.record_by=mp.record_by
@@ -535,7 +532,6 @@ class AggregateCells(Aggregate,Image):
         smp=self.mapped_parameters
         for key in keys:
             del smp.original_files[key]
-            del smp.image_stacks[key]
             mask=locs['filename']==key
             self.data=np.delete(self.data,mask,0)
             smp.locations=np.delete(smp.locations,mask,0)

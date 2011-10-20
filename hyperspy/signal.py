@@ -61,6 +61,7 @@ class Signal(t.HasTraits, MVA):
         self.mapped_parameters = DictionaryBrowser()
         self.original_parameters = DictionaryBrowser()
         self.mva_results=MVA_Results()
+        self.peak_mva_results=MVA_Results()
         if type(file_data_dict).__name__ == "dict":
             self.load_dictionary(file_data_dict)
         self._plot = None

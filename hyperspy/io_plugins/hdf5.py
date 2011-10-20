@@ -112,10 +112,11 @@ def hdfgroup2signaldict(group):
         exp['original_parameters'] = hdfgroup2dict(
             group['original_parameters'], {})
         exp['axes'] = axes
+        exp['attributes']={}
         if 'mva_results' in group.keys():
-            exp['attributes'] = {
-                'mva_results':hdfgroup2dict(group['mva_results'],{}),
-                }
+            exp['attributes']['mva_results']=hdfgroup2dict(group['mva_results'],{})
+        if 'peak_mva_results' in group.keys():
+            exp['attributes']['peak_mva_results']=hdfgroup2dict(group['peak_mva_results'],{})
         # Replace the old signal and name keys with their current names
         if 'signal' in exp['mapped_parameters']:
             exp['mapped_parameters']['signal_type'] = \
@@ -138,7 +139,13 @@ def dict2hdfgroup(dictionary, group):
         elif isinstance(value, DictionaryBrowser):
             dict2hdfgroup(value.as_dictionary(), group.create_group(key))
         elif isinstance(value, Signal):
-            write_signal(value,group.create_group('_sig_'+key))
+            if key.startswith('_sig_'):
+                try:
+                    write_signal(value,group[key])
+                except:
+                    write_signal(value,group.create_group(key))
+            else:
+                write_signal(value,group.create_group('_sig_'+key))
         elif isinstance(value, np.ndarray):
             group.create_dataset(key, data = value)
         elif isinstance(value, mdp.Node):
@@ -171,12 +178,16 @@ def hdfgroup2dict(group, dictionary = {}):
             pass
         if type(value) == np.ndarray and value.dtype == np.dtype('|S1'):
             value = value.tolist()
-        dictionary[key] = value
+        # skip signals - these are handled below.
+        if key.startswith('_sig_'):
+            pass
+        else:
+            dictionary[key] = value
     if not isinstance(group,h5py.Dataset):
         for key in group.keys():
             if key.startswith('_sig_'):
                 dictionary[key[5:]] = hdfgroup2signaldict(group[key])
-            if isinstance(group[key],h5py.Dataset):
+            elif isinstance(group[key],h5py.Dataset):
                 dictionary[key]=np.array(group[key])
             else:
                 dictionary[key] = {}
@@ -200,6 +211,10 @@ def write_signal(signal,group):
     mva_results = group.create_group('mva_results')
     dict2hdfgroup(signal.mva_results.__dict__, 
                   mva_results)
+    if hasattr(signal,'peak_mva_results'):
+        peak_mva_results = group.create_group('peak_mva_results')
+        dict2hdfgroup(signal.peak_mva_results.__dict__, 
+                  peak_mva_results)
                                     
 def file_writer(filename, signal, *args, **kwds):
     f = h5py.File(filename, mode = 'w')
