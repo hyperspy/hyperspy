@@ -195,12 +195,12 @@ def load_with_reader(filename, reader, record_by = None, signal_type = None,
     return objects
 
 
-def save(filename, signal, format = 'hdf5', **kwds):
+def save(filename, signal, **kwds):
     extension = os.path.splitext(filename)[1][1:]
     i = 0
     if extension == '':
-        extension = format
-        filename = filename + '.' + format
+        extension = preferences.General.default_file_format
+        filename = filename + '.' + preferences.General.default_file_format
     while extension not in io_plugins[i].file_extensions and \
         i < len(io_plugins) - 1:
         i += 1
@@ -210,3 +210,4 @@ def save(filename, signal, format = 'hdf5', **kwds):
         writer = io_plugins[i]
         # Check if the writer can write
         writer.file_writer(filename, signal, **kwds)
+        print('The %s file was created' % filename)

@@ -539,9 +539,13 @@ class Model(list, Optimizers, Estimators):
     def _jacobian4odr(self,param,x):
         return self._jacobian(param, x)
                 
-    def multifit(self, mask = None, fitter = preferences.Model.default_fitter, 
+    def multifit(self, mask = None, fitter = None, 
                  charge_only_fixed = False, grad = False, autosave = False, 
                  autosave_every = 10, bounded = False, **kwargs):
+        
+        if fitter is None:
+            fitter = preferences.Model.default_fitter
+            print('Fitter: %s' % fitter) 
         if autosave is not False:
             fd, autosave_fn = tempfile.mkstemp(prefix = 'hyperspy_autosave-', 
             dir = '.', suffix = '.npz')

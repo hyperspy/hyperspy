@@ -165,7 +165,7 @@ class Parameter(object):
             ('is_set', 'bool', 1)])
             self.map['std'][:] = np.nan
                     
-class Component:
+class Component(object):
     def __init__(self, parameter_name_list):
         self.parameters = []
         self.init_parameters(parameter_name_list)

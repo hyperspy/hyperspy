@@ -70,7 +70,10 @@ else:
 # This "section" is all that has to be modified to add or remove sections and
 # options from the defaults   
 class GeneralConfig(t.HasTraits):
-    default_file_format = t.Enum('hdf5', 'rpl', default = 'hdf5')
+    default_file_format = t.Enum('hdf5', 'rpl', default = 'hdf5',
+        desc = 'Using the hdf5 format is highly reccomended because is the '
+               'only one fully supported. The Ripple (rpl) format it is useful '
+               'to export data to other software that do not support hdf5')
     plot_on_load = t.CBool(False,
         desc = 'If enabled, the object will be plot automatically on loading')
     interactive = t.CBool(True,
@@ -89,7 +92,9 @@ class GeneralConfig(t.HasTraits):
 
     
 class ModelConfig(t.HasTraits):
-    default_fitter = t.Enum('leastsq', 'mpfit', default = 'leastsq')
+    default_fitter = t.Enum('leastsq', 'mpfit', default = 'leastsq',
+        desc = 'Choose leastsq if no bounding is required. '
+               'Otherwise choose mpfit')
     
 class EELSConfig(t.HasTraits):
     eels_gos_files_path = t.Directory(guess_gos_path(),
@@ -122,6 +127,20 @@ class EELSConfig(t.HasTraits):
                'disable if the next ionisation edge onset distance to the '
                'higher energy side of the fine structure region is lower that '
                'the value of this parameter')
+    view = tui.View(
+        tui.Group(
+        'synchronize_cl_with_ll',
+        label = 'General'),
+        tui.Group(
+            'eels_gos_files_path',
+            'preedge_safe_window_width',
+            tui.Group(
+                'fs_emax', 'fs_state', 'knots_factor', 
+                'min_distance_between_edges_for_fine_structure',
+                label = 'Fine structure'),
+            label = 'Model')
+            )            
+            
 
 template = {
     'General' : GeneralConfig(),

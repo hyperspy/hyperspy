@@ -210,6 +210,8 @@ class EELSCLEdge(Component):
         return self.edgeenergy + self.delta.value
         
     def setfslist(self):
+        if self.energy_scale is None:
+            return
         self.fslist._number_of_elements = \
         int(round(self.knots_factor * self.fs_emax / self.energy_scale)) + 4        
         self.fslist.bmin, self.fslist.bmax = None, None
