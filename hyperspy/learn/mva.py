@@ -40,8 +40,10 @@ class MVA():
     """
 
     def __init__(self):
-        self.mva_results = MVA_Results()
-        self.peak_chars = None
+        if not hasattr(self,'mva_results'):
+            self.mva_results = MVA_Results()
+        if not hasattr(self,'peak_chars'):
+            self.peak_chars = None
 
     def _get_target(self, on_peaks):
         if on_peaks:
@@ -739,7 +741,7 @@ class MVA():
                                              diff_order = diff_order, pc = pc, 
                                              comp_list = comp_list, mask = mask)
 
-class MVA_Results():
+class MVA_Results(object):
     def __init__(self):
         self.pc = None
         self.v = None
@@ -754,7 +756,6 @@ class MVA_Results():
         self.ica_node=None
         # Demixing matrix
         self.w = None
-
 
     def save(self, filename):
         """Save the result of the PCA analysis
@@ -816,6 +817,6 @@ class MVA_Results():
         """
         Crop the score matrix up to the given number.
 
-        It is mainly useful to save memory and redude the storage size
+        It is mainly useful to save memory and reduce the storage size
         """
         self.v = self.v[:,:n].copy()

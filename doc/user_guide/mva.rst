@@ -167,9 +167,11 @@ more than one match.
 
 .. code-block:: python
 
-    s.plot_pr (hit tab)
-    s.plot_principal_components_ (hit tab)
-    s.(number_of_components)
+    s.plotP (hit tab)
+    s.plotPca_ (hit tab)
+    s.plotPca_factors(number_of_components)
+    s.plotPca_scores(number_of_components)
+
 
 Saving and loading results
 ==========================
@@ -177,8 +179,8 @@ Saving and loading results
 You can save the entire object on which you've done MVA (this saves
 the data along with the MVA results).  For this, just use the base
 **save** method.  Alternatively, to save just the MVA results, you can use
-the specialized **save_independent_components** and
-**save_principal_components** methods.  This has the advantage of being
+the specialized **exportPca_results** and
+**exportIca_results** methods.  This has the advantage of being
 easier to import into other data analysis programs, such as Digital
 Micrograph.
 
@@ -186,11 +188,11 @@ Micrograph.
 
     # save the entire object
     s.save(filename)
-    # save the principal components and maps to files themselves
-    s.save_principal_components()
+    # save the principal components and scores to files themselves
+    s.exportPca_results()
     # save the independent components to the rpl format, which is
     #   easily importable into Digital Micrograph
-    s.save_independent_components(spectrum_format='rpl', image_format='rpl')
+    s.exportIca_results(factor_format='rpl', score_format='rpl')
 
 
 

@@ -19,6 +19,8 @@
 import h5py
 
 import numpy as np
+# mdp is imported so that we know how to skip saving nodes.
+import mdp
 
 from hyperspy import messages
 
@@ -137,6 +139,10 @@ def dict2hdfgroup(dictionary, group):
             dict2hdfgroup(value.as_dictionary(), group.create_group(key))
         elif isinstance(value, Signal):
             write_signal(value,group.create_group('_sig_'+key))
+        elif isinstance(value, np.ndarray):
+            group.create_dataset(key, data = value)
+        elif isinstance(value, mdp.Node):
+            pass
         else:
             if value is None:
                 value = '_None_'
@@ -166,13 +172,15 @@ def hdfgroup2dict(group, dictionary = {}):
         if type(value) == np.ndarray and value.dtype == np.dtype('|S1'):
             value = value.tolist()
         dictionary[key] = value
-        
-    for _group in group.keys():
-        if _group.startswith('_sig_'):
-            dictionary[_group[5:]] = hdfgroup2signaldict(group[_group])
-        else:
-            dictionary[_group] = {}
-            hdfgroup2dict(group[_group], dictionary[_group])
+    if not isinstance(group,h5py.Dataset):
+        for key in group.keys():
+            if key.startswith('_sig_'):
+                dictionary[key[5:]] = hdfgroup2signaldict(group[key])
+            if isinstance(group[key],h5py.Dataset):
+                dictionary[key]=np.array(group[key])
+            else:
+                dictionary[key] = {}
+                hdfgroup2dict(group[key], dictionary[key])
     return dictionary
 
 def write_signal(signal,group):

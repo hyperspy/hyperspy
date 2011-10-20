@@ -36,7 +36,7 @@ from matplotlib import pyplot as plt
 
 # MCS - 18/10/11
 # These are here for exporting file formats.  They need a better place.
-multidim_formats = ['rpl']
+multidim_formats = ['rpl','hdf', 'h4', 'hdf4', 'h5', 'hdf5', 'he4', 'he5']
 img_formats = ['bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg', 'msp', 'pcx', 
                'png', 'ppm', "pbm", "pgm", 'tiff', 'tif', 'xbm', 'spi',]
 spec_formats =['msa']
@@ -60,10 +60,10 @@ class Signal(t.HasTraits, MVA):
         super(Signal, self).__init__()
         self.mapped_parameters = DictionaryBrowser()
         self.original_parameters = DictionaryBrowser()
+        self.mva_results=MVA_Results()
         if type(file_data_dict).__name__ == "dict":
             self.load_dictionary(file_data_dict)
         self._plot = None
-        self.mva_results=MVA_Results()
         self._shape_before_unfolding = None
         self._axes_manager_before_unfolding = None
 
@@ -111,7 +111,12 @@ class Signal(t.HasTraits, MVA):
             file_data_dict['original_parameters'] = {}
         if 'attributes' in file_data_dict:
             for key, value in file_data_dict['attributes'].iteritems():
-                self.__setattr__(key, value)
+                if hasattr(self,key):
+                    if isinstance(value,dict):
+                        for k,v in value.iteritems():
+                            eval('self.%s.__setattr__(k,v)'%key)
+                    else:
+                        self.__setattr__(key, value)
         self.original_parameters.load_dictionary(
             file_data_dict['original_parameters'])
         self.mapped_parameters.load_dictionary(
@@ -769,7 +774,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         if comp_ids is None:
             comp_ids=xrange(factors.shape[1])
 
-        elif type(comp_ids).__name__!='list':
+        elif not hasattr(comp_ids,'__iter__'):
             comp_ids=xrange(comp_ids)
 
         n=len(comp_ids)
@@ -783,13 +788,15 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
 
         if n<per_row: per_row=n
 
+        f=plt.figure()
+
         for i in xrange(n):
             if self.axes_manager.signal_dimension==1:
                 if same_window:
-                    f=plt.gcf()
                     ax=plt.gca()
                 else:
-                    f=plt.figure()
+                    if i>0:
+                        f=plt.figure()
                     ax=f.add_subplot(111)
                 ax=sigdraw._plot_1D_component(factors=factors,
                         idx=i,axes_manager=self.axes_manager,
@@ -800,10 +807,10 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                     plt.legend(ncol=factors.shape[1]//2, loc='best')
             elif self.axes_manager.signal_dimension==2:
                 if same_window:
-                    f=plt.gcf()
                     ax=f.add_subplot(rows,per_row,i+1)
                 else:
-                    f=plt.figure()
+                    if i>0:
+                        f=plt.figure()
                     ax=f.add_subplot(111)
                 if on_peaks:
                     if img_data==None:
@@ -823,7 +830,7 @@ from peak characteristic data?')
                         img_cmap=plt.cm.gray,
                         sc_cmap=cmap,
                         quiver_color=quiver_color,
-                        vector_scale=vector_scale)                    
+                        vector_scale=vector_scale)
                 else:
                     sigdraw._plot_2D_component(factors=factors, 
                         idx=comp_ids[i], 
@@ -840,11 +847,12 @@ from peak characteristic data?')
 
     def _plot_scores(self, scores, comp_ids=None, calibrate=True,
                      same_window=True, comp_label=None, 
+                     with_factors=False, factors=None,
                      cmap=plt.cm.jet, no_nans=True, per_row=3):
         if comp_ids is None:
             comp_ids=xrange(scores.shape[0])
 
-        elif type(comp_ids).__name__!='list':
+        elif not hasattr(comp_ids,'__iter__'):
             comp_ids=xrange(comp_ids)
 
         n=len(comp_ids)
@@ -855,33 +863,53 @@ from peak characteristic data?')
 
         if n<per_row: per_row=n
 
+        f=plt.figure()
+
         for i in xrange(n):
             if self.axes_manager.navigation_dimension==1:
                 if same_window:
-                    f=plt.gcf()
                     ax=plt.gca()
                 else:
-                    f=plt.figure()
+                    if i>0:
+                        f=plt.figure()
                     ax=f.add_subplot(111)
             elif self.axes_manager.navigation_dimension==2:
                 if same_window:
-                    f=plt.gcf()
                     ax=f.add_subplot(rows,per_row,i+1)
                 else:
-                    f=plt.figure()
+                    if i>0:
+                        f=plt.figure()
                     ax=f.add_subplot(111)
             sigdraw._plot_score(scores,idx=comp_ids[i],
                                 axes_manager=self.axes_manager,
                                 no_nans=no_nans, calibrate=calibrate,
                                 cmap=cmap,comp_label=comp_label,ax=ax,
                                 same_window=same_window)
+            if not same_window:
+                fig_list.append(f)
         plt.tight_layout()
         if not same_window:
-            return fig_list
+            if with_factors:
+                return fig_list, self._plot_factors_or_pchars(factors, 
+                                            comp_ids=comp_ids, 
+                                            calibrate=calibrate,
+                                            same_window=same_window, 
+                                            comp_label=comp_label, 
+                                            per_row=per_row)
+            else:
+                return fig_list
         else:
             if self.axes_manager.navigation_dimension==1:
                 plt.legend(ncol=scores.shape[0]//2, loc='best')
-            return f
+            if with_factors:
+                return f, self._plot_factors_or_pchars(factors, 
+                                            comp_ids=comp_ids, 
+                                            calibrate=calibrate,
+                                            same_window=same_window, 
+                                            comp_label=comp_label, 
+                                            per_row=per_row)
+            else:
+                return f
 
     def _export_factors(self, factors, comp_ids=None,
                         factor_prefix=None, factor_format='rpl',
@@ -901,19 +929,22 @@ from peak characteristic data?')
         if comp_ids is None:
             comp_ids=xrange(factors.shape[1])
 
-        elif type(comp_ids).__name__!='list':
+        elif not hasattr(comp_ids,'__iter__'):
             comp_ids=xrange(comp_ids)
 
         if factor_format in img_formats:
+            plt.ioff()
             fac_plots=self._plot_factors_or_pchars(factors, comp_ids=comp_ids, 
                                 same_window=same_window, comp_label=comp_label, 
                                 on_peaks=on_peaks, img_data=img_data,
                                 plot_shifts=plot_shifts, plot_char=plot_char, 
                                 cmap=cmap, per_row=per_row)
             for idx in xrange(len(comp_ids)):
-                fac_plots[idx].save('%s_%02i.%s'%(factor_prefix,
+                fac_plots[idx].savefig('%s_%02i.%s'%(factor_prefix,
                                                   comp_ids[idx],
-                                                  factor_format))
+                                                  factor_format),
+                                       dpi=600)
+            plt.ion()
         elif factor_format in multidim_formats:
             if self.axes_manager.signal_dimension==2 and not on_peaks:
                 axes_dicts=[]
@@ -954,12 +985,17 @@ from peak characteristic data?')
                             'axes':axes})
             s.save('%ss.%s' % (factor_prefix, factor_format))
         elif factor_format in spec_formats:
-            axis_dict = self.axes_manager._slicing_axes[0].get_axis_dictionary()
-            sf=None
-            for dim in comp_ids:
-                s=Spectrum({'data':factors[:,dim],
-                            'axes': [axis_dict,]})
-                s.save('%s-%i.%s' % (pc_prefix, i, spectrum_format))
+            if self.axes_manager.signal_dimension>1:
+                messages.warning('1D spectral format is unable to save multidimensional \
+data.  Please use a different file format.')
+                return None
+            else:
+                axis_dict = self.axes_manager._slicing_axes[0].get_axis_dictionary()
+                axis_dict['index_in_array']=0
+                for dim in comp_ids:
+                    s=Spectrum({'data':factors[:,dim],
+                                'axes': [axis_dict,]})
+                    s.save('%s-%i.%s' % (factor_prefix, dim, factor_format))
 
     def _export_scores(self, scores, comp_ids=None,
                         score_prefix=None, score_format='rpl',
@@ -977,10 +1013,11 @@ from peak characteristic data?')
         if comp_ids is None:
             comp_ids=xrange(scores.shape[0])
 
-        elif type(comp_ids).__name__!='list':
+        elif not hasattr(comp_ids,'__iter__'):
             comp_ids=xrange(comp_ids)
 
         if score_format in img_formats:
+            plt.ioff()
             sc_plots=self._plot_scores(scores, comp_ids=comp_ids, 
                                        calibrate=calibrate,
                                        same_window=same_window, 
@@ -988,9 +1025,11 @@ from peak characteristic data?')
                                        cmap=cmap, no_nans=no_nans,
                                        per_row=per_row)
             for idx in xrange(len(comp_ids)):
-                fac_plots[idx].save('%s_%02i.%s'%(score_prefix,
+                sc_plots[idx].savefig('%s_%02i.%s'%(score_prefix,
                                                   comp_ids[idx],
-                                                  score_format))
+                                                  score_format),
+                                       dpi=600)
+            plt.ion()
         elif score_format in multidim_formats:
             if self.axes_manager.navigation_dimension==2:
                 axes_dicts=[]
@@ -1023,12 +1062,624 @@ from peak characteristic data?')
                             'axes':axes})
             s.save('%ss.%s' % (score_prefix, score_format))
         elif score_format in spec_formats:
-            axis_dict = self.axes_manager._slicing_axes[0].get_axis_dictionary()
-            sf=None
-            for dim in comp_ids:
-                s=Spectrum({'data':scores[dim],
-                            'axes': [axis_dict,]})
-                s.save('%s-%i.%s' % (score_prefix, i, score_format))
+            if self.axes_manager.navigation_dimension>1:
+                messages.warning('1D spectral format is unable to save multidimensional \
+data.  Please use a different file format.')
+                return None
+            else:
+                axis_dict = self.axes_manager._non_slicing_axes[0].get_axis_dictionary()
+                axis_dict['index_in_array']=0
+                for dim in comp_ids:
+                    s=Spectrum({'data':scores[dim],
+                                'axes': [axis_dict,]})
+                    s.save('%s-%i.%s' % (score_prefix, dim, score_format))
+
+    # =============================================================
+    def plotPca_factors(self,comp_ids=None, calibrate=True,
+                        same_window=True, comp_label='PC', 
+                        per_row=3):
+        """Plot components from PCA
+
+        Parameters
+        ----------
+
+        comp_ids : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+
+        calibrate : bool
+            if True, calibrates plots where calibration is available from
+            the axes_manager.  If False, plots are in pixels/channels.
+
+        same_window : bool
+            if True, plots each factor to the same window.  They are not scaled.
+        
+        comp_label : string, the label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+
+        cmap : The colormap used for the factor image, or for peak 
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        
+        per_row : int, the number of plots in each row, when the same_window
+            parameter is True.
+        """
+        factors=self.mva_results.pc
+        return self._plot_factors_or_pchars(factors, 
+                                            comp_ids=comp_ids, 
+                                            calibrate=calibrate,
+                                            same_window=same_window, 
+                                            comp_label=comp_label, 
+                                            per_row=per_row)
+
+    def plotIca_factors(self,comp_ids=None, calibrate=True,
+                        same_window=True, comp_label='IC',
+                        per_row=3):
+        """Plot components from ICA
+
+        Parameters
+        ----------
+
+        comp_ids : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+
+        calibrate : bool
+            if True, calibrates plots where calibration is available from
+            the axes_manager.  If False, plots are in pixels/channels.
+
+        same_window : bool
+            if True, plots each factor to the same window.  They are not scaled.
+        
+        comp_label : string, the label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+
+        cmap : The colormap used for the factor image, or for peak 
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        
+        per_row : int, the number of plots in each row, when the same_window
+            parameter is True.
+        """
+        factors=self.mva_results.ic
+        return self._plot_factors_or_pchars(factors, 
+                                            comp_ids=comp_ids, 
+                                            calibrate=calibrate,
+                                            same_window=same_window, 
+                                            comp_label=comp_label, 
+                                            per_row=per_row)
+
+    def plotPca_scores(self, comp_ids=None, calibrate=True,
+                       same_window=True, comp_label='PC', 
+                       with_factors=False, cmap=plt.cm.jet, 
+                       no_nans=True,per_row=3):
+        """Plot scores from PCA
+
+        Parameters
+        ----------
+
+        comp_ids : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+
+        calibrate : bool
+            if True, calibrates plots where calibration is available from
+            the axes_manager.  If False, plots are in pixels/channels.
+
+        same_window : bool
+            if True, plots each factor to the same window.  They are not scaled.
+        
+        comp_label : string, 
+            The label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+
+        with_factors : bool
+            If True, also returns figure(s) with the factors for the
+            given comp_ids.
+
+        cmap : matplotlib colormap
+            The colormap used for the factor image, or for peak 
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        
+        no_nans : bool
+            If True, removes NaN's from the score plots.
+
+        per_row : int 
+            the number of plots in each row, when the same_window
+            parameter is True.
+        """
+        scores=self.mva_results.v.T
+        if with_factors:
+            factors=self.mva_results.pc
+        else: factors=None
+        return self._plot_scores(scores, comp_ids=comp_ids, 
+                                 with_factors=with_factors, factors=factors,
+                                 same_window=same_window, comp_label=comp_label,
+                                 cmap=cmap, no_nans=no_nans,per_row=per_row)
+
+    def plotIca_scores(self, comp_ids=None, calibrate=True,
+                       same_window=True, comp_label='IC', 
+                       with_factors=False, cmap=plt.cm.jet, 
+                       no_nans=True,per_row=3):
+        """Plot scores from ICA
+
+        Parameters
+        ----------
+
+        comp_ids : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+
+        calibrate : bool
+            if True, calibrates plots where calibration is available from
+            the axes_manager.  If False, plots are in pixels/channels.
+
+        same_window : bool
+            if True, plots each factor to the same window.  They are not scaled.
+        
+        comp_label : string, 
+            The label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+
+        with_factors : bool
+            If True, also returns figure(s) with the factors for the
+            given comp_ids.
+
+        cmap : matplotlib colormap
+            The colormap used for the factor image, or for peak 
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        
+        no_nans : bool
+            If True, removes NaN's from the score plots.
+
+        per_row : int 
+            the number of plots in each row, when the same_window
+            parameter is True.
+        """
+        scores=self._get_ica_scores(self.mva_results)
+        if with_factors:
+            factors=self.mva_results.ic
+        else: factors=None
+        return self._plot_scores(scores, comp_ids=comp_ids, 
+                                 with_factors=with_factors, factors=factors,
+                                 same_window=same_window, comp_label=comp_label,
+                                 cmap=cmap, no_nans=no_nans,per_row=per_row)
+
+    def exportPca_results(self, comp_ids=None, calibrate=True,
+                          factor_prefix='pc', factor_format='rpl',
+                          score_prefix='PC_score', score_format='rpl', 
+                          comp_label='PC',cmap=plt.cm.jet,
+                          same_window=False,
+                          no_nans=True,per_row=3):
+        """Export results from PCA to any of the supported formats.
+
+        Parameters
+        ----------
+
+        comp_ids : None, int, or list of ints
+            if None, returns all components/scores.
+            if int, returns components/scores with ids from 0 to given int.
+            if list of ints, returns components/scores with ids in given list.
+
+        factor_prefix : string
+            The prefix that any exported filenames for factors/components 
+            begin with
+
+        factor_format : string
+            The extension of the format that you wish to save to.  Determines
+            the kind of output.
+                - For image formats (tif, png, jpg, etc.), plots are created 
+                  using the plotting flags as below, and saved at 600 dpi.
+                  One plot per factor is saved.
+                - For multidimensional formats (rpl, hdf5), arrays are saved
+                  in single files.  All factors are contained in the one
+                  file.
+                - For spectral formats (msa), each factor is saved to a
+                  separate file.
+                
+        score_prefix : string
+            The prefix that any exported filenames for factors/components 
+            begin with
+
+        score_format : string
+            The extension of the format that you wish to save to.  Determines
+            the kind of output.
+                - For image formats (tif, png, jpg, etc.), plots are created 
+                  using the plotting flags as below, and saved at 600 dpi.
+                  One plot per score is saved.
+                - For multidimensional formats (rpl, hdf5), arrays are saved
+                  in single files.  All scores are contained in the one
+                  file.
+                - For spectral formats (msa), each score is saved to a
+                  separate file.
+
+        Plotting options (for image file formats ONLY)
+        ----------------------------------------------
+
+        calibrate : bool
+            if True, calibrates plots where calibration is available from
+            the axes_manager.  If False, plots are in pixels/channels.
+
+        same_window : bool
+            if True, plots each factor to the same window.
+        
+        comp_label : string, the label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+
+        cmap : The colormap used for the factor image, or for peak 
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        
+        per_row : int, the number of plots in each row, when the same_window
+            parameter is True.
+        """
+        factors=self.mva_results.pc
+        scores=self.mva_results.v.T
+        self._export_factors(factors, comp_ids=comp_ids,
+                             calibrate=calibrate,
+                             factor_prefix=factor_prefix,
+                             factor_format=factor_format,
+                             comp_label=comp_label,
+                             cmap=cmap,
+                             no_nans=no_nans,
+                             same_window=same_window,
+                             per_row=per_row)
+        self._export_scores(scores,comp_ids=comp_ids,
+                            calibrate=calibrate,
+                            score_prefix=score_prefix,
+                            score_format=score_format,
+                            comp_label=comp_label,
+                            cmap=cmap,
+                            same_window=same_window,
+                            no_nans=no_nans,
+                            per_row=per_row)
+
+    def exportIca_results(self, comp_ids=None, calibrate=True,
+                          factor_prefix='pc', factor_format='rpl',
+                          score_prefix='PC_score', score_format='rpl', 
+                          comp_label='PC',cmap=plt.cm.jet,
+                          same_window=False,
+                          no_nans=True,per_row=3):
+        """Export results from ICA to any of the supported formats.
+
+        Parameters
+        ----------
+
+        comp_ids : None, int, or list of ints
+            if None, returns all components/scores.
+            if int, returns components/scores with ids from 0 to given int.
+            if list of ints, returns components/scores with ids in given list.
+
+        factor_prefix : string
+            The prefix that any exported filenames for factors/components 
+            begin with
+
+        factor_format : string
+            The extension of the format that you wish to save to.  Determines
+            the kind of output.
+                - For image formats (tif, png, jpg, etc.), plots are created 
+                  using the plotting flags as below, and saved at 600 dpi.
+                  One plot per factor is saved.
+                - For multidimensional formats (rpl, hdf5), arrays are saved
+                  in single files.  All factors are contained in the one
+                  file.
+                - For spectral formats (msa), each factor is saved to a
+                  separate file.
+                
+        score_prefix : string
+            The prefix that any exported filenames for factors/components 
+            begin with
+
+        score_format : string
+            The extension of the format that you wish to save to.  Determines
+            the kind of output.
+                - For image formats (tif, png, jpg, etc.), plots are created 
+                  using the plotting flags as below, and saved at 600 dpi.
+                  One plot per score is saved.
+                - For multidimensional formats (rpl, hdf5), arrays are saved
+                  in single files.  All scores are contained in the one
+                  file.
+                - For spectral formats (msa), each score is saved to a
+                  separate file.
+
+        Plotting options (for image file formats ONLY)
+        ----------------------------------------------
+
+        calibrate : bool
+            if True, calibrates plots where calibration is available from
+            the axes_manager.  If False, plots are in pixels/channels.
+
+        same_window : bool
+            if True, plots each factor to the same window.
+        
+        comp_label : string, the label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+
+        cmap : The colormap used for the factor image, or for peak 
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        
+        per_row : int, the number of plots in each row, when the same_window
+            parameter is True.
+        """
+        factors=self.mva_results.ic
+        scores=self._get_ica_scores(self.mva_results)
+        self._export_factors(factors, comp_ids=comp_ids,
+                             calibrate=calibrate,
+                             plot_shifts=plot_shifts,
+                             plot_char=plot_char,
+                             img_data=img_data,
+                             factor_prefix=factor_prefix,
+                             factor_format=factor_format,
+                             comp_label=comp_label,
+                             on_peaks=on_peaks,
+                             cmap=cmap,
+                             no_nans=no_nans,
+                             same_window=same_window,
+                             per_row=per_row)
+        self._export_scores(scores, comp_ids=comp_ids,
+                            calibrate=calibrate,
+                            score_prefix=score_prefix,
+                            score_format=score_format,
+                            comp_label=comp_label,
+                            cmap=cmap,
+                            same_window=same_window,
+                            no_nans=no_nans,
+                            per_row=per_row)
+
+    #===================================
+    # Deprecated MVA results methods
+    #===================================
+
+    def plot_principal_components(self, comp_ids = None, calibrate=True,
+                                  same_window=True, comp_label='PC'):
+        """Plot the principal components up to the given number
+
+        Parameters
+        ----------
+
+        comp_ids : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+
+        calibrate : bool
+            if True, calibrates the factor plots according to the axes_manager.
+
+        same_window : bool
+            if True, plots each factor to the same window.  They are not scaled.
+        
+        comp_label : the label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+        
+        """
+        messages.warning('Deprecation notice: the plot_principal_components\
+function has been replaced by the plotPca_factors function.  The new function\
+especially offers more options for image stacks.')
+        factors=self.mva_results.pc
+        return self._plot_factors_or_pchars(factors, 
+                                            comp_ids=comp_ids, 
+                                            calibrate=calibrate,
+                                            same_window=same_window, 
+                                            comp_label=comp_label)
+
+    def plot_independent_components(self, comp_ids = None, calibrate=True,
+                                    same_window=True, comp_label='IC'):
+        """Plot the independent components up to the given number
+
+        Parameters
+        ----------
+
+        comp_ids : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+
+        same_window : bool
+            if True, plots each factor to the same window.  They are not scaled.
+        
+        comp_label : the label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+        
+        """
+        messages.warning('Deprecation notice: the plot_independent_components\
+function has been replaced by the plotIca_factors function.  The new function\
+especially offers more options for image stacks.')
+        factors=self.mva_results.ic
+        return self._plot_factors_or_pchars(factors, 
+                                            comp_ids=comp_ids, 
+                                            calibrate=calibrate,
+                                            same_window=same_window, 
+                                            comp_label=comp_label)
+
+    def plot_principal_components_maps(self, comp_ids=None, calibrate=True,
+                                       cmap=plt.cm.gray, no_nans=False, savefig=False, 
+                                       comp_label='PCA',directory = None):
+        """Plot the map associated to each principal component
+
+        Parameters
+        ----------
+        comp_ids : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+
+        calibrate : bool
+            if True, calibrates plots where calibration is available from
+            the axes_manager.  If False, plots are in pixels/channels.
+
+        same_window : bool
+            if True, plots each factor to the same window.  They are not scaled.
+        
+        comp_label : string, 
+            The label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+
+        with_factors : bool
+            If True, also returns figure(s) with the factors for the
+            given comp_ids.
+
+        cmap : matplotlib colormap
+            The colormap used for the factor image, or for peak 
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        
+        no_nans : bool
+            If True, removes NaN's from the score plots.
+
+        per_row : int 
+            the number of plots in each row, when the same_window
+            parameter is True.
+
+        Returns
+        -------
+        If same_window is True:
+           Tuple of two matplotlib Figures, the first being the scores,
+           the second being the factors
+        If same_window is False:
+           Tuple of two lists with the first being a list of matplotlib
+           Figures of scores, the second being a list of matplotlib
+           Figures of factors
+        """
+        return self.plotPca_scores(self, comp_ids=None, calibrate=True,
+                       same_window=True, comp_label=comp_label, 
+                       with_factors=True, cmap=plt.cm.jet, 
+                       no_nans=True,per_row=3)
+
+    def plot_independent_components_maps(self, comp_ids=None, calibrate=True,
+                                       cmap=plt.cm.gray, no_nans=False, savefig=False, 
+                                       comp_label='ICA',directory = None):
+        """Plot the map associated to each independent component
+
+        Parameters
+        ----------
+        comp_ids : None, int, or list of ints
+            if None, returns maps of all components.
+            if int, returns maps of components with ids from 0 to given int.
+            if list of ints, returns maps of components with ids in given list.
+
+        calibrate : bool
+            if True, calibrates plots where calibration is available from
+            the axes_manager.  If False, plots are in pixels/channels.
+
+        same_window : bool
+            if True, plots each factor to the same window.  They are not scaled.
+        
+        comp_label : string, 
+            The label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting in the 
+            same window)
+
+        with_factors : bool
+            If True, also returns figure(s) with the factors for the
+            given comp_ids.
+
+        cmap : matplotlib colormap
+            The colormap used for the factor image, or for peak 
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        
+        no_nans : bool
+            If True, removes NaN's from the score plots.
+
+        per_row : int 
+            the number of plots in each row, when the same_window
+            parameter is True.
+
+        Returns
+        -------
+        If same_window is True:
+           Tuple of two matplotlib Figures, the first being the scores,
+           the second being the factors
+        If same_window is False:
+           Tuple of two lists with the first being a list of matplotlib
+           Figures of scores, the second being a list of matplotlib
+           Figures of factors
+        """
+        return self.plotIca_scores(self, comp_ids=comp_ids, calibrate=True,
+                       same_window=same_window, comp_label=comp_label, 
+                       with_factors=True, cmap=cmap, 
+                       no_nans=no_nans,per_row=per_row)
+
+    def save_principal_components(self, n, pc_prefix = 'pc',
+                                  score_prefix = 'score', 
+                                  spectrum_format = 'rpl', 
+                                  hs_format = 'rpl'):
+        """Save the `n` first principal components  and score maps
+        in the specified format
+
+        Parameters
+        ----------
+        n : int
+            Number of principal components to save
+        score_prefix : string
+            Prefix for the score file names
+        pc_prefix : string
+            Prefix for the principal component file names
+        spectrum_format : string
+            Any of Hyperspy's supported file formats for spectral data
+        hs_format : string
+            Any of Hyperspy's supported file formats for hyperspectral data
+            
+        """
+        messages.warning('Deprecation notice: the save_principal_components\
+function has been replaced by the exportPca_results function.  The new function\
+especially offers more options for image stacks.')
+        self.exportPca_results(comp_ids=n, calibrate=True,
+                          factor_prefix=pc_prefix, factor_format=spectrum_format,
+                          score_prefix=score_prefix, score_format=hs_format, 
+                          comp_label='PC',cmap=plt.cm.jet,
+                          same_window=False,
+                          no_nans=True,per_row=3)
+
+    def save_independent_components(self, ic_prefix = 'ic',
+                                    score_prefix = 'score',
+                                    spectrum_format='rpl',
+                                    hs_format='rpl',
+                                    on_peaks=False):
+        """Saves the result of the ICA in image and spectrum format.
+        Note that to save the image, the NaNs in the map will be converted
+        to zeros.
+
+        Parameters
+        ----------
+        score_prefix : string
+            Prefix for the score file names
+        pc_prefix : string
+            Prefix for the principal component file names
+        spectrum_format : string
+            Any of Hyperspy's supported file formats for spectral data
+        hs_format : string
+            Any of Hyperspy's supported file formats for hyperspectral data
+        """
+        messages.warning('Deprecation notice: the save_independent_components\
+function has been replaced by the exportIca_results function.  The new function\
+especially offers more options for image stacks.')
+        self.exportIca_results(comp_ids=None, calibrate=True,
+                          factor_prefix=ic_prefix, factor_format=spectrum_format,
+                          score_prefix=score_prefix, score_format=hs_format, 
+                          comp_label='IC',cmap=plt.cm.jet,
+                          same_window=False,
+                          no_nans=True,per_row=3)
+
+    #=====================================================================
+    # End deprecated MVA results methods
+    #=====================================================================
 
 #    def sum_in_mask(self, mask):
 #        """Returns the result of summing all the spectra in the mask.

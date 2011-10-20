@@ -102,12 +102,85 @@ cropped images,
 
     agg.principal_components_analysis(True)
 
+To view your factor images, use the **plotPca_factors** method:
+
+.. code-block:: python
+
+    agg.plotPca_factors(2)
+
 Why ICA works for images
 ------------------------
+For several real-world situations, the distributions of components
+that make up the system are not Gaussian.  This means that PCA will
+never work well for finding the original components - it can only
+derive Gaussian components.  Independent component analysis, on the
+other hand, derives components by intentionally maximizing the
+non-Gaussianity of components.  The idea is encapsulated by the
+`Central Limit Theorem
+<http://en.wikipedia.org/wiki/Central_limit_theorem>`_, 
+which states that the sum of any number of independent components 
+will converge towards the Gaussian distribution.
 
 Characterizing image peaks
 --------------------------
 
+To make the interpretation of factors more straightforward, you can
+derive characteristics for image peaks, and run multivariate analysis
+on the characteristics, rather than the image data.  Assuming that
+your characteristics properly parameterize your peaks (i.e. the
+parameterized peak does not lose important information), this
+description of your data is equivalent to the image.
+
+In hyperspy, you can quickly and easily characterize all the peaks in
+a stack of images with the **peak_char_stack** function.  Its one
+required parameter is the peak_width, which you should estimate
+visually from your images.
+
+.. code-block:: python
+
+    agg.peak_char_stack(10)
+
+Meaning of peak characteristics
+-------------------------------
+
+Peak characteristics currently come in sets of 7:
+
+ #. 0 and 1: the peak position
+
+ #. 2 and 3: the difference between peak position and target position
+
+ #. 4: the peak height (or change in peak height for a component)
+
+ #. 5: the peak orientation (or change in peak orientation for a
+   component).  Orientation ranges from -pi/2 to pi/2 radians.
+   
+ #. 6: the peak eccentricity (or change in peak eccentricity for a
+   component).  Eccentricity ranges from 0 to 1, with 0 being a
+   perfectly round object, and 1 being a line.
+
 Analysis in Peak space
 ----------------------
 
+Running multivariate analysis on peak characteristics is similar to
+analysis on image data, with the exception that you pass the on_peaks
+parameter as True.
+
+.. code-block:: python
+
+    agg.principal_component_analysis(on_peaks=True)
+
+Similarly, plotting functions also take the on_peaks parameter.  They
+also offer a few more options to control exactly which of the peak
+parameters are plotted.
+
+.. code-block:: python
+
+    # default view for peak plotting is to plot shifts,
+    # magnified by a factor of 100, along with a scatter map
+    # of peak heights.
+    agg.plotPca_factors(3,on_peaks=True)
+    # disable the vector plot of peak shifts
+    agg.plotPca_factors(3,on_peaks=True,plot_shifts=False)
+    # plot peak orientation instead of peak height
+    agg.plotPca_factors(3,on_peaks=True,plot_char=5)
+    
