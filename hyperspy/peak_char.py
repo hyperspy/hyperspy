@@ -345,9 +345,12 @@ def peak_attribs_image(image, peak_width, subpixel=False,
     try:
         import cv
     except:
-        print 'Module %s:' % sys.modules[__name__]
-        print 'OpenCV is not available, the peak characterization functions will not work.'
-        return None
+        try:
+            import cv2.cv as cv
+        except:
+            print 'Module %s:' % sys.modules[__name__]
+            print 'OpenCV is not available, the peak characterization functions will not work.'
+            return None
     if target_locations is None:
         target_locations=two_dim_findpeaks(image, subpixel=subpixel,
                                          peak_width=peak_width)
@@ -443,9 +446,12 @@ def peak_attribs_stack(stack, peak_width, subpixel=True, target_locations=None,
     try:
         import cv
     except:
-        print 'Module %s:' % sys.modules[__name__]
-        print 'OpenCV is not available, the peak characterization functions will not work.'
-        return None
+        try:
+            import cv2.cv as cv
+        except:
+            print 'Module %s:' % sys.modules[__name__]
+            print 'OpenCV is not available, the peak characterization functions will not work.'
+            return None
 
     if target_locations is None:
         # get peak locations from the average image
@@ -506,9 +512,12 @@ def center_of_mass(moments):
     try:
         import cv
     except:
-        print 'Module %s:' % sys.modules[__name__]
-        print 'OpenCV is not available, the peak characterization functions will not work.'
-        return None
+        try:
+            import cv2.cv as cv
+        except:
+            print 'Module %s:' % sys.modules[__name__]
+            print 'OpenCV is not available, the peak characterization functions will not work.'
+            return None
     x = cv.GetCentralMoment(moments,1,0)/cv.GetCentralMoment(moments,0,0)
     y = cv.GetCentralMoment(moments,0,1)/cv.GetCentralMoment(moments,0,0)
     return x,y
@@ -517,9 +526,12 @@ def orientation(moments):
     try:
         import cv
     except:
-        print 'Module %s:' % sys.modules[__name__]
-        print 'OpenCV is not available, the peak characterization functions will not work.'
-        return None
+        try:
+            import cv2.cv as cv
+        except:
+            print 'Module %s:' % sys.modules[__name__]
+            print 'OpenCV is not available, the peak characterization functions will not work.'
+            return None
     mu11p = cv.GetCentralMoment(moments,1,1)/cv.GetCentralMoment(moments,0,0)
     mu02p = cv.GetCentralMoment(moments,2,0)/cv.GetCentralMoment(moments,0,0)
     mu20p = cv.GetCentralMoment(moments,0,2)/cv.GetCentralMoment(moments,0,0)
@@ -535,9 +547,12 @@ def eccentricity(moments):
     try:
         import cv
     except:
-        print 'Module %s:' % sys.modules[__name__]
-        print 'OpenCV is not available, the peak characterization functions will not work.'
-        return None
+        try:
+            import cv2.cv as cv
+        except:
+            print 'Module %s:' % sys.modules[__name__]
+            print 'OpenCV is not available, the peak characterization functions will not work.'
+            return None
     mu11p = cv.GetCentralMoment(moments,1,1)/cv.GetCentralMoment(moments,0,0)
     mu02p = cv.GetCentralMoment(moments,2,0)/cv.GetCentralMoment(moments,0,0)
     mu20p = cv.GetCentralMoment(moments,0,2)/cv.GetCentralMoment(moments,0,0)
