@@ -982,7 +982,10 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                         'units': 'factor',
                         'index_in_array': 0, })
                 s=Image({'data':factor_data,
-                         'axes':axes_dicts})
+                         'axes':axes_dicts,
+                         'mapped_parameters':{
+                            'title':'%s from %s'%(factor_prefix,self.mapped_parameters.title),
+                            }})
             elif self.axes_manager.signal_dimension==1 or on_peaks:
                 axes=[]
                 if not on_peaks:
@@ -1003,7 +1006,10 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                         'units': 'factor',
                         'index_in_array': 0, })
                 s=Spectrum({'data':factors,
-                            'axes':axes})
+                            'axes':axes,
+                            'mapped_parameters':{
+                            'title':'%s from %s'%(factor_prefix,self.mapped_parameters.title),
+                            }})
             s.save('%ss.%s' % (factor_prefix, factor_format))
         elif factor_format in spec_formats:
             if self.axes_manager.signal_dimension>1:
@@ -1077,7 +1083,10 @@ data.  Please use a different file format.')
                         'units': 'factor',
                         'index_in_array': 0, })
                 s=Image({'data':score_data,
-                         'axes':axes_dicts})
+                         'axes':axes_dicts,
+                         'mapped_parameters':{
+                            'title':'%s from %s'%(score_prefix,self.mapped_parameters.title),
+                            }})
             elif self.axes_manager.navigation_dimension==1:
                 axes=[]
                 axes.append(self.axes_manager._slicing_axes[0].get_axis_dictionary())
@@ -1089,7 +1098,11 @@ data.  Please use a different file format.')
                         'units': 'score',
                         'index_in_array': 0, })
                 s=Spectrum({'data':scores,
-                            'axes':axes})
+                            'axes':axes,
+                            'mapped_parameters':{
+                            'title':'%s from %s'%(score_prefix,self.mapped_parameters.title),
+                            }
+                            })
             s.save('%ss.%s' % (score_prefix, score_format))
         elif score_format in spec_formats:
             if self.axes_manager.navigation_dimension>1:
