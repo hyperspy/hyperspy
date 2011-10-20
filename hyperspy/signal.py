@@ -702,7 +702,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         return(copy.deepcopy(self))
 
     def _plot_factors_or_pchars(self, factors, comp_ids=None, 
-                                calibrate=True,
+                                calibrate=True, avg_char=False,
                                 same_window=True, comp_label='PC', 
                                 on_peaks=False, img_data=None,
                                 plot_shifts=True, plot_char=4, 
@@ -781,9 +781,6 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         if same_window:
             rows=int(np.ceil(n/float(per_row)))
 
-        shape=(self.axes_manager.axes[2].size, 
-               self.axes_manager.axes[1].size)
-
         fig_list=[]
 
         if n<per_row: per_row=n
@@ -814,17 +811,31 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                     ax=f.add_subplot(111)
                 if on_peaks:
                     if img_data==None:
-                        img_data=np.average(self.data,axis=0)
-                    try:
-                        shifts, char = self.get_pk_shifts_and_char(factors,
-                                             plot_shifts=plot_shifts,
-                                             plot_char=plot_char)
-                    except:
-                        messages.warning('Unable to get peak\
-data.  Are you sure the factors you are trying to use are\
-from peak characteristic data?')
+                        image=np.average(self.data,axis=0)
+                        if avg_char:
+                            shifts, char = self._get_pk_shifts_and_char(
+                                f_pc=np.average(factors,axis=1),
+                                plot_shifts=plot_shifts,
+                                plot_char=plot_char)
+                            # Break the loop and return the (one) plot
+                            plt.clf()
+                            ax=f.add_subplot(111)
+                            return sigdraw._plot_quiver_scatter_overlay(
+                                image=image,
+                                axes_manager=self.axes_manager,
+                                shifts=shifts,char=char,ax=ax,
+                                img_cmap=plt.cm.gray,
+                                sc_cmap=cmap,
+                                quiver_color=quiver_color,
+                                vector_scale=vector_scale)
+                    elif len(img_data.shape)>2:
+                        image=img_data[i]
+                    shifts, char = self._get_pk_shifts_and_char(
+                            f_pc=factors[:,comp_ids[i]],
+                            plot_shifts=plot_shifts,
+                            plot_char=plot_char)
                     sigdraw._plot_quiver_scatter_overlay(
-                        image=img_data,
+                        image=image,
                         axes_manager=self.axes_manager,
                         shifts=shifts,char=char,ax=ax,
                         img_cmap=plt.cm.gray,
@@ -926,6 +937,15 @@ from peak characteristic data?')
             messages.warning('Format %s not supported for saving.'%factor_format)
             return None
 
+        if factor_format in multidim_formats:
+            if comp_ids is not None:
+                if not hasattr(comp_ids,'__iter__'):
+                    comp_ids=range(comp_ids)
+                mask=np.zeros(factors.shape[1],dtype=np.bool)
+                for idx in comp_ids:
+                    mask[idx]=1
+                factors=factors[:,mask]
+
         if comp_ids is None:
             comp_ids=xrange(factors.shape[1])
 
@@ -971,7 +991,7 @@ from peak characteristic data?')
                     axes.append({'name': 'peak_characteristics',
                                  'scale': 1.,
                                  'offset': 0.,
-                                 'size': int(factors.shape[0]),
+                                 'size': int(factors.shape[1]),
                                  'units': 'peak_characteristics',
                                  'index_in_array': 1, })                    
 
@@ -1009,6 +1029,15 @@ data.  Please use a different file format.')
         if score_format not in multidim_formats+img_formats+spec_formats:
             messages.warning('Format %s not supported for saving.'%factor_format)
             return None
+
+        if score_format in multidim_formats:
+            if comp_ids is not None:
+                if not hasattr(comp_ids,'__iter__'):
+                    comp_ids=range(comp_ids)
+                mask=np.zeros(scores.shape[0],dtype=np.bool)
+                for idx in comp_ids:
+                    mask[idx]=1
+                scores=scores[mask]
 
         if comp_ids is None:
             comp_ids=xrange(scores.shape[0])
