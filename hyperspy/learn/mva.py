@@ -42,8 +42,8 @@ class MVA():
     def __init__(self):
         if not hasattr(self,'mva_results'):
             self.mva_results = MVA_Results()
-        if not hasattr(self,'peak_chars'):
-            self.peak_chars = None
+        if not hasattr(self.mapped_parameters,'peak_chars'):
+            self.mapped_parameters.peak_chars = None
 
     def _get_target(self, on_peaks):
         if on_peaks:
@@ -89,8 +89,8 @@ class MVA():
         """
         # backup the original data
         if on_peaks:
-            if hasattr(self,'peak_chars'):
-                self._data_before_treatments = self.peak_chars.copy()
+            if hasattr(self.mapped_parameters,'peak_chars'):
+                self._data_before_treatments = self.mapped_parameters.peak_chars.copy()
             else:
                 print """No peak characteristics found.  You must run the 
                          peak_char_stack function to obtain these before 
@@ -152,7 +152,7 @@ class MVA():
         messages.information('Performing principal components analysis')
 
         if on_peaks:
-            dc=self.peak_chars
+            dc=self.mapped_parameters.peak_chars
         else:
             # The data must be transposed both for Images and Spectra
             dc = self.data.T.squeeze()
@@ -492,7 +492,7 @@ class MVA():
     def variance2one(self, on_peaks=False):
         # Whitening
         if on_peaks:
-            d=self.peak_chars
+            d=self.mapped_parameters.peak_chars
         else:
             d=self.data
         self._std = np.std(d, 0)
@@ -501,7 +501,7 @@ class MVA():
 
     def undo_variance2one(self, on_peaks=False):
         if on_peaks:
-            d=self.peak_chars
+            d=self.mapped_parameters.peak_chars
         else:
             d=self.data
         if hasattr(self,'_std'):
@@ -668,7 +668,7 @@ class MVA():
         """Undo normalize_poissonian_noise"""
         print "Undoing data pre-treatments"
         if on_peaks:
-            self.peak_chars=self._data_before_treatments
+            self.mapped_parameters.peak_chars=self._data_before_treatments
             del self._data_before_treatments
         else:
             self.data=self._data_before_treatments

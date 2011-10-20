@@ -40,6 +40,7 @@ from types import ListType, TupleType
 from hyperspy.misc import cv_funcs
 import numpy as np
 from collections import OrderedDict
+import os
 
 """
 try:

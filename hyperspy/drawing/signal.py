@@ -53,24 +53,36 @@ def _plot_quiver_scatter_overlay(image, axes_manager,
                 axes[0].high_value,
                 axes[1].high_value,
                 axes[1].low_value)
-        locations=locations*(
-            (axes[0].high_value-axes[0].low_value)/float(
-            (axes[0].size)
-                )
-            -axes[0].low_value)
+        if shifts is not None:
+            slocs=shifts['location'].squeeze()
+            shifts=shifts['shift'].squeeze()
+            slocs[:,0]=slocs[:,0]*axes[0].scale+axes[0].offset
+            slocs[:,1]=slocs[:,1]*axes[1].scale+axes[1].offset
+            shifts[:,0]=shifts[:,0]*axes[0].scale+axes[0].offset
+            shifts[:,1]=shifts[:,1]*axes[1].scale+axes[1].offset
+        if char is not None:
+            clocs=char['location'].squeeze()
+            clocs[:,0]=clocs[:,0]*axes[0].scale+axes[0].offset
+            clocs[:,1]=clocs[:,1]*axes[1].scale+axes[1].offset
     ax.imshow(image,interpolation='nearest',
               cmap=img_cmap,extent=extent)
     if shifts <> None:
-        ax.quiver(locations[:,0],locations[:,1],
+        ax.quiver(slocs[:,0],slocs[:,1],
                   shifts[:,0], shifts[:,1],
                   units='x',color=quiver_color,
                   scale=vector_scale, scale_units='x')
     if char <> None:
-        sc=ax.scatter(locations[:,0],locations[:,1],
-                   c=char, cmap=sc_cmap)
+        sc=ax.scatter(clocs[:,0],clocs[:,1],
+                   c=char['char'], cmap=sc_cmap)
         div=make_axes_locatable(ax)
         cax=div.append_axes('right',size="5%",pad=0.05)
         plt.colorbar(sc,cax=cax)
+    if extent:
+        ax.set_xlim(extent[:2])
+        ax.set_ylim(extent[2:])
+    else:
+        ax.set_xlim(0,image.shape[0])
+        ax.set_ylim(image.shape[1],0)
     return ax
         
 def _plot_1D_component(factors, idx, axes_manager, ax=None, 
