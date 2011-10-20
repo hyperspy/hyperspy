@@ -814,11 +814,13 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                         f=plt.figure()
                     ax=f.add_subplot(111)
                 if on_peaks:
+                    cbar_label=None
                     if img_data==None:
                         image=np.average(self.data,axis=0)
                         if avg_char:
                             shifts, char = self._get_pk_shifts_and_char(
                                 f_pc=np.average(factors,axis=1),
+                                locations=self.mapped_parameters.target_locations,
                                 plot_shifts=plot_shifts,
                                 plot_char=plot_char)
                             # Break the loop and return the (one) plot
@@ -837,8 +839,15 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                         image=img_data[i]
                     shifts, char = self._get_pk_shifts_and_char(
                             f_pc=factors[:,comp_ids[i]],
+                            locations=self.mapped_parameters.target_locations,
                             plot_shifts=plot_shifts,
                             plot_char=plot_char)
+                    if plot_char==4:
+                        cbar_label='Peak Height'
+                    elif plot_char==5:
+                        cbar_label='Peak Orientation'
+                    elif plot_char==6:
+                        cbar_label='Peak Eccentricity'
                     sigdraw._plot_quiver_scatter_overlay(
                         image=image,
                         comp_label='Peak Chars for %s %i from:\n%s'%(
@@ -848,7 +857,8 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                         img_cmap=plt.cm.gray,
                         sc_cmap=cmap,
                         quiver_color=quiver_color,
-                        vector_scale=vector_scale)
+                        vector_scale=vector_scale,
+                        cbar_label=cbar_label)
                 else:
                     sigdraw._plot_2D_component(factors=factors, 
                         idx=comp_ids[i], 
@@ -857,7 +867,10 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                         cmap=cmap,comp_label=comp_label)
             if not same_window:
                 fig_list.append(f)
-        plt.tight_layout()
+        try:
+            plt.tight_layout()
+        except:
+            pass
         if not same_window:
             return fig_list
         else:
@@ -908,7 +921,10 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                                 same_window=same_window)
             if not same_window:
                 fig_list.append(f)
-        plt.tight_layout()
+        try:
+            plt.tight_layout()
+        except:
+            pass
         if not same_window:
             if with_factors:
                 return fig_list, self._plot_factors_or_pchars(factors, 

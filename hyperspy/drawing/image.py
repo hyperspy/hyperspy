@@ -196,4 +196,6 @@ def plot_image_peaks(img_data, locations, plot_ids=False, ax=None):
                      )
     else:
         ax.scatter(locations[:,0],locations[:,1])
+        ax.set_xlim(0,img_data.shape[0]-1)
+        ax.set_ylim(img_data.shape[1]-1,0)
     return ax

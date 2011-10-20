@@ -34,6 +34,7 @@ def _plot_quiver_scatter_overlay(image, axes_manager,
                                  sc_cmap=plt.cm.jet,
                                  quiver_color='white',
                                  vector_scale=100,
+                                 cbar_label=None
                                  ):
     """quiver plot notes:
        
@@ -47,6 +48,10 @@ def _plot_quiver_scatter_overlay(image, axes_manager,
     if ax==None:
         ax=plt.gca()
     axes=axes_manager._slicing_axes
+    if len(axes)<2:
+        axes=axes_manager.axes
+        if axes[0].index_in_array==0:
+            axes=axes[1],axes[0]
     extent=None
     if calibrate:
         extent=(axes[0].low_value,
@@ -54,14 +59,14 @@ def _plot_quiver_scatter_overlay(image, axes_manager,
                 axes[1].high_value,
                 axes[1].low_value)
         if shifts is not None:
-            slocs=shifts['location'].squeeze()
-            shifts=shifts['shift'].squeeze()
+            slocs=shifts['location'].squeeze().copy()
+            shifts=shifts['shift'].squeeze().copy()
             slocs[:,0]=slocs[:,0]*axes[0].scale+axes[0].offset
             slocs[:,1]=slocs[:,1]*axes[1].scale+axes[1].offset
             shifts[:,0]=shifts[:,0]*axes[0].scale+axes[0].offset
             shifts[:,1]=shifts[:,1]*axes[1].scale+axes[1].offset
         if char is not None:
-            clocs=char['location'].squeeze()
+            clocs=char['location'].squeeze().copy()
             clocs[:,0]=clocs[:,0]*axes[0].scale+axes[0].offset
             clocs[:,1]=clocs[:,1]*axes[1].scale+axes[1].offset
     ax.imshow(image,interpolation='nearest',
@@ -78,7 +83,9 @@ def _plot_quiver_scatter_overlay(image, axes_manager,
                    c=char['char'], cmap=sc_cmap)
         div=make_axes_locatable(ax)
         cax=div.append_axes('right',size="5%",pad=0.05)
-        plt.colorbar(sc,cax=cax)
+        cb=plt.colorbar(sc,cax=cax)
+        if cbar_label:
+            cb.set_label(cbar_label)
     if extent:
         ax.set_xlim(extent[:2])
         ax.set_ylim(extent[2:])
