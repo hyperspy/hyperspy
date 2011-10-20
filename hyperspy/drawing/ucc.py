@@ -500,7 +500,7 @@ class TemplatePicker(HasTraits):
             parent=self.sig
         else:
             parent=self.sig.mapped_parameters.original_files[self.titles[idx]]
-        positions=np.zeros((peaks.shape[0],1),dtype=[('filename','a256'),('id','i4'),('position','i4',(1,2))])
+        positions=np.zeros((peaks.shape[0],1),dtype=[('filename','a256'),('id','i4'),('position','f4',(1,2))])
         for i in xrange(peaks.shape[0]):
             # crop the cells from the given locations
             data[i,:,:]=self.sig.data[idx,peaks[i,1]:peaks[i,1]+tmp_sz,peaks[i,0]:peaks[i,0]+tmp_sz]

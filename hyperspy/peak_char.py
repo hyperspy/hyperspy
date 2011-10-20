@@ -471,11 +471,7 @@ def peak_attribs_stack(stack, peak_width, subpixel=True, target_locations=None,
                for j in xrange(target_locations.shape[0])])
 
     # pre-allocate result array.  7 rows for each peak, 1 column for each image
-    if imcoords:
-        # an extra 2 rows for keeping track of image coordinates
-        rlt=np.zeros((7*peak_locations.shape[0]+2,stack.shape[2]))
-    else:
-        rlt=np.zeros((7*peak_locations.shape[0],stack.shape[2]))
+    rlt=np.zeros((7*peak_locations.shape[0],stack.shape[2]))
     rlt_tmp=np.zeros((peak_locations.shape[0],5))
     for i in xrange(stack.shape[2]):
         rlt_tmp=peak_attribs_image(stack[i,:,:], 

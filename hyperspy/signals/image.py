@@ -127,12 +127,12 @@ class Image(Signal):
         locations=self.mapped_parameters.target_locations
 
         if plot_shifts:
-            shifts=np.zeros((locations.shape[0]),dtype=[('location','i4',(1,2)),
-                                                        ('shift','i4',(1,2))])
+            shifts=np.zeros((locations.shape[0]),dtype=[('location','f4',(1,2)),
+                                                        ('shift','f4',(1,2))])
         else: shifts=None
         if plot_char:
-            char=np.zeros(locations.shape[0],dtype=[('location','i4',(1,2)),
-                                                          ('char','i4')])
+            char=np.zeros(locations.shape[0],dtype=[('location','f4',(1,2)),
+                                                          ('char','f4')])
         else: char=None
 
         for pos in xrange(locations.shape[0]):
