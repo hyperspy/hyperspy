@@ -60,8 +60,8 @@ if are_we_building4windows() or os.name in ['nt','dos']:
         batch_file = os.path.splitext(script)[0] + '.bat'
         f = open(batch_file, "w")
         f.write('set path=%~dp0;%~dp0\..\;%PATH%\n')
-        if script == 'bin/hyperspy_ipython_qtconsole':
-            f.write('ipython.exe qtconsole --profile=hyperspy --pylab=wx\n')
+        if script == 'bin/hyperspy':
+            f.write('python "%%~dp0\%s" --ipython_args qtconsole %%*\n' % os.path.split(script)[1])
         elif script == 'bin/hyperspy_update':
             f.write('pip install --upgrade hyperspy\n')
         else:

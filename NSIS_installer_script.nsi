@@ -14,7 +14,7 @@
 !define S_DEFINSTDIR_ADMIN "$ProgramFiles\${APPNAME}"
 !define UNINSTALLER_FULLPATH "$InstDir\Uninstaller.exe"
 
-!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\orange-install.ico"
+!define MUI_ICON "$doc\_static\hyperspy_logo.ico"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall.ico"
 
 SetCompressor lzma
@@ -185,19 +185,19 @@ SectionIn RO
       ${registry::CreateKey} "HKEY_CLASSES_ROOT\*\shell\Hyperspy" $R0
       ${registry::Write} "HKEY_CLASSES_ROOT\*\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
       ${registry::CreateKey} "HKEY_CLASSES_ROOT\*\shell\Hyperspy\command" $R0
-      ${registry::Write} "HKEY_CLASSES_ROOT\*\shell\Hyperspy\command" "" '$INSTDIR\Scripts\ipython.exe qtconsole --profile=hyperspy --pylab=wx' "REG_EXPAND_SZ" $R0
+      ${registry::Write} "HKEY_CLASSES_ROOT\*\shell\Hyperspy\command" "" '$INSTDIR\Scripts\hyperspy.bat' "REG_EXPAND_SZ" $R0
 
       ; For folders
       ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy" $R0
       ;${registry::Write} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
       ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy\command" $R0
-      ;${registry::Write} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy\command" "" '$INSTDIR\Scripts\ipython.exe qtconsole --profile=hyperspy --pylab=wx' "REG_EXPAND_SZ" $R0
+      ;${registry::Write} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy\command" "" '$INSTDIR\Scripts\hyperspy.bat' "REG_EXPAND_SZ" $R0
 
       ; For right-clicking on directories
       ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy" $R0
       ;${registry::Write} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
       ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy\command" $R0
-      ;${registry::Write} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy\command" "" 'cmd.exe /k cd %1 & "$INSTDIR\Scripts\hyperspy_ipython_qtconsole.bat"' "REG_EXPAND_SZ" $R0
+      ;${registry::Write} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy\command" "" 'cmd.exe /k cd %1 & "$INSTDIR\Scripts\hyperspy.bat"' "REG_EXPAND_SZ" $R0
 
       ; For right-clicking on drives
       ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy" $R0
@@ -216,7 +216,6 @@ SectionIn RO
   CreateDirectory "$SMPROGRAMS\${APPNAME}"
   createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\Scripts\hyperspy.bat"
   createShortCut "$SMPROGRAMS\${APPNAME}\Update ${APPNAME}.lnk" "$INSTDIR\Scripts\hyperspy_update.bat"
-  createShortCut "$SMPROGRAMS\${APPNAME}\PyScripter.lnk" "$INSTDIR\PyScripter.exe"
   ;Write uninstall start menu shortcut
   createShortCut "$SMPROGRAMS\${APPNAME}\Uninstall ${APPNAME}.lnk" '"${UNINSTALLER_FULLPATH}"'
 SectionEnd
@@ -269,7 +268,6 @@ FunctionEnd
 Section -un.Main
   Delete "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk"
   Delete "$SMPROGRAMS\${APPNAME}\Update ${APPNAME}.lnk"
-  Delete "$SMPROGRAMS\${APPNAME}\PyScripter.lnk"
   Delete "$SMPROGRAMS\${APPNAME}\Uninstall ${APPNAME}.lnk"
   RMDir "$SMPROGRAMS\${APPNAME}"
   Delete "${UNINSTALLER_FULLPATH}"
