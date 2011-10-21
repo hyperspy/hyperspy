@@ -1420,9 +1420,9 @@ data.  Please use a different file format.')
                             per_row=per_row)
 
     def exportIca_results(self, comp_ids=None, calibrate=True,
-                          factor_prefix='pc', factor_format='rpl',
-                          score_prefix='PC_score', score_format='rpl', 
-                          comp_label='PC',cmap=plt.cm.jet,
+                          factor_prefix='ic', factor_format='rpl',
+                          score_prefix='IC_score', score_format='rpl', 
+                          comp_label='IC',cmap=plt.cm.jet,
                           same_window=False,
                           no_nans=True,per_row=3):
         """Export results from ICA to any of the supported formats.
@@ -1492,13 +1492,9 @@ data.  Please use a different file format.')
         scores=self._get_ica_scores(self.mva_results)
         self._export_factors(factors, comp_ids=comp_ids,
                              calibrate=calibrate,
-                             plot_shifts=plot_shifts,
-                             plot_char=plot_char,
-                             img_data=img_data,
                              factor_prefix=factor_prefix,
                              factor_format=factor_format,
                              comp_label=comp_label,
-                             on_peaks=on_peaks,
                              cmap=cmap,
                              no_nans=no_nans,
                              same_window=same_window,
