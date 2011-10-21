@@ -1018,12 +1018,7 @@ class DictionaryBrowser(object):
             # Mixing unicode with strings can deal to Unicode errors
             # We convert all the unicode values to strings
             if type(value) is unicode:
-                try:
-                    value = str(value)
-                except UnicodeEncodeError:
-                    value = value.encode('latin-1')
-                except UnicodeEncodeError:
-                    value = 'CannotPrint'
+                value = value.encode('utf-8')
             if type(item) != types.MethodType:
                 if isinstance(value, DictionaryBrowser):
                     if j == eoi - 1:
