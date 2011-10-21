@@ -282,7 +282,7 @@ if(data_type_value=="signed"){
         img := IntegerImage(imagename, pixel_size, 1, size_x, size_y, size_z)
         }
         else{
-        img := IntegerImage(imagename, pixel_size, 1, size_z, size_x)
+        img := IntegerImage(imagename, pixel_size, 1, size_x, size_y)
         }
         }
 
@@ -291,7 +291,7 @@ if(data_type_value=="float") {
         img := RealImage(imagename, pixel_size, size_x, size_y, size_z)
         }
         else {
-        img := RealImage(imagename, pixel_size, size_z, size_x)
+        img := RealImage(imagename, pixel_size, size_x, size_y)
         }
         }
 
@@ -300,7 +300,7 @@ if(data_type_value=="unsigned") {
         img := IntegerImage(imagename, pixel_size, 0, size_x, size_y, size_z)
         }
         else {
-        img := IntegerImage(imagename, pixel_size, 0, size_z, size_x)
+        img := IntegerImage(imagename, pixel_size, 0, size_x, size_y)
         }
         }
 //if data-type was not given or recognized
@@ -311,7 +311,7 @@ result(" Unrecognized data-type value. Data-type formats are: signed, unsigned a
         img := RealImage(imagename, pixel_size, size_x, size_y, size_z)
         }
         else {
-        img := RealImage(imagename, pixel_size, size_z, size_x)
+        img := RealImage(imagename, pixel_size, size_x, size_y)
         }
 }
 
@@ -338,7 +338,7 @@ if(size_z>1)
 {
 	img.ImageSetDimensionOrigin(2, origin_z )  
 	img.ImageSetDimensionScale( 2, scale_z )  
-	img.ImageSetDimensionUnitString(2, units_z )  
+	img.ImageSetDimensionUnitString(2, units_z )   
 }
 
 }
@@ -352,7 +352,7 @@ if (units_x=="eV" || units_y=="eV" || units_z=="eV") {
 
 img.ShowImage()
 
-if(size_x==1) //if the data is a collection of spectra, display in raster mode
+//if(size_x==1) //if the data is a collection of spectra, display in raster mode
 //setDisplayType(img,4)
 
 UpdateImage (Img)

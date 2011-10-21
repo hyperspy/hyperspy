@@ -997,6 +997,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             plt.ion()
         elif factor_format in multidim_formats:
             if self.axes_manager.signal_dimension==2 and not on_peaks:
+                # factor images
                 axes_dicts=[]
                 axes=self.axes_manager._slicing_axes
                 shape=(axes[1].size,axes[0].size)
@@ -1117,16 +1118,17 @@ data.  Please use a different file format.')
                             'title':'%s from %s'%(score_prefix,self.mapped_parameters.title),
                             }})
             elif self.axes_manager.navigation_dimension==1:
+                cal_axis=self.axes_manager._non_slicing_axes[0].get_axis_dictionary()
+                cal_axis['index_in_array']=1
                 axes=[]
-                axes.append(self.axes_manager._slicing_axes[0].get_axis_dictionary())
-                axes[0]['index_in_array']=1
                 axes.append({'name': 'score_index',
                         'scale': 1.,
                         'offset': 0.,
                         'size': int(scores.shape[0]),
-                        'units': 'score',
+                        'units': 'comp_id',
                         'index_in_array': 0, })
-                s=Spectrum({'data':scores,
+                axes.append(cal_axis)
+                s=Image({'data':scores,
                             'axes':axes,
                             'mapped_parameters':{
                             'title':'%s from %s'%(score_prefix,self.mapped_parameters.title),
