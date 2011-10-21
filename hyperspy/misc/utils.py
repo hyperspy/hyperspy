@@ -1007,18 +1007,7 @@ class DictionaryBrowser(object):
                     value=Signal(value)
                 else:
                     value = DictionaryBrowser(value)
-            # We convert all the strings to unicode
-            # In the case that the encoding is not ASCII we try with
-            # latin-1
-            if isinstance(value, str):
-                try:
-                    value = unicode(value)
-                except:
-                    value = value.decode('latin-1')
-            try:
-                self.__setattr__(key, value)
-            except:
-                messages.warning('Failed to load key %s'%key)
+            self.__setattr__(key, value)
 
     def _get_print_items(self, padding = '', max_len=20):
         """Prints only the attributes that are not methods"""
@@ -1026,6 +1015,15 @@ class DictionaryBrowser(object):
         eoi = len(self.__dict__)
         j = 0
         for item, value in self.__dict__.iteritems():
+            # Mixing unicode with strings can deal to Unicode errors
+            # We convert all the unicode values to strings
+            if type(value) is unicode:
+                try:
+                    value = str(value)
+                except UnicodeEncodeError:
+                    value = value.encode('latin-1')
+                except UnicodeEncodeError:
+                    value = 'CannotPrint'
             if type(item) != types.MethodType:
                 if isinstance(value, DictionaryBrowser):
                     if j == eoi - 1:
