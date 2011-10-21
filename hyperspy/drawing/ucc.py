@@ -500,6 +500,7 @@ class TemplatePicker(HasTraits):
             parent=self.sig
         else:
             parent=self.sig.mapped_parameters.original_files[self.titles[idx]]
+        pmp=parent.mapped_parameters
         positions=np.zeros((peaks.shape[0],1),dtype=[('filename','a256'),('id','i4'),('position','f4',(1,2))])
         for i in xrange(peaks.shape[0]):
             # crop the cells from the given locations
@@ -510,18 +511,9 @@ class TemplatePicker(HasTraits):
                                'title':'Cropped cells from %s'%self.titles[idx],
                                'record_by':'image',
                                'locations':positions,
-                               'parent':parent,
+                               'original_files':{pmp.title:parent},
                                }
                             })
             
         return crop_sig
 
-if __name__=="__main__":
-    import sys
-    from hyperspy.hspy import *
-    sig=load("005nm_0.7500_frac.png")
-    #if sys.flags.interactive !=1:
-    #    app.exec_()
-    #pyqt_template_picker(sig)
-    
-    TemplatePicker(sig)

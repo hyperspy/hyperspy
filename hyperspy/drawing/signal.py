@@ -51,13 +51,13 @@ def _plot_quiver_scatter_overlay(image, axes_manager,
     if len(axes)<2:
         axes=axes_manager.axes
         if axes[0].index_in_array==0:
-            axes=axes[1],axes[0]
+            axes=axes[0],axes[1]
     extent=None
     if calibrate:
-        extent=(axes[0].low_value,
-                axes[0].high_value,
+        extent=(axes[1].low_value,
                 axes[1].high_value,
-                axes[1].low_value)
+                axes[0].high_value,
+                axes[0].low_value)
         if shifts is not None:
             slocs=shifts['location'].squeeze().copy()
             shifts=shifts['shift'].squeeze().copy()

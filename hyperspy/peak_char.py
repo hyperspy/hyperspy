@@ -252,7 +252,7 @@ def two_dim_findpeaks(arr,subpixel=False,peak_width=10,medfilt_radius=5,maxpeakn
 
 def subpix_locate(data,points,peak_width,scale=None):
     from scipy.ndimage.measurements import center_of_mass as CofM
-    top=left=peak_width/2
+    top=left=peak_width/2+1
     centers=np.array(points,dtype=np.float32)
     for i in xrange(points.shape[0]):
         pt=points[i]
@@ -362,17 +362,17 @@ def peak_attribs_image(image, peak_width, subpixel=False,
     roi=np.zeros((peak_width,peak_width))
     for loc in xrange(target_locations.shape[0]):
         c=target_locations[loc]
-        bxmin=c[0]-r
-        bymin=c[1]-r
-        bxmax=c[0]+r
-        bymax=c[1]+r
+        bxmin=c[1]-r
+        bymin=c[0]-r
+        bxmax=c[1]+r
+        bymax=c[0]+r
         if bxmin<0: bxmin=0; bxmax=peak_width
         if bymin<0: bymin=0; bymax=peak_width
         if bxmax>imsize: bxmax=imsize; bxmin=imsize-peak_width
         if bymax>imsize: bymax=imsize; bymin=imsize-peak_width
-        roi[:,:]=image[bxmin:bxmax,bymin:bymax]
+        roi[:,:]=image[bymin:bymax,bxmin:bxmax]
         ms=cv.Moments(cv.fromarray(roi))
-        height=image[c[0],c[1]]
+        height=image[c[1],c[0]]
         orient=orientation(ms)
         ecc=eccentricity(ms)
         rlt[loc,:2]=c[:2]

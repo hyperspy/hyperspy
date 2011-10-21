@@ -495,10 +495,11 @@ class AggregateCells(Aggregate,Image):
         smp=self.mapped_parameters
         #object parameters
         mp=arg.mapped_parameters
-        pmp=mp.parent.mapped_parameters
+        p=mp.original_files.keys()[0]
+        pmp=mp.original_files[p].mapped_parameters
                 
         if pmp.original_filename not in list(set(smp.locations['filename'].squeeze())):
-            smp.original_files[pmp.title]=mp.parent
+            smp.original_files[pmp.title]=mp.original_files[p]
             # add the data to the aggregate array
             if self.data==None:
                 smp.record_by=mp.record_by
