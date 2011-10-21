@@ -33,7 +33,7 @@ def _plot_quiver_scatter_overlay(image, axes_manager,
                                  img_cmap=plt.cm.gray,
                                  sc_cmap=plt.cm.jet,
                                  quiver_color='white',
-                                 vector_scale=100,
+                                 vector_scale=1,
                                  cbar_label=None
                                  ):
     """quiver plot notes:
