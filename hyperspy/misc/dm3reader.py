@@ -333,7 +333,7 @@ def readStringData(stringSize):
 			
 		## !!! *Unicode* string... convert to latin-1 string
 		rString = readString(f, stringSize)
-		rString = unicode(rString, "utf_16_le").encode("latin1", "replace")
+		rString = unicode(rString, "utf_16_le").encode("utf-8")
 
 		if ( debugLevel > 3 ):
 			print rString + "   <"  + repr( rString ) + ">"
