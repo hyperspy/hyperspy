@@ -505,6 +505,8 @@ class Image(Signal):
                           factor_prefix='pc', factor_format='rpl',
                           score_prefix='PC_score', score_format='rpl', 
                           on_peaks=False,
+                          quiver_color='white',
+                          vector_scale=1,
                           calibrate=True, same_window=False,
                           comp_label='PC',cmap=plt.cm.jet,
                           no_nans=True,per_row=3,
@@ -610,6 +612,8 @@ class Image(Signal):
                              factor_format=factor_format,
                              comp_label=comp_label,
                              on_peaks=on_peaks,
+                             quiver_color=quiver_color,
+                             vector_scale=vector_scale,
                              cmap=cmap,
                              no_nans=no_nans,
                              same_window=same_window,
@@ -632,6 +636,7 @@ class Image(Signal):
                           comp_label='IC',cmap=plt.cm.jet,
                           no_nans=True,per_row=3,
                           plot_shifts=True, 
+                          quiver_color='white',vector_scale=1,
                           plot_char=None, img_data=None):
         """Export results from ICA to any of the supported formats.
 
@@ -733,6 +738,8 @@ class Image(Signal):
                              factor_format=factor_format,
                              comp_label=comp_label,
                              on_peaks=on_peaks,
+                             quiver_color=quiver_color,
+                             vector_scale=vector_scale,
                              cmap=cmap,
                              no_nans=no_nans,
                              same_window=same_window,
@@ -1236,7 +1243,6 @@ Nothing to plot.  Try again.""")
                                      quiver_color=quiver_color,
                                      vector_scale=vector_scale,
                                      per_row=per_row)
-
 
 #=============================================================================
         

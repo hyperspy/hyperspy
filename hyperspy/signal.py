@@ -958,6 +958,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                         on_peaks=False, plot_shifts=True,
                         plot_char=4,img_data=None,
                         same_window=False,calibrate=True,
+                        quiver_color='white',vector_scale=1,
                         no_nans=True,per_row=3):
 
         from hyperspy.signals.image import Image
@@ -988,7 +989,8 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                                 same_window=same_window, comp_label=comp_label, 
                                 on_peaks=on_peaks, img_data=img_data,
                                 plot_shifts=plot_shifts, plot_char=plot_char, 
-                                cmap=cmap, per_row=per_row)
+                                cmap=cmap, per_row=per_row,quiver_color=quiver_color,
+                                vector_scale=vector_scale)
             for idx in xrange(len(comp_ids)):
                 fac_plots[idx].savefig('%s_%02i.%s'%(factor_prefix,
                                                   comp_ids[idx],
