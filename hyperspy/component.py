@@ -157,12 +157,13 @@ class Parameter(object):
         self.map['is_set'][mask == False] = True
         
     def create_array(self, shape):
-        if self.map is None  or self.map.shape != shape:
-            self.map = np.zeros(shape, 
-            dtype = [
+        dtype_ = np.dtype([
             ('values','float', self._number_of_elements), 
             ('std', 'float', self._number_of_elements), 
             ('is_set', 'bool', 1)])
+        if self.map is None  or self.map.shape != shape or \
+        self.map.dtype != dtype_:
+            self.map = np.zeros(shape, dtype_)       
             self.map['std'][:] = np.nan
                     
 class Component(object):
