@@ -1540,8 +1540,8 @@ data.  Please use a different file format.')
             same window)
         
         """
-        messages.warning('Deprecation notice: the plot_principal_components\
-function has been replaced by the plotPca_factors function.  The new function\
+        messages.warning('Deprecation notice: the plot_principal_components \
+function has been replaced by the plotPca_factors function.  The new function \
 especially offers more options for image stacks.')
         factors=self.mva_results.pc
         return self._plot_factors_or_pchars(factors, 
@@ -1570,8 +1570,8 @@ especially offers more options for image stacks.')
             same window)
         
         """
-        messages.warning('Deprecation notice: the plot_independent_components\
-function has been replaced by the plotIca_factors function.  The new function\
+        messages.warning('Deprecation notice: the plot_independent_components \
+function has been replaced by the plotIca_factors function.  The new function \
 especially offers more options for image stacks.')
         factors=self.mva_results.ic
         return self._plot_factors_or_pchars(factors, 
@@ -1581,8 +1581,9 @@ especially offers more options for image stacks.')
                                             comp_label=comp_label)
 
     def plot_principal_components_maps(self, comp_ids=None, calibrate=True,
-                                       cmap=plt.cm.gray, no_nans=False, savefig=False, 
-                                       comp_label='PCA',directory = None):
+                                       cmap=plt.cm.gray, no_nans=False, 
+                                       same_window=True,per_row=3,
+                                       comp_label='PC',with_factors=True):
         """Plot the map associated to each principal component
 
         Parameters
@@ -1630,14 +1631,22 @@ especially offers more options for image stacks.')
            Figures of scores, the second being a list of matplotlib
            Figures of factors
         """
-        return self.plotPca_scores(self, comp_ids=None, calibrate=True,
-                       same_window=True, comp_label=comp_label, 
-                       with_factors=True, cmap=plt.cm.jet, 
-                       no_nans=True,per_row=3)
+        messages.warning('Deprecation notice: the plot_principal_components_maps \
+function has been replaced by the plotPca_scores function.  The new function \
+especially offers more options for image stacks.')
+        scores=self.mva_results.v.T
+        if with_factors:
+            factors=self.mva_results.pc
+        else: factors=None
+        return self._plot_scores(scores, comp_ids=comp_ids, 
+                                 with_factors=with_factors, factors=factors,
+                                 same_window=same_window, comp_label=comp_label,
+                                 cmap=cmap, no_nans=no_nans,per_row=per_row)
 
     def plot_independent_components_maps(self, comp_ids=None, calibrate=True,
-                                       cmap=plt.cm.gray, no_nans=False, savefig=False, 
-                                       comp_label='ICA',directory = None):
+                                         cmap=plt.cm.gray, no_nans=False, 
+                                         comp_label='IC',with_factors=True,
+                                         same_window=True,per_row=3):
         """Plot the map associated to each independent component
 
         Parameters
@@ -1685,10 +1694,17 @@ especially offers more options for image stacks.')
            Figures of scores, the second being a list of matplotlib
            Figures of factors
         """
-        return self.plotIca_scores(self, comp_ids=comp_ids, calibrate=True,
-                       same_window=same_window, comp_label=comp_label, 
-                       with_factors=True, cmap=cmap, 
-                       no_nans=no_nans,per_row=per_row)
+        scores=self._get_ica_scores(self.mva_results)
+        if with_factors:
+            factors=self.mva_results.ic
+        else: factors=None
+        messages.warning('Deprecation notice: the plot_independent_components_maps \
+function has been replaced by the plotIca_scores function.  The new function \
+especially offers more options for image stacks.')
+        return self._plot_scores(scores, comp_ids=comp_ids, 
+                                 with_factors=with_factors, factors=factors,
+                                 same_window=same_window, comp_label=comp_label,
+                                 cmap=cmap, no_nans=no_nans,per_row=per_row)
 
     def save_principal_components(self, n, pc_prefix = 'pc',
                                   score_prefix = 'score', 
@@ -1711,8 +1727,8 @@ especially offers more options for image stacks.')
             Any of Hyperspy's supported file formats for hyperspectral data
             
         """
-        messages.warning('Deprecation notice: the save_principal_components\
-function has been replaced by the exportPca_results function.  The new function\
+        messages.warning('Deprecation notice: the save_principal_components \
+function has been replaced by the exportPca_results function.  The new function \
 especially offers more options for image stacks.')
         self.exportPca_results(comp_ids=n, calibrate=True,
                           factor_prefix=pc_prefix, factor_format=spectrum_format,
@@ -1741,8 +1757,8 @@ especially offers more options for image stacks.')
         hs_format : string
             Any of Hyperspy's supported file formats for hyperspectral data
         """
-        messages.warning('Deprecation notice: the save_independent_components\
-function has been replaced by the exportIca_results function.  The new function\
+        messages.warning('Deprecation notice: the save_independent_components \
+function has been replaced by the exportIca_results function.  The new function \
 especially offers more options for image stacks.')
         self.exportIca_results(comp_ids=None, calibrate=True,
                           factor_prefix=ic_prefix, factor_format=spectrum_format,
