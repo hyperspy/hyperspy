@@ -1151,7 +1151,7 @@ data.  Please use a different file format.')
                     s.save('%s-%i.%s' % (score_prefix, dim, score_format))
 
     # =============================================================
-    def plotPca_factors(self,comp_ids=None, calibrate=True,
+    def plot_pca_factors(self,comp_ids=None, calibrate=True,
                         same_window=True, comp_label='PC', 
                         per_row=3):
         """Plot components from PCA
@@ -1190,7 +1190,7 @@ data.  Please use a different file format.')
                                             comp_label=comp_label, 
                                             per_row=per_row)
 
-    def plotIca_factors(self,comp_ids=None, calibrate=True,
+    def plot_ica_factors(self,comp_ids=None, calibrate=True,
                         same_window=True, comp_label='IC',
                         per_row=3):
         """Plot components from ICA
@@ -1229,7 +1229,7 @@ data.  Please use a different file format.')
                                             comp_label=comp_label, 
                                             per_row=per_row)
 
-    def plotPca_scores(self, comp_ids=None, calibrate=True,
+    def plot_pca_scores(self, comp_ids=None, calibrate=True,
                        same_window=True, comp_label='PC', 
                        with_factors=False, cmap=plt.cm.jet, 
                        no_nans=True,per_row=3):
@@ -1280,7 +1280,7 @@ data.  Please use a different file format.')
                                  same_window=same_window, comp_label=comp_label,
                                  cmap=cmap, no_nans=no_nans,per_row=per_row)
 
-    def plotIca_scores(self, comp_ids=None, calibrate=True,
+    def plot_ica_scores(self, comp_ids=None, calibrate=True,
                        same_window=True, comp_label='IC', 
                        with_factors=False, cmap=plt.cm.jet, 
                        no_nans=True,per_row=3):
@@ -1331,7 +1331,7 @@ data.  Please use a different file format.')
                                  same_window=same_window, comp_label=comp_label,
                                  cmap=cmap, no_nans=no_nans,per_row=per_row)
 
-    def exportPca_results(self, comp_ids=None, calibrate=True,
+    def export_pca_results(self, comp_ids=None, calibrate=True,
                           factor_prefix='pc', factor_format='rpl',
                           score_prefix='PC_score', score_format='rpl', 
                           comp_label='PC',cmap=plt.cm.jet,
@@ -1421,7 +1421,7 @@ data.  Please use a different file format.')
                             no_nans=no_nans,
                             per_row=per_row)
 
-    def exportIca_results(self, comp_ids=None, calibrate=True,
+    def export_ica_results(self, comp_ids=None, calibrate=True,
                           factor_prefix='ic', factor_format='rpl',
                           score_prefix='IC_score', score_format='rpl', 
                           comp_label='IC',cmap=plt.cm.jet,
@@ -1539,7 +1539,7 @@ data.  Please use a different file format.')
         
         """
         messages.warning('Deprecation notice: the plot_principal_components \
-function has been replaced by the plotPca_factors function.  The new function \
+function has been replaced by the plot_pca_factors function.  The new function \
 especially offers more options for image stacks.')
         factors=self.mva_results.pc
         return self._plot_factors_or_pchars(factors, 
@@ -1569,7 +1569,7 @@ especially offers more options for image stacks.')
         
         """
         messages.warning('Deprecation notice: the plot_independent_components \
-function has been replaced by the plotIca_factors function.  The new function \
+function has been replaced by the plot_ica_factors function.  The new function \
 especially offers more options for image stacks.')
         factors=self.mva_results.ic
         return self._plot_factors_or_pchars(factors, 
@@ -1630,7 +1630,7 @@ especially offers more options for image stacks.')
            Figures of factors
         """
         messages.warning('Deprecation notice: the plot_principal_components_maps \
-function has been replaced by the plotPca_scores function.  The new function \
+function has been replaced by the plot_pca_scores function.  The new function \
 especially offers more options for image stacks.')
         scores=self.mva_results.v.T
         if with_factors:
@@ -1697,7 +1697,7 @@ especially offers more options for image stacks.')
             factors=self.mva_results.ic
         else: factors=None
         messages.warning('Deprecation notice: the plot_independent_components_maps \
-function has been replaced by the plotIca_scores function.  The new function \
+function has been replaced by the plot_ica_scores function.  The new function \
 especially offers more options for image stacks.')
         return self._plot_scores(scores, comp_ids=comp_ids, 
                                  with_factors=with_factors, factors=factors,
@@ -1726,9 +1726,9 @@ especially offers more options for image stacks.')
             
         """
         messages.warning('Deprecation notice: the save_principal_components \
-function has been replaced by the exportPca_results function.  The new function \
+function has been replaced by the export_pca_results function.  The new function \
 especially offers more options for image stacks.')
-        self.exportPca_results(comp_ids=n, calibrate=True,
+        self.export_pca_results(comp_ids=n, calibrate=True,
                           factor_prefix=pc_prefix, factor_format=spectrum_format,
                           score_prefix=score_prefix, score_format=hs_format, 
                           comp_label='PC',cmap=plt.cm.jet,
@@ -1756,9 +1756,9 @@ especially offers more options for image stacks.')
             Any of Hyperspy's supported file formats for hyperspectral data
         """
         messages.warning('Deprecation notice: the save_independent_components \
-function has been replaced by the exportIca_results function.  The new function \
+function has been replaced by the export_ica_results function.  The new function \
 especially offers more options for image stacks.')
-        self.exportIca_results(comp_ids=None, calibrate=True,
+        self.export_ica_results(comp_ids=None, calibrate=True,
                           factor_prefix=ic_prefix, factor_format=spectrum_format,
                           score_prefix=score_prefix, score_format=hs_format, 
                           comp_label='IC',cmap=plt.cm.jet,

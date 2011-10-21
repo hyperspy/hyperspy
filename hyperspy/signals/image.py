@@ -251,7 +251,7 @@ class Image(Signal):
         else:
             return fig_list
 
-    def plotPca_factors(self, comp_ids=None, calibrate=True,
+    def plot_pca_factors(self, comp_ids=None, calibrate=True,
                         same_window=True, comp_label='PC', 
                         on_peaks=False, img_data=None,
                         plot_shifts=True, plot_char=None, 
@@ -318,7 +318,7 @@ class Image(Signal):
                                 plot_shifts=plot_shifts, plot_char=plot_char, 
                                 cmap=cmap, per_row=per_row)
 
-    def plotIca_factors(self,comp_ids=None, calibrate=True,
+    def plot_ica_factors(self,comp_ids=None, calibrate=True,
                         same_window=True, comp_label='IC', 
                         on_peaks=False, img_data=None,
                         plot_shifts=True, plot_char=None, 
@@ -385,7 +385,7 @@ class Image(Signal):
                                 plot_shifts=plot_shifts, plot_char=plot_char, 
                                 cmap=cmap, per_row=per_row)
 
-    def plotPca_scores(self, comp_ids=None, calibrate=True,
+    def plot_pca_scores(self, comp_ids=None, calibrate=True,
                        same_window=True, comp_label='PC', 
                        with_factors=False,
                        on_peaks=False, cmap=plt.cm.jet, 
@@ -443,7 +443,7 @@ class Image(Signal):
                                  on_peaks=on_peaks, cmap=cmap,
                                  no_nans=no_nans,per_row=per_row)
 
-    def plotIca_scores(self, comp_ids=None, calibrate=True,
+    def plot_ica_scores(self, comp_ids=None, calibrate=True,
                        same_window=True, comp_label='IC', 
                        with_factors=False,
                        on_peaks=False, cmap=plt.cm.jet, 
@@ -1047,7 +1047,7 @@ Nothing to plot.  Try again.""")
                                  quiver_color=quiver_color,
                                  vector_scale=vector_scale)
 
-    def plotIca_peak_factors(self, comp_ids=None, calibrate=True,
+    def plot_ica_peak_factors(self, comp_ids=None, calibrate=True,
                         same_window=True, comp_label='IC', 
                         img_data=None,
                         plot_shifts=True, plot_char=None, 
@@ -1112,7 +1112,7 @@ Nothing to plot.  Try again.""")
                                      vector_scale=vector_scale,
                                      per_row=per_row)
 
-    def plotPca_peak_factors(self, comp_ids=None, calibrate=True,
+    def plot_pca_peak_factors(self, comp_ids=None, calibrate=True,
                         same_window=True, comp_label='PC', 
                         img_data=None,
                         plot_shifts=True, plot_char=None, 
@@ -1178,7 +1178,7 @@ Nothing to plot.  Try again.""")
                                      vector_scale=vector_scale,
                                      per_row=per_row)
 
-    def plotIca_peak_factors(self, comp_ids=None, calibrate=True,
+    def plot_ica_peak_factors(self, comp_ids=None, calibrate=True,
                         same_window=True, comp_label='IC', 
                         img_data=None,
                         plot_shifts=True, plot_char=None, 
