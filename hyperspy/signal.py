@@ -783,6 +783,15 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         if same_window:
             rows=int(np.ceil(n/float(per_row)))
 
+        if plot_char==4:
+            cbar_label='Peak Height'
+        elif plot_char==5:
+            cbar_label='Peak Orientation'
+        elif plot_char==6:
+            cbar_label='Peak Eccentricity'
+        else:
+            cbar_label=None
+
         fig_list=[]
 
         if n<per_row: per_row=n
@@ -814,7 +823,6 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                         f=plt.figure()
                     ax=f.add_subplot(111)
                 if on_peaks:
-                    cbar_label=None
                     if img_data==None:
                         image=np.average(self.data,axis=0)
                         if avg_char:
@@ -834,20 +842,16 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                                 sc_cmap=cmap, 
                                 comp_label='Avg Peak Chars for:\n%s'%self.mapped_parameters.title,
                                 quiver_color=quiver_color,
-                                vector_scale=vector_scale)
+                                vector_scale=vector_scale,
+                                cbar_label=cbar_label)
                     elif len(img_data.shape)>2:
                         image=img_data[i]
                     shifts, char = self._get_pk_shifts_and_char(
-                            f_pc=factors[:,comp_ids[i]],
+                            f_pc=factors,
                             locations=self.mapped_parameters.target_locations,
                             plot_shifts=plot_shifts,
-                            plot_char=plot_char)
-                    if plot_char==4:
-                        cbar_label='Peak Height'
-                    elif plot_char==5:
-                        cbar_label='Peak Orientation'
-                    elif plot_char==6:
-                        cbar_label='Peak Eccentricity'
+                            plot_char=plot_char,
+                            comp_id=comp_ids[i])
                     sigdraw._plot_quiver_scatter_overlay(
                         image=image,
                         comp_label='Peak Chars for %s %i from:\n%s'%(

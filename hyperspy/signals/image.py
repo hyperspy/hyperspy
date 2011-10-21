@@ -117,40 +117,57 @@ class Image(Signal):
         """
         pass
 
-    def _get_pk_shifts_and_char(self,f_pc,locations,plot_shifts=False,plot_char=4,peak_id=None):
+    def _get_pk_shifts_and_char(self,f_pc,locations,plot_shifts=False,plot_char=4,
+                                peak_id=None, comp_id=None):
         if plot_shifts:
-            shifts=self._get_pk_shifts(f_pc,locations,peak_id=peak_id)
+            shifts=self._get_pk_shifts(f_pc,locations,peak_id=peak_id,comp_id=comp_id)
         else: shifts=None
-        if plot_char:
-            char=self._get_pk_char(f_pc, locations, plot_char=plot_char,peak_id=peak_id)
+        if plot_char <> None:
+            char=self._get_pk_char(f_pc, locations, plot_char=plot_char, peak_id=peak_id,comp_id=comp_id)
         else: char=None
 
         return shifts, char
 
-    def _get_pk_shifts(self,f_pc,locations,peak_id=None):
+    def _get_pk_shifts(self,f_pc,locations,peak_id=None,comp_id=None):
         shifts=np.zeros((locations.shape[0]),dtype=[('location','f4',(1,2)),
                                                         ('shift','f4',(1,2))])
         if peak_id<>None:
             for pos in xrange(locations.shape[0]):
                 shifts[pos]=(locations[pos,:2],
-                           f_pc[peak_id*7+2:pos*7+4,pos])
-        else:
+                           f_pc[peak_id*7+2:peak_id*7+4,pos])
+        elif comp_id<>None:
             for pos in xrange(locations.shape[0]):
                 shifts[pos]=(locations[pos,:2],
-                             f_pc[pos*7+2:pos*7+4])
+                             f_pc[pos*7+2:pos*7+4,comp_id])
+        elif len(f_pc.shape)==1:
+            for pos in xrange(locations.shape[0]):
+                shifts[pos]=(locations[pos,:2],
+                           f_pc[pos*7+2:pos*7+4])
+        else: shifts=None
         return shifts
 
-    def _get_pk_char(self,f_pc, locations, peak_id=None, plot_char=None, comp_id=None):
+    def _get_pk_char(self,f_pc, locations, plot_char, peak_id=None, comp_id=None):
         char=np.zeros(locations.shape[0],dtype=[('location','f4',(1,2)),
                                                 ('char','f4')])
         if peak_id<>None and plot_char<>None:
+            # locations here is the image locations, i.e. locations of the crops.
             for pos in xrange(locations.shape[0]):
                 char[pos]=(locations[pos,:2],
                            f_pc[peak_id*7+plot_char,pos])
+        
+        elif comp_id<>None and plot_char<>None:
+            # locations is the target locations here, i.e. locations of peaks on cells.
+            for pos in xrange(locations.shape[0]):
+                char[pos]=(locations[pos,:2],
+                           f_pc[pos*7+plot_char,comp_id])
         elif comp_id<>None:
             for pos in xrange(locations.shape[0]):
                 char[pos]=(locations[pos,:2],
-                           f_pc[comp_id,pos])
+                           f_pc[comp_id,pos])            
+        elif len(f_pc.shape)==1 and plot_char<>None:
+            for pos in xrange(locations.shape[0]):
+                char[pos]=(locations[pos,:2],
+                           f_pc[pos*7+plot_char])
         else: char=None
         return char
 
@@ -166,7 +183,7 @@ class Image(Signal):
                      same_window=True, comp_label=None, 
                      with_factors=False, factors=None,
                      cmap=plt.cm.jet, no_nans=True, per_row=3,
-                     quiver_color='white',vector_scale=100):
+                     quiver_color='white',vector_scale=1):
         if not hasattr(self.mapped_parameters,'locations'):
             return self._plot_scores(s_pc, comp_ids=comp_ids, 
                                      calibrate=calibrate,
@@ -182,6 +199,10 @@ class Image(Signal):
             peak_or_comp = 'peak'
         else:
             peak_or_comp = 'comp'
+        
+        if peak_ids is None and plot_char<>None:
+            messages.warning('plot_char specified without peak_ids.  Must specify which peak to plot characteristics for.  Use the plot_image_peaks method to figure out which one.')
+            return None
 
         if peak_or_comp=='comp':
             if comp_ids is None:
@@ -206,7 +227,8 @@ class Image(Signal):
                            plot_shifts=plot_shifts,per_row=per_row,
                            sc_cmap=cmap,
                            quiver_color=quiver_color,
-                           vector_scale=vector_scale, comp_label=comp_label))
+                           vector_scale=vector_scale, 
+                           comp_label=comp_label))
             else:
                 fig_list.append(self._plot_image_overlay(s_pc, plot_component=ids[i],
                            peak_id=None, plot_char=plot_char, 
@@ -776,7 +798,7 @@ class Image(Signal):
                            plot_shifts=False,calibrate=True,
                             img_cmap=plt.cm.gray,
                             sc_cmap=plt.cm.jet,
-                            quiver_color='white',vector_scale=100,
+                            quiver_color='white',vector_scale=1,
                             per_row=3,same_window=True,
                             comp_label=None):
         """Overlays scores or some peak characteristic on top of an image
@@ -844,6 +866,10 @@ Nothing to plot.  Try again.""")
             image=smp.original_files[keys[i]].data
             axes_manager=smp.original_files[keys[i]].axes_manager
             cbar_label=None
+            if peak_id<>None:
+                # add the offset for the desired peak so that it lies on top of the peak in the image.
+                pk_loc=smp.peak_chars[:,mask][7*peak_id:7*peak_id+2].T
+                locs=locs+pk_loc
             if plot_char<>None:
                 char=self._get_pk_char(f_pc[:,mask], locations=locs, plot_char=plot_char, peak_id=peak_id)
                 id_label=peak_id
@@ -854,7 +880,7 @@ Nothing to plot.  Try again.""")
                 elif plot_char==6:
                     cbar_label='Peak Eccentricity'
             elif plot_component<>None:
-                char=self._get_pk_char(f_pc[:,mask], locations=locs, comp_id=plot_component)
+                char=self._get_pk_char(f_pc[:,mask], locations=locs, plot_char=plot_char, comp_id=plot_component)
                 id_label=plot_component
                 cbar_label='Score'
             else: char=None
@@ -883,9 +909,9 @@ Nothing to plot.  Try again.""")
         return flist
 
     def plot_peak_overlay_cell(self, img_ids=None, calibrate=True,
-                        same_window=True, comp_label='Peak Char - img', 
+                        same_window=True, comp_label='img', 
                         plot_shifts=True, plot_char=None, quiver_color='white',
-                        vector_scale=100,
+                        vector_scale=1,
                         cmap=plt.cm.jet, per_row=3):
         """Overlays peak characteristics on an image plot of the average image.
 
@@ -957,7 +983,7 @@ Nothing to plot.  Try again.""")
                                 plot_shifts=False, plot_char=None,
                                 same_window=True, comp_label=None, 
                                 cmap=plt.cm.jet, no_nans=True, per_row=3,
-                                quiver_color='white',vector_scale=100):
+                                quiver_color='white',vector_scale=1):
 
         """Overlays peak characteristics on an image plot.
         
@@ -1083,7 +1109,7 @@ Nothing to plot.  Try again.""")
                         same_window=True, comp_label='PC', 
                         img_data=None,
                         plot_shifts=True, plot_char=None, 
-                        quiver_color='white',vector_scale=100,
+                        quiver_color='white',vector_scale=1,
                         cmap=plt.cm.jet, per_row=3):
         """Overlays PCA-derived peak characteristics on an image plot.
 
@@ -1149,7 +1175,7 @@ Nothing to plot.  Try again.""")
                         same_window=True, comp_label='IC', 
                         img_data=None,
                         plot_shifts=True, plot_char=None, 
-                        quiver_color='white',vector_scale=100,
+                        quiver_color='white',vector_scale=1,
                         cmap=plt.cm.jet, per_row=3):
         """Overlays ICA-derived peak characteristics on an image plot.
 
