@@ -14,7 +14,7 @@
 !define S_DEFINSTDIR_ADMIN "$ProgramFiles\${APPNAME}"
 !define UNINSTALLER_FULLPATH "$InstDir\Uninstaller.exe"
 
-!define MUI_ICON "$doc\_static\hyperspy_logo.ico"
+!define MUI_ICON "doc\_static\hyperspy_logo.ico"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall.ico"
 
 SetCompressor lzma
