@@ -402,7 +402,7 @@ class EELSModel(Model):
             if edge.isbackground is False and edge.fs_state is True:
                 start = edge.edgeenergy + edge.delta.value
                 stop = start + edge.fs_emax
-                self.remove_data_range(start,stop)
+                self.remove_data_range_in_units(start,stop)
        
     def enable_edges(self,edges_list = None):
         """
