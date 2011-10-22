@@ -61,6 +61,14 @@ class EELSModel(Model):
         if self.spectrum.subshells and auto_add_edges is True:
             self._add_edges_from_subshells_names()
             
+    @spectrum.setter
+    def spectrum(self, value):
+        if isinstance(value, EELSSpectrum):
+            self._spectrum = value
+            self.check_eels_parameters()
+        else:
+            raise WrongObjectError(str(type(value)), 'EELSSpectrum')
+            
     def _touch(self):
         """Run model setup tasks
         

@@ -21,6 +21,7 @@ import os
 import tempfile
 
 import numpy as np
+import traits.api as t
 
 from hyperspy.estimators import Estimators
 from hyperspy.optimizers import Optimizers
@@ -28,9 +29,10 @@ from hyperspy import messages
 import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.misc import progressbar
-from hyperspy.signals.eels import EELSSpectrum
+from hyperspy.signals.eels import EELSSpectrum, Spectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
+from hyperspy.exceptions import WrongObjectError
 
 class Model(list, Optimizers, Estimators):
     """Build and fit a model
@@ -57,7 +59,18 @@ class Model(list, Optimizers, Estimators):
         self.model_cube[:] = np.nan
         self.channel_switches=np.array([True] * len(self.axis.axis))
         self._low_loss = None
+
+    @property
+    def spectrum(self):
+        return self._spectrum
         
+    @spectrum.setter
+    def spectrum(self, value):
+        if isinstance(value, Spectrum):
+            self._spectrum = value
+        else:
+            raise WrongObjectError(str(type(value)), 'Spectrum')
+                    
     @property
     def low_loss(self):
         return self._low_loss

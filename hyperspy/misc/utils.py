@@ -1065,6 +1065,43 @@ class DictionaryBrowser(object):
                     value = value.as_dictionary()
                 par_dict.__setitem__(item, value)
         return par_dict
+        
+    def has_item(self, item_path):
+        """Given a path, return True if it exists
+        
+        Parameters
+        ----------
+        item_path : Str
+            A string describing the path with each item separated by a point
+            
+        Example
+        -------
+        
+        >>> dict = {'To' : {'be' : True}}
+        >>> dict_browser = DictionaryBrowser(dict)
+        >>> dict_browser.has_item('To')
+        True
+        >>> dict_browser.has_item('To.be')
+        True
+        >>> dict_browser.has_item('To.be.or')
+        False
+        
+        
+        """
+        if type(item_path) is str:
+            item_path = item_path.split('.')
+        attrib = item_path.pop(0)
+        if hasattr(self, attrib):
+            if len(item_path) == 0:
+                return True
+            else:
+                item = self[attrib]
+                if isinstance(item, type(self)): 
+                    return item.has_item(item_path)
+                else:
+                    return False
+        else:
+            return False
 
     def add_node(self, node_path):
         keys = node_path.split('/')

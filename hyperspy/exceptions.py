@@ -87,6 +87,14 @@ class NoInteractiveError(Exception):
 
     def __str__(self):
         return repr(self.error)
+        
+class WrongObjectError(Exception):
+    def __init__(self, is_str, must_be_str):
+        self.error = ("A object of type %s was given, but a %s" % (
+            is_str, must_be_str) + " object is required")
+
+    def __str__(self):
+        return repr(self.error)
 
 class SignalOutputDimensionError(Exception):
     def __init__(self, output_dimension, expected_output_dimension):
