@@ -30,6 +30,7 @@ from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.misc import progressbar
 from hyperspy.signals.eels import EELSSpectrum
 from hyperspy.defaults_parser import preferences
+from hyperspy.axes import generate_axis
 
 class Model(list, Optimizers, Estimators):
     """Build and fit a model
@@ -55,6 +56,22 @@ class Model(list, Optimizers, Estimators):
                                    dtype = 'float')
         self.model_cube[:] = np.nan
         self.channel_switches=np.array([True] * len(self.axis.axis))
+        self._low_loss = None
+        
+    @property
+    def low_loss(self):
+        return self._low_loss
+        
+    @low_loss.setter
+    def low_loss(self, value):
+        if value is not None:
+            self._low_loss = value
+            self.set_convolution_axis()
+            self.convolved = True
+        else:
+            self._low_loss = value
+            self.convolution_axis = None
+            self.convolved = False
 
         
     # Extend the list methods to call the _touch when the model is modified
@@ -92,7 +109,19 @@ class Model(list, Optimizers, Estimators):
         self.connect_parameters2update_plot()
         
     __touch = _touch
-
+    
+    def set_convolution_axis(self):
+        """
+        Creates an axis to use to generate the data of the model in the precise
+        scale to obtain the correct axis and origin after convolution with the
+        lowloss spectrum.
+        """
+        ll_axis = self.low_loss.axes_manager._slicing_axes[0]
+        dimension = self.axis.size + ll_axis.size - 1
+        step = self.axis.scale
+        knot_position = ll_axis.size - ll_axis.value2index(0) - 1
+        self.convolution_axis = generate_axis(self.axis.offset, step, 
+        dimension, knot_position)
                 
     def connect_parameters2update_plot(self):   
         for component in self:
@@ -318,7 +347,7 @@ class Model(list, Optimizers, Estimators):
 
         else: # convolved
             counter = 0
-            sum_convolved = np.zeros(len(self.experiments.convolution_axis))
+            sum_convolved = np.zeros(len(self.convolution_axis))
             sum_ = np.zeros(len(self.axis.axis))
             for component in self: # Cut the parameters list
                 if onlyactive :
@@ -326,7 +355,7 @@ class Model(list, Optimizers, Estimators):
                         if component.convolved:
                             np.add(sum_convolved,
                             component.function(
-                            self.experiments.convolution_axis), sum_convolved)
+                            self.convolution_axis), sum_convolved)
                         else:
                             np.add(sum_,
                             component.function(self.axis.axis), sum_)
@@ -334,14 +363,14 @@ class Model(list, Optimizers, Estimators):
                 else :
                     if component.convolved:
                         np.add(sum_convolved,
-                        component.function(self.experiments.convolution_axis),
+                        component.function(self.convolution_axis),
                         sum_convolved)
                     else:
                         np.add(sum_, component.function(self.axis.axis),
                         sum_)
                     counter+=component.nfree_param
             to_return = sum_ + np.convolve(
-                self.ll(self.axes_manager), 
+                self.low_loss(self.axes_manager), 
                 sum_convolved, mode="valid")
             to_return = to_return[self.channel_switches]
             return to_return
@@ -443,20 +472,20 @@ class Model(list, Optimizers, Estimators):
 
         if self.convolved is True:
             counter = 0
-            sum_convolved = np.zeros(len(self.experiments.convolution_axis))
+            sum_convolved = np.zeros(len(self.convolution_axis))
             sum = np.zeros(len(self.axis.axis))
             for component in self: # Cut the parameters list
                 if component.active is True:
                     if component.convolved is True:
                         np.add(sum_convolved, component(param[\
                         counter:counter+component.nfree_param],
-                        self.experiments.convolution_axis), sum_convolved)
+                        self.convolution_axis), sum_convolved)
                     else:
                         np.add(sum, component(param[counter:counter + \
                         component.nfree_param], self.axis.axis), sum)
                     counter+=component.nfree_param
 
-            return (sum + np.convolve(self.ll(self.axes_manager), 
+            return (sum + np.convolve(self.low_loss(self.axes_manager), 
                                       sum_convolved,mode="valid"))[
                                       self.channel_switches]
 
@@ -487,15 +516,15 @@ class Model(list, Optimizers, Estimators):
                     if component.convolved:
                         for parameter in component.free_parameters :
                             par_grad = np.convolve(
-                            parameter.grad(self.experiments.convolution_axis), 
-                            self.ll(self.axes_manager), 
+                            parameter.grad(self.convolution_axis), 
+                            self.low_loss(self.axes_manager), 
                             mode="valid")
                             if parameter._twins:
                                 for parameter in parameter._twins:
                                     np.add(par_grad, np.convolve(
                                     parameter.grad(
-                                    self.experiments.convolution_axis), 
-                                    self.ll(self.axes_manager), 
+                                    self.convolution_axis), 
+                                    self.low_loss(self.axes_manager), 
                                     mode="valid"), par_grad)
                             grad = np.vstack((grad, par_grad))
                         counter += component.nfree_param
