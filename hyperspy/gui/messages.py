@@ -17,14 +17,28 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import traits.api as t
-import traitsui.api as tui
-from traitsui.menu import OKButton
+import traitsui.api as tu
+from traitsui.menu import OKButton, CancelButton
     
-information_view = tui.View(tui.Item('text', show_label = False, 
+
+
+class MessageHandler(tu.Handler):
+    def close(self, info, is_ok):
+        # Removes the span selector from the plot
+        print is_ok
+        if is_ok is True:
+            info.object.is_ok = True
+        else:
+            info.object.is_ok = False
+        return True
+
+information_view = tu.View(tu.Item('text', show_label = False, 
                             style = 'readonly', springy = True, width = 300,), 
-                            kind = 'modal', buttons = [OKButton,] )
+                            kind = 'modal', buttons = [OKButton, CancelButton],
+                            handler = MessageHandler)
 class Message(t.HasTraits):
     text = t.Str
+    is_ok = t.Bool(False)
     def __init__(self, text):
         self.text = text
     traits_view = information_view
@@ -38,12 +52,12 @@ class MessageWithOptions(Message, Options):
     def __init__(self, text, options):
         Message.__init__(self, text)
         Options.__init__(self, options)
-
-                                
+        
 def information(text):
     message = Message(text)
     message.text = text
     message.edit_traits()
+    return message.is_ok
     
 def options(options_):
     class Options(t.HasTraits):

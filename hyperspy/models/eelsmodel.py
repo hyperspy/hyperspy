@@ -19,6 +19,7 @@
 import copy
 
 import numpy as np
+import traits.api as t
 
 from hyperspy.model import Model
 from hyperspy.components.eels_cl_edge import EELSCLEdge
@@ -27,6 +28,11 @@ from hyperspy.misc.interactive_ns import interactive_ns
 from hyperspy.defaults_parser import preferences
 import hyperspy.messages as messages
 from hyperspy import components
+from hyperspy.decorators import only_interactive
+from hyperspy.exceptions import MissingParametersError
+from hyperspy.signals.eels import EELSSpectrum
+from hyperspy.gui.eels import TEMParametersUI
+import hyperspy.gui.messages as messagesui
 
 
 class EELSModel(Model):
@@ -61,6 +67,10 @@ class EELSModel(Model):
         if self.spectrum.subshells and auto_add_edges is True:
             self._add_edges_from_subshells_names()
             
+    @property
+    def spectrum(self):
+        return self._spectrum
+                
     @spectrum.setter
     def spectrum(self, value):
         if isinstance(value, EELSSpectrum):
@@ -68,6 +78,55 @@ class EELSModel(Model):
             self.check_eels_parameters()
         else:
             raise WrongObjectError(str(type(value)), 'EELSSpectrum')
+            
+    def check_eels_parameters(self):
+        must_exist = (
+            'TEM.convergence_angle', 
+            'TEM.beam_energy',
+            'TEM.EELS.collection_angle',)
+        missing_parameters = []
+        for item in must_exist:
+            exists = self.spectrum.mapped_parameters.has_item(item)
+            if exists is False:
+                missing_parameters.append(item)
+        if missing_parameters:
+            if preferences.General.interactive is True:
+                par_str = "The following parameters are missing:\n"
+                for par in missing_parameters:
+                    par_str += '%s\n' % par
+                par_str += 'Please set them in the following wizard'
+                is_ok = messagesui.information(par_str)
+                if is_ok:
+                    self.define_eels_parameters()
+                else:
+                    raise MissingParametersError(missing_parameters)
+            else:
+                raise MissingParametersError(missing_parameters)
+    
+    @only_interactive            
+    def define_eels_parameters(self, defined_parameters = None):
+        if self.spectrum.mapped_parameters.has_item('TEM') is False:
+            self.spectrum.mapped_parameters.add_node('TEM')
+        if self.spectrum.mapped_parameters.has_item('TEM.EELS') is False:
+            self.spectrum.mapped_parameters.TEM.add_node('EELS')
+        tem_par = TEMParametersUI()
+        mapping = {
+            'TEM.convergence_angle' : 'tem_par.convergence_angle',
+            'TEM.beam_energy' : 'tem_par.beam_energy',
+            'TEM.EELS.collection_angle' : 'tem_par.collection_angle',}
+        for key, value in mapping.iteritems():
+            if self.spectrum.mapped_parameters.has_item(key):
+                exec('%s = self.spectrum.mapped_parameters.%s' % (value, key))
+        tem_par.edit_traits()
+        mapping = {
+            'TEM.convergence_angle' : tem_par.convergence_angle,
+            'TEM.beam_energy' : tem_par.beam_energy,
+            'TEM.EELS.collection_angle' : tem_par.collection_angle,}
+        for key, value in mapping.iteritems():
+            if value != t.Undefined:
+                exec('self.spectrum.mapped_parameters.%s = %s' % (key, value))
+        self.check_eels_parameters()
+        
             
     def _touch(self):
         """Run model setup tasks

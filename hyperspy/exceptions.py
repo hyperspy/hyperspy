@@ -95,6 +95,18 @@ class WrongObjectError(Exception):
 
     def __str__(self):
         return repr(self.error)
+        
+class MissingParametersError(Exception):
+    def __init__(self, parameters):
+        par_str = ''
+        for par in parameters:
+            par_str += '%s,' % par
+        self.error = "The following parameters are missing: %s" % par_str
+        # Remove the last comma
+        self.error  = self.error[:-1]
+
+    def __str__(self):
+        return repr(self.error)
 
 class SignalOutputDimensionError(Exception):
     def __init__(self, output_dimension, expected_output_dimension):
