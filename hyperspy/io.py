@@ -21,6 +21,7 @@ import os
 from hyperspy import messages
 from hyperspy.defaults_parser import preferences
 from hyperspy.io_plugins import msa, digital_micrograph, fei, mrc, ripple
+from hyperspy.gui.tools import Load
 
 
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple]
@@ -54,6 +55,9 @@ def load(*filenames, **kwds):
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
     FEI ser and emi and hdf5.
     
+    If no parameter is passed and the interactive mode is enabled the a window 
+    ui is raised.
+    
     Parameters
     ----------
     *filenames : if multiple file names are passed in, they get aggregated to
@@ -84,6 +88,11 @@ def load(*filenames, **kwds):
 
     """
 
+    if len(filenames)<1 and preferences.General.interactive is True:
+            load_ui = Load()
+            load_ui.edit_traits()
+            if load_ui.filename:
+                filenames = (load_ui.filename,)
     if len(filenames)<1:
         messages.warning('No file provided to reader.')
         return None

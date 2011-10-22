@@ -227,3 +227,11 @@ class SmoothingLowess(Smoothing):
                                 self.smoothing_parameter, 
                                 self.number_of_iterations)
         return smoothed
+        
+class Load(t.HasTraits):
+    filename = t.File
+    traits_view = tu.View(
+        tu.Group('filename'),
+        kind = 'modal',
+        buttons = [OKButton, CancelButton])
+        
