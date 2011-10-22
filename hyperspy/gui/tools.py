@@ -232,6 +232,6 @@ class Load(t.HasTraits):
     filename = t.File
     traits_view = tu.View(
         tu.Group('filename'),
-        kind = 'modal',
+        kind = 'livemodal',
         buttons = [OKButton, CancelButton])
         

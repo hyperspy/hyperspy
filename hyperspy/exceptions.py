@@ -80,6 +80,13 @@ class ShapeError(Exception):
 
     def __str__(self):
         return repr(self.error)
+        
+class NoInteractiveError(Exception):
+    def __init__(self):
+        self.error = "Hyperspy must run in interactive mode to use this feature"
+
+    def __str__(self):
+        return repr(self.error)
 
 class SignalOutputDimensionError(Exception):
     def __init__(self, output_dimension, expected_output_dimension):

@@ -16,6 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import numpy as np
+import scipy as sp
+import matplotlib.pyplot as plt
+
 from hyperspy.signal import Signal
 from hyperspy.misc import progressbar
 from hyperspy.misc import utils
@@ -23,13 +27,10 @@ from hyperspy.misc import utils_varia
 from hyperspy.gui.tools import (SpectrumCalibration, SmoothingSavitzkyGolay,
     SmoothingLowess, )
 from hyperspy.gui.egerton_quantification import BackgroundRemoval
-
 from hyperspy.drawing import signal as sigdraw
+from hyperspy.decorators import only_interactive
 
-import numpy as np
-import scipy as sp
-import matplotlib.pyplot as plt
-
+            
 class Spectrum(Signal):
     """
     """
@@ -512,7 +513,8 @@ class Spectrum(Signal):
         dic = self._get_signal_dict()
         dic['mapped_parameters']['signal_type'] = 'EELS'
         return EELSSpectrum(dic)
-
+    
+    @only_interactive
     def calibrate(self):
         '''Calibrate the spectral dimension using a gui
 
@@ -526,19 +528,23 @@ class Spectrum(Signal):
         For this method to work the output_dimension must be 1. Set the view
         accordingly
         '''
+
         calibration = SpectrumCalibration(self)
         calibration.edit_traits()
 
+    @only_interactive
     def smooth_savitzky_golay(self):
         '''Savitzky-Golay data smoothing using a gui'''
         sg = SmoothingSavitzkyGolay(self)
         sg.edit_traits()
-
+    
+    @only_interactive
     def smooth_lowess(self):
         '''Lowess data smoothing using a gui'''
         lw = SmoothingLowess(self)
         lw.edit_traits()
 
+    @only_interactive
     def remove_background(self):
         '''Remove the background using a gui'''
         br = BackgroundRemoval(self)
