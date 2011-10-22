@@ -200,7 +200,7 @@ class EELSCLEdge(Component):
     fs_state = property(_get_fs_state,_set_fs_state)
     
     def _get_fs_emax(self):
-        return self.__fs_state
+        return self.__fs_emax
     def _set_fs_emax(self,arg):
         self.__fs_emax = arg
         self.setfslist()
