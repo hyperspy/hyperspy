@@ -132,13 +132,17 @@ class EELSModel(Model):
         interactive_ns[element] = []
         interactive_ns[element].append(self[-1])
         while len(e_shells) > 0:
-            self.append(EELSCLEdge(e_shells.pop()))
-            self[-1].intensity.twin = master_edge.intensity
-            self[-1].delta.twin = master_edge.delta
-            self[-1].freedelta = False
-            if copy2interactive_ns is True:
-                interactive_ns[self[-1].__repr__()] = self[-1]
-                interactive_ns[element].append(self[-1])
+            next_element = e_shells[-1].split('_')[0]
+            if next_element != element:
+                self._add_edges_from_subshells_names(e_shells = e_shells)
+            else:
+                self.append(EELSCLEdge(e_shells.pop()))
+                self[-1].intensity.twin = master_edge.intensity
+                self[-1].delta.twin = master_edge.delta
+                self[-1].freedelta = False
+                if copy2interactive_ns is True:
+                    interactive_ns[self[-1].__repr__()] = self[-1]
+                    interactive_ns[element].append(self[-1])
                 
     def resolve_fine_structure(self,preedge_safe_window_width = 
         preferences.EELS.preedge_safe_window_width, i1 = 0):
@@ -373,8 +377,8 @@ class EELSModel(Model):
         elements = {}
         for edge in self.edges:
             if edge.active and edge.intensity.twin is None:
-                element = edge._Edge__element
-                subshell = edge._Edge__subshell
+                element = edge._EELSCLEdge__element
+                subshell = edge._EELSCLEdge__subshell
                 if element not in elements:
                     elements[element] = {}
                 elements[element][subshell] = edge.intensity.value
