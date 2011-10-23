@@ -31,7 +31,7 @@ from hyperspy.learn.mlpca import mlpca
 from hyperspy.misc.utils import center_and_scale
 from hyperspy.defaults_parser import preferences
 from hyperspy import messages
-from hyperspy.decorators import auto_replot
+from hyperspy.decorators import auto_replot, do_not_replot
 
 
 class MVA():
@@ -52,7 +52,7 @@ class MVA():
         else:
             target=self.mva_results
         return target
-
+    @do_not_replot
     def principal_components_analysis(self, normalize_poissonian_noise = False,
     algorithm = 'svd', output_dimension = None, navigation_mask = None,
     signal_mask = None, center = False, variance2one = False, var_array = None,
@@ -89,7 +89,6 @@ class MVA():
 
         """
         # backup the original data
-        self.auto_replot = False
         if on_peaks:
             if hasattr(self.mapped_parameters,'peak_chars'):
                 self._data_before_treatments = self.mapped_parameters.peak_chars.copy()
@@ -272,7 +271,6 @@ class MVA():
         if self._unfolded4pca is True:
             self.fold()
             self._unfolded4pca is False
-        self.auto_replot = True
 
     def independent_components_analysis(self, number_of_components = None,
                                         algorithm = 'CuBICA', diff_order = 1, pc = None,
@@ -378,6 +376,7 @@ class MVA():
         Q = np.linalg.inv(target.w.T)
         return np.dot(Q,W)
 
+    @do_not_replot
     def _calculate_recmatrix(self, components = None, mva_type=None,
                              on_peaks=False):
         """
