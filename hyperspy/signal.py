@@ -69,6 +69,7 @@ class Signal(t.HasTraits, MVA):
         self._shape_before_unfolding = None
         self._axes_manager_before_unfolding = None
         self.auto_replot = True
+        self.variance = None
 
     def __repr__(self):
         string = self.__class__.__name__
@@ -1818,51 +1819,44 @@ especially offers more options for image stacks.')
 #        """
 #        utils.copy_energy_calibration(s, self)
 #
-#    def estimate_variance(self, dc = None, gaussian_noise_var = None):
-#        """Variance estimation supposing Poissonian noise
-#
-#        Parameters
-#        ----------
-#        dc : None or numpy array
-#            If None the SI is used to estimate its variance. Otherwise, the
-#            provided array will be used.
-#        Note
-#        ----
-#        The gain_factor and gain_offset from the aquisition parameters are used
-#        """
-#        print "Variace estimation using the following values:"
-#        print "Gain factor = ", self.acquisition_parameters.gain_factor
-#        print "Gain offset = ", self.acquisition_parameters.gain_offset
-#        if dc is None:
-#            dc = self.data_cube
-#        gain_factor = self.acquisition_parameters.gain_factor
-#        gain_offset = self.acquisition_parameters.gain_offset
-#        self.variance = dc*gain_factor + gain_offset
-#        if self.variance.min() < 0:
-#            if gain_offset == 0 and gaussian_noise_var is None:
-#                print "The variance estimation results in negative values"
-#                print "Maybe the gain_offset is wrong?"
-#                self.variance = None
-#                return
-#            elif gaussian_noise_var is None:
-#                print "Clipping the variance to the gain_offset value"
-#                self.variance = np.clip(self.variance, np.abs(gain_offset),
-#                np.Inf)
-#            else:
-#                print "Clipping the variance to the gaussian_noise_var"
-#                self.variance = np.clip(self.variance, gaussian_noise_var,
-#                np.Inf)
-#
-#    def calibrate(self, lcE = 642.6, rcE = 849.7, lc = 161.9, rc = 1137.6,
-#    modify_calibration = True):
-#        dispersion = (rcE - lcE) / (rc - lc)
-#        origin = lcE - dispersion * lc
-#        print "Energy step = ", dispersion
-#        print "Energy origin = ", origin
-#        if modify_calibration is True:
-#            self.set_new_calibration(origin, dispersion)
-#        return origin, dispersion
-#
+    def estimate_variance(self, dc = None, gaussian_noise_var = None):
+        """Variance estimation supposing Poissonian noise
+
+        Parameters
+        ----------
+        dc : None or numpy array
+            If None the SI is used to estimate its variance. Otherwise, the
+            provided array will be used.
+        Note
+        ----
+        The gain_factor and gain_offset from the aquisition parameters are used
+        """
+        gain_factor = 1
+        gain_offset = 0
+        if self.mapped_parameters.has_item('gain_factor'):
+            gain_factor = self.mapped_parameters.gain_factor
+        if self.mapped_parameters.has_item('gain_offset'):
+            gain_offset = self.mapped_parameters.gain_offset
+        print "Gain factor = ", gain_factor
+        print "Gain offset = ", gain_offset
+        if dc is None:
+            dc = self.data
+        self.variance = dc * gain_factor + gain_offset
+        if self.variance.min() < 0:
+            if gain_offset == 0 and gaussian_noise_var is None:
+                print "The variance estimation results in negative values"
+                print "Maybe the gain_offset is wrong?"
+                self.variance = None
+                return
+            elif gaussian_noise_var is None:
+                print "Clipping the variance to the gain_offset value"
+                self.variance = np.clip(self.variance, np.abs(gain_offset),
+                np.Inf)
+            else:
+                print "Clipping the variance to the gaussian_noise_var"
+                self.variance = np.clip(self.variance, gaussian_noise_var,
+                np.Inf)
+
     def _correct_navigation_mask_when_unfolded(self, navigation_mask = None,):
         #if 'unfolded' in self.history:
         if navigation_mask is not None:
