@@ -1,2 +1,2 @@
-set path=PortableInstall;PortableInstall\Scripts\%PATH%
+set path=PortableInstall;PortableInstall\Scripts;%PATH%
 python setup.py install
