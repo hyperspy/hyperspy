@@ -89,6 +89,7 @@ class MVA():
 
         """
         # backup the original data
+        self.auto_replot = False
         if on_peaks:
             if hasattr(self.mapped_parameters,'peak_chars'):
                 self._data_before_treatments = self.mapped_parameters.peak_chars.copy()
@@ -271,6 +272,7 @@ class MVA():
         if self._unfolded4pca is True:
             self.fold()
             self._unfolded4pca is False
+        self.auto_replot = True
 
     def independent_components_analysis(self, number_of_components = None,
                                         algorithm = 'CuBICA', diff_order = 1, pc = None,
