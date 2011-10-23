@@ -30,6 +30,7 @@ from hyperspy import drawing
 from hyperspy.misc.interactive_ns import interactive_ns
 from hyperspy.gui.tools import (SpanSelectorInSpectrum, 
     SpanSelectorInSpectrumHandler)
+from hyperspy.misc.progressbar import progressbar
 
 
 class BackgroundRemoval(SpanSelectorInSpectrum):
@@ -96,7 +97,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         self.bg_line.autoscale = False
         self.bg_line.plot()
         
-    def bg_to_plot(self, axes_manager = None):
+    def bg_to_plot(self, axes_manager = None, fill_with = np.nan):
         # First try to update the estimation
         self.background_estimator.estimate_parameters(
             self.signal, self.ss_left_value, self.ss_right_value, 
@@ -104,7 +105,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             
         if self.bg_line_range == 'from_left_range':
             bg_array = np.zeros(self.axis.axis.shape)
-            bg_array[:] = np.nan
+            bg_array[:] = fill_with
             from_index = self.axis.value2index(self.ss_left_value)
             bg_array[from_index:] = self.background_estimator.function(
                 self.axis.axis[from_index:])
@@ -113,7 +114,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             return self.background_estimator.function(self.axis.axis)
         elif self.bg_line_range == 'ss_range':
             bg_array = np.zeros(self.axis.axis.shape)
-            bg_array[:] = np.nan
+            bg_array[:] = fill_with
             from_index = self.axis.value2index(self.ss_left_value)
             to_index = self.axis.value2index(self.ss_right_value)
             bg_array[from_index:] = self.background_estimator.function(
@@ -130,6 +131,25 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             self.create_background_line()
         else:
             self.bg_line.update()
+            
+    def apply(self):
+        self.signal._plot.auto_update_plot = False
+        pbar = progressbar(
+        maxval = (np.cumprod(self.signal.axes_manager.navigation_shape)[-1]))
+        i = 0
+        self.bg_line_range = 'full'
+        for index in np.ndindex(
+        tuple(self.signal.axes_manager.navigation_shape)):
+            self.signal.axes_manager.set_not_slicing_indexes(index)
+            self.signal.data[
+            self.signal.axes_manager._getitem_tuple] -= \
+            np.nan_to_num(self.bg_to_plot(self.signal.axes_manager, 0))
+            i+=1
+            pbar.update(i)
+        pbar.finish()
+        self.signal._replot()
+        self.signal._plot.auto_update_plot = True
+    
 
        
 #class EgertonPanel(t.HasTraits):

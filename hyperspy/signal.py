@@ -258,13 +258,6 @@ class Signal(t.HasTraits, MVA):
         else:
             messages.warning_exit('Plotting is not supported for this view')
 
-    traits_view = tui.View(
-        tui.Item('name'),
-        tui.Item('physical_property'),
-        tui.Item('units'),
-        tui.Item('offset'),
-        tui.Item('scale'),)
-
     def plot_residual(self, axes_manager=None):
         """Plot the residual between original data and reconstructed data
 
@@ -310,6 +303,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         if self._plot is not None:
             if self._plot.is_active() is True:
                 self.plot()
+
     @auto_replot
     def get_dimensions_from_data(self):
         """Get the dimension parameters from the data_cube. Useful when the

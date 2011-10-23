@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import numpy as np
 import traits.api as t
 import traitsui.api as tu
 from traitsui.menu import OKButton, ApplyButton, CancelButton, ModalButtons
@@ -25,18 +26,28 @@ from hyperspy import drawing
 from hyperspy.misc.interactive_ns import interactive_ns
 from hyperspy.exceptions import SignalOutputDimensionError
 from hyperspy.gui import messages
+from hyperspy.misc.progressbar import progressbar
 
 import sys
 
 OurApplyButton = tu.Action(name = "Apply",
                 action = "apply")
+                
+class SmoothingHandler(tu.Handler):
+    def close(self, info, is_ok):
+        # Removes the span selector from the plot
+        if is_ok is True:
+            info.object.apply()
+        return True
+
 
 class SpanSelectorInSpectrumHandler(tu.Handler):
     def close(self, info, is_ok):
         # Removes the span selector from the plot
+        info.object.span_selector_switch(False)
         if is_ok is True:
             self.apply(info)
-        info.object.span_selector_switch('False')
+        
         return True
 
     def apply(self, info, *args, **kwargs):
@@ -45,6 +56,8 @@ class SpanSelectorInSpectrumHandler(tu.Handler):
         """
         obj = info.object
         obj.is_ok = True
+        if hasattr(obj, 'apply'):
+            obj.apply()
         
         return
 
@@ -212,6 +225,23 @@ class Smoothing(t.HasTraits):
         l2.plot()
         self.data_line = l1
         self.smooth_line = l2
+        
+    def apply(self):
+        self.signal._plot.auto_update_plot = False
+        pbar = progressbar(
+        maxval = (np.cumprod(self.signal.axes_manager.navigation_shape)[-1]))
+        i = 0
+        for index in np.ndindex(
+        tuple(self.signal.axes_manager.navigation_shape)):
+            self.signal.axes_manager.set_not_slicing_indexes(index)
+            self.signal.data[
+            self.signal.axes_manager._getitem_tuple] = self.model2plot()
+            i+=1
+            pbar.update(i)
+        pbar.finish()
+        self.signal._replot()
+        self.signal._plot.auto_update_plot = True
+
     
 
 class SmoothingSavitzkyGolay(Smoothing):
@@ -224,6 +254,7 @@ class SmoothingSavitzkyGolay(Smoothing):
             'number_of_points',
             'differential_order',),
             kind = 'nonmodal',
+            handler = SmoothingHandler,
             buttons= ModalButtons)
 
     def _polynomial_order_changed(self, old, new):
@@ -248,6 +279,7 @@ class SmoothingLowess(Smoothing):
             'smoothing_parameter',
             'number_of_iterations',),
             kind = 'nonmodal',
+            handler = SmoothingHandler,
             buttons= ModalButtons,)
             
     def _smoothing_parameter_changed(self, old, new):

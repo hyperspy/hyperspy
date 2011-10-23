@@ -106,6 +106,7 @@ class SpectrumLine():
         self.data_function = None
         self.axis = None
         self.axes_manager = None
+        self.auto_update = True
         
         # Properties
         self.line = None
@@ -150,8 +151,9 @@ class SpectrumLine():
         self.ax.figure.canvas.draw()
                   
     def update(self):
-        """Update the current spectrum figure"""            
-        
+        """Update the current spectrum figure"""
+        if self.auto_update is False:
+            return           
         ydata = self.data_function(axes_manager = self.axes_manager)
         self.line.set_ydata(ydata)
         

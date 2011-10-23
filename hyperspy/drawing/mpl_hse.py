@@ -43,6 +43,24 @@ class MPL_HyperSpectrum_Explorer(object):
         self.right_pointer = None
         self._key_nav_cid = None
         self._right_pointer_on = False
+        self._auto_update_plot = True
+        
+    @property
+    def auto_update_plot(self):
+        return self._auto_update_plot
+        
+    @auto_update_plot.setter
+    def auto_update_plot(self, value):
+        if self._auto_update_plot is value:
+            return
+        for line in self.spectrum_plot.ax_lines + \
+        self.spectrum_plot.right_ax_lines:
+            line.auto_update = value
+        if self.pointer is not None:
+            if value is True:
+                self.pointer.add_axes(self.navigator_plot.ax)
+            else:
+                self.pointer.disconnect(self.navigator_plot.ax)
         
     @property
     def right_pointer_on(self):
