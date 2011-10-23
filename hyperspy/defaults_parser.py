@@ -240,4 +240,4 @@ preferences = Preferences(
             Model = template['Model'])
             
 if preferences.General.logger_on:
-    turn_logging_on()
+    turn_logging_on(verbose = 0)

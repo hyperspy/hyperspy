@@ -39,14 +39,14 @@ else:
     interactive_ns = ip.user_ns
 
 
-def turn_logging_on():
-    
-    if ipy_version < ipy_011:
-        print("Logging is not supported by this version of IPython")
-        return
-    if ip.logger.log_active is True:
-        print "Already logging to " + ip.logger.logfname
-        return
+def turn_logging_on(verbose = 1):
+    if verbose == 1:
+        if ipy_version < ipy_011:
+            print("Logging is not supported by this version of IPython")
+            return
+        if ip.logger.log_active is True:
+            print "Already logging to " + ip.logger.logfname
+            return
     
     filename = os.path.join(os.getcwd(), 'hyperspy_log.py')
     new = not os.path.exists(filename)
@@ -58,10 +58,10 @@ def turn_logging_on():
             "# %s \n" % strftime('%Y-%m-%d') +
             "# %s \n" % strftime('%H:%M') +
             "# ============================\n" )
-
-    print("\nLogging is active")
-    print("The log is stored in the hyperspy_log.py file"
-          " in the current directory")
+    if verbose == 1:
+        print("\nLogging is active")
+        print("The log is stored in the hyperspy_log.py file"
+              " in the current directory")
           
 def turn_logging_off():
     if ipy_version < ipy_011:
