@@ -171,5 +171,6 @@ class MPL_HyperSpectrum_Explorer(object):
             self.pointer.disconnect(self.navigator_plot.ax)
     
     def close(self):
+        self._close_pointer()
         self.spectrum_plot.close()
         self.navigator_plot.close()
