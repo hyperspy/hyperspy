@@ -41,8 +41,30 @@ class SpanSelectorInSpectrumHandler(tu.Handler):
 
         """
         obj = info.object
+        obj.is_ok = True
         
         return
+
+class SpectrumRangeSelectorHandler(tu.Handler):
+    def close(self, info, is_ok):
+        # Removes the span selector from the plot
+        info.object.span_selector_switch('False')
+        if is_ok is True:
+            self.apply(info)
+        return True
+
+    def apply(self, info, *args, **kwargs):
+        """Handles the **Apply** button being clicked.
+
+        """
+        obj = info.object
+        if obj.ss_left_value != obj.ss_right_value:
+            for method, cls in obj.on_close:
+                method(cls, obj.ss_left_value, obj.ss_right_value)
+        obj.is_ok = True
+        
+        return
+
 
 class CalibrationHandler(SpanSelectorInSpectrumHandler):
 
@@ -63,6 +85,7 @@ class CalibrationHandler(SpanSelectorInSpectrumHandler):
 class SpanSelectorInSpectrum(t.HasTraits):
     ss_left_value = t.Float()
     ss_right_value = t.Float()
+    is_ok = t.Bool(False)
             
     def __init__(self, signal):
         if signal.axes_manager.signal_dimension != 1:
@@ -72,11 +95,6 @@ class SpanSelectorInSpectrum(t.HasTraits):
         self.axis = self.signal.axes_manager._slicing_axes[0]
         self.span_selector = None
         self.signal.plot()
-        # The next two lines are to walk-around a traitui bug that causes a 
-        # inherited trait to be overwritten by the editor if it was not 
-        # initialized by the parent trait
-        self.ss_left_value = self.axis.axis[0]
-        self.ss_right_value = self.axis.axis[-1]
         self.span_selector_switch(on = True)
         
     def on_disabling_span_selector(self):
@@ -150,6 +168,25 @@ class SpectrumCalibration(SpanSelectorInSpectrum):
         self.offset, self.scale = self.axis.calibrate(
             (self.left_value, self.right_value), (lc,rc),
             modify_calibration = False)
+            
+class SpectrumRangeSelector(SpanSelectorInSpectrum):
+    on_close = t.List()
+    reset = t.Button()
+    
+    def _reset_fired(self):
+        self.ss_left_value = 0
+        self.ss_right_value = 0
+        self.span_selector_switch(False)
+        self.span_selector_switch(True)
+        
+    view = tu.View(
+        tu.Item('ss_left_value', label = 'Left', style = 'readonly'),
+        tu.Item('ss_right_value', label = 'Right', style = 'readonly'),
+        tu.Item('reset', show_label = False),
+        handler = SpectrumRangeSelectorHandler,
+#        kind = 'nonmodal',
+        buttons = [OKButton, CancelButton],)
+            
 
 class Smoothing(t.HasTraits):
 

@@ -19,16 +19,19 @@
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
+import traits.api as t
 
 from hyperspy.signal import Signal
 from hyperspy.misc import progressbar
 from hyperspy.misc import utils
 from hyperspy.misc import utils_varia
 from hyperspy.gui.tools import (SpectrumCalibration, SmoothingSavitzkyGolay,
-    SmoothingLowess, )
+    SmoothingLowess, SpectrumRangeSelector, SpanSelectorInSpectrum)
 from hyperspy.gui.egerton_quantification import BackgroundRemoval
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import only_interactive
+from hyperspy.defaults_parser import preferences
+from hyperspy.decorators import interactive_range_selector
 
             
 class Spectrum(Signal):
@@ -530,6 +533,11 @@ class Spectrum(Signal):
         '''
 
         calibration = SpectrumCalibration(self)
+        # The next two lines are to walk-around the fact that, in nonmodal mode
+        # the inherited traits are overwritten by the editor if they were not 
+        # initialized by the parent trait
+        calibration.ss_left_value = calibration.axis.axis[0]
+        calibration.ss_right_value = calibration.axis.axis[-1]
         calibration.edit_traits()
 
     @only_interactive
@@ -549,4 +557,9 @@ class Spectrum(Signal):
         '''Remove the background using a gui'''
         br = BackgroundRemoval(self)
         br.edit_traits()
+
+    @interactive_range_selector    
+    def crop_spectrum(self, left_value = None, right_value = None,):
+        iaxis = self.axes_manager._slicing_axes[0].index_in_array
+        self.crop_in_units(axis=iaxis, x1=left_value, x2=right_value)
     
