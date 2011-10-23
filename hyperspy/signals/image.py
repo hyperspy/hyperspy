@@ -1112,7 +1112,7 @@ Nothing to plot.  Try again.""")
                                      vector_scale=vector_scale,
                                      per_row=per_row)
 
-    def plot_pca_peak_factors(self, comp_ids=None, calibrate=True,
+    def plot_pca_peak_factors(self, comp_ids=6, calibrate=True,
                         same_window=True, comp_label='PC', 
                         img_data=None,
                         plot_shifts=True, plot_char=None, 
