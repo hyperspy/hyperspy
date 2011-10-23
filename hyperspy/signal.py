@@ -31,6 +31,7 @@ from hyperspy.misc import utils
 from hyperspy.learn.mva import MVA, MVA_Results
 from hyperspy.misc.utils import DictionaryBrowser
 from hyperspy.drawing import signal as sigdraw
+from hyperspy.decorators import auto_replot
 
 from matplotlib import pyplot as plt
 
@@ -67,6 +68,7 @@ class Signal(t.HasTraits, MVA):
         self._plot = None
         self._shape_before_unfolding = None
         self._axes_manager_before_unfolding = None
+        self.auto_replot = True
 
     def __repr__(self):
         string = self.__class__.__name__
@@ -308,7 +310,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         if self._plot is not None:
             if self._plot.is_active() is True:
                 self.plot()
-
+    @auto_replot
     def get_dimensions_from_data(self):
         """Get the dimension parameters from the data_cube. Useful when the
         data_cube was externally modified, or when the SI was not loaded from
@@ -319,7 +321,6 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             axis.size = int(dc.shape[axis.index_in_array])
             print("%s size: %i" %
             (axis.name, dc.shape[axis.index_in_array]))
-        self._replot()
 
     def crop_in_pixels(self, axis, i1 = None, i2 = None):
         """Crops the data in a given axis. The range is given in pixels
@@ -364,6 +365,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         i2 = self.axes_manager.axes[axis].value2index(x2)
         self.crop_in_pixels(axis, i1, i2)
 
+    @auto_replot
     def roll_xy(self, n_x, n_y = 1):
         """Roll over the x axis n_x positions and n_y positions the former rows
 
@@ -380,9 +382,9 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         """
         self.data = np.roll(self.data, n_x, 0)
         self.data[:n_x, ...] = np.roll(self.data[:n_x, ...], n_y, 1)
-        self._replot()
 
     # TODO: After using this function the plotting does not work
+    @auto_replot
     def swap_axis(self, axis1, axis2):
         """Swaps the axes
 
@@ -399,7 +401,6 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         self.axes_manager.axes[axis1] = c2
         self.axes_manager.axes[axis2] = c1
         self.axes_manager.set_signal_dimension()
-        self._replot()
 
     def rebin(self, new_shape):
         """
@@ -480,6 +481,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         else:
             return False
 
+    @auto_replot
     def _unfold(self, steady_axes, unfolded_axis):
         """Modify the shape of the data by specifying the axes the axes which
         dimension do not change and the axis over which the remaining axes will
@@ -535,7 +537,6 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             self.axes_manager.axes.remove(axis)
 
         self.data = self.data.squeeze()
-        self._replot()
 
     def unfold(self):
         """Modifies the shape of the data by unfolding the signal and
@@ -574,6 +575,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         unfolded_axis = self.axes_manager._slicing_axes[-1].index_in_array
         self._unfold(steady_axes, unfolded_axis)
 
+    @auto_replot
     def fold(self):
         """If the signal was previously unfolded, folds it back"""
         if self._shape_before_unfolding is not None:
@@ -581,7 +583,6 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             self.axes_manager = self._axes_manager_before_unfolding
             self._shape_before_unfolding = None
             self._axes_manager_before_unfolding = None
-            self._replot()
 
     def _get_positive_axis_index_index(self, axis):
         if axis < 0:

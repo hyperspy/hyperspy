@@ -31,6 +31,7 @@ from hyperspy.learn.mlpca import mlpca
 from hyperspy.misc.utils import center_and_scale
 from hyperspy.defaults_parser import preferences
 from hyperspy import messages
+from hyperspy.decorators import auto_replot
 
 
 class MVA():
@@ -476,19 +477,19 @@ class MVA():
         """
         return self._calculate_recmatrix(components=components, mva_type='ica',
                                          on_peaks=on_peaks)
-
+    @auto_replot
     def energy_center(self):
         """Subtract the mean energy pixel by pixel"""
         print "\nCentering the energy axis"
         self._energy_mean = np.mean(self.data, 0)
         self.data = (self.data - self._energy_mean)
-        self._replot()
-
+    
+    @auto_replot
     def undo_energy_center(self):
         if hasattr(self,'_energy_mean'):
             self.data = (self.data + self._energy_mean)
-            self._replot()
-
+    
+    @auto_replot
     def variance2one(self, on_peaks=False):
         # Whitening
         if on_peaks:
@@ -497,8 +498,8 @@ class MVA():
             d=self.data
         self._std = np.std(d, 0)
         d /= self._std
-        self._replot()
 
+    @auto_replot
     def undo_variance2one(self, on_peaks=False):
         if on_peaks:
             d=self.mapped_parameters.peak_chars
@@ -506,7 +507,6 @@ class MVA():
             d=self.data
         if hasattr(self,'_std'):
             d *= self._std
-            self._replot()
 
     def plot_lev(self, n=50, on_peaks=False):
         """Plot the principal components LEV up to the given number

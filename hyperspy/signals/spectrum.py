@@ -32,6 +32,7 @@ from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import only_interactive
 from hyperspy.defaults_parser import preferences
 from hyperspy.decorators import interactive_range_selector
+from hyperspy.decorators import auto_replot
 
             
 class Spectrum(Signal):
@@ -41,6 +42,7 @@ class Spectrum(Signal):
         Signal.__init__(self, *args, **kwargs)
         self.axes_manager.set_view('hyperspectrum')
 
+    @auto_replot
     def correct_bad_pixels(self, indexes, axis = -1):
         """Substitutes the value of a given pixel by the average of the
         adjencent pixels
@@ -56,7 +58,6 @@ class Spectrum(Signal):
             data[(slice(None),)*axis + (pixel, Ellipsis)] = \
             (data[(slice(None),)*axis + (pixel - 1, Ellipsis)] + \
             data[(slice(None),)*axis + (pixel + 1, Ellipsis)]) / 2.
-        self._replot()
 
 
     def align_with_array_1D(self, shift_array, axis = -1,

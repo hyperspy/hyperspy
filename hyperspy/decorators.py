@@ -39,3 +39,12 @@ def interactive_range_selector(cm):
         else:
             cm(self, *args, **kwargs)
     return wrapper
+    
+def auto_replot(cm):
+    def wrapper(self, *args, **kwargs):
+        if self.auto_replot is True:
+            cm(self, *args, **kwargs)
+            self._replot()
+        else:
+            cm(self, *args, **kwargs)
+    return wrapper
