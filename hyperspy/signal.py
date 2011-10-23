@@ -1278,7 +1278,7 @@ data.  Please use a different file format.')
 
     def plot_ica_scores(self, comp_ids=None, calibrate=True,
                        same_window=True, comp_label='IC', 
-                       with_factors=False, cmap=plt.cm.jet, 
+                       with_factors=False, cmap=plt.cm.grey, 
                        no_nans=True,per_row=3):
         """Plot scores from ICA
 
