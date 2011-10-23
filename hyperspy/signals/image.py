@@ -251,7 +251,7 @@ class Image(Signal):
         else:
             return fig_list
 
-    def plot_pca_factors(self, comp_ids=None, calibrate=True,
+    def plot_pca_factors(self, comp_ids=6, calibrate=True,
                         same_window=True, comp_label='PC', 
                         on_peaks=False, img_data=None,
                         plot_shifts=True, plot_char=None, 
@@ -385,7 +385,7 @@ class Image(Signal):
                                 plot_shifts=plot_shifts, plot_char=plot_char, 
                                 cmap=cmap, per_row=per_row)
 
-    def plot_pca_scores(self, comp_ids=None, calibrate=True,
+    def plot_pca_scores(self, comp_ids=6, calibrate=True,
                        same_window=True, comp_label='PC', 
                        with_factors=False,
                        on_peaks=False, cmap=plt.cm.jet, 

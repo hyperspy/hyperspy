@@ -1147,7 +1147,7 @@ data.  Please use a different file format.')
                     s.save('%s-%i.%s' % (score_prefix, dim, score_format))
 
     # =============================================================
-    def plot_pca_factors(self,comp_ids=None, calibrate=True,
+    def plot_pca_factors(self,comp_ids=6, calibrate=True,
                         same_window=True, comp_label='PC', 
                         per_row=3):
         """Plot components from PCA
@@ -1225,7 +1225,7 @@ data.  Please use a different file format.')
                                             comp_label=comp_label, 
                                             per_row=per_row)
 
-    def plot_pca_scores(self, comp_ids=None, calibrate=True,
+    def plot_pca_scores(self, comp_ids=6, calibrate=True,
                        same_window=True, comp_label='PC', 
                        with_factors=False, cmap=plt.cm.jet, 
                        no_nans=True,per_row=3):
