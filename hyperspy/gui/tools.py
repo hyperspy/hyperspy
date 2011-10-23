@@ -28,6 +28,9 @@ from hyperspy.gui import messages
 
 import sys
 
+OurApplyButton = tu.Action(name = "Apply",
+                action = "apply")
+
 class SpanSelectorInSpectrumHandler(tu.Handler):
     def close(self, info, is_ok):
         # Removes the span selector from the plot
@@ -48,7 +51,7 @@ class SpanSelectorInSpectrumHandler(tu.Handler):
 class SpectrumRangeSelectorHandler(tu.Handler):
     def close(self, info, is_ok):
         # Removes the span selector from the plot
-        info.object.span_selector_switch('False')
+        info.object.span_selector_switch(False)
         if is_ok is True:
             self.apply(info)
         return True
@@ -59,8 +62,11 @@ class SpectrumRangeSelectorHandler(tu.Handler):
         """
         obj = info.object
         if obj.ss_left_value != obj.ss_right_value:
+            info.object.span_selector_switch(False)
             for method, cls in obj.on_close:
                 method(cls, obj.ss_left_value, obj.ss_right_value)
+            info.object.span_selector_switch(True)
+                
         obj.is_ok = True
         
         return
@@ -171,21 +177,12 @@ class SpectrumCalibration(SpanSelectorInSpectrum):
             
 class SpectrumRangeSelector(SpanSelectorInSpectrum):
     on_close = t.List()
-    reset = t.Button()
-    
-    def _reset_fired(self):
-        self.ss_left_value = 0
-        self.ss_right_value = 0
-        self.span_selector_switch(False)
-        self.span_selector_switch(True)
         
     view = tu.View(
         tu.Item('ss_left_value', label = 'Left', style = 'readonly'),
         tu.Item('ss_right_value', label = 'Right', style = 'readonly'),
-        tu.Item('reset', show_label = False),
         handler = SpectrumRangeSelectorHandler,
-#        kind = 'nonmodal',
-        buttons = [OKButton, CancelButton],)
+        buttons = [OKButton, OurApplyButton, CancelButton],)
             
 
 class Smoothing(t.HasTraits):

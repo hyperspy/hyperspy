@@ -33,6 +33,7 @@ from hyperspy.signals.eels import EELSSpectrum, Spectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
+from hyperspy.decorators import interactive_range_selector
 
 class Model(list, Optimizers, Estimators):
     """Build and fit a model
@@ -407,7 +408,8 @@ class Model(list, Optimizers, Estimators):
         self.channel_switches[i1:i2] = True
         if self.auto_update_plot is True:
             self.update_plot()
-        
+            
+    @interactive_range_selector   
     def set_data_range_in_units(self, x1 = None, x2 = None):
         """Use only the selected spectral range defined in its own units in the 
         fitting routine.
@@ -436,7 +438,8 @@ class Model(list, Optimizers, Estimators):
         self.channel_switches[i1:i2] = False
         if self.auto_update_plot is True:
             self.update_plot()
-        
+
+    @interactive_range_selector    
     def remove_data_range_in_units(self, x1 = None, x2= None):
         """Removes the data in the given range from the data range that will be 
         used by the fitting rountine
@@ -450,6 +453,10 @@ class Model(list, Optimizers, Estimators):
         i1, i2 = self.axis.value2index(x1), self.axis.value2index(x2)
         self.remove_data_range_in_pixels(i1, i2)
         
+    def reset_data_range(self):
+        '''Resets the data range'''
+        self.set_data_range_in_pixels()
+    
     def add_data_range_in_pixels(self, i1 = None, i2= None):
         """Adds the data in the given range from the data range that will be 
         used by the fitting rountine
@@ -462,7 +469,8 @@ class Model(list, Optimizers, Estimators):
         self.channel_switches[i1:i2] = True
         if self.auto_update_plot is True:
             self.update_plot()
-        
+
+    @interactive_range_selector    
     def add_data_range_in_units(self, x1 = None, x2= None):
         """Adds the data in the given range from the data range that will be 
         used by the fitting rountine
@@ -689,6 +697,7 @@ class Model(list, Optimizers, Estimators):
 #        on_figure_window_close(_plot.spectrum_plot.figure, 
 #                                      self.disconnect_parameters2update_plot)
         self.set_auto_update_plot(True)
+        self._plot = self.spectrum._plot
         # TODO Set autoupdate to False on close
         
     def set_current_values_to(self, components_list = None, mask = None):
