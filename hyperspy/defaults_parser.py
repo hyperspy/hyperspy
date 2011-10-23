@@ -239,8 +239,5 @@ preferences = Preferences(
             General = template['General'],
             Model = template['Model'])
             
-
-    
-
-
-
+if preferences.General.logger_on:
+    turn_logging_on()
