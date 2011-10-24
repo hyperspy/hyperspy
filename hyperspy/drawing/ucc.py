@@ -183,8 +183,6 @@ class TemplatePicker(HasTraits):
         self.OK_custom=OK_custom_handler()
         self.sig=signal_instance
         if not hasattr(self.sig.mapped_parameters,"original_files"):
-            if len(self.sig.data.shape)<3:
-                self.sig.data=self.sig.data[np.newaxis,:,:]
             self.titles=[os.path.splitext(self.sig.mapped_parameters.title)[0]]
         else:
             self.numfiles=len(self.sig.mapped_parameters.original_files.keys())
@@ -312,14 +310,14 @@ class TemplatePicker(HasTraits):
         self.redraw_plots()        
 
     def _get_max_pos_x(self):
-        max_pos_x=self.sig.data.shape[1]-self.tmp_size-1
+        max_pos_x=self.sig.data.shape[-1]-self.tmp_size-1
         if max_pos_x>0:
             return max_pos_x
         else:
             return None
 
     def _get_max_pos_y(self):
-        max_pos_y=self.sig.data.shape[2]-self.tmp_size-1
+        max_pos_y=self.sig.data.shape[-2]-self.tmp_size-1
         if max_pos_y>0:
             return max_pos_y
         else:

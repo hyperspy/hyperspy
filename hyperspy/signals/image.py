@@ -1247,6 +1247,8 @@ Nothing to plot.  Try again.""")
 #=============================================================================
         
     def cell_cropper(self):
+        if len(self.sig.data.shape)<3:
+            self.data=self.data[np.newaxis,:,:]
         if not hasattr(self.mapped_parameters,"picker"):
             import hyperspy.drawing.ucc as ucc
             self.mapped_parameters.picker=ucc.TemplatePicker(self)
