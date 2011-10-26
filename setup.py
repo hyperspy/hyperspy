@@ -53,7 +53,6 @@ if are_we_building4windows() or os.name in ['nt','dos']:
     install_req.append('pyreadline')
     scripts.append('bin/win_post_installation.py')
 
-    scripts.append('bin/hyperspy_update')
 
     batch_files = []
     for script in scripts:
@@ -61,9 +60,7 @@ if are_we_building4windows() or os.name in ['nt','dos']:
         f = open(batch_file, "w")
         f.write('set path=%~dp0;%~dp0\..\;%PATH%\n')
         if script == 'bin/hyperspy':
-            f.write('python "%%~dp0\%s" --ipython_args qtconsole %%*\n' % os.path.split(script)[1])
-        elif script == 'bin/hyperspy_update':
-            f.write('pip install --upgrade hyperspy\n')
+            f.write('start pythonw "%%~dp0\%s" --ipython_args qtconsole %%*\n' % os.path.split(script)[1])
         else:
             f.write('python "%%~dp0\%s" %%*\n' % os.path.split(script)[1])
         f.close()
