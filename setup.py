@@ -89,6 +89,7 @@ setup(
                 'data/*.m', 
                 'data/*.csv',
                 'data/*.tar.gz',
+				'data/hyperspy_logo.ico',
 		'tests/io/dm3_1D_data/*.dm3',
 		'tests/io/dm3_2D_data/*.dm3',
 		'tests/io/dm3_3D_data/*.dm3',
