@@ -92,8 +92,8 @@ class TemplatePicker(HasTraits):
     tmp_size = Range(low=2, high=512, value=64, cols=4)
     max_pos_x=Property(depends_on=['tmp_size'])
     max_pos_y=Property(depends_on=['tmp_size'])
-    top = Range(low='zero',high='max_pos_x', value=20, cols=4)
-    left = Range(low='zero',high='max_pos_y', value=20, cols=4)
+    top = Range(low='zero',high='max_pos_y', value=20, cols=4)
+    left = Range(low='zero',high='max_pos_x', value=20, cols=4)
     is_square = Bool
     img_plot = Instance(Plot)
     tmp_plot = Instance(Plot)
@@ -106,8 +106,8 @@ class TemplatePicker(HasTraits):
     img_container = Instance(Component)
     container = Instance(Component)
     colorbar= Instance(Component)
-    numpeaks_total = Int(0)
-    numpeaks_img = Int(0)
+    numpeaks_total = Int(0,cols=5)
+    numpeaks_img = Int(0,cols=5)
     OK_custom=OK_custom_handler
     cbar_selection = Instance(RangeSelection)
     cbar_selected = Event
@@ -329,6 +329,7 @@ class TemplatePicker(HasTraits):
             self.img_idx=0
         else:
             self.img_idx+=1
+
     @on_trait_change('prev_img')
     def decrease_img_idx(self,info):
         if self.img_idx==0:
@@ -343,14 +344,14 @@ class TemplatePicker(HasTraits):
 
     @on_trait_change('csr:current_position')
     def update_top_left(self):
-        if self.csr.current_position[0]>0:
+        if self.csr.current_position[0]>0 or self.csr.current_position[1]>0:
             if self.csr.current_position[0]>self.max_pos_x:
                 if self.csr.current_position[1]<self.max_pos_y:
                     self.top=self.csr.current_position[1]
                 else:
                     self.csr.current_position=self.max_pos_x, self.max_pos_y
             elif self.csr.current_position[1]>self.max_pos_y:
-                self.left=self.csr.current_position[0]
+                self.left,self.top=self.csr.current_position[0],self.max_pos_y
             else:
                 self.left,self.top=self.csr.current_position
         
