@@ -52,16 +52,20 @@ def install_hyperspy_here(hyperspy_bat):
 def install():
 	commons_sm = get_special_folder_path("CSIDL_COMMON_STARTMENU")
 	local_sm = get_special_folder_path("CSIDL_STARTMENU")
-	if admin_rights is True:
+	if admin_rights() is True:
 		start_menu = commons_sm
 	else:
 		start_menu = local_sm
+	print start_menu
 	hyperspy_install_path = os.path.dirname(hyperspy.__file__)
 	logo_path = os.path.expandvars(os.path.join(hyperspy_install_path, 'data', 'hyperspy_logo.ico'))
 	print logo_path
 	hyperspy_bat = os.path.join(sys.prefix, 'Scripts', 'hyperspy.bat')
 	# Create the start_menu entry
-	hspy_sm_path = os.path.join(start_menu, "Hyperspy")
+	if sys.getwindowsversion()[0] < 6.: # Older than Windows Vista:
+	    hspy_sm_path = os.path.join(start_menu, "Programs","Hyperspy")
+	else:
+	    hspy_sm_path = os.path.join(start_menu, "Hyperspy")
 	if not os.path.isdir(hspy_sm_path):
 		os.mkdir(hspy_sm_path)
 		directory_created(hspy_sm_path)
