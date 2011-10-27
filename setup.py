@@ -16,10 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-try:
-    import setuptools
-except:
-    print "Setuptools unavailable.  setup.py develop and test commands not available."
 
 from distutils.core import setup
 
