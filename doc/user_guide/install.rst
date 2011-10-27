@@ -8,11 +8,8 @@ Most users will like to :ref:`install-binary`. At the moment we provide binary i
  
 Install from a binary
 ---------------------
-.. Note::
-    To date there is not any stable release of Hyperspy and therefore no binaries are provided. Currently the only way to get Hyperspy is to :ref:`install-dev`
 
-..
-    There are binary distributions for Linux and Windows. In Debian and Ubuntu the dependencies are installed automatically. In Windows there is an experimental bundle installer that includes all the dependencies both for Windows 32 bits and 64 bits.
+    We provide  binary distributions for Debian/Ubuntu Linux and Windows. In Debian and Ubuntu the dependencies are installed automatically. In Windows it is necessary to previously install the required libraries, see :ref:`install-dependencies`
 
 .. _install-source:
 
@@ -75,14 +72,15 @@ To create a Windows binary run the `release_windows.bat` script in a windows mac
 
 .. _install-dependencies:
 
-Installing the dependencies
----------------------------
+Installing the required libraries
+---------------------------------
 
-The easiest way to install these packages is by installing the `enthough python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with most Hyperspy dependencies installed by default.
+Before installing Hyperspy certain libraries have to be installed in the system. The easiest way to install these packages is by installing the `enthough python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default. Please note that the academic version of EPD is free, `you can get it here <http://www.enthought.com/products/edudownload.php>`_
+
 
 Another option in Windows is to install `pythonxy <http://www.pythonxy.com/>`_.
 
-If you use a Debian/Ubuntu binary to install Hyperspy all the dependencies should install automatically. Otherwise you must install the following packages (note that we use the Debian/Ubuntu package names): ``python-numpy``  ``python-scipy`` ``python-matplotlib`` ``ipython`` ``python-mdp`` ``python-netcdf`` ``python-h5py`` ``python-traits`` ``python-traitsgui`` ``python-nose`` ``python-opencv`` ``python-chaco``.
+If you use a Debian/Ubuntu binary to install Hyperspy all the dependencies should install automatically. Otherwise you must install the following packages (note that we use the Debian/Ubuntu package names): ``python-numpy``  ``python-scipy`` ``python-matplotlib`` ``ipython`` ``python-mdp`` ``python-netcdf`` ``python-h5py`` ``python-traits`` ``python-traitsui`` ``python-nose`` ``python-opencv`` ``python-chaco``.
 
 
 
