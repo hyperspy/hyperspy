@@ -174,7 +174,7 @@ def unfold_if_multidim(signal):
         return False
 
 def estimate_gain(noisy_signal, clean_signal, mask = None, pol_order = 1,
-higher_than = None, return_results = False):
+higher_than = None, return_results = False, plot_results = True):
     """Find the scale and offset of the Poissonian noise
 
     By comparing an SI with its denoised version (i.e. by PCA), this plots an
@@ -192,6 +192,8 @@ higher_than = None, return_results = False):
         To restrict the fit to counts over the given value.
         
     return_results : Bool
+    
+    plot_results : Bool
 
     Returns
     -------
@@ -210,17 +212,19 @@ higher_than = None, return_results = False):
     noise = ns - cs
     variance = np.var(noise, 0)
     average = np.mean(cs, 0)
-    plt.figure()
-    plt.scatter(average.squeeze(), variance.squeeze())
-    plt.xlabel('Counts')
-    plt.ylabel('Variance')
+
     ave = average.squeeze()
     so = np.argsort(ave)
     aveso = ave[so]
     avesoh = aveso > higher_than
     varso = variance.squeeze()[so]
     fit = np.polyfit(aveso[avesoh], varso[avesoh], pol_order)
-    plt.plot(ave[so], np.polyval(fit,ave[so]), color = 'red')
+    if plot_results is True:
+        plt.figure()
+        plt.scatter(average.squeeze(), variance.squeeze())
+        plt.xlabel('Counts')
+        plt.ylabel('Variance')
+        plt.plot(ave[so], np.polyval(fit,ave[so]), color = 'red')
     dic = {'fit' : fit, 'variance' : variance.squeeze(),
     'counts' : average.squeeze()}
     message = ("Gain factor: %.2f\n" % fit[0] +
