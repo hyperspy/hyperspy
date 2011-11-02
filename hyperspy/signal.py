@@ -547,8 +547,6 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         """
 
         if self.axes_manager.navigation_dimension < 2:
-            messages.information('Nothing done, the navigation dimension was '
-                                'already 1')
             return False
         steady_axes = [
                         axis.index_in_array for axis in
@@ -561,8 +559,6 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         dimension 1
         """
         if self.axes_manager.signal_dimension < 2:
-            messages.information('Nothing done, the signal dimension was '
-                                'already 1')
             return False
         steady_axes = [
                         axis.index_in_array for axis in
