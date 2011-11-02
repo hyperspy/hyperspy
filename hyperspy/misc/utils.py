@@ -28,8 +28,6 @@ except ImportError:
     # happens with Python < 2.7
     ordict = False
 
-from hyperspy import messages
-
 import numpy as np
 import scipy as sp
 import scipy.interpolate
@@ -44,6 +42,10 @@ def import_rpy():
         print "python-rpy is not installed"
 
 import matplotlib.pyplot as plt
+
+from hyperspy import messages
+from hyperspy.gui import messages as messagesui
+import hyperspy.defaults_parser
 
 def dump_dictionary(file, dic, string = 'root', node_separator = '.',
                     value_separator = ' = '):
@@ -219,6 +221,20 @@ higher_than = None):
     plt.plot(ave[so], np.polyval(fit,ave[so]), color = 'red')
     dic = {'fit' : fit, 'variance' : variance.squeeze(),
     'counts' : average.squeeze()}
+    message = ("Gain factor: %.2f\n" % fit[0] +
+               "Gain offset: %.2f\n" % fit[1])
+    is_ok = True
+    if hyperspy.defaults_parser.preferences.General.interactive is True:
+        is_ok = messagesui.information(message +
+                                       "Would you like to store the results?")
+    
+    if is_ok:
+        if not noisy_signal.mapped_parameters.has_item('Variance_estimation'):
+            noisy_signal.mapped_parameters.add_node('Variance_estimation')
+        noisy_signal.mapped_parameters.Variance_estimation.gain_factor = fit[0]
+        noisy_signal.mapped_parameters.Variance_estimation.gain_offset = fit[1]
+        noisy_signal.mapped_parameters.Variance_estimation.\
+        gain_estimation_method = 'Hyperspy estimate_gain'
     return dic
     if fold_back_noisy is True:
         noisy_signal.fold()

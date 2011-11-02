@@ -37,7 +37,25 @@ record_by
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
     If 'spectrum' the spectral data is stored in the faster index.
     
+Variance_estimation
+-------------------
 
+In some cases the variance can be calculated from the data using a simple linear
+formula: variance = (gain_factor * I + gain_offset) * correlation_factor
+When this is the case, the parameters can be stored in the Variance_estimation
+node.
+
+gain_factor
+    type: Float
+
+gain_offset
+    type: Float
+
+correlation_factor
+    type: Float
+
+gain_estimation_method
+    type: Str
 
 Transmission electron microscope keys
 -------------------------------------

@@ -1833,12 +1833,22 @@ especially offers more options for image stacks.')
         """
         gain_factor = 1
         gain_offset = 0
-        if self.mapped_parameters.has_item('gain_factor'):
-            gain_factor = self.mapped_parameters.gain_factor
-        if self.mapped_parameters.has_item('gain_offset'):
-            gain_offset = self.mapped_parameters.gain_offset
+        correlation_factor = 1
+        if not self.mapped_parameters.has_item("Variance_estimation"):
+            print("No Variance estimation parameters found in mapped"
+                  " parameters. The variance will be estimated supposing "
+                  "perfect poissonian noise")
+        if self.mapped_parameters.has_item('Variance_estimation.gain_factor'):
+            gain_factor = self.mapped_parameters.Variance_estimation.gain_factor
+        if self.mapped_parameters.has_item('Variance_estimation.gain_offset'):
+            gain_offset = self.mapped_parameters.Variance_estimation.gain_offset
+        if self.mapped_parameters.has_item(
+            'Variance_estimation.correlation_factor'):
+            correlation_factor = \
+                self.mapped_parameters.Variance_estimation.correlation_factor
         print "Gain factor = ", gain_factor
         print "Gain offset = ", gain_offset
+        print "Correlation factor = ", correlation_factor
         if dc is None:
             dc = self.data
         self.variance = dc * gain_factor + gain_offset
@@ -1850,7 +1860,8 @@ especially offers more options for image stacks.')
                 return
             elif gaussian_noise_var is None:
                 print "Clipping the variance to the gain_offset value"
-                self.variance = np.clip(self.variance, np.abs(gain_offset),
+                minimum = 0 if gain_offset < 0 else gain_offset
+                self.variance = np.clip(self.variance, minimum,
                 np.Inf)
             else:
                 print "Clipping the variance to the gaussian_noise_var"
