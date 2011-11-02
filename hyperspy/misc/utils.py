@@ -174,7 +174,7 @@ def unfold_if_multidim(signal):
         return False
 
 def estimate_gain(noisy_signal, clean_signal, mask = None, pol_order = 1,
-higher_than = None):
+higher_than = None, return_results = False):
     """Find the scale and offset of the Poissonian noise
 
     By comparing an SI with its denoised version (i.e. by PCA), this plots an
@@ -190,6 +190,8 @@ higher_than = None):
         The order of the polynomy.
     higher_than: float
         To restrict the fit to counts over the given value.
+        
+    return_results : Bool
 
     Returns
     -------
@@ -227,7 +229,8 @@ higher_than = None):
     if hyperspy.defaults_parser.preferences.General.interactive is True:
         is_ok = messagesui.information(message +
                                        "Would you like to store the results?")
-    
+    else:
+        print message
     if is_ok:
         if not noisy_signal.mapped_parameters.has_item('Variance_estimation'):
             noisy_signal.mapped_parameters.add_node('Variance_estimation')
@@ -235,11 +238,14 @@ higher_than = None):
         noisy_signal.mapped_parameters.Variance_estimation.gain_offset = fit[1]
         noisy_signal.mapped_parameters.Variance_estimation.\
         gain_estimation_method = 'Hyperspy estimate_gain'
-    return dic
+
     if fold_back_noisy is True:
         noisy_signal.fold()
     if fold_back_clean is True:
         clean_signal.fold()
+        
+    if return_results is True:
+        return dic
 
 def rebin(a, new_shape):
     """Rebin SI
