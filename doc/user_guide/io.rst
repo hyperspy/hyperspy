@@ -85,6 +85,13 @@ It is the default format and it is the only one that guarantees that no informat
 
 Note that only HDF5 files written by Hyperspy are supported.
 
+Extra arguments
+^^^^^^^^^^^^^^^
+compression: One of None, 'gzip', 'szip', 'lzf'.
+
+'gzip' is the default
+
+
 .. _netcdf-format:
 
 NetCDF

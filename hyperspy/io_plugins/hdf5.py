@@ -130,14 +130,16 @@ def hdfgroup2signaldict(group):
         
     return exp
 
-def dict2hdfgroup(dictionary, group):
+def dict2hdfgroup(dictionary, group, compression = None):
     from hyperspy.misc.utils import DictionaryBrowser
     from hyperspy.signal import Signal
     for key, value in dictionary.iteritems():
         if isinstance(value, dict):
-            dict2hdfgroup(value, group.create_group(key))
+            dict2hdfgroup(value, group.create_group(key), 
+                          compression = compression)
         elif isinstance(value, DictionaryBrowser):
-            dict2hdfgroup(value.as_dictionary(), group.create_group(key))
+            dict2hdfgroup(value.as_dictionary(), group.create_group(key),
+                          compression = compression)
         elif isinstance(value, Signal):
             if key.startswith('_sig_'):
                 try:
@@ -147,7 +149,7 @@ def dict2hdfgroup(dictionary, group):
             else:
                 write_signal(value,group.create_group('_sig_'+key))
         elif isinstance(value, np.ndarray):
-            group.create_dataset(key, data = value)
+            group.create_dataset(key, data = value, compression = compression)
         elif isinstance(value, mdp.Node):
             pass
         else:
@@ -194,31 +196,31 @@ def hdfgroup2dict(group, dictionary = {}):
                 hdfgroup2dict(group[key], dictionary[key])
     return dictionary
 
-def write_signal(signal,group):
-    group.create_dataset('data', data = signal.data)
+def write_signal(signal,group, compression):
+    group.create_dataset('data', data = signal.data, compression = compression)
     for axis in signal.axes_manager.axes:
         axis_dict = axis.get_axis_dictionary()
         # For the moment we don't store the slice_bool
         del(axis_dict['slice_bool'])
         coord_group = group.create_group('axis-%s' % axis.index_in_array)
-        dict2hdfgroup(axis_dict, coord_group)
+        dict2hdfgroup(axis_dict, coord_group, compression = compression)
     mapped_par = group.create_group('mapped_parameters')
     dict2hdfgroup(signal.mapped_parameters.as_dictionary(), 
-                  mapped_par)
+                  mapped_par, compression = compression)
     original_par = group.create_group('original_parameters')
     dict2hdfgroup(signal.original_parameters.as_dictionary(), 
-                  original_par)
+                  original_par, compression = compression)
     mva_results = group.create_group('mva_results')
     dict2hdfgroup(signal.mva_results.__dict__, 
-                  mva_results)
+                  mva_results, compression = compression)
     if hasattr(signal,'peak_mva_results'):
         peak_mva_results = group.create_group('peak_mva_results')
         dict2hdfgroup(signal.peak_mva_results.__dict__, 
-                  peak_mva_results)
+                  peak_mva_results, compression = compression)
                                     
-def file_writer(filename, signal, *args, **kwds):
+def file_writer(filename, signal, compression = 'gzip', *args, **kwds):
     f = h5py.File(filename, mode = 'w')
     exps = f.create_group('Experiments')
     expg = exps.create_group(signal.mapped_parameters.title)
-    write_signal(signal,expg)
+    write_signal(signal,expg, compression = compression)
     f.close()
