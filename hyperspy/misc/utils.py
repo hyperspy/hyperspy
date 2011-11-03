@@ -172,9 +172,71 @@ def unfold_if_multidim(signal):
         return True
     else:
         return False
+        
+def _estimate_gain(ns, cs, weighted = False, higher_than = None, 
+    plot_results = False, binning = 0, pol_order = 1):
+    if binning > 0:
+        factor = 2 ** binning
+        remainder = np.mod(ns.shape[1], factor)
+        if remainder != 0:
+            ns = ns[:,remainder:]
+            cs = cs[:,remainder:]
+        new_shape = (ns.shape[0], ns.shape[1]/factor)
+        ns = rebin(ns, new_shape)
+        cs = rebin(cs, new_shape)
 
-def estimate_gain(noisy_signal, clean_signal, mask = None, pol_order = 1,
-higher_than = None, return_results = False, plot_results = True):
+    noise = ns - cs
+    variance = np.var(noise, 0)
+    average = np.mean(cs, 0).squeeze()
+
+    # Select only the values higher_than for the calculation
+    if higher_than is not None:
+        sorting_index_array = np.argsort(average)
+        average_sorted = average[sorting_index_array]
+        average_higher_than = average_sorted > higher_than
+        variance_sorted = variance.squeeze()[sorting_index_array]
+        variance2fit = variance_sorted[average_higher_than]
+        average2fit = average_sorted[average_higher_than]
+    else:
+        variance2fit = variance
+        average2fit = average
+        
+    fit = np.polyfit(average2fit, variance2fit, pol_order)
+    if weighted is True:
+        from hyperspy.signals.spectrum import Spectrum
+        from hyperspy.model import Model
+        from hyperspy.components import Line
+        s = Spectrum({'data' : varso[avesoh]})
+        s.axes_manager._slicing_axes[0].axis = aveso[avesoh]
+        m = Model(s)
+        l = Line()
+        l.a.value = fit[1]
+        l.b.value = fit[0]
+        m.append(l)
+        m.fit(weights = True)
+        fit[0] = l.b.value
+        fit[1] = l.a.value
+        
+    if plot_results is True:
+        plt.figure()
+        plt.scatter(average.squeeze(), variance.squeeze())
+        plt.xlabel('Counts')
+        plt.ylabel('Variance')
+        plt.plot(average2fit, np.polyval(fit,average2fit), color = 'red')
+    results = {'fit' : fit, 'variance' : variance.squeeze(),
+    'counts' : average.squeeze()}
+    
+    return results
+
+def _estimate_correlation_factor(g0, gk,k):
+    a = math.sqrt(g0/gk)
+    e = k*(a-1)/(a-k)
+    c = (1 - e)**2
+    return c    
+
+def estimate_variance_parameters(noisy_signal, clean_signal, mask = None,
+    pol_order = 1, higher_than = None, return_results = False,
+    plot_results = True, weighted = False):
     """Find the scale and offset of the Poissonian noise
 
     By comparing an SI with its denoised version (i.e. by PCA), this plots an
@@ -209,26 +271,20 @@ higher_than = None, return_results = False, plot_results = True):
         ns = ns[mask]
         cs = cs[mask]
 
-    noise = ns - cs
-    variance = np.var(noise, 0)
-    average = np.mean(cs, 0)
-
-    ave = average.squeeze()
-    so = np.argsort(ave)
-    aveso = ave[so]
-    avesoh = aveso > higher_than
-    varso = variance.squeeze()[so]
-    fit = np.polyfit(aveso[avesoh], varso[avesoh], pol_order)
-    if plot_results is True:
-        plt.figure()
-        plt.scatter(average.squeeze(), variance.squeeze())
-        plt.xlabel('Counts')
-        plt.ylabel('Variance')
-        plt.plot(ave[so], np.polyval(fit,ave[so]), color = 'red')
-    dic = {'fit' : fit, 'variance' : variance.squeeze(),
-    'counts' : average.squeeze()}
-    message = ("Gain factor: %.2f\n" % fit[0] +
-               "Gain offset: %.2f\n" % fit[1])
+    results0 = _estimate_gain(ns, cs, weighted = weighted, 
+        higher_than = higher_than, plot_results = plot_results, binning = 0,
+        pol_order = pol_order)
+        
+    results2 = _estimate_gain(ns, cs, weighted = weighted, 
+        higher_than = higher_than, plot_results = False, binning = 2,
+        pol_order = pol_order)
+        
+    c = _estimate_correlation_factor(results0['fit'][0], results2['fit'][0],
+        4)
+    
+    message = ("Gain factor: %.2f\n" % results0['fit'][0] +
+               "Gain offset: %.2f\n" % results0['fit'][1] +
+               "Correlation factor: %.2f\n" % c )
     is_ok = True
     if hyperspy.defaults_parser.preferences.General.interactive is True:
         is_ok = messagesui.information(message +
@@ -238,10 +294,14 @@ higher_than = None, return_results = False, plot_results = True):
     if is_ok:
         if not noisy_signal.mapped_parameters.has_item('Variance_estimation'):
             noisy_signal.mapped_parameters.add_node('Variance_estimation')
-        noisy_signal.mapped_parameters.Variance_estimation.gain_factor = fit[0]
-        noisy_signal.mapped_parameters.Variance_estimation.gain_offset = fit[1]
+        noisy_signal.mapped_parameters.Variance_estimation.gain_factor = \
+            results0['fit'][0]
+        noisy_signal.mapped_parameters.Variance_estimation.gain_offset = \
+            results0['fit'][1]
+        noisy_signal.mapped_parameters.Variance_estimation.correlation_factor =\
+            c
         noisy_signal.mapped_parameters.Variance_estimation.\
-        gain_estimation_method = 'Hyperspy estimate_gain'
+        parameters_estimation_method = 'Hyperspy'
 
     if fold_back_noisy is True:
         noisy_signal.fold()
@@ -249,7 +309,7 @@ higher_than = None, return_results = False, plot_results = True):
         clean_signal.fold()
         
     if return_results is True:
-        return dic
+        return results0
 
 def rebin(a, new_shape):
     """Rebin SI
