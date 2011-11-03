@@ -54,7 +54,7 @@ gain_offset
 correlation_factor
     type: Float
 
-gain_estimation_method
+parameters_estimation_method
     type: Str
 
 Transmission electron microscope keys
