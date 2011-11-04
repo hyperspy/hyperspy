@@ -476,8 +476,11 @@ class MVA():
         -------
         Signal instance
         """
-        return self._calculate_recmatrix(components=components, mva_type='ica',
-                                         on_peaks=on_peaks)
+        rec=self._calculate_recmatrix(components=components, mva_type='ica',
+                                      on_peaks=on_peaks)
+        rec.residual=rec.copy()
+        rec.residual.data=self.data-rec.data
+        return rec
     @auto_replot
     def energy_center(self):
         """Subtract the mean energy pixel by pixel"""
