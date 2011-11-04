@@ -1264,7 +1264,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
 
     def plot_pca_scores(self, comp_ids=6, calibrate=True,
                        same_window=True, comp_label='PC', 
-                       with_factors=False, cmap=plt.cm.jet, 
+                       with_factors=False, cmap=plt.cm.gray, 
                        no_nans=True,per_row=3):
         """Plot scores from PCA
 
