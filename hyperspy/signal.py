@@ -1008,12 +1008,14 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                 s=Image({'data':factor_data,
                          'axes':axes_dicts,
                          'mapped_parameters':{
-                            'title':'%s from %s'%(factor_prefix,self.mapped_parameters.title),
+                            'title':'%s from %s'%(factor_prefix,
+                                self.mapped_parameters.title),
                             }})
             elif self.axes_manager.signal_dimension==1 or on_peaks:
                 axes=[]
                 if not on_peaks:
-                    axes.append(self.axes_manager._slicing_axes[0].get_axis_dictionary())
+                    axes.append(
+                    self.axes_manager._slicing_axes[0].get_axis_dictionary())
                     axes[0]['index_in_array']=1
                 else:
                     axes.append({'name': 'peak_characteristics',
@@ -1023,22 +1025,25 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                                  'units': 'peak_characteristics',
                                  'index_in_array': 1, })                    
 
-                axes.append({'name': 'factor_index',
-                        'scale': 1.,
-                        'offset': 0.,
-                        'size': int(factors.shape[1]),
-                        'units': 'factor',
-                        'index_in_array': 0, })
-                s=Spectrum({'data':factors,
-                            'axes':axes,
-                            'mapped_parameters':{
-                            'title':'%s from %s'%(factor_prefix,self.mapped_parameters.title),
-                            }})
+                axes.append({
+                    'name': 'factor_index',
+                    'scale': 1.,
+                    'offset': 0.,
+                    'size': int(factors.shape[1]),
+                    'units': 'factor',
+                    'index_in_array': 0,
+                        })
+                s=Spectrum({'data' : factors.T,
+                            'axes' : axes,
+                            'mapped_parameters' : {
+                            'title':'%s from %s'%(factor_prefix, 
+                                self.mapped_parameters.title),}})
             s.save('%ss.%s' % (factor_prefix, factor_format))
         elif factor_format in spec_formats:
-            if self.axes_manager.signal_dimension>1:
-                messages.warning('1D spectral format is unable to save multidimensional \
-data.  Please use a different file format.')
+            if self.axes_manager.signal_dimension > 1:
+                messages.warning(
+                '1D spectral format is unable to save multidimensional data. '
+                'Please use a different file format.')
                 return None
             else:
                 axis_dict = self.axes_manager._slicing_axes[0].get_axis_dictionary()
@@ -1131,8 +1136,9 @@ data.  Please use a different file format.')
             s.save('%ss.%s' % (score_prefix, score_format))
         elif score_format in spec_formats:
             if self.axes_manager.navigation_dimension>1:
-                messages.warning('1D spectral format is unable to save multidimensional \
-data.  Please use a different file format.')
+                messages.warning(
+                    '1D spectral format is unable to save multidimensional '
+                    'data.  Please use a different file format.')
                 return None
             else:
                 axis_dict = self.axes_manager._non_slicing_axes[0].get_axis_dictionary()
