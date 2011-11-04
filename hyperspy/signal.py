@@ -32,15 +32,16 @@ from hyperspy.learn.mva import MVA, MVA_Results
 from hyperspy.misc.utils import DictionaryBrowser
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
+from hyperspy.io import (write_1d_exts, write_2d_exts, write_3d_exts,
+                         write_xd_exts)
+from hyperspy.io_plugins.image import file_extensions as image_extensions
+from hyperspy.defaults_parser import preferences
 
 from matplotlib import pyplot as plt
 
 # MCS - 18/10/11
 # These are here for exporting file formats.  They need a better place.
-multidim_formats = ['rpl','hdf', 'h4', 'hdf4', 'h5', 'hdf5', 'he4', 'he5']
-img_formats = ['bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg', 'msp', 'pcx', 
-               'png', 'ppm', "pbm", "pgm", 'tiff', 'tif', 'xbm', 'spi',]
-spec_formats =['msa']
+
 
 class Signal(t.HasTraits, MVA):
     data = t.Any()
@@ -944,38 +945,38 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             else:
                 return f
 
-    def _export_factors(self, factors, comp_ids=None,
-                        factor_prefix=None, factor_format='rpl',
-                        comp_label=None,cmap=plt.cm.jet,
+    def _export_factors(self, factors, comp_ids=None, multiple_files=None,
+                        save_figures=False, save_figures_format = 'png',
+                        factor_prefix=None,
+                        factor_format=None, comp_label=None, cmap=plt.cm.jet,
                         on_peaks=False, plot_shifts=True,
-                        plot_char=4,img_data=None,
-                        same_window=False,calibrate=True,
-                        quiver_color='white',vector_scale=1,
-                        no_nans=True,per_row=3):
+                        plot_char=4, img_data=None,
+                        same_window=False, calibrate=True,
+                        quiver_color='white', vector_scale=1,
+                        no_nans=True, per_row=3):
 
         from hyperspy.signals.image import Image
         from hyperspy.signals.spectrum import Spectrum
+        
+        if multiple_files is None:
+            multiple_files = preferences.MachineLearning.multiple_files
+        
+        if factor_format is None:
+            factor_format = preferences.MachineLearning.\
+                export_factors_default_file_format
 
-        if factor_format not in multidim_formats+img_formats+spec_formats:
-            messages.warning('Format %s not supported for saving.'%factor_format)
-            return None
-
-        if factor_format in multidim_formats:
-            if comp_ids is not None:
-                if not hasattr(comp_ids,'__iter__'):
-                    comp_ids=range(comp_ids)
-                mask=np.zeros(factors.shape[1],dtype=np.bool)
-                for idx in comp_ids:
-                    mask[idx]=1
-                factors=factors[:,mask]
-
+        # Select the desired factors
         if comp_ids is None:
             comp_ids=xrange(factors.shape[1])
-
         elif not hasattr(comp_ids,'__iter__'):
-            comp_ids=xrange(comp_ids)
+            comp_ids=range(comp_ids)
+        mask=np.zeros(factors.shape[1],dtype=np.bool)
+        for idx in comp_ids:
+            mask[idx]=1
+        factors=factors[:,mask]
 
-        if factor_format in img_formats:
+        if save_figures is True or (on_peaks is True and \
+            factor_format in image_extensions):
             plt.ioff()
             fac_plots=self._plot_factors_or_pchars(factors, comp_ids=comp_ids, 
                                 same_window=same_window, comp_label=comp_label, 
@@ -986,10 +987,11 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             for idx in xrange(len(comp_ids)):
                 fac_plots[idx].savefig('%s_%02i.%s'%(factor_prefix,
                                                   comp_ids[idx],
-                                                  factor_format),
+                                                  save_figures_format),
                                        dpi=600)
             plt.ion()
-        elif factor_format in multidim_formats:
+            
+        elif multiple_files is False:
             if self.axes_manager.signal_dimension==2 and not on_peaks:
                 # factor images
                 axes_dicts=[]
@@ -1038,50 +1040,69 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                             'mapped_parameters' : {
                             'title':'%s from %s'%(factor_prefix, 
                                 self.mapped_parameters.title),}})
-            s.save('%ss.%s' % (factor_prefix, factor_format))
-        elif factor_format in spec_formats:
-            if self.axes_manager.signal_dimension > 1:
-                messages.warning(
-                '1D spectral format is unable to save multidimensional data. '
-                'Please use a different file format.')
-                return None
-            else:
-                axis_dict = self.axes_manager._slicing_axes[0].get_axis_dictionary()
+                s.save('%ss.%s' % (factor_prefix, factor_format))
+        else: # Separate files
+            if self.axes_manager.signal_dimension == 1:
+            
+                axis_dict = self.axes_manager._slicing_axes[0].\
+                    get_axis_dictionary()
                 axis_dict['index_in_array']=0
                 for dim in comp_ids:
                     s=Spectrum({'data':factors[:,dim],
-                                'axes': [axis_dict,]})
+                                'axes': [axis_dict,],
+                                'mapped_parameters' : {
+                            'title':'%s from %s'%(factor_prefix, 
+                                self.mapped_parameters.title),}})
                     s.save('%s-%i.%s' % (factor_prefix, dim, factor_format))
+                    
+            if self.axes_manager.signal_dimension == 2:
+                axes = self.axes_manager._slicing_axes
+                axes_dicts=[]
+                axes_dicts.append(axes[0].get_axis_dictionary())
+                axes_dicts.append(axes[1].get_axis_dictionary())
+                axes_dicts[0]['index_in_array'] = 0
+                axes_dicts[1]['index_in_array'] = 1
+                
+                factor_data = factors.reshape(
+                    self.axes_manager.signal_shape + [-1,])
+                
+                for i in range(factor_data.shape[-1]):
+                    im = Image({
+                                'data' : factor_data[...,i],
+                                'axes' : axes_dicts,
+                                'mapped_parameters' : {
+                                'title' : '%s from %s' % (factor_prefix,
+                                    self.mapped_parameters.title),
+                                }})
+                    im.save('%s-%i.%s' % (factor_prefix, i, factor_format))
 
-    def _export_scores(self, scores, comp_ids=None,
-                        score_prefix=None, score_format='rpl',
-                        comp_label=None,cmap=plt.cm.jet,
+    def _export_scores(self, scores, comp_ids=None, multiple_files=None,
+                        score_prefix=None, score_format=None,
+                        save_figures_format = 'png',
+                        comp_label=None,cmap=plt.cm.jet, save_figures = False,
                         same_window=False,calibrate=True,
                         no_nans=True,per_row=3):
 
         from hyperspy.signals.image import Image
         from hyperspy.signals.spectrum import Spectrum
 
-        if score_format not in multidim_formats+img_formats+spec_formats:
-            messages.warning('Format %s not supported for saving.'%factor_format)
-            return None
-
-        if score_format in multidim_formats:
-            if comp_ids is not None:
-                if not hasattr(comp_ids,'__iter__'):
-                    comp_ids=range(comp_ids)
-                mask=np.zeros(scores.shape[0],dtype=np.bool)
-                for idx in comp_ids:
-                    mask[idx]=1
-                scores=scores[mask]
+        if multiple_files is None:
+            multiple_files = preferences.MachineLearning.multiple_files
+        
+        if score_format is None:
+            score_format = preferences.MachineLearning.\
+                export_scores_default_file_format
 
         if comp_ids is None:
-            comp_ids=xrange(scores.shape[0])
-
+            comp_ids=range(scores.shape[0])
         elif not hasattr(comp_ids,'__iter__'):
-            comp_ids=xrange(comp_ids)
+            comp_ids=range(comp_ids)
+        mask=np.zeros(scores.shape[0],dtype=np.bool)
+        for idx in comp_ids:
+            mask[idx]=1
+        scores=scores[mask]
 
-        if score_format in img_formats:
+        if save_figures is True:
             plt.ioff()
             sc_plots=self._plot_scores(scores, comp_ids=comp_ids, 
                                        calibrate=calibrate,
@@ -1092,10 +1113,10 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             for idx in xrange(len(comp_ids)):
                 sc_plots[idx].savefig('%s_%02i.%s'%(score_prefix,
                                                   comp_ids[idx],
-                                                  score_format),
+                                                  save_figures_format),
                                        dpi=600)
             plt.ion()
-        elif score_format in multidim_formats:
+        elif multiple_files is False:
             if self.axes_manager.navigation_dimension==2:
                 axes_dicts=[]
                 axes=self.axes_manager._non_slicing_axes
@@ -1114,10 +1135,12 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                 s=Image({'data':score_data,
                          'axes':axes_dicts,
                          'mapped_parameters':{
-                            'title':'%s from %s'%(score_prefix,self.mapped_parameters.title),
+                            'title':'%s from %s'%(score_prefix, 
+                                self.mapped_parameters.title),
                             }})
             elif self.axes_manager.navigation_dimension==1:
-                cal_axis=self.axes_manager._non_slicing_axes[0].get_axis_dictionary()
+                cal_axis=self.axes_manager._non_slicing_axes[0].\
+                    get_axis_dictionary()
                 cal_axis['index_in_array']=1
                 axes=[]
                 axes.append({'name': 'score_index',
@@ -1130,25 +1153,37 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                 s=Image({'data':scores,
                             'axes':axes,
                             'mapped_parameters':{
-                            'title':'%s from %s'%(score_prefix,self.mapped_parameters.title),
-                            }
-                            })
+                            'title':'%s from %s'%(score_prefix,
+                                self.mapped_parameters.title),}})
             s.save('%ss.%s' % (score_prefix, score_format))
-        elif score_format in spec_formats:
-            if self.axes_manager.navigation_dimension>1:
-                messages.warning(
-                    '1D spectral format is unable to save multidimensional '
-                    'data.  Please use a different file format.')
-                return None
-            else:
-                axis_dict = self.axes_manager._non_slicing_axes[0].get_axis_dictionary()
+        else: # Separate files
+            if self.axes_manager.navigation_dimension == 1:
+                axis_dict = self.axes_manager._non_slicing_axes[0].\
+                    get_axis_dictionary()
                 axis_dict['index_in_array']=0
                 for dim in comp_ids:
                     s=Spectrum({'data':scores[dim],
                                 'axes': [axis_dict,]})
                     s.save('%s-%i.%s' % (score_prefix, dim, score_format))
+            elif self.axes_manager.navigation_dimension == 2:
+                axes_dicts=[]
+                axes=self.axes_manager._non_slicing_axes
+                shape=(axes[1].size,axes[0].size)
+                score_data=scores.reshape((-1,shape[0],shape[1]))
+                axes_dicts.append(axes[0].get_axis_dictionary())
+                axes_dicts[0]['index_in_array']=0
+                axes_dicts.append(axes[1].get_axis_dictionary())
+                axes_dicts[1]['index_in_array']=1
+                for i in range(score_data.shape[0]):
+                    s=Image({'data':score_data[i,...],
+                             'axes':axes_dicts,
+                             'mapped_parameters':{
+                                'title':'%s from %s'%(score_prefix, 
+                                    self.mapped_parameters.title),
+                                }})
+                    s.save('%s-%i.%s' % (score_prefix, i, score_format))
 
-    # =============================================================
+
     def plot_pca_factors(self,comp_ids=6, calibrate=True,
                         same_window=True, comp_label='PC', 
                         per_row=3):
@@ -1330,11 +1365,12 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                                  cmap=cmap, no_nans=no_nans,per_row=per_row)
 
     def export_pca_results(self, comp_ids=None, calibrate=True,
-                          factor_prefix='pc', factor_format='rpl',
-                          score_prefix='PC_score', score_format='rpl', 
+                          factor_prefix='pc', factor_format=None,
+                          score_prefix='PC_score', score_format=None, 
                           comp_label='PC',cmap=plt.cm.jet,
-                          same_window=False,
-                          no_nans=True,per_row=3):
+                          same_window=False, multiple_files = None,
+                          no_nans=True,per_row=3, save_figures = False,
+                          save_figures_format = 'png'):
         """Export results from PCA to any of the supported formats.
 
         Parameters
@@ -1350,16 +1386,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             begin with
 
         factor_format : string
-            The extension of the format that you wish to save to.  Determines
-            the kind of output.
-                - For image formats (tif, png, jpg, etc.), plots are created 
-                  using the plotting flags as below, and saved at 600 dpi.
-                  One plot per factor is saved.
-                - For multidimensional formats (rpl, hdf5), arrays are saved
-                  in single files.  All factors are contained in the one
-                  file.
-                - For spectral formats (msa), each factor is saved to a
-                  separate file.
+            The extension of the format that you wish to save to.
                 
         score_prefix : string
             The prefix that any exported filenames for factors/components 
@@ -1376,8 +1403,18 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                   file.
                 - For spectral formats (msa), each score is saved to a
                   separate file.
+                  
+        multiple_files : Bool
+            If True, on exporting a file per factor and per score will be 
+            created. Otherwise only two files will be created, one for the
+            factors and another for the scores. The default value can be
+            chosen in the preferences.
+            
+        save_figures : Bool
+            If True the same figures that are obtained when using the plot 
+            methods will be saved with 600 dpi resolution
 
-        Plotting options (for image file formats ONLY)
+        Plotting options (for save_figures = True ONLY)
         ----------------------------------------------
 
         calibrate : bool
@@ -1397,34 +1434,39 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         
         per_row : int, the number of plots in each row, when the same_window
             parameter is True.
+            
+        save_figures_format : str
+            The image format extension.
         """
         factors=self.mva_results.pc
         scores=self.mva_results.v.T
         self._export_factors(factors, comp_ids=comp_ids,
-                             calibrate=calibrate,
+                             calibrate=calibrate, multiple_files=multiple_files,
                              factor_prefix=factor_prefix,
                              factor_format=factor_format,
-                             comp_label=comp_label,
+                             comp_label=comp_label, save_figures = save_figures,
                              cmap=cmap,
                              no_nans=no_nans,
                              same_window=same_window,
-                             per_row=per_row)
+                             per_row=per_row,
+                             save_figures_format=save_figures_format)
         self._export_scores(scores,comp_ids=comp_ids,
-                            calibrate=calibrate,
+                            calibrate=calibrate, multiple_files=multiple_files,
                             score_prefix=score_prefix,
                             score_format=score_format,
                             comp_label=comp_label,
-                            cmap=cmap,
+                            cmap=cmap, save_figures = save_figures,
                             same_window=same_window,
                             no_nans=no_nans,
                             per_row=per_row)
 
     def export_ica_results(self, comp_ids=None, calibrate=True,
-                          factor_prefix='ic', factor_format='rpl',
-                          score_prefix='IC_score', score_format='rpl', 
+                           multiple_files=None, save_figures = False,
+                          factor_prefix='ic', factor_format=None,
+                          score_prefix='IC_score', score_format=None, 
                           comp_label='IC',cmap=plt.cm.jet,
-                          same_window=False,
-                          no_nans=True,per_row=3):
+                          same_window=False, no_nans=True,per_row=3,
+                          save_figures_format='png'):
         """Export results from ICA to any of the supported formats.
 
         Parameters
@@ -1456,18 +1498,19 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             begin with
 
         score_format : string
-            The extension of the format that you wish to save to.  Determines
-            the kind of output.
-                - For image formats (tif, png, jpg, etc.), plots are created 
-                  using the plotting flags as below, and saved at 600 dpi.
-                  One plot per score is saved.
-                - For multidimensional formats (rpl, hdf5), arrays are saved
-                  in single files.  All scores are contained in the one
-                  file.
-                - For spectral formats (msa), each score is saved to a
-                  separate file.
+            The extension of the format that you wish to save to.
+            
+        multiple_files : Bool
+            If True, on exporting a file per factor and per score will be 
+            created. Otherwise only two files will be created, one for the
+            factors and another for the scores. The default value can be
+            chosen in the preferences.
+            
+        save_figures : Bool
+            If True the same figures that are obtained when using the plot 
+            methods will be saved with 600 dpi resolution
 
-        Plotting options (for image file formats ONLY)
+        Plotting options (for save_figures = True ONLY)
         ----------------------------------------------
 
         calibrate : bool
@@ -1477,7 +1520,8 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         same_window : bool
             if True, plots each factor to the same window.
         
-        comp_label : string, the label that is either the plot title (if plotting in
+        comp_label : string
+            the label that is either the plot title (if plotting in
             separate windows) or the label in the legend (if plotting in the 
             same window)
 
@@ -1487,286 +1531,34 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         
         per_row : int, the number of plots in each row, when the same_window
             parameter is True.
+        
+        save_figures_format : str
+            The image format extension.
         """
         factors=self.mva_results.ic
         scores=self._get_ica_scores(self.mva_results)
         self._export_factors(factors, comp_ids=comp_ids,
-                             calibrate=calibrate,
+                             calibrate=calibrate, multiple_files=multiple_files,
                              factor_prefix=factor_prefix,
                              factor_format=factor_format,
-                             comp_label=comp_label,
+                             comp_label=comp_label, save_figures=save_figures,
                              cmap=cmap,
                              no_nans=no_nans,
                              same_window=same_window,
-                             per_row=per_row)
+                             per_row=per_row,
+                             save_figures_format=save_figures_format)
         self._export_scores(scores, comp_ids=comp_ids,
-                            calibrate=calibrate,
+                            calibrate=calibrate, multiple_files=multiple_files,
                             score_prefix=score_prefix,
                             score_format=score_format,
                             comp_label=comp_label,
-                            cmap=cmap,
-                            same_window=same_window,
+                            cmap=cmap, save_figures=save_figures,
+                            same_window=same_window, 
                             no_nans=no_nans,
-                            per_row=per_row)
+                            per_row=per_row,
+                            save_figures_format=save_figures_format)
 
-    #===================================
-    # Deprecated MVA results methods
-    #===================================
-
-    def plot_principal_components(self, comp_ids = None, calibrate=True,
-                                  same_window=True, comp_label='PC'):
-        """Plot the principal components up to the given number
-
-        Parameters
-        ----------
-
-        comp_ids : None, int, or list of ints
-            if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given int.
-            if list of ints, returns maps of components with ids in given list.
-
-        calibrate : bool
-            if True, calibrates the factor plots according to the axes_manager.
-
-        same_window : bool
-            if True, plots each factor to the same window.  They are not scaled.
-        
-        comp_label : the label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting in the 
-            same window)
-        
-        """
-        messages.warning('Deprecation notice: the plot_principal_components \
-function has been replaced by the plot_pca_factors function.  The new function \
-especially offers more options for image stacks.')
-        factors=self.mva_results.pc
-        return self._plot_factors_or_pchars(factors, 
-                                            comp_ids=comp_ids, 
-                                            calibrate=calibrate,
-                                            same_window=same_window, 
-                                            comp_label=comp_label)
-
-    def plot_independent_components(self, comp_ids = None, calibrate=True,
-                                    same_window=True, comp_label='IC'):
-        """Plot the independent components up to the given number
-
-        Parameters
-        ----------
-
-        comp_ids : None, int, or list of ints
-            if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given int.
-            if list of ints, returns maps of components with ids in given list.
-
-        same_window : bool
-            if True, plots each factor to the same window.  They are not scaled.
-        
-        comp_label : the label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting in the 
-            same window)
-        
-        """
-        messages.warning('Deprecation notice: the plot_independent_components \
-function has been replaced by the plot_ica_factors function.  The new function \
-especially offers more options for image stacks.')
-        factors=self.mva_results.ic
-        return self._plot_factors_or_pchars(factors, 
-                                            comp_ids=comp_ids, 
-                                            calibrate=calibrate,
-                                            same_window=same_window, 
-                                            comp_label=comp_label)
-
-    def plot_principal_components_maps(self, comp_ids=None, calibrate=True,
-                                       cmap=plt.cm.gray, no_nans=False, 
-                                       same_window=True,per_row=3,
-                                       comp_label='PC',with_factors=True):
-        """Plot the map associated to each principal component
-
-        Parameters
-        ----------
-        comp_ids : None, int, or list of ints
-            if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given int.
-            if list of ints, returns maps of components with ids in given list.
-
-        calibrate : bool
-            if True, calibrates plots where calibration is available from
-            the axes_manager.  If False, plots are in pixels/channels.
-
-        same_window : bool
-            if True, plots each factor to the same window.  They are not scaled.
-        
-        comp_label : string, 
-            The label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting in the 
-            same window)
-
-        with_factors : bool
-            If True, also returns figure(s) with the factors for the
-            given comp_ids.
-
-        cmap : matplotlib colormap
-            The colormap used for the factor image, or for peak 
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
-        
-        no_nans : bool
-            If True, removes NaN's from the score plots.
-
-        per_row : int 
-            the number of plots in each row, when the same_window
-            parameter is True.
-
-        Returns
-        -------
-        If same_window is True:
-           Tuple of two matplotlib Figures, the first being the scores,
-           the second being the factors
-        If same_window is False:
-           Tuple of two lists with the first being a list of matplotlib
-           Figures of scores, the second being a list of matplotlib
-           Figures of factors
-        """
-        messages.warning('Deprecation notice: the plot_principal_components_maps \
-function has been replaced by the plot_pca_scores function.  The new function \
-especially offers more options for image stacks.')
-        scores=self.mva_results.v.T
-        if with_factors:
-            factors=self.mva_results.pc
-        else: factors=None
-        return self._plot_scores(scores, comp_ids=comp_ids, 
-                                 with_factors=with_factors, factors=factors,
-                                 same_window=same_window, comp_label=comp_label,
-                                 cmap=cmap, no_nans=no_nans,per_row=per_row)
-
-    def plot_independent_components_maps(self, comp_ids=None, calibrate=True,
-                                         cmap=plt.cm.gray, no_nans=False, 
-                                         comp_label='IC',with_factors=True,
-                                         same_window=True,per_row=3):
-        """Plot the map associated to each independent component
-
-        Parameters
-        ----------
-        comp_ids : None, int, or list of ints
-            if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given int.
-            if list of ints, returns maps of components with ids in given list.
-
-        calibrate : bool
-            if True, calibrates plots where calibration is available from
-            the axes_manager.  If False, plots are in pixels/channels.
-
-        same_window : bool
-            if True, plots each factor to the same window.  They are not scaled.
-        
-        comp_label : string, 
-            The label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting in the 
-            same window)
-
-        with_factors : bool
-            If True, also returns figure(s) with the factors for the
-            given comp_ids.
-
-        cmap : matplotlib colormap
-            The colormap used for the factor image, or for peak 
-            characteristics, the colormap used for the scatter plot of
-            some peak characteristic.
-        
-        no_nans : bool
-            If True, removes NaN's from the score plots.
-
-        per_row : int 
-            the number of plots in each row, when the same_window
-            parameter is True.
-
-        Returns
-        -------
-        If same_window is True:
-           Tuple of two matplotlib Figures, the first being the scores,
-           the second being the factors
-        If same_window is False:
-           Tuple of two lists with the first being a list of matplotlib
-           Figures of scores, the second being a list of matplotlib
-           Figures of factors
-        """
-        scores=self._get_ica_scores(self.mva_results)
-        if with_factors:
-            factors=self.mva_results.ic
-        else: factors=None
-        messages.warning('Deprecation notice: the plot_independent_components_maps \
-function has been replaced by the plot_ica_scores function.  The new function \
-especially offers more options for image stacks.')
-        return self._plot_scores(scores, comp_ids=comp_ids, 
-                                 with_factors=with_factors, factors=factors,
-                                 same_window=same_window, comp_label=comp_label,
-                                 cmap=cmap, no_nans=no_nans,per_row=per_row)
-
-    def save_principal_components(self, n, pc_prefix = 'pc',
-                                  score_prefix = 'score', 
-                                  spectrum_format = 'rpl', 
-                                  hs_format = 'rpl'):
-        """Save the `n` first principal components  and score maps
-        in the specified format
-
-        Parameters
-        ----------
-        n : int
-            Number of principal components to save
-        score_prefix : string
-            Prefix for the score file names
-        pc_prefix : string
-            Prefix for the principal component file names
-        spectrum_format : string
-            Any of Hyperspy's supported file formats for spectral data
-        hs_format : string
-            Any of Hyperspy's supported file formats for hyperspectral data
-            
-        """
-        messages.warning('Deprecation notice: the save_principal_components \
-function has been replaced by the export_pca_results function.  The new function \
-especially offers more options for image stacks.')
-        self.export_pca_results(comp_ids=n, calibrate=True,
-                          factor_prefix=pc_prefix, factor_format=spectrum_format,
-                          score_prefix=score_prefix, score_format=hs_format, 
-                          comp_label='PC',cmap=plt.cm.jet,
-                          same_window=False,
-                          no_nans=True,per_row=3)
-
-    def save_independent_components(self, ic_prefix = 'ic',
-                                    score_prefix = 'score',
-                                    spectrum_format='rpl',
-                                    hs_format='rpl',
-                                    on_peaks=False):
-        """Saves the result of the ICA in image and spectrum format.
-        Note that to save the image, the NaNs in the map will be converted
-        to zeros.
-
-        Parameters
-        ----------
-        score_prefix : string
-            Prefix for the score file names
-        pc_prefix : string
-            Prefix for the principal component file names
-        spectrum_format : string
-            Any of Hyperspy's supported file formats for spectral data
-        hs_format : string
-            Any of Hyperspy's supported file formats for hyperspectral data
-        """
-        messages.warning('Deprecation notice: the save_independent_components \
-function has been replaced by the export_ica_results function.  The new function \
-especially offers more options for image stacks.')
-        self.export_ica_results(comp_ids=None, calibrate=True,
-                          factor_prefix=ic_prefix, factor_format=spectrum_format,
-                          score_prefix=score_prefix, score_format=hs_format, 
-                          comp_label='IC',cmap=plt.cm.jet,
-                          same_window=False,
-                          no_nans=True,per_row=3)
-
-    #=====================================================================
-    # End deprecated MVA results methods
-    #=====================================================================
-
+   
 #    def sum_in_mask(self, mask):
 #        """Returns the result of summing all the spectra in the mask.
 #

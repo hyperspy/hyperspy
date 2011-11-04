@@ -19,7 +19,7 @@
 import os
 
 from hyperspy import messages
-from hyperspy.defaults_parser import preferences
+import hyperspy.defaults_parser
 from hyperspy.io_plugins import msa, digital_micrograph, fei, mrc, ripple
 from hyperspy.gui.tools import Load
 
@@ -48,6 +48,23 @@ try:
     io_plugins.append(image)
 except ImportError:
     messages.information('The Image (PIL) IO features are not available')
+
+write_1d_exts, write_2d_exts, write_3d_exts, write_xd_exts = [], [], [], []
+default_write_ext = set()
+for plugin in io_plugins:
+
+    if plugin.writes_1d is True:
+        write_1d_exts.extend(plugin.file_extensions)
+        default_write_ext.add(plugin.file_extensions[plugin.default_extension])
+    if plugin.writes_2d is True:
+        write_2d_exts.extend(plugin.file_extensions)
+        default_write_ext.add(plugin.file_extensions[plugin.default_extension])
+    if plugin.writes_3d is True:
+        write_3d_exts.extend(plugin.file_extensions)
+        default_write_ext.add(plugin.file_extensions[plugin.default_extension])
+    if plugin.writes_xd is True:
+        write_xd_exts.extend(plugin.file_extensions)
+        default_write_ext.add(plugin.file_extensions[plugin.default_extension])
 
 def load(*filenames, **kwds):
     """
@@ -88,7 +105,7 @@ def load(*filenames, **kwds):
 
     """
 
-    if len(filenames)<1 and preferences.General.interactive is True:
+    if len(filenames)<1 and hyperspy.defaults_parser.preferences.General.interactive is True:
             load_ui = Load()
             load_ui.edit_traits()
             if load_ui.filename:
@@ -118,7 +135,7 @@ def load(*filenames, **kwds):
         agg_sig=agg.AggregateSpectrum(*objects)
     else:
         agg_sig=agg.Aggregate(*objects)
-    if preferences.General.plot_on_load is True:
+    if hyperspy.defaults_parser.preferences.General.plot_on_load is True:
         agg_sig.plot()
     return agg_sig
 
@@ -197,7 +214,8 @@ def load_with_reader(filename, reader, record_by = None, signal_type = None,
                 s = Spectrum(file_data_dict)
         objects.append(s)
         print s
-        if preferences.General.plot_on_load is True and is_agg is False:
+        if hyperspy.defaults_parser.preferences.General.plot_on_load is True \
+            and is_agg is False:
             s.plot()
     if len(objects) == 1:
         objects = objects[0]
@@ -208,8 +226,10 @@ def save(filename, signal, **kwds):
     extension = os.path.splitext(filename)[1][1:]
     i = 0
     if extension == '':
-        extension = preferences.General.default_file_format
-        filename = filename + '.' + preferences.General.default_file_format
+        extension = \
+            hyperspy.defaults_parser.preferences.General.default_file_format
+        filename = filename + '.' + \
+            hyperspy.defaults_parser.preferences.General.default_file_format
     while extension not in io_plugins[i].file_extensions and \
         i < len(io_plugins) - 1:
         i += 1

@@ -35,13 +35,15 @@ file_extensions = ['bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg', 'msp', 'pcx',
 default_extension = -3 # tif
 
 # Reading features
-reads_images = True
-reads_spectrum = False
-reads_spectrum_image = True
+reads_2d = True
+reads_1d = False
+reads_3d = True
+reads_xd = False
 # Writing features
-writes_images = True
-writes_spectrum = False
-writes_spectrum_image = True
+writes_2d = True
+writes_1d = False
+writes_3d = False
+writes_xd = False
 # ----------------------
 
 
