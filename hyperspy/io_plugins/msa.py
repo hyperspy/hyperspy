@@ -37,13 +37,15 @@ file_extensions = ('msa', 'ems', 'mas', 'emsa', 'EMS', 'MAS', 'EMSA', 'MSA')
 default_extension = 0
 
 # Reading features
-reads_images = False
-reads_spectrum = True
-reads_spectrum_image = False
+reads_2d = False
+reads_1d = True
+reads_3d = False
+reads_xd = False
 # Writing features
-writes_images = False
-writes_spectrum = True
-writes_spectrum_image = False
+writes_2d = False
+writes_1d = True
+writes_3d = False
+writes_xd = False
 # ----------------------
 
 # For a description of the EMSA/MSA format, incluiding the meaning of the 

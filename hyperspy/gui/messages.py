@@ -25,7 +25,6 @@ from traitsui.menu import OKButton, CancelButton
 class MessageHandler(tu.Handler):
     def close(self, info, is_ok):
         # Removes the span selector from the plot
-        print is_ok
         if is_ok is True:
             info.object.is_ok = True
         else:

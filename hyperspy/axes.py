@@ -261,6 +261,12 @@ class AxesManager(t.HasTraits):
                 axis.size for axis in self._non_slicing_axes]
         else:
             self.navigation_shape = [0,]
+            
+        if self.signal_dimension != 0:
+            self.signal_shape = [
+                axis.size for axis in self._slicing_axes]
+        else:
+            self.signal_shape = [0,]
 
     def set_not_slicing_indexes(self, nsi):
         for index,axis in zip(nsi, self.axes):

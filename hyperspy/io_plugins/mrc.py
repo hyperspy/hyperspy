@@ -34,15 +34,15 @@ full_suport = False
 file_extensions = ['mrc', 'MRC', 'ALI', 'ali']
 default_extension = 0
 # Reading capabilities
-reads_images = True
-reads_spectrum = False
-reads_spectrum_image = False
+reads_2d = True
+reads_1d = False
+reads_3d = True
+reads_xd = False
 # Writing capabilities
-writes_images = False
-writes_spectrum = False
-writes_spectrum_image = False
-
-
+writes_2d = False
+writes_1d = False
+writes_3d = False
+writes_xd = False
 
 def get_std_dtype_list(endianess = '<'):
     end = endianess

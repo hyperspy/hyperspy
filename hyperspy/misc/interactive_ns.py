@@ -40,13 +40,15 @@ else:
 
 
 def turn_logging_on(verbose = 1):
-    if verbose == 1:
-        if ipy_version < ipy_011:
+    
+    if ipy_version < ipy_011:
+        if verbose == 1:
             print("Logging is not supported by this version of IPython")
-            return
-        if ip.logger.log_active is True:
+        return
+    if ip.logger.log_active is True:
+        if verbose == 1:
             print "Already logging to " + ip.logger.logfname
-            return
+        return
     
     filename = os.path.join(os.getcwd(), 'hyperspy_log.py')
     new = not os.path.exists(filename)

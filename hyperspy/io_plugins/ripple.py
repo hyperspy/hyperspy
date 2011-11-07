@@ -38,13 +38,15 @@ full_suport = False             #  but maybe True
 file_extensions = ['rpl','RPL']
 default_extension = 0
 # Reading capabilities
-reads_images = True
-reads_spectrum = True          # but maybe True
-reads_spectrum_image = True
+reads_2d = True
+reads_1d = True          # but maybe True
+reads_3d = True
+reads_xd = False
 # Writing capabilities
-writes_images = True           # but maybe True
-writes_spectrum = True
-writes_spectrum_image = True
+writes_2d = True           # but maybe True
+writes_1d = True
+writes_3d = True
+writes_xd = False
 # ----------------------
 
 # The format only support the followng data types

@@ -28,6 +28,7 @@ from hyperspy.misc.config_dir import config_path, os_name, data_path
 from hyperspy import messages
 from hyperspy.misc.utils import DictionaryBrowser
 from hyperspy.misc.interactive_ns import turn_logging_on, turn_logging_off
+from hyperspy.io import default_write_ext
 
 defaults_file = os.path.join(config_path, 'hyperspyrc')
 eels_gos_files = os.path.join(data_path, 'EELS_GOS.tar.gz')
@@ -70,7 +71,7 @@ else:
 # This "section" is all that has to be modified to add or remove sections and
 # options from the defaults   
 class GeneralConfig(t.HasTraits):
-    default_file_format = t.Enum('hdf5', 'rpl', default = 'hdf5',
+    default_file_format = t.Enum('hdf5', 'rpl',
         desc = 'Using the hdf5 format is highly reccomended because is the '
                'only one fully supported. The Ripple (rpl) format it is useful '
                'to export data to other software that do not support hdf5')
@@ -92,9 +93,18 @@ class GeneralConfig(t.HasTraits):
 
     
 class ModelConfig(t.HasTraits):
-    default_fitter = t.Enum('leastsq', 'mpfit', default = 'leastsq',
+    default_fitter = t.Enum('leastsq', 'mpfit',
         desc = 'Choose leastsq if no bounding is required. '
                'Otherwise choose mpfit')
+
+class MachineLearningConfig(t.HasTraits):
+    export_factors_default_file_format = t.Enum(*default_write_ext)
+    export_scores_default_file_format = t.Enum(*default_write_ext)
+    multiple_files = t.Bool(False,
+        label = 'Export to multiple files',
+        desc = 'If enabled, on exporting the PCA or ICA results one file'
+               'per factor and score will be created. Otherwise only two files'
+               'will contain the factors and scores')
     
 class EELSConfig(t.HasTraits):
     eels_gos_files_path = t.Directory(guess_gos_path(),
@@ -145,7 +155,12 @@ class EELSConfig(t.HasTraits):
 template = {
     'General' : GeneralConfig(),
     'Model' : ModelConfig(),
-    'EELS' : EELSConfig(),}
+    'EELS' : EELSConfig(),
+    'MachineLearning' : MachineLearningConfig(),}
+
+# Set the enums defaults
+template['MachineLearning'].export_factors_default_file_format = 'rpl'
+template['MachineLearning'].export_scores_default_file_format = 'rpl'
 
 # Defaults template definition ends ############################################       
 
@@ -215,6 +230,7 @@ class Preferences(t.HasTraits):
     EELS = t.Instance(EELSConfig)
     Model = t.Instance(ModelConfig)
     General = t.Instance(GeneralConfig)
+    MachineLearning = t.Instance(MachineLearningConfig)
     view = tui.View(
         tui.Group(tui.Item('General', style='custom', show_label=False, ),
             label = 'General'),
@@ -222,6 +238,8 @@ class Preferences(t.HasTraits):
             label = 'Model'),
         tui.Group(tui.Item('EELS', style='custom', show_label=False, ),
             label = 'EELS'),
+        tui.Group(tui.Item('MachineLearning', style='custom', show_label=False,),
+            label = 'Machine Learning'),
         title = 'Preferences',
         handler = PreferencesHandler,)
     
@@ -237,7 +255,8 @@ class Preferences(t.HasTraits):
 preferences = Preferences(
             EELS = template['EELS'],
             General = template['General'],
-            Model = template['Model'])
+            Model = template['Model'],
+            MachineLearning = template['MachineLearning'])
             
 if preferences.General.logger_on:
     turn_logging_on(verbose = 0)

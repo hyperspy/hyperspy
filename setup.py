@@ -16,10 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-try:
-    import setuptools
-except:
-    print "Setuptools unavailable.  setup.py develop and test commands not available."
 
 from distutils.core import setup
 
@@ -51,9 +47,9 @@ if are_we_building4windows() or os.name in ['nt','dos']:
     # that runs the different scripts.
     # (code adapted from scitools)
     install_req.append('pyreadline')
-    scripts.append('bin/win_post_installation.py')
-
-
+    scripts.extend(('bin/win_post_installation.py',
+                   'bin/install_hyperspy_here.py',
+                   'bin/uninstall_hyperspy_here.py'))
     batch_files = []
     for script in scripts:
         batch_file = os.path.splitext(script)[0] + '.bat'

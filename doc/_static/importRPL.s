@@ -29,6 +29,7 @@
 
 Object file_stream
 Image img
+Image img2
 String filenameRPL, filenameRAW
 Number size_x, size_y, size_z, pixel_size
 realnumber   scale_x, scale_y,scale_z, origin_x, origin_y, origin_z
@@ -214,110 +215,65 @@ file_stream = NewStreamFromFileReference(file_RAW, 1)
 imagename = PathExtractFileName(filenameRAW,0)
 
 
-if(recorded_by_value=="vector")
-{
-if(data_type_value=="signed"){
-        if (size_y>1){
-        img := IntegerImage(imagename, pixel_size, 1, size_x, size_z, size_y)
-        }
-        else {
-        img := IntegerImage(imagename, pixel_size, 1, size_x, size_z)
-        }
-        }
-if(data_type_value=="float") {
-        if (size_y>1){  
-        img := RealImage(imagename, pixel_size, size_x, size_z, size_y)
-        }
-        else {
-        img := RealImage(imagename, pixel_size, size_x, size_z)
-        }
-        }
-if(data_type_value=="unsigned") {
-        if (size_y>1){  
-        img := IntegerImage(imagename, pixel_size, 0, size_x, size_z, size_y)
-        }
-        else {
-        img := IntegerImage(imagename, pixel_size, 0, size_x, size_z)
-        }
-        }
-if(!ImageIsValid(img))
-{
-        if (size_y>1) {  
-        img := RealImage(imagename, pixel_size, size_x, size_z, size_y)
-        }
-        else {
-        img := RealImage(imagename, pixel_size, size_z, size_x)
-        }
-}
-
-  ImageReadImageDataFromStream(img, file_stream, 0)
-
-  img.RotateLeft()
-  img.flipvertical()
-
-	img.ImageSetDimensionOrigin(0, origin_z )  
-	img.ImageSetDimensionScale( 0, scale_z )  
-	img.ImageSetDimensionUnitString(0, units_z )
-
-if(size_x>1)
-{
-img.ImageSetDimensionOrigin(1, origin_x )  
-img.ImageSetDimensionScale( 1, scale_x )  
-img.ImageSetDimensionUnitString(1, units_x )  
-}
-
-if(size_y>1)
-{
-img.ImageSetDimensionOrigin(2, origin_y )  
-img.ImageSetDimensionScale( 2, scale_y )  
-img.ImageSetDimensionUnitString(2, units_y )  
-}
-}
-
-else {
-        
 //Create an image depending on the data-type
-if(data_type_value=="signed"){
-        if (size_y>1){
-        img := IntegerImage(imagename, pixel_size, 1, size_x, size_y, size_z)
-        }
-        else{
-        img := IntegerImage(imagename, pixel_size, 1, size_x, size_y)
-        }
-        }
+if(data_type_value=="signed")
+img := IntegerImage(imagename, pixel_size, 1, size_x, size_y, size_z)
 
-if(data_type_value=="float") {
-        if (size_y>1){
-        img := RealImage(imagename, pixel_size, size_x, size_y, size_z)
-        }
-        else {
-        img := RealImage(imagename, pixel_size, size_x, size_y)
-        }
-        }
+if(data_type_value=="float")
+img := RealImage(imagename, pixel_size, size_x, size_y, size_z)          
 
-if(data_type_value=="unsigned") {
-        if (size_y>1){
-        img := IntegerImage(imagename, pixel_size, 0, size_x, size_y, size_z)
-        }
-        else {
-        img := IntegerImage(imagename, pixel_size, 0, size_x, size_y)
-        }
-        }
+if(data_type_value=="unsigned")
+img := IntegerImage(imagename, pixel_size, 0, size_x, size_y, size_z)          
+
 //if data-type was not given or recognized
 if(!ImageIsValid(img))
 {
-result(" Unrecognized data-type value. Data-type formats are: signed, unsigned and float. Using float by default."+"\n")
-        if (size_y>1){
-        img := RealImage(imagename, pixel_size, size_x, size_y, size_z)
-        }
-        else {
-        img := RealImage(imagename, pixel_size, size_x, size_y)
-        }
+result(" Unregonazed data-type value. Data-type formats are:sined, unsigned and float. Using float by default."+"\n")
+img := RealImage(imagename, pixel_size, size_x, size_y, size_z)
 }
 
 //if the data is recorded by vector, create another image to change the data order
+if(recorded_by_value=="vector")
+{
 
+if(data_type_value=="signed")
+img2 := IntegerImage(imagename, pixel_size, 1, size_z, size_x, size_y)
+
+if(data_type_value=="float")
+img2 := RealImage(imagename, pixel_size, size_z, size_x, size_y)          
+
+if(data_type_value=="unsigned")
+img2 := IntegerImage(imagename, pixel_size, 0, size_z, size_x, size_y)          
+
+if(!ImageIsValid(img2))
+{
+img2 := RealImage(imagename, pixel_size, size_z, size_x, size_y)
+}
+
+}
+
+
+if(recorded_by_value=="vector")
+{	
+  if(size_x>1) // if it is an spectrum-image
+  {
+  ImageReadImageDataFromStream(img2, file_stream, 0)
+  img = img2[iplane,icol,irow]
+  Closeimage(img2)
+  }
+  else   //if the data is just spectra
+  {
+  ImageReadImageDataFromStream(img2, file_stream, 0)
+  Closeimage(img)
+  img := img2 
+  }
+
+}
+else // recorded-by should be "image" or "dont-care"
 ImageReadImageDataFromStream(img, file_stream, 0)
+
+//data reading if finished
+CloseFile(file_RAW)
 
 //Add scale calibration and format to the image
 if(size_x>1)
@@ -341,18 +297,15 @@ if(size_z>1)
 	img.ImageSetDimensionUnitString(2, units_z )   
 }
 
-}
-//data reading if finished
-CloseFile(file_RAW)
 
-if (units_x=="eV" || units_y=="eV" || units_z=="eV") {
-    img.setstringnote("Meta Data:Format","Spectrum image")
-    img.setstringnote("Meta Data:Signal","EELS")
-    }
+//if (units_x=="eV" || units_y=="eV" || units_z=="eV") {
+//    img.setstringnote("Meta Data:Format","Spectrum image")
+//    img.setstringnote("Meta Data:Signal","EELS")
+//    }
 
 img.ShowImage()
 
 //if(size_x==1) //if the data is a collection of spectra, display in raster mode
 //setDisplayType(img,4)
 
-UpdateImage (Img)
+//UpdateImage (Img)

@@ -40,13 +40,15 @@ full_suport = False
 file_extensions = ser_extensions + emi_extensions
 default_extension = 0
 # Reading capabilities
-reads_images = True
-reads_spectrum = True
-reads_spectrum_image = True
+reads_2d = True
+reads_1d = True
+reads_3d = True
+reads_xd = False
 # Writing capabilities
-writes_images = False
-writes_spectrum = False
-writes_spectrum_image = False
+writes_2d = False
+writes_1d = False
+writes_3d = False
+writes_xd = False
 # ----------------------
 
 data_types = {
