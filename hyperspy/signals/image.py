@@ -88,19 +88,21 @@ class Image(Signal):
         """
         smp=self.mapped_parameters
         if target_locations is None:
-            target_locations=pc.two_dim_findpeaks(np.average(self.data,axis=0), 
-                                               subpixel=subpixel,
-                                               peak_width=peak_width)
+            target_locations=pc.two_dim_findpeaks(
+                np.average(self.data,axis=0), 
+                subpixel=subpixel,
+                peak_width=peak_width)
         smp.target_locations=target_locations
         smp.peak_width=peak_width
-        smp.peak_chars=pc.peak_attribs_stack(self.data, 
-                                peak_width,
-                                subpixel=subpixel, 
-                                target_locations=target_locations,
-                                peak_locations=peak_locations, 
-                                target_neighborhood=target_neighborhood,
-                                medfilt_radius=medfilt_radius
-                                )
+        smp.peak_chars=pc.peak_attribs_stack(
+            self.data, 
+            peak_width,
+            subpixel=subpixel, 
+            target_locations=target_locations,
+            peak_locations=peak_locations, 
+            target_neighborhood=target_neighborhood,
+            medfilt_radius=medfilt_radius
+            )
 
     def recon_peak_chars(factors,scores,comp_ids=None,target_locations=None):
         """INCOMPLETE!!
@@ -117,8 +119,9 @@ class Image(Signal):
         """
         pass
 
-    def _get_pk_shifts_and_char(self,f_pc,locations,plot_shifts=False,plot_char=4,
-                                peak_id=None, comp_id=None):
+    def _get_pk_shifts_and_char(
+        self,f_pc,locations,plot_shifts=False,plot_char=4,
+        peak_id=None, comp_id=None):
         if plot_shifts:
             shifts=self._get_pk_shifts(f_pc,locations,peak_id=peak_id,comp_id=comp_id)
         else: shifts=None
@@ -146,7 +149,8 @@ class Image(Signal):
         else: shifts=None
         return shifts
 
-    def _get_pk_char(self,f_pc, locations, plot_char, peak_id=None, comp_id=None):
+    def _get_pk_char(
+        self,f_pc, locations, plot_char, peak_id=None, comp_id=None):
         char=np.zeros(locations.shape[0],dtype=[('location','f4',(1,2)),
                                                 ('char','f4')])
         if peak_id<>None and plot_char<>None:
@@ -177,13 +181,14 @@ class Image(Signal):
     # in drawing/signal.py and drawing/image.py
     #=============================
 
-    def _plot_scores_or_peak_char(self, s_pc, comp_ids=None, calibrate=True,
-                     on_peaks=False, peak_ids=None, plot_shifts=False,
-                     plot_char=None,
-                     same_window=True, comp_label=None, 
-                     with_factors=False, factors=None,
-                     cmap=plt.cm.jet, no_nans=True, per_row=3,
-                     quiver_color='white',vector_scale=1):
+    def _plot_scores_or_peak_char(
+        self, s_pc, comp_ids=None, calibrate=True,
+        on_peaks=False, peak_ids=None, plot_shifts=False,
+        plot_char=None,
+        same_window=True, comp_label=None, 
+        with_factors=False, factors=None,
+        cmap=plt.cm.jet, no_nans=True, per_row=3,
+        quiver_color='white',vector_scale=1):
         if not hasattr(self.mapped_parameters,'locations'):
             return self._plot_scores(s_pc, comp_ids=comp_ids, 
                                      calibrate=calibrate,
@@ -251,11 +256,13 @@ class Image(Signal):
         else:
             return fig_list
 
-    def plot_pca_factors(self, comp_ids=6, calibrate=True,
-                        same_window=True, comp_label='PC', 
-                        on_peaks=False, img_data=None,
-                        plot_shifts=True, plot_char=None, 
-                        cmap=plt.cm.jet, per_row=3):
+    def plot_pca_factors(
+        self, comp_ids=6, calibrate=True,
+        same_window=True, comp_label='PC', 
+        on_peaks=False, img_data=None,
+        plot_shifts=True, plot_char=None, 
+        vector_scale=1,quiver_color='white',
+        cmap=plt.cm.jet, per_row=3):
         """Plot components from PCA, either factor images or
            peak characteristics.
 
@@ -322,7 +329,8 @@ class Image(Signal):
                         same_window=True, comp_label='IC', 
                         on_peaks=False, img_data=None,
                         plot_shifts=True, plot_char=None, 
-                        cmap=plt.cm.jet, per_row=3):
+                        cmap=plt.cm.jet, per_row=3,
+                         quiver_color='white',vector_scale=1):
         """Plot components from ICA, either factor images or
            peak characteristics.
 
@@ -501,7 +509,7 @@ class Image(Signal):
                                  on_peaks=on_peaks, cmap=cmap,
                                  no_nans=no_nans,per_row=per_row)
 
-    def exportPca_results(self, comp_ids=None, 
+    def export_pca_results(self, comp_ids=None, 
                           factor_prefix='pc', factor_format='rpl',
                           score_prefix='PC_score', score_format='rpl', 
                           on_peaks=False,
@@ -628,7 +636,7 @@ class Image(Signal):
                             no_nans=no_nans,
                             per_row=per_row)
 
-    def exportIca_results(self, comp_ids=None, 
+    def export_ica_results(self, comp_ids=None, 
                           factor_prefix='ic', factor_format='rpl',
                           score_prefix='IC_score', score_format='rpl', 
                           on_peaks=False,

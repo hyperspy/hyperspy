@@ -702,7 +702,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                                 on_peaks=False, img_data=None,
                                 plot_shifts=True, plot_char=4, 
                                 cmap=plt.cm.jet, quiver_color='white',
-                                vector_scale=100,
+                                vector_scale=1,
                                 per_row=3,ax=None):
         """Plot components from PCA or ICA, or peak characteristics
 
@@ -793,7 +793,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             f=plt.figure(figsize=(4*per_row,3*rows))
         else:
             f=plt.figure()
-        for i in xrange(n):
+        for i in xrange(len(comp_ids)):
             if self.axes_manager.signal_dimension==1:
                 if same_window:
                     ax=plt.gca()
@@ -802,7 +802,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                         f=plt.figure()
                     ax=f.add_subplot(111)
                 ax=sigdraw._plot_1D_component(factors=factors,
-                        idx=i,axes_manager=self.axes_manager,
+                        idx=comp_ids[i],axes_manager=self.axes_manager,
                         ax=ax, calibrate=calibrate,
                         comp_label=comp_label,
                         same_window=same_window)
@@ -827,13 +827,17 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                             # Break the loop and return the (one) plot
                             plt.clf()
                             ax=f.add_subplot(111)
+                            if len(self.mapped_parameters.title)>10:
+                                title=self.mapped_parameters.title[:10]+'...'
+                            else:
+                                title=self.mapped_parameters.title
                             return sigdraw._plot_quiver_scatter_overlay(
                                 image=image,
                                 axes_manager=self.axes_manager,
                                 shifts=shifts,char=char,ax=ax,
                                 img_cmap=plt.cm.gray,
                                 sc_cmap=cmap, 
-                                comp_label='Avg Peak Chars for:\n%s'%self.mapped_parameters.title,
+                                comp_label='Avg Peak Chars for:\n%s'%title,
                                 quiver_color=quiver_color,
                                 vector_scale=vector_scale,
                                 cbar_label=cbar_label)
@@ -845,10 +849,14 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                             plot_shifts=plot_shifts,
                             plot_char=plot_char,
                             comp_id=comp_ids[i])
+                    if len(self.mapped_parameters.title)>10:
+                        title=self.mapped_parameters.title[:10]+'...'
+                    else:
+                        title=self.mapped_parameters.title
                     sigdraw._plot_quiver_scatter_overlay(
                         image=image,
                         comp_label='Peak Chars for %s %i from:\n%s'%(
-                            comp_label,i,self.mapped_parameters.title),
+                            comp_label, comp_ids[i], title),
                         axes_manager=self.axes_manager,
                         shifts=shifts,char=char,ax=ax,
                         img_cmap=plt.cm.gray,
