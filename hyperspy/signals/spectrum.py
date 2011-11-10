@@ -26,7 +26,8 @@ from hyperspy.misc import progressbar
 from hyperspy.misc import utils
 from hyperspy.misc import utils_varia
 from hyperspy.gui.tools import (SpectrumCalibration, SmoothingSavitzkyGolay,
-    SmoothingLowess, SpectrumRangeSelector, SpanSelectorInSpectrum)
+    SmoothingLowess, SpectrumRangeSelector, SpanSelectorInSpectrum,
+    SmoothingTV)
 from hyperspy.gui.egerton_quantification import BackgroundRemoval
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import only_interactive
@@ -553,6 +554,12 @@ class Spectrum(Signal):
         lw = SmoothingLowess(self)
         lw.edit_traits()
 
+    @only_interactive
+    def smooth_tv(self):
+        '''Lowess data smoothing using a gui'''
+        lw = SmoothingTV(self)
+        lw.edit_traits()
+        
     @only_interactive
     def remove_background(self):
         '''Remove the background using a gui'''

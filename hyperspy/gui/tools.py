@@ -27,6 +27,7 @@ from hyperspy.misc.interactive_ns import interactive_ns
 from hyperspy.exceptions import SignalOutputDimensionError
 from hyperspy.gui import messages
 from hyperspy.misc.progressbar import progressbar
+from hyperspy.misc.tv_denoise import _tv_denoise_1d
 
 import sys
 
@@ -292,6 +293,27 @@ class SmoothingLowess(Smoothing):
         smoothed = utils.lowess(self.axis, self.signal(), 
                                 self.smoothing_parameter, 
                                 self.number_of_iterations)
+        return smoothed
+
+class SmoothingTV(Smoothing):
+    smoothing_parameter = t.Float(200)
+
+    view = tu.View(
+        tu.Group(
+            'smoothing_parameter',),
+            kind = 'nonmodal',
+            handler = SmoothingHandler,
+            buttons= ModalButtons,)
+            
+    def _smoothing_parameter_changed(self, old, new):
+        self.smooth_line.update()
+        
+    def _number_of_iterations_changed(self, old, new):
+        self.smooth_line.update()
+            
+    def model2plot(self, axes_manager = None):
+        smoothed = _tv_denoise_1d(self.signal(), 
+                                weight = self.smoothing_parameter,)
         return smoothed
         
 class Load(t.HasTraits):
