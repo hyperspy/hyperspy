@@ -19,7 +19,8 @@
 import numpy as np
 import traits.api as t
 import traitsui.api as tu
-from traitsui.menu import OKButton, ApplyButton, CancelButton, ModalButtons
+from traitsui.menu import (OKButton, ApplyButton, CancelButton, ModalButtons,
+    OKCancelButtons)
 
 from hyperspy.misc import utils
 from hyperspy import drawing
@@ -28,17 +29,20 @@ from hyperspy.exceptions import SignalOutputDimensionError
 from hyperspy.gui import messages
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
+from hyperspy.drawing.utils import does_figure_object_exists
 
 import sys
 
 OurApplyButton = tu.Action(name = "Apply",
-                action = "apply")
+                           action = "apply")
                 
 class SmoothingHandler(tu.Handler):
     def close(self, info, is_ok):
         # Removes the span selector from the plot
         if is_ok is True:
             info.object.apply()
+        else:
+            info.object.close()
         return True
 
 
@@ -200,7 +204,10 @@ class SpectrumRangeSelector(SpanSelectorInSpectrum):
             
 
 class Smoothing(t.HasTraits):
-
+    line_color = t.Color('blue')
+    differential_order = t.Int(0)
+    crop_diff_axis = True
+    
     def __init__(self, signal):
         self.ax = None
         self.data_line = None
@@ -210,89 +217,170 @@ class Smoothing(t.HasTraits):
         self.plot()
                    
     def plot(self):
-        self.signal.plot()
+        if self.signal._plot is None or not \
+            does_figure_object_exists(self.signal._plot.spectrum_plot.figure):
+            self.signal.plot()
         hse = self.signal._plot
         l1 = hse.spectrum_plot.ax_lines[0]
-        color = l1.line.get_color()
-        l1.line_properties_helper(color, 'scatter')
+        self.original_color = l1.line.get_color()
+        l1.line_properties_helper(self.original_color, 'scatter')
         l1.set_properties()
         
         l2 = drawing.spectrum.SpectrumLine()
         l2.data_function = self.model2plot
-        l2.line_properties_helper('blue', 'line')        
+        l2.line_properties_helper(np.array(
+            self.line_color.Get())/255., 'line')   
         # Add the line to the figure
-          
         hse.spectrum_plot.add_line(l2)
         l2.plot()
         self.data_line = l1
         self.smooth_line = l2
+        self.smooth_diff_line = None
+        
+    def update_lines(self):
+        self.smooth_line.update()
+        if self.smooth_diff_line is not None:
+            self.smooth_diff_line.update()
+        
+    def turn_diff_line_on(self, diff_order):
+
+        self.signal._plot.spectrum_plot.create_right_axis()
+        self.smooth_diff_line = drawing.spectrum.SpectrumLine()
+        self.smooth_diff_line.data_function = self.diff_model2plot
+        self.smooth_diff_line.line_properties_helper(np.array(
+            self.line_color.Get())/255., 'line')   
+        self.signal._plot.spectrum_plot.add_line(self.smooth_diff_line,
+                                                 ax = 'right')
+        self.smooth_diff_line.axes_manager = self.signal.axes_manager
+        
+    def turn_diff_line_off(self):
+        if self.smooth_diff_line is None: return
+        self.smooth_diff_line.close()
+        self.smooth_diff_line = None
+        
+    def _differential_order_changed(self, old, new):
+        if old == 0:
+            self.turn_diff_line_on(new)
+        if new == 0:
+            self.turn_diff_line_off()
+            return
+        if self.crop_diff_axis is True:
+            self.smooth_diff_line.axis =\
+                self.axis[:-new] + (self.axis[1] - self.axis[0]) * new
+        if old == 0:
+            self.smooth_diff_line.plot()
+        self.smooth_diff_line.update(force_replot = True)    
+        
+    def _line_color_changed(self, old, new):
+        self.smooth_line.line_properties['color'] = np.array(
+            self.line_color.Get())/255.
+        self.smooth_line.set_properties()
+        if self.smooth_diff_line is not None:
+            self.smooth_diff_line.line_properties['color'] = np.array(
+            self.line_color.Get())/255.
+            self.smooth_diff_line.set_properties()
+        self.update_lines()
+            
+    def diff_model2plot(self, axes_manager = None):
+        smoothed = np.diff(self.model2plot(axes_manager),
+            self.differential_order)
+        return smoothed
         
     def apply(self):
         self.signal._plot.auto_update_plot = False
         pbar = progressbar(
         maxval = (np.cumprod(self.signal.axes_manager.navigation_shape)[-1]))
+        up_to = None
+        if self.differential_order == 0:
+            f = self.model2plot
+        else:
+            f = self.diff_model2plot
+            if self.crop_diff_axis is True:
+                up_to = -self.differential_order
         i = 0
         for index in np.ndindex(
         tuple(self.signal.axes_manager.navigation_shape)):
             self.signal.axes_manager.set_not_slicing_indexes(index)
             self.signal.data[
-            self.signal.axes_manager._getitem_tuple] = self.model2plot()
-            i+=1
+            self.signal.axes_manager._getitem_tuple][:up_to]\
+                 = f()
+            i += 1
             pbar.update(i)
         pbar.finish()
+        if self.differential_order > 0:
+            self.signal.axes_manager._slicing_axes[0].offset = \
+                self.smooth_diff_line.axis[0]
+            self.signal.crop_in_pixels(-1,0,-self.differential_order)
         self.signal._replot()
         self.signal._plot.auto_update_plot = True
-
-    
+        
+    def close(self):
+        if self.differential_order != 0:
+            self.turn_diff_line_off()
+        self.smooth_line.close()
+        self.data_line.line_properties_helper(self.original_color, 'line')
+        self.data_line.set_properties()
+        
 
 class SmoothingSavitzkyGolay(Smoothing):
     polynomial_order = t.Int(3)
     number_of_points = t.Int(5)
-    differential_order = t.Int(0)
+    crop_diff_axis = False
     view = tu.View(
         tu.Group(
             'polynomial_order',
             'number_of_points',
-            'differential_order',),
-            kind = 'nonmodal',
+            'differential_order',
+            'line_color'),
+            kind = 'live',
             handler = SmoothingHandler,
-            buttons= ModalButtons)
+            buttons= OKCancelButtons,
+            title = 'Savitzky-Golay Smoothing',)
 
     def _polynomial_order_changed(self, old, new):
-        self.smooth_line.update()
+        self.update_lines()
         
     def _number_of_points_changed(self, old, new):
-        self.smooth_line.update()
+        self.update_lines()
+    def _differential_order(self, old, new):
+        self.update_lines()
         
-    def _differential_order_changed(self, old, new):
-        self.smooth_line.update()
-            
-    def model2plot(self, axes_manager = None):
+    def diff_model2plot(self, axes_manager = None):
         smoothed = utils.sg(self.signal(), self.number_of_points, 
                             self.polynomial_order, self.differential_order)
+        return smoothed
+                                        
+    def model2plot(self, axes_manager = None):
+        smoothed = utils.sg(self.signal(), self.number_of_points, 
+                            self.polynomial_order, 0)
         return smoothed
             
 class SmoothingLowess(Smoothing):
     smoothing_parameter = t.Float(2/3.)
     number_of_iterations = t.Int(3)
+    differential_order = t.Int(0)
     view = tu.View(
         tu.Group(
             'smoothing_parameter',
-            'number_of_iterations',),
-            kind = 'nonmodal',
+            'number_of_iterations',
+            'differential_order',
+            'line_color'),
+            kind = 'live',
             handler = SmoothingHandler,
-            buttons= ModalButtons,)
+            buttons= OKCancelButtons,
+            title = 'Lowess Smoothing',)
             
     def _smoothing_parameter_changed(self, old, new):
-        self.smooth_line.update()
+        self.update_lines()
         
     def _number_of_iterations_changed(self, old, new):
-        self.smooth_line.update()
+        self.update_lines()
             
     def model2plot(self, axes_manager = None):
         smoothed = utils.lowess(self.axis, self.signal(), 
                                 self.smoothing_parameter, 
                                 self.number_of_iterations)
+                            
         return smoothed
 
 class SmoothingTV(Smoothing):
@@ -300,16 +388,19 @@ class SmoothingTV(Smoothing):
 
     view = tu.View(
         tu.Group(
-            'smoothing_parameter',),
-            kind = 'nonmodal',
+            'smoothing_parameter',
+            'differential_order',
+            'line_color'),
+            kind = 'live',
             handler = SmoothingHandler,
-            buttons= ModalButtons,)
+            buttons= OKCancelButtons,
+            title = 'Total Variation Smoothing',)
             
     def _smoothing_parameter_changed(self, old, new):
-        self.smooth_line.update()
+        self.update_lines()
         
     def _number_of_iterations_changed(self, old, new):
-        self.smooth_line.update()
+        self.update_lines()
             
     def model2plot(self, axes_manager = None):
         smoothed = _tv_denoise_1d(self.signal(), 

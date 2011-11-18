@@ -135,6 +135,8 @@ class SpectrumLine():
             lp['markeredgecolor'] = color
         elif type == 'line':
             lp['color'] = color
+            lp['linestyle'] = '-'
+            lp['marker'] = None
         elif type == 'step':
             lp['color'] = color
             lp['drawstyle'] = 'steps'
@@ -146,14 +148,18 @@ class SpectrumLine():
     def plot(self, data = 1):
         f = self.data_function
         self.line, = self.ax.plot(
-            self.axis, f(axes_manager = self.axes_manager), **self.line_properties)
+            self.axis, f(axes_manager = self.axes_manager),
+                **self.line_properties)
         self.axes_manager.connect(self.update)
         self.ax.figure.canvas.draw()
                   
-    def update(self):
+    def update(self, force_replot = True):
         """Update the current spectrum figure"""
         if self.auto_update is False:
             return           
+        if force_replot is True:
+            self.close()
+            self.plot()
         ydata = self.data_function(axes_manager = self.axes_manager)
         self.line.set_ydata(ydata)
         

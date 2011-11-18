@@ -506,7 +506,8 @@ def calc_coeff(num_points, pol_degree, diff_order=0):
         for m in xrange(pol_degree+1):
             x += wvec[m]*pow(n, m)
         coeff[n+num_points] = x
-    return coeff
+    return coeff * (-1) ** diff_order
+    
 
 def smooth(data, coeff):
     """applies coefficients calculated by calc_coeff() to signal
