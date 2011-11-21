@@ -271,11 +271,15 @@ class MVA():
         if self._unfolded4pca is True:
             self.fold()
             self._unfolded4pca is False
-
-    def independent_components_analysis(self, number_of_components = None,
-                                        algorithm = 'CuBICA', diff_order = 1, pc = None,
-                                        comp_list = None, mask = None, on_peaks=False, 
-                                        **kwds):
+    
+    def get_pcs_as_spectrum(self):
+        from hyperspy.signals.spectrum import Spectrum
+        return Spectrum({'data' : self.mva_results.pc.T})
+    
+    def independent_components_analysis(
+        self, number_of_components=None, algorithm='CuBICA', diff_order=1,
+        pc=None, comp_list = None, mask = None, on_peaks=False,
+        smoothing = None, **kwds):
         """Independent components analysis.
 
         Available algorithms: FastICA, JADE, CuBICA, and TDSEP
@@ -295,6 +299,7 @@ class MVA():
         mask : numpy boolean array with the same dimension as the PC
             If not None, only the selected channels will be used by the
             algorithm.
+        smoothing: dict
         """
         target=self._get_target(on_peaks)
 
@@ -317,8 +322,17 @@ class MVA():
                     bool_index[ipc] = True
                 number_of_components = len(comp_list)
             pc = pc[:,bool_index]
-            if diff_order > 0:
+            if diff_order > 0 and smoothing is None:
                 pc = np.diff(pc, diff_order, axis = 0)
+            if smoothing is not None:
+                from hyperspy.signals.spectrum import Spectrum
+                spc = Spectrum({'data' : pc.T})
+                if smoothing['algorithm'] == 'savitzky_golay':
+                    spc.smooth_savitzky_golay(
+                        number_of_points = smoothing['number_of_points'],
+                        polynomial_order = smoothing['polynomial_order'],
+                        differential_order = diff_order)
+                    pc = spc.data.T
             if mask is not None:
                 pc = pc[mask, :]
 
