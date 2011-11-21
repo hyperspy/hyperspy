@@ -684,7 +684,7 @@ class EELSSpectrum(Spectrum):
         plt.ylabel('Counts')
         plt.draw()
         
-    def plot_spikes(self, threshold = 2200, energy_range = None):
+    def plot_spikes(self, threshold = 2200, energy_range = None, plot = True):
         """Plot the spikes in the given threshold
         
         Parameters
@@ -721,9 +721,10 @@ class EELSSpectrum(Spectrum):
                 i2 = np.clip(argmax+100,0, dc.shape[axis.index_in_array]-1)
                 nlindex.insert(axis.index_in_array, slice(i1, i2))
                 toplot = dc[nlindex]
-                plt.figure()
-                plt.step(range(len(toplot)), toplot)
-                plt.title(str(index))
+                if plot is True:
+                    plt.figure()
+                    plt.step(range(len(toplot)), toplot)
+                    plt.title(str(index))
                 i += 1
         return spikes
 #                        
