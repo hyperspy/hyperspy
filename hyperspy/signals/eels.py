@@ -582,7 +582,7 @@ class EELSSpectrum(Spectrum):
 #            dc[-offset:,:,:] *= 0. 
 #        
     def remove_spikes(self, threshold = 2200, subst_width = 5, 
-                      coordinates = None, energy_range = None):
+                      coordinates = None, energy_range = None, add_noise = True):
         """Remove the spikes in the SI.
         
         Detect the spikes above a given threshold and fix them by interpolating 
@@ -601,6 +601,10 @@ class EELSSpectrum(Spectrum):
             applied to all the spikes.
         energy_range: List
             Restricts the operation to the energy range given in units
+            
+        add_noise: Bool
+            If True, Poissonian noise will be added to the region that has been
+            interpolated to remove the spikes
         
         See also
         --------
@@ -656,7 +660,10 @@ class EELSSpectrum(Spectrum):
                 x_int = E_ax[lp2:rp1 + 1]
                 nlindex3 = list(index)
                 nlindex3.insert(axis.index_in_array, slice(lp2, rp1 + 1))
-                dc[nlindex3]  = intp(x_int)
+                new_data = intp(x_int)
+                if add_noise is True:
+                    new_data = np.random.poisson(new_data)
+                dc[nlindex3]  = new_data
                 i += 1
                 
     def spikes_diagnosis(self, energy_range = None):
