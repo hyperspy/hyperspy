@@ -698,7 +698,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
 
     def _plot_factors_or_pchars(self, factors, comp_ids=None, 
                                 calibrate=True, avg_char=False,
-                                same_window=True, comp_label='PC', 
+                                same_window=None, comp_label='PC', 
                                 on_peaks=False, img_data=None,
                                 plot_shifts=True, plot_char=4, 
                                 cmap=plt.cm.jet, quiver_color='white',
@@ -765,7 +765,8 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
            If None, uses matplotlib's autoscaling.
                
         """
-
+        if same_window is None:
+            same_window = preferences.MachineLearning.same_window
         if comp_ids is None:
             comp_ids=xrange(factors.shape[1])
 
@@ -882,9 +883,11 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             return f
 
     def _plot_scores(self, scores, comp_ids=None, calibrate=True,
-                     same_window=True, comp_label=None, 
+                     same_window=None, comp_label=None, 
                      with_factors=False, factors=None,
                      cmap=plt.cm.jet, no_nans=True, per_row=3):
+        if same_window is None:
+            same_window = preferences.MachineLearning.same_window
         if comp_ids is None:
             comp_ids=xrange(scores.shape[0])
 
@@ -1193,7 +1196,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
 
 
     def plot_pca_factors(self,comp_ids=6, calibrate=True,
-                        same_window=True, comp_label='PC', 
+                        same_window=None, comp_label='PC', 
                         per_row=3):
         """Plot components from PCA
 
@@ -1223,6 +1226,8 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         per_row : int, the number of plots in each row, when the same_window
             parameter is True.
         """
+        if same_window is None:
+            same_window = preferences.MachineLearning.same_window
         factors=self.mva_results.pc
         return self._plot_factors_or_pchars(factors, 
                                             comp_ids=comp_ids, 
@@ -1232,7 +1237,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                                             per_row=per_row)
 
     def plot_ica_factors(self,comp_ids=None, calibrate=True,
-                        same_window=True, comp_label='IC',
+                        same_window=None, comp_label='IC',
                         per_row=3):
         """Plot components from ICA
 
@@ -1262,6 +1267,8 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         per_row : int, the number of plots in each row, when the same_window
             parameter is True.
         """
+        if same_window is None:
+            same_window = preferences.MachineLearning.same_window
         factors=self.mva_results.ic
         return self._plot_factors_or_pchars(factors, 
                                             comp_ids=comp_ids, 
@@ -1271,7 +1278,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                                             per_row=per_row)
 
     def plot_pca_scores(self, comp_ids=6, calibrate=True,
-                       same_window=True, comp_label='PC', 
+                       same_window=None, comp_label='PC', 
                        with_factors=False, cmap=plt.cm.gray, 
                        no_nans=True,per_row=3):
         """Plot scores from PCA
@@ -1312,6 +1319,8 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             the number of plots in each row, when the same_window
             parameter is True.
         """
+        if same_window is None:
+            same_window = preferences.MachineLearning.same_window
         scores=self.mva_results.v.T
         if with_factors:
             factors=self.mva_results.pc
@@ -1322,7 +1331,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                                  cmap=cmap, no_nans=no_nans,per_row=per_row)
 
     def plot_ica_scores(self, comp_ids=None, calibrate=True,
-                       same_window=True, comp_label='IC', 
+                       same_window=None, comp_label='IC', 
                        with_factors=False, cmap=plt.cm.gray, 
                        no_nans=True,per_row=3):
         """Plot scores from ICA
@@ -1363,6 +1372,8 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
             the number of plots in each row, when the same_window
             parameter is True.
         """
+        if same_window is None:
+            same_window = preferences.MachineLearning.same_window
         scores=self._get_ica_scores(self.mva_results)
         if with_factors:
             factors=self.mva_results.ic

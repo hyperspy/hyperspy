@@ -105,6 +105,10 @@ class MachineLearningConfig(t.HasTraits):
         desc = 'If enabled, on exporting the PCA or ICA results one file'
                'per factor and score will be created. Otherwise only two files'
                'will contain the factors and scores')
+    same_window = t.Bool(True,
+        label = 'Plot components in the same window',
+        desc = 'If enabled the principal and independent components will all'
+               ' be plotted in the same window')
     
 class EELSConfig(t.HasTraits):
     eels_gos_files_path = t.Directory(guess_gos_path(),
