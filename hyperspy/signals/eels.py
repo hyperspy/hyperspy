@@ -662,7 +662,7 @@ class EELSSpectrum(Spectrum):
                 nlindex3.insert(axis.index_in_array, slice(lp2, rp1 + 1))
                 new_data = intp(x_int)
                 if add_noise is True:
-                    new_data = np.random.poisson(new_data)
+                    new_data = np.random.poisson(np.clip(new_data, 0, np.inf))
                 dc[nlindex3]  = new_data
                 i += 1
                 
