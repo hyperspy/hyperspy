@@ -1195,7 +1195,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                     s.save('%s-%i.%s' % (score_prefix, i, score_format))
 
 
-    def plot_pca_factors(self,comp_ids=6, calibrate=True,
+    def plot_decomposition_factors(self,comp_ids=6, calibrate=True,
                         same_window=None, comp_label='PC', 
                         per_row=3):
         """Plot components from PCA
@@ -1277,7 +1277,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                                             comp_label=comp_label, 
                                             per_row=per_row)
 
-    def plot_pca_scores(self, comp_ids=6, calibrate=True,
+    def plot_decomposition_scores(self, comp_ids=6, calibrate=True,
                        same_window=None, comp_label='PC', 
                        with_factors=False, cmap=plt.cm.gray, 
                        no_nans=True,per_row=3):
@@ -1383,7 +1383,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                                  same_window=same_window, comp_label=comp_label,
                                  cmap=cmap, no_nans=no_nans,per_row=per_row)
 
-    def export_pca_results(self, comp_ids=None, calibrate=True,
+    def export_decomposition_results(self, comp_ids=None, calibrate=True,
                           factor_prefix='pc', factor_format=None,
                           score_prefix='PC_score', score_format=None, 
                           comp_label='PC',cmap=plt.cm.jet,

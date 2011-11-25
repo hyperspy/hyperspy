@@ -256,7 +256,7 @@ class Image(Signal):
         else:
             return fig_list
 
-    def plot_pca_factors(
+    def plot_decomposition_factors(
         self, comp_ids=6, calibrate=True,
         same_window=True, comp_label='PC', 
         on_peaks=False, img_data=None,
@@ -393,7 +393,7 @@ class Image(Signal):
                                 plot_shifts=plot_shifts, plot_char=plot_char, 
                                 cmap=cmap, per_row=per_row)
 
-    def plot_pca_scores(self, comp_ids=6, calibrate=True,
+    def plot_decomposition_scores(self, comp_ids=6, calibrate=True,
                        same_window=True, comp_label='PC', 
                        with_factors=False,
                        on_peaks=False, cmap=plt.cm.jet, 
@@ -509,7 +509,7 @@ class Image(Signal):
                                  on_peaks=on_peaks, cmap=cmap,
                                  no_nans=no_nans,per_row=per_row)
 
-    def export_pca_results(self, comp_ids=None, 
+    def export_decomposition_results(self, comp_ids=None, 
                           factor_prefix='pc', factor_format='rpl',
                           score_prefix='PC_score', score_format='rpl', 
                           on_peaks=False,
@@ -1120,7 +1120,7 @@ Nothing to plot.  Try again.""")
                                      vector_scale=vector_scale,
                                      per_row=per_row)
 
-    def plot_pca_peak_factors(self, comp_ids=6, calibrate=True,
+    def plot_decomposition_peak_factors(self, comp_ids=6, calibrate=True,
                         same_window=True, comp_label='PC', 
                         img_data=None,
                         plot_shifts=True, plot_char=None, 

@@ -812,7 +812,7 @@ class MVA_Results(object):
         'variance2one' : False,
         'poissonian_noise_normalized' : False,
         'output_dimension' : None,
-        'last_used_pca_algorithm' : None
+        'last_used_decomposition_algorithm' : None
         }
         for attrib in defaults.keys():
             if not hasattr(self, attrib):
