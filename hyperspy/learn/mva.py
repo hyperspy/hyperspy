@@ -278,7 +278,7 @@ class MVA():
     
     def independent_components_analysis(
         self, number_of_components=None, algorithm='CuBICA', diff_order=1,
-        pc=None, comp_list = None, mask = None, on_peaks=False,
+        pc=None, comp_list = None, mask = None, on_peaks=False, on_scores=False,
         smoothing = None, **kwds):
         """Independent components analysis.
 
@@ -308,7 +308,10 @@ class MVA():
 
         else:
             if pc is None:
-                pc = target.pc
+                if on_scores:
+                    pc = target.v
+                else:
+                    pc = target.pc
             bool_index = np.zeros((pc.shape[0]), dtype = 'bool')
             if number_of_components is not None:
                 bool_index[:number_of_components] = True
