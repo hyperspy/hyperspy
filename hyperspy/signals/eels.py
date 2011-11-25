@@ -798,7 +798,7 @@ class EELSSpectrum(Spectrum):
 #        mw = mean_interval
 #        s = copy.deepcopy(self)
 #        s.energy_crop(1023-pw, 1023 + pw)
-#        s.principal_components_analysis(normalize_poissonian_noise)
+#        s.decomposition(normalize_poissonian_noise)
 #        if show_lev:
 #            s.plot_lev()
 #            pcs = int(raw_input('Number of principal components? '))

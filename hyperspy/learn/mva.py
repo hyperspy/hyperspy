@@ -53,7 +53,7 @@ class MVA():
             target=self.mva_results
         return target
     @do_not_replot
-    def principal_components_analysis(self, normalize_poissonian_noise = False,
+    def decomposition(self, normalize_poissonian_noise = False,
     algorithm = 'svd', output_dimension = None, navigation_mask = None,
     signal_mask = None, center = False, variance2one = False, var_array = None,
     var_func = None, polyfit = None, on_peaks=False):
@@ -304,7 +304,7 @@ class MVA():
         target=self._get_target(on_peaks)
 
         if not hasattr(target, 'pc') or target.pc==None:
-            self.principal_components_analysis(on_peaks=on_peaks)
+            self.decomposition(on_peaks=on_peaks)
 
         else:
             if pc is None:
@@ -363,7 +363,7 @@ class MVA():
         Examples
         -------
         >>> s = load('some_file')
-        >>> s.principal_components_analysis(True) # perform PCA
+        >>> s.decomposition(True) # perform PCA
         >>> s.independent_components_analysis(3)  # perform ICA on 3 PCs
         >>> s.reverse_ic(1) # reverse IC 1
         >>> s.reverse_ic((0, 2)) # reverse ICs 0 and 2
@@ -538,7 +538,7 @@ class MVA():
         """
         target = self._get_target(on_peaks)
         if target.V==None:
-            self.principal_components_analysis()
+            self.decomposition()
         if n>target.V.shape[0]:
             n=target.V.shape[0]
         fig = plt.figure()
@@ -726,7 +726,7 @@ class MVA():
         polyfit :
 
         """
-        self.principal_components_analysis(on_peaks=True,
+        self.decomposition(on_peaks=True,
                                            normalize_poissonian_noise = normalize_poissonian_noise,
                                            algorithm = algorithm, output_dimension = output_dimension, 
                                            navigation_mask = navigation_mask, signal_mask = signal_mask, 

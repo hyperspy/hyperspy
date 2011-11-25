@@ -273,7 +273,7 @@ to add?'%arg.mapped_parameters.title)
         smp.aggregate_end_pointer=self.data.shape[0]
         smp.title="Aggregate Spectra: %s"%smp.original_files.keys()
 
-    def principal_components_analysis(self, normalize_poissonian_noise = False, 
+    def decomposition(self, normalize_poissonian_noise = False, 
                                      algorithm = 'svd', output_dimension = None, navigation_mask = None, 
                                      signal_mask = None, center = False, variance2one = False, var_array = None, 
                                      var_func = None, polyfit = None, **kw):
@@ -310,7 +310,7 @@ to add?'%arg.mapped_parameters.title)
         --------
         plot_principal_components, , plot_lev
         """
-        super(AggregateSpectrum,self).principal_components_analysis(normalize_poissonian_noise, 
+        super(AggregateSpectrum,self).decomposition(normalize_poissonian_noise, 
                                      algorithm, output_dimension, navigation_mask, 
                                      signal_mask, center, variance2one, var_array, 
                                      var_func, polyfit)
