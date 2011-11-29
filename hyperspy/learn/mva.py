@@ -32,6 +32,10 @@ from hyperspy.misc.utils import center_and_scale
 from hyperspy.defaults_parser import preferences
 from hyperspy import messages
 from hyperspy.decorators import auto_replot, do_not_replot
+try:
+    import sklearn.decomposition
+except:
+    pass
 
 
 class MVA():
@@ -56,8 +60,8 @@ class MVA():
     def decomposition(self, normalize_poissonian_noise = False,
     algorithm = 'svd', output_dimension = None, navigation_mask = None,
     signal_mask = None, center = False, variance2one = False, var_array = None,
-    var_func = None, polyfit = None, on_peaks=False):
-        """Principal components analysis.
+    var_func = None, polyfit = None, on_peaks=False, **kwargs):
+        """Decomposition with a choice of algorithms
 
         The results are stored in self.mva_results
 
@@ -65,27 +69,38 @@ class MVA():
         ----------
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
-        algorithm : {'svd', 'fast_svd', 'mlpca', 'fast_mlpca', 'mdp', 'NIPALS'}
+            
+        algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'mdp' | 
+                    'NIPALS' | 'nmf' | 'sparse_pca' | 'mini_batch_sparse_pca'
+        
+        
         output_dimension : None or int
-            number of PCA to keep
+            number of components to keep/calculate
+            
         navigation_mask : boolean numpy array
+        
         signal_mask : boolean numpy array
+        
         center : bool
-            Perform energy centering before PCA
+            Perform energy centering before applying the algorithm
+            
         variance2one : bool
-            Perform whitening before PCA
+            Scale the data to have unit variance
+            
         var_array : numpy array
             Array of variance for the maximum likelihood PCA algorithm
+            
         var_func : function or numpy array
             If function, it will apply it to the dataset to obtain the
             var_array. Alternatively, it can a an array with the coefficients
             of a polynomial.
+            
         polyfit :
 
 
         See also
         --------
-        plot_principal_components, , plot_lev
+        plot_decomposition_factors, plot_decomposition_scores, plot_lev
 
         """
         # backup the original data
@@ -98,6 +113,7 @@ class MVA():
                          you can run PCA or ICA on them."""
         else:
             self._data_before_treatments = self.data.copy()
+            
         # Check for conflicting options and correct them when possible
         if (algorithm == 'mdp' or algorithm == 'NIPALS') and center is False:
             print \
@@ -144,26 +160,30 @@ class MVA():
         # Note that this function can change the masks
         if normalize_poissonian_noise is True:
             navigation_mask, signal_mask = \
-                self.normalize_poissonian_noise(navigation_mask = navigation_mask,
-                                                signal_mask = signal_mask,
+                self.normalize_poissonian_noise(navigation_mask=navigation_mask,
+                                                signal_mask=signal_mask,
                                                 return_masks = True)
 
-        navigation_mask = self._correct_navigation_mask_when_unfolded(navigation_mask)
+        navigation_mask = self._correct_navigation_mask_when_unfolded(
+                                                                navigation_mask)
 
-        messages.information('Performing principal components analysis')
+        messages.information('Performing decomposition analysis')
 
         if on_peaks:
             dc=self.mapped_parameters.peak_chars
         else:
             # The data must be transposed both for Images and Spectra
             dc = self.data.T.squeeze()
+            
         #set the output target (peak results or not?)
         target=self._get_target(on_peaks)
+        
         # Transform the None masks in slices to get the right behaviour
         if navigation_mask is None:
             navigation_mask = slice(None)
         if signal_mask is None:
             signal_mask = slice(None)
+            
         if algorithm == 'mdp' or algorithm == 'NIPALS':
             if algorithm == 'mdp':
                 target.pca_node = mdp.nodes.PCANode(
@@ -185,10 +205,43 @@ class MVA():
         elif algorithm == 'svd':
             pca_v, pca_V = pca(dc[signal_mask,:][:,navigation_mask])
             pc = np.dot(dc[:,navigation_mask], pca_v)
+
         elif algorithm == 'fast_svd':
             pca_v, pca_V = pca(dc[signal_mask,:][:,navigation_mask],
             fast = True, output_dimension = output_dimension)
             pc = np.dot(dc[:,navigation_mask], pca_v)
+        elif algorithm == 'nmf_navigation':
+            nmf = sklearn.decomposition.NMF(**kwargs)
+            nmf.n_components = output_dimension
+            nmf.fit(dc[signal_mask,:][:,navigation_mask])
+            pca_v = nmf.components_.T
+            pc = nmf.transform(dc[:,navigation_mask])
+#            pc = np.dot(dc[:,navigation_mask], pca_v)
+            pca_V = [1,] * output_dimension
+        elif algorithm == 'nmf_signal':    
+            nmf = sklearn.decomposition.NMF(**kwargs)
+            nmf.n_components = output_dimension
+            nmf.fit((dc[signal_mask,:][:,navigation_mask]).T)
+            pc = nmf.components_.T
+            pca_v = nmf.transform((dc[signal_mask,:][:,navigation_mask]).T)
+            pca_V = [1,] * output_dimension
+            
+        elif algorithm == 'sparse_pca':
+            spca = sklearn.decomposition.SparsePCA(output_dimension, **kwargs)
+            spca.fit(dc[signal_mask,:][:,navigation_mask])
+            pca_v = spca.components_.T
+            pc = spca.transform(dc[:,navigation_mask])
+#            pc = np.dot(dc[:,navigation_mask], pca_v)
+            pca_V = [1,] * output_dimension
+            
+        elif algorithm == 'mini_batch_sparse_pca':
+            spca = sklearn.decomposition.MiniBatchSparsePCA(output_dimension,
+                                                            **kwargs)
+            spca.fit(dc[signal_mask,:][:,navigation_mask])
+            pca_v = spca.components_.T
+            pc = spca.transform(dc[:,navigation_mask])
+#            pc = np.dot(dc[:,navigation_mask], pca_v)
+            pca_V = [1,] * output_dimension
 
         elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
             print "Performing the MLPCA training"
