@@ -546,18 +546,23 @@ class Spectrum(Signal):
     def smooth_savitzky_golay(self, polynomial_order = None,
         number_of_points = None, differential_order = 0):
         '''Savitzky-Golay data smoothing'''
-        smoother = SmoothingSavitzkyGolay(self)
-        smoother.differential_order = differential_order
-        if polynomial_order is not None:
-            smoother.polynomial_order = polynomial_order
-        if number_of_points is not None:
-            smoother.number_of_points = number_of_points
-        if polynomial_order is None or number_of_points is None:
-            smoother.edit_traits()
+        if polynomial_order is not None and number_of_points is not None:
+            for index in np.ndindex(
+            tuple(self.axes_manager.navigation_shape)):
+                self.axes_manager.set_not_slicing_indexes(index)
+                self.data[self.axes_manager._getitem_tuple] = \
+                    utils.sg(self(), number_of_points, 
+                             polynomial_order, differential_order)
         else:
-            smoother.apply()
-    
+            smoother = SmoothingSavitzkyGolay(self)
+            smoother.differential_order = differential_order
+            if polynomial_order is not None:
+                smoother.polynomial_order = polynomial_order
+            if number_of_points is not None:
+                smoother.number_of_points = number_of_points
 
+            smoother.edit_traits()
+            
     def smooth_lowess(self, smoothing_parameter = None,
         number_of_iterations=None, differential_order = 0):
         '''Lowess data smoothing'''
