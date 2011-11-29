@@ -1195,7 +1195,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                     s.save('%s-%i.%s' % (score_prefix, i, score_format))
 
 
-    def plot_decomposition_factors(self,comp_ids=6, calibrate=True,
+    def plot_decomposition_factors(self,comp_ids=None, calibrate=True,
                         same_window=None, comp_label='PC', 
                         per_row=3):
         """Plot components from PCA
@@ -1229,6 +1229,9 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         factors=self.mva_results.pc
+        if comp_ids is None:
+            comp_ids = self.mva_results.output_dimension
+            
         return self._plot_factors_or_pchars(factors, 
                                             comp_ids=comp_ids, 
                                             calibrate=calibrate,
@@ -1277,7 +1280,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                                             comp_label=comp_label, 
                                             per_row=per_row)
 
-    def plot_decomposition_scores(self, comp_ids=6, calibrate=True,
+    def plot_decomposition_scores(self, comp_ids=None, calibrate=True,
                        same_window=None, comp_label='PC', 
                        with_factors=False, cmap=plt.cm.gray, 
                        no_nans=True,per_row=3):
@@ -1324,7 +1327,11 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         scores=self.mva_results.v.T
         if with_factors:
             factors=self.mva_results.pc
-        else: factors=None
+        else:
+            factors=None
+        
+        if comp_ids is None:
+            comp_ids = self.mva_results.output_dimension
         return self._plot_scores(scores, comp_ids=comp_ids, 
                                  with_factors=with_factors, factors=factors,
                                  same_window=same_window, comp_label=comp_label,
