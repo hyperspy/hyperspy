@@ -179,6 +179,8 @@ class MVA():
         target=self._get_target(on_peaks)
         
         # Transform the None masks in slices to get the right behaviour
+        
+        pca_V = None
         if navigation_mask is None:
             navigation_mask = slice(None)
         if signal_mask is None:
@@ -210,21 +212,13 @@ class MVA():
             pca_v, pca_V = pca(dc[signal_mask,:][:,navigation_mask],
             fast = True, output_dimension = output_dimension)
             pc = np.dot(dc[:,navigation_mask], pca_v)
-        elif algorithm == 'nmf_navigation':
-            nmf = sklearn.decomposition.NMF(**kwargs)
-            nmf.n_components = output_dimension
-            nmf.fit(dc[signal_mask,:][:,navigation_mask])
-            pca_v = nmf.components_.T
-            pc = nmf.transform(dc[:,navigation_mask])
-#            pc = np.dot(dc[:,navigation_mask], pca_v)
-            pca_V = [1,] * output_dimension
-        elif algorithm == 'nmf_signal':    
+
+        elif algorithm == 'nmf':    
             nmf = sklearn.decomposition.NMF(**kwargs)
             nmf.n_components = output_dimension
             nmf.fit((dc[signal_mask,:][:,navigation_mask]).T)
             pc = nmf.components_.T
             pca_v = nmf.transform((dc[signal_mask,:][:,navigation_mask]).T)
-            pca_V = [1,] * output_dimension
             
         elif algorithm == 'sparse_pca':
             spca = sklearn.decomposition.SparsePCA(output_dimension, **kwargs)
@@ -232,7 +226,6 @@ class MVA():
             pca_v = spca.components_.T
             pc = spca.transform(dc[:,navigation_mask])
 #            pc = np.dot(dc[:,navigation_mask], pca_v)
-            pca_V = [1,] * output_dimension
             
         elif algorithm == 'mini_batch_sparse_pca':
             spca = sklearn.decomposition.MiniBatchSparsePCA(output_dimension,
@@ -241,7 +234,6 @@ class MVA():
             pca_v = spca.components_.T
             pc = spca.transform(dc[:,navigation_mask])
 #            pc = np.dot(dc[:,navigation_mask], pca_v)
-            pca_V = [1,] * output_dimension
 
         elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
             print "Performing the MLPCA training"
@@ -280,11 +272,17 @@ class MVA():
             pc = np.dot(dc[:,navigation_mask], V)
             pca_v = V
             pca_V = S ** 2
+            
+        else:
+            messages.information('Error: Algorithm not recognised. '
+                                 'Nothing done')
+            return False
 
         if output_dimension:
             print "trimming to %i dimensions"%output_dimension
             pca_v = pca_v[:,:output_dimension]
-            pca_V = pca_V[:output_dimension]
+            if pca_V is not None:
+                pca_V = pca_V[:output_dimension]
             pc = pc[:,:output_dimension]
 
         target.pc = pc
