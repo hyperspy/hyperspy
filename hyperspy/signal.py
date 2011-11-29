@@ -885,7 +885,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
     def _plot_scores(self, scores, comp_ids=None, calibrate=True,
                      same_window=None, comp_label=None, 
                      with_factors=False, factors=None,
-                     cmap=plt.cm.jet, no_nans=True, per_row=3):
+                     cmap=plt.cm.jet, no_nans=False, per_row=3):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         if comp_ids is None:
@@ -1283,7 +1283,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
     def plot_decomposition_scores(self, comp_ids=None, calibrate=True,
                        same_window=None, comp_label='PC', 
                        with_factors=False, cmap=plt.cm.gray, 
-                       no_nans=True,per_row=3):
+                       no_nans=False,per_row=3):
         """Plot scores from PCA
 
         Parameters
@@ -1340,7 +1340,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
     def plot_ica_scores(self, comp_ids=None, calibrate=True,
                        same_window=None, comp_label='IC', 
                        with_factors=False, cmap=plt.cm.gray, 
-                       no_nans=True,per_row=3):
+                       no_nans=False,per_row=3):
         """Plot scores from ICA
 
         Parameters
