@@ -388,6 +388,10 @@ class MVA():
                         number_of_points = smoothing['number_of_points'],
                         polynomial_order = smoothing['polynomial_order'],
                         differential_order = diff_order)
+                if smoothing['algorithm'] == 'tv':
+                    spc.smooth_tv(
+                        smoothing_parameter= smoothing['smoothing_parameter'],
+                        differential_order = diff_order)
                     pc = spc.data.T
             
             if mask is not None:
