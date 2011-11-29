@@ -556,7 +556,7 @@ class MVA():
     def energy_center(self):
         """Subtract the mean energy pixel by pixel"""
         print "\nCentering the energy axis"
-        self._energy_mean = np.mean(self.data, 0)
+        self._energy_mean = np.mean(self.data, -1)[..., np.newaxis]
         self.data = (self.data - self._energy_mean)
     
     @auto_replot
