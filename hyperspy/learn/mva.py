@@ -439,9 +439,12 @@ class MVA():
         w = target.w
         n = len(w)
         target.ic = np.dot(target.pc[:,:n], w.T)
+        n_channels = target.ic.shape[0]
         for i in xrange(n):
-            if np.all(target.ic[:,i] <= 0):
+            neg_channels = np.sum(target.ic[:,i] < 0)
+            if neg_channels > n_channels/2.:
                 self.reverse_ic(i)
+                print("IC %i reversed" % i)
 
     def _get_ica_scores(self,target):
         """
