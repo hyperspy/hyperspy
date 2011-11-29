@@ -332,7 +332,7 @@ class MVA():
     def independent_components_analysis(
         self, number_of_components=None, algorithm='CuBICA', diff_order=1,
         pc=None, comp_list = None, mask = None, on_peaks=False, on_scores=False,
-        smoothing = None, **kwds):
+        smoothing = None, **kwargs):
         """Independent components analysis.
 
         Available algorithms: FastICA, JADE, CuBICA, and TDSEP
@@ -353,6 +353,8 @@ class MVA():
             If not None, only the selected channels will be used by the
             algorithm.
         smoothing: dict
+        
+        Any extra parameter is passed to the ICA algorithm
         """
         target=self._get_target(on_peaks)
 
@@ -389,21 +391,22 @@ class MVA():
                         polynomial_order = smoothing['polynomial_order'],
                         differential_order = diff_order)
                     pc = spc.data.T
+            
             if mask is not None:
                 pc = pc[mask, :]
 
-            else:
-                # first centers and scales data
-                invsqcovmat, pc = center_and_scale(pc).itervalues()
-                exec('target.ica_node=mdp.nodes.%sNode(white_parm = \
-                {\'svd\' : True})' % algorithm)
-                target.ica_node.variance2oneed = True
-                target.ica_node.train(pc)
-                target.w = np.dot(target.ica_node.get_recmatrix(), invsqcovmat)
+            # first centers and scales data
+            invsqcovmat, pc = center_and_scale(pc).itervalues()
+            to_exec = 'target.ica_node=mdp.nodes.%sNode(' % algorithm
+            for key, value in kwargs.iteritems():
+                to_exec += '%s=%s,' % (key, value)
+            to_exec += ')'
+            exec(to_exec)
+            target.ica_node.train(pc)
+            target.w = np.dot(target.ica_node.get_recmatrix(), invsqcovmat)
             self._ic_from_w(target)
             target.ica_scores=self._get_ica_scores(target)
             target.ica_algorithm = algorithm
-            self.output_dimension = number_of_components
 
     def reverse_ic(self, ic_n, on_peaks = False):
         """Reverse the independent component
