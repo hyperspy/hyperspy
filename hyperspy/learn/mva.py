@@ -399,7 +399,8 @@ class MVA():
 
             # first centers and scales data
             invsqcovmat, pc = center_and_scale(pc).itervalues()
-            to_exec = 'target.ica_node=mdp.nodes.%sNode(' % algorithm
+            to_exec = ('target.ica_node=mdp.nodes.%sNode(' % algorithm + 
+                       'white_parm = { \'svd\' : True }, whitened = False,')
             for key, value in kwargs.iteritems():
                 to_exec += '%s=%s,' % (key, value)
             to_exec += ')'
