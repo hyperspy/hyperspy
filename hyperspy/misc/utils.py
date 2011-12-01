@@ -773,29 +773,6 @@ def _ntu(C):
         CN[:,t] = C[:,t] / np.max(np.abs(C[:,t]))
     return CN
 
-def center_and_scale(data):
-    """Center and scale SI
-
-    Parameters
-    ----------
-    data : array
-        SI
-    Returns
-    -------
-    Dictionary:
-        data : array
-        invsqcovmat : array
-    """
-    N = data.shape[1]
-    data = data - np.average(data,0).reshape(1,-1)
-    data = data.T
-    covmat = np.cov(data, bias = 1)
-    sqcovmat = sp.linalg.sqrtm(covmat).real
-    invsqcovmat = np.linalg.inv(sqcovmat)
-    data = np.dot(invsqcovmat,data)
-    data = data.T
-    return {'data' : data, 'invsqcovmat' : invsqcovmat}
-
 def analyze_readout(spectrum):
     """Readout diagnostic tool
 

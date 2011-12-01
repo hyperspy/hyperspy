@@ -28,16 +28,27 @@ import mdp
 from hyperspy.misc import utils
 from hyperspy.learn.svd_pca import pca
 from hyperspy.learn.mlpca import mlpca
-from hyperspy.misc.utils import center_and_scale
 from hyperspy.defaults_parser import preferences
 from hyperspy import messages
 from hyperspy.decorators import auto_replot, do_not_replot
+from scipy import linalg
 try:
     import sklearn.decomposition
 except:
     pass
 
-
+def centering_and_whitening(X):
+    X = X.T
+    # Centering the columns (ie the variables)
+    X = X - X.mean(axis=-1)[:, np.newaxis]
+    # Whitening and preprocessing by PCA
+    u, d, _ = linalg.svd(X, full_matrices=False)
+    del _
+    K = (u / (d/np.sqrt(X.shape[1]))).T
+    del u, d
+    X1 = np.dot(K, X)
+    return X1.T, K
+    
 class MVA():
     """
     Multivariate analysis capabilities for the Spectrum class.
@@ -398,17 +409,23 @@ class MVA():
                 pc = pc[mask, :]
 
             # first centers and scales data
-            invsqcovmat, pc = center_and_scale(pc).itervalues()
-            to_exec = ('target.ica_node=mdp.nodes.%sNode(' % algorithm + 
-                       'white_parm = { \'svd\' : True }, whitened = False,')
-            for key, value in kwargs.iteritems():
-                to_exec += '%s=%s,' % (key, value)
-            to_exec += ')'
-            exec(to_exec)
-            target.ica_node.train(pc)
-            target.w = np.dot(target.ica_node.get_recmatrix(), invsqcovmat)
+            pc,invsqcovmat = centering_and_whitening(pc)
+            if algorithm != 'sklearn_fastica':
+                to_exec = 'target.ica_node=mdp.nodes.%sNode(' % algorithm
+                for key, value in kwargs.iteritems():
+                    to_exec += '%s=%s,' % (key, value)
+                to_exec += ')'
+                exec(to_exec)
+                target.ica_node.train(pc)
+                w = target.ica_node.get_recmatrix()
+            else:
+                target.ica_node = sklearn.decomposition.FastICA(**kwargs)
+                target.ica_node.whiten = False
+                target.ica_node.fit(pc)
+                w = target.ica_node.get_mixing_matrix().T
+            target.w = np.dot(w, invsqcovmat)
             self._ic_from_w(target)
-            target.ica_scores=self._get_ica_scores(target)
+            target.ica_scores = self._get_ica_scores(target)
             target.ica_algorithm = algorithm
 
     def reverse_ic(self, ic_n, on_peaks = False):
