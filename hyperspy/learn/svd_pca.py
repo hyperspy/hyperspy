@@ -46,5 +46,5 @@ def pca(data, fast = False, output_dimension = None):
         u, S, PC = scipy.linalg.svd(Y, full_matrices = False)
     
     v = PC.T
-    V = S ** 2
+    V = S ** 2 / N
     return v,V
