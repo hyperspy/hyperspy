@@ -417,14 +417,14 @@ class MVA():
                 to_exec += ')'
                 exec(to_exec)
                 target.ica_node.train(pc)
-                w = target.ica_node.get_recmatrix()
+                unmixing_matrix = target.ica_node.get_recmatrix()
             else:
                 target.ica_node = sklearn.decomposition.FastICA(**kwargs)
                 target.ica_node.whiten = False
                 target.ica_node.fit(pc)
-                w = target.ica_node.get_mixing_matrix().T
-            target.w = np.dot(w, invsqcovmat)
-            self._ic_from_w(target)
+                unmixing_matrix = target.ica_node.unmixing_matrix_
+            target.unmixing_matrix = np.dot(unmixing_matrix, invsqcovmat)
+            self._unmix_factors(target)
             target.ica_scores = self._get_ica_scores(target)
             target.ica_algorithm = algorithm
 
@@ -451,10 +451,10 @@ class MVA():
 
         for i in [ic_n,]:
             target.ic[:,i] *= -1
-            target.w[i,:] *= -1
+            target.unmixing_matrix[i,:] *= -1
 
-    def _ic_from_w(self,target):
-        w = target.w
+    def _unmix_factors(self,target):
+        w = target.unmixing_matrix
         n = len(w)
         target.ic = np.dot(target.pc[:,:n], w.T)
         n_channels = target.ic.shape[0]
@@ -469,7 +469,7 @@ class MVA():
         Returns the ICA score matrix (formerly known as the recmatrix)
         """
         W = target.v.T[:target.ic.shape[1],:]
-        Q = np.linalg.inv(target.w.T)
+        Q = np.linalg.inv(target.unmixing_matrix.T)
         return np.dot(Q,W)
 
     @do_not_replot
@@ -807,17 +807,18 @@ class MVA():
 
         """
         self.decomposition(on_peaks=True,
-                                           normalize_poissonian_noise = normalize_poissonian_noise,
-                                           algorithm = algorithm, output_dimension = output_dimension, 
-                                           navigation_mask = navigation_mask, signal_mask = signal_mask, 
-                                           center = center, variance2one = variance2one, 
-                                           var_array = var_array, var_func = var_func, polyfit = polyfit)
+               normalize_poissonian_noise = normalize_poissonian_noise,
+               algorithm = algorithm, output_dimension = output_dimension, 
+               navigation_mask = navigation_mask, signal_mask = signal_mask, 
+               center = center, variance2one = variance2one, 
+               var_array = var_array, var_func = var_func, polyfit = polyfit)
 
     def peak_ica(self, number_of_components, algorithm = 'CuBICA', diff_order = 1, 
                  pc = None, comp_list = None, mask = None, on_peaks=False, **kwds):
         """Independent components analysis on peak characteristic data.
 
-        Requires that you have run the peak_char_stack function on your stack of images.
+        Requires that you have run the peak_char_stack function on your stack of
+        images.
 
         Available algorithms: FastICA, JADE, CuBICA, and TDSEP
 
@@ -857,7 +858,7 @@ class MVA_Results(object):
         self.original_shape = None
         self.ica_node=None
         # Demixing matrix
-        self.w = None
+        self.unmixing_matrix = None
 
     def save(self, filename):
         """Save the result of the PCA analysis
@@ -866,11 +867,13 @@ class MVA_Results(object):
         ----------
         filename : string
         """
-        np.savez(filename, pc = self.pc, v = self.v, V = self.explained_variance,
-        pca_algorithm = self.pca_algorithm, centered = self.centered,
-        output_dimension = self.output_dimension, variance2one = self.variance2one,
-        poissonian_noise_normalized = self.poissonian_noise_normalized,
-        w = self.w, ica_algorithm = self.ica_algorithm)
+        np.savez(filename, pc = self.pc, v = self.v,
+        explained_variance=self.explained_variance,
+        pca_algorithm=self.pca_algorithm, centered=self.centered,
+        output_dimension=self.output_dimension, variance2one=self.variance2one,
+        poissonian_noise_normalized=self.poissonian_noise_normalized,
+        unmixing_matrix = self.unmixing_matrix,
+        ica_algorithm=self.ica_algorithm)
 
     def load(self, filename):
         """Load the result of the PCA analysis
@@ -884,17 +887,26 @@ class MVA_Results(object):
             exec('self.%s = pca[\'%s\']' % (key, key))
         print "\n%s loaded correctly" %  filename
 
-        # For compatibility with old version
+        # For compatibility with old version ##################
+
         if hasattr(self, 'algorithm'):
             self.pca_algorithm = self.algorithm
             del self.algorithm
         if hasattr(self, 'V'):
             self.explained_variance = self.V
             del self.V
+        if hasattr(self, 'w'):
+            self.unmixing_matrix = self.w
+            del self.w
 
+        #######################################################
+        
         # Output_dimension is an array after loading, convert it to int            
         if hasattr(self, 'output_dimension'):
-            self.output_dimension = int(self.output_dimension)
+            try:
+                self.output_dimension = int(self.output_dimension)
+            except TypeError:
+                self.output_dimension = None
             
         defaults = {
         'centered' : False,
