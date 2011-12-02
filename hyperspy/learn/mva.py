@@ -890,6 +890,10 @@ class MVA_Results(object):
         if hasattr(self, 'V'):
             self.explained_variance = self.V
             del self.V
+
+        # Output_dimension is an array after loading, convert it to int            
+        if hasattr(self, 'output_dimension'):
+            self.output_dimension = int(self.output_dimension)
             
         defaults = {
         'centered' : False,
