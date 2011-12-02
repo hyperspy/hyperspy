@@ -719,9 +719,8 @@ class MVA():
         """
         messages.information(
             "Scaling the data to normalize the (presumably) Poissonian noise")
-        # If energy axis is not first, it needs to be for MVA.
         refold = self.unfold_if_multidim()
-        dc = self.data.T.squeeze().copy()
+        dc = self.data.T
         navigation_mask = \
             self._correct_navigation_mask_when_unfolded(navigation_mask)
         if navigation_mask is None:
@@ -764,9 +763,6 @@ class MVA():
             mask3D = signal_mask[:, np.newaxis] * \
                 navigation_mask[np.newaxis, :]
             dc[mask3D] = temp.ravel()
-        # TODO - dc was never modifying self.data - was normalization ever
-        # really getting applied?  Comment next lines as necessary.
-        self.data = dc.T.copy()
         # end normalization write to self.data.
         if refold is True:
             print "Automatically refolding the SI after scaling"
