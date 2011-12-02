@@ -164,7 +164,7 @@ class MVA():
             self.energy_center()
         # Variance normalization
         if normalize_variance is True:
-            self.variance_normalized()
+            self.normalize_variance()
         # Transform the data in a line spectrum
         self._unfolded4pca = self.unfold_if_multidim()
         # Normalize the poissonian noise
