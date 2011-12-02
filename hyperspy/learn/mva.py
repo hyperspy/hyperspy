@@ -191,7 +191,7 @@ class MVA():
         
         # Transform the None masks in slices to get the right behaviour
         
-        pca_V = None
+        explained_variance = None
         if navigation_mask is None:
             navigation_mask = slice(None)
         if signal_mask is None:
@@ -212,15 +212,15 @@ class MVA():
             print "Performing PCA projection"
             pc = target.pca_node.execute(dc[:,navigation_mask])
             pca_v = target.pca_node.v
-            pca_V = target.pca_node.d
+            explained_variance = target.pca_node.d
             target.output_dimension = output_dimension
 
         elif algorithm == 'svd':
-            pca_v, pca_V = pca(dc[signal_mask,:][:,navigation_mask])
+            pca_v, explained_variance = pca(dc[signal_mask,:][:,navigation_mask])
             pc = np.dot(dc[:,navigation_mask], pca_v)
 
         elif algorithm == 'fast_svd':
-            pca_v, pca_V = pca(dc[signal_mask,:][:,navigation_mask],
+            pca_v, explained_variance = pca(dc[signal_mask,:][:,navigation_mask],
             fast = True, output_dimension = output_dimension)
             pc = np.dot(dc[:,navigation_mask], pca_v)
 
@@ -282,7 +282,7 @@ class MVA():
             print "Performing PCA projection"
             pc = np.dot(dc[:,navigation_mask], V)
             pca_v = V
-            pca_V = S ** 2
+            explained_variance = S ** 2
             
         else:
             messages.information('Error: Algorithm not recognised. '
@@ -292,13 +292,13 @@ class MVA():
         if output_dimension:
             print "trimming to %i dimensions"%output_dimension
             pca_v = pca_v[:,:output_dimension]
-            if pca_V is not None:
-                pca_V = pca_V[:output_dimension]
+            if explained_variance is not None:
+                explained_variance = explained_variance[:output_dimension]
             pc = pc[:,:output_dimension]
 
         target.pc = pc
         target.v = pca_v
-        target.V = pca_V
+        target.explained_variance = explained_variance
         target.pca_algorithm = algorithm
         target.centered = center
         target.poissonian_noise_normalized = \
@@ -616,13 +616,13 @@ class MVA():
         n : int
         """
         target = self._get_target(on_peaks)
-        if target.V==None:
+        if target.explained_variance==None:
             self.decomposition()
-        if n>target.V.shape[0]:
-            n=target.V.shape[0]
+        if n>target.explained_variance.shape[0]:
+            n=target.explained_variance.shape[0]
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.plot(range(n), target.V[:n], 'o')
+        ax.plot(range(n), target.explained_variance[:n], 'o')
         ax.semilogy()
         ax.set_title('Log(eigenvalues)')
         ax.set_xlabel('Principal component')
@@ -639,9 +639,9 @@ class MVA():
         n : int
         """
         target = self._get_target(on_peaks)
-        if n > target.V.shape[0]:
-            n=target.V.shape[0]
-        cumu = np.cumsum(target.V) / np.sum(target.V)
+        if n > target.explained_variance.shape[0]:
+            n=target.explained_variance.shape[0]
+        cumu = np.cumsum(target.explained_variance) / np.sum(target.explained_variance)
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.scatter(range(n), cumu[:n])
@@ -836,16 +836,17 @@ class MVA():
             If not None, only the selected channels will be used by the
             algorithm.
         """
-        self.independent_components_analysis(number_of_components=number_of_components, 
-                                             on_peaks=True,algorithm = algorithm, 
-                                             diff_order = diff_order, pc = pc, 
-                                             comp_list = comp_list, mask = mask)
+        self.independent_components_analysis(number_of_components=
+                                             number_of_components, 
+                                             on_peaks=True,algorithm=algorithm, 
+                                             diff_order=diff_order, pc=pc, 
+                                             comp_list=comp_list, mask=mask)
 
 class MVA_Results(object):
     def __init__(self):
         self.pc = None
         self.v = None
-        self.V = None
+        self.explained_variance = None
         self.pca_algorithm = None
         self.ica_algorithm = None
         self.centered = None
@@ -864,7 +865,7 @@ class MVA_Results(object):
         ----------
         filename : string
         """
-        np.savez(filename, pc = self.pc, v = self.v, V = self.V,
+        np.savez(filename, pc = self.pc, v = self.v, V = self.explained_variance,
         pca_algorithm = self.pca_algorithm, centered = self.centered,
         output_dimension = self.output_dimension, variance2one = self.variance2one,
         poissonian_noise_normalized = self.poissonian_noise_normalized,
@@ -886,6 +887,10 @@ class MVA_Results(object):
         if hasattr(self, 'algorithm'):
             self.pca_algorithm = self.algorithm
             del self.algorithm
+        if hasattr(self, 'V'):
+            self.explained_variance = self.V
+            del self.V
+            
         defaults = {
         'centered' : False,
         'variance2one' : False,
