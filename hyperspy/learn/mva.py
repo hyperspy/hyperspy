@@ -70,7 +70,7 @@ class MVA():
     @do_not_replot
     def decomposition(self, normalize_poissonian_noise = False,
     algorithm = 'svd', output_dimension = None, navigation_mask = None,
-    signal_mask = None, center = False, variance2one = False, var_array = None,
+    signal_mask = None, center = False, normalize_variance = False, var_array = None,
     var_func = None, polyfit = None, on_peaks=False, **kwargs):
         """Decomposition with a choice of algorithms
 
@@ -95,7 +95,7 @@ class MVA():
         center : bool
             Perform energy centering before applying the algorithm
             
-        variance2one : bool
+        normalize_variance : bool
             Scale the data to have unit variance
             
         var_array : numpy array
@@ -151,20 +151,20 @@ class MVA():
             "Disabling centering")
             center = False
 
-        if variance2one is True and normalize_poissonian_noise is True:
+        if normalize_variance is True and normalize_poissonian_noise is True:
             messages.warning(
             "Variance normalization is not compatible with poissonian noise"
             "normalization.\n"
-            "Disabling variance2one")
-            variance2one = False
+            "Disabling normalize_variance")
+            normalize_variance = False
 
         # Apply pre-treatments
         # Centering
         if center is True:
             self.energy_center()
         # Variance normalization
-        if variance2one is True:
-            self.variance2one()
+        if normalize_variance is True:
+            self.variance_normalized()
         # Transform the data in a line spectrum
         self._unfolded4pca = self.unfold_if_multidim()
         # Normalize the poissonian noise
@@ -305,7 +305,7 @@ class MVA():
             normalize_poissonian_noise
         target.output_dimension = output_dimension
         target.unfolded = self._unfolded4pca
-        target.variance2one = variance2one
+        target.normalize_variance = normalize_variance
         
         # Delete the unmixing information, because it'll refer to a previous
         # decompositions
@@ -596,7 +596,7 @@ class MVA():
             self.data = (self.data + self._energy_mean)
     
     @auto_replot
-    def variance2one(self, on_peaks=False):
+    def normalize_variance(self, on_peaks=False):
         # Whitening
         if on_peaks:
             d=self.mapped_parameters.peak_chars
@@ -606,7 +606,7 @@ class MVA():
         d /= self._std
 
     @auto_replot
-    def undo_variance2one(self, on_peaks=False):
+    def undo_normalize_variance(self, on_peaks=False):
         if on_peaks:
             d=self.mapped_parameters.peak_chars
         else:
@@ -783,7 +783,7 @@ class MVA():
 
     def peak_pca(self,normalize_poissonian_noise = False, algorithm = 'svd', 
                  output_dimension = None, navigation_mask = None, 
-                 signal_mask = None, center = False, variance2one = False, 
+                 signal_mask = None, center = False, normalize_variance = False, 
                  var_array = None, var_func = None, polyfit = None):
         """Performs Principal Component Analysis on peak characteristic data.
 
@@ -801,7 +801,7 @@ class MVA():
         signal_mask : boolean numpy array
         center : bool
             Perform energy centering before PCA
-        variance2one : bool
+        normalize_variance : bool
             Perform whitening before PCA
         var_array : numpy array
             Array of variance for the maximum likelihood PCA algorithm
@@ -816,7 +816,7 @@ class MVA():
                normalize_poissonian_noise = normalize_poissonian_noise,
                algorithm = algorithm, output_dimension = output_dimension, 
                navigation_mask = navigation_mask, signal_mask = signal_mask, 
-               center = center, variance2one = variance2one, 
+               center = center, normalize_variance = normalize_variance, 
                var_array = var_array, var_func = var_func, polyfit = polyfit)
 
     def peak_ica(self, number_of_components, algorithm = 'CuBICA', diff_order = 1, 
@@ -855,7 +855,7 @@ class MVA_Results(object):
         self.pc = None
         self.v = None
         self.explained_variance = None
-        self.pca_algorithm = None
+        self.decomposition_algorithm = None
         self.ica_algorithm = None
         self.centered = None
         self.poissonian_noise_normalized = None
@@ -875,8 +875,9 @@ class MVA_Results(object):
         """
         np.savez(filename, pc = self.pc, v = self.v,
         explained_variance=self.explained_variance,
-        pca_algorithm=self.pca_algorithm, centered=self.centered,
-        output_dimension=self.output_dimension, variance2one=self.variance2one,
+        decomposition_algorithm=self.decomposition_algorithm,
+        centered=self.centered, output_dimension=self.output_dimension,
+        normalize_variance=self.variance_normalized,
         poissonian_noise_normalized=self.poissonian_noise_normalized,
         unmixing_matrix = self.unmixing_matrix,
         ica_algorithm=self.ica_algorithm)
@@ -896,7 +897,7 @@ class MVA_Results(object):
         # For compatibility with old version ##################
 
         if hasattr(self, 'algorithm'):
-            self.pca_algorithm = self.algorithm
+            self.decomposition_algorithm = self.algorithm
             del self.algorithm
         if hasattr(self, 'V'):
             self.explained_variance = self.V
@@ -904,6 +905,14 @@ class MVA_Results(object):
         if hasattr(self, 'w'):
             self.unmixing_matrix = self.w
             del self.w
+            
+        if hasattr(self, 'variance2one'):
+            self.variance_normalized = self.variance2one
+            del self.variance2one
+            
+        if hasattr(self, 'pca_algorithm'):
+            self.decomposition_algorithm = self.pca_algorithm
+            del self.pca_algorithm
 
         #######################################################
         
@@ -916,10 +925,10 @@ class MVA_Results(object):
             
         defaults = {
         'centered' : False,
-        'variance2one' : False,
+        'variance_normalized' : False,
         'poissonian_noise_normalized' : False,
         'output_dimension' : None,
-        'last_used_decomposition_algorithm' : None
+        'decomposition_algorithm' : None
         }
         for attrib in defaults.keys():
             if not hasattr(self, attrib):
@@ -933,11 +942,11 @@ class MVA_Results(object):
         print "MVA Summary:"
         print "------------"
         print
-        print "PCA algorithm : ", self.pca_algorithm
+        print "Decomposition algorithm : ", self.decomposition_algorithm
         print "Scaled to normalize poissonina noise : %s" % \
         self.poissonian_noise_normalized
         print "Energy centered : %s" % self.centered
-        print "Variance normalized : %s" % self.variance2one
+        print "Variance normalized : %s" % self.variance_normalized
         print "Output dimension : %s" % self.output_dimension
         print "ICA algorithm : %s" % self.ica_algorithm
 
