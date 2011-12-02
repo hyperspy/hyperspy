@@ -582,6 +582,7 @@ class MVA():
         rec.residual=rec.copy()
         rec.residual.data=self.data-rec.data
         return rec
+        
     @auto_replot
     def energy_center(self):
         """Subtract the mean energy pixel by pixel"""
@@ -601,7 +602,7 @@ class MVA():
             d=self.mapped_parameters.peak_chars
         else:
             d=self.data
-        self._std = np.std(d, 0)
+        self._std = np.std(d, -1)[..., np.newaxis]
         d /= self._std
 
     @auto_replot
