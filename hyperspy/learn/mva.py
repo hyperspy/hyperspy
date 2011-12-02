@@ -630,7 +630,7 @@ class MVA():
         plt.show()
         return ax
 
-    def plot_explained_variance(self,n=50,on_peaks=False):
+    def plot_explained_variance_ratio(self,n=50,on_peaks=False):
         """Plot the principal components explained variance up to the given
         number
 
@@ -641,12 +641,13 @@ class MVA():
         target = self._get_target(on_peaks)
         if n > target.explained_variance.shape[0]:
             n=target.explained_variance.shape[0]
-        cumu = np.cumsum(target.explained_variance) / np.sum(target.explained_variance)
+        cumu = np.cumsum(target.explained_variance) / np.sum(
+                                                     target.explained_variance)
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.scatter(range(n), cumu[:n])
         ax.set_xlabel('Principal component')
-        ax.set_ylabel('Explained variance')
+        ax.set_ylabel('Explained variance ratio')
         plt.draw()
         plt.show()
         return ax
