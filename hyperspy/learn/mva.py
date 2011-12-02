@@ -306,6 +306,11 @@ class MVA():
         target.output_dimension = output_dimension
         target.unfolded = self._unfolded4pca
         target.variance2one = variance2one
+        
+        # Delete the unmixing information, because it'll refer to a previous
+        # decompositions
+        target.unmixing_matrix = None
+        target.ica_algorithm = None
 
         if self._unfolded4pca is True:
             target.original_shape = self._shape_before_unfolding
