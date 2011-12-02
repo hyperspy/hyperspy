@@ -461,6 +461,13 @@ class MVA():
     def _unmix_factors(self,target):
         w = target.unmixing_matrix
         n = len(w)
+        if target.explained_variance is not None:
+            # The output of ICA is not sorted in any way what makes it difficult
+            # to compare results from different unmixings. The following code
+            # is an experimental attempt to sort them in a more predictable way
+            sorting_indexes = np.argsort(np.dot(target.explained_variance[:n],
+                np.abs(w.T)))[::-1]
+            w[:] = w[sorting_indexes,:]
         target.ic = np.dot(target.pc[:,:n], w.T)
         n_channels = target.ic.shape[0]
         for i in xrange(n):
