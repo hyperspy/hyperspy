@@ -1688,11 +1688,6 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
                 self.variance = np.clip(self.variance, gaussian_noise_var,
                 np.Inf)
 
-    def _correct_navigation_mask_when_unfolded(self, navigation_mask = None,):
-        #if 'unfolded' in self.history:
-        if navigation_mask is not None:
-            navigation_mask = navigation_mask.reshape((-1,))
-        return navigation_mask
 #
 #    def get_single_spectrum(self):
 #        s = Spectrum({'calibration' : {'data_cube' : self()}})

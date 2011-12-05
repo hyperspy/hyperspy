@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 import mdp
 
 from hyperspy.misc import utils
-from hyperspy.learn.svd_pca import pca
+from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
 from hyperspy.defaults_parser import preferences
 from hyperspy import messages
@@ -67,11 +67,12 @@ class MVA():
         else:
             target=self.mva_results
         return target
+    
     @do_not_replot
-    def decomposition(self, normalize_poissonian_noise = False,
-    algorithm = 'svd', output_dimension = None, navigation_mask = None,
-    signal_mask = None, center = False, normalize_variance = False, var_array = None,
-    var_func = None, polyfit = None, on_peaks=False, **kwargs):
+    def decomposition(self, normalize_poissonian_noise=False,
+    algorithm = 'svd', output_dimension=None, navigation_mask=None,
+    signal_mask=None, center=False, normalize_variance=False, var_array=None,
+    var_func=None, polyfit=None, on_peaks=False, **kwargs):
         """Decomposition with a choice of algorithms
 
         The results are stored in self.mva_results
@@ -81,8 +82,8 @@ class MVA():
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
             
-        algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'mdp' | 
-                    'NIPALS' | 'nmf' | 'sparse_pca' | 'mini_batch_sparse_pca'
+        algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
+            'sparse_pca' | 'mini_batch_sparse_pca'
         
         
         output_dimension : None or int
@@ -117,7 +118,8 @@ class MVA():
         # backup the original data
         if on_peaks:
             if hasattr(self.mapped_parameters,'peak_chars'):
-                self._data_before_treatments = self.mapped_parameters.peak_chars.copy()
+                self._data_before_treatments = \
+                    self.mapped_parameters.peak_chars.copy()
             else:
                 print """No peak characteristics found.  You must run the 
                          peak_char_stack function to obtain these before 
@@ -125,15 +127,7 @@ class MVA():
         else:
             self._data_before_treatments = self.data.copy()
             
-        # Check for conflicting options and correct them when possible
-        if (algorithm == 'mdp' or algorithm == 'NIPALS') and center is False:
-            print \
-            """
-            The PCA algorithms from the MDP toolking (mdp and NIPALS)
-            do not permit deactivating data centering.
-            Therefore, the algorithm will proceed to center the data.
-            """
-            center = True
+
         if algorithm == 'mlpca':
             if normalize_poissonian_noise is True:
                 messages.warning(
@@ -142,21 +136,9 @@ class MVA():
                 "normalize_poissonian_noise is set to False")
                 normalize_poissonian_noise = False
             if output_dimension is None:
-                messages.warning_exit(
-                "With the mlpca algorithm the output_dimension must be expecified")
+                messages.warning_exit("With the mlpca algorithm the "
+                "output_dimension must be expecified")
 
-        if center is True and normalize_poissonian_noise is True:
-            messages.warning(
-            "Centering is not compatible with poissonian noise normalization\n"
-            "Disabling centering")
-            center = False
-
-        if normalize_variance is True and normalize_poissonian_noise is True:
-            messages.warning(
-            "Variance normalization is not compatible with poissonian noise"
-            "normalization.\n"
-            "Disabling normalize_variance")
-            normalize_variance = False
 
         # Apply pre-treatments
         # Centering
@@ -174,77 +156,65 @@ class MVA():
                 self.normalize_poissonian_noise(navigation_mask=navigation_mask,
                                                 signal_mask=signal_mask,
                                                 return_masks = True)
-
-        navigation_mask = self._correct_navigation_mask_when_unfolded(
-                                                                navigation_mask)
+        if hasattr(navigation_mask, 'ravel'):
+            navigation_mask = navigation_mask.ravel()
 
         messages.information('Performing decomposition analysis')
 
         if on_peaks:
-            dc=self.mapped_parameters.peak_chars
+            dc = self.mapped_parameters.peak_chars
         else:
             # The data must be transposed both for Images and Spectra
-            dc = self.data.T.squeeze()
+            dc = self.data
             
         #set the output target (peak results or not?)
-        target=self._get_target(on_peaks)
+        target = self._get_target(on_peaks)
         
         # Transform the None masks in slices to get the right behaviour
-        
         explained_variance = None
         if navigation_mask is None:
             navigation_mask = slice(None)
         if signal_mask is None:
             signal_mask = slice(None)
-            
-        if algorithm == 'mdp' or algorithm == 'NIPALS':
-            if algorithm == 'mdp':
-                target.pca_node = mdp.nodes.PCANode(
-                output_dim=output_dimension, svd = True)
-            elif algorithm == 'NIPALS':
-                target.pca_node = mdp.nodes.NIPALSNode(
-                output_dim=output_dimension)
-            # Train the node
-            print "\nPerforming the PCA node training"
-            print "This include variance normalizing"
-            target.pca_node.train(
-                dc[signal_mask,:][:,navigation_mask])
-            print "Performing PCA projection"
-            pc = target.pca_node.execute(dc[:,navigation_mask])
-            pca_v = target.pca_node.v
-            explained_variance = target.pca_node.d
-            target.output_dimension = output_dimension
-
-        elif algorithm == 'svd':
-            pca_v, explained_variance = pca(dc[signal_mask,:][:,navigation_mask])
-            pc = np.dot(dc[:,navigation_mask], pca_v)
+        
+        if algorithm == 'svd':
+            pc, explained_variance = svd_pca(
+                dc[:,signal_mask][navigation_mask,:])
+            pca_v = np.dot(dc[:,signal_mask], pc)
 
         elif algorithm == 'fast_svd':
-            pca_v, explained_variance = pca(dc[signal_mask,:][:,navigation_mask],
+            pc, explained_variance = svd_pca(
+                dc[:,signal_mask][navigation_mask,:],
             fast = True, output_dimension = output_dimension)
-            pc = np.dot(dc[:,navigation_mask], pca_v)
+            pca_v = np.dot(dc[:,signal_mask], pc)
+
+        elif algorithm == 'sklearn_pca':    
+            pca = sklearn.decomposition.PCA(**kwargs)
+            pca.n_components = output_dimension
+            pca.fit((dc[:,signal_mask][navigation_mask,:]))
+            pc = pca.components_.T
+            pca_v = pca.transform((dc[:,signal_mask]))
+            explained_variance = pca.explained_variance_    
 
         elif algorithm == 'nmf':    
             nmf = sklearn.decomposition.NMF(**kwargs)
             nmf.n_components = output_dimension
-            nmf.fit((dc[signal_mask,:][:,navigation_mask]).T)
+            nmf.fit((dc[:,signal_mask][navigation_mask,:]))
             pc = nmf.components_.T
-            pca_v = nmf.transform((dc[signal_mask,:][:,navigation_mask]).T)
+            pca_v = nmf.transform((dc[:,signal_mask]))
             
         elif algorithm == 'sparse_pca':
             spca = sklearn.decomposition.SparsePCA(output_dimension, **kwargs)
-            spca.fit(dc[signal_mask,:][:,navigation_mask])
-            pca_v = spca.components_.T
-            pc = spca.transform(dc[:,navigation_mask])
-#            pc = np.dot(dc[:,navigation_mask], pca_v)
+            spca.fit(dc[:,signal_mask][navigation_mask,:])
+            pc = spca.components_.T
+            pca_v = spca.transform(dc[navigation_mask,:])
             
         elif algorithm == 'mini_batch_sparse_pca':
             spca = sklearn.decomposition.MiniBatchSparsePCA(output_dimension,
                                                             **kwargs)
-            spca.fit(dc[signal_mask,:][:,navigation_mask])
-            pca_v = spca.components_.T
-            pc = spca.transform(dc[:,navigation_mask])
-#            pc = np.dot(dc[:,navigation_mask], pca_v)
+            spca.fit(dc[:,signal_mask][navigation_mask,:])
+            pc = spca.components_.T
+            pca_v = spca.transform(dc[:,signal_mask])
 
         elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
             print "Performing the MLPCA training"
@@ -254,7 +224,7 @@ class MVA():
             if var_array is None and var_func is None:
                 messages.information('No variance array provided.'
                 'Supposing poissonian data')
-                var_array = dc.squeeze()[signal_mask,:][:,navigation_mask]
+                var_array = dc[:,signal_mask][navigation_mask,:]
 
             if var_array is not None and var_func is not None:
                 messages.warning_exit(
@@ -276,12 +246,12 @@ class MVA():
             else:
                 fast = True
             target.mlpca_output = mlpca(
-                dc.squeeze()[signal_mask,:][:,navigation_mask],
-                var_array.squeeze(), output_dimension, fast = fast)
+                dc[:,signal_mask][navigation_mask,:],
+                var_array, output_dimension, fast = fast)
             U,S,V,Sobj, ErrFlag  = target.mlpca_output
             print "Performing PCA projection"
-            pc = np.dot(dc[:,navigation_mask], V)
-            pca_v = V
+            pca_v = np.dot(dc[:,signal_mask], V)
+            pc = V
             explained_variance = S ** 2
             
         else:
@@ -290,7 +260,7 @@ class MVA():
             return False
 
         if output_dimension:
-            print "trimming to %i dimensions"%output_dimension
+            print "trimming to %i dimensions" % output_dimension
             pca_v = pca_v[:,:output_dimension]
             if explained_variance is not None:
                 explained_variance = explained_variance[:output_dimension]
@@ -317,8 +287,8 @@ class MVA():
 
         # Rescale the results if the noise was normalized
         if normalize_poissonian_noise is True:
-            target.pc[signal_mask,:] *= self._root_bH
-            target.v *= self._root_aG.T
+            target.pc[:] *= self._root_bH.T
+            target.v[navigation_mask,:] *= self._root_aG
             if isinstance(navigation_mask, slice):
                 navigation_mask = None
             if isinstance(signal_mask, slice):
@@ -328,12 +298,16 @@ class MVA():
         self.undo_treatments(on_peaks)
 
         # Set the pixels that were not processed to nan
-        if navigation_mask is not None or not isinstance(navigation_mask, slice):
-            v = np.zeros((dc.shape[1], target.v.shape[1]),
-                    dtype = target.v.dtype)
-            v[navigation_mask == False,:] = np.nan
-            v[navigation_mask,:] = target.v
-            target.v = v
+        if navigation_mask is not None and not isinstance(
+            navigation_mask, slice):
+            target.v[navigation_mask == False,:] = np.nan
+            
+        if signal_mask is not None and not isinstance(
+            signal_mask, slice):
+            factors = np.zeros((dc.shape[-1], target.pc.shape[1]))
+            factors[signal_mask == True,:] = target.pc
+            factors[signal_mask == False,:] = np.nan
+            target.pc = factors
 
         if self._unfolded4pca is True:
             self.fold()
@@ -720,16 +694,16 @@ class MVA():
         messages.information(
             "Scaling the data to normalize the (presumably) Poissonian noise")
         refold = self.unfold_if_multidim()
-        dc = self.data.T
-        navigation_mask = \
-            self._correct_navigation_mask_when_unfolded(navigation_mask)
+        dc = self.data
         if navigation_mask is None:
             navigation_mask = slice(None)
+        else:
+            navigation_mask = navigation_mask.ravel()
         if signal_mask is None:
             signal_mask = slice(None)
         # Rescale the data to gaussianize the poissonian noise
-        aG = dc[signal_mask,:][:,navigation_mask].sum(0).squeeze()
-        bH = dc[signal_mask,:][:,navigation_mask].sum(1).squeeze()
+        aG = dc[:,signal_mask][navigation_mask,:].sum(1).squeeze()
+        bH = dc[:,signal_mask][navigation_mask,:].sum(0).squeeze()
         # Checks if any is negative
         if (aG < 0).any() or (bH < 0).any():
             messages.warning_exit(
@@ -742,28 +716,22 @@ class MVA():
         if aG0.any():
             if isinstance(navigation_mask, slice):
                 # Convert the slice into a mask before setting its values
-                navigation_mask = np.ones((self.data.shape[1]),dtype = 'bool')
+                navigation_mask = np.ones((self.data.shape[0]),dtype = 'bool')
             # Set colums summing zero as masked
             navigation_mask[aG0] = False
             aG = aG[aG0 == False]
         if bH0.any():
             if isinstance(signal_mask, slice):
                 # Convert the slice into a mask before setting its values
-                signal_mask = np.ones((self.data.shape[0]), dtype = 'bool')
+                signal_mask = np.ones((self.data.shape[1]), dtype = 'bool')
             # Set rows summing zero as masked
             signal_mask[bH0] = False
             bH = bH[bH0 == False]
-        self._root_aG = np.sqrt(aG)[np.newaxis,:]
-        self._root_bH = np.sqrt(bH)[:, np.newaxis]
-        temp = (dc[signal_mask,:][:,navigation_mask] /
+        self._root_aG = np.sqrt(aG)[:, np.newaxis]
+        self._root_bH = np.sqrt(bH)[np.newaxis, :]
+        dc[:,signal_mask][navigation_mask,:] = \
+            (dc[:,signal_mask][navigation_mask,:] /
                 (self._root_aG * self._root_bH))
-        if  isinstance(signal_mask,slice) or isinstance(navigation_mask,slice):
-            dc[signal_mask,navigation_mask] = temp
-        else:
-            mask3D = signal_mask[:, np.newaxis] * \
-                navigation_mask[np.newaxis, :]
-            dc[mask3D] = temp.ravel()
-        # end normalization write to self.data.
         if refold is True:
             print "Automatically refolding the SI after scaling"
             self.fold()
@@ -790,7 +758,8 @@ class MVA():
                  var_array = None, var_func = None, polyfit = None):
         """Performs Principal Component Analysis on peak characteristic data.
 
-        Requires that you have run the peak_char_stack function on your stack of images.
+        Requires that you have run the peak_char_stack function on your stack of
+        images.
 
         Parameters
         ----------
@@ -822,8 +791,9 @@ class MVA():
                center = center, normalize_variance = normalize_variance, 
                var_array = var_array, var_func = var_func, polyfit = polyfit)
 
-    def peak_ica(self, number_of_components, algorithm = 'CuBICA', diff_order = 1, 
-                 pc = None, comp_list = None, mask = None, on_peaks=False, **kwds):
+    def peak_ica(self, number_of_components, algorithm = 'CuBICA',
+                 diff_order = 1, pc=None, comp_list=None, mask=None,
+                 on_peaks=False, **kwds):
         """Independent components analysis on peak characteristic data.
 
         Requires that you have run the peak_char_stack function on your stack of

@@ -26,7 +26,7 @@ except:
 
 from hyperspy import messages
 
-def pca(data, fast = False, output_dimension = None):
+def svd_pca(data, fast = False, output_dimension = None):
     """Perform PCA using SVD.
     data - MxN matrix of input data
     (M dimensions, N trials)
