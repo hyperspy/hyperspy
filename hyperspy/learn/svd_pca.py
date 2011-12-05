@@ -41,10 +41,11 @@ def svd_pca(data, fast = False, output_dimension = None):
         if output_dimension is None:
             messages.warning_exit('When using fast_svd it is necessary to '
                                   'define the output_dimension')
-        u, S, PC = fast_svd(Y, output_dimension, q = 3)
+        U, S, V = fast_svd(Y, output_dimension, q = 3)
     else:
-        u, S, PC = scipy.linalg.svd(Y, full_matrices = False)
+        U, S, V = scipy.linalg.svd(Y, full_matrices = False)
     
-    v = PC.T
-    V = S ** 2 / N
-    return v,V
+    factors = V.T
+    explained_variance = S ** 2 / N
+    scores = U * S
+    return factors, scores, explained_variance

@@ -178,14 +178,18 @@ class MVA():
             signal_mask = slice(None)
         
         if algorithm == 'svd':
-            factors, explained_variance = svd_pca(
+            factors, scores, explained_variance = svd_pca(
                 dc[:,signal_mask][navigation_mask,:])
+            # We recompute the the scores because for some reason otherwise
+            # the first pixels get higher variance
             scores = np.dot(dc[:,signal_mask], factors)
 
         elif algorithm == 'fast_svd':
-            factors, explained_variance = svd_pca(
+            factors, scores, explained_variance = svd_pca(
                 dc[:,signal_mask][navigation_mask,:],
             fast = True, output_dimension = output_dimension)
+            # We recompute the the scores because for some reason otherwise
+            # the first pixels get higher variance
             scores = np.dot(dc[:,signal_mask], factors)
 
         elif algorithm == 'sklearn_pca':    
