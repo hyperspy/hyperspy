@@ -264,14 +264,14 @@ class Signal(t.HasTraits, MVA):
         """Plot the residual between original data and reconstructed data
 
         Requires you to have already run PCA or ICA, and to reconstruct data
-        using either the pca_build_SI or ica_build_SI methods.
+        using either the get_decomposition_model or get_ica_model methods.
         """
 
         if hasattr(self, 'residual'):
             self.residual.plot(axes_manager)
         else:
             print "Object does not have any residual information.  Is it a \
-reconstruction created using either pca_build_SI or ica_build_SI methods?"
+reconstruction created using either get_decomposition_model or get_ica_model methods?"
 
     def save(self, filename, only_view = False, **kwds):
         """Saves the signal in the specified format.
@@ -1228,7 +1228,7 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
-        factors=self.mva_results.pc
+        factors=self.mva_results.factors
         if comp_ids is None:
             comp_ids = self.mva_results.output_dimension
             
@@ -1324,9 +1324,9 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
-        scores=self.mva_results.v.T
+        scores=self.mva_results.scores.T
         if with_factors:
-            factors=self.mva_results.pc
+            factors=self.mva_results.factors
         else:
             factors=None
         
@@ -1464,8 +1464,8 @@ reconstruction created using either pca_build_SI or ica_build_SI methods?"
         save_figures_format : str
             The image format extension.
         """
-        factors=self.mva_results.pc
-        scores=self.mva_results.v.T
+        factors=self.mva_results.factors
+        scores=self.mva_results.scores.T
         self._export_factors(factors, comp_ids=comp_ids,
                              calibrate=calibrate, multiple_files=multiple_files,
                              factor_prefix=factor_prefix,

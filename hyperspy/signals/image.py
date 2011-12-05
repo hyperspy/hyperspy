@@ -318,7 +318,7 @@ class Image(Signal):
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
         """
-        factors=self._get_target(on_peaks).pc
+        factors=self._get_target(on_peaks).factors
         return self._plot_factors_or_pchars(factors, comp_ids=comp_ids, 
                                 same_window=same_window, comp_label=comp_label, 
                                 on_peaks=on_peaks, img_data=img_data,
@@ -441,9 +441,9 @@ class Image(Signal):
             the number of plots in each row, when the same_window
             parameter is True.
         """
-        scores=self._get_target(on_peaks).v.T
+        scores=self._get_target(on_peaks).scores.T
         if with_factors:
-            factors=self._get_target(on_peaks).pc
+            factors=self._get_target(on_peaks).factors
         else: factors=None
         return self._plot_scores_or_peak_char(scores, comp_ids=comp_ids,
                                  with_factors=with_factors, factors=factors,
@@ -609,8 +609,8 @@ class Image(Signal):
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
         """
-        factors=self._get_target(on_peaks).pc
-        scores=self._get_target(on_peaks).v.T
+        factors=self._get_target(on_peaks).factors
+        scores=self._get_target(on_peaks).scores.T
         self._export_factors(factors, comp_ids=comp_ids,
                              calibrate=calibrate,
                              plot_shifts=plot_shifts,
@@ -1176,7 +1176,7 @@ Nothing to plot.  Try again.""")
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
         """
-        factors=self.peak_mva_results.pc
+        factors=self.peak_mva_results.factors
         return self._plot_factors_or_pchars(factors=factors, comp_ids=comp_ids,
                                      calibrate=calibrate, comp_label=comp_label,
                                      img_data=img_data,

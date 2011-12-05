@@ -148,7 +148,7 @@ class MVA():
         if normalize_variance is True:
             self.normalize_variance()
         # Transform the data in a line spectrum
-        self._unfolded4pca = self.unfold_if_multidim()
+        self._unfolded4decomposition = self.unfold_if_multidim()
         # Normalize the poissonian noise
         # Note that this function can change the masks
         if normalize_poissonian_noise is True:
@@ -178,43 +178,43 @@ class MVA():
             signal_mask = slice(None)
         
         if algorithm == 'svd':
-            pc, explained_variance = svd_pca(
+            factors, explained_variance = svd_pca(
                 dc[:,signal_mask][navigation_mask,:])
-            pca_v = np.dot(dc[:,signal_mask], pc)
+            scores = np.dot(dc[:,signal_mask], factors)
 
         elif algorithm == 'fast_svd':
-            pc, explained_variance = svd_pca(
+            factors, explained_variance = svd_pca(
                 dc[:,signal_mask][navigation_mask,:],
             fast = True, output_dimension = output_dimension)
-            pca_v = np.dot(dc[:,signal_mask], pc)
+            scores = np.dot(dc[:,signal_mask], factors)
 
         elif algorithm == 'sklearn_pca':    
             pca = sklearn.decomposition.PCA(**kwargs)
             pca.n_components = output_dimension
             pca.fit((dc[:,signal_mask][navigation_mask,:]))
-            pc = pca.components_.T
-            pca_v = pca.transform((dc[:,signal_mask]))
+            factors = pca.components_.T
+            scores = pca.transform((dc[:,signal_mask]))
             explained_variance = pca.explained_variance_    
 
         elif algorithm == 'nmf':    
             nmf = sklearn.decomposition.NMF(**kwargs)
             nmf.n_components = output_dimension
             nmf.fit((dc[:,signal_mask][navigation_mask,:]))
-            pc = nmf.components_.T
-            pca_v = nmf.transform((dc[:,signal_mask]))
+            factors = nmf.components_.T
+            scores = nmf.transform((dc[:,signal_mask]))
             
         elif algorithm == 'sparse_pca':
             spca = sklearn.decomposition.SparsePCA(output_dimension, **kwargs)
             spca.fit(dc[:,signal_mask][navigation_mask,:])
-            pc = spca.components_.T
-            pca_v = spca.transform(dc[navigation_mask,:])
+            factors = spca.components_.T
+            scores = spca.transform(dc[navigation_mask,:])
             
         elif algorithm == 'mini_batch_sparse_pca':
             spca = sklearn.decomposition.MiniBatchSparsePCA(output_dimension,
                                                             **kwargs)
             spca.fit(dc[:,signal_mask][navigation_mask,:])
-            pc = spca.components_.T
-            pca_v = spca.transform(dc[:,signal_mask])
+            factors = spca.components_.T
+            scores = spca.transform(dc[:,signal_mask])
 
         elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
             print "Performing the MLPCA training"
@@ -250,8 +250,8 @@ class MVA():
                 var_array, output_dimension, fast = fast)
             U,S,V,Sobj, ErrFlag  = target.mlpca_output
             print "Performing PCA projection"
-            pca_v = np.dot(dc[:,signal_mask], V)
-            pc = V
+            scores = np.dot(dc[:,signal_mask], V)
+            factors = V
             explained_variance = S ** 2
             
         else:
@@ -259,36 +259,32 @@ class MVA():
                                  'Nothing done')
             return False
 
-        if output_dimension:
-            print "trimming to %i dimensions" % output_dimension
-            pca_v = pca_v[:,:output_dimension]
-            if explained_variance is not None:
-                explained_variance = explained_variance[:output_dimension]
-            pc = pc[:,:output_dimension]
-
-        target.pc = pc
-        target.v = pca_v
+        target.factors = factors
+        target.scores = scores
         target.explained_variance = explained_variance
-        target.pca_algorithm = algorithm
+        target.decomposition_algorithm = algorithm
         target.centered = center
         target.poissonian_noise_normalized = \
             normalize_poissonian_noise
         target.output_dimension = output_dimension
-        target.unfolded = self._unfolded4pca
-        target.normalize_variance = normalize_variance
+        target.unfolded = self._unfolded4decomposition
+        target.variance_normalized = normalize_variance
+        
+        if output_dimension:
+            self.crop_decomposition_dimension(output_dimension)
         
         # Delete the unmixing information, because it'll refer to a previous
         # decompositions
         target.unmixing_matrix = None
         target.ica_algorithm = None
 
-        if self._unfolded4pca is True:
+        if self._unfolded4decomposition is True:
             target.original_shape = self._shape_before_unfolding
 
         # Rescale the results if the noise was normalized
         if normalize_poissonian_noise is True:
-            target.pc[:] *= self._root_bH.T
-            target.v[navigation_mask,:] *= self._root_aG
+            target.factors[:] *= self._root_bH.T
+            target.scores[navigation_mask,:] *= self._root_aG
             if isinstance(navigation_mask, slice):
                 navigation_mask = None
             if isinstance(signal_mask, slice):
@@ -300,26 +296,26 @@ class MVA():
         # Set the pixels that were not processed to nan
         if navigation_mask is not None and not isinstance(
             navigation_mask, slice):
-            target.v[navigation_mask == False,:] = np.nan
+            target.scores[navigation_mask == False,:] = np.nan
             
         if signal_mask is not None and not isinstance(
             signal_mask, slice):
-            factors = np.zeros((dc.shape[-1], target.pc.shape[1]))
-            factors[signal_mask == True,:] = target.pc
+            factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
+            factors[signal_mask == True,:] = target.factors
             factors[signal_mask == False,:] = np.nan
-            target.pc = factors
+            target.factors = factors
 
-        if self._unfolded4pca is True:
+        if self._unfolded4decomposition is True:
             self.fold()
-            self._unfolded4pca is False
+            self._unfolded4decomposition is False
     
-    def get_pcs_as_spectrum(self):
+    def get_factors_as_spectrum(self):
         from hyperspy.signals.spectrum import Spectrum
-        return Spectrum({'data' : self.mva_results.pc.T})
+        return Spectrum({'data' : self.mva_results.factors.T})
     
     def independent_components_analysis(
         self, number_of_components=None, algorithm='CuBICA', diff_order=1,
-        pc=None, comp_list = None, mask = None, on_peaks=False, on_scores=False,
+        factors=None, comp_list = None, mask = None, on_peaks=False, on_scores=False,
         smoothing = None, **kwargs):
         """Independent components analysis.
 
@@ -332,7 +328,7 @@ class MVA():
         algorithm : {FastICA, JADE, CuBICA, TDSEP}
         diff : bool
         diff_order : int
-        pc : numpy array
+        factors : numpy array
             externally provided components
         comp_list : boolen numpy array
             choose the components to use by the boolean list. It permits to
@@ -346,16 +342,16 @@ class MVA():
         """
         target=self._get_target(on_peaks)
 
-        if not hasattr(target, 'pc') or target.pc==None:
+        if not hasattr(target, 'factors') or target.factors==None:
             self.decomposition(on_peaks=on_peaks)
 
         else:
-            if pc is None:
+            if factors is None:
                 if on_scores:
-                    pc = target.v
+                    factors = target.scores
                 else:
-                    pc = target.pc
-            bool_index = np.zeros((pc.shape[0]), dtype = 'bool')
+                    factors = target.factors
+            bool_index = np.zeros((factors.shape[0]), dtype = 'bool')
             if number_of_components is not None:
                 bool_index[:number_of_components] = True
             else:
@@ -364,43 +360,43 @@ class MVA():
                     bool_index[:number_of_components] = True
 
             if comp_list is not None:
-                for ipc in comp_list:
-                    bool_index[ipc] = True
+                for ifactors in comp_list:
+                    bool_index[ifactors] = True
                 number_of_components = len(comp_list)
-            pc = pc[:,bool_index]
+            factors = factors[:,bool_index]
             if diff_order > 0 and smoothing is None:
-                pc = np.diff(pc, diff_order, axis = 0)
+                factors = np.diff(factors, diff_order, axis = 0)
             if smoothing is not None:
                 from hyperspy.signals.spectrum import Spectrum
-                spc = Spectrum({'data' : pc.T})
+                sfactors = Spectrum({'data' : factors.T})
                 if smoothing['algorithm'] == 'savitzky_golay':
-                    spc.smooth_savitzky_golay(
+                    sfactors.smooth_savitzky_golay(
                         number_of_points = smoothing['number_of_points'],
                         polynomial_order = smoothing['polynomial_order'],
                         differential_order = diff_order)
                 if smoothing['algorithm'] == 'tv':
-                    spc.smooth_tv(
+                    sfactors.smooth_tv(
                         smoothing_parameter= smoothing['smoothing_parameter'],
                         differential_order = diff_order)
-                    pc = spc.data.T
+                    factors = sfactors.data.T
             
             if mask is not None:
-                pc = pc[mask, :]
+                factors = factors[mask, :]
 
             # first centers and scales data
-            pc,invsqcovmat = centering_and_whitening(pc)
+            factors,invsqcovmat = centering_and_whitening(factors)
             if algorithm != 'sklearn_fastica':
                 to_exec = 'target.ica_node=mdp.nodes.%sNode(' % algorithm
                 for key, value in kwargs.iteritems():
                     to_exec += '%s=%s,' % (key, value)
                 to_exec += ')'
                 exec(to_exec)
-                target.ica_node.train(pc)
+                target.ica_node.train(factors)
                 unmixing_matrix = target.ica_node.get_recmatrix()
             else:
                 target.ica_node = sklearn.decomposition.FastICA(**kwargs)
                 target.ica_node.whiten = False
-                target.ica_node.fit(pc)
+                target.ica_node.fit(factors)
                 unmixing_matrix = target.ica_node.unmixing_matrix_
             target.unmixing_matrix = np.dot(unmixing_matrix, invsqcovmat)
             self._unmix_factors(target)
@@ -442,7 +438,7 @@ class MVA():
             sorting_indexes = np.argsort(np.dot(target.explained_variance[:n],
                 np.abs(w.T)))[::-1]
             w[:] = w[sorting_indexes,:]
-        target.ic = np.dot(target.pc[:,:n], w.T)
+        target.ic = np.dot(target.factors[:,:n], w.T)
         n_channels = target.ic.shape[0]
         for i in xrange(n):
             neg_channels = np.sum(target.ic[:,i] < 0)
@@ -454,7 +450,7 @@ class MVA():
         """
         Returns the ICA score matrix (formerly known as the recmatrix)
         """
-        W = target.v.T[:target.ic.shape[1],:]
+        W = target.scores.T[:target.ic.shape[1],:]
         Q = np.linalg.inv(target.unmixing_matrix.T)
         return np.dot(Q,W)
 
@@ -471,7 +467,7 @@ class MVA():
              if None, rebuilds SI from all components
              if int, rebuilds SI from components in range 0-given int
              if list of ints, rebuilds SI from only components in given list
-        mva_type : string, currently either 'pca' or 'ica'
+        mva_type : string, currently either 'decomposition' or 'ica'
              (not case sensitive)
 
         Returns
@@ -481,15 +477,15 @@ class MVA():
 
         target=self._get_target(on_peaks)
 
-        if mva_type.lower() == 'pca':
-            factors = target.pc
-            scores = target.v.T
+        if mva_type.lower() == 'decomposition':
+            factors = target.factors
+            scores = target.scores.T
         elif mva_type.lower() == 'ica':
             factors = target.ic
             scores = self._get_ica_scores(target)
         if components is None:
             a = np.atleast_3d(np.dot(factors,scores))
-            signal_name = 'rebuilt from %s with %i components' % (
+            signal_name = 'model from %s with %i components' % (
             mva_type,factors.shape[1])
         elif hasattr(components, '__iter__'):
             tfactors = np.zeros((factors.shape[0],len(components)))
@@ -498,15 +494,15 @@ class MVA():
                 tfactors[:,i] = factors[:,components[i]]
                 tscores[i,:] = scores[components[i],:]
             a = np.atleast_3d(np.dot(tfactors, tscores))
-            signal_name = 'rebuilt from %s with components %s' % (
+            signal_name = 'model from %s with components %s' % (
             mva_type,components)
         else:
             a = np.atleast_3d(np.dot(factors[:,:components],
                                      scores[:components,:]))
-            signal_name = 'rebuilt from %s with %i components' % (
+            signal_name = 'model from %s with %i components' % (
             mva_type,components)
 
-        self._unfolded4pca = self.unfold_if_multidim()
+        self._unfolded4decomposition = self.unfold_if_multidim()
 
         sc = self.deepcopy()
 
@@ -516,13 +512,13 @@ class MVA():
         #else:
         #    sc.data = a.squeeze()
         sc.mapped_parameters.title += signal_name
-        if self._unfolded4pca is True:
+        if self._unfolded4decomposition is True:
             self.fold()
             sc.history = ['unfolded']
             sc.fold()
         return sc
 
-    def pca_build_SI(self, components=None, on_peaks=False):
+    def get_decomposition_model(self, components=None, on_peaks=False):
         """Return the spectrum generated with the selected number of principal
         components
 
@@ -537,13 +533,14 @@ class MVA():
         -------
         Signal instance
         """
-        rec=self._calculate_recmatrix(components=components, mva_type='pca',
-                                         on_peaks=on_peaks)
+        rec=self._calculate_recmatrix(components=components,
+                                      mva_type='decomposition',
+                                      on_peaks=on_peaks)
         rec.residual=rec.copy()
         rec.residual.data=self.data-rec.data
         return rec
 
-    def ica_build_SI(self,components = None, on_peaks=False):
+    def get_ica_model(self,components = None, on_peaks=False):
         """Return the spectrum generated with the selected number of
         independent components
 
@@ -578,7 +575,6 @@ class MVA():
     
     @auto_replot
     def normalize_variance(self, on_peaks=False):
-        # Whitening
         if on_peaks:
             d=self.mapped_parameters.peak_chars
         else:
@@ -684,7 +680,7 @@ class MVA():
                                    signal_mask = None, return_masks = False):
         """
         Scales the SI following Surf. Interface Anal. 2004; 36: 203–212 to
-        "normalize" the poissonian data for PCA analysis
+        "normalize" the poissonian data for decomposition analysis
 
         Parameters
         ----------
@@ -766,7 +762,7 @@ class MVA():
 
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
-        algorithm : {'svd', 'fast_svd', 'mlpca', 'fast_mlpca', 'mdp', 'NIPALS'}
+        algorithm : {'svd', 'fast_svd', 'mlpca', 'fast_mlpca'}
         output_dimension : None or int
             number of PCA to keep
         navigation_mask : boolean numpy array
@@ -792,7 +788,7 @@ class MVA():
                var_array = var_array, var_func = var_func, polyfit = polyfit)
 
     def peak_ica(self, number_of_components, algorithm = 'CuBICA',
-                 diff_order = 1, pc=None, comp_list=None, mask=None,
+                 diff_order = 1, factors=None, comp_list=None, mask=None,
                  on_peaks=False, **kwds):
         """Independent components analysis on peak characteristic data.
 
@@ -808,8 +804,8 @@ class MVA():
         algorithm : {FastICA, JADE, CuBICA, TDSEP}
         diff : bool
         diff_order : int
-        pc : numpy array
-            externally provided components
+        factors : numpy array
+            externally provided factors
         comp_list : boolen numpy array
             choose the components to use by the boolen list. It permits to
             choose non contiguous components.
@@ -820,13 +816,14 @@ class MVA():
         self.independent_components_analysis(number_of_components=
                                              number_of_components, 
                                              on_peaks=True,algorithm=algorithm, 
-                                             diff_order=diff_order, pc=pc, 
+                                             diff_order=diff_order,
+                                             factors=factors, 
                                              comp_list=comp_list, mask=mask)
 
 class MVA_Results(object):
     def __init__(self):
-        self.pc = None
-        self.v = None
+        self.factors = None
+        self.scores = None
         self.explained_variance = None
         self.decomposition_algorithm = None
         self.ica_algorithm = None
@@ -840,13 +837,13 @@ class MVA_Results(object):
         self.unmixing_matrix = None
 
     def save(self, filename):
-        """Save the result of the PCA analysis
+        """Save the result of the decomposition and demixing analysis
 
         Parameters
         ----------
         filename : string
         """
-        np.savez(filename, pc = self.pc, v = self.v,
+        np.savez(filename, factors = self.factors, v = self.scores,
         explained_variance=self.explained_variance,
         decomposition_algorithm=self.decomposition_algorithm,
         centered=self.centered, output_dimension=self.output_dimension,
@@ -856,15 +853,16 @@ class MVA_Results(object):
         ica_algorithm=self.ica_algorithm)
 
     def load(self, filename):
-        """Load the result of the PCA analysis
+        """Load the results of a previous decomposition and demixing analysis
+        from a file.
 
         Parameters
         ----------
         filename : string
         """
-        pca = np.load(filename)
-        for key in pca.files:
-            exec('self.%s = pca[\'%s\']' % (key, key))
+        decomposition = np.load(filename)
+        for key in decomposition.files:
+            exec('self.%s = decomposition[\'%s\']' % (key, key))
         print "\n%s loaded correctly" %  filename
 
         # For compatibility with old version ##################
@@ -886,6 +884,14 @@ class MVA_Results(object):
         if hasattr(self, 'pca_algorithm'):
             self.decomposition_algorithm = self.pca_algorithm
             del self.pca_algorithm
+            
+        if hasattr(self, 'v'):
+            self.scores = self.v
+            del self.v
+            
+        if hasattr(self, 'pc'):
+            self.scores = self.pc
+            del self.pc
 
         #######################################################
         
@@ -909,24 +915,35 @@ class MVA_Results(object):
         self.summary()
 
     def summary(self):
-        """Prints a summary of the PCA parameters to the stdout
+        """Prints a summary of the decomposition and demixing parameters to the 
+        stdout
         """
         print
-        print "MVA Summary:"
-        print "------------"
-        print
+        print "Decomposition parameters:"
+        print "-------------------------"
         print "Decomposition algorithm : ", self.decomposition_algorithm
-        print "Scaled to normalize poissonina noise : %s" % \
+        print "Poissonian noise normalization : %s" % \
         self.poissonian_noise_normalized
         print "Energy centered : %s" % self.centered
         print "Variance normalized : %s" % self.variance_normalized
         print "Output dimension : %s" % self.output_dimension
-        print "ICA algorithm : %s" % self.ica_algorithm
+        
+        if self.ica_algorithm is not None:
+            print
+            print "Demixing parameters:"
+            print "---------------------"
+            print "ICA algorithm : %s" % self.ica_algorithm
+            print "Number of components : %i" % len(self.unmixing_matrix)
 
-    def crop_v(self, n):
+
+    def crop_decomposition_dimension(self, n):
         """
         Crop the score matrix up to the given number.
 
         It is mainly useful to save memory and reduce the storage size
         """
-        self.v = self.v[:,:n].copy()
+        print "trimming to %i dimensions" % n
+        self.scores = self.scores[:,:n]
+        if self.explained_variance is not None:
+            self.explained_variance = self.explained_variance[:n]
+        self.factors = self.factors[:,:n]

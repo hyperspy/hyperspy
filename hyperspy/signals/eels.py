@@ -802,7 +802,7 @@ class EELSSpectrum(Spectrum):
 #        if show_lev:
 #            s.plot_lev()
 #            pcs = int(raw_input('Number of principal components? '))
-#        sc = s.pca_build_SI(pcs)
+#        sc = s.get_decomposition_model(pcs)
 #        step = sc.data_cube[(pw-mw):(pw+1),:,:].mean(0) - \
 #        sc.data_cube[(pw+1):(pw+1+mw),:,:].mean(0)
 #        self.data_cube[1024:,:,:] += step.reshape((1, step.shape[0], 
