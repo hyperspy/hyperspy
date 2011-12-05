@@ -275,7 +275,7 @@ class MVA():
         target.variance_normalized = normalize_variance
         
         if output_dimension:
-            self.crop_decomposition_dimension(output_dimension)
+            target.crop_decomposition_dimension(output_dimension)
         
         # Delete the unmixing information, because it'll refer to a previous
         # decompositions
