@@ -595,47 +595,6 @@ class MVA():
         plt.show()
         return ax
 
-    def als(self, **kwargs):
-        """Alternate Least Squares imposing positivity constraints
-        to the result of a previous ICA
-
-        Stores in result in self.als_out
-
-        Parameters
-        ----------
-        thresh : float
-            default=.001
-        nonnegS : bool
-            Impose non-negative constraint of the components. Default: True
-        nonnegC : bool
-            Impose non-negative constraint of the maps. Default: True
-
-        See also
-        -------
-        plot_als_ic_maps, plot_als_ic
-        """
-        shape = (self.data.shape[2], self.data.shape[1],-1)
-        if hasattr(self, 'ic') and (self.ic is not None):
-            also = utils.ALS(self, **kwargs)
-            self.als_ic = also['S']
-            self.als_maps = also['CList'].reshape(shape, order = 'C')
-            self.als_output = also
-
-    def plot_als_ic_maps(self):
-        """Same as plot_ic_maps for the ALS results"""
-        return self.plot_independent_components_maps(recmatrix =
-        self.als_output['CList'].T, ic = self.als_ic)
-
-    def plot_als_ic(self):
-        """Same as plot_independent_componets for the ALS results"""
-        self.plot_independent_components(ic = self.als_ic)
-
-    def save_als_ica_results(self, elements = None,
-    format = preferences.General.default_file_format, image_format = 'tif'):
-        """Same as save_ica_results for the ALS results"""
-        self.save_ica_results(elements = elements, image_format = image_format,
-        recmatrix = self.als_output['CList'].T, ic = self.als_ic)
-
     def normalize_poissonian_noise(self, navigation_mask = None,
                                    signal_mask = None, return_masks = False):
         """
