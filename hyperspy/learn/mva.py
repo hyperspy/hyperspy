@@ -575,7 +575,7 @@ class MVA():
         plt.show()
         return ax
 
-    def plot_explained_variance_ratio(self,n=50,on_peaks=False):
+    def plot_cumulative_explained_variance_ratio(self,n=50,on_peaks=False):
         """Plot the principal components explained variance up to the given
         number
 
@@ -592,7 +592,7 @@ class MVA():
         ax = fig.add_subplot(111)
         ax.scatter(range(n), cumu[:n])
         ax.set_xlabel('Principal component')
-        ax.set_ylabel('Explained variance ratio')
+        ax.set_ylabel('Cumulative explained variance ratio')
         plt.draw()
         plt.show()
         return ax
