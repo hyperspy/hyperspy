@@ -71,7 +71,7 @@ class MVA():
     @do_not_replot
     def decomposition(self, normalize_poissonian_noise=False,
     algorithm = 'svd', output_dimension=None, navigation_mask=None,
-    signal_mask=None, center=False, normalize_variance=False, var_array=None,
+    signal_mask=None, var_array=None,
     var_func=None, polyfit=None, on_peaks=False, **kwargs):
         """Decomposition with a choice of algorithms
 
@@ -85,19 +85,12 @@ class MVA():
         algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
             'sparse_pca' | 'mini_batch_sparse_pca'
         
-        
         output_dimension : None or int
             number of components to keep/calculate
             
         navigation_mask : boolean numpy array
         
         signal_mask : boolean numpy array
-        
-        center : bool
-            Perform energy centering before applying the algorithm
-            
-        normalize_variance : bool
-            Scale the data to have unit variance
             
         var_array : numpy array
             Array of variance for the maximum likelihood PCA algorithm
@@ -141,12 +134,6 @@ class MVA():
 
 
         # Apply pre-treatments
-        # Centering
-        if center is True:
-            self.energy_center()
-        # Variance normalization
-        if normalize_variance is True:
-            self.normalize_variance()
         # Transform the data in a line spectrum
         self._unfolded4decomposition = self.unfold_if_multidim()
         # Normalize the poissonian noise
@@ -565,35 +552,6 @@ class MVA():
         rec.residual.data=self.data-rec.data
         return rec
         
-    @auto_replot
-    def energy_center(self):
-        """Subtract the mean energy pixel by pixel"""
-        print "\nCentering the energy axis"
-        self._energy_mean = np.mean(self.data, -1)[..., np.newaxis]
-        self.data = (self.data - self._energy_mean)
-    
-    @auto_replot
-    def undo_energy_center(self):
-        if hasattr(self,'_energy_mean'):
-            self.data = (self.data + self._energy_mean)
-    
-    @auto_replot
-    def normalize_variance(self, on_peaks=False):
-        if on_peaks:
-            d=self.mapped_parameters.peak_chars
-        else:
-            d=self.data
-        self._std = np.std(d, -1)[..., np.newaxis]
-        d /= self._std
-
-    @auto_replot
-    def undo_normalize_variance(self, on_peaks=False):
-        if on_peaks:
-            d=self.mapped_parameters.peak_chars
-        else:
-            d=self.data
-        if hasattr(self,'_std'):
-            d *= self._std
 
     def plot_lev(self, n=50, on_peaks=False):
         """Plot the principal components LEV up to the given number
