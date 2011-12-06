@@ -254,12 +254,10 @@ class MVA():
         target.scores = scores
         target.explained_variance = explained_variance
         target.decomposition_algorithm = algorithm
-        target.centered = center
         target.poissonian_noise_normalized = \
             normalize_poissonian_noise
         target.output_dimension = output_dimension
         target.unfolded = self._unfolded4decomposition
-        target.variance_normalized = normalize_variance
         
         if output_dimension:
             target.crop_decomposition_dimension(output_dimension)
@@ -808,8 +806,7 @@ class MVA_Results(object):
         np.savez(filename, factors = self.factors, v = self.scores,
         explained_variance=self.explained_variance,
         decomposition_algorithm=self.decomposition_algorithm,
-        centered=self.centered, output_dimension=self.output_dimension,
-        normalize_variance=self.variance_normalized,
+        output_dimension=self.output_dimension,
         poissonian_noise_normalized=self.poissonian_noise_normalized,
         unmixing_matrix = self.unmixing_matrix,
         ica_algorithm=self.ica_algorithm)
@@ -838,10 +835,11 @@ class MVA_Results(object):
         if hasattr(self, 'w'):
             self.unmixing_matrix = self.w
             del self.w
-            
         if hasattr(self, 'variance2one'):
-            self.variance_normalized = self.variance2one
+#            self.variance_normalized = self.variance2one
             del self.variance2one
+        if hasattr(self, 'centered'):
+            del self.centered
             
         if hasattr(self, 'pca_algorithm'):
             self.decomposition_algorithm = self.pca_algorithm
@@ -865,8 +863,6 @@ class MVA_Results(object):
                 self.output_dimension = None
             
         defaults = {
-        'centered' : False,
-        'variance_normalized' : False,
         'poissonian_noise_normalized' : False,
         'output_dimension' : None,
         'decomposition_algorithm' : None
@@ -886,8 +882,6 @@ class MVA_Results(object):
         print "Decomposition algorithm : ", self.decomposition_algorithm
         print "Poissonian noise normalization : %s" % \
         self.poissonian_noise_normalized
-        print "Energy centered : %s" % self.centered
-        print "Variance normalized : %s" % self.variance_normalized
         print "Output dimension : %s" % self.output_dimension
         
         if self.ica_algorithm is not None:
