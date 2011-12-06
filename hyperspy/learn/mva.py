@@ -259,7 +259,7 @@ class MVA():
         target.output_dimension = output_dimension
         target.unfolded = self._unfolded4decomposition
         
-        if output_dimension:
+        if output_dimension and factors.shape[1] != output_dimension:
             target.crop_decomposition_dimension(output_dimension)
         
         # Delete the unmixing information, because it'll refer to a previous
