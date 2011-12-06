@@ -20,6 +20,7 @@
 from __future__ import division
 import sys
 import os
+import types
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -158,11 +159,14 @@ class MVA():
         target = self._get_target(on_peaks)
         
         # Transform the None masks in slices to get the right behaviour
-        explained_variance = None
         if navigation_mask is None:
             navigation_mask = slice(None)
         if signal_mask is None:
             signal_mask = slice(None)
+        
+        # Reset the explained_variance which is not set by all the algorithms
+        explained_variance = None
+        explained_variance_ratio = None
         
         if algorithm == 'svd':
             factors, scores, explained_variance = svd_pca(
@@ -250,15 +254,22 @@ class MVA():
                                  'Nothing done')
             return False
 
+        # We must calculate the ratio here because otherwise the sum information
+        # can be lost if the user call crop_decomposition_dimension
+        if explained_variance is not None:
+            explained_variance_ratio = \
+                explained_variance / explained_variance.sum()
         target.factors = factors
         target.scores = scores
         target.explained_variance = explained_variance
+        target.explained_variance_ratio = explained_variance_ratio
         target.decomposition_algorithm = algorithm
         target.poissonian_noise_normalized = \
             normalize_poissonian_noise
         target.output_dimension = output_dimension
         target.unfolded = self._unfolded4decomposition
         
+
         if output_dimension and factors.shape[1] != output_dimension:
             target.crop_decomposition_dimension(output_dimension)
         
@@ -414,7 +425,7 @@ class MVA():
             target=self.mva_results
 
         for i in [ic_n,]:
-            target.ic[:,i] *= -1
+            target.ica_factors[:,i] *= -1
             target.unmixing_matrix[i,:] *= -1
 
     def _unmix_factors(self,target):
@@ -427,10 +438,10 @@ class MVA():
             sorting_indexes = np.argsort(np.dot(target.explained_variance[:n],
                 np.abs(w.T)))[::-1]
             w[:] = w[sorting_indexes,:]
-        target.ic = np.dot(target.factors[:,:n], w.T)
-        n_channels = target.ic.shape[0]
+        target.ica_factors = np.dot(target.factors[:,:n], w.T)
+        n_channels = target.ica_factors.shape[0]
         for i in xrange(n):
-            neg_channels = np.sum(target.ic[:,i] < 0)
+            neg_channels = np.sum(target.ica_factors[:,i] < 0)
             if neg_channels > n_channels/2.:
                 self.reverse_ic(i)
                 print("IC %i reversed" % i)
@@ -439,7 +450,7 @@ class MVA():
         """
         Returns the ICA score matrix (formerly known as the recmatrix)
         """
-        W = target.scores.T[:target.ic.shape[1],:]
+        W = target.scores.T[:target.ica_factors.shape[1],:]
         Q = np.linalg.inv(target.unmixing_matrix.T)
         return np.dot(Q,W)
 
@@ -470,7 +481,7 @@ class MVA():
             factors = target.factors
             scores = target.scores.T
         elif mva_type.lower() == 'ica':
-            factors = target.ic
+            factors = target.ica_factors
             scores = self._get_ica_scores(target)
         if components is None:
             a = np.atleast_3d(np.dot(factors,scores))
@@ -740,20 +751,17 @@ class MVA():
                                              comp_list=comp_list, mask=mask)
 
 class MVA_Results(object):
-    def __init__(self):
-        self.factors = None
-        self.scores = None
-        self.explained_variance = None
-        self.decomposition_algorithm = None
-        self.ica_algorithm = None
-        self.centered = None
-        self.poissonian_noise_normalized = None
-        self.output_dimension = None
-        self.unfolded = None
-        self.original_shape = None
-        self.ica_node=None
-        # Demixing matrix
-        self.unmixing_matrix = None
+    factors = None
+    scores = None
+    explained_variance = None
+    explained_variance_ratio = None
+    decomposition_algorithm = None
+    poissonian_noise_normalized = None
+    output_dimension = None
+    unfolded = None
+    original_shape = None
+    ica_algorithm = None
+    unmixing_matrix = None
 
     def save(self, filename):
         """Save the result of the decomposition and demixing analysis
@@ -762,13 +770,14 @@ class MVA_Results(object):
         ----------
         filename : string
         """
-        np.savez(filename, factors = self.factors, v = self.scores,
-        explained_variance=self.explained_variance,
-        decomposition_algorithm=self.decomposition_algorithm,
-        output_dimension=self.output_dimension,
-        poissonian_noise_normalized=self.poissonian_noise_normalized,
-        unmixing_matrix = self.unmixing_matrix,
-        ica_algorithm=self.ica_algorithm)
+        kwargs = {}
+        for attribute in [
+            v for v in dir(self) if type(getattr(self,v)) != types.MethodType
+                and not v.startswith('_')]:
+            kwargs[attribute] = self.__getattribute__(attribute)
+            print attribute
+        np.savez(filename, **kwargs)
+
 
     def load(self, filename):
         """Load the results of a previous decomposition and demixing analysis
@@ -779,8 +788,11 @@ class MVA_Results(object):
         filename : string
         """
         decomposition = np.load(filename)
-        for key in decomposition.files:
-            exec('self.%s = decomposition[\'%s\']' % (key, key))
+        for key,value in decomposition.iteritems():
+            if value.dtype == np.dtype('object'):
+                value = None
+                
+            setattr(self, key, value)
         print "\n%s loaded correctly" %  filename
 
         # For compatibility with old version ##################
@@ -815,20 +827,9 @@ class MVA_Results(object):
         #######################################################
         
         # Output_dimension is an array after loading, convert it to int            
-        if hasattr(self, 'output_dimension'):
-            try:
-                self.output_dimension = int(self.output_dimension)
-            except TypeError:
-                self.output_dimension = None
-            
-        defaults = {
-        'poissonian_noise_normalized' : False,
-        'output_dimension' : None,
-        'decomposition_algorithm' : None
-        }
-        for attrib in defaults.keys():
-            if not hasattr(self, attrib):
-                exec('self.%s = %s' % (attrib, defaults[attrib]))
+        if hasattr(self, 'output_dimension') and self.output_dimension \
+                                                is not None:
+            self.output_dimension = int(self.output_dimension)
         self.summary()
 
     def summary(self):

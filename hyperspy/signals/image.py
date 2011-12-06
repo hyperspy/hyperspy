@@ -386,7 +386,7 @@ class Image(Signal):
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
         """
-        factors=self._get_target(on_peaks).ic
+        factors=self._get_target(on_peaks).ica_factors
         return self._plot_factors_or_pchars(factors, comp_ids=comp_ids, 
                                 same_window=same_window, comp_label=comp_label, 
                                 on_peaks=on_peaks, img_data=img_data,
@@ -501,7 +501,7 @@ class Image(Signal):
         """
         scores=self._get_ica_scores(self._get_target(on_peaks))
         if with_factors:
-            factors=self.get_target(on_peaks).ic
+            factors=self.get_target(on_peaks).ica_factors
         else: factors=None
         return self._plot_scores_or_peak_char(scores, comp_ids=comp_ids,
                                  with_factors=with_factors, factors=factors,
@@ -735,7 +735,7 @@ class Image(Signal):
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
         """
-        factors=self._get_target(on_peaks).ic
+        factors=self._get_target(on_peaks).ica_factors
         scores=self._get_ica_scores(self._get_target(on_peaks))
         self._export_factors(factors, comp_ids=comp_ids,
                              calibrate=calibrate,
@@ -1110,7 +1110,7 @@ Nothing to plot.  Try again.""")
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
         """
-        factors=self.peak_mva_results.ic
+        factors=self.peak_mva_results.ica_factors
         return self._plot_factors_or_pchars(factors=factors, comp_ids=comp_ids,
                                      calibrate=calibrate, comp_label=comp_label,
                                      img_data=img_data,
@@ -1242,7 +1242,7 @@ Nothing to plot.  Try again.""")
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
         """
-        factors=self.peak_mva_results.ic
+        factors=self.peak_mva_results.ica_factors
         return self._plot_factors_or_pchars(factors=factors, comp_ids=comp_ids,
                                      calibrate=calibrate, comp_label=comp_label,
                                      img_data=img_data,

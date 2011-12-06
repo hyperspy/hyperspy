@@ -1272,7 +1272,7 @@ reconstruction created using either get_decomposition_model or get_ica_model met
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
-        factors=self.mva_results.ic
+        factors=self.mva_results.ica_factors
         return self._plot_factors_or_pchars(factors, 
                                             comp_ids=comp_ids, 
                                             calibrate=calibrate,
@@ -1383,7 +1383,7 @@ reconstruction created using either get_decomposition_model or get_ica_model met
             same_window = preferences.MachineLearning.same_window
         scores=self._get_ica_scores(self.mva_results)
         if with_factors:
-            factors=self.mva_results.ic
+            factors=self.mva_results.ica_factors
         else: factors=None
         return self._plot_scores(scores, comp_ids=comp_ids, 
                                  with_factors=with_factors, factors=factors,
@@ -1561,7 +1561,7 @@ reconstruction created using either get_decomposition_model or get_ica_model met
         save_figures_format : str
             The image format extension.
         """
-        factors=self.mva_results.ic
+        factors=self.mva_results.ica_factors
         scores=self._get_ica_scores(self.mva_results)
         self._export_factors(factors, comp_ids=comp_ids,
                              calibrate=calibrate, multiple_files=multiple_files,
