@@ -788,7 +788,6 @@ class MVA_Results(object):
             v for v in dir(self) if type(getattr(self,v)) != types.MethodType
                 and not v.startswith('_')]:
             kwargs[attribute] = self.__getattribute__(attribute)
-            print attribute
         np.savez(filename, **kwargs)
 
 
