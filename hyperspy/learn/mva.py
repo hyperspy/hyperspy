@@ -562,25 +562,38 @@ class MVA():
         return rec
         
 
-    def plot_lev(self, n=50, on_peaks=False):
-        """Plot the principal components LEV up to the given number
+    def plot_explained_variance_ratio(self, n=50, log = True, on_peaks=False,
+                                      ax = None, label = None):
+        """Plot the decomposition explained variance ratio vs index number
 
         Parameters
         ----------
         n : int
+            Number of components
+        log : bool
+            If True, the y axis uses a log scale
+        ax : matplotlib.axes instance
+            The axes where to plot the figures. If None, a new figure will be
+            created
+        label: str
+            An optional label for the legend
         """
         target = self._get_target(on_peaks)
-        if target.explained_variance==None:
-            self.decomposition()
-        if n>target.explained_variance.shape[0]:
-            n=target.explained_variance.shape[0]
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.plot(range(n), target.explained_variance[:n], 'o')
-        ax.semilogy()
-        ax.set_title('Log(eigenvalues)')
-        ax.set_xlabel('Principal component')
-        plt.draw()
+        if target.explained_variance_ratio is None:
+            messages.information(
+                'No explained variance ratio information available')
+            return 0
+        if n > target.explained_variance_ratio.shape[0]:
+            n = target.explained_variance_ratio.shape[0]
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+        ax.plot(range(n), target.explained_variance_ratio[:n], 'o', label=label)
+        if log is True:
+            ax.semilogy()
+        ax.set_ylabel('Explained variance ratio')
+        ax.set_xlabel('Principal component index')
+        plt.legend()
         plt.show()
         return ax
 
