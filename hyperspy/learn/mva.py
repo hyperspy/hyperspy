@@ -188,7 +188,7 @@ class MVA():
             pca.n_components = output_dimension
             pca.fit((dc[:,signal_mask][navigation_mask,:]))
             factors = pca.components_.T
-            scores = pca.transform((dc[:,signal_mask]))
+            scores = np.dot(dc[:,signal_mask], factors)
             explained_variance = pca.explained_variance_    
 
         elif algorithm == 'nmf':    
