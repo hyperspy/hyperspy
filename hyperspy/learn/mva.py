@@ -484,7 +484,7 @@ class MVA():
             factors = target.ica_factors
             scores = self._get_ica_scores(target)
         if components is None:
-            a = np.atleast_3d(np.dot(factors,scores))
+            a = np.dot(factors,scores)
             signal_name = 'model from %s with %i components' % (
             mva_type,factors.shape[1])
         elif hasattr(components, '__iter__'):
@@ -493,12 +493,12 @@ class MVA():
             for i in xrange(len(components)):
                 tfactors[:,i] = factors[:,components[i]]
                 tscores[i,:] = scores[components[i],:]
-            a = np.atleast_3d(np.dot(tfactors, tscores))
+            a = np.dot(tfactors, tscores)
             signal_name = 'model from %s with components %s' % (
             mva_type,components)
         else:
-            a = np.atleast_3d(np.dot(factors[:,:components],
-                                     scores[:components,:]))
+            a = np.dot(factors[:,:components],
+                                     scores[:components,:])
             signal_name = 'model from %s with %i components' % (
             mva_type,components)
 
