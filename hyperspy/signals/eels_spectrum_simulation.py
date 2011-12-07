@@ -17,44 +17,15 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#import Signal
-#
-#class SimulationSignal(Signal):
-#    def add_poissonian_noise(self):
-#        """Add Poissonian noise to the SI"""
-#        self.__new_cube(np.random.poisson(self.data_cube).astype('float64'), 
-#        'poissonian noise')
-#        self._replot()
-#
-#    def add_gaussian_noise(self, std):
-#        """Add Gaussian noise to the SI
-#        Parameters
-#        ----------
-#        std : float
-#        
-#        See also
-#        --------
-#        Spectrum.simulate
-#        """
-#        self.__new_cube(np.random.normal(self.data_cube,std), 'gaussian_noise')
-#        self._replot()
-#        
-#    def gaussian_filter(self, FWHM):
-#        """Applies a Gaussian filter in the energy dimension.
-#        
-#        Parameters
-#        ----------
-#        FWHM : float
-#
-#        See also
-#        --------
-#        Spectrum.simulate
-#        """
-#        if FWHM > 0:
-#            self.data_cube = gaussian_filter1d(self.data_cube, axis = 0, 
-#            sigma = FWHM/2.35482)
-#
-#            
+from hyperspy.signals.eels import EELSSpectrum
+from hyperspy.signals.spectrum_simulation import SpectrumSimulation
+
+class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
+    pass
+
+
+
+#    @auto_replot       
 #    def add_energy_instability(self, std):
 #        """Introduce random energy instability
 #        
@@ -78,23 +49,9 @@
 #            edge.delta.already_set_map = np.ones((self.xdimension, 
 #            self.ydimension), dtype = 'Bool')
 #        return delta_map
-#    
-#    def create_data_cube(self):
-#        """Generate an empty data_cube from the dimension parameters
-#        
-#        The parameters self.energydimension, self.xdimension and 
-#        self.ydimension will be used to generate an empty data_cube.
-#        
-#        See also
-#        --------
-#        Spectrum.simulate
-#        """
-#        self.data_cube = np.zeros((self.energydimension, self.xdimension, 
-#        self.ydimension))
-#        self.get_dimensions_from_cube()
-#        self.updateenergy_axis()
-#        
-#        
+    
+        
+        
 #    def simulate(self, maps = None, energy_instability = 0, 
 #    min_intensity = 0., max_intensity = 1.):
 #        """Create a simulated SI.
