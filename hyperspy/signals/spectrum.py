@@ -518,6 +518,13 @@ class Spectrum(Signal):
         dic = self._get_signal_dict()
         dic['mapped_parameters']['signal_type'] = 'EELS'
         return EELSSpectrum(dic)
+        
+    def to_simulation(self):
+        from hyperspy.signals.spectrum_simulation import SpectrumSimulation
+        dic = self._get_signal_dict()
+        dic['mapped_parameters']['signal_type'] = \
+            self.mapped_parameters.signal_type + '_simulation'
+        return SpectrumSimulation(dic)
     
     @only_interactive
     def calibrate(self):
