@@ -71,9 +71,9 @@ class MVA():
     
     @do_not_replot
     def decomposition(self, normalize_poissonian_noise=False,
-    algorithm = 'svd', output_dimension=None, navigation_mask=None,
-    signal_mask=None, var_array=None,
-    var_func=None, polyfit=None, on_peaks=False, **kwargs):
+    algorithm = 'svd', output_dimension=None, centre = None,
+    auto_transpose = True, navigation_mask=None, signal_mask=None,
+    var_array=None, var_func=None, polyfit=None, on_peaks=False, **kwargs):
         """Decomposition with a choice of algorithms
 
         The results are stored in self.mva_results
@@ -88,6 +88,16 @@ class MVA():
         
         output_dimension : None or int
             number of components to keep/calculate
+            
+        centre : None | 'variables' | 'trials'
+            If None no centring is applied. If 'variable' the centring will be
+            performed in the variable axis. If 'trials', the centring will be 
+            performed in the 'trials' axis. It only has effect when using the 
+            svd or fast_svd algorithms
+        
+        auto_transpose : bool
+            If True, automatically transposes the data to boost performance. Only 
+            has effect when using the svd of fast_svd algorithms.
             
         navigation_mask : boolean numpy array
         
@@ -120,7 +130,6 @@ class MVA():
                          you can run PCA or ICA on them."""
         else:
             self._data_before_treatments = self.data.copy()
-            
 
         if algorithm == 'mlpca':
             if normalize_poissonian_noise is True:
@@ -169,19 +178,21 @@ class MVA():
         explained_variance_ratio = None
         
         if algorithm == 'svd':
-            factors, scores, explained_variance = svd_pca(
-                dc[:,signal_mask][navigation_mask,:])
+            factors, scores, explained_variance, mean = svd_pca(
+                dc[:,signal_mask][navigation_mask,:], centre = centre,
+                auto_transpose = auto_transpose)
             # We recompute the the scores because for some reason otherwise
             # the first pixels get higher variance
-            scores = np.dot(dc[:,signal_mask], factors)
+#            scores = np.dot(dc[:,signal_mask], factors)
 
         elif algorithm == 'fast_svd':
-            factors, scores, explained_variance = svd_pca(
+            factors, scores, explained_variance, mean = svd_pca(
                 dc[:,signal_mask][navigation_mask,:],
-            fast = True, output_dimension = output_dimension)
+            fast = True, output_dimension = output_dimension, centre = centre,
+                auto_transpose = auto_transpose)
             # We recompute the the scores because for some reason otherwise
             # the first pixels get higher variance
-            scores = np.dot(dc[:,signal_mask], factors)
+#            scores = np.dot(dc[:,signal_mask], factors)
 
         elif algorithm == 'sklearn_pca':    
             pca = sklearn.decomposition.PCA(**kwargs)
@@ -189,7 +200,9 @@ class MVA():
             pca.fit((dc[:,signal_mask][navigation_mask,:]))
             factors = pca.components_.T
             scores = pca.transform((dc[:,signal_mask]))
-            explained_variance = pca.explained_variance_    
+            explained_variance = pca.explained_variance_
+            mean = pca.mean_
+            centre = 'trials'   
 
         elif algorithm == 'nmf':    
             nmf = sklearn.decomposition.NMF(**kwargs)
@@ -268,6 +281,8 @@ class MVA():
             normalize_poissonian_noise
         target.output_dimension = output_dimension
         target.unfolded = self._unfolded4decomposition
+        target.centre = centre
+        target.mean = mean
         
 
         if output_dimension and factors.shape[1] != output_dimension:
@@ -400,7 +415,7 @@ class MVA():
                 unmixing_matrix = target.ica_node.unmixing_matrix_
             target.unmixing_matrix = np.dot(unmixing_matrix, invsqcovmat)
             self._unmix_factors(target)
-            target.ica_scores = self._get_ica_scores(target)
+            self._unmix_scores(target)
             target.ica_algorithm = algorithm
 
     def reverse_ic(self, ic_n, on_peaks = False):
@@ -446,13 +461,13 @@ class MVA():
                 self.reverse_ic(i)
                 print("IC %i reversed" % i)
 
-    def _get_ica_scores(self,target):
+    def _unmix_scores(self,target):
         """
         Returns the ICA score matrix (formerly known as the recmatrix)
         """
         W = target.scores.T[:target.ica_factors.shape[1],:]
         Q = np.linalg.inv(target.unmixing_matrix.T)
-        return np.dot(Q,W)
+        target.ica_scores = np.dot(Q,W).T
 
     @do_not_replot
     def _calculate_recmatrix(self, components = None, mva_type=None,
@@ -512,6 +527,8 @@ class MVA():
         #else:
         #    sc.data = a.squeeze()
         sc.mapped_parameters.title += signal_name
+        if target.mean is not None:
+            sc.data += target.mean
         if self._unfolded4decomposition is True:
             self.fold()
             sc.history = ['unfolded']
@@ -764,6 +781,7 @@ class MVA():
                                              comp_list=comp_list, mask=mask)
 
 class MVA_Results(object):
+    # Decomposition
     factors = None
     scores = None
     explained_variance = None
@@ -771,11 +789,17 @@ class MVA_Results(object):
     decomposition_algorithm = None
     poissonian_noise_normalized = None
     output_dimension = None
-    unfolded = None
-    original_shape = None
+    mean = None
+    centre = None
+    # Unmixing
     ica_algorithm = None
     unmixing_matrix = None
-
+    ica_factors = None
+    ica_scores = None
+    # Shape
+    unfolded = None
+    original_shape = None
+    
     def save(self, filename):
         """Save the result of the decomposition and demixing analysis
 
@@ -855,6 +879,7 @@ class MVA_Results(object):
         print "Poissonian noise normalization : %s" % \
         self.poissonian_noise_normalized
         print "Output dimension : %s" % self.output_dimension
+        print "Centre : %s" % self.centre
         
         if self.ica_algorithm is not None:
             print
@@ -875,3 +900,8 @@ class MVA_Results(object):
         if self.explained_variance is not None:
             self.explained_variance = self.explained_variance[:n]
         self.factors = self.factors[:,:n]
+        
+    def _transpose_results(self):
+        self.factors, self.scores, self.ica_factors, self.ica_scores = \
+        self.scores, self.factors, self.ica_scores, self.ica_factors
+        

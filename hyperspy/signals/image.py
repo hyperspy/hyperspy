@@ -16,6 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import copy
+
+from matplotlib import pyplot as plt
+import numpy as np
 
 from hyperspy.signal import Signal
 import hyperspy.peak_char as pc
@@ -26,9 +31,7 @@ from hyperspy import messages
 from hyperspy.drawing import image as imgdraw
 from hyperspy.drawing import signal as sigdraw
 
-from matplotlib import pyplot as plt
-import numpy as np
-import os
+
 
 class Image(Signal):
     """
@@ -499,7 +502,7 @@ class Image(Signal):
             the number of plots in each row, when the same_window
             parameter is True.
         """
-        scores=self._get_ica_scores(self._get_target(on_peaks))
+        scores=self._get_target(on_peaks).ica_scores.T
         if with_factors:
             factors=self.get_target(on_peaks).ica_factors
         else: factors=None
@@ -736,7 +739,7 @@ class Image(Signal):
             the cell_data parameter
         """
         factors=self._get_target(on_peaks).ica_factors
-        scores=self._get_ica_scores(self._get_target(on_peaks))
+        scores=self._get_target(on_peaks).ica_scores.T
         self._export_factors(factors, comp_ids=comp_ids,
                              calibrate=calibrate,
                              plot_shifts=plot_shifts,
@@ -1385,4 +1388,10 @@ Nothing to plot.  Try again.""")
         utils_varia.swapelem(dic['axes'],0,-1)
         dic['axes'][0]['index_in_array'] = 0
         dic['axes'][-1]['index_in_array'] = len(dic['axes']) - 1
-        return Spectrum(dic)
+        sp = Spectrum(dic)
+        if hasattr(self, 'mva_results'):
+            sp.mva_results = copy.deepcopy(self.mva_results)
+            sp.mva_results._transpose_results()
+            sp.mva_results.original_shape = self.data.shape
+            
+        return sp

@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
+
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
@@ -511,20 +513,34 @@ class Spectrum(Signal):
         for axis in dic['axes']:
             axis['index_in_array'] = i
             i += 1
-        return Image(dic)
+        im = Image(dic)
+        if hasattr(self, 'mva_results'):
+            im.mva_results = copy.deepcopy(self.mva_results)
+            im.mva_results._transpose_results()
+            im.mva_results.original_shape = self.data.shape
+        return im
 
     def to_EELS(self):
         from hyperspy.signals.eels import EELSSpectrum
         dic = self._get_signal_dict()
         dic['mapped_parameters']['signal_type'] = 'EELS'
-        return EELSSpectrum(dic)
+        eels = EELSSpectrum(dic)
+        if hasattr(self, 'mva_results'):
+            eels.mva_results = copy.deepcopy(self.mva_results)
+        return eels
         
     def to_simulation(self):
         from hyperspy.signals.spectrum_simulation import SpectrumSimulation
         dic = self._get_signal_dict()
+        signal_type = self.mapped_parameters.signal_type
+        if signal_type is None:
+            signal_type = ""
         dic['mapped_parameters']['signal_type'] = \
-            self.mapped_parameters.signal_type + '_simulation'
-        return SpectrumSimulation(dic)
+            signal_type + '_simulation'
+        simu = SpectrumSimulation(dic)
+        if hasattr(self, 'mva_results'):
+            simu.mva_results = copy.deepcopy(self.mva_results)
+        return simu
     
     @only_interactive
     def calibrate(self):

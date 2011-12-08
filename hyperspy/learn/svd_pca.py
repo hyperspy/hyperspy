@@ -9,14 +9,14 @@
 # (at your option) any later version.
 #
 #  Hyperspy is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# but WITHOUT ANdata WARRANTdata; without even the implied warranty of
+# MERCHANTABILITdata or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
+# dataou should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import numpy as np
 import scipy.linalg
 try:
     from scikits.learn.utils.extmath import fast_svd
@@ -26,26 +26,65 @@ except:
 
 from hyperspy import messages
 
-def svd_pca(data, fast = False, output_dimension = None):
+def svd_pca(data, fast = False, output_dimension = None, centre = None,
+            auto_transpose = True):
     """Perform PCA using SVD.
-    data - MxN matrix of input data
-    (M dimensions, N trials)
-    signals - MxN matrix of projected data
-    PC - each column is a PC
-    V - Mx1 matrix of variances
+    
+    Parameters
+    ----------
+    data : numpy array
+        MxN array of input data (M variables, N trials)
+    fast : bool
+        Wheter to use randomized svd estimation to estimate a limited number of
+        componentes given by output_dimension
+    output_dimension : int
+        Number of components to estimate when fast is True
+    centre : None | 'variables' | 'trials'
+        If None no centring is applied. If 'variable' the centring will be
+        performed in the variable axis. If 'trials', the centring will be 
+        performed in the 'trials' axis.
+    auto_transpose : bool
+        If True, automatically transposes the data to boost performance
+    
+    Returns
+    -------
+    
+    factors : numpy array
+    scores : numpy array
+    explained_variance : numpy array
+    mean : numpy array or None (if center is None)
     """
-    print "Performing PCA with a SVD based algorithm"
     N, M = data.shape
-    Y = data
+    if centre is not None:
+        if centre == 'variables':
+            mean = data.mean(1)[:,np.newaxis]
+        elif centre == 'trials':
+            mean = data.mean(0)[np.newaxis,:]
+        else:
+            raise AttributeError(
+                'centre must be one of: None, variables, trials')
+        data -= mean
+    else:
+        mean = None 
+    if auto_transpose is True:
+        if N < M:
+            print("Auto transposing the data")
+            data = data.T
+        else:
+            auto_transpose = False
     if fast is True and sklearn is True:
         if output_dimension is None:
             messages.warning_exit('When using fast_svd it is necessary to '
                                   'define the output_dimension')
-        U, S, V = fast_svd(Y, output_dimension, q = 3)
+        U, S, V = fast_svd(data, output_dimension, q = 3)
     else:
-        U, S, V = scipy.linalg.svd(Y, full_matrices = False)
-    
-    factors = V.T
-    explained_variance = S ** 2 / N
-    scores = U * S
-    return factors, scores, explained_variance
+        U, S, V = scipy.linalg.svd(data, full_matrices = False)
+    if auto_transpose is False:
+        factors = V.T
+        explained_variance = S ** 2 / N
+        scores = U * S
+    else:
+        scores = V.T
+        explained_variance = S ** 2 / N
+        factors = U * S
+    return factors, scores, explained_variance, mean
