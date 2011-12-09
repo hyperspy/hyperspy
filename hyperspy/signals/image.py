@@ -1383,15 +1383,18 @@ Nothing to plot.  Try again.""")
     def to_spectrum(self):
         from hyperspy.signals.spectrum import Spectrum
         dic = self._get_signal_dict()
+        dim = len(self.data.shape)
         dic['mapped_parameters']['record_by'] = 'spectrum'
-        dic['data'] = np.swapaxes(dic['data'], 0, -1)
-        utils_varia.swapelem(dic['axes'],0,-1)
-        dic['axes'][0]['index_in_array'] = 0
-        dic['axes'][-1]['index_in_array'] = len(dic['axes']) - 1
+        dic['data'] = np.rollaxis(dic['data'], 0, dim)
+        dic['axes'] = utils_varia.rollelem(dic['axes'],0, dim)
+        i = 0
+        for axis in dic['axes']:
+            axis['index_in_array'] = i
+            i += 1
         sp = Spectrum(dic)
+        sp.axes_manager._set_axes_index_in_array_from_position()
         if hasattr(self, 'mva_results'):
             sp.mva_results = copy.deepcopy(self.mva_results)
             sp.mva_results._transpose_results()
             sp.mva_results.original_shape = self.data.shape
-            
         return sp

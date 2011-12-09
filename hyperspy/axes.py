@@ -367,6 +367,12 @@ class AxesManager(t.HasTraits):
             i += 1
         return axes_dicts
         
+    def _set_axes_index_in_array_from_position(self):
+        i = 0
+        for axis in self.axes:
+            axis.index_in_array = i
+            i += 1
+        
     def show(self):
         context = {}
         ag = []
