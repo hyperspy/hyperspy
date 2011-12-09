@@ -118,13 +118,13 @@ def _plot_2D_component(factors, idx, axes_manager,
     if ax==None:
         ax=plt.gca()
     axes=axes_manager._slicing_axes
-    shape=(axes[1].size,axes[0].size)
+    shape=axes_manager.signal_shape
     extent=None
     if calibrate:
-        extent=(axes[0].low_value,
-                axes[0].high_value,
+        extent=(axes[1].low_value,
                 axes[1].high_value,
-                axes[1].low_value)
+                axes[0].high_value,
+                axes[0].low_value)
     if comp_label:
         plt.title('%s %s' % (comp_label,idx))
     im=ax.imshow(factors[:,idx].reshape(shape),
