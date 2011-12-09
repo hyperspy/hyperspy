@@ -146,6 +146,12 @@ class MVA():
         # Apply pre-treatments
         # Transform the data in a line spectrum
         self._unfolded4decomposition = self.unfold_if_multidim()
+        if hasattr(navigation_mask, 'ravel'):
+            navigation_mask = navigation_mask.ravel()
+
+        if hasattr(signal_mask, 'ravel'):
+            signal_mask = signal_mask.ravel()
+
         # Normalize the poissonian noise
         # Note that this function can change the masks
         if normalize_poissonian_noise is True:
@@ -153,11 +159,9 @@ class MVA():
                 self.normalize_poissonian_noise(navigation_mask=navigation_mask,
                                                 signal_mask=signal_mask,
                                                 return_masks = True)
-        if hasattr(navigation_mask, 'ravel'):
-            navigation_mask = navigation_mask.ravel()
 
+            
         messages.information('Performing decomposition analysis')
-
         if on_peaks:
             dc = self.mapped_parameters.peak_chars
         else:
@@ -183,7 +187,7 @@ class MVA():
                 auto_transpose = auto_transpose)
             # We recompute the the scores because for some reason otherwise
             # the first pixels get higher variance
-#            scores = np.dot(dc[:,signal_mask], factors)
+            scores = np.dot(dc[:,signal_mask], factors)
 
         elif algorithm == 'fast_svd':
             factors, scores, explained_variance, mean = svd_pca(
@@ -192,7 +196,7 @@ class MVA():
                 auto_transpose = auto_transpose)
             # We recompute the the scores because for some reason otherwise
             # the first pixels get higher variance
-#            scores = np.dot(dc[:,signal_mask], factors)
+            scores = np.dot(dc[:,signal_mask], factors)
 
         elif algorithm == 'sklearn_pca':    
             pca = sklearn.decomposition.PCA(**kwargs)
@@ -396,7 +400,7 @@ class MVA():
                     factors = sfactors.data.T
             
             if mask is not None:
-                factors = factors[mask, :]
+                factors = factors[mask.ravel(), :]
 
             # first centers and scales data
             factors,invsqcovmat = centering_and_whitening(factors)
