@@ -180,6 +180,7 @@ class MVA():
         # Reset the explained_variance which is not set by all the algorithms
         explained_variance = None
         explained_variance_ratio = None
+        mean = None
         
         if algorithm == 'svd':
             factors, scores, explained_variance, mean = svd_pca(
