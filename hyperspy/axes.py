@@ -235,6 +235,7 @@ class AxesManager(t.HasTraits):
         self.set_signal_dimension()
         self.on_trait_change(self.set_signal_dimension, 'axes.slice')
         self.on_trait_change(self.set_signal_dimension, 'axes.index')
+        self.on_trait_change(self.set_signal_dimension, 'axes.size')
 
     def set_signal_dimension(self):
         getitem_tuple = []
