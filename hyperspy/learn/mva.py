@@ -73,7 +73,8 @@ class MVA():
     def decomposition(self, normalize_poissonian_noise=False,
     algorithm = 'svd', output_dimension=None, centre = None,
     auto_transpose = True, navigation_mask=None, signal_mask=None,
-    var_array=None, var_func=None, polyfit=None, on_peaks=False, **kwargs):
+    var_array=None, var_func=None, polyfit=None, on_peaks=False, 
+    reproject=None, **kwargs):
         """Decomposition with a choice of algorithms
 
         The results are stored in self.mva_results
@@ -96,8 +97,8 @@ class MVA():
             svd or fast_svd algorithms
         
         auto_transpose : bool
-            If True, automatically transposes the data to boost performance. Only 
-            has effect when using the svd of fast_svd algorithms.
+            If True, automatically transposes the data to boost performance.
+            Only has effect when using the svd of fast_svd algorithms.
             
         navigation_mask : boolean numpy array
         
@@ -112,6 +113,10 @@ class MVA():
             of a polynomial.
             
         polyfit :
+        
+        reproject : None | signal | navigation | both
+            If not None, the results of the decomposition will be projected in 
+            the selected masked area.
 
 
         See also
@@ -153,13 +158,26 @@ class MVA():
             signal_mask = signal_mask.ravel()
 
         # Normalize the poissonian noise
-        # Note that this function can change the masks
+        # TODO this function can change the masks and this can cause
+        # problems when reprojecting
         if normalize_poissonian_noise is True:
-            navigation_mask, signal_mask = \
-                self.normalize_poissonian_noise(navigation_mask=navigation_mask,
-                                                signal_mask=signal_mask,
-                                                return_masks = True)
-
+            if reproject is None:
+                navigation_mask, signal_mask = \
+                    self.normalize_poissonian_noise(
+                                            navigation_mask=navigation_mask,
+                                            signal_mask=signal_mask,
+                                            return_masks = True)
+            elif reproject == 'both':
+                _, _ = \
+                    self.normalize_poissonian_noise(return_masks = True)  
+            elif reproject == 'navigation':
+                _, signal_mask = \
+                    self.normalize_poissonian_noise(return_masks = True,
+                                                    signal_mask=signal_mask,) 
+            elif reproject == 'signal':
+                navigation_mask, _ = \
+                    self.normalize_poissonian_noise(return_masks = True,
+                                            navigation_mask=navigation_mask,)         
             
         messages.information('Performing decomposition analysis')
         if on_peaks:
@@ -186,48 +204,38 @@ class MVA():
             factors, scores, explained_variance, mean = svd_pca(
                 dc[:,signal_mask][navigation_mask,:], centre = centre,
                 auto_transpose = auto_transpose)
-            # We recompute the the scores because for some reason otherwise
-            # the first pixels get higher variance
-            scores = np.dot(dc[:,signal_mask], factors)
 
         elif algorithm == 'fast_svd':
             factors, scores, explained_variance, mean = svd_pca(
                 dc[:,signal_mask][navigation_mask,:],
             fast = True, output_dimension = output_dimension, centre = centre,
                 auto_transpose = auto_transpose)
-            # We recompute the the scores because for some reason otherwise
-            # the first pixels get higher variance
-            scores = np.dot(dc[:,signal_mask], factors)
 
         elif algorithm == 'sklearn_pca':    
-            pca = sklearn.decomposition.PCA(**kwargs)
-            pca.n_components = output_dimension
-            pca.fit((dc[:,signal_mask][navigation_mask,:]))
-            factors = pca.components_.T
-            scores = pca.transform((dc[:,signal_mask]))
-            explained_variance = pca.explained_variance_
-            mean = pca.mean_
+            sk = sklearn.decomposition.PCA(**kwargs)
+            sk.n_components = output_dimension
+            scores = sk.fit_transform((dc[:,signal_mask][navigation_mask,:]))
+            factors = sk.components_.T
+            explained_variance = sk.explained_variance_
+            mean = sk.mean_
             centre = 'trials'   
 
         elif algorithm == 'nmf':    
-            nmf = sklearn.decomposition.NMF(**kwargs)
-            nmf.n_components = output_dimension
-            nmf.fit((dc[:,signal_mask][navigation_mask,:]))
-            factors = nmf.components_.T
-            scores = nmf.transform((dc[:,signal_mask]))
+            sk = sklearn.decomposition.NMF(**kwargs)
+            sk.n_components = output_dimension
+            scores = sk.fit_transform((dc[:,signal_mask][navigation_mask,:]))
+            factors = sk.components_.T
             
         elif algorithm == 'sparse_pca':
-            spca = sklearn.decomposition.SparsePCA(output_dimension, **kwargs)
-            spca.fit(dc[:,signal_mask][navigation_mask,:])
-            factors = spca.components_.T
-            scores = spca.transform(dc[navigation_mask,:])
+            sk = sklearn.decomposition.SparsePCA(output_dimension, **kwargs)
+            scores = sk.fit_transform(dc[:,signal_mask][navigation_mask,:])
+            factors = sk.components_.T
             
         elif algorithm == 'mini_batch_sparse_pca':
-            spca = sklearn.decomposition.MiniBatchSparsePCA(output_dimension,
+            sk = sklearn.decomposition.MiniBatchSparsePCA(output_dimension,
                                                             **kwargs)
-            spca.fit(dc[:,signal_mask][navigation_mask,:])
-            factors = spca.components_.T
-            scores = spca.transform(dc[:,signal_mask])
+            scores = sk.fit_transform(dc[:,signal_mask][navigation_mask,:])
+            factors = sk.components_.T
 
         elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
             print "Performing the MLPCA training"
@@ -265,7 +273,6 @@ class MVA():
             factors = V
             explained_variance_ratio = S ** 2 / Sobj
             explained_variance = S ** 2 / len(factors)
-            
         else:
             messages.information('Error: Algorithm not recognised. '
                                  'Nothing done')
@@ -302,32 +309,52 @@ class MVA():
         if self._unfolded4decomposition is True:
             target.original_shape = self._shape_before_unfolding
 
+        # Reproject
+        if mean is None:
+            mean = 0
+        if reproject in ('navigation', 'both'):
+            if algorithm not in ('nmf', 'sparse_pca', 'mini_batch_sparse_pca'):
+                scores_ = np.dot(dc[:,signal_mask] - mean, factors)
+            else:
+                scores_ = sk.transform(dc[:,signal_mask])
+            target.scores = scores_
+        if reproject in ('signal', 'both'):
+            if algorithm not in ('nmf', 'sparse_pca', 'mini_batch_sparse_pca'):
+                factors = np.dot(np.linalg.pinv(scores), 
+                                 dc[navigation_mask,:] - mean).T
+                target.factors = factors
+            else:
+                messages.information("Reprojecting the signal is not yet "
+                                     "supported for this algorithm")
+                if reproject == 'both':
+                    reproject = 'signal'
+                else:
+                    reproject = None
+        
         # Rescale the results if the noise was normalized
         if normalize_poissonian_noise is True:
             target.factors[:] *= self._root_bH.T
-            target.scores[navigation_mask,:] *= self._root_aG
-            if isinstance(navigation_mask, slice):
-                navigation_mask = None
-            if isinstance(signal_mask, slice):
-                signal_mask = None
+            target.scores[:] *= self._root_aG
+            
+        # Set the pixels that were not processed to nan
+        if not isinstance(signal_mask, slice):
+            target.signal_mask = signal_mask
+            if reproject not in ('both', 'signal'):
+                factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
+                factors[signal_mask == True,:] = target.factors
+                factors[signal_mask == False,:] = np.nan
+                target.factors = factors
+        if not isinstance(navigation_mask, slice):
+            target.navigation_mask = navigation_mask
+            if reproject not in ('both', 'navigation'):
+                scores = np.zeros((dc.shape[0], target.scores.shape[1]))
+                scores[navigation_mask == True,:] = target.scores
+                scores[navigation_mask == False,:] = np.nan
+                target.scores = scores
 
         #undo any pre-treatments
         self.undo_treatments(on_peaks)
-
-        # Set the pixels that were not processed to nan
-        if navigation_mask is not None and not isinstance(
-            navigation_mask, slice):
-            target.navigation_mask = navigation_mask
-            target.scores[navigation_mask == False,:] = np.nan
-            
-        if signal_mask is not None and not isinstance(
-            signal_mask, slice):
-            target.signal_mask = signal_mask
-            factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
-            factors[signal_mask == True,:] = target.factors
-            factors[signal_mask == False,:] = np.nan
-            target.factors = factors
-
+        
         if self._unfolded4decomposition is True:
             self.fold()
             self._unfolded4decomposition is False
