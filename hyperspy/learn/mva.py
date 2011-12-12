@@ -258,14 +258,13 @@ class MVA():
                 fast = False
             else:
                 fast = True
-            target.mlpca_output = mlpca(
+            U,S,V,Sobj, ErrFlag = mlpca(
                 dc[:,signal_mask][navigation_mask,:],
                 var_array, output_dimension, fast = fast)
-            U,S,V,Sobj, ErrFlag  = target.mlpca_output
-            print "Performing PCA projection"
-            scores = np.dot(dc[:,signal_mask], V)
+            scores = U * S
             factors = V
-            explained_variance = S ** 2
+            explained_variance_ratio = S ** 2 / Sobj
+            explained_variance = S ** 2 / len(factors)
             
         else:
             messages.information('Error: Algorithm not recognised. '
@@ -274,9 +273,11 @@ class MVA():
 
         # We must calculate the ratio here because otherwise the sum information
         # can be lost if the user call crop_decomposition_dimension
-        if explained_variance is not None:
+        if explained_variance is not None and explained_variance_ratio is None:
             explained_variance_ratio = \
                 explained_variance / explained_variance.sum()
+                
+        # Store the results in mva_results
         target.factors = factors
         target.scores = scores
         target.explained_variance = explained_variance
@@ -316,10 +317,12 @@ class MVA():
         # Set the pixels that were not processed to nan
         if navigation_mask is not None and not isinstance(
             navigation_mask, slice):
+            target.navigation_mask = navigation_mask
             target.scores[navigation_mask == False,:] = np.nan
             
         if signal_mask is not None and not isinstance(
             signal_mask, slice):
+            target.signal_mask = signal_mask
             factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
             factors[signal_mask == True,:] = target.factors
             factors[signal_mask == False,:] = np.nan
@@ -804,6 +807,9 @@ class MVA_Results(object):
     # Shape
     unfolded = None
     original_shape = None
+    # Masks
+    navigation_mask = None
+    signal_mask =  None
     
     def save(self, filename):
         """Save the result of the decomposition and demixing analysis
