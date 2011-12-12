@@ -40,7 +40,7 @@ class ImagePlot:
         self.auto_contrast = True
         
     def optimize_contrast(self, data, perc = 0.01):
-        dc = data[np.isnan(data) == False]
+        dc = data
         try:
             # check if it's an RGB structured array
             dc = dc['R']
@@ -53,8 +53,8 @@ class ImagePlot:
             dc = np.log(np.abs(dc))
         i = int(round(len(dc)*perc/100.))
         i = i if i > 0 else 1
-        vmin = np.min(dc)
-        vmax = np.max(dc)
+        vmin = np.nanmin(dc)
+        vmax = np.nanmax(dc)
         self.vmin = vmin
         self.vmax = vmax
         

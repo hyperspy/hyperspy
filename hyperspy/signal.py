@@ -186,7 +186,7 @@ class Signal(t.HasTraits, MVA):
 
     def _get_hse_2D_explorer(self, *args, **kwargs):
         islice = self.axes_manager._slicing_axes[0].index_in_array
-        data = self.data.sum(islice)
+        data = np.nan_to_num(self.data).sum(islice)
         return data
 
     def _get_hie_explorer(self, *args, **kwargs):
