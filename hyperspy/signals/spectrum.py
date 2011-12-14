@@ -29,7 +29,7 @@ from hyperspy.misc import utils
 from hyperspy.misc import utils_varia
 from hyperspy.gui.tools import (SpectrumCalibration, SmoothingSavitzkyGolay,
     SmoothingLowess, SpectrumRangeSelector, SpanSelectorInSpectrum,
-    SmoothingTV)
+    SmoothingTV, ButterworthFilter)
 from hyperspy.gui.egerton_quantification import BackgroundRemoval
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import only_interactive
@@ -610,6 +610,16 @@ class Spectrum(Signal):
             smoother.edit_traits()
         else:
             smoother.apply()
+    
+    def filter_butterworth(self, cutoff_frequency_ratio=None, type='low',
+                           order = 2):
+        '''Butterworth filter'''
+        smoother = ButterworthFilter(self)
+        if cutoff_frequency_ratio is not None:
+            smoother.cutoff_frequency_ratio = cutoff_frequency_ratio
+            smoother.apply()
+        else:
+            smoother.edit_traits()
         
     @only_interactive
     def remove_background(self):

@@ -17,6 +17,7 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import scipy as sp
 import traits.api as t
 import traitsui.api as tu
 from traitsui.menu import (OKButton, ApplyButton, CancelButton, ModalButtons,
@@ -406,6 +407,37 @@ class SmoothingTV(Smoothing):
         smoothed = _tv_denoise_1d(self.signal(), 
                                 weight = self.smoothing_parameter,)
         return smoothed
+        
+class ButterworthFilter(Smoothing):
+    cutoff_frequency_ratio = t.Float(0.05)
+    type = t.Enum('low', 'high')
+    order = t.Int(2)
+    
+    view = tu.View(
+        tu.Group(
+            'cutoff_frequency_ratio',
+            'order',
+            'type'),
+            kind = 'live',
+            handler = SmoothingHandler,
+            buttons= OKCancelButtons,
+            title = 'Butterworth filter',)
+            
+    def _cutoff_frequency_ratio_changed(self, old, new):
+        self.update_lines()
+        
+    def _type_changed(self, old, new):
+        self.update_lines()
+        
+    def _order_changed(self, old, new):
+        self.update_lines()
+            
+    def model2plot(self, axes_manager = None):
+        b, a = sp.signal.butter(self.order, self.cutoff_frequency_ratio,
+                                self.type)
+        smoothed = sp.signal.filtfilt(b, a, self.signal())
+        return smoothed
+
         
 class Load(t.HasTraits):
     filename = t.File
