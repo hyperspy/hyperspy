@@ -409,7 +409,7 @@ class SmoothingTV(Smoothing):
         return smoothed
         
 class ButterworthFilter(Smoothing):
-    cutoff_frequency_ratio = t.Float(0.05)
+    cutoff_frequency_ratio = t.Range(0.,1.,0.05)
     type = t.Enum('low', 'high')
     order = t.Int(2)
     
