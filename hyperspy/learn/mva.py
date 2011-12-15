@@ -457,6 +457,7 @@ class MVA():
             target.unmixing_matrix = np.dot(unmixing_matrix, invsqcovmat)
             self._unmix_factors(target)
             self._unmix_scores(target)
+            self._auto_reverse_ic(target)
             target.ica_algorithm = algorithm
 
     def reverse_ic(self, ic_n, on_peaks = False):
@@ -482,7 +483,9 @@ class MVA():
 
         for i in [ic_n,]:
             target.ica_factors[:,i] *= -1
+            target.ica_scores[:,i] *= -1
             target.unmixing_matrix[i,:] *= -1
+            
 
     def _unmix_factors(self,target):
         w = target.unmixing_matrix
@@ -495,10 +498,13 @@ class MVA():
                 np.abs(w.T)))[::-1]
             w[:] = w[sorting_indexes,:]
         target.ica_factors = np.dot(target.factors[:,:n], w.T)
-        n_channels = target.ica_factors.shape[0]
-        for i in xrange(n):
-            neg_channels = np.sum(target.ica_factors[:,i] < 0)
-            if neg_channels > n_channels/2.:
+    
+    def _auto_reverse_ic(self, target):
+        n_components = target.ica_factors.shape[1]
+        for i in xrange(n_components):
+            minimum = np.nanmin(target.ica_scores[:,i])
+            maximum = np.nanmax(target.ica_scores[:,i])
+            if minimum < 0 and -minimum > maximum:
                 self.reverse_ic(i)
                 print("IC %i reversed" % i)
 
