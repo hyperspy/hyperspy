@@ -441,7 +441,17 @@ class MVA():
 
             # first centers and scales data
             factors,invsqcovmat = centering_and_whitening(factors)
-            if algorithm != 'sklearn_fastica':
+            if algorithm == 'orthomax':
+                _, unmixing_matrix = utils.orthomax(factors, **kwargs)
+                unmixing_matrix = unmixing_matrix.T
+            
+            elif algorithm == 'sklearn_fastica':
+                target.ica_node = sklearn.decomposition.FastICA(**kwargs)
+                target.ica_node.whiten = False
+                target.ica_node.fit(factors)
+                unmixing_matrix = target.ica_node.unmixing_matrix_
+            
+            else:
                 to_exec = 'target.ica_node=mdp.nodes.%sNode(' % algorithm
                 for key, value in kwargs.iteritems():
                     to_exec += '%s=%s,' % (key, value)
@@ -449,11 +459,7 @@ class MVA():
                 exec(to_exec)
                 target.ica_node.train(factors)
                 unmixing_matrix = target.ica_node.get_recmatrix()
-            else:
-                target.ica_node = sklearn.decomposition.FastICA(**kwargs)
-                target.ica_node.whiten = False
-                target.ica_node.fit(factors)
-                unmixing_matrix = target.ica_node.unmixing_matrix_
+
             target.unmixing_matrix = np.dot(unmixing_matrix, invsqcovmat)
             self._unmix_factors(target)
             self._unmix_scores(target)
