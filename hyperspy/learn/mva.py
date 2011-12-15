@@ -23,6 +23,7 @@ import os
 import types
 
 import numpy as np
+import scipy as sp
 import matplotlib.pyplot as plt
 import mdp
 
@@ -366,7 +367,7 @@ class MVA():
     def independent_components_analysis(
         self, number_of_components=None, algorithm='CuBICA', diff_order=1,
         factors=None, comp_list = None, mask = None, on_peaks=False, on_scores=False,
-        smoothing = None, **kwargs):
+        pretreatment = None, **kwargs):
         """Independent components analysis.
 
         Available algorithms: FastICA, JADE, CuBICA, and TDSEP
@@ -376,7 +377,6 @@ class MVA():
         number_of_components : int
             number of principal components to pass to the ICA algorithm
         algorithm : {FastICA, JADE, CuBICA, TDSEP}
-        diff : bool
         diff_order : int
         factors : numpy array
             externally provided components
@@ -386,7 +386,7 @@ class MVA():
         mask : numpy boolean array with the same dimension as the PC
             If not None, only the selected channels will be used by the
             algorithm.
-        smoothing: dict
+        pretreatment: dict
         
         Any extra parameter is passed to the ICA algorithm
         """
@@ -414,21 +414,27 @@ class MVA():
                     bool_index[ifactors] = True
                 number_of_components = len(comp_list)
             factors = factors[:,bool_index]
-            if diff_order > 0 and smoothing is None:
+            if diff_order > 0 and pretreatment is None:
                 factors = np.diff(factors, diff_order, axis = 0)
-            if smoothing is not None:
+            if pretreatment is not None:
                 from hyperspy.signals.spectrum import Spectrum
                 sfactors = Spectrum({'data' : factors.T})
-                if smoothing['algorithm'] == 'savitzky_golay':
+                if pretreatment['algorithm'] == 'savitzky_golay':
                     sfactors.smooth_savitzky_golay(
-                        number_of_points = smoothing['number_of_points'],
-                        polynomial_order = smoothing['polynomial_order'],
+                        number_of_points = pretreatment['number_of_points'],
+                        polynomial_order = pretreatment['polynomial_order'],
                         differential_order = diff_order)
-                if smoothing['algorithm'] == 'tv':
+                if pretreatment['algorithm'] == 'tv':
                     sfactors.smooth_tv(
-                        smoothing_parameter= smoothing['smoothing_parameter'],
+                        pretreatment_parameter= pretreatment[
+                            'pretreatment_parameter'],
                         differential_order = diff_order)
-                    factors = sfactors.data.T
+                factors = sfactors.data.T
+                if pretreatment['algorithm'] == 'butter':
+                    b, a = sp.signal.butter(pretreatment['order'],
+                        pretreatment['cutoff'], pretreatment['type'])
+                    for i in range(factors.shape[1]):
+                        factors[:,i] = sp.signal.filtfilt(b, a, factors[:,i])
             
             if mask is not None:
                 factors = factors[mask.ravel(), :]
