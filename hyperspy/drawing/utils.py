@@ -99,12 +99,12 @@ def plot_RGB_map(im_list, normalization = 'single', dont_plot = False):
     array: RGB matrix
     """
 #    from widgets import cursors
-    width, height = im_list[0].data_cube.shape[:2]
+    height,width = im_list[0].data.shape[:2]
     rgb = np.zeros((height, width,3))
-    rgb[:,:,0] = im_list[0].data_cube.T.squeeze()
-    rgb[:,:,1] = im_list[1].data_cube.T.squeeze()
+    rgb[:,:,0] = im_list[0].data.squeeze()
+    rgb[:,:,1] = im_list[1].data.squeeze()
     if len(im_list) == 3:
-        rgb[:,:,2] = im_list[2].data_cube.T.squeeze()
+        rgb[:,:,2] = im_list[2].data.squeeze()
     if normalization == 'single':
         for i in xrange(rgb.shape[2]):
             rgb[:,:,i] /= rgb[:,:,i].max()
