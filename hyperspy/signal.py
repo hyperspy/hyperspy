@@ -598,6 +598,7 @@ reconstruction created using either get_decomposition_model or get_ica_model met
             getitem[unfolded_axis] = i
             yield(data[getitem])
 
+    @auto_replot
     def sum(self, axis, return_signal = False):
         """Sum the data over the specify axis
 
