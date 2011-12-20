@@ -1180,7 +1180,7 @@ reconstruction created using either get_decomposition_model or get_ica_model met
             elif self.axes_manager.navigation_dimension == 2:
                 axes_dicts=[]
                 axes=self.axes_manager._non_slicing_axes
-                shape=(axes[1].size,axes[0].size)
+                shape=(axes[0].size, axes[1].size)
                 score_data=scores.reshape((-1,shape[0],shape[1]))
                 axes_dicts.append(axes[0].get_axis_dictionary())
                 axes_dicts[0]['index_in_array']=0
