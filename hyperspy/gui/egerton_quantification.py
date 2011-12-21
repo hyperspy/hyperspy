@@ -134,19 +134,25 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             
     def apply(self):
         self.signal._plot.auto_update_plot = False
-        pbar = progressbar(
-        maxval = (np.cumprod(self.signal.axes_manager.navigation_shape)[-1]))
-        i = 0
-        self.bg_line_range = 'full'
-        for index in np.ndindex(
-        tuple(self.signal.axes_manager.navigation_shape)):
-            self.signal.axes_manager.set_not_slicing_indexes(index)
-            self.signal.data[
-            self.signal.axes_manager._getitem_tuple] -= \
-            np.nan_to_num(self.bg_to_plot(self.signal.axes_manager, 0))
-            i+=1
-            pbar.update(i)
-        pbar.finish()
+        if self.signal.axes_manager.navigation_dimension != 0:
+            pbar = progressbar(
+            maxval = (np.cumprod(self.signal.axes_manager.navigation_shape)[-1]))
+            i = 0
+            self.bg_line_range = 'full'
+            indexes = np.ndindex(
+            tuple(self.signal.axes_manager.navigation_shape))
+            for index in indexes:
+                self.signal.axes_manager.set_not_slicing_indexes(index)
+                self.signal.data[
+                self.signal.axes_manager._getitem_tuple] -= \
+                np.nan_to_num(self.bg_to_plot(self.signal.axes_manager, 0))
+                i+=1
+                pbar.update(i)
+            pbar.finish()
+        else:
+            self.signal.data[self.signal.axes_manager._getitem_tuple] -= \
+                np.nan_to_num(self.bg_to_plot(self.signal.axes_manager, 0))
+            
         self.signal._replot()
         self.signal._plot.auto_update_plot = True
     
