@@ -71,7 +71,7 @@ class Offset(Component):
         i2 = energy2index(x2)
         
         if only_current is True:
-            self.offset.value = signal()[i1:i2].sum()
+            self.offset.value = signal()[i1:i2].mean()
             return True
         else:
             if self.A.map is None:
@@ -79,6 +79,6 @@ class Offset(Component):
             dc = signal.data
             gi = [slice(None),] * len(dc.shape)
             gi[axis.index_in_array] = slice(i1,i2)
-            self.offset.map['values'][:] = dc[gi].sum(axis.index_in_array)
+            self.offset.map['values'][:] = dc[gi].mean(axis.index_in_array)
             self.offset.map['is_set'][:] = True
             return True
