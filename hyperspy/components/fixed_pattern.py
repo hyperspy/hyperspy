@@ -40,7 +40,7 @@ class FixedPattern(Component):
         self.interpolate = False
         self._interpolation_ready = False
     
-    def prepare_interpolator(self, x, kind = 3, fill_value = 0, **kwards):
+    def prepare_interpolator(self, x, kind = 'linear', fill_value = 0, **kwards):
         self.interp = interp1d(x, self.array, kind = kind, 
         fill_value = fill_value, bounds_error=False, **kwards)
         self._interpolation_ready = True
