@@ -543,7 +543,7 @@ class Spectrum(Signal):
         return simu
     
     @only_interactive
-    def calibrate(self):
+    def calibrate(self, return_obj = False):
         '''Calibrate the spectral dimension using a gui
 
         It displays a window where the new calibration can be set by:
@@ -558,13 +558,9 @@ class Spectrum(Signal):
         '''
 
         calibration = SpectrumCalibration(self)
-        # The next two lines are to walk-around the fact that, in nonmodal mode
-        # the inherited traits are overwritten by the editor if they were not 
-        # initialized by the parent trait
-        calibration.ss_left_value = calibration.axis.axis[0]
-        calibration.ss_right_value = calibration.axis.axis[-1]
         calibration.edit_traits()
-
+        if return_obj is True:
+            return calibration
 
     def smooth_savitzky_golay(self, polynomial_order = None,
         number_of_points = None, differential_order = 0):

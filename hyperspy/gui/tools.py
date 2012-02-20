@@ -147,8 +147,8 @@ class SpanSelectorInSpectrum(t.HasTraits):
             self.span_selector.rect.get_width()
 
 class SpectrumCalibration(SpanSelectorInSpectrum):
-    left_value = t.Float()
-    right_value = t.Float()
+    left_value = t.Float(label = 'New left value')
+    right_value = t.Float(label = 'New right value')
     offset = t.Float()
     scale = t.Float()
     units = t.Unicode()
@@ -156,12 +156,14 @@ class SpectrumCalibration(SpanSelectorInSpectrum):
         tu.Group(
             'left_value',
             'right_value',
+            tu.Item('ss_left_value', label = 'Left', style = 'readonly'),
+            tu.Item('ss_right_value', label = 'Right', style = 'readonly'),
             tu.Item(name = 'offset', style = 'readonly'),
             tu.Item(name = 'scale', style = 'readonly'),
             'units',),
         handler = CalibrationHandler,
-        buttons = [OKButton, ApplyButton, CancelButton],
-        kind = 'nonmodal',
+        buttons = [OKButton, OurApplyButton, CancelButton],
+        kind = 'live',
         title = 'Calibration parameters')
             
     def __init__(self, signal):
