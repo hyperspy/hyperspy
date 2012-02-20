@@ -126,6 +126,8 @@ class SpanSelectorInSpectrum(t.HasTraits):
         pass
             
     def span_selector_switch(self, on):
+        if not self.signal._plot.is_active(): return
+        
         if on is True:
             self.span_selector = \
             drawing.widgets.ModifiableSpanSelector(
@@ -139,6 +141,7 @@ class SpanSelectorInSpectrum(t.HasTraits):
             self.span_selector = None
 
     def update_span_selector_traits(self, *args, **kwargs):
+        if not self.signal._plot.is_active(): return
         self.ss_left_value = self.span_selector.rect.get_x()
         self.ss_right_value = self.ss_left_value + \
             self.span_selector.rect.get_width()
@@ -316,11 +319,12 @@ class Smoothing(t.HasTraits):
         self.signal._plot.auto_update_plot = True
         
     def close(self):
-        if self.differential_order != 0:
-            self.turn_diff_line_off()
-        self.smooth_line.close()
-        self.data_line.line_properties_helper(self.original_color, 'line')
-        self.data_line.set_properties()
+        if self.signal._plot.is_active():
+            if self.differential_order != 0:
+                self.turn_diff_line_off()
+            self.smooth_line.close()
+            self.data_line.line_properties_helper(self.original_color, 'line')
+            self.data_line.set_properties()
         
 
 class SmoothingSavitzkyGolay(Smoothing):
