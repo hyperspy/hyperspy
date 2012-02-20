@@ -174,7 +174,6 @@ class Model(list, Optimizers, Estimators):
             if out_of_range_to_nan is True:
                 self.model_cube[self.axes_manager._getitem_tuple][
                 self.channel_switches == False] = np.nan
-                self.model_cube[self.channel_switches == False,:,:] = np.nan
             i += 1
             pbar.update(i)
             

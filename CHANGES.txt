@@ -1,7 +1,92 @@
-v0.2.13 beta
-
+**********************
+v0.3.0beta3 20/02/2012
+**********************
 Enhancements
------------
+------------
+a98289c In FixedPattern, default interpolation changed to linear
+ea65623 Add auto_replot to sum
+ee35e44 Add orthomax FA algorithm
+410f007 Fix reverse_ic which was not reversing the scores and improve the autoreversing method
+da406ab smoothing renamed to pretreatment and butter added
+5e70aed Add a slider to the filter ui
+9397bf5 Add butterworth filter
+12618f6 Add the possibility to reproject the data after a decomposition
+e46bab4 Store the masks in mva_results
+f103920 Added centring and auto_transpose to the svd_pca algorithm. Also now hyperspy keeps the mva_results information when changing the signal type
+c5d31bf Revert "BUG-FIX: when using transform the data was being centered and the resulting scores were wrong"
+0e45be5 remove debugging print
+ca7e09b rename eels_simulation to eels_spectrum_simulation
+788073d New signal, spectrum_simulation
+d414f41 Replace plot_lev by plot_explained_variance_ratio
+286608c Add explained_variance_ratio Improvements in saving/loading mva data
+1d3bfda Avoid cropping when is not needed
+67c3ba5 Remove obsolete ALS code
+5ff3798 Remove obsolete normalize_variance and centering
+3a7c506 Rename the output parameter of svd_pca and add scores
+6a39559 pca_v and mva_results.v renamed to scores pc renamed to factors pca_build_SI renamed to get_pca_model ica_build_SI renamed to get_ica_model
+23196f3 Removes unnecessary transpose when performing decomposition Removes mdp decomposition algorithms
+6bf41e1 Remove unnecessary copying when normalizing the poissonian noise
+463714a BUG-FIX: a typo was causing in error in pca when normalize_variance = True
+8413e6a Increased the chances that similar independent components will have the same indexes
+b859a1e variance2one renamed to normalize_variance
+6f3a2bc BUG-FIX: variance2one was operating in the wrong axis
+84c6a24 Clean the ummixing info after a new decomposition
+4d082e1 w renamed to unmixing matrix and fixes a bug when loading a mva_result in which output_dimension = None
+0ecfede plot_explained_variance renamed to plot_explained_variance_ratio
+4b9f8fc BUG-FIX: attempting to use any decomposition plotting method after loading with mva_results.load was raising an error
+48e673d in decomposition V rename to explained_variance
+a0a2255 Make pca_V = variance
+e5c1f55 Change the whitening algorithm to a svd based one and add sklearn fastica algorithm
+34bf0b5 Added whitening to the mdp ICA preprocessing
+da57f5a Make savitzky-golay smoothing work without raising figures
+6372885 Changed criteria to reverse the ICs
+876230e Added TV to the smoothing algorithms that ICA understands
+e8a3b74 BUG-FIXED: the decomposition centering index was wrong
+c3f6ad1 Changed nonans default to False for plotting
+5ee8f75 Return an error message when the decomposition algorithm is not recognised
+995becb Add the possibility to pass extra parameters to the ICA algorithm
+cf3e969 Make plot_decomposition* plot only the number of factors/scores determined by output_dimension
+3d8a4f8 Added sparse_pca and mini_batch_sparse_pca
+43d1e1f pca renamed to decomposition
+077d7d2 principal_components_analysis renamed to decomposition
+08ef60b Add option to perform ICA of the scores instead of the factors
+367ea6c Remove spikes was raising an error when the interpolated data was negative is add_noise was activated
+3812f3a Remove spikes now optionally adds poissonian noise to the interpolated area
+1b0bf71 Plotting the components in the same or separate windows is now configurable in the preferences
+e1683fa Plotting the spikes is now optional
+0c543f8 Enhance: Add the possibility to select the energy range in which to perform spike removal operations
+89195b2 ENHANCE: adds a method to get the PCs as a Spectrum object and adds smoothing to the ICA preprocessing
+f017e16 ENHANCE: the smoothings guis now offer differentiation and line color option. Smoothing now does not require a gui
+3484f45 Merge branch 'master' of github.com:hyperspy/hyperspy
+b7b351e New smoothing algorithm: total variance denoising
+606fe3b Merge branch 'master' of github.com:hyperspy/hyperspy
+687ed3c BUG-FIX: plot naming for peak char factor plots were messed up.
+0be251b BUG-FIX: Added missing keywords to plot_pca_factors and plot_ica_factors. BUG-FIX: renamed incorrectly named exportPca and exportIca functions
+
+BUGS fixed
+----------
+19375c7 BUG-FIX: the offset estimation was summing instead of averaging
+226e546 BUG-FIX: remove background was raising an error when the navigation dimension was 0
+c41298c BUG-FIX: plot_RGB was broken
+66ac522 BUG-FIX: saving the scores was sometimes transposing the shape
+a9cb5f3 BUG-FIX: a signal with containing nans was failing to plot
+528188b BUG-FIX: when the axis size was changed (e.g. after cropping) the set_signal_dimension method was not being called
+f91a4d6 BUG-FIX: non declared variable was raising an error
+e408c16 BUG-FIX: to_spectrum was transposing the navigation dimension
+63d09c6 BUG-FIX: plot_scores_2D was using the transpose of the shape to reshape the scores
+81c2767 BUG-FIX: the signal mask in decomposition and ica was not being raveled
+323a121 BUG-FIX: when using transform the data was being centered and the resulting scores were wrong
+ac60bc4 BUG-FIX: model data forced to be 3D unnecessarily
+11447df BUG-FIX: commit 5ff3798105d6 made decomposition and other methods raise an error
+b3417fd BUG-FIX: the plot_explained_variance_ratio was actually plotting the cumulative, renamed
+62972d6 BUG-FIX: a typo was raising an error when cropping the decomposition dimension
+
+
+************
+v0.2.13 beta
+************
+Enhancements
+------------
 
 * The egerton quantification gui now supports signal integratal mapping when the background is not defined
 * The keywords in the rpl file are now sorted
@@ -15,9 +100,9 @@ BUGS Fixed:
 * hyperspy was overwriting the ipython script
 * In win32 with no DM installed an error was raised when running hyperspy for the first time
 
-
+************
 v0.2.12 beta
-
+************
 Enhancements
 ------------
 * Writting support for the ripple format
@@ -30,8 +115,10 @@ Bugs fixed
 * Fixed a bug in the mrc reader plugin that was failing to load standard mrc files
 * Various bug/compatibility fixes in MSA plugin
 
-v0.2.11a 31/03/2011
 
+*******************
+v0.2.11a 31/03/2011
+*******************
 Enhancements
 ------------
 * Added option to plot ICs in the same plot
@@ -42,9 +129,9 @@ Bugs fixed
 * Hyperspy was not finding the DM path when a 32 bits DM was installed in a 64-bits Windows
 * The new dm3reader was suffering from some bugs, the default reader is back to the old code until the issues are fixed
 
-
+******************
 v0.2.10 23/03/2011
-
+******************
 Enhancements
 ------------
 * New image stack io plugin
@@ -56,9 +143,9 @@ BUGs fixed
 * The new dm3 reader is was failing to load some dm3 files 
 
 
-
+*****************
 v0.2.9 18/03/2011
-
+*****************
 Enhancements
 ------------
 * Totally new code to read dm3s
@@ -81,8 +168,9 @@ Enhancements
 * The TK and QT4 backends are now supported
 * Added key navigation
 
+*****************
 v0.2.8 13/03/2011
-
+*****************
 Enhancements
 ------------
 * The second cursor feature is again available
@@ -107,8 +195,9 @@ Known BUGS
 
 * The line spectrum navigator shows a 'ghost' second pointer after disabling it.
 
+******************
 v0.2.8b 18/12/2010
-
+******************
 Enhancements
 ------------
 *  The data exploration code was totally rewritten. Between the enhancements 
@@ -122,8 +211,9 @@ BUGs fixes
 ----------
 * m.fit was broken for grad = True and any fitter but leastsq and odr 
 
-
+******************
 v0.2.7, 01/12/2010
+******************
 Enhancements
 ------------
 * Improvements in the visual data exploring features:
@@ -142,18 +232,24 @@ Bugs fixed
 * The calculate_thickness method was broken
 * The creation of the configuration folder was broken
 
+******************
 v0.2.6, 19/11/2010
+******************
 * Added imported_parameters attribute to the Spectrum object for FEI's and DMs data format
 * FEI's reader now handles properly the SIs with reversed dimensions
 * Fixed the get_configuration_directory_path() that was not working
 
+******************
 v0.2.5, 18/11/2010
+******************
 * Several bugs fixed (many thanks to the reporters). Probably the most annoying one was the failure to write to the user namespace after upgrading ipython. Now the name of the subshells are again availabe in the interactive session
 * Several changes to the interface.
 * The documentation was updated to reflex the last changes
 * The microscopes.csv file was updated so it no longer contains the Orsay VG parameters.
 
+******************
 v0.2.4, 03/11/2010
+******************
 * Added Spectrum.save_principal_components method
 * The poissonian noise normalization uses a masks to avoid errors with rows or columns that are always zero
 * The dm3 reader was improved and should now read most of the data types.
@@ -161,4 +257,6 @@ v0.2.4, 03/11/2010
 * In windows it is now possible (as it always has been in linux) to start hyperspy by simply typing hyperspy in the command prompt
 * Several bugs fixed
 
+***************************************
 v0.2.3b, 31/10/2010 -- Initial release.
+***************************************
