@@ -693,8 +693,8 @@ class Model(list, Optimizers, Estimators):
         _plot.spectrum_plot.add_line(l2)
         l2.plot()
         self.connect_parameters2update_plot()
-#        on_figure_window_close(_plot.spectrum_plot.figure, 
-#                                      self.disconnect_parameters2update_plot)
+        on_figure_window_close(_plot.spectrum_plot.figure, 
+                                      self.disconnect_parameters2update_plot)
         self.set_auto_update_plot(True)
         self._plot = self.spectrum._plot
         # TODO Set autoupdate to False on close

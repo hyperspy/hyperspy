@@ -56,8 +56,9 @@ def on_figure_window_close(figure, function):
     window = figure.canvas.manager.window
     backend = plt.get_backend()
     if not hasattr(figure, '_on_window_close'):
-        figure._on_window_close = set()
-    figure._on_window_close.add(function)
+        figure._on_window_close = list()
+    if function not in figure._on_window_close:
+        figure._on_window_close.append(function)
     
     if backend == 'GTKAgg':
         def function_wrapper(*args):
