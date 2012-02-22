@@ -50,6 +50,8 @@ def get_axis_group(n , label = ''):
     return group
     
 class BoundedIndex(t.Int):
+    """
+    """
     def validate(self, object, name, value):
         value = super(BoundedIndex, self).validate(object, name, value)
         if abs(value) >= object.size:

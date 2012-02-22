@@ -264,14 +264,14 @@ class Signal(t.HasTraits, MVA):
         """Plot the residual between original data and reconstructed data
 
         Requires you to have already run PCA or ICA, and to reconstruct data
-        using either the get_decomposition_model or get_ica_model methods.
+        using either the get_decomposition_model or get_bss_model methods.
         """
 
         if hasattr(self, 'residual'):
             self.residual.plot(axes_manager)
         else:
             print "Object does not have any residual information.  Is it a \
-reconstruction created using either get_decomposition_model or get_ica_model methods?"
+reconstruction created using either get_decomposition_model or get_bss_model methods?"
 
     def save(self, filename, only_view = False, **kwds):
         """Saves the signal in the specified format.
@@ -1240,7 +1240,7 @@ reconstruction created using either get_decomposition_model or get_ica_model met
                                             comp_label=comp_label, 
                                             per_row=per_row)
 
-    def plot_ica_factors(self,comp_ids=None, calibrate=True,
+    def plot_bss_factors(self,comp_ids=None, calibrate=True,
                         same_window=None, comp_label='IC',
                         per_row=3):
         """Plot components from ICA
@@ -1273,7 +1273,7 @@ reconstruction created using either get_decomposition_model or get_ica_model met
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
-        factors=self.mva_results.ica_factors
+        factors=self.mva_results.bss_factors
         return self._plot_factors_or_pchars(factors, 
                                             comp_ids=comp_ids, 
                                             calibrate=calibrate,
@@ -1338,7 +1338,7 @@ reconstruction created using either get_decomposition_model or get_ica_model met
                                  same_window=same_window, comp_label=comp_label,
                                  cmap=cmap, no_nans=no_nans,per_row=per_row)
 
-    def plot_ica_scores(self, comp_ids=None, calibrate=True,
+    def plot_bss_scores(self, comp_ids=None, calibrate=True,
                        same_window=None, comp_label='IC', 
                        with_factors=False, cmap=plt.cm.gray, 
                        no_nans=False,per_row=3):
@@ -1382,9 +1382,9 @@ reconstruction created using either get_decomposition_model or get_ica_model met
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
-        scores=self.mva_results.ica_scores.T
+        scores=self.mva_results.bss_scores.T
         if with_factors:
-            factors=self.mva_results.ica_factors
+            factors=self.mva_results.bss_factors
         else: factors=None
         return self._plot_scores(scores, comp_ids=comp_ids, 
                                  with_factors=with_factors, factors=factors,
@@ -1487,7 +1487,7 @@ reconstruction created using either get_decomposition_model or get_ica_model met
                             no_nans=no_nans,
                             per_row=per_row)
 
-    def export_ica_results(self, comp_ids=None, calibrate=True,
+    def export_bss_results(self, comp_ids=None, calibrate=True,
                            multiple_files=None, save_figures = False,
                           factor_prefix='ic', factor_format=None,
                           score_prefix='IC_score', score_format=None, 
@@ -1562,8 +1562,8 @@ reconstruction created using either get_decomposition_model or get_ica_model met
         save_figures_format : str
             The image format extension.
         """
-        factors=self.mva_results.ica_factors
-        scores=self.mva_results.ica_scores.T
+        factors=self.mva_results.bss_factors
+        scores=self.mva_results.bss_scores.T
         self._export_factors(factors, comp_ids=comp_ids,
                              calibrate=calibrate, multiple_files=multiple_files,
                              factor_prefix=factor_prefix,

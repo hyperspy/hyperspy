@@ -21,7 +21,7 @@ If everythig goes well Hyperspy should welcome you with a message similar to:
     Version 0.3.0
     
     Copyright (C) 2007-2010 Francisco de la Peña
-    Copyright (C) 2010-2011 F. de la Peña, S. Mazzucco, M. Sarahan
+    Copyright (C) 2011-2012 The Hyperspy development team
     
     http://www.hyperspy.org
 
@@ -61,6 +61,8 @@ To load from a supported file format (see :ref:`supported-formats`) simply type:
 For more details read :ref:`loading_files`
 
 
+.. _saving:
+
 Saving Files
 ------------
 
@@ -89,35 +91,22 @@ There are optional flags that may be passed to the save function. See :ref:`savi
 .. _configuring-hyperspy-label:
 
 Configuring hyperspy
--------------------
+--------------------
 
-You can configure some parameters of hyperspy by editing the :file:`hyperspyrc` 
-file. The location of the configuration file depends on the system. 
-You can find its path by calling the ```get_configuration_directory_path``` 
-function in the hyperspy prompt:
+The behaviour of Hyperspy can be customised using the :py:class:`~.defaults_parser.Preferences` class. The easiest way to do it is by calling the :meth:`gui` method:
 
-.. code-block:: pythons
+.. code-block:: python
 
-    get_configuration_directory_path()
+    preferences.gui()
+    
+This command should raise the Preferences window:
 
+.. _preferences_image:
 
-Alternatively it is possible to change the same parameters at runtime by changing 
-the attributes of the defaults class. For example, to plot automatically the 
-data when loading it:
+.. figure::  images/preferences.png
+   :align:   center
 
-.. code-block:: bash
-
-    # First we load some data
-    s = load('YourDataFilenameHere')
-    # (in the defaults setting nothing is plotted, unless you can changed the 
-    # defaults in the hyperspyrc file)
-    #
-    # Now we will change the setting at runtime
-    defaults.plot_on_load = True
-    s = load('YourDataFilenameHere')
-    # The data should have been automatically plotted.
-
-
+   Preferences user interface
 
 .. _getting-help-label:
 
@@ -144,7 +133,7 @@ autocompletion of commands and filenames. It is highly recommended to read the
 Data visualisation
 ==================
 
-:py:class:`~.signal.Signal` has a ``plot`` method.
+:py:class:`~.signal.Signal` has a :py:meth:`~.signal.Signal.plot` method.
 
 .. code-block:: python
     
@@ -152,14 +141,62 @@ Data visualisation
     s.plot()
 
 if the object is single spectrum or an image one window will appear when calling 
-the plot method. If the object is a 2D or 3D SI two figures will appear, 
-one containing a plot of a spectrum of the dataset and the other a 2D 
-representation of the data. 
+the plot method.
 
-To explore a hyperspectrum drag the cursor present in the 2D data representation 
-(it can be a line for 1D data exploration or a square for 2D data exploration). 
+
+If the object is a 2D or 3D spectrum image two figures will appear, 
+one containing a plot of the spectrum at the current coordinates and the other
+an image of the spectrum image summed over its spectral dimension if 2D or an 
+image with the spectral dimension in the x-axis e.g. 
+
+.. _2d_SI:
+
+.. figure::  images/2D_SI.png
+   :align:   center
+   :width:   500
+
+   Visualisation of a 2D spectrum image
+   
+.. _1d_SI:
+
+.. figure::  images/1D_SI.png
+   :align:   center
+   :width:   500
+
+   Visualisation of a 1D spectrum image
+   
+Equivalently, if the object is a 1D or 2D image stack two figures will appear, 
+one containing a plot of the image at the current coordinates and the other
+a spectrum or an image obtained by summing over the image dimensions, e.g.:
+   
+.. _1D_image_stack.png:
+
+.. figure::  images/1D_image_stack.png
+   :align:   center
+   :width:   500    
+
+   Visualisation of a 1D image stack
+   
+.. _2D_image_stack.png:
+
+.. figure::  images/2D_image_stack.png
+   :align:   center
+   :width:   500
+   
+   Visualisation of a 2D image stack
+
+To change the current coordinates, click on the pointer (which will be a line or a square depending on the dimensions of the data) and drag it around. It is also possible to move the pointer by using the numpad arrows **when numlock is on and the spectrum or navigator figure is on focus**.When using the numpad arrows the PageUp and PageDown keys change the size of the step.
+
 An extra cursor can be added by pressing the ``e`` key. Pressing ``e`` once more will 
-disable the extra cursor.
+disable the extra cursor, e.g.
+
+.. _second_pointer.png:
+
+.. figure::  images/second_pointer.png
+   :align:   center
+   :width:   500
+
+   Visualisation of a 2D spectrum image using two pointers.
 
 When exploring a 2D hyperspectral object of high spatial resolution the default size of the rectangular cursors can be too small to be dragged or even seen. It is possible to change the size of the cursors by pressing the ``+`` and ``-`` keys  **when the navigator
 windows is on focus**.
@@ -184,7 +221,7 @@ PageDown    Decrease step size
 =========   =============================
 
 
-To close all the figures type:
+To close all the figures run the following command:
 
 .. code-block:: python
 

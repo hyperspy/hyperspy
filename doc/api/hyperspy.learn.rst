@@ -1,10 +1,10 @@
-mva Package
-===========
+learn Package
+=============
 
-:mod:`mva` Package
-------------------
+:mod:`learn` Package
+--------------------
 
-.. automodule:: hyperspy.mva
+.. automodule:: hyperspy.learn
     :members:
     :undoc-members:
     :show-inheritance:
@@ -12,7 +12,7 @@ mva Package
 :mod:`mlpca` Module
 -------------------
 
-.. automodule:: hyperspy.mva.mlpca
+.. automodule:: hyperspy.learn.mlpca
     :members:
     :undoc-members:
     :show-inheritance:
@@ -20,7 +20,7 @@ mva Package
 :mod:`mva` Module
 -----------------
 
-.. automodule:: hyperspy.mva.mva
+.. automodule:: hyperspy.learn.mva
     :members:
     :undoc-members:
     :show-inheritance:
@@ -28,7 +28,7 @@ mva Package
 :mod:`svd_pca` Module
 ---------------------
 
-.. automodule:: hyperspy.mva.svd_pca
+.. automodule:: hyperspy.learn.svd_pca
     :members:
     :undoc-members:
     :show-inheritance:

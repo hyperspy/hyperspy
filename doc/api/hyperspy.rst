@@ -33,6 +33,14 @@ hyperspy Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`decorators` Module
+------------------------
+
+.. automodule:: hyperspy.decorators
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`defaults_parser` Module
 -----------------------------
 
@@ -130,9 +138,9 @@ Subpackages
     hyperspy.drawing
     hyperspy.gui
     hyperspy.io_plugins
+    hyperspy.learn
     hyperspy.misc
     hyperspy.models
-    hyperspy.mva
     hyperspy.signals
     hyperspy.tests
 

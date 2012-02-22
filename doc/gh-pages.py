@@ -78,6 +78,7 @@ def init_repo(path):
 #-----------------------------------------------------------------------------
 if __name__ == '__main__':
     # The tag can be given as a positional argument
+    sh('./generate_api_doc.sh')
     try:
         tag = sys.argv[1]
     except IndexError:

@@ -1,5 +1,5 @@
-Project Modules
-===============
+hyperspy
+========
 
 .. toctree::
    :maxdepth: 4

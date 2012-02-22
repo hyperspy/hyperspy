@@ -49,6 +49,14 @@ misc Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`tv_denoise` Module
+------------------------
+
+.. automodule:: hyperspy.misc.tv_denoise
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`utils` Module
 -------------------
 
@@ -80,4 +88,11 @@ misc Package
     :members:
     :undoc-members:
     :show-inheritance:
+
+Subpackages
+-----------
+
+.. toctree::
+
+    hyperspy.misc.mpfit
 

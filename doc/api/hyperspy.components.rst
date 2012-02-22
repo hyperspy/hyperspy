@@ -145,6 +145,14 @@ components Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`polynomial` Module
+------------------------
+
+.. automodule:: hyperspy.components.polynomial
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`power_law` Module
 -----------------------
 

@@ -47,7 +47,7 @@ info = u"""
     Version %s
     
     Copyright (C) 2007-2010 Francisco de la Peña
-    Copyright (C) 2010-2011 F. de la Peña, S. Mazzucco, M. Sarahan
+    Copyright (C) 2011-2012 The Hyperspy development team
     
     http://www.hyperspy.org
     

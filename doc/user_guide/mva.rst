@@ -1,198 +1,234 @@
-Statistical analysis
-********************
+Machine learning
+****************
+.. warning::
 
-Introduction/Concepts 
-===================== 
+   In version 0.3.0beta3 the syntax for most of the machine-learning functions
+   have changed. It follows a summary of the changes:
+   
+   * `principal_components_analysis` was renamed to `decomposition`
+   * `independent_components_analysis` was renamed to `blind_source_separation`
+   * `pca_build_SI` was renamed to `get_decomposition_model`
+   * `ica_build_SI` was renamed to `get_bss_model`
+   * `plot_lev` was rename to `plot_explained_variance_ratio`
 
-The amount of data collected often greatly exceeds the true
-dimensionality of the system being measured.  For instance, a typical
-spectrum image has a number of dimensions equal to the number of
-channels in the spectrum at each beam position.  With present
-technology, that is on the order of 1000 dimensions.  For stacks of
-images of a repetitive structure, the number of dimensions is the
-number of pixels in each image, and can easily reach the order of
-10,000 or higher.  However, it is not each individual channel in a
-spectrum, nor each pixel in an image that is of interest.  Rather, it
-is a partcular range and shape of a spectrum that identifies the
-chemical constituents of the sample, or a set of pixels that
-represents a change in column population or position.  There are
-likely far fewer of these "dimensions," which are really the physical
-phenomena of interest.  Multivariate analysis provides a means of
-simplifying the representation of data as channels, transforrming the
-data into a representation of components.  Ideally, these components
-would match pure physical components, allowing direct identification
-of the species present in the sample.  In practice, the components
-obtained by the most common multivariate analysis method, principal
-component analysis (PCA), are not directly interpretable.  Other
-methods that derive components using different mathematical methods
-and with different criteria for separation can provide much more
-meaningful components, making interpretation easier.  The method
-demonstrated here, independent component anlaysis (ICA), derives
-components with minimally Gaussian statistics.  Both EEL spectra and
-structural variations captured in images are expected to be
-non-Gaussian, thus ICA is well suited to studying these systems.
-
-What can MSA be applied to?
-===========================
-
-MVA can be applied to any data in which dimensions are directly
-comparable within a data set.  These dimensions can be channels of an
-energy resolved spectrum, pixels across several images of a repeat
-structure, or pixels from several images in a time-resolved series.
-The interpretation of any MVA results of course depends on the data
-being fed into it, but the principles are quite similar - what is the
-simplest way to examine how the sample is varying over time or space?
-
-PCA workflow
+Introduction
 ============
 
-PCA is most commonly applied as a means of noise reduction and data
-simplification.  To perform PCA on your data set, run the following
-command:
+Hyperspy provides easy access to several machine learning algorithms which can
+be useful when analysing hyperspectral data. In particular, decomposition 
+algorithms such as principal component analysis (PCA) or blind source separation
+algorithms such as independent component analysis (ICA) are available through
+the methods described in this section.
+
+The behaviour of some Machine Learning functionality can be customised :ref:`customised <configuring-hyperspy-label>`in the Machine Learning section Preferences.
+
+
+   
+   
+.. _decomposition:
+
+Decomposition
+=============
+
+There are several methods to decompose a matrix or tensor into several factors.
+The decomposition is most commonly applied as a means of noise reduction and
+dimensionality reduction. One of the most popular decomposition methods is
+principal component analysis (PCA). To perform PCA on your data set,
+run the :py:meth:`~.learn.mva.MVA.decomposition` method:
+
+.. code-block:: python
+    # Note that the s variable must contain a Signal class of any of its
+    # subclasses which most likely has been previously loaded with the 
+    # load function, e.g. s = load('my_file.hdf5')
+    s.decomposition()
+
+
+The default algorithm is :py:const:`SVD`, which performs PCA using singular value decomposition. This method has many options. For more details read method documentation.
+
+
+.. _decomposition-nomenclature:
+
+Nomenclature
+------------
+Hyperspy performs the decomposition of a dataset into two datasets:
+one with the dimension of the signal space which we will call `factors` and the other with 
+the dimension of the navigation space which we will call `scores`.
+The same nomenclature applies to the result of BSS.
+
+
+Poissonian noise
+----------------
+
+Most decomposition algorithms assume that the noise of the data follows a
+Gaussian distribution. In the case that the data that you are analysing follow
+a Poissonian distribution instead Hyperspy can "normalise" the data by
+performing a scaling operation which can greatly enhance the result.
+
+To perform Poissonian noise normalisation:
 
 .. code-block:: python
 
-    s.principal_components_analysis()
+    # The long way:
+    s.decomposition(normalize_poissonian_noise = True)
+    
+    # Because it is the first argument we cold have simple written:
+    s.decomposition(True)
+    
+For more details about the scaling procedure you can read the 
+`following research article <http://onlinelibrary.wiley.com/doi/10.1002/sia.1657/abstract>`_
 
-There are several options for PCA, including data pre-treatment and
-the algorithm used to compute the analysis.  If you're curious, please
-review these options using the ? syntax of ipython:
 
-.. code-block:: python
+Principal component analysis
+----------------------------
 
-    s.principal_components_analysis?
+.. _scree-plot:
 
-The primary purpose of PCA is to estimate the dimensionality of your
-system.  To do this visually, you must examine the scree plot for you
-data, which is a plot of the eigenvalue vs eigenvalue index (in other
-words, the amount of variance that each component accounts for.)
-This plot drops quickly, eventually becoming a slowly descending
-line.  The point at which it becomes linear (often referred to as an
-elbow) is generally judged to be the dimensionality of your system.
+Scree plot
+^^^^^^^^^^
 
-To obtain a scree plot, run the following command:
+When using PCA it is often useful to estimate the dimensionality of the data
+by plotting the explained variance against the component index in a
+logarithmic y-scale. This plot is sometimes called scree-plot and it drops
+quickly, eventually becoming a slowly descending line. The point at which it
+becomes linear (often referred to as an elbow) is generally judged to be a good
+estimation of the dimensionality of the data.
 
-.. code-block:: python
-
-    s.plot_lev()
-
-Reconstructing data from a partial set of components
-=====================================================
-
-As we mentioned before, the primary purpose of PCA is often to filter
-noise.  To reconstruct your data using a limited set of components,
-omitting the later components that ideally contain only noise, do the
-following:
+To obtain a scree plot, run the :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` method e.g.:
 
 .. code-block:: python
 
-    s2=s.pca_build_SI(components)
+    s.plot_explained_variance_ratio()
+    
+Data denoising
+--------------
+
+One of the most popular uses of PCA is data denoising. The denoising property
+is achieved by using a limited set of components to make a model of the
+original, omitting the later components that ideally contain only noise.
+
+To perform this operation with Hyperspy running the :py:meth:`~.learn.mva.MVA.get_decomposition_model` method, usually after estimating the dimension of your data e.g. by using the :ref:`scree-plot` if your algorithm of choice is PCA. For example:
+
+.. code-block:: python
+
+    sc = s.get_decomposition_model(components)
 
 .. NOTE:: 
     The components argument can be one of several things (None, int,
     or list of ints):
 
-    * if None, rebuilds SI from all components
-    * if int, rebuilds SI from components in range 0-given int
-    * if list of ints, rebuilds SI from only components in given list
+    * if None, all the components are used to construct the model.
+    * if int, only the given number of components (starting from index 0) are used to construct the model.
+    * if list of ints, only the components in the given list are used to
+    construct the model.
 
-.. NOTE::
+.. HINT::
     Unlike most of the analysis functions, this function returns a new
     object.  The new object is something that you have to give a
-    handle to, so that you can perform analysis on that object later.
-    That is why we use the **s2=s.pca_build_SI()** syntax.
+    handle to, so that you can perform operations on that object later.
+    That is why we use the `sc = s.get_decomposition_model(components)`,
+    which simply assign the object returned by the :py:meth:`get_decomposition_model` 
+    method to the variable :py:const:`sc`. The name of the variable is totally arbitrary
+    and therefore you can choose it at your will. The returned object is
+    a clone of the original :py:const:`s` object, where the data has been replaced by the
+    model constructed using the chosen components.
 
-It is very important to examine the residuals between your original
-data and your reconstructed data before you go any further.  If you
-have any recognizable structure in either the image space or the
-spectral space, that means you did not include enough components in
-your reconstruction, and you have lost important experimental
-information.  To examine residuals, use the plot_residual method on
-the reconstructed object.
-
-.. code-block:: python
-
-    s2.plot_residual()
-
-
-ICA workflow
-============
-
-ICA is advantageous over PCA for its ability to return components that
-are often more physically meaningful.  The reasons behind this are
-that ICA relaxes the orthogonality requirement among components, and
-that ICA seeks non-Gaussian components.  These work out to better
-results because in reality, data are often correlated in observation
-space (non-orthogonal), and the distributions of real data are not
-Gaussian.
-
-To perform ICA on your data, run the following command:
+Sometimes it is useful to examine the residuals between your original
+data and the decomposition model. To examine residuals, use the :py:meth:`~.signal.Signal.plot_residual` method on
+the reconstructed object, e.g.:
 
 .. code-block:: python
 
-    s.independent_components_analysis(number_of_components)
+    sc.plot_residual()
+
+
+Blind Source Separation
+=======================
+
+In some cases (it largely depends on the particular application) it is possible
+to obtain physically meaninful components from the result of a data
+decomposition by Blind Source Separation (BSS).
+
+To perform BSS on the result of a decomposition, run the :py:meth:`~.learn.mva.MVA.blind_source_separation' method, e.g._
+
+.. code-block:: python
+
+    s.blind_source_separation(number_of_components)
 
 .. NOTE::
-    You must have run PCA before you attempt to run ICA.  ICA uses the
-    components from PCA, but analyzes them to come up with a different
-    set of components.
-
-.. NOTE::
-    If you reconstructed an SI from principal components, you need to
-    run PCA again before you can run ICA.
+    You must have performed a :ref:`decomposition` before you attempt to 
+    perform BSS.
 
 .. NOTE::
     You must pass an integer number of components to ICA.  The best
-    way to estimate this number is by looking at the Scree plot, as
-    described above in the PCA workflow.
+    way to estimate this number in the case of a PCA decomposition is by
+    inspecting the :ref:`scree-plot`.
 
+For more information about the blind source separation you can read the 
+`following introductory article  <http://www.sciencedirect.com/science/article/pii/S0893608000000265>`_
+or `this other article <http://www.sciencedirect.com/science/article/pii/S030439911000255X>`_
+from the authors of Hyperspy for an application to EELS analysis.
 
 Visualising results
 ===================
 
-Plot methods exist for both components and score maps.  Most of these
-methods begin with plot.  Most of these methods take at least one
-argument - the number of components or score maps to plot.
+Plot methods exist for the results of decomposition and blind source separation.
+All the methods begin with plot:
 
-To explore the plot methods available for an object (we'll use s for
-this example), type the following, and hit the tab key.
-
-.. code-block:: python
-
-    s.plot
-
-You can then start typing whichever plot method you want, then hit the
-tab key again.  It will auto-complete up to the point where there is
-more than one match.
-
-.. code-block:: python
-
-    s.plotP (hit tab)
-    s.plotPca_ (hit tab)
-    s.plotPca_factors(number_of_components)
-    s.plotPca_scores(number_of_components)
+* :py:meth:`~.signal.Signal.plot_decomposition_factors`
+* :py:meth:`~.signal.Signal.plot_decomposition_scores`
+* :py:meth:`~.signal.Signal.plot_bss_factors`
+* :py:meth:`~.signal.Signal.plot_bss_scores`
 
 
 Saving and loading results
 ==========================
+There are several methods to store  the result of a machine learning 
+analysis.
 
-You can save the entire object on which you've done MVA (this saves
-the data along with the MVA results).  For this, just use the base
-**save** method.  Alternatively, to save just the MVA results, you can use
-the specialized **exportPca_results** and
-**exportIca_results** methods.  This has the advantage of being
-easier to import into other data analysis programs, such as Digital
-Micrograph.
+Saving in the main file
+-------------------------
+When you save the object on which you've performed machine learning
+analysis in the :ref:`hdf5-format` format (the default in Hyperspy)
+(see :ref:`saving_files`) the result of the analysis is automatically saved in
+the file and it is loaded with the rest of the data when you load the file.
+
+This option is the simplest because everything is stored in the same file and
+it does not require any extra command to recover the result of machine learning
+analysis when loading a file. However, it only supports storing one
+decomposition and one BSS result, what may not be enough for your purposes.
+
+Saving to an external files
+---------------------------
+Alternatively, to save the results of the current machine learning analysis 
+to a file you can use the :py:meth:`~.learn.mva.MVA_Results.save` method, e.g.:
 
 .. code-block:: python
+    
+    # To save the result of the analysis
+    s.mva_results.save('my_results')
+    
+    # To load back the results
+    s.mva_results.load('my_results.npz')
+    
+    
+Exporting
+---------
 
-    # save the entire object
-    s.save(filename)
-    # save the principal components and scores to files themselves
-    s.exportPca_results()
-    # save the independent components to the rpl format, which is
-    #   easily importable into Digital Micrograph
-    s.exportIca_results(factor_format='rpl', score_format='rpl')
+It is possible to export the results of machine learning to any format supported
+by Hyperspy using:
+
+* :py:meth:`~.signal.Signal.export_decomposition_results` or
+* :py:meth:`~.signal.Signal.export_bss_results`.
+
+These methods accept many arguments to customise the way the data is exported,
+so please consult the method documentation. The options include the choice of
+file format, the prefixes for scores and factors, saving figures instead of 
+data and more.
+
+Please, note that the exported data cannot be easily be loaded into Hyperspy's
+machine learning structure.
+
+
 
 
 

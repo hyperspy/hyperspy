@@ -9,6 +9,14 @@ gui Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`eels` Module
+------------------
+
+.. automodule:: hyperspy.gui.eels
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`egerton_quantification` Module
 ------------------------------------
 

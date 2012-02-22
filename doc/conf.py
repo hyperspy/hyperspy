@@ -28,9 +28,13 @@ sys.path.append(os.path.abspath('sphinxext'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'gen_rst', 'numpydoc',
-'matplotlib.sphinxext.only_directives', 'sphinx.ext.intersphinx', 
-'sphinx.ext.autosummary'] #, 'rst2pdf.pdfbuilder']
+extensions = [
+                'sphinx.ext.autodoc',
+                'gen_rst',
+                'numpydoc',
+                'matplotlib.sphinxext.only_directives',
+                'sphinx.ext.intersphinx',
+                'sphinx.ext.autosummary'] #, 'rst2pdf.pdfbuilder']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -46,7 +50,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Hyperspy'
-copyright = u'2011, The hyperspy development team'
+copyright = u'2012, The Hyperspy development team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -222,4 +226,5 @@ man_pages = [
 
 # Add the hyperspy website to the intersphinx domains
 intersphinx_mapping = {'hyperspyweb': ('http://hyperspy.org/', None)}
+
 

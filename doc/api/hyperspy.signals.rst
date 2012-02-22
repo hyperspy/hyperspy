@@ -25,10 +25,10 @@ signals Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`eels_simulation` Module
------------------------------
+:mod:`eels_spectrum_simulation` Module
+--------------------------------------
 
-.. automodule:: hyperspy.signals.eels_simulation
+.. automodule:: hyperspy.signals.eels_spectrum_simulation
     :members:
     :undoc-members:
     :show-inheritance:
@@ -53,6 +53,14 @@ signals Package
 ----------------------
 
 .. automodule:: hyperspy.signals.spectrum
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`spectrum_simulation` Module
+---------------------------------
+
+.. automodule:: hyperspy.signals.spectrum_simulation
     :members:
     :undoc-members:
     :show-inheritance:

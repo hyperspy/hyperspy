@@ -33,6 +33,14 @@ drawing Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`signal` Module
+--------------------
+
+.. automodule:: hyperspy.drawing.signal
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`spectrum` Module
 ----------------------
 

@@ -328,7 +328,7 @@ class Image(Signal):
                                 plot_shifts=plot_shifts, plot_char=plot_char, 
                                 cmap=cmap, per_row=per_row)
 
-    def plot_ica_factors(self,comp_ids=None, calibrate=True,
+    def plot_bss_factors(self,comp_ids=None, calibrate=True,
                         same_window=True, comp_label='IC', 
                         on_peaks=False, img_data=None,
                         plot_shifts=True, plot_char=None, 
@@ -389,7 +389,7 @@ class Image(Signal):
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
         """
-        factors=self._get_target(on_peaks).ica_factors
+        factors=self._get_target(on_peaks).bss_factors
         return self._plot_factors_or_pchars(factors, comp_ids=comp_ids, 
                                 same_window=same_window, comp_label=comp_label, 
                                 on_peaks=on_peaks, img_data=img_data,
@@ -454,7 +454,7 @@ class Image(Signal):
                                  on_peaks=on_peaks, cmap=cmap,
                                  no_nans=no_nans,per_row=per_row)
 
-    def plot_ica_scores(self, comp_ids=None, calibrate=True,
+    def plot_bss_scores(self, comp_ids=None, calibrate=True,
                        same_window=True, comp_label='IC', 
                        with_factors=False,
                        on_peaks=False, cmap=plt.cm.jet, 
@@ -502,9 +502,9 @@ class Image(Signal):
             the number of plots in each row, when the same_window
             parameter is True.
         """
-        scores=self._get_target(on_peaks).ica_scores.T
+        scores=self._get_target(on_peaks).bss_scores.T
         if with_factors:
-            factors=self.get_target(on_peaks).ica_factors
+            factors=self.get_target(on_peaks).bss_factors
         else: factors=None
         return self._plot_scores_or_peak_char(scores, comp_ids=comp_ids,
                                  with_factors=with_factors, factors=factors,
@@ -639,7 +639,7 @@ class Image(Signal):
                             no_nans=no_nans,
                             per_row=per_row)
 
-    def export_ica_results(self, comp_ids=None, 
+    def export_bss_results(self, comp_ids=None, 
                           factor_prefix='ic', factor_format='rpl',
                           score_prefix='IC_score', score_format='rpl', 
                           on_peaks=False,
@@ -738,8 +738,8 @@ class Image(Signal):
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
         """
-        factors=self._get_target(on_peaks).ica_factors
-        scores=self._get_target(on_peaks).ica_scores.T
+        factors=self._get_target(on_peaks).bss_factors
+        scores=self._get_target(on_peaks).bss_scores.T
         self._export_factors(factors, comp_ids=comp_ids,
                              calibrate=calibrate,
                              plot_shifts=plot_shifts,
@@ -1058,7 +1058,7 @@ Nothing to plot.  Try again.""")
                                  quiver_color=quiver_color,
                                  vector_scale=vector_scale)
 
-    def plot_ica_peak_factors(self, comp_ids=None, calibrate=True,
+    def plot_bss_peak_factors(self, comp_ids=None, calibrate=True,
                         same_window=True, comp_label='IC', 
                         img_data=None,
                         plot_shifts=True, plot_char=None, 
@@ -1113,7 +1113,7 @@ Nothing to plot.  Try again.""")
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
         """
-        factors=self.peak_mva_results.ica_factors
+        factors=self.peak_mva_results.bss_factors
         return self._plot_factors_or_pchars(factors=factors, comp_ids=comp_ids,
                                      calibrate=calibrate, comp_label=comp_label,
                                      img_data=img_data,
@@ -1189,7 +1189,7 @@ Nothing to plot.  Try again.""")
                                      vector_scale=vector_scale,
                                      per_row=per_row)
 
-    def plot_ica_peak_factors(self, comp_ids=None, calibrate=True,
+    def plot_bss_peak_factors(self, comp_ids=None, calibrate=True,
                         same_window=True, comp_label='IC', 
                         img_data=None,
                         plot_shifts=True, plot_char=None, 
@@ -1245,7 +1245,7 @@ Nothing to plot.  Try again.""")
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
         """
-        factors=self.peak_mva_results.ica_factors
+        factors=self.peak_mva_results.bss_factors
         return self._plot_factors_or_pchars(factors=factors, comp_ids=comp_ids,
                                      calibrate=calibrate, comp_label=comp_label,
                                      img_data=img_data,

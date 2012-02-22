@@ -305,7 +305,7 @@ class MVA():
         # Delete the unmixing information, because it'll refer to a previous
         # decompositions
         target.unmixing_matrix = None
-        target.ica_algorithm = None
+        target.bss_algorithm = None
 
         if self._unfolded4decomposition is True:
             target.original_shape = self._shape_before_unfolding
@@ -364,18 +364,18 @@ class MVA():
         from hyperspy.signals.spectrum import Spectrum
         return Spectrum({'data' : self.mva_results.factors.T})
     
-    def independent_components_analysis(
+    def blind_source_separation(
         self, number_of_components=None, algorithm='CuBICA', diff_order=1,
-        factors=None, comp_list = None, mask = None, on_peaks=False, on_scores=False,
-        pretreatment = None, **kwargs):
-        """Independent components analysis.
+        factors=None, comp_list=None, mask=None, on_peaks=False,
+        on_scores=False,pretreatment = None, **kwargs):
+        """Blind source separation (BSS) on the result on the decomposition.
 
         Available algorithms: FastICA, JADE, CuBICA, and TDSEP
 
         Parameters
         ----------
         number_of_components : int
-            number of principal components to pass to the ICA algorithm
+            number of principal components to pass to the BSS algorithm
         algorithm : {FastICA, JADE, CuBICA, TDSEP}
         diff_order : int
         factors : numpy array
@@ -446,52 +446,51 @@ class MVA():
                 unmixing_matrix = unmixing_matrix.T
             
             elif algorithm == 'sklearn_fastica':
-                target.ica_node = sklearn.decomposition.FastICA(**kwargs)
-                target.ica_node.whiten = False
-                target.ica_node.fit(factors)
-                unmixing_matrix = target.ica_node.unmixing_matrix_
+                target.bss_node = sklearn.decomposition.FastICA(**kwargs)
+                target.bss_node.whiten = False
+                target.bss_node.fit(factors)
+                unmixing_matrix = target.bss_node.unmixing_matrix_
             
             else:
-                to_exec = 'target.ica_node=mdp.nodes.%sNode(' % algorithm
+                to_exec = 'target.bss_node=mdp.nodes.%sNode(' % algorithm
                 for key, value in kwargs.iteritems():
                     to_exec += '%s=%s,' % (key, value)
                 to_exec += ')'
                 exec(to_exec)
-                target.ica_node.train(factors)
-                unmixing_matrix = target.ica_node.get_recmatrix()
+                target.bss_node.train(factors)
+                unmixing_matrix = target.bss_node.get_recmatrix()
 
             target.unmixing_matrix = np.dot(unmixing_matrix, invsqcovmat)
             self._unmix_factors(target)
             self._unmix_scores(target)
-            self._auto_reverse_ic(target)
-            target.ica_algorithm = algorithm
+            self._auto_reverse_bss_component(target)
+            target.bss_algorithm = algorithm
 
-    def reverse_ic(self, ic_n, on_peaks = False):
+    def reverse_bss_component(self, component_number, on_peaks = False):
         """Reverse the independent component
 
         Parameters
         ----------
-        ic_n : list or int
+        component_number : list or int
             component index/es
 
         Examples
         -------
         >>> s = load('some_file')
         >>> s.decomposition(True) # perform PCA
-        >>> s.independent_components_analysis(3)  # perform ICA on 3 PCs
-        >>> s.reverse_ic(1) # reverse IC 1
-        >>> s.reverse_ic((0, 2)) # reverse ICs 0 and 2
+        >>> s.blind_source_separation(3)  # perform ICA on 3 PCs
+        >>> s.reverse_bss_component(1) # reverse IC 1
+        >>> s.reverse_bss_component((0, 2)) # reverse ICs 0 and 2
         """
         if on_peaks:
             target=self.peak_mva_results
         else:
             target=self.mva_results
 
-        for i in [ic_n,]:
-            target.ica_factors[:,i] *= -1
-            target.ica_scores[:,i] *= -1
+        for i in [component_number,]:
+            target.bss_factors[:,i] *= -1
+            target.bss_scores[:,i] *= -1
             target.unmixing_matrix[i,:] *= -1
-            
 
     def _unmix_factors(self,target):
         w = target.unmixing_matrix
@@ -503,24 +502,24 @@ class MVA():
             sorting_indexes = np.argsort(np.dot(target.explained_variance[:n],
                 np.abs(w.T)))[::-1]
             w[:] = w[sorting_indexes,:]
-        target.ica_factors = np.dot(target.factors[:,:n], w.T)
+        target.bss_factors = np.dot(target.factors[:,:n], w.T)
     
-    def _auto_reverse_ic(self, target):
-        n_components = target.ica_factors.shape[1]
+    def _auto_reverse_bss_component(self, target):
+        n_components = target.bss_factors.shape[1]
         for i in xrange(n_components):
-            minimum = np.nanmin(target.ica_scores[:,i])
-            maximum = np.nanmax(target.ica_scores[:,i])
+            minimum = np.nanmin(target.bss_scores[:,i])
+            maximum = np.nanmax(target.bss_scores[:,i])
             if minimum < 0 and -minimum > maximum:
-                self.reverse_ic(i)
+                self.reverse_bss_component(i)
                 print("IC %i reversed" % i)
 
     def _unmix_scores(self,target):
         """
         Returns the ICA score matrix (formerly known as the recmatrix)
         """
-        W = target.scores.T[:target.ica_factors.shape[1],:]
+        W = target.scores.T[:target.bss_factors.shape[1],:]
         Q = np.linalg.inv(target.unmixing_matrix.T)
-        target.ica_scores = np.dot(Q,W).T
+        target.bss_scores = np.dot(Q,W).T
 
     @do_not_replot
     def _calculate_recmatrix(self, components = None, mva_type=None,
@@ -535,7 +534,7 @@ class MVA():
              if None, rebuilds SI from all components
              if int, rebuilds SI from components in range 0-given int
              if list of ints, rebuilds SI from only components in given list
-        mva_type : string, currently either 'decomposition' or 'ica'
+        mva_type : string, currently either 'decomposition' or 'bss'
              (not case sensitive)
 
         Returns
@@ -548,9 +547,9 @@ class MVA():
         if mva_type.lower() == 'decomposition':
             factors = target.factors
             scores = target.scores.T
-        elif mva_type.lower() == 'ica':
-            factors = target.ica_factors
-            scores = self._get_ica_scores(target)
+        elif mva_type.lower() == 'bss':
+            factors = target.bss_factors
+            scores = target.bss_scores.T
         if components is None:
             a = np.dot(factors,scores)
             signal_name = 'model from %s with %i components' % (
@@ -610,7 +609,7 @@ class MVA():
         rec.residual.data=self.data-rec.data
         return rec
 
-    def get_ica_model(self,components = None, on_peaks=False):
+    def get_bss_model(self,components = None, on_peaks=False):
         """Return the spectrum generated with the selected number of
         independent components
 
@@ -625,7 +624,7 @@ class MVA():
         -------
         Signal instance
         """
-        rec=self._calculate_recmatrix(components=components, mva_type='ica',
+        rec=self._calculate_recmatrix(components=components, mva_type='bss',
                                       on_peaks=on_peaks)
         rec.residual=rec.copy()
         rec.residual.data=self.data-rec.data
@@ -800,7 +799,7 @@ class MVA():
                center = center, normalize_variance = normalize_variance, 
                var_array = var_array, var_func = var_func, polyfit = polyfit)
 
-    def peak_ica(self, number_of_components, algorithm = 'CuBICA',
+    def peak_bss(self, number_of_components, algorithm = 'CuBICA',
                  diff_order = 1, factors=None, comp_list=None, mask=None,
                  on_peaks=False, **kwds):
         """Independent components analysis on peak characteristic data.
@@ -826,7 +825,7 @@ class MVA():
             If not None, only the selected channels will be used by the
             algorithm.
         """
-        self.independent_components_analysis(number_of_components=
+        self.blind_source_separation(number_of_components=
                                              number_of_components, 
                                              on_peaks=True,algorithm=algorithm, 
                                              diff_order=diff_order,
@@ -845,10 +844,10 @@ class MVA_Results(object):
     mean = None
     centre = None
     # Unmixing
-    ica_algorithm = None
+    bss_algorithm = None
     unmixing_matrix = None
-    ica_factors = None
-    ica_scores = None
+    bss_factors = None
+    bss_scores = None
     # Shape
     unfolded = None
     original_shape = None
@@ -908,6 +907,10 @@ class MVA_Results(object):
             self.decomposition_algorithm = self.pca_algorithm
             del self.pca_algorithm
             
+        if hasattr(self, 'ica_algorithm'):
+            self.bss_algorithm = self.ica_algorithm
+            del self.ica_algorithm
+            
         if hasattr(self, 'v'):
             self.scores = self.v
             del self.v
@@ -915,6 +918,14 @@ class MVA_Results(object):
         if hasattr(self, 'pc'):
             self.scores = self.pc
             del self.pc
+            
+        if hasattr(self, 'ica_scores'):
+            self.bss_scores = self.ica_scores
+            del self.self.ica_scores
+            
+        if hasattr(self, 'ica_factors'):
+            self.bss_factors = self.ica_factors
+            del self.self.ica_factors
 
         #######################################################
         
@@ -937,11 +948,11 @@ class MVA_Results(object):
         print "Output dimension : %s" % self.output_dimension
         print "Centre : %s" % self.centre
         
-        if self.ica_algorithm is not None:
+        if self.bss_algorithm is not None:
             print
             print "Demixing parameters:"
             print "---------------------"
-            print "ICA algorithm : %s" % self.ica_algorithm
+            print "BSS algorithm : %s" % self.bss_algorithm
             print "Number of components : %i" % len(self.unmixing_matrix)
 
 
@@ -958,6 +969,6 @@ class MVA_Results(object):
         self.factors = self.factors[:,:n]
         
     def _transpose_results(self):
-        self.factors, self.scores, self.ica_factors, self.ica_scores = \
-        self.scores, self.factors, self.ica_scores, self.ica_factors
+        self.factors, self.scores, self.bss_factors, self.bss_scores = \
+        self.scores, self.factors, self.bss_scores, self.bss_factors
         

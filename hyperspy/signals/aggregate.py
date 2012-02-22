@@ -316,7 +316,7 @@ to add?'%arg.mapped_parameters.title)
                                      var_func, polyfit)
         self._split_mva_results()
 
-    def independent_components_analysis(self, number_of_components = None, 
+    def blind_source_separation(self, number_of_components = None, 
                                        algorithm = 'CuBICA', diff_order = 1, pc = None, 
                                        comp_list = None, mask = None, **kwds):
         """Independent components analysis.
@@ -339,7 +339,7 @@ to add?'%arg.mapped_parameters.title)
             If not None, only the selected channels will be used by the 
             algorithm.
         """
-        super(AggregateSpectrum,self).independent_components_analysis(number_of_components, 
+        super(AggregateSpectrum,self).blind_source_separation(number_of_components, 
                                        algorithm, diff_order, pc, 
                                        comp_list, mask, **kwds)
         self._split_mva_results()
@@ -369,7 +369,7 @@ to add?'%arg.mapped_parameters.title)
             # sense on this object, now separate from the whole.)
             mvar.V  = smvar.V
             mvar.pca_algorithm = smvar.pca_algorithm
-            mvar.ica_algorithm = smvar.ica_algorithm
+            mvar.bss_algorithm = smvar.bss_algorithm
             mvar.centered = smvar.centered
             mvar.poissonian_noise_normalized = smvar.poissonian_noise_normalized
             # number of independent components derived
