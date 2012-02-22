@@ -8,7 +8,7 @@ Welcome to Hyperspy's documentation!
 
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     user_guide/index.rst
     credits.rst
