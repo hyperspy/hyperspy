@@ -47,6 +47,22 @@ def start_gui():
         gui.main_window.MainWindow().configure_traits()
         
 def create_model(signal, *args, **kwargs):
+    """Create a model object
+    
+    Any extra argument is passes to the Model constructor.
+    
+    Parameters
+    ----------
+    
+    signal: A signal class
+    
+    Returns
+    -------
+    
+    A Model class
+    
+    """
+    
     from hyperspy.signals.eels import EELSSpectrum
     from hyperspy.models.eelsmodel import EELSModel
     from hyperspy.model import Model
