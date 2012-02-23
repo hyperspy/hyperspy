@@ -22,7 +22,19 @@ from hyperspy.component import Component
 
 
 class Exponential(Component):
-    """
+    """Exponentian function components
+    
+    f(x) = A*e^{-x/k}
+    
+    +------------+-----------+
+    | Parameter  | Attribute |
+    +------------+-----------+
+    +------------+-----------+
+    |     A      |     A     |
+    +------------+-----------+
+    |     k      |    tau    |
+    +------------+-----------+
+
     """
 
     def __init__(self):

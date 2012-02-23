@@ -23,7 +23,25 @@ import numpy as np
 from hyperspy.component import Component
 
 class PowerLaw(Component):
-    """
+    """Power law component
+    
+    f(x) = A*(x-x0)^-r
+    
+    +------------+-----------+
+    | Parameter  | Attribute |
+    +------------+-----------+
+    +------------+-----------+
+    |     A      |     A     |
+    +------------+-----------+
+    |     r      |     r     |
+    +------------+-----------+
+    |    x0      |  origin   |
+    +------------+-----------+
+
+    The left_cutoff parameter can be used to set a lower threshold from which
+    the component will return 0. 
+    
+    
     """
 
     def __init__(self, A=10e5, r=3.,origin = 0.):
@@ -33,7 +51,7 @@ class PowerLaw(Component):
         self.r.value = r
         self.origin.value = origin
         self.origin.free = False
-        self.left_cutoff = 20.
+        self.left_cutoff = 0.
 
         # Boundaries
         self.A.bmin = 0.

@@ -22,9 +22,17 @@ import numpy as np
 from hyperspy.component import Component
 
 class Offset(Component):
-    """
-    Given an array of the same shape as Spectrum energy_axis, returns it as
-    a component that can be added to a model.
+    """Component to add a constant value in the y-axis
+    
+    f(x) = k + x
+    
+    +------------+-----------+
+    | Parameter  | Attribute |
+    +------------+-----------+
+    +------------+-----------+
+    |     k      |  offset   |
+    +------------+-----------+
+
     """
 
     def __init__( self, offset = 0. ):

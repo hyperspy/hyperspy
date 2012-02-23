@@ -135,11 +135,15 @@ def EffectiveAngle(E0,E,alpha,beta):
     return BSTAR*10**-3 # In rad
 
 class EELSCLEdge(Component):
-    """ This class builds a single cross section edge.
-    Currently it only supports cross sections from Gatan Digital Micrograph(c)
-    P. Rez calculations, although hydrogenic cross sections will be available.
-    To model the fine structure with a small number of parameters a spline
-    is used to fit to the experimental data. 
+    """EELS core loss ionisation edge.
+    
+    This component reads the cross section from a folder specified in the 
+    GOS_directory parameter of the Preferences. It supports fitting a spline
+    to the fine structure area of the ionisation edge.
+    
+    Currently it only supports P. Rez Hartree Slater cross sections parametrised
+    as distributed by Gatan in their Digital Micrograph software.
+    
     """
 
     def __init__(self, element_subshell, intensity=1.,delta=0.):
