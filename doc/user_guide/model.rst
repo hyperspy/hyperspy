@@ -27,7 +27,7 @@ In Hyperspy a model consists of a linear combination of :py:mod:`~.components`. 
 * :py:class:`~.components.offset.Offset`
 * :py:class:`~.components.exponential.Exponential`
 * :py:class:`~.components.fixed_pattern.FixedPattern`
-* :py:class:`~.components.resizeble_fixed_pattern.ResizebleFixedPattern`
+* :py:class:`~.components.scalable_fixed_pattern.ScalableFixedPattern`
 * :py:class:`~.components.gaussian.Gaussian`
 * :py:class:`~.components.lorentzian.Lorentzian`
 * :py:class:`~.components.voigt.Voigt`
@@ -93,6 +93,10 @@ To fit the model to the data at the current coordinates use :py:meth:`~.optimize
     
 Getting and setting the component parameters
 --------------------------------------------
+
+
+Exclude data from the fitting process
+-------------------------------------
 
 
 

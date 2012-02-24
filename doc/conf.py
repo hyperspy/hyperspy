@@ -34,6 +34,7 @@ extensions = [
                 'numpydoc',
                 'matplotlib.sphinxext.only_directives',
                 'sphinx.ext.intersphinx',
+                'sphinx.ext.pngmath',
                 'sphinx.ext.autosummary'] #, 'rst2pdf.pdfbuilder']
 
 # Add any paths that contain templates here, relative to this directory.

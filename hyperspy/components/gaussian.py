@@ -16,14 +16,33 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import math
+
 import numpy as np
 
 from hyperspy.component import Component
 
-sqrt2pi = np.sqrt(2*np.pi)
+sqrt2pi = math.sqrt(2*math.pi)
 
 class Gaussian(Component):
-    """A Gaussian component defined by its area, center and sigma
+    """Normalized gaussian function component
+    
+    .. math::
+
+        f(x) = \\frac{a}{\sqrt{2\pi c^{2}}}e^{-\\frac{\left(x-b\\right)^{2}}{2c^{2}}}
+        
+    +------------+-----------+
+    | Parameter  | Attribute |
+    +------------+-----------+
+    +------------+-----------+
+    |     a      |     A     |
+    +------------+-----------+
+    |     b      |  centre   |
+    +------------+-----------+
+    |     c      |   sigma   |
+    +------------+-----------+
+                  
+    
     """
 
     def __init__(self, A=1., sigma=1.,centre = 0.):
@@ -57,8 +76,11 @@ class Gaussian(Component):
         you want to evaluate the background model, returns the background
         model for the current parameters.
         """
-        return self.A.value * (1 / (self.sigma.value * sqrt2pi)) * np.exp(
-        -(x-self.centre.value)**2 / (2 * self.sigma.value**2))
+        A = self.A.value
+        sigma = self.sigma.value
+        centre = self.centre.value
+        return A * (1 / (sigma * sqrt2pi)) * np.exp(
+                                            -(x - centre)**2 / (2 * sigma**2))
     
     def grad_A(self, x):
         """

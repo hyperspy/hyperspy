@@ -177,6 +177,14 @@ components Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`scalable_fixed_pattern` Module
+------------------------------------
+
+.. automodule:: hyperspy.components.scalable_fixed_pattern
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`spline` Module
 --------------------
 

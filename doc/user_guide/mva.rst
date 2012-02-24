@@ -20,7 +20,7 @@ algorithms such as principal component analysis (PCA) or blind source separation
 algorithms such as independent component analysis (ICA) are available through
 the methods described in this section.
 
-The behaviour of some Machine Learning functionality can be customised :ref:`customised <configuring-hyperspy-label>`in the Machine Learning section Preferences.
+The behaviour of some Machine Learning functionality can be customised :ref:`customised <configuring-hyperspy-label>` in the Machine Learning section Preferences.
 
 
    
