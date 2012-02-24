@@ -50,9 +50,12 @@ class Parameter(object):
         self.name = ''
         self.units = ''
         self.std = None
-        
+        self._axes = None
 
     # Define the bounding and coupling propertires
+    
+    def __repr__(self):
+        return self.name
     
     def connect(self, f):
         if f not in self.connected_functions:
