@@ -26,13 +26,10 @@ In Hyperspy a model consists of a linear combination of :py:mod:`~.components`. 
 * :py:class:`~.components.power_law.PowerLaw`
 * :py:class:`~.components.offset.Offset`
 * :py:class:`~.components.exponential.Exponential`
-* :py:class:`~.components.fixed_pattern.FixedPattern`
 * :py:class:`~.components.scalable_fixed_pattern.ScalableFixedPattern`
 * :py:class:`~.components.gaussian.Gaussian`
 * :py:class:`~.components.lorentzian.Lorentzian`
 * :py:class:`~.components.voigt.Voigt`
-* :py:class:`~.components.line.Line`
-* :py:class:`~.components.parabole.Parabole`
 * :py:class:`~.components.polynomial.Polynomial`
 * :py:class:`~.components.logistic.Logistic`
 * :py:class:`~.components.bleasdale.Bleasdale`

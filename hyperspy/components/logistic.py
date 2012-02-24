@@ -22,7 +22,17 @@ import numpy as np
 from hyperspy.component import Component
 
 class Logistic(Component):
-    """
+    """Logistic function component
+    
+    f(x) = a/(1+b*exp(-c*(x-origin)))
+    
+    Attributes
+    ----------
+    a : Float
+    b : Float
+    c : Float
+    origin : Float
+    
     """
 
     def __init__(self):
@@ -37,7 +47,6 @@ class Logistic(Component):
 
     def function(self, x):
         """
-        This functions it too complicated to explain
         """
         a = self.a.value
         b = self.b.value

@@ -71,11 +71,6 @@ class Gaussian(Component):
         a0 = self.A.value
         a1 = self.centre.value
         a2 = self.sigma.value
-        """
-        Given an one dimensional array x containing the energies at which
-        you want to evaluate the background model, returns the background
-        model for the current parameters.
-        """
         A = self.A.value
         sigma = self.sigma.value
         centre = self.centre.value
@@ -83,33 +78,15 @@ class Gaussian(Component):
                                             -(x - centre)**2 / (2 * sigma**2))
     
     def grad_A(self, x):
-        """
-        Given an one dimensional array x containing the energies at which
-        you want to evaluate the gradient of the background model,
-        returns the gradient of parameter A for the current value of the
-        parameters.
-        """
         return self.function(x) / self.A.value
     
     def grad_sigma(self,x):
-        """
-        Given an one dimensional array x containing the energies at which
-        you want to evaluate the gradient of the background model,
-        returns the gradient of parameter sigma for the current value of
-        the parameters.
-        """
         return ((x - self.centre.value)**2 * np.exp(-(x - self.centre.value)**2 
         /(2 * self.sigma.value**2)) * self.A.value) / (sqrt2pi * 
         self.sigma.value**4)-(np.exp(-(x - self.centre.value)**2 / (2 * 
         self.sigma.value**2)) * self.A.value) / (sqrt2pi * self.sigma.value**2)
     
     def grad_centre(self,x):
-        """
-        Given an one dimensional array x containing the energies at which
-        you want to evaluate the gradient of the background model,
-        returns the gradient of parameter centre for the current value of
-        the parameters.
-        """
         return ((x - self.centre.value) * np.exp(-(x - self.centre.value)**2/(2 
         * self.sigma.value**2)) * self.A.value) / (sqrt2pi * 
         self.sigma.value**3)

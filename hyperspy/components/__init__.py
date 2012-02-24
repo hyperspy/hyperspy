@@ -31,20 +31,17 @@ from hyperspy.components.eels_double_power_law import DoublePowerLaw
 from hyperspy.components.eels_cl_edge import EELSCLEdge
 from hyperspy.components.error_function import Erf
 from hyperspy.components.exponential import Exponential
-from hyperspy.components.fixed_pattern import FixedPattern
 from hyperspy.components.gaussian import Gaussian
-from hyperspy.components.line import Line
 from hyperspy.components.logistic import Logistic
 from hyperspy.components.lorentzian import Lorentzian
 from hyperspy.components.offset import Offset
-from hyperspy.components.parabole import Parabole
 from hyperspy.components.power_law import PowerLaw
 from hyperspy.components.pes_see import SEE
 from hyperspy.components.rc import RC
 from hyperspy.components.spline import Spline
 from hyperspy.components.eels_vignetting import Vignetting
 from hyperspy.components.voigt import Voigt
-from hyperspy.components.resizeble_fixed_pattern import ScalableFixedPattern
+from hyperspy.components.scalable_fixed_pattern import ScalableFixedPattern
 from hyperspy.components.polynomial import Polynomial
 
 

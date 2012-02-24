@@ -56,12 +56,41 @@ def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
     return scale*V.real
 
 class Voigt(Component):
-    """
+    """Voigt profile component with support for shirley background,
+    non_isochromaticity,transmission_function corrections and spin orbit
+    splitting specially suited for Photoemission spectroscopy data analysis.
+    
+    f(x) = G(x)*L(x) where G(x) is the Gaussian function and L(x) is the 
+    Lorentzian function
+    
+    Attributes
+    ----------
+    
+    area : Parameter
+    origin: Parameter
+    FWHM : Parameter
+    gamma : Parameter
+    resolution : Parameter
+    shirley_background : Parameter
+    non_isochromaticity : Parameter
+    transmission_function : Parameter
+    spin_orbit_splitting : Bool
+    spin_orbit_branching_ratio : float
+    spin_orbit_splitting_energy : float
+    
     """
 
     def __init__(self):
-        Component.__init__(self, ('area', 'origin', 'FWHM', 'gamma', 'resolution', 
-        'shirley_background', 'non_isochromaticity', 'transmission_function'))
+        Component.__init__(self, (
+            'area',
+            'origin',
+            'FWHM',
+            'gamma',
+            'resolution',
+            'shirley_background',
+            'non_isochromaticity',
+            'transmission_function'))
+
         self.name = 'Voigt'
         self.FWHM.value = 1
         self.gamma.value = 0
@@ -83,11 +112,6 @@ class Voigt(Component):
         self.convolved = True
 
     def function(self, x):
-        """
-        Given an one dimensional array x containing the energies at which
-        you want to evaluate the background model, returns the background
-        model for the current parameters.
-        """
         area = self.area.value * self.transmission_function.value
         origin = self.origin.value
         ab = self.non_isochromaticity.value

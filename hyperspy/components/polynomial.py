@@ -76,12 +76,18 @@ def ordinal(value):
 
 
 class Polynomial(Component):
-    """
+    """n-order polynomial component.
+    
     Polynomial component defined by the coefficients parameters which is an 
     array of len the order of the polynomial.
     
     For example, the [1,2,3] coefficients define the following 3rd order 
     polynomial: f(x) = 1x² + 2x + 3
+    
+    Attributes
+    ----------
+    
+    coeffcients : array
     
     """
 

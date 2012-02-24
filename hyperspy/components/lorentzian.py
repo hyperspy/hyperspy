@@ -21,15 +21,31 @@ import numpy as np
 from hyperspy.component import Component
 
 class Lorentzian(Component):
-    """
+    """Cauchy-Lorentz distribution (a.k.a. Lorentzian function) component
+    
+    .. math::
+    
+        f(x)=\\frac{a}{\pi}\left[\\frac{\gamma}{\left(x-x_{0}\\right)^{2}+\gamma^{2}}\\right]
+        
+    +------------+-----------+
+    | Parameter  | Attribute |
+    +------------+-----------+
+    +------------+-----------+
+    |     a      |     A     |
+    +------------+-----------+
+    |   gamma    |   gamma   |
+    +------------+-----------+
+    |    x0      |  centre   |
+    +------------+-----------+
+        
     """
 
-    def __init__(self, A=1., gamma=1.,origin = 0.):
-        Component.__init__(self, ('A', 'gamma', 'origin'))
+    def __init__(self, A=1., gamma=1.,centre = 0.):
+        Component.__init__(self, ('A', 'gamma', 'centre'))
         
         self.A.value = A
         self.gamma.value = gamma
-        self.origin.value = origin
+        self.centre.value = centre
         
         # Boundaries
         self.A.bmin = 0.
@@ -43,45 +59,33 @@ class Lorentzian(Component):
         # Gradients
         self.A.grad = self.grad_A
         self.gamma.grad = self.grad_gamma
-        self.origin.grad = self.grad_origin
+        self.centre.grad = self.grad_centre
 
     def __repr__(self):
         return 'Lorentzian'
 
     def function( self, x ) :
         """
-        Given an one dimensional array x containing the energies at which
-        you want to evaluate the background model, returns the background
-        model for the current parameters.
         """
-        return (self.A.value / np.pi) * (self.gamma.value / 
-        ((x - self.origin.value)**2 + self.gamma.value**2))
+        A = self.A.value
+        gamma = self.gamma.value
+        centre = self.centre.value
+        
+        return A / np.pi * (gamma / ((x - centre)**2 + gamma**2))
     def grad_A(self, x):
         """
-        Given an one dimensional array x containing the energies at which
-        you want to evaluate the gradient of the background model,
-        returns the gradient of parameter A for the current value of the
-        parameters.
         """
         return self.function(x) / self.A.value
     def grad_gamma(self,x):
         """
-        Given an one dimensional array x containing the energies at which
-        you want to evaluate the gradient of the background model,
-        returns the gradient of parameter gamma for the current value of
-        the parameters.
         """
         return self.A.value / (np.pi * (self.gamma.value**2 + 
-        (x - self.origin.value)**2)) - ((2 * self.A.value * self.gamma.value**2) 
-        / (np.pi*(self.gamma.value**2+(x-self.origin.value)**2)**2))
-    def grad_origin(self,x):
+        (x - self.centre.value)**2)) - ((2 * self.A.value * self.gamma.value**2) 
+        / (np.pi*(self.gamma.value**2+(x-self.centre.value)**2)**2))
+    def grad_centre(self,x):
         """
-        Given an one dimensional array x containing the energies at which
-        you want to evaluate the gradient of the background model,
-        returns the gradient of parameter origin for the current value of
-        the parameters.
         """
-        return (2 * (x - self.origin.value) * self.A.value * self.gamma.value
-        )/(np.pi * (self.gamma.value**2 + (x - self.origin.value)**2)**2)
+        return (2 * (x - self.centre.value) * self.A.value * self.gamma.value
+        )/(np.pi * (self.gamma.value**2 + (x - self.centre.value)**2)**2)
         
         

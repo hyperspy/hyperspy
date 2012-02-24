@@ -26,7 +26,13 @@ from hyperspy.component import Component
 sqrt2pi = np.sqrt(2*np.pi)
 
 class Erf(Component):
-    """
+    """Error function component
+    
+    Attributes
+    ----------
+    A : float
+    sigma : float
+    origin : float
     """
 
     def __init__(self):

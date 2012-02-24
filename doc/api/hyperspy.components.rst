@@ -169,14 +169,6 @@ components Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`resizeble_fixed_pattern` Module
--------------------------------------
-
-.. automodule:: hyperspy.components.resizeble_fixed_pattern
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`scalable_fixed_pattern` Module
 ------------------------------------
 

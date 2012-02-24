@@ -25,7 +25,16 @@ from .gaussian import Gaussian
 sqrt2pi = np.sqrt(2*np.pi)
 
 class SEE(Component):
-    """
+    """Secondary electron emission component for Photoemission Spectroscopy
+    
+    Attributes
+    ----------
+    A : float
+    Phi : float
+    B : float
+    sigma : float
+        Resolution parameter.
+        
     """
 
     def __init__(self, A=1., Phi=1.,B = 0., sigma = 0):
@@ -57,9 +66,6 @@ class SEE(Component):
 
     def function(self, x):
         """
-        Given an one dimensional array x containing the energies at which
-        you want to evaluate the background model, returns the background
-        model for the current parameters.
         """
         if self.sigma.value:
             self.gaussian.sigma.value = self.sigma.value
@@ -73,10 +79,6 @@ class SEE(Component):
 
     def grad_A(self, x):
         """
-        Given an one dimensional array x containing the energies at which
-        you want to evaluate the gradient of the background model,
-        returns the gradient of parameter A for the current value of the
-        parameters.
         """
         if self.sigma.value:
             self.gaussian.sigma.value = self.sigma.value
@@ -89,10 +91,6 @@ class SEE(Component):
     (x - self.Phi.value + self.B.value)**4, 0)
     def grad_sigma(self,x):
         """
-        Given an one dimensional array x containing the energies at which
-        you want to evaluate the gradient of the background model,
-        returns the gradient of parameter sigma for the current value of
-        the parameters.
         """
         self.gaussian.sigma.value = self.sigma.value
         self.gaussian.origin.value = (x[-1] + x[0]) / 2
@@ -101,10 +99,6 @@ class SEE(Component):
         (x-self.Phi.value) / (x - self.Phi.value + self.B.value)**4, 0), 'same')
     def grad_Phi(self,x):
         """
-        Given an one dimensional array x containing the energies at which
-        you want to evaluate the gradient of the background model,
-        returns the gradient of parameter origin for the current value of
-        the parameters.
         """
         if self.sigma.value:
             self.gaussian.sigma.value = self.sigma.value

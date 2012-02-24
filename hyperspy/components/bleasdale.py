@@ -21,7 +21,16 @@ import numpy as np
 from hyperspy.component import Component, Parameter
 
 class Bleasdale(Component):
-    """
+    """Bleasdale function component.
+    
+    f(x) = (a+b*x)^(-1/c)
+    
+    Attributes
+    ----------
+    a : Float
+    b : Float
+    c : Float
+    
     """
 
     def __init__(self):
@@ -32,7 +41,6 @@ class Bleasdale(Component):
 
     def function(self, x):
         """
-        This functions it too complicated to explain
         """
         a = self.a.value
         b = self.b.value
