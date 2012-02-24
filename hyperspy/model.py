@@ -91,17 +91,20 @@ class Model(list, Optimizers, Estimators):
     # Extend the list methods to call the _touch when the model is modified
     def append(self, object):
         object.create_arrays(self.axes_manager.navigation_shape)
+        object.set_axes(self.axes_manager)
         list.append(self,object)
         self._touch()
     
     def insert(self, object):
         object.create_arrays(self.axes_manager.navigation_shape)
+        object.set_axes(self.axes_manager)
         list.insert(self,object)
         self._touch()
    
     def extend(self, iterable):
         for object in iterable:
             object.create_arrays(self.axes_manager.navigation_shape)
+            object.set_axes(self.axes_manager)
         list.extend(self,iterable)
         self._touch()
                 

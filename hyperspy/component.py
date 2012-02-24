@@ -17,9 +17,6 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-#from widgets import cursors
-
-
 
 class Parameter(object):
     """
@@ -50,7 +47,7 @@ class Parameter(object):
         self.name = ''
         self.units = ''
         self.std = None
-        self._axes = None
+        self._axes_manager = None
 
     # Define the bounding and coupling propertires
     
@@ -168,6 +165,26 @@ class Parameter(object):
         self.map.dtype != dtype_:
             self.map = np.zeros(shape, dtype_)       
             self.map['std'][:] = np.nan
+            
+    def as_signal(self, field = 'values'):
+        """Get a parameter map as a signal object.
+        
+        Parameters
+        ----------
+        field : {'values', 'std', 'is_set'}
+        
+        """
+        from hyperspy.signal import Signal
+        
+        s = Signal({'data' : self.map[field],
+                    'axes' : self._axes_manager._get_non_slicing_axes_dicts()})
+        s.mapped_parameters.title = self.name
+        for axis in s.axes_manager.axes:
+            axis.slice_bool = True
+        return s
+        
+    def plot(self):
+        self.as_signal().plot()
                     
 class Component(object):
     def __init__(self, parameter_name_list):
@@ -247,32 +264,25 @@ class Component(object):
                     parameter.value = parameter.value.tolist()
                     parameter.value = parameter.std.tolist()
 
-#    def plot_maps(self):
-#        for parameter in self.parameters:
-#            if (parameter.map is not None) and (parameter.twin is None):
-#                dim = len(parameter.map.squeeze().shape)
-#                title = '%s - %s' % (self.name, parameter.name)
-#                if dim == 2:
-#                    fig = plt.figure()
-#                    ax = fig.add_subplot(111)
-#                    this_map = ax.matshow(parameter.map.squeeze().T)
-#                    ax.set_title(title)
-#                    fig.canvas.set_window_title(title)
-#                    fig.colorbar(this_map)
-#                    cursors.add_axes(ax)
-#                    fig.canvas.draw()
-#                elif dim == 1:
-#                    fig = plt.figure()
-#                    ax = fig.add_subplot(111)
-#                    this_graph = ax.plot(parameter.map.squeeze())
-#                    ax.set_title(title)
-#                    fig.canvas.set_window_title(title)
-#                    ax.set_title(title)
-#                    ax.set_ylabel('%s (%s)' % (parameter.name, parameter.units))
-#                    ax.set_xlabel('Pixel')
-#                    fig.canvas.draw()
-#                elif dim == 3:
-#                    pass
+    def plot(self, only_free = True):
+        """Plot the value of the parameters of the model
+        
+        Parameters
+        ----------
+        only_free : bool
+            If True, only the value of the parameters that are free will be
+            plotted
+              
+        """
+        if only_free:
+            parameters = self.free_parameters
+        else:
+            parameters = self.parameters
+            
+        parameters = [k for k in parameters if k.twin is None]
+        for parameter in parameters:
+            parameter.plot()
+            
     def summary(self):
         for parameter in self.parameters:
             dim = len(parameter.map.squeeze().shape)
@@ -284,3 +294,7 @@ class Component(object):
     def __call__(self, p, x, onlyfree = True) :
         self.charge(p , onlyfree = onlyfree)
         return self.function(x)
+        
+    def set_axes(self, axes_manager):
+        for parameter in self.parameters:
+            parameter._axes_manager = axes_manager
