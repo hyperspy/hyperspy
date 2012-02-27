@@ -93,7 +93,7 @@ class DataAxis(t.HasTraits):
     low_index = t.Int(0)
     high_index = t.Int()
     slice = t.Instance(slice)
-    navigate = t.Bool(False)
+    navigate = t.Bool(True)
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
 
@@ -111,13 +111,16 @@ class DataAxis(t.HasTraits):
         self.index = 0
         self.index_in_array = index_in_array
         self.update_axis()
-
+        self.navigate = navigate
         self.on_trait_change(self.update_axis, ['scale', 'offset', 'size'])
         self.on_trait_change(self.update_value, 'index')
         self.on_trait_change(self.set_index_from_value, 'value')
         self.on_trait_change(self._update_slice, 'navigate')
         self.on_trait_change(self.update_index_bounds, 'size')
-        self.navigate = navigate
+        # The slice must be updated even if the default value did not change to
+        # correctly set its value.
+        self._update_slice(self.navigate)
+
 
     def __repr__(self):
         if self.name is not None:
@@ -254,6 +257,7 @@ class AxesManager(t.HasTraits):
             else:
                 getitem_tuple.append(axis.slice)
                 self._slicing_axes.append(axis)
+                
         self._getitem_tuple = getitem_tuple
         self._indexes = np.array(indexes)
         self._values = np.array(values)
