@@ -884,14 +884,14 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         else:
             return f
 
-    def _plot_scores(self, scores, comp_ids=None, calibrate=True,
+    def _plot_loadings(self, loadings, comp_ids=None, calibrate=True,
                      same_window=None, comp_label=None, 
                      with_factors=False, factors=None,
                      cmap=plt.cm.jet, no_nans=False, per_row=3):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         if comp_ids is None:
-            comp_ids=xrange(scores.shape[0])
+            comp_ids=xrange(loadings.shape[0])
 
         elif not hasattr(comp_ids,'__iter__'):
             comp_ids=xrange(comp_ids)
@@ -924,7 +924,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                     if i>0:
                         f=plt.figure()
                     ax=f.add_subplot(111)
-            sigdraw._plot_score(scores,idx=comp_ids[i],
+            sigdraw._plot_loading(loadings,idx=comp_ids[i],
                                 axes_manager=self.axes_manager,
                                 no_nans=no_nans, calibrate=calibrate,
                                 cmap=cmap,comp_label=comp_label,ax=ax,
@@ -947,7 +947,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 return fig_list
         else:
             if self.axes_manager.navigation_dimension==1:
-                plt.legend(ncol=scores.shape[0]//2, loc='best')
+                plt.legend(ncol=loadings.shape[0]//2, loc='best')
             if with_factors:
                 return f, self._plot_factors_or_pchars(factors, 
                                             comp_ids=comp_ids, 
@@ -1089,8 +1089,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                                 }})
                     im.save('%s-%i.%s' % (factor_prefix, i, factor_format))
 
-    def _export_scores(self, scores, comp_ids=None, multiple_files=None,
-                        score_prefix=None, score_format=None,
+    def _export_loadings(self, loadings, comp_ids=None, multiple_files=None,
+                        loading_prefix=None, loading_format=None,
                         save_figures_format = 'png',
                         comp_label=None,cmap=plt.cm.jet, save_figures = False,
                         same_window=False,calibrate=True,
@@ -1102,29 +1102,29 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         if multiple_files is None:
             multiple_files = preferences.MachineLearning.multiple_files
         
-        if score_format is None:
-            score_format = preferences.MachineLearning.\
-                export_scores_default_file_format
+        if loading_format is None:
+            loading_format = preferences.MachineLearning.\
+                export_loadings_default_file_format
 
         if comp_ids is None:
-            comp_ids=range(scores.shape[0])
+            comp_ids=range(loadings.shape[0])
         elif not hasattr(comp_ids,'__iter__'):
             comp_ids=range(comp_ids)
-        mask=np.zeros(scores.shape[0],dtype=np.bool)
+        mask=np.zeros(loadings.shape[0],dtype=np.bool)
         for idx in comp_ids:
             mask[idx]=1
-        scores=scores[mask]
+        loadings=loadings[mask]
 
         if save_figures is True:
             plt.ioff()
-            sc_plots=self._plot_scores(scores, comp_ids=comp_ids, 
+            sc_plots=self._plot_loadings(loadings, comp_ids=comp_ids, 
                                        calibrate=calibrate,
                                        same_window=same_window, 
                                        comp_label=comp_label,
                                        cmap=cmap, no_nans=no_nans,
                                        per_row=per_row)
             for idx in xrange(len(comp_ids)):
-                sc_plots[idx].savefig('%s_%02i.%s'%(score_prefix,
+                sc_plots[idx].savefig('%s_%02i.%s'%(loading_prefix,
                                                   comp_ids[idx],
                                                   save_figures_format),
                                        dpi=600)
@@ -1134,21 +1134,21 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 axes_dicts=[]
                 axes=self.axes_manager._non_slicing_axes
                 shape=(axes[1].size,axes[0].size)
-                score_data=scores.reshape((-1,shape[0],shape[1]))
+                loading_data=loadings.reshape((-1,shape[0],shape[1]))
                 axes_dicts.append(axes[0].get_axis_dictionary())
                 axes_dicts[0]['index_in_array']=1
                 axes_dicts.append(axes[1].get_axis_dictionary())
                 axes_dicts[1]['index_in_array']=2
-                axes_dicts.append({'name': 'score_index',
+                axes_dicts.append({'name': 'loading_index',
                         'scale': 1.,
                         'offset': 0.,
-                        'size': int(scores.shape[0]),
+                        'size': int(loadings.shape[0]),
                         'units': 'factor',
                         'index_in_array': 0, })
-                s=Image({'data':score_data,
+                s=Image({'data':loading_data,
                          'axes':axes_dicts,
                          'mapped_parameters':{
-                            'title':'%s from %s'%(score_prefix, 
+                            'title':'%s from %s'%(loading_prefix, 
                                 self.mapped_parameters.title),
                             }})
             elif self.axes_manager.navigation_dimension==1:
@@ -1156,51 +1156,51 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                     get_axis_dictionary()
                 cal_axis['index_in_array']=1
                 axes=[]
-                axes.append({'name': 'score_index',
+                axes.append({'name': 'loading_index',
                         'scale': 1.,
                         'offset': 0.,
-                        'size': int(scores.shape[0]),
+                        'size': int(loadings.shape[0]),
                         'units': 'comp_id',
                         'index_in_array': 0, })
                 axes.append(cal_axis)
-                s=Image({'data':scores,
+                s=Image({'data':loadings,
                             'axes':axes,
                             'mapped_parameters':{
-                            'title':'%s from %s'%(score_prefix,
+                            'title':'%s from %s'%(loading_prefix,
                                 self.mapped_parameters.title),}})
-            s.save('%ss.%s' % (score_prefix, score_format))
+            s.save('%ss.%s' % (loading_prefix, loading_format))
         else: # Separate files
             if self.axes_manager.navigation_dimension == 1:
                 axis_dict = self.axes_manager._non_slicing_axes[0].\
                     get_axis_dictionary()
                 axis_dict['index_in_array']=0
                 for dim in comp_ids:
-                    s=Spectrum({'data':scores[dim],
+                    s=Spectrum({'data':loadings[dim],
                                 'axes': [axis_dict,]})
-                    s.save('%s-%i.%s' % (score_prefix, dim, score_format))
+                    s.save('%s-%i.%s' % (loading_prefix, dim, loading_format))
             elif self.axes_manager.navigation_dimension == 2:
                 axes_dicts=[]
                 axes=self.axes_manager._non_slicing_axes
                 shape=(axes[0].size, axes[1].size)
-                score_data=scores.reshape((-1,shape[0],shape[1]))
+                loading_data=loadings.reshape((-1,shape[0],shape[1]))
                 axes_dicts.append(axes[0].get_axis_dictionary())
                 axes_dicts[0]['index_in_array']=0
                 axes_dicts.append(axes[1].get_axis_dictionary())
                 axes_dicts[1]['index_in_array']=1
-                for i in range(score_data.shape[0]):
-                    s=Image({'data':score_data[i,...],
+                for i in range(loading_data.shape[0]):
+                    s=Image({'data':loading_data[i,...],
                              'axes':axes_dicts,
                              'mapped_parameters':{
-                                'title':'%s from %s'%(score_prefix, 
+                                'title':'%s from %s'%(loading_prefix, 
                                     self.mapped_parameters.title),
                                 }})
-                    s.save('%s-%i.%s' % (score_prefix, i, score_format))
+                    s.save('%s-%i.%s' % (loading_prefix, i, loading_format))
 
 
     def plot_decomposition_factors(self,comp_ids=None, calibrate=True,
-                        same_window=None, comp_label='PC', 
+                        same_window=None, comp_label='Decomposition factor', 
                         per_row=3):
-        """Plot components from PCA
+        """Plot factors from a decomposition
 
         Parameters
         ----------
@@ -1242,9 +1242,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                                             per_row=per_row)
 
     def plot_bss_factors(self,comp_ids=None, calibrate=True,
-                        same_window=None, comp_label='IC',
+                        same_window=None, comp_label='BSS factor',
                         per_row=3):
-        """Plot components from ICA
+        """Plot factors from blind source separation results.
 
         Parameters
         ----------
@@ -1282,11 +1282,11 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                                             comp_label=comp_label, 
                                             per_row=per_row)
 
-    def plot_decomposition_scores(self, comp_ids=None, calibrate=True,
-                       same_window=None, comp_label='PC', 
+    def plot_decomposition_loadings(self, comp_ids=None, calibrate=True,
+                       same_window=None, comp_label='Decomposition loading', 
                        with_factors=False, cmap=plt.cm.gray, 
                        no_nans=False,per_row=3):
-        """Plot scores from PCA
+        """Plot loadings from PCA
 
         Parameters
         ----------
@@ -1318,7 +1318,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             some peak characteristic.
         
         no_nans : bool
-            If True, removes NaN's from the score plots.
+            If True, removes NaN's from the loading plots.
 
         per_row : int 
             the number of plots in each row, when the same_window
@@ -1326,7 +1326,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
-        scores=self.mva_results.scores.T
+        loadings=self.mva_results.loadings.T
         if with_factors:
             factors=self.mva_results.factors
         else:
@@ -1334,16 +1334,16 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         if comp_ids is None:
             comp_ids = self.mva_results.output_dimension
-        return self._plot_scores(scores, comp_ids=comp_ids, 
+        return self._plot_loadings(loadings, comp_ids=comp_ids, 
                                  with_factors=with_factors, factors=factors,
                                  same_window=same_window, comp_label=comp_label,
                                  cmap=cmap, no_nans=no_nans,per_row=per_row)
 
-    def plot_bss_scores(self, comp_ids=None, calibrate=True,
-                       same_window=None, comp_label='IC', 
+    def plot_bss_loadings(self, comp_ids=None, calibrate=True,
+                       same_window=None, comp_label='BSS loading', 
                        with_factors=False, cmap=plt.cm.gray, 
                        no_nans=False,per_row=3):
-        """Plot scores from ICA
+        """Plot loadings from ICA
 
         Parameters
         ----------
@@ -1375,7 +1375,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             some peak characteristic.
         
         no_nans : bool
-            If True, removes NaN's from the score plots.
+            If True, removes NaN's from the loading plots.
 
         per_row : int 
             the number of plots in each row, when the same_window
@@ -1383,31 +1383,31 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
-        scores=self.mva_results.bss_scores.T
+        loadings=self.mva_results.bss_loadings.T
         if with_factors:
             factors=self.mva_results.bss_factors
         else: factors=None
-        return self._plot_scores(scores, comp_ids=comp_ids, 
+        return self._plot_loadings(loadings, comp_ids=comp_ids, 
                                  with_factors=with_factors, factors=factors,
                                  same_window=same_window, comp_label=comp_label,
                                  cmap=cmap, no_nans=no_nans,per_row=per_row)
 
     def export_decomposition_results(self, comp_ids=None, calibrate=True,
-                          factor_prefix='pc', factor_format=None,
-                          score_prefix='PC_score', score_format=None, 
-                          comp_label='PC',cmap=plt.cm.jet,
+                          factor_prefix='factor', factor_format=None,
+                          loading_prefix='loading', loading_format=None, 
+                          comp_label=None,cmap=plt.cm.jet,
                           same_window=False, multiple_files = None,
-                          no_nans=True,per_row=3, save_figures = False,
-                          save_figures_format = 'png'):
+                          no_nans=True,per_row=3, save_figures=False,
+                          save_figures_format ='png'):
         """Export results from PCA to any of the supported formats.
 
         Parameters
         ----------
 
         comp_ids : None, int, or list of ints
-            if None, returns all components/scores.
-            if int, returns components/scores with ids from 0 to given int.
-            if list of ints, returns components/scores with ids in given list.
+            if None, returns all components/loadings.
+            if int, returns components/loadings with ids from 0 to given int.
+            if list of ints, returns components/loadings with ids in given list.
 
         factor_prefix : string
             The prefix that any exported filenames for factors/components 
@@ -1416,26 +1416,26 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         factor_format : string
             The extension of the format that you wish to save to.
                 
-        score_prefix : string
+        loading_prefix : string
             The prefix that any exported filenames for factors/components 
             begin with
 
-        score_format : string
+        loading_format : string
             The extension of the format that you wish to save to.  Determines
             the kind of output.
                 - For image formats (tif, png, jpg, etc.), plots are created 
                   using the plotting flags as below, and saved at 600 dpi.
-                  One plot per score is saved.
+                  One plot per loading is saved.
                 - For multidimensional formats (rpl, hdf5), arrays are saved
-                  in single files.  All scores are contained in the one
+                  in single files.  All loadings are contained in the one
                   file.
-                - For spectral formats (msa), each score is saved to a
+                - For spectral formats (msa), each loading is saved to a
                   separate file.
                   
         multiple_files : Bool
-            If True, on exporting a file per factor and per score will be 
+            If True, on exporting a file per factor and per loading will be 
             created. Otherwise only two files will be created, one for the
-            factors and another for the scores. The default value can be
+            factors and another for the loadings. The default value can be
             chosen in the preferences.
             
         save_figures : Bool
@@ -1467,7 +1467,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             The image format extension.
         """
         factors=self.mva_results.factors
-        scores=self.mva_results.scores.T
+        loadings=self.mva_results.loadings.T
         self._export_factors(factors, comp_ids=comp_ids,
                              calibrate=calibrate, multiple_files=multiple_files,
                              factor_prefix=factor_prefix,
@@ -1478,10 +1478,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                              same_window=same_window,
                              per_row=per_row,
                              save_figures_format=save_figures_format)
-        self._export_scores(scores,comp_ids=comp_ids,
+        self._export_loadings(loadings,comp_ids=comp_ids,
                             calibrate=calibrate, multiple_files=multiple_files,
-                            score_prefix=score_prefix,
-                            score_format=score_format,
+                            loading_prefix=loading_prefix,
+                            loading_format=loading_format,
                             comp_label=comp_label,
                             cmap=cmap, save_figures = save_figures,
                             same_window=same_window,
@@ -1490,9 +1490,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 
     def export_bss_results(self, comp_ids=None, calibrate=True,
                            multiple_files=None, save_figures = False,
-                          factor_prefix='ic', factor_format=None,
-                          score_prefix='IC_score', score_format=None, 
-                          comp_label='IC',cmap=plt.cm.jet,
+                          factor_prefix='bss_factor', factor_format=None,
+                          loading_prefix='bss_loading', loading_format=None, 
+                          comp_label=None,cmap=plt.cm.jet,
                           same_window=False, no_nans=True,per_row=3,
                           save_figures_format='png'):
         """Export results from ICA to any of the supported formats.
@@ -1501,9 +1501,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         ----------
 
         comp_ids : None, int, or list of ints
-            if None, returns all components/scores.
-            if int, returns components/scores with ids from 0 to given int.
-            if list of ints, returns components/scores with ids in given list.
+            if None, returns all components/loadings.
+            if int, returns components/loadings with ids from 0 to given int.
+            if list of ints, returns components/loadings with ids in given list.
 
         factor_prefix : string
             The prefix that any exported filenames for factors/components 
@@ -1521,17 +1521,17 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 - For spectral formats (msa), each factor is saved to a
                   separate file.
                 
-        score_prefix : string
+        loading_prefix : string
             The prefix that any exported filenames for factors/components 
             begin with
 
-        score_format : string
+        loading_format : string
             The extension of the format that you wish to save to.
             
         multiple_files : Bool
-            If True, on exporting a file per factor and per score will be 
+            If True, on exporting a file per factor and per loading will be 
             created. Otherwise only two files will be created, one for the
-            factors and another for the scores. The default value can be
+            factors and another for the loadings. The default value can be
             chosen in the preferences.
             
         save_figures : Bool
@@ -1564,7 +1564,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             The image format extension.
         """
         factors=self.mva_results.bss_factors
-        scores=self.mva_results.bss_scores.T
+        loadings=self.mva_results.bss_loadings.T
         self._export_factors(factors, comp_ids=comp_ids,
                              calibrate=calibrate, multiple_files=multiple_files,
                              factor_prefix=factor_prefix,
@@ -1575,10 +1575,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                              same_window=same_window,
                              per_row=per_row,
                              save_figures_format=save_figures_format)
-        self._export_scores(scores, comp_ids=comp_ids,
+        self._export_loadings(loadings, comp_ids=comp_ids,
                             calibrate=calibrate, multiple_files=multiple_files,
-                            score_prefix=score_prefix,
-                            score_format=score_format,
+                            loading_prefix=loading_prefix,
+                            loading_format=loading_format,
                             comp_label=comp_label,
                             cmap=cmap, save_figures=save_figures,
                             same_window=same_window, 

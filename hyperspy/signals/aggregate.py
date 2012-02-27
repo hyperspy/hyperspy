@@ -362,7 +362,7 @@ to add?'%arg.mapped_parameters.title)
             mvar=smp.original_files[key].mva_results
             # copy the principal components
             mvar.pc = smvar.pc
-            # copy the appropriate section of the aggregate scores
+            # copy the appropriate section of the aggregate loadings
             agg_address = smp.aggregate_address[key]
             mvar.v  = smvar.v[agg_address[0]:(agg_address[1]+1)]
             # copy eigenvalues (though really, these don't make much 
@@ -610,7 +610,7 @@ your_object.mapped_parameters.clusters\n"
         Parameters:
 
         plot_component - None or int
-            The integer index of the component to plot scores for.
+            The integer index of the component to plot loadings for.
             If specified, the values plotted for the shifts (if enabled by the plot_shifts flag)
             and the values plotted for the plot characteristics (if enabled by the plot_char flag)
             will be drawn from the given component resulting from MVA on the peak characteristics.

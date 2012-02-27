@@ -9,7 +9,8 @@ Machine learning
    * `independent_components_analysis` was renamed to `blind_source_separation`
    * `pca_build_SI` was renamed to `get_decomposition_model`
    * `ica_build_SI` was renamed to `get_bss_model`
-   * `plot_lev` was rename to `plot_explained_variance_ratio`
+   * `plot_lev` was renamed to `plot_explained_variance_ratio`
+   * `scores` was renamed to `loadings`
 
 Introduction
 ============
@@ -52,7 +53,7 @@ Nomenclature
 ------------
 Hyperspy performs the decomposition of a dataset into two datasets:
 one with the dimension of the signal space which we will call `factors` and the other with 
-the dimension of the navigation space which we will call `scores`.
+the dimension of the navigation space which we will call `loadings`.
 The same nomenclature applies to the result of BSS.
 
 
@@ -175,9 +176,9 @@ Plot methods exist for the results of decomposition and blind source separation.
 All the methods begin with plot:
 
 * :py:meth:`~.signal.Signal.plot_decomposition_factors`
-* :py:meth:`~.signal.Signal.plot_decomposition_scores`
+* :py:meth:`~.signal.Signal.plot_decomposition_loadings`
 * :py:meth:`~.signal.Signal.plot_bss_factors`
-* :py:meth:`~.signal.Signal.plot_bss_scores`
+* :py:meth:`~.signal.Signal.plot_bss_loadings`
 
 
 Saving and loading results
@@ -222,7 +223,7 @@ by Hyperspy using:
 
 These methods accept many arguments to customise the way the data is exported,
 so please consult the method documentation. The options include the choice of
-file format, the prefixes for scores and factors, saving figures instead of 
+file format, the prefixes for loadings and factors, saving figures instead of 
 data and more.
 
 Please, note that the exported data cannot be easily be loaded into Hyperspy's

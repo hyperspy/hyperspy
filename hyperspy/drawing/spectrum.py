@@ -196,13 +196,13 @@ def _plot_component(factors, idx, ax=None, cal_axis=None,
     ax.plot(x,factors[:,idx],label='%s %i'%(comp_label,idx))
     return ax
 
-def _plot_score(scores, idx, axes_manager, ax=None, 
+def _plot_loading(loadings, idx, axes_manager, ax=None, 
                 comp_label='PC',no_nans=True, calibrate=True,
                 cmap=plt.cm.gray):
     if ax==None:
         ax=plt.gca()
     if no_nans:
-        scores=np.nan_to_num(scores)
+        loadings=np.nan_to_num(loadings)
     if axes_manager.navigation_dimension==2:
         extent=None
         # get calibration from a passed axes_manager
@@ -212,7 +212,7 @@ def _plot_score(scores, idx, axes_manager, ax=None,
                     axes_manager.axes[0].high_value,
                     axes_manager.axes[1].high_value,
                     axes_manager.axes[1].low_value)
-        im=ax.imshow(scores[idx].reshape(shape),cmap=cmap,extent=extent, 
+        im=ax.imshow(loadings[idx].reshape(shape),cmap=cmap,extent=extent, 
                      interpolation = 'nearest')
         div=make_axes_locatable(ax)
         cax=div.append_axes("right",size="5%",pad=0.05)
@@ -222,7 +222,7 @@ def _plot_score(scores, idx, axes_manager, ax=None,
             x=axes_manager.axes[0].axis
         else:
             x=np.arange(axes_manager.axes[0].size)
-        ax.step(x,scores[idx])
+        ax.step(x,loadings[idx])
     else:
         messages.warning_exit('View not supported')
             

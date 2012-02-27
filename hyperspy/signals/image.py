@@ -107,7 +107,7 @@ class Image(Signal):
             medfilt_radius=medfilt_radius
             )
 
-    def recon_peak_chars(factors,scores,comp_ids=None,target_locations=None):
+    def recon_peak_chars(factors,loadings,comp_ids=None,target_locations=None):
         """INCOMPLETE!!
 
         Does the following with Factor images:
@@ -184,7 +184,7 @@ class Image(Signal):
     # in drawing/signal.py and drawing/image.py
     #=============================
 
-    def _plot_scores_or_peak_char(
+    def _plot_loadings_or_peak_char(
         self, s_pc, comp_ids=None, calibrate=True,
         on_peaks=False, peak_ids=None, plot_shifts=False,
         plot_char=None,
@@ -193,7 +193,7 @@ class Image(Signal):
         cmap=plt.cm.jet, no_nans=True, per_row=3,
         quiver_color='white',vector_scale=1):
         if not hasattr(self.mapped_parameters,'locations'):
-            return self._plot_scores(s_pc, comp_ids=comp_ids, 
+            return self._plot_loadings(s_pc, comp_ids=comp_ids, 
                                      calibrate=calibrate,
                                      same_window=same_window, 
                                      comp_label=comp_label, 
@@ -396,12 +396,12 @@ class Image(Signal):
                                 plot_shifts=plot_shifts, plot_char=plot_char, 
                                 cmap=cmap, per_row=per_row)
 
-    def plot_decomposition_scores(self, comp_ids=6, calibrate=True,
+    def plot_decomposition_loadings(self, comp_ids=6, calibrate=True,
                        same_window=True, comp_label='PC', 
                        with_factors=False,
                        on_peaks=False, cmap=plt.cm.jet, 
                        no_nans=True,per_row=3):
-        """Plot scores from PCA, either factor images or
+        """Plot loadings from PCA, either factor images or
            peak characteristics.
 
         Parameters
@@ -429,7 +429,7 @@ class Image(Signal):
             given comp_ids.
 
         on_peaks : bool
-            Plot scores from peak characteristics (True), 
+            Plot loadings from peak characteristics (True), 
             or factor images (False)
 
         cmap : matplotlib colormap
@@ -438,28 +438,28 @@ class Image(Signal):
             some peak characteristic.
         
         no_nans : bool
-            If True, removes NaN's from the score plots.
+            If True, removes NaN's from the loading plots.
 
         per_row : int 
             the number of plots in each row, when the same_window
             parameter is True.
         """
-        scores=self._get_target(on_peaks).scores.T
+        loadings=self._get_target(on_peaks).loadings.T
         if with_factors:
             factors=self._get_target(on_peaks).factors
         else: factors=None
-        return self._plot_scores_or_peak_char(scores, comp_ids=comp_ids,
+        return self._plot_loadings_or_peak_char(loadings, comp_ids=comp_ids,
                                  with_factors=with_factors, factors=factors,
                                  same_window=same_window, comp_label=comp_label,
                                  on_peaks=on_peaks, cmap=cmap,
                                  no_nans=no_nans,per_row=per_row)
 
-    def plot_bss_scores(self, comp_ids=None, calibrate=True,
+    def plot_bss_loadings(self, comp_ids=None, calibrate=True,
                        same_window=True, comp_label='IC', 
                        with_factors=False,
                        on_peaks=False, cmap=plt.cm.jet, 
                        no_nans=True,per_row=3):
-        """Plot scores from ICA, either factor images or
+        """Plot loadings from ICA, either factor images or
            peak characteristics.
 
         Parameters
@@ -487,7 +487,7 @@ class Image(Signal):
             given comp_ids.
 
         on_peaks : bool
-            Plot scores from peak characteristics (True), 
+            Plot loadings from peak characteristics (True), 
             or factor images (False)
 
         cmap : matplotlib colormap
@@ -496,17 +496,17 @@ class Image(Signal):
             some peak characteristic.
         
         no_nans : bool
-            If True, removes NaN's from the score plots.
+            If True, removes NaN's from the loading plots.
 
         per_row : int 
             the number of plots in each row, when the same_window
             parameter is True.
         """
-        scores=self._get_target(on_peaks).bss_scores.T
+        loadings=self._get_target(on_peaks).bss_loadings.T
         if with_factors:
             factors=self.get_target(on_peaks).bss_factors
         else: factors=None
-        return self._plot_scores_or_peak_char(scores, comp_ids=comp_ids,
+        return self._plot_loadings_or_peak_char(loadings, comp_ids=comp_ids,
                                  with_factors=with_factors, factors=factors,
                                  same_window=same_window, comp_label=comp_label,
                                  on_peaks=on_peaks, cmap=cmap,
@@ -514,7 +514,7 @@ class Image(Signal):
 
     def export_decomposition_results(self, comp_ids=None, 
                           factor_prefix='pc', factor_format='rpl',
-                          score_prefix='PC_score', score_format='rpl', 
+                          loading_prefix='PC_loading', loading_format='rpl', 
                           on_peaks=False,
                           quiver_color='white',
                           vector_scale=1,
@@ -529,9 +529,9 @@ class Image(Signal):
         ----------
 
         comp_ids : None, int, or list of ints
-            if None, returns all components/scores.
-            if int, returns components/scores with ids from 0 to given int.
-            if list of ints, returns components/scores with ids in given list.
+            if None, returns all components/loadings.
+            if int, returns components/loadings with ids from 0 to given int.
+            if list of ints, returns components/loadings with ids in given list.
 
         factor_prefix : string
             The prefix that any exported filenames for factors/components 
@@ -549,20 +549,20 @@ class Image(Signal):
                 - For spectral formats (msa), each factor is saved to a
                   separate file.
                 
-        score_prefix : string
+        loading_prefix : string
             The prefix that any exported filenames for factors/components 
             begin with
 
-        score_format : string
+        loading_format : string
             The extension of the format that you wish to save to.  Determines
             the kind of output.
                 - For image formats (tif, png, jpg, etc.), plots are created 
                   using the plotting flags as below, and saved at 600 dpi.
-                  One plot per score is saved.
+                  One plot per loading is saved.
                 - For multidimensional formats (rpl, hdf5), arrays are saved
-                  in single files.  All scores are contained in the one
+                  in single files.  All loadings are contained in the one
                   file.
-                - For spectral formats (msa), each score is saved to a
+                - For spectral formats (msa), each loading is saved to a
                   separate file.
 
         on_peaks : bool
@@ -613,7 +613,7 @@ class Image(Signal):
             the cell_data parameter
         """
         factors=self._get_target(on_peaks).factors
-        scores=self._get_target(on_peaks).scores.T
+        loadings=self._get_target(on_peaks).loadings.T
         self._export_factors(factors, comp_ids=comp_ids,
                              calibrate=calibrate,
                              plot_shifts=plot_shifts,
@@ -629,10 +629,10 @@ class Image(Signal):
                              no_nans=no_nans,
                              same_window=same_window,
                              per_row=per_row)
-        self._export_scores(scores,comp_ids=comp_ids,
+        self._export_loadings(loadings,comp_ids=comp_ids,
                             calibrate=calibrate,
-                            score_prefix=score_prefix,
-                            score_format=score_format,
+                            loading_prefix=loading_prefix,
+                            loading_format=loading_format,
                             comp_label=comp_label,
                             cmap=cmap,
                             same_window=same_window,
@@ -641,7 +641,7 @@ class Image(Signal):
 
     def export_bss_results(self, comp_ids=None, 
                           factor_prefix='ic', factor_format='rpl',
-                          score_prefix='IC_score', score_format='rpl', 
+                          loading_prefix='IC_loading', loading_format='rpl', 
                           on_peaks=False,
                           calibrate=True, same_window=False,
                           comp_label='IC',cmap=plt.cm.jet,
@@ -655,9 +655,9 @@ class Image(Signal):
         ----------
 
         comp_ids : None, int, or list of ints
-            if None, returns all components/scores.
-            if int, returns components/scores with ids from 0 to given int.
-            if list of ints, returns components/scores with ids in given list.
+            if None, returns all components/loadings.
+            if int, returns components/loadings with ids from 0 to given int.
+            if list of ints, returns components/loadings with ids in given list.
 
         factor_prefix : string
             The prefix that any exported filenames for factors/components 
@@ -675,20 +675,20 @@ class Image(Signal):
                 - For spectral formats (msa), each factor is saved to a
                   separate file.
                 
-        score_prefix : string
+        loading_prefix : string
             The prefix that any exported filenames for factors/components 
             begin with
 
-        score_format : string
+        loading_format : string
             The extension of the format that you wish to save to.  Determines
             the kind of output.
                 - For image formats (tif, png, jpg, etc.), plots are created 
                   using the plotting flags as below, and saved at 600 dpi.
-                  One plot per score is saved.
+                  One plot per loading is saved.
                 - For multidimensional formats (rpl, hdf5), arrays are saved
-                  in single files.  All scores are contained in the one
+                  in single files.  All loadings are contained in the one
                   file.
-                - For spectral formats (msa), each score is saved to a
+                - For spectral formats (msa), each loading is saved to a
                   separate file.
 
         on_peaks : bool
@@ -739,7 +739,7 @@ class Image(Signal):
             the cell_data parameter
         """
         factors=self._get_target(on_peaks).bss_factors
-        scores=self._get_target(on_peaks).bss_scores.T
+        loadings=self._get_target(on_peaks).bss_loadings.T
         self._export_factors(factors, comp_ids=comp_ids,
                              calibrate=calibrate,
                              plot_shifts=plot_shifts,
@@ -755,10 +755,10 @@ class Image(Signal):
                              no_nans=no_nans,
                              same_window=same_window,
                              per_row=per_row)
-        self._export_scores(scores,comp_ids=comp_ids,
+        self._export_loadings(loadings,comp_ids=comp_ids,
                             calibrate=calibrate,
-                            score_prefix=score_prefix,
-                            score_format=score_format,
+                            loading_prefix=loading_prefix,
+                            loading_format=loading_format,
                             comp_label=comp_label,
                             cmap=cmap,
                             same_window=same_window,
@@ -819,15 +819,15 @@ class Image(Signal):
                             quiver_color='white',vector_scale=1,
                             per_row=3,same_window=True,
                             comp_label=None):
-        """Overlays scores or some peak characteristic on top of an image
+        """Overlays loadings or some peak characteristic on top of an image
         plot of the original experimental image.  Useful for obtaining a 
         bird's-eye view of some image characteristic.
 
         plot_component - None or int 
-        (optional, but required to plot score overlays)
-            The integer index of the component to plot scores for.
+        (optional, but required to plot loading overlays)
+            The integer index of the component to plot loadings for.
             Creates a scatter plot that is colormapped according to 
-            score values.
+            loading values.
 
         peak_id - None or int
         (optional, but required to plot peak characteristic and shift overlays)
@@ -1005,7 +1005,7 @@ Nothing to plot.  Try again.""")
 
         """Overlays peak characteristics on an image plot.
         
-        Analogous to score plots, except that this allows you to examine how one
+        Analogous to loading plots, except that this allows you to examine how one
         particular peak is varying across an image.
 
         Parameters
@@ -1049,7 +1049,7 @@ Nothing to plot.  Try again.""")
         """
         peak_chars=self.mapped_parameters.peak_chars
         
-        return self._plot_scores_or_peak_char(peak_chars,
+        return self._plot_loadings_or_peak_char(peak_chars,
                                  calibrate=calibrate,
                                  same_window=same_window, comp_label=comp_label,cmap=cmap,
                                  no_nans=no_nans,per_row=per_row,

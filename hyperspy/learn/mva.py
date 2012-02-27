@@ -122,7 +122,7 @@ class MVA():
 
         See also
         --------
-        plot_decomposition_factors, plot_decomposition_scores, plot_lev
+        plot_decomposition_factors, plot_decomposition_loadings, plot_lev
 
         """
         # backup the original data
@@ -202,12 +202,12 @@ class MVA():
         mean = None
         
         if algorithm == 'svd':
-            factors, scores, explained_variance, mean = svd_pca(
+            factors, loadings, explained_variance, mean = svd_pca(
                 dc[:,signal_mask][navigation_mask,:], centre = centre,
                 auto_transpose = auto_transpose)
 
         elif algorithm == 'fast_svd':
-            factors, scores, explained_variance, mean = svd_pca(
+            factors, loadings, explained_variance, mean = svd_pca(
                 dc[:,signal_mask][navigation_mask,:],
             fast = True, output_dimension = output_dimension, centre = centre,
                 auto_transpose = auto_transpose)
@@ -215,7 +215,7 @@ class MVA():
         elif algorithm == 'sklearn_pca':    
             sk = sklearn.decomposition.PCA(**kwargs)
             sk.n_components = output_dimension
-            scores = sk.fit_transform((dc[:,signal_mask][navigation_mask,:]))
+            loadings = sk.fit_transform((dc[:,signal_mask][navigation_mask,:]))
             factors = sk.components_.T
             explained_variance = sk.explained_variance_
             mean = sk.mean_
@@ -224,18 +224,18 @@ class MVA():
         elif algorithm == 'nmf':    
             sk = sklearn.decomposition.NMF(**kwargs)
             sk.n_components = output_dimension
-            scores = sk.fit_transform((dc[:,signal_mask][navigation_mask,:]))
+            loadings = sk.fit_transform((dc[:,signal_mask][navigation_mask,:]))
             factors = sk.components_.T
             
         elif algorithm == 'sparse_pca':
             sk = sklearn.decomposition.SparsePCA(output_dimension, **kwargs)
-            scores = sk.fit_transform(dc[:,signal_mask][navigation_mask,:])
+            loadings = sk.fit_transform(dc[:,signal_mask][navigation_mask,:])
             factors = sk.components_.T
             
         elif algorithm == 'mini_batch_sparse_pca':
             sk = sklearn.decomposition.MiniBatchSparsePCA(output_dimension,
                                                             **kwargs)
-            scores = sk.fit_transform(dc[:,signal_mask][navigation_mask,:])
+            loadings = sk.fit_transform(dc[:,signal_mask][navigation_mask,:])
             factors = sk.components_.T
 
         elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
@@ -270,7 +270,7 @@ class MVA():
             U,S,V,Sobj, ErrFlag = mlpca(
                 dc[:,signal_mask][navigation_mask,:],
                 var_array, output_dimension, fast = fast)
-            scores = U * S
+            loadings = U * S
             factors = V
             explained_variance_ratio = S ** 2 / Sobj
             explained_variance = S ** 2 / len(factors)
@@ -287,7 +287,7 @@ class MVA():
                 
         # Store the results in mva_results
         target.factors = factors
-        target.scores = scores
+        target.loadings = loadings
         target.explained_variance = explained_variance
         target.explained_variance_ratio = explained_variance_ratio
         target.decomposition_algorithm = algorithm
@@ -315,13 +315,13 @@ class MVA():
             mean = 0
         if reproject in ('navigation', 'both'):
             if algorithm not in ('nmf', 'sparse_pca', 'mini_batch_sparse_pca'):
-                scores_ = np.dot(dc[:,signal_mask] - mean, factors)
+                loadings_ = np.dot(dc[:,signal_mask] - mean, factors)
             else:
-                scores_ = sk.transform(dc[:,signal_mask])
-            target.scores = scores_
+                loadings_ = sk.transform(dc[:,signal_mask])
+            target.loadings = loadings_
         if reproject in ('signal', 'both'):
             if algorithm not in ('nmf', 'sparse_pca', 'mini_batch_sparse_pca'):
-                factors = np.dot(np.linalg.pinv(scores), 
+                factors = np.dot(np.linalg.pinv(loadings), 
                                  dc[navigation_mask,:] - mean).T
                 target.factors = factors
             else:
@@ -335,7 +335,7 @@ class MVA():
         # Rescale the results if the noise was normalized
         if normalize_poissonian_noise is True:
             target.factors[:] *= self._root_bH.T
-            target.scores[:] *= self._root_aG
+            target.loadings[:] *= self._root_aG
             
         # Set the pixels that were not processed to nan
         if not isinstance(signal_mask, slice):
@@ -348,10 +348,10 @@ class MVA():
         if not isinstance(navigation_mask, slice):
             target.navigation_mask = navigation_mask
             if reproject not in ('both', 'navigation'):
-                scores = np.zeros((dc.shape[0], target.scores.shape[1]))
-                scores[navigation_mask == True,:] = target.scores
-                scores[navigation_mask == False,:] = np.nan
-                target.scores = scores
+                loadings = np.zeros((dc.shape[0], target.loadings.shape[1]))
+                loadings[navigation_mask == True,:] = target.loadings
+                loadings[navigation_mask == False,:] = np.nan
+                target.loadings = loadings
 
         #undo any pre-treatments
         self.undo_treatments(on_peaks)
@@ -367,7 +367,7 @@ class MVA():
     def blind_source_separation(
         self, number_of_components=None, algorithm='CuBICA', diff_order=1,
         factors=None, comp_list=None, mask=None, on_peaks=False,
-        on_scores=False,pretreatment = None, **kwargs):
+        on_loadings=False,pretreatment = None, **kwargs):
         """Blind source separation (BSS) on the result on the decomposition.
 
         Available algorithms: FastICA, JADE, CuBICA, and TDSEP
@@ -397,8 +397,8 @@ class MVA():
 
         else:
             if factors is None:
-                if on_scores:
-                    factors = target.scores
+                if on_loadings:
+                    factors = target.loadings
                 else:
                     factors = target.factors
             bool_index = np.zeros((factors.shape[0]), dtype = 'bool')
@@ -462,7 +462,7 @@ class MVA():
 
             target.unmixing_matrix = np.dot(unmixing_matrix, invsqcovmat)
             self._unmix_factors(target)
-            self._unmix_scores(target)
+            self._unmix_loadings(target)
             self._auto_reverse_bss_component(target)
             target.bss_algorithm = algorithm
 
@@ -489,7 +489,7 @@ class MVA():
 
         for i in [component_number,]:
             target.bss_factors[:,i] *= -1
-            target.bss_scores[:,i] *= -1
+            target.bss_loadings[:,i] *= -1
             target.unmixing_matrix[i,:] *= -1
 
     def _unmix_factors(self,target):
@@ -507,19 +507,19 @@ class MVA():
     def _auto_reverse_bss_component(self, target):
         n_components = target.bss_factors.shape[1]
         for i in xrange(n_components):
-            minimum = np.nanmin(target.bss_scores[:,i])
-            maximum = np.nanmax(target.bss_scores[:,i])
+            minimum = np.nanmin(target.bss_loadings[:,i])
+            maximum = np.nanmax(target.bss_loadings[:,i])
             if minimum < 0 and -minimum > maximum:
                 self.reverse_bss_component(i)
                 print("IC %i reversed" % i)
 
-    def _unmix_scores(self,target):
+    def _unmix_loadings(self,target):
         """
         Returns the ICA score matrix (formerly known as the recmatrix)
         """
-        W = target.scores.T[:target.bss_factors.shape[1],:]
+        W = target.loadings.T[:target.bss_factors.shape[1],:]
         Q = np.linalg.inv(target.unmixing_matrix.T)
-        target.bss_scores = np.dot(Q,W).T
+        target.bss_loadings = np.dot(Q,W).T
 
     @do_not_replot
     def _calculate_recmatrix(self, components = None, mva_type=None,
@@ -546,26 +546,26 @@ class MVA():
 
         if mva_type.lower() == 'decomposition':
             factors = target.factors
-            scores = target.scores.T
+            loadings = target.loadings.T
         elif mva_type.lower() == 'bss':
             factors = target.bss_factors
-            scores = target.bss_scores.T
+            loadings = target.bss_loadings.T
         if components is None:
-            a = np.dot(factors,scores)
+            a = np.dot(factors,loadings)
             signal_name = 'model from %s with %i components' % (
             mva_type,factors.shape[1])
         elif hasattr(components, '__iter__'):
             tfactors = np.zeros((factors.shape[0],len(components)))
-            tscores = np.zeros((len(components),scores.shape[1]))
+            tloadings = np.zeros((len(components),loadings.shape[1]))
             for i in xrange(len(components)):
                 tfactors[:,i] = factors[:,components[i]]
-                tscores[i,:] = scores[components[i],:]
-            a = np.dot(tfactors, tscores)
+                tloadings[i,:] = loadings[components[i],:]
+            a = np.dot(tfactors, tloadings)
             signal_name = 'model from %s with components %s' % (
             mva_type,components)
         else:
             a = np.dot(factors[:,:components],
-                                     scores[:components,:])
+                                     loadings[:components,:])
             signal_name = 'model from %s with %i components' % (
             mva_type,components)
 
@@ -835,7 +835,7 @@ class MVA():
 class MVA_Results(object):
     # Decomposition
     factors = None
-    scores = None
+    loadings = None
     explained_variance = None
     explained_variance_ratio = None
     decomposition_algorithm = None
@@ -847,7 +847,7 @@ class MVA_Results(object):
     bss_algorithm = None
     unmixing_matrix = None
     bss_factors = None
-    bss_scores = None
+    bss_loadings = None
     # Shape
     unfolded = None
     original_shape = None
@@ -912,16 +912,20 @@ class MVA_Results(object):
             del self.ica_algorithm
             
         if hasattr(self, 'v'):
-            self.scores = self.v
+            self.loadings = self.v
             del self.v
+
+        if hasattr(self, 'scores'):
+            self.loadings = self.scores
+            del self.scores
             
         if hasattr(self, 'pc'):
-            self.scores = self.pc
+            self.loadings = self.pc
             del self.pc
             
         if hasattr(self, 'ica_scores'):
-            self.bss_scores = self.ica_scores
-            del self.self.ica_scores
+            self.bss_loadings = self.ica_loadings
+            del self.self.ica_loadings
             
         if hasattr(self, 'ica_factors'):
             self.bss_factors = self.ica_factors
@@ -963,12 +967,12 @@ class MVA_Results(object):
         It is mainly useful to save memory and reduce the storage size
         """
         print "trimming to %i dimensions" % n
-        self.scores = self.scores[:,:n]
+        self.loadings = self.loadings[:,:n]
         if self.explained_variance is not None:
             self.explained_variance = self.explained_variance[:n]
         self.factors = self.factors[:,:n]
         
     def _transpose_results(self):
-        self.factors, self.scores, self.bss_factors, self.bss_scores = \
-        self.scores, self.factors, self.bss_scores, self.bss_factors
+        self.factors, self.loadings, self.bss_factors, self.bss_loadings = \
+        self.loadings, self.factors, self.bss_loadings, self.bss_factors
         

@@ -170,14 +170,14 @@ def _plot_component(axes_manager,
                                       cmap=cmap,
                                       comp_label=comp_label)
 
-def _plot_score(scores, idx, axes_manager, ax=None, 
+def _plot_loading(loadings, idx, axes_manager, ax=None, 
                 comp_label=None, no_nans=True, 
                 calibrate=True, cmap=plt.cm.gray,
                 same_window=False):
     if ax==None:
         ax=plt.gca()
     if no_nans:
-        scores=np.nan_to_num(scores)
+        loadings=np.nan_to_num(loadings)
     axes=axes_manager._non_slicing_axes
     if axes_manager.navigation_dimension==2:
         extent=None
@@ -188,7 +188,7 @@ def _plot_score(scores, idx, axes_manager, ax=None,
                     axes[1].high_value,
                     axes[0].high_value,
                     axes[0].low_value)
-        im=ax.imshow(scores[idx].reshape(shape),cmap=cmap,extent=extent,
+        im=ax.imshow(loadings[idx].reshape(shape),cmap=cmap,extent=extent,
                      interpolation='nearest')
         if calibrate:
             plt.xlabel(axes[1].units)
@@ -206,7 +206,7 @@ def _plot_score(scores, idx, axes_manager, ax=None,
             x=axes[0].axis
         else:
             x=np.arange(axes[0].size)
-        ax.step(x,scores[idx],
+        ax.step(x,loadings[idx],
                 label='%s %s'%(comp_label,idx))
         if comp_label and not same_window:
             plt.title('%s %s'%(comp_label,idx))

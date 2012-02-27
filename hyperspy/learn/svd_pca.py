@@ -50,7 +50,7 @@ def svd_pca(data, fast = False, output_dimension = None, centre = None,
     -------
     
     factors : numpy array
-    scores : numpy array
+    loadings : numpy array
     explained_variance : numpy array
     mean : numpy array or None (if center is None)
     """
@@ -82,9 +82,9 @@ def svd_pca(data, fast = False, output_dimension = None, centre = None,
     if auto_transpose is False:
         factors = V.T
         explained_variance = S ** 2 / N
-        scores = U * S
+        loadings = U * S
     else:
-        scores = V.T
+        loadings = V.T
         explained_variance = S ** 2 / N
         factors = U * S
-    return factors, scores, explained_variance, mean
+    return factors, loadings, explained_variance, mean

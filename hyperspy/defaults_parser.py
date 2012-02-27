@@ -99,12 +99,12 @@ class ModelConfig(t.HasTraits):
 
 class MachineLearningConfig(t.HasTraits):
     export_factors_default_file_format = t.Enum(*default_write_ext)
-    export_scores_default_file_format = t.Enum(*default_write_ext)
+    export_loadings_default_file_format = t.Enum(*default_write_ext)
     multiple_files = t.Bool(False,
         label = 'Export to multiple files',
         desc = 'If enabled, on exporting the PCA or ICA results one file'
-               'per factor and score will be created. Otherwise only two files'
-               'will contain the factors and scores')
+               'per factor and loading will be created. Otherwise only two files'
+               'will contain the factors and loadings')
     same_window = t.Bool(True,
         label = 'Plot components in the same window',
         desc = 'If enabled the principal and independent components will all'
@@ -164,7 +164,7 @@ template = {
 
 # Set the enums defaults
 template['MachineLearning'].export_factors_default_file_format = 'rpl'
-template['MachineLearning'].export_scores_default_file_format = 'rpl'
+template['MachineLearning'].export_loadings_default_file_format = 'rpl'
 
 # Defaults template definition ends ############################################       
 
