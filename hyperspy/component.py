@@ -180,7 +180,7 @@ class Parameter(object):
                     'axes' : self._axes_manager._get_non_slicing_axes_dicts()})
         s.mapped_parameters.title = self.name
         for axis in s.axes_manager.axes:
-            axis.slice_bool = True
+            axis.navigate = False
         return s
         
     def plot(self):

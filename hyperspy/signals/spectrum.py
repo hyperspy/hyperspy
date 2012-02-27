@@ -43,7 +43,7 @@ class Spectrum(Signal):
     """
     def __init__(self, *args, **kwargs):
         Signal.__init__(self, *args, **kwargs)
-        self.axes_manager.set_view('hyperspectrum')
+        self.axes_manager.set_view('spectrum')
 
     @auto_replot
     def correct_bad_pixels(self, indexes, axis = -1):

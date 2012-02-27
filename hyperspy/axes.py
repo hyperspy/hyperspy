@@ -38,7 +38,7 @@ def get_axis_group(n , label = ''):
                 tui.Item('axis%i.index' % n, style = 'readonly'),
                 tui.Item('axis%i.value' % n, style = 'readonly'),
                 tui.Item('axis%i.units' % n),
-                tui.Item('axis%i.slice_bool' % n, label = 'slice'),
+                tui.Item('axis%i.navigate' % n, label = 'slice'),
             show_border = True,),
             tui.Group(
                 tui.Item('axis%i.scale' % n),
@@ -93,12 +93,12 @@ class DataAxis(t.HasTraits):
     low_index = t.Int(0)
     high_index = t.Int()
     slice = t.Instance(slice)
-    slice_bool = t.Bool(False)
+    navigate = t.Bool(False)
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
 
     def __init__(self, size, index_in_array, name='', scale=1., offset=0.,
-                 units='undefined', slice_bool = False):
+                 units='undefined', navigate = True):
         super(DataAxis, self).__init__()
 
         self.name = name
@@ -115,9 +115,9 @@ class DataAxis(t.HasTraits):
         self.on_trait_change(self.update_axis, ['scale', 'offset', 'size'])
         self.on_trait_change(self.update_value, 'index')
         self.on_trait_change(self.set_index_from_value, 'value')
-        self.on_trait_change(self._update_slice, 'slice_bool')
+        self.on_trait_change(self._update_slice, 'navigate')
         self.on_trait_change(self.update_index_bounds, 'size')
-        self.slice_bool = slice_bool
+        self.navigate = navigate
 
     def __repr__(self):
         if self.name is not None:
@@ -132,7 +132,7 @@ class DataAxis(t.HasTraits):
 #        self.update_value()
 
     def _update_slice(self, value):
-        if value is True:
+        if value is False:
             self.slice = slice(None)
         else:
             self.slice = None
@@ -145,7 +145,7 @@ class DataAxis(t.HasTraits):
             'size' : self.size,
             'units' : self.units,
             'index_in_array' : self.index_in_array,
-            'slice_bool' : self.slice_bool
+            'navigate' : self.navigate
         }
         return adict
 
@@ -206,7 +206,7 @@ class DataAxis(t.HasTraits):
                 tui.Item(name = 'index'),
                 tui.Item(name = 'value', style = 'readonly'),
                 tui.Item(name = 'units'),
-                tui.Item(name = 'slice_bool', label = 'slice'),
+                tui.Item(name = 'navigate', label = 'navigate'),
             show_border = True,),
             tui.Group(
                 tui.Item(name = 'scale'),
@@ -230,9 +230,9 @@ class AxesManager(t.HasTraits):
         self.axes = [None] * ncoord
         for axis_dict in axes_list:
             self.axes[axis_dict['index_in_array']] = DataAxis(**axis_dict)
-        slices = [i.slice_bool for i in self.axes if hasattr(i, 'slice_bool')]
+        navigates = [i.navigate for i in self.axes if hasattr(i, 'navigate')]
         # set_view is called only if there is no current view
-        if not slices or np.all(np.array(slices) == False):
+        if not navigates or np.all(np.array(navigates) == True):
             self.set_view()
         self.set_signal_dimension()
         self.on_trait_change(self.set_signal_dimension, 'axes.slice')
@@ -275,17 +275,25 @@ class AxesManager(t.HasTraits):
         for index,axis in zip(nsi, self.axes):
             axis.index = index
 
-    def set_view(self, view = 'hyperspectrum'):
-        """view : 'hyperspectrum' or 'image' """
-        tl = [False] * len(self.axes)
-        if view == 'hyperspectrum':
+    def set_view(self, view = 'spectrum'):
+        """Adjust the navigate attribute depending on the desired view-
+        
+        Attributes
+        ----------
+        view : {'spectrum', 'image'}
+            If spectrum all but the last index will be set to "navigate". If 
+            'image' the all but the last two indexes will be set to navigate.            
+        
+        """
+        tl = [True] * len(self.axes)
+        if view == 'spectrum':
             # We limit the signal_dimension to 1 to get a spectrum
-            tl[0] = True
+            tl[-1] = False
         elif view == 'image':
-            tl[:2] = True, True
+            tl[-2:] = False, False
 
         for axis in self.axes:
-            axis.slice_bool = tl.pop()
+            axis.navigate = tl.pop(0)
 
     def set_slicing_axes(self, slicing_axes):
         '''Easily choose which axes are slicing
@@ -299,9 +307,9 @@ class AxesManager(t.HasTraits):
         '''
         for axis in self.axes:
             if axis.index_in_array in slicing_axes:
-                axis.slice_bool = True
+                axis.navigate = False
             else:
-                axis.slice_bool = False
+                axis.navigate = True
 
     def connect(self, f):
         for axis in self.axes:

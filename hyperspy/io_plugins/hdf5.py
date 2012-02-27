@@ -202,8 +202,8 @@ def write_signal(signal,group, compression):
     group.create_dataset('data', data = signal.data, compression = compression)
     for axis in signal.axes_manager.axes:
         axis_dict = axis.get_axis_dictionary()
-        # For the moment we don't store the slice_bool
-        del(axis_dict['slice_bool'])
+        # For the moment we don't store the navigate attribute
+        del(axis_dict['navigate'])
         coord_group = group.create_group('axis-%s' % axis.index_in_array)
         dict2hdfgroup(axis_dict, coord_group, compression = compression)
     mapped_par = group.create_group('mapped_parameters')
