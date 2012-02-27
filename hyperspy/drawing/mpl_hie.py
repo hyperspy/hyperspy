@@ -45,6 +45,7 @@ class MPL_HyperImage_Explorer():
         imf.data_function = self.image_data_function
         imf.pixel_units = self.pixel_units
         imf.pixel_size = self.pixel_size
+        imf.title = self.image_title
         imf.plot()
         self.image_plot = imf
         

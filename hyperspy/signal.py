@@ -255,6 +255,7 @@ class Signal(t.HasTraits, MVA):
             self._plot.image_data_function = self.__call__
             self._plot.navigator_data_function = self._get_explorer
             self._plot.axes_manager = axes_manager
+            self._plot.image_title = self.mapped_parameters.title
             self._plot.plot()
 
         else:

@@ -64,6 +64,7 @@ class ImagePlot:
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
         self.ax.set_axis_off()
+        self.ax.set_title(self.title)
         self.figure.subplots_adjust(0,0,1,1)
         
     def plot(self):
@@ -84,6 +85,8 @@ class ImagePlot:
         #size = [ 6,  6.* data.shape[0] / data.shape[1]]
         #self.figure.set_size_inches(size, forward = True)        
         self.figure.canvas.draw()
+        if hasattr(self.figure, 'tight_layout'):
+            self.figure.tight_layout()
         self.connect()
         
     def update_image(self):
