@@ -452,7 +452,7 @@ class EELSModel(Model):
         # Print absolute quantification
         print
         print "Absolute quantification:"
-        print "Elem.\tAreal density (atoms/nm**2)"
+        print "Elem.\tIntensity"
         for element in elements:
             if len(elements[element]) == 1:
                 for subshell in elements[element]:

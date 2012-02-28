@@ -782,4 +782,23 @@ class Model(list, Optimizers, Estimators):
         for component in self:
             if only_active is False or component.active is True:
                 component.plot(only_free=only_free)
+                
+    def print_current_values(self, only_free=True):
+        """Print the value of each parameter of the model.
+        
+        Parameters
+        ----------
+        only_free : bool
+            If True, only the value of the parameters that are free will be
+            printed.
+        """
+        print "Components\tParameter\tValue"
+        for component in self:
+            if component.active is True:
+                print(component.name )
+                parameters = component.free_parameters if only_free \
+                    else component.parameter
+                for parameter in parameters:
+                    print("\t\t%s\t%f" % (parameter.name, parameter.value))
+
         
