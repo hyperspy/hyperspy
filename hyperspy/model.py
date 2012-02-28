@@ -204,7 +204,6 @@ class Model(list, Optimizers, Estimators):
     def _set_p0(self):
         p0 = None
         for component in self:
-            component.refresh_free_parameters()
             if component.active:
                 for param in component.free_parameters:
                     if p0 is not None:
@@ -224,7 +223,6 @@ class Model(list, Optimizers, Estimators):
         """
         self.free_parameters_boundaries = []
         for component in self:
-            component.refresh_free_parameters()
             if component.active:
                 for param in component.free_parameters:
                     if param._number_of_elements == 1:
@@ -237,7 +235,6 @@ class Model(list, Optimizers, Estimators):
     def set_mpfit_parameters_info(self):
         self.mpfit_parinfo = []
         for component in self:
-            component.refresh_free_parameters()
             if component.active:
                 for param in component.free_parameters:
                     if param._number_of_elements == 1:
@@ -305,11 +302,11 @@ class Model(list, Optimizers, Estimators):
         for component in self: # Cut the parameters list
             if component.active is True:
                 if p_std is not None:
-                    comp_p_std = p_std[counter: counter + component.nfree_param]
+                    comp_p_std = p_std[counter: counter + component._nfree_param]
                 component.charge(
-                self.p0[counter: counter + component.nfree_param], 
+                self.p0[counter: counter + component._nfree_param], 
                 comp_p_std, onlyfree = True)
-                counter += component.nfree_param
+                counter += component._nfree_param
 
     # Defines the functions for the fitting process -------------------------
     def _model2plot(self, axes_manager, out_of_range2nans = True):
@@ -375,7 +372,7 @@ class Model(list, Optimizers, Estimators):
                         else:
                             np.add(sum_,
                             component.function(self.axis.axis), sum_)
-                        counter+=component.nfree_param
+                        counter+=component._nfree_param
                 else :
                     if component.convolved:
                         np.add(sum_convolved,
@@ -384,7 +381,7 @@ class Model(list, Optimizers, Estimators):
                     else:
                         np.add(sum_, component.function(self.axis.axis),
                         sum_)
-                    counter+=component.nfree_param
+                    counter+=component._nfree_param
             to_return = sum_ + np.convolve(
                 self.low_loss(self.axes_manager), 
                 sum_convolved, mode="valid")
@@ -501,12 +498,12 @@ class Model(list, Optimizers, Estimators):
                 if component.active is True:
                     if component.convolved is True:
                         np.add(sum_convolved, component(param[\
-                        counter:counter+component.nfree_param],
+                        counter:counter+component._nfree_param],
                         self.convolution_axis), sum_convolved)
                     else:
                         np.add(sum, component(param[counter:counter + \
-                        component.nfree_param], self.axis.axis), sum)
-                    counter+=component.nfree_param
+                        component._nfree_param], self.axis.axis), sum)
+                    counter+=component._nfree_param
 
             return (sum + np.convolve(self.low_loss(self.axes_manager), 
                                       sum_convolved,mode="valid"))[
@@ -520,12 +517,12 @@ class Model(list, Optimizers, Estimators):
                 if component.active is True:
                     if first is True:
                         sum = component(param[counter:counter + \
-                        component.nfree_param],axis)
+                        component._nfree_param],axis)
                         first = False
                     else:
                         sum += component(param[counter:counter + \
-                        component.nfree_param], axis)
-                    counter += component.nfree_param
+                        component._nfree_param], axis)
+                    counter += component._nfree_param
             return sum
 
     def _jacobian(self,param, y, weights = None):
@@ -535,7 +532,7 @@ class Model(list, Optimizers, Estimators):
             for component in self: # Cut the parameters list
                 if component.active:
                     component.charge(param[counter:counter + \
-                    component.nfree_param] , onlyfree = True)
+                    component._nfree_param] , onlyfree = True)
                     if component.convolved:
                         for parameter in component.free_parameters :
                             par_grad = np.convolve(
@@ -550,7 +547,7 @@ class Model(list, Optimizers, Estimators):
                                     self.low_loss(self.axes_manager), 
                                     mode="valid"), par_grad)
                             grad = np.vstack((grad, par_grad))
-                        counter += component.nfree_param
+                        counter += component._nfree_param
                     else:
                         for parameter in component.free_parameters :
                             par_grad = parameter.grad(self.axis.axis)
@@ -559,7 +556,7 @@ class Model(list, Optimizers, Estimators):
                                     np.add(par_grad, parameter.grad(
                                     self.axis.axis), par_grad)
                             grad = np.vstack((grad, par_grad))
-                        counter += component.nfree_param
+                        counter += component._nfree_param
             if weights is None:
                 return grad[1:, self.channel_switches]
             else:
@@ -571,7 +568,7 @@ class Model(list, Optimizers, Estimators):
             for component in self: # Cut the parameters list
                 if component.active:
                     component.charge(param[counter:counter + \
-                    component.nfree_param] , onlyfree = True)
+                    component._nfree_param] , onlyfree = True)
                     for parameter in component.free_parameters :
                         par_grad = parameter.grad(axis)
                         if parameter._twins:
@@ -579,7 +576,7 @@ class Model(list, Optimizers, Estimators):
                                 np.add(par_grad, parameter.grad(
                                 axis), par_grad)
                         grad = np.vstack((grad, par_grad))
-                    counter += component.nfree_param
+                    counter += component._nfree_param
             if weights is None:
                 return grad[1:,:]
             else:

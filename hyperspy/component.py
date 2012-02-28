@@ -32,6 +32,7 @@ class Parameter(object):
     def __init__(self, value=0., free=True, bmin=None, 
     bmax=None, twin = None):
         
+        self.component = None
         self.connection_active = False
         self.connected_functions = list()
         self.ext_bounded = False
@@ -105,6 +106,8 @@ class Parameter(object):
             return False
     def _setfree(self,arg):
         self.__free = arg
+        if self.component is not None:
+            self.component._update_free_parameters()
     free = property(_getfree,_setfree)
 
     def _set_twin(self,arg):
@@ -241,7 +244,7 @@ class Component(object):
     def __init__(self, parameter_name_list):
         self.parameters = []
         self.init_parameters(parameter_name_list)
-        self.refresh_free_parameters()
+        self._update_free_parameters()
         self.active = True
         self.isbackground = False
         self.convolved = True
@@ -260,18 +263,16 @@ class Component(object):
     def __repr__(self):
         return self.name
 
-    def refresh_free_parameters(self):
+    def _update_free_parameters(self):
         self.free_parameters = set()
         for parameter in self.parameters:
             if parameter.free:
                 self.free_parameters.add(parameter)
-        self.update_number_free_parameters()
-
-    def update_number_free_parameters(self):
+        # update_number_free_parameters(self):
         i=0
         for parameter in self.free_parameters:
             i += parameter._number_of_elements
-        self.nfree_param=i
+        self._nfree_param=i
 
     def update_number_parameters(self):
         i=0
