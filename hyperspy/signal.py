@@ -36,6 +36,7 @@ from hyperspy.io import (write_1d_exts, write_2d_exts, write_3d_exts,
                          write_xd_exts)
 from hyperspy.io_plugins.image import file_extensions as image_extensions
 from hyperspy.defaults_parser import preferences
+from hyperspy.misc.utils import ensure_directory
 
 from matplotlib import pyplot as plt
 
@@ -982,14 +983,25 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             else:
                 return f
 
-    def _export_factors(self, factors, comp_ids=None, multiple_files=None,
-                        save_figures=False, save_figures_format = 'png',
+    def _export_factors(self,
+                        factors,
+                        folder=None,
+                        comp_ids=None,
+                        multiple_files=None,
+                        save_figures=False,
+                        save_figures_format='png',
                         factor_prefix=None,
-                        factor_format=None, comp_label=None, cmap=plt.cm.jet,
-                        on_peaks=False, plot_shifts=True,
-                        plot_char=4, img_data=None,
-                        same_window=False, calibrate=True,
-                        quiver_color='white', vector_scale=1,
+                        factor_format=None,
+                        comp_label=None,
+                        cmap=plt.cm.jet,
+                        on_peaks=False,
+                        plot_shifts=True,
+                        plot_char=4,
+                        img_data=None,
+                        same_window=False,
+                        calibrate=True,
+                        quiver_color='white',
+                        vector_scale=1,
                         no_nans=True, per_row=3):
 
         from hyperspy.signals.image import Image
@@ -1015,17 +1027,24 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         if save_figures is True or (on_peaks is True and \
             factor_format in image_extensions):
             plt.ioff()
-            fac_plots=self._plot_factors_or_pchars(factors, comp_ids=comp_ids, 
-                                same_window=same_window, comp_label=comp_label, 
-                                on_peaks=on_peaks, img_data=img_data,
-                                plot_shifts=plot_shifts, plot_char=plot_char, 
-                                cmap=cmap, per_row=per_row,quiver_color=quiver_color,
-                                vector_scale=vector_scale)
+            fac_plots=self._plot_factors_or_pchars(factors,
+                                                   comp_ids=comp_ids, 
+                                                   same_window=same_window,
+                                                   comp_label=comp_label, 
+                                                   on_peaks=on_peaks,
+                                                   img_data=img_data,
+                                                   plot_shifts=plot_shifts,
+                                                   plot_char=plot_char, 
+                                                   cmap=cmap,
+                                                   per_row=per_row,
+                                                   quiver_color=quiver_color,
+                                                   vector_scale=vector_scale)
             for idx in xrange(len(comp_ids)):
-                fac_plots[idx].savefig('%s_%02i.%s'%(factor_prefix,
-                                                  comp_ids[idx],
-                                                  save_figures_format),
-                                       dpi=600)
+                filename = '%s_%02i.%s' % (factor_prefix, comp_ids[idx])
+                if folder is not None:
+                    filename = os.path.join(folder, filename)
+                ensure_directory(filename)
+                fac_plots[idx].savefig(filename, save_figures_format, dpi=600)
             plt.ion()
             
         elif multiple_files is False:
@@ -1077,7 +1096,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                             'mapped_parameters' : {
                             'title':'%s from %s'%(factor_prefix, 
                                 self.mapped_parameters.title),}})
-                s.save('%ss.%s' % (factor_prefix, factor_format))
+            filename = '%ss.%s' % (factor_prefix, factor_format)
+            if folder is not None:
+                filename = os.path.join(folder, filename)
+            s.save(filename)
         else: # Separate files
             if self.axes_manager.signal_dimension == 1:
             
@@ -1090,7 +1112,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                                 'mapped_parameters' : {
                             'title':'%s from %s'%(factor_prefix, 
                                 self.mapped_parameters.title),}})
-                    s.save('%s-%i.%s' % (factor_prefix, dim, factor_format))
+                    filename = '%s-%i.%s' % (factor_prefix, dim, factor_format)
+                    if folder is not None:
+                        filename = os.path.join(folder, filename)
+                    s.save(filename)
                     
             if self.axes_manager.signal_dimension == 2:
                 axes = self.axes_manager._slicing_axes
@@ -1111,14 +1136,26 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                                 'title' : '%s from %s' % (factor_prefix,
                                     self.mapped_parameters.title),
                                 }})
-                    im.save('%s-%i.%s' % (factor_prefix, i, factor_format))
+                    filename = '%s-%i.%s' % (factor_prefix, i, factor_format)
+                    if folder is not None:
+                        filename = os.path.join(folder, filename)
+                    im.save(filename)
 
-    def _export_loadings(self, loadings, comp_ids=None, multiple_files=None,
-                        loading_prefix=None, loading_format=None,
-                        save_figures_format = 'png',
-                        comp_label=None,cmap=plt.cm.jet, save_figures = False,
-                        same_window=False,calibrate=True,
-                        no_nans=True,per_row=3):
+    def _export_loadings(self,
+                         loadings,
+                         folder=None,
+                         comp_ids=None,
+                         multiple_files=None,
+                         loading_prefix=None,
+                         loading_format=None,
+                         save_figures_format = 'png',
+                         comp_label=None,
+                         cmap=plt.cm.gray,
+                         save_figures = False,
+                         same_window=False,
+                         calibrate=True,
+                         no_nans=True,
+                         per_row=3):
 
         from hyperspy.signals.image import Image
         from hyperspy.signals.spectrum import Spectrum
@@ -1148,10 +1185,12 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                                        cmap=cmap, no_nans=no_nans,
                                        per_row=per_row)
             for idx in xrange(len(comp_ids)):
-                sc_plots[idx].savefig('%s_%02i.%s'%(loading_prefix,
-                                                  comp_ids[idx],
-                                                  save_figures_format),
-                                       dpi=600)
+                filename = '%s_%02i.%s'%(loading_prefix, comp_ids[idx],
+                                                  save_figures_format)
+                if folder is not None:
+                    filename = os.path.join(folder, filename)
+                ensure_directory(filename)
+                sc_plots[idx].savefig(filename, dpi=600)
             plt.ion()
         elif multiple_files is False:
             if self.axes_manager.navigation_dimension==2:
@@ -1192,7 +1231,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                             'mapped_parameters':{
                             'title':'%s from %s'%(loading_prefix,
                                 self.mapped_parameters.title),}})
-            s.save('%ss.%s' % (loading_prefix, loading_format))
+            filename = '%ss.%s' % (loading_prefix, loading_format)
+            if folder is not None:
+                filename = os.path.join(folder, filename)
+            s.save(filename)
         else: # Separate files
             if self.axes_manager.navigation_dimension == 1:
                 axis_dict = self.axes_manager._non_slicing_axes[0].\
@@ -1201,7 +1243,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 for dim in comp_ids:
                     s=Spectrum({'data':loadings[dim],
                                 'axes': [axis_dict,]})
-                    s.save('%s-%i.%s' % (loading_prefix, dim, loading_format))
+                    filename = '%s-%i.%s' % (loading_prefix, dim, loading_format)
+                    if folder is not None:
+                        filename = os.path.join(folder, filename)
+                    s.save(filename)
             elif self.axes_manager.navigation_dimension == 2:
                 axes_dicts=[]
                 axes=self.axes_manager._non_slicing_axes
@@ -1218,8 +1263,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                                 'title':'%s from %s'%(loading_prefix, 
                                     self.mapped_parameters.title),
                                 }})
-                    s.save('%s-%i.%s' % (loading_prefix, i, loading_format))
-
+                    filename = '%s-%i.%s' % (loading_prefix, i, loading_format)
+                    if folder is not None:
+                        filename = os.path.join(folder, filename)
+                    s.save(filename)
 
     def plot_decomposition_factors(self,comp_ids=None, calibrate=True,
                         same_window=None, comp_label='Decomposition factor', 
@@ -1416,34 +1463,40 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                                  same_window=same_window, comp_label=comp_label,
                                  cmap=cmap, no_nans=no_nans,per_row=per_row)
 
-    def export_decomposition_results(self, comp_ids=None, calibrate=True,
-                          factor_prefix='factor', factor_format=None,
-                          loading_prefix='loading', loading_format=None, 
-                          comp_label=None,cmap=plt.cm.jet,
-                          same_window=False, multiple_files = None,
-                          no_nans=True,per_row=3, save_figures=False,
-                          save_figures_format ='png'):
-        """Export results from PCA to any of the supported formats.
+    def export_decomposition_results(self, comp_ids=None,
+                                     folder=None,
+                                     calibrate=True,
+                                     factor_prefix='factor',
+                                     factor_format=None,
+                                     loading_prefix='loading',
+                                     loading_format=None, 
+                                     comp_label=None,
+                                     cmap=plt.cm.gray,
+                                     same_window=False,
+                                     multiple_files=None,
+                                     no_nans=True,
+                                     per_row=3,
+                                     save_figures=False,
+                                     save_figures_format ='png'):
+        """Export results from a decomposition to any of the supported formats.
 
         Parameters
         ----------
-
         comp_ids : None, int, or list of ints
             if None, returns all components/loadings.
             if int, returns components/loadings with ids from 0 to given int.
             if list of ints, returns components/loadings with ids in given list.
-
+        folder : str or None
+            The path to the folder where the file will be saved. If `None` the
+            current folder is used by default.
         factor_prefix : string
             The prefix that any exported filenames for factors/components 
             begin with
-
         factor_format : string
             The extension of the format that you wish to save to.
-                
         loading_prefix : string
             The prefix that any exported filenames for factors/components 
             begin with
-
         loading_format : string
             The extension of the format that you wish to save to.  Determines
             the kind of output.
@@ -1455,13 +1508,11 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                   file.
                 - For spectral formats (msa), each loading is saved to a
                   separate file.
-                  
         multiple_files : Bool
             If True, on exporting a file per factor and per loading will be 
             created. Otherwise only two files will be created, one for the
             factors and another for the loadings. The default value can be
             chosen in the preferences.
-            
         save_figures : Bool
             If True the same figures that are obtained when using the plot 
             methods will be saved with 600 dpi resolution
@@ -1472,27 +1523,24 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         calibrate : bool
             if True, calibrates plots where calibration is available from
             the axes_manager.  If False, plots are in pixels/channels.
-
         same_window : bool
             if True, plots each factor to the same window.
-        
-        comp_label : string, the label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting in the 
-            same window)
-
+        comp_label : string, the label that is either the plot title 
+            (if plotting in separate windows) or the label in the legend 
+            (if plotting in the same window)
         cmap : The colormap used for the factor image, or for peak 
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
-        
         per_row : int, the number of plots in each row, when the same_window
             parameter is True.
-            
         save_figures_format : str
             The image format extension.
+            
         """
+        
         factors=self.learning_results.factors
         loadings=self.learning_results.loadings.T
-        self._export_factors(factors, comp_ids=comp_ids,
+        self._export_factors(factors, folder=folder,comp_ids=comp_ids,
                              calibrate=calibrate, multiple_files=multiple_files,
                              factor_prefix=factor_prefix,
                              factor_format=factor_format,
@@ -1502,7 +1550,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                              same_window=same_window,
                              per_row=per_row,
                              save_figures_format=save_figures_format)
-        self._export_loadings(loadings,comp_ids=comp_ids,
+        self._export_loadings(loadings,comp_ids=comp_ids,folder=folder,
                             calibrate=calibrate, multiple_files=multiple_files,
                             loading_prefix=loading_prefix,
                             loading_format=loading_format,
@@ -1512,27 +1560,35 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                             no_nans=no_nans,
                             per_row=per_row)
 
-    def export_bss_results(self, comp_ids=None, calibrate=True,
-                           multiple_files=None, save_figures=False,
-                          factor_prefix='bss_factor', factor_format=None,
-                          loading_prefix='bss_loading', loading_format=None, 
-                          comp_label=None, cmap=plt.cm.jet,
-                          same_window=False, no_nans=True, per_row=3,
-                          save_figures_format='png'):
+    def export_bss_results(self,
+                           comp_ids=None,
+                           folder=None,
+                           calibrate=True,
+                           multiple_files=None,
+                           save_figures=False,
+                           factor_prefix='bss_factor',
+                           factor_format=None,
+                           loading_prefix='bss_loading',
+                           loading_format=None, 
+                           comp_label=None, cmap=plt.cm.gray,
+                           same_window=False,
+                           no_nans=True,
+                           per_row=3,
+                           save_figures_format='png'):
         """Export results from ICA to any of the supported formats.
 
         Parameters
         ----------
-
         comp_ids : None, int, or list of ints
             if None, returns all components/loadings.
             if int, returns components/loadings with ids from 0 to given int.
             if list of ints, returns components/loadings with ids in given list.
-
+        folder : str or None
+            The path to the folder where the file will be saved. If `None` the
+            current folder is used by default.
         factor_prefix : string
             The prefix that any exported filenames for factors/components 
             begin with
-
         factor_format : string
             The extension of the format that you wish to save to.  Determines
             the kind of output.
@@ -1548,48 +1604,42 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         loading_prefix : string
             The prefix that any exported filenames for factors/components 
             begin with
-
         loading_format : string
             The extension of the format that you wish to save to.
-            
         multiple_files : Bool
             If True, on exporting a file per factor and per loading will be 
             created. Otherwise only two files will be created, one for the
             factors and another for the loadings. The default value can be
             chosen in the preferences.
-            
         save_figures : Bool
             If True the same figures that are obtained when using the plot 
             methods will be saved with 600 dpi resolution
 
         Plotting options (for save_figures = True ONLY)
         ----------------------------------------------
-
         calibrate : bool
             if True, calibrates plots where calibration is available from
             the axes_manager.  If False, plots are in pixels/channels.
-
         same_window : bool
             if True, plots each factor to the same window.
-        
         comp_label : string
             the label that is either the plot title (if plotting in
             separate windows) or the label in the legend (if plotting in the 
             same window)
-
         cmap : The colormap used for the factor image, or for peak 
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
-        
         per_row : int, the number of plots in each row, when the same_window
             parameter is True.
-        
         save_figures_format : str
             The image format extension.
+            
         """
+        
         factors=self.learning_results.bss_factors
         loadings=self.learning_results.bss_loadings.T
         self._export_factors(factors,
+                             folder=folder,
                              comp_ids=comp_ids,
                              calibrate=calibrate,
                              multiple_files=multiple_files,
@@ -1605,6 +1655,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                              
         self._export_loadings(loadings,
                               comp_ids=comp_ids,
+                              folder=folder,
                               calibrate=calibrate, 
                               multiple_files=multiple_files,
                               loading_prefix=loading_prefix,
