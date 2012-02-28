@@ -1106,8 +1106,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 axis_dict = self.axes_manager._slicing_axes[0].\
                     get_axis_dictionary()
                 axis_dict['index_in_array']=0
-                for dim in comp_ids:
-                    s=Spectrum({'data':factors[:,dim],
+                for dim,index in zip(comp_ids,range(len(comp_ids))):
+                    s=Spectrum({'data':factors[:,index],
                                 'axes': [axis_dict,],
                                 'mapped_parameters' : {
                             'title':'%s from %s'%(factor_prefix, 
@@ -1128,15 +1128,15 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 factor_data = factors.reshape(
                     self.axes_manager.signal_shape + [-1,])
                 
-                for i in range(factor_data.shape[-1]):
+                for dim,index in zip(comp_ids,range(len(comp_ids))):
                     im = Image({
-                                'data' : factor_data[...,i],
+                                'data' : factor_data[...,index],
                                 'axes' : axes_dicts,
                                 'mapped_parameters' : {
                                 'title' : '%s from %s' % (factor_prefix,
                                     self.mapped_parameters.title),
                                 }})
-                    filename = '%s-%i.%s' % (factor_prefix, i, factor_format)
+                    filename = '%s-%i.%s' % (factor_prefix, dim, factor_format)
                     if folder is not None:
                         filename = os.path.join(folder, filename)
                     im.save(filename)
@@ -1240,10 +1240,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 axis_dict = self.axes_manager._non_slicing_axes[0].\
                     get_axis_dictionary()
                 axis_dict['index_in_array']=0
-                for dim in comp_ids:
-                    s=Spectrum({'data':loadings[dim],
+                for dim,index in zip(comp_ids,range(len(comp_ids))):
+                    s=Spectrum({'data':loadings[index],
                                 'axes': [axis_dict,]})
-                    filename = '%s-%i.%s' % (loading_prefix, dim, loading_format)
+                    filename = '%s-%i.%s' % (loading_prefix, dim,loading_format)
                     if folder is not None:
                         filename = os.path.join(folder, filename)
                     s.save(filename)
@@ -1256,14 +1256,15 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 axes_dicts[0]['index_in_array']=0
                 axes_dicts.append(axes[1].get_axis_dictionary())
                 axes_dicts[1]['index_in_array']=1
-                for i in range(loading_data.shape[0]):
-                    s=Image({'data':loading_data[i,...],
+                for dim,index in zip(comp_ids,range(len(comp_ids))):
+                    s=Image({'data':loading_data[index,...],
                              'axes':axes_dicts,
                              'mapped_parameters':{
-                                'title':'%s from %s'%(loading_prefix, 
+                                'title':'%s from %s'%(
+                                    loading_prefix, 
                                     self.mapped_parameters.title),
                                 }})
-                    filename = '%s-%i.%s' % (loading_prefix, i, loading_format)
+                    filename = '%s-%i.%s' % (loading_prefix, dim, loading_format)
                     if folder is not None:
                         filename = os.path.join(folder, filename)
                     s.save(filename)
