@@ -697,7 +697,31 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 
     def deepcopy(self):
         return(copy.deepcopy(self))
+        
+    def change_dtype(self, dtype):
+        """Change the data type
+        
+        Parameters
+        ----------
 
+        dtype : str or dtype
+            Typecode or data-type to which the array is cast.
+            
+        Example
+        -------
+        >>> import numpy as np
+        >>> from hyperspy.signals.spectrum import Spectrum
+        >>> s = Spectrum({'data' : np.array([1,2,3,4,5])})
+        >>> s.data
+        array([1, 2, 3, 4, 5])
+        >>> s.change_dtype('float')
+        >>> s.data
+        array([ 1.,  2.,  3.,  4.,  5.])
+        
+        """
+        
+        self.data = self.data.astype(dtype)
+        
     def _plot_factors_or_pchars(self, factors, comp_ids=None, 
                                 calibrate=True, avg_char=False,
                                 same_window=None, comp_label='PC', 
