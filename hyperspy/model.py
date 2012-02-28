@@ -726,9 +726,10 @@ class Model(list, Optimizers, Estimators):
             for parameter in component.parameters:
                 parameter.ext_bounded = False
                 
-    def export(self, folder=None, format=None, save_std=False, only_free=True,
-               only_active = True):
-        """Plot the value of the parameters of the model
+    def export_results(self, folder=None, format=None, save_std=False,
+                       only_free=True, only_active = True):
+        """Export the results of the parameters of the model to the desired
+        folder.
         
         Parameters
         ----------
@@ -741,6 +742,9 @@ class Model(list, Optimizers, Estimators):
             format for exporting as defined in the `Preferences` will be used.
         save_std : bool
             If True, also the standard deviation will be saved.
+        only_free : bool
+            If True, only the value of the parameters that are free will be
+            exported.
         only_active : bool
             If True, only the value of the active parameters will be exported.
             
@@ -754,5 +758,28 @@ class Model(list, Optimizers, Estimators):
         for component in self:
             if only_active is False or component.active is True:
                 component.export(folder=folder, format=format,
-                                 save_std=save_std, only_free=only_free)    
+                                 save_std=save_std, only_free=only_free)
+                                 
+    def plot_results(self, only_free=True, only_active = True):
+        """Plot the value of the parameters of the model
+        
+        Parameters
+        ----------
+
+        only_free : bool
+            If True, only the value of the parameters that are free will be
+            plotted.
+        only_active : bool
+            If True, only the value of the active parameters will be plotted.
+            
+        Notes
+        -----
+        The name of the files will be determined by each the Component and
+        each Parameter name attributes. Therefore, it is possible to customise
+        the file names modify the name attributes.
+              
+        """
+        for component in self:
+            if only_active is False or component.active is True:
+                component.plot(only_free=only_free)
         
