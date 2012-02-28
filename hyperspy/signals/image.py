@@ -25,7 +25,7 @@ import numpy as np
 from hyperspy.signal import Signal
 import hyperspy.peak_char as pc
 from hyperspy.misc import utils_varia
-from hyperspy.learn.mva import MVA_Results
+from hyperspy.learn.mva import LearningResults
 from hyperspy import messages
 
 from hyperspy.drawing import image as imgdraw
@@ -1113,7 +1113,7 @@ Nothing to plot.  Try again.""")
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
         """
-        factors=self.peak_mva_results.bss_factors
+        factors=self.peak_learning_results.bss_factors
         return self._plot_factors_or_pchars(factors=factors, comp_ids=comp_ids,
                                      calibrate=calibrate, comp_label=comp_label,
                                      img_data=img_data,
@@ -1179,7 +1179,7 @@ Nothing to plot.  Try again.""")
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
         """
-        factors=self.peak_mva_results.factors
+        factors=self.peak_learning_results.factors
         return self._plot_factors_or_pchars(factors=factors, comp_ids=comp_ids,
                                      calibrate=calibrate, comp_label=comp_label,
                                      img_data=img_data,
@@ -1245,7 +1245,7 @@ Nothing to plot.  Try again.""")
             If True, plots shift overlays from the factor onto the image given in
             the cell_data parameter
         """
-        factors=self.peak_mva_results.bss_factors
+        factors=self.peak_learning_results.bss_factors
         return self._plot_factors_or_pchars(factors=factors, comp_ids=comp_ids,
                                      calibrate=calibrate, comp_label=comp_label,
                                      img_data=img_data,
@@ -1393,8 +1393,8 @@ Nothing to plot.  Try again.""")
             i += 1
         sp = Spectrum(dic)
         sp.axes_manager._set_axes_index_in_array_from_position()
-        if hasattr(self, 'mva_results'):
-            sp.mva_results = copy.deepcopy(self.mva_results)
-            sp.mva_results._transpose_results()
-            sp.mva_results.original_shape = self.data.shape
+        if hasattr(self, 'learning_results'):
+            sp.learning_results = copy.deepcopy(self.learning_results)
+            sp.learning_results._transpose_results()
+            sp.learning_results.original_shape = self.data.shape
         return sp

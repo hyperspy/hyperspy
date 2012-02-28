@@ -11,6 +11,7 @@ Machine learning
    * `ica_build_SI` was renamed to `get_bss_model`
    * `plot_lev` was renamed to `plot_explained_variance_ratio`
    * `scores` was renamed to `loadings`
+   * `mva_result` was renamed to `learning_results`
 
 Introduction
 ============
@@ -201,15 +202,15 @@ decomposition and one BSS result, what may not be enough for your purposes.
 Saving to an external files
 ---------------------------
 Alternatively, to save the results of the current machine learning analysis 
-to a file you can use the :py:meth:`~.learn.mva.MVA_Results.save` method, e.g.:
+to a file you can use the :py:meth:`~.learn.mva.LearningResults.save` method, e.g.:
 
 .. code-block:: python
     
     # To save the result of the analysis
-    s.mva_results.save('my_results')
+    s.learning_results.save('my_results')
     
     # To load back the results
-    s.mva_results.load('my_results.npz')
+    s.learning_results.load('my_results.npz')
     
     
 Exporting

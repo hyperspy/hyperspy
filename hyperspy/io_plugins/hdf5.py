@@ -115,10 +115,18 @@ def hdfgroup2signaldict(group):
             group['original_parameters'], {})
         exp['axes'] = axes
         exp['attributes']={}
+        if 'learning_results' in group.keys():
+            exp['attributes']['learning_results']=hdfgroup2dict(group['learning_results'],{})
+        if 'peak_learning_results' in group.keys():
+            exp['attributes']['peak_learning_results']=hdfgroup2dict(group['peak_learning_results'],{})
+            
+        # Load the decomposition results written with the old name, mva_results
         if 'mva_results' in group.keys():
-            exp['attributes']['mva_results']=hdfgroup2dict(group['mva_results'],{})
+            exp['attributes']['learning_results']=hdfgroup2dict(
+                group['mva_results'],{})
         if 'peak_mva_results' in group.keys():
-            exp['attributes']['peak_mva_results']=hdfgroup2dict(group['peak_mva_results'],{})
+            exp['attributes']['peak_learning_results']=hdfgroup2dict(
+                group['peak_mva_results'],{})
         # Replace the old signal and name keys with their current names
         if 'signal' in exp['mapped_parameters']:
             exp['mapped_parameters']['signal_type'] = \
@@ -212,13 +220,13 @@ def write_signal(signal,group, compression):
     original_par = group.create_group('original_parameters')
     dict2hdfgroup(signal.original_parameters.as_dictionary(), 
                   original_par, compression = compression)
-    mva_results = group.create_group('mva_results')
-    dict2hdfgroup(signal.mva_results.__dict__, 
-                  mva_results, compression = compression)
-    if hasattr(signal,'peak_mva_results'):
-        peak_mva_results = group.create_group('peak_mva_results')
-        dict2hdfgroup(signal.peak_mva_results.__dict__, 
-                  peak_mva_results, compression = compression)
+    learning_results = group.create_group('learning_results')
+    dict2hdfgroup(signal.learning_results.__dict__, 
+                  learning_results, compression = compression)
+    if hasattr(signal,'peak_learning_results'):
+        peak_learning_results = group.create_group('peak_learning_results')
+        dict2hdfgroup(signal.peak_learning_results.__dict__, 
+                  peak_learning_results, compression = compression)
                                     
 def file_writer(filename, signal, compression = 'gzip', *args, **kwds):
     f = h5py.File(filename, mode = 'w')

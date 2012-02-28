@@ -514,10 +514,10 @@ class Spectrum(Signal):
             axis['index_in_array'] = i
             i += 1
         im = Image(dic)
-        if hasattr(self, 'mva_results'):
-            im.mva_results = copy.deepcopy(self.mva_results)
-            im.mva_results._transpose_results()
-            im.mva_results.original_shape = self.data.shape
+        if hasattr(self, 'learning_results'):
+            im.learning_results = copy.deepcopy(self.learning_results)
+            im.learning_results._transpose_results()
+            im.learning_results.original_shape = self.data.shape
         return im
 
     def to_EELS(self):
@@ -525,8 +525,8 @@ class Spectrum(Signal):
         dic = self._get_signal_dict()
         dic['mapped_parameters']['signal_type'] = 'EELS'
         eels = EELSSpectrum(dic)
-        if hasattr(self, 'mva_results'):
-            eels.mva_results = copy.deepcopy(self.mva_results)
+        if hasattr(self, 'learning_results'):
+            eels.learning_results = copy.deepcopy(self.learning_results)
         return eels
         
     def to_simulation(self):
@@ -538,8 +538,8 @@ class Spectrum(Signal):
         dic['mapped_parameters']['signal_type'] = \
             signal_type + '_simulation'
         simu = SpectrumSimulation(dic)
-        if hasattr(self, 'mva_results'):
-            simu.mva_results = copy.deepcopy(self.mva_results)
+        if hasattr(self, 'learning_results'):
+            simu.learning_results = copy.deepcopy(self.learning_results)
         return simu
     
     @only_interactive

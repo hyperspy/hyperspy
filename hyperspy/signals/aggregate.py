@@ -21,7 +21,7 @@ from hyperspy.signal import Signal
 from hyperspy.signals.image import Image
 from hyperspy.signals.spectrum import Spectrum
 import traits.api as t
-from hyperspy.learn.mva import MVA_Results
+from hyperspy.learn.mva import LearningResults
 from hyperspy.axes import AxesManager, DataAxis
 from hyperspy.misc.utils import DictionaryBrowser
 from hyperspy import messages
@@ -209,8 +209,8 @@ f=this_agg_obj.mapped_parameters.original_files['file_name.ext']"
         smp=self.mapped_parameters
         if mp.original_filename not in smp.original_files.keys():
             smp.original_files[mp.title]=arg
-            # save the original data shape to the mva_results for later use
-            smp.original_files[mp.title].mva_results.original_shape = arg.data.shape[:-1]
+            # save the original data shape to the learning_results for later use
+            smp.original_files[mp.title].learning_results.original_shape = arg.data.shape[:-1]
             if self.data==None:
                 self.axes_manager=arg.axes_manager.copy()
                 if len(arg.data.shape)==1:
@@ -282,7 +282,7 @@ to add?'%arg.mapped_parameters.title)
         aggregate data as a whole, and splits the results into
         your constituent files afterwards.
         
-        The results are stored in self.mva_results
+        The results are stored in self.learning_results
         
         Parameters
         ----------
@@ -314,7 +314,7 @@ to add?'%arg.mapped_parameters.title)
                                      algorithm, output_dimension, navigation_mask, 
                                      signal_mask, center, variance2one, var_array, 
                                      var_func, polyfit)
-        self._split_mva_results()
+        self._split_learning_results()
 
     def blind_source_separation(self, number_of_components = None, 
                                        algorithm = 'CuBICA', diff_order = 1, pc = None, 
@@ -342,12 +342,12 @@ to add?'%arg.mapped_parameters.title)
         super(AggregateSpectrum,self).blind_source_separation(number_of_components, 
                                        algorithm, diff_order, pc, 
                                        comp_list, mask, **kwds)
-        self._split_mva_results()
+        self._split_learning_results()
 
 
-    def _split_mva_results(self):
+    def _split_learning_results(self):
         """Method to take any multivariate analysis results from the aggregate and
-        split them into the constituent SI's.  Required before the individual mva_results
+        split them into the constituent SI's.  Required before the individual learning_results
         can be made sense of.
 
         Note: this method is called automatically at the end of PCA or ICA on AggregateSpectrum
@@ -356,10 +356,10 @@ to add?'%arg.mapped_parameters.title)
         """
         smp=self.mapped_parameters
         # shorter handle on the origin
-        smvar=self.mva_results
+        smvar=self.learning_results
         for key in smp.original_files.keys():
             # get a shorter handle on the destination
-            mvar=smp.original_files[key].mva_results
+            mvar=smp.original_files[key].learning_results
             # copy the principal components
             mvar.pc = smvar.pc
             # copy the appropriate section of the aggregate loadings

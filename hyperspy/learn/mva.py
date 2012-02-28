@@ -58,16 +58,16 @@ class MVA():
     """
 
     def __init__(self):
-        if not hasattr(self,'mva_results'):
-            self.mva_results = MVA_Results()
+        if not hasattr(self,'learning_results'):
+            self.learning_results = LearningResults()
         if not hasattr(self.mapped_parameters,'peak_chars'):
             self.mapped_parameters.peak_chars = None
 
     def _get_target(self, on_peaks):
         if on_peaks:
-            target=self.peak_mva_results
+            target=self.peak_learning_results
         else:
-            target=self.mva_results
+            target=self.learning_results
         return target
     
     @do_not_replot
@@ -78,7 +78,7 @@ class MVA():
     reproject=None, **kwargs):
         """Decomposition with a choice of algorithms
 
-        The results are stored in self.mva_results
+        The results are stored in self.learning_results
 
         Parameters
         ----------
@@ -285,7 +285,7 @@ class MVA():
             explained_variance_ratio = \
                 explained_variance / explained_variance.sum()
                 
-        # Store the results in mva_results
+        # Store the results in learning_results
         target.factors = factors
         target.loadings = loadings
         target.explained_variance = explained_variance
@@ -362,7 +362,7 @@ class MVA():
     
     def get_factors_as_spectrum(self):
         from hyperspy.signals.spectrum import Spectrum
-        return Spectrum({'data' : self.mva_results.factors.T})
+        return Spectrum({'data' : self.learning_results.factors.T})
     
     def blind_source_separation(
         self, number_of_components=None, algorithm='CuBICA', diff_order=1,
@@ -483,9 +483,9 @@ class MVA():
         >>> s.reverse_bss_component((0, 2)) # reverse ICs 0 and 2
         """
         if on_peaks:
-            target=self.peak_mva_results
+            target=self.peak_learning_results
         else:
-            target=self.mva_results
+            target=self.learning_results
 
         for i in [component_number,]:
             target.bss_factors[:,i] *= -1
@@ -529,7 +529,7 @@ class MVA():
 
         Parameters
         ------------
-        target : target or self.peak_mva_results
+        target : target or self.peak_learning_results
         components : None, int, or list of ints
              if None, rebuilds SI from all components
              if int, rebuilds SI from components in range 0-given int
@@ -832,7 +832,7 @@ class MVA():
                                              factors=factors, 
                                              comp_list=comp_list, mask=mask)
 
-class MVA_Results(object):
+class LearningResults(object):
     # Decomposition
     factors = None
     loadings = None

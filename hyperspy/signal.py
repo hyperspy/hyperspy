@@ -28,7 +28,7 @@ from hyperspy.axes import AxesManager
 from hyperspy import io
 from hyperspy.drawing import mpl_hie, mpl_hse
 from hyperspy.misc import utils
-from hyperspy.learn.mva import MVA, MVA_Results
+from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.misc.utils import DictionaryBrowser
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
@@ -62,8 +62,8 @@ class Signal(t.HasTraits, MVA):
         super(Signal, self).__init__()
         self.mapped_parameters = DictionaryBrowser()
         self.original_parameters = DictionaryBrowser()
-        self.mva_results=MVA_Results()
-        self.peak_mva_results=MVA_Results()
+        self.learning_results=LearningResults()
+        self.peak_learning_results=LearningResults()
         if type(file_data_dict).__name__ == "dict":
             self.load_dictionary(file_data_dict)
         self._plot = None
@@ -155,8 +155,8 @@ class Signal(t.HasTraits, MVA):
         self.mapped_parameters.as_dictionary()
         dic['original_parameters'] = \
         self.original_parameters.as_dictionary()
-        if hasattr(self,'mva_results'):
-            dic['mva_results'] = self.mva_results.__dict__
+        if hasattr(self,'learning_results'):
+            dic['learning_results'] = self.learning_results.__dict__
         return dic
 
     def _get_undefined_axes_list(self):
@@ -1230,9 +1230,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
-        factors=self.mva_results.factors
+        factors=self.learning_results.factors
         if comp_ids is None:
-            comp_ids = self.mva_results.output_dimension
+            comp_ids = self.learning_results.output_dimension
             
         return self._plot_factors_or_pchars(factors, 
                                             comp_ids=comp_ids, 
@@ -1274,7 +1274,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
-        factors=self.mva_results.bss_factors
+        factors=self.learning_results.bss_factors
         return self._plot_factors_or_pchars(factors, 
                                             comp_ids=comp_ids, 
                                             calibrate=calibrate,
@@ -1326,14 +1326,14 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
-        loadings=self.mva_results.loadings.T
+        loadings=self.learning_results.loadings.T
         if with_factors:
-            factors=self.mva_results.factors
+            factors=self.learning_results.factors
         else:
             factors=None
         
         if comp_ids is None:
-            comp_ids = self.mva_results.output_dimension
+            comp_ids = self.learning_results.output_dimension
         return self._plot_loadings(loadings, comp_ids=comp_ids, 
                                  with_factors=with_factors, factors=factors,
                                  same_window=same_window, comp_label=comp_label,
@@ -1383,9 +1383,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
-        loadings=self.mva_results.bss_loadings.T
+        loadings=self.learning_results.bss_loadings.T
         if with_factors:
-            factors=self.mva_results.bss_factors
+            factors=self.learning_results.bss_factors
         else: factors=None
         return self._plot_loadings(loadings, comp_ids=comp_ids, 
                                  with_factors=with_factors, factors=factors,
@@ -1466,8 +1466,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         save_figures_format : str
             The image format extension.
         """
-        factors=self.mva_results.factors
-        loadings=self.mva_results.loadings.T
+        factors=self.learning_results.factors
+        loadings=self.learning_results.loadings.T
         self._export_factors(factors, comp_ids=comp_ids,
                              calibrate=calibrate, multiple_files=multiple_files,
                              factor_prefix=factor_prefix,
@@ -1563,8 +1563,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         save_figures_format : str
             The image format extension.
         """
-        factors=self.mva_results.bss_factors
-        loadings=self.mva_results.bss_loadings.T
+        factors=self.learning_results.bss_factors
+        loadings=self.learning_results.bss_loadings.T
         self._export_factors(factors,
                              comp_ids=comp_ids,
                              calibrate=calibrate,
