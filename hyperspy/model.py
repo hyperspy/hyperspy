@@ -728,3 +728,34 @@ class Model(list, Optimizers, Estimators):
         for component in components:
             for parameter in component.parameters:
                 parameter.ext_bounded = False
+                
+    def export(self, folder=None, format=None, save_std=False, only_free=True,
+               only_active = True):
+        """Plot the value of the parameters of the model
+        
+        Parameters
+        ----------
+        folder : str or None
+            The path to the folder where the file will be saved. If `None` the
+            current folder is used by default.
+        format : str
+            The format to which the data will be exported. It must be the
+            extension of any format supported by Hyperspy. If None, the default
+            format for exporting as defined in the `Preferences` will be used.
+        save_std : bool
+            If True, also the standard deviation will be saved.
+        only_active : bool
+            If True, only the value of the active parameters will be exported.
+            
+        Notes
+        -----
+        The name of the files will be determined by each the Component and
+        each Parameter name attributes. Therefore, it is possible to customise
+        the file names modify the name attributes.
+              
+        """
+        for component in self:
+            if only_active is False or component.active is True:
+                component.export(folder=folder, format=format,
+                                 save_std=save_std, only_free=only_free)    
+        

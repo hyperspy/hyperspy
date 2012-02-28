@@ -75,6 +75,10 @@ class GeneralConfig(t.HasTraits):
         desc = 'Using the hdf5 format is highly reccomended because is the '
                'only one fully supported. The Ripple (rpl) format it is useful '
                'to export data to other software that do not support hdf5')
+    default_export_format = t.Enum(*default_write_ext,
+        desc = 'Using the hdf5 format is highly reccomended because is the '
+               'only one fully supported. The Ripple (rpl) format it is useful '
+               'to export data to other software that do not support hdf5')
     plot_on_load = t.CBool(False,
         desc = 'If enabled, the object will be plot automatically on loading')
     interactive = t.CBool(True,
@@ -165,6 +169,7 @@ template = {
 # Set the enums defaults
 template['MachineLearning'].export_factors_default_file_format = 'rpl'
 template['MachineLearning'].export_loadings_default_file_format = 'rpl'
+template['General'].default_export_format = 'rpl'
 
 # Defaults template definition ends ############################################       
 

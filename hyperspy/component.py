@@ -16,7 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
 import numpy as np
+
+from hyperspy.defaults_parser import preferences
+from hyperspy.misc.utils import incremental_filename, append2pathname, slugify
+from hyperspy.exceptions import NavigationDimensionError
 
 class Parameter(object):
     """
@@ -169,22 +175,67 @@ class Parameter(object):
     def as_signal(self, field = 'values'):
         """Get a parameter map as a signal object.
         
+        Please note that this method only works when the navigation dimension
+        is greater than 0.
+        
         Parameters
         ----------
         field : {'values', 'std', 'is_set'}
         
+        Raises
+        ------
+        
+        NavigationDimensionError : if the navigation dimension is 0
+        
         """
         from hyperspy.signal import Signal
-        
+        if self._axes_manager.navigation_dimension == 0:
+            raise NavigationDimensionError(0, '>0')
+            
         s = Signal({'data' : self.map[field],
                     'axes' : self._axes_manager._get_non_slicing_axes_dicts()})
         s.mapped_parameters.title = self.name
         for axis in s.axes_manager.axes:
             axis.navigate = False
+        if self._number_of_elements > 1:
+            s.axes_manager.append_axis(size=self._number_of_elements,
+                                       name=self.name,
+                                       index_in_array=len(s.axes_manager.axes),
+                                       navigate=True)
         return s
         
     def plot(self):
         self.as_signal().plot()
+        
+    def export(self, folder=None, name=None, format=None, save_std=False):
+        '''Save the data to a file.
+        
+        All the arguments are optional.
+        
+        Parameters
+        ----------
+        folder : str or None
+            The path to the folder where the file will be saved. If `None` the
+            current folder is used by default.
+        name : str or None
+            The name of the file. If `None` the Components name followed by the
+            Parameter `name` attributes will be used by default. If a file with 
+            the same name exists the name will be modified by appending a number
+            to the file path.
+        save_std : bool
+            If True, also the standard deviation will be saved
+        
+        '''
+        if format is None:
+            format = preferences.General.default_export_format
+        if name is None:
+            name = self.component.name + '_' + self.name
+        filename = incremental_filename(slugify(name) + '.' + format)
+        if folder is not None:
+            filename = os.path.join(folder, filename)
+        self.as_signal().save(filename)
+        if save_std is True:
+            self.as_signal(field = 'std').save(append2pathname(filename,'_std'))
                     
 class Component(object):
     def __init__(self, parameter_name_list):
@@ -197,12 +248,14 @@ class Component(object):
         self.parameters = tuple(self.parameters)
 
     def init_parameters(self, parameter_name_list):
-        for par in parameter_name_list:
-            exec('self.%s = Parameter()' % par)
-            exec('self.%s.name = \'%s\'' % (par, par))
-            exec('self.parameters.append(self.%s)' % par)
-            exec('try:\n    self.%s.grad = self.grad_%s\nexcept:\n    '
-            'self.%s.grad = None' % (par, par, par))
+        for name in parameter_name_list:
+            parameter = Parameter()
+            self.parameters.append(parameter)
+            parameter.name = name
+            setattr(self, name, parameter)
+            if hasattr(self, 'grad_' + name):
+                parameter.grad = getattr(self, 'grad_' + name)
+            parameter.component = self
     
     def __repr__(self):
         return self.name
@@ -282,6 +335,40 @@ class Component(object):
         parameters = [k for k in parameters if k.twin is None]
         for parameter in parameters:
             parameter.plot()
+            
+    def export(self, folder=None, format=None, save_std=False, only_free=True):
+        """Plot the value of the parameters of the model
+        
+        Parameters
+        ----------
+        folder : str or None
+            The path to the folder where the file will be saved. If `None` the
+            current folder is used by default.
+        format : str
+            The format to which the data will be exported. It must be the
+            extension of any format supported by Hyperspy. If None, the default
+            format for exporting as defined in the `Preferences` will be used.
+        save_std : bool
+            If True, also the standard deviation will be saved.
+        only_free : bool
+            If True, only the value of the parameters that are free will be
+            exported.
+            
+        Notes
+        -----
+        The name of the files will be determined by each the Component and
+        each Parameter name attributes. Therefore, it is possible to customise
+        the file names modify the name attributes.
+              
+        """
+        if only_free:
+            parameters = self.free_parameters
+        else:
+            parameters = self.parameters
+            
+        parameters = [k for k in parameters if k.twin is None]
+        for parameter in parameters:
+            parameter.export(folder=folder, format=format, save_std=save_std,)
             
     def summary(self):
         for parameter in self.parameters:

@@ -20,6 +20,7 @@ import types
 import  math
 import glob
 import os
+import re
 from StringIO import StringIO
 try:
     from collections import OrderedDict
@@ -1228,3 +1229,60 @@ def orthomax(A, gamma=1, reltol=1.4901e-07, maxit=256):
                 converged = True
                 break
     return B,T
+    
+def append2pathname(filename, to_append):
+    """Append a string to a path name
+    
+    Parameters
+    ----------
+    filename : str
+    to_append : str
+    
+    """
+    pathname, extension = os.path.splitext(filename)
+    return pathname + to_append + extension
+    
+def incremental_filename(filename, i=1):
+    """If a file with the same file name exists, returns a new filename that
+    does not exists.
+    
+    The new file name is created by appending `-n` (where `n` is an integer)
+    to path name
+    
+    Parameters
+    ----------
+    filename : str
+    i : int
+       The number to be appended.
+    """
+    
+    if os.path.isfile(filename):
+        new_filename = append2pathname(filename, '-%s' % i) 
+        if os.path.isfile(new_filename):
+            return incremental_filename(filename, i + 1)
+        else:
+            return new_filename
+    else:
+        return filename
+        
+def ensure_directory(path):
+    """Check if the path exists and if it does not create the directory"""
+    directory = os.path.split(path)[0]
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        
+_slugify_strip_re = re.compile(r'[^\w\s-]')
+_slugify_hyphenate_re = re.compile(r'[-\s]+')
+def slugify(value):
+    """
+    Normalizes string, converts to lowercase, removes non-alpha characters,
+    and converts spaces to hyphens.
+    
+    Adapted from Django's "django/template/defaultfilters.py".
+    """
+    import unicodedata
+    if not isinstance(value, unicode):
+        value = unicode(value)
+    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
+    value = unicode(_slugify_strip_re.sub('', value).strip())
+    return _slugify_hyphenate_re.sub('_', value)

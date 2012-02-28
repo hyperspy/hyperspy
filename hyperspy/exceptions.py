@@ -117,3 +117,13 @@ class SignalOutputDimensionError(Exception):
 
     def __str__(self):
      return repr(self.msg)
+     
+class NavigationDimensionError(Exception):
+    def __init__(self, navigation_dimension, expected_navigation_dimension):
+        self.navigation_dimension = navigation_dimension
+        self.expected_navigation_dimension = expected_navigation_dimension
+        self.msg = 'navigation dimension  = %i, %s expected' % (
+        self.navigation_dimension, self.expected_navigation_dimension)
+
+    def __str__(self):
+     return repr(self.msg)

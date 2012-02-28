@@ -241,6 +241,10 @@ class AxesManager(t.HasTraits):
         self.on_trait_change(self.set_signal_dimension, 'axes.slice')
         self.on_trait_change(self.set_signal_dimension, 'axes.index')
         self.on_trait_change(self.set_signal_dimension, 'axes.size')
+        
+    def append_axis(self, *args, **kwargs):
+        axis = DataAxis(*args, **kwargs)
+        self.axes.append(axis)
 
     def set_signal_dimension(self):
         getitem_tuple = []

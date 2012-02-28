@@ -22,6 +22,7 @@ from hyperspy import messages
 import hyperspy.defaults_parser
 from hyperspy.io_plugins import msa, digital_micrograph, fei, mrc, ripple
 from hyperspy.gui.tools import Load
+from hyperspy.misc.utils import ensure_directory
 
 
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple]
@@ -238,5 +239,6 @@ def save(filename, signal, **kwds):
     else:
         writer = io_plugins[i]
         # Check if the writer can write
+        ensure_directory(filename)
         writer.file_writer(filename, signal, **kwds)
         print('The %s file was created' % filename)

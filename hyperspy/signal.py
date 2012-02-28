@@ -1489,11 +1489,11 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                             per_row=per_row)
 
     def export_bss_results(self, comp_ids=None, calibrate=True,
-                           multiple_files=None, save_figures = False,
+                           multiple_files=None, save_figures=False,
                           factor_prefix='bss_factor', factor_format=None,
                           loading_prefix='bss_loading', loading_format=None, 
-                          comp_label=None,cmap=plt.cm.jet,
-                          same_window=False, no_nans=True,per_row=3,
+                          comp_label=None, cmap=plt.cm.jet,
+                          same_window=False, no_nans=True, per_row=3,
                           save_figures_format='png'):
         """Export results from ICA to any of the supported formats.
 
@@ -1565,26 +1565,33 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         """
         factors=self.mva_results.bss_factors
         loadings=self.mva_results.bss_loadings.T
-        self._export_factors(factors, comp_ids=comp_ids,
-                             calibrate=calibrate, multiple_files=multiple_files,
+        self._export_factors(factors,
+                             comp_ids=comp_ids,
+                             calibrate=calibrate,
+                             multiple_files=multiple_files,
                              factor_prefix=factor_prefix,
                              factor_format=factor_format,
-                             comp_label=comp_label, save_figures=save_figures,
+                             comp_label=comp_label,
+                             save_figures=save_figures,
                              cmap=cmap,
                              no_nans=no_nans,
                              same_window=same_window,
                              per_row=per_row,
                              save_figures_format=save_figures_format)
-        self._export_loadings(loadings, comp_ids=comp_ids,
-                            calibrate=calibrate, multiple_files=multiple_files,
-                            loading_prefix=loading_prefix,
-                            loading_format=loading_format,
-                            comp_label=comp_label,
-                            cmap=cmap, save_figures=save_figures,
-                            same_window=same_window, 
-                            no_nans=no_nans,
-                            per_row=per_row,
-                            save_figures_format=save_figures_format)
+                             
+        self._export_loadings(loadings,
+                              comp_ids=comp_ids,
+                              calibrate=calibrate, 
+                              multiple_files=multiple_files,
+                              loading_prefix=loading_prefix,
+                              loading_format=loading_format,
+                              comp_label=comp_label,
+                              cmap=cmap,
+                              save_figures=save_figures,
+                              same_window=same_window, 
+                              no_nans=no_nans,
+                              per_row=per_row,
+                              save_figures_format=save_figures_format)
 
    
 #    def sum_in_mask(self, mask):
