@@ -1268,7 +1268,7 @@ def incremental_filename(filename, i=1):
 def ensure_directory(path):
     """Check if the path exists and if it does not create the directory"""
     directory = os.path.split(path)[0]
-    if not os.path.exists(directory):
+    if directory and not os.path.exists(directory):
         os.makedirs(directory)
         
 _slugify_strip_re = re.compile(r'[^\w\s-]')
