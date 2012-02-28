@@ -125,6 +125,14 @@ class MVA():
         plot_decomposition_factors, plot_decomposition_loadings, plot_lev
 
         """
+        # Check if it is the wrong data type
+        if self.data.dtype.char not in ['e', 'f', 'd']: # If not float
+            messages.warning(
+                'To perform a decomposition the data must be of the float type.'
+                ' You can change the type using the change_dtype method'
+                ' e.g. s.change_dtype(\'float64\')\n'
+                'Nothing done.')
+            return
         # backup the original data
         if on_peaks:
             if hasattr(self.mapped_parameters,'peak_chars'):
