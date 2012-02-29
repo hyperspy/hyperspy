@@ -75,7 +75,7 @@ To create a Windows binary run the `release_windows.bat` script in a windows mac
 Installing the required libraries
 ---------------------------------
 
-Before installing Hyperspy certain libraries have to be installed in the system. The easiest way to install these packages is by installing the `enthough python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default. Please note that the academic version of EPD is free, `you can get it here <http://www.enthought.com/products/edudownload.php>`_
+Before installing Hyperspy certain libraries have to be installed in the system. The easiest way to install these packages is by installing the `enthough python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default. Please note that the academic version of EPD is free, `you can get it here. <http://www.enthought.com/products/edudownload.php>`_
 
 
 Another option in Windows is to install `pythonxy <http://www.pythonxy.com/>`_.

@@ -18,7 +18,7 @@ If everythig goes well Hyperspy should welcome you with a message similar to:
 .. code-block:: ipython
     
     H y p e r s p y
-    Version 0.3.0
+    Version 0.4.0
     
     Copyright (C) 2007-2010 Francisco de la Peña
     Copyright (C) 2011-2012 The Hyperspy development team
@@ -52,7 +52,7 @@ To load from a supported file format (see :ref:`supported-formats`) simply type:
 
 .. code-block:: python
 
-    s = load('filename')
+    s = load("filename")
 
 .. HINT::
 
@@ -81,7 +81,7 @@ the extension of the filename.
     d.save('example_processed.hdf5')
 
 Some file formats are much better at maintaining the information about
-how you processed your data.  The preferred format in EELSlab is hdf5,
+how you processed your data.  The preferred format in Hyperspy is hdf5,
 the hierarchical data format.  This format keeps the most information
 possible.
 
