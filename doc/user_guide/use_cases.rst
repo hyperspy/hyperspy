@@ -1,5 +1,5 @@
-Uses cases
-**********
+Use cases
+*********
 
 Machine learning application to the analysis of image stacks
 ============================================================
