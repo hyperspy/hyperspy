@@ -32,6 +32,7 @@ from hyperspy.gui import messages
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.drawing.utils import does_figure_object_exists
+from hyperspy.gui.mpl_traits_editor import MPLFigureEditor
 
 import sys
 
