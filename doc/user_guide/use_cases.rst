@@ -1,5 +1,15 @@
-Image Processing
-============
+Uses cases
+**********
+
+Machine learning application to the analysis of image stacks
+============================================================
+
+.. WARNING::
+    Some features mentioned in this section are no longer maintained since
+    their author (and the author of this section), Michael Sarahan,
+    left the project. Therefore, it is possible that they no longer work as 
+    expected. If no one maintains the associated code it can be deprecated 
+    in future versions of Hyperspy.
 
 Types of data
 -------------

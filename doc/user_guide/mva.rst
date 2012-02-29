@@ -2,8 +2,8 @@ Machine learning
 ****************
 .. warning::
 
-   In version 0.3.0beta3 the syntax for most of the machine-learning functions
-   have changed. It follows a summary of the changes:
+   In version 0.4 the syntax of many of the machine-learning functions
+   has changed. It follows a summary of the changes:
    
    * `principal_components_analysis` was renamed to `decomposition`
    * `independent_components_analysis` was renamed to `blind_source_separation`
@@ -150,7 +150,7 @@ In some cases (it largely depends on the particular application) it is possible
 to obtain physically meaninful components from the result of a data
 decomposition by Blind Source Separation (BSS).
 
-To perform BSS on the result of a decomposition, run the :py:meth:`~.learn.mva.MVA.blind_source_separation' method, e.g._
+To perform BSS on the result of a decomposition, run the :py:meth:`~.learn.mva.MVA.blind_source_separation` method, e.g.:
 
 .. code-block:: python
 

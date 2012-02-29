@@ -41,6 +41,14 @@ gui Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`mpl_traits_editor` Module
+-------------------------------
+
+.. automodule:: hyperspy.gui.mpl_traits_editor
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`tools` Module
 -------------------
 

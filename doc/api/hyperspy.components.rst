@@ -73,26 +73,10 @@ components Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`fixed_pattern` Module
----------------------------
-
-.. automodule:: hyperspy.components.fixed_pattern
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`gaussian` Module
 ----------------------
 
 .. automodule:: hyperspy.components.gaussian
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`line` Module
-------------------
-
-.. automodule:: hyperspy.components.line
     :members:
     :undoc-members:
     :show-inheritance:
@@ -117,14 +101,6 @@ components Package
 --------------------
 
 .. automodule:: hyperspy.components.offset
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`parabole` Module
-----------------------
-
-.. automodule:: hyperspy.components.parabole
     :members:
     :undoc-members:
     :show-inheritance:

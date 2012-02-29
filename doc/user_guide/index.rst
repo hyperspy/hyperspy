@@ -15,10 +15,10 @@ Hyperspy User Guide (DRAFT)
     install.rst
     getting_started.rst
     io.rst
+    tools.rst
     mva.rst
     model.rst
-    eels.rst
-    image.rst
+    use_cases.rst
     mapped_parameters_structure.rst
     credits.rst
     bibliography.rst

@@ -2,18 +2,35 @@ Getting started
 ***************
 
 First steps with hyperspy
-========================
+=========================
 
 Starting hyperspy
-----------------
+-----------------
 
-To start hyperspy type in a console:
+
+Windows
+^^^^^^^
+
+In Windows it is possible to start Hyperspy from :menuselection:`Start Menu --> Programs --> Hyperspy` .
+
+Alternatively, one can start Hyperspy in any folder by pressing the :kbd:`right mouse button` on the empty area of a folder or on a folder and choosing menuselection:`Hyperspy here` from the context menu. see :ref:`windows_hyperspy_here_image`
+
+.. _windows_hyperspy_here_image:
+
+.. figure::  images/windows_hyperspy_here.png
+   :align:   center
+   :width:   500    
+
+   Starting hyperspy using the Windows context menu.
+   
+
+Hyperspy can also be started from a console:
 
 .. code-block:: bash
 
     $ hyperspy
 
-If everythig goes well Hyperspy should welcome you with a message similar to:
+In any case Hyperspy should welcome you with a message similar to:
 
 .. code-block:: ipython
     
@@ -26,29 +43,40 @@ If everythig goes well Hyperspy should welcome you with a message similar to:
     http://www.hyperspy.org
 
 
-.. NOTE::
+Linux and MacOS
+^^^^^^^^^^^^^^^
 
-   If you are using GNOME in Linux, you can open a terminal in a folder by 
-   choosing :menuselection:`open terminal` in the file menu if 
-   :program:`nautilus-open-terminal` is 
-   installed in your system.
-   A similar feature is available in :program:`Windows Vista` or newer when pressing :kbd:`Shift Right-Mouse-Button`.
+In Linux and MacOS Hyperspy can be started from a console:
 
-   Alternatively, if you are using :program:`Windows Vista` or newer, you can navigate to the
-   folder with your data files, and then click in the address bar.
-   Enter cmd, then press enter.  A command prompt will be opened in
-   that folder.
-   
-.. NOTE::
-       For more comfort in Windows it is recommended to use 
-       `Console2 <http://sourceforge.net/projects/console/>`_ instead of the default terminal of that platform.    
+.. code-block:: bash
 
+    $ hyperspy
+
+After that, Hyperspy should welcome you with a message similar to:
+
+.. code-block:: ipython
+    
+    H y p e r s p y
+    Version 0.4.0
+    
+    Copyright (C) 2007-2010 Francisco de la Peña
+    Copyright (C) 2011-2012 The Hyperspy development team
+    
+    http://www.hyperspy.org
+
+
+.. HINT::
+    If you are using GNOME in Linux, you can open a terminal in a folder by 
+    choosing :menuselection:`open terminal` in the file menu if 
+    :program:`nautilus-open-terminal` is 
+    installed in your system.
+    
 
 Loading data
------------------------
+------------
 
 
-To load from a supported file format (see :ref:`supported-formats`) simply type:
+To load from a supported file format (see :ref:`supported-formats`) simply type in a Hyperspy session:
 
 .. code-block:: python
 
@@ -56,7 +84,7 @@ To load from a supported file format (see :ref:`supported-formats`) simply type:
 
 .. HINT::
 
-   We use the variable :guilabel:`s` but you can choose any (valid) variable name
+   The load function returns an object that contains data read from the file. We assign this object to the variable ``s`` but you can choose any (valid) variable name you like. 
 
 For more details read :ref:`loading_files`
 
@@ -72,13 +100,13 @@ the extension of the filename.
 .. code-block:: python
 
     # load the data
-    d=load('example.tif')
+    d = load("example.tif")
     # save the data as a tiff
-    d.save('example_processed.tif')
+    d.save("example_processed.tif")
     # save the data as a png
-    d.save('example_processed.png')
+    d.save("example_processed.png")
     # save the data as an hdf5 file
-    d.save('example_processed.hdf5')
+    d.save("example_processed.hdf5")
 
 Some file formats are much better at maintaining the information about
 how you processed your data.  The preferred format in Hyperspy is hdf5,
@@ -123,6 +151,8 @@ This syntax is one of the many features of `IPython <http://ipython.scipy.org/mo
 
 Please note that the documentation of the code is a work in progress, so not all the objects are documented yet.
 
+Up-to-date documentation is always available in `the Hyperspy website. <http://hyperspy.org/documentation.html>`_
+
 Autocompletion
 --------------
 
@@ -133,7 +163,7 @@ autocompletion of commands and filenames. It is highly recommended to read the
 Data visualisation
 ==================
 
-:py:class:`~.signal.Signal` has a :py:meth:`~.signal.Signal.plot` method.
+The object returned by :py:func:`~.io.load` is a :py:class:`~.signal.Signal` and has a :py:meth:`~.signal.Signal.plot` method which plots the data and allows navigation.
 
 .. code-block:: python
     
@@ -142,7 +172,6 @@ Data visualisation
 
 if the object is single spectrum or an image one window will appear when calling 
 the plot method.
-
 
 If the object is a 2D or 3D spectrum image two figures will appear, 
 one containing a plot of the spectrum at the current coordinates and the other
@@ -221,7 +250,6 @@ PageDown    Decrease step size
 ``h``       Launch the contrast adjustment tool (only for Image)
 =========   =============================
 
-Additionally, it is p
 To close all the figures run the following command:
 
 .. code-block:: python

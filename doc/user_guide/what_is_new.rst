@@ -1,6 +1,9 @@
 What's new in Hyperspy
 ======================
 
+Version 0.4
+-----------
+
 Version 0.3
 -----------
 

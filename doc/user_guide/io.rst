@@ -15,7 +15,7 @@ Hyperspy can read and write to multiple formats (see :ref:`supported-formats`). 
 
 .. code-block:: python
 
-    s = load('lena.jpg')
+    s = load("lena.jpg")
     
 If the loading was successful, the variable :guilabel:`s` contains a generic :py:class:`~.signal.Signal`, a :py:class:`~.signals.spectrum.Spectrum` or a :py:class:`~.signals.image.Image`. In any case, the data is stored in a numpy array in the :py:attr:`~.signal.Signal.data` attribute, but you will not normally need to access it there.
 
@@ -23,7 +23,7 @@ Hyperspy will try to guess the most convenient object for the corresponding file
 
 .. code-block:: python
 
-    s = load('filename', signal = 'EELS')
+    s = load("filename", signal = "EELS")
 
 Some file formats store some extra information about the data. If Hyperspy was able to read some extra information it stores it in :py:attr:`~.signal.Signal.original_parameters` attribute. Also, it is possible that some information was mapped by Hyperspy to a standard location where it can be used by some standard routines, the :py:attr:`~.signal.Signal.mapped_parameters` attribute.
 
