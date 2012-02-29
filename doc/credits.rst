@@ -13,7 +13,7 @@ In March 2011 Michael Sarahan joined the project contributing code that he had i
 
 Luiz Fernando Zagonel wrote the importRPL Digital Micrograph plugin to import Ripple files, providing an easy path to export data to Digital Micrograph.
 
-The Hyperspy logo was created by Stefano Mazzucco. It is a modified version of http://en.wikipedia.org/wiki/File:Hypercube.svg and the same GFDL license apply.
+The Hyperspy logo was created by Stefano Mazzucco. It is a modified version of http://en.wikipedia.org/wiki/File:Hypercube.svg and the same GFDL license applies.
  
 The website is a fork of the Ipython website.
 
