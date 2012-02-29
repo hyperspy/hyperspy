@@ -22,8 +22,11 @@ import matplotlib.pyplot as plt
 import matplotlib.widgets
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-import widgets
-import utils
+from hyperspy.drawing import widgets
+from hyperspy.drawing import utils
+from hyperspy.gui.tools import ImageContrastEditor
+
+
 
 class ImagePlot:
     def __init__(self):
@@ -40,7 +43,8 @@ class ImagePlot:
         self.auto_contrast = True
         
     def optimize_contrast(self, data, perc = 0.01):
-        dc = data
+        dc = data.copy().ravel()
+        dc.sort()
         try:
             # check if it's an RGB structured array
             dc = dc['R']
@@ -51,10 +55,10 @@ class ImagePlot:
                 raise
         if 'complex' in dc.dtype.name:
             dc = np.log(np.abs(dc))
-        i = int(round(len(dc)*perc/100.))
+        i = int(round(len(dc)*perc))
         i = i if i > 0 else 1
-        vmin = np.nanmin(dc)
-        vmax = np.nanmax(dc)
+        vmin = np.nanmin(dc[i:])
+        vmax = np.nanmax(dc[:-i])
         self.vmin = vmin
         self.vmax = vmax
         
@@ -89,12 +93,13 @@ class ImagePlot:
             self.figure.tight_layout()
         self.connect()
         
-    def update_image(self):
+    def update_image(self, auto_contrast = None):
         ims = self.ax.images
         if ims:
             ims.remove(ims[0])
         data = self.data_function()
-        if self.auto_contrast is True:
+        if auto_contrast is True or auto_contrast is None and\
+            self.auto_contrast is True:
             self.optimize_contrast(data)
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
@@ -114,39 +119,23 @@ class ImagePlot:
                        vmax = self.vmax)
         self.figure.canvas.draw()
         
+    def adjust_contrast(self):
+        ceditor = ImageContrastEditor(self)
+        ceditor.edit_traits()
+        return ceditor
+        
     def connect(self):
         self.figure.canvas.mpl_connect('key_press_event', self.on_key_press)
         self.figure.canvas.draw()
 
     def on_key_press(self, event):
         if event.key == 'h':
-            self.plot_histogram()
-        
-            
-    def histogram_key_press(self, event):
-        if event.key == 'a':
-            self.optimize_contrast(self.data_function())
-            self.set_contrast(self.vmin, self.vmax)
-            
+            self.adjust_contrast()
+                    
     def set_contrast(self, vmin, vmax):
         self.vmin, self.vmax =  vmin, vmax
-        del(self.histogram_span_selector)
-        plt.close(self.histogram_figure)
-        del(self.histogram_figure)
-        self.plot_histogram()
         self.update_image()
-        
-    def plot_histogram(self):
-        f = plt.figure()
-        ax = f.add_subplot(111)
-        data = self.data_function().ravel()
-        ax.hist(data,100, range = (self.vmin, self.vmax))
-        self.histogram_span_selector = matplotlib.widgets.SpanSelector(
-        ax, self.set_contrast, direction = 'horizontal')
-        self.histogram_figure = f
-        self.histogram_figure.canvas.mpl_connect(
-        'key_press_event', self.histogram_key_press)
-    
+            
     # TODO The next function must be improved
     
     def optimize_colorbar(self, number_of_ticks = 5, tolerance = 5, step_prec_max = 1):

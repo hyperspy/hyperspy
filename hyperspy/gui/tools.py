@@ -18,6 +18,7 @@
 
 import numpy as np
 import scipy as sp
+import matplotlib.pyplot as plt
 import traits.api as t
 import traitsui.api as tu
 from traitsui.menu import (OKButton, ApplyButton, CancelButton, ModalButtons,
@@ -36,6 +37,10 @@ import sys
 
 OurApplyButton = tu.Action(name = "Apply",
                            action = "apply")
+                           
+OurResetButton = tu.Action(name = "Reset",
+                           action = "reset")
+                           
                 
 class SmoothingHandler(tu.Handler):
     def close(self, info, is_ok):
@@ -451,4 +456,130 @@ class Load(t.HasTraits):
         tu.Group('filename'),
         kind = 'livemodal',
         buttons = [OKButton, CancelButton])
+        
+class ImageContrastHandler(tu.Handler):
+    def close(self, info, is_ok):
+#        # Removes the span selector from the plot
+#        info.object.span_selector_switch(False)
+#        if is_ok is True:
+#            self.apply(info)
+        if is_ok is False:
+            info.object.image.update_image(auto_contrast=True)
+        info.object.close()
+        return True
+
+    def apply(self, info, *args, **kwargs):
+        """Handles the **Apply** button being clicked.
+
+        """
+        obj = info.object
+        obj.apply()
+        
+        return
+        
+    def reset(self, info, *args, **kwargs):
+        """Handles the **Apply** button being clicked.
+
+        """
+        obj = info.object
+        obj.reset()
+        return
+
+    def our_help(self, info, *args, **kwargs):
+        """Handles the **Apply** button being clicked.
+
+        """
+        obj = info.object._help()
+    
+                
+class ImageContrastEditor(t.HasTraits):
+    ss_left_value = t.Float()
+    ss_right_value = t.Float()
+
+    view = tu.View( tu.Item('ss_left_value',
+                            label = 'vmin',
+                            show_label=True,
+                            style = 'readonly',),
+                    tu.Item('ss_right_value',
+                            label = 'vmax',
+                            show_label=True,
+                            style = 'readonly'),
+
+#                    resizable=True,
+                    handler = ImageContrastHandler,
+                    buttons = [OKButton,
+                               OurApplyButton,
+                               OurResetButton,
+                               CancelButton,],
+                    title = 'Constrast adjustment tool',
+                    )
+
+    def __init__(self, image):
+        super(ImageContrastEditor, self).__init__()
+        self.image = image
+        f = plt.figure()
+        self.ax = f.add_subplot(111)
+        self.plot_histogram()
+
+        self.span_selector = None
+        self.span_selector_switch(on=True)
+        
+    def on_disabling_span_selector(self):
+        pass
+            
+    def span_selector_switch(self, on):        
+        if on is True:
+            self.span_selector = \
+            drawing.widgets.ModifiableSpanSelector(
+            self.ax,
+            onselect = self.update_span_selector_traits,
+            onmove_callback = self.update_span_selector_traits)
+
+        elif self.span_selector is not None:
+            self.on_disabling_span_selector()
+            self.span_selector.turn_off()
+            self.span_selector = None
+
+    def update_span_selector_traits(self, *args, **kwargs):
+        self.ss_left_value = self.span_selector.rect.get_x()
+        self.ss_right_value = self.ss_left_value + \
+            self.span_selector.rect.get_width()
+
+    def plot_histogram(self):
+        vmin, vmax = self.image.vmin, self.image.vmax
+        pad = (vmax - vmin) * 0.05
+        vmin = vmin - pad
+        vmax = vmax + pad
+        data = self.image.data_function().ravel()
+        self.patches = self.ax.hist(data,100, range = (vmin, vmax),
+                                    color = 'blue')[2]
+        self.ax.set_xticks([])
+        self.ax.set_yticks([])
+        self.ax.set_xlim(vmin, vmax)
+        self.ax.figure.canvas.draw()
+
+    def reset(self):
+        data = self.image.data_function().ravel()
+        self.image.vmin, self.image.vmax = np.nanmin(data),np.nanmax(data)
+        self.image.update_image(auto_contrast=False)
+        self.update_histogram()
+        
+    def update_histogram(self):
+        for patch in self.patches:
+            self.ax.patches.remove(patch)
+        self.plot_histogram()
+        
+    def apply(self):
+        if self.ss_left_value == self.ss_right_value:
+            return
+        self.image.vmin = self.ss_left_value
+        self.image.vmax = self.ss_right_value
+        self.image.update_image(auto_contrast=False)
+        self.update_histogram()
+        
+    def close(self):
+        plt.close(self.ax.figure)
+        
+
+
         
