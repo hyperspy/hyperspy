@@ -1,6 +1,6 @@
-**********************
-v0.3.0beta3 20/02/2012
-**********************
+***************
+v0.4 29/02/2012
+***************
 Enhancements
 ------------
 a98289c In FixedPattern, default interpolation changed to linear
@@ -26,14 +26,14 @@ d414f41 Replace plot_lev by plot_explained_variance_ratio
 6a39559 pca_v and mva_results.v renamed to scores pc renamed to factors pca_build_SI renamed to get_pca_model ica_build_SI renamed to get_ica_model
 23196f3 Removes unnecessary transpose when performing decomposition Removes mdp decomposition algorithms
 6bf41e1 Remove unnecessary copying when normalizing the poissonian noise
-463714a BUG-FIX: a typo was causing in error in pca when normalize_variance = True
+463714a a typo was causing in error in pca when normalize_variance = True
 8413e6a Increased the chances that similar independent components will have the same indexes
 b859a1e variance2one renamed to normalize_variance
-6f3a2bc BUG-FIX: variance2one was operating in the wrong axis
+6f3a2bc variance2one was operating in the wrong axis
 84c6a24 Clean the ummixing info after a new decomposition
 4d082e1 w renamed to unmixing matrix and fixes a bug when loading a mva_result in which output_dimension = None
 0ecfede plot_explained_variance renamed to plot_explained_variance_ratio
-4b9f8fc BUG-FIX: attempting to use any decomposition plotting method after loading with mva_results.load was raising an error
+4b9f8fc attempting to use any decomposition plotting method after loading with mva_results.load was raising an error
 48e673d in decomposition V rename to explained_variance
 a0a2255 Make pca_V = variance
 e5c1f55 Change the whitening algorithm to a svd based one and add sklearn fastica algorithm
@@ -60,26 +60,28 @@ f017e16 ENHANCE: the smoothings guis now offer differentiation and line color op
 3484f45 Merge branch 'master' of github.com:hyperspy/hyperspy
 b7b351e New smoothing algorithm: total variance denoising
 606fe3b Merge branch 'master' of github.com:hyperspy/hyperspy
-687ed3c BUG-FIX: plot naming for peak char factor plots were messed up.
-0be251b BUG-FIX: Added missing keywords to plot_pca_factors and plot_ica_factors. BUG-FIX: renamed incorrectly named exportPca and exportIca functions
+
 
 BUGS fixed
 ----------
-19375c7 BUG-FIX: the offset estimation was summing instead of averaging
-226e546 BUG-FIX: remove background was raising an error when the navigation dimension was 0
-c41298c BUG-FIX: plot_RGB was broken
-66ac522 BUG-FIX: saving the scores was sometimes transposing the shape
-a9cb5f3 BUG-FIX: a signal with containing nans was failing to plot
-528188b BUG-FIX: when the axis size was changed (e.g. after cropping) the set_signal_dimension method was not being called
-f91a4d6 BUG-FIX: non declared variable was raising an error
-e408c16 BUG-FIX: to_spectrum was transposing the navigation dimension
-63d09c6 BUG-FIX: plot_scores_2D was using the transpose of the shape to reshape the scores
-81c2767 BUG-FIX: the signal mask in decomposition and ica was not being raveled
-323a121 BUG-FIX: when using transform the data was being centered and the resulting scores were wrong
-ac60bc4 BUG-FIX: model data forced to be 3D unnecessarily
-11447df BUG-FIX: commit 5ff3798105d6 made decomposition and other methods raise an error
-b3417fd BUG-FIX: the plot_explained_variance_ratio was actually plotting the cumulative, renamed
-62972d6 BUG-FIX: a typo was raising an error when cropping the decomposition dimension
+19375c7 the offset estimation was summing instead of averaging
+226e546 remove background was raising an error when the navigation dimension was 0
+c41298c plot_RGB was broken
+66ac522 saving the scores was sometimes transposing the shape
+a9cb5f3 a signal with containing nans was failing to plot
+528188b when the axis size was changed (e.g. after cropping) the set_signal_dimension method was not being called
+f91a4d6 non declared variable was raising an error
+e408c16 to_spectrum was transposing the navigation dimension
+63d09c6 plot_scores_2D was using the transpose of the shape to reshape the scores
+81c2767 the signal mask in decomposition and ica was not being raveled
+323a121 when using transform the data was being centered and the resulting scores were wrong
+ac60bc4 model data forced to be 3D unnecessarily
+11447df commit 5ff3798105d6 made decomposition and other methods raise an error
+b3417fd the plot_explained_variance_ratio was actually plotting the cumulative, renamed
+62972d6 a typo was raising an error when cropping the decomposition dimension
+687ed3c plot naming for peak char factor plots were messed up.
+0be251b Added missing keywords to plot_pca_factors and plot_ica_factors.
+        renamed incorrectly named exportPca and exportIca functions
 
 
 ************

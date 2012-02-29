@@ -218,9 +218,10 @@ PageUp      Increase step size
 PageDown    Decrease step size
 ``+``           Increase pointer size
 ``-``           Decrease pointer size
+``h``       Launch the contrast adjustment tool (only for Image)
 =========   =============================
 
-
+Additionally, it is p
 To close all the figures run the following command:
 
 .. code-block:: python
