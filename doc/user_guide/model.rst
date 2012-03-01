@@ -63,14 +63,14 @@ To add a component first we have to create an instance of the component. Once th
     In [13]: m
     Out[2]: [Normalized Gaussian]
     In [14]: # Create two Lorentzian function components
-    In [15]:  lorentzian1 = components.Lorentzian()
-    In [16]: lorentzian2 = components.Lorentzian()
+    In [15]: gaussian2 = components.Gaussian()
+    In [16]: gaussian3 = components.Gaussian()
     In [17]: # We could use the append method two times to add the
     In [18]: # two lorentzians, but when adding multiple components it is handier to used
     In [19]: # the extend method
-    In [20]: m.extend((lorentzian1, lorentzian2))
+    In [20]: m.extend((gaussian2, gaussian3))
     In [21]: # Let's print the components    
-    Out[2]: [Normalized Gaussian, Lorentzian, Lorentzian]
+    Out[2]: [Normalized Gaussian, Normalized Gaussian, Normalized Gaussian]
     
     
 Fitting the model to the data
@@ -88,13 +88,101 @@ To fit the model to the data at the current coordinates use :py:meth:`~.optimize
     In [28]: # data in all the coordinates
     In [29]: m.multifit()
     
-Getting and setting the component parameters
---------------------------------------------
+Getting and setting parameters value and attributes
+--------------------------------------------------------------------
+
+:py:meth:`~.model.Model.print_current_values` prints the value of the parameters of the components in the current coordinates.
+
+:py:attr:`~.component.Component.parameters` contains a list of the parameters of a component and :py:attr:`~.component.Component.free_parameters` lists only the free parameters.
+
+The value of a particular parameter can be accessed in the :py:attr:`~.component.Parameter.value`.
+
+To set the the `free` state of a parameter change the :py:attr:`~.component.Parameter.free` attribute.
+
+The value of a parameter can be coupled to the value of another by setting the :py:attr:`~.component.Parameter.twin` attribute.
+
+The following example clarifies these concepts:
+
+.. code-block:: ipython
+    
+    In [30]: # Print the parameters of the gaussian components
+    In [31]: gaussian.parameters
+    Out[3]: (A, sigma, centre)
+    In [30]: # Fix the centre
+    In [31]: gaussian.centre.free = False
+    In [30]: # Print the free parameters
+    In [31]: gaussian.parameters
+    Out[3]: set([A, sigma])
+    In [31]: gaussian.parameters
+    Out[3]: set([A, sigma])
+    In [32]: # Print the current value of all the free parameters
+    In [33]: m.print_current_values()
+    Components	Parameter	Value
+    Normalized Gaussian
+		    A	1.000000
+		    sigma	1.000000
+    Normalized Gaussian
+		    centre	0.000000
+		    A	1.000000
+		    sigma	1.000000
+    Normalized Gaussian
+		    A	1.000000
+		    sigma	1.000000
+		    centre	0.000000
+    In [34]: # Couple the A parameter of gaussian2 to the A parameter of gaussian 3
+    In [35]: gaussian2.A.twin = gaussian3.A
+    In [36]: # Set the gaussian2 centre value to 10
+    In [37]: gaussian2.centre.value = 10
+    In [38]: # Print the current value of all the free parameters
+    In [39]: m.print_current_values()
+    Components	Parameter	Value
+    Normalized Gaussian
+		    A	1.000000
+		    sigma	1.000000
+    Normalized Gaussian
+		    centre	10.000000
+		    A	1.000000
+		    sigma	1.000000
+    Normalized Gaussian
+		    A	1.000000
+		    sigma	1.000000
+		    centre	0.000000   
+    
 
 
 Exclude data from the fitting process
 -------------------------------------
 
 
+The following :py:class:`~.model.Model` methods can be used to exclude undesired spectral channels from the fitting process:
 
+* :py:meth:`~.model.Model.set_data_range_in_units`
+* :py:meth:`~.model.Model.set_data_range_in_pixels`
+* :py:meth:`~.model.Model.remove_data_range_in_units`
+* :py:meth:`~.model.Model.remove_data_range_in_pixels`
+* :py:meth:`~.model.Model.reset_data_range`
+
+Visualising the result of the fit
+---------------------------------
+
+The :py:class:`~.model.Model`, :py:class:`~.component.Component` and :py:class:`~.component.Parameter` classes have plot methods to visualise
+the result of the fit **when fitting multidimensional datasets**.
+
+* :py:meth:`~.model.Model.plot_results`
+* :py:meth:`~.component.Component.plot`
+* :py:meth:`~.component.Parameter.plot`
+
+Saving and loading the result of the fit
+----------------------------------------
+
+To save the result of the fit to a single file use :py:meth:`~.model.save_parameters2file` and :py:meth:`~.model.load_parameters_from_file` to load back the results into the same model structure.
+
+Exporting the result of the fit
+-------------------------------
+
+The :py:class:`~.model.Model`, :py:class:`~.component.Component` and :py:class:`~.component.Parameter` classes have export methods:
+
+* :py:meth:`~.model.Model.export_results`
+* :py:meth:`~.component.Component.export`
+* :py:meth:`~.component.Parameter.export`
 
