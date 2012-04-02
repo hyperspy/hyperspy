@@ -558,16 +558,12 @@ def crawl_dm3(f, data_dict, endian, ntags, group_name='root',
                 data_dict[data_key] = parse_tag_data(f, infoarray,
                                                        endian, skip)
 
-            # We convert all the strings to unicode
-            # In the case that the encoding is not ASCII we try with
-            # latin-1
+            # We convert all the strings to unicode presuming
+            # latin-1 encoding
             if isinstance(data_dict[data_key][1], StringType):
-                try:
-                    data_dict[data_key] = (data_dict[data_key][0], 
-                    unicode(data_dict[data_key][1]))
-                except:
-                    data_dict[data_key] = (data_dict[data_key][0], 
-                    data_dict[data_key][1].decode('latin-1'))
+                data_dict[data_key] = (data_dict[data_key][0], 
+                data_dict[data_key][1].decode('latin-1',
+                                               errors='replace'))
 
             if debug > 10:
                 try:

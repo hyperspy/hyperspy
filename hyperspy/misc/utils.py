@@ -1062,6 +1062,22 @@ def interpolate_1D(number_of_interpolation_points, data):
     interpolator = sp.interpolate.interp1d(old_ax,data)
     return interpolator(new_ax)
     
+_slugify_strip_re = re.compile(r'[^\w\s-]')
+_slugify_hyphenate_re = re.compile(r'[-\s]+')
+def slugify(value):
+    """
+    Normalizes string, converts to lowercase, removes non-alpha characters,
+    and converts spaces to hyphens.
+    
+    Adapted from Django's "django/template/defaultfilters.py".
+    """
+    import unicodedata
+    if not isinstance(value, unicode):
+        value = value.decode('latin-1')
+    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
+    value = unicode(_slugify_strip_re.sub('', value).strip())
+    return _slugify_hyphenate_re.sub('_', value)
+    
 class DictionaryBrowser(object):
     """A class to comfortably access some parameters as attributes"""
 
@@ -1077,7 +1093,9 @@ class DictionaryBrowser(object):
                     value=Signal(value)
                 else:
                     value = DictionaryBrowser(value)
-            self.__setattr__(key, value)
+            sluged_key = slugify(key)
+            self.__setattr__(sluged_key, {'key' : key,
+								   'value' : value})
 
     def _get_print_items(self, padding = '', max_len=20):
         """Prints only the attributes that are not methods"""
@@ -1087,6 +1105,7 @@ class DictionaryBrowser(object):
         for item, value in self.__dict__.iteritems():
             # Mixing unicode with strings can deal to Unicode errors
             # We convert all the unicode values to strings
+            value = value['value']
             if type(value) is unicode:
                 value = value.encode('utf-8')
             if type(item) != types.MethodType:
@@ -1119,11 +1138,11 @@ class DictionaryBrowser(object):
 		# Printing instead of returning the string is a walkaround a bug
 		# in Ipython 0.12 that fails to print the UTF8 character in the
 		# Qt console but works properly in the terminal
-        print(self._get_print_items())
+        print self._get_print_items()
         return ""
 
     def __getitem__(self,key):
-        return self.__dict__.__getitem__(key)
+        return self.__dict__.__getitem__(key)['value']
 
     def len(self):
         return len(self.__dict__.keys())
@@ -1137,7 +1156,7 @@ class DictionaryBrowser(object):
             if type(item) != types.MethodType:
                 if isinstance(value, DictionaryBrowser):
                     value = value.as_dictionary()
-                par_dict.__setitem__(item, value)
+                par_dict.__setitem__(value['key'], value)
         return par_dict
         
     def has_item(self, item_path):
@@ -1280,18 +1299,3 @@ def ensure_directory(path):
     if directory and not os.path.exists(directory):
         os.makedirs(directory)
         
-_slugify_strip_re = re.compile(r'[^\w\s-]')
-_slugify_hyphenate_re = re.compile(r'[-\s]+')
-def slugify(value):
-    """
-    Normalizes string, converts to lowercase, removes non-alpha characters,
-    and converts spaces to hyphens.
-    
-    Adapted from Django's "django/template/defaultfilters.py".
-    """
-    import unicodedata
-    if not isinstance(value, unicode):
-        value = unicode(value)
-    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    value = unicode(_slugify_strip_re.sub('', value).strip())
-    return _slugify_hyphenate_re.sub('_', value)

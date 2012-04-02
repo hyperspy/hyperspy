@@ -21,8 +21,11 @@
 #  and
 #  http://www.nist.gov/lispix/doc/image-file-formats/raw-file-format.htm
 
-import numpy as np
+import codecs
 import os.path
+
+import numpy as np
+
 from hyperspy.misc.utils_readfile import *
 from hyperspy import Release
 
@@ -83,14 +86,14 @@ rpl_keys = {
     # Hyperspy-specific keys
     'depth-origin' : float,
     'depth-scale' : float,
-    'depth-units' : str,
+    'depth-units' : unicode,
     'width-origin' : float,
     'width-scale' : float,
-    'width-units' : str,
+    'width-units' : unicode,
     'height-origin' : float,
     'height-scale' : float,
-    'height-units' : str,
-    'signal' : str,
+    'height-units' : unicode,
+    'signal' : unicode,
     }
 
 def parse_ripple(fp):
@@ -192,7 +195,8 @@ def read_raw(rpl_info, fp):
         data = data.reshape(size)
     return data
 
-def file_reader(filename, rpl_info=None, *args, **kwds):
+def file_reader(filename, rpl_info=None, encoding="latin-1", 
+                *args,**kwds):
     """Parses a Lispix (http://www.nist.gov/lispix/) ripple (.rpl) file
     and reads the data from the corresponding raw (.raw) file;
     or, read a raw file if the dictionary rpl_info is provided.
@@ -282,10 +286,13 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
     Other keys and values can be included and are ignored.
 
     Any number of spaces can go along with each tab.
+    
     """
+    
     if not rpl_info:
         if filename[-3:] in file_extensions:
-            with open(filename) as f:
+            with codecs.open(filename, encoding = encoding,
+                              errors = 'replace') as f:
                 rpl_info = parse_ripple(f)
         else:
             raise IOError, 'File has wrong extension: "%s"' % filename[-3:]
@@ -399,7 +406,7 @@ def file_reader(filename, rpl_info=None, *args, **kwds):
         }
     return [dictionary, ]
 
-def file_writer(filename, signal, *args, **kwds):
+def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
 
     # Set the optional keys to None
     ev_per_chan = None
@@ -482,17 +489,20 @@ def file_writer(filename, signal, *args, **kwds):
             keys_dictionary['%s-units' % key] = eval('%s_axis.units' % key)
             keys_dictionary['%s-name' % key] = eval('%s_axis.name' % key)
 
-    write_rpl(filename, keys_dictionary)
+    write_rpl(filename, keys_dictionary, encoding)
     write_raw(filename, signal, record_by)
 
-def write_rpl(filename, keys_dictionary):
-    f = open(filename, 'w')
+def write_rpl(filename, keys_dictionary, encoding = 'ascii'):
+    f = codecs.open(filename, 'w', encoding = encoding,
+                    errors = 'replace')
     f.write(';File created by Hyperspy version %s\n' % Release.version)
     f.write('key\tvalue\n')
     # Even if it is not necessary, we sort the keywords when writing
     # to make the rpl file more human friendly
     for key, value in iter(sorted(keys_dictionary.iteritems())):
-        f.write(key + '\t' + str(value) + '\n')
+        if not isinstance(value, basestring):
+            value = str(value)
+        f.write(key + '\t' + value + '\n')
     f.close()
 
 def write_raw(filename, signal, record_by):

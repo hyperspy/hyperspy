@@ -169,12 +169,8 @@ def dict2hdfgroup(dictionary, group, compression = None):
                 group.attrs[key] = value
             except:
                 if type(value) is unicode:
-                    try:
-                        group.attrs[key] = str(value)
-                    except:
-                        print("The hdf5 writer could not write the following "
-                        "information in the file")
-                        print('%s : %s' % (key, value))
+                    group.attrs[key] = value.encode('latin-1',
+                                          errors = 'replace')
                 else:
                     print("The hdf5 writer could not write the following "
                     "information in the file")
@@ -182,13 +178,13 @@ def dict2hdfgroup(dictionary, group, compression = None):
             
 def hdfgroup2dict(group, dictionary = {}):
     for key, value in group.attrs.iteritems():
-        try:
+        if type(value) is np.string_:
             if value == '_None_':
                 value = None
-        except ValueError:
-            # If the value is an array it will raise a ValueError
-            pass
-        if type(value) == np.ndarray and value.dtype == np.dtype('|S1'):
+            else:
+                print value
+                value = value.decode('latin-1')
+        elif type(value) is np.ndarray and value.dtype == np.dtype('|S1'):
             value = value.tolist()
         # skip signals - these are handled below.
         if key.startswith('_sig_'):

@@ -19,6 +19,7 @@
 import locale
 import time
 import datetime
+import codecs
 
 import numpy as np
 
@@ -53,33 +54,33 @@ writes_xd = False
 # http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/XEDS/EMMFF/EMMFF.IBM/Emmff.Total
 keywords = {    
                 # Required parameters
-                'FORMAT' : {'dtype' : str, 'mapped_to': None},
-                'VERSION' : {'dtype' : str, 'mapped_to': None},
-                'TITLE' : {'dtype' : str, 'mapped_to': None},
-                'DATE' : {'dtype' : str, 'mapped_to': None},     
-                'TIME' : {'dtype' : str, 'mapped_to': None},
-                'OWNER' : {'dtype' : str, 'mapped_to': None},
+                'FORMAT' : {'dtype' : unicode, 'mapped_to': None},
+                'VERSION' : {'dtype' : unicode, 'mapped_to': None},
+                'TITLE' : {'dtype' : unicode, 'mapped_to': None},
+                'DATE' : {'dtype' : unicode, 'mapped_to': None},     
+                'TIME' : {'dtype' : unicode, 'mapped_to': None},
+                'OWNER' : {'dtype' : unicode, 'mapped_to': None},
                 'NPOINTS' : {'dtype' : float, 'mapped_to': None},
                 'NCOLUMNS' : {'dtype' : float, 'mapped_to': None},
-                'DATATYPE' : {'dtype' : str, 'mapped_to': None},
+                'DATATYPE' : {'dtype' : unicode, 'mapped_to': None},
                 'XPERCHAN' : {'dtype' : float, 'mapped_to': None},
                 'OFFSET' : {'dtype' : float, 'mapped_to': None},
                 # Optional parameters
                 ## Spectrum characteristics
-                'SIGNALTYPE' : {'dtype' : str, 'mapped_to': 'signal'},
-                'XLABEL' : {'dtype' : str, 'mapped_to': None},
-                'YLABEL' : {'dtype' : str, 'mapped_to': None},
-                'XUNITS' : {'dtype' : str, 'mapped_to': None},
-                'YUNITS' : {'dtype' : str, 'mapped_to': None},
+                'SIGNALTYPE' : {'dtype' : unicode, 'mapped_to': 'signal'},
+                'XLABEL' : {'dtype' : unicode, 'mapped_to': None},
+                'YLABEL' : {'dtype' : unicode, 'mapped_to': None},
+                'XUNITS' : {'dtype' : unicode, 'mapped_to': None},
+                'YUNITS' : {'dtype' : unicode, 'mapped_to': None},
                 'CHOFFSET' : {'dtype' : float, 'mapped_to': None},
-                'COMMENT' : {'dtype' : str, 'mapped_to': None},
+                'COMMENT' : {'dtype' : unicode, 'mapped_to': None},
                 ## Microscope
                 'BEAMKV' : {'dtype' : float, 'mapped_to': 'beam_energy'},
                 'EMISSION' : {'dtype' : float, 'mapped_to': None},
                 'PROBECUR' : {'dtype' : float, 'mapped_to': None},
                 'BEAMDIAM' : {'dtype' : float, 'mapped_to': None},
                 'MAGCAM' : {'dtype' : float, 'mapped_to': None},
-                'OPERMODE' : {'dtype' : str, 'mapped_to': None},
+                'OPERMODE' : {'dtype' : unicode, 'mapped_to': None},
                 'CONVANGLE' : {'dtype' : float, 'mapped_to': None},
                 
                 ## Specimen
@@ -94,7 +95,7 @@ keywords = {
                 'INTEGTIME' : {'dtype' : float, 'mapped_to': None}, # in ms
                 'DWELLTIME' : {'dtype' : float, 'mapped_to': None}, # in ms
                 'COLLANGLE' : {'dtype' : float, 'mapped_to': None},
-                'ELSDET' :  {'dtype' : str, 'mapped_to': None},
+                'ELSDET' :  {'dtype' : unicode, 'mapped_to': None},
 
                 ## EDS
                 'ELEVANGLE' : {'dtype' : float, 'mapped_to': None},
@@ -111,14 +112,13 @@ keywords = {
                 'TBNWIND' : {'dtype' : float, 'mapped_to': None},
                 'TDIWIND' : {'dtype' : float, 'mapped_to': None},
                 'THCWIND' : {'dtype' : float, 'mapped_to': None},
-                'EDSDET'  : {'dtype' : str, 'mapped_to': None},	
+                'EDSDET'  : {'dtype' : unicode, 'mapped_to': None},	
             }
-def file_reader(filename, **kwds):
+def file_reader(filename, encoding = 'latin-1', **kwds):
     parameters = {}
     mapped = {}
-    spectrum_file = open(filename)
-
-
+    spectrum_file = codecs.open(filename, encoding = encoding,
+                                errors = 'replace')
     y = []
     # Read the keywords
     data_section = False
@@ -226,7 +226,8 @@ def file_reader(filename, **kwds):
                 }
     return [dictionary,]
 
-def file_writer(filename, signal, format = None, separator = ', '):
+def file_writer(filename, signal, format = None, separator = ', ',
+                encoding = 'latin-1'):
     keywords = {}
     FORMAT = "EMSA/MAS Spectral Data File"
     if hasattr(signal.original_parameters, 'FORMAT') and \
@@ -297,7 +298,8 @@ def file_writer(filename, signal, format = None, separator = ', '):
         if key not in keywords or value != '':
             keywords[key] = value
 
-    f = open(filename, 'w')   
+    f = codecs.open(filename, 'w', encoding = encoding,
+                    errors = 'replace')   
     # Remove the following keys from keywords if they are in 
     # (although they shouldn't)
     for key in ['SPECTRUM', 'ENDOFDATA']:
