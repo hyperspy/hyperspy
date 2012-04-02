@@ -1049,6 +1049,11 @@ def iterate_axis(data, axis = -1):
             getitem[unfolded_axis] = i
             yield(data[getitem])
 
+#  
+#  name: interpolate_1D
+#  @param
+#  @return
+#  
 def interpolate_1D(number_of_interpolation_points, data):
     ip = number_of_interpolation_points
     ch = len(data)
@@ -1111,7 +1116,11 @@ class DictionaryBrowser(object):
         return string
 
     def __repr__(self):
-        return self._get_print_items()
+		# Printing instead of returning the string is a walkaround a bug
+		# in Ipython 0.12 that fails to print the UTF8 character in the
+		# Qt console but works properly in the terminal
+        print(self._get_print_items())
+        return ""
 
     def __getitem__(self,key):
         return self.__dict__.__getitem__(key)
