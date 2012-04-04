@@ -23,11 +23,13 @@ import numpy as np
 import mdp
 
 from hyperspy import messages
+from hyperspy.misc.utils import ensure_unicode
 
 # Plugin characteristics
 # ----------------------
 format_name = 'HDF5'
-description = 'The default file format for Hyperspy based on the HDF5 standard' 
+description = \
+    'The default file format for Hyperspy based on the HDF5 standard' 
 
 full_suport = False
 # Recognised file extension
@@ -49,26 +51,27 @@ writes_xd = True
 # -----------------------
 # The root must contain a group called Experiments
 # The experiments group can contain any number of subgroups
-# Each subgroup it is an experiment or signal
+# Each subgroup is an experiment or signal
 # Each subgroup must contain at least one dataset called data
 # The data is an array of arbitrary dimension
-# In addition a number equal to the number of dimensions of the data dataset
-# + 1 of empty groups called coordinates followed by a number must exists 
-# with the following attributes:
+# In addition a number equal to the number of dimensions of the data
+# dataset + 1 of empty groups called coordinates followed by a number
+# must exists with the following attributes:
 #    'name' 
 #    'offset' 
 #    'scale' 
 #    'units' 
 #    'size'
-#    'index_in_array' : 1
-# The experiment group contains a number of attributes that will be directly 
-# assigned as class attributes of the Signal instance. In addition the 
-# experiment groups may contain an 'extra_parameters' subgroup that will be 
-# assigned to the 'extra_parameters' attribute of the Signal instance as a 
-# dictionary
-# The Experiments group can contain attributes that may be common to all the 
-# experiments and that will be accessible as attribures of the Experiments
-# instance
+#    'index_in_array'
+# The experiment group contains a number of attributes that will be
+# directly assigned as class attributes of the Signal instance. In
+# addition the experiment groups may contain 'original_parameters' and 
+# 'mapped_parameters'subgroup that will be 
+# assigned to the same name attributes of the Signal instance as a 
+# Dictionary Browsers
+# The Experiments group can contain attributes that may be common to all
+# the experiments and that will be accessible as attribures of the
+# Experimentsinstance
 
 not_valid_format = 'The file is not a valid Hyperspy hdf5 file'
 
@@ -76,8 +79,8 @@ def file_reader(filename, record_by, mode = 'r', driver = 'core',
                 backing_store = False, **kwds):
             
     f = h5py.File(filename, mode = mode, driver = driver)
-    # If the file has been created with Hyperspy it should cointain a folder 
-    # Experiments.
+    # If the file has been created with Hyperspy it should cointain a
+    # folder Experiments.
     experiments = []
     exp_dict_list = []
     if 'Experiments' in f:
@@ -94,8 +97,8 @@ def file_reader(filename, record_by, mode = 'r', driver = 'core',
             exp=hdfgroup2signaldict(exg)
             exp_dict_list.append(exp)
     else:
-        # Eventually there will be the possibility of loading the datasets of 
-        # any hdf5 file
+        # Eventually there will be the possibility of loading the
+        # datasets of any hdf5 file
         pass
     f.close()
     return exp_dict_list
@@ -109,34 +112,40 @@ def hdfgroup2signaldict(group):
             axes.append(dict(group['axis-%i' % i].attrs))
         except KeyError:
             raise IOError(not_valid_format)
-        exp['mapped_parameters'] = hdfgroup2dict(
-            group['mapped_parameters'], {})
-        exp['original_parameters'] = hdfgroup2dict(
-            group['original_parameters'], {})
-        exp['axes'] = axes
-        exp['attributes']={}
-        if 'learning_results' in group.keys():
-            exp['attributes']['learning_results']=hdfgroup2dict(group['learning_results'],{})
-        if 'peak_learning_results' in group.keys():
-            exp['attributes']['peak_learning_results']=hdfgroup2dict(group['peak_learning_results'],{})
-            
-        # Load the decomposition results written with the old name, mva_results
-        if 'mva_results' in group.keys():
-            exp['attributes']['learning_results']=hdfgroup2dict(
-                group['mva_results'],{})
-        if 'peak_mva_results' in group.keys():
-            exp['attributes']['peak_learning_results']=hdfgroup2dict(
-                group['peak_mva_results'],{})
-        # Replace the old signal and name keys with their current names
-        if 'signal' in exp['mapped_parameters']:
-            exp['mapped_parameters']['signal_type'] = \
-                exp['mapped_parameters']['signal']
-            del exp['mapped_parameters']['signal']
-            
-        if 'name' in exp['mapped_parameters']:
-            exp['mapped_parameters']['title'] = \
-                exp['mapped_parameters']['name']
-            del exp['mapped_parameters']['name']
+    for axis in axes:
+        for key, item in axis.iteritems():
+            axis[key] = ensure_unicode(item)
+    exp['mapped_parameters'] = hdfgroup2dict(
+        group['mapped_parameters'], {})
+    exp['original_parameters'] = hdfgroup2dict(
+        group['original_parameters'], {})
+    exp['axes'] = axes
+    exp['attributes']={}
+    if 'learning_results' in group.keys():
+        exp['attributes']['learning_results'] = \
+            hdfgroup2dict(group['learning_results'],{})
+    if 'peak_learning_results' in group.keys():
+        exp['attributes']['peak_learning_results'] = \
+            hdfgroup2dict(group['peak_learning_results'],{})
+        
+    # Load the decomposition results written with the old name,
+    # mva_results
+    if 'mva_results' in group.keys():
+        exp['attributes']['learning_results']=hdfgroup2dict(
+            group['mva_results'],{})
+    if 'peak_mva_results' in group.keys():
+        exp['attributes']['peak_learning_results']=hdfgroup2dict(
+            group['peak_mva_results'],{})
+    # Replace the old signal and name keys with their current names
+    if 'signal' in exp['mapped_parameters']:
+        exp['mapped_parameters']['signal_type'] = \
+            exp['mapped_parameters']['signal']
+        del exp['mapped_parameters']['signal']
+        
+    if 'name' in exp['mapped_parameters']:
+        exp['mapped_parameters']['title'] = \
+            exp['mapped_parameters']['name']
+        del exp['mapped_parameters']['name']
         
     return exp
 
@@ -148,7 +157,8 @@ def dict2hdfgroup(dictionary, group, compression = None):
             dict2hdfgroup(value, group.create_group(key), 
                           compression = compression)
         elif isinstance(value, DictionaryBrowser):
-            dict2hdfgroup(value.as_dictionary(), group.create_group(key),
+            dict2hdfgroup(value.as_dictionary(),
+                          group.create_group(key),
                           compression = compression)
         elif isinstance(value, Signal):
             if key.startswith('_sig_'):
@@ -159,22 +169,23 @@ def dict2hdfgroup(dictionary, group, compression = None):
             else:
                 write_signal(value,group.create_group('_sig_'+key))
         elif isinstance(value, np.ndarray):
-            group.create_dataset(key, data = value, compression = compression)
+            group.create_dataset(key,
+                                 data=value,
+                                 compression = compression)
         elif isinstance(value, mdp.Node):
             pass
+        elif value is None:
+            group.attrs[key] = '_None_'
+        elif isinstance(value, basestring):
+            group.attrs[key] = value.encode('utf8',
+                                            errors='ignore')
         else:
-            if value is None:
-                value = '_None_'
             try:
                 group.attrs[key] = value
             except:
-                if type(value) is unicode:
-                    group.attrs[key] = value.encode('latin-1',
-                                          errors = 'replace')
-                else:
-                    print("The hdf5 writer could not write the following "
-                    "information in the file")
-                    print('%s : %s' % (key, value))
+                print("The hdf5 writer could not write the following "
+                "information in the file")
+                print('%s : %s' % (key, value))
             
 def hdfgroup2dict(group, dictionary = {}):
     for key, value in group.attrs.iteritems():
@@ -182,9 +193,14 @@ def hdfgroup2dict(group, dictionary = {}):
             if value == '_None_':
                 value = None
             else:
-                print value
-                value = value.decode('latin-1')
-        elif type(value) is np.ndarray and value.dtype == np.dtype('|S1'):
+                try:
+                    value = value.decode('utf8')
+                except UnicodeError:
+                    # For old files
+                    value = value.decode('latin-1')
+                    
+        elif type(value) is np.ndarray and \
+                value.dtype == np.dtype('|S1'):
             value = value.tolist()
         # skip signals - these are handled below.
         if key.startswith('_sig_'):
@@ -203,12 +219,15 @@ def hdfgroup2dict(group, dictionary = {}):
     return dictionary
 
 def write_signal(signal,group, compression):
-    group.create_dataset('data', data = signal.data, compression = compression)
+    group.create_dataset('data',
+                         data=signal.data,
+                         compression=compression)
     for axis in signal.axes_manager.axes:
         axis_dict = axis.get_axis_dictionary()
         # For the moment we don't store the navigate attribute
         del(axis_dict['navigate'])
-        coord_group = group.create_group('axis-%s' % axis.index_in_array)
+        coord_group = group.create_group(
+            'axis-%s' % axis.index_in_array)
         dict2hdfgroup(axis_dict, coord_group, compression = compression)
     mapped_par = group.create_group('mapped_parameters')
     dict2hdfgroup(signal.mapped_parameters.as_dictionary(), 
@@ -220,7 +239,8 @@ def write_signal(signal,group, compression):
     dict2hdfgroup(signal.learning_results.__dict__, 
                   learning_results, compression = compression)
     if hasattr(signal,'peak_learning_results'):
-        peak_learning_results = group.create_group('peak_learning_results')
+        peak_learning_results = group.create_group(
+            'peak_learning_results')
         dict2hdfgroup(signal.peak_learning_results.__dict__, 
                   peak_learning_results, compression = compression)
                                     

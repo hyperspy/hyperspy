@@ -502,6 +502,7 @@ def write_rpl(filename, keys_dictionary, encoding = 'ascii'):
     for key, value in iter(sorted(keys_dictionary.iteritems())):
         if not isinstance(value, basestring):
             value = str(value)
+        print value
         f.write(key + '\t' + value + '\n')
     f.close()
 

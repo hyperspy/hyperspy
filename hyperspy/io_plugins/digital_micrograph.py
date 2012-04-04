@@ -188,7 +188,6 @@ from types import StringType
 import numpy as np
 
 from hyperspy.axes import DataAxis
-
 from hyperspy.misc.utils_readfile import *
 from hyperspy.exceptions import *
 import hyperspy.misc.utils
@@ -279,10 +278,6 @@ def read_string(f, iarray, endian):
 
     If it's a tag name, each char is 1-Byte;
     if it's a tag data, each char is 2-Bytes Unicode,
-    UTF-16-BE or UTF-16-LE.
-    E.g 43 00 for little-endian files (UTF-16-LE)
-    i.e. a char followed by an empty Byte.
-    E.g 'hello' becomes 'h.e.l.l.o.' in UTF-16-LE
     """    
     if (endian != 'little') and (endian != 'big'):
         print('File address:', f.tell())
@@ -298,9 +293,15 @@ def read_string(f, iarray, endian):
             s = B_char
         for char in xrange(iarray[1]):
             data += s.unpack(f.read(1))[0]
-        if '\x00' in data:      # it's a Unicode string (TagData)
-            uenc = 'utf_16_'+endian[0]+'e'
-            data = unicode(data, uenc, 'replace')
+        #~ if '\x00' in data:      # it's a Unicode string (TagData)
+            #~ uenc = 'utf_16_'+endian[0]+'e'
+            #~ data = unicode(data, uenc, 'replace')
+        try:
+            data = data.decode('utf8')
+        except:
+            # Sometimes the dm3 file strings are encoded in latin-1
+            # instead of utf8
+            data = data.decode('latin-1', errors = 'ignore')
         return data
 
 def read_struct(f, iarray, endian):
@@ -445,6 +446,8 @@ def parse_tag_data(f, iarray, endian, skip=0):
             data = read_data(f, endian)
         else:
             raise DM3DataTypeError(iarray[0])
+        if isinstance(data, str):
+            data = hyperspy.misc.utils.ensure_unicode(data)
     else:
         data = '__skipped__'        
         # print('Skipping', nbytes, 'Bytes.')
@@ -557,13 +560,6 @@ def crawl_dm3(f, data_dict, endian, ntags, group_name='root',
             else:
                 data_dict[data_key] = parse_tag_data(f, infoarray,
                                                        endian, skip)
-
-            # We convert all the strings to unicode presuming
-            # latin-1 encoding
-            if isinstance(data_dict[data_key][1], StringType):
-                data_dict[data_key] = (data_dict[data_key][0], 
-                data_dict[data_key][1].decode('latin-1',
-                                               errors='replace'))
 
             if debug > 10:
                 try:
@@ -964,7 +960,7 @@ class DM3ImageFile(object):
         # self.dimensions['sizes'] -> integer
         # self.dimensions['origins'] -> float
         # self.dimensions['scales'] -> float
-        # self.dimensions['units'] -> string     
+        # self.dimensions['units'] -> string
         self.dimensions = np.asarray(dimensions,
                                      dtype={'names':['sizes',
                                                      'origins',

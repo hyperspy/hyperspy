@@ -17,6 +17,7 @@
 ################################################################################
 
 import sys, struct
+from hyperspy.misc.utils import ensure_unicode
 
 version='0.72'
 
@@ -333,7 +334,6 @@ def readStringData(stringSize):
 			
 		## !!! *Unicode* string... convert to latin-1 string
 		rString = readString(f, stringSize)
-		rString = unicode(rString, "utf_16_le").encode("utf-8")
 
 		if ( debugLevel > 3 ):
 			print rString + "   <"  + repr( rString ) + ">"
@@ -447,9 +447,8 @@ def readStructData( structTypes ):
 	
 def storeTag( tagName, tagValue ):
 	global storedTags, tagHash
-	
 	storedTags.append( str(tagName) + " = " + str(tagValue) )
-	tagHash[ str(tagName) ] = tagValue
+	tagHash[ ensure_unicode(tagName, 'utf8', 'latin-1')] = ensure_unicode(tagValue, 'utf16')
 	
 	
 ### END sub-routines ###
@@ -463,71 +462,61 @@ def parseDM3( filename, dump=False ):
 
 	global f
 
-	try:
-		f = open( filename, 'rb' )
-		isDM3 = True
-		## read header (first 3 4-byte int)
-		# get version
-		fileVersion = readLong(f)
-		if ( fileVersion != 3 ):
-			isDM3 = False
-		# get indicated file size
-		FileSize = readLong(f)
-		# get byte-ordering
-		lE = readLong(f)
-		if ( lE == 1 ):
-			littleEndian = True
-		else :
-			littleEndian = False
-			isDM3 = False
-		# check file header, raise Exception if not DM3
-		if (not (isDM3 and littleEndian) ):
-			raise NameError("Is_Not_a_DM3_File")
-		
-		if ( debugLevel > 5):
-			print "Header info.:"
-			print "File version:", version
-			print "lE:", lE
-			print "File size:", FileSize
 
-		# print '%s appears to be a DM3 file' % filename,
+	f = open( filename, 'rb' )
+	isDM3 = True
+	## read header (first 3 4-byte int)
+	# get version
+	fileVersion = readLong(f)
+	if ( fileVersion != 3 ):
+		isDM3 = False
+	# get indicated file size
+	FileSize = readLong(f)
+	# get byte-ordering
+	lE = readLong(f)
+	if ( lE == 1 ):
+		littleEndian = True
+	else :
+		littleEndian = False
+		isDM3 = False
+	# check file header, raise Exception if not DM3
+	if (not (isDM3 and littleEndian) ):
+		raise NameError("Is_Not_a_DM3_File")
+	
+	if ( debugLevel > 5):
+		print "Header info.:"
+		print "File version:", version
+		print "lE:", lE
+		print "File size:", FileSize
 
-		# set name of root group (contains all data)...
-		curGroupNameAtLevelX[0] = "root"
-		# ... then read it
-		global storedTags, tagHash
-		storedTags = []
-		tagHash = {}
-		readTagGroup()
-		
-		f.close()
-		
-		# print "--", len(storedTags), "Tags read"
-		
-		# dump Tags in txt file if requested
-		if dump:
-			dump_file = filename + ".dump.txt"
-			try:
-				log = open( dump_file, 'w' )
-			except:
-				print "Error -- could not access output file."
-				sys.exit()
-			for tag in storedTags:
-				log.write( tag + "\n" )
-			log.close
+	# print '%s appears to be a DM3 file' % filename,
+
+	# set name of root group (contains all data)...
+	curGroupNameAtLevelX[0] = "root"
+	# ... then read it
+	global storedTags, tagHash
+	storedTags = []
+	tagHash = {}
+	readTagGroup()
 	
-		# return Tag list
-		return tagHash
+	f.close()
 	
-	except IOError:
-		print "Error -- cannot access data file. Terminating."
-		sys.exit()
-	except NameError:
-		print '%s does not appear to be a DM3 file.' % filename
-		return 0
-	except:
-		print '\n Could not parse %s as a DM3 file' % filename
-		return 0
+	# print "--", len(storedTags), "Tags read"
+	
+	# dump Tags in txt file if requested
+	if dump:
+		dump_file = filename + ".dump.txt"
+		try:
+			log = open( dump_file, 'w' )
+		except:
+			print "Error -- could not access output file."
+			sys.exit()
+		for tag in storedTags:
+			log.write( tag + "\n" )
+		log.close
+
+	# return Tag list
+	return tagHash
 	
 
 def getDM3FileInfo( dm3_file, makePGMtn=False, tn_file='dm3tn_temp.pgm' ):

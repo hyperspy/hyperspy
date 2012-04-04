@@ -1073,7 +1073,7 @@ def slugify(value):
     """
     import unicodedata
     if not isinstance(value, unicode):
-        value = value.decode('latin-1')
+        value = value.decode('utf8')
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
     value = unicode(_slugify_strip_re.sub('', value).strip())
     return _slugify_hyphenate_re.sub('_', value)
@@ -1093,9 +1093,7 @@ class DictionaryBrowser(object):
                     value=Signal(value)
                 else:
                     value = DictionaryBrowser(value)
-            sluged_key = slugify(key)
-            self.__setattr__(sluged_key, {'key' : key,
-								   'value' : value})
+            self.__setattr__(key, value)
 
     def _get_print_items(self, padding = '', max_len=20):
         """Prints only the attributes that are not methods"""
@@ -1105,32 +1103,31 @@ class DictionaryBrowser(object):
         for item, value in self.__dict__.iteritems():
             # Mixing unicode with strings can deal to Unicode errors
             # We convert all the unicode values to strings
-            value = value['value']
-            if type(value) is unicode:
-                value = value.encode('utf-8')
             if type(item) != types.MethodType:
+                item = ensure_unicode(value['key'])
+                value = ensure_unicode(value['value'])
                 if isinstance(value, DictionaryBrowser):
                     if j == eoi - 1:
-                        symbol = '└── '
+                        symbol = u'└── '
                     else:
-                        symbol = '├── '
-                    string += '%s%s%s\n' % (padding, symbol, item)
+                        symbol = u'├── '
+                    string += u'%s%s%s\n' % (padding, symbol, item)
                     if j == eoi - 1:
-                        extra_padding = '    '
+                        extra_padding = u'    '
                     else:
-                        extra_padding = '│   '
+                        extra_padding = u'│   '
                     string += value._get_print_items(padding + extra_padding)
                 else:
                     if j == eoi - 1:
-                        symbol = '└── '
+                        symbol = u'└── '
                     else:
-                        symbol = '├── '
-                    strvalue = str(value)
+                        symbol = u'├── '
+                    strvalue = unicode(value)
                     if len(strvalue) > 2 * max_len:
                         right_limit = min(max_len, len(strvalue) - max_len)
-                        value = '%s ... %s' % (strvalue[:max_len],
+                        value = u'%s ... %s' % (strvalue[:max_len],
                                               strvalue[-right_limit:])
-                    string += "%s%s%s = %s\n" % (padding, symbol, item, value)
+                    string += u"%s%s%s = %s\n" % (padding, symbol, item, value)
             j += 1
         return string
 
@@ -1138,11 +1135,23 @@ class DictionaryBrowser(object):
 		# Printing instead of returning the string is a walkaround a bug
 		# in Ipython 0.12 that fails to print the UTF8 character in the
 		# Qt console but works properly in the terminal
-        print self._get_print_items()
-        return ""
+        print
+        #~ print self._get_print_items()
+        return self._get_print_items().encode('utf8', errors = 'ignore')
 
     def __getitem__(self,key):
         return self.__dict__.__getitem__(key)['value']
+        
+    def __getattribute__(self,name):
+        item = super(DictionaryBrowser,self).__getattribute__(name)
+        if isinstance(item, dict) and 'value' in item:
+            return item['value']
+        else:
+            return item
+            
+    def __setattr__(self, key, value):
+        super(DictionaryBrowser,self).__setattr__(
+                         slugify(key), {'key' : key, 'value' : value})
 
     def len(self):
         return len(self.__dict__.keys())
@@ -1152,11 +1161,14 @@ class DictionaryBrowser(object):
 
     def as_dictionary(self):
         par_dict = {}
-        for item, value in self.__dict__.iteritems():
-            if type(item) != types.MethodType:
-                if isinstance(value, DictionaryBrowser):
-                    value = value.as_dictionary()
-                par_dict.__setitem__(value['key'], value)
+        for key_, item_ in self.__dict__.iteritems():
+            if type(item_) != types.MethodType:
+                key = item_['key']
+                if isinstance(item_['value'], DictionaryBrowser):
+                    item = item_['value'].as_dictionary()
+                else:
+                    item = item_['value']
+                par_dict.__setitem__(key, item)
         return par_dict
         
     def has_item(self, item_path):
@@ -1299,3 +1311,13 @@ def ensure_directory(path):
     if directory and not os.path.exists(directory):
         os.makedirs(directory)
         
+def ensure_unicode(stuff, encoding = 'utf8', encoding2 = 'latin-1'):
+    if type(stuff) is not str and type(stuff) is not np.string_:
+        return stuff
+    else:
+        string = stuff
+    try:
+        string = string.decode(encoding)
+    except:
+        string = string.decode(encoding2, errors = 'ignore')
+    return string
