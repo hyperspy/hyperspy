@@ -19,7 +19,7 @@
 
 name = 'hyperspy'
 
-version = '0.4'
+version = '0.4.1dev'
 
 description = "Hyperspectral data analysis toolbox"
 
