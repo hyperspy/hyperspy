@@ -1105,18 +1105,16 @@ class DictionaryBrowser(object):
         string = ''
         eoi = len(self.__dict__)
         j = 0
-        for item, value in self.__dict__.iteritems():
-            # Mixing unicode with strings can deal to Unicode errors
-            # We convert all the unicode values to strings
-            if type(item) != types.MethodType:
-                item = ensure_unicode(value['key'])
+        for key_, value in self.__dict__.iteritems():
+            if type(key_) != types.MethodType:
+                key = ensure_unicode(value['key'])
                 value = ensure_unicode(value['value'])
                 if isinstance(value, DictionaryBrowser):
                     if j == eoi - 1:
                         symbol = u'└── '
                     else:
                         symbol = u'├── '
-                    string += u'%s%s%s\n' % (padding, symbol, item)
+                    string += u'%s%s%s\n' % (padding, symbol, key)
                     if j == eoi - 1:
                         extra_padding = u'    '
                     else:
@@ -1135,7 +1133,7 @@ class DictionaryBrowser(object):
                         value = u'%s ... %s' % (strvalue[:max_len],
                                               strvalue[-right_limit:])
                     string += u"%s%s%s = %s\n" % (
-                                        padding, symbol, item, value)
+                                        padding, symbol, key, value)
             j += 1
         return string
 
@@ -1144,6 +1142,9 @@ class DictionaryBrowser(object):
 
     def __getitem__(self,key):
         return self.__getattribute__(key)
+        
+    def __setitem__(self,key, value):
+        self.__setattr__(key, value)
         
     def __getattribute__(self,name):
         item = super(DictionaryBrowser,self).__getattribute__(name)
@@ -1214,11 +1215,10 @@ class DictionaryBrowser(object):
 
     def add_node(self, node_path):
         keys = node_path.split('/')
-        current_dict = self.__dict__
         for key in keys:
-            if key not in current_dict:
-                current_dict[key] = DictionaryBrowser()
-            current_dict = current_dict[key].__dict__
+            if self.has_item(key) is False:
+                self[key] = DictionaryBrowser()
+            self = self[key]
             
             
 def orthomax(A, gamma=1, reltol=1.4901e-07, maxit=256):
