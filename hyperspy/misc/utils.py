@@ -22,6 +22,7 @@ import glob
 import os
 import re
 from StringIO import StringIO
+import string
 try:
     from collections import OrderedDict
     ordict = True
@@ -1064,7 +1065,7 @@ def interpolate_1D(number_of_interpolation_points, data):
     
 _slugify_strip_re = re.compile(r'[^\w\s-]')
 _slugify_hyphenate_re = re.compile(r'[-\s]+')
-def slugify(value):
+def slugify(value, valid_variable_name=False):
     """
     Normalizes string, converts to lowercase, removes non-alpha characters,
     and converts spaces to hyphens.
@@ -1076,16 +1077,20 @@ def slugify(value):
         value = value.decode('utf8')
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
     value = unicode(_slugify_strip_re.sub('', value).strip())
-    return _slugify_hyphenate_re.sub('_', value)
+    value = _slugify_hyphenate_re.sub('_', value)
+    if valid_variable_name is True:
+        if value[:1].isdigit():
+            value = u'Number_' + value
+    return value
     
 class DictionaryBrowser(object):
     """A class to comfortably access some parameters as attributes"""
 
     def __init__(self, dictionary={}):
         super(DictionaryBrowser, self).__init__()
-        self.load_dictionary(dictionary)
+        self._load_dictionary(dictionary)
 
-    def load_dictionary(self, dictionary):
+    def _load_dictionary(self, dictionary):
         for key, value in dictionary.iteritems():
             if isinstance(value, dict):
                 if 'mapped_parameters' in value.keys():
@@ -1116,7 +1121,8 @@ class DictionaryBrowser(object):
                         extra_padding = u'    '
                     else:
                         extra_padding = u'│   '
-                    string += value._get_print_items(padding + extra_padding)
+                    string += value._get_print_items(
+                        padding + extra_padding)
                 else:
                     if j == eoi - 1:
                         symbol = u'└── '
@@ -1124,19 +1130,16 @@ class DictionaryBrowser(object):
                         symbol = u'├── '
                     strvalue = unicode(value)
                     if len(strvalue) > 2 * max_len:
-                        right_limit = min(max_len, len(strvalue) - max_len)
+                        right_limit = min(max_len,
+                                          len(strvalue)-max_len)
                         value = u'%s ... %s' % (strvalue[:max_len],
                                               strvalue[-right_limit:])
-                    string += u"%s%s%s = %s\n" % (padding, symbol, item, value)
+                    string += u"%s%s%s = %s\n" % (
+                                        padding, symbol, item, value)
             j += 1
         return string
 
     def __repr__(self):
-		# Printing instead of returning the string is a walkaround a bug
-		# in Ipython 0.12 that fails to print the UTF8 character in the
-		# Qt console but works properly in the terminal
-        print
-        #~ print self._get_print_items()
         return self._get_print_items().encode('utf8', errors = 'ignore')
 
     def __getitem__(self,key):
@@ -1151,7 +1154,8 @@ class DictionaryBrowser(object):
             
     def __setattr__(self, key, value):
         super(DictionaryBrowser,self).__setattr__(
-                         slugify(key), {'key' : key, 'value' : value})
+                         slugify(key, valid_variable_name=True),
+                         {'key' : key, 'value' : value})
 
     def len(self):
         return len(self.__dict__.keys())
