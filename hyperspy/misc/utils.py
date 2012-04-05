@@ -23,6 +23,7 @@ import os
 import re
 from StringIO import StringIO
 import string
+import codecs
 try:
     from collections import OrderedDict
     ordict = True
@@ -1099,6 +1100,20 @@ class DictionaryBrowser(object):
                 else:
                     value = DictionaryBrowser(value)
             self.__setattr__(key, value)
+            
+    def export(self, filename, encoding = 'utf8'):
+        """Export the dictionary to a text file
+        
+        Parameters
+        ----------
+        filename : str
+            The name of the file without the extension that is
+            txt by default
+        encoding : valid encoding str
+        """
+        f = codecs.open(filename, 'w', encoding = encoding)
+        f.write(self._get_print_items(max_len = None))
+        f.close()
 
     def _get_print_items(self, padding = '', max_len=20):
         """Prints only the attributes that are not methods"""
@@ -1127,7 +1142,8 @@ class DictionaryBrowser(object):
                     else:
                         symbol = u'├── '
                     strvalue = unicode(value)
-                    if len(strvalue) > 2 * max_len:
+                    if max_len is not None and \
+                        len(strvalue) > 2 * max_len:
                         right_limit = min(max_len,
                                           len(strvalue)-max_len)
                         value = u'%s ... %s' % (strvalue[:max_len],
