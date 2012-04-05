@@ -46,7 +46,6 @@ class PowerLaw(Component):
 
     def __init__(self, A=10e5, r=3.,origin = 0.):
         Component.__init__(self, ('A', 'r', 'origin'))
-        self.name = 'Power Law'
         self.A.value = A
         self.r.value = r
         self.origin.value = origin

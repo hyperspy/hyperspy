@@ -25,6 +25,7 @@ and therefore their name are preceded by the signal name: eg. eels_cl_edge.
 Writing a new template is really easy, just edit _template.py and maybe take a 
 look to the other components.
 '''
+
 from hyperspy.components.bleasdale import Bleasdale
 from hyperspy.components.eels_double_offset import DoubleOffset
 from hyperspy.components.eels_double_power_law import DoublePowerLaw
@@ -43,6 +44,7 @@ from hyperspy.components.eels_vignetting import Vignetting
 from hyperspy.components.voigt import Voigt
 from hyperspy.components.scalable_fixed_pattern import ScalableFixedPattern
 from hyperspy.components.polynomial import Polynomial
+
 
 
 

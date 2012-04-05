@@ -91,7 +91,6 @@ class Voigt(Component):
             'non_isochromaticity',
             'transmission_function'))
 
-        self.name = 'Voigt'
         self.FWHM.value = 1
         self.gamma.value = 0
         self.area.value = 1

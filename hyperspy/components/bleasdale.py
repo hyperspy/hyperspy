@@ -37,7 +37,6 @@ class Bleasdale(Component):
         # Define the parameters
         Component.__init__(self, ('a', 'b', 'c'))        
         # Define the name of the component
-        self.name = 'Bleasdale'
 
     def function(self, x):
         """

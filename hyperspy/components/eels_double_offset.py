@@ -29,7 +29,6 @@ class DoubleOffset(Component):
 
     def __init__(self):
         Component.__init__(self, ('offset','step'))
-        self.name = 'double offset'
         self.isbackground = True
         self.convolved = False
         

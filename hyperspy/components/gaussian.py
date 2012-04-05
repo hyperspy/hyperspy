@@ -65,7 +65,6 @@ class Gaussian(Component):
         self.A.grad = self.grad_A
         self.sigma.grad = self.grad_sigma
         self.centre.grad = self.grad_centre
-        self.name = 'Normalized Gaussian'
 
     def function(self, x) :
         a0 = self.A.value

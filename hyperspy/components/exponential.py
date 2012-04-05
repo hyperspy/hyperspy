@@ -40,7 +40,6 @@ class Exponential(Component):
     def __init__(self):
         Component.__init__(self, ['A', 'tau'])
         self.isbackground = False
-        self.name = 'Exponential'
         self.A.grad = self.grad_A
         self.tau.grad = self.grad_tau
 

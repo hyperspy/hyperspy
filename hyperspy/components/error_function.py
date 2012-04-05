@@ -37,7 +37,6 @@ class Erf(Component):
 
     def __init__(self):
         Component.__init__(self, ['A','sigma','origin'])        
-        self.name = 'Error Function'
                 
         # Boundaries
         self.A.bmin = 0.

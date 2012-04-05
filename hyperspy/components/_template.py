@@ -25,8 +25,7 @@ class My_Component(Component):
     def __init__(self, parameter_1 = 1, parameter_2 = 2):
         # Define the parameters
         Component.__init__(self, ('parameter_1', 'parameter_2'))        
-        # Define the name of the component
-        self.name = 'Template'
+        # Define the identification name of the component
                 
         # Optionally we can set the initial values
 #        self.parameter_1.value = parameter_1

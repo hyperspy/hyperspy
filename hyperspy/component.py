@@ -29,8 +29,8 @@ class Parameter(object):
     class_documentation
     """
 
-    def __init__(self, value=0., free=True, bmin=None, 
-    bmax=None, twin = None):
+    def __init__(self, value=0., free=True, bmin=None, bmax=None,
+                 twin=None):
         
         self.component = None
         self.connection_active = False
@@ -51,7 +51,7 @@ class Parameter(object):
         self.std_map = None
         self.grad = None
         self.already_set_map = None
-        self.name = ''
+        self._id_name = ''
         self.units = ''
         self.std = None
         self._axes_manager = None
@@ -59,7 +59,12 @@ class Parameter(object):
     # Define the bounding and coupling propertires
     
     def __repr__(self):
-        return self.name
+        text = ''
+        text += 'Parameter %s' % self._id_name
+        if self.component is not None:
+            text += ' of %s' % self.component._get_short_description()
+        text = '<' + text + '>'
+        return text
     
     def connect(self, f):
         if f not in self.connected_functions:
@@ -238,7 +243,8 @@ class Parameter(object):
             filename = os.path.join(folder, filename)
         self.as_signal().save(filename)
         if save_std is True:
-            self.as_signal(field = 'std').save(append2pathname(filename,'_std'))
+            self.as_signal(field = 'std').save(append2pathname(
+                filename,'_std'))
                     
 class Component(object):
     def __init__(self, parameter_name_list):
@@ -249,19 +255,39 @@ class Component(object):
         self.isbackground = False
         self.convolved = True
         self.parameters = tuple(self.parameters)
+        self.name = ''
+        self._id_name = self.__class__.__name__
+        self._id_version = '1.0'
 
     def init_parameters(self, parameter_name_list):
         for name in parameter_name_list:
             parameter = Parameter()
             self.parameters.append(parameter)
-            parameter.name = name
+            parameter._id_name = name
             setattr(self, name, parameter)
             if hasattr(self, 'grad_' + name):
                 parameter.grad = getattr(self, 'grad_' + name)
             parameter.component = self
+            
+    def _get_long_description(self):
+        if self.name:
+            text = '%s (%s component)' % (self.name, self._id_name)
+        else:
+            text = '%s component' % self._id_name
+        return text
+        
+    def _get_short_description(self):
+        text = ''
+        if self.name:
+            text += self.name
+        else:
+            text += self._id_name
+        text += ' component'
+        return text
     
     def __repr__(self):
-        return self.name
+        text = '<%s>' % self._get_long_description()
+        return text
 
     def _update_free_parameters(self):
         self.free_parameters = set()

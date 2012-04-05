@@ -37,7 +37,6 @@ class Offset(Component):
 
     def __init__( self, offset = 0. ):
         Component.__init__(self, ('offset',))
-        self.name = 'offset'
         self.offset.free = True
         self.offset.value = offset
 

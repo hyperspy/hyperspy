@@ -42,7 +42,6 @@ class Lorentzian(Component):
 
     def __init__(self, A=1., gamma=1.,centre = 0.):
         Component.__init__(self, ('A', 'gamma', 'centre'))
-        
         self.A.value = A
         self.gamma.value = gamma
         self.centre.value = centre

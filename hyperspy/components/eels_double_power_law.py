@@ -25,7 +25,6 @@ class DoublePowerLaw(Component):
     """
     def __init__(self, A=10e5, r=3.,origin = 0.,):
         Component.__init__(self, ('A', 'r', 'origin','shift', 'ratio'))
-        self.name = 'Double power law'
         self.A.value = 1E-5
         self.r.value = 3.
         self.origin.value = 0.

@@ -39,7 +39,6 @@ class SEE(Component):
 
     def __init__(self, A=1., Phi=1.,B = 0., sigma = 0):
         Component.__init__(self, ('A', 'Phi', 'B', 'sigma'))
-        self.name = 'SEE'
         self.A.value, self.Phi.value, self.B.value,self.sigma.value = \
         A, Phi, B, sigma
         

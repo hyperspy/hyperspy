@@ -39,7 +39,6 @@ class Logistic(Component):
         # Define the parameters
         Component.__init__(self, ('a', 'b', 'c', 'origin'))        
         # Define the name of the component
-        self.name = 'Logistic'
         self.a.grad = self.grad_a
         self.b.grad = self.grad_b
         self.c.grad = self.grad_c

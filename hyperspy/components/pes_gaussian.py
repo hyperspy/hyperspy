@@ -23,13 +23,12 @@ from hyperspy.component import Component
 
 sqrt2pi = np.sqrt(2*np.pi)
 
-class Gaussian4SEM(Component):
+class PESCoreLineShape(Component):
     """
     """
 
     def __init__(self, A=1., FWHM=1.,origin = 0.):
         Component.__init__(self, ['A', 'FWHM', 'origin', 'ab', 'shirley'])
-        self.name = 'Gaussian for PE'
         self.shirley.free = False
         self.ab.value = 0
         self.ab.free = False
