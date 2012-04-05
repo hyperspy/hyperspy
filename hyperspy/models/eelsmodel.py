@@ -55,9 +55,10 @@ class EELSModel(Model):
         self.ll = ll
         
         if auto_background is True:
-            bg = PowerLaw()
-            interactive_ns['bg'] = bg
-            self.append(bg)
+            background = PowerLaw()
+            background.name = 'background'
+            interactive_ns['background'] = background
+            self.append(background)
         if self.ll is not None:
             self.convolved = True
             if self.experiments.convolution_axis is None:
