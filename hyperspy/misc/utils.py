@@ -1140,10 +1140,10 @@ class DictionaryBrowser(object):
         return string
 
     def __repr__(self):
-        return self._get_print_items().encode('utf8', errors = 'ignore')
+        return self._get_print_items().encode('utf8', errors='ignore')
 
     def __getitem__(self,key):
-        return self.__dict__.__getitem__(key)['value']
+        return self.__getattribute__(key)
         
     def __getattribute__(self,name):
         item = super(DictionaryBrowser,self).__getattribute__(name)
