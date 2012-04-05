@@ -124,7 +124,9 @@ class DataAxis(t.HasTraits):
 
     def __repr__(self):
         if self.name is not None:
-            return self.name + ' index: ' + str(self.index_in_array)
+            text = '<%s axis, index: %s>' % (self.name,
+                                               self.index_in_array)
+            return text
 
     def update_index_bounds(self):
         self.high_index = self.size - 1
@@ -400,4 +402,10 @@ class AxesManager(t.HasTraits):
             context['axis%i' % n] = self.axes[n]
         ag = tuple(ag)
         self.edit_traits(view = tui.View(*ag), context = context)
+        
+    def __repr__(self):
+        text = '<Axes manager, %i axes, signal dimension: %i, navigation dimension: %i>' % (
+            len(self.axes), self.signal_dimension,
+            self.navigation_dimension)
+        return text
 

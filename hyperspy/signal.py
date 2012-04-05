@@ -74,14 +74,11 @@ class Signal(t.HasTraits, MVA):
         self.variance = None
 
     def __repr__(self):
-        string = self.__class__.__name__
-        string+="\n\tTitle: %s"%self.mapped_parameters.title
-        if hasattr(self.mapped_parameters,'signal_type'):
-            string += "\n\tSignal type: %s" % self.mapped_parameters.signal_type
-        string += "\n\tData dimensions: %s" % (str(self.data.shape))
-        if hasattr(self.mapped_parameters, 'record_by'):
-            string += \
-            "\n\tData representation: %s" % self.mapped_parameters.record_by
+        string = '<'
+        string += self.__class__.__name__
+        string+=", title: %s" % self.mapped_parameters.title
+        string += ", dimensions: %s" % (str(self.data.shape))
+        string += '>'
 
         return string
 
