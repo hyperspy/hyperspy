@@ -809,10 +809,10 @@ class DM3ImageFile(object):
                 self.name = self.data_dict.ls([im,] + DM3ImageFile.imname)[1][1]
             else:
                 self.name = self.filename
-            if self.output_level>1:
-                print 'Loading image "%s" (ID: %i) from file %s'% (self.name,
-                                                               self.data_id,
-                                                               self.filename)
+            #~ if self.output_level>1:
+                #~ print 'Loading image "%s" (ID: %i) from file %s'% (self.name,
+                                                               #~ self.data_id,
+                                                               #~ self.filename)
         except IndexError:
             raise ImageIDError(self.data_id)
 

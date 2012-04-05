@@ -141,7 +141,7 @@ def load(*filenames, **kwds):
     return agg_sig
 
 
-def load_single_file(filename, record_by=None, output_level=1, is_agg = False, 
+def load_single_file(filename, record_by=None, output_level=2, is_agg = False, 
     **kwds):
     """
     Load any supported file into an Hyperspy structure
@@ -188,7 +188,8 @@ def load_with_reader(filename, reader, record_by = None, signal_type = None,
     from hyperspy.signals.spectrum import Spectrum
     from hyperspy.signals.eels import EELSSpectrum
     if output_level>1:
-        messages.information(reader.description)
+        messages.information('Loading %s ...' % filename)
+    
     file_data_list = reader.file_reader(filename,
                                          record_by=record_by,
                                         output_level=output_level,
@@ -220,6 +221,8 @@ def load_with_reader(filename, reader, record_by = None, signal_type = None,
             s.plot()
     if len(objects) == 1:
         objects = objects[0]
+    if output_level>1:
+        messages.information('%s correctly loaded' % filename)
     return objects
 
 
