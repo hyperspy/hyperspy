@@ -17,13 +17,16 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import glob
+
+import numpy as np
 
 from hyperspy import messages
 import hyperspy.defaults_parser
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
     ripple, tiff)
 from hyperspy.gui.tools import Load
-from hyperspy.misc.utils import ensure_directory
+from hyperspy.misc.utils import ensure_directory, DictionaryBrowser
 
 
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff]
@@ -57,93 +60,151 @@ for plugin in io_plugins:
 
     if plugin.writes_1d is True:
         write_1d_exts.extend(plugin.file_extensions)
-        default_write_ext.add(plugin.file_extensions[plugin.default_extension])
+        default_write_ext.add(
+            plugin.file_extensions[plugin.default_extension])
     if plugin.writes_2d is True:
         write_2d_exts.extend(plugin.file_extensions)
-        default_write_ext.add(plugin.file_extensions[plugin.default_extension])
+        default_write_ext.add(
+            plugin.file_extensions[plugin.default_extension])
     if plugin.writes_3d is True:
         write_3d_exts.extend(plugin.file_extensions)
-        default_write_ext.add(plugin.file_extensions[plugin.default_extension])
+        default_write_ext.add(
+            plugin.file_extensions[plugin.default_extension])
     if plugin.writes_xd is True:
         write_xd_exts.extend(plugin.file_extensions)
-        default_write_ext.add(plugin.file_extensions[plugin.default_extension])
+        default_write_ext.add(
+            plugin.file_extensions[plugin.default_extension])
 
-def load(*filenames, **kwds):
+def load(filenames=None, record_by=None, signal_type=None, 
+         stack=True,**kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
-    Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
-    FEI ser and emi and hdf5.
+    Supported formats: HDF5, msa, Gatan dm3, Ripple (rpl+raw)
+    FEI ser and emi and hdf5, tif and a number of image formats.
     
-    If no parameter is passed and the interactive mode is enabled the a window 
-    ui is raised.
+    Any extra keyword is passed to the corresponsing reader. For 
+    available options see their individual documentation.
     
     Parameters
     ----------
-    *filenames : if multiple file names are passed in, they get aggregated to
-    a Signal class that has members for each file, plus a data set that
-    consists of stacked input files. That stack has one dimension more than
-    the input files. All files must match in size, number of dimensions, and
-    type/extension.
-
-    record_by : Str 
-        Manually set the way in which the data will be read. Possible values are
-        'spectrum' or 'image'. Please note that most of the times it is better 
-        to leave Hyperspy to decide this.
+    filenames :  None, str or list of strings
+        The filename to be loaded. If None, a window will open to select
+        a file to load. If a valid filename is passed in that single
+        file is loaded. If multiple file names are passed in
+        a list, a list of objects or a single object containing the data
+        of the individual files stacked are returned. This behaviour is
+        controlled by the `stack` parameter (see bellow). Multiple
+        files can be loaded by using simple shell-style wildcards, 
+        e.g. 'my_file*.msa' loads all the files that starts
+        by 'my_file' and has the '.msa' extension.
+    record_by : None | 'spectrum' | 'image' 
+        Manually set the way in which the data will be read. Possible
+        values are 'spectrum' or 'image'.
+    signal_type : str
+        Manually set the signal type of the data. Although only setting
+        signal type to 'EELS' will currently change the way the data is 
+        loaded, it is good practice to set this parameter so it can be 
+        stored when saving the file. Please note that, if the 
+        signal_type is already defined in the file the information 
+        will be overriden without warning.
+    stack : bool
+        If True and multiple filenames are passed in, stacking all
+        the data into a single object is attempted. All files must match
+        in shape.
         
-    signal_type : Str
-        Manually set the signal type of the data. Although only setting signal 
-        type to 'EELS' will currently change the way the data is loaded, it is 
-        good practice to set this parameter so it can be stored when saving the 
-        file. Please note that, if the signal_type is already defined in the 
-        file the information will be overriden without warning.
+    Returns
+    -------
+    Signal instance or list of signal instances
 
-    Example usage:
-        Loading a single file providing the signal type:
-            d=load('file.dm3', signal_type = 'XPS')
-        Loading a single file and overriding its default record_by:
-            d=load('file.dm3', record_by='Image')
-        Loading multiple files:
-            d=load('file1.dm3','file2.dm3')
+    Examples
+    --------
+    Loading a single file providing the signal type:
+    
+    >>> d = load('file.dm3', signal_type='XPS')
+    
+    Loading a single file and overriding its default record_by:
+    
+    >>> d = load('file.dm3', record_by='Image')
+    
+    Loading multiple files:
+    
+    >>> d = load('file1.dm3','file2.dm3')
+    
+    Loading multiple files matching the pattern:
+    
+    >>>d = load('file*.dm3')
 
     """
-
-    if len(filenames)<1 and hyperspy.defaults_parser.preferences.General.interactive is True:
+    if filenames is None:
+        if hyperspy.defaults_parser.preferences.General.interactive is True:
             load_ui = Load()
             load_ui.edit_traits()
             if load_ui.filename:
-                filenames = (load_ui.filename,)
-    if len(filenames)<1:
-        messages.warning('No file provided to reader.')
+                filenames = load_ui.filename
+        else:
+            raise ValueError("No file provided to reader and "
+            "interactive mode is disabled")
+        if filenames is None:
+            raise ValueError("No file provided to reader")
+        
+    if isinstance(filenames, basestring):
+        filenames=sorted(glob.glob(filenames))
+        if not filenames:
+            raise ValueError('No file name matches this pattern')
+    elif not isinstance(filenames, (list, tuple)):
+        raise ValueError(
+        'The filenames parameter must be a list, tuple, string or None')
+    if not filenames:
+        raise ValueError('No file provided to reader.')
         return None
-    elif len(filenames)==1:
-        if '*' in filenames[0]:
-            from glob import glob
-            filenames=sorted(glob(filenames[0]))
-        else:
-            f=load_single_file(filenames[0], **kwds)
-            return f
-    import hyperspy.signals.aggregate as agg
-    objects=[load_single_file(filename, output_level=0, is_agg = True, **kwds) 
-        for filename in filenames]
-
-    obj_type=objects[0].mapped_parameters.record_by
-    if obj_type=='image':
-        if len(objects[0].data.shape)==3:
-            # feeding 3d objects creates cell stacks
-            agg_sig=agg.AggregateCells(*objects)
-        else:
-            agg_sig=agg.AggregateImage(*objects)
-    elif 'spectrum' in obj_type:
-        agg_sig=agg.AggregateSpectrum(*objects)
     else:
-        agg_sig=agg.Aggregate(*objects)
-    if hyperspy.defaults_parser.preferences.General.plot_on_load is True:
-        agg_sig.plot()
-    return agg_sig
+        if len(filenames) > 1:
+            messages.information('Loading individual files')
+        objects=[load_single_file(filename, output_level=0,**kwds) 
+            for filename in filenames]
+        if len(objects) > 1 and stack is True:
+            original_shape = objects[0].data.shape
+            record_by = objects[0].mapped_parameters.record_by
+            stack_shape = [len(objects),] + list(original_shape)
+            signal = type(objects[0])({'data' : np.empty(stack_shape)})
+            signal.axes_manager.axes[1:] = objects[0].axes_manager.axes
+            signal.axes_manager._set_axes_index_in_array_from_position()
+            eaxis = signal.axes_manager.axes[0]
+            eaxis.name = 'stack_element'
+            eaxis.navigate = True
+            signal.mapped_parameters = objects[0].mapped_parameters
+            signal.mapped_parameters.original_filename = ''
+            signal.mapped_parameters.title = \
+            os.path.split(os.path.split(
+                os.path.abspath(filenames[0]))[0])[1]
+            signal.original_parameters = DictionaryBrowser({})
+            signal.original_parameters.add_node('stack_elements')
+            for obj,i in zip(objects, range(len(objects))):
+                if obj.data.shape != original_shape:
+                    raise IOError(
+                "Only files with data of the same shape can be stacked")
+                signal.data[i,...] = obj.data
+                signal.original_parameters.stack_elements.add_node(
+                    'element%i' % i)
+                node = signal.original_parameters.stack_elements[
+                    'element%i' % i]
+                node.original_parameters = \
+                    obj.original_parameters.as_dictionary()
+                node.mapped_parameters = \
+                    obj.mapped_parameters.as_dictionary()
+            messages.information('Individual files loaded correctly')
+            print signal
+            objects = [signal,]
+
+        if hyperspy.defaults_parser.preferences.General.plot_on_load:
+            for obj in objects:
+                obj.plot()
+        if len(objects) == 1:
+            objects = objects[0]
+    return objects
 
 
-def load_single_file(filename, record_by=None, output_level=2, is_agg = False, 
-    **kwds):
+def load_single_file(filename, record_by=None, output_level=2, **kwds):
     """
     Load any supported file into an Hyperspy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
@@ -179,11 +240,11 @@ def load_single_file(filename, record_by=None, output_level=2, is_agg = False,
     else:
         reader = io_plugins[i]
         return load_with_reader(filename, reader, record_by, 
-                    output_level=output_level, is_agg=is_agg, **kwds)
+                    output_level=output_level, **kwds)
 
 
 def load_with_reader(filename, reader, record_by = None, signal_type = None,
-                     output_level=1, is_agg = False, **kwds):
+                     output_level=1, **kwds):
     from hyperspy.signals.image import Image
     from hyperspy.signals.spectrum import Spectrum
     from hyperspy.signals.eels import EELSSpectrum
@@ -216,9 +277,7 @@ def load_with_reader(filename, reader, record_by = None, signal_type = None,
                 s = Spectrum(file_data_dict)
         objects.append(s)
         print s
-        if hyperspy.defaults_parser.preferences.General.plot_on_load is True \
-            and is_agg is False:
-            s.plot()
+
     if len(objects) == 1:
         objects = objects[0]
     if output_level>1:
