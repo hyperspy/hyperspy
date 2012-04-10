@@ -218,7 +218,7 @@ def hdfgroup2dict(group, dictionary = {}):
                 hdfgroup2dict(group[key], dictionary[key])
     return dictionary
 
-def write_signal(signal,group, compression):
+def write_signal(signal,group, compression='gzip'):
     group.create_dataset('data',
                          data=signal.data,
                          compression=compression)
