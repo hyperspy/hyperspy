@@ -20,12 +20,13 @@ import os
 
 from hyperspy import messages
 import hyperspy.defaults_parser
-from hyperspy.io_plugins import msa, digital_micrograph, fei, mrc, ripple
+from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
+    ripple, tiff)
 from hyperspy.gui.tools import Load
 from hyperspy.misc.utils import ensure_directory
 
 
-io_plugins = [msa, digital_micrograph, fei, mrc, ripple]
+io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff]
 
 #try:
 #    from hyperspy.io_plugins import fits
@@ -178,8 +179,7 @@ def load_single_file(filename, record_by=None, output_level=2, is_agg = False,
     else:
         reader = io_plugins[i]
         return load_with_reader(filename, reader, record_by, 
-                                output_level=output_level, is_agg = is_agg,
-                                **kwds)
+                    output_level=output_level, is_agg=is_agg, **kwds)
 
 
 def load_with_reader(filename, reader, record_by = None, signal_type = None,

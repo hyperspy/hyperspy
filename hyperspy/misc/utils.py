@@ -1112,7 +1112,7 @@ class DictionaryBrowser(object):
         encoding : valid encoding str
         """
         f = codecs.open(filename, 'w', encoding = encoding)
-        f.write(self._get_print_items(max_len = None))
+        f.write(self._get_print_items(max_len=None))
         f.close()
 
     def _get_print_items(self, padding = '', max_len=20):

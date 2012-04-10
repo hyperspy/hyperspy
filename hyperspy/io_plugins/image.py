@@ -18,21 +18,17 @@
 
 
 import numpy as np
-try:
-    from mahotas import imread, imsave
-    mahotas_installed = True
-except:
-    from scipy.misc import imread, imsave
-    mahotas_installed = False
+
+from scipy.misc import imread, imsave
 
 # Plugin characteristics
 # ----------------------
 format_name = 'image'
 description = 'Import/Export standard image formats using PIL or freeimage'
 full_suport = False
-file_extensions = ['bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg', 'msp', 'pcx', 
-                   'png', 'ppm', "pbm", "pgm", 'tiff', 'tif', 'xbm', 'spi',]
-default_extension = -3 # tif
+file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg', 
+                   'msp', 'pcx', 'ppm', "pbm", "pgm", 'xbm', 'spi',]
+default_extension = 0 # png
 
 # Reading features
 reads_2d = True
@@ -66,13 +62,9 @@ def rescale(data, bits):
     return data
         
 # TODO Extend it to support SI
-def file_writer(filename, signal, _rescale = True, file_format='tif', 
+def file_writer(filename, signal, _rescale = True, file_format='png', 
                 only_view = False, **kwds):
-    '''Writes data to any format supported by PIL or freeimage if mahotas is 
-        installed
-        
-        Note that only when mahotas and freeimage are installed it is possible 
-        to write 16-bit tiff files.
+    '''Writes data to any format supported by PIL
         
         Parameters
         ----------
@@ -84,7 +76,7 @@ def file_writer(filename, signal, _rescale = True, file_format='tif',
             scale of the data what might not always be a good idea
         file_format : str
             The fileformat defined by its extension that is any one supported by 
-            PIL of mahotas if installed.  
+            PIL.  
     '''
     if only_view is True and signal.axes_manager.signal_dimension == 2:
         dc = signal()
@@ -92,26 +84,14 @@ def file_writer(filename, signal, _rescale = True, file_format='tif',
         dc = signal.data.squeeze()
     else:
         raise IOError("This format only supports writing of 2D data")
-        
-    if file_format in ('tif', 'tiff') and mahotas_installed is True:
-        
-        bits = 16    
-    else:
-        # Only tiff supports 16-bits
-        bits = 8
-        
+                
     if _rescale is True:
         dc = rescale(dc, bits)
 
     imsave(filename, dc.astype('uint%s' % bits))
-    print "Image saved"
     
 def file_reader(filename, **kwds):
-    '''Read data from any format supported by PIL or freeimage if mahotas is 
-    installed
-    
-    Note that only when mahotas and freeimage are installed it is possible 
-    to read 16-bit tiff files.
+    '''Read data from any format supported by PIL.
     
     Parameters
     ----------
