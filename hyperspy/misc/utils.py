@@ -1093,12 +1093,6 @@ class DictionaryBrowser(object):
 
     def _load_dictionary(self, dictionary):
         for key, value in dictionary.iteritems():
-            if isinstance(value, dict):
-                if 'mapped_parameters' in value.keys():
-                    from hyperspy.signal import Signal
-                    value=Signal(value)
-                else:
-                    value = DictionaryBrowser(value)
             self.__setattr__(key, value)
             
     def export(self, filename, encoding = 'utf8'):
@@ -1170,6 +1164,8 @@ class DictionaryBrowser(object):
             return item
             
     def __setattr__(self, key, value):
+        if isinstance(value, dict):
+            value = DictionaryBrowser(value)
         super(DictionaryBrowser,self).__setattr__(
                          slugify(key, valid_variable_name=True),
                          {'key' : key, 'value' : value})
