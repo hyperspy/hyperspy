@@ -1,10 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from hyperspy.gui.main_window import MainWindow
+#~ from hyperspy.gui.main_window import MainWindow
+#~ 
+#~ window = MainWindow()
+#~ window.configure_traits()
 
-window = MainWindow()
-window.configure_traits()
 
 
 

@@ -38,7 +38,7 @@ def are_we_building4windows():
         if 'wininst' in arg:
             return True
 
-scripts = ['bin/hyperspy', 'bin/hyperspy-gui',]
+scripts = ['bin/hyperspy',]
 
 if are_we_building4windows() or os.name in ['nt','dos']:
     # In the Windows command prompt we can't execute Python scripts 
@@ -63,7 +63,6 @@ if are_we_building4windows() or os.name in ['nt','dos']:
     scripts.extend(batch_files)
     
 version = Release.version
-
 setup(
     name = "hyperspy",
     package_dir = {'hyperspy': 'hyperspy'},
