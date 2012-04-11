@@ -146,7 +146,6 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
                 print \
                 "Warning: the \'%s\' attribute is not defined in the file\
             " % attrib[0]
-    print "EELSLab NetCDF file correctly loaded"
     original_parameters = {'record_by' : ncfile.type, 'calibration' : calibration_dict, 
     'acquisition' : acquisition_dict, 'treatments' : treatments_dict}
     ncfile.close()

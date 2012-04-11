@@ -40,13 +40,18 @@ try:
     from hyperspy.io_plugins import netcdf
     io_plugins.append(netcdf)
 except ImportError:
-    messages.information('The NetCDF IO features are not available')
+    pass
+    # NetCDF is obsolate and is only provided for users who have
+    # old EELSLab files. Therefore, we print no message if it is not
+    # available
+    #~ messages.information('The NetCDF IO features are not available')
     
 try:
     from hyperspy.io_plugins import hdf5
     io_plugins.append(hdf5)
 except ImportError:
-    messages.information('The HDF5 IO features are not available')
+    messages.warning('The HDF5 IO features are not available. '
+    'It is highly reccomended to install h5py')
     
 try:
     from hyperspy.io_plugins import image

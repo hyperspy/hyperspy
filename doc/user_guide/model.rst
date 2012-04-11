@@ -175,7 +175,7 @@ the result of the fit **when fitting multidimensional datasets**.
 Saving and loading the result of the fit
 ----------------------------------------
 
-To save the result of the fit to a single file use :py:meth:`~.model.save_parameters2file` and :py:meth:`~.model.load_parameters_from_file` to load back the results into the same model structure.
+To save the result of the fit to a single file use :py:meth:`~.model.Model.save_parameters2file` and :py:meth:`~.model.Model.load_parameters_from_file` to load back the results into the same model structure.
 
 Exporting the result of the fit
 -------------------------------

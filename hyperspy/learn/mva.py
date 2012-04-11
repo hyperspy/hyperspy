@@ -25,7 +25,16 @@ import types
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
-import mdp
+try:
+    import mdp
+    mdp_installed = True
+except:
+    mdp_installed = False
+try:
+    import sklearn.decomposition
+    sklearn_installed = True
+except:
+    sklearn_installed = False
 
 from hyperspy.misc import utils
 from hyperspy.learn.svd_pca import svd_pca
@@ -34,10 +43,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy import messages
 from hyperspy.decorators import auto_replot, do_not_replot
 from scipy import linalg
-try:
-    import sklearn.decomposition
-except:
-    pass
+
 
 def centering_and_whitening(X):
     X = X.T
@@ -198,7 +204,10 @@ class MVA():
             fast = True, output_dimension = output_dimension, centre = centre,
                 auto_transpose = auto_transpose)
 
-        elif algorithm == 'sklearn_pca':    
+        elif algorithm == 'sklearn_pca':
+            if sklearn_installed is False:
+                raise ImportError(
+                'sklearn is not installed. Nothing done')
             sk = sklearn.decomposition.PCA(**kwargs)
             sk.n_components = output_dimension
             loadings = sk.fit_transform((dc[:,signal_mask][navigation_mask,:]))
@@ -207,18 +216,27 @@ class MVA():
             mean = sk.mean_
             centre = 'trials'   
 
-        elif algorithm == 'nmf':    
+        elif algorithm == 'nmf':
+            if sklearn_installed is False:
+                raise ImportError(
+                'sklearn is not installed. Nothing done')
             sk = sklearn.decomposition.NMF(**kwargs)
             sk.n_components = output_dimension
             loadings = sk.fit_transform((dc[:,signal_mask][navigation_mask,:]))
             factors = sk.components_.T
             
         elif algorithm == 'sparse_pca':
+            if sklearn_installed is False:
+                raise ImportError(
+                'sklearn is not installed. Nothing done')
             sk = sklearn.decomposition.SparsePCA(output_dimension, **kwargs)
             loadings = sk.fit_transform(dc[:,signal_mask][navigation_mask,:])
             factors = sk.components_.T
             
         elif algorithm == 'mini_batch_sparse_pca':
+            if sklearn_installed is False:
+                raise ImportError(
+                'sklearn is not installed. Nothing done')
             sk = sklearn.decomposition.MiniBatchSparsePCA(output_dimension,
                                                             **kwargs)
             loadings = sk.fit_transform(dc[:,signal_mask][navigation_mask,:])
@@ -261,9 +279,8 @@ class MVA():
             explained_variance_ratio = S ** 2 / Sobj
             explained_variance = S ** 2 / len(factors)
         else:
-            messages.information('Error: Algorithm not recognised. '
+            raise ValueError('Algorithm not recognised. '
                                  'Nothing done')
-            return False
 
         # We must calculate the ratio here because otherwise the sum information
         # can be lost if the user call crop_decomposition_dimension
@@ -432,12 +449,18 @@ class MVA():
                 unmixing_matrix = unmixing_matrix.T
             
             elif algorithm == 'sklearn_fastica':
+                if sklearn_installed is False:
+                    raise ImportError(
+                    'sklearn is not installed. Nothing done')
                 target.bss_node = sklearn.decomposition.FastICA(**kwargs)
                 target.bss_node.whiten = False
                 target.bss_node.fit(factors)
                 unmixing_matrix = target.bss_node.unmixing_matrix_
             
             else:
+                if mdp_installed is False:
+                    raise ImportError(
+                    'MDP is not installed. Nothing done')
                 to_exec = 'target.bss_node=mdp.nodes.%sNode(' % algorithm
                 for key, value in kwargs.iteritems():
                     to_exec += '%s=%s,' % (key, value)

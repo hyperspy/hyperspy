@@ -31,7 +31,7 @@ if os.path.exists('build'):
     distutils.dir_util.remove_tree('build')
 
 install_req = ['scipy', 'ipython', 'matplotlib', 'numpy', 'mdp',
-'traits', 'traitsui', 'h5py', ]
+'traits', 'traitsui', 'h5py', 'scikit-learn']
 
 def are_we_building4windows():
     for arg in sys.argv:

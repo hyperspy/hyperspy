@@ -75,12 +75,15 @@ To create a Windows binary run the `release_windows.bat` script in a windows mac
 Installing the required libraries
 ---------------------------------
 
-Before installing Hyperspy certain libraries have to be installed in the system. The easiest way to install these packages is by installing the `enthough python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default. Please note that the academic version of EPD is free, `you can get it here. <http://www.enthought.com/products/edudownload.php>`_
+Before installing Hyperspy certain libraries have to be installed in the system. The easiest way to install these packages is by installing the `enthough python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default. Please note that the academic version of EPD is free, `you can get it here. <http://www.enthought.com/products/edudownload.php>`_ . From version 0.4.1 Hyperspy runs under `EPD free <http://www.enthought.com/products/epd_free.php>`_ . However, for full functionality when using EPD free h5py, mdp and scikit-learn must be installed.
 
 
 Another option in Windows is to install `pythonxy <http://www.pythonxy.com/>`_.
 
-If you use a Debian/Ubuntu binary to install Hyperspy all the dependencies should install automatically. Otherwise you must install the following packages (note that we use the Debian/Ubuntu package names): ``python-numpy``  ``python-scipy`` ``python-matplotlib`` ``ipython`` ``python-mdp`` ``python-netcdf`` ``python-h5py`` ``python-traits`` ``python-traitsui``.
+If you use a Debian/Ubuntu binary to install Hyperspy all the dependencies should install automatically.
+
+When installing from source the following packages must be installed in the system: 
+numpy, scipy, matplotlib, ipython, traits and traitsui. For full functionality it is reccomended to install h5py, mdp and scikit-learn .
 
 
 
