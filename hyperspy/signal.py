@@ -734,7 +734,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
     def _plot_factors_or_pchars(self, factors, comp_ids=None, 
                                 calibrate=True, avg_char=False,
                                 same_window=None, comp_label='PC', 
-                                on_peaks=False, img_data=None,
+                                img_data=None,
                                 plot_shifts=True, plot_char=4, 
                                 cmap=plt.cm.jet, quiver_color='white',
                                 vector_scale=1,
@@ -748,21 +748,14 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             if None, returns maps of all components.
             if int, returns maps of components with ids from 0 to given int.
             if list of ints, returns maps of components with ids in given list.
-
         calibrate : bool
             if True, plots are calibrated according to the data in the axes
             manager.
-
         same_window : bool
             if True, plots each factor to the same window.  They are not scaled.
-        
         comp_label : string, the label that is either the plot title (if plotting in
             separate windows) or the label in the legend (if plotting in the 
             same window)
-            
-        on_peaks : bool
-            Plot peak characteristics (True), or factor images (False)
-
         cmap : a matplotlib colormap
             The colormap used for factor images or
             any peak characteristic scatter map
@@ -851,61 +844,12 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                     if i>0:
                         f=plt.figure()
                     ax=f.add_subplot(111)
-                if on_peaks:
-                    if img_data==None:
-                        image=np.average(self.data,axis=0)
-                        if avg_char:
-                            shifts, char = self._get_pk_shifts_and_char(
-                                f_pc=np.average(factors,axis=1),
-                                locations=self.mapped_parameters.target_locations,
-                                plot_shifts=plot_shifts,
-                                plot_char=plot_char)
-                            # Break the loop and return the (one) plot
-                            plt.clf()
-                            ax=f.add_subplot(111)
-                            if len(self.mapped_parameters.title)>10:
-                                title=self.mapped_parameters.title[:10]+'...'
-                            else:
-                                title=self.mapped_parameters.title
-                            return sigdraw._plot_quiver_scatter_overlay(
-                                image=image,
-                                axes_manager=self.axes_manager,
-                                shifts=shifts,char=char,ax=ax,
-                                img_cmap=plt.cm.gray,
-                                sc_cmap=cmap, 
-                                comp_label='Avg Peak Chars for:\n%s'%title,
-                                quiver_color=quiver_color,
-                                vector_scale=vector_scale,
-                                cbar_label=cbar_label)
-                    elif len(img_data.shape)>2:
-                        image=img_data[i]
-                    shifts, char = self._get_pk_shifts_and_char(
-                            f_pc=factors,
-                            locations=self.mapped_parameters.target_locations,
-                            plot_shifts=plot_shifts,
-                            plot_char=plot_char,
-                            comp_id=comp_ids[i])
-                    if len(self.mapped_parameters.title)>10:
-                        title=self.mapped_parameters.title[:10]+'...'
-                    else:
-                        title=self.mapped_parameters.title
-                    sigdraw._plot_quiver_scatter_overlay(
-                        image=image,
-                        comp_label='Peak Chars for %s %i from:\n%s'%(
-                            comp_label, comp_ids[i], title),
-                        axes_manager=self.axes_manager,
-                        shifts=shifts,char=char,ax=ax,
-                        img_cmap=plt.cm.gray,
-                        sc_cmap=cmap,
-                        quiver_color=quiver_color,
-                        vector_scale=vector_scale,
-                        cbar_label=cbar_label)
-                else:
-                    sigdraw._plot_2D_component(factors=factors, 
-                        idx=comp_ids[i], 
-                        axes_manager=self.axes_manager,
-                        calibrate=calibrate,ax=ax, 
-                        cmap=cmap,comp_label=comp_label)
+
+                sigdraw._plot_2D_component(factors=factors, 
+                    idx=comp_ids[i], 
+                    axes_manager=self.axes_manager,
+                    calibrate=calibrate,ax=ax, 
+                    cmap=cmap,comp_label=comp_label)
             if not same_window:
                 fig_list.append(f)
         try:
@@ -1002,7 +946,6 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                         factor_format=None,
                         comp_label=None,
                         cmap=plt.cm.jet,
-                        on_peaks=False,
                         plot_shifts=True,
                         plot_char=4,
                         img_data=None,
@@ -1032,14 +975,12 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             mask[idx]=1
         factors=factors[:,mask]
 
-        if save_figures is True or (on_peaks is True and \
-            factor_format in image_extensions):
+        if save_figures is True:
             plt.ioff()
             fac_plots=self._plot_factors_or_pchars(factors,
                                                    comp_ids=comp_ids, 
                                                    same_window=same_window,
                                                    comp_label=comp_label, 
-                                                   on_peaks=on_peaks,
                                                    img_data=img_data,
                                                    plot_shifts=plot_shifts,
                                                    plot_char=plot_char, 
@@ -1056,7 +997,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             plt.ion()
             
         elif multiple_files is False:
-            if self.axes_manager.signal_dimension==2 and not on_peaks:
+            if self.axes_manager.signal_dimension==2:
                 # factor images
                 axes_dicts=[]
                 axes=self.axes_manager._slicing_axes
@@ -1077,19 +1018,12 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                             'title':'%s from %s'%(factor_prefix,
                                 self.mapped_parameters.title),
                             }})
-            elif self.axes_manager.signal_dimension==1 or on_peaks:
+            elif self.axes_manager.signal_dimension==1:
                 axes=[]
-                if not on_peaks:
-                    axes.append(
-                    self.axes_manager._slicing_axes[0].get_axis_dictionary())
-                    axes[0]['index_in_array']=1
-                else:
-                    axes.append({'name': 'peak_characteristics',
-                                 'scale': 1.,
-                                 'offset': 0.,
-                                 'size': int(factors.shape[1]),
-                                 'units': 'peak_characteristics',
-                                 'index_in_array': 1, })                    
+                axes.append(
+                self.axes_manager._slicing_axes[0].get_axis_dictionary())
+                axes[0]['index_in_array']=1
+                  
 
                 axes.append({
                     'name': 'factor_index',

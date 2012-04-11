@@ -80,7 +80,7 @@ Before installing Hyperspy certain libraries have to be installed in the system.
 
 Another option in Windows is to install `pythonxy <http://www.pythonxy.com/>`_.
 
-If you use a Debian/Ubuntu binary to install Hyperspy all the dependencies should install automatically. Otherwise you must install the following packages (note that we use the Debian/Ubuntu package names): ``python-numpy``  ``python-scipy`` ``python-matplotlib`` ``ipython`` ``python-mdp`` ``python-netcdf`` ``python-h5py`` ``python-traits`` ``python-traitsui`` ``python-nose`` ``python-opencv`` ``python-chaco``.
+If you use a Debian/Ubuntu binary to install Hyperspy all the dependencies should install automatically. Otherwise you must install the following packages (note that we use the Debian/Ubuntu package names): ``python-numpy``  ``python-scipy`` ``python-matplotlib`` ``ipython`` ``python-mdp`` ``python-netcdf`` ``python-h5py`` ``python-traits`` ``python-traitsui``.
 
 
 

@@ -167,27 +167,4 @@ class ImagePlot:
         if utils.does_figure_object_exists(self.figure) is True:
             plt.close(self.figure)
 
-#==============================================================================
-# Plotting methods from MVA
-#==============================================================================
 
-def plot_image_peaks(img_data, locations, plot_ids=False, ax=None):
-    if ax is None:
-        ax=plt.gca()
-    ax.imshow(img_data,cmap=plt.gray(), 
-            interpolation = 'nearest')
-    if plot_ids:
-        for pk_id in xrange(locations.shape[0]):
-            plt.text(locations[pk_id,0], locations[pk_id,1], 
-                     "%s"%pk_id, size=10, rotation=0.,
-                     ha="center", va="center",
-                     bbox = dict(boxstyle="round",
-                                 ec=(1., 0.5, 0.5),
-                                 fc=(1., 0.8, 0.8),
-                                 )
-                     )
-    else:
-        ax.scatter(locations[:,0],locations[:,1])
-        ax.set_xlim(0,img_data.shape[0]-1)
-        ax.set_ylim(img_data.shape[1]-1,0)
-    return ax

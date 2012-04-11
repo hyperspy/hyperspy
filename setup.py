@@ -30,9 +30,8 @@ import hyperspy.Release as Release
 if os.path.exists('build'):
     distutils.dir_util.remove_tree('build')
 
-install_req = ['scipy', 'ipython', 'matplotlib', 'numpy', 'mdp', 'netcdf', 
-'nose', 'traits', 'traitsui', 'h5py', 'nose',]
-# Add also open-cv and chaco?
+install_req = ['scipy', 'ipython', 'matplotlib', 'numpy', 'mdp',
+'traits', 'traitsui', 'h5py', ]
 
 def are_we_building4windows():
     for arg in sys.argv:

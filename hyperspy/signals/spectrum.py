@@ -36,6 +36,8 @@ from hyperspy.decorators import only_interactive
 from hyperspy.defaults_parser import preferences
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.decorators import auto_replot
+from hyperspy.misc.utils import one_dim_findpeaks
+
 
             
 class Spectrum(Signal):
@@ -356,7 +358,6 @@ class Spectrum(Signal):
         P : array of shape (npeaks, 3)
             contains position, height, and width of each peak
         """
-        from peak_char import one_dim_findpeaks
         if len(self.data.shape)==1:
             # preallocate a large array for the results
             self.peaks=one_dim_findpeaks(self.data, slope_thresh=slope_thresh, amp_thresh=amp_thresh,

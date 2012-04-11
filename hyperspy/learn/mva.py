@@ -60,22 +60,12 @@ class MVA():
     def __init__(self):
         if not hasattr(self,'learning_results'):
             self.learning_results = LearningResults()
-        if not hasattr(self.mapped_parameters,'peak_chars'):
-            self.mapped_parameters.peak_chars = None
 
-    def _get_target(self, on_peaks):
-        if on_peaks:
-            target=self.peak_learning_results
-        else:
-            target=self.learning_results
-        return target
-    
     @do_not_replot
     def decomposition(self, normalize_poissonian_noise=False,
     algorithm = 'svd', output_dimension=None, centre = None,
     auto_transpose = True, navigation_mask=None, signal_mask=None,
-    var_array=None, var_func=None, polyfit=None, on_peaks=False, 
-    reproject=None, **kwargs):
+    var_array=None, var_func=None, polyfit=None, reproject=None, **kwargs):
         """Decomposition with a choice of algorithms
 
         The results are stored in self.learning_results
@@ -134,16 +124,7 @@ class MVA():
                 'Nothing done.')
             return
         # backup the original data
-        if on_peaks:
-            if hasattr(self.mapped_parameters,'peak_chars'):
-                self._data_before_treatments = \
-                    self.mapped_parameters.peak_chars.copy()
-            else:
-                print """No peak characteristics found.  You must run the 
-                         peak_char_stack function to obtain these before 
-                         you can run PCA or ICA on them."""
-        else:
-            self._data_before_treatments = self.data.copy()
+        self._data_before_treatments = self.data.copy()
 
         if algorithm == 'mlpca':
             if normalize_poissonian_noise is True:
@@ -189,14 +170,11 @@ class MVA():
                                             navigation_mask=navigation_mask,)         
             
         messages.information('Performing decomposition analysis')
-        if on_peaks:
-            dc = self.mapped_parameters.peak_chars
-        else:
-            # The data must be transposed both for Images and Spectra
-            dc = self.data
+
+        dc = self.data
             
         #set the output target (peak results or not?)
-        target = self._get_target(on_peaks)
+        target = self.learning_results
         
         # Transform the None masks in slices to get the right behaviour
         if navigation_mask is None:
@@ -362,7 +340,7 @@ class MVA():
                 target.loadings = loadings
 
         #undo any pre-treatments
-        self.undo_treatments(on_peaks)
+        self.undo_treatments()
         
         if self._unfolded4decomposition is True:
             self.fold()
@@ -374,7 +352,7 @@ class MVA():
     
     def blind_source_separation(
         self, number_of_components=None, algorithm='CuBICA', diff_order=1,
-        factors=None, comp_list=None, mask=None, on_peaks=False,
+        factors=None, comp_list=None, mask=None, 
         on_loadings=False,pretreatment = None, **kwargs):
         """Blind source separation (BSS) on the result on the decomposition.
 
@@ -398,10 +376,10 @@ class MVA():
         
         Any extra parameter is passed to the ICA algorithm
         """
-        target=self._get_target(on_peaks)
+        target=self.learning_results
 
         if not hasattr(target, 'factors') or target.factors==None:
-            self.decomposition(on_peaks=on_peaks)
+            self.decomposition()
 
         else:
             if factors is None:
@@ -413,8 +391,8 @@ class MVA():
             if number_of_components is not None:
                 bool_index[:number_of_components] = True
             else:
-                if self.output_dimension is not None:
-                    number_of_components = self.output_dimension
+                if target.output_dimension is not None:
+                    number_of_components = target.output_dimension
                     bool_index[:number_of_components] = True
 
             if comp_list is not None:
@@ -474,7 +452,7 @@ class MVA():
             self._auto_reverse_bss_component(target)
             target.bss_algorithm = algorithm
 
-    def reverse_bss_component(self, component_number, on_peaks = False):
+    def reverse_bss_component(self, component_number):
         """Reverse the independent component
 
         Parameters
@@ -490,10 +468,8 @@ class MVA():
         >>> s.reverse_bss_component(1) # reverse IC 1
         >>> s.reverse_bss_component((0, 2)) # reverse ICs 0 and 2
         """
-        if on_peaks:
-            target=self.peak_learning_results
-        else:
-            target=self.learning_results
+
+        target=self.learning_results
 
         for i in [component_number,]:
             target.bss_factors[:,i] *= -1
@@ -530,8 +506,7 @@ class MVA():
         target.bss_loadings = np.dot(Q,W).T
 
     @do_not_replot
-    def _calculate_recmatrix(self, components = None, mva_type=None,
-                             on_peaks=False):
+    def _calculate_recmatrix(self, components = None, mva_type=None,):
         """
         Rebuilds SIs from selected components
 
@@ -550,7 +525,7 @@ class MVA():
         Signal instance
         """
 
-        target=self._get_target(on_peaks)
+        target=self.learning_results
 
         if mva_type.lower() == 'decomposition':
             factors = target.factors
@@ -595,7 +570,7 @@ class MVA():
             sc.fold()
         return sc
 
-    def get_decomposition_model(self, components=None, on_peaks=False):
+    def get_decomposition_model(self, components=None):
         """Return the spectrum generated with the selected number of principal
         components
 
@@ -611,13 +586,12 @@ class MVA():
         Signal instance
         """
         rec=self._calculate_recmatrix(components=components,
-                                      mva_type='decomposition',
-                                      on_peaks=on_peaks)
+                                      mva_type='decomposition')
         rec.residual=rec.copy()
         rec.residual.data=self.data-rec.data
         return rec
 
-    def get_bss_model(self,components = None, on_peaks=False):
+    def get_bss_model(self,components = None):
         """Return the spectrum generated with the selected number of
         independent components
 
@@ -632,14 +606,13 @@ class MVA():
         -------
         Signal instance
         """
-        rec=self._calculate_recmatrix(components=components, mva_type='bss',
-                                      on_peaks=on_peaks)
+        rec=self._calculate_recmatrix(components=components, mva_type='bss',)
         rec.residual=rec.copy()
         rec.residual.data=self.data-rec.data
         return rec
         
 
-    def plot_explained_variance_ratio(self, n=50, log = True, on_peaks=False,
+    def plot_explained_variance_ratio(self, n=50, log = True,
                                       ax = None, label = None):
         """Plot the decomposition explained variance ratio vs index number
 
@@ -655,7 +628,7 @@ class MVA():
         label: str
             An optional label for the legend
         """
-        target = self._get_target(on_peaks)
+        target = self.learning_results
         if target.explained_variance_ratio is None:
             messages.information(
                 'No explained variance ratio information available')
@@ -674,7 +647,7 @@ class MVA():
         plt.show()
         return ax
 
-    def plot_cumulative_explained_variance_ratio(self,n=50,on_peaks=False):
+    def plot_cumulative_explained_variance_ratio(self,n=50):
         """Plot the principal components explained variance up to the given
         number
 
@@ -682,7 +655,7 @@ class MVA():
         ----------
         n : int
         """
-        target = self._get_target(on_peaks)
+        target = self.learning_results
         if n > target.explained_variance.shape[0]:
             n=target.explained_variance.shape[0]
         cumu = np.cumsum(target.explained_variance) / np.sum(
@@ -758,87 +731,11 @@ class MVA():
                 signal_mask = None
             return navigation_mask, signal_mask
 
-    def undo_treatments(self, on_peaks=False):
+    def undo_treatments(self):
         """Undo normalize_poissonian_noise"""
         print "Undoing data pre-treatments"
-        if on_peaks:
-            self.mapped_parameters.peak_chars=self._data_before_treatments
-            del self._data_before_treatments
-        else:
-            self.data=self._data_before_treatments
-            del self._data_before_treatments
-
-    def peak_pca(self,normalize_poissonian_noise = False, algorithm = 'svd', 
-                 output_dimension = None, navigation_mask = None, 
-                 signal_mask = None, center = False, normalize_variance = False, 
-                 var_array = None, var_func = None, polyfit = None):
-        """Performs Principal Component Analysis on peak characteristic data.
-
-        Requires that you have run the peak_char_stack function on your stack of
-        images.
-
-        Parameters
-        ----------
-
-        normalize_poissonian_noise : bool
-            If True, scale the SI to normalize Poissonian noise
-        algorithm : {'svd', 'fast_svd', 'mlpca', 'fast_mlpca'}
-        output_dimension : None or int
-            number of PCA to keep
-        navigation_mask : boolean numpy array
-        signal_mask : boolean numpy array
-        center : bool
-            Perform energy centering before PCA
-        normalize_variance : bool
-            Perform whitening before PCA
-        var_array : numpy array
-            Array of variance for the maximum likelihood PCA algorithm
-        var_func : function or numpy array
-            If function, it will apply it to the dataset to obtain the
-            var_array. Alternatively, it can a an array with the coefficients
-            of a polynomial.
-        polyfit :
-
-        """
-        self.decomposition(on_peaks=True,
-               normalize_poissonian_noise = normalize_poissonian_noise,
-               algorithm = algorithm, output_dimension = output_dimension, 
-               navigation_mask = navigation_mask, signal_mask = signal_mask, 
-               center = center, normalize_variance = normalize_variance, 
-               var_array = var_array, var_func = var_func, polyfit = polyfit)
-
-    def peak_bss(self, number_of_components, algorithm = 'CuBICA',
-                 diff_order = 1, factors=None, comp_list=None, mask=None,
-                 on_peaks=False, **kwds):
-        """Independent components analysis on peak characteristic data.
-
-        Requires that you have run the peak_char_stack function on your stack of
-        images.
-
-        Available algorithms: FastICA, JADE, CuBICA, and TDSEP
-
-        Parameters
-        ----------
-        number_of_components : int
-            number of principal components to pass to the ICA algorithm
-        algorithm : {FastICA, JADE, CuBICA, TDSEP}
-        diff : bool
-        diff_order : int
-        factors : numpy array
-            externally provided factors
-        comp_list : boolen numpy array
-            choose the components to use by the boolen list. It permits to
-            choose non contiguous components.
-        mask : numpy boolean array with the same dimension as the PC
-            If not None, only the selected channels will be used by the
-            algorithm.
-        """
-        self.blind_source_separation(number_of_components=
-                                             number_of_components, 
-                                             on_peaks=True,algorithm=algorithm, 
-                                             diff_order=diff_order,
-                                             factors=factors, 
-                                             comp_list=comp_list, mask=mask)
+        self.data=self._data_before_treatments
+        del self._data_before_treatments
 
 class LearningResults(object):
     # Decomposition

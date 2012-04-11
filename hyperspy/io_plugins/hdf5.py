@@ -19,8 +19,6 @@
 import h5py
 
 import numpy as np
-# mdp is imported so that we know how to skip saving nodes.
-import mdp
 
 from hyperspy import messages
 from hyperspy.misc.utils import ensure_unicode
@@ -172,8 +170,6 @@ def dict2hdfgroup(dictionary, group, compression = None):
             group.create_dataset(key,
                                  data=value,
                                  compression = compression)
-        elif isinstance(value, mdp.Node):
-            pass
         elif value is None:
             group.attrs[key] = '_None_'
         elif isinstance(value, basestring):

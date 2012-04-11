@@ -137,7 +137,7 @@ def _plot_2D_component(factors, idx, axes_manager,
 
 def _plot_component(axes_manager,
                     factors=None, idx=None,
-                    on_peaks=False, comp_label=None,
+                    comp_label=None,
                     image=None, calibrate=True, 
                     shifts=None, char=None, 
                     ax=None, img_cmap=plt.cm.gray,
@@ -152,23 +152,12 @@ def _plot_component(axes_manager,
                         comp_label=comp_label,
                         same_window=same_window)
     elif axes_manager.signal_dimension==2:
-        if on_peaks:
-            return self._plot_quiver_scatter_overlay(
-                        image=image,
-                        axes_manager=axes_manager,
-                        shifts=shifts,char=char,ax=ax,
-                        comp_label=comp_label,
-                        img_cmap=img_cmap,
-                        sc_cmap=sc_cmap,
-                        quiver_color=quiver_color,
-                        vector_scale=vector_scale)
-        else:
-            return _plot_2D_component(factors=factors, 
-                                      idx=idx, 
-                                      axes_manager=axes_manager,
-                                      calibrate=calibrate,ax=ax, 
-                                      cmap=cmap,
-                                      comp_label=comp_label)
+        return _plot_2D_component(factors=factors, 
+                                  idx=idx, 
+                                  axes_manager=axes_manager,
+                                  calibrate=calibrate,ax=ax, 
+                                  cmap=cmap,
+                                  comp_label=comp_label)
 
 def _plot_loading(loadings, idx, axes_manager, ax=None, 
                 comp_label=None, no_nans=True, 
