@@ -31,16 +31,44 @@ authors = {
     'M_S'    : ('Michael Sarahan', 'hyperspy-devel@googlegroups.com'),
     'all'    : ('The Hyperspy developers', 'hyperspy-devel@googlegroups.com'),}
 
-url = 'http://www.hyperspy.org'
+url = 'http://hyperspy.org'
 
 download_url = 'http://www.hyperspy.org'
+documentation_url = 'http://hyperspy.org/hyperspy-doc/current/index.html'
 
 platforms = ['Linux','Mac OSX','Windows XP/2000/NT','Windows 95/98/ME']
 
-keywords = [
-    'hyperspy', 'hyperspectral', 'data analysis', 'electron', 'spectroscopy', 
-    'python', 'numpy', 'scipy', 'microscopy', 'TEM', 'STEM', 'quantification',
-    'EDX', 'EELS', 'EFTEM', 'PES', 'PCA', 'ICA', 'curve fitting', 'model']
+keywords = ['EDX',
+            'EELS',
+            'EFTEM',
+            'EMSA',
+            'FEI',
+            'ICA',
+            'PCA',
+            'PES',
+            'STEM',
+            'TEM',
+            'curve fitting',
+            'data analysis',
+            'dm3',
+            'electron energy loss spectroscopy',
+            'electron microscopy',
+            'emi',
+            'energy dispersive x-rays',
+            'hyperspectral',
+            'hyperspectrum',
+            'hyperspy',
+            'machine learning',
+            'microscopy',
+            'model',
+            'msa',
+            'numpy',
+            'python',
+            'quantification',
+            'scipy',
+            'ser',
+            'spectroscopy',
+            'spectrum image']
 
 info = u"""
     H y p e r s p y

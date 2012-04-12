@@ -26,7 +26,8 @@ import sys
 import shutil
 
 import hyperspy.Release as Release
-# clean the build directory so we aren't mixing Windows and Linux installations carelessly.
+# clean the build directory so we aren't mixing Windows and Linux 
+# installations carelessly.
 if os.path.exists('build'):
     distutils.dir_util.remove_tree('build')
 
@@ -67,7 +68,6 @@ setup(
     name = "hyperspy",
     package_dir = {'hyperspy': 'hyperspy'},
     version = version,
-    #py_modules = ['', ],
     packages = ['hyperspy', 'hyperspy.components', 'hyperspy.io_plugins', 
                 'hyperspy.drawing', 'hyperspy.learn', 'hyperspy.signals', 
                 'hyperspy.gui', 'hyperspy.tests', 'hyperspy.models',
@@ -91,10 +91,24 @@ setup(
     },
     author = Release.authors['all'][0],
     author_email = Release.authors['all'][1],
+    maintainer = 'Francisco de la Peña',
+    maintainer_email = 'fjd29@cam.ac.uk',
     description = Release.description,
     long_description = open('README.txt').read(),
     license = Release.license,
     platforms = Release.platforms,
     url = Release.url,
-    test_suite = 'nose.collector',
+    #~ test_suite = 'nose.collector',
+    keywords = Release.keywords,
+    classifiers = [
+        "Programming Language :: Python :: 2.7"
+        "Development Status :: 4 - Beta",
+        "Environment :: Console",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Natural Language :: English",
+        "Operating System :: OS Independent",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Physics",
+        ],
     )
