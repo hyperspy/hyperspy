@@ -73,3 +73,11 @@ io_plugins Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`tiff` Module
+------------------
+
+.. automodule:: hyperspy.io_plugins.tiff
+    :members:
+    :undoc-members:
+    :show-inheritance:
+

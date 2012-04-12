@@ -105,10 +105,10 @@ components Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`pes_gaussian` Module
---------------------------
+:mod:`pes_core_line_shape` Module
+---------------------------------
 
-.. automodule:: hyperspy.components.pes_gaussian
+.. automodule:: hyperspy.components.pes_core_line_shape
     :members:
     :undoc-members:
     :show-inheritance:

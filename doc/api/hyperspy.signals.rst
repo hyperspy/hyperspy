@@ -9,14 +9,6 @@ signals Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`aggregate` Module
------------------------
-
-.. automodule:: hyperspy.signals.aggregate
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`eels` Module
 ------------------
 

@@ -113,14 +113,6 @@ hyperspy Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`peak_char` Module
------------------------
-
-.. automodule:: hyperspy.peak_char
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`signal` Module
 --------------------
 

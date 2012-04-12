@@ -17,14 +17,6 @@ misc Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`cv_funcs` Module
-----------------------
-
-.. automodule:: hyperspy.misc.cv_funcs
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`dm3reader` Module
 -----------------------
 
@@ -45,6 +37,14 @@ misc Package
 -------------------------
 
 .. automodule:: hyperspy.misc.progressbar
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`tifffile` Module
+----------------------
+
+.. automodule:: hyperspy.misc.tifffile
     :members:
     :undoc-members:
     :show-inheritance:

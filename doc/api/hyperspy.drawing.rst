@@ -49,14 +49,6 @@ drawing Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`ucc` Module
------------------
-
-.. automodule:: hyperspy.drawing.ucc
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`utils` Module
 -------------------
 
