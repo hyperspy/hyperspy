@@ -9,29 +9,56 @@ Most users will like to :ref:`install-binary`. At the moment we provide binary i
 Install from a binary
 ---------------------
 
-    We provide  binary distributions for Debian/Ubuntu Linux and Windows. In Debian and Ubuntu the dependencies are installed automatically. In Windows it is necessary to previously install the required libraries, see :ref:`install-dependencies`
+    We provide  binary distributions for Ubuntu Linux and Windows (`see the Downloads section of the website <http://hyperspy.org/download.html>`_). In Ubuntu the dependencies are installed automatically. In Windows it is necessary to previously install the required libraries, see :ref:`install-dependencies`. To install easily in other platforms see :ref:`install-with-python-installers`
+    
+.. _install-with-python-installers
+
+Python installers
+-----------------
+
+Since version 4.1 Hyperspy is listed in the `Python Package Index <http://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded and installed using `setuptools <http://pypi.python.org/pypi/setuptools>`_, <distribute <http://pypi.python.org/pypi/distribute>`_ or (our favourite) `pip <http://pypi.python.org/pypi/pip>`_. However, depending on your Python distribution, you might need to install one of these packages manually. An extra advantage of using the python installers is that they should install the required libraries automatically.
+
+Install using `pip`:
+
+.. code-block:: bash
+
+    $ pip install hyperspy
+
+Install using `distribute` or `setuptools`:
+
+.. code-block:: bash
+
+    $ easy_install hyperspy
+    
 
 .. _install-source:
 
 Install from source
 -------------------
-.. Note::
-    To date there is not any stable release of Hyperspy and therefore no tar.gz files are provided. Currently the only way to get Hyperspy is to :ref:`install-dev`
 
+.. _install-released-source:
 
+Released version
+^^^^^^^^^^^^^^^^
 
-To install from source grab a tar.gz release and in Linux/Mac:
+To install from source grab a tar.gz release and in Linux/Mac (requires to :ref:`install-dependencies` manually):
 
 .. code-block:: bash
 
     $ tar -xzf hyperspy.tar.gz
     $ cd hyperspy
     $ python setup.py install
+    
+You can also use a Python installer, in which case the required libraries will also be automatically installed, e.g pip.
+
+.. code-block:: bash
+
+    $ pip install hyperspy.tar.gz
 
 .. _install-dev:
 
-Install the development version
--------------------------------
+Development version
+^^^^^^^^^^^^^^^^^^^
 
 
 To get the development version from our git repository you need to install `git <http://git-scm.com//>`_. Then just do:
@@ -40,7 +67,7 @@ To get the development version from our git repository you need to install `git 
 
     $ git clone https://github.com/hyperspy/hyperspy.git
 
-To install Hyperspy you could proceed like in :ref:`install-source`. However, if you are installing from the development version most likely you will prefer to install Hyperspy using  `pip <http://www.pip-installer.org>`_ development mode: 
+To install Hyperspy you could proceed like in :ref:`iinstall-released-source`. However, if you are installing from the development version most likely you will prefer to install Hyperspy using  `pip <http://www.pip-installer.org>`_ development mode: 
 
 
 .. code-block:: bash
@@ -48,14 +75,14 @@ To install Hyperspy you could proceed like in :ref:`install-source`. However, if
     $ cd hyperspy
     $ pip install -e ./
     
-In any case, like when installing from source you must be sure to have all the dependencies installed, see :ref:`install-dependencies`
+In any case, you must be sure to have all the dependencies installed, see :ref:`install-dependencies`
  
 .. _create-debian-binary: 
     
 Creating Debian/Ubuntu binaries
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can create binaries for Debian/Ubuntu running the `release_debian` script
+You can create binaries for Debian/Ubuntu from the source by running the `release_debian` script
 
 .. code-block:: bash
 
@@ -66,9 +93,9 @@ You can create binaries for Debian/Ubuntu running the `release_debian` script
     For this to work, the following packages must be installed in your system python-stdeb, debhelper, dpkg-dev and python-argparser are required.
     
 Creating windows binaries
--------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
     
-To create a Windows binary run the `release_windows.bat` script in a windows machine.
+To create a Windows binary from the source run the `release_windows.bat` script in a windows machine.
 
 .. _install-dependencies:
 

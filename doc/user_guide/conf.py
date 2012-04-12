@@ -41,7 +41,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Hyperspy User Guide'
+project = u'Hyperspy User Guide [Draft]'
 copyright = u'2011-2012, Francisco de la Peña, Michael Sarahan'
 
 # The version info for the project you're documenting, acts as replacement for

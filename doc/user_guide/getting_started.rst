@@ -35,7 +35,7 @@ In any case Hyperspy should welcome you with a message similar to:
 .. code-block:: ipython
     
     H y p e r s p y
-    Version 0.4.0
+    Version 0.4.1
     
     Copyright (C) 2007-2010 Francisco de la Peña
     Copyright (C) 2011-2012 The Hyperspy development team
@@ -84,9 +84,16 @@ To load from a supported file format (see :ref:`supported-formats`) simply type 
 
 .. HINT::
 
-   The load function returns an object that contains data read from the file. We assign this object to the variable ``s`` but you can choose any (valid) variable name you like. 
+   The load function returns an object that contains data read from the file. We assign this object to the variable ``s`` but you can choose any (valid) variable name you like.
+   
+If no argument is passed to the load function, a window will be raised that allows to select a single file through your OS file manager, e.g.:
 
-For more details read :ref:`loading_files`
+.. code-block:: python
+
+    # This raises the load user interface
+    s = load()
+
+It is also possible to load multiple files at once or even stack multiple files. For more details read :ref:`loading_files`
 
 
 .. _saving:
@@ -127,7 +134,7 @@ The behaviour of Hyperspy can be customised using the :py:class:`~.defaults_pars
 
     preferences.gui()
     
-This command should raise the Preferences window:
+This command should raise the :ref:`preferences_image`
 
 .. _preferences_image:
 
@@ -157,8 +164,8 @@ Autocompletion
 --------------
 
 Another useful `IPython <http://ipython.scipy.org/moin/>`_ feature is the 
-autocompletion of commands and filenames. It is highly recommended to read the 
-`Ipython documentation <http://ipython.scipy.org/moin/Documentation>`_ for many more useful features that will boost efficiency when working with Hyperspy/Python.
+autocompletion of commands and filenames using the tabulator. It is highly recommended to read the 
+`Ipython documentation <http://ipython.scipy.org/moin/Documentation>`_ (specially their `Getting started <http://ipython.org/ipython-doc/stable/interactive/tutorial.html>`_ section) for many more useful features that will boost your efficiency when working with Hyperspy/Python interactively.
 
 Data visualisation
 ==================
@@ -176,7 +183,7 @@ the plot method.
 If the object is a 2D or 3D spectrum image two figures will appear, 
 one containing a plot of the spectrum at the current coordinates and the other
 an image of the spectrum image summed over its spectral dimension if 2D or an 
-image with the spectral dimension in the x-axis e.g. 
+image with the spectral dimension in the x-axis e.g see :ref:`2d_SI` and :ref:`1d_SI`. 
 
 .. _2d_SI:
 
@@ -196,7 +203,7 @@ image with the spectral dimension in the x-axis e.g.
    
 Equivalently, if the object is a 1D or 2D image stack two figures will appear, 
 one containing a plot of the image at the current coordinates and the other
-a spectrum or an image obtained by summing over the image dimensions, e.g.:
+a spectrum or an image obtained by summing over the image dimensions, e.g. see :ref:`1D_image_stack.png` and :ref:`2D_image_stack.png`:
    
 .. _1D_image_stack.png:
 
@@ -217,7 +224,7 @@ a spectrum or an image obtained by summing over the image dimensions, e.g.:
 To change the current coordinates, click on the pointer (which will be a line or a square depending on the dimensions of the data) and drag it around. It is also possible to move the pointer by using the numpad arrows **when numlock is on and the spectrum or navigator figure is on focus**.When using the numpad arrows the PageUp and PageDown keys change the size of the step.
 
 An extra cursor can be added by pressing the ``e`` key. Pressing ``e`` once more will 
-disable the extra cursor, e.g.
+disable the extra cursor, e.g see :ref:`second_pointer.png`.
 
 .. _second_pointer.png:
 
@@ -229,10 +236,6 @@ disable the extra cursor, e.g.
 
 When exploring a 2D hyperspectral object of high spatial resolution the default size of the rectangular cursors can be too small to be dragged or even seen. It is possible to change the size of the cursors by pressing the ``+`` and ``-`` keys  **when the navigator
 windows is on focus**.
-
-It is also possible to move the pointer by using the numpad arrows 
-**when numlock is on and the spectrum or navigator figure is on focus**. 
-When using the numpad arrows the PageUp and PageDown keys change the size of the step.
 
 The same keys can be used to explore an image stack.
 

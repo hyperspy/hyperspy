@@ -1,7 +1,7 @@
 What's new
 **********
 
-This is a summary of changes, for a detailed list of all the changes see ` the github commits changelog <https://github.com/hyperspy/hyperspy/commits/master>`_.
+This is a summary of changes, for a detailed list of all the changes see `the github commits changelog <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
 .. _changes_0.4.1:
 

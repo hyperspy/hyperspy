@@ -15,7 +15,7 @@ Hyperspy can read and write to multiple formats (see :ref:`supported-formats`). 
 
 .. code-block:: python
 
-    s = load("lena.jpg")
+    >>> s = load("lena.jpg")
     
 If the loading was successful, the variable :guilabel:`s` contains a generic :py:class:`~.signal.Signal`, a :py:class:`~.signals.spectrum.Spectrum` or a :py:class:`~.signals.image.Image`. In any case, the data is stored in a numpy array in the :py:attr:`~.signal.Signal.data` attribute, but you will not normally need to access it there.
 
@@ -23,13 +23,58 @@ Hyperspy will try to guess the most convenient object for the corresponding file
 
 .. code-block:: python
 
-    s = load("filename", signal = "EELS")
+    >>> s = load("filename", signal = "EELS")
 
 Some file formats store some extra information about the data. If Hyperspy was able to read some extra information it stores it in :py:attr:`~.signal.Signal.original_parameters` attribute. Also, it is possible that some information was mapped by Hyperspy to a standard location where it can be used by some standard routines, the :py:attr:`~.signal.Signal.mapped_parameters` attribute.
 
-In addition Hyperspy supports reading collections of files, see :ref:`aggregate`
+To print the content of the parameters simply:
 
-.. _saving_files:
+.. code-block:: python
+
+    >>> s.mapped_parameters
+    ├── TEM
+    │   ├── EELS
+    │   │   └── collection_angle = 22.0
+    │   ├── convergence_angle = 7.0
+    │   └── beam_energy = 100000.0
+    ├── title = BN
+    ├── beam_energy = 100000.0
+    ├── Sample
+    │   └── elements = ['C', 'B', 'N']
+    ├── record_by = spectrum
+    ├── original_filename = BN.msa
+    └── signal_type = EELS
+
+The :py:attr:`~.signal.Signal.original_parameters` and :py:attr:`~.signal.Signal.mapped_parameters` can be exported to a text files using the :py:meth:`~.misc.utils.DictionaryBrowser.export` method, e.g.:
+
+.. code-block:: python
+    
+    # The following command stores the original parameters in the parameters.txt file
+    >>> s.original_parameters.export('parameters')
+
+Loading multiple files
+----------------------
+
+Rather than loading files individually, several files
+can be loaded with a single command. This can be done by passing a list of filenames to the load functions, e.g.:
+
+.. code-block:: python
+
+    >>> s = load(["file1.hdf5", "file2.hdf5"])
+    
+or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
+
+.. code-block:: python
+
+    >>> s = load("file*.hdf5",)
+    
+By default Hyperspy will try to stack all the files in a single file, but for this to work all the files need to contain data with exactly the same dimensions. If this is not the case an error is raised.
+
+It is also possible to load multiple files with a single command without stacking them by passing the stack=False argument to the load function, in which case the function will return a list of objects, e.g.:
+
+.. code-block:: python
+
+    >>> s = load("file*.hdf5", stack = False)
 
 Saving data to files
 ====================
@@ -65,7 +110,9 @@ In :ref:`supported-file-formats-table` we summarise the different formats that a
     +--------------------+-----------+----------+
     | HDF5               | Complete  | Complete |
     +--------------------+-----------+----------+
-    | Image              | Complete  | Complete |
+    | Image: jpg..       | Complete  | Complete |
+    +--------------------+-----------+----------+
+    | TIFF               | Complete  | Complete |
     +--------------------+-----------+----------+
     | MRC                | Complete  | -        |
     +--------------------+-----------+----------+
@@ -159,97 +206,4 @@ Hyperspy only support reading ``ser`` and ``emi`` files and the reading features
 
 In Hyperspy (and unlike in TIA) it is possible to read the data directly from the ``.ser`` files. However, by doing so, the experiment information that is stored in the emi file is lost. Therefore it is reccommend to load using the ``.emi`` file.
 
-.. _aggregate:
 
-Aggregating data
-================
-
-Loading Aggregate Files
-------------------------
-
-Rather than loading and working with files individually, several files
-can be loaded simultaneously, creating an aggregate object.  In
-aggregate objects, all of the data from each set is collected into a
-single data set.  Any analysis you do runs on the aggregate set, and
-any results are split into separate files afterwards.
-
-Here's an example of loading multiple files:
-
-.. code-block:: python
-
-    d=load('file1.ext', 'file2.ext')
-
-If you just want to load, say, all tif files in a folder into an
-aggregate, you can do something like this:
-
-.. code-block:: python
-
-    d=load('*.tif')
-
-Files can be added to aggregates in one of two ways, both using the
-append function on any existing Aggregate object.
-
-Adding files that are not yet loaded (passing filenames):
-
-.. code-block:: python
-
-    d.append('file3.ext')
-
-
-Adding files that are already loaded (passing objects):
-
-.. code-block:: python
-
-    d2=load('file3.ext')
-    d.append(d2)
-
-Of course, the object types must match - you cannot aggregate spectrum
-images with normal images.
-
-Notes:
-Presently, aggregate spectra are not checked for any energy
-alignment.  You must have similar energy ranges, with similar numbers
-of channels on all files you wish to aggregate.
-
-Images are stacked along the 3rd dimension.  Any images you aggregate must
-have similar dimensions in terms of pixel size.  The aggregator does
-not check for calibrated size.  It does not physically make sense to
-aggregate images with differing fields of view.
-
-For the future of aggregate spectra, the goal is that each file must
-share at least some part of their energy range.  The aggregate energy
-range will be automatically truncated to include only the union of all
-energy ranges.  Interpolation will be used in case of any channel mismatch
-between data sets.
-
-Saving Aggregate files
--------------------------
-
-Aggregate files are saved similarly to other Signal based classes,
-however, depending on the file format, several files will be created.
-HDF5, the preferred format, will save one file containing the entire
-hierarchy of the aggregate.  Other formats will create folder
-structures, placing files of the desired format in folders according
-to their place in the aggregate hierarchy.
-
-Loading Saved Aggregate Files
---------------------------------
-
-Please, please use the HDF5 file format.  It will make your life
-easier.  To load an hdf5 aggregate data set, use the simple load
-command:
-
-.. code-block:: python
-
-    d=load('filename.hdf5')
-
-For all other formats, the folder hierarchy created when the aggregate
-was saved must remain exactly the same, or the aggregate will no
-longer load properly.  Do not delete, move, or edit files from the
-automatically created folders.  When saved, a file consisting of a
-table of contents of the aggregate is created.  To load the aggregate, 
-provide this file to the load function:
-
-.. code-block:: python
-
-    d=load('filename_agg_contents.txt')
