@@ -20,4 +20,5 @@ os.system('python setup.py --command-packages=stdeb.command bdist_deb')
 if args.install is True:
     os.system('sudo dpkg -i deb_dist/python-%s-1_all.deb' % 
     release_name.replace('hyperspy-', 'hyperspy_'))
+    os.system('sudo apt-get install -f')
     
