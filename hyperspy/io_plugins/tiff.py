@@ -55,12 +55,12 @@ def file_writer(filename, signal, _rescale = True,
     navigation_dimension = signal.axes_manager.navigation_dimension
     if signal_dimension != 2:
         raise IOError("This format only supports writing signals of "
-        "size 2, the current signal size is %" % 
+        "size 2, the current signal size is %i" % 
             signal_dimension)
     if navigation_dimension > 1 and only_view is False:
         raise IOError("This format only supports writing images or  "
         "spectrum images. However, the current signal navigation "
-        "dimension is %" % navigation_dimension)
+        "dimension is %i" % navigation_dimension)
         
     if only_view is False:
         dc = signal.data.squeeze()
