@@ -42,8 +42,7 @@ writes_xd = False
 # ----------------------
 
 
-def file_writer(filename, signal, _rescale = True,  
-                only_view = False, **kwds):
+def file_writer(filename, signal, _rescale = True,  **kwds):
     '''Writes data to tif using Christoph Gohlke's tifffile library
         
         Parameters
@@ -51,23 +50,8 @@ def file_writer(filename, signal, _rescale = True,
         filename: str
         signal: a Signal instance
     '''
-    signal_dimension = signal.axes_manager.signal_dimension
-    navigation_dimension = signal.axes_manager.navigation_dimension
-    if signal_dimension != 2:
-        raise IOError("This format only supports writing signals of "
-        "size 2, the current signal size is %i" % 
-            signal_dimension)
-    if navigation_dimension > 1 and only_view is False:
-        raise IOError("This format only supports writing images or  "
-        "spectrum images. However, the current signal navigation "
-        "dimension is %i" % navigation_dimension)
-        
-    if only_view is False:
-        dc = signal.data.squeeze()
-    else:
-        dc = signal()
-        
-    imsave(filename, dc, **kwds)
+    
+    imsave(filename, signal.data.squeeze(), **kwds)
     
 def file_reader(filename, output_level=0, record_by='image',**kwds):
     '''Read data from tif files using Christoph Gohlke's tifffile

@@ -114,7 +114,7 @@ keywords = {
                 'THCWIND' : {'dtype' : float, 'mapped_to': None},
                 'EDSDET'  : {'dtype' : unicode, 'mapped_to': None},	
             }
-def file_reader(filename, encoding = 'latin-1', **kwds):
+def file_reader(filename, encoding = 'utf8', **kwds):
     parameters = {}
     mapped = {}
     spectrum_file = codecs.open(filename, encoding = encoding,
@@ -227,7 +227,7 @@ def file_reader(filename, encoding = 'latin-1', **kwds):
     return [dictionary,]
 
 def file_writer(filename, signal, format = None, separator = ', ',
-                encoding = 'latin-1'):
+                encoding = 'utf8'):
     keywords = {}
     FORMAT = "EMSA/MAS Spectral Data File"
     if hasattr(signal.original_parameters, 'FORMAT') and \

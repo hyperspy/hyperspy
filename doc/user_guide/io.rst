@@ -148,6 +148,8 @@ It was the default format in EELSLab but it has been superseeded by :ref:`HDF5` 
 
 Note that only NetCDF files written by EELSLab are supported.
 
+To use this format a python netcdf interface must be installed manually because it is not installed by default when using the automatic installers.
+
 
 .. _mrc-format:
 
@@ -155,7 +157,7 @@ MRC
 ---
 
 It is a format widely used for tomographic data. Our implementation is based on 
-`this specification <http://ami.scripps.edu/software/mrctools/mrc_specification.php>`_. We also partly support FEI's custom header. We do not provide writing features for this format, but, being an open format, we may implement this feature in the future if it is demanded by the users.
+`this specification <http://ami.scripps.edu/software/mrctools/mrc_specification.php>`_. We also partly support FEI's custom header. We do not provide writing features for this format, but, being an open format, we may implement this feature in the future on demand.
 
 .. _msa-format:
 

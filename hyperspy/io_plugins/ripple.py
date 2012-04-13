@@ -195,7 +195,7 @@ def read_raw(rpl_info, fp):
         data = data.reshape(size)
     return data
 
-def file_reader(filename, rpl_info=None, encoding="latin-1", 
+def file_reader(filename, rpl_info=None, encoding="utf8", 
                 *args,**kwds):
     """Parses a Lispix (http://www.nist.gov/lispix/) ripple (.rpl) file
     and reads the data from the corresponding raw (.raw) file;
@@ -406,7 +406,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         }
     return [dictionary, ]
 
-def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
+def file_writer(filename, signal, encoding='utf8', *args, **kwds):
 
     # Set the optional keys to None
     ev_per_chan = None

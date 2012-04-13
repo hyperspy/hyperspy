@@ -283,7 +283,7 @@ class Signal(t.HasTraits, MVA):
             print "Object does not have any residual information.  Is it a \
 reconstruction created using either get_decomposition_model or get_bss_model methods?"
 
-    def save(self, filename, only_view = False, **kwds):
+    def save(self, filename, **kwds):
         """Saves the signal in the specified format.
 
         The function gets the format from the extension. You can use:
@@ -296,18 +296,13 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         `preferences` is used.
         Please note that not all the formats supports saving datasets of
         arbitrary dimensions, e.g. msa only suports 1D data.
+        
+        Each format accepts a different set of parameters. For details 
+        see the specific format documentation.
 
         Parameters
         ----------
         filename : str
-        msa_format : Str, one of: 'Y', 'XY'
-            'Y' will produce a file without the energy axis. 'XY' will also
-            save another column with the energy axis. For compatibility with
-            Gatan Digital Micrograph 'Y' is the default.
-        only_view : bool
-            If True, only the current view will be saved. Otherwise the full
-            dataset is saved. Please note that not all the formats support this
-            option at the moment.
         """
         io.save(filename, self, **kwds)
 

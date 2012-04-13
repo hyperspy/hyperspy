@@ -62,8 +62,7 @@ def rescale(data, bits):
     return data
         
 # TODO Extend it to support SI
-def file_writer(filename, signal, _rescale = True, file_format='png', 
-                only_view = False, **kwds):
+def file_writer(filename, signal, _rescale=True, file_format='png', **kwds):
     '''Writes data to any format supported by PIL
         
         Parameters
@@ -78,12 +77,6 @@ def file_writer(filename, signal, _rescale = True, file_format='png',
             The fileformat defined by its extension that is any one supported by 
             PIL.  
     '''
-    if only_view is True and signal.axes_manager.signal_dimension == 2:
-        dc = signal()
-    elif only_view is False and len(signal.data.squeeze().shape) == 2:
-        dc = signal.data.squeeze()
-    else:
-        raise IOError("This format only supports writing of 2D data")
                 
     if _rescale is True:
         dc = rescale(dc, bits)
