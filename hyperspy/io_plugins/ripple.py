@@ -40,16 +40,8 @@ full_suport = False             #  but maybe True
 # Recognised file extension
 file_extensions = ['rpl','RPL']
 default_extension = 0
-# Reading capabilities
-reads_2d = True
-reads_1d = True          # but maybe True
-reads_3d = True
-reads_xd = False
 # Writing capabilities
-writes_2d = True           # but maybe True
-writes_1d = True
-writes_3d = True
-writes_xd = False
+writes = [(1,0), (1,1), (1,2), (2,1), (1,2),]
 # ----------------------
 
 # The format only support the followng data types

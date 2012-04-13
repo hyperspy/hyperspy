@@ -32,9 +32,6 @@ from hyperspy.learn.mva import MVA, LearningResults
 from hyperspy.misc.utils import DictionaryBrowser
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
-from hyperspy.io import (write_1d_exts, write_2d_exts, write_3d_exts,
-                         write_xd_exts)
-from hyperspy.io_plugins.image import file_extensions as image_extensions
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import ensure_directory
 

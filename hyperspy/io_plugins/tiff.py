@@ -23,22 +23,15 @@ from hyperspy.misc.tifffile import imsave, imread
 
 # Plugin characteristics
 # ----------------------
-format_name = 'image'
-description = 'Import/Export standard image formats using PIL or freeimage'
+format_name = 'TIFF'
+description = 'Import/Export standard image formats Christoph Gohlke\'s tifffile library'
 full_suport = False
-file_extensions = ['tif', 'tiff', 'TIF', 'TIFF']
+file_extensions = ['tif', 'tiff']
 default_extension = 0 # tif
 
-# Reading features
-reads_2d = True
-reads_1d = False
-reads_3d = True
-reads_xd = False
+
 # Writing features
-writes_2d = True
-writes_1d = False
-writes_3d = True
-writes_xd = False
+writes = [(2,0), (2,1)]
 # ----------------------
 
 

@@ -23,65 +23,34 @@ from scipy.misc import imread, imsave
 
 # Plugin characteristics
 # ----------------------
-format_name = 'image'
+format_name = 'Image'
 description = 'Import/Export standard image formats using PIL or freeimage'
 full_suport = False
 file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg', 
                    'msp', 'pcx', 'ppm', "pbm", "pgm", 'xbm', 'spi',]
 default_extension = 0 # png
 
-# Reading features
-reads_2d = True
-reads_1d = False
-reads_3d = True
-reads_xd = False
+
 # Writing features
-writes_2d = True
-writes_1d = False
-writes_3d = False
-writes_xd = False
+writes = [(2,0),]
 # ----------------------
 
 
-def rescale(data, bits):
-    # First check if rescaling makes sense
-    dtn = data.dtype.name
-    if 'int' in dtn:
-        if bits == 8 and ('16' not in dtn or '32' not in dtn):
-            return data
-        elif bits == 16 and '32' not in dtn:
-            return data
-    data = data - data.min()
-    data = data / data.max()
-    if bits == 8:
-        data = 255 * data
-        data = data.astype(np.uint8)
-    elif bits == 16:
-        data = 65535 * data
-        data = data.astype(np.uint16)
-    return data
+
         
 # TODO Extend it to support SI
-def file_writer(filename, signal, _rescale=True, file_format='png', **kwds):
+def file_writer(filename, signal, file_format='png', **kwds):
     '''Writes data to any format supported by PIL
         
         Parameters
         ----------
         filename: str
         signal: a Signal instance
-        rescale: bool
-            Rescales the data to use the full dynamic range available in the 
-            chosen encoding. Note that this operation (obviously) affects the 
-            scale of the data what might not always be a good idea
         file_format : str
             The fileformat defined by its extension that is any one supported by 
             PIL.  
     '''
-                
-    if _rescale is True:
-        dc = rescale(dc, bits)
-
-    imsave(filename, dc.astype('uint%s' % bits))
+    imsave(filename, signal.data)
     
 def file_reader(filename, **kwds):
     '''Read data from any format supported by PIL.

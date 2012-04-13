@@ -33,16 +33,9 @@ full_suport = False
 # Recognised file extension
 file_extensions = ['hdf', 'h4', 'hdf4', 'h5', 'hdf5', 'he4', 'he5']
 default_extension = 4
-# Reading capabilities
-reads_2d = True
-reads_1d = True
-reads_3d = True
-reads_xd = True
+
 # Writing capabilities
-writes_2d = True
-writes_1d = True
-writes_3d = True
-writes_xd = True
+writes = True
 
 # -----------------------
 # File format description

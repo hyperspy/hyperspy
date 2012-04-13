@@ -204,16 +204,9 @@ full_suport = False
 # Recognised file extension
 file_extensions = ('dm3', 'DM3')
 default_extension = 0
-# Reading features
-reads_2d = True
-reads_1d = True
-reads_3d = True
-reads_xd = False
+
 # Writing features
-writes_2d = False
-writes_1d = False
-writes_3d = False
-writes_xd = False
+writes = False
 # ----------------------
 
 ## used in crawl_dm3 ##

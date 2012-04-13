@@ -37,16 +37,7 @@ full_suport = False
 file_extensions = ('msa', 'ems', 'mas', 'emsa', 'EMS', 'MAS', 'EMSA', 'MSA')
 default_extension = 0
 
-# Reading features
-reads_2d = False
-reads_1d = True
-reads_3d = False
-reads_xd = False
-# Writing features
-writes_2d = False
-writes_1d = True
-writes_3d = False
-writes_xd = False
+writes = [(1,0),]
 # ----------------------
 
 # For a description of the EMSA/MSA format, incluiding the meaning of the 

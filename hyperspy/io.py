@@ -26,7 +26,8 @@ import hyperspy.defaults_parser
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
     ripple, tiff)
 from hyperspy.gui.tools import Load
-from hyperspy.misc.utils import ensure_directory, DictionaryBrowser
+from hyperspy.misc.utils import (ensure_directory, DictionaryBrowser, 
+    strlist2enumeration)
 
 
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff]
@@ -59,24 +60,10 @@ try:
 except ImportError:
     messages.information('The Image (PIL) IO features are not available')
 
-write_1d_exts, write_2d_exts, write_3d_exts, write_xd_exts = [], [], [], []
 default_write_ext = set()
 for plugin in io_plugins:
-
-    if plugin.writes_1d is True:
-        write_1d_exts.extend(plugin.file_extensions)
-        default_write_ext.add(
-            plugin.file_extensions[plugin.default_extension])
-    if plugin.writes_2d is True:
-        write_2d_exts.extend(plugin.file_extensions)
-        default_write_ext.add(
-            plugin.file_extensions[plugin.default_extension])
-    if plugin.writes_3d is True:
-        write_3d_exts.extend(plugin.file_extensions)
-        default_write_ext.add(
-            plugin.file_extensions[plugin.default_extension])
-    if plugin.writes_xd is True:
-        write_xd_exts.extend(plugin.file_extensions)
+    if plugin.writes:
+        
         default_write_ext.add(
             plugin.file_extensions[plugin.default_extension])
 
@@ -232,7 +219,7 @@ def load_single_file(filename, record_by=None, output_level=2, **kwds):
     extension = os.path.splitext(filename)[1][1:]
 
     i = 0
-    while extension not in io_plugins[i].file_extensions and \
+    while extension.lower() not in io_plugins[i].file_extensions and \
         i < len(io_plugins) - 1:
         i += 1
     if i == len(io_plugins):
@@ -289,23 +276,39 @@ def load_with_reader(filename, reader, record_by = None, signal_type = None,
         messages.information('%s correctly loaded' % filename)
     return objects
 
-
 def save(filename, signal, **kwds):
     extension = os.path.splitext(filename)[1][1:]
-    i = 0
     if extension == '':
         extension = \
             hyperspy.defaults_parser.preferences.General.default_file_format
         filename = filename + '.' + \
             hyperspy.defaults_parser.preferences.General.default_file_format
-    while extension not in io_plugins[i].file_extensions and \
-        i < len(io_plugins) - 1:
-        i += 1
-    if i == len(io_plugins):
-        messages.warning_exit('File type not supported')
+    writer = None
+    for plugin in io_plugins:
+        if extension.lower() in plugin.file_extensions:
+            writer = plugin
+            break
+
+    if writer is None:
+        raise ValueError('.%s does not correspond ' % extension + 
+        'of any supported format. Supported file extensions are: %s ' % 
+                    strlist2enumeration(default_write_ext))
     else:
-        writer = io_plugins[i]
         # Check if the writer can write
+        sd = signal.axes_manager.signal_dimension
+        nd = signal.axes_manager.navigation_dimension
+        if writer.writes is False:
+                raise ValueError('Writing to this format is not '
+                'supported, supported file extensions are: %s ' % 
+                    strlist2enumeration(default_write_ext))
+        if writer.writes is not True and (sd, nd) not in writer.writes:
+            yes_we_can = [plugin.format_name for plugin in io_plugins 
+                if plugin.writes is True or
+                plugin.writes is not False and 
+                (sd, nd) in plugin.writes]
+            raise ValueError('This file format cannot write this data. '
+            'The following formats can: %s' % 
+            strlist2enumeration(yes_we_can))
         ensure_directory(filename)
         writer.file_writer(filename, signal, **kwds)
         print('The %s file was created' % filename)

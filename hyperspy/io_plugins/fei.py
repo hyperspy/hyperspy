@@ -39,16 +39,9 @@ full_suport = False
 # Recognised file extension
 file_extensions = ser_extensions + emi_extensions
 default_extension = 0
-# Reading capabilities
-reads_2d = True
-reads_1d = True
-reads_3d = True
-reads_xd = False
+
 # Writing capabilities
-writes_2d = False
-writes_1d = False
-writes_3d = False
-writes_xd = False
+writes = False
 # ----------------------
 
 data_types = {

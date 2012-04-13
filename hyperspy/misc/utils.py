@@ -1488,3 +1488,14 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
     # return only the part of the array that contains peaks
     # (not the whole maxpeakn x 3 array)
     return P[:peak,:]
+    
+def strlist2enumeration(lst):
+    lst = tuple(lst)
+    if not lst:
+        return ''
+    elif len(lst) == 1:
+        return lst[0]
+    elif len(lst) == 2:
+        return "%s and %s" % lst
+    else:
+        return "%s, "*(len(lst) - 2) % lst[:-2] + "%s and %s" % lst[-2:]

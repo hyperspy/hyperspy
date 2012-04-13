@@ -33,16 +33,9 @@ full_suport = False
 # Recognised file extension
 file_extensions = ['mrc', 'MRC', 'ALI', 'ali']
 default_extension = 0
-# Reading capabilities
-reads_2d = True
-reads_1d = False
-reads_3d = True
-reads_xd = False
+
 # Writing capabilities
-writes_2d = False
-writes_1d = False
-writes_3d = False
-writes_xd = False
+writes = False
 
 def get_std_dtype_list(endianess = '<'):
     end = endianess

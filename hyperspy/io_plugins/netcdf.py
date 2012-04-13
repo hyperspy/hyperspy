@@ -45,16 +45,10 @@ full_suport = True
 file_extensions = ('nc', 'NC')
 default_extension = 0
 
-# Reading features
-reads_2d = True
-reads_1d = True
-reads_3d = True
-reads_xd = False
+
 # Writing features
-writes_2d = False
-writes_1d = False
-writes_3d = False
-writes_xd = False
+writes = False
+
 # ----------------------
 
 
