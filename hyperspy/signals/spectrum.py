@@ -43,6 +43,7 @@ from hyperspy.misc.utils import one_dim_findpeaks
 class Spectrum(Signal):
     """
     """
+    _default_record_by = 'spectrum'
     def __init__(self, *args, **kwargs):
         Signal.__init__(self, *args, **kwargs)
         self.axes_manager.set_view('spectrum')

@@ -47,6 +47,7 @@ class Signal(t.HasTraits, MVA):
     original_parameters = t.Instance(DictionaryBrowser)
     mapped_parameters = t.Instance(DictionaryBrowser)
     physical_property = t.Str()
+    _default_record_by = 'image'
 
     def __init__(self, file_data_dict=None, *args, **kw):
         """All data interaction is made through this class or its subclasses
@@ -62,7 +63,7 @@ class Signal(t.HasTraits, MVA):
         self.original_parameters = DictionaryBrowser()
         self.learning_results=LearningResults()
         self.peak_learning_results=LearningResults()
-        if type(file_data_dict).__name__ == "dict":
+        if file_data_dict is not None:
             self.load_dictionary(file_data_dict)
         self._plot = None
         self._shape_before_unfolding = None
@@ -139,6 +140,8 @@ class Signal(t.HasTraits, MVA):
             # "Synthetic" signals do not have an original filename
             else:
                 self.mapped_parameters.title = ''
+        if not hasattr(self.mapped_parameters,'record_by'):
+            self.mapped_parameters.record_by = self._default_record_by
         self.squeeze()
                 
     def squeeze(self):

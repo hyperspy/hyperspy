@@ -90,7 +90,7 @@ def file_reader(filename, record_by, mode = 'r', driver = 'core',
     else:
         # Eventually there will be the possibility of loading the
         # datasets of any hdf5 file
-        pass
+        raise IOError('This is not a Hyperspy HDF5')
     f.close()
     return exp_dict_list
 
@@ -236,6 +236,7 @@ def write_signal(signal,group, compression='gzip'):
 def file_writer(filename, signal, compression = 'gzip', *args, **kwds):
     f = h5py.File(filename, mode = 'w')
     exps = f.create_group('Experiments')
-    expg = exps.create_group(signal.mapped_parameters.title)
+    group_name = signal.mapped_parameters.title if signal.mapped_parameters.title else 'unnamed'
+    expg = exps.create_group(group_name)
     write_signal(signal,expg, compression = compression)
     f.close()
