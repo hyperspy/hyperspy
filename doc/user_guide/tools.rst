@@ -1,4 +1,3 @@
-.. _decomposition:
 
 Tools
 *****

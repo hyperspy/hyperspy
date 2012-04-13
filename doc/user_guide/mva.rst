@@ -90,7 +90,7 @@ Scree plot
 
 When using PCA it is often useful to estimate the dimensionality of the data
 by plotting the explained variance against the component index in a
-logarithmic y-scale. This plot is sometimes called scree-plot and it drops
+logarithmic y-scale. This plot is sometimes called scree-plot and it should drop
 quickly, eventually becoming a slowly descending line. The point at which it
 becomes linear (often referred to as an elbow) is generally judged to be a good
 estimation of the dimensionality of the data.

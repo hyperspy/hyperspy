@@ -66,11 +66,21 @@ To add a component first we have to create an instance of the component. Once th
     In [15]: gaussian2 = components.Gaussian()
     In [16]: gaussian3 = components.Gaussian()
     In [17]: # We could use the append method two times to add the
-    In [18]: # two lorentzians, but when adding multiple components it is handier to used
+    In [18]: # two gaussians, but when adding multiple components it is handier to used
     In [19]: # the extend method
     In [20]: m.extend((gaussian2, gaussian3))
     In [21]: # Let's print the components    
+    In [22]: m
     Out[2]: [Normalized Gaussian, Normalized Gaussian, Normalized Gaussian]
+    In [23]: # We can customise the name of the components
+    In [24]: gaussian.name = 'Carbon'
+    In [25]: gaussian2.name = 'Hydrogen'
+    In [26]: gaussian3.name = 'Nitrogen'
+    In [27]: # Let's print the components of the model once more
+    Out[3]:
+    [<Carbon (Gaussian component)>,
+     <Hydrogen (Gaussian component)>,
+     <Nitrogen (Gaussian component)>]
     
     
 Fitting the model to the data
@@ -80,13 +90,13 @@ To fit the model to the data at the current coordinates use :py:meth:`~.optimize
 
 .. code-block:: ipython
     
-    In [22]: # Let's fit the data at the current coordinates
-    In [23]: m.fit()
-    In [24]: # And now let's visualise the results
-    In [25]: m.plot()
-    In [26]: # Because we like what we see, we will fit the model to the
-    In [28]: # data in all the coordinates
-    In [29]: m.multifit()
+    In [28]: # Let's fit the data at the current coordinates
+    In [29]: m.fit()
+    In [30]: # And now let's visualise the results
+    In [31]: m.plot()
+    In [32]: # Because we like what we see, we will fit the model to the
+    In [33]: # data in all the coordinates
+    In [34]: m.multifit()
     
 Getting and setting parameters value and attributes
 --------------------------------------------------------------------
@@ -105,18 +115,18 @@ The following example clarifies these concepts:
 
 .. code-block:: ipython
     
-    In [30]: # Print the parameters of the gaussian components
-    In [31]: gaussian.parameters
-    Out[3]: (A, sigma, centre)
-    In [30]: # Fix the centre
-    In [31]: gaussian.centre.free = False
-    In [30]: # Print the free parameters
-    In [31]: gaussian.parameters
-    Out[3]: set([A, sigma])
-    In [31]: gaussian.parameters
-    Out[3]: set([A, sigma])
-    In [32]: # Print the current value of all the free parameters
-    In [33]: m.print_current_values()
+    In [35]: # Print the parameters of the gaussian components
+    In [36]: gaussian.parameters
+    Out[4]: (A, sigma, centre)
+    In [37]: # Fix the centre
+    In [38]: gaussian.centre.free = False
+    In [39]: # Print the free parameters
+    In [40]: gaussian.parameters
+    Out[41]: set([A, sigma])
+    In [42]: gaussian.parameters
+    Out[5]: set([A, sigma])
+    In [43]: # Print the current value of all the free parameters
+    In [44]: m.print_current_values()
     Components	Parameter	Value
     Normalized Gaussian
 		    A	1.000000
@@ -129,12 +139,12 @@ The following example clarifies these concepts:
 		    A	1.000000
 		    sigma	1.000000
 		    centre	0.000000
-    In [34]: # Couple the A parameter of gaussian2 to the A parameter of gaussian 3
-    In [35]: gaussian2.A.twin = gaussian3.A
-    In [36]: # Set the gaussian2 centre value to 10
-    In [37]: gaussian2.centre.value = 10
-    In [38]: # Print the current value of all the free parameters
-    In [39]: m.print_current_values()
+    In [45]: # Couple the A parameter of gaussian2 to the A parameter of gaussian 3
+    In [46]: gaussian2.A.twin = gaussian3.A
+    In [47]: # Set the gaussian2 centre value to 10
+    In [48]: gaussian2.centre.value = 10
+    In [50]: # Print the current value of all the free parameters
+    In [51]: m.print_current_values()
     Components	Parameter	Value
     Normalized Gaussian
 		    A	1.000000

@@ -69,12 +69,16 @@ Saving data to files
 ====================
 
 To save data to a file use the :py:meth:`~.signal.Signal.save` method of the :py:class:`~.signal.Signal` class or its subclasses. The first argument is the filename and the format is defined by the filename extension. If the filename does not contain the extension the default format (:ref:`hdf5-format`) is used. For example, if the :py:const:`s` variable contains the :py:class:`~.signal.Signal` that you want to write to a file, the following will write the data to a file called :file:`spectrum.hdf5` in the default :ref:`hdf5-format` format::
-    
-    s.save('spectrum')
-    
-If instead you want to save in the :ref:`ripple-format` write instead::
 
-    s.save('spectrum.rpl')
+.. code-block:: python
+
+    >>> s.save('spectrum')
+    
+If instead you want to save in the :ref:`ripple-format` write instead:
+
+.. code-block:: python
+
+    >>> s.save('spectrum.rpl')
 
 Some formats take extra arguments. See the relevant subsection of :ref:`supported-formats` for more information.
 
@@ -157,11 +161,19 @@ This `open standard format <http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/
 
 Extra arguments
 ^^^^^^^^^^^^^^^
-For the MSA format the msa_format argument is used to specify whether the energy axis should also be saved with the data.  The default, 'Y' omits the energy axis in the file.  The alternative, 'XY', saves a second column with the calibrated energy data. Also it  is possible to personalise the separator with the `separator` keyword. 
+For the MSA format the msa_format argument is used to specify whether the energy axis should also be saved with the data.  The default, 'Y' omits the energy axis in the file.  The alternative, 'XY', saves a second column with the calibrated energy data. It  is possible to personalise the separator with the `separator` keyword. 
 
 .. Warning::
 
     However, if a different separator is chosen the resulting file will not comply with the MSA/EMSA standard and Hyperspy and other software may not be able to read it.
+    
+The default encoding is `latin-1`. It is possible to set a different encoding using the `encoding` argument, e.g.:
+
+.. code-block:: python
+
+    >>> s.save('file.msa', encoding = 'utf8')
+
+
 
 .. _ripple-format:
 
@@ -170,16 +182,33 @@ Ripple
 
 This `open standard format <http://www.nist.gov/lispix/doc/image-file-formats/raw-file-format.htm>`_ is widely used to exchange hyperspectra data. However, it only support data of up to three dimensions. It can be used to exchange data with Bruker and Lispix. Installing the :ref:`import-rpl` it is very useful to export data to Gatan Digital Micrograph.
 
+The default encoding is latin-1. It is possible to set a different encoding using the encoding argument, e.g.:
+
+.. code-block:: python
+
+    >>> s.save('file.rpl', encoding = 'utf8')
+
 .. _image-format:
 
 Image
 -----
 
-Hyperspy is able to read and write data too all the image formats supported by `the Python Image Library <http://www.pythonware.com/products/pil/>`_ (PIL). 
+Hyperspy is able to read and write data too all the image formats supported by `the Python Image Library <http://www.pythonware.com/products/pil/>`_ (PIL). This includes png, pdf, gif etc.
 
-It is important to note that all the image formats only support 8-bit files, what may incur in dynamic range loss in most cases.
+It is important to note that all the image formats only support 8-bit files, what may incur in dynamic range loss in most cases. It is therefore highly discouraged to use any image format (with the exception of :ref:`tiff-format` that uses another library) to store data.
 
-It is possible (and strongly reccommend if saving to an image format is required) to read and write 16-bit images in the TIFF format by installing `mahotas <http://pypi.python.org/pypi/mahotas>`_ and the `freeimage library <http://freeimage.sourceforge.net/>`_.
+.. _tiff-format:
+    
+TIFF
+----
+
+Since version 4.1 Hyperspy can read and write 2D and 3D TIFF files using using Christoph Gohlke's tifffile library, in particular it supports can be reading and writing TIFF, BigTIFF, OME-TIFF, STK, LSM, NIH,
+and FluoView files,mainly uncompressed and losslessly compressed 2**(0 to 6) bit integer,16, 32 and 64-bit float, grayscale and RGB(A) images, which are commonly
+used in bio-scientific imaging. See `the library webpage <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_ for more details.
+
+Currently Hyperspy cannot read the TIFF tags.
+
+
  
 .. _dm3-format:
 
