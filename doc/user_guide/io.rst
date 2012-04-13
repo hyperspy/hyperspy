@@ -32,18 +32,7 @@ To print the content of the parameters simply:
 .. code-block:: python
 
     >>> s.mapped_parameters
-    ├── TEM
-    │   ├── EELS
-    │   │   └── collection_angle = 22.0
-    │   ├── convergence_angle = 7.0
-    │   └── beam_energy = 100000.0
-    ├── title = BN
-    ├── beam_energy = 100000.0
-    ├── Sample
-    │   └── elements = ['C', 'B', 'N']
-    ├── record_by = spectrum
-    ├── original_filename = BN.msa
-    └── signal_type = EELS
+
 
 The :py:attr:`~.signal.Signal.original_parameters` and :py:attr:`~.signal.Signal.mapped_parameters` can be exported to a text files using the :py:meth:`~.misc.utils.DictionaryBrowser.export` method, e.g.:
 

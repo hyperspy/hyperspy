@@ -74,9 +74,6 @@ info = u"""
     H y p e r s p y
     Version %s
     
-    Copyright (C) 2007-2010 Francisco de la Peña
-    Copyright (C) 2011-2012 The Hyperspy development team
-    
-    http://www.hyperspy.org
+    hyperspy home: http://www.hyperspy.org
     
     """ % version.replace('_', ' ')
