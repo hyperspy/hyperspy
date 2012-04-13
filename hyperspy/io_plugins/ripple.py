@@ -187,7 +187,7 @@ def read_raw(rpl_info, fp):
         data = data.reshape(size)
     return data
 
-def file_reader(filename, rpl_info=None, encoding="utf8", 
+def file_reader(filename, rpl_info=None, encoding="latin-1", 
                 *args,**kwds):
     """Parses a Lispix (http://www.nist.gov/lispix/) ripple (.rpl) file
     and reads the data from the corresponding raw (.raw) file;
@@ -398,7 +398,7 @@ def file_reader(filename, rpl_info=None, encoding="utf8",
         }
     return [dictionary, ]
 
-def file_writer(filename, signal, encoding='utf8', *args, **kwds):
+def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
 
     # Set the optional keys to None
     ev_per_chan = None
@@ -486,7 +486,7 @@ def file_writer(filename, signal, encoding='utf8', *args, **kwds):
 
 def write_rpl(filename, keys_dictionary, encoding = 'ascii'):
     f = codecs.open(filename, 'w', encoding = encoding,
-                    errors = 'replace')
+                    errors = 'ignore')
     f.write(';File created by Hyperspy version %s\n' % Release.version)
     f.write('key\tvalue\n')
     # Even if it is not necessary, we sort the keywords when writing

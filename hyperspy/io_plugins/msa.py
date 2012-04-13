@@ -105,7 +105,7 @@ keywords = {
                 'THCWIND' : {'dtype' : float, 'mapped_to': None},
                 'EDSDET'  : {'dtype' : unicode, 'mapped_to': None},	
             }
-def file_reader(filename, encoding = 'utf8', **kwds):
+def file_reader(filename, encoding = 'latin-1', **kwds):
     parameters = {}
     mapped = {}
     spectrum_file = codecs.open(filename, encoding = encoding,
@@ -173,7 +173,7 @@ def file_reader(filename, encoding = 'utf8', **kwds):
     loc = locale.getlocale(locale.LC_TIME)
     
     if os_name == 'posix':
-        locale.setlocale(locale.LC_TIME, ('en_US', 'UTF8'))
+        locale.setlocale(locale.LC_TIME, ('en_US', 'latin-1'))
     elif os_name == 'windows':
         locale.setlocale(locale.LC_TIME, 'english')
     try:
@@ -218,7 +218,7 @@ def file_reader(filename, encoding = 'utf8', **kwds):
     return [dictionary,]
 
 def file_writer(filename, signal, format = None, separator = ', ',
-                encoding = 'utf8'):
+                encoding = 'latin-1'):
     keywords = {}
     FORMAT = "EMSA/MAS Spectral Data File"
     if hasattr(signal.original_parameters, 'FORMAT') and \
@@ -235,7 +235,7 @@ def file_writer(filename, signal, format = None, separator = ', ',
         if hasattr(signal.mapped_parameters, "date"):
             loc = locale.getlocale(locale.LC_TIME)
             if os_name == 'posix':
-                locale.setlocale(locale.LC_TIME, ('en_US', 'UTF8'))
+                locale.setlocale(locale.LC_TIME, ('en_US', 'latin-1'))
             elif os_name == 'windows':
                 locale.setlocale(locale.LC_TIME, 'english')
             keywords['DATE'] = signal.mapped_parameters.data.strftime("%d-%b-%Y")
@@ -290,7 +290,7 @@ def file_writer(filename, signal, format = None, separator = ', ',
             keywords[key] = value
 
     f = codecs.open(filename, 'w', encoding = encoding,
-                    errors = 'replace')   
+                    errors = 'ignore')   
     # Remove the following keys from keywords if they are in 
     # (although they shouldn't)
     for key in ['SPECTRUM', 'ENDOFDATA']:
