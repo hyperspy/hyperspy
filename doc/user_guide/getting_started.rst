@@ -37,9 +37,6 @@ In any case Hyperspy should welcome you with a message similar to:
     H y p e r s p y
     Version 0.4.1
     
-    Copyright (C) 2007-2010 Francisco de la Peña
-    Copyright (C) 2011-2012 The Hyperspy development team
-    
     http://www.hyperspy.org
 
 

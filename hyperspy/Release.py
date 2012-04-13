@@ -74,6 +74,6 @@ info = u"""
     H y p e r s p y
     Version %s
     
-    hyperspy home: http://www.hyperspy.org
+    http://www.hyperspy.org
     
     """ % version.replace('_', ' ')
