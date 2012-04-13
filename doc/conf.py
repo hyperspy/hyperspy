@@ -35,7 +35,8 @@ extensions = [
                 'matplotlib.sphinxext.only_directives',
                 'sphinx.ext.intersphinx',
                 'sphinx.ext.pngmath',
-                'sphinx.ext.autosummary'] #, 'rst2pdf.pdfbuilder']
+                'sphinx.ext.autosummary',
+                'ipython_console_highlighting'] #, 'rst2pdf.pdfbuilder']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
