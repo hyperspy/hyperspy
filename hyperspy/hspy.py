@@ -30,6 +30,8 @@ from hyperspy.io import load
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc import utils
 from hyperspy import tests
+from hyperspy.signals.spectrum import Spectrum
+from hyperspy.signals.image import Image
 
 
 
