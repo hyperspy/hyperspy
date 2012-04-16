@@ -433,12 +433,9 @@ class EELSSpectrum(Spectrum):
         """Performs fourier-log deconvolution of the full SI.
         
         The zero-loss can be specified by defining the parameter 
-        self.zero_loss that must be an instance of Spectrum. Otherwise the 
-        zero loss will be extracted by the reflected tail method
+        self.zero_loss that must be an instance of Spectrum. 
         """
         axis = self.axes_manager._slicing_axes[0]
-        if self.zero_loss is None:
-            self.extract_zero_loss()
         z = np.fft.fft(self.zero_loss.data, axis = axis.index_in_array)
         j = np.fft.fft(self.data, axis = axis.index_in_array)
         j1 = z*np.log(j/z)
