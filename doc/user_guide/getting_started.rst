@@ -54,10 +54,7 @@ After that, Hyperspy should welcome you with a message similar to:
 .. code-block:: ipython
     
     H y p e r s p y
-    Version 0.4.0
-    
-    Copyright (C) 2007-2010 Francisco de la Peña
-    Copyright (C) 2011-2012 The Hyperspy development team
+    Version 0.4.1
     
     http://www.hyperspy.org
 
@@ -77,7 +74,7 @@ To load from a supported file format (see :ref:`supported-formats`) simply type 
 
 .. code-block:: python
 
-    s = load("filename")
+    >>> s = load("filename")
 
 .. HINT::
 
@@ -87,8 +84,8 @@ If no argument is passed to the load function, a window will be raised that allo
 
 .. code-block:: python
 
-    # This raises the load user interface
-    s = load()
+    >>> # This raises the load user interface
+    >>> s = load()
 
 It is also possible to load multiple files at once or even stack multiple files. For more details read :ref:`loading_files`
 
@@ -103,14 +100,14 @@ the extension of the filename.
 
 .. code-block:: python
 
-    # load the data
-    d = load("example.tif")
-    # save the data as a tiff
-    d.save("example_processed.tif")
-    # save the data as a png
-    d.save("example_processed.png")
-    # save the data as an hdf5 file
-    d.save("example_processed.hdf5")
+    >>> # load the data
+    >>> d = load("example.tif")
+    >>> # save the data as a tiff
+    >>> d.save("example_processed.tif")
+    >>> # save the data as a png
+    >>> d.save("example_processed.png")
+    >>> # save the data as an hdf5 file
+    >>> d.save("example_processed.hdf5")
 
 Some file formats are much better at maintaining the information about
 how you processed your data.  The preferred format in Hyperspy is hdf5,
@@ -129,7 +126,7 @@ The behaviour of Hyperspy can be customised using the :py:class:`~.defaults_pars
 
 .. code-block:: python
 
-    preferences.gui()
+    >>> preferences.gui()
     
 This command should raise the :ref:`preferences_image`
 
@@ -149,7 +146,7 @@ The documentation can be accessed by adding a question mark to the name of a fun
 
 .. code-block:: python
     
-    load?
+    >>> load?
 
 This syntax is one of the many features of `IPython <http://ipython.scipy.org/moin/>`_ that is the interactive python shell that Hyperspy uses under the hood.
 
@@ -171,8 +168,8 @@ The object returned by :py:func:`~.io.load` is a :py:class:`~.signal.Signal` and
 
 .. code-block:: python
     
-    s = load('YourDataFilenameHere')
-    s.plot()
+    >>> s = load('YourDataFilenameHere')
+    >>> s.plot()
 
 if the object is single spectrum or an image one window will appear when calling 
 the plot method.

@@ -24,6 +24,15 @@ the methods described in this section.
 
 The behaviour of some Machine Learning functionality can be customised :ref:`customised <configuring-hyperspy-label>` in the Machine Learning section Preferences.
 
+.. _decomposition-nomenclature:
+
+Nomenclature
+============
+
+Hyperspy performs the decomposition of a dataset into two datasets:
+one with the dimension of the signal space which we will call `factors` and the other with 
+the dimension of the navigation space which we will call `loadings`.
+The same nomenclature applies to the result of BSS.
 
    
    
@@ -39,23 +48,13 @@ principal component analysis (PCA). To perform PCA on your data set,
 run the :py:meth:`~.learn.mva.MVA.decomposition` method:
 
 .. code-block:: python
-    # Note that the s variable must contain a Signal class of any of its
-    # subclasses which most likely has been previously loaded with the 
-    # load function, e.g. s = load('my_file.hdf5')
-    s.decomposition()
+    >>> # Note that the s variable must contain a Signal class of any of its
+    >>> # subclasses which most likely has been previously loaded with the 
+    >>> # load function, e.g. s = load('my_file.hdf5')
+    >>> s.decomposition()
 
 
 The default algorithm is :py:const:`SVD`, which performs PCA using singular value decomposition. This method has many options. For more details read method documentation.
-
-
-.. _decomposition-nomenclature:
-
-Nomenclature
-------------
-Hyperspy performs the decomposition of a dataset into two datasets:
-one with the dimension of the signal space which we will call `factors` and the other with 
-the dimension of the navigation space which we will call `loadings`.
-The same nomenclature applies to the result of BSS.
 
 
 Poissonian noise
@@ -70,11 +69,10 @@ To perform Poissonian noise normalisation:
 
 .. code-block:: python
 
-    # The long way:
-    s.decomposition(normalize_poissonian_noise = True)
-    
-    # Because it is the first argument we cold have simple written:
-    s.decomposition(True)
+    >>> # The long way:
+    >>> s.decomposition(normalize_poissonian_noise = True
+    >>> # Because it is the first argument we cold have simple written:
+    >>> s.decomposition(True)
     
 For more details about the scaling procedure you can read the 
 `following research article <http://onlinelibrary.wiley.com/doi/10.1002/sia.1657/abstract>`_
@@ -99,7 +97,7 @@ To obtain a scree plot, run the :py:meth:`~.learn.mva.MVA.plot_explained_varianc
 
 .. code-block:: python
 
-    s.plot_explained_variance_ratio()
+    >>> s.plot_explained_variance_ratio()
     
 Data denoising
 --------------
@@ -112,7 +110,7 @@ To perform this operation with Hyperspy running the :py:meth:`~.learn.mva.MVA.ge
 
 .. code-block:: python
 
-    sc = s.get_decomposition_model(components)
+    >>> sc = s.get_decomposition_model(components)
 
 .. NOTE:: 
     The components argument can be one of several things (None, int,
@@ -140,7 +138,7 @@ the reconstructed object, e.g.:
 
 .. code-block:: python
 
-    sc.plot_residual()
+    >>> sc.plot_residual()
 
 
 Blind Source Separation
@@ -206,11 +204,11 @@ to a file you can use the :py:meth:`~.learn.mva.LearningResults.save` method, e.
 
 .. code-block:: python
     
-    # To save the result of the analysis
-    s.learning_results.save('my_results')
+    >>> # To save the result of the analysis
+    >>> s.learning_results.save('my_results')
     
-    # To load back the results
-    s.learning_results.load('my_results.npz')
+    >>> # To load back the results
+    >>> s.learning_results.load('my_results.npz')
     
     
 Exporting

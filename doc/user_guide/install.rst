@@ -1,22 +1,29 @@
 Installing Hyperspy
 ===================
 
-Most users will like to :ref:`install-binary`. At the moment we provide binary installers for Debian/Ubuntu and Windows. If we do not distribute a binary for your platform or installing from binary is not for you it is also very easy to :ref:`install-source` or to    :ref:`install-dev`.
+The easiest way to install Hyperspy in all the platforms but Ubuntu Linux is by installing Python (see :ref:`install-dependencies`) and then :ref:`install-with-python-installers`. We also provide binary installers for Debian/Ubuntu and Windows. If we do not distribute a binary for your platform or installing from binary is not for you it is also very easy to :ref:`install-source` or to :ref:`install-dev`.
 
+Quick instructions to install Hyperspy in Windows
+-------------------------------------------------
 
-.. _install-binary:
+It follows a recipe to install hyperspy in Windows. For more options and details read the rest of the documentation.
+
+#. Download and install *one of*:
+
+    * `EPD free. <http://www.enthought.com/products/epd_free.php>`_ (if you are not an academic and you do not want to pay for EPD)
+    * `EPD. <http://www.enthought.com/products/http://enthought.com/products/epd.php>`_ This is reccomended over EPD free for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are incluided). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_
+    * `PythonXY <http://code.google.com/p/pythonxy/wiki/Welcome>`_ if for any reason you prefer it to EPD.
+#. Restart the computer (although it might not be necessary)
+#. Open a Console (if you do not know how to do it `read this <http://www.computerhope.com/issues/chdos.htm>`_)
+#. Type: ``easy_install hyperspy``
  
-Install from a binary
----------------------
 
-    We provide  binary distributions for Ubuntu Linux and Windows (`see the Downloads section of the website <http://hyperspy.org/download.html>`_). In Ubuntu the dependencies are installed automatically. In Windows it is necessary to previously install the required libraries, see :ref:`install-dependencies`. To install easily in other platforms see :ref:`install-with-python-installers`
-    
-.. _install-with-python-installers
+.. _install-with-python-installers:
 
-Python installers
------------------
+Install using Python installers
+-------------------------------
 
-Since version 4.1 Hyperspy is listed in the `Python Package Index <http://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded and installed using `setuptools <http://pypi.python.org/pypi/setuptools>`_, <distribute <http://pypi.python.org/pypi/distribute>`_ or (our favourite) `pip <http://pypi.python.org/pypi/pip>`_. However, depending on your Python distribution, you might need to install one of these packages manually. An extra advantage of using the python installers is that they should install the required libraries automatically.
+Since version 4.1 Hyperspy is listed in the `Python Package Index <http://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded and installed using `setuptools <http://pypi.python.org/pypi/setuptools>`_, `distribute <http://pypi.python.org/pypi/distribute>`_ or (our favourite) `pip <http://pypi.python.org/pypi/pip>`_. However, depending on your Python distribution, you might need to install at least one of these packages manually. An extra advantage of using the python installers is that they should install the required libraries automatically.
 
 Install using `pip`:
 
@@ -29,6 +36,13 @@ Install using `distribute` or `setuptools`:
 .. code-block:: bash
 
     $ easy_install hyperspy
+
+.. _install-binary:
+ 
+Install from a binary
+---------------------
+
+We provide  binary distributions for Ubuntu Linux and Windows (`see the Downloads section of the website <http://hyperspy.org/download.html>`_). In Ubuntu the dependencies are installed automatically. In Windows it is necessary to previously install the required libraries, see :ref:`install-dependencies`. To install easily in other platforms see :ref:`install-with-python-installers`
     
 
 .. _install-source:
@@ -92,25 +106,25 @@ You can create binaries for Debian/Ubuntu from the source by running the `releas
 
     For this to work, the following packages must be installed in your system python-stdeb, debhelper, dpkg-dev and python-argparser are required.
     
-Creating windows binaries
-^^^^^^^^^^^^^^^^^^^^^^^^^
-    
-To create a Windows binary from the source run the `release_windows.bat` script in a windows machine.
 
 .. _install-dependencies:
 
 Installing the required libraries
 ---------------------------------
 
-Before installing Hyperspy certain libraries have to be installed in the system. The easiest way to install these packages is by installing the `enthough python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default. Please note that the academic version of EPD is free, `you can get it here. <http://www.enthought.com/products/edudownload.php>`_ . From version 0.4.1 Hyperspy runs under `EPD free <http://www.enthought.com/products/epd_free.php>`_ . However, for full functionality when using EPD free h5py, mdp and scikit-learn must be installed.
+.. Warning::
 
+    Read at least up to the second paragraph of this instruction before taking any action
+    
+    
+Before installing Hyperspy Python and the following libraries be installed in the system: numpy, scipy, matplotlib, ipython, traits and traitsui. For full functionality it is reccomended to also install h5py, mdp and scikit-learn.
+
+In Windows and Mac the easiest way to install these packages is by installing the `enthough python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default. Please note that the academic version of EPD is free, `you can get it here. <http://www.enthought.com/products/epd_free.php>`_ . From version 0.4.1 Hyperspy runs under `EPD free <http://www.enthought.com/products/epd_free.php>`_ . For full functionality when using EPD Free h5py, mdp and scikit-learn must be installed. If you :ref:`install-with-python-installers` this libraries will install automatically, otherwise they must be installed manually.
 
 Another option in Windows is to install `pythonxy <http://www.pythonxy.com/>`_.
 
-If you use a Debian/Ubuntu binary to install Hyperspy all the dependencies should install automatically.
+If you use an Ubuntu binary to install Hyperspy all the dependencies should install automatically.
 
-When installing from source the following packages must be installed in the system: 
-numpy, scipy, matplotlib, ipython, traits and traitsui. For full functionality it is reccomended to install h5py, mdp and scikit-learn .
 
 
 

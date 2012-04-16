@@ -65,6 +65,8 @@ It is also possible to load multiple files with a single command without stackin
 
     >>> s = load("file*.hdf5", stack = False)
 
+.. _saving_files:
+
 Saving data to files
 ====================
 
@@ -125,8 +127,8 @@ It is the default format and it is the only one that guarantees that no informat
 
 Note that only HDF5 files written by Hyperspy are supported.
 
-Extra arguments
-^^^^^^^^^^^^^^^
+Extra saving arguments
+^^^^^^^^^^^^^^^^^^^^^^^
 compression: One of None, 'gzip', 'szip', 'lzf'.
 
 'gzip' is the default
@@ -159,8 +161,8 @@ EMSA/MSA
 
 This `open standard format <http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/XEDS/EMMFF/EMMFF.IBM/Emmff.Total>`_ is widely used to exchange single spectrum data, but it does not support multidimensional data. It can be used to exchange single spectrum with Gatan Digital Micrograph.
 
-Extra arguments
-^^^^^^^^^^^^^^^
+Extra saving arguments
+^^^^^^^^^^^^^^^^^^^^^^^
 For the MSA format the msa_format argument is used to specify whether the energy axis should also be saved with the data.  The default, 'Y' omits the energy axis in the file.  The alternative, 'XY', saves a second column with the calibrated energy data. It  is possible to personalise the separator with the `separator` keyword. 
 
 .. Warning::
@@ -180,7 +182,7 @@ The default encoding is `latin-1`. It is possible to set a different encoding us
 Ripple
 ------
 
-This `open standard format <http://www.nist.gov/lispix/doc/image-file-formats/raw-file-format.htm>`_ is widely used to exchange hyperspectra data. However, it only support data of up to three dimensions. It can be used to exchange data with Bruker and Lispix. Installing the :ref:`import-rpl` it is very useful to export data to Gatan Digital Micrograph.
+This `open standard format <http://www.nist.gov/lispix/doc/image-file-formats/raw-file-format.htm>`_ is widely used to exchange hyperspectra data. However, it only support data of up to three dimensions. It can be used to exchange data with Bruker and `Lispix <http://www.nist.gov/lispix/>`. Installing the :ref:`import-rpl` it is very useful to export data to Gatan Digital Micrograph.
 
 The default encoding is latin-1. It is possible to set a different encoding using the encoding argument, e.g.:
 
@@ -195,14 +197,14 @@ Image
 
 Hyperspy is able to read and write data too all the image formats supported by `the Python Image Library <http://www.pythonware.com/products/pil/>`_ (PIL). This includes png, pdf, gif etc.
 
-It is important to note that all the image formats only support 8-bit files, what may incur in dynamic range loss in most cases. It is therefore highly discouraged to use any image format (with the exception of :ref:`tiff-format` that uses another library) to store data.
+It is important to note these image formats only support 8-bit files, what may incur in dynamic range loss in most cases. It is therefore highly discouraged to use any image format (with the exception of :ref:`tiff-format` that uses another library) to store data for analysis purposes.
 
 .. _tiff-format:
     
 TIFF
 ----
 
-Since version 4.1 Hyperspy can read and write 2D and 3D TIFF files using using Christoph Gohlke's tifffile library, in particular it supports can be reading and writing TIFF, BigTIFF, OME-TIFF, STK, LSM, NIH,
+Since version 4.1 Hyperspy can read and write 2D and 3D TIFF files using using Christoph Gohlke's tifffile library. In particular it supports can be reading and writing TIFF, BigTIFF, OME-TIFF, STK, LSM, NIH,
 and FluoView files,mainly uncompressed and losslessly compressed 2**(0 to 6) bit integer,16, 32 and 64-bit float, grayscale and RGB(A) images, which are commonly
 used in bio-scientific imaging. See `the library webpage <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_ for more details.
 
@@ -215,15 +217,17 @@ Currently Hyperspy cannot read the TIFF tags.
 Gatan Digital Micrograph
 ------------------------
 
-Hyperspy only support reading dm3 files and the reading features are not complete (and probably they will never be because it is not an open standard format). That said we know that this is an important feature and if loading a particular dm3 file fails for you, please report an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make us aware of the problem. 
+Hyperspy supports reading dm3 files but the reading features are not complete (and probably they will never be because it is not an open standard format). That said we know that this is an important feature and if loading a particular dm3 file fails for you, please report an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make us aware of the problem. 
 
 .. _fei-format:
 
 FEI TIA ser and emi
 -------------------
 
-Hyperspy only support reading ``ser`` and ``emi`` files and the reading features are not complete (and probably they will never be because it is not an open standard format). That said we know that this is an important feature and if loading a particular ser or emi file fails for you, please report an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make us aware of the problem.
+Hyperspy supports reading ``ser`` and ``emi`` files but the reading features are not complete (and probably they will never be because it is not an open standard format). That said we know that this is an important feature and if loading a particular ser or emi file fails for you, please report an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make us aware of the problem.
 
-In Hyperspy (and unlike in TIA) it is possible to read the data directly from the ``.ser`` files. However, by doing so, the experiment information that is stored in the emi file is lost. Therefore it is reccommend to load using the ``.emi`` file.
+Hyperspy (unlike in TIA) can read data directly from the ``.ser`` files. However, by doing so, the experiment information that is stored in the emi file is lost. Therefore it is reccommend to load using the ``.emi`` file.
+
+When reading an ``.emi`` file if there are several ``.ser`` files associated to it, all of them will be read and returned as a list.
 
 

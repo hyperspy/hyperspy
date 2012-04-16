@@ -61,7 +61,7 @@ To add a component first we have to create an instance of the component. Once th
     In [11]: m.append(gaussian)
     In [12]: # Let's print the components
     In [13]: m
-    Out[2]: [Normalized Gaussian]
+    Out[2]: [<Gaussian component>]
     In [14]: # Create two Lorentzian function components
     In [15]: gaussian2 = components.Gaussian()
     In [16]: gaussian3 = components.Gaussian()
@@ -71,7 +71,7 @@ To add a component first we have to create an instance of the component. Once th
     In [20]: m.extend((gaussian2, gaussian3))
     In [21]: # Let's print the components    
     In [22]: m
-    Out[2]: [Normalized Gaussian, Normalized Gaussian, Normalized Gaussian]
+    Out[2]: [<Gaussian component>, <Gaussian component>, <Gaussian component>]
     In [23]: # We can customise the name of the components
     In [24]: gaussian.name = 'Carbon'
     In [25]: gaussian2.name = 'Hydrogen'
