@@ -84,6 +84,8 @@ class Signal(t.HasTraits, MVA):
         if hasattr(self.mapped_parameters, 'record_by'):
             string += \
             "\n\tData representation: %s" % self.mapped_parameters.record_by
+            string += \
+            "\n\tData type: %s" % self.data.dtype
 
         return string
 
