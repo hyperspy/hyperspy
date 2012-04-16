@@ -38,16 +38,16 @@ def are_we_building4windows():
     for arg in sys.argv:
         if 'wininst' in arg:
             return True
-
 scripts = ['bin/hyperspy',]
-scripts.extend(('bin/win_post_installation.py',
-               'bin/install_hyperspy_here.py',
-               'bin/uninstall_hyperspy_here.py'))
+
 if are_we_building4windows() or os.name in ['nt','dos']:
     # In the Windows command prompt we can't execute Python scripts 
     # without a .py extension. A solution is to create batch files
     # that runs the different scripts.
     # (code adapted from scitools)
+    scripts.extend(('bin/win_post_installation.py',
+                   'bin/install_hyperspy_here.py',
+                   'bin/uninstall_hyperspy_here.py'))
     batch_files = []
     for script in scripts:
         batch_file = os.path.splitext(script)[0] + '.bat'
@@ -76,7 +76,7 @@ setup(
     package_data = 
     {
         'hyperspy': 
-            [
+            [   'bin/*.py',
                 'ipython_profile/*',
                 'data/*.m', 
                 'data/*.csv',
@@ -99,7 +99,7 @@ setup(
     #~ test_suite = 'nose.collector',
     keywords = Release.keywords,
     classifiers = [
-        "Programming Language :: Python :: 2.7"
+        "Programming Language :: Python :: 2.7",
         "Development Status :: 4 - Beta",
         "Environment :: Console",
         "Intended Audience :: Science/Research",

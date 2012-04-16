@@ -14,7 +14,7 @@ Currently the following signal subclasses are available:
 * :py:class:`~.signals.eels.EELSSpectrum`
 * :py:class:`~.signals.spectrum_simulation.SpectrumSimulation`
 
-The data is stores in the :py:attr:`~.signal.Signal.data` attribure, the original parameters in the :py:attr:`~.signal.Signal.original_parameters` attribute, the mapped parameters in the :py:attr:`~.signal.Signal.mapped_parameters` attribute and the axes information (incluiding calibration) can be accessed (and modified) in the :py:attr:`~.signal.Signal.axes_manager` attribute. All the methods of the class provides functionality.
+The data is stores in the :py:attr:`~.signal.Signal.data` attribute, the original parameters in the :py:attr:`~.signal.Signal.original_parameters` attribute, the mapped parameters in the :py:attr:`~.signal.Signal.mapped_parameters` attribute and the axes information (incluiding calibration) can be accessed (and modified) in the :py:attr:`~.signal.Signal.axes_manager` attribute. All the methods of the class provides functionality.
 
 
 Transforming between signal subclasses
@@ -94,7 +94,7 @@ Sum or average over one axis
 Changing the data type
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Even if the original data was recorded with a limited dynamic range, it is often desirable to perform the analysis operations with a higher precision. Conversely, storing in a shorter data type can decrease the file size. The :py:meth:`~.signal.Signal.change_dtype` changes the data type in place, e.g.:
+Even if the original data is recorded with a limited dynamic range, it is often desirable to perform the analysis operations with a higher precision. Conversely, storing in a shorter data type can decrease the file size. The :py:meth:`~.signal.Signal.change_dtype` changes the data type in place, e.g.:
 
 .. code-block:: python
 
@@ -137,7 +137,7 @@ The :py:meth:`~.signals.spectrum.Spectrum.remove_background` provides a user int
 
 Calibration
 ^^^^^^^^^^^
-The :py:meth:`~.signals.spectrum.Spectrum.remove_background` provides a user interface to calibrate the spectral axis.
+The :py:meth:`~.signals.spectrum.Spectrum.calibrate` provides a user interface to calibrate the spectral axis.
 
 Aligning
 ^^^^^^^^
