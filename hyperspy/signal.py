@@ -37,16 +37,12 @@ from hyperspy.misc.utils import ensure_directory
 
 from matplotlib import pyplot as plt
 
-# MCS - 18/10/11
-# These are here for exporting file formats.  They need a better place.
-
 
 class Signal(t.HasTraits, MVA):
     data = t.Any()
     axes_manager = t.Instance(AxesManager)
     original_parameters = t.Instance(DictionaryBrowser)
     mapped_parameters = t.Instance(DictionaryBrowser)
-    physical_property = t.Str()
     _default_record_by = 'image'
 
     def __init__(self, file_data_dict=None, *args, **kw):
