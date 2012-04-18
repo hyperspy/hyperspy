@@ -16,12 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-try:
-    from setuptools import setup
-    setuptool_installed = True
-except:
-    from distutils.core import setup
-    setuptool_installed = False
+
+from distutils.core import setup
 
 import distutils.dir_util
 
@@ -35,14 +31,8 @@ import hyperspy.Release as Release
 if os.path.exists('build'):
     distutils.dir_util.remove_tree('build')
 
-requires = ['scipy', 'ipython', 'matplotlib', 'numpy', 
-    'traits', 'traitsui', 'h5py', 'scikit_learn', 'mdp']
-    
-# To install_requires we only add the packages that are installable
-# from PyPi, otherwise an error is raised when installing with Python
-# installers
-install_requires = ['scipy', 'ipython', 'matplotlib', 'numpy', 
-    'traits', 'traitsui', 'h5py', 'scikit_learn']
+install_req = ['scipy', 'ipython', 'matplotlib', 'numpy', 'mdp',
+'traits', 'traitsui', 'h5py', 'scikit_learn']
 
 def are_we_building4windows():
     for arg in sys.argv:
@@ -70,17 +60,18 @@ if are_we_building4windows() or os.name in ['nt','dos']:
         f.close()
         batch_files.append(batch_file)
     scripts.extend(batch_files)
-
-setup_args = dict(
+    
+version = Release.version
+setup(
     name = "hyperspy",
     package_dir = {'hyperspy': 'hyperspy'},
-    version = Release.version,
+    version = version,
     packages = ['hyperspy', 'hyperspy.components', 'hyperspy.io_plugins', 
                 'hyperspy.drawing', 'hyperspy.learn', 'hyperspy.signals', 
                 'hyperspy.gui', 'hyperspy.tests', 'hyperspy.models',
                 'hyperspy.tests.io', 'hyperspy.misc', 'hyperspy.misc.mpfit', 
                 'hyperspy.misc.mpfit.tests'],
-    requires = requires,
+    requires = install_req,
     scripts = scripts,
     package_data = 
     {
@@ -105,6 +96,7 @@ setup_args = dict(
     license = Release.license,
     platforms = Release.platforms,
     url = Release.url,
+    #~ test_suite = 'nose.collector',
     keywords = Release.keywords,
     classifiers = [
         "Programming Language :: Python :: 2.7",
@@ -118,11 +110,3 @@ setup_args = dict(
         "Topic :: Scientific/Engineering :: Physics",
         ],
     )
-    
-if setuptool_installed is True:
-    setup_args.setdefault('install_requires', install_requires)
-    setup_args.setdefault('test_suite', 'nose.collector')
-
-    
-if __name__ == '__main__':
-    setup(**setup_args)
