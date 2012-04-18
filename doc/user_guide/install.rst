@@ -1,16 +1,37 @@
 Installing Hyperspy
 ===================
 
-The easiest way to install Hyperspy in all the platforms but Ubuntu Linux is by installing Python (see :ref:`install-dependencies`) and then :ref:`install-with-python-installers`. We also provide binary installers for Debian/Ubuntu and Windows. If we do not distribute a binary for your platform or installing from binary is not for you it is also very easy to :ref:`install-source` or to :ref:`install-dev`.
+For the easiest way to install Hyperspy in Windows :ref:`read this <quick-windows-install>`.
+
+For the easiest way to install Hyperspy in MacOs :ref:`read this <quick-mac-install>`.
+
+The easiest way to install Hyperspy in Ubuntu Linux is by downloading and installing the deb file from the  `Download section <http://hyperspy.org/download.html>`_.
+
+For installing in any other platform you can :ref:`install-with-python-installers` or :ref:`install-source`. 
+
+.. _quick-windows-install:
 
 Quick instructions to install Hyperspy in Windows
 -------------------------------------------------
 
-It follows a recipe to install hyperspy in Windows. For more options and details read the rest of the documentation.
 
 #. Download and install `EPD. <http://www.enthought.com/products/http://enthought.com/products/epd.php>`_ EPD is reccomended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are incluided). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_
 #. (Maybe) Restart the computer
-#. Download and install Hyperspy from the `Download sections <http://hyperspy.org/download.html>`_
+#. Download and install Hyperspy from the `Download section <http://hyperspy.org/download.html>`_
+
+For more options and details read the rest of the documentation.
+
+.. _quick-mac-install:
+
+
+Quick instructions to install Hyperspy in MacOs
+-------------------------------------------------
+
+#. Download and install `EPD. <http://www.enthought.com/products/http://enthought.com/products/epd.php>`_ EPD is reccomended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are incluided). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_
+#. (Maybe) Restart the computer
+#. Open a terminal and type: `easy_install hyperspy`
+
+For more options and details read the rest of the documentation.
 
 
 .. _install-with-python-installers:
@@ -18,7 +39,7 @@ It follows a recipe to install hyperspy in Windows. For more options and details
 Install using Python installers
 -------------------------------
 
-Since version 4.1 Hyperspy is listed in the `Python Package Index <http://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded and installed using `setuptools <http://pypi.python.org/pypi/setuptools>`_, `distribute <http://pypi.python.org/pypi/distribute>`_ or (our favourite) `pip <http://pypi.python.org/pypi/pip>`_. However, depending on your Python distribution, you might need to install at least one of these packages manually. An extra advantage of using the python installers is that they should install the required libraries automatically.
+Since version 4.1 Hyperspy is listed in the `Python Package Index <http://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded and installed using `distribute <http://pypi.python.org/pypi/distribute>`_ or (our favourite) `pip <http://pypi.python.org/pypi/pip>`_. Depending on your Python distribution, you might need to install at least one of these packages manually. An extra advantage of using the python installers is that they should install the required libraries automatically. However, unless the :ref:`required libraries <install-dependencies>` are already installed in your system, it is likely that you need to install some extra building tools.
 
 Install using `pip`:
 
@@ -58,7 +79,7 @@ To install from source grab a tar.gz release and in Linux/Mac (requires to :ref:
     $ cd hyperspy
     $ python setup.py install
     
-You can also use a Python installer, in which case the required libraries will also be automatically installed, e.g pip.
+You can also use a Python installer, e.g.
 
 .. code-block:: bash
 
@@ -112,9 +133,9 @@ Installing the required libraries
     Read at least up to the second paragraph of this instruction before taking any action
     
     
-Before installing Hyperspy Python and the following libraries be installed in the system: numpy, scipy, matplotlib, ipython, traits and traitsui. For full functionality it is reccomended to also install h5py, mdp and scikit-learn.
+Before installing Hyperspy Python and the following libraries be installed in the system: numpy, scipy, matplotlib, ipython, traits and traitsui. For full functionality it is reccomended to also install h5py, mdp and scikit-learn. In Windows Hyperspy uses the Ipython's QtConsole nd therefore Qt and PyQt or PySide are also required.
 
-In Windows and Mac the easiest way to install these packages is by installing the `enthough python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default. Please note that the academic version of EPD is free, `you can get it here. <http://www.enthought.com/products/epd_free.php>`_ .
+In Windows and Mac the easiest way to install these packages is by installing the `enthough python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default. Please note that the academic version of EPD is free, `you can get it here <http://www.enthought.com/products/epd_free.php>`_ .
 
 If you use an Ubuntu binary to install Hyperspy all the dependencies should install automatically.
 

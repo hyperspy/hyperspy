@@ -1,6 +1,6 @@
 Hyperspy provides a rich toolbox for hyperspectral data analysis: 
 
-* Reads and writes multiple file formats common in electron microscopy and HDF5.
+* Reads and writes multiple file formats common in electron microscopy and the open standard HDF5.
 * Performs curve fitting on multidimensional datasets.
 * Machine learning e.g. PCA, ICA...
 * Easy to use and customise.
