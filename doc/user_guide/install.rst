@@ -39,7 +39,7 @@ For more options and details read the rest of the documentation.
 Install using Python installers
 -------------------------------
 
-Since version 4.1 Hyperspy is listed in the `Python Package Index <http://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded and installed using `distribute <http://pypi.python.org/pypi/distribute>`_ or (our favourite) `pip <http://pypi.python.org/pypi/pip>`_. Depending on your Python distribution, you might need to install at least one of these packages manually. An extra advantage of using the python installers is that they should install the required libraries automatically. However, unless the :ref:`required libraries <install-dependencies>` are already installed in your system, it is likely that you need to install some extra building tools.
+Since version 4.1 Hyperspy is listed in the `Python Package Index <http://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded and installed using `distribute <http://pypi.python.org/pypi/distribute>`_ or (our favourite) `pip <http://pypi.python.org/pypi/pip>`_. Depending on your Python distribution, you might need to install at least one of these packages manually.
 
 Install using `pip`:
 
@@ -52,6 +52,9 @@ Install using `distribute` or `setuptools`:
 .. code-block:: bash
 
     $ easy_install hyperspy
+
+In any case, you must be sure to have all the dependencies installed, see :ref:`install-dependencies`
+
 
 .. _install-binary:
  
