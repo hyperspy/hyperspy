@@ -138,7 +138,7 @@ Installing the required libraries
     
 Before installing Hyperspy Python and the following libraries be installed in the system: numpy, scipy, matplotlib, ipython, traits and traitsui. For full functionality it is reccomended to also install h5py, mdp and scikit-learn. In Windows Hyperspy uses the Ipython's QtConsole nd therefore Qt and PyQt or PySide are also required.
 
-In Windows and Mac the easiest way to install these packages is by installing the `enthough python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default. Please note that the academic version of EPD is free, `you can get it here <http://www.enthought.com/products/epd_free.php>`_ .
+In Windows and Mac the easiest way to install these packages is by installing the `enthought python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default, and is free if you provide an academic e-mail address.
 
 If you use an Ubuntu binary to install Hyperspy all the dependencies should install automatically.
 
