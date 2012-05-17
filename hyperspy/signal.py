@@ -971,22 +971,24 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         if save_figures is True:
             plt.ioff()
             fac_plots=self._plot_factors_or_pchars(factors,
-                                                   comp_ids=comp_ids, 
-                                                   same_window=same_window,
-                                                   comp_label=comp_label, 
-                                                   img_data=img_data,
-                                                   plot_shifts=plot_shifts,
-                                                   plot_char=plot_char, 
-                                                   cmap=cmap,
-                                                   per_row=per_row,
-                                                   quiver_color=quiver_color,
-                                                   vector_scale=vector_scale)
+                                           comp_ids=comp_ids, 
+                                           same_window=same_window,
+                                           comp_label=comp_label, 
+                                           img_data=img_data,
+                                           plot_shifts=plot_shifts,
+                                           plot_char=plot_char, 
+                                           cmap=cmap,
+                                           per_row=per_row,
+                                           quiver_color=quiver_color,
+                                           vector_scale=vector_scale)
             for idx in xrange(len(comp_ids)):
-                filename = '%s_%02i.%s' % (factor_prefix, comp_ids[idx])
+                filename = '%s_%02i.%s' % (factor_prefix, comp_ids[idx],
+                save_figures_format)
                 if folder is not None:
                     filename = os.path.join(folder, filename)
                 ensure_directory(filename)
-                fac_plots[idx].savefig(filename, save_figures_format, dpi=600)
+                fac_plots[idx].savefig(filename, save_figures_format,
+                    dpi=600)
             plt.ion()
             
         elif multiple_files is False:
