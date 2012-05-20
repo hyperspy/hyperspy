@@ -474,6 +474,46 @@ class MVA():
             self._unmix_loadings(target)
             self._auto_reverse_bss_component(target)
             target.bss_algorithm = algorithm
+            
+    def normalize_factors(self, which='bss',by='area', sort=True):
+        """Normalises the factors and modifies the loadings 
+        accordingly
+        
+        Parameters
+        ----------
+        which : 'bss' | 'decomposition'
+        by : 'max' | 'area'
+        sort : bool
+        
+        """
+        if which == 'bss':
+            factors = self.learning_results.bss_factors
+            loadings = self.learning_results.bss_loadings
+            if factors is None:
+                raise UserWarning("This method can only be used after a "
+                    "blind source separation operation")
+        elif which == 'decomposition':
+            factors = self.learning_results.factors
+            loadings = self.learning_results.loadings
+            if factors is None:
+                raise UserWarning("This method can only be used after a "
+                    "decomposition operation")
+        else:
+            raise ValueError("what must be bss or decomposition")
+        
+        if by == 'max':
+            by = np.max
+        elif by == 'area':
+            by = np.sum
+        else:
+            raise ValueError("by must be max or mean")
+            
+        factors /= by(factors,0)
+        loadings *= by(factors,0)
+        sorting_indexes = np.argsort(loadings.max(0))
+        factors[:] = factors[:,sorting_indexes]
+        loadings[:] = loadings[:,sorting_indexes]
+        loadings[:] = loadings[:,sorting_indexes]
 
     def reverse_bss_component(self, component_number):
         """Reverse the independent component
