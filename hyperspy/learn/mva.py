@@ -852,12 +852,12 @@ class LearningResults(object):
             del self.pc
             
         if hasattr(self, 'ica_scores'):
-            self.bss_loadings = self.ica_loadings
-            del self.self.ica_loadings
+            self.bss_loadings = self.ica_scores
+            del self.ica_scores
             
         if hasattr(self, 'ica_factors'):
             self.bss_factors = self.ica_factors
-            del self.self.ica_factors
+            del self.ica_factors
 
         #######################################################
         
