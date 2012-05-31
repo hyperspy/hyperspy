@@ -795,10 +795,13 @@ class Model(list, Optimizers, Estimators):
         print "Components\tParameter\tValue"
         for component in self:
             if component.active is True:
-                print(component.name )
+                if component.name:
+                    print(component.name)
+                else:
+                    print(component._id_name)
                 parameters = component.free_parameters if only_free \
                     else component.parameter
                 for parameter in parameters:
-                    print("\t\t%s\t%f" % (parameter.name, parameter.value))
+                    print("\t\t%s\t%f" % (parameter._id_name, parameter.value))
 
         
