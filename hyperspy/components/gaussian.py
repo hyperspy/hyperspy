@@ -67,9 +67,6 @@ class Gaussian(Component):
         self.centre.grad = self.grad_centre
 
     def function(self, x) :
-        a0 = self.A.value
-        a1 = self.centre.value
-        a2 = self.sigma.value
         A = self.A.value
         sigma = self.sigma.value
         centre = self.centre.value
