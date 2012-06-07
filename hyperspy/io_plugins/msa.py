@@ -171,9 +171,10 @@ def file_reader(filename, encoding = 'latin-1', **kwds):
     # It is necessary to change the locale to US english to read the date
     # keyword            
     loc = locale.getlocale(locale.LC_TIME)
+    print(loc)
     
     if os_name == 'posix':
-        locale.setlocale(locale.LC_TIME, ('en_US', 'latin-1'))
+        locale.setlocale(locale.LC_TIME, ('en_US', 'utf8'))
     elif os_name == 'windows':
         locale.setlocale(locale.LC_TIME, 'english')
     try:
