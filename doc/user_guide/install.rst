@@ -15,7 +15,7 @@ Quick instructions to install Hyperspy in Windows
 -------------------------------------------------
 
 
-#. Download and install `EPD. <http://www.enthought.com/products/http://enthought.com/products/epd.php>`_ EPD is reccomended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are incluided). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_
+#. Download and install `EPD. <http://www.enthought.com/products/epd.php>`_ EPD is reccomended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are incluided). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_
 #. (Maybe) Restart the computer
 #. Download and install Hyperspy from the `Download section <http://hyperspy.org/download.html>`_
 
@@ -27,7 +27,7 @@ For more options and details read the rest of the documentation.
 Quick instructions to install Hyperspy in MacOs
 -------------------------------------------------
 
-#. Download and install `EPD. <http://www.enthought.com/products/http://enthought.com/products/epd.php>`_ EPD is reccomended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are incluided). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_
+#. Download and install `EPD. <http://www.enthought.com/products/epd.php>`_ EPD is reccomended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are incluided). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_
 #. (Maybe) Restart the computer
 #. Open a terminal and type: `easy_install hyperspy`
 
@@ -138,7 +138,7 @@ Installing the required libraries
     
 Before installing Hyperspy Python and the following libraries be installed in the system: numpy, scipy, matplotlib, ipython, traits and traitsui. For full functionality it is reccomended to also install h5py, mdp and scikit-learn. In Windows Hyperspy uses the Ipython's QtConsole nd therefore Qt and PyQt or PySide are also required.
 
-In Windows and Mac the easiest way to install these packages is by installing the `enthought python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default, and is free if you provide an academic e-mail address.
+In Windows and Mac the easiest way to install these packages is by installing the `enthought python distribution <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default, and you can get it free `here <http://www.enthought.com/products/edudownload.php>`_ if you have an academic e-mail address.
 
 If you use an Ubuntu binary to install Hyperspy all the dependencies should install automatically.
 
