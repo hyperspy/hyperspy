@@ -51,7 +51,7 @@ class Parameter(object):
         self.std_map = None
         self.grad = None
         self.already_set_map = None
-        self._id_name = ''
+        self.name = ''
         self.units = ''
         self.std = None
         self._axes_manager = None
@@ -263,7 +263,7 @@ class Component(object):
         for name in parameter_name_list:
             parameter = Parameter()
             self.parameters.append(parameter)
-            parameter._id_name = name
+            parameter.name = name
             setattr(self, name, parameter)
             if hasattr(self, 'grad_' + name):
                 parameter.grad = getattr(self, 'grad_' + name)

@@ -454,11 +454,16 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             cut_node = range(0, rounded+step, step)
         else:
             cut_node = np.array([0] + steps).cumsum()
+        signal_dict = self._get_signal_dict()
+        axes_dict = signal_dict['axes']
         for i in xrange(len(cut_node)-1):
+            axes_dict[axis]['offset'] = \
+                self.axes_manager.axes[axis].index2value(cut_node[i])
             data = self.data[
             (slice(None), ) * axis + (slice(cut_node[i], cut_node[i + 1]),
             Ellipsis)]
-            s = Signal({'data': data})
+            signal_dict['data'] = data
+            s = Signal(signal_dict)
             # TODO: When copying plotting does not work
 #            s.axes = copy.deepcopy(self.axes_manager)
             s.get_dimensions_from_data()
