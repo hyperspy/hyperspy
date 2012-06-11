@@ -238,13 +238,13 @@ class Model(list, Optimizers, Estimators):
             if component.active:
                 for param in component.free_parameters:
                     if param._number_of_elements == 1:
-                        limited = [0,0]
+                        limited = [False,False]
                         limits = [0,0]
                         if param.bmin is not None:
-                            limited[0] = 1
+                            limited[0] = True
                             limits[0] = param.bmin
                         if param.bmax is not None:
-                            limited[1] = 1
+                            limited[1] = True
                             limits[1] = param.bmax
                         self.mpfit_parinfo.append(
                         {'limited' : limited,
