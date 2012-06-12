@@ -13,9 +13,8 @@ Windows
 
 In Windows it is possible to start Hyperspy from :menuselection:`Start Menu --> Programs --> Hyperspy` .
 
-Alternatively, one can start Hyperspy in any folder by pressing the :kbd:`right mouse button` on the empty area of a folder or on a folder and choosing menuselection:`Hyperspy here` from the context menu. see :ref:`windows_hyperspy_here_image`
+Alternatively, one can start Hyperspy in any folder by pressing the :kbd:`right mouse button` or on a yellow folder icon or (in some cases) on the empty area of a folder, and choosing menuselection:`Hyperspy here` from the context menu:
 
-.. _windows_hyperspy_here_image:
 
 .. figure::  images/windows_hyperspy_here.png
    :align:   center
@@ -70,7 +69,7 @@ Loading data
 ------------
 
 
-To load from a supported file format (see :ref:`supported-formats`) simply type in a Hyperspy session:
+Once hyperspy is running, to load from a supported file format (see :ref:`supported-formats`) simply type:
 
 .. code-block:: python
 
@@ -78,7 +77,7 @@ To load from a supported file format (see :ref:`supported-formats`) simply type 
 
 .. HINT::
 
-   The load function returns an object that contains data read from the file. We assign this object to the variable ``s`` but you can choose any (valid) variable name you like.
+   The load function returns an object that contains data read from the file. We assign this object to the variable ``s`` but you can choose any (valid) variable name you like. for the filename, don't forget to include the quotation marks and the file extension.
    
 If no argument is passed to the load function, a window will be raised that allows to select a single file through your OS file manager, e.g.:
 
@@ -128,7 +127,7 @@ The behaviour of Hyperspy can be customised using the :py:class:`~.defaults_pars
 
     >>> preferences.gui()
     
-This command should raise the :ref:`preferences_image`
+This command should raise the Preferences user interface:
 
 .. _preferences_image:
 
@@ -148,7 +147,7 @@ The documentation can be accessed by adding a question mark to the name of a fun
     
     >>> load?
 
-This syntax is one of the many features of `IPython <http://ipython.scipy.org/moin/>`_ that is the interactive python shell that Hyperspy uses under the hood.
+This syntax is one of the many features of `IPython <http://ipython.scipy.org/moin/>`_ , which is the interactive python shell that Hyperspy uses under the hood.
 
 Please note that the documentation of the code is a work in progress, so not all the objects are documented yet.
 
@@ -158,7 +157,7 @@ Autocompletion
 --------------
 
 Another useful `IPython <http://ipython.scipy.org/moin/>`_ feature is the 
-autocompletion of commands and filenames using the tabulator. It is highly recommended to read the 
+autocompletion of commands and filenames using the tab and arrow keys. It is highly recommended to read the 
 `Ipython documentation <http://ipython.scipy.org/moin/Documentation>`_ (specially their `Getting started <http://ipython.org/ipython-doc/stable/interactive/tutorial.html>`_ section) for many more useful features that will boost your efficiency when working with Hyperspy/Python interactively.
 
 Data visualisation
@@ -174,10 +173,10 @@ The object returned by :py:func:`~.io.load` is a :py:class:`~.signal.Signal` and
 if the object is single spectrum or an image one window will appear when calling 
 the plot method.
 
-If the object is a 2D or 3D spectrum image two figures will appear, 
+If the object is a 1D or 2D spectrum-image (i.e. with 2 or 3 dimensions when including energy) two figures will appear, 
 one containing a plot of the spectrum at the current coordinates and the other
-an image of the spectrum image summed over its spectral dimension if 2D or an 
-image with the spectral dimension in the x-axis e.g see :ref:`2d_SI` and :ref:`1d_SI`. 
+an image of the data summed over its spectral dimension if 2D or an 
+image with the spectral dimension in the x-axis if 1D:
 
 .. _2d_SI:
 
@@ -197,7 +196,7 @@ image with the spectral dimension in the x-axis e.g see :ref:`2d_SI` and :ref:`1
    
 Equivalently, if the object is a 1D or 2D image stack two figures will appear, 
 one containing a plot of the image at the current coordinates and the other
-a spectrum or an image obtained by summing over the image dimensions, e.g. see :ref:`1D_image_stack.png` and :ref:`2D_image_stack.png`:
+a spectrum or an image obtained by summing over the image dimensions:
    
 .. _1D_image_stack.png:
 
@@ -215,10 +214,10 @@ a spectrum or an image obtained by summing over the image dimensions, e.g. see :
    
    Visualisation of a 2D image stack
 
-To change the current coordinates, click on the pointer (which will be a line or a square depending on the dimensions of the data) and drag it around. It is also possible to move the pointer by using the numpad arrows **when numlock is on and the spectrum or navigator figure is on focus**.When using the numpad arrows the PageUp and PageDown keys change the size of the step.
+To change the current coordinates, click on the pointer (which will be a line or a square depending on the dimensions of the data) and drag it around. It is also possible to move the pointer by using the numpad arrows **when numlock is on and the spectrum or navigator figure is selected**.When using the numpad arrows the PageUp and PageDown keys change the size of the step.
 
 An extra cursor can be added by pressing the ``e`` key. Pressing ``e`` once more will 
-disable the extra cursor, e.g see :ref:`second_pointer.png`.
+disable the extra cursor:
 
 .. _second_pointer.png:
 
@@ -229,7 +228,7 @@ disable the extra cursor, e.g see :ref:`second_pointer.png`.
    Visualisation of a 2D spectrum image using two pointers.
 
 When exploring a 2D hyperspectral object of high spatial resolution the default size of the rectangular cursors can be too small to be dragged or even seen. It is possible to change the size of the cursors by pressing the ``+`` and ``-`` keys  **when the navigator
-windows is on focus**.
+window is selected**.
 
 The same keys can be used to explore an image stack.
 
