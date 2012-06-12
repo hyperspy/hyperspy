@@ -114,9 +114,10 @@ class Optimizers(Estimators):
             elif bounded is False:
                 self.mpfit_parinfo = None
             m = mpfit(self._errfunc4mpfit, self.p0[:], 
-            parinfo = self.mpfit_parinfo, functkw= {
+                parinfo=self.mpfit_parinfo, functkw= {
                 'y': self.spectrum()[self.channel_switches], 
-                'weights' :weights}, autoderivative = autoderivative, quiet = 1)
+                'weights' :weights}, autoderivative = autoderivative,
+                quiet = 1)
             self.p0 = m.params
             self.p_std = m.perror
             self.fit_output = m

@@ -38,8 +38,8 @@ class Parameter(object):
         self.ext_bounded = False
         self._number_of_elements = 1
         self._bounds = (None, None)
-        self.bmin = bmin
-        self.bmax = bmax
+        self.bmin = None
+        self.bmax = None
         self.__twin = None
         self.twin = twin
         self.twin_function = lambda x: x
@@ -80,16 +80,16 @@ class Parameter(object):
             return self.twin_function(self.twin.value)
     def _decoerce(self, arg):
 
-        if self.ext_bounded is False :
+        if self.ext_bounded is False:
                 self.__value = arg
         else:
             if self.ext_force_positive is True :
                 self.__value = abs(arg)
             else :
                 if self._number_of_elements == 1:
-                    if arg <= self.bmin:
+                    if self.bmin is not None and arg <= self.bmin:
                         self.__value=self.bmin
-                    elif arg >= self.bmax:
+                    elif self.bmax is not None and arg >= self.bmax:
                         self.__value=self.bmax
                     else:
                         self.__value=arg
