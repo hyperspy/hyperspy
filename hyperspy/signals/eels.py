@@ -192,11 +192,15 @@ class EELSSpectrum(Spectrum):
             limit of the SI will be incluided
         """
         for element in elements:
-            self.elements.add(element)
+            if element in edges_dict:
+                self.elements.add(element)
+            else:
+                print("%s is not a valid symbol of an element" % element)
         if not hasattr(self.mapped_parameters, 'Sample'):
             self.mapped_parameters.add_node('Sample')
         self.mapped_parameters.Sample.elements = list(self.elements)
-        self.generate_subshells(include_pre_edges)
+        if self.elements:
+            self.generate_subshells(include_pre_edges)
         
     def generate_subshells(self, include_pre_edges = False):
         """Calculate the subshells for the current energy range for the elements

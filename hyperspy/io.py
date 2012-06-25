@@ -28,6 +28,7 @@ from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
 from hyperspy.gui.tools import Load
 from hyperspy.misc.utils import (ensure_directory, DictionaryBrowser, 
     strlist2enumeration)
+from hyperspy.misc.natsort import natsorted
 
 
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff]
@@ -140,7 +141,7 @@ def load(filenames=None, record_by=None, signal_type=None,
             raise ValueError("No file provided to reader")
         
     if isinstance(filenames, basestring):
-        filenames=sorted(glob.glob(filenames))
+        filenames=natsorted(glob.glob(filenames))
         if not filenames:
             raise ValueError('No file name matches this pattern')
     elif not isinstance(filenames, (list, tuple)):
