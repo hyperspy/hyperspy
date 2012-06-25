@@ -70,7 +70,7 @@ The following methods are available to crop a given axis:
 Rebinning
 ^^^^^^^^^
 
-The :py:meth:`~.signal.Signal.rebin` method rebins data down to a size determined by the user.
+The :py:meth:`~.signal.Signal.rebin` method rebins data in place down to a size determined by the user.
 
 Folding and unfolding
 ^^^^^^^^^^^^^^^^^^^^^
