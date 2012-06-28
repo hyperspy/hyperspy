@@ -141,7 +141,8 @@ def load(filenames=None, record_by=None, signal_type=None,
             raise ValueError("No file provided to reader")
         
     if isinstance(filenames, basestring):
-        filenames=natsorted(glob.glob(filenames))
+        filenames=natsorted([f for f in glob.glob(filenames)
+                             if os.path.isfile(f)])
         if not filenames:
             raise ValueError('No file name matches this pattern')
     elif not isinstance(filenames, (list, tuple)):
