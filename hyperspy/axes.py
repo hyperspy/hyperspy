@@ -408,4 +408,23 @@ class AxesManager(t.HasTraits):
             len(self.axes), self.signal_dimension,
             self.navigation_dimension)
         return text
+        
+    def set_coordinates(self, coordinates):
+        """Set the index of the navigation axes.
+        
+        Parameters
+        ----------
+        coordinates : tuple
+            The len of the the tuple must coincide with the navigation
+            dimension
+            
+        """
+        
+        if len(coordinates) != self.navigation_dimension:
+            raise AttributeError(
+            "The number of coordinates must be equal to the "
+            "navigation dimension that is %i" % 
+                self.navigation_dimension)
+        for index, axis in zip(coordinates, self._non_slicing_axes):
+            axis.index = index
 
