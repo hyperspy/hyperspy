@@ -22,6 +22,7 @@ import copy
 import matplotlib.pyplot as plt
 import matplotlib.widgets
 import numpy as np
+import traits
 
 from utils import on_figure_window_close
 #if self.blit is True:
@@ -222,11 +223,20 @@ class DraggableSquare(ResizebleDraggablePatch):
 
         if self.picked is True and event.inaxes:
             if self.axes_manager._indexes[0] != round(event.ydata):
-                self.axes_manager._non_slicing_axes[0].index = \
-                round(event.ydata)
+                try:
+                    self.axes_manager._non_slicing_axes[0].index = \
+                    round(event.ydata)
+                except traits.api.TraitError:
+                    # Index out of range, we do nothing
+                    pass
+                    
             if  self.axes_manager._indexes[1] != round(event.xdata):
-                self.axes_manager._non_slicing_axes[1].index = \
-                round(event.xdata)
+                try:
+                    self.axes_manager._non_slicing_axes[1].index = \
+                    round(event.xdata)
+                except traits.api.TraitError:
+                    # Index out of range, we do nothing
+                    pass
 
 class DraggableHorizontalLine(DraggablePatch):
     def __init__(self, axes_manager):
@@ -250,7 +260,11 @@ class DraggableHorizontalLine(DraggablePatch):
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
-            self.axes_manager._non_slicing_axes[0].index = event.ydata
+            try:
+                self.axes_manager._non_slicing_axes[0].index = event.ydata
+            except traits.api.TraitError:
+                # Index out of range, we do nothing
+                pass
 
 class DraggableVerticalLine(DraggablePatch):
     def __init__(self, axes_manager):
@@ -274,7 +288,11 @@ class DraggableVerticalLine(DraggablePatch):
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
-            self.axes_manager._non_slicing_axes[0].value = event.xdata
+            try:
+                self.axes_manager._non_slicing_axes[0].value = event.xdata
+            except traits.api.TraitError:
+                # Index out of range, we do nothing
+                pass
 
 class Scale_Bar():
     def __init__(self, ax, units, pixel_size, color = 'white', position = None,
