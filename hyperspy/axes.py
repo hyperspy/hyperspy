@@ -427,4 +427,15 @@ class AxesManager(t.HasTraits):
                 self.navigation_dimension)
         for index, axis in zip(coordinates, self._non_slicing_axes):
             axis.index = index
+            
+    def get_coordinates(self):
+        """Get the index of the navigation axes.
+        
+        Returns
+        -------
+        list
+            
+        """
+        return [axis.index for axis in self._non_slicing_axes]
+        
 
