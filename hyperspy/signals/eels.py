@@ -582,8 +582,9 @@ class EELSSpectrum(Spectrum):
 #            (np.hanning(2*channels)[-channels:]).reshape((-1,1,1))
 #            dc[-offset:,:,:] *= 0. 
 #        
-    def remove_spikes(self, threshold = 2200, subst_width = 5, 
-                      coordinates = None, energy_range = None, add_noise = True):
+    def remove_spikes(self, threshold=2200, subst_width=5, 
+                      coordinates=None, energy_range=None,
+                      add_noise=True, kind='linear'):
         """Remove the spikes in the SI.
         
         Detect the spikes above a given threshold and fix them by interpolating 
@@ -602,17 +603,20 @@ class EELSSpectrum(Spectrum):
             applied to all the spikes.
         energy_range: List
             Restricts the operation to the energy range given in units
-            
         add_noise: Bool
             If True, Poissonian noise will be added to the region that has been
             interpolated to remove the spikes
+        kind : str or int, optional
+            Specifies the kind of interpolation as a string
+            ('linear','nearest', 'zero', 'slinear', 'quadratic, 'cubic')
+            or as an integer specifying the order of the spline interpolator
+            to use. Default is 'linear'.
         
         See also
         --------
         Spectrum.spikes_diagnosis, Spectrum.plot_spikes
         """
         axis = self.axes_manager._slicing_axes[0]
-        int_window = 20
         dc = self.data
         if energy_range is not None:
             ileft, iright = (axis.value2index(energy_range[0]),
@@ -626,12 +630,12 @@ class EELSSpectrum(Spectrum):
         der = np.diff(dc[...,_slice], 1, axis.index_in_array)
         E_ax = axis.axis
         n_ch = len(E_ax)
-        i = 0
         if coordinates is None:
             coordinates = []
-            for index in np.ndindex(tuple(self.axes_manager.navigation_shape)):
+            for index in np.ndindex(
+                            tuple(self.axes_manager.navigation_shape)):
                 coordinates.append(index)
-        for index in coordinates:
+        for i, index in enumerate(coordinates):
             lindex = list(index)
             lindex.insert(axis.index_in_array, slice(None))
             if der[lindex].max() >= threshold:
@@ -641,6 +645,10 @@ class EELSSpectrum(Spectrum):
                     subst__width = subst_width[index]
                 else:
                     subst__width = subst_width
+                if kind == 'linear':
+                    int_window = subst_width + 1
+                else:
+                    int_window = subst_width + 10
                 lp1 = np.clip(argmax - int_window, 0, n_ch)
                 lp2 = np.clip(argmax - subst__width, 0, n_ch)
                 rp2 = np.clip(argmax + int_window, 0, n_ch)
@@ -656,7 +664,7 @@ class EELSSpectrum(Spectrum):
                 y = np.hstack((dc[nlindex1], dc[nlindex2])) 
                 # The weights were commented because the can produce 
                 # nans, maybe it should be an option?
-                intp = scipy.interpolate.UnivariateSpline(x, y) 
+                intp = scipy.interpolate.interp1d(x, y, kind=kind) 
                 #,w = 1/np.sqrt(y))
                 x_int = E_ax[lp2:rp1 + 1]
                 nlindex3 = list(index)
@@ -665,7 +673,6 @@ class EELSSpectrum(Spectrum):
                 if add_noise is True:
                     new_data = np.random.poisson(np.clip(new_data, 0, np.inf))
                 dc[nlindex3]  = new_data
-                i += 1
                 
     def spikes_diagnosis(self, energy_range = None):
         """Plots a histogram to help in choosing the threshold for spikes
