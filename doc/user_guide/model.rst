@@ -6,15 +6,16 @@ Hyperspy can perform curve fitting in n-dimensional data sets. It can create a m
 Creating a model
 ----------------
 
-A :py:class:`~.model.Model` can be created using the :py:func:`~.hspy.create_model` function, which first argument is a :py:class:`~.signal.Signal` of any of its subclasses (often it is simply the object returned by the :py:func:`~.io.load` function. e.g.,
+A :py:class:`~.model.Model` can be created using the :py:func:`~.hspy.create_model` function, whose first argument is a :py:class:`~.signal.Signal` of any of its subclasses (often it is simply the object returned by the :py:func:`~.io.load` function. e.g.,
 
 .. code-block:: ipython
     
     In [1]: # Load the data from a file
     In [2]: s = load('YourDataFilenameHere')
     In [3]: #Create the model and asign it to the variable m
-    In [4]: m = create_model()
+    In [4]: m = create_model(s)
 
+At this point you may be prompted to provide any necessary information not already included in the datafile, e.g.if s is EELS data, you may be asked for the accellerating voltage, convergence and collection angles etc.
 
 Adding components to the model
 ------------------------------
@@ -22,7 +23,7 @@ Adding components to the model
 In Hyperspy a model consists of a linear combination of :py:mod:`~.components`. These are some of the components which are currently available:
 
 
-* :py:class:`~.components.eels_cl_edge.EELSCLEdge`
+* :py:class:`~.components.eels_cl_edge.EELSCLEdge` (currently requires  EELS edge tables from Gatan's Digital Migrograph)
 * :py:class:`~.components.power_law.PowerLaw`
 * :py:class:`~.components.offset.Offset`
 * :py:class:`~.components.exponential.Exponential`
@@ -40,7 +41,7 @@ In Hyperspy a model consists of a linear combination of :py:mod:`~.components`. 
 Writing a new component is very easy, so, if the function that you need to fit is not in the list above, by inspecting the code of, for example, the Gaussian component, it should be easy to write your own component. If you need help for the task please submit your question to the :ref:`users mailing list <http://groups.google.com/group/hyperspy-users>`.
 
 
-To print the current components in a model simply write the name of the variable a press ``Enter``, e.g.:
+To print the current components in a model simply enter the name of the variable, e.g.:
 
 .. code-block:: ipython
     
@@ -50,7 +51,7 @@ To print the current components in a model simply write the name of the variable
     In [7]: # [] means that the model is empty
     
 
-To add a component first we have to create an instance of the component. Once the instance has been created we can add the component to the model using the :py:meth:`append` method, e.g.:
+In fact, components may be created automatically in some cases. For example, if the s is recognised as EELS data, a power-law background component will automatically be placed in m. To add a component first we have to create an instance of the component. Once the instance has been created we can add the component to the model using the :py:meth:`append` method, e.g. for a type of data that can be modelled using gaussians we might proceed as follows:
     
 
 .. code-block:: ipython
@@ -62,13 +63,13 @@ To add a component first we have to create an instance of the component. Once th
     In [12]: # Let's print the components
     In [13]: m
     Out[2]: [<Gaussian component>]
-    In [14]: # Create two Lorentzian function components
+    In [14]: # Create two more gaussian function components
     In [15]: gaussian2 = components.Gaussian()
     In [16]: gaussian3 = components.Gaussian()
     In [17]: # We could use the append method two times to add the
-    In [18]: # two gaussians, but when adding multiple components it is handier to used
+    In [18]: # two gaussians, but when adding multiple components it is handier to use
     In [19]: # the extend method
-    In [20]: m.extend((gaussian2, gaussian3))
+    In [20]: m.extend((gaussian2, gaussian3)) #note the double brackets!
     In [21]: # Let's print the components    
     In [22]: m
     Out[2]: [<Gaussian component>, <Gaussian component>, <Gaussian component>]
@@ -77,6 +78,7 @@ To add a component first we have to create an instance of the component. Once th
     In [25]: gaussian2.name = 'Hydrogen'
     In [26]: gaussian3.name = 'Nitrogen'
     In [27]: # Let's print the components of the model once more
+    In [28]: m
     Out[3]:
     [<Carbon (Gaussian component)>,
      <Hydrogen (Gaussian component)>,
@@ -86,7 +88,7 @@ To add a component first we have to create an instance of the component. Once th
 Fitting the model to the data
 -----------------------------
 
-To fit the model to the data at the current coordinates use :py:meth:`~.optimizers.Optimizers.fit`. To fit the model to the data in all the coordinates use :py:meth:`~.model.Model.multifit` and to visualise the result :py:meth:`~.model.Model.plot`, e.g.:
+To fit the model to the data at the current coordinates (e.g. to fit one spectrum at a particular point in a spectrum-image) use :py:meth:`~.optimizers.Optimizers.fit`. To fit the model to the data in all the coordinates use :py:meth:`~.model.Model.multifit` and to visualise the result :py:meth:`~.model.Model.plot`, e.g.:
 
 .. code-block:: ipython
     
@@ -96,9 +98,9 @@ To fit the model to the data at the current coordinates use :py:meth:`~.optimize
     In [31]: m.plot()
     In [32]: # Because we like what we see, we will fit the model to the
     In [33]: # data in all the coordinates
-    In [34]: m.multifit()
+    In [34]: m.multifit() # warning: this can be a lengthy process on large datasets
     
-Getting and setting parameters value and attributes
+Getting and setting parameter values and attributes
 --------------------------------------------------------------------
 
 :py:meth:`~.model.Model.print_current_values` prints the value of the parameters of the components in the current coordinates.
@@ -121,10 +123,8 @@ The following example clarifies these concepts:
     In [37]: # Fix the centre
     In [38]: gaussian.centre.free = False
     In [39]: # Print the free parameters
-    In [40]: gaussian.parameters
-    Out[41]: set([A, sigma])
-    In [42]: gaussian.parameters
-    Out[5]: set([A, sigma])
+    In [40]: gaussian.free_parameters
+    Out[4]: set([A, sigma])
     In [43]: # Print the current value of all the free parameters
     In [44]: m.print_current_values()
     Components	Parameter	Value
