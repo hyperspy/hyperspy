@@ -39,7 +39,6 @@ class SpectrumFigure():
         self.axes_manager = None
         self.right_axes_manager = None
         
-        
         # Labels
         self.xlabel = ''
         self.ylabel = ''

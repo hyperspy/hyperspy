@@ -26,6 +26,7 @@ from hyperspy.signals.image import Image
 
 from hyperspy.components.eels_cl_edge import edges_dict
 import hyperspy.axes
+from hyperspy.gui.egerton_quantification import SpikesRemoval
 
 class EELSSpectrum(Spectrum):
     
@@ -582,97 +583,6 @@ class EELSSpectrum(Spectrum):
 #            (np.hanning(2*channels)[-channels:]).reshape((-1,1,1))
 #            dc[-offset:,:,:] *= 0. 
 #        
-    def remove_spikes(self, threshold=2200, subst_width=5, 
-                      coordinates=None, energy_range=None,
-                      add_noise=True, kind='linear'):
-        """Remove the spikes in the SI.
-        
-        Detect the spikes above a given threshold and fix them by interpolating 
-        in the give interval. If coordinates is given, it will only remove the 
-        spikes for the specified spectra.
-        
-        Paramerters:
-        ------------
-        threshold : float
-            A suitable threshold can be determined with 
-            Spectrum.spikes_diagnosis
-        subst_width : tuple of int or int
-            radius of the interval around the spike to substitute with the 
-            interpolation. If a tuple, the dimension must be equal to the 
-            number of spikes in the threshold. If int the same value will be 
-            applied to all the spikes.
-        energy_range: List
-            Restricts the operation to the energy range given in units
-        add_noise: Bool
-            If True, Poissonian noise will be added to the region that has been
-            interpolated to remove the spikes
-        kind : str or int, optional
-            Specifies the kind of interpolation as a string
-            ('linear','nearest', 'zero', 'slinear', 'quadratic, 'cubic')
-            or as an integer specifying the order of the spline interpolator
-            to use. Default is 'linear'.
-        
-        See also
-        --------
-        Spectrum.spikes_diagnosis, Spectrum.plot_spikes
-        """
-        axis = self.axes_manager._slicing_axes[0]
-        dc = self.data
-        if energy_range is not None:
-            ileft, iright = (axis.value2index(energy_range[0]),
-                             axis.value2index(energy_range[1]))
-            _slice = slice(ileft, iright)
-        else:
-            _slice = slice(None)
-            ileft = 0
-            iright = len(axis.axis)
-
-        der = np.diff(dc[...,_slice], 1, axis.index_in_array)
-        E_ax = axis.axis
-        n_ch = len(E_ax)
-        if coordinates is None:
-            coordinates = []
-            for index in np.ndindex(
-                            tuple(self.axes_manager.navigation_shape)):
-                coordinates.append(index)
-        for i, index in enumerate(coordinates):
-            lindex = list(index)
-            lindex.insert(axis.index_in_array, slice(None))
-            if der[lindex].max() >= threshold:
-                print "Spike detected in ", index
-                argmax = ileft + der[lindex].argmax()
-                if hasattr(subst_width, '__iter__'):
-                    subst__width = subst_width[index]
-                else:
-                    subst__width = subst_width
-                if kind == 'linear':
-                    int_window = subst_width + 1
-                else:
-                    int_window = subst_width + 10
-                lp1 = np.clip(argmax - int_window, 0, n_ch)
-                lp2 = np.clip(argmax - subst__width, 0, n_ch)
-                rp2 = np.clip(argmax + int_window, 0, n_ch)
-                rp1 = np.clip(argmax + subst__width, 0, n_ch)
-                x = np.hstack((E_ax[lp1:lp2], E_ax[rp1:rp2]))
-                nlindex1 = list(index)
-                nlindex1.insert(axis.index_in_array, 
-                                  slice(lp1, lp2))
-                nlindex2 = list(index)
-                nlindex2.insert(axis.index_in_array, 
-                                  slice(rp1, rp2))                
-                
-                y = np.hstack((dc[nlindex1], dc[nlindex2])) 
-                # The weights were commented because the can produce 
-                # nans, maybe it should be an option?
-                intp = scipy.interpolate.interp1d(x, y, kind=kind) 
-                #,w = 1/np.sqrt(y))
-                x_int = E_ax[lp2:rp1 + 1]
-                nlindex3 = list(index)
-                nlindex3.insert(axis.index_in_array, slice(lp2, rp1 + 1))
-                new_data = intp(x_int)
-                if add_noise is True:
-                    new_data = np.random.poisson(np.clip(new_data, 0, np.inf))
-                dc[nlindex3]  = new_data
                 
     def spikes_diagnosis(self, energy_range = None):
         """Plots a histogram to help in choosing the threshold for spikes
@@ -692,57 +602,20 @@ class EELSSpectrum(Spectrum):
         if energy_range is not None:
             dc = dc[..., axis.value2index(energy_range[0]):
                     axis.value2index(energy_range[1])]
-        der = np.diff(dc, 1, axis.index_in_array)
+        der = np.abs(np.diff(dc, 1, axis.index_in_array))
         plt.figure()
         plt.hist(np.ravel(der.max(axis.index_in_array)),100)
         plt.xlabel('Threshold')
         plt.ylabel('Counts')
         plt.draw()
         
-    def plot_spikes(self, threshold = 2200, energy_range = None, plot = True):
-        """Plot the spikes in the given threshold
         
-        Parameters
-        ----------
-        threshold : float
-        energy_range: List
-            Restricts the operation to the energy range given in units
+    def spikes_removal_tool(self):
+        sr = SpikesRemoval(self)
+        sr.edit_traits()
+        return sr
         
-        Returns
-        -------
-        list of spikes coordinates
-        
-        See also
-        --------
-        Spectrum.remove_spikes, Spectrum.spikes_diagnosis
-        """
-        dc = self.data
-        axis = self.axes_manager._slicing_axes[0]
-        if energy_range is not None:
-            dc = dc[..., axis.value2index(energy_range[0]):
-                    axis.value2index(energy_range[1])]
-        der = np.diff(dc,1,axis.index_in_array)
-        i = 0
-        spikes = []
-        for index in np.ndindex(tuple(self.axes_manager.navigation_shape)):
-            lindex = list(index)
-            lindex.insert(axis.index_in_array, slice(None))
-            if der[lindex].max() >= threshold:
-                print "Spike detected in ", index
-                spikes.append(index)
-                argmax = der[lindex].argmax()
-                nlindex = list(index)
-                i1 = np.clip(argmax-100,0, dc.shape[axis.index_in_array]-1)
-                i2 = np.clip(argmax+100,0, dc.shape[axis.index_in_array]-1)
-                nlindex.insert(axis.index_in_array, slice(i1, i2))
-                toplot = dc[nlindex]
-                if plot is True:
-                    plt.figure()
-                    plt.step(range(len(toplot)), toplot)
-                    plt.title(str(index))
-                i += 1
-        return spikes
-#                        
+                      
 #    def build_SI_from_substracted_zl(self,ch, taper_nch = 20):
 #        """Modify the SI to have fit with a smoothly decaying ZL
 #        
