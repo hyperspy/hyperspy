@@ -42,8 +42,8 @@ OurApplyButton = tu.Action(name = "Apply",
 OurResetButton = tu.Action(name = "Reset",
                            action = "reset")
                            
-OurNextButton = tu.Action(name = "Next",
-                           action = "next")
+OurFindButton = tu.Action(name = "Find",
+                           action = "find")
                            
 OurPreviousButton = tu.Action(name = "Previous",
                            action = "back")

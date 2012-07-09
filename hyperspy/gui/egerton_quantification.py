@@ -31,7 +31,7 @@ from hyperspy.misc import utils
 from hyperspy import drawing
 from hyperspy.misc.interactive_ns import interactive_ns
 from hyperspy.gui.tools import (SpanSelectorInSpectrum, 
-    SpanSelectorInSpectrumHandler,OurNextButton, OurPreviousButton,
+    SpanSelectorInSpectrumHandler,OurFindButton, OurPreviousButton,
     OurApplyButton)
 from hyperspy.misc.progressbar import progressbar
 
@@ -181,14 +181,14 @@ class SpikesRemovalHandler(tu.Handler):
         
         return
         
-    def next(self, info, *args, **kwargs):
+    def find(self, info, *args, **kwargs):
         """Handles the **Next** button being clicked.
 
         """
         obj = info.object
         obj.is_ok = True
-        if hasattr(obj, 'next'):
-            obj.next(mask=True)
+        if hasattr(obj, 'find'):
+            obj.find(mask=True)
         return
         
     def back(self, info, *args, **kwargs):
@@ -197,8 +197,8 @@ class SpikesRemovalHandler(tu.Handler):
         """
         obj = info.object
         obj.is_ok = True
-        if hasattr(obj, 'next'):
-            obj.next(mask=True, back=True)
+        if hasattr(obj, 'find'):
+            obj.find(mask=True, back=True)
         return
 
         
@@ -227,7 +227,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             show_border=True,
             label='Advanced settings'),
             ),
-            buttons= [OKButton, OurPreviousButton, OurNextButton, OurApplyButton,
+            buttons= [OKButton, OurPreviousButton, OurFindButton, OurApplyButton,
                       ],
             handler = SpikesRemovalHandler,
             title = 'Spikes removal tool')
@@ -272,7 +272,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         else:
             return False
         
-    def next(self,mask=False, back=False):
+    def find(self,mask=False, back=False):
         if self.index == len(self.coordinates) - 1 or \
             (back is True and self.index == 0):
             return
@@ -286,7 +286,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
                 self.index += 1
             else:
                 self.index -= 1
-            self.next(back=back)
+            self.find(back=back)
         else:
             minimum = max(0,self.argmax - 50)
             maximum = min(len(self.signal()) - 1, self.argmax + 50)
@@ -402,7 +402,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.interpolated_line.close()
         self.interpolated_line = None
         self.reset_span_selector()
-        self.next(mask=False)
+        self.find(mask=False)
         
     
 #class EgertonPanel(t.HasTraits):
