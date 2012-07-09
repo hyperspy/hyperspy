@@ -41,7 +41,7 @@ full_suport = False             #  but maybe True
 file_extensions = ['rpl','RPL']
 default_extension = 0
 # Writing capabilities
-writes = [(1,0), (1,1), (1,2), (2,1), (1,2),]
+writes = [(1,0), (1,1), (1,2), (2,0), (2,1),]
 # ----------------------
 
 # The format only support the followng data types
