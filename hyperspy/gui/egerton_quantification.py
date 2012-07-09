@@ -252,7 +252,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.index = 0
         self.update_plot()
         
-    def _derivative_histogram_fired(self):
+    def _show_derivative_histogram_fired(self):
         self.signal.spikes_diagnosis()
         
     def detect_spike(self, mask=False):
