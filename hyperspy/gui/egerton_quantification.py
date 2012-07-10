@@ -34,6 +34,7 @@ from hyperspy.gui.tools import (SpanSelectorInSpectrum,
     SpanSelectorInSpectrumHandler,OurFindButton, OurPreviousButton,
     OurApplyButton)
 from hyperspy.misc.progressbar import progressbar
+import hyperspy.gui.messages as messages
 
 
 class BackgroundRemoval(SpanSelectorInSpectrum):
@@ -276,6 +277,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
     def find(self, back=False):
         if (self.index == len(self.coordinates) - 1 and back is False) \
         or (back is True and self.index == 0):
+            messages.information('End of dataset reached')
             return
         if self.interpolated_line is not None:
             self.interpolated_line.close()
