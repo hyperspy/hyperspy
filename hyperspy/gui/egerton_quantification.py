@@ -249,13 +249,15 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.kind = "linear"
         self._temp_mask = np.zeros(self.signal().shape, dtype='bool')
         self.signal_mask = signal_mask
+        self.spatial_mask = spatial_mask
         
     def _threshold_changed(self, old, new):
         self.index = 0
         self.update_plot()
         
     def _show_derivative_histogram_fired(self):
-        self.signal.spikes_diagnosis(signal_mask=self.signal_mask)
+        self.signal.spikes_diagnosis(signal_mask=self.signal_mask,
+                                     spatial_mask=self.spatial_mask)
         
     def detect_spike(self):
         derivative = np.diff(self.signal())
