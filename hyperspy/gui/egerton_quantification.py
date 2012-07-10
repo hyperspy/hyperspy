@@ -188,7 +188,7 @@ class SpikesRemovalHandler(tu.Handler):
         obj = info.object
         obj.is_ok = True
         if hasattr(obj, 'find'):
-            obj.find(mask=True)
+            obj.find()
         return
         
     def back(self, info, *args, **kwargs):
@@ -198,7 +198,7 @@ class SpikesRemovalHandler(tu.Handler):
         obj = info.object
         obj.is_ok = True
         if hasattr(obj, 'find'):
-            obj.find(mask=True, back=True)
+            obj.find(back=True)
         return
 
         
@@ -232,11 +232,11 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             handler = SpikesRemovalHandler,
             title = 'Spikes removal tool')
                  
-    def __init__(self, signal):
+    def __init__(self, signal,spatial_mask=None, signal_mask=None):
         super(SpikesRemoval, self).__init__(signal)
         self.interpolated_line = None
         self.coordinates = [coordinate for coordinate in np.ndindex(
-                            tuple(signal.axes_manager.navigation_shape))]
+                            tuple(signal.axes_manager.navigation_shape)) if (spatial_mask is None or not spatial_mask[coordinate])]
         self.signal = signal
         sys.setrecursionlimit(np.cumprod(self.signal.data.shape)[-1])
         self.line = signal._plot.spectrum_plot.ax_lines[0]
@@ -247,41 +247,40 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.index = 0
         self.argmax = None
         self.kind = "linear"
+        self._temp_mask = np.zeros(self.signal().shape, dtype='bool')
+        self.signal_mask = signal_mask
         
     def _threshold_changed(self, old, new):
         self.index = 0
         self.update_plot()
         
     def _show_derivative_histogram_fired(self):
-        self.signal.spikes_diagnosis()
+        self.signal.spikes_diagnosis(signal_mask=self.signal_mask)
         
-    def detect_spike(self, mask=False):
+    def detect_spike(self):
         derivative = np.diff(self.signal())
-        if  mask is False and abs(derivative.max()) >= self.threshold:
+        if self.signal_mask is not None:
+            derivative[self.signal_mask[:-1]] = 0
+        if self.argmax is not None:
+            left, right = self.get_interpolation_range()
+            self._temp_mask[left:right] = True
+            derivative[self._temp_mask[:-1]] = 0
+        if abs(derivative.max()) >= self.threshold:
             self.argmax = derivative.argmax()
             return True
-            
-        elif mask is True and self.argmax is not None:
-            left, right = self.get_interpolation_range()
-            derivative[left:right] = 0
-            if abs(derivative.max()) >= self.threshold:
-                self.argmax = derivative.argmax()
-                return True
-            else:
-                return False
         else:
             return False
-        
-    def find(self,mask=False, back=False):
-        if self.index == len(self.coordinates) - 1 or \
-            (back is True and self.index == 0):
+
+    def find(self, back=False):
+        if (self.index == len(self.coordinates) - 1 and back is False) \
+        or (back is True and self.index == 0):
             return
         if self.interpolated_line is not None:
             self.interpolated_line.close()
             self.interpolated_line = None
             self.reset_span_selector()
         
-        if self.detect_spike(mask=mask) is False:
+        if self.detect_spike() is False:
             if back is False:
                 self.index += 1
             else:
@@ -312,6 +311,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
     def _index_changed(self, old, new):
         self.signal.axes_manager.set_coordinates(
             self.coordinates[new])
+        self.argmax = None
+        self._temp_mask[:] = False
         
     def on_disabling_span_selector(self):
         if self.interpolated_line is not None:
@@ -402,7 +403,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.interpolated_line.close()
         self.interpolated_line = None
         self.reset_span_selector()
-        self.find(mask=False)
+        self.find()
         
     
 #class EgertonPanel(t.HasTraits):

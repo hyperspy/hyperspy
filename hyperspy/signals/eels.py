@@ -584,24 +584,24 @@ class EELSSpectrum(Spectrum):
 #            dc[-offset:,:,:] *= 0. 
 #        
                 
-    def spikes_diagnosis(self, energy_range = None):
+    def spikes_diagnosis(self, signal_mask=None):
         """Plots a histogram to help in choosing the threshold for spikes
         removal.
         
         Parameters
         ----------
-        energy_range: List
+        signal_mask: boolean array
             Restricts the operation to the energy range given in units
         
         See also
         --------
-        Spectrum.remove_spikes, Spectrum.plot_spikes
+        EELSSpectrum.spikes_removal_tool
+        
         """
         dc = self.data
         axis = self.axes_manager._slicing_axes[0]
-        if energy_range is not None:
-            dc = dc[..., axis.value2index(energy_range[0]):
-                    axis.value2index(energy_range[1])]
+        if signal_mask is not None:
+            dc = dc[..., signal_mask]
         der = np.abs(np.diff(dc, 1, axis.index_in_array))
         plt.figure()
         plt.hist(np.ravel(der.max(axis.index_in_array)),100)
@@ -610,8 +610,9 @@ class EELSSpectrum(Spectrum):
         plt.draw()
         
         
-    def spikes_removal_tool(self):
-        sr = SpikesRemoval(self)
+    def spikes_removal_tool(self,signal_mask=None, spatial_mask=None):
+        sr = SpikesRemoval(self,spatial_mask=spatial_mask,
+                           signal_mask=signal_mask)
         sr.edit_traits()
         return sr
         
