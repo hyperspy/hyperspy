@@ -430,7 +430,7 @@ class MVA():
                 if pretreatment['algorithm'] == 'tv':
                     sfactors.smooth_tv(
                         pretreatment_parameter= pretreatment[
-                            'pretreatment_parameter'],
+                            'smoothing_parameter'],
                         differential_order = diff_order)
                 factors = sfactors.data.T
                 if pretreatment['algorithm'] == 'butter':
