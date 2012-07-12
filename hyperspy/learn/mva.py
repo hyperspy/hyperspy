@@ -25,14 +25,17 @@ import types
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
+import warnings
 try:
     import mdp
     mdp_installed = True
 except:
     mdp_installed = False
 try:
-    import sklearn.decomposition
-    sklearn_installed = True
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        import sklearn.decomposition
+        sklearn_installed = True
 except:
     sklearn_installed = False
 

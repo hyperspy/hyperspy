@@ -25,10 +25,12 @@
 
 import numpy as np
 import scipy.linalg
-
+import warnings
 try:
-    from scikits.learn.utils.extmath import fast_svd
-    sklearn = True
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from scikits.learn.utils.extmath import fast_svd
+        sklearn = True
 except:
     sklearn = False
 
