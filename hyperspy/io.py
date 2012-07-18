@@ -69,7 +69,7 @@ for plugin in io_plugins:
             plugin.file_extensions[plugin.default_extension])
 
 def load(filenames=None, record_by=None, signal_type=None, 
-         stack=True,**kwds):
+         stack=False,**kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
     Supported formats: HDF5, msa, Gatan dm3, Ripple (rpl+raw)

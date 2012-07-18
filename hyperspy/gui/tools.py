@@ -42,6 +42,12 @@ OurApplyButton = tu.Action(name = "Apply",
 OurResetButton = tu.Action(name = "Reset",
                            action = "reset")
                            
+OurFindButton = tu.Action(name = "Find",
+                           action = "find")
+                           
+OurPreviousButton = tu.Action(name = "Previous",
+                           action = "back")
+                           
                 
 class SmoothingHandler(tu.Handler):
     def close(self, info, is_ok):
@@ -71,6 +77,16 @@ class SpanSelectorInSpectrumHandler(tu.Handler):
         if hasattr(obj, 'apply'):
             obj.apply()
         
+        return
+        
+    def next(self, info, *args, **kwargs):
+        """Handles the **Next** button being clicked.
+
+        """
+        obj = info.object
+        obj.is_ok = True
+        if hasattr(obj, 'next'):
+            obj.next()
         return
 
 class SpectrumRangeSelectorHandler(tu.Handler):
@@ -151,6 +167,13 @@ class SpanSelectorInSpectrum(t.HasTraits):
         self.ss_left_value = self.span_selector.rect.get_x()
         self.ss_right_value = self.ss_left_value + \
             self.span_selector.rect.get_width()
+            
+    def reset_span_selector(self):
+        self.span_selector_switch(False)
+        self.ss_left_value = 0
+        self.ss_right_value = 0
+        self.span_selector_switch(True)
+        
 
 class SpectrumCalibration(SpanSelectorInSpectrum):
     left_value = t.Float(label = 'New left value')

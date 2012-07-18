@@ -171,7 +171,6 @@ def file_reader(filename, encoding = 'latin-1', **kwds):
     # It is necessary to change the locale to US english to read the date
     # keyword            
     loc = locale.getlocale(locale.LC_TIME)
-    print(loc)
     
     if os_name == 'posix':
         locale.setlocale(locale.LC_TIME, ('en_US', 'utf8'))
@@ -181,12 +180,14 @@ def file_reader(filename, encoding = 'latin-1', **kwds):
         H, M = time.strptime(parameters['TIME'], "%H:%M")[3:5]
         mapped['time'] = datetime.time(H, M)
     except:
-        print('The time information could not be retrieved')
+        if 'TIME' in parameters and parameters['TIME']:
+            print('The time information could not be retrieved')
     try:    
         Y, M, D = time.strptime(parameters['DATE'], "%d-%b-%Y")[0:3]
         mapped['date'] = datetime.date(Y, M, D)
     except:
-        print('The date information could not be retrieved')
+        if 'DATE' in parameters and parameters['DATE']:
+            print('The date information could not be retrieved')
 
     locale.setlocale(locale.LC_TIME, loc) # restore saved locale
 

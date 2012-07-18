@@ -652,6 +652,51 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         s.axes_manager.set_signal_dimension()
         if return_signal is True:
             return s
+            
+    def diff(self, axis, order=1, return_signal=False):
+        """Differentiate the data over the specify axis
+
+        Parameters
+        ----------
+        axis: int
+            The axis over which the operation will be performed
+        order: the order of the derivative
+        return_signal : bool
+            If False the operation will be performed on the current object. If
+            True, the current object will not be modified and the operation
+            will be performed in a new signal object that will be returned.
+
+        Returns
+        -------
+        Depending on the value of the return_signal keyword, nothing or a
+        signal instance
+
+        See also
+        --------
+        mean, sum
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.diff(-1)
+        >>> s.data.shape
+        (64,64,1023)
+        # If we just want to plot the result of the operation
+        s.diff(-1, True).plot()
+        """
+        if return_signal is True:
+            s = self.deepcopy()
+        else:
+            s = self
+        s.data = np.diff(s.data,order,axis)
+        axis = s.axes_manager.axes[axis]
+        axis.offset = axis.axis[:2].mean()
+        s.get_dimensions_from_data()
+        if return_signal is True:
+            return s
 
     def mean(self, axis, return_signal = False):
         """Average the data over the specify axis

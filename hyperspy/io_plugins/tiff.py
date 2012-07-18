@@ -18,8 +18,10 @@
 
 
 import numpy as np
-
-from hyperspy.misc.tifffile import imsave, imread
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    from hyperspy.misc.tifffile import imsave, imread
 
 # Plugin characteristics
 # ----------------------

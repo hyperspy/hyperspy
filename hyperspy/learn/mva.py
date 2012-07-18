@@ -25,14 +25,17 @@ import types
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
+import warnings
 try:
     import mdp
     mdp_installed = True
 except:
     mdp_installed = False
 try:
-    import sklearn.decomposition
-    sklearn_installed = True
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        import sklearn.decomposition
+        sklearn_installed = True
 except:
     sklearn_installed = False
 
@@ -429,8 +432,8 @@ class MVA():
                         differential_order = diff_order)
                 if pretreatment['algorithm'] == 'tv':
                     sfactors.smooth_tv(
-                        pretreatment_parameter= pretreatment[
-                            'pretreatment_parameter'],
+                        smoothing_parameter= pretreatment[
+                            'smoothing_parameter'],
                         differential_order = diff_order)
                 factors = sfactors.data.T
                 if pretreatment['algorithm'] == 'butter':

@@ -31,10 +31,17 @@ class MessageHandler(tu.Handler):
             info.object.is_ok = False
         return True
 
-information_view = tu.View(tu.Item('text', show_label = False, 
-                            style = 'readonly', springy = True, width = 300,), 
-                            kind = 'modal', buttons = [OKButton, CancelButton],
-                            handler = MessageHandler)
+information_view = tu.View(tu.Group(
+                                tu.Item('text',
+                                        show_label = False,
+                                        style = 'readonly',
+                                        springy = True,
+                                        width = 300,
+                                        padding= 15),),
+                            kind = 'modal',
+                            buttons = [OKButton, CancelButton],
+                            handler = MessageHandler,
+                            title = 'Message')
 class Message(t.HasTraits):
     text = t.Str
     is_ok = t.Bool(False)
