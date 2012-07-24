@@ -71,10 +71,19 @@ class MVA():
             self.learning_results = LearningResults()
 
     @do_not_replot
-    def decomposition(self, normalize_poissonian_noise=False,
-    algorithm = 'svd', output_dimension=None, centre = None,
-    auto_transpose = True, navigation_mask=None, signal_mask=None,
-    var_array=None, var_func=None, polyfit=None, reproject=None, **kwargs):
+    def decomposition(self,
+        normalize_poissonian_noise=False,
+        algorithm = 'svd',
+        output_dimension=None,
+        centre=None,
+        auto_transpose=True,
+        navigation_mask=None,
+        signal_mask=None,
+        var_array=None,
+        var_func=None,
+        polyfit=None,
+        reproject=None,
+        **kwargs):
         """Decomposition with a choice of algorithms
 
         The results are stored in self.learning_results
@@ -160,24 +169,9 @@ class MVA():
         # TODO this function can change the masks and this can cause
         # problems when reprojecting
         if normalize_poissonian_noise is True:
-            if reproject is None:
-                navigation_mask, signal_mask = \
-                    self.normalize_poissonian_noise(
-                                            navigation_mask=navigation_mask,
-                                            signal_mask=signal_mask,
-                                            return_masks = True)
-            elif reproject == 'both':
-                _, _ = \
-                    self.normalize_poissonian_noise(return_masks = True)  
-            elif reproject == 'navigation':
-                _, signal_mask = \
-                    self.normalize_poissonian_noise(return_masks = True,
-                                                    signal_mask=signal_mask,) 
-            elif reproject == 'signal':
-                navigation_mask, _ = \
-                    self.normalize_poissonian_noise(return_masks = True,
-                                            navigation_mask=navigation_mask,)         
-            
+            self.normalize_poissonian_noise(
+                                    navigation_mask=navigation_mask,
+                                    signal_mask=signal_mask,)
         messages.information('Performing decomposition analysis')
 
         dc = self.data
@@ -191,7 +185,8 @@ class MVA():
         if signal_mask is None:
             signal_mask = slice(None)
         
-        # Reset the explained_variance which is not set by all the algorithms
+        # Reset the explained_variance which is not set by all the 
+        # algorithms
         explained_variance = None
         explained_variance_ratio = None
         mean = None
@@ -204,8 +199,10 @@ class MVA():
         elif algorithm == 'fast_svd':
             factors, loadings, explained_variance, mean = svd_pca(
                 dc[:,signal_mask][navigation_mask,:],
-            fast = True, output_dimension = output_dimension, centre = centre,
-                auto_transpose = auto_transpose)
+                fast=True,
+                output_dimension=output_dimension,
+                centre=centre,
+                auto_transpose=auto_transpose)
 
         elif algorithm == 'sklearn_pca':
             if sklearn_installed is False:
@@ -213,7 +210,8 @@ class MVA():
                 'sklearn is not installed. Nothing done')
             sk = sklearn.decomposition.PCA(**kwargs)
             sk.n_components = output_dimension
-            loadings = sk.fit_transform((dc[:,signal_mask][navigation_mask,:]))
+            loadings = sk.fit_transform((
+                dc[:,signal_mask][navigation_mask,:]))
             factors = sk.components_.T
             explained_variance = sk.explained_variance_
             mean = sk.mean_
@@ -225,31 +223,36 @@ class MVA():
                 'sklearn is not installed. Nothing done')
             sk = sklearn.decomposition.NMF(**kwargs)
             sk.n_components = output_dimension
-            loadings = sk.fit_transform((dc[:,signal_mask][navigation_mask,:]))
+            loadings = sk.fit_transform((
+                dc[:,signal_mask][navigation_mask,:]))
             factors = sk.components_.T
             
         elif algorithm == 'sparse_pca':
             if sklearn_installed is False:
                 raise ImportError(
                 'sklearn is not installed. Nothing done')
-            sk = sklearn.decomposition.SparsePCA(output_dimension, **kwargs)
-            loadings = sk.fit_transform(dc[:,signal_mask][navigation_mask,:])
+            sk = sklearn.decomposition.SparsePCA(
+                output_dimension, **kwargs)
+            loadings = sk.fit_transform(
+                dc[:,signal_mask][navigation_mask,:])
             factors = sk.components_.T
             
         elif algorithm == 'mini_batch_sparse_pca':
             if sklearn_installed is False:
                 raise ImportError(
                 'sklearn is not installed. Nothing done')
-            sk = sklearn.decomposition.MiniBatchSparsePCA(output_dimension,
-                                                            **kwargs)
-            loadings = sk.fit_transform(dc[:,signal_mask][navigation_mask,:])
+            sk = sklearn.decomposition.MiniBatchSparsePCA(
+                output_dimension, **kwargs)
+            loadings = sk.fit_transform(
+                dc[:,signal_mask][navigation_mask,:])
             factors = sk.components_.T
 
         elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
             print "Performing the MLPCA training"
             if output_dimension is None:
                 messages.warning_exit(
-                "For MLPCA it is mandatory to define the output_dimension")
+                "For MLPCA it is mandatory to define the "
+                "output_dimension")
             if var_array is None and var_func is None:
                 messages.information('No variance array provided.'
                 'Supposing poissonian data')
@@ -257,11 +260,13 @@ class MVA():
 
             if var_array is not None and var_func is not None:
                 messages.warning_exit(
-                "You have defined both the var_func and var_array keywords"
+                "You have defined both the var_func and var_array "
+                "keywords."
                 "Please, define just one of them")
             if var_func is not None:
                 if hasattr(var_func, '__call__'):
-                    var_array = var_func(dc[signal_mask,...][:,navigation_mask])
+                    var_array = var_func(
+                        dc[signal_mask,...][:,navigation_mask])
                 else:
                     try:
                         var_array = np.polyval(polyfit,dc[signal_mask,
@@ -285,9 +290,11 @@ class MVA():
             raise ValueError('Algorithm not recognised. '
                                  'Nothing done')
 
-        # We must calculate the ratio here because otherwise the sum information
-        # can be lost if the user call crop_decomposition_dimension
-        if explained_variance is not None and explained_variance_ratio is None:
+        # We must calculate the ratio here because otherwise the sum 
+        # information can be lost if the user call 
+        # crop_decomposition_dimension
+        if explained_variance is not None and \
+        explained_variance_ratio is None:
             explained_variance_ratio = \
                 explained_variance / explained_variance.sum()
                 
@@ -320,13 +327,15 @@ class MVA():
         if mean is None:
             mean = 0
         if reproject in ('navigation', 'both'):
-            if algorithm not in ('nmf', 'sparse_pca', 'mini_batch_sparse_pca'):
+            if algorithm not in ('nmf', 'sparse_pca', 
+                                  'mini_batch_sparse_pca'):
                 loadings_ = np.dot(dc[:,signal_mask] - mean, factors)
             else:
                 loadings_ = sk.transform(dc[:,signal_mask])
             target.loadings = loadings_
         if reproject in ('signal', 'both'):
-            if algorithm not in ('nmf', 'sparse_pca', 'mini_batch_sparse_pca'):
+            if algorithm not in ('nmf', 'sparse_pca',
+                                  'mini_batch_sparse_pca'):
                 factors = np.dot(np.linalg.pinv(loadings), 
                                  dc[navigation_mask,:] - mean).T
                 target.factors = factors
@@ -345,14 +354,16 @@ class MVA():
             
         # Set the pixels that were not processed to nan
         if not isinstance(signal_mask, slice):
-            target.signal_mask = signal_mask
+            target.signal_mask = signal_mask.reshape(
+                self.axes_manager.signal_shape)
             if reproject not in ('both', 'signal'):
                 factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
                 factors[signal_mask == True,:] = target.factors
                 factors[signal_mask == False,:] = np.nan
                 target.factors = factors
         if not isinstance(navigation_mask, slice):
-            target.navigation_mask = navigation_mask
+            target.navigation_mask = navigation_mask.reshape(
+                self.axes_manager.navigation_shape)
             if reproject not in ('both', 'navigation'):
                 loadings = np.zeros((dc.shape[0], target.loadings.shape[1]))
                 loadings[navigation_mask == True,:] = target.loadings
@@ -370,11 +381,18 @@ class MVA():
         from hyperspy.signals.spectrum import Spectrum
         return Spectrum({'data' : self.learning_results.factors.T})
     
-    def blind_source_separation(
-        self, number_of_components=None, algorithm='CuBICA', diff_order=1,
-        factors=None, comp_list=None, mask=None, 
-        on_loadings=False,pretreatment = None, **kwargs):
-        """Blind source separation (BSS) on the result on the decomposition.
+    def blind_source_separation(self,
+                                number_of_components=None,
+                                algorithm='CuBICA',
+                                diff_order=1,
+                                factors=None,
+                                comp_list=None,
+                                mask=None, 
+                                on_loadings=False,
+                                pretreatment=None,
+                                **kwargs):
+        """Blind source separation (BSS) on the result on the 
+        decomposition.
 
         Available algorithms: FastICA, JADE, CuBICA, and TDSEP
 
@@ -387,17 +405,17 @@ class MVA():
         factors : numpy array
             externally provided components
         comp_list : boolen numpy array
-            choose the components to use by the boolean list. It permits to
-            choose non contiguous components.
-        mask : numpy boolean array with the same dimension as the PC
+            choose the components to use by the boolean list. It permits
+             to choose non contiguous components.
+        mask : numpy boolean array with the same dimension as the signal
             If not None, only the selected channels will be used by the
             algorithm.
         pretreatment: dict
         
-        Any extra parameter is passed to the ICA algorithm
+        Any extra parameter is passed to the ICA algorithm.
+        
         """
-        target=self.learning_results
-
+        target=self.learning_results                
         if not hasattr(target, 'factors') or target.factors==None:
             self.decomposition()
 
@@ -420,15 +438,16 @@ class MVA():
                     bool_index[ifactors] = True
                 number_of_components = len(comp_list)
             factors = factors[:,bool_index]
-            if diff_order > 0 and pretreatment is None:
-                factors = np.diff(factors, diff_order, axis = 0)
+                    
             if pretreatment is not None:
                 from hyperspy.signals.spectrum import Spectrum
                 sfactors = Spectrum({'data' : factors.T})
                 if pretreatment['algorithm'] == 'savitzky_golay':
                     sfactors.smooth_savitzky_golay(
-                        number_of_points = pretreatment['number_of_points'],
-                        polynomial_order = pretreatment['polynomial_order'],
+                        number_of_points=pretreatment[
+                                'number_of_points'],
+                        polynomial_order=pretreatment[
+                                'polynomial_order'],
                         differential_order = diff_order)
                 if pretreatment['algorithm'] == 'tv':
                     sfactors.smooth_tv(
@@ -440,12 +459,15 @@ class MVA():
                     b, a = sp.signal.butter(pretreatment['order'],
                         pretreatment['cutoff'], pretreatment['type'])
                     for i in range(factors.shape[1]):
-                        factors[:,i] = sp.signal.filtfilt(b, a, factors[:,i])
-            
+                        factors[:,i] = sp.signal.filtfilt(b,a,
+                            factors[:,i])
+            elif diff_order > 0:
+                factors = np.diff(factors, diff_order, axis=0)
+                    
             if mask is not None:
-                factors = factors[mask.ravel(), :]
+                factors = factors[mask]
 
-            # first centers and scales data
+            # first center and scale the data
             factors,invsqcovmat = centering_and_whitening(factors)
             if algorithm == 'orthomax':
                 _, unmixing_matrix = utils.orthomax(factors, **kwargs)
@@ -455,11 +477,11 @@ class MVA():
                 if sklearn_installed is False:
                     raise ImportError(
                     'sklearn is not installed. Nothing done')
-                target.bss_node = sklearn.decomposition.FastICA(**kwargs)
+                target.bss_node = sklearn.decomposition.FastICA(
+                    **kwargs)
                 target.bss_node.whiten = False
                 target.bss_node.fit(factors)
                 unmixing_matrix = target.bss_node.unmixing_matrix_
-            
             else:
                 if mdp_installed is False:
                     raise ImportError(
@@ -472,7 +494,7 @@ class MVA():
                 target.bss_node.train(factors)
                 unmixing_matrix = target.bss_node.get_recmatrix()
 
-            target.unmixing_matrix = np.dot(unmixing_matrix, invsqcovmat)
+            target.unmixing_matrix = np.dot(unmixing_matrix,invsqcovmat)
             self._unmix_factors(target)
             self._unmix_loadings(target)
             self._auto_reverse_bss_component(target)
@@ -493,14 +515,14 @@ class MVA():
             factors = self.learning_results.bss_factors
             loadings = self.learning_results.bss_loadings
             if factors is None:
-                raise UserWarning("This method can only be used after a "
-                    "blind source separation operation")
+                raise UserWarning("This method can only be used after "
+                    "a blind source separation operation")
         elif which == 'decomposition':
             factors = self.learning_results.factors
             loadings = self.learning_results.loadings
             if factors is None:
-                raise UserWarning("This method can only be used after a "
-                    "decomposition operation")
+                raise UserWarning("This method can only be used after"
+                    "a decomposition operation")
         else:
             raise ValueError("what must be bss or decomposition")
         
@@ -704,7 +726,8 @@ class MVA():
         if ax is None:
             fig = plt.figure()
             ax = fig.add_subplot(111)
-        ax.plot(range(n), target.explained_variance_ratio[:n], 'o', label=label)
+        ax.plot(range(n), target.explained_variance_ratio[:n], 'o',
+            label=label)
         if log is True:
             ax.semilogy()
         ax.set_ylabel('Explained variance ratio')
@@ -714,8 +737,8 @@ class MVA():
         return ax
 
     def plot_cumulative_explained_variance_ratio(self,n=50):
-        """Plot the principal components explained variance up to the given
-        number
+        """Plot the principal components explained variance up to the 
+        given number
 
         Parameters
         ----------
@@ -725,7 +748,7 @@ class MVA():
         if n > target.explained_variance.shape[0]:
             n=target.explained_variance.shape[0]
         cumu = np.cumsum(target.explained_variance) / np.sum(
-                                                     target.explained_variance)
+                                            target.explained_variance)
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.scatter(range(n), cumu[:n])
@@ -735,11 +758,11 @@ class MVA():
         plt.show()
         return ax
 
-    def normalize_poissonian_noise(self, navigation_mask = None,
-                                   signal_mask = None, return_masks = False):
+    def normalize_poissonian_noise(self, navigation_mask=None,
+                                   signal_mask=None):
         """
-        Scales the SI following Surf. Interface Anal. 2004; 36: 203–212 to
-        "normalize" the poissonian data for decomposition analysis
+        Scales the SI following Surf. Interface Anal. 2004; 36: 203–212 
+        to "normalize" the poissonian data for decomposition analysis
 
         Parameters
         ----------
@@ -747,7 +770,8 @@ class MVA():
         signal_mask  : boolen numpy array
         """
         messages.information(
-            "Scaling the data to normalize the (presumably) Poissonian noise")
+            "Scaling the data to normalize the (presumably)"
+            " Poissonian noise")
         refold = self.unfold_if_multidim()
         dc = self.data
         if navigation_mask is None:
@@ -763,39 +787,25 @@ class MVA():
         if (aG < 0).any() or (bH < 0).any():
             messages.warning_exit(
             "Data error: negative values\n"
-            "Are you sure that the data follow a poissonian distribution?")
-        # Update the spatial and energy masks so it does not include rows
-        # or colums that sum zero.
-        aG0 = (aG == 0)
-        bH0 = (bH == 0)
-        if aG0.any():
-            if isinstance(navigation_mask, slice):
-                # Convert the slice into a mask before setting its values
-                navigation_mask = np.ones((self.data.shape[0]),dtype = 'bool')
-            # Set colums summing zero as masked
-            navigation_mask[aG0] = False
-            aG = aG[aG0 == False]
-        if bH0.any():
-            if isinstance(signal_mask, slice):
-                # Convert the slice into a mask before setting its values
-                signal_mask = np.ones((self.data.shape[1]), dtype = 'bool')
-            # Set rows summing zero as masked
-            signal_mask[bH0] = False
-            bH = bH[bH0 == False]
+            "Are you sure that the data follow a poissonian "
+            "distribution?")
+
         self._root_aG = np.sqrt(aG)[:, np.newaxis]
         self._root_bH = np.sqrt(bH)[np.newaxis, :]
+        # We first disable numpy's warning when the result of an
+        # operation produces nans
+        np.seterr(invalid='ignore')
+        dc[:,signal_mask][navigation_mask,:] /= (self._root_aG * 
+            self._root_bH)
+        # Enable numpy warning
+        np.seterr(invalid=None)
+        #Set the nans resulting from 0/0 to zero
         dc[:,signal_mask][navigation_mask,:] = \
-            (dc[:,signal_mask][navigation_mask,:] /
-                (self._root_aG * self._root_bH))
+            np.nan_to_num(dc[:,signal_mask][navigation_mask,:])
+        
         if refold is True:
             print "Automatically refolding the SI after scaling"
             self.fold()
-        if return_masks is True:
-            if isinstance(navigation_mask, slice):
-                navigation_mask = None
-            if isinstance(signal_mask, slice):
-                signal_mask = None
-            return navigation_mask, signal_mask
 
     def undo_treatments(self):
         """Undo normalize_poissonian_noise"""
@@ -835,15 +845,15 @@ class LearningResults(object):
         """
         kwargs = {}
         for attribute in [
-            v for v in dir(self) if type(getattr(self,v)) != types.MethodType
-                and not v.startswith('_')]:
+            v for v in dir(self) if type(getattr(self,v)) != 
+            types.MethodType and not v.startswith('_')]:
             kwargs[attribute] = self.__getattribute__(attribute)
         np.savez(filename, **kwargs)
 
 
     def load(self, filename):
-        """Load the results of a previous decomposition and demixing analysis
-        from a file.
+        """Load the results of a previous decomposition and
+         demixing analysis from a file.
 
         Parameters
         ----------
@@ -911,8 +921,8 @@ class LearningResults(object):
         self.summary()
 
     def summary(self):
-        """Prints a summary of the decomposition and demixing parameters to the 
-        stdout
+        """Prints a summary of the decomposition and demixing parameters
+         to the stdout
         """
         print
         print "Decomposition parameters:"
@@ -944,6 +954,7 @@ class LearningResults(object):
         self.factors = self.factors[:,:n]
         
     def _transpose_results(self):
-        self.factors, self.loadings, self.bss_factors, self.bss_loadings = \
-        self.loadings, self.factors, self.bss_loadings, self.bss_factors
+        (self.factors, self.loadings, self.bss_factors, 
+            self.bss_loadings) = (self.loadings, self.factors, 
+                self.bss_loadings, self.bss_factors)
         
