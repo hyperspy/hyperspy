@@ -15,6 +15,9 @@ import os
 from subprocess import call
 import hyperspy.Release as Release
 release_name = 'hyperspy-' + Release.version.replace('.dev','~dev')
+# Delete the deb_dist folder to avoid an error if it contains
+# directories from a previous packaging
+os.system("rm -rf deb_dist")
 os.system('python setup.py --command-packages=stdeb.command bdist_deb')
 
 if args.install is True:
