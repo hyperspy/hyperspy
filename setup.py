@@ -70,7 +70,6 @@ class update_version_when_dev:
         # Get the hash from the git repository if available
         self.restore_version = False
         git_master_path = ".git/refs/heads/master"
-        print git_master_path
         if "+dev" in self.release_version and \
                 os.path.isfile(git_master_path):
             try:
