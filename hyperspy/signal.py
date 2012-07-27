@@ -590,8 +590,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         return axis
 
     def iterate_axis(self, axis = -1):
-        # We make a copy to guarantee that the data in contiguous, otherwise
-        # it will not return a view of the data
+        # We make a copy to guarantee that the data in contiguous,
+        # otherwise it will not return a view of the data
         self.data = self.data.copy()
         axis = self._get_positive_axis_index_index(axis)
         unfolded_axis = axis - 1
@@ -603,6 +603,26 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         for i in xrange(data.shape[unfolded_axis]):
             getitem = [0] * len(data.shape)
             getitem[axis] = slice(None)
+            getitem[unfolded_axis] = i
+            yield(data[getitem])
+            
+    def _iterate_signal(self):
+        # We make a copy to guarantee that the data in contiguous,
+        # otherwise it will not return a view of the data
+        self.data = self.data.copy()
+        axes = [axis.index_in_array for 
+                axis in self.axes_manager._slicing_axes]
+        unfolded_axis = self.axes_manager._non_slicing_axes[-1].index_in_array
+        new_shape = [1] * len(self.data.shape)
+        for axis in axes:
+            new_shape[axis] = self.data.shape[axis]
+        new_shape[unfolded_axis] = -1
+        # Warning! if the data is not contigous it will make a copy!!
+        data = self.data.reshape(new_shape)
+        for i in xrange(data.shape[unfolded_axis]):
+            getitem = [0] * len(data.shape)
+            for axis in axes:
+                getitem[axis] = slice(None)
             getitem[unfolded_axis] = i
             yield(data[getitem])
 
