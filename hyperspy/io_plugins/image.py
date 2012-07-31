@@ -58,28 +58,18 @@ def file_reader(filename, **kwds):
     Parameters
     ----------
     filename: str
-        By using '*' it is possible to load a collection of images of the same 
-        size into a three dimensional dataset.
+
     '''
-    if '*' in filename:
-        from glob import glob
-        flist=glob(filename)
-        flist.sort()
-        imsample = imread(flist[0])
-        w=imsample.shape[0]
-        h=imsample.shape[1]
-        d=len(flist)
-        dc=np.zeros((d,w,h))
-        for i in xrange(d):
-            dc[i,:,:] = imread(flist[i])
-    else:
-        dc = imread(filename)
-    dt = 'image'    
-    return [{'data':dc, 
-             'mapped_parameters': {
-                'original_filename' : filename,
-                'record_by': dt,
-                'signal_type' : None,
-                }
-             }]
+    dc = imread(filename)
+    if len(dc.shape) > 2:
+        # It may be a grayscale image that was saved in the RGB or RGBA
+        # format
+        if (dc[:,:,1] == dc[:,:,2]).all() and \
+                            (dc[:,:,1] == dc[:,:,2]).all():
+            dc = dc[:,:,0]
+    return [{'data': dc, 
+             'mapped_parameters': 
+                 {'original_filename' : filename,
+                  'record_by': 'image',
+                  'signal_type' : None,}}]
 
