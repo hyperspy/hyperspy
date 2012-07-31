@@ -23,18 +23,27 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+from distutils.version import StrictVersion
+import warnings
+
 import numpy as np
 import scipy.linalg
-import warnings
 try:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        from scikits.learn.utils.extmath import fast_svd
+        import scikits.learn
+        sklearn_version = StrictVersion(scikits.learn.__version__)
+        if  sklearn_version < StrictVersion("0.9"):
+            from scikits.learn.utils.extmath import fast_svd
+        elif sklearn_version == StrictVersion("0.9"):
+            from sklearn.utils.extmath import fast_svd
+        else:
+            from sklearn.utils.extmath import  randomized_svd as fast_svd
         sklearn = True
-except:
+except ImportError:
     sklearn = False
 
-def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000, fast = False):
+def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000, fast=False):
     """
     This function performs MLPCA with missing
     data.
@@ -55,7 +64,7 @@ def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000, fast = False):
     """
     if fast is True and sklearn is True:
         def svd(X):
-            return fast_svd(X, p, q = 3)
+            return fast_svd(X, p)
     else:
         def svd(X):
             return scipy.linalg.svd(X, full_matrices = False)

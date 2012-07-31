@@ -16,14 +16,25 @@
 # dataou should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import warnings
+
 import numpy as np
 import scipy.linalg
+from distutils.version import StrictVersion
+
 try:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        from scikits.learn.utils.extmath import fast_svd
+        import scikits.learn
+        sklearn_version = StrictVersion(scikits.learn.__version__)
+        if  sklearn_version < StrictVersion("0.9"):
+            from scikits.learn.utils.extmath import fast_svd
+        elif sklearn_version == StrictVersion("0.9"):
+            from sklearn.utils.extmath import fast_svd
+        else:
+            from sklearn.utils.extmath import  randomized_svd as fast_svd
         sklearn = True
-except:
+except ImportError:
     sklearn = False
 
 from hyperspy import messages
@@ -78,7 +89,7 @@ def svd_pca(data, fast = False, output_dimension = None, centre = None,
         if output_dimension is None:
             messages.warning_exit('When using fast_svd it is necessary to '
                                   'define the output_dimension')
-        U, S, V = fast_svd(data, output_dimension, q = 3)
+        U, S, V = fast_svd(data, output_dimension)
     else:
         U, S, V = scipy.linalg.svd(data, full_matrices = False)
     if auto_transpose is False:

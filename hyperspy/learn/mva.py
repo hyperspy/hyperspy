@@ -21,6 +21,7 @@ from __future__ import division
 import sys
 import os
 import types
+from distutils.version import StrictVersion
 
 import numpy as np
 import scipy as sp
@@ -31,6 +32,20 @@ try:
     mdp_installed = True
 except:
     mdp_installed = False
+    
+try:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        import scikits.learn
+        sklearn_version = StrictVersion(scikits.learn.__version__)
+        if  sklearn_version < StrictVersion("0.9"):
+            import scikits.learn as sklearn
+            import scikits.learn.decomposition
+        else:
+            import sklearn.decomposition
+        sklearn = True
+except ImportError:
+    sklearn = False
 try:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -715,6 +730,12 @@ class MVA():
             created
         label: str
             An optional label for the legend
+            
+        Returns
+        -------
+        The axe of the plot, that can be passed to the method again in
+        a future call using the ax attribute
+        
         """
         target = self.learning_results
         if target.explained_variance_ratio is None:
