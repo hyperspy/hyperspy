@@ -18,6 +18,8 @@
 
 import os
 import glob
+import tempfile
+import os.path as path
 
 import numpy as np
 
@@ -69,7 +71,7 @@ for plugin in io_plugins:
             plugin.file_extensions[plugin.default_extension])
 
 def load(filenames=None, record_by=None, signal_type=None, 
-         stack=False,**kwds):
+         stack=False, mmap=False, mmap_dir=None, **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
     Supported formats: HDF5, msa, Gatan dm3, Ripple (rpl+raw)
@@ -103,7 +105,20 @@ def load(filenames=None, record_by=None, signal_type=None,
     stack : bool
         If True and multiple filenames are passed in, stacking all
         the data into a single object is attempted. All files must match
-        in shape.
+        in shape. It is possible to store the data in a memory mapped
+        temporary file instead of in memory setting mmap_mode.
+        
+    mmap: bool
+        If True and stack is True, then the data is stored
+        in a memory-mapped temporary file.The memory-mapped data is 
+        stored on disk, and not directly loaded into memory.  
+        Memory mapping is especially useful for accessing small 
+        fragments of large files without reading the entire file into 
+        memory.
+    mmap_dir : string
+        If mmap_dir is not None, and stack and mmap are True, the memory
+        mapped file will be created in the given directory,
+        otherwise the default directory is used.
         
     Returns
     -------
@@ -161,10 +176,26 @@ def load(filenames=None, record_by=None, signal_type=None,
                 if original_shape is None:
                     original_shape = obj.data.shape
                     record_by = obj.mapped_parameters.record_by
-                    stack_shape = [len(filenames),] + list(original_shape)
+                    stack_shape = tuple([len(filenames),]) + original_shape
+                    tempf = None
+                    if mmap is False:
+                        data = np.empty(stack_shape,
+                                           dtype=obj.data.dtype)
+                    else:
+                        #filename = os.path.join(tempfile.mkdtemp(),
+                                             #'newfile.dat')
+                        tempf = tempfile.NamedTemporaryFile(
+                                                        dir=mmap_dir)
+                        data = np.memmap(tempf,
+                                         dtype=obj.data.dtype,
+                                         mode = 'w+',
+                                         shape=stack_shape,)
                     signal = type(obj)(
-                        {'data' : np.empty(stack_shape,
-                                           dtype=obj.data.dtype)})
+                        {'data' : data})
+                    # Store the temporary file in the signal class to
+                    # avoid its deletion when garbage collecting
+                    if tempf is not None:
+                        signal._data_temporary_file = tempf
                     signal.axes_manager.axes[1:] = obj.axes_manager.axes
                     signal.axes_manager._set_axes_index_in_array_from_position()
                     eaxis = signal.axes_manager.axes[0]
