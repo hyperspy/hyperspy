@@ -139,9 +139,26 @@ def parse_ripple(fp):
         raise IOError, err
     return rpl_info
 
-def read_raw(rpl_info, fp):
+def read_raw(rpl_info, fp, mmap_mode='c'):
     """Read the raw file object 'fp' based on the information given in the
     'rpl_info' dictionary.
+    
+    Parameters
+    ----------
+    rpl_info: dict
+        A dictionary containing the keywords as parsed by read_rpl
+    fp:
+    mmap_mode: {None, 'r+', 'r', 'w+', 'c'}, optional
+    If not None, then memory-map the file, using the given mode
+    (see `numpy.memmap`).  The mode has no effect for pickled or
+    zipped files.
+    A memory-mapped array is stored on disk, and not directly loaded
+    into memory.  However, it can be accessed and sliced like any
+    ndarray.  Memory mapping is especially useful for accessing
+    small fragments of large files without reading the entire file
+    into memory.
+    
+    
     """
     width = rpl_info['width']
     height = rpl_info['height']
@@ -172,9 +189,10 @@ def read_raw(rpl_info, fp):
     data_type = np.dtype(data_type)
     data_type = data_type.newbyteorder(endian)
 
-    data = read_data_array(fp,
-                           byte_address=offset,
-                           data_type=data_type)
+    data = np.memmap(fp,
+                     offset=offset,
+                     dtype=data_type,
+                     mode=mmap_mode)
 
     if record_by == 'vector':   # spectral image
         size = (height, width, depth)
@@ -187,8 +205,8 @@ def read_raw(rpl_info, fp):
         data = data.reshape(size)
     return data
 
-def file_reader(filename, rpl_info=None, encoding="latin-1", 
-                *args,**kwds):
+def file_reader(filename, rpl_info=None, encoding="latin-1",
+                mmap_mode='c', *args,**kwds):
     """Parses a Lispix (http://www.nist.gov/lispix/) ripple (.rpl) file
     and reads the data from the corresponding raw (.raw) file;
     or, read a raw file if the dictionary rpl_info is provided.
@@ -297,7 +315,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     if not rawfname:
         raise IOError, 'RAW file "%s" does not exists' % rawfname
     else:
-        data = read_raw(rpl_info, rawfname)
+        data = read_raw(rpl_info, rawfname, mmap_mode=mmap_mode)
 
     if rpl_info['record-by'] == 'vector':
         print 'Loading as spectrum'
