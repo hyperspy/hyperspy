@@ -154,29 +154,33 @@ def load(filenames=None, record_by=None, signal_type=None,
     else:
         if len(filenames) > 1:
             messages.information('Loading individual files')
-        objects=[load_single_file(filename, output_level=0,**kwds) 
-            for filename in filenames]
-        if len(objects) > 1 and stack is True:
-            original_shape = objects[0].data.shape
-            record_by = objects[0].mapped_parameters.record_by
-            stack_shape = [len(objects),] + list(original_shape)
-            signal = type(objects[0])({'data' : np.empty(stack_shape)})
-            signal.axes_manager.axes[1:] = objects[0].axes_manager.axes
-            signal.axes_manager._set_axes_index_in_array_from_position()
-            eaxis = signal.axes_manager.axes[0]
-            eaxis.name = 'stack_element'
-            eaxis.navigate = True
-            signal.mapped_parameters = objects[0].mapped_parameters
-            signal.mapped_parameters.original_filename = ''
-            signal.mapped_parameters.title = \
-            os.path.split(os.path.split(
-                os.path.abspath(filenames[0]))[0])[1]
-            signal.original_parameters = DictionaryBrowser({})
-            signal.original_parameters.add_node('stack_elements')
-            for obj,i in zip(objects, range(len(objects))):
+        if stack is True:
+            original_shape = None
+            for i, filename in enumerate(filenames):
+                obj = load_single_file(filename, output_level=0,**kwds)
+                if original_shape is None:
+                    original_shape = obj.data.shape
+                    record_by = obj.mapped_parameters.record_by
+                    stack_shape = [len(filenames),] + list(original_shape)
+                    signal = type(obj)(
+                        {'data' : np.empty(stack_shape,
+                                           dtype=obj.data.dtype)})
+                    signal.axes_manager.axes[1:] = obj.axes_manager.axes
+                    signal.axes_manager._set_axes_index_in_array_from_position()
+                    eaxis = signal.axes_manager.axes[0]
+                    eaxis.name = 'stack_element'
+                    eaxis.navigate = True
+                    signal.mapped_parameters = obj.mapped_parameters
+                    signal.mapped_parameters.original_filename = ''
+                    signal.mapped_parameters.title = \
+                    os.path.split(os.path.split(
+                        os.path.abspath(filenames[0]))[0])[1]
+                    signal.original_parameters = DictionaryBrowser({})
+                    signal.original_parameters.add_node('stack_elements')
                 if obj.data.shape != original_shape:
                     raise IOError(
                 "Only files with data of the same shape can be stacked")
+                
                 signal.data[i,...] = obj.data
                 signal.original_parameters.stack_elements.add_node(
                     'element%i' % i)
@@ -186,10 +190,14 @@ def load(filenames=None, record_by=None, signal_type=None,
                     obj.original_parameters.as_dictionary()
                 node.mapped_parameters = \
                     obj.mapped_parameters.as_dictionary()
+                del obj
             messages.information('Individual files loaded correctly')
             print signal
             objects = [signal,]
-
+        else:
+            objects=[load_single_file(filename, output_level=0,**kwds) 
+                for filename in filenames]
+            
         if hyperspy.defaults_parser.preferences.General.plot_on_load:
             for obj in objects:
                 obj.plot()
