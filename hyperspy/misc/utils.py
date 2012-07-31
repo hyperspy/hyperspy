@@ -1499,3 +1499,17 @@ def strlist2enumeration(lst):
         return "%s and %s" % lst
     else:
         return "%s, "*(len(lst) - 2) % lst[:-2] + "%s and %s" % lst[-2:]
+        
+def get_array_memory_size_in_GiB(shape, dtype):
+    """Given the size and dtype returns the amount of memory that such
+    an array needs to allocate
+    
+    Parameters
+    ----------
+    shape: tuple
+    dtype : data-type
+        The desired data-type for the array.
+    """
+    if isinstance(dtype, str):
+        dtype = np.dtype(dtype)
+    return np.array(shape).cumprod()[-1] * dtype.itemsize / 2.**30
