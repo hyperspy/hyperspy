@@ -321,17 +321,21 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             print("%s size: %i" %
             (axis.name, dc.shape[axis.index_in_array]))
 
-    def crop_in_pixels(self, axis, i1 = None, i2 = None):
+    def crop_in_pixels(self, axis, i1=None, i2=None, copy=True):
         """Crops the data in a given axis. The range is given in pixels
         axis : int
         i1 : int
             Start index
         i2 : int
             End index
+        copy : bool
+            If True makes a copy of the data, otherwise the cropping
+            performs just a view.
 
         See also:
         ---------
         crop_in_units
+        
         """
         axis = self._get_positive_axis_index_index(axis)
         if i1 is not None:
@@ -345,15 +349,18 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         self.get_dimensions_from_data()
         self.squeeze()
 
-    def crop_in_units(self, axis, x1 = None, x2 = None):
+    def crop_in_units(self, axis, x1=None, x2=None, copy=True):
         """Crops the data in a given axis. The range is given in the units of
         the axis
 
         axis : int
-        i1 : int
-            Start index
-        i2 : int
-            End index
+        i1 : float
+            Start value
+        i2 : float
+            End value
+        copy : bool
+            If True makes a copy of the data, otherwise the cropping
+            performs just a view.
 
         See also:
         ---------
@@ -362,7 +369,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         """
         i1 = self.axes_manager.axes[axis].value2index(x1)
         i2 = self.axes_manager.axes[axis].value2index(x2)
-        self.crop_in_pixels(axis, i1, i2)
+        self.crop_in_pixels(axis, i1, i2,copy=copy)
 
     @auto_replot
     def roll_xy(self, n_x, n_y = 1):
@@ -589,10 +596,11 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             axis = len(self.data.shape) + axis
         return axis
 
-    def iterate_axis(self, axis = -1):
+    def iterate_axis(self, axis = -1, copy=True):
         # We make a copy to guarantee that the data in contiguous,
         # otherwise it will not return a view of the data
-        self.data = self.data.copy()
+        if copy is True:
+            self.data = self.data.copy()
         axis = self._get_positive_axis_index_index(axis)
         unfolded_axis = axis - 1
         new_shape = [1] * len(self.data.shape)
@@ -606,10 +614,11 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             getitem[unfolded_axis] = i
             yield(data[getitem])
             
-    def _iterate_signal(self):
+    def _iterate_signal(self, copy=True):
         # We make a copy to guarantee that the data in contiguous,
         # otherwise it will not return a view of the data
-        self.data = self.data.copy()
+        if copy is True:
+            self.data = self.data.copy()
         axes = [axis.index_in_array for 
                 axis in self.axes_manager._slicing_axes]
         unfolded_axis = self.axes_manager._non_slicing_axes[-1].index_in_array
