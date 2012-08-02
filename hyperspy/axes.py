@@ -49,16 +49,6 @@ def get_axis_group(n , label = ''):
         show_border = True,)
     return group
     
-class BoundedIndex(t.Int):
-    """
-    """
-    def validate(self, object, name, value):
-        value = super(BoundedIndex, self).validate(object, name, value)
-        if abs(value) >= object.size:
-            value = value % object.size
-        return value
-
-
 def generate_axis(offset, scale, size, offset_index=0):
     """Creates an axis given the offset, scale and number of channels
 
