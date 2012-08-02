@@ -26,9 +26,8 @@ For more options and details read the rest of the documentation.
 Quick instructions to install Hyperspy in MacOs
 -------------------------------------------------
 
-#. Download and install `EPD. <http://www.enthought.com/products/epd.php>`_ EPD is reccomended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are incluided). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_
-#. (Maybe) Restart the computer
-#. Open a terminal and type: `easy_install hyperspy`
+#. Download and install `EPD. <http://www.enthought.com/products/epd.php>`_ **Do not install the 64bits version even if your processor is 64bits because it does not include the Python WX libraries which are required by Hyperspy**. EPD is reccomended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are incluided). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_
+#. Open a new terminal and type: `easy_install hyperspy`
 
 For more options and details read the rest of the documentation.
 
