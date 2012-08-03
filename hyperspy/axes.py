@@ -102,15 +102,15 @@ class DataAxis(t.HasTraits):
         self.index_in_array = index_in_array
         self.update_axis()
         self.navigate = navigate
-        self.on_trait_change(self.update_axis, ['scale', 'offset', 'size'])
+        self.on_trait_change(self.update_axis,
+                             ['scale', 'offset', 'size'])
         self.on_trait_change(self.update_value, 'index')
         self.on_trait_change(self.set_index_from_value, 'value')
         self.on_trait_change(self._update_slice, 'navigate')
         self.on_trait_change(self.update_index_bounds, 'size')
-        # The slice must be updated even if the default value did not change to
-        # correctly set its value.
+        # The slice must be updated even if the default value did not 
+        # change to correctly set its value.
         self._update_slice(self.navigate)
-
 
     def __repr__(self):
         if self.name is not None:
@@ -167,10 +167,12 @@ class DataAxis(t.HasTraits):
             if self.size > index >= 0:
                 return index
             elif index < 0:
-                messages.warning("The given value is below the axis limits")
+                messages.warning(
+                    "The given value is below the axis limits")
                 return 0
             else:
-                messages.warning("The given value is above the axis limits")
+                messages.warning(
+                    "The given value is above the axis limits")
                 return int(self.size - 1)
 
     def index2value(self, index):
@@ -214,18 +216,71 @@ class DataAxis(t.HasTraits):
     )
 
 class AxesManager(t.HasTraits):
+    """Contains and manages the data axes.
+    
+    It can iterate over the navigation coordiantes returning the 
+    coordinates at the current iteration.
+    
+    
+    Attributes
+    ----------
+    
+    coordinates : tuple
+        Get and set the current coordinates if the navigation dimension
+        is not 0. If the navigation dimension is 0 it raises 
+        AttributeError when attempting to set its value.
+        
+    Examples
+    --------
+    
+    >>> import numpy as np
+    
+    Create a spectrum with random data
+    
+    >>> s = Spectrum({'data' : np.random.random((2,2,2,10))})
+    >>> s.axes_manager
+    <Axes manager, 4 axes, signal dimension: 1, navigation dimension: 3>
+    
+    >>> s.axes_manager[1]
+    <undefined axis, index: 1>
+    >>> for i in s.axes_manager:
+    >>>     print i, s.axes_manager.coordinates
+    (0, 0, 0) (0, 0, 0)
+    (0, 0, 1) (0, 0, 1)
+    (0, 1, 0) (0, 1, 0)
+    (0, 1, 1) (0, 1, 1)
+    (1, 0, 0) (1, 0, 0)
+    (1, 0, 1) (1, 0, 1)
+    (1, 1, 0) (1, 1, 0)
+    (1, 1, 1) (1, 1, 1)
+    
+    """
     axes = t.List(DataAxis)
     _slicing_axes = t.List()
     _non_slicing_axes = t.List()
     _step = t.Int(1)
     
+    def __getitem__(self, y):
+        """x.__getitem__(y) <==> x[y]
+        
+        """
+        return self.axes[y]
+        
+    def __getslice__(self, i=None, j=None):
+        """x.__getslice__(i, j) <==> x[i:j]
+        
+        """
+        return self.axes[i:j]
+        
     def __init__(self, axes_list):
         super(AxesManager, self).__init__()
         ncoord = len(axes_list)
         self.axes = [None] * ncoord
         for axis_dict in axes_list:
-            self.axes[axis_dict['index_in_array']] = DataAxis(**axis_dict)
-        navigates = [i.navigate for i in self.axes if hasattr(i, 'navigate')]
+            self.axes[axis_dict['index_in_array']] = DataAxis(
+                                                            **axis_dict)
+        navigates = [i.navigate for i in self.axes if 
+                                                hasattr(i, 'navigate')]
         # set_view is called only if there is no current view
         if not navigates or np.all(np.array(navigates) == True):
             self.set_view()
@@ -233,6 +288,45 @@ class AxesManager(t.HasTraits):
         self.on_trait_change(self.set_signal_dimension, 'axes.slice')
         self.on_trait_change(self.set_signal_dimension, 'axes.index')
         self.on_trait_change(self.set_signal_dimension, 'axes.size')
+        self._index = None # index for the iterator
+        
+    def _update_max_index(self):
+        self._max_index = 1
+        for i in self.navigation_shape:
+            self._max_index *= i
+        self._max_index -= 1
+
+    def next(self):
+        """
+        Standard iterator method, updates the index and returns the 
+        current coordiantes
+
+        Returns
+        -------
+        val : tuple of ints
+            Returns a tuple containing the coordiantes of the current 
+            iteration.
+
+        """
+        if self._index is None:
+            self._index = 0
+            self._coordinates_backup = self.coordinates
+            val = (0,) * self.navigation_dimension
+            self.coordinates = val
+        elif (self._index >= self._max_index):
+            self._index = None
+            self.coordinates = self._coordinates_backup
+            del self._coordinates_backup
+            raise StopIteration
+        else:
+            self._index += 1
+            val = np.unravel_index(self._index, 
+                                    tuple(self.navigation_shape))
+            self.coordinates = val
+        return val
+
+    def __iter__(self):
+        return self
         
     def append_axis(self, *args, **kwargs):
         axis = DataAxis(*args, **kwargs)
@@ -270,6 +364,7 @@ class AxesManager(t.HasTraits):
                 axis.size for axis in self._slicing_axes]
         else:
             self.signal_shape = [0,]
+        self._update_max_index()
 
     def set_not_slicing_indexes(self, nsi):
         for index,axis in zip(nsi, self.axes):
@@ -398,8 +493,20 @@ class AxesManager(t.HasTraits):
             len(self.axes), self.signal_dimension,
             self.navigation_dimension)
         return text
+    
+    @property        
+    def coordinates(self):
+        """Get the index of the navigation axes.
         
-    def set_coordinates(self, coordinates):
+        Returns
+        -------
+        list
+            
+        """
+        return tuple([axis.index for axis in self._non_slicing_axes])
+        
+    @coordinates.setter    
+    def coordinates(self, coordinates):
         """Set the index of the navigation axes.
         
         Parameters
@@ -417,15 +524,3 @@ class AxesManager(t.HasTraits):
                 self.navigation_dimension)
         for index, axis in zip(coordinates, self._non_slicing_axes):
             axis.index = index
-            
-    def get_coordinates(self):
-        """Get the index of the navigation axes.
-        
-        Returns
-        -------
-        list
-            
-        """
-        return [axis.index for axis in self._non_slicing_axes]
-        
-
