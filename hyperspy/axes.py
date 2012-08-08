@@ -294,7 +294,8 @@ class AxesManager(t.HasTraits):
         self._max_index = 1
         for i in self.navigation_shape:
             self._max_index *= i
-        self._max_index -= 1
+        if self._max_index != 0:
+            self._max_index -= 1
 
     def next(self):
         """
