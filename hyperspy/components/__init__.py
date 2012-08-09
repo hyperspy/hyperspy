@@ -45,6 +45,7 @@ from hyperspy.components.voigt import Voigt
 from hyperspy.components.scalable_fixed_pattern import ScalableFixedPattern
 from hyperspy.components.polynomial import Polynomial
 from hyperspy.components.pes_core_line_shape import PESCoreLineShape
+from hyperspy.components.volume_plasmon_drude import VolumePlasmonDrude
 
 
 
