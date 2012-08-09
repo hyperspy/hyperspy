@@ -75,6 +75,22 @@ try:
 except ImportError:
     pass
 
+try:
+    # Check if it is running inside IPython
+    __IPYTHON__
+    # Check that it is available (i.e. that we are not in the
+    # standard terminal vs the Notebook, QtConsole...
+    #clear_output()
+    from IPython.core.interactiveshell import InteractiveShell
+    InteractiveShell.instance().display_pub.clear_output
+    from IPython.core.display import clear_output
+    have_clear_output = True 
+except Exception:
+    have_clear_output = False
+    
+    
+
+
 class ProgressBarWidget(object):
     """This is an element of ProgressBar formatting.
 
@@ -220,12 +236,11 @@ class ProgressBar(object):
     - seconds_elapsed: seconds elapsed since start_time
     - percentage(): percentage of the progress (this is a method)
     """
-    def __init__(self, maxval=100, widgets=default_widgets, term_width=None,
-                 fd=sys.stderr):
+    def __init__(self, maxval=100, widgets=default_widgets,
+                 term_width=None,):
         assert maxval > 0
         self.maxval = maxval
         self.widgets = widgets
-        self.fd = fd
         self.signal_set = False
         if term_width is None:
             try:
@@ -242,6 +257,13 @@ class ProgressBar(object):
         self.prev_percentage = -1
         self.start_time = None
         self.seconds_elapsed = 0
+        if have_clear_output is True:
+            self.update = self.update_ipython
+            self.fd = sys.stdout
+        else:
+            self.update = self.update_noipython
+            self.fd = sys.stderr
+            
 
     def handle_resize(self, signum, frame):
         h,w=array('h', ioctl(self.fd,termios.TIOCGWINSZ,'\0'*8))[:2]
@@ -278,7 +300,22 @@ class ProgressBar(object):
     def _need_update(self):
         return int(self.percentage()) != int(self.prev_percentage)
 
-    def update(self, value):
+    def update_ipython(self, value):
+        "Updates the progress bar to a new value."
+        assert 0 <= value <= self.maxval
+        self.currval = value
+        if not self._need_update() or self.finished:
+            return
+        if not self.start_time:
+            self.start_time = time.time()
+        self.seconds_elapsed = time.time() - self.start_time
+        self.prev_percentage = self.percentage()
+        print '\r', self._format_line(),
+        sys.stdout.flush()
+        if value == self.maxval:
+            self.finished = True
+    
+    def update_noipython(self, value):
         "Updates the progress bar to a new value."
         assert 0 <= value <= self.maxval
         self.currval = value
