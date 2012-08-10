@@ -260,6 +260,7 @@ class ProgressBar(object):
         if have_clear_output is True:
             self.update = self.update_ipython
             self.fd = sys.stdout
+            self.clear_output = True
         else:
             self.update = self.update_noipython
             self.fd = sys.stderr
@@ -310,6 +311,8 @@ class ProgressBar(object):
             self.start_time = time.time()
         self.seconds_elapsed = time.time() - self.start_time
         self.prev_percentage = self.percentage()
+        if self.clear_output is True:
+            clear_output()
         print '\r', self._format_line(),
         sys.stdout.flush()
         if value == self.maxval:
@@ -391,6 +394,7 @@ if __name__=='__main__':
         widgets = ['Test: ', Percentage(), ' ', Bar(marker=RotatingMarker()),
                    ' ', ETA(), ' ', FileTransferSpeed()]
         pbar = ProgressBar(widgets=widgets, maxval=10000000).start()
+        pbar.clear_output = False
         for i in xrange(1000000):
             # do something
             pbar.update(10*i+1)
