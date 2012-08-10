@@ -26,6 +26,8 @@ from hyperspy.misc import utils_varia
 from hyperspy.misc.image_utils import (shift_image, hanning2d,
     sobel_filter, fft_correlation, estimate_image_shift)
 from hyperspy import messages
+from hyperspy.misc.progressbar import progressbar
+from hyperspy.misc.utils import symmetrize, antisymmetrize
 
 
 
@@ -136,23 +138,34 @@ class Image(Signal):
             self.__call__().copy()
         shifts = []
         nrows = None
+        images_number = self.axes_manager._max_index + 1
         if reference == 'stat':
-            nrows = self.axes_manager._max_index + 1
-            nrows = nrows if chunk_size is None else \
-                min(nrows, chunk_size)
+            nrows = images_number if chunk_size is None else \
+                min(images_number, chunk_size)
             pcarray = ma.zeros((nrows, self.axes_manager._max_index + 1,
                                 ),
                                 dtype=np.dtype([('max_value', np.float),
                                                 ('shift', np.int32,
                                                 (2,))]))
-            np.fill_diagonal(pcarray['max_value'], 1)
+            nshift, max_value = estimate_image_shift(
+                          self(),
+                          self(),
+                          roi=roi,
+                          sobel=sobel,
+                          medfilter=medfilter,
+                          hanning=hanning,
+                          normalize_corr=normalize_corr,
+                          plot=plot,
+                          dtype=dtype)
+            np.fill_diagonal(pcarray['max_value'], max_value)
+            pbar = progressbar(maxval=nrows*images_number).start()
+        else:
+            pbar = progressbar(maxval=images_number).start()
+            
             
         # Main iteration loop. Fills the rows of pcarray when reference 
         # is stat
         for i1, im in enumerate(self._iterate_signal(copy=False)):
-            if nrows is not None and i1 == nrows:
-                break
-
             if reference in ['current', 'cascade']:
                 if ref is None:
                     ref = im.copy()
@@ -172,7 +185,10 @@ class Image(Signal):
                 else:
                     shift = nshift
                 shifts.append(shift.copy())
+                pbar.update(i1+1)
             elif reference == 'stat':
+                if i1 == nrows:
+                    break
                 # Iterate to fill the columns of pcarray
                 for i2, im2 in enumerate(
                                     self._iterate_signal(copy=False)):
@@ -189,29 +205,15 @@ class Image(Signal):
                                       dtype=dtype)
                         
                         pcarray[i1,i2] = max_value, nshift
-                    
-                    elif i2 < i1:
-                        pcarray['max_value'][i1,i2] = \
-                            pcarray['max_value'][i2, i1]
-                        pcarray['shift'][i1,i2] = \
-                            -pcarray['shift'][i2, i1]
-                    elif i2 == 0 and i1 == 0:
-                        nshift, max_value = estimate_image_shift(
-                                      im,
-                                      im2,
-                                      roi=roi,
-                                      sobel=sobel,
-                                      medfilter=medfilter,
-                                      hanning=hanning,
-                                      normalize_corr=normalize_corr,
-                                      plot=plot,
-                                      dtype=dtype)
-                        pcarray['max_value'] = max_value
                     del im2
+                    pbar.update(i2 + images_number*i1 + 1)
                 del im
         if reference == 'stat':
             # Select the reference image as the one that has the
             # higher max_value in the row
+            sqpcarr = pcarray[:,:nrows]
+            sqpcarr['max_value'][:] = symmetrize(sqpcarr['max_value'])
+            sqpcarr['shift'][:] = antisymmetrize(sqpcarr['shift'])
             ref_index = np.argmax(pcarray['max_value'].min(1))
             self.ref_index = ref_index
             shifts = (pcarray['shift']  + 

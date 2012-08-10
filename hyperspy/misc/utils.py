@@ -1513,3 +1513,10 @@ def get_array_memory_size_in_GiB(shape, dtype):
     if isinstance(dtype, str):
         dtype = np.dtype(dtype)
     return np.array(shape).cumprod()[-1] * dtype.itemsize / 2.**30
+    
+def symmetrize(a):
+    return a + a.swapaxes(0,1) - np.diag(a.diagonal())
+    
+def antisymmetrize(a):    
+    return a - a.swapaxes(0,1)+ np.diag(a.diagonal())
+
