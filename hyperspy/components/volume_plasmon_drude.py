@@ -63,24 +63,28 @@ class VolumePlasmonDrude(Component):
     def function(self, x):
         plasmon_energy = self.plasmon_energy.value
         plasmon_linewidth = self.plasmon_linewidth.value
-        return (plasmon_energy**2 * x * plasmon_linewidth) / (
-            (x**2 - plasmon_energy**2)**2 + (x * plasmon_linewidth)**2)
+        return np.where(x > 0, 
+            (plasmon_energy**2 * x * plasmon_linewidth) / (
+            (x**2 - plasmon_energy**2)**2 + (x * plasmon_linewidth)**2),
+            0)
             
     # Partial derivative with respect to the plasmon energy E_p
     def grad_plasmon_energy(self, x):
         plasmon_energy = self.plasmon_energy.value
         plasmon_linewidth = self.plasmon_linewidth.value
-        return 2 * x * plasmon_linewidth * plasmon_energy * (
+        return np.where(x > 0,
+            2 * x * plasmon_linewidth * plasmon_energy * (
             (x**4 + (x * plasmon_linewidth)**2 - plasmon_energy**4)
-            / (x**4 + x**2 * (plasmon_linewidth**2 - 2 * plasmon_energy**2)
-            + plasmon_energy**4)**2)
+            / (x**4 + x**2 * (plasmon_linewidth**2 - 2 * 
+            plasmon_energy**2) + plasmon_energy**4)**2), 0)
         
     # Partial derivative with respect to the plasmon linewidth delta_E_p
     def grad_plasmon_linewidth(self, x):
         plasmon_energy = self.plasmon_energy.value
         plasmon_linewidth = self.plasmon_linewidth.value
-        return x * plasmon_energy * ((x**4 - x**2 * (2 * plasmon_energy**2
+        return np.where(x > 0,
+            x * plasmon_energy * ((x**4 - x**2 * (2 * plasmon_energy**2
             + plasmon_linewidth**2) + plasmon_energy**4) / (x**4 + x**2
             * (plasmon_linewidth**2 - 2 * plasmon_energy**2)
-            + plasmon_energy**4)**2)
+            + plasmon_energy**4)**2),0)
             
