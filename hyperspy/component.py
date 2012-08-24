@@ -60,7 +60,7 @@ class Parameter(object):
     
     def __repr__(self):
         text = ''
-        text += 'Parameter %s' % self._id_name
+        text += 'Parameter %s' % self.name
         if self.component is not None:
             text += ' of %s' % self.component._get_short_description()
         text = '<' + text + '>'
