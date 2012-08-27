@@ -809,7 +809,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         -------
         >>> import numpy as np
         >>> from hyperspy.signals.spectrum import Spectrum
-        >>> s = Spectrum({'data' : np.array([1,2,3,4,5])})
+        >>> s = signals.Spectrum({'data' : np.array([1,2,3,4,5])})
         >>> s.data
         array([1, 2, 3, 4, 5])
         >>> s.change_dtype('float')

@@ -2,7 +2,7 @@
 """
 
 
-s = Image({'data' : np.random.random((16,32,32))})
+s = signals.Image({'data' : np.random.random((16,32,32))})
 s.plot()
 
 
