@@ -373,7 +373,8 @@ class MVA():
     
     def get_factors_as_spectrum(self):
         from hyperspy.signals.spectrum import Spectrum
-        return Spectrum({'data' : self.learning_results.factors.T})
+        return Spectrum(
+            {'data' : self.learning_results.factors.T.copy()})
     
     def blind_source_separation(self,
                                 number_of_components=None,
