@@ -21,39 +21,18 @@ from __future__ import division
 import sys
 import os
 import types
-from distutils.version import StrictVersion
 
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
-import warnings
 try:
     import mdp
     mdp_installed = True
 except:
     mdp_installed = False
     
-try:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        import scikits.learn
-        sklearn_version = StrictVersion(scikits.learn.__version__)
-        if  sklearn_version < StrictVersion("0.9"):
-            import scikits.learn as sklearn
-            import scikits.learn.decomposition
-        else:
-            import sklearn.decomposition
-        sklearn = True
-except ImportError:
-    sklearn = False
-try:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        import sklearn.decomposition
-        sklearn_installed = True
-except:
-    sklearn_installed = False
 
+from hyperspy.misc.import_sklearn import *
 from hyperspy.misc import utils
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca

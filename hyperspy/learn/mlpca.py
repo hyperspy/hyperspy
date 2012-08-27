@@ -23,25 +23,11 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-from distutils.version import StrictVersion
-import warnings
 
 import numpy as np
 import scipy.linalg
-try:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        import scikits.learn
-        sklearn_version = StrictVersion(scikits.learn.__version__)
-        if  sklearn_version < StrictVersion("0.9"):
-            from scikits.learn.utils.extmath import fast_svd
-        elif sklearn_version == StrictVersion("0.9"):
-            from sklearn.utils.extmath import fast_svd
-        else:
-            from sklearn.utils.extmath import  randomized_svd as fast_svd
-        sklearn = True
-except ImportError:
-    sklearn = False
+from hyperspy.misc.import_sklearn import *
+
 
 def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000, fast=False):
     """
@@ -62,7 +48,7 @@ def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000, fast=False):
             0 = nkmal termination
             1 = max iterations exceeded.
     """
-    if fast is True and sklearn is True:
+    if fast is True and sklearn_installed is True:
         def svd(X):
             return fast_svd(X, p)
     else:
