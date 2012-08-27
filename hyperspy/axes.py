@@ -21,6 +21,7 @@ import copy
 import numpy as np
 import traits.api as t
 import traitsui.api as tui
+from traits.trait_errors import TraitError
 
 from hyperspy import messages
 
@@ -420,22 +421,24 @@ class AxesManager(t.HasTraits):
     def key_navigator(self, event):
         if len(self._non_slicing_axes) not in (1,2): return
         x = self._non_slicing_axes[-1]
-
-        if event.key == "right" or event.key == "6":
-            x.index += self._step
-        elif event.key == "left" or event.key == "4":
-            x.index -= self._step
-        elif event.key == "pageup":
-            self._step += 1
-        elif event.key == "pagedown":
-            if self._step > 1:
-                self._step -= 1
-        if len(self._non_slicing_axes) == 2:
-            y = self._non_slicing_axes[-2]
-            if event.key == "up" or event.key == "8":
-                y.index -= self._step
-            elif event.key == "down" or event.key == "2":
-                y.index += self._step
+        try:
+            if event.key == "right" or event.key == "6":
+                x.index += self._step
+            elif event.key == "left" or event.key == "4":
+                x.index -= self._step
+            elif event.key == "pageup":
+                self._step += 1
+            elif event.key == "pagedown":
+                if self._step > 1:
+                    self._step -= 1
+            if len(self._non_slicing_axes) == 2:
+                y = self._non_slicing_axes[-2]
+                if event.key == "up" or event.key == "8":
+                    y.index -= self._step
+                elif event.key == "down" or event.key == "2":
+                    y.index += self._step
+        except TraitError:
+            pass
 
     def gui(self):
         for axis in self.axes:
