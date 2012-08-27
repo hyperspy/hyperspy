@@ -139,7 +139,7 @@ class SpanSelectorInSpectrum(t.HasTraits):
          raise SignalOutputDimensionError(signal.axes.signal_dimension, 1)
         
         self.signal = signal
-        self.axis = self.signal.axes_manager._slicing_axes[0]
+        self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
         self.signal.plot()
         self.span_selector_switch(on = True)
@@ -248,7 +248,7 @@ class Smoothing(t.HasTraits):
         self.data_line = None
         self.smooth_line = None
         self.signal = signal
-        self.axis = self.signal.axes_manager._slicing_axes[0].axis
+        self.axis = self.signal.axes_manager.signal_axes[0].axis
         self.plot()
                    
     def plot(self):
@@ -343,7 +343,7 @@ class Smoothing(t.HasTraits):
             pbar.update(i)
         pbar.finish()
         if self.differential_order > 0:
-            self.signal.axes_manager._slicing_axes[0].offset = \
+            self.signal.axes_manager.signal_axes[0].offset = \
                 self.smooth_diff_line.axis[0]
             self.signal.crop_in_pixels(-1,0,-self.differential_order)
         self.signal._replot()

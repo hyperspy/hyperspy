@@ -127,7 +127,7 @@ class Gaussian(Component):
         g.estimate_parameters(s, -10,10, False)
             
         """
-        axis = signal.axes_manager._slicing_axes[0]
+        axis = signal.axes_manager.signal_axes[0]
         
         energy2index = axis.value2index
         i1 = energy2index(E1)

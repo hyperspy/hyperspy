@@ -90,8 +90,8 @@ class MPL_HyperImage_Explorer():
         if self.axes_manager.navigation_dimension == 2:
             imf = image.ImagePlot()
             imf.data_function = self.navigator_data_function
-            imf.pixel_units = self.axes_manager._non_slicing_axes[0].units
-            imf.pixel_size = self.axes_manager._non_slicing_axes[0].scale
+            imf.pixel_units = self.axes_manager.navigation_axes[0].units
+            imf.pixel_size = self.axes_manager.navigation_axes[0].scale
             imf.plot()
             self.pointer.add_axes(imf.ax)
             self.navigator_plot = imf
@@ -100,7 +100,7 @@ class MPL_HyperImage_Explorer():
             
             # Create the figure
             sf = spectrum.SpectrumFigure()
-            axis = self.axes_manager._non_slicing_axes[0]
+            axis = self.axes_manager.navigation_axes[0]
             sf.xlabel = axis.name
 #            sf.ylabel = self.ylabel
             sf.title = '1D navigator'

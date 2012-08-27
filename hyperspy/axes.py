@@ -257,8 +257,8 @@ class AxesManager(t.HasTraits):
     
     """
     axes = t.List(DataAxis)
-    _slicing_axes = t.List()
-    _non_slicing_axes = t.List()
+    signal_axes = t.List()
+    navigation_axes = t.List()
     _step = t.Int(1)
     
     def __getitem__(self, y):
@@ -338,32 +338,32 @@ class AxesManager(t.HasTraits):
         getitem_tuple = []
         indexes = []
         values = []
-        self._slicing_axes = []
-        self._non_slicing_axes = []
+        self.signal_axes = []
+        self.navigation_axes = []
         for axis in self.axes:
             if axis.slice is None:
                 getitem_tuple.append(axis.index)
                 indexes.append(axis.index)
                 values.append(axis.value)
-                self._non_slicing_axes.append(axis)
+                self.navigation_axes.append(axis)
             else:
                 getitem_tuple.append(axis.slice)
-                self._slicing_axes.append(axis)
+                self.signal_axes.append(axis)
                 
         self._getitem_tuple = getitem_tuple
         self._indexes = np.array(indexes)
         self._values = np.array(values)
-        self.signal_dimension = len(self._slicing_axes)
-        self.navigation_dimension = len(self._non_slicing_axes)
+        self.signal_dimension = len(self.signal_axes)
+        self.navigation_dimension = len(self.navigation_axes)
         if self.navigation_dimension != 0:
             self.navigation_shape = [
-                axis.size for axis in self._non_slicing_axes]
+                axis.size for axis in self.navigation_axes]
         else:
             self.navigation_shape = [0,]
             
         if self.signal_dimension != 0:
             self.signal_shape = [
-                axis.size for axis in self._slicing_axes]
+                axis.size for axis in self.signal_axes]
         else:
             self.signal_shape = [0,]
         self._update_max_index()
@@ -392,18 +392,18 @@ class AxesManager(t.HasTraits):
         for axis in self.axes:
             axis.navigate = tl.pop(0)
 
-    def set_slicing_axes(self, slicing_axes):
+    def setsignal_axes(self, signal_axes):
         '''Easily choose which axes are slicing
 
         Parameters
         ----------
 
-        slicing_axes: tuple of ints
+        signal_axes: tuple of ints
             A list of the axis indexes that we want to slice
 
         '''
         for axis in self.axes:
-            if axis.index_in_array in slicing_axes:
+            if axis.index_in_array in signal_axes:
                 axis.navigate = False
             else:
                 axis.navigate = True
@@ -419,8 +419,8 @@ class AxesManager(t.HasTraits):
                 axis.on_trait_change(f, 'index', remove = True)
 
     def key_navigator(self, event):
-        if len(self._non_slicing_axes) not in (1,2): return
-        x = self._non_slicing_axes[-1]
+        if len(self.navigation_axes) not in (1,2): return
+        x = self.navigation_axes[-1]
         try:
             if event.key == "right" or event.key == "6":
                 x.index += self._step
@@ -431,8 +431,8 @@ class AxesManager(t.HasTraits):
             elif event.key == "pagedown":
                 if self._step > 1:
                     self._step -= 1
-            if len(self._non_slicing_axes) == 2:
-                y = self._non_slicing_axes[-2]
+            if len(self.navigation_axes) == 2:
+                y = self.navigation_axes[-2]
                 if event.key == "up" or event.key == "8":
                     y.index -= self._step
                 elif event.key == "down" or event.key == "2":
@@ -459,19 +459,19 @@ class AxesManager(t.HasTraits):
             axes_dicts.append(axis.get_axis_dictionary())
         return axes_dicts
 
-    def _get_slicing_axes_dicts(self):
+    def _getsignal_axes_dicts(self):
         axes_dicts = []
         i = 0
-        for axis in self._slicing_axes:
+        for axis in self.signal_axes:
             axes_dicts.append(axis.get_axis_dictionary())
             axes_dicts[-1]['index_in_array'] = i
             i += 1
         return axes_dicts
 
-    def _get_non_slicing_axes_dicts(self):
+    def _getnavigation_axes_dicts(self):
         axes_dicts = []
         i = 0
-        for axis in self._non_slicing_axes:
+        for axis in self.navigation_axes:
             axes_dicts.append(axis.get_axis_dictionary())
             axes_dicts[-1]['index_in_array'] = i
             i += 1
@@ -507,7 +507,7 @@ class AxesManager(t.HasTraits):
         list
             
         """
-        return tuple([axis.index for axis in self._non_slicing_axes])
+        return tuple([axis.index for axis in self.navigation_axes])
         
     @coordinates.setter    
     def coordinates(self, coordinates):
@@ -526,5 +526,5 @@ class AxesManager(t.HasTraits):
             "The number of coordinates must be equal to the "
             "navigation dimension that is %i" % 
                 self.navigation_dimension)
-        for index, axis in zip(coordinates, self._non_slicing_axes):
+        for index, axis in zip(coordinates, self.navigation_axes):
             axis.index = index

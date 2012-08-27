@@ -50,7 +50,7 @@ class Model(list, Optimizers, Estimators):
         self.auto_update_plot = False
         self.spectrum = spectrum
         self.axes_manager = self.spectrum.axes_manager
-        self.axis = self.axes_manager._slicing_axes[0]
+        self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.charge)
          
         self.free_parameters_boundaries = None
@@ -133,7 +133,7 @@ class Model(list, Optimizers, Estimators):
         scale to obtain the correct axis and origin after convolution with the
         lowloss spectrum.
         """
-        ll_axis = self.low_loss.axes_manager._slicing_axes[0]
+        ll_axis = self.low_loss.axes_manager.signal_axes[0]
         dimension = self.axis.size + ll_axis.size - 1
         step = self.axis.scale
         knot_position = ll_axis.size - ll_axis.value2index(0) - 1

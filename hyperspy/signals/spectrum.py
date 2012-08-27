@@ -527,6 +527,6 @@ class Spectrum(Signal):
 
     @interactive_range_selector    
     def crop_spectrum(self, left_value = None, right_value = None,):
-        iaxis = self.axes_manager._slicing_axes[0].index_in_array
+        iaxis = self.axes_manager.signal_axes[0].index_in_array
         self.crop_in_units(axis=iaxis, x1=left_value, x2=right_value)
     

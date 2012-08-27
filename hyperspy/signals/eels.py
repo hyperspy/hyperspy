@@ -213,7 +213,7 @@ class EELSSpectrum(Spectrum):
             If True, the ionization edges with an onset below the lower energy 
             limit of the SI will be incluided
         """
-        Eaxis = self.axes_manager._slicing_axes[0].axis
+        Eaxis = self.axes_manager.signal_axes[0].axis
         if not include_pre_edges:
             start_energy = Eaxis[0]
         else:
@@ -423,7 +423,7 @@ class EELSSpectrum(Spectrum):
     def find_low_loss_centre(self, sync_signal = None):
         """Calculate the position of the zero loss origin as the average of the 
         postion of the maximum of all the spectra"""
-        axis = self.axes_manager._slicing_axes[0] 
+        axis = self.axes_manager.signal_axes[0] 
         old_offset = axis.offset
         imax = np.mean(np.argmax(self.data,axis.index_in_array))
         axis.offset = hyperspy.axes.generate_axis(0, axis.scale, 
@@ -440,7 +440,7 @@ class EELSSpectrum(Spectrum):
         The zero-loss can be specified by defining the parameter 
         self.zero_loss that must be an instance of Spectrum. 
         """
-        axis = self.axes_manager._slicing_axes[0]
+        axis = self.axes_manager.signal_axes[0]
         z = np.fft.fft(self.zero_loss.data, axis = axis.index_in_array)
         j = np.fft.fft(self.data, axis = axis.index_in_array)
         j1 = z*np.log(j/z)
@@ -467,7 +467,7 @@ class EELSSpectrum(Spectrum):
         print "Calculating the thickness"
         # Create the thickness array
         dc = self.data
-        axis = self.axes_manager._slicing_axes[0]
+        axis = self.axes_manager.signal_axes[0]
         integral = dc.sum(axis.index_in_array)
         if method == 'zl':
             if self.zero_loss is None:
@@ -511,7 +511,7 @@ class EELSSpectrum(Spectrum):
                 Position in energy units of the roots of the first
             derivative if der_roots is True (False by default)
         """
-        axis = self.axes_manager._slicing_axes[0]
+        axis = self.axes_manager.signal_axes[0]
         i0, i1 = axis.value2index(energy_range[0]), axis.value2index(
         energy_range[1])
         data = self()[i0:i1]
@@ -599,7 +599,7 @@ class EELSSpectrum(Spectrum):
         
         """
         dc = self.data
-        axis = self.axes_manager._slicing_axes[0]
+        axis = self.axes_manager.signal_axes[0]
         if signal_mask is not None:
             dc = dc[..., signal_mask]
         if navigation_mask is not None:

@@ -96,7 +96,7 @@ class PowerLaw(Component):
             
         """
         
-        axis = signal.axes_manager._slicing_axes[0]
+        axis = signal.axes_manager.signal_axes[0]
         energy2index = axis.value2index
         i1 = energy2index(x1)
         if (energy2index(x2) - i1) % 2 == 0:

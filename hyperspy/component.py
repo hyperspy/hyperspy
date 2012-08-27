@@ -201,7 +201,7 @@ class Parameter(object):
             raise NavigationDimensionError(0, '>0')
             
         s = Signal({'data' : self.map[field],
-                    'axes' : self._axes_manager._get_non_slicing_axes_dicts()})
+                    'axes' : self._axes_manager._getnavigation_axes_dicts()})
         s.mapped_parameters.title = self.name
         for axis in s.axes_manager.axes:
             axis.navigate = False

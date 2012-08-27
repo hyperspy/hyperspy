@@ -350,7 +350,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.interpolated_line.plot()
         
     def get_interpolation_range(self):
-        axis = self.signal.axes_manager._slicing_axes[0]
+        axis = self.signal.axes_manager.signal_axes[0]
         if self.ss_left_value == self.ss_right_value:
             left = self.argmax - self.default_spike_width
             right = self.argmax + self.default_spike_width
@@ -363,7 +363,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         
     def get_interpolated_spectrum(self, axes_manager=None):
         data = self.signal().copy()
-        axis = self.signal.axes_manager._slicing_axes[0]
+        axis = self.signal.axes_manager.signal_axes[0]
         left, right = self.get_interpolation_range()
         if self.kind == 'linear':
             pad = 1

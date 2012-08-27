@@ -224,7 +224,7 @@ class DraggableSquare(ResizebleDraggablePatch):
         if self.picked is True and event.inaxes:
             if self.axes_manager._indexes[0] != round(event.ydata):
                 try:
-                    self.axes_manager._non_slicing_axes[0].index = \
+                    self.axes_manager.navigation_axes[0].index = \
                     round(event.ydata)
                 except traits.api.TraitError:
                     # Index out of range, we do nothing
@@ -232,7 +232,7 @@ class DraggableSquare(ResizebleDraggablePatch):
                     
             if  self.axes_manager._indexes[1] != round(event.xdata):
                 try:
-                    self.axes_manager._non_slicing_axes[1].index = \
+                    self.axes_manager.navigation_axes[1].index = \
                     round(event.xdata)
                 except traits.api.TraitError:
                     # Index out of range, we do nothing
@@ -261,7 +261,7 @@ class DraggableHorizontalLine(DraggablePatch):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
             try:
-                self.axes_manager._non_slicing_axes[0].index = event.ydata
+                self.axes_manager.navigation_axes[0].index = event.ydata
             except traits.api.TraitError:
                 # Index out of range, we do nothing
                 pass
@@ -289,7 +289,7 @@ class DraggableVerticalLine(DraggablePatch):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
             try:
-                self.axes_manager._non_slicing_axes[0].value = event.xdata
+                self.axes_manager.navigation_axes[0].value = event.xdata
             except traits.api.TraitError:
                 # Index out of range, we do nothing
                 pass

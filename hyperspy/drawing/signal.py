@@ -47,7 +47,7 @@ def _plot_quiver_scatter_overlay(image, axes_manager,
     """
     if ax==None:
         ax=plt.gca()
-    axes=axes_manager._slicing_axes
+    axes=axes_manager.signal_axes
     if len(axes)<2:
         axes=axes_manager.axes
         if axes[0].index_in_array==0:
@@ -99,7 +99,7 @@ def _plot_1D_component(factors, idx, axes_manager, ax=None,
                        same_window=False):
     if ax==None:
         ax=plt.gca()
-    axis=axes_manager._slicing_axes[0]
+    axis=axes_manager.signal_axes[0]
     if calibrate:
         x=axis.axis
         plt.xlabel(axis.units)
@@ -117,7 +117,7 @@ def _plot_2D_component(factors, idx, axes_manager,
                        ):
     if ax==None:
         ax=plt.gca()
-    axes=axes_manager._slicing_axes
+    axes=axes_manager.signal_axes
     shape=axes_manager.signal_shape
     extent=None
     if calibrate:
@@ -167,7 +167,7 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
         ax=plt.gca()
     if no_nans:
         loadings=np.nan_to_num(loadings)
-    axes=axes_manager._non_slicing_axes
+    axes=axes_manager.navigation_axes
     if axes_manager.navigation_dimension==2:
         extent=None
         # get calibration from a passed axes_manager

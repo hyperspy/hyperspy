@@ -184,21 +184,21 @@ class Signal(t.HasTraits, MVA):
         return self.data.__getitem__(axes_manager._getitem_tuple)
 
     def _get_hse_1D_explorer(self, *args, **kwargs):
-        islice = self.axes_manager._slicing_axes[0].index_in_array
-        inslice = self.axes_manager._non_slicing_axes[0].index_in_array
+        islice = self.axes_manager.signal_axes[0].index_in_array
+        inslice = self.axes_manager.navigation_axes[0].index_in_array
         if islice > inslice:
             return self.data.squeeze()
         else:
             return self.data.squeeze().T
 
     def _get_hse_2D_explorer(self, *args, **kwargs):
-        islice = self.axes_manager._slicing_axes[0].index_in_array
+        islice = self.axes_manager.signal_axes[0].index_in_array
         data = np.nan_to_num(self.data).sum(islice)
         return data
 
     def _get_hie_explorer(self, *args, **kwargs):
-        isslice = [self.axes_manager._slicing_axes[0].index_in_array,
-                   self.axes_manager._slicing_axes[1].index_in_array]
+        isslice = [self.axes_manager.signal_axes[0].index_in_array,
+                   self.axes_manager.signal_axes[1].index_in_array]
         isslice.sort()
         data = self.data.sum(isslice[1]).sum(isslice[0])
         return data
@@ -239,20 +239,20 @@ class Signal(t.HasTraits, MVA):
             self._plot.spectrum_data_function = self.__call__
             self._plot.spectrum_title = self.mapped_parameters.title
             self._plot.xlabel = '%s (%s)' % (
-                self.axes_manager._slicing_axes[0].name,
-                self.axes_manager._slicing_axes[0].units)
+                self.axes_manager.signal_axes[0].name,
+                self.axes_manager.signal_axes[0].units)
             self._plot.ylabel = 'Intensity'
             self._plot.axes_manager = axes_manager
-            self._plot.axis = self.axes_manager._slicing_axes[0].axis
+            self._plot.axis = self.axes_manager.signal_axes[0].axis
 
             # Image properties
-            if self.axes_manager._non_slicing_axes:
+            if self.axes_manager.navigation_axes:
                 self._plot.image_data_function = self._get_explorer
                 self._plot.image_title = ''
                 if self.axes_manager.navigation_dimension == 1:
-                    scalebar_axis = self.axes_manager._slicing_axes[0]
+                    scalebar_axis = self.axes_manager.signal_axes[0]
                 else:
-                    scalebar_axis = self.axes_manager._non_slicing_axes[-1]
+                    scalebar_axis = self.axes_manager.navigation_axes[-1]
                 self._plot.pixel_size = scalebar_axis.scale
                 self._plot.pixel_units = scalebar_axis.units
             self._plot.plot()
@@ -583,8 +583,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             return False
         steady_axes = [
                         axis.index_in_array for axis in
-                        self.axes_manager._slicing_axes]
-        unfolded_axis = self.axes_manager._non_slicing_axes[-1].index_in_array
+                        self.axes_manager.signal_axes]
+        unfolded_axis = self.axes_manager.navigation_axes[-1].index_in_array
         self._unfold(steady_axes, unfolded_axis)
 
     def unfold_signal_space(self):
@@ -595,8 +595,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             return False
         steady_axes = [
                         axis.index_in_array for axis in
-                        self.axes_manager._non_slicing_axes]
-        unfolded_axis = self.axes_manager._slicing_axes[-1].index_in_array
+                        self.axes_manager.navigation_axes]
+        unfolded_axis = self.axes_manager.signal_axes[-1].index_in_array
         self._unfold(steady_axes, unfolded_axis)
 
     @auto_replot
@@ -637,8 +637,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         if copy is True:
             self.data = self.data.copy()
         axes = [axis.index_in_array for 
-                axis in self.axes_manager._slicing_axes]
-        unfolded_axis = self.axes_manager._non_slicing_axes[-1].index_in_array
+                axis in self.axes_manager.signal_axes]
+        unfolded_axis = self.axes_manager.navigation_axes[-1].index_in_array
         new_shape = [1] * len(self.data.shape)
         for axis in axes:
             new_shape[axis] = self.data.shape[axis]
@@ -1091,7 +1091,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             if self.axes_manager.signal_dimension==2:
                 # factor images
                 axes_dicts=[]
-                axes=self.axes_manager._slicing_axes
+                axes=self.axes_manager.signal_axes
                 shape=(axes[1].size,axes[0].size)
                 factor_data=np.rollaxis(
                         factors.reshape((shape[0],shape[1],-1)),2)
@@ -1112,7 +1112,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             elif self.axes_manager.signal_dimension==1:
                 axes=[]
                 axes.append(
-                self.axes_manager._slicing_axes[0].get_axis_dictionary())
+                self.axes_manager.signal_axes[0].get_axis_dictionary())
                 axes[0]['index_in_array']=1
                   
 
@@ -1136,7 +1136,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         else: # Separate files
             if self.axes_manager.signal_dimension == 1:
             
-                axis_dict = self.axes_manager._slicing_axes[0].\
+                axis_dict = self.axes_manager.signal_axes[0].\
                     get_axis_dictionary()
                 axis_dict['index_in_array']=0
                 for dim,index in zip(comp_ids,range(len(comp_ids))):
@@ -1151,7 +1151,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                     s.save(filename)
                     
             if self.axes_manager.signal_dimension == 2:
-                axes = self.axes_manager._slicing_axes
+                axes = self.axes_manager.signal_axes
                 axes_dicts=[]
                 axes_dicts.append(axes[0].get_axis_dictionary())
                 axes_dicts.append(axes[1].get_axis_dictionary())
@@ -1228,7 +1228,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         elif multiple_files is False:
             if self.axes_manager.navigation_dimension==2:
                 axes_dicts=[]
-                axes=self.axes_manager._non_slicing_axes
+                axes=self.axes_manager.navigation_axes
                 shape=(axes[1].size,axes[0].size)
                 loading_data=loadings.reshape((-1,shape[0],shape[1]))
                 axes_dicts.append(axes[0].get_axis_dictionary())
@@ -1248,7 +1248,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                                 self.mapped_parameters.title),
                             }})
             elif self.axes_manager.navigation_dimension==1:
-                cal_axis=self.axes_manager._non_slicing_axes[0].\
+                cal_axis=self.axes_manager.navigation_axes[0].\
                     get_axis_dictionary()
                 cal_axis['index_in_array']=1
                 axes=[]
@@ -1270,7 +1270,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             s.save(filename)
         else: # Separate files
             if self.axes_manager.navigation_dimension == 1:
-                axis_dict = self.axes_manager._non_slicing_axes[0].\
+                axis_dict = self.axes_manager.navigation_axes[0].\
                     get_axis_dictionary()
                 axis_dict['index_in_array']=0
                 for dim,index in zip(comp_ids,range(len(comp_ids))):
@@ -1282,7 +1282,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                     s.save(filename)
             elif self.axes_manager.navigation_dimension == 2:
                 axes_dicts=[]
-                axes=self.axes_manager._non_slicing_axes
+                axes=self.axes_manager.navigation_axes
                 shape=(axes[0].size, axes[1].size)
                 loading_data=loadings.reshape((-1,shape[0],shape[1]))
                 axes_dicts.append(axes[0].get_axis_dictionary())

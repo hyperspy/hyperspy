@@ -445,25 +445,25 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
         signal_type=None
     if signal.axes_manager.signal_dimension == 1:
         record_by = 'vector'
-        depth_axis = signal.axes_manager._slicing_axes[0]
+        depth_axis = signal.axes_manager.signal_axes[0]
         ev_per_chan = int(round(depth_axis.scale))
         if dimension == 3:
-            width_axis = signal.axes_manager._non_slicing_axes[1]
-            height_axis = signal.axes_manager._non_slicing_axes[0]
+            width_axis = signal.axes_manager.navigation_axes[1]
+            height_axis = signal.axes_manager.navigation_axes[0]
             depth, width, height = \
                             depth_axis.size, width_axis.size, height_axis.size
         elif dimension == 2:
-            width_axis = signal.axes_manager._non_slicing_axes[0]
+            width_axis = signal.axes_manager.navigation_axes[0]
             depth, width, height = depth_axis.size, width_axis.size,1
         elif dimension == 1:
             record_by == 'dont-care'
             depth, width, height = depth_axis.size, 1, 1
 
     elif signal.axes_manager.signal_dimension == 2:
-        width_axis = signal.axes_manager._slicing_axes[1]
-        height_axis = signal.axes_manager._slicing_axes[0]
+        width_axis = signal.axes_manager.signal_axes[1]
+        height_axis = signal.axes_manager.signal_axes[0]
         if dimension == 3:
-            depth_axis = signal.axes_manager._non_slicing_axes[0]
+            depth_axis = signal.axes_manager.navigation_axes[0]
             record_by = 'image'
             depth, width, height =  \
                             depth_axis.size, width_axis.size, height_axis.size
@@ -532,16 +532,16 @@ def write_raw(filename, signal, record_by):
     if len(dshape) == 3:
         if record_by == 'vector':
             np.rollaxis(
-                data, signal.axes_manager._slicing_axes[0].index_in_array, 3
+                data, signal.axes_manager.signal_axes[0].index_in_array, 3
                         ).ravel().tofile(filename)
         elif record_by == 'image':
             data = np.rollaxis(
-                data, signal.axes_manager._non_slicing_axes[0].index_in_array, 0
+                data, signal.axes_manager.navigation_axes[0].index_in_array, 0
                         ).ravel().tofile(filename)
     elif len(dshape) == 2:
         if record_by == 'vector':
             np.rollaxis(
-                data, signal.axes_manager._slicing_axes[0].index_in_array, 2
+                data, signal.axes_manager.signal_axes[0].index_in_array, 2
                         ).ravel().tofile(filename)
         elif record_by in ('image', 'dont-care'):
             data.ravel().tofile(filename)

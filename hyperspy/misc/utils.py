@@ -211,7 +211,7 @@ def _estimate_gain(ns, cs, weighted = False, higher_than = None,
         from hyperspy.model import Model
         from hyperspy.components import Line
         s = Spectrum({'data' : varso[avesoh]})
-        s.axes_manager._slicing_axes[0].axis = aveso[avesoh]
+        s.axes_manager.signal_axes[0].axis = aveso[avesoh]
         m = Model(s)
         l = Line()
         l.a.value = fit[1]
