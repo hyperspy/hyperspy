@@ -71,7 +71,7 @@ class MPL_HyperImage_Explorer():
             self.pointer.color = 'red'
             self.plot_navigator()
         self.plot_image()
-        self.axes_manager.connect(self.image_plot.update_image)
+        self.axes_manager.connect(self.image_plot._update_image)
             
     def assign_pointer(self):
         nav_dim = self.axes_manager.navigation_dimension
