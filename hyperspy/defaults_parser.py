@@ -35,7 +35,8 @@ eels_gos_files = os.path.join(data_path, 'EELS_GOS.tar.gz')
 
 def guess_gos_path():
     if os_name == 'windows':
-        # If DM is installed, use the GOS tables from the default installation
+        # If DM is installed, use the GOS tables from the default 
+        # installation
         # location in windows
         program_files = os.environ['PROGRAMFILES']
         gos = 'Gatan\DigitalMicrograph\EELS Reference Data\H-S GOS Tables'
@@ -247,7 +248,8 @@ class Preferences(t.HasTraits):
             label = 'Model'),
         tui.Group(tui.Item('EELS', style='custom', show_label=False, ),
             label = 'EELS'),
-        tui.Group(tui.Item('MachineLearning', style='custom', show_label=False,),
+        tui.Group(tui.Item('MachineLearning', style='custom',
+            show_label=False,),
             label = 'Machine Learning'),
         title = 'Preferences',
         handler = PreferencesHandler,)

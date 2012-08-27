@@ -420,19 +420,29 @@ class EELSSpectrum(Spectrum):
 #               "To correct the readout, please define the dark_current " \
 #                "attribute")
 #                
-    def find_low_loss_centre(self, sync_signal = None):
+    def find_low_loss_centre(self, also_apply_to=None):
         """Calculate the position of the zero loss origin as the average of the 
-        postion of the maximum of all the spectra"""
+        postion of the maximum of all the spectra
+        
+        Parameters
+        ----------
+        also_apply_to : None or list of Signals
+            If a list of signals is provided, the same offset
+            transformation is applied to all the other signals.
+            
+        """
         axis = self.axes_manager.signal_axes[0] 
         old_offset = axis.offset
         imax = np.mean(np.argmax(self.data,axis.index_in_array))
         axis.offset = hyperspy.axes.generate_axis(0, axis.scale, 
             axis.size, imax)[0]
-        print('Energy offset applied: %f %s' % ((axis.offset - old_offset), 
-              axis.units))
-        if sync_signal is not None:
-            saxis = sync_signal.axes_manager.axes[axis.index_in_array]
-            saxis.offset += axis.offset - old_offset
+        print('Energy offset applied: %f %s' % ((
+                axis.offset - old_offset), axis.units))
+        if also_apply_to:
+            for sync_signal in also_apply_to:
+                saxis = sync_signal.axes_manager.axes[
+                    axis.index_in_array]
+                saxis.offset += axis.offset - old_offset
 
     def fourier_log_deconvolution(self):
         """Performs fourier-log deconvolution of the full SI.
