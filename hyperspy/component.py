@@ -399,8 +399,9 @@ class Component(object):
             
     def summary(self):
         for parameter in self.parameters:
-            dim = len(parameter.map.squeeze().shape)
-            if (parameter.map is not None) and (parameter.twin is None):
+            dim = len(parameter.map.squeeze().shape) if parameter.map \
+                        is not None else 0
+            if parameter.twin is None:
                 if dim <= 1:
                     print '%s = %s ± %s %s' % (parameter.name, parameter.value, 
                     parameter.std, parameter.units)
