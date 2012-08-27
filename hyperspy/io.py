@@ -143,6 +143,8 @@ def load(filenames=None, record_by=None, signal_type=None,
     >>>d = load('file*.dm3')
 
     """
+    
+    kwds['record_by'] = record_by
     if filenames is None:
         if hyperspy.defaults_parser.preferences.General.interactive is True:
             load_ui = Load()
