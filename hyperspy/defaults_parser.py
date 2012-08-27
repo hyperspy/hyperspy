@@ -84,7 +84,7 @@ class GeneralConfig(t.HasTraits):
     interactive = t.CBool(True,
         desc = 'If enabled, Hyperspy will prompt the user when optios are '
                'available, otherwise it will use the default values if possible')
-    logger_on = t.CBool(True,
+    logger_on = t.CBool(False,
         label = 'Automatic logging',
         desc = 'If enabled, Hyperspy will store a log in the current directory '
                'of all the commands typed')
