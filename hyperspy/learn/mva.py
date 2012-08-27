@@ -412,8 +412,9 @@ class MVA():
         """
         target=self.learning_results                
         if not hasattr(target, 'factors') or target.factors==None:
-            self.decomposition()
-
+            raise AttributeError(
+                'A decomposition must be performed before blind '
+                'source seperation or factors must be provided.')
         else:
             if factors is None:
                 if on_loadings:
