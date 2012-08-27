@@ -233,11 +233,11 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             handler = SpikesRemovalHandler,
             title = 'Spikes removal tool')
                  
-    def __init__(self, signal,spatial_mask=None, signal_mask=None):
+    def __init__(self, signal,navigation_mask=None, signal_mask=None):
         super(SpikesRemoval, self).__init__(signal)
         self.interpolated_line = None
         self.coordinates = [coordinate for coordinate in np.ndindex(
-                            tuple(signal.axes_manager.navigation_shape)) if (spatial_mask is None or not spatial_mask[coordinate])]
+                            tuple(signal.axes_manager.navigation_shape)) if (navigation_mask is None or not navigation_mask[coordinate])]
         self.signal = signal
         sys.setrecursionlimit(np.cumprod(self.signal.data.shape)[-1])
         self.line = signal._plot.spectrum_plot.ax_lines[0]
@@ -250,7 +250,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.kind = "linear"
         self._temp_mask = np.zeros(self.signal().shape, dtype='bool')
         self.signal_mask = signal_mask
-        self.spatial_mask = spatial_mask
+        self.navigation_mask = navigation_mask
         
     def _threshold_changed(self, old, new):
         self.index = 0
@@ -258,7 +258,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         
     def _show_derivative_histogram_fired(self):
         self.signal.spikes_diagnosis(signal_mask=self.signal_mask,
-                                     spatial_mask=self.spatial_mask)
+                                     navigation_mask=self.navigation_mask)
         
     def detect_spike(self):
         derivative = np.diff(self.signal())

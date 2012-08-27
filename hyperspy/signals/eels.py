@@ -584,7 +584,7 @@ class EELSSpectrum(Spectrum):
 #            dc[-offset:,:,:] *= 0. 
 #        
                 
-    def spikes_diagnosis(self, signal_mask=None, spatial_mask=None):
+    def spikes_diagnosis(self, signal_mask=None, navigation_mask=None):
         """Plots a histogram to help in choosing the threshold for spikes
         removal.
         
@@ -602,8 +602,8 @@ class EELSSpectrum(Spectrum):
         axis = self.axes_manager._slicing_axes[0]
         if signal_mask is not None:
             dc = dc[..., signal_mask]
-        if spatial_mask is not None:
-            dc = dc[spatial_mask==False, :]
+        if navigation_mask is not None:
+            dc = dc[navigation_mask==False, :]
         der = np.abs(np.diff(dc, 1, -1))
         plt.figure()
         plt.hist(np.ravel(der.max(-1)),100)
@@ -612,8 +612,8 @@ class EELSSpectrum(Spectrum):
         plt.draw()
         
         
-    def spikes_removal_tool(self,signal_mask=None, spatial_mask=None):
-        sr = SpikesRemoval(self,spatial_mask=spatial_mask,
+    def spikes_removal_tool(self,signal_mask=None, navigation_mask=None):
+        sr = SpikesRemoval(self,navigation_mask=navigation_mask,
                            signal_mask=signal_mask)
         sr.edit_traits()
         return sr
