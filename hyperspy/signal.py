@@ -281,7 +281,7 @@ class Signal(t.HasTraits, MVA):
             print "Object does not have any residual information.  Is it a \
 reconstruction created using either get_decomposition_model or get_bss_model methods?"
 
-    def save(self, filename, **kwds):
+    def save(self, filename=None, **kwds):
         """Saves the signal in the specified format.
 
         The function gets the format from the extension. You can use:
@@ -300,8 +300,21 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 
         Parameters
         ----------
-        filename : str
+        filename : str or None
+            If None and mapped_parameters.filename or 
+            mapped_parameters.original_filename are defined, the
+            filename and extension will be taken from them in this 
+            order.
         """
+        if filename is None:
+            if self.mapped_parameters.has_item('filename'):
+                filename = self.mapped_parameters.filename
+            elif self.mapped_parameters.has_item('original_filename'):
+                filename = self.mapped_parameters.original_filename
+                self.mapped_parameters.filename = \
+                    self.mapped_parameters.original_filename
+            else:
+                raise ValueError('File name not defined')
         io.save(filename, self, **kwds)
 
     def _replot(self):
