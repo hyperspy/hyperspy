@@ -378,7 +378,7 @@ class MVA():
     
     def blind_source_separation(self,
                                 number_of_components=None,
-                                algorithm='CuBICA',
+                                algorithm='sklearn_fastica',
                                 diff_order=1,
                                 factors=None,
                                 comp_list=None,
@@ -473,6 +473,8 @@ class MVA():
                 if sklearn_installed is False:
                     raise ImportError(
                     'sklearn is not installed. Nothing done')
+                if 'tol' not in kwargs:
+                    kwargs['tol'] = 1e-10
                 target.bss_node = sklearn.decomposition.FastICA(
                     **kwargs)
                 target.bss_node.whiten = False
