@@ -31,7 +31,7 @@ from hyperspy.gui.tools import Load
 from hyperspy.misc.utils import (ensure_directory, DictionaryBrowser, 
     strlist2enumeration)
 from hyperspy.misc.natsort import natsorted
-
+import hyperspy.misc.utils_varia
 
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff]
 
@@ -317,7 +317,7 @@ def load_with_reader(filename, reader, record_by = None, signal_type = None,
         messages.information('%s correctly loaded' % filename)
     return objects
 
-def save(filename, signal, **kwds):
+def save(filename, signal, overwrite=None, **kwds):
     extension = os.path.splitext(filename)[1][1:]
     if extension == '':
         extension = \
@@ -351,5 +351,8 @@ def save(filename, signal, **kwds):
             'The following formats can: %s' % 
             strlist2enumeration(yes_we_can))
         ensure_directory(filename)
-        writer.file_writer(filename, signal, **kwds)
-        print('The %s file was created' % filename)
+        if overwrite is None:
+            overwrite = hyperspy.misc.utils_varia.overwrite(filename)
+        if overwrite is True:
+            writer.file_writer(filename, signal, **kwds)
+            print('The %s file was created' % filename)
