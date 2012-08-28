@@ -44,6 +44,8 @@ class MPL_HyperSpectrum_Explorer(object):
         self._key_nav_cid = None
         self._right_pointer_on = False
         self._auto_update_plot = True
+        self.plot_navigator_scalebar = False
+        self.plot_navigator_plot_ticks = True
         
     @property
     def auto_update_plot(self):
@@ -90,6 +92,7 @@ class MPL_HyperSpectrum_Explorer(object):
         return Pointer
    
     def plot(self):
+        self.generate_labels()
         if self.pointer is None:
             pointer = self.assign_pointer()  
             if pointer is not None:
@@ -99,6 +102,48 @@ class MPL_HyperSpectrum_Explorer(object):
             self.plot_navigator()
         self.plot_spectrum()
         
+    def generate_labels(self):
+        # Spectrum plot labels
+        self.xlabel = '%s (%s)' % (
+                self.axes_manager.signal_axes[0].name,
+                self.axes_manager.signal_axes[0].units)
+        self.ylabel = 'Intensity'
+        self.axis = self.axes_manager.signal_axes[0].axis
+        # Navigator labels
+        if self.axes_manager.navigation_dimension == 1:
+            scalebar_axis = self.axes_manager.signal_axes[0]
+            self.navigator_xlabel = '%s (%s)' % (
+                self.axes_manager.signal_axes[0].name,
+                self.axes_manager.signal_axes[0].units)
+            self.navigator_ylabel = '%s (%s)' % (
+                self.axes_manager.navigation_axes[0].name,
+                self.axes_manager.navigation_axes[0].units)
+            self.plot_navigator_scalebar = False
+            self.plot_navigator_ticks = True
+            self.pixel_units = scalebar_axis.units
+            self.pixel_size = scalebar_axis.scale
+
+
+        elif self.axes_manager.navigation_dimension == 2:
+            scalebar_axis = \
+                self.axes_manager.navigation_axes[-1]
+            self.navigator_ylabel = '%s (%s)' % (
+                self.axes_manager.navigation_axes[0].name,
+                self.axes_manager.navigation_axes[0].units)
+            self.navigator_xlabel = '%s (%s)' % (
+                self.axes_manager.navigation_axes[1].name,
+                self.axes_manager.navigation_axes[1].units)
+            if (self.axes_manager.navigation_axes[0].units == 
+                self.axes_manager.navigation_axes[1].units):
+                    self.plot_navigator_scalebar = True
+                    self.plot_navigator_ticks = False
+            else:
+                self.plot_navigator_scalebar = False
+                self.plot_navigator_ticks = True
+            self.pixel_units = scalebar_axis.units
+            self.pixel_size = scalebar_axis.scale
+        
+        
     def plot_navigator(self):
         if self.navigator_plot is not None:
             self.navigator_plot.plot()
@@ -107,6 +152,10 @@ class MPL_HyperSpectrum_Explorer(object):
         imf.data_function = self.navigator_data_function
         imf.pixel_units = self.pixel_units
         imf.pixel_size = self.pixel_size
+        imf.xlabel = self.navigator_xlabel
+        imf.ylabel = self.navigator_ylabel
+        imf.plot_scalebar = self.plot_navigator_scalebar
+        imf.plot_ticks = self.plot_navigator_ticks
         imf.plot()
         self.pointer.add_axes(imf.ax)
         self.navigator_plot = imf
@@ -141,11 +190,16 @@ class MPL_HyperSpectrum_Explorer(object):
         if self.navigator_plot is not None and sf.figure is not None:
             utils.on_figure_window_close(self.navigator_plot.figure, 
             self._close_pointer)
-            utils.on_figure_window_close(sf.figure, self.close_navigator_plot)
-            self._key_nav_cid = self.spectrum_plot.figure.canvas.mpl_connect(
-            'key_press_event', self.axes_manager.key_navigator)
-            self._key_nav_cid = self.navigator_plot.figure.canvas.mpl_connect(
-            'key_press_event', self.axes_manager.key_navigator)
+            utils.on_figure_window_close(sf.figure,
+                                            self.close_navigator_plot)
+            self._key_nav_cid = \
+                self.spectrum_plot.figure.canvas.mpl_connect(
+                        'key_press_event',
+                        self.axes_manager.key_navigator)
+            self._key_nav_cid = \
+                self.navigator_plot.figure.canvas.mpl_connect(
+                    'key_press_event',
+                    self.axes_manager.key_navigator)
             self.spectrum_plot.figure.canvas.mpl_connect(
                 'key_press_event', self.key2switch_right_pointer)
             self.navigator_plot.figure.canvas.mpl_connect(

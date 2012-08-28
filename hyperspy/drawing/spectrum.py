@@ -54,9 +54,6 @@ class SpectrumFigure():
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
         ax = self.ax
-        ax.set_xlabel(self.xlabel)
-        ax.set_ylabel(self.ylabel)
-        ax.set_title(self.title)
         
     def create_right_axis(self):
         if self.ax is None:
@@ -80,7 +77,9 @@ class SpectrumFigure():
         line.blit = self.blit
         
     def plot(self):
-        
+        self.ax.set_xlabel(self.xlabel)
+        self.ax.set_ylabel(self.ylabel)
+        self.ax.set_title(self.title)
         x_axis_upper_lims=[]
         x_axis_lower_lims=[]
         for line in self.ax_lines:

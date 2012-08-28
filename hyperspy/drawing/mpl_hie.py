@@ -30,8 +30,10 @@ class MPL_HyperImage_Explorer():
         self.navigator_title = ''
         self.image_plot = None
         self.navigator_plot = None
-        self.pixel_size = None
-        self.pixel_units =  None
+        self.signal_pixel_size = None
+        self.signal_pixel_units =  None
+        self.navigator_pixel_size = None
+        self.navigator_pixel_units =  None
         self.axis = None
         self.pointer = None
         self._key_nav_cid = None
@@ -43,20 +45,68 @@ class MPL_HyperImage_Explorer():
             return
         imf = image.ImagePlot()
         imf.data_function = self.signal_data_function
-        imf.pixel_units = self.pixel_units
-        imf.pixel_size = self.pixel_size
+        imf.pixel_units = self.signal_pixel_units
+        imf.pixel_size = self.signal_pixel_size
         imf.title = self.signal_title
+        imf.xlabel = self.signal_xlabel
+        imf.ylabel = self.signal_ylabel
+        imf.plot_scalebar = self.plot_signal_scalebar
+        imf.plot_ticks = self.plot_signal_ticks
         imf.plot()
         self.image_plot = imf
         
         if self.navigator_plot is not None and imf.figure is not None:
             utils.on_figure_window_close(self.navigator_plot.figure, 
             self._close_pointer)
-            utils.on_figure_window_close(imf.figure, self.close_navigator_plot)
-            self._key_nav_cid = self.image_plot.figure.canvas.mpl_connect(
-            'key_press_event', self.axes_manager.key_navigator)
-            self._key_nav_cid = self.navigator_plot.figure.canvas.mpl_connect(
-            'key_press_event', self.axes_manager.key_navigator)
+            utils.on_figure_window_close(
+                imf.figure, self.close_navigator_plot)
+            self._key_nav_cid = \
+                self.image_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.axes_manager.key_navigator)
+            self._key_nav_cid = \
+                self.navigator_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.axes_manager.key_navigator)
+                    
+    def plot_navigator(self):
+        if self.navigator_plot is not None:
+            self.navigator_plot.plot()
+            return
+        if self.axes_manager.navigation_dimension == 2:
+            imf = image.ImagePlot()
+            imf.data_function = self.navigator_data_function
+            imf.pixel_units = self.navigator_pixel_units
+            imf.pixel_size = self.navigator_pixel_size
+            imf.title = self.signal_title + ' Navigator'
+            imf.xlabel = self.navigator_xlabel
+            imf.ylabel = self.navigator_ylabel
+            imf.plot_scalebar = self.plot_navigator_scalebar
+            imf.plot_ticks = self.plot_navigator_ticks
+            imf.plot()
+            self.pointer.add_axes(imf.ax)
+            self.navigator_plot = imf
+            
+        if self.axes_manager.navigation_dimension == 1:
+            
+            # Create the figure
+            sf = spectrum.SpectrumFigure()
+            axis = self.axes_manager.navigation_axes[0]
+            sf.xlabel = self.navigator_xlabel
+            sf.ylabel = '$\Sigma\mathrm{Image\,intensity\,(%s)}$' % (
+                self.axes_manager.signal_axes[0].units)
+            sf.title = self.signal_title + ' Navigator'
+            sf.axis = axis.axis
+            sf.axes_manager = self.axes_manager
+            self.navigator_plot = sf
+            # Create a line to the left axis with the default 
+            # coordinates
+            sl = spectrum.SpectrumLine()
+            sl.data_function = self.navigator_data_function
+            sl.line_properties_helper('blue', 'step')        
+            # Add the line to the figure
+            sf.add_line(sl)
+            self.navigator_plot = sf
+            sf.plot()
+            self.pointer.add_axes(sf.ax)
     
     def close_navigator_plot(self):
         self._close_pointer()
@@ -64,7 +114,9 @@ class MPL_HyperImage_Explorer():
     
     def is_active(self):
         return utils.does_figure_object_exists(self.image_plot.figure)        
+    
     def plot(self):
+        self.generate_labels()
         self.pointer = self.assign_pointer()
         if self.pointer is not None:
             self.pointer = self.pointer(self.axes_manager)
@@ -83,41 +135,59 @@ class MPL_HyperImage_Explorer():
             Pointer = None
         return Pointer
         
-    def plot_navigator(self):
-        if self.navigator_plot is not None:
-            self.navigator_plot.plot()
-            return
-        if self.axes_manager.navigation_dimension == 2:
-            imf = image.ImagePlot()
-            imf.data_function = self.navigator_data_function
-            imf.pixel_units = self.axes_manager.navigation_axes[0].units
-            imf.pixel_size = self.axes_manager.navigation_axes[0].scale
-            imf.plot()
-            self.pointer.add_axes(imf.ax)
-            self.navigator_plot = imf
+    def generate_labels(self):
+        # Image labels
+        self.signal_xlabel = '%s (%s)' % (
+                self.axes_manager.signal_axes[1].name,
+                self.axes_manager.signal_axes[1].units)
+        self.signal_ylabel = '%s (%s)' % (
+            self.axes_manager.signal_axes[0].name,
+            self.axes_manager.signal_axes[0].units)
             
+        if (self.axes_manager.signal_axes[0].units == 
+            self.axes_manager.signal_axes[1].units):
+                self.plot_signal_scalebar = True
+                self.plot_signal_ticks = False
+        else:
+            self.plot_signal_scalebar = False
+            self.plot_signal_ticks = True
+        signal_scalebar_axis = \
+                    self.axes_manager.signal_axes[-1]
+        self.signal_pixel_units = signal_scalebar_axis.units
+        self.signal_pixel_size = signal_scalebar_axis.scale
+                
+        # Navigator labels
         if self.axes_manager.navigation_dimension == 1:
-            
-            # Create the figure
-            sf = spectrum.SpectrumFigure()
-            axis = self.axes_manager.navigation_axes[0]
-            sf.xlabel = axis.name
-#            sf.ylabel = self.ylabel
-            sf.title = '1D navigator'
-            sf.axis = axis.axis
-            sf.axes_manager = self.axes_manager
-            self.navigator_plot = sf
-            # Create a line to the left axis with the default coordinates
-            sl = spectrum.SpectrumLine()
-            sl.data_function = self.navigator_data_function
+            navigator_scalebar_axis = self.axes_manager.signal_axes[0]
+            self.navigator_ylabel = (
+                '$\Sigma \mathrm{Image\,instensity}$')
+                
+            self.navigator_xlabel = '%s (%s)' % (
+                self.axes_manager.navigation_axes[0].name,
+                self.axes_manager.navigation_axes[0].units)
+            self.plot_navigator_scalebar = False
+            self.plot_navigator_ticks = True
 
-            sl.line_properties_helper('blue', 'step')        
-            # Add the line to the figure
-              
-            sf.add_line(sl)
-            self.navigator_plot = sf
-            sf.plot()
-            self.pointer.add_axes(sf.ax)
+        elif self.axes_manager.navigation_dimension == 2:
+            navigator_scalebar_axis = \
+                self.axes_manager.navigation_axes[-1]
+            self.navigator_ylabel = '%s (%s)' % (
+                self.axes_manager.navigation_axes[0].name,
+                self.axes_manager.navigation_axes[0].units)
+            self.navigator_xlabel = '%s (%s)' % (
+                self.axes_manager.navigation_axes[1].name,
+                self.axes_manager.navigation_axes[1].units)
+            if (self.axes_manager.navigation_axes[0].units == 
+                self.axes_manager.navigation_axes[1].units):
+                    self.plot_navigator_scalebar = True
+                    self.plot_navigator_ticks = False
+            else:
+                self.plot_navigator_scalebar = False
+                self.plot_navigator_ticks = True
+            self.navigator_pixel_units = navigator_scalebar_axis.units
+            self.navigator_pixel_size = navigator_scalebar_axis.scale
+
+        
     def _close_pointer(self):
         if self.pointer is not None:
             self.pointer.disconnect(self.navigator_plot.ax)            

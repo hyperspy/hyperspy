@@ -33,7 +33,8 @@ class ImagePlot:
         self.data_function = None
         self.pixel_size = None
         self.pixel_units = None
-        self.plot_scale_bar = True
+        self.plot_scalebar = True
+        self.plot_ticks = False
         self.figure = None
         self.ax = None
         self.title = ''
@@ -61,11 +62,14 @@ class ImagePlot:
         
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
-        self.ax.set_axis_off()
+        #self.ax.set_axis_off()
         self.ax.set_title(self.title)
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
-        self.figure.subplots_adjust(0,0,1,1)
+        if self.plot_ticks is False:
+            self.ax.set_xticks([])
+            self.ax.set_yticks([])
+        #self.figure.subplots_adjust(0,0,1,1)
         
     def plot(self):
         if not utils.does_figure_object_exists(self.figure):
@@ -75,9 +79,9 @@ class ImagePlot:
         if self.auto_contrast is True:
             self.optimize_contrast(data)
         self.update_image()
-        if self.plot_scale_bar is True:
+        if self.plot_scalebar is True:
             if self.pixel_size is not None:
-                self.ax.scale_bar = widgets.Scale_Bar(
+                self.ax.scalebar = widgets.Scale_Bar(
                  ax = self.ax, units = self.pixel_units, 
                  pixel_size = self.pixel_size)
         
