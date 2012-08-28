@@ -52,6 +52,7 @@ class MPL_HyperImage_Explorer():
         imf.ylabel = self.signal_ylabel
         imf.plot_scalebar = self.plot_signal_scalebar
         imf.plot_ticks = self.plot_signal_ticks
+        imf.plot_colorbar = True
         imf.plot()
         self.image_plot = imf
         

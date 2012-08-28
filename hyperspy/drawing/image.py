@@ -35,6 +35,8 @@ class ImagePlot:
         self.pixel_units = None
         self.plot_scalebar = True
         self.plot_ticks = False
+        self.plot_colorbar = False
+        self._colorbar = None
         self.figure = None
         self.ax = None
         self.title = ''
@@ -84,13 +86,17 @@ class ImagePlot:
                 self.ax.scalebar = widgets.Scale_Bar(
                  ax = self.ax, units = self.pixel_units, 
                  pixel_size = self.pixel_size)
+                 
+        if self.plot_colorbar is True:
+            fig = self.ax.figure
+            self._colorbar = plt.colorbar(self.ax.images[0],ax=self.ax)
         
         # Adjust the size of the window
         #size = [ 6,  6.* data.shape[0] / data.shape[1]]
         #self.figure.set_size_inches(size, forward = True)        
         self.figure.canvas.draw()
-        if hasattr(self.figure, 'tight_layout'):
-            self.figure.tight_layout()
+        #if hasattr(self.figure, 'tight_layout'):
+            #self.figure.tight_layout()
         self.connect()
         
     def update_image(self, auto_contrast=None):
