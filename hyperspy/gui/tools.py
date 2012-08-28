@@ -479,7 +479,8 @@ class Load(t.HasTraits):
     traits_view = tu.View(
         tu.Group('filename'),
         kind = 'livemodal',
-        buttons = [OKButton, CancelButton])
+        buttons = [OKButton, CancelButton],
+        title = 'Load file')
         
 class ImageContrastHandler(tu.Handler):
     def close(self, info, is_ok):
