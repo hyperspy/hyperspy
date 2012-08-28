@@ -153,223 +153,223 @@ class MVA():
         # Apply pre-treatments
         # Transform the data in a line spectrum
         self._unfolded4decomposition = self.unfold_if_multidim()
-        if hasattr(navigation_mask, 'ravel'):
-            navigation_mask = navigation_mask.ravel()
+        try:
+            if hasattr(navigation_mask, 'ravel'):
+                navigation_mask = navigation_mask.ravel()
 
-        if hasattr(signal_mask, 'ravel'):
-            signal_mask = signal_mask.ravel()
+            if hasattr(signal_mask, 'ravel'):
+                signal_mask = signal_mask.ravel()
 
-        # Normalize the poissonian noise
-        # TODO this function can change the masks and this can cause
-        # problems when reprojecting
-        if normalize_poissonian_noise is True:
-            self.normalize_poissonian_noise(
-                                    navigation_mask=navigation_mask,
-                                    signal_mask=signal_mask,)
-        messages.information('Performing decomposition analysis')
+            # Normalize the poissonian noise
+            # TODO this function can change the masks and this can cause
+            # problems when reprojecting
+            if normalize_poissonian_noise is True:
+                self.normalize_poissonian_noise(
+                                        navigation_mask=navigation_mask,
+                                        signal_mask=signal_mask,)
+            messages.information('Performing decomposition analysis')
 
-        dc = self.data
+            dc = self.data
+            #set the output target (peak results or not?)
+            target = self.learning_results
             
-        #set the output target (peak results or not?)
-        target = self.learning_results
-        
-        # Transform the None masks in slices to get the right behaviour
-        if navigation_mask is None:
-            navigation_mask = slice(None)
-        if signal_mask is None:
-            signal_mask = slice(None)
-        
-        # Reset the explained_variance which is not set by all the 
-        # algorithms
-        explained_variance = None
-        explained_variance_ratio = None
-        mean = None
-        
-        if algorithm == 'svd':
-            factors, loadings, explained_variance, mean = svd_pca(
-                dc[:,signal_mask][navigation_mask,:], centre = centre,
-                auto_transpose = auto_transpose)
-
-        elif algorithm == 'fast_svd':
-            factors, loadings, explained_variance, mean = svd_pca(
-                dc[:,signal_mask][navigation_mask,:],
-                fast=True,
-                output_dimension=output_dimension,
-                centre=centre,
-                auto_transpose=auto_transpose)
-
-        elif algorithm == 'sklearn_pca':
-            if sklearn_installed is False:
-                raise ImportError(
-                'sklearn is not installed. Nothing done')
-            sk = sklearn.decomposition.PCA(**kwargs)
-            sk.n_components = output_dimension
-            loadings = sk.fit_transform((
-                dc[:,signal_mask][navigation_mask,:]))
-            factors = sk.components_.T
-            explained_variance = sk.explained_variance_
-            mean = sk.mean_
-            centre = 'trials'   
-
-        elif algorithm == 'nmf':
-            if sklearn_installed is False:
-                raise ImportError(
-                'sklearn is not installed. Nothing done')
-            sk = sklearn.decomposition.NMF(**kwargs)
-            sk.n_components = output_dimension
-            loadings = sk.fit_transform((
-                dc[:,signal_mask][navigation_mask,:]))
-            factors = sk.components_.T
+            # Transform the None masks in slices to get the right behaviour
+            if navigation_mask is None:
+                navigation_mask = slice(None)
+            if signal_mask is None:
+                signal_mask = slice(None)
             
-        elif algorithm == 'sparse_pca':
-            if sklearn_installed is False:
-                raise ImportError(
-                'sklearn is not installed. Nothing done')
-            sk = sklearn.decomposition.SparsePCA(
-                output_dimension, **kwargs)
-            loadings = sk.fit_transform(
-                dc[:,signal_mask][navigation_mask,:])
-            factors = sk.components_.T
+            # Reset the explained_variance which is not set by all the 
+            # algorithms
+            explained_variance = None
+            explained_variance_ratio = None
+            mean = None
             
-        elif algorithm == 'mini_batch_sparse_pca':
-            if sklearn_installed is False:
-                raise ImportError(
-                'sklearn is not installed. Nothing done')
-            sk = sklearn.decomposition.MiniBatchSparsePCA(
-                output_dimension, **kwargs)
-            loadings = sk.fit_transform(
-                dc[:,signal_mask][navigation_mask,:])
-            factors = sk.components_.T
+            if algorithm == 'svd':
+                factors, loadings, explained_variance, mean = svd_pca(
+                    dc[:,signal_mask][navigation_mask,:], centre = centre,
+                    auto_transpose = auto_transpose)
 
-        elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
-            print "Performing the MLPCA training"
-            if output_dimension is None:
-                messages.warning_exit(
-                "For MLPCA it is mandatory to define the "
-                "output_dimension")
-            if var_array is None and var_func is None:
-                messages.information('No variance array provided.'
-                'Supposing poissonian data')
-                var_array = dc[:,signal_mask][navigation_mask,:]
+            elif algorithm == 'fast_svd':
+                factors, loadings, explained_variance, mean = svd_pca(
+                    dc[:,signal_mask][navigation_mask,:],
+                    fast=True,
+                    output_dimension=output_dimension,
+                    centre=centre,
+                    auto_transpose=auto_transpose)
 
-            if var_array is not None and var_func is not None:
-                messages.warning_exit(
-                "You have defined both the var_func and var_array "
-                "keywords."
-                "Please, define just one of them")
-            if var_func is not None:
-                if hasattr(var_func, '__call__'):
-                    var_array = var_func(
-                        dc[signal_mask,...][:,navigation_mask])
-                else:
-                    try:
-                        var_array = np.polyval(polyfit,dc[signal_mask,
-                        navigation_mask])
-                    except:
-                        messages.warning_exit(
-                        'var_func must be either a function or an array'
-                        'defining the coefficients of a polynom')
-            if algorithm == 'mlpca':
-                fast = False
-            else:
-                fast = True
-            U,S,V,Sobj, ErrFlag = mlpca(
-                dc[:,signal_mask][navigation_mask,:],
-                var_array, output_dimension, fast = fast)
-            loadings = U * S
-            factors = V
-            explained_variance_ratio = S ** 2 / Sobj
-            explained_variance = S ** 2 / len(factors)
-        else:
-            raise ValueError('Algorithm not recognised. '
-                                 'Nothing done')
+            elif algorithm == 'sklearn_pca':
+                if sklearn_installed is False:
+                    raise ImportError(
+                    'sklearn is not installed. Nothing done')
+                sk = sklearn.decomposition.PCA(**kwargs)
+                sk.n_components = output_dimension
+                loadings = sk.fit_transform((
+                    dc[:,signal_mask][navigation_mask,:]))
+                factors = sk.components_.T
+                explained_variance = sk.explained_variance_
+                mean = sk.mean_
+                centre = 'trials'   
 
-        # We must calculate the ratio here because otherwise the sum 
-        # information can be lost if the user call 
-        # crop_decomposition_dimension
-        if explained_variance is not None and \
-        explained_variance_ratio is None:
-            explained_variance_ratio = \
-                explained_variance / explained_variance.sum()
+            elif algorithm == 'nmf':
+                if sklearn_installed is False:
+                    raise ImportError(
+                    'sklearn is not installed. Nothing done')
+                sk = sklearn.decomposition.NMF(**kwargs)
+                sk.n_components = output_dimension
+                loadings = sk.fit_transform((
+                    dc[:,signal_mask][navigation_mask,:]))
+                factors = sk.components_.T
                 
-        # Store the results in learning_results
-        target.factors = factors
-        target.loadings = loadings
-        target.explained_variance = explained_variance
-        target.explained_variance_ratio = explained_variance_ratio
-        target.decomposition_algorithm = algorithm
-        target.poissonian_noise_normalized = \
-            normalize_poissonian_noise
-        target.output_dimension = output_dimension
-        target.unfolded = self._unfolded4decomposition
-        target.centre = centre
-        target.mean = mean
-        
+            elif algorithm == 'sparse_pca':
+                if sklearn_installed is False:
+                    raise ImportError(
+                    'sklearn is not installed. Nothing done')
+                sk = sklearn.decomposition.SparsePCA(
+                    output_dimension, **kwargs)
+                loadings = sk.fit_transform(
+                    dc[:,signal_mask][navigation_mask,:])
+                factors = sk.components_.T
+                
+            elif algorithm == 'mini_batch_sparse_pca':
+                if sklearn_installed is False:
+                    raise ImportError(
+                    'sklearn is not installed. Nothing done')
+                sk = sklearn.decomposition.MiniBatchSparsePCA(
+                    output_dimension, **kwargs)
+                loadings = sk.fit_transform(
+                    dc[:,signal_mask][navigation_mask,:])
+                factors = sk.components_.T
 
-        if output_dimension and factors.shape[1] != output_dimension:
-            target.crop_decomposition_dimension(output_dimension)
-        
-        # Delete the unmixing information, because it'll refer to a previous
-        # decompositions
-        target.unmixing_matrix = None
-        target.bss_algorithm = None
+            elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
+                print "Performing the MLPCA training"
+                if output_dimension is None:
+                    messages.warning_exit(
+                    "For MLPCA it is mandatory to define the "
+                    "output_dimension")
+                if var_array is None and var_func is None:
+                    messages.information('No variance array provided.'
+                    'Supposing poissonian data')
+                    var_array = dc[:,signal_mask][navigation_mask,:]
 
-        if self._unfolded4decomposition is True:
-            target.original_shape = self._shape_before_unfolding
-
-        # Reproject
-        if mean is None:
-            mean = 0
-        if reproject in ('navigation', 'both'):
-            if algorithm not in ('nmf', 'sparse_pca', 
-                                  'mini_batch_sparse_pca'):
-                loadings_ = np.dot(dc[:,signal_mask] - mean, factors)
-            else:
-                loadings_ = sk.transform(dc[:,signal_mask])
-            target.loadings = loadings_
-        if reproject in ('signal', 'both'):
-            if algorithm not in ('nmf', 'sparse_pca',
-                                  'mini_batch_sparse_pca'):
-                factors = np.dot(np.linalg.pinv(loadings), 
-                                 dc[navigation_mask,:] - mean).T
-                target.factors = factors
-            else:
-                messages.information("Reprojecting the signal is not yet "
-                                     "supported for this algorithm")
-                if reproject == 'both':
-                    reproject = 'signal'
+                if var_array is not None and var_func is not None:
+                    messages.warning_exit(
+                    "You have defined both the var_func and var_array "
+                    "keywords."
+                    "Please, define just one of them")
+                if var_func is not None:
+                    if hasattr(var_func, '__call__'):
+                        var_array = var_func(
+                            dc[signal_mask,...][:,navigation_mask])
+                    else:
+                        try:
+                            var_array = np.polyval(polyfit,dc[signal_mask,
+                            navigation_mask])
+                        except:
+                            messages.warning_exit(
+                            'var_func must be either a function or an array'
+                            'defining the coefficients of a polynom')
+                if algorithm == 'mlpca':
+                    fast = False
                 else:
-                    reproject = None
-        
-        # Rescale the results if the noise was normalized
-        if normalize_poissonian_noise is True:
-            target.factors[:] *= self._root_bH.T
-            target.loadings[:] *= self._root_aG
-            
-        # Set the pixels that were not processed to nan
-        if not isinstance(signal_mask, slice):
-            target.signal_mask = signal_mask.reshape(
-                self.axes_manager.signal_shape)
-            if reproject not in ('both', 'signal'):
-                factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
-                factors[signal_mask == True,:] = target.factors
-                factors[signal_mask == False,:] = np.nan
-                target.factors = factors
-        if not isinstance(navigation_mask, slice):
-            target.navigation_mask = navigation_mask.reshape(
-                self.axes_manager.navigation_shape)
-            if reproject not in ('both', 'navigation'):
-                loadings = np.zeros((dc.shape[0], target.loadings.shape[1]))
-                loadings[navigation_mask == True,:] = target.loadings
-                loadings[navigation_mask == False,:] = np.nan
-                target.loadings = loadings
+                    fast = True
+                U,S,V,Sobj, ErrFlag = mlpca(
+                    dc[:,signal_mask][navigation_mask,:],
+                    var_array, output_dimension, fast = fast)
+                loadings = U * S
+                factors = V
+                explained_variance_ratio = S ** 2 / Sobj
+                explained_variance = S ** 2 / len(factors)
+            else:
+                raise ValueError('Algorithm not recognised. '
+                                     'Nothing done')
 
-        #undo any pre-treatments
-        self.undo_treatments()
-        
-        if self._unfolded4decomposition is True:
-            self.fold()
-            self._unfolded4decomposition is False
+            # We must calculate the ratio here because otherwise the sum 
+            # information can be lost if the user call 
+            # crop_decomposition_dimension
+            if explained_variance is not None and \
+            explained_variance_ratio is None:
+                explained_variance_ratio = \
+                    explained_variance / explained_variance.sum()
+                    
+            # Store the results in learning_results
+            target.factors = factors
+            target.loadings = loadings
+            target.explained_variance = explained_variance
+            target.explained_variance_ratio = explained_variance_ratio
+            target.decomposition_algorithm = algorithm
+            target.poissonian_noise_normalized = \
+                normalize_poissonian_noise
+            target.output_dimension = output_dimension
+            target.unfolded = self._unfolded4decomposition
+            target.centre = centre
+            target.mean = mean
+            
+
+            if output_dimension and factors.shape[1] != output_dimension:
+                target.crop_decomposition_dimension(output_dimension)
+            
+            # Delete the unmixing information, because it'll refer to a previous
+            # decompositions
+            target.unmixing_matrix = None
+            target.bss_algorithm = None
+
+            if self._unfolded4decomposition is True:
+                target.original_shape = self._shape_before_unfolding
+
+            # Reproject
+            if mean is None:
+                mean = 0
+            if reproject in ('navigation', 'both'):
+                if algorithm not in ('nmf', 'sparse_pca', 
+                                      'mini_batch_sparse_pca'):
+                    loadings_ = np.dot(dc[:,signal_mask] - mean, factors)
+                else:
+                    loadings_ = sk.transform(dc[:,signal_mask])
+                target.loadings = loadings_
+            if reproject in ('signal', 'both'):
+                if algorithm not in ('nmf', 'sparse_pca',
+                                      'mini_batch_sparse_pca'):
+                    factors = np.dot(np.linalg.pinv(loadings), 
+                                     dc[navigation_mask,:] - mean).T
+                    target.factors = factors
+                else:
+                    messages.information("Reprojecting the signal is not yet "
+                                         "supported for this algorithm")
+                    if reproject == 'both':
+                        reproject = 'signal'
+                    else:
+                        reproject = None
+            
+            # Rescale the results if the noise was normalized
+            if normalize_poissonian_noise is True:
+                target.factors[:] *= self._root_bH.T
+                target.loadings[:] *= self._root_aG
+                
+            # Set the pixels that were not processed to nan
+            if not isinstance(signal_mask, slice):
+                target.signal_mask = signal_mask.reshape(
+                    self.axes_manager.signal_shape)
+                if reproject not in ('both', 'signal'):
+                    factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
+                    factors[signal_mask == True,:] = target.factors
+                    factors[signal_mask == False,:] = np.nan
+                    target.factors = factors
+            if not isinstance(navigation_mask, slice):
+                target.navigation_mask = navigation_mask.reshape(
+                    self.axes_manager.navigation_shape)
+                if reproject not in ('both', 'navigation'):
+                    loadings = np.zeros((dc.shape[0], target.loadings.shape[1]))
+                    loadings[navigation_mask == True,:] = target.loadings
+                    loadings[navigation_mask == False,:] = np.nan
+                    target.loadings = loadings
+        finally:
+            #undo any pre-treatments
+            self.undo_treatments()
+            
+            if self._unfolded4decomposition is True:
+                self.fold()
+                self._unfolded4decomposition is False
     
     def get_factors_as_spectrum(self):
         from hyperspy.signals.spectrum import Spectrum
