@@ -23,10 +23,10 @@ import utils
 
 class MPL_HyperImage_Explorer():
     def __init__(self):
-        self.image_data_function = None
+        self.signal_data_function = None
         self.navigator_data_function = None
         self.axes_manager = None
-        self.image_title = ''
+        self.signal_title = ''
         self.navigator_title = ''
         self.image_plot = None
         self.navigator_plot = None
@@ -42,10 +42,10 @@ class MPL_HyperImage_Explorer():
             self.image_plot.plot()
             return
         imf = image.ImagePlot()
-        imf.data_function = self.image_data_function
+        imf.data_function = self.signal_data_function
         imf.pixel_units = self.pixel_units
         imf.pixel_size = self.pixel_size
-        imf.title = self.image_title
+        imf.title = self.signal_title
         imf.plot()
         self.image_plot = imf
         

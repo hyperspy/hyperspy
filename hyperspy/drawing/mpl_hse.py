@@ -27,13 +27,13 @@ class MPL_HyperSpectrum_Explorer(object):
     explore the SI."""
     
     def __init__(self):
-        self.spectrum_data_function = None
-        self.image_data_function = None
+        self.signal_data_function = None
+        self.navigator_data_function = None
         self.axes_manager = None
-        self.spectrum_title = ''
+        self.signal_title = ''
         self.xlabel = ''
         self.ylabel = ''
-        self.image_title = ''
+        self.navigator_title = ''
         self.navigator_plot = None
         self.spectrum_plot = None
         self.pixel_size = None
@@ -104,7 +104,7 @@ class MPL_HyperSpectrum_Explorer(object):
             self.navigator_plot.plot()
             return
         imf = image.ImagePlot()
-        imf.data_function = self.image_data_function
+        imf.data_function = self.navigator_data_function
         imf.pixel_units = self.pixel_units
         imf.pixel_size = self.pixel_size
         imf.plot()
@@ -120,14 +120,14 @@ class MPL_HyperSpectrum_Explorer(object):
         sf = spectrum.SpectrumFigure()
         sf.xlabel = self.xlabel
         sf.ylabel = self.ylabel
-        sf.title = self.spectrum_title
+        sf.title = self.signal_title
         sf.axis = self.axis
         sf.create_axis()
         sf.axes_manager = self.axes_manager
         self.spectrum_plot = sf
         # Create a line to the left axis with the default coordinates
         sl = spectrum.SpectrumLine()
-        sl.data_function = self.spectrum_data_function
+        sl.data_function = self.signal_data_function
         if self.pointer is not None:
             color = self.pointer.color
         else:
@@ -169,7 +169,7 @@ class MPL_HyperSpectrum_Explorer(object):
             self.right_pointer.color = 'blue'
             self.right_pointer.add_axes(self.navigator_plot.ax)
         rl = spectrum.SpectrumLine()
-        rl.data_function = self.spectrum_data_function
+        rl.data_function = self.signal_data_function
         rl.line_properties_helper(self.right_pointer.color, 'step')
         self.spectrum_plot.create_right_axis()
         self.spectrum_plot.add_line(rl, ax = 'right')

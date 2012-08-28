@@ -234,39 +234,56 @@ class Signal(t.HasTraits, MVA):
 
         if axes_manager.signal_dimension == 1:
             # Hyperspectrum
-
             self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
-            self._plot.spectrum_data_function = self.__call__
-            self._plot.spectrum_title = self.mapped_parameters.title
             self._plot.xlabel = '%s (%s)' % (
                 self.axes_manager.signal_axes[0].name,
                 self.axes_manager.signal_axes[0].units)
             self._plot.ylabel = 'Intensity'
-            self._plot.axes_manager = axes_manager
-            self._plot.axis = self.axes_manager.signal_axes[0].axis
-
-            # Image properties
-            if self.axes_manager.navigation_axes:
-                self._plot.image_data_function = self._get_explorer
-                self._plot.image_title = ''
-                if self.axes_manager.navigation_dimension == 1:
-                    scalebar_axis = self.axes_manager.signal_axes[0]
-                else:
-                    scalebar_axis = self.axes_manager.navigation_axes[-1]
-                self._plot.pixel_size = scalebar_axis.scale
-                self._plot.pixel_units = scalebar_axis.units
-            self._plot.plot()
+            self._plot.axis = axes_manager.signal_axes[0].axis
             
         elif axes_manager.signal_dimension == 2:
             self._plot = mpl_hie.MPL_HyperImage_Explorer()
-            self._plot.image_data_function = self.__call__
-            self._plot.navigator_data_function = self._get_explorer
-            self._plot.axes_manager = axes_manager
-            self._plot.image_title = self.mapped_parameters.title
-            self._plot.plot()
-
+            self._plot.xlabel = '%s (%s)' % (
+                self.axes_manager.signal_axes[1].name,
+                self.axes_manager.signal_axes[1].units)
+            self._plot.ylabel = '%s (%s)' % (
+                self.axes_manager.signal_axes[0].name,
+                self.axes_manager.signal_axes[0].units)
         else:
-            messages.warning_exit('Plotting is not supported for this view')
+            raise ValueError('Plotting is not supported for this view')
+        
+        self._plot.axes_manager = axes_manager
+        self._plot.signal_data_function = self.__call__
+        self._plot.signal_title = self.mapped_parameters.title
+
+
+        # Navigator properties
+        if self.axes_manager.navigation_axes:
+            self._plot.navigator_data_function = self._get_explorer
+            self._plot.navigator_title = 'Navigator'
+
+            if self.axes_manager.navigation_dimension == 1:
+                scalebar_axis = self.axes_manager.signal_axes[0]
+                self._plot.navigator_xlabel = '%s (%s)' % (
+                    self.axes_manager.signal_axes[0].name,
+                    self.axes_manager.signal_axes[0].units)
+                self._plot.navigator_ylabel = '%s (%s)' % (
+                    self.axes_manager.navigation_axes[0].name,
+                    self.axes_manager.navigation_axes[0].units)
+            else:
+                scalebar_axis = self.axes_manager.navigation_axes[-1]
+                self._plot.navigator_ylabel = '%s (%s)' % (
+                    self.axes_manager.navigation_axes[0].name,
+                    self.axes_manager.navigation_axes[0].units)
+                self._plot.navigator_xlabel = '%s (%s)' % (
+                    self.axes_manager.navigation_axes[1].name,
+                    self.axes_manager.navigation_axes[1].units)
+                
+            self._plot.pixel_size = scalebar_axis.scale
+            self._plot.pixel_units = scalebar_axis.units
+        
+        self._plot.plot()
+            
 
     def plot_residual(self, axes_manager=None):
         """Plot the residual between original data and reconstructed data

@@ -41,6 +41,8 @@ class ImagePlot:
         self.vmin = None
         self.vmax = None
         self.auto_contrast = True
+        self.ylabel = ''
+        self.xlabel = ''
         
     def optimize_contrast(self, data, perc = 0.01):
         dc = data.copy().ravel()
@@ -61,6 +63,8 @@ class ImagePlot:
         self.ax = self.figure.add_subplot(111)
         self.ax.set_axis_off()
         self.ax.set_title(self.title)
+        self.ax.set_xlabel(self.xlabel)
+        self.ax.set_ylabel(self.ylabel)
         self.figure.subplots_adjust(0,0,1,1)
         
     def plot(self):
