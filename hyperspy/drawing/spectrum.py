@@ -110,7 +110,9 @@ class SpectrumLine():
         self.line = None
         self.line_properties = dict()
         self.autoscale = True
-    
+        self.plot_coordinates = False
+        self.text = None
+        self.text_position = (-0.1, 1.05,)
 
     def line_properties_helper(self, color, type):
         """This function provides an easy way of defining some basic line 
@@ -149,16 +151,24 @@ class SpectrumLine():
             self.axis, f(axes_manager = self.axes_manager),
                 **self.line_properties)
         self.axes_manager.connect(self.update)
+        if not self.axes_manager or not self.axes_manager.coordinates:
+            self.plot_coordinates = False
+        if self.plot_coordinates is True:
+            self.text = self.ax.text(*self.text_position,
+                            s=str(self.axes_manager.coordinates[::-1]),
+                            transform = self.ax.transAxes,
+                            fontsize=12,
+                            color=self.line.get_color())
         self.ax.figure.canvas.draw()
                   
-    def update(self, force_replot = True):
+    def update(self, force_replot=True):
         """Update the current spectrum figure"""
         if self.auto_update is False:
             return           
         if force_replot is True:
             self.close()
             self.plot()
-        ydata = self.data_function(axes_manager = self.axes_manager)
+        ydata = self.data_function(axes_manager=self.axes_manager)
         self.line.set_ydata(ydata)
         
         if self.autoscale is True:
@@ -168,13 +178,18 @@ class SpectrumLine():
             y2 += 2
             y1, y2 = np.clip((y1,y2),0,len(ydata-1))
             clipped_ydata = ydata[y1:y2]
-            y_max, y_min = np.nanmax(clipped_ydata), np.nanmin(clipped_ydata)
+            y_max, y_min = (np.nanmax(clipped_ydata),
+                            np.nanmin(clipped_ydata))
             self.ax.set_ylim(y_min, y_max)
+        if self.plot_coordinates is True:
+            self.text.set_text((self.axes_manager.coordinates[::-1]))
         self.ax.figure.canvas.draw()
         
     def close(self):
         if self.line in self.ax.lines:
             self.ax.lines.remove(self.line)
+        if self.text and self.text in self.ax.texts:
+            self.ax.texts.remove(self.text)
         self.axes_manager.disconnect(self.update)
         try:
             self.ax.figure.canvas.draw()

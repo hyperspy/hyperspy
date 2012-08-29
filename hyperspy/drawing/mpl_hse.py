@@ -23,8 +23,10 @@ import spectrum, image, utils
 import copy
 
 class MPL_HyperSpectrum_Explorer(object):
-    """Plots the current spectrum to the screen and a map with a cursor to 
-    explore the SI."""
+    """Plots the current spectrum to the screen and a map with a cursor 
+    to explore the SI.
+    
+    """
     
     def __init__(self):
         self.signal_data_function = None
@@ -177,6 +179,7 @@ class MPL_HyperSpectrum_Explorer(object):
         # Create a line to the left axis with the default coordinates
         sl = spectrum.SpectrumLine()
         sl.data_function = self.signal_data_function
+        sl.plot_coordinates = True
         if self.pointer is not None:
             color = self.pointer.color
         else:
@@ -219,7 +222,8 @@ class MPL_HyperSpectrum_Explorer(object):
             copy.deepcopy(self.axes_manager)
         if self.right_pointer is None:
             pointer = self.assign_pointer()
-            self.right_pointer = pointer(self.signal_plot.right_axes_manager)
+            self.right_pointer = pointer(
+                self.signal_plot.right_axes_manager)
             self.right_pointer.color = 'blue'
             self.right_pointer.add_axes(self.navigator_plot.ax)
         rl = spectrum.SpectrumLine()
@@ -227,6 +231,8 @@ class MPL_HyperSpectrum_Explorer(object):
         rl.line_properties_helper(self.right_pointer.color, 'step')
         self.signal_plot.create_right_axis()
         self.signal_plot.add_line(rl, ax = 'right')
+        rl.plot_coordinates = True
+        rl.text_position = (1., 1.05,)
         rl.plot()
         self.right_pointer_on = True
         

@@ -46,6 +46,10 @@ class ImagePlot:
         self.auto_contrast = True
         self.ylabel = ''
         self.xlabel = ''
+        self.plot_coordinates = True
+        self.text = None
+        self.text_position = (-0.1, 1.05,)
+        self.axes_manager = None
         
     def optimize_contrast(self, data, perc = 0.01):
         dc = data.copy().ravel()
@@ -80,6 +84,14 @@ class ImagePlot:
         data = self.data_function()
         if self.auto_contrast is True:
             self.optimize_contrast(data)
+        if not self.axes_manager or not self.axes_manager.coordinates:
+            self.plot_coordinates = False
+        if self.plot_coordinates is True:
+            self.text = self.ax.text(*self.text_position,
+                            s=str(self.axes_manager.coordinates[::-1]),
+                            transform = self.ax.transAxes,
+                            fontsize=12,
+                            color='red')
         self.update_image()
         if self.plot_scalebar is True:
             if self.pixel_size is not None:
@@ -90,6 +102,7 @@ class ImagePlot:
         if self.plot_colorbar is True:
             fig = self.ax.figure
             self._colorbar = plt.colorbar(self.ax.images[0],ax=self.ax)
+
         
         # Adjust the size of the window
         #size = [ 6,  6.* data.shape[0] / data.shape[1]]
@@ -112,6 +125,8 @@ class ImagePlot:
             
         self.ax.imshow(data, interpolation='nearest', vmin=self.vmin, 
                        vmax=self.vmax)
+        if self.plot_coordinates is True:
+            self.text.set_text((self.axes_manager.coordinates[::-1]))
         self.figure.canvas.draw()
         
     def _update_image(self):

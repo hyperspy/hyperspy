@@ -44,6 +44,7 @@ class MPL_HyperImage_Explorer():
             self.signal_plot.plot()
             return
         imf = image.ImagePlot()
+        imf.axes_manager = self.axes_manager
         imf.data_function = self.signal_data_function
         imf.pixel_units = self.signal_pixel_units
         imf.pixel_size = self.signal_pixel_size
