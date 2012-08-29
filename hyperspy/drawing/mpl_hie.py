@@ -28,7 +28,7 @@ class MPL_HyperImage_Explorer():
         self.axes_manager = None
         self.signal_title = ''
         self.navigator_title = ''
-        self.image_plot = None
+        self.signal_plot = None
         self.navigator_plot = None
         self.signal_pixel_size = None
         self.signal_pixel_units =  None
@@ -39,9 +39,9 @@ class MPL_HyperImage_Explorer():
         self._key_nav_cid = None
 
         
-    def plot_image(self):
-        if self.image_plot is not None:
-            self.image_plot.plot()
+    def plot_signal(self):
+        if self.signal_plot is not None:
+            self.signal_plot.plot()
             return
         imf = image.ImagePlot()
         imf.data_function = self.signal_data_function
@@ -54,7 +54,7 @@ class MPL_HyperImage_Explorer():
         imf.plot_ticks = self.plot_signal_ticks
         imf.plot_colorbar = True
         imf.plot()
-        self.image_plot = imf
+        self.signal_plot = imf
         
         if self.navigator_plot is not None and imf.figure is not None:
             utils.on_figure_window_close(self.navigator_plot.figure, 
@@ -62,7 +62,7 @@ class MPL_HyperImage_Explorer():
             utils.on_figure_window_close(
                 imf.figure, self.close_navigator_plot)
             self._key_nav_cid = \
-                self.image_plot.figure.canvas.mpl_connect(
+                self.signal_plot.figure.canvas.mpl_connect(
                     'key_press_event', self.axes_manager.key_navigator)
             self._key_nav_cid = \
                 self.navigator_plot.figure.canvas.mpl_connect(
@@ -114,7 +114,7 @@ class MPL_HyperImage_Explorer():
         self.navigator_plot.close()
     
     def is_active(self):
-        return utils.does_figure_object_exists(self.image_plot.figure)        
+        return utils.does_figure_object_exists(self.signal_plot.figure)        
     
     def plot(self):
         self.generate_labels()
@@ -123,8 +123,8 @@ class MPL_HyperImage_Explorer():
             self.pointer = self.pointer(self.axes_manager)
             self.pointer.color = 'red'
             self.plot_navigator()
-        self.plot_image()
-        self.axes_manager.connect(self.image_plot._update_image)
+        self.plot_signal()
+        self.axes_manager.connect(self.signal_plot._update_image)
             
     def assign_pointer(self):
         nav_dim = self.axes_manager.navigation_dimension
@@ -193,6 +193,6 @@ class MPL_HyperImage_Explorer():
         if self.pointer is not None:
             self.pointer.disconnect(self.navigator_plot.ax)            
     def close(self):         
-        self.image_plot.close()
+        self.signal_plot.close()
         self.navigator_plot.close()        
            

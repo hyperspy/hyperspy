@@ -283,7 +283,7 @@ class Model(list, Optimizers, Estimators):
     def update_plot(self):
         if self.spectrum._plot is not None:
             try:
-                for line in self.spectrum._plot.spectrum_plot.ax_lines:
+                for line in self.spectrum._plot.signal_plot.ax_lines:
                         line.update()
             except:
                 self.disconnect_parameters2update_plot()
@@ -680,7 +680,7 @@ class Model(list, Optimizers, Estimators):
         # If new coordinates are assigned
         self.spectrum.plot()
         _plot = self.spectrum._plot
-        l1 = _plot.spectrum_plot.ax_lines[0]
+        l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()
         l1.line_properties_helper(color, 'scatter')
         l1.set_properties()
@@ -690,10 +690,10 @@ class Model(list, Optimizers, Estimators):
         l2.line_properties_helper('blue', 'line')        
         # Add the line to the figure
           
-        _plot.spectrum_plot.add_line(l2)
+        _plot.signal_plot.add_line(l2)
         l2.plot()
         self.connect_parameters2update_plot()
-        on_figure_window_close(_plot.spectrum_plot.figure, 
+        on_figure_window_close(_plot.signal_plot.figure, 
                                       self.disconnect_parameters2update_plot)
         self.set_auto_update_plot(True)
         self._plot = self.spectrum._plot

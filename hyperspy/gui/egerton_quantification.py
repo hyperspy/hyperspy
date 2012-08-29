@@ -102,7 +102,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         self.bg_line = drawing.spectrum.SpectrumLine()
         self.bg_line.data_function = self.bg_to_plot
         self.bg_line.line_properties_helper('blue', 'line')
-        self.signal._plot.spectrum_plot.add_line(self.bg_line)
+        self.signal._plot.signal_plot.add_line(self.bg_line)
         self.bg_line.autoscale = False
         self.bg_line.plot()
         
@@ -240,8 +240,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
                             tuple(signal.axes_manager.navigation_shape)) if (navigation_mask is None or not navigation_mask[coordinate])]
         self.signal = signal
         sys.setrecursionlimit(np.cumprod(self.signal.data.shape)[-1])
-        self.line = signal._plot.spectrum_plot.ax_lines[0]
-        self.ax = signal._plot.spectrum_plot.ax
+        self.line = signal._plot.signal_plot.ax_lines[0]
+        self.ax = signal._plot.signal_plot.ax
         signal._plot.auto_update_plot = False
         signal.axes_manager.set_coordinates(self.coordinates[0])
         self.threshold = 400
@@ -345,7 +345,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.interpolated_line.data_function = \
             self.get_interpolated_spectrum
         self.interpolated_line.line_properties_helper('blue', 'line')
-        self.signal._plot.spectrum_plot.add_line(self.interpolated_line)
+        self.signal._plot.signal_plot.add_line(self.interpolated_line)
         self.interpolated_line.autoscale = False
         self.interpolated_line.plot()
         
@@ -464,7 +464,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 #        if new is True:
 #            self.span_selector = \
 #            drawing.widgets.ModifiableSpanSelector(
-#            self.signal.hse.spectrum_plot.ax,
+#            self.signal.hse.signal_plot.ax,
 #            onselect = self.store_current_spectrum_bg_parameters,
 #            onmove_callback = self.background_estimatorot_bg_removed_spectrum)
 #        elif self.span_selector is not None:
@@ -496,7 +496,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 #        if new is True:
 #            self.signal_span_selector = \
 #            drawing.widgets.ModifiableSpanSelector(
-#            self.signal.hse.spectrum_plot.ax, 
+#            self.signal.hse.signal_plot.ax, 
 #            onselect = self.store_current_spectrum_bg_parameters,
 #            onmove_callback = self.background_estimatorot_signal_map)
 #            self.signal_span_selector.rect.set_color('blue')
@@ -513,12 +513,12 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 #        if self.bg_line is not None:
 #            self.span_selector.ax.lines.remove(self.bg_line)
 #            self.span_selector.ax.lines.remove(self.signal_line)
-#        self.bg_line, = self.signal.hse.spectrum_plot.ax.plot(
+#        self.bg_line, = self.signal.hse.signal_plot.ax.plot(
 #        ea, self.background_estimator.function(ea), color = 'black')
-#        self.signal_line, = self.signal.hse.spectrum_plot.ax.plot(
+#        self.signal_line, = self.signal.hse.signal_plot.ax.plot(
 #        self.signal.energy_axis[iright:], self.signal()[iright:] - 
 #        self.background_estimator.function(self.signal.energy_axis[iright:]), color = 'black')
-#        self.signal.hse.spectrum_plot.ax.figure.canvas.draw()
+#        self.signal.hse.signal_plot.ax.figure.canvas.draw()
 
 #        
 #    def plot_signal_map(self, *args, **kwargs):

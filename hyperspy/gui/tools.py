@@ -153,7 +153,7 @@ class SpanSelectorInSpectrum(t.HasTraits):
         if on is True:
             self.span_selector = \
             drawing.widgets.ModifiableSpanSelector(
-            self.signal._plot.spectrum_plot.ax,
+            self.signal._plot.signal_plot.ax,
             onselect = self.update_span_selector_traits,
             onmove_callback = self.update_span_selector_traits)
 
@@ -253,10 +253,10 @@ class Smoothing(t.HasTraits):
                    
     def plot(self):
         if self.signal._plot is None or not \
-            does_figure_object_exists(self.signal._plot.spectrum_plot.figure):
+            does_figure_object_exists(self.signal._plot.signal_plot.figure):
             self.signal.plot()
         hse = self.signal._plot
-        l1 = hse.spectrum_plot.ax_lines[0]
+        l1 = hse.signal_plot.ax_lines[0]
         self.original_color = l1.line.get_color()
         l1.line_properties_helper(self.original_color, 'scatter')
         l1.set_properties()
@@ -266,7 +266,7 @@ class Smoothing(t.HasTraits):
         l2.line_properties_helper(np.array(
             self.line_color.Get())/255., 'line')   
         # Add the line to the figure
-        hse.spectrum_plot.add_line(l2)
+        hse.signal_plot.add_line(l2)
         l2.plot()
         self.data_line = l1
         self.smooth_line = l2
@@ -279,12 +279,12 @@ class Smoothing(t.HasTraits):
         
     def turn_diff_line_on(self, diff_order):
 
-        self.signal._plot.spectrum_plot.create_right_axis()
+        self.signal._plot.signal_plot.create_right_axis()
         self.smooth_diff_line = drawing.spectrum.SpectrumLine()
         self.smooth_diff_line.data_function = self.diff_model2plot
         self.smooth_diff_line.line_properties_helper(np.array(
             self.line_color.Get())/255., 'line')   
-        self.signal._plot.spectrum_plot.add_line(self.smooth_diff_line,
+        self.signal._plot.signal_plot.add_line(self.smooth_diff_line,
                                                  ax = 'right')
         self.smooth_diff_line.axes_manager = self.signal.axes_manager
         

@@ -35,7 +35,7 @@ class MPL_HyperSpectrum_Explorer(object):
         self.ylabel = ''
         self.navigator_title = ''
         self.navigator_plot = None
-        self.spectrum_plot = None
+        self.signal_plot = None
         self.pixel_size = None
         self.pixel_units =  None
         self.axis = None
@@ -55,8 +55,8 @@ class MPL_HyperSpectrum_Explorer(object):
     def auto_update_plot(self, value):
         if self._auto_update_plot is value:
             return
-        for line in self.spectrum_plot.ax_lines + \
-        self.spectrum_plot.right_ax_lines:
+        for line in self.signal_plot.ax_lines + \
+        self.signal_plot.right_ax_lines:
             line.auto_update = value
         if self.pointer is not None:
             if value is True:
@@ -79,7 +79,7 @@ class MPL_HyperSpectrum_Explorer(object):
             self.remove_right_pointer()
     
     def is_active(self):
-        return utils.does_figure_object_exists(self.spectrum_plot.figure)
+        return utils.does_figure_object_exists(self.signal_plot.figure)
     
     def assign_pointer(self):
         nav_dim = self.axes_manager.navigation_dimension
@@ -100,7 +100,7 @@ class MPL_HyperSpectrum_Explorer(object):
                 self.pointer.color = 'red'
         if self.pointer is not None:
             self.plot_navigator()
-        self.plot_spectrum()
+        self.plot_signal()
         
     def generate_labels(self):
         # Spectrum plot labels
@@ -160,9 +160,9 @@ class MPL_HyperSpectrum_Explorer(object):
         self.pointer.add_axes(imf.ax)
         self.navigator_plot = imf
         
-    def plot_spectrum(self):
-        if self.spectrum_plot is not None:
-            self.spectrum_plot.plot()
+    def plot_signal(self):
+        if self.signal_plot is not None:
+            self.signal_plot.plot()
             return
         
         # Create the figure
@@ -173,7 +173,7 @@ class MPL_HyperSpectrum_Explorer(object):
         sf.axis = self.axis
         sf.create_axis()
         sf.axes_manager = self.axes_manager
-        self.spectrum_plot = sf
+        self.signal_plot = sf
         # Create a line to the left axis with the default coordinates
         sl = spectrum.SpectrumLine()
         sl.data_function = self.signal_data_function
@@ -185,7 +185,7 @@ class MPL_HyperSpectrum_Explorer(object):
         # Add the line to the figure
           
         sf.add_line(sl)
-        self.spectrum_plot = sf
+        self.signal_plot = sf
         sf.plot()
         if self.navigator_plot is not None and sf.figure is not None:
             utils.on_figure_window_close(self.navigator_plot.figure, 
@@ -193,14 +193,14 @@ class MPL_HyperSpectrum_Explorer(object):
             utils.on_figure_window_close(sf.figure,
                                             self.close_navigator_plot)
             self._key_nav_cid = \
-                self.spectrum_plot.figure.canvas.mpl_connect(
+                self.signal_plot.figure.canvas.mpl_connect(
                         'key_press_event',
                         self.axes_manager.key_navigator)
             self._key_nav_cid = \
                 self.navigator_plot.figure.canvas.mpl_connect(
                     'key_press_event',
                     self.axes_manager.key_navigator)
-            self.spectrum_plot.figure.canvas.mpl_connect(
+            self.signal_plot.figure.canvas.mpl_connect(
                 'key_press_event', self.key2switch_right_pointer)
             self.navigator_plot.figure.canvas.mpl_connect(
                 'key_press_event', self.key2switch_right_pointer)
@@ -214,25 +214,25 @@ class MPL_HyperSpectrum_Explorer(object):
             self.right_pointer_on = not self.right_pointer_on
             
     def add_right_pointer(self):
-        if self.spectrum_plot.right_axes_manager is None:
-            self.spectrum_plot.right_axes_manager = \
+        if self.signal_plot.right_axes_manager is None:
+            self.signal_plot.right_axes_manager = \
             copy.deepcopy(self.axes_manager)
         if self.right_pointer is None:
             pointer = self.assign_pointer()
-            self.right_pointer = pointer(self.spectrum_plot.right_axes_manager)
+            self.right_pointer = pointer(self.signal_plot.right_axes_manager)
             self.right_pointer.color = 'blue'
             self.right_pointer.add_axes(self.navigator_plot.ax)
         rl = spectrum.SpectrumLine()
         rl.data_function = self.signal_data_function
         rl.line_properties_helper(self.right_pointer.color, 'step')
-        self.spectrum_plot.create_right_axis()
-        self.spectrum_plot.add_line(rl, ax = 'right')
+        self.signal_plot.create_right_axis()
+        self.signal_plot.add_line(rl, ax = 'right')
         rl.plot()
         self.right_pointer_on = True
         
     def remove_right_pointer(self):
-        for line in self.spectrum_plot.right_ax_lines:
-            self.spectrum_plot.right_ax_lines.remove(line)
+        for line in self.signal_plot.right_ax_lines:
+            self.signal_plot.right_ax_lines.remove(line)
             line.close()
         self.right_pointer.close()
         self.right_pointer = None
@@ -244,5 +244,5 @@ class MPL_HyperSpectrum_Explorer(object):
     
     def close(self):
         self._close_pointer()
-        self.spectrum_plot.close()
+        self.signal_plot.close()
         self.navigator_plot.close()
