@@ -808,7 +808,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                                 same_window=None, comp_label='PC', 
                                 img_data=None,
                                 plot_shifts=True, plot_char=4, 
-                                cmap=plt.cm.jet, quiver_color='white',
+                                cmap=plt.cm.gray, quiver_color='white',
                                 vector_scale=1,
                                 per_row=3,ax=None):
         """Plot components from PCA or ICA, or peak characteristics
@@ -936,7 +936,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
     def _plot_loadings(self, loadings, comp_ids=None, calibrate=True,
                      same_window=None, comp_label=None, 
                      with_factors=False, factors=None,
-                     cmap=plt.cm.jet, no_nans=False, per_row=3):
+                     cmap=plt.cm.gray, no_nans=False, per_row=3):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         if comp_ids is None:
@@ -1017,7 +1017,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                         factor_prefix=None,
                         factor_format=None,
                         comp_label=None,
-                        cmap=plt.cm.jet,
+                        cmap=plt.cm.gray,
                         plot_shifts=True,
                         plot_char=4,
                         img_data=None,

@@ -31,7 +31,7 @@ def _plot_quiver_scatter_overlay(image, axes_manager,
                                  calibrate=True, shifts=None, 
                                  char=None, ax=None, comp_label=None,
                                  img_cmap=plt.cm.gray,
-                                 sc_cmap=plt.cm.jet,
+                                 sc_cmap=plt.cm.gray,
                                  quiver_color='white',
                                  vector_scale=1,
                                  cbar_label=None
@@ -113,7 +113,7 @@ def _plot_1D_component(factors, idx, axes_manager, ax=None,
 
 def _plot_2D_component(factors, idx, axes_manager, 
                        calibrate=True, ax=None,
-                       comp_label=None, cmap=plt.cm.jet,
+                       comp_label=None, cmap=plt.cm.gray,
                        ):
     if ax==None:
         ax=plt.gca()
@@ -141,8 +141,8 @@ def _plot_component(axes_manager,
                     image=None, calibrate=True, 
                     shifts=None, char=None, 
                     ax=None, img_cmap=plt.cm.gray,
-                    sc_cmap=plt.cm.jet,
-                    cmap=plt.cm.jet,
+                    sc_cmap=plt.cm.gray,
+                    cmap=plt.cm.gray,
                     quiver_color='white',
                     vector_scale=100,):
     if axes_manager.signal_dimension==1:
