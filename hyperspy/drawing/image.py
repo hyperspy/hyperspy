@@ -80,7 +80,7 @@ class ImagePlot:
     def plot(self):
         if not utils.does_figure_object_exists(self.figure):
             self.create_figure()
-            self.create_axis()     
+            self.create_axis()   
         data = self.data_function()
         if self.auto_contrast is True:
             self.optimize_contrast(data)
@@ -117,6 +117,16 @@ class ImagePlot:
         if ims:
             ims.remove(ims[0])
         data = self.data_function()
+        numrows, numcols = data.shape
+        def format_coord(x, y):
+            col = int(x+0.5)
+            row = int(y+0.5)
+            if col>=0 and col<numcols and row>=0 and row<numrows:
+                z = data[row,col]
+                return 'x=%1.4f, y=%1.4f, intensity=%1.4f'%(x, y, z)
+            else:
+                return 'x=%1.4f, y=%1.4f'%(x, y)
+        self.ax.format_coord = format_coord
         if auto_contrast is True or auto_contrast is None and\
             self.auto_contrast is True:
             self.optimize_contrast(data)
