@@ -224,6 +224,7 @@ class MPL_HyperSpectrum_Explorer(object):
             pointer = self.assign_pointer()
             self.right_pointer = pointer(
                 self.signal_plot.right_axes_manager)
+            self.right_pointer.size = self.pointer.size
             self.right_pointer.color = 'blue'
             self.right_pointer.add_axes(self.navigator_plot.ax)
         rl = spectrum.SpectrumLine()
