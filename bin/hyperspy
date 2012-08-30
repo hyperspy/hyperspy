@@ -36,8 +36,8 @@ import IPython
 import hyperspy
 import hyperspy.Release
 
-# First we split the argv items in two: the firsts for hyperspy, the rest for
-# ipython
+# First we split the argv items in two: the firsts for hyperspy,
+# the rest for ipython
 ipy_argv = [sys.argv[0],]
 if '--ipython_args' in sys.argv:
     ipy_argv += sys.argv[sys.argv.index('--ipython_args') + 1:]
@@ -59,18 +59,19 @@ if ipy_version < ipy_011:
             rc_suffix = ''
         else:
             rc_suffix = '.ini'
-        # Ise the IPython function to create the ipy_dir
-        user_setup(ipy_dir, rc_suffix, mode='install', interactive=False)
+        # Use the IPython function to create the ipy_dir
+        user_setup(ipy_dir, rc_suffix, mode='install',
+                   interactive=False)
         sys.argv.append('--overwrite_profile')
 else:
     ipy_dir = IPython.utils.path.get_ipython_dir()
     to_copy = [ os.path.join(ipy_hspy, 'ipython_config.py'),
                 os.path.join(ipy_hspy, 'ipython_qtconsole_config.py'),
-                os.path.join(ipy_hspy, 'ipython_notebook_config.py',), ]
+                os.path.join(ipy_hspy, 'ipython_notebook_config.py',),]
     destination = os.path.join(ipy_dir, 'profile_hyperspy')
-    # The ipy_dir may not exist if it is the first time that the user runs
-    # ipython, therefore we must create it, what is done automatically when 
-    # creating a profile
+    # The ipy_dir may not exist if it is the first time that the user 
+    # runs ipython, therefore we must create it, what is done 
+    # automatically when creating a profile
     if not os.path.isdir(ipy_dir) or not os.path.isdir(destination):
         # Use the IPython routines to create the directory and profile
         import IPython.core.profileapp
@@ -80,40 +81,57 @@ else:
         sys.argv.append('--overwrite_profile')
         
 if argp is True:
-    parser = argparse.ArgumentParser(add_help=True, 
-                                     version=hyperspy.Release.version,
-                                     description = hyperspy.Release.description)
-    parser.add_argument('--no_pylab', action="store_true", default=False)
-    parser.add_argument('--overwrite_profile', action="store_true", 
-    default=False, help = 'Overwrite the Ipython profile with the default one')
-    parser.add_argument('--ipython_args', nargs='*', 
-    help='Arguments to be passed to IPython. This option must be the last one.' 
-    'Look at the IPython documentation for available options.')
-    args = parser.parse_args()
-    for f in to_copy:
-        if not os.path.isfile(os.path.join(destination, os.path.split(f)[-1]))\
-                or args.overwrite_profile:
-            shutil.copy(f, destination)
+    parser = argparse.ArgumentParser(
+                 add_help=True, 
+                 version=hyperspy.Release.version,
+                 description = hyperspy.Release.description)
 else:
-    parser = optparse.OptionParser( version=hyperspy.Release.version,
-                                    description = hyperspy.Release.description)
-    parser.add_option('--no_pylab', action="store_true", default=False)
-    parser.add_option('--overwrite_profile', action="store_true", 
-    default=False, help = 'Overwrite the Ipython profile with the default one')
-    parser.add_option('--ipython_args', nargs='*', 
-    help='Arguments to be passed to IPython. This option must be the last one.' 
-    'Look at the IPython documentation for available options.')
-    (options, args) = parser.parse_args()
-    for f in to_copy:
-        if not os.path.isfile(os.path.join(destination, os.path.split(f)[-1]))\
-                or options.overwrite_profile:
-            shutil.copy(f, destination)
+    parser = optparse.OptionParser(
+        version=hyperspy.Release.version,
+        description = hyperspy.Release.description)
+parser.add_argument('environment',
+                    nargs='?',
+                    choices=['console', 'notebook', 'qtconsole'],
+                    default = 'console',
+                    help = ('Selects the IPython environment in '
+                    'which to start Hyperspy. The default is console'))
+parser.add_argument('--no_pylab',
+                    action="store_true",
+                    default=False)
+parser.add_argument('--overwrite_profile',
+                    action="store_true", 
+                    default=False,
+                    help = (
+            'Overwrite the Ipython profile with the default one'))
+parser.add_argument('--ipython_args',
+                    nargs='*', 
+                    help=(
+                    'Arguments to be passed to IPython. '
+                    'This option must be the last one.' 
+                    'Look at the IPython documentation '
+                    'for available options.'))
+                    
+if argp is True:
+    args = parser.parse_args()
+else:
+    options, args = parser.parse_args()
+    
+for f in to_copy:
+    if not os.path.isfile(os.path.join(
+            destination, os.path.split(f)[-1])) or \
+            args.overwrite_profile:
+        shutil.copy(f, destination)
 
-# Now that the hspy arguments are parsed, we can delete them from sys.argv
+# Now that the hspy arguments are parsed, we can delete them from
+# sys.argv
 sys.argv = ipy_argv
 
-# By default Hyperspy uses the wx backend, but if the user tries to choose a 
-# different one using --pylab= , then we grant him the control        
+
+# Add the subcommand first
+
+sys.argv.insert(1, args.environment)
+# By default Hyperspy uses the wx backend, but if the user tries to 
+# choose a different one using --pylab= , then we grant him the control        
 add_pylab = True
 if argp is True:
     if args.no_pylab is True:
@@ -144,4 +162,3 @@ else:
     if add_pylab is True:
         sys.argv.append('--pylab=wx')
     sys.exit(launch_new_instance())
-    
