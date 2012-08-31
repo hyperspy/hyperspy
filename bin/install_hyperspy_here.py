@@ -44,5 +44,4 @@ def install_hyperspy_here():
     print("Hyperspy here correctly installed")
 
 if __name__ == "__main__":
-    
-    install_hyperspy_here(script)
+    install_hyperspy_here()
