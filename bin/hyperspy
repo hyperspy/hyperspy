@@ -66,6 +66,7 @@ if ipy_version < ipy_011:
 else:
     ipy_dir = IPython.utils.path.get_ipython_dir()
     to_copy = [ os.path.join(ipy_hspy, 'ipython_config.py'),
+                os.path.join(ipy_hspy, 'ipython_console_config.py'),
                 os.path.join(ipy_hspy, 'ipython_qtconsole_config.py'),
                 os.path.join(ipy_hspy, 'ipython_notebook_config.py',),]
     destination = os.path.join(ipy_dir, 'profile_hyperspy')

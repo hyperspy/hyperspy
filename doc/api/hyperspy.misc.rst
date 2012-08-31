@@ -25,10 +25,34 @@ misc Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`image_utils` Module
+-------------------------
+
+.. automodule:: hyperspy.misc.image_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`import_sklearn` Module
+----------------------------
+
+.. automodule:: hyperspy.misc.import_sklearn
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`interactive_ns` Module
 ----------------------------
 
 .. automodule:: hyperspy.misc.interactive_ns
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`natsort` Module
+---------------------
+
+.. automodule:: hyperspy.misc.natsort
     :members:
     :undoc-members:
     :show-inheritance:

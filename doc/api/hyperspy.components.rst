@@ -169,3 +169,11 @@ components Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`volume_plasmon_drude` Module
+----------------------------------
+
+.. automodule:: hyperspy.components.volume_plasmon_drude
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
