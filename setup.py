@@ -33,13 +33,21 @@ import hyperspy.Release as Release
 if os.path.exists('build'):
     distutils.dir_util.remove_tree('build')
 
-install_req = ['scipy', 'ipython', 'matplotlib', 'numpy', 'mdp',
-'traits', 'traitsui', 'h5py', 'scikit_learn']
+install_req = ['scipy',
+               'ipython',
+               'matplotlib',
+               'numpy',
+               'mdp',
+               'scikit_learn',
+               'traits',
+               'traitsui',
+               'h5py',]
 
 def are_we_building4windows():
     for arg in sys.argv:
         if 'wininst' in arg:
             return True
+
 scripts = ['bin/hyperspy',]
 
 if are_we_building4windows() or os.name in ['nt','dos']:
@@ -55,12 +63,21 @@ if are_we_building4windows() or os.name in ['nt','dos']:
         batch_file = os.path.splitext(script)[0] + '.bat'
         f = open(batch_file, "w")
         f.write('set path=%~dp0;%~dp0\..\;%PATH%\n')
-        if script == 'bin/hyperspy':
-            f.write('start pythonw "%%~dp0\%s" --ipython_args qtconsole %%*\n' % os.path.split(script)[1])
-        else:
-            f.write('python "%%~dp0\%s" %%*\n' % os.path.split(script)[1])
+        f.write('python "%%~dp0\%s" %%*\n' % os.path.split(script)[1])
         f.close()
         batch_files.append(batch_file)
+        if script in ('bin/hyperspy'):
+            for env in ('qtconsole', 'notebook'):
+                batch_file = os.path.splitext(script)[0] + '_%s' % env + '.bat'
+                f = open(batch_file, "w")
+                f.write('set path=%~dp0;%~dp0\..\;%PATH%\n')
+                if env == "qtconsole":
+                    f.write('start pythonw "%%~dp0\%s " %s %%*\n' % (
+                        os.path.split(script)[1], env))
+                else:
+                    f.write('python "%%~dp0\%s" %s %%*\n' % (os.path.split(script)[1], env))
+                    
+                batch_files.append(batch_file)        
     scripts.extend(batch_files)
 
 class update_version_when_dev:
@@ -142,7 +159,7 @@ with update_version_when_dev() as version:
                     'data/*.m', 
                     'data/*.csv',
                     'data/*.tar.gz',
-                    'data/hyperspy_logo.ico',
+                    'data/*.ico',
             'tests/io/dm3_1D_data/*.dm3',
             'tests/io/dm3_2D_data/*.dm3',
             'tests/io/dm3_3D_data/*.dm3',
