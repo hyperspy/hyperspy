@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 from hyperspy.signals.spectrum import Spectrum
 from hyperspy.signals.image import Image
 
-from hyperspy.components.eels_cl_edge import edges_dict
+from hyperspy.misc.eels.edges_dictionary import edges_dict
 import hyperspy.axes
 from hyperspy.gui.egerton_quantification import SpikesRemoval
 

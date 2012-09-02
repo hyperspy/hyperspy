@@ -81,7 +81,7 @@ convergence_angle
 beam_energy
     type: Float
     
-    The energy of the electron beam in eV
+    The energy of the electron beam in keV
     
 beam_current
     type: Float

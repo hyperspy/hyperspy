@@ -31,8 +31,7 @@ from hyperspy.io import load
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc import utils
 from hyperspy import tests
-
-
+from hyperspy.misc.eels.edges_dictionary import edges_dict
 
 __version__ = Release.version
 
@@ -41,11 +40,11 @@ __version__ = Release.version
 def get_configuration_directory_path():
     import hyperspy.misc.config_dir
     print(hyperspy.misc.config_dir.config_path)
-
-def start_gui():
-    if ETSConfig.toolkit != 'null':
-        import gui.main_window
-        gui.main_window.MainWindow().configure_traits()
+#
+#def start_gui():
+    #if ETSConfig.toolkit != 'null':
+        #import gui.main_window
+        #gui.main_window.MainWindow().configure_traits()
         
 def create_model(signal, *args, **kwargs):
     """Create a model object

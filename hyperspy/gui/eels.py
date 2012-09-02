@@ -30,7 +30,7 @@ class TEMParametersUI(t.HasTraits):
     convergence_angle = t.Float(t.Undefined,
         label = 'Convergence angle (mrad)')
     beam_energy = t.Float(t.Undefined,
-        label = 'Beam energy (eV)')
+        label = 'Beam energy (keV)')
     collection_angle = t.Float(t.Undefined,
         label = 'Collection angle (mrad)')
         

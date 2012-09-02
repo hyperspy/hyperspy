@@ -1,0 +1,182 @@
+from __future__ import division
+import math
+
+import numpy as np
+import scipy as sp
+import scipy.interpolate
+
+from hyperspy.misc.eels.base_gos import GOSBase
+from hyperspy.misc.physical_constants import R, e, m0, a0, c
+
+XU=[.52,.42,.30,.29,.22,.30,.22,.16,.12,.13,.13,.14,.16,.18,
+    .19,.22,.14,.11,.12,.12,.12,.10,.10,.10]
+#IE3=[73,99,135,164,200,245,294,347,402,455,513,575,641,710,
+#779,855,931,1021,1115,1217,1323,1436,1550,1675]
+
+#IE1=[118,149,189,229,270,320,377,438,500,564,628,695,769,846,
+    #926,1008,1096,1194,1142,1248,1359,1476,1596,1727]
+    
+class HydrogenicGOS(GOSBase):
+    """Computes the K and L GOS using Egerton's SigmaK and SigmalL 
+    modified hydrogenic calculations.
+    
+    Parameters
+    ----------
+    
+    element_subshell : str
+        For example, 'Ti_L3' for the GOS of the titanium L3 subshell
+        
+    Methods
+    -------
+    
+    parametrize_GOS()
+        Parametrize the GOS to speed up the calculation.
+    get_qaxis_and_gos(ienergy, qmin, qmax)
+        Given the energy axis index and qmin and qmax values returns
+        the qaxis and gos between qmin and qmax using linear 
+        interpolation to include qmin and qmax in the range.
+        
+    
+    Attributes
+    ----------
+    
+    energy_axis : array
+        The tabulated energy axis
+    qaxis : array
+        The tabulated qaxis
+    energy_onset: float
+        The energy onset for the given element subshell as obtained
+        from iternal tables.
+    
+    """
+
+    def __init__(self, element_subshell):
+        """
+        Parameters
+        ----------
+    
+        element_subshell : str
+            For example, 'Ti_L3' for the GOS of the titanium L3 subshell
+            
+        """
+        # Check if the Peter Rez's Hartree Slater GOS distributed by 
+        # Gatan are available. Otherwise exit
+        
+        self.element, self.subshell = element_subshell.split('_')
+        if self.subshell == 'K':
+            self.gosfunc = self.gosfuncK
+        elif self.subshell[:1] == 'L':
+            self.gosfunc = self.gosfuncL
+        else:
+            raise ValueError('The Hydrogenic GOS currently can only'
+                'compute K or L shells. Try using Hartree-Slater GOS')
+        self.read_edges_dict()
+
+        self.onset_energy_L3 = self.element_dict['subshells']['L3'][
+            'onset_energy']
+        self.onset_energy_L1 = self.element_dict['subshells']['L1'][
+            'onset_energy']
+        self.rel_energy_axis = self.get_parametrized_energy_axis(
+            50, 3, 50)
+        self.energy_axis = self.rel_energy_axis + self.onset_energy_L3
+
+    def integrateq(self,delta, angle,E0):
+        gamma = 1 + E0 / 511.06
+        T = 511060 * (1 - 1 / gamma**2) / 2
+        qint = np.zeros((self.energy_axis.shape[0]))
+        for i, E in enumerate(self.energy_axis + delta):
+            qa0sqmin = (E**2) / (4 * R * T) + (E**3) / (
+                            8 * gamma ** 3 * R * T**2)
+            p02 = T / (R * (1 - 2 * T / 511060))
+            pp2 = p02 - E / R * (gamma - E / 1022120)
+            qa0sqmax = qa0sqmin + 4 * np.sqrt(p02 * pp2) * \
+                (math.sin(angle/2))**2
+        
+            # dsbyde IS THE ENERGY-DIFFERENTIAL X-SECN (barn/eV/atom)
+            qint[i] = 3.5166e8 * (R / T) * (R / E) * (
+                scipy.integrate.quad(
+                    lambda x: self.gosfunc(E, np.exp(x)),
+                    math.log(qa0sqmin), math.log(qa0sqmax))[0])
+        self.qint = qint
+        return sp.interpolate.interp1d(self.energy_axis + delta, qint)
+                      
+    def gosfuncK(self, E, qa02):
+    # gosfunc calculates (=DF/DE) which IS PER EV AND PER ATOM
+        z = self.Z
+        r = 13.606
+        zs = 1.0
+        rnk = 1
+        if z != 1:
+            zs = z - 0.5
+            rnk = 2
+        
+        q = qa02 / zs**2
+        kh2 = E / (r * zs**2) - 1
+        akh = np.sqrt(np.abs(kh2))
+        if akh < 0.01:
+            akh = 0.01
+        if kh2 >= 0.0:
+            d = 1 - np.e**(-2 * np.pi/kh2)
+            bp = np.arctan(2 * akh / (q - kh2 + 1))
+            if bp < 0:
+                bp = bp + np.pi
+            c = np.e**((-2 / akh) * bp)
+        else: 
+            d = 1
+            y = -1 / akh * np.log((q + 1 - kh2 + 2 * akh) / (q + 1 - kh2
+            - 2 * akh))
+            c = np.e**y
+        a = ((q - kh2 + 1)**2 + 4 * kh2)**3
+        return 128 * rnk * E / (
+            r * zs**4) * c/d * (q + kh2/3 + 1/3) / (a * r)
+            
+            
+    def gosfuncL(self, E, qa02):
+    # gosfunc calculates (=DF/DE) which IS PER EV AND PER ATOM
+    # Note: quad function only works with qa02 due to IF statements in function
+
+        z = self.Z
+        r = 13.606
+        zs = z - 0.35 * (8 - 1) - 1.7
+        iz = np.fix(z) - 12
+        u = XU[np.int(iz)]
+        #el3 = IE3[np.int(iz) - 1]
+        #el1 = IE1[np.int(iz) - 1]
+        el3 = self.onset_energy_L3
+        el1 = self.onset_energy_L1
+        
+        
+        q = qa02 / zs**2
+        kh2 = E / (r * zs**2) - 0.25
+        akh = np.sqrt(np.abs(kh2))
+        if kh2 >= 0.0:
+            d = 1 - np.exp(-2 * np.pi/akh)
+            bp = np.arctan(akh / (q - kh2 + 0.25))
+            if bp < 0:
+                bp = bp + np.pi
+            c = np.exp((-2 / akh) * bp)
+        else: 
+            d = 1
+            y = -1 / akh * np.log((q + 0.25 - kh2 + akh) / (q + 0.25 - kh2 - akh))
+            c = np.exp(y)
+        
+        if E - el1 <= 0:
+            g = 2.25 * q**4 - (0.75 + 3 * kh2) * q**3 + (
+                0.59375 - 0.75 * kh2- 0.5 * kh2**2) * q * q + (
+                0.11146 + 0.85417 * kh2 + 1.8833 * kh2 * kh2 + kh2**3) * \
+                q + 0.0035807 + kh2 / 21.333 + kh2 * kh2 / 4.5714 + kh2**3 \
+                / 2.4 + kh2**4 / 4
+            
+            a =((q - kh2 + 0.25)**2 + kh2)**5
+        else:
+            g = q**3 - (5 / 3 * kh2 + 11/12) * q**2 + (kh2 * kh2 / 3 + 1.5 * kh2
+                + 65/48) * q + kh2**3 / 3 + 0.75 * kh2 * kh2 + 23/48 * kh2 + 5/64
+            a =((q - kh2 + 0.25)**2 + kh2)**4
+        rf =((E + 0.1 - el3) / 1.8 / z / z)**u
+        #if np.abs(iz - 11) <= 5 and E - el3 <= 20:
+            #rf = 1
+        return rf * 32 * g * c / a / d * E / r / r / zs**4
+
+            
+                                               
+
