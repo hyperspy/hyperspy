@@ -20,13 +20,19 @@
 import numpy as np
 import scipy.interpolate
 import matplotlib.pyplot as plt
+import traits.api as t
+
 
 from hyperspy.signals.spectrum import Spectrum
 from hyperspy.signals.image import Image
-
 from hyperspy.misc.eels.edges_dictionary import edges_dict
 import hyperspy.axes
 from hyperspy.gui.egerton_quantification import SpikesRemoval
+from hyperspy.decorators import only_interactive
+from hyperspy.gui.eels import TEMParametersUI
+from hyperspy.defaults_parser import preferences
+import hyperspy.gui.messages as messagesui
+
 
 class EELSSpectrum(Spectrum):
     
@@ -40,6 +46,300 @@ class EELSSpectrum(Spectrum):
         hasattr(self.mapped_parameters.Sample, 'elements'):
             print('Elemental composition read from file')
             self.add_elements(self.mapped_parameters.Sample.elements)
+
+    def add_elements(self, elements, include_pre_edges = False):
+        """Declare the elemental composition of the sample.
+        
+        The ionisation edges of the elements present in the current energy range
+        will be added automatically.
+        
+        Parameters
+        ----------
+        elements : tuple of strings
+            The strings must represent a chemical element.
+        include_pre_edges : bool
+            If True, the ionization edges with an onset below the lower energy 
+            limit of the SI will be incluided
+        """
+        for element in elements:
+            if element in edges_dict:
+                self.elements.add(element)
+            else:
+                print("%s is not a valid symbol of an element" % element)
+        if not hasattr(self.mapped_parameters, 'Sample'):
+            self.mapped_parameters.add_node('Sample')
+        self.mapped_parameters.Sample.elements = list(self.elements)
+        if self.elements:
+            self.generate_subshells(include_pre_edges)
+        
+    def generate_subshells(self, include_pre_edges = False):
+        """Calculate the subshells for the current energy range for the elements
+         present in self.elements
+         
+        Parameters
+        ----------
+        include_pre_edges : bool
+            If True, the ionization edges with an onset below the lower energy 
+            limit of the SI will be incluided
+        """
+        Eaxis = self.axes_manager.signal_axes[0].axis
+        if not include_pre_edges:
+            start_energy = Eaxis[0]
+        else:
+            start_energy = 0.
+        end_energy = Eaxis[-1]
+        for element in self.elements:
+            e_shells = list()
+            for shell in edges_dict[element]['subshells']:
+                if shell[-1] != 'a':
+                    if start_energy <= \
+                    edges_dict[element]['subshells'][shell]['onset_energy'] \
+                    <= end_energy :
+                        subshell = '%s_%s' % (element, shell)
+                        if subshell not in self.subshells:
+                            print "Adding %s subshell" % (subshell)
+                            self.subshells.add('%s_%s' % (element, shell))
+                            e_shells.append(subshell)
+
+                    
+    def find_low_loss_centre(self, also_apply_to=None):
+        """Calculate the position of the zero loss origin as the average of the 
+        postion of the maximum of all the spectra
+        
+        Parameters
+        ----------
+        also_apply_to : None or list of Signals
+            If a list of signals is provided, the same offset
+            transformation is applied to all the other signals.
+            
+        """
+        axis = self.axes_manager.signal_axes[0] 
+        old_offset = axis.offset
+        imax = np.mean(np.argmax(self.data,axis.index_in_array))
+        axis.offset = hyperspy.axes.generate_axis(0, axis.scale, 
+            axis.size, imax)[0]
+        print('Energy offset applied: %f %s' % ((
+                axis.offset - old_offset), axis.units))
+        if also_apply_to:
+            for sync_signal in also_apply_to:
+                saxis = sync_signal.axes_manager.axes[
+                    axis.index_in_array]
+                saxis.offset += axis.offset - old_offset
+
+    def fourier_log_deconvolution(self):
+        """Performs fourier-log deconvolution of the full SI.
+        
+        The zero-loss can be specified by defining the parameter 
+        self.zero_loss that must be an instance of Spectrum. 
+        """
+        axis = self.axes_manager.signal_axes[0]
+        z = np.fft.fft(self.zero_loss.data, axis = axis.index_in_array)
+        j = np.fft.fft(self.data, axis = axis.index_in_array)
+        j1 = z*np.log(j/z)
+        self.data = np.fft.ifft(j1, axis = 0).real
+        
+    def calculate_thickness(self, method = 'threshold', threshold = 3, 
+        factor = 1):
+        """Calculates the thickness from a LL SI.
+        
+        The resulting thickness map is stored in self.thickness as an image 
+        instance. To visualize it: self.thickness.plot()
+        
+        Parameters
+        ----------
+        method : {'threshold', 'zl'}
+            If 'threshold', it will extract the zero loss by just splittin the 
+            spectrum at the threshold value. If 'zl', it will use the 
+            self.zero_loss SI (if defined) to perform the calculation.
+        threshold : float
+            threshold value.
+        factor : float
+            factor by which to multiple the ZLP
+        """
+        print "Calculating the thickness"
+        # Create the thickness array
+        dc = self.data
+        axis = self.axes_manager.signal_axes[0]
+        integral = dc.sum(axis.index_in_array)
+        if method == 'zl':
+            if self.zero_loss is None:
+                hyperspy.messages.warning_exit('To use this method the zero_loss'
+                'attribute must be defined')
+            zl = self.zero_loss.data
+            zl_int = zl.sum(axis.index_in_array)            
+        elif method == 'threshold':
+            ti = axis.value2index(threshold)
+            zl_int = self.data[
+            (slice(None),) * axis.index_in_array + (slice(None, ti), Ellipsis,)
+            ].sum(axis.index_in_array) * factor 
+        self.thickness = \
+        Image({'data' : np.log(integral / zl_int)})
+                
+    def calculate_FWHM(self, factor = 0.5, energy_range = (-2,2), der_roots = False):
+        """Use a third order spline interpolation to estimate the FWHM of 
+        the zero loss peak.
+        
+        Parameters:
+        -----------
+        factor : float < 1
+            By default is 0.5 to give FWHM. Choose any other float to give
+            find the position of a different fraction of the peak.
+        channels : int
+            radius of the interval around the origin were the algorithm will 
+            perform the estimation.
+        der_roots: bool
+            If True, compute the roots of the first derivative
+            (2 times slower).  
+        
+        Returns:
+        --------
+        dictionary. Keys:
+            'FWHM' : float
+                 width, at half maximum or other fraction as choosen by
+            `factor`. 
+            'FWHM_E' : tuple of floats
+                Coordinates in energy units of the FWHM points.
+            'der_roots' : tuple
+                Position in energy units of the roots of the first
+            derivative if der_roots is True (False by default)
+        """
+        axis = self.axes_manager.signal_axes[0]
+        i0, i1 = axis.value2index(energy_range[0]), axis.value2index(
+        energy_range[1])
+        data = self()[i0:i1]
+        x = axis.axis[i0:i1]
+        height = np.max(data)
+        spline_fwhm = scipy.interpolate.UnivariateSpline(x, 
+                                                         data - factor * height)
+        pair_fwhm = spline_fwhm.roots()[0:2]
+        fwhm = pair_fwhm[1] - pair_fwhm[0]
+        if der_roots:
+            der_x = np.arange(x[0], x[-1] + 1, (x[1] - x[0]) * 0.2)
+            derivative = spline_fwhm(der_x, 1)
+            spline_der = scipy.interpolate.UnivariateSpline(der_x, derivative)
+            return {'FWHM' : fwhm, 'pair' : pair_fwhm, 
+            'der_roots': spline_der.roots()}
+        else:
+            return {'FWHM' : fwhm, 'FWHM_E' : pair_fwhm}
+            
+    def spikes_diagnosis(self, signal_mask=None, navigation_mask=None):
+        """Plots a histogram to help in choosing the threshold for spikes
+        removal.
+        
+        Parameters
+        ----------
+        signal_mask: boolean array
+            Restricts the operation to the energy range given in units
+        
+        See also
+        --------
+        EELSSpectrum.spikes_removal_tool
+        
+        """
+        dc = self.data
+        axis = self.axes_manager.signal_axes[0]
+        if signal_mask is not None:
+            dc = dc[..., signal_mask]
+        if navigation_mask is not None:
+            dc = dc[navigation_mask==False, :]
+        der = np.abs(np.diff(dc, 1, -1))
+        plt.figure()
+        plt.hist(np.ravel(der.max(-1)),100)
+        plt.xlabel('Threshold')
+        plt.ylabel('Counts')
+        plt.draw()
+        
+        
+    def spikes_removal_tool(self,signal_mask=None, navigation_mask=None):
+        sr = SpikesRemoval(self,navigation_mask=navigation_mask,
+                           signal_mask=signal_mask)
+        sr.edit_traits()
+        return sr
+        
+    def _are_microscope_parameters_missing(self):
+        """Check if the EELS parameters necessary to calculate the GOS
+        are defined in mapped_parameters. If not, in interactive mode 
+        raises an UI item to fill the values"""
+        must_exist = (
+            'TEM.convergence_angle', 
+            'TEM.beam_energy',
+            'TEM.EELS.collection_angle',)
+        missing_parameters = []
+        for item in must_exist:
+            exists = self.mapped_parameters.has_item(item)
+            if exists is False:
+                missing_parameters.append(item)
+        if missing_parameters:
+            if preferences.General.interactive is True:
+                par_str = "The following parameters are missing:\n"
+                for par in missing_parameters:
+                    par_str += '%s\n' % par
+                par_str += 'Please set them in the following wizard'
+                is_ok = messagesui.information(par_str)
+                if is_ok:
+                    self._set_microscope_parameters()
+                else:
+                    return True
+            else:
+                return True
+        else:
+            return False
+                
+    def set_microscope_parameters(self, beam_energy=None, 
+            convergence_angle=None, collection_angle=None):
+        """Set the microscope parameters that are necessary to calculate
+        the GOS.
+        
+        If not all of them are defined, raises in interactive mode 
+        raises an UI item to fill the values
+        
+        beam_energy: float
+            The energy of the electron beam in keV
+        convengence_angle : float
+            In mrad.
+        collection_angle : float
+            In mrad.
+        """
+        if self.mapped_parameters.has_item('TEM') is False:
+            self.mapped_parameters.add_node('TEM')
+        if self.mapped_parameters.has_item('TEM.EELS') is False:
+            self.mapped_parameters.TEM.add_node('EELS')
+        mp = self.mapped_parameters
+        if beam_energy is not None:
+            mp.TEM.beam_energy = beam_energy
+        if convergence_angle is not None:
+            mp.TEM.convergence_angle = convergence_angle
+        if collection_angle is not None:
+            mp.TEM.EELS.collection_angle = collection_angle
+        
+        self._are_microscope_parameters_missing()
+                
+            
+    
+    @only_interactive            
+    def _set_microscope_parameters(self):
+        if self.mapped_parameters.has_item('TEM') is False:
+            self.mapped_parameters.add_node('TEM')
+        if self.mapped_parameters.has_item('TEM.EELS') is False:
+            self.mapped_parameters.TEM.add_node('EELS')
+        tem_par = TEMParametersUI()
+        mapping = {
+            'TEM.convergence_angle' : 'tem_par.convergence_angle',
+            'TEM.beam_energy' : 'tem_par.beam_energy',
+            'TEM.EELS.collection_angle' : 'tem_par.collection_angle',}
+        for key, value in mapping.iteritems():
+            if self.mapped_parameters.has_item(key):
+                exec('%s = self.mapped_parameters.%s' % (value, key))
+        tem_par.edit_traits()
+        mapping = {
+            'TEM.convergence_angle' : tem_par.convergence_angle,
+            'TEM.beam_energy' : tem_par.beam_energy,
+            'TEM.EELS.collection_angle' : tem_par.collection_angle,}
+        for key, value in mapping.iteritems():
+            if value != t.Undefined:
+                exec('self.mapped_parameters.%s = %s' % (key, value))
+        self._are_microscope_parameters_missing()
+        
 #        self.readout = None
 #        self.dark_current = None
 #        self.gain_correction = None
@@ -178,61 +478,7 @@ class EELSSpectrum(Spectrum):
 #            self.dark_current.set_new_calibration(0,1)
 #            
 #    # Elements _________________________________________________________________
-    def add_elements(self, elements, include_pre_edges = False):
-        """Declare the elemental composition of the sample.
         
-        The ionisation edges of the elements present in the current energy range
-        will be added automatically.
-        
-        Parameters
-        ----------
-        elements : tuple of strings
-            The strings must represent a chemical element.
-        include_pre_edges : bool
-            If True, the ionization edges with an onset below the lower energy 
-            limit of the SI will be incluided
-        """
-        for element in elements:
-            if element in edges_dict:
-                self.elements.add(element)
-            else:
-                print("%s is not a valid symbol of an element" % element)
-        if not hasattr(self.mapped_parameters, 'Sample'):
-            self.mapped_parameters.add_node('Sample')
-        self.mapped_parameters.Sample.elements = list(self.elements)
-        if self.elements:
-            self.generate_subshells(include_pre_edges)
-        
-    def generate_subshells(self, include_pre_edges = False):
-        """Calculate the subshells for the current energy range for the elements
-         present in self.elements
-         
-        Parameters
-        ----------
-        include_pre_edges : bool
-            If True, the ionization edges with an onset below the lower energy 
-            limit of the SI will be incluided
-        """
-        Eaxis = self.axes_manager.signal_axes[0].axis
-        if not include_pre_edges:
-            start_energy = Eaxis[0]
-        else:
-            start_energy = 0.
-        end_energy = Eaxis[-1]
-        for element in self.elements:
-            e_shells = list()
-            for shell in edges_dict[element]['subshells']:
-                if shell[-1] != 'a':
-                    if start_energy <= \
-                    edges_dict[element]['subshells'][shell]['onset_energy'] \
-                    <= end_energy :
-                        subshell = '%s_%s' % (element, shell)
-                        if subshell not in self.subshells:
-                            print "Adding %s subshell" % (subshell)
-                            self.subshells.add('%s_%s' % (element, shell))
-                            e_shells.append(subshell)
-
-    
 #            
 #    def remove_background(self, start_energy = None, mask = None):
 #        """Removes the power law background of the EELS SI if the present 
@@ -419,126 +665,6 @@ class EELSSpectrum(Spectrum):
 #                messages.warning_exit(
 #               "To correct the readout, please define the dark_current " \
 #                "attribute")
-#                
-    def find_low_loss_centre(self, also_apply_to=None):
-        """Calculate the position of the zero loss origin as the average of the 
-        postion of the maximum of all the spectra
-        
-        Parameters
-        ----------
-        also_apply_to : None or list of Signals
-            If a list of signals is provided, the same offset
-            transformation is applied to all the other signals.
-            
-        """
-        axis = self.axes_manager.signal_axes[0] 
-        old_offset = axis.offset
-        imax = np.mean(np.argmax(self.data,axis.index_in_array))
-        axis.offset = hyperspy.axes.generate_axis(0, axis.scale, 
-            axis.size, imax)[0]
-        print('Energy offset applied: %f %s' % ((
-                axis.offset - old_offset), axis.units))
-        if also_apply_to:
-            for sync_signal in also_apply_to:
-                saxis = sync_signal.axes_manager.axes[
-                    axis.index_in_array]
-                saxis.offset += axis.offset - old_offset
-
-    def fourier_log_deconvolution(self):
-        """Performs fourier-log deconvolution of the full SI.
-        
-        The zero-loss can be specified by defining the parameter 
-        self.zero_loss that must be an instance of Spectrum. 
-        """
-        axis = self.axes_manager.signal_axes[0]
-        z = np.fft.fft(self.zero_loss.data, axis = axis.index_in_array)
-        j = np.fft.fft(self.data, axis = axis.index_in_array)
-        j1 = z*np.log(j/z)
-        self.data = np.fft.ifft(j1, axis = 0).real
-        
-    def calculate_thickness(self, method = 'threshold', threshold = 3, 
-    factor = 1):
-        """Calculates the thickness from a LL SI.
-        
-        The resulting thickness map is stored in self.thickness as an image 
-        instance. To visualize it: self.thickness.plot()
-        
-        Parameters
-        ----------
-        method : {'threshold', 'zl'}
-            If 'threshold', it will extract the zero loss by just splittin the 
-            spectrum at the threshold value. If 'zl', it will use the 
-            self.zero_loss SI (if defined) to perform the calculation.
-        threshold : float
-            threshold value.
-        factor : float
-            factor by which to multiple the ZLP
-        """
-        print "Calculating the thickness"
-        # Create the thickness array
-        dc = self.data
-        axis = self.axes_manager.signal_axes[0]
-        integral = dc.sum(axis.index_in_array)
-        if method == 'zl':
-            if self.zero_loss is None:
-                hyperspy.messages.warning_exit('To use this method the zero_loss'
-                'attribute must be defined')
-            zl = self.zero_loss.data
-            zl_int = zl.sum(axis.index_in_array)            
-        elif method == 'threshold':
-            ti = axis.value2index(threshold)
-            zl_int = self.data[
-            (slice(None),) * axis.index_in_array + (slice(None, ti), Ellipsis,)
-            ].sum(axis.index_in_array) * factor 
-        self.thickness = \
-        Image({'data' : np.log(integral / zl_int)})
-                
-    def calculate_FWHM(self, factor = 0.5, energy_range = (-2,2), der_roots = False):
-        """Use a third order spline interpolation to estimate the FWHM of 
-        the zero loss peak.
-        
-        Parameters:
-        -----------
-        factor : float < 1
-            By default is 0.5 to give FWHM. Choose any other float to give
-            find the position of a different fraction of the peak.
-        channels : int
-            radius of the interval around the origin were the algorithm will 
-            perform the estimation.
-        der_roots: bool
-            If True, compute the roots of the first derivative
-            (2 times slower).  
-        
-        Returns:
-        --------
-        dictionary. Keys:
-            'FWHM' : float
-                 width, at half maximum or other fraction as choosen by
-            `factor`. 
-            'FWHM_E' : tuple of floats
-                Coordinates in energy units of the FWHM points.
-            'der_roots' : tuple
-                Position in energy units of the roots of the first
-            derivative if der_roots is True (False by default)
-        """
-        axis = self.axes_manager.signal_axes[0]
-        i0, i1 = axis.value2index(energy_range[0]), axis.value2index(
-        energy_range[1])
-        data = self()[i0:i1]
-        x = axis.axis[i0:i1]
-        height = np.max(data)
-        spline_fwhm = scipy.interpolate.UnivariateSpline(x, 
-                                                         data - factor * height)
-        pair_fwhm = spline_fwhm.roots()[0:2]
-        fwhm = pair_fwhm[1] - pair_fwhm[0]
-        if der_roots:
-            der_x = np.arange(x[0], x[-1] + 1, (x[1] - x[0]) * 0.2)
-            derivative = spline_fwhm(der_x, 1)
-            spline_der = scipy.interpolate.UnivariateSpline(der_x, derivative)
-            return {'FWHM' : fwhm, 'pair' : pair_fwhm, 
-            'der_roots': spline_der.roots()}
-        else:
-            return {'FWHM' : fwhm, 'FWHM_E' : pair_fwhm}
 #            
 #    def power_law_extension(self, interval, new_size = 1024, 
 #                            to_the = 'right'):
@@ -593,41 +719,7 @@ class EELSSpectrum(Spectrum):
 #            (np.hanning(2*channels)[-channels:]).reshape((-1,1,1))
 #            dc[-offset:,:,:] *= 0. 
 #        
-                
-    def spikes_diagnosis(self, signal_mask=None, navigation_mask=None):
-        """Plots a histogram to help in choosing the threshold for spikes
-        removal.
-        
-        Parameters
-        ----------
-        signal_mask: boolean array
-            Restricts the operation to the energy range given in units
-        
-        See also
-        --------
-        EELSSpectrum.spikes_removal_tool
-        
-        """
-        dc = self.data
-        axis = self.axes_manager.signal_axes[0]
-        if signal_mask is not None:
-            dc = dc[..., signal_mask]
-        if navigation_mask is not None:
-            dc = dc[navigation_mask==False, :]
-        der = np.abs(np.diff(dc, 1, -1))
-        plt.figure()
-        plt.hist(np.ravel(der.max(-1)),100)
-        plt.xlabel('Threshold')
-        plt.ylabel('Counts')
-        plt.draw()
-        
-        
-    def spikes_removal_tool(self,signal_mask=None, navigation_mask=None):
-        sr = SpikesRemoval(self,navigation_mask=navigation_mask,
-                           signal_mask=signal_mask)
-        sr.edit_traits()
-        return sr
-        
+                        
                       
 #    def build_SI_from_substracted_zl(self,ch, taper_nch = 20):
 #        """Modify the SI to have fit with a smoothly decaying ZL
