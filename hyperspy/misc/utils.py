@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import types
 import  math
 import glob
@@ -1195,7 +1196,8 @@ class DictionaryBrowser(object):
         Parameters
         ----------
         item_path : Str
-            A string describing the path with each item separated by a point
+            A string describing the path with each item separated by 
+            full stops (periods)
             
         Examples
         --------
@@ -1213,6 +1215,8 @@ class DictionaryBrowser(object):
         """
         if type(item_path) is str:
             item_path = item_path.split('.')
+        else:
+            item_path = copy.copy(item_path)
         attrib = item_path.pop(0)
         if hasattr(self, attrib):
             if len(item_path) == 0:
@@ -1225,6 +1229,39 @@ class DictionaryBrowser(object):
                     return False
         else:
             return False
+            
+    def set_item(self, item_path, value):
+        """Given the path and value, create the missing nodes in
+        the path and assign to the last one the value
+        
+        Parameters
+        ----------
+        item_path : Str
+            A string describing the path with each item separated by a 
+            full stops (periods)
+            
+        Examples
+        --------
+        
+        >>> dict_browser = DictionaryBrowser({})
+        >>> dict_browser.set_item('First.Second.Third', 3)
+        >>> dict_browser
+        └── First
+           └── Second
+                └── Third = 3
+        
+        """
+        if not self.has_item(item_path):
+            self.add_node(item_path)
+        if type(item_path) is str:
+            item_path = item_path.split('.')
+        if len(item_path) > 1:
+            self.__getattribute__(item_path.pop(0)).set_item(
+                item_path, value)
+        else:
+            self.__setattr__(item_path.pop(), value)
+
+
 
     def add_node(self, node_path):
         """Adds all the nodes in the given path if they don't exist.
@@ -1234,8 +1271,8 @@ class DictionaryBrowser(object):
         node_path: str
             The nodes must be separated by full stops (periods).
             
-        Example
-        -------
+        Examples
+        --------
         
         >>> dict_browser = DictionaryBrowser({})
         >>> dict_browser.add_node('First.Second')
