@@ -28,6 +28,7 @@ from hyperspy.misc.utils import generate_axis
 from hyperspy import messages
 from hyperspy.misc.utils_varia import overwrite
 from hyperspy import Release
+from hyperspy.misc.utils import DictionaryBrowser
 
 # Plugin characteristics
 # ----------------------
@@ -47,7 +48,7 @@ keywords = {
                 # Required parameters
                 'FORMAT' : {'dtype' : unicode, 'mapped_to': None},
                 'VERSION' : {'dtype' : unicode, 'mapped_to': None},
-                'TITLE' : {'dtype' : unicode, 'mapped_to': None},
+                'TITLE' : {'dtype' : unicode, 'mapped_to': 'title'},
                 'DATE' : {'dtype' : unicode, 'mapped_to': None},     
                 'TIME' : {'dtype' : unicode, 'mapped_to': None},
                 'OWNER' : {'dtype' : unicode, 'mapped_to': None},
@@ -58,7 +59,8 @@ keywords = {
                 'OFFSET' : {'dtype' : float, 'mapped_to': None},
                 # Optional parameters
                 ## Spectrum characteristics
-                'SIGNALTYPE' : {'dtype' : unicode, 'mapped_to': 'signal'},
+                'SIGNALTYPE' : {'dtype' : unicode, 'mapped_to' : 
+                    'signal_kind'},
                 'XLABEL' : {'dtype' : unicode, 'mapped_to': None},
                 'YLABEL' : {'dtype' : unicode, 'mapped_to': None},
                 'XUNITS' : {'dtype' : unicode, 'mapped_to': None},
@@ -66,16 +68,20 @@ keywords = {
                 'CHOFFSET' : {'dtype' : float, 'mapped_to': None},
                 'COMMENT' : {'dtype' : unicode, 'mapped_to': None},
                 ## Microscope
-                'BEAMKV' : {'dtype' : float, 'mapped_to': 'beam_energy'},
+                'BEAMKV' : {'dtype' : float, 'mapped_to': 
+                    'TEM.beam_energy'},
                 'EMISSION' : {'dtype' : float, 'mapped_to': None},
-                'PROBECUR' : {'dtype' : float, 'mapped_to': None},
+                'PROBECUR' : {'dtype' : float, 'mapped_to': 
+                    'TEM.beam_current'},
                 'BEAMDIAM' : {'dtype' : float, 'mapped_to': None},
                 'MAGCAM' : {'dtype' : float, 'mapped_to': None},
                 'OPERMODE' : {'dtype' : unicode, 'mapped_to': None},
-                'CONVANGLE' : {'dtype' : float, 'mapped_to': None},
+                'CONVANGLE' : {'dtype' : float, 'mapped_to': 
+                    'TEM.convergence_angle'},
                 
                 ## Specimen
-                'THICKNESS' : {'dtype' : float, 'mapped_to': None},
+                'THICKNESS' : {'dtype' : float, 'mapped_to': 
+                    'Sample.thickness'},
                 'XTILTSTGE' : {'dtype' : float, 'mapped_to': None},
                 'YTILTSTGE' : {'dtype' : float, 'mapped_to': None},
                 'XPOSITION' : {'dtype' : float, 'mapped_to': None},
@@ -83,9 +89,12 @@ keywords = {
                 'ZPOSITION' : {'dtype' : float, 'mapped_to': None},
                 
                 ## EELS
-                'INTEGTIME' : {'dtype' : float, 'mapped_to': None}, # in ms
-                'DWELLTIME' : {'dtype' : float, 'mapped_to': None}, # in ms
-                'COLLANGLE' : {'dtype' : float, 'mapped_to': None},
+                'INTEGTIME' : {'dtype' : float, 'mapped_to': 
+                    'TEM.exposure'}, # in ms
+                'DWELLTIME' : {'dtype' : float, 'mapped_to': 
+                    'TEM.dwell_time'}, # in ms
+                'COLLANGLE' : {'dtype' : float, 'mapped_to' : 
+                    'TEM.EELS.collection_angle'},
                 'ELSDET' :  {'dtype' : unicode, 'mapped_to': None},
 
                 ## EDS
@@ -105,9 +114,11 @@ keywords = {
                 'THCWIND' : {'dtype' : float, 'mapped_to': None},
                 'EDSDET'  : {'dtype' : unicode, 'mapped_to': None},	
             }
+            
+    
 def file_reader(filename, encoding = 'latin-1', **kwds):
     parameters = {}
-    mapped = {}
+    mapped = DictionaryBrowser({})
     spectrum_file = codecs.open(filename, encoding = encoding,
                                 errors = 'replace')
     y = []
@@ -163,9 +174,11 @@ def file_reader(filename, encoding = 'latin-1', **kwds):
                     "could not be converted to the right type" )
                 
             if keywords[clean_par]['mapped_to'] is not None:
-                mapped[keywords[clean_par]['mapped_to']] = parameters[parameter]
+                mapped.set_item(keywords[clean_par]['mapped_to'],
+                    parameters[parameter])
                 if units is not None:
-                    mapped[keywords[clean_par]['mapped_to']+'_units'] = units
+                    mapped.set_item(keywords[clean_par]['mapped_to'] + 
+                        '_units',units)
                 
     # The data parameter needs some extra care
     # It is necessary to change the locale to US english to read the date
@@ -194,27 +207,27 @@ def file_reader(filename, encoding = 'latin-1', **kwds):
     axes = []
 
     axes.append({
-            'size' : len(y), 
-            'index_in_array' : 0,
-            'name' : parameters['XLABEL'] if 'XLABEL' in parameters else '', 
-            'scale': parameters['XPERCHAN'] if 'XPERCHAN' in parameters else 1,
-            'offset' : parameters['OFFSET'] if 'OFFSET' in parameters else 0,
-            'units' : parameters['XUNITS'] if 'XUNITS' in parameters else '',
+    'size' : len(y), 
+    'index_in_array' : 0,
+    'name' : parameters['XLABEL'] if 'XLABEL' in parameters else '', 
+    'scale': parameters['XPERCHAN'] if 'XPERCHAN' in parameters else 1,
+    'offset' : parameters['OFFSET'] if 'OFFSET' in parameters else 0,
+    'units' : parameters['XUNITS'] if 'XUNITS' in parameters else '',
                 })
 
     mapped['original_filename'] = filename
-    mapped['record_by']='spectrum'
-    if 'signal_type' in mapped:
-        if mapped['signal_type'] == 'ELS':
-            mapped['signal_type'] = 'EELS'
+    mapped['record_by'] = 'spectrum'
+    if mapped.has_item('signal_type'):
+        if mapped.signal_type == 'ELS':
+            mapped.signal_type = 'EELS'
     else:
         # Defaulting to EELS looks reasonable
-        mapped['signal_type'] = 'EELS'
+        mapped.signal_type = 'EELS'
 
     dictionary = {
                     'data' : np.array(y),
                     'axes' : axes,
-                    'mapped_parameters': mapped,
+                    'mapped_parameters': mapped.as_dictionary(),
                     'original_parameters' : parameters
                 }
     return [dictionary,]
