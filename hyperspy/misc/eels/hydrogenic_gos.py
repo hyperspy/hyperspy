@@ -49,7 +49,7 @@ class HydrogenicGOS(GOSBase):
         from iternal tables.
     
     """
-
+    _name = 'hydrogenic'
     def __init__(self, element_subshell):
         """
         Parameters
@@ -66,7 +66,7 @@ class HydrogenicGOS(GOSBase):
         self.read_edges_dict()
         self.delta = 0
 
-        if self.subshell == 'K':
+        if self.subshell[:1] == 'K':
             self.gosfunc = self.gosfuncK
         elif self.subshell[:1] == 'L':
             self.gosfunc = self.gosfuncL
@@ -83,6 +83,10 @@ class HydrogenicGOS(GOSBase):
         self.rel_energy_axis = self.get_parametrized_energy_axis(
             50, 3, 50)
         self.energy_axis = self.rel_energy_axis + self.onset_energy
+        print "\nHydrogenic GOS"
+        print "\tElement: ", self.element
+        print "\tSubshell: ", self.subshell[1:]
+        print "\tOnset energy: ", self.onset_energy
 
     def integrateq(self,delta, angle,E0):
         self.delta = delta

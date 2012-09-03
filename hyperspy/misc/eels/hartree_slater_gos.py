@@ -47,6 +47,7 @@ class HartreeSlaterGOS(GOSBase):
     
     """
 
+    _name = 'Hartree-Slater'
     def __init__(self, element_subshell):
         """
         Parameters
@@ -69,10 +70,10 @@ class HartreeSlaterGOS(GOSBase):
         self.readgosfile()
 
     def readgosfile(self): 
-        print("\nLoading Hartree-Slater cross section from the tables")
-        print("Element: ", self.element)
-        print("Subshell: ", self._subshell)
-        print("Onset Energy = ", self.onset_energy)
+        print "\nReading the parametrized Hartree-Slater GOS"
+        print "\tElement: ", self.element
+        print "\tSubshell: ", self._subshell
+        print "\tOnset Energy = ", self.onset_energy
         element = self.element
         subshell = self._subshell
         filename = os.path.join(

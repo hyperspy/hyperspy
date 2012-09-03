@@ -94,7 +94,7 @@ class EELSCLEdge(Component):
                     'Hartree-Slater GOS not available'
                     'Using hydrogenic GOS')
         elif GOS == 'Hartree-Slater':
-            self.GOS == HartreeSlaterGOS(element_subshell)
+            self.GOS = HartreeSlaterGOS(element_subshell)
         elif GOS == 'hydrogenic':
             self.GOS = HydrogenicGOS(element_subshell)
         else:

@@ -180,52 +180,59 @@ class EELSModel(Model):
                    component.isbackground is True):
                 self._background_components.append(component)
 
-        if not self.edges:
-            messages.warning("The model contains no edges")
-        else:
+        if self.edges:
             self.edges.sort(key = EELSCLEdge.edge_position)
             self.resolve_fine_structure()
-        if len(self._background_components) > 1 :
+        if len(self._background_components) > 1:
             self._backgroundtype = "mix"
-        elif not self._background_components:
-            messages.warning("No background model has been defined")
-        else :
+        elif len(self._background_components) == 1:
             self._backgroundtype = \
             self._background_components[0].__repr__()
             if self._firstimetouch and self.edges:
                 self.two_area_background_estimation()
                 self._firstimetouch = False
         
-    def _add_edges_from_subshells_names(self, e_shells = None, 
-                                        copy2interactive_ns = True):
+    def _add_edges_from_subshells_names(self, e_shells=None, 
+                                        copy2interactive_ns=True):
         """Create the Edge instances and configure them appropiately
         Parameters
         ----------
         e_shells : list of strings
         copy2interactive_ns : bool
-            If True, variables with the format Element_Shell will be created in
-            IPython's interactive shell
+            If True, variables with the format Element_Shell will be 
+            created in IPython's interactive shell
         """
         if e_shells is None:
             e_shells = list(self.spectrum.subshells)
         e_shells.sort()
-        master_edge = EELSCLEdge(e_shells.pop())
+        master_edge = EELSCLEdge(e_shells.pop(), self.GOS)
+        # If self.GOS was None, the GOS is set by eels_cl_edge so
+        # we reassing the value of self.GOS
+        self.GOS = master_edge.GOS._name
         self.append(master_edge)
-        interactive_ns[self[-1].__repr__()] = self[-1]
-        element = self[-1].__repr__().split('_')[0]
+        interactive_ns[self[-1].name] = self[-1]
+        element = master_edge.element
         interactive_ns[element] = []
         interactive_ns[element].append(self[-1])
         while len(e_shells) > 0:
             next_element = e_shells[-1].split('_')[0]
             if next_element != element:
+                # New master edge
                 self._add_edges_from_subshells_names(e_shells=e_shells)
+            elif self.GOS == 'hydrogenic':
+                # The hydrogenic GOS includes all the L subshells in one
+                # so we get rid of the others
+                e_shells.pop()
             else:
+                # Add the other subshells of the same element
+                # and couple their intensity and delta to that of the 
+                # master edge
                 self.append(EELSCLEdge(e_shells.pop(), GOS=self.GOS))
                 self[-1].intensity.twin = master_edge.intensity
                 self[-1].delta.twin = master_edge.delta
                 self[-1].freedelta = False
                 if copy2interactive_ns is True:
-                    interactive_ns[self[-1].__repr__()] = self[-1]
+                    interactive_ns[self[-1].name] = self[-1]
                     interactive_ns[element].append(self[-1])
                 
     def resolve_fine_structure(self,preedge_safe_window_width = 
@@ -359,26 +366,27 @@ class EELSModel(Model):
                 E2 = ea[-1]
         else:
             E2 = E2           
-        print \
-        "Estimating the parameters of the background by the two area method"
-        print "E1 = %s\t E2 = %s" % (E1, E2)
         if powerlaw is None:
             for component in self._background_components:
                 if isinstance(component, components.PowerLaw):
                     if powerlaw is None:
                         powerlaw = component
                     else:
-                        message.warning('There are more than two power law '
-                        'background components defined in this model, please '
-                        'use the powerlaw keyword to specify one of them')
+                        message.warning(
+                        'There are more than two power law '
+                        'background components defined in this model, ' 
+                        'please use the powerlaw keyword to specify one'
+                        ' of them')
                         return
                         
         
-        if powerlaw.estimate_parameters(self.spectrum, E1, E2, False) is True:
+        if powerlaw.estimate_parameters(
+            self.spectrum, E1, E2, False) is True:
             self.charge()
         else:
             messages.warning(
-            "The power law background parameters could not be estimated\n"
+            "The power law background parameters could not "
+            "be estimated.\n"
             "Try choosing a different energy range for the estimation")
             return
 
@@ -461,8 +469,8 @@ class EELSModel(Model):
         elements = {}
         for edge in self.edges:
             if edge.active and edge.intensity.twin is None:
-                element = edge._EELSCLEdge__element
-                subshell = edge._EELSCLEdge__subshell
+                element = edge.element
+                subshell = edge.subshell
                 if element not in elements:
                     elements[element] = {}
                 elements[element][subshell] = edge.intensity.value
