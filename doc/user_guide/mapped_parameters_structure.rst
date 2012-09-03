@@ -37,6 +37,16 @@ record_by
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
     If 'spectrum' the spectral data is stored in the faster index.
     
+time
+    type: datetime.time
+    
+    The acquistion or creation time
+    
+date
+    type: datetime.time
+    
+    The acquistion or creation date
+    
 Variance_estimation
 -------------------
 

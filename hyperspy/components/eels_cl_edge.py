@@ -50,7 +50,7 @@ class EELSCLEdge(Component):
     element_subshell : str
             For example, 'Ti_L3' for the GOS of the titanium L3 subshell
             
-    gos : {'hydrogenic', 'Hartree-Slater', None}
+    GOS : {'hydrogenic', 'Hartree-Slater', None}
         The GOS to use. If None it will use the Hartree-Slater GOS if 
         they are available, otherwise it will use the hydrogenic GOS.
     
@@ -60,7 +60,7 @@ class EELSCLEdge(Component):
     
     """
 
-    def __init__(self, element_subshell, gos=None):
+    def __init__(self, element_subshell, GOS=None):
         # Declare the parameters
         Component.__init__(self,
             ['delta', 'intensity', 'fslist', 'effective_angle'])
@@ -85,17 +85,17 @@ class EELSCLEdge(Component):
         self.knots_factor = preferences.EELS.knots_factor
 
         # Set initial actions
-        if gos is None:
+        if GOS is None:
             try:
                 self.GOS = HartreeSlaterGOS(element_subshell)
             except IOError:
-                gos = 'hydrogenic'
+                GOS = 'hydrogenic'
                 messages.information(
                     'Hartree-Slater GOS not available'
                     'Using hydrogenic GOS')
-        elif gos == 'Hartree-Slater':
+        elif GOS == 'Hartree-Slater':
             self.GOS == HartreeSlaterGOS(element_subshell)
-        elif gos == 'hydrogenic':
+        elif GOS == 'hydrogenic':
             self.GOS = HydrogenicGOS(element_subshell)
         else:
             raise ValueError('gos must be one of: None, \'hydrogenic\''

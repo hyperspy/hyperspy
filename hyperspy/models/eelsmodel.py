@@ -42,23 +42,39 @@ class EELSModel(Model):
     ----------
     spectrum : an Spectrum (or any Spectrum subclass) instance
     auto_background : boolean
-        If True, and if spectrum is an EELS instance adds automatically a powerlaw to the model and estimate the 
-        parameters by the two-area method.
+        If True, and if spectrum is an EELS instance adds automatically 
+        a powerlaw to the model and estimate the parameters by the 
+        two-area method.
     auto_add_edges : boolean
-        If True, and if spectrum is an EELS instance, it will automatically add the ionization edges as 
-        defined in the Spectrum instance.
+        If True, and if spectrum is an EELS instance, it will 
+        automatically add the ionization edges as defined in the 
+        Spectrum instance. Adding a new element to the spectrum using
+        the components.EELSSpectrum.add_elements method automatically
+        add the corresponding ionisation edges to the model.
+    ll : {None, EELSSpectrum}
+        If an EELSSPectrum is provided, it will be assumed that it is
+        a low-loss EELS spectrum, and it will be used to simulate the 
+        effect of multiple scattering by convolving it with the EELS
+        spectrum.
+    GOS : {'hydrogenic', 'Hartree-Slater', None}
+        The GOS to use when auto adding core-loss EELS edges.
+        If None it will use the Hartree-Slater GOS if 
+        they are available, otherwise it will use the hydrogenic GOS.
+        
     """
     
-    def __init__(self, spectrum, auto_background = True, auto_add_edges = True, 
-                 ll = None, *args, **kwargs):
+    def __init__(self, spectrum, auto_background=True,
+                 auto_add_edges=True, ll=None, 
+                 GOS=None, *args, **kwargs):
         Model.__init__(self, spectrum, *args, **kwargs)
         self.ll = ll
-        
+        self.GOS = GOS
         if auto_background is True:
             background = PowerLaw()
             background.name = 'background'
             interactive_ns['background'] = background
             self.append(background)
+            
         if self.ll is not None:
             self.convolved = True
             if self.experiments.convolution_axis is None:
@@ -105,7 +121,7 @@ class EELSModel(Model):
                 raise MissingParametersError(missing_parameters)
     
     @only_interactive            
-    def define_eels_parameters(self, defined_parameters = None):
+    def define_eels_parameters(self):
         if self.spectrum.mapped_parameters.has_item('TEM') is False:
             self.spectrum.mapped_parameters.add_node('TEM')
         if self.spectrum.mapped_parameters.has_item('TEM.EELS') is False:
@@ -151,7 +167,7 @@ class EELSModel(Model):
                 component.energy_scale = self.axis.scale
                 component.setfslist()
                 if component.edge_position() < \
-                self.axis.axis[self.channel_switches][0]:
+                            self.axis.axis[self.channel_switches][0]:
                     component.isbackground = True
                 if component.isbackground is not True:
                     self.edges.append(component)
@@ -160,8 +176,8 @@ class EELSModel(Model):
                     component.fslist.free = False
                     component.backgroundtype = "edge"
                     self._background_components.append(component)
-
-            elif isinstance(component,PowerLaw) or component.isbackground is True:
+            elif (isinstance(component,PowerLaw) or 
+                   component.isbackground is True):
                 self._background_components.append(component)
 
         if not self.edges:
@@ -202,9 +218,9 @@ class EELSModel(Model):
         while len(e_shells) > 0:
             next_element = e_shells[-1].split('_')[0]
             if next_element != element:
-                self._add_edges_from_subshells_names(e_shells = e_shells)
+                self._add_edges_from_subshells_names(e_shells=e_shells)
             else:
-                self.append(EELSCLEdge(e_shells.pop()))
+                self.append(EELSCLEdge(e_shells.pop(), GOS=self.GOS))
                 self[-1].intensity.twin = master_edge.intensity
                 self[-1].delta.twin = master_edge.delta
                 self[-1].freedelta = False
