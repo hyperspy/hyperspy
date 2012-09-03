@@ -1197,8 +1197,8 @@ class DictionaryBrowser(object):
         item_path : Str
             A string describing the path with each item separated by a point
             
-        Example
-        -------
+        Examples
+        --------
         
         >>> dict = {'To' : {'be' : True}}
         >>> dict_browser = DictionaryBrowser(dict)
@@ -1227,7 +1227,25 @@ class DictionaryBrowser(object):
             return False
 
     def add_node(self, node_path):
-        keys = node_path.split('/')
+        """Adds all the nodes in the given path if they don't exist.
+        
+        Parameters
+        ----------
+        node_path: str
+            The nodes must be separated by full stops (periods).
+            
+        Example
+        -------
+        
+        >>> dict_browser = DictionaryBrowser({})
+        >>> dict_browser.add_node('First.Second')
+        >>> dict_browser.First.Second = 3
+        >>> dict_browser
+        └── First
+            └── Second = 3
+
+        """
+        keys = node_path.split('.')
         for key in keys:
             if self.has_item(key) is False:
                 self[key] = DictionaryBrowser()
