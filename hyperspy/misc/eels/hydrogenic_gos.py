@@ -63,24 +63,29 @@ class HydrogenicGOS(GOSBase):
         # Gatan are available. Otherwise exit
         
         self.element, self.subshell = element_subshell.split('_')
+        self.read_edges_dict()
+        self.delta = 0
+
         if self.subshell == 'K':
             self.gosfunc = self.gosfuncK
         elif self.subshell[:1] == 'L':
             self.gosfunc = self.gosfuncL
+            self.onset_energy_L3 = self.element_dict['subshells']['L3'][
+            'onset_energy']
+            self.onset_energy_L1 = self.element_dict['subshells']['L1'][
+            'onset_energy']
+            self.onset_energy = self.onset_energy_L3
         else:
             raise ValueError('The Hydrogenic GOS currently can only'
                 'compute K or L shells. Try using Hartree-Slater GOS')
-        self.read_edges_dict()
 
-        self.onset_energy_L3 = self.element_dict['subshells']['L3'][
-            'onset_energy']
-        self.onset_energy_L1 = self.element_dict['subshells']['L1'][
-            'onset_energy']
+
         self.rel_energy_axis = self.get_parametrized_energy_axis(
             50, 3, 50)
-        self.energy_axis = self.rel_energy_axis + self.onset_energy_L3
+        self.energy_axis = self.rel_energy_axis + self.onset_energy
 
     def integrateq(self,delta, angle,E0):
+        self.delta = delta
         gamma = 1 + E0 / 511.06
         T = 511060 * (1 - 1 / gamma**2) / 2
         qint = np.zeros((self.energy_axis.shape[0]))
@@ -142,8 +147,8 @@ class HydrogenicGOS(GOSBase):
         u = XU[np.int(iz)]
         #el3 = IE3[np.int(iz) - 1]
         #el1 = IE1[np.int(iz) - 1]
-        el3 = self.onset_energy_L3
-        el1 = self.onset_energy_L1
+        el3 = self.onset_energy_L3 + self.delta
+        el1 = self.onset_energy_L1 + self.delta
         
         
         q = qa02 / zs**2
