@@ -230,11 +230,11 @@ class EELSCLEdge(Component):
         """
         Emax = self.GOS.energy_axis[-1] + self.delta.value 
         cts = np.zeros((len(E)))
-        bsignal = E >= self.GOS.onset_energy + self.delta.value
+        bsignal = (E >= self.edge_position())
         if self.fs_state is True:
-            bfs = bsignal * E < (self.GOS.onset_energy + 
-                  self.delta.value + self.fs_emax)
-            cts[bfs] = 1E-25*splev(E,(self.__knots,self.fslist.value,3))
+            bfs = bsignal * (E < (self.edge_position() + self.fs_emax))
+            cts[bfs] = splev(E[bfs],
+                        (self.__knots, self.fslist.value + [0,]*4, 3))
             bsignal[bfs] = False
         itab = bsignal * (E <= Emax)
         cts[itab] = self.tab_xsection(E[itab])

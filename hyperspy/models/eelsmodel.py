@@ -66,7 +66,8 @@ class EELSModel(Model):
                  auto_add_edges=True, ll=None, 
                  GOS=None, *args, **kwargs):
         Model.__init__(self, spectrum, *args, **kwargs)
-        self.ll = ll
+        self.convolved = False
+        self.low_loss = ll
         self.GOS = GOS
         if auto_background is True:
             background = PowerLaw()
@@ -74,12 +75,6 @@ class EELSModel(Model):
             interactive_ns['background'] = background
             self.append(background)
             
-        if self.ll is not None:
-            self.convolved = True
-            if self.experiments.convolution_axis is None:
-                self.experiments.set_convolution_axis()
-        else:
-            self.convolved = False
         if self.spectrum.subshells and auto_add_edges is True:
             self._add_edges_from_subshells_names()
             
@@ -447,7 +442,7 @@ class EELSModel(Model):
             edges_list = self.edges
         for edge in edges_list :
             if edge.isbackground is False and edge.fs_state is True:
-                start = edge.edgeenergy + edge.delta.value
+                start = edge.edge_position()
                 stop = start + edge.fs_emax
                 self.remove_data_range_in_units(start,stop)
        
