@@ -17,18 +17,15 @@ XU=[.52,.42,.30,.29,.22,.30,.22,.16,.12,.13,.13,.14,.16,.18,
     #926,1008,1096,1194,1142,1248,1359,1476,1596,1727]
     
 class HydrogenicGOS(GOSBase):
-    """Computes the K and L GOS using Egerton's SigmaK and SigmalL 
-    modified hydrogenic calculations.
+    """Computes the K and L GOS using R. Egerton's  routines.
     
     Parameters
     ----------
-    
     element_subshell : str
         For example, 'Ti_L3' for the GOS of the titanium L3 subshell
         
     Methods
     -------
-    
     parametrize_GOS()
         Parametrize the GOS to speed up the calculation.
     get_qaxis_and_gos(ienergy, qmin, qmax)
@@ -39,7 +36,6 @@ class HydrogenicGOS(GOSBase):
     
     Attributes
     ----------
-    
     energy_axis : array
         The tabulated energy axis
     qaxis : array
@@ -47,6 +43,12 @@ class HydrogenicGOS(GOSBase):
     energy_onset: float
         The energy onset for the given element subshell as obtained
         from iternal tables.
+        
+    Notes
+    -----
+    The Hydrogeninc GOS are calculated using R. Egerton's SIGMAK3 and 
+    SIGMAL3 routines that has been translated from Matlab to Python by 
+    I. Iyengar. See http://www.tem-eels.ca/ for the original code.
     
     """
     _name = 'hydrogenic'
