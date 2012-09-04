@@ -545,6 +545,7 @@ class EELSModel(Model):
                 start = edge.edge_position()
                 stop = start + edge.fs_emax
                 self.remove_data_range_in_units(start,stop)
+        self.update_plot()
        
     def enable_edges(self,edges_list=None):
         """Enable the edges listed in edges_list. If edges_list is 
@@ -575,6 +576,8 @@ class EELSModel(Model):
         for edge in edges_list :
             if edge.isbackground is False:
                 edge.active = True
+        self.update_plot()
+        
     def disable_edges(self,edges_list = None):
         """Disable the edges listed in edges_list. If edges_list is None (default)
         all the edges with onset in the spectrum energy region will be
@@ -603,19 +606,23 @@ class EELSModel(Model):
         for edge in edges_list :
             if edge.isbackground is False:
                 edge.active = False
+        self.update_plot()
 
     def enable_background(self):
-        """
-        Enable the background.
+        """Enable the background componets.
+        
         """
         for component in self._background_components:
             component.active = True
+        self.update_plot()
+        
     def disable_background(self):
-        """
-        Disable the background.
+        """Disable the background components.
+        
         """
         for component in self._background_components:
             component.active = False
+        self.update_plot()
 
     def enable_fine_structure(self,edges_list=None):
         """Enable the fine structure of the edges listed in edges_list.
@@ -646,7 +653,8 @@ class EELSModel(Model):
             if edge.isbackground is False:
                 edge.fs_state = True
                 edge.fslist.free = True
-                
+        self.update_plot()
+        
     def disable_fine_structure(self,edges_list=None):
         """Disable the fine structure of the edges listed in edges_list.
         If edges_list is None (default) the fine structure of all the edges
@@ -676,11 +684,13 @@ class EELSModel(Model):
             if edge.isbackground is False:
                 edge.fs_state = False
                 edge.fslist.free = False
+        self.update_plot()
                 
     def set_all_edges_intensities_positive(self):
         for edge in self.edges:
             edge.intensity.ext_force_positive = True
             edge.intensity.ext_bounded = True
+        
             
     def unset_all_edges_intensities_positive(self):
         for edge in self.edges:

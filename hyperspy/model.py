@@ -118,7 +118,7 @@ class Model(list):
         list.__delitem__(self,object)
         self._touch()
     
-    def remove(self, object, touch = True):
+    def remove(self, object, touch=True):
         list.remove(self,object)
         if touch is True:
             self._touch() 
@@ -166,7 +166,7 @@ class Model(list):
                 parameter.connection_active = tof
         self.auto_update_plot = tof
 
-    def generate_data_from_model(self, out_of_range_to_nan = True):
+    def generate_data_from_model(self, out_of_range_to_nan=True):
         """Generate a SI with the current model
         
         The SI is stored in self.model_cube
@@ -266,7 +266,7 @@ class Model(list):
             component.store_current_parameters_in_map(
             tuple(self.axes_manager._indexes))
 
-    def charge(self, only_fixed = False):
+    def charge(self, only_fixed=False):
         """Charge the parameters for the current spectrum from the parameters 
         array
         
@@ -315,7 +315,7 @@ class Model(list):
                 counter += component._nfree_param
 
     # Defines the functions for the fitting process -------------------------
-    def _model2plot(self, axes_manager, out_of_range2nans = True):
+    def _model2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None
         if axes_manager is not self.axes_manager:
             old_axes_manager = self.axes_manager
@@ -332,7 +332,7 @@ class Model(list):
             s = ns
         return s
     
-    def __call__(self, non_convolved = False, onlyactive = False) :
+    def __call__(self, non_convolved=False, onlyactive=False) :
         """Returns the corresponding model for the current coordinates
         
         Parameters
@@ -395,7 +395,7 @@ class Model(list):
             return to_return
 
     # TODO: the way it uses the axes
-    def set_data_range_in_pixels(self, i1 = None, i2 = None):
+    def set_data_range_in_pixels(self, i1=None, i2=None):
         """Use only the selected spectral range in the fitting routine.
         
         Parameters
@@ -415,7 +415,7 @@ class Model(list):
             self.update_plot()
             
     @interactive_range_selector   
-    def set_data_range_in_units(self, x1 = None, x2 = None):
+    def set_data_range_in_units(self, x1=None, x2=None):
         """Use only the selected spectral range defined in its own units in the 
         fitting routine.
         
@@ -431,7 +431,7 @@ class Model(list):
         i1, i2 = self.axis.value2index(x1), self.axis.value2index(x2)
         self.set_data_range_in_pixels(i1, i2)
 
-    def remove_data_range_in_pixels(self, i1 = None, i2= None):
+    def remove_data_range_in_pixels(self, i1=None, i2=None):
         """Removes the data in the given range from the data range that 
         will be used by the fitting rountine
         
@@ -445,7 +445,7 @@ class Model(list):
             self.update_plot()
 
     @interactive_range_selector    
-    def remove_data_range_in_units(self, x1 = None, x2= None):
+    def remove_data_range_in_units(self, x1=None, x2=None):
         """Removes the data in the given range from the data range that 
         will be used by the fitting rountine
         
@@ -462,7 +462,7 @@ class Model(list):
         '''Resets the data range'''
         self.set_data_range_in_pixels()
     
-    def add_data_range_in_pixels(self, i1 = None, i2= None):
+    def add_data_range_in_pixels(self, i1=None, i2=None):
         """Adds the data in the given range from the data range that 
         will be used by the fitting rountine
         
@@ -476,7 +476,7 @@ class Model(list):
             self.update_plot()
 
     @interactive_range_selector    
-    def add_data_range_in_units(self, x1 = None, x2= None):
+    def add_data_range_in_units(self, x1=None, x2=None):
         """Adds the data in the given range from the data range that 
         will be used by the fitting rountine
         
@@ -1113,5 +1113,3 @@ class Model(list):
                     else component.parameter
                 for parameter in parameters:
                     print("\t\t%s\t%f" % (parameter.name, parameter.value))
-
-        
