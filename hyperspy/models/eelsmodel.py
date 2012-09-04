@@ -576,6 +576,7 @@ class EELSModel(Model):
         for edge in edges_list :
             if edge.isbackground is False:
                 edge.active = True
+        self.resolve_fine_structure()
         self.update_plot()
         
     def disable_edges(self,edges_list = None):
@@ -606,6 +607,7 @@ class EELSModel(Model):
         for edge in edges_list :
             if edge.isbackground is False:
                 edge.active = False
+        self.resolve_fine_structure()
         self.update_plot()
 
     def enable_background(self):
@@ -653,6 +655,7 @@ class EELSModel(Model):
             if edge.isbackground is False:
                 edge.fs_state = True
                 edge.fslist.free = True
+        self.resolve_fine_structure()
         self.update_plot()
         
     def disable_fine_structure(self,edges_list=None):
@@ -684,6 +687,7 @@ class EELSModel(Model):
             if edge.isbackground is False:
                 edge.fs_state = False
                 edge.fslist.free = False
+        self.resolve_fine_structure()
         self.update_plot()
                 
     def set_all_edges_intensities_positive(self):
