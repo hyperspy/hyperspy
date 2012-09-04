@@ -31,7 +31,7 @@ from hyperspy.io import load
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc import utils
 from hyperspy import tests
-from hyperspy.misc.eels.edges_dictionary import edges_dict
+from hyperspy.misc.eels.elements import elements
 
 __version__ = Release.version
 

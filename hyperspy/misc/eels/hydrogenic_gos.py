@@ -63,7 +63,7 @@ class HydrogenicGOS(GOSBase):
         # Gatan are available. Otherwise exit
         
         self.element, self.subshell = element_subshell.split('_')
-        self.read_edges_dict()
+        self.read_elements()
         self.delta = 0
 
         if self.subshell[:1] == 'K':

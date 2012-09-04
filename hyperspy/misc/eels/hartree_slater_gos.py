@@ -9,7 +9,7 @@ import scipy.interpolate
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.physical_constants import R, e, m0, a0, c
 from hyperspy.misc.eels.base_gos import GOSBase
-from hyperspy.misc.eels.edges_dictionary import edges_dict
+from hyperspy.misc.eels.elements import elements
 
 
 class HartreeSlaterGOS(GOSBase):
@@ -66,19 +66,19 @@ class HartreeSlaterGOS(GOSBase):
                 "Please define a valid location for the files "
                 "in the preferences.")
         self.element, self.subshell = element_subshell.split('_')
-        self.read_edges_dict()
+        self.read_elements()
         self.readgosfile()
 
     def readgosfile(self): 
-        print "\nReading the parametrized Hartree-Slater GOS"
+        print "\nHartree-Slater GOS"
         print "\tElement: ", self.element
-        print "\tSubshell: ", self._subshell
+        print "\tSubshell: ", self.subshell
         print "\tOnset Energy = ", self.onset_energy
         element = self.element
-        subshell = self._subshell
+        subshell = self.subshell
         filename = os.path.join(
             preferences.EELS.eels_gos_files_path, 
-            edges_dict[element]['subshells'][subshell]['filename'])
+            elements[element]['subshells'][subshell]['filename'])
             
         with open(filename) as f:
             GOS_list = f.read().replace('\r','').split()

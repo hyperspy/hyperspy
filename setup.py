@@ -157,9 +157,6 @@ with update_version_when_dev() as version:
             'hyperspy': 
                 [   'bin/*.py',
                     'ipython_profile/*',
-                    'data/*.m', 
-                    'data/*.csv',
-                    'data/*.tar.gz',
                     'data/*.ico',
             'tests/io/dm3_1D_data/*.dm3',
             'tests/io/dm3_2D_data/*.dm3',

@@ -3,34 +3,30 @@ from __future__ import division
 import numpy as np
 
 from hyperspy.misc.utils import get_linear_interpolation
-from hyperspy.misc.eels.edges_dictionary import edges_dict
+from hyperspy.misc.eels.elements import elements
 
 
 class GOSBase(object):
-    def read_edges_dict(self):
+    def read_elements(self):
         element = self.element
+        subshell = self.subshell
         # Convert to the "GATAN" nomenclature
-        if self.subshell == "K" :
-            subshell = "K1"
-        else:
-            subshell = self.subshell
-        if edges_dict.has_key(element) is not True:
+        if elements.has_key(element) is not True:
             raise ValueError("The given element " + element + 
                               " is not in the database.")
-        elif not edges_dict[element]['subshells'].has_key(subshell):
+        elif not elements[element]['subshells'].has_key(subshell):
             raise ValueError(
                 "The given subshell " + subshell + 
                 " is not in the database.\n" + 
                 "The available subshells are:\n" + 
-            str(edges_dict[element]['subshells'].keys()))
+            str(elements[element]['subshells'].keys()))
             
         self.onset_energy = \
-            edges_dict[element]['subshells'][subshell]['onset_energy']
+            elements[element]['subshells'][subshell]['onset_energy']
         self.subshell_factor = \
-            edges_dict[element]['subshells'][subshell]['factor']
-        self._subshell = subshell
-        self.Z = edges_dict[element]['Z']
-        self.element_dict = edges_dict[element]
+            elements[element]['subshells'][subshell]['factor']
+        self.Z = elements[element]['Z']
+        self.element_dict = elements[element]
         
     def get_parametrized_qaxis(self, k1, k2, n):
         return k1*(np.exp(np.arange(n)*k2) - 1)*1e10

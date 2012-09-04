@@ -21,7 +21,7 @@ import os.path
 import shutil
 from hyperspy import messages
 
-config_files = ['edges_db.csv',]
+config_files = list()
 data_path = os.sep.join([os.path.dirname(__file__), '..', 'data'])
 
 if os.name == 'posix':
