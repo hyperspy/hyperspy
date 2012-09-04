@@ -70,6 +70,8 @@ class HydrogenicGOS(GOSBase):
 
         if self.subshell[:1] == 'K':
             self.gosfunc = self.gosfuncK
+            self.rel_energy_axis = self.get_parametrized_energy_axis(
+            50, 3, 50)
         elif self.subshell[:1] == 'L':
             self.gosfunc = self.gosfuncL
             self.onset_energy_L3 = self.element_dict['subshells']['L3'][
@@ -77,13 +79,16 @@ class HydrogenicGOS(GOSBase):
             self.onset_energy_L1 = self.element_dict['subshells']['L1'][
             'onset_energy']
             self.onset_energy = self.onset_energy_L3
+            relative_axis = self.get_parametrized_energy_axis(
+            50, 3, 50)
+            dL3L2 = self.onset_energy_L1 - self.onset_energy_L3
+            self.rel_energy_axis = np.hstack((
+                relative_axis[:relative_axis.searchsorted(dL3L2)],
+                relative_axis + dL3L2))
         else:
             raise ValueError('The Hydrogenic GOS currently can only'
                 'compute K or L shells. Try using Hartree-Slater GOS')
-
-
-        self.rel_energy_axis = self.get_parametrized_energy_axis(
-            50, 3, 50)
+            
         self.energy_axis = self.rel_energy_axis + self.onset_energy
         print "\nHydrogenic GOS"
         print "\tElement: ", self.element
