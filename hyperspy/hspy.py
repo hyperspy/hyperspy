@@ -37,6 +37,8 @@ __version__ = Release.version
 
 # start up the log file
 
+elements = utils.DictionaryBrowser(elements)
+
 def get_configuration_directory_path():
     import hyperspy.misc.config_dir
     print(hyperspy.misc.config_dir.config_path)
