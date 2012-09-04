@@ -496,7 +496,7 @@ class EELSSpectrum(Spectrum):
 #        if mask is None:
 #            mask = np.ones(self.data_cube.shape[1:], dtype = 'bool')
 #        m = Model(self)
-#        m.fit_background(startenergy = start_energy, type = 'multi', 
+#        m.fit_background(start_energy = start_energy, type = 'multi', 
 #        mask = mask)
 #        m.model_cube[:, mask == False] *= 0
 #        self.background = Spectrum()

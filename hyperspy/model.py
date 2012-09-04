@@ -21,7 +21,12 @@ import os
 import tempfile
 
 import numpy as np
+import numpy.linalg
+
 import traits.api as t
+import scipy.odr as odr
+from scipy.optimize import (leastsq,fmin, fmin_cg, fmin_ncg, fmin_bfgs,
+    fmin_cobyla, fmin_l_bfgs_b, fmin_tnc, fmin_powell)
 
 from hyperspy.estimators import Estimators
 from hyperspy.optimizers import Optimizers
@@ -34,8 +39,9 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
+from hyperspy.misc.mpfit.mpfit import mpfit
 
-class Model(list, Optimizers, Estimators):
+class Model(list):
     """Build and fit a model
     
     Parameters
@@ -426,8 +432,8 @@ class Model(list, Optimizers, Estimators):
         self.set_data_range_in_pixels(i1, i2)
 
     def remove_data_range_in_pixels(self, i1 = None, i2= None):
-        """Removes the data in the given range from the data range that will be 
-        used by the fitting rountine
+        """Removes the data in the given range from the data range that 
+        will be used by the fitting rountine
         
         Parameters
         ----------
@@ -440,8 +446,8 @@ class Model(list, Optimizers, Estimators):
 
     @interactive_range_selector    
     def remove_data_range_in_units(self, x1 = None, x2= None):
-        """Removes the data in the given range from the data range that will be 
-        used by the fitting rountine
+        """Removes the data in the given range from the data range that 
+        will be used by the fitting rountine
         
         Parameters
         ----------
@@ -457,8 +463,8 @@ class Model(list, Optimizers, Estimators):
         self.set_data_range_in_pixels()
     
     def add_data_range_in_pixels(self, i1 = None, i2= None):
-        """Adds the data in the given range from the data range that will be 
-        used by the fitting rountine
+        """Adds the data in the given range from the data range that 
+        will be used by the fitting rountine
         
         Parameters
         ----------
@@ -471,8 +477,8 @@ class Model(list, Optimizers, Estimators):
 
     @interactive_range_selector    
     def add_data_range_in_units(self, x1 = None, x2= None):
-        """Adds the data in the given range from the data range that will be 
-        used by the fitting rountine
+        """Adds the data in the given range from the data range that 
+        will be used by the fitting rountine
         
         Parameters
         ----------
@@ -587,10 +593,298 @@ class Model(list, Optimizers, Estimators):
     
     def _jacobian4odr(self,param,x):
         return self._jacobian(param, x)
+        
+    def calculate_p_std(self, p0, method, *args):
+        print "Estimating the standard deviation"
+        f = self._poisson_likelihood_function if method == 'ml' \
+        else self._errfunc2
+        hess = approx_hessian(p0,f,*args)
+        ihess = np.linalg.inv(hess)
+        p_std = np.sqrt(1./np.diag(ihess))
+        return p_std
+
+    def _poisson_likelihood_function(self,param,y, weights=None):
+        """Returns the likelihood function of the model for the given
+        data and parameters
+        """
+        mf = self._model_function(param)
+        return -(y*np.log(mf) - mf).sum()
+
+    def _gradient_ml(self,param, y, weights=None):
+        mf = self._model_function(param)
+        return -(self._jacobian(param, y)*(y/mf - 1)).sum(1)
+
+
+    def _errfunc(self,param, y, weights=None):
+        errfunc = self._model_function(param) - y
+        if weights is None:
+            return errfunc
+        else:
+            return errfunc * weights
+    def _errfunc2(self,param, y, weights=None):
+        if weights is None:
+            return ((self._errfunc(param, y))**2).sum()
+        else:
+            return ((weights * self._errfunc(param, y))**2).sum()
+
+    def _gradient_ls(self,param, y, weights=None):
+        gls =(2*self._errfunc(param, y, weights) * 
+        self._jacobian(param, y)).sum(1)
+        return gls
+        
+    def _errfunc4mpfit(self, p, fjac=None, x=None, y=None,
+        weights = None):
+        if fjac is None:
+            errfunc = self._model_function(p) - y
+            if weights is not None:
+                errfunc *= weights
+            jacobian = None
+            status = 0
+            return [status, errfunc]
+        else:
+            return [0, self._jacobian(p,y).T]
+        
+    def fit(self, fitter=None, method='ls', grad=False, weights=None,
+            bounded=False, ext_bounding=False, update_plot=False, 
+            **kwargs):
+        """Fits the model to the experimental data
+        
+        Parameters
+        ----------
+        fitter : {None, "leastsq", "odr", "mpfit", "fmin"}
+            The optimizer to perform the fitting. If None the fitter
+            defined in the Preferences is used. leastsq is the most 
+            stable but it does not support bounding. mpfit supports
+            bounding. fmin is the only one that supports 
+            maximum likelihood estimation, but it is less robust than 
+            the Levenberg–Marquardt based leastsq and mpfit, and it is 
+            better to use it after one of them to refine the estimation.
+        method : {'ls', 'ml'}
+            Choose 'ls' (default) for least squares and 'ml' for 
+            maximum-likelihood estimation. The latter only works with 
+            fitter = 'fmin'.
+        grad : bool
+            If True, the analytical gradient is used if defined to 
+            speed up the estimation. 
+        weights : {None, True, numpy.array}
+            If None, performs standard least squares. If True 
+            performs weighted least squares where the weights are 
+            calculated using spectrum.Spectrum.estimate_variance. 
+            Alternatively, external weights can be supplied by passing
+            a weights array of the same dimensions as the signal.
+        ext_bounding : bool
+            If True, enforce bounding by keeping the value of the 
+            parameters constant out of the defined bounding area.
+        bounded : bool
+            If True performs bounded optimization if the fitter 
+            supports it. Currently only mpfit support bounding. 
+        update_plot : bool
+            If True, the plot is updated during the optimization 
+            process. It slows down the optimization but it permits
+            to visualize the optimization evolution. 
+        
+        **kwargs : key word arguments
+            Any extra key word argument will be passed to the chosen
+            fitter
+            
+        See Also
+        --------
+        multifit
+            
+        """
+        if fitter is None:
+            fitter = preferences.Model.default_fitter
+            print('Fitter: %s' % fitter)
+        switch_aap = (update_plot != self.auto_update_plot)
+        if switch_aap is True:
+            self.set_auto_update_plot(update_plot)
+        self.p_std = None
+        self._set_p0()
+        if ext_bounding:
+            self._enable_ext_bounding()
+        if grad is False :
+            approx_grad = True
+            jacobian = None
+            odr_jacobian = None
+            grad_ml = None
+            grad_ls = None
+        else :
+            approx_grad = False
+            jacobian = self._jacobian
+            odr_jacobian = self._jacobian4odr
+            grad_ml = self._gradient_ml
+            grad_ls = self._gradient_ls
+        if method == 'ml':
+            weights = None
+        if weights is True:
+            if self.spectrum.variance is None:
+                self.spectrum.estimate_variance()
+            weights = 1. / np.sqrt(self.spectrum.variance.__getitem__(
+            self.axes_manager._getitem_tuple)[self.channel_switches])
+        elif weights is not None:
+            weights = weights.__getitem__(
+                self.axes_manager._getitem_tuple)[
+                    self.channel_switches]
+        args = (self.spectrum()[self.channel_switches], 
+        weights)
+        
+        # Least squares "dedicated" fitters
+        if fitter == "leastsq":
+            output = \
+            leastsq(self._errfunc, self.p0[:], Dfun = jacobian,
+            col_deriv=1, args = args, full_output = True, **kwargs)
+            
+            self.p0 = output[0]
+            var_matrix = output[1]
+            # In Scipy 0.7 sometimes the variance matrix is None (maybe a 
+            # bug?) so...
+            if var_matrix is not None:
+                self.p_std = np.sqrt(np.diag(var_matrix))
+            self.fit_output = output
+        
+        elif fitter == "odr":
+            modelo = odr.Model(fcn = self._function4odr, 
+            fjacb = odr_jacobian)
+            mydata = odr.RealData(self.axis.axis[self.channel_switches],
+            self.spectrum()[self.channel_switches],
+            sx = None,
+            sy = (1/weights if weights is not None else None))
+            myodr = odr.ODR(mydata, modelo, beta0=self.p0[:])
+            myoutput = myodr.run()
+            result = myoutput.beta
+            self.p_std = myoutput.sd_beta
+            self.p0 = result
+            self.fit_output = myoutput
+            
+        elif fitter == 'mpfit':
+            autoderivative = 1
+            if grad is True:
+                autoderivative = 0
+
+            if bounded is True:
+                self.set_mpfit_parameters_info()
+            elif bounded is False:
+                self.mpfit_parinfo = None
+            m = mpfit(self._errfunc4mpfit, self.p0[:], 
+                parinfo=self.mpfit_parinfo, functkw= {
+                'y': self.spectrum()[self.channel_switches], 
+                'weights' :weights}, autoderivative = autoderivative,
+                quiet = 1)
+            self.p0 = m.params
+            self.p_std = m.perror
+            self.fit_output = m
+            
+        else:          
+        # General optimizers (incluiding constrained ones(tnc,l_bfgs_b)
+        # Least squares or maximum likelihood
+            if method == 'ml':
+                tominimize = self._poisson_likelihood_function
+                fprime = grad_ml
+            elif method == 'ls':
+                tominimize = self._errfunc2
+                fprime = grad_ls
+                        
+            # OPTIMIZERS
+            
+            # Simple (don't use gradient)
+            if fitter == "fmin" :
+                self.p0 = fmin(
+                    tominimize, self.p0, args = args, **kwargs)
+            elif fitter == "powell" :
+                self.p0 = fmin_powell(tominimize, self.p0, args = args, 
+                **kwargs)
+            
+            # Make use of the gradient
+            elif fitter == "cg" :
+                self.p0 = fmin_cg(tominimize, self.p0, fprime = fprime,
+                args= args, **kwargs)
+            elif fitter == "ncg" :
+                self.p0 = fmin_ncg(tominimize, self.p0, fprime = fprime,
+                args = args, **kwargs)
+            elif fitter == "bfgs" :
+                self.p0 = fmin_bfgs(
+                    tominimize, self.p0, fprime = fprime,
+                    args = args, **kwargs)
+            
+            # Constrainded optimizers
+            
+            # Use gradient
+            elif fitter == "tnc":
+                if bounded is True:
+                    self.set_boundaries()
+                elif bounded is False:
+                    self.self.free_parameters_boundaries = None
+                self.p0 = fmin_tnc(tominimize, self.p0, fprime = fprime,
+                args = args, bounds = self.free_parameters_boundaries, 
+                approx_grad = approx_grad, **kwargs)[0]
+            elif fitter == "l_bfgs_b":
+                if bounded is True:
+                    self.set_boundaries()
+                elif bounded is False:
+                    self.self.free_parameters_boundaries = None
+                self.p0 = fmin_l_bfgs_b(tominimize, self.p0,
+                    fprime=fprime, args=args, 
+                    bounds=self.free_parameters_boundaries, 
+                    approx_grad = approx_grad, **kwargs)[0]
+            else:
+                print \
+                """
+                The %s optimizer is not available.
+
+                Available optimizers:
+                Unconstrained:
+                --------------
+                Only least Squares: leastsq and odr
+                General: fmin, powell, cg, ncg, bfgs
+
+                Cosntrained:
+                ------------
+                tnc and l_bfgs_b
+                """ % fitter
                 
-    def multifit(self, mask = None, fitter = None, 
-                 charge_only_fixed = False, grad = False, autosave = False, 
-                 autosave_every = 10, bounded = False, **kwargs):
+        
+        if np.iterable(self.p0) == 0:
+            self.p0 = (self.p0,)
+        self._charge_p0(p_std = self.p_std)
+        self.set()
+        if ext_bounding is True:
+            self._disable_ext_bounding()
+        if switch_aap is True:
+            self.set_auto_update_plot(not update_plot)
+            if not update_plot and self.spectrum._plot is not None:
+                self.update_plot()
+                
+    def multifit(self, mask=None, charge_only_fixed=False,
+                 autosave=False, autosave_every=10, **kwargs):
+        """Fit the data to the model at all the positions of the 
+        navigation dimensions.        
+        
+        Parameters
+        ----------
+        
+        mask : {None, numpy.array}
+            To mask (do not fit) at certain position pass a numpy.array
+            of type bool where True indicates that the data will not be
+            fitter at the given position.
+        charge_only_fixed : bool
+            If True, only the fixed parameters values will be updated
+            when changing the positon.
+        autosave : bool
+            If True, the result of the fit will be saved automatically
+            with a frequency defined by autosave_every.
+        autosave_every : int
+            Save the result of fitting every given number of spectra.
+        
+        **kwargs : key word arguments
+            Any extra key word argument will be passed to 
+            the fit method. See the fit method documentation for 
+            a list of valid arguments.
+            
+        See Also
+        --------
+        fit
+            
+        """
         
         if fitter is None:
             fitter = preferences.Model.default_fitter
@@ -608,8 +902,9 @@ class Model(list, Optimizers, Estimators):
         if mask is not None and \
         (mask.shape != tuple(self.axes_manager.navigation_shape)):
            messages.warning_exit(
-           "The mask must be an array with the same espatial dimensions as the" 
-           "navigation shape, %s" % self.axes_manager.navigation_shape)
+           "The mask must be a numpy array of boolen type with "
+           " the same shape as the navigation: %s" % 
+           self.axes_manager.navigation_shape)
         masked_elements = 0 if mask is None else mask.sum()
         pbar = progressbar.progressbar(
         maxval = (np.cumprod(self.axes_manager.navigation_shape)[-1] - 
@@ -624,15 +919,16 @@ class Model(list, Optimizers, Estimators):
             else:
                 messages.information(
                 "The chosen fitter does not suppport bounding."
-                "If you require boundinig please select one of the following"
-                "fitters instead: mpfit, tnc, l_bfgs_b")
+                "If you require boundinig please select one of the "
+                "following fitters instead: mpfit, tnc, l_bfgs_b")
                 bounded = False
         i = 0
-        for index in np.ndindex(tuple(self.axes_manager.navigation_shape)):
+        for index in np.ndindex(tuple(
+                self.axes_manager.navigation_shape)):
             if mask is None or not mask[index]:
                 self.axes_manager.set_not_slicing_indexes(index)
                 self.charge(only_fixed = charge_only_fixed)
-                self.fit(fitter = fitter, grad = grad, bounded = bounded, 
+                self.fit(fitter=fitter, grad=grad, bounded=bounded, 
                          **kwargs)
                 i += 1
                 pbar.update(i)
@@ -641,12 +937,19 @@ class Model(list, Optimizers, Estimators):
         pbar.finish()
         if autosave is True:
             messages.information(
-            'Deleting the temporary file %s pixels' % (autosave_fn + 'npz'))
+            'Deleting the temporary file %s pixels' % (
+                autosave_fn + 'npz'))
             os.remove(autosave_fn + '.npz')
 
             
-    def save_parameters2file(self,filename):
-        """Save the parameters array in binary format"""
+    def save_parameters2file(self, filename):
+        """Save the parameters array in binary format
+        
+        Parameters
+        ----------
+        filename : str
+        
+        """
         kwds = {}
         i = 0
         for component in self:
@@ -658,8 +961,14 @@ class Model(list, Optimizers, Estimators):
         np.savez(filename, **kwds)
 
     def load_parameters_from_file(self,filename):
-        """Loads the parameters array from  a binary file written with the
-        'save_parameters2file' function"""
+        """Loads the parameters array from  a binary file written with 
+        the 'save_parameters2file' function
+        
+        Paramters
+        ---------
+        filename : str
+        
+        """
         
         f = np.load(filename)
         i = 0
@@ -673,8 +982,9 @@ class Model(list, Optimizers, Estimators):
         self.charge()
            
     def plot(self, auto_update_plot = True):
-        """Plots the current spectrum to the screen and a map with a cursor to 
-        explore the SI.
+        """Plots the current spectrum to the screen and a map with a 
+        cursor to explore the SI.
+        
         """
         
         # If new coordinates are assigned
@@ -694,12 +1004,12 @@ class Model(list, Optimizers, Estimators):
         l2.plot()
         self.connect_parameters2update_plot()
         on_figure_window_close(_plot.signal_plot.figure, 
-                                      self.disconnect_parameters2update_plot)
+                                self.disconnect_parameters2update_plot)
         self.set_auto_update_plot(True)
         self._plot = self.spectrum._plot
         # TODO Set autoupdate to False on close
         
-    def set_current_values_to(self, components_list = None, mask = None):
+    def set_current_values_to(self, components_list=None, mask=None):
         if components_list is None:
             components_list = []
             for comp in self:
@@ -727,7 +1037,7 @@ class Model(list, Optimizers, Estimators):
                 parameter.ext_bounded = False
                 
     def export_results(self, folder=None, format=None, save_std=False,
-                       only_free=True, only_active = True):
+                       only_free=True, only_active=True):
         """Export the results of the parameters of the model to the desired
         folder.
         
