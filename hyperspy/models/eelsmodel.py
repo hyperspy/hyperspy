@@ -346,7 +346,7 @@ class EELSModel(Model):
         while edge.edge_position() < start_energy or edge.active is False:
             i+=1
             edge = edges.pop(0)
-        self.set_data_range_in_units(start_energy,edge.edge_position() - \
+        self.set_signal_range(start_energy,edge.edge_position() - \
         preferences.EELS.preedge_safe_window_width)
         active_edges = []
         for edge in self.edges[i:]:
@@ -465,7 +465,7 @@ class EELSModel(Model):
         print "edges_to_activate", edges_to_activate
         print "Fine structure to fit", to_activate_fs
         
-        self.set_data_range_in_units(start_energy, nextedgeenergy)
+        self.set_signal_range(start_energy, nextedgeenergy)
         if edge.freedelta is True:
             print "Fit without fine structure, delta free"
             edge.delta.free = True
@@ -481,7 +481,7 @@ class EELSModel(Model):
             self.fit(**kwargs)
 
         if len(to_activate_fs) > 0:
-            self.set_data_range_in_units(start_energy, nextedgeenergy)
+            self.set_signal_range(start_energy, nextedgeenergy)
             self.enable_fine_structure(to_activate_fs)
             print "Fit with fine structure"
             self.fit(**kwargs)
@@ -544,7 +544,7 @@ class EELSModel(Model):
             if edge.isbackground is False and edge.fs_state is True:
                 start = edge.edge_position()
                 stop = start + edge.fs_emax
-                self.remove_data_range_in_units(start,stop)
+                self.remove_signal_range(start,stop)
         self.update_plot()
        
     def enable_edges(self,edges_list=None):

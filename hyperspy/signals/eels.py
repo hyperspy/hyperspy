@@ -427,7 +427,7 @@ class EELSSpectrum(Spectrum):
 #            m = Model(self,False)
 #            m.append(fp)
 #            m.set_data_region(None,right)
-#            m.remove_data_range(-around,around)
+#            m.remove_signal_range(-around,around)
 #            m.multifit()
 #            self.zero_loss = copy.deepcopy(self)
 #            self.zero_loss.data_cube = m.model_cube

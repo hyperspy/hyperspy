@@ -395,7 +395,7 @@ class Model(list):
             return to_return
 
     # TODO: the way it uses the axes
-    def set_data_range_in_pixels(self, i1=None, i2=None):
+    def _set_signal_range_in_pixels(self, i1=None, i2=None):
         """Use only the selected spectral range in the fitting routine.
         
         Parameters
@@ -415,7 +415,7 @@ class Model(list):
             self.update_plot()
             
     @interactive_range_selector   
-    def set_data_range_in_units(self, x1=None, x2=None):
+    def set_signal_range(self, x1=None, x2=None):
         """Use only the selected spectral range defined in its own units in the 
         fitting routine.
         
@@ -429,9 +429,9 @@ class Model(list):
         To use the full energy range call the function without arguments.
         """
         i1, i2 = self.axis.value2index(x1), self.axis.value2index(x2)
-        self.set_data_range_in_pixels(i1, i2)
+        self._set_signal_range_in_pixels(i1, i2)
 
-    def remove_data_range_in_pixels(self, i1=None, i2=None):
+    def _remove_signal_range_in_pixels(self, i1=None, i2=None):
         """Removes the data in the given range from the data range that 
         will be used by the fitting rountine
         
@@ -445,7 +445,7 @@ class Model(list):
             self.update_plot()
 
     @interactive_range_selector    
-    def remove_data_range_in_units(self, x1=None, x2=None):
+    def remove_signal_range(self, x1=None, x2=None):
         """Removes the data in the given range from the data range that 
         will be used by the fitting rountine
         
@@ -456,13 +456,13 @@ class Model(list):
         
         """
         i1, i2 = self.axis.value2index(x1), self.axis.value2index(x2)
-        self.remove_data_range_in_pixels(i1, i2)
+        self._remove_signal_range_in_pixels(i1, i2)
         
-    def reset_data_range(self):
+    def reset_signal_range(self):
         '''Resets the data range'''
-        self.set_data_range_in_pixels()
+        self._set_signal_range_in_pixels()
     
-    def add_data_range_in_pixels(self, i1=None, i2=None):
+    def _add_signal_range_in_pixels(self, i1=None, i2=None):
         """Adds the data in the given range from the data range that 
         will be used by the fitting rountine
         
@@ -476,7 +476,7 @@ class Model(list):
             self.update_plot()
 
     @interactive_range_selector    
-    def add_data_range_in_units(self, x1=None, x2=None):
+    def add_signal_range(self, x1=None, x2=None):
         """Adds the data in the given range from the data range that 
         will be used by the fitting rountine
         
@@ -487,9 +487,9 @@ class Model(list):
         
         """
         i1, i2 = self.axis.value2index(x1), self.axis.value2index(x2)
-        self.add_data_range_in_pixels(i1, i2)
+        self._add_signal_range_in_pixels(i1, i2)
         
-    def reset_the_data_range(self):
+    def reset_the_signal_range(self):
         self.channel_switches[:] = True
         if self.auto_update_plot is True:
             self.update_plot()
