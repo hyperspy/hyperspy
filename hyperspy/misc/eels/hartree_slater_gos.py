@@ -131,6 +131,6 @@ class HartreeSlaterGOS(GOSBase):
         qint *= (4.0 * np.pi * a0 ** 2.0 * R**2 / E / T *
                  self.subshell_factor) * 1e28
         self.qint = qint
-        return sp.interpolate.interp1d(E, qint)
+        return sp.interpolate.interp1d(E, qint, kind=3)
             
                                                
