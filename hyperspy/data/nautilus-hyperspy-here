@@ -1,4 +1,0 @@
-#!/bin/sh
-# hyperspy-here
-hyperspy --ipython_args qtconsole
-
