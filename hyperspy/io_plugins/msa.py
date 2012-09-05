@@ -60,7 +60,7 @@ keywords = {
                 # Optional parameters
                 ## Spectrum characteristics
                 'SIGNALTYPE' : {'dtype' : unicode, 'mapped_to' : 
-                    'signal_kind'},
+                    None},
                 'XLABEL' : {'dtype' : unicode, 'mapped_to': None},
                 'YLABEL' : {'dtype' : unicode, 'mapped_to': None},
                 'XUNITS' : {'dtype' : unicode, 'mapped_to': None},
