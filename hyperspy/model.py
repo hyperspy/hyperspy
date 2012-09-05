@@ -28,8 +28,6 @@ import scipy.odr as odr
 from scipy.optimize import (leastsq,fmin, fmin_cg, fmin_ncg, fmin_bfgs,
     fmin_cobyla, fmin_l_bfgs_b, fmin_tnc, fmin_powell)
 
-from hyperspy.estimators import Estimators
-from hyperspy.optimizers import Optimizers
 from hyperspy import messages
 import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
