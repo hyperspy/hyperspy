@@ -28,6 +28,7 @@ import numpy as np
 
 from hyperspy.misc.utils_readfile import *
 from hyperspy import Release
+from hyperspy.misc.utils import DictionaryBrowser
 
 # Plugin characteristics
 # ----------------------
@@ -86,6 +87,11 @@ rpl_keys = {
     'height-scale' : float,
     'height-units' : unicode,
     'signal' : unicode,
+    # EELS Hyperspy keys
+    'collection-angle' : float,
+    # TEM Hyperespy keys
+    'convergence-angle' : float,
+    'beam-energy' : float,
     }
 
 def parse_ripple(fp):
@@ -97,7 +103,7 @@ def parse_ripple(fp):
         line = line.replace(' ', '')
         if line[:2] not in newline and line[0] != comment:
             line = line.strip('\r\n')
-            line = line.lower()
+            #line = line.lower()
             if comment in line:
                 line = line[:line.find(comment)]
             if not sep in line:
@@ -264,6 +270,9 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
       height-units          str      # row units, usually nm
       height-name      str           # Name of the magnitude stored as height
       signal            str        # Name of the signal stored, e.g. HAADF
+      convergence-angle float   # TEM convergence angle in mrad
+      collection-angle  float   # EELS spectrometer collection angle in mrad
+      beam-energy       float   # TEM beam energy in keV
 
     NOTES
 
@@ -345,7 +354,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
 
     if 'signal' not in rpl_info:
         rpl_info['signal'] = None
-
+        
     if rpl_info.has_key('detector-peak-width-ev'):
         original_parameters['detector-peak-width-ev'] = \
         rpl_info['detector-peak-width-ev']
@@ -389,7 +398,23 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
 
     if rpl_info.has_key('height-name'):
         names[iheight] = rpl_info['height-name']
-
+        
+    
+    mp = DictionaryBrowser({
+			'record_by': record_by,
+			'original_filename': filename,
+            'signal_type': rpl_info['signal'],
+			})
+            
+    if 'convergence_angle' in rpl_info:
+        mp.set_item('TEM.convergence_angle', 
+            rpl_info['convergence_angle'])
+    if 'collection_angle' in rpl_info:
+        mp.set_item('TEM.EELS.collection_angle', 
+            rpl_info['collection_angle'])
+    if 'beam_energy' in rpl_info:
+        mp.set_item('TEM.beam_energy', 
+            rpl_info['beam_energy'])
     axes = []
     index_in_array = 0
     for i in xrange(3):
@@ -407,11 +432,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     dictionary = {
         'data': data.squeeze(),
         'axes': axes,
-        'mapped_parameters': {
-			'record_by': record_by,
-			'original_filename': filename,
-                        'signal_type': rpl_info['signal'],
-			},
+        'mapped_parameters': mp.as_dictionary(),
         'original_parameters': rpl_info
         }
     return [dictionary, ]
@@ -440,7 +461,7 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
     byte_order = endianess2rpl[dc.dtype.byteorder.replace('|', '=')]
     offset = 0
     if hasattr(signal.mapped_parameters,'signal_type'):
-        signal_type=signal.mapped_parameters.signal_type
+        signal_type = signal.mapped_parameters.signal_type
     else:
         signal_type=None
     if signal.axes_manager.signal_dimension == 1:
@@ -494,10 +515,22 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
     keys = ['depth', 'height', 'width']
     for key in keys:
         if eval(key) > 1:
-            keys_dictionary['%s-scale' % key] = eval('%s_axis.scale' % key)
-            keys_dictionary['%s-origin' % key] = eval('%s_axis.offset' % key)
-            keys_dictionary['%s-units' % key] = eval('%s_axis.units' % key)
-            keys_dictionary['%s-name' % key] = eval('%s_axis.name' % key)
+            keys_dictionary['%s-scale' % key] = eval(
+                '%s_axis.scale' % key)
+            keys_dictionary['%s-origin' % key] = eval(
+                '%s_axis.offset' % key)
+            keys_dictionary['%s-units' % key] = eval(
+                '%s_axis.units' % key)
+            keys_dictionary['%s-name' % key] = eval(
+                '%s_axis.name' % key)
+            
+    mp = signal.mapped_parameters
+    if mp.has_item('TEM.beam_energy'):
+        keys_dictionary['beam_energy'] = mp.TEM.beam_energy
+    if mp.has_item('TEM.convergence_angle'):
+        keys_dictionary['convergence_angle'] = mp.TEM.convergence_angle
+    if mp.has_item('TEM.EELS.collection_angle'):
+        keys_dictionary['collection_angle'] = mp.TEM.EELS.collection_angle
 
     write_rpl(filename, keys_dictionary, encoding)
     write_raw(filename, signal, record_by)
