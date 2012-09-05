@@ -406,15 +406,15 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
             'signal_type': rpl_info['signal'],
 			})
             
-    if 'convergence_angle' in rpl_info:
+    if 'convergence-angle' in rpl_info:
         mp.set_item('TEM.convergence_angle', 
-            rpl_info['convergence_angle'])
-    if 'collection_angle' in rpl_info:
+            rpl_info['convergence-angle'])
+    if 'collection-angle' in rpl_info:
         mp.set_item('TEM.EELS.collection_angle', 
-            rpl_info['collection_angle'])
-    if 'beam_energy' in rpl_info:
+            rpl_info['collection-angle'])
+    if 'beam-energy' in rpl_info:
         mp.set_item('TEM.beam_energy', 
-            rpl_info['beam_energy'])
+            rpl_info['beam-energy'])
     axes = []
     index_in_array = 0
     for i in xrange(3):

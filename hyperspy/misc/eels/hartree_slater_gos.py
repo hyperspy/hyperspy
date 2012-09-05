@@ -62,7 +62,7 @@ class HartreeSlaterGOS(GOSBase):
         if not os.path.isdir(preferences.EELS.eels_gos_files_path):
             raise IOError(
                 "The parametrized Hartree-Slater GOS files could not "
-                "found in %s ." % s +
+                "found in %s ." % preferences.EELS.eels_gos_files_path +
                 "Please define a valid location for the files "
                 "in the preferences.")
         self.element, self.subshell = element_subshell.split('_')
