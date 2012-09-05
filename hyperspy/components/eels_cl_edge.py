@@ -83,23 +83,26 @@ class EELSCLEdge(Component):
         self.intensity.bmax = None
 
         self.knots_factor = preferences.EELS.knots_factor
-
+        self.GOS = None
         # Set initial actions
         if GOS is None:
             try:
                 self.GOS = HartreeSlaterGOS(element_subshell)
+                GOS = 'Hartree-Slater'
             except IOError:
                 GOS = 'hydrogenic'
                 messages.information(
                     'Hartree-Slater GOS not available'
                     'Using hydrogenic GOS')
-        if GOS == 'Hartree-Slater':
+        if self.GOS is not None:
+            return
+        if GOS=='Hartree-Slater':
             self.GOS = HartreeSlaterGOS(element_subshell)
         elif GOS == 'hydrogenic':
             self.GOS = HydrogenicGOS(element_subshell)
         else:
             raise ValueError('gos must be one of: None, \'hydrogenic\''
-                              '\'Hartree-Slater\'')
+                              ' or \'Hartree-Slater\'')
                     
     # Automatically fix the fine structure when the fine structure is 
     # disable.

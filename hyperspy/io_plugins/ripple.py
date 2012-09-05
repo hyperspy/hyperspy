@@ -526,11 +526,11 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
             
     mp = signal.mapped_parameters
     if mp.has_item('TEM.beam_energy'):
-        keys_dictionary['beam_energy'] = mp.TEM.beam_energy
+        keys_dictionary['beam-energy'] = mp.TEM.beam_energy
     if mp.has_item('TEM.convergence_angle'):
-        keys_dictionary['convergence_angle'] = mp.TEM.convergence_angle
+        keys_dictionary['convergence-angle'] = mp.TEM.convergence_angle
     if mp.has_item('TEM.EELS.collection_angle'):
-        keys_dictionary['collection_angle'] = mp.TEM.EELS.collection_angle
+        keys_dictionary['collection-angle'] = mp.TEM.EELS.collection_angle
 
     write_rpl(filename, keys_dictionary, encoding)
     write_raw(filename, signal, record_by)
