@@ -86,6 +86,7 @@ def file_reader(filename, record_by, mode = 'r', driver = 'core',
         for experiment in experiments:
             exg = f['Experiments'][experiment]
             exp=hdfgroup2signaldict(exg)
+            exp['mapped_parameters']['filename'] = filename
             exp_dict_list.append(exp)
     else:
         # Eventually there will be the possibility of loading the
