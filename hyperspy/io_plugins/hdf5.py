@@ -68,32 +68,29 @@ not_valid_format = 'The file is not a valid Hyperspy hdf5 file'
 
 def file_reader(filename, record_by, mode = 'r', driver = 'core', 
                 backing_store = False, **kwds):
-            
-    f = h5py.File(filename, mode = mode, driver = driver)
-    # If the file has been created with Hyperspy it should cointain a
-    # folder Experiments.
-    experiments = []
-    exp_dict_list = []
-    if 'Experiments' in f:
-        for ds in f['Experiments']:
-            if isinstance(f['Experiments'][ds], h5py.Group):
-                if 'data' in f['Experiments'][ds]:
-                    experiments.append(ds)
-        if not experiments:
-            f.close()
-            raise IOError(not_valid_format)
-        # Parse the file
-        for experiment in experiments:
-            exg = f['Experiments'][experiment]
-            exp=hdfgroup2signaldict(exg)
-            exp['mapped_parameters']['filename'] = filename
-            exp_dict_list.append(exp)
-    else:
-        # Eventually there will be the possibility of loading the
-        # datasets of any hdf5 file
-        raise IOError('This is not a Hyperspy HDF5')
-    f.close()
-    return exp_dict_list
+    with h5py.File(filename, mode = mode, driver = driver) as f:
+        # If the file has been created with Hyperspy it should cointain a
+        # folder Experiments.
+        experiments = []
+        exp_dict_list = []
+        if 'Experiments' in f:
+            for ds in f['Experiments']:
+                if isinstance(f['Experiments'][ds], h5py.Group):
+                    if 'data' in f['Experiments'][ds]:
+                        experiments.append(ds)
+            if not experiments:
+                raise IOError(not_valid_format)
+            # Parse the file
+            for experiment in experiments:
+                exg = f['Experiments'][experiment]
+                exp=hdfgroup2signaldict(exg)
+                exp['mapped_parameters']['filename'] = filename
+                exp_dict_list.append(exp)
+        else:
+            # Eventually there will be the possibility of loading the
+            # datasets of any hdf5 file
+            raise IOError('This is not a Hyperspy HDF5')
+        return exp_dict_list
 
 def hdfgroup2signaldict(group):
     exp = {}
@@ -235,9 +232,8 @@ def write_signal(signal,group, compression='gzip'):
                   peak_learning_results, compression = compression)
                                     
 def file_writer(filename, signal, compression = 'gzip', *args, **kwds):
-    f = h5py.File(filename, mode = 'w')
-    exps = f.create_group('Experiments')
-    group_name = signal.mapped_parameters.title if signal.mapped_parameters.title else 'unnamed'
-    expg = exps.create_group(group_name)
-    write_signal(signal,expg, compression = compression)
-    f.close()
+    with h5py.File(filename, mode = 'w') as f:
+        exps = f.create_group('Experiments')
+        group_name = signal.mapped_parameters.title if signal.mapped_parameters.title else 'unnamed'
+        expg = exps.create_group(group_name)
+        write_signal(signal,expg, compression = compression)
