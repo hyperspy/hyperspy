@@ -29,6 +29,7 @@ import re
 import os
 
 import matplotlib.pyplot as plt
+from hyperspy.gui.messages import information
 
 
 # from pylab import figure, show, cm
@@ -80,16 +81,21 @@ def overwrite(fname):
     """
     if os.path.isfile(fname):
         message = "Overwrite '%s' (y/n)?\n" % fname
-        answer = raw_input(message)
-        answer = answer.lower()
-        while (answer != 'y') and (answer != 'n'):
-            print('Please answer y or n.')
+        try:
             answer = raw_input(message)
-        if answer.lower() == 'y':
-            return True
-        elif answer.lower() == 'n':
-            # print('Operation canceled.')
-            return False
+            answer = answer.lower()
+            while (answer != 'y') and (answer != 'n'):
+                print('Please answer y or n.')
+                answer = raw_input(message)
+            if answer.lower() == 'y':
+                return True
+            elif answer.lower() == 'n':
+                # print('Operation canceled.')
+                return False
+        except:
+            # We are running in the IPython notebook that does not
+            # support raw_input
+            return information(message)
     else:
         return True
     
