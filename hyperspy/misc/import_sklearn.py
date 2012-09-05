@@ -23,6 +23,8 @@ try:
         else:
             from sklearn.utils.extmath import randomized_svd as fast_svd
             import sklearn.decomposition
+        from sklearn.decomposition import FastICA
         sklearn_installed = True
 except ImportError:
     sklearn_installed = False
+    from hyperspy.misc.fastica import FastICA

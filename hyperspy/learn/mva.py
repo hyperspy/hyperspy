@@ -470,12 +470,12 @@ class MVA():
                 unmixing_matrix = unmixing_matrix.T
             
             elif algorithm == 'sklearn_fastica':
-                if sklearn_installed is False:
-                    raise ImportError(
-                    'sklearn is not installed. Nothing done')
+                #if sklearn_installed is False:
+                    #raise ImportError(
+                    #'sklearn is not installed. Nothing done')
                 if 'tol' not in kwargs:
                     kwargs['tol'] = 1e-10
-                target.bss_node = sklearn.decomposition.FastICA(
+                target.bss_node = FastICA(
                     **kwargs)
                 target.bss_node.whiten = False
                 target.bss_node.fit(factors)
