@@ -234,16 +234,16 @@ def file_reader(filename, encoding = 'latin-1', **kwds):
 
 def file_writer(filename, signal, format = None, separator = ', ',
                 encoding = 'latin-1'):
-    keywords = {}
+    loc_kwds = {}
     FORMAT = "EMSA/MAS Spectral Data File"
     if hasattr(signal.original_parameters, 'FORMAT') and \
     signal.original_parameters.FORMAT == FORMAT:
-        keywords = signal.original_parameters.as_dictionary()
+        loc_kwds = signal.original_parameters.as_dictionary()
         if format is not None:
-            keywords['DATATYPE'] = format
+            loc_kwds['DATATYPE'] = format
         else:
-            if 'DATATYPE' in keywords:
-                format = keywords['DATATYPE']
+            if 'DATATYPE' in loc_kwds:
+                format = loc_kwds['DATATYPE']
     else:
         if format is None:
             format = 'Y'
@@ -253,15 +253,15 @@ def file_writer(filename, signal, format = None, separator = ', ',
                 locale.setlocale(locale.LC_TIME, ('en_US', 'latin-1'))
             elif os_name == 'windows':
                 locale.setlocale(locale.LC_TIME, 'english')
-            keywords['DATE'] = signal.mapped_parameters.data.strftime("%d-%b-%Y")
+            loc_kwds['DATE'] = signal.mapped_parameters.data.strftime("%d-%b-%Y")
             locale.setlocale(locale.LC_TIME, loc) # restore saved locale
             
     keys_from_signal = {
         # Required parameters
         'FORMAT' : FORMAT,
         'VERSION' : '1.0',
-        'TITLE' : signal.title[:64] if hasattr(signal, "title") else '',
-        'DATA' : '',
+        #'TITLE' : signal.title[:64] if hasattr(signal, "title") else '',
+        'DATE' : '',
         'TIME' : '',
         'OWNER' : '',
         'NPOINTS' : signal.axes_manager.axes[0].size,
@@ -299,21 +299,28 @@ def file_writer(filename, signal, format = None, separator = ', ',
 #        'ELSDET' :  ,                     
     }
     
-    # Update the keywords with the information retrieved from the signal class
+    # Update the loc_kwds with the information retrieved from the signal class
     for key, value in keys_from_signal.iteritems():
-        if key not in keywords or value != '':
-            keywords[key] = value
+        if key not in loc_kwds or value != '':
+            loc_kwds[key] = value
+            
+    for key, dic in keywords.iteritems():
+        if dic['mapped_to'] is not None:
+            if signal.mapped_parameters.has_item(dic['mapped_to']):
+                loc_kwds[key] = eval('signal.mapped_parameters.%s' %
+                    dic['mapped_to'])
+                
 
     f = codecs.open(filename, 'w', encoding = encoding,
                     errors = 'ignore')   
-    # Remove the following keys from keywords if they are in 
+    # Remove the following keys from loc_kwds if they are in 
     # (although they shouldn't)
     for key in ['SPECTRUM', 'ENDOFDATA']:
-        if key in keywords: del(keywords[key])
+        if key in loc_kwds: del(loc_kwds[key])
     
-    f.write(u'#%-12s: %s\u000D\u000A' % ('FORMAT', keywords.pop('FORMAT')))
-    f.write(u'#%-12s: %s\u000D\u000A' % ('VERSION', keywords.pop('VERSION')))
-    for keyword, value in keywords.items():
+    f.write(u'#%-12s: %s\u000D\u000A' % ('FORMAT', loc_kwds.pop('FORMAT')))
+    f.write(u'#%-12s: %s\u000D\u000A' % ('VERSION', loc_kwds.pop('VERSION')))
+    for keyword, value in loc_kwds.items():
         f.write(u'#%-12s: %s\u000D\u000A' % (keyword, value))
     
     f.write(u'#%-12s: Spectral Data Starts Here\u000D\u000A' % 'SPECTRUM')
