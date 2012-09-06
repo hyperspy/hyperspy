@@ -124,8 +124,6 @@ class EELSCLEdge(Component):
     def _set_fine_structure_width(self,arg):
         self.__fine_structure_width = arg
         self.setfine_structure_coeff()
-        # Force replot
-        self.intensity.value = self.intensity.value
     fine_structure_width = property(_get_fine_structure_width,_set_fine_structure_width)
     
     
@@ -173,13 +171,17 @@ class EELSCLEdge(Component):
     def setfine_structure_coeff(self):
         if self.energy_scale is None:
             return
-        self.fine_structure_coeff._number_of_elements = \
-        int(round(self.knots_factor * self.fine_structure_width / self.energy_scale)) + 4        
-        self.fine_structure_coeff.bmin, self.fine_structure_coeff.bmax = None, None
-        self.fine_structure_coeff.value = np.zeros(self.fine_structure_coeff._number_of_elements).tolist()
+        self.fine_structure_coeff._number_of_elements = int(
+            round(self.knots_factor * self.fine_structure_width / 
+                self.energy_scale)) + 4        
+        self.fine_structure_coeff.bmin = None
+        self.fine_structure_coeff.bmax = None
+        self.fine_structure_coeff.value = np.zeros(
+            self.fine_structure_coeff._number_of_elements).tolist()
         self.calculate_knots()
         if self.fine_structure_coeff.map is not None:
-            self.fine_structure_coeff.create_array(self.fine_structure_coeff.map.shape)
+            self.fine_structure_coeff.create_array(
+                self.fine_structure_coeff.map.shape)
             
     def set_microscope_parameters(self, E0, alpha, beta, energy_scale):
         """

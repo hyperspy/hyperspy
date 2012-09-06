@@ -175,10 +175,17 @@ class Parameter(object):
             ('values','float', self._number_of_elements), 
             ('std', 'float', self._number_of_elements), 
             ('is_set', 'bool', 1)])
-        if self.map is None  or self.map.shape != shape or \
-        self.map.dtype != dtype_:
+        if (self.map is None  or self.map.shape != shape or 
+                    self.map.dtype != dtype_):
+            print("Updating")
             self.map = np.zeros(shape, dtype_)       
             self.map['std'][:] = np.nan
+            # TODO: in the future this class should have access to 
+            # axes manager and should be able to charge its own
+            # values. Until then, the next line is necessary to avoid
+            # erros when self.std is defined and the shape is different
+            # from the newly defined arrays
+            self.std = None
             
     def as_signal(self, field = 'values'):
         """Get a parameter map as a signal object.
