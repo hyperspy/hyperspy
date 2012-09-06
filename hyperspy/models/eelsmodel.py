@@ -111,7 +111,7 @@ class EELSModel(Model):
                 beta = self.spectrum.mapped_parameters.TEM.EELS.collection_angle, 
                 energy_scale = self.axis.scale)
                 component.energy_scale = self.axis.scale
-                component.setfslist()
+                component.setfine_structure_coeff()
                 if component.edge_position() < \
                             self.axis.axis[self.channel_switches][0]:
                     component.isbackground = True
@@ -119,7 +119,7 @@ class EELSModel(Model):
                     self.edges.append(component)
                 else :
                     component.fine_structure_active = False
-                    component.fslist.free = False
+                    component.fine_structure_coeff.free = False
                     component.backgroundtype = "edge"
                     self._background_components.append(component)
             elif (isinstance(component,PowerLaw) or 
@@ -216,7 +216,7 @@ class EELSModel(Model):
                         structure of edge number",i2+1,"to avoid conflicts\
                          with edge number",i1+1
                         self.edges[i2].fine_structure_active = False
-                        self.edges[i2].fslist.free = False
+                        self.edges[i2].fine_structure_coeff.free = False
                         self.resolve_fine_structure(i1 = i2)
                     else:
                         new_fs_emax = distance_between_edges - \
@@ -448,7 +448,7 @@ class EELSModel(Model):
         # Backup the fsstate
         to_activate_fs = []
         for edge_ in [edge,] + twins:
-            if edge_.fine_structure_active is True and edge_.fslist.free is True:
+            if edge_.fine_structure_active is True and edge_.fine_structure_coeff.free is True:
                 to_activate_fs.append(edge_)
         self.disable_fine_structure(to_activate_fs)
         
@@ -654,7 +654,7 @@ class EELSModel(Model):
         for edge in edges_list :
             if edge.isbackground is False:
                 edge.fine_structure_active = True
-                edge.fslist.free = True
+                edge.fine_structure_coeff.free = True
         self.resolve_fine_structure()
         self.update_plot()
         
@@ -686,7 +686,7 @@ class EELSModel(Model):
         for edge in edges_list :
             if edge.isbackground is False:
                 edge.fine_structure_active = False
-                edge.fslist.free = False
+                edge.fine_structure_coeff.free = False
         self.resolve_fine_structure()
         self.update_plot()
                 
@@ -792,7 +792,7 @@ class EELSModel(Model):
             if edge.isbackground is False:
                 edge.intensity.free = False
                 edge.delta.free = False
-                edge.fslist.free = False
+                edge.fine_structure_coeff.free = False
 
     def free_edges(self,edges_list=None):
         """Frees all the parameters of the edges given in edges_list.
@@ -823,7 +823,7 @@ class EELSModel(Model):
             if edge.isbackground is False:
                 edge.intensity.free = True
                 #edge.delta.free = True
-                #edge.fslist.free = True
+                #edge.fine_structure_coeff.free = True
                 
     def fix_fine_structure(self,edges_list=None):
         """Fixes all the parameters of the edges given in edges_list.
@@ -851,7 +851,7 @@ class EELSModel(Model):
             edges_list = self.edges
         for edge in edges_list :
             if edge.isbackground is False:
-                edge.fslist.free = False
+                edge.fine_structure_coeff.free = False
 
     def free_fine_structure(self,edges_list=None):
         """Frees all the parameters of the edges given in edges_list.
@@ -879,4 +879,4 @@ class EELSModel(Model):
             edges_list = self.edges
         for edge in edges_list :
             if edge.isbackground is False:
-                edge.fslist.free = True
+                edge.fine_structure_coeff.free = True

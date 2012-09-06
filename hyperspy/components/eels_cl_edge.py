@@ -63,14 +63,14 @@ class EELSCLEdge(Component):
     def __init__(self, element_subshell, GOS=None):
         # Declare the parameters
         Component.__init__(self,
-            ['delta', 'intensity', 'fslist', 'effective_angle'])
+            ['delta', 'intensity', 'fine_structure_coeff', 'effective_angle'])
         self.name = element_subshell
         self.element, self.subshell = element_subshell.split('_')
         self.energy_scale = None
         self.effective_angle.free = False
         self.fine_structure_active = preferences.EELS.fine_structure_active
         self.fs_emax = preferences.EELS.fs_emax
-        self.fslist.ext_force_positive = False
+        self.fine_structure_coeff.ext_force_positive = False
         
         self.delta.value = 0
         self.delta.free = False
@@ -113,7 +113,7 @@ class EELSCLEdge(Component):
             return self.__fine_structure_active
     def _set_fine_structure_active(self,arg):
         if arg is False:
-            self.fslist.free = False
+            self.fine_structure_coeff.free = False
         self.__fine_structure_active = arg
     fine_structure_active = property(_get_fine_structure_active,_set_fine_structure_active)
     
@@ -121,7 +121,7 @@ class EELSCLEdge(Component):
         return self.__fs_emax
     def _set_fs_emax(self,arg):
         self.__fs_emax = arg
-        self.setfslist()
+        self.setfine_structure_coeff()
     fs_emax = property(_get_fs_emax,_set_fs_emax)
     
     
@@ -166,16 +166,16 @@ class EELSCLEdge(Component):
     def edge_position(self):
         return self.GOS.onset_energy + self.delta.value
         
-    def setfslist(self):
+    def setfine_structure_coeff(self):
         if self.energy_scale is None:
             return
-        self.fslist._number_of_elements = \
+        self.fine_structure_coeff._number_of_elements = \
         int(round(self.knots_factor * self.fs_emax / self.energy_scale)) + 4        
-        self.fslist.bmin, self.fslist.bmax = None, None
-        self.fslist.value = np.zeros(self.fslist._number_of_elements).tolist()
+        self.fine_structure_coeff.bmin, self.fine_structure_coeff.bmax = None, None
+        self.fine_structure_coeff.value = np.zeros(self.fine_structure_coeff._number_of_elements).tolist()
         self.calculate_knots()
-        if self.fslist.map is not None:
-            self.fslist.create_array(self.fslist.map.shape)
+        if self.fine_structure_coeff.map is not None:
+            self.fine_structure_coeff.create_array(self.fine_structure_coeff.map.shape)
             
     def set_microscope_parameters(self, E0, alpha, beta, energy_scale):
         """
@@ -224,7 +224,7 @@ class EELSCLEdge(Component):
         start = self.GOS.onset_energy + self.delta.value
         stop = start + self.fs_emax
         self.__knots = np.r_[[start]*4,
-        np.linspace(start, stop, self.fslist._number_of_elements)[2:-2], 
+        np.linspace(start, stop, self.fine_structure_coeff._number_of_elements)[2:-2], 
         [stop]*4]
         
     def function(self,E) :
@@ -237,7 +237,7 @@ class EELSCLEdge(Component):
         if self.fine_structure_active is True:
             bfs = bsignal * (E < (self.edge_position() + self.fs_emax))
             cts[bfs] = splev(E[bfs],
-                        (self.__knots, self.fslist.value + [0,]*4, 3))
+                        (self.__knots, self.fine_structure_coeff.value + [0,]*4, 3))
             bsignal[bfs] = False
         itab = bsignal * (E <= Emax)
         cts[itab] = self.tab_xsection(E[itab])
@@ -248,14 +248,14 @@ class EELSCLEdge(Component):
     def grad_intensity(self,E) :
         return self.function(E) / self.intensity.value    
 
-    def fslist_to_txt(self,filename) :
-        np.savetxt(filename + '.dat', self.fslist.value, fmt="%12.6G")
+    def fine_structure_coeff_to_txt(self,filename) :
+        np.savetxt(filename + '.dat', self.fine_structure_coeff.value, fmt="%12.6G")
  
-    def txt_to_fslist(self,filename) :
+    def txt_to_fine_structure_coeff(self,filename) :
         fs = np.loadtxt(filename)
         self.calculate_knots()
         if len(fs) == len(self.__knots) :
-            self.fslist.value = fs
+            self.fine_structure_coeff.value = fs
         else :
             messages.warning_exit("The provided fine structure file "  
             "doesn't match the size of the current fine structure")
