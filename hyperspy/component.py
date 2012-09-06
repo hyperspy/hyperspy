@@ -177,7 +177,6 @@ class Parameter(object):
             ('is_set', 'bool', 1)])
         if (self.map is None  or self.map.shape != shape or 
                     self.map.dtype != dtype_):
-            print("Updating")
             self.map = np.zeros(shape, dtype_)       
             self.map['std'][:] = np.nan
             # TODO: in the future this class should have access to 
