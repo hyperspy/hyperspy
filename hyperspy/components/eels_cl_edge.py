@@ -69,7 +69,7 @@ class EELSCLEdge(Component):
         self.energy_scale = None
         self.effective_angle.free = False
         self.fine_structure_active = preferences.EELS.fine_structure_active
-        self.fs_emax = preferences.EELS.fs_emax
+        self.fine_structure_width = preferences.EELS.fine_structure_width
         self.fine_structure_coeff.ext_force_positive = False
         
         self.delta.value = 0
@@ -117,12 +117,12 @@ class EELSCLEdge(Component):
         self.__fine_structure_active = arg
     fine_structure_active = property(_get_fine_structure_active,_set_fine_structure_active)
     
-    def _get_fs_emax(self):
-        return self.__fs_emax
-    def _set_fs_emax(self,arg):
-        self.__fs_emax = arg
+    def _get_fine_structure_width(self):
+        return self.__fine_structure_width
+    def _set_fine_structure_width(self,arg):
+        self.__fine_structure_width = arg
         self.setfine_structure_coeff()
-    fs_emax = property(_get_fs_emax,_set_fs_emax)
+    fine_structure_width = property(_get_fine_structure_width,_set_fine_structure_width)
     
     
     # E0
@@ -170,7 +170,7 @@ class EELSCLEdge(Component):
         if self.energy_scale is None:
             return
         self.fine_structure_coeff._number_of_elements = \
-        int(round(self.knots_factor * self.fs_emax / self.energy_scale)) + 4        
+        int(round(self.knots_factor * self.fine_structure_width / self.energy_scale)) + 4        
         self.fine_structure_coeff.bmin, self.fine_structure_coeff.bmax = None, None
         self.fine_structure_coeff.value = np.zeros(self.fine_structure_coeff._number_of_elements).tolist()
         self.calculate_knots()
@@ -222,7 +222,7 @@ class EELSCLEdge(Component):
     def calculate_knots(self):    
         # Recompute the knots
         start = self.GOS.onset_energy + self.delta.value
-        stop = start + self.fs_emax
+        stop = start + self.fine_structure_width
         self.__knots = np.r_[[start]*4,
         np.linspace(start, stop, self.fine_structure_coeff._number_of_elements)[2:-2], 
         [stop]*4]
@@ -235,7 +235,7 @@ class EELSCLEdge(Component):
         cts = np.zeros((len(E)))
         bsignal = (E >= self.edge_position())
         if self.fine_structure_active is True:
-            bfs = bsignal * (E < (self.edge_position() + self.fs_emax))
+            bfs = bsignal * (E < (self.edge_position() + self.fine_structure_width))
             cts[bfs] = splev(E[bfs],
                         (self.__knots, self.fine_structure_coeff.value + [0,]*4, 3))
             bsignal[bfs] = False

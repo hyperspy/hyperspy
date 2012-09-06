@@ -119,7 +119,7 @@ class EELSConfig(t.HasTraits):
     eels_gos_files_path = t.Directory(guess_gos_path(),
         label = 'GOS directory',
         desc = 'The GOS files are required to create the EELS edge components')
-    fs_emax = t.CFloat(30,
+    fine_structure_width = t.CFloat(30,
         label = 'Fine structure lenght',
         desc = 'The default lenght of the fine structure from the edge onset')
     fine_structure_active = t.CBool(False,
@@ -154,7 +154,7 @@ class EELSConfig(t.HasTraits):
             'eels_gos_files_path',
             'preedge_safe_window_width',
             tui.Group(
-                'fs_emax', 'fine_structure_active', 'knots_factor', 
+                'fine_structure_width', 'fine_structure_active', 'knots_factor', 
                 'min_distance_between_edges_for_fine_structure',
                 label = 'Fine structure'),
             label = 'Model')

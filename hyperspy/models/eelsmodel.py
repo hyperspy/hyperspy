@@ -207,7 +207,7 @@ class EELSModel(Model):
             if self.edges[i2].fine_structure_active is True:
                 distance_between_edges = self.edges[i2].edge_position() - \
                 self.edges[i1].edge_position()
-                if self.edges[i1].fs_emax > distance_between_edges - \
+                if self.edges[i1].fine_structure_width > distance_between_edges - \
                 preedge_safe_window_width :
                     if (distance_between_edges - 
                     preedge_safe_window_width) <= \
@@ -219,13 +219,13 @@ class EELSModel(Model):
                         self.edges[i2].fine_structure_coeff.free = False
                         self.resolve_fine_structure(i1 = i2)
                     else:
-                        new_fs_emax = distance_between_edges - \
+                        new_fine_structure_width = distance_between_edges - \
                         preedge_safe_window_width
                         print "Automatically changing the fine structure \
                         width of edge",i1+1,"from", \
-                        self.edges[i1].fs_emax, "eV to", new_fs_emax, \
+                        self.edges[i1].fine_structure_width, "eV to", new_fine_structure_width, \
                         "eV to avoid conflicts with edge number", i2+1
-                        self.edges[i1].fs_emax = new_fs_emax
+                        self.edges[i1].fine_structure_width = new_fine_structure_width
                         self.resolve_fine_structure(i1 = i2)
                 else:
                     self.resolve_fine_structure(i1 = i2)
@@ -518,7 +518,7 @@ class EELSModel(Model):
                     
     def remove_fine_structure_data(self, edges_list=None):
         """Remove the fine structure data from the fitting routine as 
-        defined in the fs_emax parameter of the component.EELSCLEdge
+        defined in the fine_structure_width parameter of the component.EELSCLEdge
         
         Parameters
         ----------
@@ -543,7 +543,7 @@ class EELSModel(Model):
         for edge in edges_list :
             if edge.isbackground is False and edge.fine_structure_active is True:
                 start = edge.edge_position()
-                stop = start + edge.fs_emax
+                stop = start + edge.fine_structure_width
                 self.remove_signal_range(start,stop)
         self.update_plot()
        
