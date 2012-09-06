@@ -248,6 +248,7 @@ class Parameter(object):
                     
 class Component(object):
     def __init__(self, parameter_name_list):
+        self.connected_functions = list()
         self.parameters = []
         self.init_parameters(parameter_name_list)
         self._update_free_parameters()
@@ -258,6 +259,24 @@ class Component(object):
         self.name = ''
         self._id_name = self.__class__.__name__
         self._id_version = '1.0'
+        
+    def connect(self, f):
+        if f not in self.connected_functions:
+            self.connected_functions.append(f)
+    def disconnect(self, f):
+        if f in self.connected_functions:
+            self.connected_functions.remove(f)
+            
+    def _get_active(self):
+        return self.__active
+    def _set_active(self, arg):
+        self.__active = arg
+        for f in self.connected_functions:
+            try:
+                f()
+            except:
+                self.disconnect(f)
+    active = property(_get_active, _set_active)
 
     def init_parameters(self, parameter_name_list):
         for name in parameter_name_list:

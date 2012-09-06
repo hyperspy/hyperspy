@@ -115,6 +115,8 @@ class EELSCLEdge(Component):
         if arg is False:
             self.fine_structure_coeff.free = False
         self.__fine_structure_active = arg
+        # Force replot
+        self.intensity.value = self.intensity.value
     fine_structure_active = property(_get_fine_structure_active,_set_fine_structure_active)
     
     def _get_fine_structure_width(self):
@@ -122,6 +124,8 @@ class EELSCLEdge(Component):
     def _set_fine_structure_width(self,arg):
         self.__fine_structure_width = arg
         self.setfine_structure_coeff()
+        # Force replot
+        self.intensity.value = self.intensity.value
     fine_structure_width = property(_get_fine_structure_width,_set_fine_structure_width)
     
     

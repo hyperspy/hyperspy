@@ -545,7 +545,6 @@ class EELSModel(Model):
                 start = edge.edge_position()
                 stop = start + edge.fine_structure_width
                 self.remove_signal_range(start,stop)
-        self.update_plot()
        
     def enable_edges(self,edges_list=None):
         """Enable the edges listed in edges_list. If edges_list is 
@@ -577,7 +576,6 @@ class EELSModel(Model):
             if edge.isbackground is False:
                 edge.active = True
         self.resolve_fine_structure()
-        self.update_plot()
         
     def disable_edges(self,edges_list = None):
         """Disable the edges listed in edges_list. If edges_list is None (default)
@@ -608,7 +606,6 @@ class EELSModel(Model):
             if edge.isbackground is False:
                 edge.active = False
         self.resolve_fine_structure()
-        self.update_plot()
 
     def enable_background(self):
         """Enable the background componets.
@@ -616,7 +613,6 @@ class EELSModel(Model):
         """
         for component in self._background_components:
             component.active = True
-        self.update_plot()
         
     def disable_background(self):
         """Disable the background components.
@@ -624,7 +620,6 @@ class EELSModel(Model):
         """
         for component in self._background_components:
             component.active = False
-        self.update_plot()
 
     def enable_fine_structure(self,edges_list=None):
         """Enable the fine structure of the edges listed in edges_list.
@@ -656,7 +651,6 @@ class EELSModel(Model):
                 edge.fine_structure_active = True
                 edge.fine_structure_coeff.free = True
         self.resolve_fine_structure()
-        self.update_plot()
         
     def disable_fine_structure(self,edges_list=None):
         """Disable the fine structure of the edges listed in edges_list.
@@ -688,7 +682,6 @@ class EELSModel(Model):
                 edge.fine_structure_active = False
                 edge.fine_structure_coeff.free = False
         self.resolve_fine_structure()
-        self.update_plot()
                 
     def set_all_edges_intensities_positive(self):
         for edge in self.edges:

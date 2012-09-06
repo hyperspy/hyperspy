@@ -146,6 +146,7 @@ class Model(list):
                 
     def connect_parameters2update_plot(self):   
         for component in self:
+            component.connect(self.update_plot)
             for parameter in component.parameters:
                 if self.spectrum._plot is not None:
                     parameter.connect(self.update_plot)
@@ -153,6 +154,7 @@ class Model(list):
     
     def disconnect_parameters2update_plot(self):
         for component in self:
+            component.disconnect(self.update_plot)
             for parameter in component.parameters:
                 parameter.disconnect(self.update_plot)
                 parameter.connection_active = False
