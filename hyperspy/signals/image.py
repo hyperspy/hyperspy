@@ -317,12 +317,12 @@ class Image(Signal):
                                     shifts[:,1].min() < 0 else None,
                            np.ceil(shifts[:,1].max()) if 
                                     shifts[:,1].max() > 0 else 0)
-            self.crop2D_in_pixels(top, bottom, left, right)
+            self.crop_image(top, bottom, left, right)
             shifts = -shifts
         if return_shifts:
             return shifts
         
-    def crop2D_in_pixels(self,top=None, bottom=None,
+    def crop_image(self,top=None, bottom=None,
                          left=None, right=None):
         """Crops an image according to the values given in pixels
         
