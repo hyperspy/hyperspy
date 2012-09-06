@@ -850,9 +850,10 @@ class Model(list):
         if ext_bounding is True:
             self._disable_ext_bounding()
         if switch_aap is True:
-            self.set_auto_update_plot(not update_plot)
-            if not update_plot and self.spectrum._plot is not None:
-                self.update_plot()
+            self.set_auto_update_plot(~update_plot)
+        if (update_plot is False and self.spectrum._plot 
+                is not None):
+            self.update_plot()
                 
     def multifit(self, mask=None, charge_only_fixed=False,
                  autosave=False, autosave_every=10, **kwargs):
