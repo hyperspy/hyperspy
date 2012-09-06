@@ -41,7 +41,7 @@ install_req = ['scipy',
                'scikit_learn',
                'traits',
                'traitsui',
-               'h5py',]
+               'h5py', ]
 
 def are_we_building4windows():
     for arg in sys.argv:
@@ -75,7 +75,8 @@ if are_we_building4windows() or os.name in ['nt','dos']:
                     f.write('start pythonw "%%~dp0\%s " %s %%*\n' % (
                         os.path.split(script)[1], env))
                 else:
-                    f.write('python "%%~dp0\%s" %s %%*\n' % (os.path.split(script)[1], env))
+                    f.write('python "%%~dp0\%s" %s %%*\n' % 
+                        (os.path.split(script)[1], env))
                     
                 batch_files.append(batch_file)        
     scripts.extend(batch_files)
@@ -186,6 +187,3 @@ with update_version_when_dev() as version:
     "Topic :: Scientific/Engineering :: Physics",
             ],
         )
-        
-
-    

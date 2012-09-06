@@ -118,7 +118,7 @@ class EELSModel(Model):
                 if component.isbackground is not True:
                     self.edges.append(component)
                 else :
-                    component.fs_state = False
+                    component.fine_structure_active = False
                     component.fslist.free = False
                     component.backgroundtype = "edge"
                     self._background_components.append(component)
@@ -195,16 +195,16 @@ class EELSModel(Model):
             and that of the following one.
         """
 
-        while (self.edges[i1].fs_state is False or  
+        while (self.edges[i1].fine_structure_active is False or  
         self.edges[i1].active is False) and i1 < len(self.edges)-1 :
             i1+=1
         if i1 < len(self.edges)-1 :
             i2=i1+1
-            while (self.edges[i2].fs_state is False or 
+            while (self.edges[i2].fine_structure_active is False or 
             self.edges[i2].active is False) and \
             i2 < len(self.edges)-1:
                 i2+=1
-            if self.edges[i2].fs_state is True:
+            if self.edges[i2].fine_structure_active is True:
                 distance_between_edges = self.edges[i2].edge_position() - \
                 self.edges[i1].edge_position()
                 if self.edges[i1].fs_emax > distance_between_edges - \
@@ -215,7 +215,7 @@ class EELSModel(Model):
                         print " Automatically desactivating the fine \
                         structure of edge number",i2+1,"to avoid conflicts\
                          with edge number",i1+1
-                        self.edges[i2].fs_state = False
+                        self.edges[i2].fine_structure_active = False
                         self.edges[i2].fslist.free = False
                         self.resolve_fine_structure(i1 = i2)
                     else:
@@ -448,7 +448,7 @@ class EELSModel(Model):
         # Backup the fsstate
         to_activate_fs = []
         for edge_ in [edge,] + twins:
-            if edge_.fs_state is True and edge_.fslist.free is True:
+            if edge_.fine_structure_active is True and edge_.fslist.free is True:
                 to_activate_fs.append(edge_)
         self.disable_fine_structure(to_activate_fs)
         
@@ -541,7 +541,7 @@ class EELSModel(Model):
         if edges_list is None:
             edges_list = self.edges
         for edge in edges_list :
-            if edge.isbackground is False and edge.fs_state is True:
+            if edge.isbackground is False and edge.fine_structure_active is True:
                 start = edge.edge_position()
                 stop = start + edge.fs_emax
                 self.remove_signal_range(start,stop)
@@ -653,7 +653,7 @@ class EELSModel(Model):
             edges_list = self.edges
         for edge in edges_list :
             if edge.isbackground is False:
-                edge.fs_state = True
+                edge.fine_structure_active = True
                 edge.fslist.free = True
         self.resolve_fine_structure()
         self.update_plot()
@@ -685,7 +685,7 @@ class EELSModel(Model):
             edges_list = self.edges
         for edge in edges_list :
             if edge.isbackground is False:
-                edge.fs_state = False
+                edge.fine_structure_active = False
                 edge.fslist.free = False
         self.resolve_fine_structure()
         self.update_plot()

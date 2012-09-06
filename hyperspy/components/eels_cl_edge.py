@@ -68,7 +68,7 @@ class EELSCLEdge(Component):
         self.element, self.subshell = element_subshell.split('_')
         self.energy_scale = None
         self.effective_angle.free = False
-        self.fs_state = preferences.EELS.fs_state
+        self.fine_structure_active = preferences.EELS.fine_structure_active
         self.fs_emax = preferences.EELS.fs_emax
         self.fslist.ext_force_positive = False
         
@@ -109,13 +109,13 @@ class EELSCLEdge(Component):
     # In this way we avoid a common source of problems when fitting
     # However the fine structure must be *manually* freed when we 
     # reactivate the fine structure.
-    def _get_fs_state(self):
-            return self.__fs_state
-    def _set_fs_state(self,arg):
+    def _get_fine_structure_active(self):
+            return self.__fine_structure_active
+    def _set_fine_structure_active(self,arg):
         if arg is False:
             self.fslist.free = False
-        self.__fs_state = arg
-    fs_state = property(_get_fs_state,_set_fs_state)
+        self.__fine_structure_active = arg
+    fine_structure_active = property(_get_fine_structure_active,_set_fine_structure_active)
     
     def _get_fs_emax(self):
         return self.__fs_emax
@@ -234,7 +234,7 @@ class EELSCLEdge(Component):
         Emax = self.GOS.energy_axis[-1] + self.delta.value 
         cts = np.zeros((len(E)))
         bsignal = (E >= self.edge_position())
-        if self.fs_state is True:
+        if self.fine_structure_active is True:
             bfs = bsignal * (E < (self.edge_position() + self.fs_emax))
             cts[bfs] = splev(E[bfs],
                         (self.__knots, self.fslist.value + [0,]*4, 3))

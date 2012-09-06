@@ -87,7 +87,7 @@ class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
 #                delta_map = np.random.normal(np.zeros((self.xdimension, 
 #                self.ydimension)), energy_instability)
 #            for edge in self.edges:
-#                edge.fs_state = False
+#                edge.fine_structure_active = False
 #                if not edge.intensity.twin:
 #                    edge.intensity.map = maps[i]
 #                    edge.intensity.already_set_map = np.ones((
@@ -113,7 +113,7 @@ class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
 #                print delta_map.shape
 #            size = self.xdimension * self.ydimension
 #            for edge in self.edges:
-#                edge.fs_state = False
+#                edge.fine_structure_active = False
 #                if not edge.intensity.twin:
 #                    edge.intensity.map = np.random.uniform(0, max_intensity, 
 #                    size).reshape(self.xdimension, self.ydimension)

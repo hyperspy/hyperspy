@@ -122,7 +122,7 @@ class EELSConfig(t.HasTraits):
     fs_emax = t.CFloat(30,
         label = 'Fine structure lenght',
         desc = 'The default lenght of the fine structure from the edge onset')
-    fs_state = t.CBool(False,
+    fine_structure_active = t.CBool(False,
         label = 'Enable fine structure',
         desc = "If enabled, the regions of the EELS spectrum defined as fine "
                "structure will be fitted with a spline. Please note that it "
@@ -154,7 +154,7 @@ class EELSConfig(t.HasTraits):
             'eels_gos_files_path',
             'preedge_safe_window_width',
             tui.Group(
-                'fs_emax', 'fs_state', 'knots_factor', 
+                'fs_emax', 'fine_structure_active', 'knots_factor', 
                 'min_distance_between_edges_for_fine_structure',
                 label = 'Fine structure'),
             label = 'Model')
