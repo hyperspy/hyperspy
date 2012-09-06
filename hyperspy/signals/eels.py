@@ -56,10 +56,19 @@ class EELSSpectrum(Spectrum):
         Parameters
         ----------
         elements : tuple of strings
-            The strings must represent a chemical element.
+            The symbol of the elements.
         include_pre_edges : bool
             If True, the ionization edges with an onset below the lower energy 
             limit of the SI will be incluided
+            
+        Examples
+        --------
+        
+        >>> s = signals.EELSSpectrum({'data' : np.arange(1024)})
+        >>> s.add_elements(('C', 'O'))
+        Adding C_K subshell
+        Adding O_K subshell
+        
         """
         for element in elements:
             if element in elements:
@@ -100,7 +109,6 @@ class EELSSpectrum(Spectrum):
                             print "Adding %s subshell" % (subshell)
                             self.subshells.add('%s_%s' % (element, shell))
                             e_shells.append(subshell)
-
                     
     def find_low_loss_centre(self, also_apply_to=None):
         """Calculate the position of the zero loss origin as the average of the 
