@@ -636,7 +636,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             yield(data[getitem])
 
     @auto_replot
-    def sum(self, axis, return_signal = False):
+    def sum(self, axis, return_signal=False):
         """Sum the data over the specify axis
 
         Parameters

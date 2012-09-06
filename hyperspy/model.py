@@ -865,7 +865,7 @@ class Model(list):
         mask : {None, numpy.array}
             To mask (do not fit) at certain position pass a numpy.array
             of type bool where True indicates that the data will not be
-            fitter at the given position.
+            fitted at the given position.
         charge_only_fixed : bool
             If True, only the fixed parameters values will be updated
             when changing the positon.

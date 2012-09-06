@@ -229,19 +229,23 @@ class EELSSpectrum(Spectrum):
         Parameters
         ----------
         signal_mask: boolean array
-            Restricts the operation to the energy range given in units
+            Restricts the operation to the signal locations not marked as 
+            True (masked)
+        navigation_mask: boolean array
+            Restricts the operation to the navigation locations not marked as 
+            True (masked)
         
         See also
         --------
-        EELSSpectrum.spikes_removal_tool
+        spikes_removal_tool
         
         """
         dc = self.data
         axis = self.axes_manager.signal_axes[0]
         if signal_mask is not None:
-            dc = dc[..., signal_mask]
+            dc = dc[..., ~signal_mask]
         if navigation_mask is not None:
-            dc = dc[navigation_mask==False, :]
+            dc = dc[~navigation_mask, :]
         der = np.abs(np.diff(dc, 1, -1))
         plt.figure()
         plt.hist(np.ravel(der.max(-1)),100)
@@ -251,6 +255,22 @@ class EELSSpectrum(Spectrum):
         
         
     def spikes_removal_tool(self,signal_mask=None, navigation_mask=None):
+        """Graphical interface to remove spikes from EELS spectra.
+
+        Parameters
+        ----------
+        signal_mask: boolean array
+            Restricts the operation to the signal locations not marked as 
+            True (masked)
+        navigation_mask: boolean array
+            Restricts the operation to the navigation locations not marked as 
+            True (masked)
+
+        See also
+        --------
+        spikes_diagnosis, 
+
+        """
         sr = SpikesRemoval(self,navigation_mask=navigation_mask,
                            signal_mask=signal_mask)
         sr.edit_traits()

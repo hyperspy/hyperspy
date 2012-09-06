@@ -104,8 +104,12 @@ class MVA():
             Only has effect when using the svd of fast_svd algorithms.
             
         navigation_mask : boolean numpy array
+            The navigation locations marked as True are not used in the 
+            decompostion.
         
         signal_mask : boolean numpy array
+            The signal locations marked as True are not used in the 
+            decomposition.
             
         var_array : numpy array
             Array of variance for the maximum likelihood PCA algorithm
@@ -176,8 +180,17 @@ class MVA():
             # Transform the None masks in slices to get the right behaviour
             if navigation_mask is None:
                 navigation_mask = slice(None)
+            else:
+                navigation_mask = ~navigation_mask
             if signal_mask is None:
                 signal_mask = slice(None)
+            else:
+                signal_mask = ~signal_mask
+                
+            # WARNING: signal_mask and navigation_mask values are now their
+            # negaties i.e. True -> False and viceversa. However, the 
+            # stored value (at the end of the method) coincides with the 
+            # input masks
             
             # Reset the explained_variance which is not set by all the 
             # algorithms
@@ -348,7 +361,8 @@ class MVA():
                 
             # Set the pixels that were not processed to nan
             if not isinstance(signal_mask, slice):
-                target.signal_mask = signal_mask.reshape(
+                # Store the (inverted, as inputed) signal mask 
+                target.signal_mask = ~signal_mask.reshape(
                     self.axes_manager.signal_shape)
                 if reproject not in ('both', 'signal'):
                     factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
@@ -356,7 +370,8 @@ class MVA():
                     factors[signal_mask == False,:] = np.nan
                     target.factors = factors
             if not isinstance(navigation_mask, slice):
-                target.navigation_mask = navigation_mask.reshape(
+                # Store the (inverted, as inputed) navigation mask
+                target.navigation_mask = ~navigation_mask.reshape(
                     self.axes_manager.navigation_shape)
                 if reproject not in ('both', 'navigation'):
                     loadings = np.zeros((dc.shape[0], target.loadings.shape[1]))
@@ -397,17 +412,24 @@ class MVA():
             number of principal components to pass to the BSS algorithm
         algorithm : {FastICA, JADE, CuBICA, TDSEP}
         diff_order : int
-        factors : numpy array
-            externally provided components
+            Sometimes it is convenient to perform the BSS on the derivative 
+            of the signal. If diff_order is 0, the signal is not differentiated.
+        factors : numpy.array
+            Factors to decompose. If None, the BSS is performed on the result
+            of a previous decomposition.
         comp_list : boolen numpy array
             choose the components to use by the boolean list. It permits
              to choose non contiguous components.
         mask : numpy boolean array with the same dimension as the signal
-            If not None, only the selected channels will be used by the
-            algorithm.
+            If not None, the signal locations marked as True (masked) will 
+            not be passed to the BSS algorithm.
+        on_loadings : bool
+            If True, perform the BSS on the loadings of a previous 
+            decomposition. If False, performs it on the factors.
         pretreatment: dict
         
-        Any extra parameter is passed to the ICA algorithm.
+        **kwargs : extra key word arguments
+            Any keyword arguments are passed to the BSS algorithm.
         
         """
         target=self.learning_results                
@@ -461,7 +483,7 @@ class MVA():
                 factors = np.diff(factors, diff_order, axis=0)
                     
             if mask is not None:
-                factors = factors[mask]
+                factors = factors[~mask]
 
             # first center and scale the data
             factors,invsqcovmat = centering_and_whitening(factors)
@@ -781,9 +803,11 @@ class MVA():
         if navigation_mask is None:
             navigation_mask = slice(None)
         else:
-            navigation_mask = navigation_mask.ravel()
+            navigation_mask = ~navigation_mask.ravel()
         if signal_mask is None:
             signal_mask = slice(None)
+        else:
+            signal_mask = ~signal_mask
         # Rescale the data to gaussianize the poissonian noise
         aG = dc[:,signal_mask][navigation_mask,:].sum(1).squeeze()
         bH = dc[:,signal_mask][navigation_mask,:].sum(0).squeeze()

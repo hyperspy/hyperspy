@@ -239,9 +239,9 @@ def _estimate_correlation_factor(g0, gk,k):
     c = (1 - e)**2
     return c    
 
-def estimate_variance_parameters(noisy_signal, clean_signal, mask = None,
-    pol_order = 1, higher_than = None, return_results = False,
-    plot_results = True, weighted = False):
+def estimate_variance_parameters(noisy_signal, clean_signal, mask=None,
+    pol_order=1, higher_than=None, return_results=False,
+    plot_results=True, weighted=False):
     """Find the scale and offset of the Poissonian noise
 
     By comparing an SI with its denoised version (i.e. by PCA), this plots an
@@ -250,7 +250,7 @@ def estimate_variance_parameters(noisy_signal, clean_signal, mask = None,
 
     Parameters
     ----------
-    noisy_SI, clean_SI : Spectrum instances
+    noisy_SI, clean_SI : spectrum.Spectrum instances
     mask : numpy bool array
         To define the channels that will be used in the calculation.
     pol_order : int
@@ -273,8 +273,8 @@ def estimate_variance_parameters(noisy_signal, clean_signal, mask = None,
     cs = clean_signal.data.copy()
 
     if mask is not None:
-        ns = ns[mask]
-        cs = cs[mask]
+        ns = ns[~mask]
+        cs = cs[~mask]
 
     results0 = _estimate_gain(ns, cs, weighted = weighted, 
         higher_than = higher_than, plot_results = plot_results, binning = 0,
