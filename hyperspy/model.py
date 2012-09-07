@@ -694,7 +694,6 @@ class Model(list):
         """
         if fitter is None:
             fitter = preferences.Model.default_fitter
-            print('Fitter: %s' % fitter)
         switch_aap = (update_plot != self.auto_update_plot)
         if switch_aap is True:
             self.set_auto_update_plot(update_plot)
@@ -887,9 +886,6 @@ class Model(list):
             
         """
         
-        if fitter is None:
-            fitter = preferences.Model.default_fitter
-            print('Fitter: %s' % fitter) 
         if autosave is not False:
             fd, autosave_fn = tempfile.mkstemp(prefix = 'hyperspy_autosave-', 
             dir = '.', suffix = '.npz')
@@ -910,27 +906,26 @@ class Model(list):
         pbar = progressbar.progressbar(
         maxval = (np.cumprod(self.axes_manager.navigation_shape)[-1] - 
         masked_elements))
-        if bounded is True:
+        if 'bounded' in kwargs and kwargs['bounded'] is True:
             if fitter == 'mpfit':
                 self.set_mpfit_parameters_info()
-                bounded = None
+                kwargs['bounded'] = None
             elif fitter in ("tnc", "l_bfgs_b"):
                 self.set_boundaries()
-                bounded = None
+                kwargs['bounded'] = None
             else:
                 messages.information(
                 "The chosen fitter does not suppport bounding."
                 "If you require boundinig please select one of the "
                 "following fitters instead: mpfit, tnc, l_bfgs_b")
-                bounded = False
+                kwargs['bounded'] = False
         i = 0
         for index in np.ndindex(tuple(
                 self.axes_manager.navigation_shape)):
             if mask is None or not mask[index]:
                 self.axes_manager.set_not_slicing_indexes(index)
                 self.charge(only_fixed = charge_only_fixed)
-                self.fit(fitter=fitter, grad=grad, bounded=bounded, 
-                         **kwargs)
+                self.fit(**kwargs)
                 i += 1
                 pbar.update(i)
             if autosave is True and i % autosave_every  == 0:
