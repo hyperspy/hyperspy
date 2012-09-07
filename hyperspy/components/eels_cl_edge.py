@@ -75,7 +75,7 @@ class EELSCLEdge(Component):
         self.delta.value = 0
         self.delta.free = False
         self.delta.ext_force_positive = False
-        self.freedelta = False
+        self.free_energy_shift = False
         
         self.intensity.grad = self.grad_intensity
         self.intensity.value = 1

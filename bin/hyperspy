@@ -47,6 +47,7 @@ hyperspy_module_path=os.path.dirname(hyperspy.__file__)
 ipy_hspy = os.path.join(hyperspy_module_path, 'ipython_profile')
 ipy_version = StrictVersion(IPython.__version__)
 ipy_011 = StrictVersion('0.11')
+ipython_environments = ['terminal',]
 if ipy_version < ipy_011:
     from IPython.genutils import get_home_dir, get_ipython_dir
     from IPython.iplib import user_setup
@@ -80,6 +81,10 @@ else:
         ipy_create_profile.parse_command_line(['hyperspy',])
         ipy_create_profile.init_config_files()
         sys.argv.append('--overwrite_profile')
+    ipython_environments.extend(['console', 'qtconsole',])
+    
+if ipy_version > ipy_011:
+        ipython_environments.append('notebook')
         
 if argp is True:
     parser = argparse.ArgumentParser(
@@ -92,7 +97,7 @@ else:
         description = hyperspy.Release.description)
 parser.add_argument('environment',
                     nargs='?',
-                    choices=['console', 'notebook', 'qtconsole','terminal'],
+                    choices=ipython_environments,
                     default = 'terminal',
                     help = ('Selects the IPython environment in '
                     'which to start Hyperspy. The default is terminal'))

@@ -176,7 +176,7 @@ class EELSModel(Model):
                 self.append(EELSCLEdge(e_shells.pop(), GOS=self.GOS))
                 self[-1].intensity.twin = master_edge.intensity
                 self[-1].delta.twin = master_edge.delta
-                self[-1].freedelta = False
+                self[-1].free_energy_shift = False
                 if copy2interactive_ns is True:
                     interactive_ns[self[-1].name] = self[-1]
                     interactive_ns[element].append(self[-1])
@@ -466,7 +466,7 @@ class EELSModel(Model):
         print "Fine structure to fit", to_activate_fs
         
         self.set_signal_range(start_energy, nextedgeenergy)
-        if edge.freedelta is True:
+        if edge.free_energy_shift is True:
             print "Fit without fine structure, delta free"
             edge.delta.free = True
             self.fit(**kwargs)
@@ -533,8 +533,8 @@ class EELSModel(Model):
         enable_edges, disable_edges, enable_background,
         disable_background, enable_fine_structure,
         disable_fine_structure, set_all_edges_intensities_positive,
-        unset_all_edges_intensities_positive, enable_freedelta, 
-        disable_freedelta, fix_edges, free_edges, fix_fine_structure,
+        unset_all_edges_intensities_positive, enable_free_energy_shift, 
+        disable_free_energy_shift, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
         
         """
@@ -564,8 +564,8 @@ class EELSModel(Model):
         enable_edges, disable_edges, enable_background,
         disable_background, enable_fine_structure,
         disable_fine_structure, set_all_edges_intensities_positive,
-        unset_all_edges_intensities_positive, enable_freedelta, 
-        disable_freedelta, fix_edges, free_edges, fix_fine_structure,
+        unset_all_edges_intensities_positive, enable_free_energy_shift, 
+        disable_free_energy_shift, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
         
         """
@@ -595,8 +595,8 @@ class EELSModel(Model):
         enable_edges, disable_edges, enable_background,
         disable_background, enable_fine_structure,
         disable_fine_structure, set_all_edges_intensities_positive,
-        unset_all_edges_intensities_positive, enable_freedelta, 
-        disable_freedelta, fix_edges, free_edges, fix_fine_structure,
+        unset_all_edges_intensities_positive, enable_free_energy_shift, 
+        disable_free_energy_shift, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
         
         """
@@ -639,8 +639,8 @@ class EELSModel(Model):
         enable_edges, disable_edges, enable_background,
         disable_background, enable_fine_structure,
         disable_fine_structure, set_all_edges_intensities_positive,
-        unset_all_edges_intensities_positive, enable_freedelta, 
-        disable_freedelta, fix_edges, free_edges, fix_fine_structure,
+        unset_all_edges_intensities_positive, enable_free_energy_shift, 
+        disable_free_energy_shift, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
         
         """
@@ -670,8 +670,8 @@ class EELSModel(Model):
         enable_edges, disable_edges, enable_background,
         disable_background, enable_fine_structure,
         disable_fine_structure, set_all_edges_intensities_positive,
-        unset_all_edges_intensities_positive, enable_freedelta, 
-        disable_freedelta, fix_edges, free_edges, fix_fine_structure,
+        unset_all_edges_intensities_positive, enable_free_energy_shift, 
+        disable_free_energy_shift, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
         
         """
@@ -694,7 +694,7 @@ class EELSModel(Model):
             edge.intensity.ext_force_positive = False
             edge.intensity.ext_bounded = False
             
-    def enable_freedelta(self,edges_list=None):
+    def enable_free_energy_shift(self,edges_list=None):
         """Enable the automatic freeing of the delta parameter during a
         smart fit for the edges listed in edges_list.
         If edges_list is None (default) the delta of all the edges
@@ -713,8 +713,8 @@ class EELSModel(Model):
         enable_edges, disable_edges, enable_background,
         disable_background, enable_fine_structure,
         disable_fine_structure, set_all_edges_intensities_positive,
-        unset_all_edges_intensities_positive, enable_freedelta, 
-        disable_freedelta, fix_edges, free_edges, fix_fine_structure,
+        unset_all_edges_intensities_positive, enable_free_energy_shift, 
+        disable_free_energy_shift, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
         
         """
@@ -722,9 +722,9 @@ class EELSModel(Model):
             edges_list = self.edges
         for edge in edges_list :
             if edge.isbackground is False:
-                edge.freedelta = True
+                edge.free_energy_shift = True
                 
-    def disable_freedelta(self,edges_list=None):
+    def disable_free_energy_shift(self,edges_list=None):
         """Disable the automatic freeing of the delta parameter during a
         smart fit for the edges listed in edges_list.
         If edges_list is None (default) the delta of all the edges
@@ -745,8 +745,8 @@ class EELSModel(Model):
         enable_edges, disable_edges, enable_background,
         disable_background, enable_fine_structure,
         disable_fine_structure, set_all_edges_intensities_positive,
-        unset_all_edges_intensities_positive, enable_freedelta, 
-        disable_freedelta, fix_edges, free_edges, fix_fine_structure,
+        unset_all_edges_intensities_positive, enable_free_energy_shift, 
+        disable_free_energy_shift, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
         
         """
@@ -755,7 +755,7 @@ class EELSModel(Model):
             edges_list = self.edges
         for edge in edges_list :
             if edge.isbackground is False:
-                edge.freedelta = True
+                edge.free_energy_shift = True
 
     def fix_edges(self,edges_list=None):
         """Fixes all the parameters of the edges given in edges_list.
@@ -774,8 +774,8 @@ class EELSModel(Model):
         enable_edges, disable_edges, enable_background,
         disable_background, enable_fine_structure,
         disable_fine_structure, set_all_edges_intensities_positive,
-        unset_all_edges_intensities_positive, enable_freedelta, 
-        disable_freedelta, fix_edges, free_edges, fix_fine_structure,
+        unset_all_edges_intensities_positive, enable_free_energy_shift, 
+        disable_free_energy_shift, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
         
         """
@@ -804,8 +804,8 @@ class EELSModel(Model):
         enable_edges, disable_edges, enable_background,
         disable_background, enable_fine_structure,
         disable_fine_structure, set_all_edges_intensities_positive,
-        unset_all_edges_intensities_positive, enable_freedelta, 
-        disable_freedelta, fix_edges, free_edges, fix_fine_structure,
+        unset_all_edges_intensities_positive, enable_free_energy_shift, 
+        disable_free_energy_shift, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
         
         """
@@ -835,8 +835,8 @@ class EELSModel(Model):
         enable_edges, disable_edges, enable_background,
         disable_background, enable_fine_structure,
         disable_fine_structure, set_all_edges_intensities_positive,
-        unset_all_edges_intensities_positive, enable_freedelta, 
-        disable_freedelta, fix_edges, free_edges, fix_fine_structure,
+        unset_all_edges_intensities_positive, enable_free_energy_shift, 
+        disable_free_energy_shift, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
         
         """
@@ -863,8 +863,8 @@ class EELSModel(Model):
         enable_edges, disable_edges, enable_background,
         disable_background, enable_fine_structure,
         disable_fine_structure, set_all_edges_intensities_positive,
-        unset_all_edges_intensities_positive, enable_freedelta, 
-        disable_freedelta, fix_edges, free_edges, fix_fine_structure,
+        unset_all_edges_intensities_positive, enable_free_energy_shift, 
+        disable_free_energy_shift, fix_edges, free_edges, fix_fine_structure,
         free_fine_structure
         
         """
