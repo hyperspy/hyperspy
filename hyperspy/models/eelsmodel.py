@@ -171,11 +171,11 @@ class EELSModel(Model):
                 e_shells.pop()
             else:
                 # Add the other subshells of the same element
-                # and couple their intensity and delta to that of the 
+                # and couple their intensity and energy_shift to that of the 
                 # master edge
                 self.append(EELSCLEdge(e_shells.pop(), GOS=self.GOS))
                 self[-1].intensity.twin = master_edge.intensity
-                self[-1].delta.twin = master_edge.delta
+                self[-1].energy_shift.twin = master_edge.energy_shift
                 self[-1].free_energy_shift = False
                 if copy2interactive_ns is True:
                     interactive_ns[self[-1].name] = self[-1]
@@ -456,7 +456,7 @@ class EELSModel(Model):
 
         print("Fitting region: %s-%s" % (start_energy,nextedgeenergy))
 
-        # Without fine structure to determine delta
+        # Without fine structure to determine energy_shift
         edges_to_activate = []
         for edge_ in self.edges[edgenumber+1:]:
             if edge_.active is True and edge_.edge_position() >= nextedgeenergy:
@@ -467,11 +467,11 @@ class EELSModel(Model):
         
         self.set_signal_range(start_energy, nextedgeenergy)
         if edge.free_energy_shift is True:
-            print "Fit without fine structure, delta free"
-            edge.delta.free = True
+            print "Fit without fine structure, energy_shift free"
+            edge.energy_shift.free = True
             self.fit(**kwargs)
-            edge.delta.free = False
-            print "delta = ", edge.delta.value
+            edge.energy_shift.free = False
+            print "energy_shift = ", edge.energy_shift.value
             self.__touch()
         elif edge.intensity.free is True:
             print "Fit without fine structure"
@@ -695,9 +695,9 @@ class EELSModel(Model):
             edge.intensity.ext_bounded = False
             
     def enable_free_energy_shift(self,edges_list=None):
-        """Enable the automatic freeing of the delta parameter during a
+        """Enable the automatic freeing of the energy_shift parameter during a
         smart fit for the edges listed in edges_list.
-        If edges_list is None (default) the delta of all the edges
+        If edges_list is None (default) the energy_shift of all the edges
         with onset in the spectrum energy region will be freeed.
         
         Parameters
@@ -725,11 +725,11 @@ class EELSModel(Model):
                 edge.free_energy_shift = True
                 
     def disable_free_energy_shift(self,edges_list=None):
-        """Disable the automatic freeing of the delta parameter during a
+        """Disable the automatic freeing of the energy_shift parameter during a
         smart fit for the edges listed in edges_list.
-        If edges_list is None (default) the delta of all the edges
+        If edges_list is None (default) the energy_shift of all the edges
         with onset in the spectrum energy region will not be freeed.
-        Note that if their atribute edge.delta.free is True, the parameter
+        Note that if their atribute edge.energy_shift.free is True, the parameter
         will be free during the smart fit.
         
         Parameters
@@ -784,7 +784,7 @@ class EELSModel(Model):
         for edge in edges_list :
             if edge.isbackground is False:
                 edge.intensity.free = False
-                edge.delta.free = False
+                edge.energy_shift.free = False
                 edge.fine_structure_coeff.free = False
 
     def free_edges(self,edges_list=None):
@@ -815,7 +815,7 @@ class EELSModel(Model):
         for edge in edges_list :
             if edge.isbackground is False:
                 edge.intensity.free = True
-                #edge.delta.free = True
+                #edge.energy_shift.free = True
                 #edge.fine_structure_coeff.free = True
                 
     def fix_fine_structure(self,edges_list=None):

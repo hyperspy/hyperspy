@@ -63,7 +63,7 @@ class EELSCLEdge(Component):
     def __init__(self, element_subshell, GOS=None):
         # Declare the parameters
         Component.__init__(self,
-            ['delta', 'intensity', 'fine_structure_coeff', 'effective_angle'])
+            ['energy_shift', 'intensity', 'fine_structure_coeff', 'effective_angle'])
         self.name = element_subshell
         self.element, self.subshell = element_subshell.split('_')
         self.energy_scale = None
@@ -72,9 +72,9 @@ class EELSCLEdge(Component):
         self.fine_structure_width = preferences.EELS.fine_structure_width
         self.fine_structure_coeff.ext_force_positive = False
         
-        self.delta.value = 0
-        self.delta.free = False
-        self.delta.ext_force_positive = False
+        self.energy_shift.value = 0
+        self.energy_shift.free = False
+        self.energy_shift.ext_force_positive = False
         self.free_energy_shift = False
         
         self.intensity.grad = self.grad_intensity
@@ -166,7 +166,7 @@ class EELSCLEdge(Component):
             pass
 
     def edge_position(self):
-        return self.GOS.onset_energy + self.delta.value
+        return self.GOS.onset_energy + self.energy_shift.value
         
     def setfine_structure_coeff(self):
         if self.energy_scale is None:
@@ -208,10 +208,10 @@ class EELSCLEdge(Component):
         # Integration over q using splines                                        
         angle = self.effective_angle.value * 1e-3 # in rad
         self.tab_xsection = self.GOS.integrateq(
-                self.delta.value, angle, self.E0)                
+                self.energy_shift.value, angle, self.E0)                
         # Calculate extrapolation powerlaw extrapolation parameters
-        E1 = self.GOS.energy_axis[-2] + self.delta.value
-        E2 = self.GOS.energy_axis[-1] + self.delta.value
+        E1 = self.GOS.energy_axis[-2] + self.energy_shift.value
+        E2 = self.GOS.energy_axis[-1] + self.energy_shift.value
         y1 = self.GOS.qint[-2] # in m**2/bin */
         y2 = self.GOS.qint[-1] # in m**2/bin */
         self.r = math.log(y2 / y1) / math.log(E1 / E2)
@@ -221,13 +221,13 @@ class EELSCLEdge(Component):
         # parameters are well defined
         self.effective_angle.connect(self.integrate_GOS)
         self.effective_angle.connection_active = True
-        self.delta.connect(self.integrate_GOS)
-        self.delta.connect(self.calculate_knots)
-        self.delta.connection_active = True
+        self.energy_shift.connect(self.integrate_GOS)
+        self.energy_shift.connect(self.calculate_knots)
+        self.energy_shift.connection_active = True
         
     def calculate_knots(self):    
         # Recompute the knots
-        start = self.GOS.onset_energy + self.delta.value
+        start = self.GOS.onset_energy + self.energy_shift.value
         stop = start + self.fine_structure_width
         self.__knots = np.r_[[start]*4,
         np.linspace(start, stop, self.fine_structure_coeff._number_of_elements)[2:-2], 
@@ -237,7 +237,7 @@ class EELSCLEdge(Component):
         """Returns the number of counts in barns
         
         """
-        Emax = self.GOS.energy_axis[-1] + self.delta.value 
+        Emax = self.GOS.energy_axis[-1] + self.energy_shift.value 
         cts = np.zeros((len(E)))
         bsignal = (E >= self.edge_position())
         if self.fine_structure_active is True:

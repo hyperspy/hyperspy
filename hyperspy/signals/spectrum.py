@@ -107,7 +107,7 @@ class Spectrum(Signal):
         if maxi > 0:
             self.crop_in_units(axis, None, _axis[-1] - maxi)
 
-    def interpolate_in_index_1D(self, axis, i1, i2, delta = 3, **kwargs):
+    def interpolate_in_index_1D(self, axis, i1, i2, delta=3, **kwargs):
         axis = self.axes_manager.axes[axis]
         i0 = int(np.clip(i1 - delta, 0, np.inf))
         i3 = int(np.clip(i2 + delta, 0, axis.size))
@@ -117,7 +117,7 @@ class Spectrum(Signal):
                 **kwargs)
             dat[i1:i2] = dat_int(range(i1,i2))
 
-    def interpolate_in_units_1D(self, axis, u1, u2, delta = 3, **kwargs):
+    def interpolate_in_units_1D(self, axis, u1, u2, delta=3, **kwargs):
         axis = self.axes_manager.axes[axis]
         i1 = axis.value2index(u1)
         i2 = axis.value2index(u2)

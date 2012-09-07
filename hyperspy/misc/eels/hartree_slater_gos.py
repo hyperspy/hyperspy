@@ -105,14 +105,14 @@ class HartreeSlaterGOS(GOSBase):
             info1_1, info1_2, ncol)
         self.energy_axis = self.rel_energy_axis + self.onset_energy
                       
-    def integrateq(self,delta, angle,E0):
+    def integrateq(self,energy_shift, angle,E0):
         qint = np.zeros((self.energy_axis.shape[0]))
         # Calculate the cross section at each energy position of the 
         # tabulated GOS
         gamma = 1 + E0 / 511.06
         T = 511060 * (1 - 1 / gamma**2) / 2
         for i in xrange(0,self.gos_array.shape[0]):
-            E = self.energy_axis[i] + delta
+            E = self.energy_axis[i] + energy_shift
             # Calculate the limits of the q integral
             qa0sqmin = (E**2) / (4 * R * T) + (E**3) / (
                             8 * gamma ** 3 * R * T**2)
@@ -126,7 +126,7 @@ class HartreeSlaterGOS(GOSBase):
             qaxis, gos = self.get_qaxis_and_gos(i, qmin, qmax)
             logsqa0qaxis = np.log((a0 * qaxis)**2)
             qint[i] = sp.integrate.simps(gos, logsqa0qaxis)
-        E = self.energy_axis + delta
+        E = self.energy_axis + energy_shift
         # Energy differential cross section in (barn/eV/atom)
         qint *= (4.0 * np.pi * a0 ** 2.0 * R**2 / E / T *
                  self.subshell_factor) * 1e28
