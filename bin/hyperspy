@@ -92,10 +92,10 @@ else:
         description = hyperspy.Release.description)
 parser.add_argument('environment',
                     nargs='?',
-                    choices=['console', 'notebook', 'qtconsole'],
-                    default = 'console',
+                    choices=['console', 'notebook', 'qtconsole','terminal'],
+                    default = 'terminal',
                     help = ('Selects the IPython environment in '
-                    'which to start Hyperspy. The default is console'))
+                    'which to start Hyperspy. The default is terminal'))
 parser.add_argument('--no_pylab',
                     action="store_true",
                     default=False)
@@ -129,8 +129,8 @@ sys.argv = ipy_argv
 
 
 # Add the subcommand first
-
-sys.argv.insert(1, args.environment)
+if args.environment != 'terminal':
+    sys.argv.insert(1, args.environment)
 # By default Hyperspy uses the wx backend, but if the user tries to 
 # choose a different one using --pylab= , then we grant him the control        
 add_pylab = True
