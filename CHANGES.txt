@@ -1,14 +1,76 @@
 What's new
 **********
 
-This is a summary of changes, for a detailed list of all the changes see `the github commits changelog <https://github.com/hyperspy/hyperspy/commits/master>`_.
+We only cover here the main highlights, for a detailed list of all the changes see `the github commits changelog <https://github.com/hyperspy/hyperspy/commits/master>`_.
+
+.. _changes_0.5:
+
+v0.5
+====
+
+New features
+------------
+* The documentation was thoroughly revised, courtesy of M. Walls.
+* New user interface to remove spikes from EELS spectra.
+* New align2D signals.Image method to align image stacks.
+* When loading image files, the data are now automatically converted to
+grayscale when all the color channels are equal.
+* Add the possibility to load a stack memory mapped (similar to ImageJ
+virtual stack).
+* Improved hyperspy starter script that now includes the possibility
+to start Hyperspy in the new IPython notebook.
+* Add "Hyperspy notebook here" to the Windows context menu.
+* The information displayed in the plots produced by Signal.plot have 
+been enhanced.
+* Added Egerton's sigmak3 and sigmal3 GOS calculations (translated 
+from matlab by I. Iyengar) to the EELS core loss component.
+* A browsable dictionary containing the chemical elements and 
+their onset energies is now available in the user namespace under 
+the variable name `elements`.
+* The ripple file format now supports storing the beam energy, the collection and the convergence angle.
+
+
+Mayor bugs fixed
+----------------
+* The EELS core loss component had a bug in the calculation of the
+ relativistic gamma that produced a gamma that was always
+  approximately zero. As a consequence the GOS calculation was wrong,
+   especially for high beam energies.
+* Loading msa files was broken when running on Python 2.7.2 and newer.
+* Saving images to rpl format was broken.
+* Performing BSS on data decomposed with poissonian noise normalization
+was failing when some columns or rows of the unfolded data were zero, 
+what occurs often in EDX data for example.
+* Importing some versions of scikits learn was broken
+* The progress bar was not working properly in the new IPython notebook.
+* The constrast of the image was not automatically updated.
+
+API changes
+-----------
+* spatial_mask was renamed to navigation_mask
+* Spectrum and Image are not loaded into the user namespace by default.
+The signals module is loaded instead.
+* Change the default BSS algorithm to sklearn fastica, that is now 
+distributed with Hyperspy and used in case that sklearn is not 
+installed e.g. when using EPDFree.
+* _slicing_axes was renamed to signal_axes
+* _non_slicing_axes to navigation_axes
+* All the Model *_in_pixels methods  were renamed to to _*_in_pixel
+* EELSCLEdge.fs_state was renamed to fine_structure_active
+* EELSCLEdge.fslist was renamed to fine_structure_coeff
+* EELSCLEdge.fs_emax was renamed to fine_structure_width
+* EELSCLEdge.freedelta was renamed to free_energy_shift
+* EELSCLEdge.delta was renamed to energy_shift
+* A value of True in a mask now means that the item is masked all over 
+Hyperspy.
+
 
 .. _changes_0.4.1:
 
 v0.4.1
 ======
 
-Enhancements
+New features
 ------------
 
  * Added TIFF 16, 32 and 64 bits support by using (and distributing) Christoph Gohlke's `tifffile library <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_.
@@ -39,7 +101,7 @@ Syntax changes
 v0.4
 ====
 
-Enhancements
+New features
 ------------
  * Add a slider to the filter ui.
  * Add auto_replot to sum.
