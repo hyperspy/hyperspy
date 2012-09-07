@@ -25,8 +25,44 @@ from hyperspy.misc.utils import incremental_filename, append2pathname, slugify
 from hyperspy.exceptions import NavigationDimensionError
 
 class Parameter(object):
-    """
-    class_documentation
+    """Model parameter
+    
+    Attributes
+    ----------
+    value : float or array
+        The value of the parameter for the current location. The value
+        for other locations is stored in map.
+    bmin, bmax: float
+        Lower and upper bounds of the parameter value.
+    twin : {None, Parameter}
+        If it is not None, the value of the current parameter is 
+        a function of the given Parameter. The function is by default
+        the identity function, but it can be defined by twin_function
+    twin_function : function
+        Function that takes Parameter.value as its only argument
+        and returns a float or array that is set to be the current 
+        Parameter.value
+    ext_force_positive : bool
+        If True, the parameter value is set to be the absolute value 
+        of the input value i.e. if we set Parameter.value = -3, the 
+        value stored is 3 instead. This is useful to bound a value 
+        to be positive in an optimization without actually using an 
+        optimizer that supports bounding.
+    ext_bounded : bool
+        Similar to ext_force_positive, but in this case the bounds are
+        defined by bmin and bmax. It is a better idea to use
+        an optimizer that supports bounding though.
+        
+    Methods
+    -------
+    as_signal(field = 'values')
+        Get a parameter map as a signal object
+    plot()
+        Plots the value of the Parameter at all locations.
+    export(folder=None, name=None, format=None, save_std=False)
+        Saves the value of the parameter map to the specified format
+    
+    
     """
 
     def __init__(self, value=0., free=True, bmin=None, bmax=None,

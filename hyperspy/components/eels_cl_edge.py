@@ -36,6 +36,8 @@ class EELSCLEdge(Component):
     """EELS core loss ionisation edge from hydrogenic or tabulated 
     Hartree-Slater GOS with splines for fine structure fitting.
     
+    Hydrogenic GOS are limited to K and L shells.
+
     Currently it only supports Peter Rez's Hartree Slater cross sections
     parametrised as distributed by Gatan in their 
     Digital Micrograph (DM) software. If Digital Micrograph is intalled
@@ -43,7 +45,8 @@ class EELSCLEdge(Component):
     find the path to the HS GOS folder. Otherwise, the location of the 
     folder can be defined in Hyperspy preferences.
     
-    Hydrogenic GOS are limited to K and L shells.
+    Calling this class with a numpy.array 
+    
     
     Parameters
     ----------
@@ -54,10 +57,26 @@ class EELSCLEdge(Component):
         The GOS to use. If None it will use the Hartree-Slater GOS if 
         they are available, otherwise it will use the hydrogenic GOS.
     
-    Returns
-    -------
-    array: cross section in barns (1E-28 m)
-    
+    Attributes
+    ----------
+    energy_shift : float
+        Energy shift of the CL edge in respect to the CL edge onset
+         energy as defined in the internal tables GOS.energy_onset.
+         It is a component.Parameter instance.
+    intensity : float
+        The factor by which the cross section is multiplied, what in 
+        favourable cases is proportional to the number of atoms of 
+        the element. It is a component.Parameter instance.
+    fine_structure_coeff : list of floats
+        The coefficients of the spline that fits the fine structure. Fix this parameter to fix the fine structure. It is a
+         component.Parameter instance.
+    effective_angle : float
+        The effective collection angle. It is automatically 
+        calculated by set_microscope_parameters. It is a component.Parameter instance.
+    fine_structure_active : bool
+        Activates/deactivates the fine structure feature. Its 
+        default value can be choosen in the preferences.
+        
     """
 
     def __init__(self, element_subshell, GOS=None):
