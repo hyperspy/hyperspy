@@ -22,7 +22,7 @@ os.system("rm -rf deb_dist")
 os.system('python setup.py --command-packages=stdeb.command bdist_deb')
 
 if args.install is True:
-    os.system('sudo dpkg -i %s' % glob('deb_dist/*.deb')[0])
+    os.system('sudo gdebi %s' % glob('deb_dist/*.deb')[0])
     # Install the dependencies
-    os.system('sudo apt-get install -f')
+   # os.system('sudo apt-get install -f')
     
