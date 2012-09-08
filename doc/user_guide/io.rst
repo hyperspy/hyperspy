@@ -17,8 +17,11 @@ Hyperspy can read and write to multiple formats (see :ref:`supported-formats`). 
 
     >>> s = load("lena.jpg")
     
-If the loading was successful, the variable :guilabel:`s` contains a generic :py:class:`~.signal.Signal`, a :py:class:`~.signals.spectrum.Spectrum` or an :py:class:`~.signals.image.Image`. 
-(Note for python programmers: the data is stored in a numpy array in the :py:attr:`~.signal.Signal.data` attribute, but you will not normally need to access it there.)
+If the loading was successful, the variable :guilabel:`s` contains a generic :py:class:`~.signal.Signal`, a :py:class:`~.signals.spectrum.Spectrum` or an :py:class:`~.signals.image.Image`.
+
+.. NOTE::
+    Note for python programmers: the data is stored in a numpy array  in the :py:attr:`~.signal.Signal.data` attribute, but you will not   normally need to access it there.)
+
 
 Hyperspy will try to guess the most likely data type for the corresponding file. However, you can force it to read the data as a particular data type by providing the ``signal`` keyword, which has to be one of: ``spectrum``, ``image`` or ``EELS``, e.g.:
 
@@ -39,7 +42,6 @@ The :py:attr:`~.signal.Signal.original_parameters` and :py:attr:`~.signal.Signal
 
 .. code-block:: python
     
-    # The following command stores the original parameters in the parameters.txt file
     >>> s.original_parameters.export('parameters')
 
 Loading multiple files
@@ -54,17 +56,27 @@ can be loaded with a single command. This can be done by passing a list of filen
     
 or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
 
-.. code-block:: python
 
-    >>> s = load("file*.hdf5",)
-    
-By default Hyperspy will try to stack all the files in a single file, but for this to work all the files need to contain data with exactly the same dimensions. If this is not the case an error is raised.
+By default Hyperspy will return a list of all the files loaded. Alternatively, Hyperspy can stack the data of the files contain data with exactly the same dimensions. If this is not the case an error is raised.
 
-It is also possible to load multiple files with a single command without stacking them by passing the stack=False argument to the load function, in which case the function will return a list of objects, e.g.:
+It is also possible to load multiple files with a single command without stacking them by passing the `stack=False` argument to the load function, in which case the function will return a list of objects, e.g.:
 
 .. code-block:: python
 
-    >>> s = load("file*.hdf5", stack = False)
+    >>> ls
+    CL1.raw  CL1.rpl~  CL2.rpl  CL3.rpl  CL4.rpl  LL3.raw  shift_map-          SI3.npy
+    CL1.rpl  CL2.raw   CL3.raw  CL4.raw  hdf5/    LL3.rpl
+    >>> s = load('*.rpl')
+    >>> s
+   [<EELSSpectrum, title: CL1, dimensions: (64, 64, 1024)>,     
+   <EELSSpectrum, title: CL2, dimensions: (64, 64, 1024)>, 
+   <EELSSpectrum, title: CL3, dimensions: (64, 64, 1024)>, 
+   <EELSSpectrum, title: CL4, dimensions: (64, 64, 1024)>, 
+   <EELSSpectrum, title: LL3, dimensions: (64, 64, 1024)>]
+
+    >>> s
+    <EELSSpectrum, title: mva, dimensions: (5, 64, 64, 1024)>
+
 
 .. _saving_files:
 
@@ -99,23 +111,23 @@ here is a summary of the different formats that are currently supported by Hyper
     +--------------------+-----------+----------+
     | Format             | Read      | Write    |
     +====================+===========+==========+
-    | Gatan's dm3        | Partial   | -        |
+    | Gatan's dm3        |    Yes    |    No    |
     +--------------------+-----------+----------+
-    | FEI's emi and ser  | Partial   | -        |
+    | FEI's emi and ser  |    Yes    |    No    |
     +--------------------+-----------+----------+
-    | HDF5               | Complete  | Complete |
+    | HDF5               |    Yes    |    Yes   |
     +--------------------+-----------+----------+
-    | Image: jpg..       | Complete  | Complete |
+    | Image: jpg..       |    Yes    |    Yes   |
     +--------------------+-----------+----------+
-    | TIFF               | Complete  | Complete |
+    | TIFF               |    Yes    |    Yes   |
     +--------------------+-----------+----------+
-    | MRC                | Complete  | -        |
+    | MRC                |    Yes    |    No    |
     +--------------------+-----------+----------+
-    | EMSA/MSA           | Complete  | Complete |
+    | EMSA/MSA           |    Yes    |    Yes   |
     +--------------------+-----------+----------+
-    | NetCDF             | Complete  | -        |
+    | NetCDF             |    Yes    |    No    |
     +--------------------+-----------+----------+
-    | Ripple             | Complete  | Complete |
+    | Ripple             |    Yes    |    Yes   |
     +--------------------+-----------+----------+
 
 .. _hdf5-format:

@@ -1,17 +1,5 @@
 Machine learning
 ****************
-.. warning::
-
-   In version 0.4 the syntax of many of the machine-learning functions
-   has changed. Below is a summary of the changes:
-   
-   * `principal_components_analysis` was renamed to `decomposition`
-   * `independent_components_analysis` was renamed to `blind_source_separation`
-   * `pca_build_SI` was renamed to `get_decomposition_model`
-   * `ica_build_SI` was renamed to `get_bss_model`
-   * `plot_lev` was renamed to `plot_explained_variance_ratio`
-   * `scores` was renamed to `loadings`
-   * `mva_result` was renamed to `learning_results`
 
 Introduction
 ============
@@ -173,7 +161,7 @@ All the methods begin with plot:
 * :py:meth:`~.signal.Signal.plot_bss_factors`
 * :py:meth:`~.signal.Signal.plot_bss_loadings`
 
-In the case of decomposition plots, you should include as a parameter the number of factors or loadings you wish to visualise (since the default is 0). For BSS the default is the number you included when running the :py:meth:`~.learn.mva.MVA.blind_source_separation` method.
+In the case of decomposition plots, you should include as a parameter the number of factors or loadings you wish to visualise, since the default is all. For BSS the default is the number you included when running the :py:meth:`~.learn.mva.MVA.blind_source_separation` method.
 
 Saving and loading results
 ==========================
@@ -189,7 +177,7 @@ the file and it is loaded with the rest of the data when you load the file.
 
 This option is the simplest because everything is stored in the same file and
 it does not require any extra command to recover the result of machine learning
-analysis when loading a file. However, it only supports storing one
+analysis when loading a file. However, currently it only supports storing one
 decomposition and one BSS result, which may not be enough for your purposes.
 
 Saving to an external files
@@ -220,7 +208,7 @@ so please consult the method documentation. The options include the choice of
 file format, the prefixes for loadings and factors, saving figures instead of 
 data and more.
 
-Please note that the exported data cannot be easily be loaded into Hyperspy's
+Please note that the exported data cannot easily be loaded into Hyperspy's
 machine learning structure.
 
 

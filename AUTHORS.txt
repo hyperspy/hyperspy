@@ -8,6 +8,8 @@ Luiz Fernando Zagonel wrote the importRPL Digital Micrograph plugin to import Ri
 
 Michael Walls is an active contributor to the documentation and to the science behind Hyperspy.
 
+Ilya Iyengar contributed the VolumePlasmonDrude component and translated Egerton's sigmak3 and sigmal3 programs from matlab as part of his summer 2012 student project.
+
 The Hyperspy logo was created by Stefano Mazzucco. It is a modified version of http://en.wikipedia.org/wiki/File:Hypercube.svg and the same GFDL license applies.
  
 The website is a fork of the Ipython website.

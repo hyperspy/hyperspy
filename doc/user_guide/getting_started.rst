@@ -7,13 +7,39 @@ First steps with hyperspy
 Starting hyperspy
 -----------------
 
+The standard way to use Hyperspy is interactively, typically using `IPython <http://ipython.org/>`_ . In all operating systems (OS) you can start Hyperspy by opening a system terminal and typing hyperspy:
+
+.. code-block:: bash
+
+    $ hyperspy
+
+
+If Hyperspy is correctly instaled it should welcome you with a message similar to:
+
+.. code-block:: ipython
+    
+    H y p e r s p y
+    Version 0.5
+    
+    http://www.hyperspy.org	
+	
+
+If IPython 0.11 or newer and the Qt libraries are installed in your system it is also possible to run Hyperspy in `IPython's QtConsole <http://ipython.org/ipython-doc/stable/interactive/qtconsole.html>` by executing `hyperspy qtconsole` in a terminal:
+
+.. code-block:: bash
+
+    $ hyperspy qtconsole
+
+If IPython 0.12 or newer is installed in your system it is also possible to run Hyperspy in `IPython's HTML notebook <http://ipython.org/ipython-doc/stable/interactive/htmlnotebook.html>` that runs inside your browser. The Notebook is probably **the best way** to work with Hyperspy interactively. You can start it from a terminal by executing `hyperspy qtconsole`
+
+
 
 Windows
 ^^^^^^^
 
-In Windows it is possible to start Hyperspy from :menuselection:`Start Menu --> Programs --> Hyperspy` .
+In Windows it is possible to start Hyperspy from :menuselection:`Start Menu --> Programs --> Hyperspy`.
 
-Alternatively, one can start Hyperspy in any folder by pressing the :kbd:`right mouse button` or on a yellow folder icon or (in some cases) on the empty area of a folder, and choosing menuselection:`Hyperspy here` from the context menu:
+Alternatively, one can start Hyperspy in any folder by pressing the :kbd:`right mouse button` or on a yellow folder icon or (in some cases) on the empty area of a folder, and choosing :menuselection:`Hyperspy qtconsole here` or :menuselection:`Hyperspy notebook here` from the context menu.
 
 
 .. figure::  images/windows_hyperspy_here.png
@@ -23,51 +49,50 @@ Alternatively, one can start Hyperspy in any folder by pressing the :kbd:`right 
    Starting hyperspy using the Windows context menu.
    
 
-Hyperspy can also be started from a console:
+Linux
+^^^^^
 
-.. code-block:: bash
+If you are using GNOME in Linux, you can open a terminal in a folder by 
+choosing :menuselection:`open terminal` in the file menu if 
+:program:`nautilus-open-terminal` is 
+installed in your system.
 
-    $ hyperspy
+Altenatively (and more conviently), if you are using Gnome place this and this   in the :file:`/.gnome2/nautilus-scripts` folder in your home directory (create it if it does not exists) and make the executable to get the :menuselection:`Scripts --> Hyperspy QtConsole Here` and :menuselection:`Scripts --> Hyperspy Notebook Here` entries in the context menu. 
 
-In any case Hyperspy should welcome you with a message similar to:
 
-.. code-block:: ipython
+.. figure::  images/hyperspy_here_gnome.png
+   :align:   center
+   :width:   500    
+
+   Starting hyperspy using the Gnome nautilus context menu.
+
+
+Getting help
+------------
+
+The documentation can be accessed by adding a question mark to the name of a function. e.g.:
+
+.. code-block:: python
     
-    H y p e r s p y
-    Version 0.4.1
-    
-    http://www.hyperspy.org
+    >>> load?
+
+This syntax is one of the many features of `IPython <http://ipython.scipy.org/moin/>`_ , which is the interactive python shell that Hyperspy uses under the hood.
+
+Please note that the documentation of the code is a work in progress, so not all the objects are documented yet.
+
+Up-to-date documentation is always available in `the Hyperspy website. <http://hyperspy.org/documentation.html>`_
 
 
-Linux and MacOS
-^^^^^^^^^^^^^^^
+Autocompletion
+--------------
 
-In Linux and MacOS Hyperspy can be started from a console:
+Another useful `IPython <http://ipython.scipy.org/moin/>`_ feature is the 
+autocompletion of commands and filenames using the tab and arrow keys. It is highly recommended to read the 
+`Ipython documentation <http://ipython.scipy.org/moin/Documentation>`_ (specially their `Getting started <http://ipython.org/ipython-doc/stable/interactive/tutorial.html>`_ section) for many more useful features that will boost your efficiency when working with Hyperspy/Python interactively.
 
-.. code-block:: bash
-
-    $ hyperspy
-
-After that, Hyperspy should welcome you with a message similar to:
-
-.. code-block:: ipython
-    
-    H y p e r s p y
-    Version 0.4.1
-    
-    http://www.hyperspy.org
-
-
-.. HINT::
-    If you are using GNOME in Linux, you can open a terminal in a folder by 
-    choosing :menuselection:`open terminal` in the file menu if 
-    :program:`nautilus-open-terminal` is 
-    installed in your system.
-    
 
 Loading data
 ------------
-
 
 Once hyperspy is running, to load from a supported file format (see :ref:`supported-formats`) simply type:
 
@@ -138,27 +163,7 @@ This command should raise the Preferences user interface:
 
 .. _getting-help-label:
 
-Getting help
-------------
 
-The documentation can be accessed by adding a question mark to the name of a function. e.g.:
-
-.. code-block:: python
-    
-    >>> load?
-
-This syntax is one of the many features of `IPython <http://ipython.scipy.org/moin/>`_ , which is the interactive python shell that Hyperspy uses under the hood.
-
-Please note that the documentation of the code is a work in progress, so not all the objects are documented yet.
-
-Up-to-date documentation is always available in `the Hyperspy website. <http://hyperspy.org/documentation.html>`_
-
-Autocompletion
---------------
-
-Another useful `IPython <http://ipython.scipy.org/moin/>`_ feature is the 
-autocompletion of commands and filenames using the tab and arrow keys. It is highly recommended to read the 
-`Ipython documentation <http://ipython.scipy.org/moin/Documentation>`_ (specially their `Getting started <http://ipython.org/ipython-doc/stable/interactive/tutorial.html>`_ section) for many more useful features that will boost your efficiency when working with Hyperspy/Python interactively.
 
 Data visualisation
 ==================
@@ -250,12 +255,13 @@ To close all the figures run the following command:
 
 .. code-block:: python
 
-    plt.close('all')
+    close('all')
 
+.. NOTE::
 
-This is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command. 
-Matplotlib is the library that hyperspy uses to produce the plots. You can learn how 
-to pan/zoom and more  
-`in the matplotlib documentation <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
+    This is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command. 
+    Matplotlib is the library that hyperspy uses to produce the plots. You can learn how 
+    to pan/zoom and more  
+    `in the matplotlib documentation <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
 
 

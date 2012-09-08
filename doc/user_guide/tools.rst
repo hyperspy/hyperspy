@@ -5,7 +5,11 @@ Tools
 The Signal class and its subclasses
 -----------------------------------
 
-In Hyperspy there are a number of different data types that can be handled. In programming terms we would say they are all contained in the :py:class:`~.signal.Signal` class which has several (currently 4) subclasses; most of the data analysis functions are also contained in these classes. The :py:class:`~.signal.Signal` class contains general functionality that is available to all the subclasses. The subclasses provide functionality that is normally specific to a particular type of data, e.g. the :py:class:`~.signals.spectrum.Spectrum` class provides common functionality to deal with spectral data and :py:class:`~.signals.eels.EELSSpectrum` (which is a subclass of :py:class:`~.signals.spectrum.Spectrum`) adds extra functionality to the :py:class:`~.signals.spectrum.Spectrum` class for electron energy-loss spectroscopy data analysis.
+.. WARNING::
+    This subsection can be a bit confusing for beginners. Do not worry if you do not understand it all.
+    
+
+Hyperspy stores hyperspectra in the :py:class:`~.signal.Signal` class, that is the object that you get when e.g. you load a single file using :py:func:`~.io.load`. Most of the data analysis functions are also contained in this class or its specialized subclasses. The :py:class:`~.signal.Signal` class contains general functionality that is available to all the subclasses. The subclasses provide functionality that is normally specific to a particular type of data, e.g. the :py:class:`~.signals.spectrum.Spectrum` class provides common functionality to deal with spectral data and :py:class:`~.signals.eels.EELSSpectrum` (which is a subclass of :py:class:`~.signals.spectrum.Spectrum`) adds extra functionality to the :py:class:`~.signals.spectrum.Spectrum` class for electron energy-loss spectroscopy data analysis.
 
 Currently the following signal subclasses are available:
 
@@ -14,7 +18,10 @@ Currently the following signal subclasses are available:
 * :py:class:`~.signals.eels.EELSSpectrum`
 * :py:class:`~.signals.spectrum_simulation.SpectrumSimulation`
 
-Datasets (and other types of objects handled in Hyperspy) store their different components in "attributes".The data is stored in the :py:attr:`~.signal.Signal.data` attribute, the original parameters in the :py:attr:`~.signal.Signal.original_parameters` attribute, the mapped parameters in the :py:attr:`~.signal.Signal.mapped_parameters` attribute and the axes information (including calibration) can be accessed (and modified) in the :py:attr:`~.signal.Signal.axes_manager` attribute.
+The :py:mod:`~.signals` module is imported in the user namespace when
+loading hyperspy.
+
+The different signals store other objects in what are called attributes. For examples, the hyperspectral data is stored in the :py:attr:`~.signal.Signal.data` attribute, the original parameters in the :py:attr:`~.signal.Signal.original_parameters` attribute, the mapped parameters in the :py:attr:`~.signal.Signal.mapped_parameters` attribute and the axes information (including calibration) can be accessed (and modified) in the :py:attr:`~.signal.Signal.axes_manager` attribute.
 
 
 Transforming between signal subclasses
@@ -50,7 +57,7 @@ It is possible to transform between signal subclasses, e.g.:
     <EELSSpectrum, title: EELS Spectrum Image (high-loss).dm3, dimensions: (21, 42, 2048)>
     
 
-When transforming between spectrum and image classes the order in which the data array is stored in memory is modified and several functions, e.g. plotting or decomposing, will behave differently.
+When transforming between spectrum and image classes the order in which the data array is stored in memory is modified to improve performance and several functions, e.g. plotting or decomposing, will behave differently.
 
 Below we briefly introduce some of the most commonly used tools (methods). For more details about a particular method click on its name. For a detailed list of all the methods available see the :py:class:`~.signal.Signal` documentation.
 
@@ -160,7 +167,18 @@ The following methods (that include user interfaces when no arguments are passed
 Image tools
 -----------
 
-Currently there are no methods unique to the image class. 
+* :py:meth:`~.signals.Image.image_crop`
+
+
+Image registration (alignment)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.5
+
+The :py:meth:`~.signals.image.Image.align_image` method provides advanced image alignment functionality, including subpixel alignment.
+
+
+
 
 EELS tools
 ----------
@@ -171,20 +189,19 @@ These methods are only available for the following signals:
 
 Spikes removal
 ^^^^^^^^^^^^^^
+.. versionadded:: 0.5
+    The :py:meth:`~.signals.eels.EELSSpectrum.spikes_removal_tool` replaces the old :py:meth:`~.signals.eels.EELSSpectrum.remove_spikes`.
 
-The following methods can assist in removing spikes by interpolation:
 
-* :py:meth:`~.signals.eels.EELSSpectrum.spikes_diagnosis`
-* :py:meth:`~.signals.eels.EELSSpectrum.plot_spikes`
-* :py:meth:`~.signals.eels.EELSSpectrum.remove_spikes`
+:py:meth:`~.signals.eels.EELSSpectrum.spikes_removal_tool` provides an user interface to remove spikes from spectra.
 
-The workflow is as follows:
 
-* Use :py:meth:`~.signals.eels.EELSSpectrum.spikes_diagnosis` to display a histogram which can be used to select a threshold above which all points will be indentified as spikes.
+.. figure::  images/spikes_removal_tool.png
+   :align:   center
+   :width:   500    
 
-* When the optimal threshold has been found, use it as a parameter in :py:meth:`~.signals.eels.EELSSpectrum.remove_spikes` to remove the spikes by interpolation. This method also accepts a list of coordinates and other parameters.
+   Spikes removal tool
 
-* Use :py:meth:`~.signals.eels.EELSSpectrum.plot_spikes` to plot all the spectra containing points above the threshold (which is passed as a parameter). This method returns a list of spikes that can be edited and passed to :py:meth:`~.signals.eels.EELSSpectrum.remove_spikes` if the automatic detection is too coarse.
 
 Define the elemental composition of the sample
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
