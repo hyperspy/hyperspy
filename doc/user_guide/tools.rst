@@ -167,7 +167,7 @@ The following methods (that include user interfaces when no arguments are passed
 Image tools
 -----------
 
-* :py:meth:`~.signals.Image.image_crop`
+* :py:meth:`~.signals.image.Image.crop_image`
 
 
 Image registration (alignment)
@@ -175,7 +175,7 @@ Image registration (alignment)
 
 .. versionadded:: 0.5
 
-The :py:meth:`~.signals.image.Image.align_image` method provides advanced image alignment functionality, including subpixel alignment.
+The :py:meth:`~.signals.image.Image.align2D` method provides advanced image alignment functionality, including subpixel alignment.
 
 
 

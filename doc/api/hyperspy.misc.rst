@@ -25,6 +25,14 @@ misc Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`fastica` Module
+---------------------
+
+.. automodule:: hyperspy.misc.fastica
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`image_utils` Module
 -------------------------
 
@@ -53,6 +61,14 @@ misc Package
 ---------------------
 
 .. automodule:: hyperspy.misc.natsort
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`physical_constants` Module
+--------------------------------
+
+.. automodule:: hyperspy.misc.physical_constants
     :members:
     :undoc-members:
     :show-inheritance:
@@ -118,5 +134,6 @@ Subpackages
 
 .. toctree::
 
+    hyperspy.misc.eels
     hyperspy.misc.mpfit
 

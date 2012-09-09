@@ -49,14 +49,6 @@ hyperspy Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`estimators` Module
-------------------------
-
-.. automodule:: hyperspy.estimators
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`exceptions` Module
 ------------------------
 
@@ -101,14 +93,6 @@ hyperspy Package
 -------------------
 
 .. automodule:: hyperspy.model
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`optimizers` Module
-------------------------
-
-.. automodule:: hyperspy.optimizers
     :members:
     :undoc-members:
     :show-inheritance:
