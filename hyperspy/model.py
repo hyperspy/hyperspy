@@ -1106,6 +1106,8 @@ class Model(list):
                 else:
                     print(component._id_name)
                 parameters = component.free_parameters if only_free \
-                    else component.parameter
+                    else component.parameters
                 for parameter in parameters:
-                    print("\t\t%s\t%f" % (parameter.name, parameter.value))
+                    if not hasattr(parameter.value, '__iter__'):
+                        print("\t\t%s\t%f" % (
+                            parameter.name, parameter.value))
