@@ -30,7 +30,7 @@ If IPython 0.11 or newer and the Qt libraries are installed in your system it is
 
     $ hyperspy qtconsole
 
-If IPython 0.12 or newer is installed in your system it is also possible to run Hyperspy in `IPython's HTML notebook <http://ipython.org/ipython-doc/stable/interactive/htmlnotebook.html>` that runs inside your browser. The Notebook is probably **the best way** to work with Hyperspy interactively. You can start it from a terminal by executing `hyperspy qtconsole`
+If IPython 0.12 or newer is installed in your system it is also possible to run Hyperspy in `IPython's HTML notebook <http://ipython.org/ipython-doc/stable/interactive/htmlnotebook.html>`_ that runs inside your browser. The Notebook is probably **the best way** to work with Hyperspy interactively. You can start it from a terminal by executing `hyperspy qtconsole`
 
 
 
@@ -57,7 +57,7 @@ choosing :menuselection:`open terminal` in the file menu if
 :program:`nautilus-open-terminal` is 
 installed in your system.
 
-Altenatively (and more conviently), if you are using Gnome place this and this   in the :file:`/.gnome2/nautilus-scripts` folder in your home directory (create it if it does not exists) and make the executable to get the :menuselection:`Scripts --> Hyperspy QtConsole Here` and :menuselection:`Scripts --> Hyperspy Notebook Here` entries in the context menu. 
+Altenatively (and more conviently), if you are using Gnome place `this <https://github.com/downloads/hyperspy/hyperspy/Hyperspy%20QtConsole%20here.sh>`_ and `this <https://github.com/downloads/hyperspy/hyperspy/Hyperspy%20Notebook%20here.sh>`_   in the :file:`/.gnome2/nautilus-scripts` folder in your home directory (create it if it does not exists) and make the executable to get the :menuselection:`Scripts --> Hyperspy QtConsole Here` and :menuselection:`Scripts --> Hyperspy Notebook Here` entries in the context menu. 
 
 
 .. figure::  images/hyperspy_here_gnome.png

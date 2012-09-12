@@ -73,7 +73,7 @@ It is also possible to load multiple files with a single command without stackin
    <EELSSpectrum, title: CL3, dimensions: (64, 64, 1024)>, 
    <EELSSpectrum, title: CL4, dimensions: (64, 64, 1024)>, 
    <EELSSpectrum, title: LL3, dimensions: (64, 64, 1024)>]
-
+    >>> s = load('*.rpl', stack=True)
     >>> s
     <EELSSpectrum, title: mva, dimensions: (5, 64, 64, 1024)>
 
