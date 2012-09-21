@@ -29,7 +29,7 @@ Hyperspy will try to guess the most likely data type for the corresponding file.
 
     >>> s = load("filename", signal = "EELS")
 
-Some file formats store some extra information about the data, which can be stroed in "attributes". If Hyperspy manages to read some extra information about the data it stores it in :py:attr:`~.signal.Signal.original_parameters` attribute. Also, it is possible that other information will be mapped by Hyperspy to a standard location where it can be used by some standard routines, the :py:attr:`~.signal.Signal.mapped_parameters` attribute.
+Some file formats store some extra information about the data, which can be stored in "attributes". If Hyperspy manages to read some extra information about the data it stores it in :py:attr:`~.signal.Signal.original_parameters` attribute. Also, it is possible that other information will be mapped by Hyperspy to a standard location where it can be used by some standard routines, the :py:attr:`~.signal.Signal.mapped_parameters` attribute.
 
 To print the content of the parameters simply:
 

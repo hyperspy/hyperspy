@@ -16,7 +16,7 @@ A :py:class:`~.model.Model` can be created using the :py:func:`~.hspy.create_mod
     >>> s = load('YourDataFilenameHere') # Load the data from a file
     >>> m = create_model(s) # Create the model and asign it to the variable m
 
-At this point you may be prompted to provide any necessary information not already included in the datafile, e.g.if s is EELS data, you may be asked for the accellerating voltage, convergence and collection angles etc.
+At this point you may be prompted to provide any necessary information not already included in the datafile, e.g.if s is EELS data, you may be asked for the accelerating voltage, convergence and collection angles etc.
 
 Adding components to the model
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
