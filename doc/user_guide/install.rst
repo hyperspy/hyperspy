@@ -15,9 +15,12 @@ Quick instructions to install Hyperspy in Windows
 -------------------------------------------------
 
 #. Download and install `EPD. <http://www.enthought.com/products/epd.php>`_ EPD is reccomended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are incluided). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_
-#. (Maybe) Restart the computer
+#. Restart the computer
 #. Download and install Hyperspy from the `Download section <http://hyperspy.org/download.html>`_
 
+.. WARNING::
+    Read :ref:`known-issues` before installing
+    
 For more options and details read the rest of the documentation.
 
 .. _quick-mac-install:
@@ -142,7 +145,7 @@ In Windows and Mac the easiest way to install these packages is by installing th
 
 If you use an Ubuntu binary to install Hyperspy all the dependencies should install automatically.
 
-.. _known-issues
+.. _known-issues:
 
 Known issues
 ------------
@@ -151,6 +154,7 @@ Windows
 ^^^^^^^
 
 * Hyperspy does not work with an standard installation of the full version of EPD 7.3-2 due to a problem of compilation in the h5py. The easiest way to walkaround this issue is reinstalling the h5py libraries. You can download them `from here. <http://www.lfd.uci.edu/~gohlke/pythonlibs/#h5py>`_
+* In some Windows machines an error is printed at the end of the installation and the entries in the context menu and the Start Menu are not installed properly. In most cases the problem can be solved by restarting the computer and reinstalling Hyperspy.
 * Due to a `Python bug <http://bugs.python.org/issue13276>`_ uninstalling Hyperspy does not uninstall the "Hyperspy Here" entries in the context menu. Please run the following code in a Windows Terminal with administrator rights to remove the entries manually:
   
   .. code-block:: bash

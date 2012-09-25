@@ -105,7 +105,7 @@ class ModelConfig(t.HasTraits):
 class MachineLearningConfig(t.HasTraits):
     export_factors_default_file_format = t.Enum(*default_write_ext)
     export_loadings_default_file_format = t.Enum(*default_write_ext)
-    multiple_files = t.Bool(False,
+    multiple_files = t.Bool(True,
         label = 'Export to multiple files',
         desc = 'If enabled, on exporting the PCA or ICA results one file'
                'per factor and loading will be created. Otherwise only two files'
