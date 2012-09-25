@@ -17,7 +17,8 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
-import math, copy
+import math
+import copy
 
 import numpy as np
 import scipy as sp
