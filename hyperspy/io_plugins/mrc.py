@@ -20,6 +20,8 @@
 # http://www.biochem.mpg.de/doc_tom/TOM_Release_2008/IOfun/tom_mrcread.html
 # and http://ami.scripps.edu/software/mrctools/mrc_specification.php
 
+import os
+
 import numpy as np
 
 from hyperspy.misc.utils import sarray2dict
@@ -170,7 +172,7 @@ def file_reader(filename, endianess = '<', **kwds):
     
     units = ['undefined', 'nm', 'nm']
     names = ['z', 'y', 'x']
-    mapped_parameters = {   'original_filename' : filename,
+    mapped_parameters = {   'original_filename' : os.path.split(filename)[1],
                             'record_by' : 'image',
                             'signal_type' : None,}
     #create the axis objects for each axis

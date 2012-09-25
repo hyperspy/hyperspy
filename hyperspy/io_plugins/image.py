@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 
 import numpy as np
 
@@ -69,7 +70,7 @@ def file_reader(filename, **kwds):
             dc = dc[:,:,0]
     return [{'data': dc, 
              'mapped_parameters': 
-                 {'original_filename' : filename,
+                 {'original_filename' : os.path.split(filename)[1],
                   'record_by': 'image',
                   'signal_type' : None,}}]
 

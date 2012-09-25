@@ -43,6 +43,7 @@ class Signal(t.HasTraits, MVA):
     axes_manager = t.Instance(AxesManager)
     original_parameters = t.Instance(DictionaryBrowser)
     mapped_parameters = t.Instance(DictionaryBrowser)
+    tmp_parameters = t.Instance(DictionaryBrowser)
     _default_record_by = 'image'
 
     def __init__(self, file_data_dict=None, *args, **kw):
@@ -57,6 +58,7 @@ class Signal(t.HasTraits, MVA):
         super(Signal, self).__init__()
         self.mapped_parameters = DictionaryBrowser()
         self.original_parameters = DictionaryBrowser()
+        self.tmp_parameters = DictionaryBrowser()
         self.learning_results=LearningResults()
         self.peak_learning_results=LearningResults()
         if file_data_dict is not None:
@@ -132,12 +134,7 @@ class Signal(t.HasTraits, MVA):
         self.mapped_parameters._load_dictionary(
             file_data_dict['mapped_parameters'])
         if not hasattr(self.mapped_parameters,'title'):
-            if hasattr(self.mapped_parameters,'original_filename'):
-                self.mapped_parameters.title = \
-                    os.path.splitext(self.mapped_parameters.original_filename)[0]
-            # "Synthetic" signals do not have an original filename
-            else:
-                self.mapped_parameters.title = ''
+            self.mapped_parameters.title = ''
         if not hasattr(self.mapped_parameters,'record_by'):
             self.mapped_parameters.record_by = self._default_record_by
         self.squeeze()
@@ -243,7 +240,11 @@ class Signal(t.HasTraits, MVA):
         
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = self.__call__
-        self._plot.signal_title = self.mapped_parameters.title
+        if self.mapped_parameters.title:
+            self._plot.signal_title = self.mapped_parameters.title
+        elif self.tmp_parameters.has_item('filename'):
+            self._plot.signal_title = self.tmp_parameters.filename
+            
 
         # Navigator properties
         if self.axes_manager.navigation_axes:
@@ -284,24 +285,24 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         Parameters
         ----------
         filename : str or None
-            If None and mapped_parameters.filename or 
-            mapped_parameters.original_filename are defined, the
-            filename and extension will be taken from them in this 
-            order.
+            If None and tmp_parameters.filename and 
+            tmp_paramters.folder are defined, the
+            filename and extension will be taken from them.
         overwrite : None, bool
             If None, if the file exists it will query the user. If 
             True(False) it (does not) overwrites the file if it exists.
         """
         if filename is None:
-            if self.mapped_parameters.has_item('filename'):
-                filename = self.mapped_parameters.filename
+            if (self.tmp_parameters.has_item('filename') and 
+                self.tmp_parameters.has_item('folder')):
+                filename = os.path.join(
+                    self.tmp_parameters.folder,
+                    self.tmp_parameters.filename)
             elif self.mapped_parameters.has_item('original_filename'):
                 filename = self.mapped_parameters.original_filename
-                self.mapped_parameters.filename = \
-                    self.mapped_parameters.original_filename
             else:
                 raise ValueError('File name not defined')
-
+    
         io.save(filename, self, overwrite=overwrite, **kwds)
 
     def _replot(self):

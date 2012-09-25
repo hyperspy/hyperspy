@@ -399,7 +399,7 @@ def ser_reader(filename, objects = None, *args, **kwds):
     dictionary = {
     'data' : dc,
     'mapped_parameters' : {
-                            'original_filename' : filename,
+                            'original_filename' : os.path.split(filename)[1],
                             'record_by' : record_by,
                             'signal_type' : None
 		},

@@ -68,7 +68,7 @@ not_valid_format = 'The file is not a valid Hyperspy hdf5 file'
 
 def file_reader(filename, record_by, mode = 'r', driver = 'core', 
                 backing_store = False, **kwds):
-    with h5py.File(filename, mode = mode, driver = driver) as f:
+    with h5py.File(filename, mode=mode, driver=driver) as f:
         # If the file has been created with Hyperspy it should cointain a
         # folder Experiments.
         experiments = []
@@ -84,7 +84,6 @@ def file_reader(filename, record_by, mode = 'r', driver = 'core',
             for experiment in experiments:
                 exg = f['Experiments'][experiment]
                 exp=hdfgroup2signaldict(exg)
-                exp['mapped_parameters']['filename'] = filename
                 exp_dict_list.append(exp)
         else:
             # Eventually there will be the possibility of loading the
@@ -120,7 +119,7 @@ def hdfgroup2signaldict(group):
     # Load the decomposition results written with the old name,
     # mva_results
     if 'mva_results' in group.keys():
-        exp['attributes']['learning_results']=hdfgroup2dict(
+        exp['attributes']['learning_results'] = hdfgroup2dict(
             group['mva_results'],{})
     if 'peak_mva_results' in group.keys():
         exp['attributes']['peak_learning_results']=hdfgroup2dict(
@@ -135,6 +134,12 @@ def hdfgroup2signaldict(group):
         exp['mapped_parameters']['title'] = \
             exp['mapped_parameters']['name']
         del exp['mapped_parameters']['name']
+    
+    # If the title was not defined on writing the Experiment is 
+    # then called __unnamed__. The next "if" simply sets the title
+    # back to the empty string
+    if '__unnamed__' == exp['mapped_parameters']['title']:
+        exp['mapped_parameters']['title'] = ''
         
     return exp
 
@@ -234,6 +239,7 @@ def write_signal(signal,group, compression='gzip'):
 def file_writer(filename, signal, compression = 'gzip', *args, **kwds):
     with h5py.File(filename, mode = 'w') as f:
         exps = f.create_group('Experiments')
-        group_name = signal.mapped_parameters.title if signal.mapped_parameters.title else 'unnamed'
+        group_name = signal.mapped_parameters.title if \
+                     signal.mapped_parameters.title else '__unnamed__'
         expg = exps.create_group(group_name)
         write_signal(signal,expg, compression = compression)

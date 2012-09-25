@@ -106,7 +106,8 @@ def load(filenames=None, record_by=None, signal_type=None,
         If True and multiple filenames are passed in, stacking all
         the data into a single object is attempted. All files must match
         in shape. It is possible to store the data in a memory mapped
-        temporary file instead of in memory setting mmap_mode.
+        temporary file instead of in memory setting mmap_mode. The title is set
+        to the name of the folder containing the files.
         
     mmap: bool
         If True and stack is True, then the data is stored
@@ -205,10 +206,13 @@ def load(filenames=None, record_by=None, signal_type=None,
                     eaxis.name = 'stack_element'
                     eaxis.navigate = True
                     signal.mapped_parameters = obj.mapped_parameters
-                    signal.mapped_parameters.original_filename = ''
+                    # Get the title from the folder name
                     signal.mapped_parameters.title = \
-                    os.path.split(os.path.split(
-                        os.path.abspath(filenames[0]))[0])[1]
+                    os.path.split(
+                        os.path.split(
+                            os.path.abspath(filenames[0])
+                                     )[0]
+                                  )[1]
                     signal.original_parameters = DictionaryBrowser({})
                     signal.original_parameters.add_node('stack_elements')
                 if obj.data.shape != original_shape:
@@ -310,11 +314,15 @@ def load_with_reader(filename, reader, record_by=None,
         if file_data_dict['mapped_parameters']['record_by'] == 'image':
             s = Image(file_data_dict)
         else:
-            if 'signal_type' in file_data_dict['mapped_parameters'] and \
-                file_data_dict['mapped_parameters']['signal_type'] == 'EELS':
+            if ('signal_type' in file_data_dict['mapped_parameters'] 
+                and file_data_dict['mapped_parameters']['signal_type'] 
+                == 'EELS'):
                 s = EELSSpectrum(file_data_dict)
             else:
                 s = Spectrum(file_data_dict)
+        folder, filename = os.path.split(os.path.abspath(filename))
+        s.tmp_parameters.folder = folder
+        s.tmp_parameters.filename = filename
         objects.append(s)
         print s
 
@@ -363,3 +371,6 @@ def save(filename, signal, overwrite=None, **kwds):
         if overwrite is True:
             writer.file_writer(filename, signal, **kwds)
             print('The %s file was created' % filename)
+            folder, filename = os.path.split(os.path.abspath(filename))
+            signal.tmp_parameters.set_item('folder', folder)
+            signal.tmp_parameters.set_item('filename', filename)

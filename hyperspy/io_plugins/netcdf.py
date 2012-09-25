@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 
 import numpy as np
 
@@ -183,7 +184,7 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
                 'units' : units[i],} \
             for i in xrange(dim)]
     mapped_parameters = {}
-    mapped_parameters['original_filename'] = filename
+    mapped_parameters['original_filename'] = os.path.split(filename)[1]
     mapped_parameters['record_by'] = record_by
     mapped_parameters['signal_type'] = None            
     dictionary = {

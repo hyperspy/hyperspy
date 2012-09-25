@@ -402,7 +402,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     
     mp = DictionaryBrowser({
 			'record_by': record_by,
-			'original_filename': filename,
+			'original_filename': os.path.split(filename)[1],
             'signal_type': rpl_info['signal'],
 			})
             

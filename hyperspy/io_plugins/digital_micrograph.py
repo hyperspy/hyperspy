@@ -1205,7 +1205,7 @@ def file_reader(filename, record_by=None, order = None, data_id=1,
            'units' : unicode(units[i]),} \
            for i in xrange(dim)]
 
-    mapped_parameters['original_filename'] = filename
+    mapped_parameters['original_filename'] = os.path.split(filename)[1]
     mapped_parameters['record_by'] = dm3.record_by
     mapped_parameters['signal_type'] = dm3.signal
     original_parameters = {}
