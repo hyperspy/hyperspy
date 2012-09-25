@@ -83,6 +83,11 @@ class Model(list):
     @low_loss.setter
     def low_loss(self, value):
         if value is not None:
+            if (value.axes_manager.navigation_shape != 
+                self.spectrum.axes_manager.navigation_shape):
+                    raise ValueError('The low-loss does not have '
+                        'the same navigation dimension as the '
+                        'core-loss')
             self._low_loss = value
             self.set_convolution_axis()
             self.convolved = True
