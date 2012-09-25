@@ -1804,6 +1804,13 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                     ' ' + str(self.axes_manager.coordinates))
         return cs
         
+    def __iter__(self):
+        return self
+        
+    def next(self):
+        self.axes_manager.next()
+        return self.get_current_signal()
+        
 #
 #    def get_single_spectrum(self):
 #        s = Spectrum({'calibration' : {'data_cube' : self()}})
