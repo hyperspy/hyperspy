@@ -775,10 +775,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             return s
 
     def copy(self):
-        return(copy.copy(self))
+        return copy.copy(self)
 
     def deepcopy(self):
-        return(copy.deepcopy(self))
+        return copy.deepcopy(self)
         
     def change_dtype(self, dtype):
         """Change the data type
@@ -792,7 +792,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         Example
         -------
         >>> import numpy as np
-        >>> from hyperspy.signals.spectrum import Spectrum
+        >>> from hyperspy.signals.spectrum import Spectrum        ns = 
+        ns.data = self.data.copy()
         >>> s = signals.Spectrum({'data' : np.array([1,2,3,4,5])})
         >>> s.data
         array([1, 2, 3, 4, 5])
@@ -1789,7 +1790,20 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 print "Clipping the variance to the gaussian_noise_var"
                 self.variance = np.clip(self.variance, gaussian_noise_var,
                 np.Inf)
-
+    def get_current_signal(self):
+        cs = self.deepcopy()
+        cs.data = cs()
+        for axis in cs.axes_manager.navigation_axes:
+            cs.axes_manager.axes.remove(axis)
+            cs.axes_manager.set_signal_dimension()
+        if cs.tmp_parameters.has_item('filename'):
+            basename, ext = os.path.splitext(cs.tmp_parameters.filename)
+            cs.tmp_parameters.filename = (basename + '_' +
+                    str(self.axes_manager.coordinates) + ext)
+        cs.mapped_parameters.title = (cs.mapped_parameters.title +
+                    ' ' + str(self.axes_manager.coordinates))
+        return cs
+        
 #
 #    def get_single_spectrum(self):
 #        s = Spectrum({'calibration' : {'data_cube' : self()}})
