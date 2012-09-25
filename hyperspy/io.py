@@ -174,7 +174,8 @@ def load(filenames=None, record_by=None, signal_type=None,
         if stack is True:
             original_shape = None
             for i, filename in enumerate(filenames):
-                obj = load_single_file(filename, output_level=0,**kwds)
+                obj = load_single_file(filename, output_level=0,
+                    signal_type=signal_type, **kwds)
                 if original_shape is None:
                     original_shape = obj.data.shape
                     record_by = obj.mapped_parameters.record_by
@@ -228,7 +229,8 @@ def load(filenames=None, record_by=None, signal_type=None,
             print signal
             objects = [signal,]
         else:
-            objects=[load_single_file(filename, output_level=0,**kwds) 
+            objects=[load_single_file(filename, output_level=0,
+                     signal_type=signal_type, **kwds) 
                 for filename in filenames]
             
         if hyperspy.defaults_parser.preferences.General.plot_on_load:
@@ -239,7 +241,8 @@ def load(filenames=None, record_by=None, signal_type=None,
     return objects
 
 
-def load_single_file(filename, record_by=None, output_level=2, **kwds):
+def load_single_file(filename, record_by=None, output_level=2, 
+    signal_type=None, **kwds):
     """
     Load any supported file into an Hyperspy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
@@ -269,17 +272,19 @@ def load_single_file(filename, record_by=None, output_level=2, **kwds):
         # Try to load it with the python imaging library
         reader = image
         try:
-            return load_with_reader(filename, reader, record_by, **kwds)
+            return load_with_reader(filename, reader, record_by, 
+                signal_type=signal_type, **kwds)
         except:
             messages.warning_exit('File type not supported')
     else:
         reader = io_plugins[i]
-        return load_with_reader(filename, reader, record_by, 
+        return load_with_reader(filename, reader, record_by,
+                    signal_type=signal_type,
                     output_level=output_level, **kwds)
 
 
-def load_with_reader(filename, reader, record_by = None, signal_type = None,
-                     output_level=1, **kwds):
+def load_with_reader(filename, reader, record_by=None,
+        signal_type=None, output_level=1, **kwds):
     from hyperspy.signals.image import Image
     from hyperspy.signals.spectrum import Spectrum
     from hyperspy.signals.eels import EELSSpectrum
@@ -287,7 +292,7 @@ def load_with_reader(filename, reader, record_by = None, signal_type = None,
         messages.information('Loading %s ...' % filename)
     
     file_data_list = reader.file_reader(filename,
-                                         record_by=record_by,
+                                        record_by=record_by,
                                         output_level=output_level,
                                         **kwds)
     objects = []
