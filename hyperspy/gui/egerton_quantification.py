@@ -228,8 +228,10 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             show_border=True,
             label='Advanced settings'),
             ),
-            buttons= [OKButton, OurPreviousButton, OurFindButton, OurApplyButton,
-                      ],
+            buttons= [OKButton,
+                      OurPreviousButton,
+                      OurFindButton,
+                      OurApplyButton,],
             handler = SpikesRemovalHandler,
             title = 'Spikes removal tool')
                  
@@ -237,7 +239,9 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         super(SpikesRemoval, self).__init__(signal)
         self.interpolated_line = None
         self.coordinates = [coordinate for coordinate in np.ndindex(
-                            tuple(signal.axes_manager.navigation_shape)) if (navigation_mask is None or not navigation_mask[coordinate])]
+                            tuple(signal.axes_manager.navigation_shape))
+                            if (navigation_mask is None or not 
+                                navigation_mask[coordinate])]
         self.signal = signal
         sys.setrecursionlimit(np.cumprod(self.signal.data.shape)[-1])
         self.line = signal._plot.signal_plot.ax_lines[0]
@@ -258,7 +262,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         
     def _show_derivative_histogram_fired(self):
         self.signal.spikes_diagnosis(signal_mask=self.signal_mask,
-                                     navigation_mask=self.navigation_mask)
+                                navigation_mask=self.navigation_mask)
         
     def detect_spike(self):
         derivative = np.diff(self.signal())
@@ -275,8 +279,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             return False
 
     def find(self, back=False):
-        if (self.index == len(self.coordinates) - 1 and back is False) \
-        or (back is True and self.index == 0):
+        if ((self.index == len(self.coordinates) - 1 and back is False)
+        or (back is True and self.index == 0)):
             messages.information('End of dataset reached')
             return
         if self.interpolated_line is not None:
@@ -294,8 +298,10 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             minimum = max(0,self.argmax - 50)
             maximum = min(len(self.signal()) - 1, self.argmax + 50)
             self.ax.set_xlim(
-                self.signal.axes_manager.axes[-1].index2value(minimum),
-                self.signal.axes_manager.axes[-1].index2value(maximum))
+                self.signal.axes_manager.signal_axes[0].index2value(
+                    minimum),
+                self.signal.axes_manager.signal_axes[0].index2value(
+                    maximum))
             self.update_plot()
             self.create_interpolation_line()
 
@@ -356,6 +362,11 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         else:
             left = axis.value2index(self.ss_left_value)
             right = axis.value2index(self.ss_right_value)
+        
+        # Clip to the axis dimensions
+        nchannels = self.signal.axes_manager.signal_shape[0]
+        left = left if left >= 0 else 0
+        right = right if right < nchannels else nchannels - 1
             
         return left,right
         
