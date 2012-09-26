@@ -78,18 +78,20 @@ class Signal(t.HasTraits, MVA):
 
         return string
         
-    def __str__(self):
-        string = "\n\tTitle: %s"%self.mapped_parameters.title
+    def print_summary(self):
+        string = "\n\tTitle: "
+        string += self.mapped_parameters.title.decode('utf8')
         if hasattr(self.mapped_parameters,'signal_type'):
-            string += "\n\tSignal type: %s" % self.mapped_parameters.signal_type
-        string += "\n\tData dimensions: %s" % (str(self.data.shape))
+            string += "\n\tSignal type: "
+            string += self.mapped_parameters.signal_type
+        string += "\n\tData dimensions: "
+        string += str(self.data.shape)
         if hasattr(self.mapped_parameters, 'record_by'):
-            string += \
-            "\n\tData representation: %s" % self.mapped_parameters.record_by
-            string += \
-            "\n\tData type: %s" % self.data.dtype
-
-        return string
+            string += "\n\tData representation: "
+            string += self.mapped_parameters.record_by
+            string += "\n\tData type: "
+            string += str(self.data.dtype)
+        print string
 
     def load_dictionary(self, file_data_dict):
         """Parameters:
