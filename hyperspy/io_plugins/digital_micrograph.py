@@ -801,7 +801,7 @@ class DM3ImageFile(object):
             if name:
                 self.name = self.data_dict.ls([im,] + DM3ImageFile.imname)[1][1]
             else:
-                self.name = self.filename
+                self.name = ""
             #~ if self.output_level>1:
                 #~ print 'Loading image "%s" (ID: %i) from file %s'% (self.name,
                                                                #~ self.data_id,
