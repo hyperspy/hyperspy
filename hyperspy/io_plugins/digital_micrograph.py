@@ -822,7 +822,7 @@ class DM3ImageFile(object):
             
         self.old_code_tags = parseDM3(self.filename)
         self.SI_format = None
-        self.signal = None
+        self.signal = ""
         for tag, value in self.old_code_tags.iteritems():
             if 'Format' in tag and 'Spectrum image' in str(value):
                 self.SI_format = value

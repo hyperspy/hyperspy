@@ -353,7 +353,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     sizes = [rpl_info[names[i]] for i in xrange(3)]
 
     if 'signal' not in rpl_info:
-        rpl_info['signal'] = None
+        rpl_info['signal'] = ""
         
     if rpl_info.has_key('detector-peak-width-ev'):
         original_parameters['detector-peak-width-ev'] = \
@@ -463,7 +463,7 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
     if hasattr(signal.mapped_parameters,'signal_type'):
         signal_type = signal.mapped_parameters.signal_type
     else:
-        signal_type=None
+        signal_type=""
     if signal.axes_manager.signal_dimension == 1:
         record_by = 'vector'
         depth_axis = signal.axes_manager.signal_axes[0]
