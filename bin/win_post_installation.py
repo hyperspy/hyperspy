@@ -63,26 +63,27 @@ def install_hyperspy_here():
             _winreg.DeleteKey(_winreg.HKEY_CLASSES_ROOT, r'Directory\shell\hyperspy_here')
             _winreg.DeleteKey(_winreg.HKEY_CLASSES_ROOT, r'Directory\Background\shell\hyperspy_here\Command')
             _winreg.DeleteKey(_winreg.HKEY_CLASSES_ROOT, r'Directory\Background\shell\hyperspy_here')
+        uninstall_hyperspy_here()
     except:
         # The old entries were not present, so we do nothing
         pass
 
     ## Install the context menu entries for the qtconsole and the IPython notebook
     for env in ('qtconsole', 'notebook'):
-        script = os.path.join(sys.prefix, 'Scripts', 'hyperspy_%s.bat' % env)
+        script = os.path.join(sys.prefix, 'Scripts', "hyperspy_%s.bat" % env)
         if sys.getwindowsversion()[0] < 6.: # Before Windows Vista
             key = _winreg.CreateKey(_winreg.HKEY_LOCAL_MACHINE, r'Software\Classes\Folder\Shell\Hyperspy_%s_here' % env)
             _winreg.SetValueEx(key,"",0,_winreg.REG_SZ,"Hyperspy %s here" % env)
             key.Close()
             key = _winreg.CreateKey(_winreg.HKEY_LOCAL_MACHINE, r'Software\Classes\Folder\Shell\Hyperspy_%s_here\Command'  % env)
-            _winreg.SetValueEx(key, "", 0, _winreg.REG_EXPAND_SZ, script)
+            _winreg.SetValueEx(key, "", 0, _winreg.REG_EXPAND_SZ, script + " \"%L\"")
             key.Close()
         else: # Windows Vista and above
             key = _winreg.CreateKey(_winreg.HKEY_CLASSES_ROOT, r'Directory\shell\hyperspy_%s_here' % env)
             _winreg.SetValueEx(key,"",0,_winreg.REG_SZ,"Hyperspy %s here" % env)
             key.Close()
             key = _winreg.CreateKey(_winreg.HKEY_CLASSES_ROOT, r'Directory\shell\hyperspy_%s_here\Command' % env)
-            _winreg.SetValueEx(key, "", 0, _winreg.REG_EXPAND_SZ, script)
+            _winreg.SetValueEx(key, "", 0, _winreg.REG_EXPAND_SZ, script + " \"%L\"")
             key.Close()
             key = _winreg.CreateKey(_winreg.HKEY_CLASSES_ROOT, r'Directory\Background\shell\hyperspy_%s_here' % env)
             _winreg.SetValueEx(key,"",0,_winreg.REG_SZ,"Hyperspy %s Here" % env)
@@ -102,7 +103,8 @@ def install():
     else:
         start_menu = local_sm
     hyperspy_install_path = os.path.dirname(hyperspy.__file__)
-    logo_path = os.path.expandvars(os.path.join(hyperspy_install_path, 'data'))
+    logo_path = os.path.expandvars(os.path.join(hyperspy_install_path,
+                                   'data'))
     hyperspy_qtconsole_bat = os.path.join(sys.prefix,
                                           'Scripts',
                                           'hyperspy_qtconsole.bat')
@@ -122,20 +124,24 @@ def install():
             pass                   
     os.mkdir(hspy_sm_path)
     directory_created(hspy_sm_path)
-    qtconsole_link_path = os.path.join(hspy_sm_path, 'hyperspy_qtconsole.lnk')
-    notebook_link_path = os.path.join(hspy_sm_path, 'hyperspy_notebook.lnk')
+    qtconsole_link_path = os.path.join(hspy_sm_path,
+                                       'hyperspy_qtconsole.lnk')
+    notebook_link_path = os.path.join(hspy_sm_path,
+                                      'hyperspy_notebook.lnk')
     create_shortcut(hyperspy_qtconsole_bat,
                     'Hyperspy QtConsole',
                     qtconsole_link_path,
                     "",
                     os.path.expanduser("~"),
-                    os.path.join(logo_path, 'hyperspy_qtconsole_logo.ico'))
+                    os.path.join(logo_path,
+                                 'hyperspy_qtconsole_logo.ico'))
     create_shortcut(hyperspy_notebook_bat,
                     'Hyperspy Notebook',
                     notebook_link_path,
                     "",
                     os.path.expanduser("~"),
-                    os.path.join(logo_path, 'hyperspy_notebook_logo.ico'))
+                    os.path.join(logo_path,
+                                 'hyperspy_notebook_logo.ico'))
     file_created(qtconsole_link_path)
     file_created(notebook_link_path)
 
@@ -167,4 +173,4 @@ def install():
 if sys.argv[1] == '-install':
     install()
 else:
-        uninstall_hyperspy_here()
+    uninstall_hyperspy_here()

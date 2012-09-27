@@ -71,11 +71,12 @@ if are_we_building4windows() or os.name in ['nt','dos']:
                 batch_file = os.path.splitext(script)[0] + '_%s' % env + '.bat'
                 f = open(batch_file, "w")
                 f.write('set path=%~dp0;%~dp0\..\;%PATH%\n')
+                f.write('cd %1\n')
                 if env == "qtconsole":
-                    f.write('start pythonw "%%~dp0\%s " %s %%*\n' % (
+                    f.write('start pythonw "%%~dp0\%s " %s \n' % (
                         os.path.split(script)[1], env))
                 else:
-                    f.write('python "%%~dp0\%s" %s %%*\n' % 
+                    f.write('python "%%~dp0\%s" %s \n' % 
                         (os.path.split(script)[1], env))
                     
                 batch_files.append(batch_file)        
