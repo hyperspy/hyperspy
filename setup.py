@@ -37,11 +37,8 @@ install_req = ['scipy',
                'ipython',
                'matplotlib',
                'numpy',
-               'mdp',
-               'scikit_learn',
                'traits',
-               'traitsui',
-               'h5py', ]
+               'traitsui',]
 
 def are_we_building4windows():
     for arg in sys.argv:
