@@ -3,6 +3,39 @@ What's new
 
 We only cover here the main highlights, for a detailed list of all the changes see `the github commits changelog <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
+.. _changes_0.5.1:
+
+v0.5.1
+======
+
+New features
+------------
+* New Signal method `get_current_signal` proposed by magnunor.
+* New Signal `save` method keyword `extension` to easily change the saving format while keeping the same file name.
+* New EELSSpectrum methods: estimate_elastic_scattering_intensity, fourier_ratio_deconvolution, richardson_lucy_deconvolution, power_law_extrapolation
+* New Spectrum method: hanning_taper
+
+
+
+Mayor bugs fixed
+----------------
+* The `print_current_values` Model method was raising errors when fine structure was enabled or when only_free = False
+*  The `load` function `signal_type` keyword was not passed to the readers.
+* The spikes removal tool was unable to find the next spikes when the spike was detected close to the limits of the spectrum.
+* `load` was raising an UnicodeError when the title contained non-ASCII characters.
+* In Windows `Hyperspy Here` was opening in the current folder, not in the selected folder.
+* The fine structure coefficients were overwritten with their std when charging values from the model
+* Storing the parameters in the maps and all the related functionality was broken for 1D spectrum
+* Remove_background was broken for 1D spectrum
+
+
+
+
+API changes
+-----------
+* EELSSPectrum.find_low_loss_centre was renamed to estimate_zero_loss_peak_centre
+* EELSSPectrum.calculate_FWHM was renamed to estimate_FWHM
+
 .. _changes_0.5:
 
 v0.5
