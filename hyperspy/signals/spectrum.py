@@ -106,6 +106,11 @@ class Spectrum(Signal):
             self.crop_in_units(axis, offset - mini)
         if maxi > 0:
             self.crop_in_units(axis, None, _axis[-1] - maxi)
+            
+        # TODO: in some cases the first and last channels are wrongly
+        # set to zero. Until we find the time to fix it the following
+        # line is a walkaround
+        self.crop_in_pixels(-1,1,-1)
 
     def interpolate_in_index_1D(self, axis, i1, i2, delta=3, **kwargs):
         axis = self.axes_manager.axes[axis]
