@@ -284,9 +284,10 @@ class Model(list):
         if switch_aap is True:
             self.set_auto_update_plot(False)
         for component in self:
-            component.charge_value_from_map(
-            tuple(self.axes_manager._indexes), only_fixed = 
-            only_fixed)
+            indexes = self.axes_manager._indexes
+            indexes = tuple(indexes) if indexes else (0,)
+            component.charge_value_from_map(indexes, only_fixed=
+                                            only_fixed)
         if switch_aap is True:
             self.set_auto_update_plot(True)
             self.update_plot()

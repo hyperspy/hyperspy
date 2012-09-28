@@ -46,8 +46,10 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         default = 'Power Law')
     polynomial_order = t.Range(1,10)
     background_estimator = t.Instance(Component)
-    bg_line_range = t.Enum('from_left_range', 'full', 'ss_range', 
-        default = 'full')
+    bg_line_range = t.Enum('from_left_range',
+                           'full',
+                           'ss_range',
+                           default = 'full')
     hi = t.Int(0)
     view = tu.View(
         tu.Group(
@@ -106,7 +108,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         self.bg_line.autoscale = False
         self.bg_line.plot()
         
-    def bg_to_plot(self, axes_manager = None, fill_with = np.nan):
+    def bg_to_plot(self, axes_manager=None, fill_with=np.nan):
         # First try to update the estimation
         self.background_estimator.estimate_parameters(
             self.signal, self.ss_left_value, self.ss_right_value, 
@@ -143,24 +145,23 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             
     def apply(self):
         self.signal._plot.auto_update_plot = False
-        if self.signal.axes_manager.navigation_dimension != 0:
-            pbar = progressbar(
-            maxval = (np.cumprod(self.signal.axes_manager.navigation_shape)[-1]))
-            i = 0
-            self.bg_line_range = 'full'
-            indexes = np.ndindex(
-            tuple(self.signal.axes_manager.navigation_shape))
-            for index in indexes:
-                self.signal.axes_manager.set_not_slicing_indexes(index)
-                self.signal.data[
-                self.signal.axes_manager._getitem_tuple] -= \
-                np.nan_to_num(self.bg_to_plot(self.signal.axes_manager, 0))
-                i+=1
+        maxval = self.signal.axes_manager.navigation_size
+        if maxval > 0:
+            pbar = progressbar(maxval=maxval)
+        i = 0
+        self.bg_line_range = 'full'
+        for s in self.signal:
+            s.data[:] -= \
+            np.nan_to_num(self.bg_to_plot(self.signal.axes_manager,
+                                          0))
+            if self.background_type == 'Power Law':
+                s.data[:self.axis.value2index(self.ss_right_value)] = 0
+                
+            i+=1
+            if maxval > 0:
                 pbar.update(i)
+        if maxval > 0:
             pbar.finish()
-        else:
-            self.signal.data[self.signal.axes_manager._getitem_tuple] -= \
-                np.nan_to_num(self.bg_to_plot(self.signal.axes_manager, 0))
             
         self.signal._replot()
         self.signal._plot.auto_update_plot = True
@@ -261,7 +262,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.update_plot()
         
     def _show_derivative_histogram_fired(self):
-        self.signal.spikes_diagnosis(signal_mask=self.signal_mask,
+        self.signal._spikes_diagnosis(signal_mask=self.signal_mask,
                                 navigation_mask=self.navigation_mask)
         
     def detect_spike(self):

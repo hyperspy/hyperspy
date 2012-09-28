@@ -321,8 +321,10 @@ def load_with_reader(filename, reader, record_by=None,
             else:
                 s = Spectrum(file_data_dict)
         folder, filename = os.path.split(os.path.abspath(filename))
+        filename, extension = os.path.splitext(filename)
         s.tmp_parameters.folder = folder
         s.tmp_parameters.filename = filename
+        s.tmp_parameters.extension = extension.replace('.','')
         objects.append(s)
         s.print_summary()
 
@@ -373,4 +375,6 @@ def save(filename, signal, overwrite=None, **kwds):
             print('The %s file was created' % filename)
             folder, filename = os.path.split(os.path.abspath(filename))
             signal.tmp_parameters.set_item('folder', folder)
-            signal.tmp_parameters.set_item('filename', filename)
+            signal.tmp_parameters.set_item('filename', 
+                                           os.path.splitext(filename)[0])
+            signal.tmp_parameters.set_item('extension', extension)

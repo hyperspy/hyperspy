@@ -32,6 +32,8 @@ from hyperspy.decorators import only_interactive
 from hyperspy.gui.eels import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
+from hyperspy.misc.progressbar import progressbar
+from hyperspy.components.power_law import PowerLaw
 
 
 class EELSSpectrum(Spectrum):
@@ -47,19 +49,19 @@ class EELSSpectrum(Spectrum):
             print('Elemental composition read from file')
             self.add_elements(self.mapped_parameters.Sample.elements)
 
-    def add_elements(self, elements, include_pre_edges = False):
+    def add_elements(self, elements, include_pre_edges=False):
         """Declare the elemental composition of the sample.
         
-        The ionisation edges of the elements present in the current energy range
-        will be added automatically.
+        The ionisation edges of the elements present in the current 
+        energy range will be added automatically.
         
         Parameters
         ----------
         elements : tuple of strings
             The symbol of the elements.
         include_pre_edges : bool
-            If True, the ionization edges with an onset below the lower energy 
-            limit of the SI will be incluided
+            If True, the ionization edges with an onset below the lower 
+            energy limit of the SI will be incluided
             
         Examples
         --------
@@ -74,22 +76,24 @@ class EELSSpectrum(Spectrum):
             if element in elements:
                 self.elements.add(element)
             else:
-                print("%s is not a valid symbol of an element" % element)
+                print(
+                    "%s is not a valid symbol of an element" % element)
         if not hasattr(self.mapped_parameters, 'Sample'):
             self.mapped_parameters.add_node('Sample')
         self.mapped_parameters.Sample.elements = list(self.elements)
         if self.elements:
             self.generate_subshells(include_pre_edges)
         
-    def generate_subshells(self, include_pre_edges = False):
-        """Calculate the subshells for the current energy range for the elements
-         present in self.elements
+    def generate_subshells(self, include_pre_edges=False):
+        """Calculate the subshells for the current energy range for the 
+        elements present in self.elements
          
         Parameters
         ----------
         include_pre_edges : bool
-            If True, the ionization edges with an onset below the lower energy 
-            limit of the SI will be incluided
+            If True, the ionization edges with an onset below the lower 
+            energy limit of the SI will be incluided
+            
         """
         Eaxis = self.axes_manager.signal_axes[0].axis
         if not include_pre_edges:
@@ -102,21 +106,24 @@ class EELSSpectrum(Spectrum):
             for shell in elements[element]['subshells']:
                 if shell[-1] != 'a':
                     if start_energy <= \
-                    elements[element]['subshells'][shell]['onset_energy'] \
+                    elements[element]['subshells'][shell][
+                        'onset_energy'] \
                     <= end_energy :
                         subshell = '%s_%s' % (element, shell)
                         if subshell not in self.subshells:
                             print "Adding %s subshell" % (subshell)
-                            self.subshells.add('%s_%s' % (element, shell))
+                            self.subshells.add(
+                                '%s_%s' % (element, shell))
                             e_shells.append(subshell)
                     
-    def find_low_loss_centre(self, also_apply_to=None):
-        """Calculate the position of the zero loss origin as the average of the 
-        postion of the maximum of all the spectra
+    def estimate_zero_loss_peak_centre(self, also_apply_to=None):
+        """Calculates the position of the zero loss origin as the 
+        average of the position of the maximum of all the spectra and 
+         calibrates energy axis.
         
         Parameters
         ----------
-        also_apply_to : None or list of Signals
+        also_apply_to : None or list of EELSSPectrum
             If a list of signals is provided, the same offset
             transformation is applied to all the other signals.
             
@@ -133,68 +140,135 @@ class EELSSpectrum(Spectrum):
                 saxis = sync_signal.axes_manager.axes[
                     axis.index_in_array]
                 saxis.offset += axis.offset - old_offset
-
-    def fourier_log_deconvolution(self):
-        """Performs fourier-log deconvolution of the full SI.
-        
-        The zero-loss can be specified by defining the parameter 
-        self.zero_loss that must be an instance of Spectrum. 
-        """
-        axis = self.axes_manager.signal_axes[0]
-        z = np.fft.fft(self.zero_loss.data, axis = axis.index_in_array)
-        j = np.fft.fft(self.data, axis = axis.index_in_array)
-        j1 = z*np.log(j/z)
-        self.data = np.fft.ifft(j1, axis = 0).real
-        
-    def calculate_thickness(self, method = 'threshold', threshold = 3, 
-        factor = 1):
-        """Calculates the thickness from a LL SI.
-        
-        The resulting thickness map is stored in self.thickness as an image 
-        instance. To visualize it: self.thickness.plot()
+                
+    def estimate_elastic_scattering_intensity(self, threshold=None):
+        """Rough estimation of the elastic scattering signal by 
+        truncation of a EELS low-loss spectrum.
         
         Parameters
         ----------
-        method : {'threshold', 'zl'}
-            If 'threshold', it will extract the zero loss by just splittin the 
-            spectrum at the threshold value. If 'zl', it will use the 
-            self.zero_loss SI (if defined) to perform the calculation.
-        threshold : float
-            threshold value.
-        factor : float
-            factor by which to multiple the ZLP
+        threshold : {None, float}
+            Truncation energy to estimate the intensity of the 
+            elastic scattering. If None the threshold is taken as the
+            first minimum after the ZLP centre.
+            
+        Returns
+        -------
+        The elastic scattering intensity. If the navigation size is 0 
+        returns a float. Otherwise it returns a Spectrum, Image or a 
+        Signal, depending on the currenct spectrum navigation 
+        dimensions.
+            
         """
-        print "Calculating the thickness"
-        # Create the thickness array
+        axis = self.axes_manager.signal_axes[0]
+        if threshold is None:
+            # Use the data from the current location to estimate
+            # the threshold as the position of the first maximum
+            # after the ZLP
+            data = self()
+            index = data.argmax()
+            while data[index] > data[index + 1]:
+                index += 1
+            threshold = axis.index2value(index)
+            print("Threshold = %1.2f" % threshold)
+            del data
+        I0 = self.data[
+        (slice(None),) * axis.index_in_array + (
+            slice(None, axis.value2index(threshold)), 
+            Ellipsis,)].sum(axis.index_in_array)
+            
+        s = self._get_navigation_signal()
+        if s is None:
+            return I0
+        else:
+            s.data = I0
+            s.mapped_parameters.title = (self.mapped_parameters.title + 
+                ' elastic intensity')
+            if self.tmp_parameters.has_item('filename'):
+                s.tmp_parameters.filename = (
+                    self.tmp_parameters.filename +
+                    '_elastic_intensity')
+                s.tmp_parameters.folder = self.tmp_parameters.folder
+                s.tmp_parameters.extension = \
+                    self.tmp_parameters.extension
+            return s
+    
+                
+    def estimate_thickness(self, threshold=None, zlp=None,):
+        """Estimates the thickness (relative to the mean free path) 
+        of a sample using the log-ratio method.
+        
+        The current EELS spectrum must be a low-loss spectrum containing
+        the zero-loss peak. The hyperspectrum must be well calibrated 
+        and aligned. 
+        
+        Parameters
+        ----------
+        zlp : {None, EELSSpectrum}
+            If None estimates the zero-loss peak by integrating the
+            intensity of the spectrum up to the value defined in 
+            threshold (i.e. by truncation). Otherwise the zero-loss
+             peak intensity is calculated from the ZLP spectrum
+              supplied.
+        threshold : {None, float}
+            Truncation energy to estimate the intensity of the 
+            elastic scattering. If None the threshold is taken as the
+             first minimum after the ZLP centre.
+            
+        Returns
+        -------
+        The thickness relative to the MFP. If it is a single spectrum 
+        returns a float. Otherwise it returns a Spectrum, Image or a 
+        Signal, depending on the currenct spectrum navigation 
+        dimensions.
+            
+        Notes
+        -----        
+        For details see: Egerton, R. Electron Energy-Loss 
+        Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
+        
+        """       
+        
         dc = self.data
         axis = self.axes_manager.signal_axes[0]
-        integral = dc.sum(axis.index_in_array)
-        if method == 'zl':
-            if self.zero_loss is None:
-                hyperspy.messages.warning_exit('To use this method the zero_loss'
-                'attribute must be defined')
-            zl = self.zero_loss.data
-            zl_int = zl.sum(axis.index_in_array)            
-        elif method == 'threshold':
-            ti = axis.value2index(threshold)
-            zl_int = self.data[
-            (slice(None),) * axis.index_in_array + (slice(None, ti), Ellipsis,)
-            ].sum(axis.index_in_array) * factor 
-        self.thickness = \
-        Image({'data' : np.log(integral / zl_int)})
+        total_intensity = dc.sum(axis.index_in_array)
+        if zlp is not None:
+            I0 = zlp.data.sum(axis.index_in_array)            
+        else:
+            I0 = self.estimate_elastic_scattering_intensity(
+                                                threshold=threshold)
+            if self.axes_manager.navigation_size > 0:
+                I0 = I0.data
+        t_over_lambda = np.log(total_intensity / I0)
+        s = self._get_navigation_signal()
+        if s is None:
+            return t_over_lambda
+        else:
+            s.data = t_over_lambda
+            s.mapped_parameters.title = (self.mapped_parameters.title + 
+                ' $\\frac{t}{\\lambda}$')
+            if self.tmp_parameters.has_item('filename'):
+                s.tmp_parameters.filename = (
+                    self.tmp_parameters.filename +
+                    '_relative_thickness')
+                s.tmp_parameters.folder = self.tmp_parameters.folder
+                s.tmp_parameters.extension = \
+                    self.tmp_parameters.extension
+            return s
                 
-    def calculate_FWHM(self, factor = 0.5, energy_range = (-2,2), der_roots = False):
-        """Use a third order spline interpolation to estimate the FWHM of 
-        the zero loss peak.
+                
+    def estimate_FWHM(self, factor=0.5, energy_range=(-10.,10.),
+                      der_roots=False):
+        """Use a third order spline interpolation to estimate the FWHM 
+        of a peak at the current position.
         
         Parameters:
         -----------
         factor : float < 1
-            By default is 0.5 to give FWHM. Choose any other float to give
-            find the position of a different fraction of the peak.
-        channels : int
-            radius of the interval around the origin were the algorithm will 
-            perform the estimation.
+            By default is 0.5 to give FWHM. Choose any other float to 
+            give find the position of a different fraction of the peak.
+        energy_range : tuple of floats
+            energy interval containing the peak.
         der_roots: bool
             If True, compute the roots of the first derivative
             (2 times slower).  
@@ -209,39 +283,220 @@ class EELSSpectrum(Spectrum):
                 Coordinates in energy units of the FWHM points.
             'der_roots' : tuple
                 Position in energy units of the roots of the first
-            derivative if der_roots is True (False by default)
+                derivative if der_roots is True (False by default)
+                
         """
         axis = self.axes_manager.signal_axes[0]
-        i0, i1 = axis.value2index(energy_range[0]), axis.value2index(
-        energy_range[1])
+        i0, i1 = (axis.value2index(energy_range[0]), 
+                  axis.value2index(energy_range[1]))
         data = self()[i0:i1]
         x = axis.axis[i0:i1]
         height = np.max(data)
-        spline_fwhm = scipy.interpolate.UnivariateSpline(x, 
-                                                         data - factor * height)
+        spline_fwhm = scipy.interpolate.UnivariateSpline(
+                            x, data - factor * height)
         pair_fwhm = spline_fwhm.roots()[0:2]
         fwhm = pair_fwhm[1] - pair_fwhm[0]
+        
         if der_roots:
             der_x = np.arange(x[0], x[-1] + 1, (x[1] - x[0]) * 0.2)
             derivative = spline_fwhm(der_x, 1)
-            spline_der = scipy.interpolate.UnivariateSpline(der_x, derivative)
-            return {'FWHM' : fwhm, 'pair' : pair_fwhm, 
-            'der_roots': spline_der.roots()}
+            spline_der = scipy.interpolate.UnivariateSpline(der_x,
+                derivative)
+            return {'FWHM' : fwhm,
+                     'pair' : pair_fwhm, 
+                     'der_roots': spline_der.roots()}
         else:
-            return {'FWHM' : fwhm, 'FWHM_E' : pair_fwhm}
+            return {'FWHM' : fwhm,
+                     'FWHM_E' : pair_fwhm}
+
+    def fourier_log_deconvolution(self, zlp, add_zlp=True):
+        """Performs fourier-log deconvolution.
+        
+        Parameters
+        ----------
+        zlp : EELSSpectrum
+            The corresponding zero-loss peak. Note that 
+            it must have exactly the same shape as the current spectrum.
+        add_zlp : bool
+            If True, adds the ZLP to the deconvolved spectrum
+        
+        Returns
+        -------
+        An EELSSpectrum containing the current data deconvolved.
+        
+        Notes
+        -----        
+        For details see: Egerton, R. Electron Energy-Loss 
+        Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
+        
+        """
+        axis = self.axes_manager.signal_axes[0]
+        z = np.fft.fft(zlp.data, axis=axis.index_in_array)
+        j = np.fft.fft(self.data, axis=axis.index_in_array)
+        j1 = z*np.log(j/z)
+        s = self.deepcopy()
+        s.data = np.fft.ifft(j1, axis=axis.index_in_array).real
+        if add_zlp is True:
+            s.data += zlp.data
+        s.mapped_parameters.title += ' after Fourier-log deconvolution'
+        if s.tmp_parameters.has_item('filename'):
+                s.tmp_parameters.filename += (
+                    '_after_fourier_log_deconvolution')
+        return s
+
+    def fourier_ratio_deconvolution(self, ll, fwhm=None,
+                                    threshold=None):
+        """Performs Fourier-ratio deconvolution.
+        
+        The core-loss should have the background removed. To reduce
+         the noise amplication the result is convolved with a
+        Gaussian function.        
+        
+        Parameters
+        ----------
+        ll: EELSSpectrum
+            The corresponding low-loss (ll) EELSSpectrum. Note that 
+            it must have exactly the same shape as the current spectrum
             
-    def spikes_diagnosis(self, signal_mask=None, navigation_mask=None):
-        """Plots a histogram to help in choosing the threshold for spikes
-        removal.
+        fwhm : float or None
+            Full-width half-maximum of the Gaussian function by which 
+            the result of the deconvolution is convolved. It can be 
+            used to select the final SNR and spectral resolution. If 
+            None, the FWHM of the zero-loss peak of the low-loss is
+            estimated and used.
+        threshold : {None, float}
+            Truncation energy to estimate the intensity of the 
+            elastic scattering. If None the threshold is taken as the
+             first minimum after the ZLP centre.
+            
+        Notes
+        -----        
+        For details see: Egerton, R. Electron Energy-Loss 
+        Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
+        
+        """
+
+        ll = ll.power_law_extrapolation(
+            window_size=100,
+            extrapolation_size=1024)
+        cl = self.power_law_extrapolation(
+            window_size=20,
+            extrapolation_size=1024)
+
+        axis = ll.axes_manager.signal_axes[0]
+        if fwhm is None:
+            fwhm = ll.estimate_FWHM()['FWHM']
+            print("FWHM = %1.2f" % fwhm) 
+
+        I0 = ll.estimate_elastic_scattering_intensity(
+                                                threshold=threshold)
+        if ll.axes_manager.navigation_size > 0:
+            I0 = I0.data
+            I0_shape = list(I0.shape)
+            I0_shape.insert(axis.index_in_array,1)
+            I0 = I0.reshape(I0_shape)
+            
+        from hyperspy.components.gaussian import Gaussian
+        g = Gaussian()
+        g.sigma.value = fwhm / 2.3548
+        g.A.value = 1
+        g.centre.value = 0
+        zl = g.function(axis.axis)
+        ll.hanning_taper()
+        cl.hanning_taper()
+        z = np.fft.fft(zl)
+        jk = np.fft.fft(cl.data, axis=axis.index_in_array)
+        jl = np.fft.fft(ll.data, axis=axis.index_in_array)
+        zshape = [1,] * len(cl.data.shape)
+        zshape[axis.index_in_array] = axis.size
+        s = cl.deepcopy()
+        s.data = np.fft.ifft(z.reshape(zshape) * jk / jl,
+                             axis=axis.index_in_array).real
+        s.data *= I0
+        s.crop_in_pixels(-1,None,self.axes_manager.signal_axes[0].size)
+        s.mapped_parameters.title = (self.mapped_parameters.title + 
+            ' after Fourier-ratio deconvolution')
+        if s.tmp_parameters.has_item('filename'):
+                s.tmp_parameters.filename = (
+                    self.tmp_parameters.filename +
+                    'after_fourier_ratio_deconvolution')
+        return s
+            
+    def richardson_lucy_deconvolution(self,  psf, iterations=15, 
+                                      mask=None):
+        """1D Richardson-Lucy Poissonian deconvolution of 
+        the spectrum by the given kernel.
+    
+        Parameters:
+        -----------
+        iterations: int
+            Number of iterations of the deconvolution. Note that 
+            increasing the value will increase the noise amplification.
+        psf: EELSSpectrum
+            It must have the same signal dimension as the current 
+            spectrum and a spatial dimension of 0 or the same as the 
+            current spectrum.
+            
+        Notes:
+        -----
+        For details on the algorithm see Gloter, A., A. Douiri, 
+        M. Tence, and C. Colliex. “Improving Energy Resolution of 
+        EELS Spectra: An Alternative to the Monochromator Solution.” 
+        Ultramicroscopy 96, no. 3–4 (September 2003): 385–400.
+        
+        """
+
+        ds = self.deepcopy()
+        ds.data = ds.data.copy()
+        ds.mapped_parameters.title += (
+            ' after Richardson-Lucy deconvolution %i iterations' % 
+                iterations)
+        if ds.tmp_parameters.has_item('filename'):
+                ds.tmp_parameters.filename += (
+                    '_after_R-L_deconvolution_%iiter' % iterations)
+        psf_size = psf.axes_manager.signal_axes[0].size
+        kernel = psf()
+        imax = kernel.argmax()
+        j = 0
+        maxval = self.axes_manager.navigation_size
+        if maxval > 0:
+            pbar = progressbar(maxval=maxval)
+        for D in self:
+            D = D.data.copy()
+            if psf.axes_manager.navigation_dimension != 0:
+                kernel = psf(axes_manager=self.axes_manager)
+                imax = kernel.argmax()
+
+            s = ds(axes_manager=self.axes_manager)
+            mimax = psf_size -1 - imax
+            O = D.copy()
+            for i in xrange(iterations):
+                first = np.convolve(kernel, O)[imax: imax + psf_size]
+                O = O * (np.convolve(kernel[::-1], 
+                         D / first)[mimax: mimax + psf_size])
+            s[:] = O
+            j += 1
+            if maxval > 0:
+                pbar.update(j)
+        if maxval > 0:
+            pbar.finish()
+        
+        return ds
+
+            
+    def _spikes_diagnosis(self, signal_mask=None, 
+                         navigation_mask=None):
+        """Plots a histogram to help in choosing the threshold for 
+        spikes removal.
         
         Parameters
         ----------
         signal_mask: boolean array
-            Restricts the operation to the signal locations not marked as 
-            True (masked)
+            Restricts the operation to the signal locations not marked 
+            as True (masked)
         navigation_mask: boolean array
-            Restricts the operation to the navigation locations not marked as 
-            True (masked)
+            Restricts the operation to the navigation locations not 
+            marked as True (masked).
         
         See also
         --------
@@ -262,21 +517,22 @@ class EELSSpectrum(Spectrum):
         plt.draw()
         
         
-    def spikes_removal_tool(self,signal_mask=None, navigation_mask=None):
+    def spikes_removal_tool(self,signal_mask=None, 
+                            navigation_mask=None):
         """Graphical interface to remove spikes from EELS spectra.
 
         Parameters
         ----------
         signal_mask: boolean array
-            Restricts the operation to the signal locations not marked as 
-            True (masked)
+            Restricts the operation to the signal locations not marked 
+            as True (masked)
         navigation_mask: boolean array
-            Restricts the operation to the navigation locations not marked as 
-            True (masked)
+            Restricts the operation to the navigation locations not 
+            marked as True (masked)
 
         See also
         --------
-        spikes_diagnosis, 
+        _spikes_diagnosis, 
 
         """
         sr = SpikesRemoval(self,navigation_mask=navigation_mask,
@@ -343,7 +599,6 @@ class EELSSpectrum(Spectrum):
         self._are_microscope_parameters_missing()
                 
             
-    
     @only_interactive            
     def _set_microscope_parameters(self):
         if self.mapped_parameters.has_item('TEM') is False:
@@ -368,385 +623,52 @@ class EELSSpectrum(Spectrum):
                 exec('self.mapped_parameters.%s = %s' % (key, value))
         self._are_microscope_parameters_missing()
         
-#        self.readout = None
-#        self.dark_current = None
-#        self.gain_correction = None
-
-        # Perform treatments if pretreatments is True
-#        if apply_treatments:
-#            # Corrects the readout if the readout file is provided
-#            if dark_current is not None:
-#                self.dark_current = Spectrum(dark_current, 
-#                apply_treatments = False)
-#                self._process_dark_current()
-#                self.dark_current_correction()
-#            
-#            if readout is not None:
-#                self.readout = Spectrum(readout, 
-#                dark_current = dark_current)
-#                self._process_readout()
-#                self.readout_correction()
-#
-#            if gain is not None:
-#                self.gain_correction = Spectrum(gain, apply_treatments = False)
-#                self.correct_gain()
-            # Corrects the gain of the acquisition system
-
-#    def extract_zero_loss(self, zl = None,right = 0.2,around = 0.05):
-#        """
-#        Zero loss extraction by the reflected-tail or fingerprinting methods.
-#        
-#        Creates a new spectrum instance self.zero_loss with the zero loss 
-#        extracted by the reflected-tail method if no zero loss in the vacuum is 
-#        provided. Otherwise it use the zero loss fingerprinting method.
-#
-#        Parameters
-#        ----------
-#        zl : str
-#            name of the zero loss in vacuum file for the fingerprinting method
-#        right : float
-#            maximum channel in energy units to use to fit the zero loss in the 
-#            vacuum. Only has effect for the fingerprinting method.
-#        around : float
-#            interval around the origin to remove from the fit for the of the 
-#            zero loss in the vacuum. Only has effect for the fingerprinting 
-#            method.
-#        
-#        Notes
-#        -----
-#        It is convenient to align the SI and correct the baseline before using
-#        this method.
-#        """
-#
-#        print "Extracting the zero loss"
-#        if zl is None: # reflected-tail
-#            # Zero loss maximum
-#            i0 = self.data_cube[:,0,0].argmax(0)
-#            # FWQM from the first spectrum in channels
-#            # Search only 2eV around the max to avoid counting the plasmons
-#            # in thick samples
-#            i_range = int(round(2. / self.energyscale))
-#            fwqm_bool = self.data_cube[i0-i_range:i0+i_range,0,0] > \
-#            0.25 * self.data_cube[i0,0,0]
-#            ch_fwqm = len(fwqm_bool[fwqm_bool])
-#            self.zero_loss = copy.deepcopy(self)
-#            data = self.zero_loss.data_cube
-#            canvas = np.zeros(data.shape)
-#            # Reflect the tail
-#            width = int(round(1.5 * ch_fwqm))
-#            canvas[i0 + width : 2 * i0 + 1,:,:] = \
-#            data[i0 - width::-1,:,:]
-#            # Remove the "background" = mean of first 4 channels and reflects the
-#            # tail
-#            bkg = np.mean(data[0:4])
-#            canvas -= bkg
-#            # Scale the extended tail with the ratio obtained from
-#            # 2 overlapping channels
-#            ch = i0 + width
-#            ratio = np.mean(data[ch: ch + 2] / canvas[ch: ch + 2], 0)
-#            for ix in xrange(data.shape[1]):
-#                for iy in xrange(data.shape[2]):
-#                    canvas[:,ix,iy] *= ratio[ix,iy]
-#            # Copy the extension
-#            data[i0 + width:] = canvas[i0 + width:]
-#        else:
-#            import components
-#            fp = components.ZL_Fingerprinting(zl)
-#            m = Model(self,False)
-#            m.append(fp)
-#            m.set_data_region(None,right)
-#            m.remove_signal_range(-around,around)
-#            m.multifit()
-#            self.zero_loss = copy.deepcopy(self)
-#            self.zero_loss.data_cube = m.model_cube
-#            self.zl_substracted = copy.deepcopy(self)
-#            self.zl_substracted.data_cube -= self.zero_loss.data_cube
-#        self._replot()
-#        
-#    def _process_gain_correction(self):
-#        gain = self.gain_correction
-#        # Check if the spectrum has the same number of channels:
-#        if self.data_cube.shape[0] != gain.data_cube.shape[0]:
-#            print 
-#            messages.warning_exit(
-#            "The gain and spectrum don't have the same number of channels")
-#        dc = gain.data_cube.copy()
-#        dc = dc.sum(1).mean(1)
-#        dc /= dc.mean()
-#        gain.normalized_gain = dc
-#
-#    def _process_readout(self):
-#        """Readout conditioning
-#        
-#        Checks if the readout file provided contains more than one spectrum.
-#        If that is the case, it makes the average and produce a single spectrum
-#        Spectrum object to feed the correct spectrum function"""
-#        channels = self.readout.data_cube.shape[0]
-#        if self.readout.data_cube.shape[1:]  > (1, 1):
-#            self.readout.data_cube = np.average(
-#            np.average(self.readout.data_cube,1),1).reshape(channels, 1, 1)
-#            self.readout.get_dimensions_from_cube()
-#            self.readout.set_new_calibration(0,1)
-#            if self.readout.dark_current:
-#                self.readout._process_dark_current()
-#                self.readout.dark_current_correction()
-#
-#    def _process_dark_current(self):
-#        """Dark current conditioning.
-#        
-#        Checks if the readout file provided contains more than one spectrum.
-#        If that is the case, it makes the average and produce a single spectrum
-#        Spectrum object to feed the correct spectrum function. If 
-#        a readout correction is provided, it corrects the readout in the dark
-#        current spim."""
-#        if self.dark_current.data_cube.shape[1:]  > (1, 1):
-#            self.dark_current.data_cube = np.average(
-#            np.average(self.dark_current.data_cube,1),1).reshape((-1, 1, 1))
-#            self.dark_current.get_dimensions_from_cube()
-#            self.dark_current.set_new_calibration(0,1)
-#            
-#    # Elements _________________________________________________________________
+            
+    def power_law_extrapolation(self, window_size=20,
+                                extrapolation_size=1024,
+                                add_noise=False):
+        """Extrapolate the spectrum to the right using a powerlaw
         
-#            
-#    def remove_background(self, start_energy = None, mask = None):
-#        """Removes the power law background of the EELS SI if the present 
-#        elements were defined.
-#        
-#        It stores the background in self.background.
-#        
-#        Parameters
-#        ----------
-#        start_energy : float
-#            The starting energy for the fitting routine
-#        mask : boolean numpy array
-#        """
-#        from spectrum import Spectrum
-#        if mask is None:
-#            mask = np.ones(self.data_cube.shape[1:], dtype = 'bool')
-#        m = Model(self)
-#        m.fit_background(start_energy = start_energy, type = 'multi', 
-#        mask = mask)
-#        m.model_cube[:, mask == False] *= 0
-#        self.background = Spectrum()
-#        self.background.data_cube = m.model_cube
-#        self.background.get_dimensions_from_cube()
-#        utils.copy_energy_calibration(self, self.background)
-##        self.background.get_calibration_from()
-#        print "Background stored in self.background"
-#        self.__new_cube(self.data_cube[:] - m.model_cube[:], 
-#        'background removal')
-#        self._replot()
-#        
-#    def calculate_I0(self, threshold = None):
-#        """Estimates the integral of the ZLP from a LL SI
-#        
-#        The value is stored in self.I0 as an Image.
-#        
-#        Parameters
-#        ----------
-#        thresh : float or None
-#            If float, it estimates the intensity of the ZLP as the sum 
-#            of all the counts of the SI until the threshold. If None, it 
-#            calculates the sum of the ZLP previously stored in 
-#            self.zero_loss
-#        """
-#        if threshold is None:
-#            if self.zero_loss is None:
-#                messages.warning_exit(
-#                "Please, provide a threshold value of define the " 
-#                "self.zero_loss attribute by, for example, using the "
-#                "extract_zero_loss method")
-#            else:
-#                self.I0 = Image(dc = self.zero_loss.sum(0))
-#        else:
-#            threshold = self.energy2index(threshold)
-#            self.I0 = Image(dc = self.data_cube[:threshold,:,:].sum(0)) 
-#        
-#    def correct_gain(self):
-#        """Apply the gain correction stored in self.gain_correction
-#        """
-#        if not self.treatments.gain:
-#            self._process_gain_correction()
-#            gain = self.gain_correction
-#            print "Applying gain correction"
-#            # Gain correction
-#            data = np.zeros(self.data_cube.shape)
-#            for ix in xrange(0, self.xdimension):
-#                for iy self.energy_in xrange(0, self.ydimension):
-#                    np.divide(self.data_cube[:,ix,iy], 
-#                    gain.normalized_gain, 
-#                    data[:,ix,iy])
-#            self.__new_cube(data, 'gain correction')
-#            self.treatments.gain = 1
-#            self._replot()
-#        else:
-#            print "Nothing done, the SI was already gain corrected"
-#
-#    def correct_baseline(self, kind = 'pixel', positive2zero = True, 
-#    averaged = 10, fix_negative = True):
-#        """Set the minimum value to zero
-#        
-#        It can calculate the correction globally or pixel by pixel.
-#        
-#        Parameters
-#        ----------
-#        kind : {'pixel', 'global'}
-#            if 'pixel' it calculates the correction pixel by pixel.
-#            If 'global' the correction is calculated globally.
-#        positive2zero : bool
-#            If False it will only set the baseline to zero if the 
-#            minimum is negative
-#        averaged : int
-#            If > 0, it will only find the minimum in the first and last 
-#            given channels
-#        fix_negative : bool
-#            When averaged, it will take the abs of the data_cube to assure
-#            that no value is negative.
-#        
-#        """
-#        data = copy.copy(self.data_cube)
-#        print "Correcting the baseline of the low loss spectrum/a"
-#        if kind == 'global':
-#            if averaged == 0:
-#                minimum = data.min()
-#            else:
-#                minimum = np.vstack(
-#                (data[:averaged,:,:], data[-averaged:,:,:])).min()
-#            if minimum < 0. or positive2zero is True:
-#                data -= minimum
-#        elif kind == 'pixel':
-#            if averaged == 0:
-#                minimum = data.min(0).reshape(
-#            (1,data.shape[1], data.shape[2]))
-#            else:
-#                minimum = np.vstack((data[:averaged,:,:], data[-averaged:,:,:])
-#                ).min(0).reshape((1,data.shape[1], data.shape[2]))
-#            mask = np.ones(data.shape[1:], dtype = 'bool')
-#            if positive2zero is False:
-#                mask[minimum.squeeze() > 0] = False
-#            data[:,mask] -= minimum[0,mask]
-#        else:
-#            messages.warning_exit(
-#            "Wrong kind keyword. Possible values are pixel or global")
-#        
-#        if fix_negative:
-#            data = np.abs(data)
-#        self.__new_cube(data, 'baseline correction')
-#        self._replot()
-#
-#    def readout_correction(self):
-#        if not self.treatments.readout:
-#            if hasattr(self, 'readout'):
-#                data = copy.copy(self.data_cube)
-#                print "Correcting the readout"
-#                for ix in xrange(0,self.xdimension):
-#                    for iy in xrange(0,self.ydimension):
-#                        data[:, ix, iy] -= self.readout.data_cube[:,0,0]
-#                self.__new_cube(data, 'readout correction')
-#                self.treatments.readout = 1
-#                self._replot()
-#            else:
-#                print "To correct the readout, please define the readout attribute"
-#        else:
-#            print "Nothing done, the SI was already readout corrected"
-#
-#    def dark_current_correction(self):
-#        """Apply the dark_current_correction stored in self.dark_current"""
-#        if self.treatments.dark_current:
-#            print "Nothing done, the dark current was already corrected"
-#        else:
-#            ap = self.acquisition_parameters
-#            if hasattr(self, 'dark_current'):
-#                if (ap.exposure is not None) and \
-#                (self.dark_current.acquisition_parameters.exposure):
-#                    if (ap.readout_frequency is not None) and \
-#                    (ap.blanking is not None):
-#                        if not self.acquisition_parameters.blanking:
-#                            exposure = ap.exposure + self.data_cube.shape[0] * \
-#                            ap.ccd_height / (ap.binning * ap.readout_frequency)
-#                            ap.effective_exposure = exposure
-#                        else:
-#                            exposure = ap.exposure
-#                    else:
-#                        print \
-#    """Warning: no information about binning and readout frequency found. Please 
-#    define the following attributes for a correct dark current correction:
-#    exposure, binning, readout_frequency, ccd_height, blanking
-#    The correction proceeds anyway
-#    """
-#                            
-#                        exposure = self.acquisition_parameters.exposure
-#                    data = copy.copy(self.data_cube)
-#                    print "Correcting the dark current"
-#                    self.dark_current.data_cube[:,0,0] *= \
-#                    (exposure / self.dark_current.acquisition_parameters.exposure)
-#                    data -= self.dark_current.data_cube
-#                    self.__new_cube(data, 'dark current correction')
-#                    self.treatments.dark_current = 1
-#                    self._replot()
-#                else:
-#                    
-#                    messages.warning_exit(
-#                    "Please define the exposure attribute of the spectrum"
-#                    "and its dark_current")
-#            else:
-#                messages.warning_exit(
-#               "To correct the readout, please define the dark_current " \
-#                "attribute")
-#            
-#    def power_law_extension(self, interval, new_size = 1024, 
-#                            to_the = 'right'):
-#        """Extend the SI with a power law.
-#        
-#        Fit the SI with a power law in the given interval and use the result 
-#        to extend it to the left of to the right.
-#        
-#        Parameters
-#        ----------
-#        interval : tuple
-#            Interval to perform the fit in energy units        
-#        new_size : int
-#            number of channel after the extension.
-#        to_the : {'right', 'left'}
-#            extend the SI to the left or to the right
-#        """
-#        left, right = interval
-#        s = self.data_cube.shape
-#        original_size = s[0]
-#        if original_size >= new_size:
-#            print "The new size (in channels) must be bigger than %s" % \
-#            original_size
-#        new_cube = np.zeros((new_size, s[1], s[2]))
-#        iright = self.energy2index(right)
-#        new_cube[:iright,:,:] = self.data_cube[:iright,:,:]
-#        self.data_cube = new_cube
-#        self.get_dimensions_from_cube()
-#        m = Model(self, False, auto_add_edges = False)
-#        pl = PowerLaw()
-#        m.append(pl)
-#        m.set_data_region(left,right)
-#        m.multifit(grad = True)
-#        self.data_cube[iright:,:,:] = m.model_cube[iright:,:,:]
-#        
-#    def hanning_taper(self, side = 'left', channels = 20,offset = 0):
-#        """Hanning taper
-#        
-#        Parameters
-#        ----------
-#        side : {'left', 'right'}
-#        channels : int
-#        offset : int
-#        """        
-#        dc = self.data_cube
-#        if side == 'left':
-#            dc[offset:channels+offset,:,:] *= \
-#            (np.hanning(2*channels)[:channels]).reshape((-1,1,1))
-#            dc[:offset,:,:] *= 0. 
-#        if side == 'right':
-#            dc[-channels-offset:-offset,:,:] *= \
-#            (np.hanning(2*channels)[-channels:]).reshape((-1,1,1))
-#            dc[-offset:,:,:] *= 0. 
-#        
+        
+        Parameters
+        ----------
+        window_size : int
+            The number of channels from the right side of the 
+            spectrum that are used to estimate the power law 
+            parameters.        
+        extrapolation_size : int
+            Size of the extrapolation in number of channels
+        add_noise : bool
+            If True, add poissonian noise to the extrapolated spectrum.
+            
+        """
+        axis = self.axes_manager.signal_axes[0]
+        s = self.deepcopy()
+        s.mapped_parameters.title += (
+            ' %i channels extrapolated' % 
+                extrapolation_size)
+        if s.tmp_parameters.has_item('filename'):
+                s.tmp_parameters.filename += (
+                    '_%i_channels_extrapolated' % extrapolation_size)
+        new_shape = list(self.data.shape)
+        new_shape[axis.index_in_array] += extrapolation_size 
+        s.data = np.zeros((new_shape))
+        s.get_dimensions_from_data()
+        s.data[...,:axis.size] = self.data
+        pl = PowerLaw()
+        pl.estimate_parameters(
+            s, axis.index2value(axis.size - window_size),
+            axis.index2value(axis.size - 1))
+        s.data[...,axis.size:] = (
+            pl.A.map['values'][...,np.newaxis]*
+            s.axes_manager.signal_axes[0].axis[np.newaxis,axis.size:]**(
+            -pl.r.map['values'][...,np.newaxis]))
+        return s
+        
+
+        
+ 
+        
                         
                       
 #    def build_SI_from_substracted_zl(self,ch, taper_nch = 20):
@@ -770,27 +692,7 @@ class EELSSpectrum(Spectrum):
 #        sp.data_cube = dc.copy()
 #        return sp
 #        
-#    def jump_ratio(self, left_interval, right_interval):
-#        """Returns the jump ratio in the given intervals
-#        
-#        Parameters
-#        ----------
-#        left_interval : tuple of floats
-#            left interval in energy units
-#        right_interval : tuple of floats
-#            right interval in energy units
-#            
-#        Returns
-#        -------
-#        float
-#        """
-#        ilt1 = self.energy2index(left_interval[0])
-#        ilt2 = self.energy2index(left_interval[1])
-#        irt1 = self.energy2index(right_interval[0])
-#        irt2 = self.energy2index(right_interval[1])
-#        jump_ratio = (self.data_cube[irt1:irt2,:,:].sum(0) \
-#        / self.data_cube[ilt1:ilt2,:,:].sum(0))
-#        return jump_ratio
+
 #        
 #    def correct_dual_camera_step(self, show_lev = False, mean_interval = 3, 
 #                                 pca_interval = 20, pcs = 2, 

@@ -528,3 +528,34 @@ class Spectrum(Signal):
         iaxis = self.axes_manager.signal_axes[0].index_in_array
         self.crop_in_units(axis=iaxis, x1=left_value, x2=right_value)
     
+    @auto_replot
+    def hanning_taper(self, side='both', channels=None, offset=0):
+        """Hanning taper
+        
+        Parameters
+        ----------
+        side : {'left', 'right', 'both'}
+        channels : {None, int}
+            The number of channels to taper. If None 5% of the total
+            number of channels are tapered.
+        offset : int
+        
+        """
+        if channels is None:
+            channels = int(round(len(self()) * 0.02))
+            if channels < 20:
+                channels = 20
+        dc = self.data
+        if side == 'left' or side == 'both':
+            dc[..., offset:channels+offset] *= (
+                np.hanning(2*channels)[:channels])
+            dc[...,:offset] *= 0. 
+        if side== 'right' or side == 'both':
+            if offset == 0:
+                rl = None
+            else:
+                rl = -offset
+            dc[..., -channels-offset:rl] *= (
+                np.hanning(2*channels)[-channels:])
+            if offset != 0:
+                dc[..., -offset:] *= 0.

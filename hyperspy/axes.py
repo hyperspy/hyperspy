@@ -366,6 +366,8 @@ class AxesManager(t.HasTraits):
                 axis.size for axis in self.signal_axes]
         else:
             self.signal_shape = [0,]
+        self.navigation_size = \
+            np.cumprod(self.navigation_shape)[-1]
         self._update_max_index()
 
     def set_not_slicing_indexes(self, nsi):
@@ -458,8 +460,8 @@ class AxesManager(t.HasTraits):
         for axis in self.axes:
             axes_dicts.append(axis.get_axis_dictionary())
         return axes_dicts
-
-    def _getsignal_axes_dicts(self):
+        
+    def _get_signal_axes_dicts(self):
         axes_dicts = []
         i = 0
         for axis in self.signal_axes:
@@ -468,7 +470,7 @@ class AxesManager(t.HasTraits):
             i += 1
         return axes_dicts
 
-    def _getnavigation_axes_dicts(self):
+    def _get_navigation_axes_dicts(self):
         axes_dicts = []
         i = 0
         for axis in self.navigation_axes:

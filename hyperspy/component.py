@@ -209,6 +209,8 @@ class Parameter(object):
         self.map['is_set'][mask == False] = True
         
     def create_array(self, shape):
+        if len(shape) == 1 and shape[0] == 0:
+            shape = [1,]
         dtype_ = np.dtype([
             ('values','float', self._number_of_elements), 
             ('std', 'float', self._number_of_elements), 
@@ -224,7 +226,7 @@ class Parameter(object):
             # from the newly defined arrays
             self.std = None
             
-    def as_signal(self, field = 'values'):
+    def as_signal(self, field='values'):
         """Get a parameter map as a signal object.
         
         Please note that this method only works when the navigation dimension
@@ -245,7 +247,7 @@ class Parameter(object):
             raise NavigationDimensionError(0, '>0')
             
         s = Signal({'data' : self.map[field],
-                    'axes' : self._axes_manager._getnavigation_axes_dicts()})
+                    'axes' : self._axes_manager._get_navigation_axes_dicts()})
         s.mapped_parameters.title = self.name
         for axis in s.axes_manager.axes:
             axis.navigate = False
@@ -398,14 +400,13 @@ class Component(object):
             parameters = set(self.parameters) - set(self.free_parameters)
         else:
             parameters = self.parameters
-
         for parameter in parameters:
             if parameter.map['is_set'][indexes]:
                 parameter.value = parameter.map['values'][indexes]
                 parameter.std = parameter.map['std'][indexes]
                 if parameter._number_of_elements > 1:
                     parameter.value = parameter.value.tolist()
-                    parameter.value = parameter.std.tolist()
+                    parameter.std = parameter.std.tolist()
 
     def plot(self, only_free = True):
         """Plot the value of the parameters of the model

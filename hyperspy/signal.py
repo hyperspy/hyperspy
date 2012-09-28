@@ -305,7 +305,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 self.tmp_parameters.has_item('folder')):
                 filename = os.path.join(
                     self.tmp_parameters.folder,
-                    self.tmp_parameters.filename)
+                    self.tmp_parameters.filename + '.' +
+                    self.tmp_parameters.extension)
             elif self.mapped_parameters.has_item('original_filename'):
                 filename = self.mapped_parameters.original_filename
             else:
@@ -788,7 +789,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         return copy.copy(self)
 
     def deepcopy(self):
-        return copy.deepcopy(self)
+        s = copy.deepcopy(self)
+        if self.data is not None:
+            s.data = s.data.copy()
+        return s
         
     def change_dtype(self, dtype):
         """Change the data type
@@ -1800,19 +1804,48 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 print "Clipping the variance to the gaussian_noise_var"
                 self.variance = np.clip(self.variance, gaussian_noise_var,
                 np.Inf)
+                
     def get_current_signal(self):
+        data = self.data
+        self.data = None
         cs = self.deepcopy()
-        cs.data = cs()
+        self.data = data
+        del data
+        cs.data = self()
         for axis in cs.axes_manager.navigation_axes:
             cs.axes_manager.axes.remove(axis)
             cs.axes_manager.set_signal_dimension()
         if cs.tmp_parameters.has_item('filename'):
-            basename, ext = os.path.splitext(cs.tmp_parameters.filename)
+            basename = cs.tmp_parameters.filename
+            ext = cs.tmp_parameters.extension
             cs.tmp_parameters.filename = (basename + '_' +
-                    str(self.axes_manager.coordinates) + ext)
+                    str(self.axes_manager.coordinates) + '.' + ext)
         cs.mapped_parameters.title = (cs.mapped_parameters.title +
                     ' ' + str(self.axes_manager.coordinates))
         return cs
+        
+    def _get_navigation_signal(self):
+        if self.axes_manager.navigation_dimension == 0:
+            return None
+        elif self.axes_manager.navigation_dimension == 1:
+            from hyperspy.signals.spectrum import Spectrum
+            s = Spectrum({
+                'data' : np.zeros(
+                    self.axes_manager.navigation_shape),
+                'axes' : self.axes_manager._get_navigation_axes_dicts()})
+        elif self.axes_manager.navigation_dimension == 2:
+            from hyperspy.signals.image import Image
+            s = Image({
+                'data' : np.zeros(
+                    self.axes_manager.navigation_shape),
+                'axes' : self.axes_manager._get_navigation_axes_dicts()})
+        else:
+            s = Signal({
+                'data' : np.zeros(
+                    self.axes_manager.navigation_shape),
+                'axes' : self.axes_manager._get_navigation_axes_dicts()})
+        return s
+                
         
     def __iter__(self):
         return self
@@ -1821,11 +1854,13 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         self.axes_manager.next()
         return self.get_current_signal()
         
-#
-#    def get_single_spectrum(self):
-#        s = Spectrum({'calibration' : {'data_cube' : self()}})
-#        s.get_calibration_from(self)
-#        return s
+    def __len__(self):
+        if self.axes_manager.navigation_size == 0:
+            return 1
+        else:
+            return self.axes_manager.navigation_size
+        
+
 #
 #    def sum_every_n(self,n):
 #        """Bin a line spectrum
@@ -1886,39 +1921,4 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 #        return sp
 
 
-#class SignalwHistory(Signal):
-#    def _get_cube(self):
-#        return self.__cubes[self.current_cube]['data']
-#
-#    def _set_cube(self,arg):
-#        self.__cubes[self.current_cube]['data'] = arg
-#    data_cube = property(_get_cube,_set_cube)
-#
-#    def __new_cube(self, cube, treatment):
-#        history = copy.copy(self.history)
-#        history.append(treatment)
-#        if self.backup_cubes:
-#            self.__cubes.append({'data' : cube, 'history': history})
-#        else:
-#            self.__cubes[-1]['data'] = cube
-#            self.__cubes[-1]['history'] = history
-#        self.current_cube = -1
-#
-#    def _get_history(self):
-#        return self.__cubes[self.current_cube]['history']
-#    def _set_treatment(self,arg):
-#        self.__cubes[self.current_cube]['history'].append(arg)
-#
-#    history = property(_get_history,_set_treatment)
-#
-#    def print_history(self):
-#        """Prints the history of the SI to the stdout"""
-#        i = 0
-#        print
-#        print "Cube\tHistory"
-#        print "----\t----------"
-#        print
-#        for cube in self.__cubes:
-#            print i,'\t', cube['history']
-#            i+=1
-#
+

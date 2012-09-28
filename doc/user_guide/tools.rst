@@ -163,6 +163,12 @@ The following methods (that include user interfaces when no arguments are passed
 * :py:meth:`~.signals.spectrum.Spectrum.smooth_tv`
 * :py:meth:`~.signals.spectrum.Spectrum.smooth_savitzky_golay`
 
+Other methods
+^^^^^^^^^^^^^^
+
+* :py:meth:`~.signals.spectrum.Spectrum.hanning_taper`
+
+
 
 Image tools
 -----------
@@ -211,22 +217,25 @@ It can be useful to define the composition of the sample for archiving purposes 
 Estimate the FWHM of a peak
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* :py:meth:`~.signals.eels.EELSSpectrum.calculate_FWHM`
+* :py:meth:`~.signals.eels.EELSSpectrum.estimate_FWHM`
 
 Estimate the thickness
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:meth:`~.signals.eels.EELSSpectrum.calculate_thickness` can estimate the thickness from a low-loss EELS spectrum.
+The :py:meth:`~.signals.eels.EELSSpectrum.estimate_thickness` can estimate the thickness from a low-loss EELS spectrum.
 
 Estimate zero loss peak centre
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* :py:meth:`~.signals.eels.EELSSpectrum.find_low_loss_centre`
+* :py:meth:`~.signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre`
 
-Fourier-log deconvolution
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Deconvolutions
+^^^^^^^^^^^^^^
 
 * :py:meth:`~.signals.eels.EELSSpectrum.fourier_log_deconvolution`
+* :py:meth:`~.signals.eels.EELSSpectrum.fourier_ratio_deconvolution`
+* :py:meth:`~.signals.eels.EELSSpectrum.richardson_lucy_deconvolution`
+
  
 
 
