@@ -175,6 +175,9 @@ class Spectrum(Signal):
         ref = self.data[reference_indexes][i1:i2]
         if interpolate is True:
             ref = utils.interpolate_1D(ip, ref)
+        maxval = self.axes_manager.navigation_size
+        pbar = progressbar.progressbar(maxval=maxval)
+        i = 0
         for dat, shift in zip(self.iterate_axis(axis.index_in_array),
                               utils.iterate_axis(shift_array,
                                                  axis.index_in_array)):
@@ -182,6 +185,9 @@ class Spectrum(Signal):
             if interpolate is True:
                 dat = utils.interpolate_1D(ip, dat)
             shift[:] = np.argmax(np.correlate(ref, dat,'full')) - len(ref) + 1
+            i+=1
+            pbar.update(i)
+        pbar.finish()
 
         if max_shift is not None:
             if interpolate is True:
