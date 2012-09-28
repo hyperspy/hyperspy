@@ -330,17 +330,20 @@ class EELSSpectrum(Spectrum):
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
         
         """
+        s = self.deepcopy()
+        s.hanning_taper()
         axis = self.axes_manager.signal_axes[0]
         z = np.fft.fft(zlp.data, axis=axis.index_in_array)
-        j = np.fft.fft(self.data, axis=axis.index_in_array)
+        j = np.fft.fft(s.data, axis=axis.index_in_array)
         j1 = z*np.log(j/z)
-        s = self.deepcopy()
         s.data = np.fft.ifft(j1, axis=axis.index_in_array).real
         if add_zlp is True:
             s.data += zlp.data
-        s.mapped_parameters.title += ' after Fourier-log deconvolution'
+        s.mapped_parameters.title = (s.mapped_parameters.title + 
+            ' after Fourier-log deconvolution')
         if s.tmp_parameters.has_item('filename'):
-                s.tmp_parameters.filename += (
+                s.tmp_parameters.filename = (
+                    self.tmp_parameters.filename +
                     '_after_fourier_log_deconvolution')
         return s
 
