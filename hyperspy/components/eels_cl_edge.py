@@ -71,6 +71,9 @@ class EELSCLEdge(Component):
     fine_structure_coeff : list of floats
         The coefficients of the spline that fits the fine structure. Fix this parameter to fix the fine structure. It is a
          component.Parameter instance.
+    fine_structure_smoothing : float between 0 and 1
+        Controls the level of smoothing of the fine structure model.
+        Decreasing the value increases the level of smoothing.
     effective_angle : float
         The effective collection angle. It is automatically 
         calculated by set_microscope_parameters. It is a component.Parameter instance.
@@ -79,6 +82,8 @@ class EELSCLEdge(Component):
         default value can be choosen in the preferences.
         
     """
+    _fine_structure_smoothing = \
+        preferences.EELS.fine_structure_smoothing
 
     def __init__(self, element_subshell, GOS=None):
         # Declare the parameters
@@ -101,8 +106,6 @@ class EELSCLEdge(Component):
         self.intensity.value = 1
         self.intensity.bmin = 0.
         self.intensity.bmax = None
-
-        self.fine_structure_smoothing = preferences.EELS.fine_structure_smoothing
         self.GOS = None
         # Set initial actions
         if GOS is None:
@@ -184,6 +187,27 @@ class EELSCLEdge(Component):
         except:
             #All the parameters may not be defined yet...
             pass
+    
+    @property
+    def fine_structure_smoothing(self):
+        """Controls the level of the smoothing of the fine structure.
+        
+        It must a real number between 0 and 1. The higher close to 0 
+        the higher the smoothing.
+        
+        """
+        return self._fine_structure_smoothing
+        
+    @fine_structure_smoothing.setter
+    def fine_structure_smoothing(self, value):
+        if 0 <= value <= 1:
+            self._fine_structure_smoothing = value
+            self._set_fine_structure_coeff()
+        else:
+            raise ValueError(
+                    "The value must be a number between 0 and 1")
+    
+        
     
     # It is needed because the property cannot be used to sort the edges
     def _onset_energy(self):
