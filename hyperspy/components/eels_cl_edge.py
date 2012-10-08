@@ -184,9 +184,18 @@ class EELSCLEdge(Component):
         except:
             #All the parameters may not be defined yet...
             pass
-
-    def edge_position(self):
+    
+    # It is needed because the property cannot be used to sort the edges
+    def _onset_energy(self):
         return self.GOS.onset_energy + self.energy_shift.value
+    
+    @property
+    def onset_energy(self):
+        return self.GOS.onset_energy + self.energy_shift.value
+        
+    @onset_energy.setter
+    def onset_energy(self, value):
+        self.energy_shift.value = value - self.GOS.onset_energy
         
     def setfine_structure_coeff(self):
         if self.energy_scale is None:
@@ -261,9 +270,9 @@ class EELSCLEdge(Component):
         """
         Emax = self.GOS.energy_axis[-1] + self.energy_shift.value 
         cts = np.zeros((len(E)))
-        bsignal = (E >= self.edge_position())
+        bsignal = (E >= self.onset_energy)
         if self.fine_structure_active is True:
-            bfs = bsignal * (E < (self.edge_position() + self.fine_structure_width))
+            bfs = bsignal * (E < (self.onset_energy + self.fine_structure_width))
             cts[bfs] = splev(E[bfs],
                         (self.__knots, self.fine_structure_coeff.value + [0,]*4, 3))
             bsignal[bfs] = False
