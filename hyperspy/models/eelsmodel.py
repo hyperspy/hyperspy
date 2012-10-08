@@ -111,7 +111,7 @@ class EELSModel(Model):
                 beta = self.spectrum.mapped_parameters.TEM.EELS.collection_angle, 
                 energy_scale = self.axis.scale)
                 component.energy_scale = self.axis.scale
-                component.setfine_structure_coeff()
+                component._set_fine_structure_coeff()
                 if component.onset_energy < \
                             self.axis.axis[self.channel_switches][0]:
                     component.isbackground = True

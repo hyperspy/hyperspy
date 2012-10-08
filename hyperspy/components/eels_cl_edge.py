@@ -143,7 +143,7 @@ class EELSCLEdge(Component):
         return self.__fine_structure_width
     def _set_fine_structure_width(self,arg):
         self.__fine_structure_width = arg
-        self.setfine_structure_coeff()
+        self._set_fine_structure_coeff()
     fine_structure_width = property(_get_fine_structure_width,_set_fine_structure_width)
     
     
@@ -152,7 +152,7 @@ class EELSCLEdge(Component):
         return self.__E0
     def _set_E0(self,arg):
         self.__E0 = arg
-        self.calculate_effective_angle()
+        self._calculate_effective_angle()
     E0 = property(_get_E0,_set_E0)
     
     # Collection angles
@@ -160,7 +160,7 @@ class EELSCLEdge(Component):
         return self.__collection_angle
     def _set_collection_angle(self,arg):
         self.__collection_angle = arg
-        self.calculate_effective_angle()
+        self._calculate_effective_angle()
     collection_angle = property(_get_collection_angle, 
                                 _set_collection_angle)
     # Convergence angle
@@ -168,13 +168,13 @@ class EELSCLEdge(Component):
         return self.__convergence_angle
     def _set_convergence_angle(self,arg):
         self.__convergence_angle = arg
-        self.calculate_effective_angle()
+        self._calculate_effective_angle()
     convergence_angle = property(_get_convergence_angle, 
                                  _set_convergence_angle)
                             
     
     
-    def calculate_effective_angle(self):
+    def _calculate_effective_angle(self):
         try:
             self.effective_angle.value = EffectiveAngle(
                                                 self.E0,
@@ -197,7 +197,7 @@ class EELSCLEdge(Component):
     def onset_energy(self, value):
         self.energy_shift.value = value - self.GOS.onset_energy
         
-    def setfine_structure_coeff(self):
+    def _set_fine_structure_coeff(self):
         if self.energy_scale is None:
             return
         self.fine_structure_coeff._number_of_elements = int(
@@ -208,7 +208,7 @@ class EELSCLEdge(Component):
         self.fine_structure_coeff.bmax = None
         self.fine_structure_coeff.value = np.zeros(
             self.fine_structure_coeff._number_of_elements).tolist()
-        self.calculate_knots()
+        self._calculate_knots()
         if self.fine_structure_coeff.map is not None:
             self.fine_structure_coeff.create_array(
                 self.fine_structure_coeff.map.shape)
@@ -232,9 +232,9 @@ class EELSCLEdge(Component):
         self.collection_angle = beta
         self.energy_scale = energy_scale
         self.E0 = E0
-        self.integrate_GOS()
+        self._integrate_GOS()
                 
-    def integrate_GOS(self):
+    def _integrate_GOS(self):
         # Integration over q using splines                                        
         angle = self.effective_angle.value * 1e-3 # in rad
         self.tab_xsection = self.GOS.integrateq(
@@ -249,13 +249,13 @@ class EELSCLEdge(Component):
         
         # Connect them at this point where it is certain that all the 
         # parameters are well defined
-        self.effective_angle.connect(self.integrate_GOS)
+        self.effective_angle.connect(self._integrate_GOS)
         self.effective_angle.connection_active = True
-        self.energy_shift.connect(self.integrate_GOS)
-        self.energy_shift.connect(self.calculate_knots)
+        self.energy_shift.connect(self._integrate_GOS)
+        self.energy_shift.connect(self._calculate_knots)
         self.energy_shift.connection_active = True
         
-    def calculate_knots(self):    
+    def _calculate_knots(self):    
         start = self.GOS.onset_energy + self.energy_shift.value
         stop = start + self.fine_structure_width
         self.__knots = np.r_[[start]*4,
@@ -285,12 +285,12 @@ class EELSCLEdge(Component):
     def grad_intensity(self,E) :
         return self.function(E) / self.intensity.value    
 
-    def fine_structure_coeff_to_txt(self,filename) :
+    def fine_structure_coeff_to_txt(self,filename):
         np.savetxt(filename + '.dat', self.fine_structure_coeff.value, fmt="%12.6G")
  
-    def txt_to_fine_structure_coeff(self,filename) :
+    def txt_to_fine_structure_coeff(self,filename):
         fs = np.loadtxt(filename)
-        self.calculate_knots()
+        self._calculate_knots()
         if len(fs) == len(self.__knots) :
             self.fine_structure_coeff.value = fs
         else :
