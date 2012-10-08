@@ -102,7 +102,7 @@ class EELSCLEdge(Component):
         self.intensity.bmin = 0.
         self.intensity.bmax = None
 
-        self.knots_factor = preferences.EELS.knots_factor
+        self.fine_structure_smoothing = preferences.EELS.fine_structure_smoothing
         self.GOS = None
         # Set initial actions
         if GOS is None:
@@ -192,8 +192,9 @@ class EELSCLEdge(Component):
         if self.energy_scale is None:
             return
         self.fine_structure_coeff._number_of_elements = int(
-            round(self.knots_factor * self.fine_structure_width / 
-                self.energy_scale)) + 4        
+            round(self.fine_structure_smoothing * 
+                  self.fine_structure_width / 
+                  self.energy_scale)) + 4        
         self.fine_structure_coeff.bmin = None
         self.fine_structure_coeff.bmax = None
         self.fine_structure_coeff.value = np.zeros(
@@ -246,12 +247,13 @@ class EELSCLEdge(Component):
         self.energy_shift.connection_active = True
         
     def calculate_knots(self):    
-        # Recompute the knots
         start = self.GOS.onset_energy + self.energy_shift.value
         stop = start + self.fine_structure_width
         self.__knots = np.r_[[start]*4,
-        np.linspace(start, stop, self.fine_structure_coeff._number_of_elements)[2:-2], 
-        [stop]*4]
+        np.linspace(start,
+                    stop,
+                    self.fine_structure_coeff._number_of_elements
+                    )[2:-2], [stop]*4]
         
     def function(self,E) :
         """Returns the number of counts in barns
