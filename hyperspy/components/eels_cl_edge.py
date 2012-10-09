@@ -30,7 +30,6 @@ from hyperspy.component import Component
 from hyperspy import messages
 from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
 from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
-
 from hyperspy.misc.eels.effective_angle import EffectiveAngle
 
 class EELSCLEdge(Component):
@@ -69,14 +68,16 @@ class EELSCLEdge(Component):
         favourable cases is proportional to the number of atoms of 
         the element. It is a component.Parameter instance.
     fine_structure_coeff : list of floats
-        The coefficients of the spline that fits the fine structure. Fix this parameter to fix the fine structure. It is a
-         component.Parameter instance.
+        The coefficients of the spline that fits the fine structure. 
+        Fix this parameter to fix the fine structure. It is a 
+        component.Parameter instance.
     fine_structure_smoothing : float between 0 and 1
         Controls the level of smoothing of the fine structure model.
         Decreasing the value increases the level of smoothing.
     effective_angle : float
         The effective collection angle. It is automatically 
-        calculated by set_microscope_parameters. It is a component.Parameter instance.
+        calculated by set_microscope_parameters. It is a 
+        component.Parameter instance.
     fine_structure_active : bool
         Activates/deactivates the fine structure feature. Its 
         default value can be choosen in the preferences.
@@ -140,14 +141,16 @@ class EELSCLEdge(Component):
         self.__fine_structure_active = arg
         # Force replot
         self.intensity.value = self.intensity.value
-    fine_structure_active = property(_get_fine_structure_active,_set_fine_structure_active)
+    fine_structure_active = property(_get_fine_structure_active,
+                                     _set_fine_structure_active)
     
     def _get_fine_structure_width(self):
         return self.__fine_structure_width
     def _set_fine_structure_width(self,arg):
         self.__fine_structure_width = arg
         self._set_fine_structure_coeff()
-    fine_structure_width = property(_get_fine_structure_width,_set_fine_structure_width)
+    fine_structure_width = property(_get_fine_structure_width,
+                                    _set_fine_structure_width)
     
     
     # E0
@@ -206,8 +209,6 @@ class EELSCLEdge(Component):
         else:
             raise ValueError(
                     "The value must be a number between 0 and 1")
-    
-        
     
     # It is needed because the property cannot be used to sort the edges
     def _onset_energy(self):
@@ -296,9 +297,11 @@ class EELSCLEdge(Component):
         cts = np.zeros((len(E)))
         bsignal = (E >= self.onset_energy)
         if self.fine_structure_active is True:
-            bfs = bsignal * (E < (self.onset_energy + self.fine_structure_width))
+            bfs = bsignal * (
+                E < (self.onset_energy + self.fine_structure_width))
             cts[bfs] = splev(E[bfs],
-                        (self.__knots, self.fine_structure_coeff.value + [0,]*4, 3))
+                (self.__knots, self.fine_structure_coeff.value + [0,]*4,
+                 3))
             bsignal[bfs] = False
         itab = bsignal * (E <= Emax)
         cts[itab] = self.tab_xsection(E[itab])
@@ -310,7 +313,8 @@ class EELSCLEdge(Component):
         return self.function(E) / self.intensity.value    
 
     def fine_structure_coeff_to_txt(self,filename):
-        np.savetxt(filename + '.dat', self.fine_structure_coeff.value, fmt="%12.6G")
+        np.savetxt(filename + '.dat', self.fine_structure_coeff.value,
+                   fmt="%12.6G")
  
     def txt_to_fine_structure_coeff(self,filename):
         fs = np.loadtxt(filename)
@@ -320,3 +324,32 @@ class EELSCLEdge(Component):
         else :
             messages.warning_exit("The provided fine structure file "  
             "doesn't match the size of the current fine structure")
+            
+    def get_fine_structure_as_spectrum(self):
+        """Returns a spectrum containing the fine structure.
+        
+        Notes
+        -----
+        The fine structure is corrected from multiple scattering if 
+        the model was convolved with a low-loss spectrum
+        
+        """
+        from hyperspy.signals.eels import EELSSpectrum
+        channels =  int(np.floor(
+                        self.fine_structure_width / self.energy_scale))
+        data = np.zeros(self.fine_structure_coeff.map.shape + 
+                        (channels,))
+        s = EELSSpectrum({
+            'data' : data,
+            'axes' : self.intensity._axes_manager._get_axes_dicts()})
+        s.get_dimensions_from_data()
+        s.axes_manager.signal_axes[0].offset = self.onset_energy
+        current_coordinates = self.intensity._axes_manager.coordinates
+        for spectrum in s:
+            self.charge_value_from_map(s.axes_manager.coordinates)
+            spectrum.data[:] = self.function(
+                                    s.axes_manager.signal_axes[0].axis)
+        s.mapped_parameters.title = self.name.replace(
+        '_',' ') + ' fine structure'
+        return s
+        

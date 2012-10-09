@@ -395,7 +395,7 @@ class Component(object):
         for parameter in self.parameters:
             parameter.store_current_value_in_array(indexes)
         
-    def charge_value_from_map(self, indexes, only_fixed = False):
+    def charge_value_from_map(self, indexes, only_fixed=False):
         if only_fixed is True:
             parameters = set(self.parameters) - set(self.free_parameters)
         else:
