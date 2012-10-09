@@ -30,7 +30,6 @@ from hyperspy.component import Component
 from hyperspy import messages
 from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
 from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
-
 from hyperspy.misc.eels.effective_angle import EffectiveAngle
 
 class EELSCLEdge(Component):
@@ -69,16 +68,23 @@ class EELSCLEdge(Component):
         favourable cases is proportional to the number of atoms of 
         the element. It is a component.Parameter instance.
     fine_structure_coeff : list of floats
-        The coefficients of the spline that fits the fine structure. Fix this parameter to fix the fine structure. It is a
-         component.Parameter instance.
+        The coefficients of the spline that fits the fine structure. 
+        Fix this parameter to fix the fine structure. It is a 
+        component.Parameter instance.
+    fine_structure_smoothing : float between 0 and 1
+        Controls the level of smoothing of the fine structure model.
+        Decreasing the value increases the level of smoothing.
     effective_angle : float
         The effective collection angle. It is automatically 
-        calculated by set_microscope_parameters. It is a component.Parameter instance.
+        calculated by set_microscope_parameters. It is a 
+        component.Parameter instance.
     fine_structure_active : bool
         Activates/deactivates the fine structure feature. Its 
         default value can be choosen in the preferences.
         
     """
+    _fine_structure_smoothing = \
+        preferences.EELS.fine_structure_smoothing
 
     def __init__(self, element_subshell, GOS=None):
         # Declare the parameters
@@ -101,8 +107,6 @@ class EELSCLEdge(Component):
         self.intensity.value = 1
         self.intensity.bmin = 0.
         self.intensity.bmax = None
-
-        self.knots_factor = preferences.EELS.knots_factor
         self.GOS = None
         # Set initial actions
         if GOS is None:
@@ -137,14 +141,16 @@ class EELSCLEdge(Component):
         self.__fine_structure_active = arg
         # Force replot
         self.intensity.value = self.intensity.value
-    fine_structure_active = property(_get_fine_structure_active,_set_fine_structure_active)
+    fine_structure_active = property(_get_fine_structure_active,
+                                     _set_fine_structure_active)
     
     def _get_fine_structure_width(self):
         return self.__fine_structure_width
     def _set_fine_structure_width(self,arg):
         self.__fine_structure_width = arg
-        self.setfine_structure_coeff()
-    fine_structure_width = property(_get_fine_structure_width,_set_fine_structure_width)
+        self._set_fine_structure_coeff()
+    fine_structure_width = property(_get_fine_structure_width,
+                                    _set_fine_structure_width)
     
     
     # E0
@@ -152,7 +158,7 @@ class EELSCLEdge(Component):
         return self.__E0
     def _set_E0(self,arg):
         self.__E0 = arg
-        self.calculate_effective_angle()
+        self._calculate_effective_angle()
     E0 = property(_get_E0,_set_E0)
     
     # Collection angles
@@ -160,7 +166,7 @@ class EELSCLEdge(Component):
         return self.__collection_angle
     def _set_collection_angle(self,arg):
         self.__collection_angle = arg
-        self.calculate_effective_angle()
+        self._calculate_effective_angle()
     collection_angle = property(_get_collection_angle, 
                                 _set_collection_angle)
     # Convergence angle
@@ -168,13 +174,13 @@ class EELSCLEdge(Component):
         return self.__convergence_angle
     def _set_convergence_angle(self,arg):
         self.__convergence_angle = arg
-        self.calculate_effective_angle()
+        self._calculate_effective_angle()
     convergence_angle = property(_get_convergence_angle, 
                                  _set_convergence_angle)
                             
     
     
-    def calculate_effective_angle(self):
+    def _calculate_effective_angle(self):
         try:
             self.effective_angle.value = EffectiveAngle(
                                                 self.E0,
@@ -184,21 +190,50 @@ class EELSCLEdge(Component):
         except:
             #All the parameters may not be defined yet...
             pass
-
-    def edge_position(self):
+    
+    @property
+    def fine_structure_smoothing(self):
+        """Controls the level of the smoothing of the fine structure.
+        
+        It must a real number between 0 and 1. The higher close to 0 
+        the higher the smoothing.
+        
+        """
+        return self._fine_structure_smoothing
+        
+    @fine_structure_smoothing.setter
+    def fine_structure_smoothing(self, value):
+        if 0 <= value <= 1:
+            self._fine_structure_smoothing = value
+            self._set_fine_structure_coeff()
+        else:
+            raise ValueError(
+                    "The value must be a number between 0 and 1")
+    
+    # It is needed because the property cannot be used to sort the edges
+    def _onset_energy(self):
+        return self.GOS.onset_energy + self.energy_shift.value
+    
+    @property
+    def onset_energy(self):
         return self.GOS.onset_energy + self.energy_shift.value
         
-    def setfine_structure_coeff(self):
+    @onset_energy.setter
+    def onset_energy(self, value):
+        self.energy_shift.value = value - self.GOS.onset_energy
+        
+    def _set_fine_structure_coeff(self):
         if self.energy_scale is None:
             return
         self.fine_structure_coeff._number_of_elements = int(
-            round(self.knots_factor * self.fine_structure_width / 
-                self.energy_scale)) + 4        
+            round(self.fine_structure_smoothing * 
+                  self.fine_structure_width / 
+                  self.energy_scale)) + 4        
         self.fine_structure_coeff.bmin = None
         self.fine_structure_coeff.bmax = None
         self.fine_structure_coeff.value = np.zeros(
             self.fine_structure_coeff._number_of_elements).tolist()
-        self.calculate_knots()
+        self._calculate_knots()
         if self.fine_structure_coeff.map is not None:
             self.fine_structure_coeff.create_array(
                 self.fine_structure_coeff.map.shape)
@@ -222,9 +257,9 @@ class EELSCLEdge(Component):
         self.collection_angle = beta
         self.energy_scale = energy_scale
         self.E0 = E0
-        self.integrate_GOS()
+        self._integrate_GOS()
                 
-    def integrate_GOS(self):
+    def _integrate_GOS(self):
         # Integration over q using splines                                        
         angle = self.effective_angle.value * 1e-3 # in rad
         self.tab_xsection = self.GOS.integrateq(
@@ -239,19 +274,20 @@ class EELSCLEdge(Component):
         
         # Connect them at this point where it is certain that all the 
         # parameters are well defined
-        self.effective_angle.connect(self.integrate_GOS)
+        self.effective_angle.connect(self._integrate_GOS)
         self.effective_angle.connection_active = True
-        self.energy_shift.connect(self.integrate_GOS)
-        self.energy_shift.connect(self.calculate_knots)
+        self.energy_shift.connect(self._integrate_GOS)
+        self.energy_shift.connect(self._calculate_knots)
         self.energy_shift.connection_active = True
         
-    def calculate_knots(self):    
-        # Recompute the knots
+    def _calculate_knots(self):    
         start = self.GOS.onset_energy + self.energy_shift.value
         stop = start + self.fine_structure_width
         self.__knots = np.r_[[start]*4,
-        np.linspace(start, stop, self.fine_structure_coeff._number_of_elements)[2:-2], 
-        [stop]*4]
+        np.linspace(start,
+                    stop,
+                    self.fine_structure_coeff._number_of_elements
+                    )[2:-2], [stop]*4]
         
     def function(self,E) :
         """Returns the number of counts in barns
@@ -259,11 +295,13 @@ class EELSCLEdge(Component):
         """
         Emax = self.GOS.energy_axis[-1] + self.energy_shift.value 
         cts = np.zeros((len(E)))
-        bsignal = (E >= self.edge_position())
+        bsignal = (E >= self.onset_energy)
         if self.fine_structure_active is True:
-            bfs = bsignal * (E < (self.edge_position() + self.fine_structure_width))
+            bfs = bsignal * (
+                E < (self.onset_energy + self.fine_structure_width))
             cts[bfs] = splev(E[bfs],
-                        (self.__knots, self.fine_structure_coeff.value + [0,]*4, 3))
+                (self.__knots, self.fine_structure_coeff.value + [0,]*4,
+                 3))
             bsignal[bfs] = False
         itab = bsignal * (E <= Emax)
         cts[itab] = self.tab_xsection(E[itab])
@@ -274,14 +312,46 @@ class EELSCLEdge(Component):
     def grad_intensity(self,E) :
         return self.function(E) / self.intensity.value    
 
-    def fine_structure_coeff_to_txt(self,filename) :
-        np.savetxt(filename + '.dat', self.fine_structure_coeff.value, fmt="%12.6G")
+    def fine_structure_coeff_to_txt(self,filename):
+        np.savetxt(filename + '.dat', self.fine_structure_coeff.value,
+                   fmt="%12.6G")
  
-    def txt_to_fine_structure_coeff(self,filename) :
+    def txt_to_fine_structure_coeff(self,filename):
         fs = np.loadtxt(filename)
-        self.calculate_knots()
+        self._calculate_knots()
         if len(fs) == len(self.__knots) :
             self.fine_structure_coeff.value = fs
         else :
             messages.warning_exit("The provided fine structure file "  
             "doesn't match the size of the current fine structure")
+            
+    def get_fine_structure_as_spectrum(self):
+        """Returns a spectrum containing the fine structure.
+        
+        Notes
+        -----
+        The fine structure is corrected from multiple scattering if 
+        the model was convolved with a low-loss spectrum
+        
+        """
+        from hyperspy.signals.eels import EELSSpectrum
+        channels =  int(np.floor(
+                        self.fine_structure_width / self.energy_scale))
+        data = np.zeros(self.fine_structure_coeff.map.shape + 
+                        (channels,))
+        s = EELSSpectrum({
+            'data' : data,
+            'axes' : self.intensity._axes_manager._get_axes_dicts()})
+        s.get_dimensions_from_data()
+        s.axes_manager.signal_axes[0].offset = self.onset_energy
+        current_coordinates = self.intensity._axes_manager.coordinates
+        for spectrum in s:
+            self.charge_value_from_map(s.axes_manager.coordinates)
+            spectrum.data[:] = self.function(
+                                    s.axes_manager.signal_axes[0].axis)
+        self.charge_value_from_map(current_coordinates)
+        s.mapped_parameters.title = self.name.replace(
+        '_',' ') + ' fine structure'
+        
+        return s
+        

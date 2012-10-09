@@ -128,7 +128,7 @@ class EELSConfig(t.HasTraits):
                "structure will be fitted with a spline. Please note that it "
                "enabling this feature only makes sense when the model is "
                "convolved to account for multiple scattering")
-    knots_factor = t.Range(0., 1., value = 0.3,
+    fine_structure_smoothing = t.Range(0., 1., value = 0.3,
         label = 'Fine structure smoothing factor',
         desc = 'The lower the value the smoother the fine structure spline fit')
     synchronize_cl_with_ll = t.CBool(False)
@@ -154,7 +154,7 @@ class EELSConfig(t.HasTraits):
             'eels_gos_files_path',
             'preedge_safe_window_width',
             tui.Group(
-                'fine_structure_width', 'fine_structure_active', 'knots_factor', 
+                'fine_structure_width', 'fine_structure_active', 'fine_structure_smoothing', 
                 'min_distance_between_edges_for_fine_structure',
                 label = 'Fine structure'),
             label = 'Model')
@@ -189,7 +189,7 @@ def config2template(template, config):
                 value = True
             elif value == 'False':
                 value = False
-            if name == 'knots_factor':
+            if name == 'fine_structure_smoothing':
                 value = float(value)
             config_dict[name] = value
         traited_class.set(True, **config_dict)

@@ -111,8 +111,8 @@ class EELSModel(Model):
                 beta = self.spectrum.mapped_parameters.TEM.EELS.collection_angle, 
                 energy_scale = self.axis.scale)
                 component.energy_scale = self.axis.scale
-                component.setfine_structure_coeff()
-                if component.edge_position() < \
+                component._set_fine_structure_coeff()
+                if component.onset_energy < \
                             self.axis.axis[self.channel_switches][0]:
                     component.isbackground = True
                 if component.isbackground is not True:
@@ -127,7 +127,7 @@ class EELSModel(Model):
                 self._background_components.append(component)
 
         if self.edges:
-            self.edges.sort(key = EELSCLEdge.edge_position)
+            self.edges.sort(key=EELSCLEdge._onset_energy)
             self.resolve_fine_structure()
         if len(self._background_components) > 1:
             self._backgroundtype = "mix"
@@ -205,8 +205,8 @@ class EELSModel(Model):
             i2 < len(self.edges)-1:
                 i2+=1
             if self.edges[i2].fine_structure_active is True:
-                distance_between_edges = self.edges[i2].edge_position() - \
-                self.edges[i1].edge_position()
+                distance_between_edges = self.edges[i2].onset_energy - \
+                self.edges[i1].onset_energy
                 if self.edges[i1].fine_structure_width > distance_between_edges - \
                 preedge_safe_window_width :
                     if (distance_between_edges - 
@@ -343,10 +343,10 @@ class EELSModel(Model):
         if start_energy is None:
             start_energy = ea[0]
         i = 0
-        while edge.edge_position() < start_energy or edge.active is False:
+        while edge.onset_energy < start_energy or edge.active is False:
             i+=1
             edge = edges.pop(0)
-        self.set_signal_range(start_energy,edge.edge_position() - \
+        self.set_signal_range(start_energy,edge.onset_energy - \
         preferences.EELS.preedge_safe_window_width)
         active_edges = []
         for edge in self.edges[i:]:
@@ -382,10 +382,10 @@ class EELSModel(Model):
         if E2 is None:
             if self.edges:
                 i = 0
-                while self.edges[i].edge_position() < E1 or \
+                while self.edges[i].onset_energy < E1 or \
                 self.edges[i].active is False:
                     i += 1
-                E2 = self.edges[i].edge_position() - \
+                E2 = self.edges[i].onset_energy - \
                 preferences.EELS.preedge_safe_window_width
             else:
                 E2 = ea[-1]
@@ -424,7 +424,7 @@ class EELSModel(Model):
         # Declare variables
         edge = self.edges[edgenumber]
         if edge.intensity.twin is not None or edge.active is False or \
-        edge.edge_position() < start_energy or edge.edge_position() > ea[-1]:
+        edge.onset_energy < start_energy or edge.onset_energy > ea[-1]:
             return 1
         print "Fitting edge ", edge.name 
         last_index = len(self.edges) - 1
@@ -442,7 +442,7 @@ class EELSModel(Model):
         if  (edgenumber + i) > last_index:
             nextedgeenergy = ea[-1]
         else:
-            nextedgeenergy = self.edges[edgenumber+i].edge_position() - \
+            nextedgeenergy = self.edges[edgenumber+i].onset_energy - \
             preedge_safe_window_width
 
         # Backup the fsstate
@@ -459,7 +459,7 @@ class EELSModel(Model):
         # Without fine structure to determine energy_shift
         edges_to_activate = []
         for edge_ in self.edges[edgenumber+1:]:
-            if edge_.active is True and edge_.edge_position() >= nextedgeenergy:
+            if edge_.active is True and edge_.onset_energy >= nextedgeenergy:
                 edge_.active = False
                 edges_to_activate.append(edge_)
         print "edges_to_activate", edges_to_activate
@@ -542,7 +542,7 @@ class EELSModel(Model):
             edges_list = self.edges
         for edge in edges_list :
             if edge.isbackground is False and edge.fine_structure_active is True:
-                start = edge.edge_position()
+                start = edge.onset_energy
                 stop = start + edge.fine_structure_width
                 self.remove_signal_range(start,stop)
        
