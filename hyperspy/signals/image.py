@@ -56,6 +56,7 @@ class Image(Signal):
             sp.learning_results = copy.deepcopy(self.learning_results)
             sp.learning_results._transpose_results()
             sp.learning_results.original_shape = self.data.shape
+        sp.tmp_parameters = self.tmp_parameters.deepcopy()
         return sp
         
     def estimate_2D_translation(self, reference='current',
