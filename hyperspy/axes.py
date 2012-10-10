@@ -336,14 +336,12 @@ class AxesManager(t.HasTraits):
 
     def set_signal_dimension(self):
         getitem_tuple = []
-        indexes = []
         values = []
         self.signal_axes = []
         self.navigation_axes = []
         for axis in self.axes:
             if axis.slice is None:
                 getitem_tuple.append(axis.index)
-                indexes.append(axis.index)
                 values.append(axis.value)
                 self.navigation_axes.append(axis)
             else:
@@ -351,7 +349,6 @@ class AxesManager(t.HasTraits):
                 self.signal_axes.append(axis)
                 
         self._getitem_tuple = getitem_tuple
-        self._indexes = np.array(indexes)
         self._values = np.array(values)
         self.signal_dimension = len(self.signal_axes)
         self.navigation_dimension = len(self.navigation_axes)
@@ -369,10 +366,6 @@ class AxesManager(t.HasTraits):
         self.navigation_size = \
             np.cumprod(self.navigation_shape)[-1]
         self._update_max_index()
-
-    def set_not_slicing_indexes(self, nsi):
-        for index,axis in zip(nsi, self.axes):
-            axis.index = index
 
     def set_view(self, view = 'spectrum'):
         """Adjust the navigate attribute depending on the desired view-

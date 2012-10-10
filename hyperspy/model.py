@@ -176,20 +176,22 @@ class Model(list):
         
         The SI is stored in self.model_cube
         """
-        pbar = progressbar.progressbar(
-        maxval = (np.cumprod(self.axes_manager.navigation_shape)[-1]))
+        maxval = self.axes_manager.navigation_size
+        if maxval > 0:
+            pbar = progressbar.progressbar(maxval=maxval)
         i = 0
-        for index in np.ndindex(tuple(self.axes_manager.navigation_shape)):
-            self.axes_manager.set_not_slicing_indexes(index)
-            self.charge(only_fixed = False)
+        for index in self.axes_manager:
+            self.charge(only_fixed=False)
             self.model_cube[self.axes_manager._getitem_tuple][
             self.channel_switches] = self.__call__(
-                non_convolved = not self.convolved, onlyactive = True)
+                non_convolved=not self.convolved, onlyactive=True)
             if out_of_range_to_nan is True:
                 self.model_cube[self.axes_manager._getitem_tuple][
                 self.channel_switches == False] = np.nan
             i += 1
-            pbar.update(i)
+            if maxval > 0:
+                pbar.update(i)
+        pbar.finish()
             
 # TODO: port it                    
 #    def generate_chisq(self, degrees_of_freedom = 'auto') :
@@ -269,7 +271,7 @@ class Model(list):
         it with the current parameters."""
         for component in self:
             component.store_current_parameters_in_map(
-            tuple(self.axes_manager._indexes))
+                                                 self.axes_manager.coordinates)
 
     def charge(self, only_fixed=False):
         """Charge the parameters for the current spectrum from the parameters 
@@ -284,10 +286,8 @@ class Model(list):
         if switch_aap is True:
             self.set_auto_update_plot(False)
         for component in self:
-            indexes = self.axes_manager._indexes
-            indexes = tuple(indexes) if indexes else (0,)
-            component.charge_value_from_map(indexes, only_fixed=
-                                            only_fixed)
+            component.charge_value_from_map(self.axes_manager.coordinates,
+                                            only_fixed=only_fixed)
         if switch_aap is True:
             self.set_auto_update_plot(True)
             self.update_plot()
@@ -909,9 +909,9 @@ class Model(list):
            " the same shape as the navigation: %s" % 
            self.axes_manager.navigation_shape)
         masked_elements = 0 if mask is None else mask.sum()
-        pbar = progressbar.progressbar(
-        maxval = (np.cumprod(self.axes_manager.navigation_shape)[-1] - 
-        masked_elements))
+        maxval=self.axes_manager.navigation_size - masked_elements
+        if maxval > 0:
+            pbar = progressbar.progressbar(maxval=maxval)
         if 'bounded' in kwargs and kwargs['bounded'] is True:
             if fitter == 'mpfit':
                 self.set_mpfit_parameters_info()
@@ -926,17 +926,16 @@ class Model(list):
                 "following fitters instead: mpfit, tnc, l_bfgs_b")
                 kwargs['bounded'] = False
         i = 0
-        for index in np.ndindex(tuple(
-                self.axes_manager.navigation_shape)):
+        for index in self.axes_manager:
             if mask is None or not mask[index]:
-                self.axes_manager.set_not_slicing_indexes(index)
-                self.charge(only_fixed = charge_only_fixed)
                 self.fit(**kwargs)
                 i += 1
-                pbar.update(i)
+                if maxval > 0:
+                    pbar.update(i)
             if autosave is True and i % autosave_every  == 0:
                 self.save_parameters2file(autosave_fn)
-        pbar.finish()
+        if maxval > 0:
+            pbar.finish()
         if autosave is True:
             messages.information(
             'Deleting the temporary file %s pixels' % (

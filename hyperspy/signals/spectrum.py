@@ -477,12 +477,11 @@ class Spectrum(Signal):
         number_of_points = None, differential_order = 0):
         '''Savitzky-Golay data smoothing'''
         if polynomial_order is not None and number_of_points is not None:
-            for index in np.ndindex(
-            tuple(self.axes_manager.navigation_shape)):
-                self.axes_manager.set_not_slicing_indexes(index)
-                self.data[self.axes_manager._getitem_tuple] = \
-                    utils.sg(self(), number_of_points, 
-                             polynomial_order, differential_order)
+            for spectrum in self:
+                spectrum.data[:] = utils.sg(self(),
+                                            number_of_points, 
+                                            polynomial_order,
+                                            differential_order)
         else:
             smoother = SmoothingSavitzkyGolay(self)
             smoother.differential_order = differential_order

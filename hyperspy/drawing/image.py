@@ -84,7 +84,7 @@ class ImagePlot:
         data = self.data_function()
         if self.auto_contrast is True:
             self.optimize_contrast(data)
-        if not self.axes_manager or not self.axes_manager.coordinates:
+        if not self.axes_manager or self.axes_manager.navigation_size==0:
             self.plot_coordinates = False
         if self.plot_coordinates is True:
             self.text = self.ax.text(*self.text_position,
