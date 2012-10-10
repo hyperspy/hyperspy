@@ -537,7 +537,7 @@ class Model(list):
                     counter += component._nfree_param
             return sum
 
-    def _jacobian(self,param, y, weights = None):
+    def _jacobian(self,param, y, weights=None):
         if self.convolved is True:
             counter = 0
             grad = np.zeros(len(self.axis.axis))

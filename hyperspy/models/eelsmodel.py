@@ -198,7 +198,7 @@ class EELSModel(Model):
         while (self.edges[i1].fine_structure_active is False or  
         self.edges[i1].active is False) and i1 < len(self.edges)-1 :
             i1+=1
-        if i1 < len(self.edges)-1 :
+        if i1 < len(self.edges)-1:
             i2=i1+1
             while (self.edges[i2].fine_structure_active is False or 
             self.edges[i2].active is False) and \
@@ -208,7 +208,7 @@ class EELSModel(Model):
                 distance_between_edges = self.edges[i2].onset_energy - \
                 self.edges[i1].onset_energy
                 if self.edges[i1].fine_structure_width > distance_between_edges - \
-                preedge_safe_window_width :
+                preedge_safe_window_width:
                     if (distance_between_edges - 
                     preedge_safe_window_width) <= \
                     preferences.EELS.min_distance_between_edges_for_fine_structure:
@@ -284,9 +284,11 @@ class EELSModel(Model):
             
         """
         if kind == 'smart':
-            self.smart_fit(**kwargs)
+            self.smart_fit(fitter, method, grad, weights,
+            bounded, ext_bounding, update_plot, **kwargs)
         elif kind == 'std':
-            Model.fit(self, **kwargs)
+            Model.fit(self, fitter, method, grad, weights,
+            bounded, ext_bounding, update_plot, **kwargs)
         else:
             raise ValueError('kind must be either \'std\' or \'smart\'.'
             '\'%s\' provided.' % kind)
