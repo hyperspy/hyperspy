@@ -284,11 +284,24 @@ class EELSModel(Model):
             
         """
         if kind == 'smart':
-            self.smart_fit(fitter, method, grad, weights,
-            bounded, ext_bounding, update_plot, **kwargs)
+            self.smart_fit(fitter=fitter,
+                           method=method,
+                           grad=grad,
+                           weights=weights,
+                           bounded=bounded,
+                           ext_bounding=ext_bounding,
+                           update_plot=update_plot,
+                           **kwargs)
         elif kind == 'std':
-            Model.fit(self, fitter, method, grad, weights,
-            bounded, ext_bounding, update_plot, **kwargs)
+            Model.fit(self,
+                      fitter=fitter,
+                      method=method,
+                      grad=grad,
+                      weights=weights,
+                      bounded=bounded,
+                      ext_bounding=ext_bounding,
+                      update_plot=update_plot,
+                      **kwargs)
         else:
             raise ValueError('kind must be either \'std\' or \'smart\'.'
             '\'%s\' provided.' % kind)
