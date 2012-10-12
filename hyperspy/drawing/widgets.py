@@ -202,7 +202,7 @@ class DraggableSquare(ResizebleDraggablePatch):
         DraggablePatch.__init__(self, axes_manager)
 
     def set_patch(self):
-        indexes = self.axes_manager._indexes[::-1]
+        indexes = np.array(self.axes_manager.coordinates[::-1])
         self.patch = \
         plt.Rectangle(indexes - (self.size / 2.,) * 2,
         self.size, self.size, animated = self.blit,
@@ -214,7 +214,7 @@ class DraggableSquare(ResizebleDraggablePatch):
         self.update_patch_position()
 
     def update_patch_position(self):
-        indexes = self.axes_manager._indexes[::-1]
+        indexes = np.array(self.axes_manager.coordinates[::-1])
         self.patch.set_xy(indexes - (self.size / 2.,) * 2)
         self.draw_patch()
 
@@ -222,7 +222,7 @@ class DraggableSquare(ResizebleDraggablePatch):
         'on mouse motion draw the cursor if picked'
 
         if self.picked is True and event.inaxes:
-            if self.axes_manager._indexes[0] != round(event.ydata):
+            if self.axes_manager.coordinates[0] != round(event.ydata):
                 try:
                     self.axes_manager.navigation_axes[0].index = \
                     round(event.ydata)
@@ -230,7 +230,7 @@ class DraggableSquare(ResizebleDraggablePatch):
                     # Index out of range, we do nothing
                     pass
                     
-            if  self.axes_manager._indexes[1] != round(event.xdata):
+            if  self.axes_manager.coordinates[1] != round(event.xdata):
                 try:
                     self.axes_manager.navigation_axes[1].index = \
                     round(event.xdata)
@@ -248,12 +248,12 @@ class DraggableHorizontalLine(DraggablePatch):
 
     def update_patch_position(self):
         if self.patch is not None:
-            self.patch.set_ydata(self.axes_manager._indexes[0])
+            self.patch.set_ydata(self.axes_manager.coordinates[0])
             self.draw_patch()
 
     def set_patch(self):
         ax = self.ax
-        self.patch = ax.axhline(self.axes_manager._indexes[0],
+        self.patch = ax.axhline(self.axes_manager.coordinates[0],
                                 color = self.color,
                                picker = 5, animated = self.blit)
 

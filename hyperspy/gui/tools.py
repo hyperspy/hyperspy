@@ -323,8 +323,10 @@ class Smoothing(t.HasTraits):
         
     def apply(self):
         self.signal._plot.auto_update_plot = False
-        pbar = progressbar(
-        maxval = (np.cumprod(self.signal.axes_manager.navigation_shape)[-1]))
+        maxval = self.signal.axes_manager.navigation_size
+        if maxval > 0:
+            pbar=progressbar(
+            maxval=maxval)
         up_to = None
         if self.differential_order == 0:
             f = self.model2plot
@@ -333,15 +335,13 @@ class Smoothing(t.HasTraits):
             if self.crop_diff_axis is True:
                 up_to = -self.differential_order
         i = 0
-        for index in np.ndindex(
-        tuple(self.signal.axes_manager.navigation_shape)):
-            self.signal.axes_manager.set_not_slicing_indexes(index)
-            self.signal.data[
-            self.signal.axes_manager._getitem_tuple][:up_to]\
-                 = f()
+        for spectrum in self.signal:
+            spectrum.data[:] = f()
             i += 1
-            pbar.update(i)
-        pbar.finish()
+            if maxval > 0:
+                pbar.update(i)
+        if maxval > 0:
+            pbar.finish()
         if self.differential_order > 0:
             self.signal.axes_manager.signal_axes[0].offset = \
                 self.smooth_diff_line.axis[0]

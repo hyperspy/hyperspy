@@ -1229,6 +1229,12 @@ class DictionaryBrowser(object):
                     return False
         else:
             return False
+        
+    def copy(self):
+        return copy.copy(self)
+        
+    def deepcopy(self):
+        return copy.deepcopy(self)
             
     def set_item(self, item_path, value):
         """Given the path and value, create the missing nodes in

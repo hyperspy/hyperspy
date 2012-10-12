@@ -431,6 +431,8 @@ class Spectrum(Signal):
             im.learning_results = copy.deepcopy(self.learning_results)
             im.learning_results._transpose_results()
             im.learning_results.original_shape = self.data.shape
+
+        im.tmp_parameters = self.tmp_parameters.deepcopy()
         return im
 
     def to_EELS(self):
@@ -440,6 +442,7 @@ class Spectrum(Signal):
         eels = EELSSpectrum(dic)
         if hasattr(self, 'learning_results'):
             eels.learning_results = copy.deepcopy(self.learning_results)
+        eels.tmp_parameters = self.tmp_parameters.deepcopy()
         return eels
         
     def to_simulation(self):
@@ -451,6 +454,7 @@ class Spectrum(Signal):
         simu = SpectrumSimulation(dic)
         if hasattr(self, 'learning_results'):
             simu.learning_results = copy.deepcopy(self.learning_results)
+        simu.tmp_parameters = self.tmp_parameters.deepcopy()
         return simu
     
     @only_interactive
@@ -477,12 +481,11 @@ class Spectrum(Signal):
         number_of_points = None, differential_order = 0):
         '''Savitzky-Golay data smoothing'''
         if polynomial_order is not None and number_of_points is not None:
-            for index in np.ndindex(
-            tuple(self.axes_manager.navigation_shape)):
-                self.axes_manager.set_not_slicing_indexes(index)
-                self.data[self.axes_manager._getitem_tuple] = \
-                    utils.sg(self(), number_of_points, 
-                             polynomial_order, differential_order)
+            for spectrum in self:
+                spectrum.data[:] = utils.sg(self(),
+                                            number_of_points, 
+                                            polynomial_order,
+                                            differential_order)
         else:
             smoother = SmoothingSavitzkyGolay(self)
             smoother.differential_order = differential_order
