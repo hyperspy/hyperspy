@@ -14,7 +14,7 @@ For installing in any other platform you can :ref:`install-with-python-installer
 Quick instructions to install Hyperspy in Windows
 -------------------------------------------------
 
-#. Download and install `EPD. <http://www.enthought.com/products/epd.php>`_ EPD is reccomended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are incluided). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_ Since version 0.5 Hyperspy runs (with limited functionality) in `EPD free <https://www.enthought.com/repo/free/>`_ .
+#. Download and install `EPD. <http://www.enthought.com/products/epd.php>`_ EPD is recommended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are included). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_ Since version 0.5 Hyperspy runs (with limited functionality) in `EPD free <https://www.enthought.com/repo/free/>`_ .
 #. **Restart the computer**
 #. Download and install Hyperspy from the `Download section <http://hyperspy.org/download.html>`_
 
@@ -29,7 +29,7 @@ For more options and details read the rest of the documentation.
 Quick instructions to install Hyperspy in MacOs
 -------------------------------------------------
 
-#. Download and install `EPD. <http://www.enthought.com/products/epd.php>`_ **Do not install the 64bits version even if your processor is 64bits because it does not include the Python WX libraries which are required by Hyperspy**. EPD is reccomended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are incluided). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_  Since version 0.5 Hyperspy runs (with limited functionality) in `EPD free <https://www.enthought.com/repo/free/>`_ .
+#. Download and install `EPD. <http://www.enthought.com/products/epd.php>`_ **Do not install the 64bits version even if your processor is 64bits because it does not include the Python WX libraries which are required by Hyperspy**. EPD is recommended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are included). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_  Since version 0.5 Hyperspy runs (with limited functionality) in `EPD free <https://www.enthought.com/repo/free/>`_ .
 #. Open a new terminal and type: `easy_install hyperspy`
 
 For more options and details read the rest of the documentation.
@@ -40,7 +40,7 @@ For more options and details read the rest of the documentation.
 Install using Python installers
 -------------------------------
 .. WARNING::
-    Although it is possible to install hyperspy in Windows using the instructions of this section, installing using the Windows installer is reccomended in this platform because the Python installers do not create entries in the ``Start Menu`` or the ``Context Menu``
+    Although it is possible to install hyperspy in Windows using the instructions of this section, installing using the Windows installer is recommended in this platform because the Python installers do not create entries in the ``Start Menu`` or the ``Context Menu``
 
 Since version 4.1 Hyperspy is listed in the `Python Package Index <http://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded and installed using `distribute <http://pypi.python.org/pypi/distribute>`_ or (our favourite) `pip <http://pypi.python.org/pypi/pip>`_. Depending on your Python distribution, you might need to install at least one of these packages manually.
 
@@ -111,7 +111,12 @@ To install Hyperspy you could proceed like in :ref:`iinstall-released-source`. H
     $ cd hyperspy
     $ pip install -e ./
     
-In any case, you must be sure to have all the dependencies installed, see :ref:`install-dependencies`
+In any case, you must be sure to have all the dependencies installed, see :ref:`install-dependencies`. Note the pip installer requires root to install, so for Ubuntu:
+
+.. code-block:: bash
+
+    $ cd hyperspy
+    $ sudo pip install -e ./
  
 .. _create-debian-binary: 
     
@@ -139,11 +144,14 @@ Installing the required libraries
     Read at least up to the second paragraph of this instruction before taking any action
     
     
-Before installing Hyperspy Python and the following libraries be installed in the system: numpy, scipy, matplotlib, ipython, traits and traitsui. For full functionality it is reccomended to also install h5py, mdp and scikit-learn. In Windows Hyperspy uses the Ipython's QtConsole nd therefore Qt and PyQt or PySide are also required.
+Before installing Hyperspy Python and the following libraries be installed in the system: numpy, scipy, matplotlib, ipython, traits and traitsui. For full functionality it is recommended to also install h5py, mdp and scikit-learn. In Windows Hyperspy uses the Ipython's QtConsole nd therefore Qt and PyQt or PySide are also required.
 
 In Windows and Mac the easiest way to install these packages is by installing the `enthought python distribution. <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default. Academics can get it free `here <http://www.enthought.com/products/edudownload.php>`_ .  Since version 0.5 Hyperspy runs (with limited functionality) in `EPD free <https://www.enthought.com/repo/free/>`_ .
 
-If you use an Ubuntu binary to install Hyperspy all the dependencies should install automatically.
+If you use an Ubuntu binary to install Hyperspy all the dependencies should install automatically. Installing the dependencies manually in Ubuntu 12.04 (and probably Debian and other Ubuntu versions) can be done using:
+
+.. code-block:: bash
+    $ sudo apt-get install python-numpy python-matplotlib ipython python-traits python-traitsui python-h5py python-mdp python-scikits-learn python-nose
 
 .. _known-issues:
 
