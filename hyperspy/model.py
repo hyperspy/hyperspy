@@ -66,6 +66,10 @@ class Model(list):
         self._low_loss = None
 
     @property
+    def data(self):
+        return self()
+
+    @property
     def spectrum(self):
         return self._spectrum
         
