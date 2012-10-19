@@ -1815,6 +1815,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         for axis in cs.axes_manager.navigation_axes:
             cs.axes_manager.axes.remove(axis)
             cs.axes_manager.set_signal_dimension()
+        cs.axes_manager._set_axes_index_in_array_from_position()
         if cs.tmp_parameters.has_item('filename'):
             basename = cs.tmp_parameters.filename
             ext = cs.tmp_parameters.extension
