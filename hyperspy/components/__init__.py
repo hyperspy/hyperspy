@@ -26,6 +26,7 @@ Writing a new template is really easy, just edit _template.py and maybe take a
 look to the other components.
 '''
 
+from hyperspy.components.arctan import Arctan
 from hyperspy.components.bleasdale import Bleasdale
 from hyperspy.components.eels_double_offset import DoubleOffset
 from hyperspy.components.eels_double_power_law import DoublePowerLaw
