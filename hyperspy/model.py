@@ -913,10 +913,10 @@ class Model(list):
         if maxval > 0:
             pbar = progressbar.progressbar(maxval=maxval)
         if 'bounded' in kwargs and kwargs['bounded'] is True:
-            if fitter == 'mpfit':
+            if kwargs['fitter'] == 'mpfit':
                 self.set_mpfit_parameters_info()
                 kwargs['bounded'] = None
-            elif fitter in ("tnc", "l_bfgs_b"):
+            elif kwargs['fitter'] in ("tnc", "l_bfgs_b"):
                 self.set_boundaries()
                 kwargs['bounded'] = None
             else:
