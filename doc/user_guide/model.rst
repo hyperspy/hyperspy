@@ -38,6 +38,7 @@ In Hyperspy a model consists of a linear combination of :py:mod:`~.components`. 
 * :py:class:`~.components.bleasdale.Bleasdale`
 * :py:class:`~.components.error_function.Erf`
 * :py:class:`~.components.pes_see.SEE`
+* :py:class:`~.components.arctan.Arctan`
 
 
  
