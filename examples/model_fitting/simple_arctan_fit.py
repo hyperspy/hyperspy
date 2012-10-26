@@ -13,7 +13,7 @@ s.mapped_parameters.title = "Simple arctan fit"
 s.add_gaussian_noise(0.1)
 
 #Make the arctan component for use in the model
-arctanComponent = components.Arctan()
+arctan_component = components.Arctan()
 
 #Create the model and add the arctan component
 m = create_model(s)
