@@ -84,9 +84,11 @@ class Slice:
                 self.is_array = True
             except TypeError:
                 #Suppose "sli" is an int/float
-                #Build a slice from it to keep dim(s.data) constant
                 self.start = self._orig_sli
-                self.stop = self.start + 1
+                if isinstance(self.start, float):
+                    self.stop = self._axe.index2value(self.start) + 1
+                else:
+                    self.stop = self.start + 1
                 self.step = None
         if isinstance(self.start, float):
             self.offset = self.start
