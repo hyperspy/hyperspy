@@ -17,27 +17,25 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from scipy.interpolate import griddata
 
 class Slice:
     """A consistent class for slices"""
     def __init__(self, sli, axe):
         self._orig_sli = sli
         self._axe = axe
-
+        self._orig_offset = axe.offset
         #Init params
         self.start = 0
         self.stop = axe.size
         self.step = 1
-
+        self.offset = axe.offset
         #Init flags
         self.is_array = False
-
         #Update params
         self._update()
 
     def gen(self, to_values=False):
-        #By default returns indexes
+        #Generate actual slices
         if to_values:
             i2v = self._axe.index2value
             if self.is_array:
@@ -64,30 +62,23 @@ class Slice:
                              else self.step)
 
     def _update(self):
-        #Don't do too much (value2index or index2value):
-        #    Original values will be needed when interpolation is implemented
+        #Don't do too much (no value2index or index2value):
+        #Original values will be needed once interpolation is implemented
         sli = self._orig_sli
         try:
             #Suppose "sli" is a slice instance...
             if sli.start is not None:
                 self.start = sli.start
-
             if sli.stop is not None:
                 self.stop = sli.stop
-
             if sli.step is not None and abs(sli.step) >=1 :
                 self.step = int(round(sli.step)) #No non-int values for now 
             else:
-                self.step = 1 #idem
-
-            #No need for explicit size calculation from now on...
-            #self.size = int(round(abs((self.stop-self.start)/self.step)))
-
-
+                self.step = None #idem
         except (AttributeError, TypeError):
             try:
                 #Suppose "sli" is a tuple-like instance
-                self.start = None
+                self.start = sli[0]
                 self.stop = None
                 self.step = None
                 self.is_array = True
@@ -97,40 +88,49 @@ class Slice:
                 self.start = self._orig_sli
                 self.stop = self.start + 1
                 self.step = None
+        if isinstance(self.start, float):
+            self.offset = self.start
+        else:
+            self.offset = self._axe.index2value(self.start)
 
-class Slices:
+class SliceSignal:
     def __init__(self, slices):
         try:
             len(slices)
         except TypeError:
             slices = (slices,)
         self._orig_slices = slices
+
         self.nav_indexes = None
         self.spec_indexes = None 
-        
-        self.slices = None 
 
+        self._signal = None
+        
+        self.idx = None
+        self._Slices = None
+        self.slices = None
+        self.offset = None
+        
         self.has_nav = True
         self.has_spec = True
         self.XYZ_ordering = True
 
     
     def __call__(self, signal):
-        self._axes_manager = signal.axes_manager
-        self._data = signal.data
-
+        self._signal = signal.deepcopy()
         self._process_slices()
-        self.apply()
+        return self.apply()
 
     def _get_nav(self):
         self.nav_indexes =  np.array([el.index_in_array for el in
-                    self._axes_manager.navigation_axes])
+                    self._signal.axes_manager.navigation_axes])
 
     def _get_spec(self):
         self.spec_indexes =  np.array([el.index_in_array for el in
-                    self._axes_manager.signal_axes])
+                    self._signal.axes_manager.signal_axes])
 
     def _process_slices(self):
+        #Change axes order and get processed slices from the "Slice" class
         self._get_nav()
         self._get_spec()
         if self.XYZ_ordering:
@@ -147,14 +147,32 @@ class Slices:
         else:
             idx = None
 
-        axe = self._axes_manager.axes
+        axe = self._signal.axes_manager.axes
         slices = np.append(self._orig_slices,
                 [slice(None,)]*max(0, (len(idx)-len(self._orig_slices))))
+        self.idx = idx
+        self._Slices = [Slice(slices[i], axe[i]) for  i in idx]
+        self.slices = [sli.gen() for sli in self._Slices]
+        self.offset = [sli.offset for sli in self._Slices]
 
-        self.slices = [Slice(sli, axe[i]).gen() for sli, i in zip(slices, idx)]
+    def _clean_axes(self):
+        #Update axe sizes and offsets
+        for i, (slice_len,j) in enumerate(zip(self._signal.data.shape, self.idx)):
+            self._signal.axes_manager.axes[i].size = slice_len
+            self._signal.axes_manager.axes[i].offset = self.offset[j]
+        #Remove len = 1 axes
+        for slice_len, axe in zip(self._signal.data.shape, self._signal.axes_manager.axes):
+            if slice_len < 2:
+                self._signal.axes_manager.axes.remove(axe)
+                     
+
+    def update_slices(self, slices):
+        self.__init__(slices)
 
     def apply(self):
-        return self._data[self.slices]
+        self._signal.data = self._signal.data[self.slices]
+        self._clean_axes()
+        return self._signal
 
     def set_XYZ_ordering(self, bool):
         if bool:

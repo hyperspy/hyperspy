@@ -34,6 +34,7 @@ from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import ensure_directory
+from hyperspy.misc.slices import SliceSignal
 
 from matplotlib import pyplot as plt
 
@@ -77,6 +78,10 @@ class Signal(t.HasTraits, MVA):
         string += '>'
 
         return string
+
+    def __getitem__(self, slices, isNavigation=None):
+        slice_obj = SliceSignal(slices)
+        return slice_obj(self) #returns a deepcopy
         
     def print_summary(self):
         string = "\n\tTitle: "
