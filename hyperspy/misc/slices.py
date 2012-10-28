@@ -164,6 +164,7 @@ class SliceSignal:
         for slice_len, axe in zip(self._signal.data.shape, self._signal.axes_manager.axes):
             if slice_len < 2:
                 self._signal.axes_manager.axes.remove(axe)
+        self._signal.data = self._signal.data.squeeze()
                      
 
     def update_slices(self, slices):
