@@ -69,6 +69,8 @@ class Signal(t.HasTraits, MVA):
         self._axes_manager_before_unfolding = None
         self.auto_replot = True
         self.variance = None
+        self.navigation = SpecialSlicers(self, True)
+        self.spectrum = SpecialSlicers(self, False)
 
     def __repr__(self):
         string = '<'
@@ -80,7 +82,7 @@ class Signal(t.HasTraits, MVA):
         return string
 
     def __getitem__(self, slices, isNavigation=None):
-        slice_obj = SliceSignal(slices)
+        slice_obj = SliceSignal(slices, isNavigation)
         return slice_obj(self) #returns a deepcopy
         
     def print_summary(self):
@@ -1926,5 +1928,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 #        sp.get_dimensions_from_cube()
 #        return sp
 
-
+class SpecialSlicers(Signal):
+    def __init__(self, obj, isNavigation):
+        self.isNavigation = isNavigation
+        self.obj = obj
+    def __getitem__(self, slices):
+        return self.obj.__getitem__(slices, self.isNavigation)
 
