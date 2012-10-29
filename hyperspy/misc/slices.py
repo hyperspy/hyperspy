@@ -96,7 +96,7 @@ class Slice:
             self.offset = self._axe.index2value(self.start)
 
 class SliceSignal:
-    def __init__(self, slices):
+    def __init__(self, slices, isNavigation=None, XYZ_ordering=True):
         try:
             len(slices)
         except TypeError:
@@ -113,10 +113,18 @@ class SliceSignal:
         self.slices = None
         self.offset = None
         
-        self.has_nav = True
-        self.has_spec = True
-        self.XYZ_ordering = True
+        self.XYZ_ordering = XYZ_ordering
 
+        if isNavigation is not None:
+            if isNavigation:
+                self.has_nav = True
+                self.has_spec = False
+            else:
+                self.has_nav = False
+                self.has_spec = True
+        else:
+            self.has_nav = True
+            self.has_spec = True
     
     def __call__(self, signal):
         self._signal = signal.deepcopy()
@@ -140,26 +148,34 @@ class SliceSignal:
         else:
             cut = slice(None, None, 1)
 
-        if self.has_nav and self.has_spec:
-            idx = np.append(self.nav_indexes[cut], self.spec_indexes[cut])
-        elif self.has_nav and not self.has_spec:
-            idx = self.nav_indexes[cut]
-        elif self.has_spec and not self.has_nav:
-            idx = self.spec_indexes[cut]
-        else:
-            idx = None
+        nav_idx = self.nav_indexes[cut]
+        spec_idx = self.spec_indexes[cut]
+        
+        self.index = np.append(nav_idx, spec_idx)
 
-        axe = self._signal.axes_manager.axes
-        slices = np.append(self._orig_slices,
-                [slice(None,)]*max(0, (len(idx)-len(self._orig_slices))))
-        self.idx = idx
-        self._Slices = [Slice(slices[i], axe[i]) for  i in idx]
+        if self.has_nav and not self.has_spec:
+            self.idx =  nav_idx
+        elif not self.has_nav and self.has_spec:
+            self.idx =  spec_idx
+        else:
+            self.idx =  self.index
+
+        slices = np.array([slice(None,)]*len(self._signal.axes_manager.axes))
+        slices[self.idx] = self._fill(self._orig_slices, len(self.idx))
+        axes = [self._signal.axes_manager.axes[i] for i in self.index]
+
+        self._Slices = [Slice(sli, axe) for sli, axe in zip(slices,axes)]
         self.slices = [sli.gen() for sli in self._Slices]
         self.offset = [sli.offset for sli in self._Slices]
 
+    def _fill(self, slices, num):
+        return np.append(slices, [slice(None,)]*max(0,num-len(slices)))
+
     def _clean_axes(self):
         #Update axe sizes and offsets
-        for i, (slice_len,j) in enumerate(zip(self._signal.data.shape, self.idx)):
+
+        for i, (slice_len,j) in enumerate(zip(self._signal.data.shape,
+                                              self.index)):
             self._signal.axes_manager.axes[i].size = slice_len
             self._signal.axes_manager.axes[i].offset = self.offset[j]
         #Remove len = 1 axes
@@ -176,25 +192,3 @@ class SliceSignal:
         self._signal.data = self._signal.data[self.slices]
         self._clean_axes()
         return self._signal
-
-    def set_XYZ_ordering(self, bool):
-        if bool:
-            self.XYZ_ordering = True
-        else:
-            self.XYZ_ordering = False
-
-    def has_nav(self, bool):
-        if bool:
-            self.has_nav = True
-        else:
-            self.has_nav = False
-            if not self.has_spec:
-                self.has_spec = True
-
-    def has_spec(self, bool):
-        if bool:
-            self.has_spec = True
-        else:
-            self.has_spec = False
-            if not self.has_nav:
-                self.has_nav = True
