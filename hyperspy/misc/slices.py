@@ -127,10 +127,10 @@ class SliceSignal:
         if isNavigation is not None:
             if isNavigation:
                 self.has_nav = True
-                self.has_spec = False
+                self.has_signal = False
             else:
                 self.has_nav = False
-                self.has_spec = True
+                self.has_signal = True
         else:
             self.has_nav = True
         self.has_signal = True
@@ -157,14 +157,14 @@ class SliceSignal:
             cut = slice(None, None, 1)
 
         nav_idx = self.nav_indexes[cut]
-        spec_idx = self.spec_indexes[cut]
+        signal_idx = self.signal_indexes[cut]
         
-        self.index = np.append(nav_idx, spec_idx)
+        self.index = np.append(nav_idx, signal_idx)
 
-        if self.has_nav and not self.has_spec:
+        if self.has_nav and not self.has_signal:
             self.idx =  nav_idx
-        elif not self.has_nav and self.has_spec:
-            self.idx =  spec_idx
+        elif not self.has_nav and self.has_signal:
+            self.idx =  signal_idx
         else:
             self.idx =  self.index
 

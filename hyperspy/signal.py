@@ -70,7 +70,7 @@ class Signal(t.HasTraits, MVA):
         self.auto_replot = True
         self.variance = None
         self.navigation = SpecialSlicers(self, True)
-        self.spectrum = SpecialSlicers(self, False)
+        self.signal = SpecialSlicers(self, False)
 
     def __repr__(self):
         string = '<'
