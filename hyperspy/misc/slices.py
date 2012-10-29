@@ -123,18 +123,17 @@ class SliceSignal:
         self._process_slices()
         return self.apply()
 
-    def _get_nav(self):
+    def _process_slices(self):
+        """Change axes order and get processed slices from the Slice
+         class.
+        
+        """
+        
         self.nav_indexes =  np.array([el.index_in_array for el in
                     self._signal.axes_manager.navigation_axes])
-
-    def _get_signal(self):
         self.signal_indexes =  np.array([el.index_in_array for el in
                     self._signal.axes_manager.signal_axes])
 
-    def _process_slices(self):
-        #Change axes order and get processed slices from the "Slice" class
-        self._get_nav()
-        self._get_signal()
         if self.XYZ_ordering:
             cut = slice(None, None, -1)
         else:
