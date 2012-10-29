@@ -42,11 +42,14 @@ class Slice:
                 return [i2v(el) if not isinstance(el, float) else el
                         for el in self._orig_sli]
             else:
-                return slice(i2v(self.start) if not isinstance(self.start, float) 
+                return slice(i2v(self.start) if not 
+                                        isinstance(self.start, float) 
                              else self.start,
-                             i2v(self.stop) if not isinstance(self.stop, float) 
+                             i2v(self.stop) if not 
+                                        isinstance(self.stop, float) 
                              else self.stop,
-                             i2v(self.step) if not isinstance(self.step, float) 
+                             i2v(self.step) if not 
+                                        isinstance(self.step, float) 
                              else self.step)
         else:
             v2i = self._axe.value2index
@@ -54,16 +57,22 @@ class Slice:
                 return [v2i(el) if isinstance(el, float) else el
                         for el in self._orig_sli]
             else:
-                return slice(v2i(self.start) if isinstance(self.start, float) 
+                return slice(v2i(self.start) if 
+                                        isinstance(self.start, float) 
                              else self.start,
-                             v2i(self.stop) if isinstance(self.stop, float) 
+                             v2i(self.stop) if 
+                                            isinstance(self.stop, float) 
                              else self.stop,
-                             v2i(self.step) if isinstance(self.step, float) 
+                             v2i(self.step) if 
+                                            isinstance(self.step, float) 
                              else self.step)
 
     def _update(self):
-        #Don't do too much (no value2index or index2value):
-        #Original values will be needed once interpolation is implemented
+        """Don't do too much (no value2index or index2value):
+        Original values will be needed once interpolation is 
+        implemented.
+        
+        """
         sli = self._orig_sli
         try:
             #Suppose "sli" is a slice instance...
@@ -140,7 +149,8 @@ class SliceSignal:
             cut = slice(None, None, 1)
 
         if self.has_nav and self.has_signal:
-            idx = np.append(self.nav_indexes[cut], self.signal_indexes[cut])
+            idx = np.append(self.nav_indexes[cut],
+                            self.signal_indexes[cut])
         elif self.has_nav and not self.has_signal:
             idx = self.nav_indexes[cut]
         elif self.has_signal and not self.has_nav:
@@ -150,7 +160,8 @@ class SliceSignal:
 
         axe = self._signal.axes_manager.axes
         slices = np.append(self._orig_slices,
-                [slice(None,)]*max(0, (len(idx)-len(self._orig_slices))))
+                [slice(None,)]*max(0,
+                                  (len(idx)-len(self._orig_slices))))
         self.idx = idx
         self._Slices = [Slice(slices[i], axe[i]) for  i in idx]
         self.slices = [sli.gen() for sli in self._Slices]
@@ -158,11 +169,13 @@ class SliceSignal:
 
     def _clean_axes(self):
         #Update axe sizes and offsets
-        for i, (slice_len,j) in enumerate(zip(self._signal.data.shape, self.idx)):
+        for i, (slice_len,j) in enumerate(zip(self._signal.data.shape, 
+                                          self.idx)):
             self._signal.axes_manager.axes[i].size = slice_len
             self._signal.axes_manager.axes[i].offset = self.offset[j]
         #Remove len = 1 axes
-        for slice_len, axe in zip(self._signal.data.shape, self._signal.axes_manager.axes):
+        for slice_len, axe in zip(self._signal.data.shape,
+                                  self._signal.axes_manager.axes):
             if slice_len < 2:
                 self._signal.axes_manager.axes.remove(axe)
         self._signal.data = self._signal.data.squeeze()
