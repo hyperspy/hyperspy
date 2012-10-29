@@ -104,7 +104,7 @@ class SliceSignal:
         self._orig_slices = slices
 
         self.nav_indexes = None
-        self.spec_indexes = None 
+        self.signal_indexes = None 
 
         self._signal = None
         
@@ -114,7 +114,7 @@ class SliceSignal:
         self.offset = None
         
         self.has_nav = True
-        self.has_spec = True
+        self.has_signal = True
         self.XYZ_ordering = True
 
     
@@ -127,25 +127,25 @@ class SliceSignal:
         self.nav_indexes =  np.array([el.index_in_array for el in
                     self._signal.axes_manager.navigation_axes])
 
-    def _get_spec(self):
-        self.spec_indexes =  np.array([el.index_in_array for el in
+    def _get_signal(self):
+        self.signal_indexes =  np.array([el.index_in_array for el in
                     self._signal.axes_manager.signal_axes])
 
     def _process_slices(self):
         #Change axes order and get processed slices from the "Slice" class
         self._get_nav()
-        self._get_spec()
+        self._get_signal()
         if self.XYZ_ordering:
             cut = slice(None, None, -1)
         else:
             cut = slice(None, None, 1)
 
-        if self.has_nav and self.has_spec:
-            idx = np.append(self.nav_indexes[cut], self.spec_indexes[cut])
-        elif self.has_nav and not self.has_spec:
+        if self.has_nav and self.has_signal:
+            idx = np.append(self.nav_indexes[cut], self.signal_indexes[cut])
+        elif self.has_nav and not self.has_signal:
             idx = self.nav_indexes[cut]
-        elif self.has_spec and not self.has_nav:
-            idx = self.spec_indexes[cut]
+        elif self.has_signal and not self.has_nav:
+            idx = self.signal_indexes[cut]
         else:
             idx = None
 
@@ -188,13 +188,13 @@ class SliceSignal:
             self.has_nav = True
         else:
             self.has_nav = False
-            if not self.has_spec:
-                self.has_spec = True
+            if not self.has_signal:
+                self.has_signal = True
 
-    def has_spec(self, bool):
+    def has_signal(self, bool):
         if bool:
-            self.has_spec = True
+            self.has_signal = True
         else:
-            self.has_spec = False
+            self.has_signal = False
             if not self.has_nav:
                 self.has_nav = True
