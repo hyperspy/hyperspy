@@ -1928,7 +1928,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 #        sp.get_dimensions_from_cube()
 #        return sp
 
-class SpecialSlicers(Signal):
+class SpecialSlicers:
     def __init__(self, obj, isNavigation):
         self.isNavigation = isNavigation
         self.obj = obj
