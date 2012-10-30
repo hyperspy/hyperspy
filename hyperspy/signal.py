@@ -34,7 +34,7 @@ from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import ensure_directory
-from hyperspy.misc.slices import SliceSignal
+from hyperspy.misc.slices import Slice
 
 from matplotlib import pyplot as plt
 
@@ -81,9 +81,60 @@ class Signal(t.HasTraits, MVA):
 
         return string
 
-    def __getitem__(self, slices, isNavigation=None):
-        slice_obj = SliceSignal(slices, isNavigation)
-        return slice_obj(self) #returns a deepcopy
+    def __getitem__(self, slices, isNavigation=None,XYZ_ordering=True):
+        try:
+            len(slices)
+        except TypeError:
+            slices = (slices,)
+        _orig_slices = slices
+        has_nav = True
+        has_signal = True
+        if isNavigation is not None:
+            if isNavigation:
+                has_signal = False
+            else:
+                has_nav = False
+
+        _signal = self.deepcopy()
+
+        nav_indexes =  [el.index_in_array for el in
+                    _signal.axes_manager.navigation_axes]
+        signal_indexes =  [el.index_in_array for el in
+                    _signal.axes_manager.signal_axes]
+
+        if XYZ_ordering:
+            nav_idx = nav_indexes[::-1]
+            signal_idx = signal_indexes[::-1]
+        else:
+            nav_idx = nav_indexes
+            signal_idx = signal_indexes
+
+        index = nav_idx + signal_idx
+
+        if not has_signal:
+            idx =  nav_idx
+        elif not has_nav:
+            idx =  signal_idx
+        else:
+            idx =  index
+    
+        slices = np.array([slice(None,)] * 
+                           len(_signal.axes_manager.axes))
+            
+        slices[idx] = _orig_slices + (slice(None),) * max(
+                            0, len(idx) - len(_orig_slices))
+        axes = [_signal.axes_manager.axes[i] for i in index]
+
+        slices = [Slice(sli, axis) for sli, axis in zip(slices,axes)]
+        array_slices = [sli.gen() for sli in slices]
+        offset = [sli.offset for sli in slices]
+        _signal.data = _signal.data[array_slices]
+        for i, (slice_len,j) in enumerate(zip(_signal.data.shape,
+                                              index)):
+            _signal.axes_manager.axes[i].size = slice_len
+            _signal.axes_manager.axes[i].offset = offset[j]
+        _signal.squeeze()
+        return _signal
         
     def print_summary(self):
         string = "\n\tTitle: "
