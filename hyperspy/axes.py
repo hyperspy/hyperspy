@@ -129,7 +129,7 @@ class DataAxis(t.HasTraits):
             else:
                 step = None # idem
         except (AttributeError, TypeError):
-            start = _slice
+            start = slice_
             if isinstance(start, float):
                 stop = self._axis.index2value(start) + 1
             else:
