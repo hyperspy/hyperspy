@@ -159,7 +159,12 @@ class SliceSignal:
         nav_idx = self.nav_indexes[cut]
         signal_idx = self.signal_indexes[cut]
         
-        self.index = np.append(nav_idx, signal_idx)
+        if list(nav_idx):
+            self.index = nav_idx
+        elif list(signal_idx):
+            self.index = signal_idx
+        else:
+            self.index = np.append(nav_idx, signal_idx)
 
         if self.has_nav and not self.has_signal:
             self.idx =  nav_idx
