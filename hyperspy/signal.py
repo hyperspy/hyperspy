@@ -20,6 +20,7 @@ import copy
 import os.path
 
 import numpy as np
+from matplotlib import pyplot as plt
 import traits.api as t
 import traitsui.api as tui
 
@@ -34,9 +35,6 @@ from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import ensure_directory
-from hyperspy.misc.slices import Slice
-
-from matplotlib import pyplot as plt
 
 
 class Signal(t.HasTraits, MVA):
@@ -124,16 +122,12 @@ class Signal(t.HasTraits, MVA):
         slices[idx] = _orig_slices + (slice(None),) * max(
                             0, len(idx) - len(_orig_slices))
         axes = [_signal.axes_manager.axes[i] for i in index]
-
-        slices = [Slice(sli, axis) for sli, axis in zip(slices,axes)]
-        array_slices = [sli.gen() for sli in slices]
-        offset = [sli.offset for sli in slices]
+        array_slices = [axis._get_slice(slice_)
+                        for slice_, axis in zip(slices,axes)]
         _signal.data = _signal.data[array_slices]
-        for i, (slice_len,j) in enumerate(zip(_signal.data.shape,
-                                              index)):
-            _signal.axes_manager.axes[i].size = slice_len
-            _signal.axes_manager.axes[i].offset = offset[j]
+        _signal.get_dimensions_from_data()
         _signal.squeeze()
+
         return _signal
         
     def print_summary(self):
