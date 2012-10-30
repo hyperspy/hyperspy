@@ -197,8 +197,8 @@ class Signal(t.HasTraits, MVA):
         """Remove single-dimensional entries from the shape of an array and the 
         axes.
         """
-        self.data = self.data.squeeze()
-        for axis in self.axes_manager.axes:
+        axes_list = list(self.axes_manager.axes)
+        for axis in axes_list:
             if axis.size == 1:
                 self.axes_manager.axes.remove(axis)
                 for ax in self.axes_manager.axes:
