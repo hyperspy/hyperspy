@@ -139,6 +139,8 @@ class DataAxis(t.HasTraits):
             self.offset = start
         else:
             self.offset = self.index2value(start)
+        if step is not None:
+            self.scale *= step
         if to_values:
             i2v = self.index2value
             return slice(i2v(start) 
