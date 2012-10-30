@@ -181,17 +181,11 @@ class SliceSignal:
 
     def _clean_axes(self):
         #Update axe sizes and offsets
-
-        for i, (slice_len,j) in enumerate(zip(self._signal.data.shape,
-                                              self.index)):
-            self._signal.axes_manager.axes[i].size = slice_len
-            self._signal.axes_manager.axes[i].offset = self.offset[j]
-        #Remove len = 1 axes
-        for slice_len, axe in zip(self._signal.data.shape,
-                                  self._signal.axes_manager.axes):
-            if slice_len < 2:
-                self._signal.axes_manager.axes.remove(axe)
-        self._signal.data = self._signal.data.squeeze()
+        for axe, slice_len, j in zip(self._signal.axes_manager.axes,
+                                     self._signal.data.shape, self.index):
+            axe.size = slice_len
+            axe.offset = self.offset[j]
+        self._signal.squeeze()
                      
 
     def update_slices(self, slices):
