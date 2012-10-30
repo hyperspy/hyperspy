@@ -1867,71 +1867,11 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             return 1
         else:
             return self.axes_manager.navigation_size
-        
 
-#
-#    def sum_every_n(self,n):
-#        """Bin a line spectrum
-#
-#        Parameters
-#        ----------
-#        step : float
-#            binning size
-#
-#        Returns
-#        -------
-#        Binned line spectrum
-#
-#        See also
-#        --------
-#        sum_every
-#        """
-#        dc = self.data_cube
-#        if dc.shape[1] % n != 0:
-#            messages.warning_exit(
-#            "n is not a divisor of the size of the line spectrum\n"
-#            "Try giving a different n or using sum_every instead")
-#        size_list = np.zeros((dc.shape[1] / n))
-#        size_list[:] = n
-#        return self.sum_every(size_list)
-#
-#    def sum_every(self,size_list):
-#        """Sum a line spectrum intervals given in a list and return the
-#        resulting SI
-#
-#        Parameters
-#        ----------
-#        size_list : list of floats
-#            A list of the size of each interval to sum.
-#
-#        Returns
-#        -------
-#        SI
-#
-#        See also
-#        --------
-#        sum_every_n
-#        """
-#        dc = self.data_cube
-#        dc_shape = self.data_cube.shape
-#        if np.sum(size_list) != dc.shape[1]:
-#            messages.warning_exit(
-#            "The sum of the elements of the size list is not equal to the size"
-#            " of the line spectrum")
-#        new_dc = np.zeros((dc_shape[0], len(size_list), 1))
-#        ch = 0
-#        for i in xrange(len(size_list)):
-#            new_dc[:,i,0] = dc[:,ch:ch + size_list[i], 0].sum(1)
-#            ch += size_list[i]
-#        sp = Spectrum()
-#        sp.data_cube = new_dc
-#        sp.get_dimensions_from_cube()
-#        return sp
-
-class SpecialSlicers(Signal):
-    def __init__(self, obj, isNavigation):
+class SpecialSlicers:
+    def __init__(self, signal, isNavigation):
         self.isNavigation = isNavigation
-        self.obj = obj
+        self.signal = signal
     def __getitem__(self, slices):
-        return self.obj.__getitem__(slices, self.isNavigation)
+        return self.signal.__getitem__(slices, self.isNavigation)
 

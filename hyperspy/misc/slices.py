@@ -19,16 +19,18 @@
 import numpy as np
 
 class Slice:
-    """A consistent class for slices"""
-    def __init__(self, sli, axe):
+    """A consistent class for slices.
+    
+    """
+    def __init__(self, sli, axis):
         self._orig_sli = sli
-        self._axe = axe
-        self._orig_offset = axe.offset
+        self._axis = axis
+        self._orig_offset = axis.offset
         #Init params
         self.start = 0
-        self.stop = axe.size
+        self.stop = axis.size
         self.step = 1
-        self.offset = axe.offset
+        self.offset = axis.offset
         #Init flags
         self.is_array = False
         #Update params
@@ -37,35 +39,39 @@ class Slice:
     def gen(self, to_values=False):
         #Generate actual slices
         if to_values:
-            i2v = self._axe.index2value
+            i2v = self._axis.index2value
             if self.is_array:
-                return [i2v(el) if not isinstance(el, float) else el
+                return [i2v(el)
+                            if not isinstance(el, float)
+                            else el
                         for el in self._orig_sli]
             else:
-                return slice(i2v(self.start) if not 
-                                        isinstance(self.start, float) 
-                             else self.start,
-                             i2v(self.stop) if not 
-                                        isinstance(self.stop, float) 
-                             else self.stop,
-                             i2v(self.step) if not 
-                                        isinstance(self.step, float) 
-                             else self.step)
+                return slice(i2v(self.start) 
+                                if not isinstance(self.start, float) 
+                                else self.start,
+                             i2v(self.stop) 
+                                if not isinstance(self.stop, float) 
+                                else self.stop,
+                             i2v(self.step) 
+                                if not isinstance(self.step, float) 
+                                else self.step)
         else:
-            v2i = self._axe.value2index
+            v2i = self._axis.value2index
             if self.is_array:
-                return [v2i(el) if isinstance(el, float) else el
+                return [v2i(el)
+                            if isinstance(el, float)
+                            else el
                         for el in self._orig_sli]
             else:
-                return slice(v2i(self.start) if 
-                                        isinstance(self.start, float) 
-                             else self.start,
-                             v2i(self.stop) if 
-                                            isinstance(self.stop, float) 
-                             else self.stop,
-                             v2i(self.step) if 
-                                            isinstance(self.step, float) 
-                             else self.step)
+                return slice(v2i(self.start) 
+                                if isinstance(self.start, float) 
+                                else self.start,
+                             v2i(self.stop) 
+                                if isinstance(self.stop, float)  
+                                else self.stop,
+                             v2i(self.step) 
+                                if isinstance(self.step, float) 
+                                else self.step)
 
     def _update(self):
         """Don't do too much (no value2index or index2value):
@@ -95,109 +101,89 @@ class Slice:
                 #Suppose "sli" is an int/float
                 self.start = self._orig_sli
                 if isinstance(self.start, float):
-                    self.stop = self._axe.index2value(self.start) + 1
+                    self.stop = self._axis.index2value(self.start) + 1
                 else:
                     self.stop = self.start + 1
                 self.step = None
         if isinstance(self.start, float):
             self.offset = self.start
         else:
-            self.offset = self._axe.index2value(self.start)
+            self.offset = self._axis.index2value(self.start)
 
 class SliceSignal:
+    """Fancy signal slicer.
+    
+    Calling an instance of this class with a Signal instance 
+    returns a sliced copy of the Signal.
+    
+    Parameters
+    ----------
+    slices : slice or iterable of slices
+    isNavigation : None or bool
+        If True(False) the slices apply only to the navigation(signal)
+         axes. If None the slices are applied to all the axes 
+         arranged in the following way:
+         [nav1, nav2,... navn, sig1,sig2,...sign]
+    XYZ_ordering : bool
+        If True the indexes are given in the "natural order" x, y, z...
+        
+    """
     def __init__(self, slices, isNavigation=None, XYZ_ordering=True):
         try:
             len(slices)
         except TypeError:
             slices = (slices,)
         self._orig_slices = slices
-
-        self.nav_indexes = None
-        self.signal_indexes = None 
-
-        self._signal = None
-        
-        self.idx = None
-        self._Slices = None
-        self.slices = None
-        self.offset = None
-        
         self.XYZ_ordering = XYZ_ordering
 
+        self.has_nav = True
+        self.has_signal = True
         if isNavigation is not None:
             if isNavigation:
-                self.has_nav = True
                 self.has_signal = False
             else:
                 self.has_nav = False
-                self.has_signal = True
-        else:
-            self.has_nav = True
-        self.has_signal = True
     
     def __call__(self, signal):
         self._signal = signal.deepcopy()
-        self._process_slices()
-        return self.apply()
 
-    def _process_slices(self):
-        """Change axes order and get processed slices from the Slice
-         class.
-        
-        """
-        
-        self.nav_indexes =  np.array([el.index_in_array for el in
-                    self._signal.axes_manager.navigation_axes])
-        self.signal_indexes =  np.array([el.index_in_array for el in
-                    self._signal.axes_manager.signal_axes])
+        self.nav_indexes =  [el.index_in_array for el in
+                    self._signal.axes_manager.navigation_axes]
+        self.signal_indexes =  [el.index_in_array for el in
+                    self._signal.axes_manager.signal_axes]
 
         if self.XYZ_ordering:
-            cut = slice(None, None, -1)
+            nav_idx = self.nav_indexes[::-1]
+            signal_idx = self.signal_indexes[::-1]
         else:
-            cut = slice(None, None, 1)
+            nav_idx = self.nav_indexes
+            signal_idx = self.signal_indexes
 
-        nav_idx = self.nav_indexes[cut]
-        signal_idx = self.signal_indexes[cut]
-        
-        self.index = np.append(nav_idx, signal_idx)
+        self.index = nav_idx + signal_idx
 
-        if self.has_nav and not self.has_signal:
-            self.idx =  nav_idx
-        elif not self.has_nav and self.has_signal:
-            self.idx =  signal_idx
+        if not self.has_signal:
+            idx =  nav_idx
+        elif not self.has_nav:
+            idx =  signal_idx
         else:
-            self.idx =  self.index
-
-        slices = np.array([slice(None,)]*len(self._signal.axes_manager.axes))
-        slices[self.idx] = self._fill(self._orig_slices, len(self.idx))
+            idx =  self.index
+    
+        slices = np.array([slice(None,)] * 
+                           len(self._signal.axes_manager.axes))
+            
+        slices[idx] = self._orig_slices + (slice(None),) * max(
+                            0, len(idx) - len(self._orig_slices))
         axes = [self._signal.axes_manager.axes[i] for i in self.index]
 
-        self._Slices = [Slice(sli, axe) for sli, axe in zip(slices,axes)]
-        self.slices = [sli.gen() for sli in self._Slices]
-        self.offset = [sli.offset for sli in self._Slices]
-
-    def _fill(self, slices, num):
-        return np.append(slices, [slice(None,)]*max(0,num-len(slices)))
-
-    def _clean_axes(self):
-        #Update axe sizes and offsets
-
+        slices = [Slice(sli, axis) for sli, axis in zip(slices,axes)]
+        self.slices = [sli.gen() for sli in slices]
+        self.offset = [sli.offset for sli in slices]
+        self._signal.data = self._signal.data[self.slices]
         for i, (slice_len,j) in enumerate(zip(self._signal.data.shape,
                                               self.index)):
             self._signal.axes_manager.axes[i].size = slice_len
             self._signal.axes_manager.axes[i].offset = self.offset[j]
-        #Remove len = 1 axes
-        for slice_len, axe in zip(self._signal.data.shape,
-                                  self._signal.axes_manager.axes):
-            if slice_len < 2:
-                self._signal.axes_manager.axes.remove(axe)
-        self._signal.data = self._signal.data.squeeze()
-                     
-
-    def update_slices(self, slices):
-        self.__init__(slices)
-
-    def apply(self):
-        self._signal.data = self._signal.data[self.slices]
-        self._clean_axes()
+        self._signal.squeeze()
         return self._signal
+
+
