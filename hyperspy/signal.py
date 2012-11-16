@@ -129,7 +129,7 @@ class Signal(t.HasTraits, MVA):
         _signal.squeeze()
 
         return _signal
-        
+
     def print_summary(self):
         string = "\n\tTitle: "
         string += self.mapped_parameters.title.decode('utf8')

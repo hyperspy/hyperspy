@@ -1601,3 +1601,40 @@ def get_linear_interpolation(p1, p2, x):
     y = a*x + b
     return y
 
+def plot_spectra(
+    spectra, 
+    style='cascade', 
+    filename=None):
+    """Parameters
+    -----------------
+    spectra : iterable
+        Ordered spectra list to plot. If style is cascade it is 
+        possible to supply several lists of spectra of the same 
+        lenght to plot multiple spectra in the same axes.
+    style : {'cascade', 'mosaic', ...}
+    filename : None or string
+        If None, raise a window with the plot and return the figure.
+
+    Returns
+    -----------
+    Matplotlib figure"""
+
+    max_value = 0 
+    for spectrum in spectra:
+        spectrum_max_value = spectrum.data.max()
+        if spectrum_max_value  > max_value:
+            max_value = spectrum_max_value
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    if style == 'cascade':
+        for spectrum_index, spectrum in enumerate(spectra):
+            x_axis = spectrum.axes_manager.signal_axes[0]
+            data = spectrum.data
+            data_to_plot = data/float(max_value) + spectrum_index 
+            ax.plot(x_axis.axis, data_to_plot)
+        ax.set_xlim(x_axis.low_value, x_axis.high_value)
+    if filename is None:
+        return(fig)
+    else:
+        fig.savefig(filename)
