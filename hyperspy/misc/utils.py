@@ -1604,7 +1604,8 @@ def get_linear_interpolation(p1, p2, x):
 def plot_spectra(
     spectra, 
     style='cascade', 
-    filename=None):
+    filename=None,
+    multiple_files=False):
     """Parameters
     -----------------
     spectra : iterable
@@ -1614,6 +1615,9 @@ def plot_spectra(
     style : {'cascade', 'mosaic', ...}
     filename : None or string
         If None, raise a window with the plot and return the figure.
+    multiple_files : bool
+        If True, and if style is 'mosaic': will save the spectra to
+        individual image files.
 
     Returns
     -----------
@@ -1625,16 +1629,46 @@ def plot_spectra(
         if spectrum_max_value  > max_value:
             max_value = spectrum_max_value
     
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
     if style == 'cascade':
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         for spectrum_index, spectrum in enumerate(spectra):
             x_axis = spectrum.axes_manager.signal_axes[0]
             data = spectrum.data
             data_to_plot = data/float(max_value) + spectrum_index 
             ax.plot(x_axis.axis, data_to_plot)
         ax.set_xlim(x_axis.low_value, x_axis.high_value)
-    if filename is None:
-        return(fig)
-    else:
-        fig.savefig(filename)
+
+        if filename is None:
+            return(fig)
+        else:
+            fig.savefig(filename)
+
+    elif style == 'mosaic':
+        if multiple_files:
+            for spectrum_index, spectrum in enumerate(spectra):
+                fig = plt.figure()
+                ax = fig.add_subplot(111)
+                x_axis = spectrum.axes_manager.signal_axes[0]
+                data = spectrum.data
+                ax.plot(x_axis.axis, data)
+                #Currently only works with png images
+                filename = filename.replace('.png', '')
+                fig.savefig(
+                        filename +
+                        '_' +
+                        str(spectrum_index) +
+                        '.png')
+        else:
+            #Need to find a way to automatically scale the figure size
+            fig = plt.figure()
+            number_of_spectra = len(spectra)
+            for spectrum_index, spectrum in enumerate(spectra):
+                x_axis = spectrum.axes_manager.signal_axes[0]
+                data = spectrum.data
+                ax = fig.add_subplot(1, number_of_spectra, spectrum_index)
+                ax.plot(x_axis.axis, data)
+            if filename is None:
+                return(fig)
+            else:
+                fig.savefig(filename)
