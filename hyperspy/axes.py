@@ -66,6 +66,7 @@ def generate_axis(offset, scale, size, offset_index=0):
     Returns
     -------
     Numpy array
+    
     """
     return np.linspace(offset - offset_index * scale,
                        offset + scale * (size - 1 - offset_index),
@@ -272,6 +273,22 @@ class AxesManager(t.HasTraits):
         
         """
         return self.axes[i:j]
+        
+    def _get_data_slice(self, fill=None):
+        """Return a tuple of slice objects to slice the data.
+        
+        Parameters
+        ----------
+        fill: None or iterable of (int, slice)
+            If not None, fill the tuple of index int with the given
+            slice.
+            
+        """
+        cslice = [slice,] * len(self.axes)
+        if fill is not None:
+            for index, slice_ in fill:
+                cslice[index] = slice_
+        return tuple(cslice)
         
     def __init__(self, axes_list):
         super(AxesManager, self).__init__()
