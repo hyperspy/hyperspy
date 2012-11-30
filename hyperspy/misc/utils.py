@@ -847,6 +847,7 @@ def multi_readout_analyze(folder, ccd_height = 100., plot = True, freq = None):
         binnings.append(s.binning)
         variances.append(variance.mean())
     pixels = ccd_height / np.array(binnings)
+
     plt.scatter(pixels, variances, label = 'data')
     fit = np.polyfit(pixels, variances,1, full = True)
     if plot:
@@ -1601,43 +1602,46 @@ def get_linear_interpolation(p1, p2, x):
     y = a*x + b
     return y
 
+def _make_cascade_subplot(spectra, fig, subplot_position):
+    max_value = 0 
+    for spectrum in spectra:
+        spectrum_max_value = spectrum.data.max()
+        if spectrum_max_value  > max_value:
+            max_value = spectrum_max_value
+
+    ax = fig.add_subplot(subplot_position)
+    for spectrum_index, spectrum in enumerate(spectra):
+        x_axis = spectrum.axes_manager.signal_axes[0]
+        data = spectrum.data
+        data_to_plot = data/float(max_value) + spectrum_index 
+        ax.plot(x_axis.axis, data_to_plot)
+    ax.set_xlim(x_axis.low_value, x_axis.high_value)
+    return(ax)
+
 def plot_spectra(
     spectra, 
     style='cascade', 
-    filename=None,
-    multiple_files=False):
+    filename=None):
     """Parameters
     -----------------
     spectra : iterable
         Ordered spectra list to plot. If style is cascade it is 
         possible to supply several lists of spectra of the same 
         lenght to plot multiple spectra in the same axes.
-    style : {'cascade', 'mosaic', ...}
+    style : {'cascade', 'mosaic', 'multiple_files', 'heatmap'}
+        The style of the plot. multiple files will plot every spectra
+        in its own file.
     filename : None or string
         If None, raise a window with the plot and return the figure.
-    multiple_files : bool
-        If True, and if style is 'mosaic': will save the spectra to
-        individual image files.
 
     Returns
     -----------
     Matplotlib figure"""
 
-    max_value = 0 
-    for spectrum in spectra:
-        spectrum_max_value = spectrum.data.max()
-        if spectrum_max_value  > max_value:
-            max_value = spectrum_max_value
     
     if style == 'cascade':
         fig = plt.figure()
-        ax = fig.add_subplot(111)
-        for spectrum_index, spectrum in enumerate(spectra):
-            x_axis = spectrum.axes_manager.signal_axes[0]
-            data = spectrum.data
-            data_to_plot = data/float(max_value) + spectrum_index 
-            ax.plot(x_axis.axis, data_to_plot)
-        ax.set_xlim(x_axis.low_value, x_axis.high_value)
+        _make_cascade_subplot(spectra, fig, 111)
 
         if filename is None:
             return(fig)
@@ -1645,33 +1649,33 @@ def plot_spectra(
             fig.savefig(filename)
 
     elif style == 'mosaic':
-        if multiple_files:
-            for spectrum_index, spectrum in enumerate(spectra):
-                fig = plt.figure()
-                ax = fig.add_subplot(111)
-                x_axis = spectrum.axes_manager.signal_axes[0]
-                data = spectrum.data
-                ax.plot(x_axis.axis, data)
-                #Currently only works with png images
-                filename = filename.replace('.png', '')
-                fig.savefig(
-                        filename +
-                        '_' +
-                        str(spectrum_index) +
-                        '.png')
+        #Need to find a way to automatically scale the figure size
+        fig = plt.figure()
+        number_of_spectra = len(spectra)
+        for spectrum_index, spectrum in enumerate(spectra):
+            x_axis = spectrum.axes_manager.signal_axes[0]
+            data = spectrum.data
+            ax = fig.add_subplot(1, number_of_spectra, spectrum_index)
+            ax.plot(x_axis.axis, data)
+        if filename is None:
+            return(fig)
         else:
-            #Need to find a way to automatically scale the figure size
+            fig.savefig(filename)
+    
+    elif style == 'multiple_files':
+        for spectrum_index, spectrum in enumerate(spectra):
             fig = plt.figure()
-            number_of_spectra = len(spectra)
-            for spectrum_index, spectrum in enumerate(spectra):
-                x_axis = spectrum.axes_manager.signal_axes[0]
-                data = spectrum.data
-                ax = fig.add_subplot(1, number_of_spectra, spectrum_index)
-                ax.plot(x_axis.axis, data)
-            if filename is None:
-                return(fig)
-            else:
-                fig.savefig(filename)
+            ax = fig.add_subplot(111)
+            x_axis = spectrum.axes_manager.signal_axes[0]
+            data = spectrum.data
+            ax.plot(x_axis.axis, data)
+            #Currently only works with png images
+            filename = filename.replace('.png', '')
+            fig.savefig(
+                    filename +
+                    '_' +
+                    str(spectrum_index) +
+                    '.png')
 
     elif style == 'heatmap':
         fig = plt.figure()
