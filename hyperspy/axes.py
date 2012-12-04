@@ -428,7 +428,7 @@ class AxesManager(t.HasTraits):
     def disconnect(self, f):
         for axis in self.axes:
             if axis.slice is None:
-                axis.on_trait_change(f, 'index', remove = True)
+                axis.on_trait_change(f, 'index', remove=True)
 
     def key_navigator(self, event):
         if len(self.navigation_axes) not in (1,2): return

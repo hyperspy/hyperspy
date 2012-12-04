@@ -305,6 +305,7 @@ class Component(object):
         self.name = ''
         self._id_name = self.__class__.__name__
         self._id_version = '1.0'
+        self._position = None
         
     def connect(self, f):
         if f not in self.connected_functions:

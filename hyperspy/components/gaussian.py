@@ -50,6 +50,7 @@ class Gaussian(Component):
         self.A.value = A
         self.sigma.value = sigma
         self.centre.value = centre
+        self._position = self.centre
 
         # Boundaries
         self.A.bmin = 0.
@@ -65,6 +66,7 @@ class Gaussian(Component):
         self.A.grad = self.grad_A
         self.sigma.grad = self.grad_sigma
         self.centre.grad = self.grad_centre
+        
 
     def function(self, x) :
         A = self.A.value

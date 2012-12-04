@@ -38,6 +38,9 @@ from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.misc.mpfit.mpfit import mpfit
+from hyperspy.axes import AxesManager
+from hyperspy.drawing.widgets import DraggableVerticalLineWithLabel
+
 
 class Model(list):
     """Build and fit a model
@@ -64,6 +67,7 @@ class Model(list):
         self.model_cube[:] = np.nan
         self.channel_switches=np.array([True] * len(self.axis.axis))
         self._low_loss = None
+        self._position_widgets = []
 
     @property
     def spectrum(self):
@@ -1116,3 +1120,17 @@ class Model(list):
                     if not hasattr(parameter.value, '__iter__'):
                         print("\t\t%s\t%f" % (
                             parameter.name, parameter.value))
+                            
+    def adjust_position(self):
+        axis_dict = self.axes_manager.signal_axes[0].get_axis_dictionary()
+        for component in self:
+            if component._position is not None:
+                am = AxesManager([axis_dict,])
+                am.axes[0].navigate = True
+                am.axes[0].value = component._position.value
+                w = hyperspy.drawing.widgets.DraggableVerticalLineWithLabel(am)
+                w.string = component._get_short_description()
+                w.add_axes(self._plot.signal_plot.ax)
+                
+                
+        
