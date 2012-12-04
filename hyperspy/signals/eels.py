@@ -309,7 +309,7 @@ class EELSSpectrum(Spectrum):
             return {'FWHM' : fwhm,
                      'FWHM_E' : pair_fwhm}
 
-    def fourier_log_deconvolution(self, zlp, add_zlp=True):
+    def fourier_log_deconvolution(self, zlp, add_zlp=True, crop=True):
         """Performs fourier-log deconvolution.
         
         Parameters
@@ -318,6 +318,9 @@ class EELSSpectrum(Spectrum):
             The corresponding zero-loss peak.
         add_zlp : bool
             If True, adds the ZLP to the deconvolved spectrum
+        crop : bool
+            If True crop the spectrum to leave out the channels that
+             have been modified to decay smoothly to zero at the sides of the spectrum.
         
         Returns
         -------
@@ -330,7 +333,7 @@ class EELSSpectrum(Spectrum):
         
         """
         s = self.deepcopy()
-        s.hanning_taper()
+        tapped_channels = s.hanning_taper()
         zlp_size = zlp.axes_manager.signal_axes[0].size 
         self_size = self.axes_manager.signal_axes[0].size
         # Conservative new size to solve the wrap-around problem 
@@ -341,8 +344,8 @@ class EELSSpectrum(Spectrum):
         axis = self.axes_manager.signal_axes[0]
         z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
         j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array)
-        j1 = z * np.log(j / z)
-        sdata = np.fft.irfft(j1, axis=axis.index_in_array).real
+        j1 = z * np.nan_to_num(np.log(j / z))
+        sdata = np.fft.irfft(j1, axis=axis.index_in_array)
         def get_cropping_slice(axis, index):
             cslice = [slice,] * len(self.axes_manager.axes)
             cslice[axis] = slice(None, index)
@@ -364,6 +367,9 @@ class EELSSpectrum(Spectrum):
                 s.tmp_parameters.filename = (
                     self.tmp_parameters.filename +
                     '_after_fourier_log_deconvolution')
+        if crop is True:
+            s.crop_in_pixels(axis.index_in_array,
+                             None, -tapped_channels)
         return s
 
     def fourier_ratio_deconvolution(self, ll, fwhm=None,
