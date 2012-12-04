@@ -21,6 +21,7 @@ import copy
 
 import matplotlib.pyplot as plt
 import matplotlib.widgets
+import matplotlib.transforms as transforms
 import numpy as np
 import traits
 
@@ -78,14 +79,11 @@ class DraggablePatch(object):
 
     def add_patch_to(self, ax):
         self.set_patch()
-        if self._2D is True:
-            ax.add_patch(self.patch)
-        else:
-            ax.add_line(self.patch)
+        ax.add_artist(self.patch)
         canvas = ax.figure.canvas
         if not hasattr(canvas, 'we_are_animated'):
             canvas.we_are_animated = list()
-        ax.figure.canvas.we_are_animated.append(self.patch)
+        ax.figure.canvas.we_are_animated.append(self.patch)            
 
     def add_axes(self, ax):
         self.ax = ax
@@ -282,8 +280,8 @@ class DraggableVerticalLine(DraggablePatch):
     def set_patch(self):
         ax = self.ax
         self.patch = ax.axvline(self.axes_manager._values[0],
-                                color = self.color,
-                               picker = 5, animated = self.blit)
+                                color=self.color,
+                               picker=5, animated=self.blit)
 
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'
@@ -293,6 +291,43 @@ class DraggableVerticalLine(DraggablePatch):
             except traits.api.TraitError:
                 # Index out of range, we do nothing
                 pass
+                
+class DraggableVerticalLineWithLabel(DraggableVerticalLine):
+    def __init__(self, axes_manager):
+        DraggablePatch.__init__(self, axes_manager)
+        self._2D = False
+        # Despise the bug, we use blit for this one because otherwise the
+        # it gets really slow
+        self.blit = True
+        self.string = ''
+
+    def update_patch_position(self):
+        super(DraggableVerticalLineWithLabel, self
+             ).update_patch_position()
+        if self.patch is not None:
+            self.text.set_x(self.axes_manager._values[0])
+            self.draw_patch()
+
+    def set_patch(self):
+        super(DraggableVerticalLineWithLabel, self).set_patch()
+        ax = self.ax
+        trans = transforms.blended_transform_factory(
+                ax.transData, ax.transAxes)
+        self.text = ax.text(self.axes_manager._values[0],
+                            0.9, # Y value in axes coordinates
+                            self.string,
+                            color='black',
+                            picker=5,
+                            animated=self.blit,
+                            transform=trans,
+                            horizontalalignment='right',
+                            bbox=dict(facecolor=self.color, alpha=0.5),
+                            )
+                            
+    def add_patch_to(self, ax):
+        super(DraggableVerticalLineWithLabel, self).add_patch_to(ax)
+        ax.add_artist(self.text)
+        ax.figure.canvas.we_are_animated.append(self.text) 
 
 class Scale_Bar():
     def __init__(self, ax, units, pixel_size, color = 'white', position = None,
