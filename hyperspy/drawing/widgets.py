@@ -26,18 +26,13 @@ import numpy as np
 import traits
 
 from utils import on_figure_window_close
-#if self.blit is True:
-#                self.patch.set_animated(True)
-#                canvas = self.ax.figure.canvas
-#                canvas.draw()
-#                self.background = canvas.copy_from_bbox(self.ax.bbox)
-#                self.ax.draw_artist(self.patch)
-#                self.ax.figure.canvas.blit()
+
+
 class DraggablePatch(object):
     """
     """
 
-    def __init__(self, axes_manager = None):
+    def __init__(self, axes_manager=None):
         """
         Add a cursor to ax.
         """
@@ -47,13 +42,11 @@ class DraggablePatch(object):
         self.size = 1.
         self.color = 'red'
         self.__is_on = True
-        self._2D = True # Whether the cursor lives in the 2D dimension
+        self._2D = True  # Whether the cursor lives in the 2D dimension
         self.patch = None
         self.cids = list()
-        # Blitting seems to be supported by all the backends but Qt4
-        # however, ATM there is a bug in Hyperspy that precludes using 2 pointers
-        # when blit is active, therefore it is disable by default for the moment
-        self.blit = False #(plt.get_backend() !=  'Qt4Agg')
+        self.blit = True
+        self.background = None
 
     def is_on(self):
         return self.__is_on
@@ -64,11 +57,12 @@ class DraggablePatch(object):
                 self.add_patch_to(self.ax)
                 self.connect(self.ax)
             elif value is False:
-                if self._2D:
-                    self.ax.patches.remove(self.patch)
-                else:
-                    self.ax.lines.remove(self.patch)
-                self.we_are_animated.remove(self.patch)
+                for container in [
+                        self.ax.patches,
+                        self.ax.lines,
+                        self.ax.artists]:
+                    if self.patch in container:
+                        container.remove(self.patch)
                 self.disconnect(self.ax)
             self.__is_on = value
             self.ax.figure.canvas.draw()
@@ -81,28 +75,23 @@ class DraggablePatch(object):
         self.set_patch()
         ax.add_artist(self.patch)
         canvas = ax.figure.canvas
-        if not hasattr(canvas, 'we_are_animated'):
-            canvas.we_are_animated = list()
-        ax.figure.canvas.we_are_animated.append(self.patch)            
+        self.patch.set_animated(hasattr(ax, 'hspy_fig'))
 
     def add_axes(self, ax):
         self.ax = ax
         canvas = ax.figure.canvas
-
         if self.is_on() is True:
             self.add_patch_to(ax)
             self.connect(ax)
             canvas.draw()
-
+            
     def connect(self, ax):
         canvas = ax.figure.canvas
-        self.cids.append(canvas.mpl_connect('motion_notify_event', self.onmove))
+        self.cids.append(
+            canvas.mpl_connect('motion_notify_event', self.onmove))
         self.cids.append(canvas.mpl_connect('pick_event', self.onpick))
-        if self.blit is True:
-            self.cids.append(
-            canvas.mpl_connect('draw_event', self.update_background))
-        self.cids.append(canvas.mpl_connect('button_release_event',
-        self.button_release))
+        self.cids.append(canvas.mpl_connect(
+            'button_release_event', self.button_release))
         self.axes_manager.connect(self.update_patch_position)
         on_figure_window_close(ax.figure, self.close)
 
@@ -114,15 +103,8 @@ class DraggablePatch(object):
                 pass
         self.axes_manager.disconnect(self.update_patch_position)
 
-    def close(self, window = None):
-        ax = self.ax
-        if self._2D is True:
-            if self.patch in ax.patches:
-                ax.patches.remove(self.patch)
-        else:
-            if self.patch in ax.lines:
-                ax.lines.remove(self.patch)
-        self.disconnect(ax)
+    def close(self, window=None):
+        self.set_on(False)
 
     def onpick(self, event):
         if event.artist is self.patch:
@@ -142,25 +124,11 @@ class DraggablePatch(object):
         if self.picked is True:
             self.picked = False
 
-    def update_background(self, *args):
-        if self.blit is True:
-            canvas = self.ax.figure.canvas
-            self.background = canvas.copy_from_bbox(self.ax.bbox)
-            for artist in canvas.we_are_animated:
-                self.ax.draw_artist(artist)
-            self.ax.figure.canvas.blit()
-
     def draw_patch(self, *args):
-        canvas = self.ax.figure.canvas
-        if self.blit is True:
-            canvas.restore_region(self.background)
-            # redraw just the current rectangle
-            for artist in canvas.we_are_animated:
-                self.ax.draw_artist(artist)
-            # blit just the redrawn area
-            canvas.blit()
+        if hasattr(self.ax, 'hspy_fig'):
+            self.ax.hspy_fig._draw_animated()
         else:
-            canvas.draw()
+            self.ax.figure.canvas.draw_idle()
 
 class ResizebleDraggablePatch(DraggablePatch):
 
@@ -201,10 +169,14 @@ class DraggableSquare(ResizebleDraggablePatch):
 
     def set_patch(self):
         indexes = np.array(self.axes_manager.coordinates[::-1])
-        self.patch = \
-        plt.Rectangle(indexes - (self.size / 2.,) * 2,
-        self.size, self.size, animated = self.blit,
-        fill = False, lw = 2,  ec = self.color, picker = True,)
+        self.patch = plt.Rectangle(
+            indexes - (self.size / 2.,) * 2,
+            self.size,
+            self.size, 
+            fill=False,
+            lw=2,
+            ec=self.color,
+            picker=True,)
 
     def update_patch_size(self):
         self.patch.set_width(self.size)
@@ -251,9 +223,10 @@ class DraggableHorizontalLine(DraggablePatch):
 
     def set_patch(self):
         ax = self.ax
-        self.patch = ax.axhline(self.axes_manager.coordinates[0],
-                                color = self.color,
-                               picker = 5, animated = self.blit)
+        self.patch = ax.axhline(
+            self.axes_manager.coordinates[0],
+            color=self.color,
+            picker=5)
 
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'
@@ -268,8 +241,6 @@ class DraggableVerticalLine(DraggablePatch):
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
         self._2D = False
-        # Despise the bug, we use blit for this one because otherwise the
-        # it gets really slow
         self.blit = True
 
     def update_patch_position(self):
@@ -281,7 +252,7 @@ class DraggableVerticalLine(DraggablePatch):
         ax = self.ax
         self.patch = ax.axvline(self.axes_manager._values[0],
                                 color=self.color,
-                               picker=5, animated=self.blit)
+                                picker=5)
 
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'
@@ -313,21 +284,20 @@ class DraggableVerticalLineWithLabel(DraggableVerticalLine):
         ax = self.ax
         trans = transforms.blended_transform_factory(
                 ax.transData, ax.transAxes)
-        self.text = ax.text(self.axes_manager._values[0],
-                            0.9, # Y value in axes coordinates
-                            self.string,
-                            color='black',
-                            picker=5,
-                            animated=self.blit,
-                            transform=trans,
-                            horizontalalignment='right',
-                            bbox=dict(facecolor=self.color, alpha=0.5),
-                            )
+        self.text = ax.text(
+            self.axes_manager._values[0],
+            0.9, # Y value in axes coordinates
+            self.string,
+            color='black',
+            picker=5,
+            transform=trans,
+            horizontalalignment='right',
+            bbox=dict(facecolor=self.color, alpha=0.5),
+            animated=True)
                             
     def add_patch_to(self, ax):
         super(DraggableVerticalLineWithLabel, self).add_patch_to(ax)
         ax.add_artist(self.text)
-        ax.figure.canvas.we_are_animated.append(self.text) 
 
 class Scale_Bar():
     def __init__(self, ax, units, pixel_size, color = 'white', position = None,

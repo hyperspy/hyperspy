@@ -26,6 +26,7 @@ from hyperspy.misc.utils import (incremental_filename,
                                   slugify)
 from hyperspy.exceptions import NavigationDimensionError
 
+
 class Parameter(object):
     """Model parameter
     
@@ -111,12 +112,12 @@ class Parameter(object):
         if f in self.connected_functions:
             self.connected_functions.remove(f)
             
-    def _coerce(self):
+    def _getvalue(self):
         if self.twin is None:
             return self.__value
         else:
             return self.twin_function(self.twin.value)
-    def _decoerce(self, arg):
+    def _setvalue(self, arg):
 
         if self.ext_bounded is False:
                 self.__value = arg
@@ -139,7 +140,7 @@ class Parameter(object):
                     f()
                 except:
                     self.disconnect(f)
-    value = property(_coerce, _decoerce)
+    value = property(_getvalue, _setvalue)
 
     # Fix the parameter when coupled
     def _getfree(self):
@@ -252,16 +253,18 @@ class Parameter(object):
         for axis in s.axes_manager.axes:
             axis.navigate = False
         if self._number_of_elements > 1:
-            s.axes_manager.append_axis(size=self._number_of_elements,
-                                       name=self.name,
-                                       index_in_array=len(s.axes_manager.axes),
-                                       navigate=True)
+            s.axes_manager.append_axis(
+                size=self._number_of_elements,
+                name=self.name,
+                index_in_array=len(s.axes_manager.axes),
+                navigate=True)
         return s
         
     def plot(self):
         self.as_signal().plot()
         
-    def export(self, folder=None, name=None, format=None, save_std=False):
+    def export(self, folder=None, name=None, format=None,
+               save_std=False):
         '''Save the data to a file.
         
         All the arguments are optional.

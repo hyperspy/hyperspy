@@ -65,6 +65,8 @@ class ImagePlot:
         
     def create_figure(self):
         self.figure = utils.create_figure()
+        self.figure.canvas.mpl_connect('draw_event', self._on_draw)
+
         
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
@@ -75,6 +77,8 @@ class ImagePlot:
         if self.plot_ticks is False:
             self.ax.set_xticks([])
             self.ax.set_yticks([])
+        self.ax.hspy_fig = self
+
         #self.figure.subplots_adjust(0,0,1,1)
         
     def plot(self):
@@ -190,5 +194,23 @@ class ImagePlot:
     def close(self):
         if utils.does_figure_object_exists(self.figure) is True:
             plt.close(self.figure)
+            
+    def _on_draw(self, *args):
+        canvas = self.figure.canvas
+        self._background = canvas.copy_from_bbox(self.ax.bbox)
+        self._draw_animated()
+        
+    def _draw_animated(self):
+        canvas = self.ax.figure.canvas
+        canvas.restore_region(self._background)
+        ax = self.ax
+        artists = []
+        artists.extend(ax.collections)
+        artists.extend(ax.patches)
+        artists.extend(ax.lines)
+        artists.extend(ax.texts)
+        artists.extend(ax.artists)
+        [ax.draw_artist(a) for a in artists if a.get_animated()]
+        canvas.blit()
 
 

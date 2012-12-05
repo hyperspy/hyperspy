@@ -299,8 +299,7 @@ class Model(list):
     def update_plot(self):
         if self.spectrum._plot is not None:
             try:
-                for line in self.spectrum._plot.signal_plot.ax_lines:
-                        line.update()
+                self.spectrum._plot.signal_plot.ax_lines[1].update()
             except:
                 self.disconnect_parameters2update_plot()
                 
@@ -1131,6 +1130,9 @@ class Model(list):
                 w = hyperspy.drawing.widgets.DraggableVerticalLineWithLabel(am)
                 w.string = component._get_short_description()
                 w.add_axes(self._plot.signal_plot.ax)
+                am.axes[0].on_trait_change(component._position._setvalue, 'value')
+        #self._plot.signal_plot.ax_lines[1].line.set_animated(True)
+        #self._plot.signal_plot.ax.figure.canvas.we_are_animated.append(self._plot.signal_plot.ax_lines[1])
                 
                 
         

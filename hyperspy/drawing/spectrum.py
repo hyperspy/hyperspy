@@ -45,21 +45,23 @@ class SpectrumFigure():
         self.title = ''
         self.create_figure()
         self.create_axis()
-#        self.create_right_axis()
 
     def create_figure(self):
         self.figure = utils.create_figure()
         utils.on_figure_window_close(self.figure, self.close)
-        
+        self.figure.canvas.mpl_connect('draw_event', self._on_draw)
+
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
         ax = self.ax
+        self.ax.hspy_fig = self
         
     def create_right_axis(self):
         if self.ax is None:
             self.create_axis()
         if self.right_ax is None:
             self.right_ax = self.ax.twinx()
+            self.right_ax.hspy_fig = self
         
     def add_line(self, line, ax = 'left'):
         if ax == 'left':
@@ -94,7 +96,25 @@ class SpectrumFigure():
             line.close()
         if utils.does_figure_object_exists(self.figure):
             plt.close(self.figure)
-
+            
+    def _on_draw(self, *args):
+        canvas = self.figure.canvas
+        self._background = canvas.copy_from_bbox(self.ax.bbox)
+        self._draw_animated()
+        
+    def _draw_animated(self):
+        canvas = self.ax.figure.canvas
+        canvas.restore_region(self._background)
+        for ax in [ax for ax in [self.ax, self.right_ax]
+                if ax is not None]:
+            artists = []
+            artists.extend(ax.collections)
+            artists.extend(ax.patches)
+            artists.extend(ax.lines)
+            artists.extend(ax.texts)
+            artists.extend(ax.artists)
+            [ax.draw_artist(a) for a in artists if a.get_animated()]
+        canvas.blit()
         
 class SpectrumLine():
     def __init__(self):
@@ -150,6 +170,7 @@ class SpectrumLine():
         self.line, = self.ax.plot(
             self.axis, f(axes_manager = self.axes_manager),
                 **self.line_properties)
+        self.line.set_animated(True)
         self.axes_manager.connect(self.update)
         if not self.axes_manager or self.axes_manager.navigation_size==0:
             self.plot_coordinates = False
@@ -158,10 +179,11 @@ class SpectrumLine():
                             s=str(self.axes_manager.coordinates[::-1]),
                             transform = self.ax.transAxes,
                             fontsize=12,
-                            color=self.line.get_color())
+                            color=self.line.get_color(),
+                            animated=True)
         self.ax.figure.canvas.draw()
                   
-    def update(self, force_replot=True):
+    def update(self, force_replot=False):
         """Update the current spectrum figure"""
         if self.auto_update is False:
             return           
@@ -183,7 +205,8 @@ class SpectrumLine():
             self.ax.set_ylim(y_min, y_max)
         if self.plot_coordinates is True:
             self.text.set_text((self.axes_manager.coordinates[::-1]))
-        self.ax.figure.canvas.draw()
+        self.ax.hspy_fig._draw_animated()
+        #self.ax.figure.canvas.draw_idle()
         
     def close(self):
         if self.line in self.ax.lines:
