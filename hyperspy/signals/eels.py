@@ -187,6 +187,7 @@ class EELSSpectrum(Spectrum):
             
             if I0 is None:
                 I0 = s.data[0:index].sum()
+                return I0
             else:
                 I0.data[s.axes_manager.coordinates] = \
                     s.data[0:index].sum()
@@ -194,18 +195,102 @@ class EELSSpectrum(Spectrum):
             i += 1
         pbar.finish()
 
-        if hasattr(I0, 'data'):
-            I0.mapped_parameters.title = (
-                self.mapped_parameters.title + ' elastic intensity')
-            if self.tmp_parameters.has_item('filename'):
-                I0.tmp_parameters.filename = (
-                    self.tmp_parameters.filename +
-                    '_elastic_intensity')
-                I0.tmp_parameters.folder = self.tmp_parameters.folder
-                I0.tmp_parameters.extension = \
-                    self.tmp_parameters.extension
+        I0.mapped_parameters.title = (
+            self.mapped_parameters.title + ' elastic intensity')
+        if self.tmp_parameters.has_item('filename'):
+            I0.tmp_parameters.filename = (
+                self.tmp_parameters.filename +
+                '_elastic_intensity')
+            I0.tmp_parameters.folder = self.tmp_parameters.folder
+            I0.tmp_parameters.extension = \
+                self.tmp_parameters.extension
         return I0
-    
+        
+    def estimate_elastic_scattering_threshold(self, window=20):
+        """Rough estimation of the elastic scattering signal by 
+        truncation of a EELS low-loss spectrum.
+        #
+        Parameters
+        ----------
+        window : {None, float}
+            If None, the search for the local minimum is performed 
+            using the full energy range. A positive float will restrict
+            the search to the (0,window] energy window.
+        Returns
+        -------
+        threshold : Signal instance
+            A Signal of the same dimension as the input spectrum 
+            navigation space containing the estimated threshold.
+
+        """
+        axis = self.axes_manager.signal_axes[0]
+        # Use the data from the current location to estimate
+        # the threshold as the position of the first maximum
+        # after the ZLP
+        threshold = self._get_navigation_signal()
+        maxval = self.axes_manager.navigation_size
+        #pbar = hyperspy.misc.progressbar.progressbar(maxval=maxval)
+        max_index = axis.value2index(window)
+        i = 0
+        for s in self:
+            zlp_index = s.data.argmax()
+            data = (s()[zlp_index:max_index] / 
+                    axis.axis[zlp_index:max_index])
+            imin = ((data[1:] - data[:-1]) >
+             0).argmax() + zlp_index
+            cthreshold = axis.index2value(imin)
+            if (cthreshold == 0): cthreshold = window # improve!
+            del data        
+            if threshold is None:
+                threshold = cthreshold
+                return threshold
+            else:
+                threshold.data[s.axes_manager.coordinates] = cthreshold    
+            #pbar.update(i)
+            i += 1
+        #pbar.finish()
+
+        threshold.mapped_parameters.title = (
+            self.mapped_parameters.title + ' ZLP threshold')
+        if self.tmp_parameters.has_item('filename'):
+            threshold.tmp_parameters.filename = (
+                self.tmp_parameters.filename +
+                '_ZLP_threshold')
+            threshold.tmp_parameters.folder = self.tmp_parameters.folder
+            threshold.tmp_parameters.extension = \
+                self.tmp_parameters.extension
+        return threshold
+        
+    def estimate_elastic_scattering_threshold_v1(self, win=20, axis=-1):
+        """ localmaximum(s,win) will search for the ZLP typical inflexion
+        point in a EELSSpectrum image or line, s, using a window width, win, 
+        specified in indices.
+        """
+        axis = self._get_positive_axis_index_index(axis)
+        C = self.data.shape[axis]
+        Ndim = self.data.ndim - 1
+        # Initialize
+        lm = np.ravel(np.zeros(self.data.shape[0:Ndim]))
+        # Progress bar is optional
+        #maxval = self.axes_manager.navigation_size
+        #pbar = hyperspy.misc.progressbar.progressbar(maxval=maxval)
+        # This index is not optional
+        i = 0
+        for s in self:
+            # Needs upside-down spectrum, from the ZLP max to the end
+            spc=s.data
+            zlpi=spc.argmax()
+            spc=-spc[zlpi:]
+            for k in xrange(1,C-2*win+1-zlpi):
+                if sum(spc[k+win:k+2*win-1]) <= sum(spc[k:k+win-1]):
+                    # This is it, notice that we add the ZLP index at the bottom
+                    lm[i] = plt.mlab.find(spc == max(spc[k:k+2*win-1]))[0] + zlpi
+                    break
+            i += 1
+            #pbar.update(i)
+        #pbar.finish()
+        # Then again, it will only work if self.data.shape = (N1,N2,C)
+        return np.reshape(lm,self.data.shape[0:Ndim])
                 
     def estimate_thickness(self, threshold=None, zlp=None,):
         """Estimates the thickness (relative to the mean free path) 
