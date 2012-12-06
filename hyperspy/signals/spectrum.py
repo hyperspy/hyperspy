@@ -554,6 +554,10 @@ class Spectrum(Signal):
             number of channels are tapered.
         offset : int
         
+        Returns
+        -------
+        channels
+        
         """
         if channels is None:
             channels = int(round(len(self()) * 0.02))
@@ -573,3 +577,4 @@ class Spectrum(Signal):
                 np.hanning(2*channels)[-channels:])
             if offset != 0:
                 dc[..., -offset:] *= 0.
+        return channels
