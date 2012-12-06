@@ -147,10 +147,13 @@ class EELSSpectrum(Spectrum):
         
         Parameters
         ----------
-        threshold : {None, float}
+        threshold : {None, array}
             Truncation energy to estimate the intensity of the 
-            elastic scattering. If None the threshold is taken as the
-            first minimum after the ZLP centre.
+            elastic scattering. If None the threshold is calculated for 
+            each spectrum as the first minimum after the ZLP centre. The
+            threshold can be provided as an array of the same shape as 
+            the navigation space. Note that for a single spectrum an 
+            array of shape 1, not a float, must be provided.
             
         Returns
         -------
@@ -161,37 +164,47 @@ class EELSSpectrum(Spectrum):
             
         """
         axis = self.axes_manager.signal_axes[0]
-        if threshold is None:
-            # Use the data from the current location to estimate
-            # the threshold as the position of the first maximum
-            # after the ZLP
-            data = self()
-            index = data.argmax()
-            while data[index] > data[index + 1]:
-                index += 1
-            threshold = axis.index2value(index)
-            print("Threshold = %1.2f" % threshold)
-            del data
-        I0 = self.data[
-        (slice(None),) * axis.index_in_array + (
-            slice(None, axis.value2index(threshold)), 
-            Ellipsis,)].sum(axis.index_in_array)
+        # Use the data from the current location to estimate
+        # the threshold as the position of the first maximum
+        # after the ZLP
+        I0 = self._get_navigation_signal()
+        threshold_ = threshold
+        # Progress bar is optional
+        maxval = self.axes_manager.navigation_size
+        pbar = hyperspy.misc.progressbar.progressbar(maxval=maxval)
+        i = 0
+        for s in self:
+            if threshold_ is None:
+                data = s()
+                index = data.argmax()
+                while data[index] > data[index + 1]:
+                    index += 1
+                threshold = axis.index2value(index)
+                del data
+            else:
+                threshold = threshold_[self.axes_manager.coordinates]
+                index = axis.value2index(threshold)
             
-        s = self._get_navigation_signal()
-        if s is None:
-            return I0
-        else:
-            s.data = I0
-            s.mapped_parameters.title = (self.mapped_parameters.title + 
-                ' elastic intensity')
+            if I0 is None:
+                I0 = s.data[0:index].sum()
+            else:
+                I0.data[s.axes_manager.coordinates] = \
+                    s.data[0:index].sum()
+            pbar.update(i)
+            i += 1
+        pbar.finish()
+
+        if hasattr(I0, 'data'):
+            I0.mapped_parameters.title = (
+                self.mapped_parameters.title + ' elastic intensity')
             if self.tmp_parameters.has_item('filename'):
-                s.tmp_parameters.filename = (
+                I0.tmp_parameters.filename = (
                     self.tmp_parameters.filename +
                     '_elastic_intensity')
-                s.tmp_parameters.folder = self.tmp_parameters.folder
-                s.tmp_parameters.extension = \
+                I0.tmp_parameters.folder = self.tmp_parameters.folder
+                I0.tmp_parameters.extension = \
                     self.tmp_parameters.extension
-            return s
+        return I0
     
                 
     def estimate_thickness(self, threshold=None, zlp=None,):
