@@ -214,13 +214,15 @@ class EELSCLEdge(Component):
     def _onset_energy(self):
         return self.GOS.onset_energy + self.energy_shift.value
     
-    @property
-    def onset_energy(self):
+    def _get_onset_energy(self):
+        print self.GOS.onset_energy
+        print self.energy_shift.value
         return self.GOS.onset_energy + self.energy_shift.value
         
-    @onset_energy.setter
-    def onset_energy(self, value):
+    def _set_onset_energy(self, value):
         self.energy_shift.value = value - self.GOS.onset_energy
+        
+    onset_energy = property(_get_onset_energy,_set_onset_energy)
         
     def _set_fine_structure_coeff(self):
         if self.energy_scale is None:

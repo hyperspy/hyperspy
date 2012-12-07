@@ -35,6 +35,7 @@ class PESCoreLineShape(Component):
         self.A.value = A
         self.FWHM.value = FWHM
         self.origin.value = origin
+        self._position = self.origin
 
         # Boundaries
         self.A.bmin = 0.

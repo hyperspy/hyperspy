@@ -22,6 +22,7 @@ import tempfile
 
 import numpy as np
 import numpy.linalg
+from traits.trait_errors import TraitError
 
 import traits.api as t
 import scipy.odr as odr
@@ -1124,13 +1125,25 @@ class Model(list):
         axis_dict = self.axes_manager.signal_axes[0].get_axis_dictionary()
         for component in self:
             if component._position is not None:
-                am = AxesManager([axis_dict,])
-                am.axes[0].navigate = True
-                am.axes[0].value = component._position.value
-                w = hyperspy.drawing.widgets.DraggableVerticalLineWithLabel(am)
-                w.string = component._get_short_description()
-                w.add_axes(self._plot.signal_plot.ax)
-                am.axes[0].on_trait_change(component._position._setvalue, 'value')
+                set_value = component._position._setvalue
+                get_value = component._position._getvalue
+            elif component._id_name == 'EELSCLEdge':
+                set_value = component._set_onset_energy
+                get_value = component._onset_energy         
+            else:
+                continue
+            am = AxesManager([axis_dict,])
+            am.axes[0].navigate = True
+            try:
+                am.axes[0].value = get_value()
+            except TraitError:
+                # The value is outside of the axis range
+                continue
+            w = hyperspy.drawing.widgets.DraggableVerticalLineWithLabel(am)
+            w.string = component._get_short_description().replace(
+                                                    ' component', '')
+            w.add_axes(self._plot.signal_plot.ax)
+            am.axes[0].on_trait_change(set_value, 'value')
         #self._plot.signal_plot.ax_lines[1].line.set_animated(True)
         #self._plot.signal_plot.ax.figure.canvas.we_are_animated.append(self._plot.signal_plot.ax_lines[1])
                 

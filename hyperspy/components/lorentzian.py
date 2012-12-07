@@ -51,6 +51,7 @@ class Lorentzian(Component):
         self.A.bmax = None
         self.gamma.bmin = None
         self.gamma.bmax = None
+        self._position = self.centre
 
         self.isbackground = False
         self.convolved = True
