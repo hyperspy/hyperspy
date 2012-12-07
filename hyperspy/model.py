@@ -1121,7 +1121,36 @@ class Model(list):
                         print("\t\t%s\t%f" % (
                             parameter.name, parameter.value))
                             
-    def adjust_position(self):
+    def enable_adjust_position(self, components=None, fix_them=True):
+        """Allow changing the *x* position of component by dragging 
+        a vertical line that is plotted in the signal model figure
+        
+        Parameters
+        ----------
+        components : {None, list of components}
+            If None, the position of all the active components of the 
+            model that has a well defined *x* position with a value 
+            in the axis range will get a position adjustment line. 
+            Otherwise the feature is added only to the given components.
+        fix_them : bool
+            If True the position parameter of the components will be
+            temporarily fixed until disable adjust position. This can 
+            be useful to iteratively adjust the component positions and 
+            fit the model.
+            
+        See also
+        --------
+        disaable_adjust_position
+        
+        """
+        if self._position_widgets:
+            self.disable_adjust_position()
+        components = components if components else self
+        if not components:
+            # The model does not have components so we do nothing
+            return
+        components = [
+            component for component in components if component.active]
         axis_dict = self.axes_manager.signal_axes[0].get_axis_dictionary()
         for component in self:
             if component._position is not None:
@@ -1139,13 +1168,19 @@ class Model(list):
             except TraitError:
                 # The value is outside of the axis range
                 continue
-            w = hyperspy.drawing.widgets.DraggableVerticalLineWithLabel(am)
+            self._position_widgets.append(
+                hyperspy.drawing.widgets.DraggableVerticalLineWithLabel(
+                    am))
+            w = self._position_widgets[-1]
             w.string = component._get_short_description().replace(
                                                     ' component', '')
             w.add_axes(self._plot.signal_plot.ax)
             am.axes[0].on_trait_change(set_value, 'value')
-        #self._plot.signal_plot.ax_lines[1].line.set_animated(True)
-        #self._plot.signal_plot.ax.figure.canvas.we_are_animated.append(self._plot.signal_plot.ax_lines[1])
+            
+    def disable_adjust_position(self, components=None, fix_them=True):
+        while self._position_widgets:
+            self._position_widgets.pop().close()
+
                 
                 
         
