@@ -40,8 +40,8 @@ class EELSCLEdge(Component):
 
     Currently it only supports Peter Rez's Hartree Slater cross sections
     parametrised as distributed by Gatan in their 
-    Digital Micrograph (DM) software. If Digital Micrograph is intalled
-    in the system Hyperespy in the standard location HyperSpy should 
+    Digital Micrograph (DM) software. If Digital Micrograph is installed
+    in the system Hyperspy in the standard location HyperSpy should 
     find the path to the HS GOS folder. Otherwise, the location of the 
     folder can be defined in Hyperspy preferences.
     
