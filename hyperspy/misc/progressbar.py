@@ -238,7 +238,8 @@ class ProgressBar(object):
     """
     def __init__(self, maxval=100, widgets=default_widgets,
                  term_width=None,):
-        assert maxval > 0
+        assert maxval >= 0
+        maxval = 1 if maxval == 0 else maxval
         self.maxval = maxval
         self.widgets = widgets
         self.signal_set = False
