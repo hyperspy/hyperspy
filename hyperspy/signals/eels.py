@@ -34,6 +34,7 @@ from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.components.power_law import PowerLaw
+import hyperspy.misc.utils as utils
 
 
 class EELSSpectrum(Spectrum):
@@ -206,52 +207,124 @@ class EELSSpectrum(Spectrum):
                 self.tmp_parameters.extension
         return I0
         
-    def estimate_elastic_scattering_threshold(self, window=20):
-        """Rough estimation of the elastic scattering signal by 
-        truncation of a EELS low-loss spectrum.
+    #def estimate_elastic_scattering_threshold_grad(self, window=20):
+        #"""Rough estimation of the elastic scattering signal by 
+        #truncation of a EELS low-loss spectrum.
+        
+        #Parameters
+        #----------
+        #window : {None, float}
+            #If None, the search for the local minimum is performed 
+            #using the full energy range. A positive float will restrict
+            #the search to the (0,window] energy window.
+        #Returns
+        #-------
+        #threshold : Signal instance
+            #A Signal of the same dimension as the input spectrum 
+            #navigation space containing the estimated threshold.
+#
+        #"""
+        #axis = self.axes_manager.signal_axes[0]
+         Use the data from the current location to estimate
+         the threshold as the position of the first maximum
+         after the ZLP
+        #threshold = self._get_navigation_signal()
+        #maxval = self.axes_manager.navigation_size
+         Progress Bar
+        #pbar = hyperspy.misc.progressbar.progressbar(maxval=maxval)
+        #max_index = axis.value2index(window)
+        #i = 0
+        #for s in self:
+            #zlp_index = s.data.argmax()
+            #data = (s()[zlp_index:max_index] / 
+                    #axis.axis[zlp_index:max_index])
+            #imin = ((data[1:] - data[:-1]) > 0).argmax() + zlp_index
+            #cthreshold = axis.index2value(imin)
+            #if (cthreshold == 0): cthreshold = window 
+            #del data 
+             If single spectrum, stop and return value
+            #if threshold is None:
+                #threshold = cthreshold
+                #pbar.finish()
+                #return threshold
+            #else:
+                #threshold.data[self.axes_manager.coordinates] = \
+                    #cthreshold
+                #pbar.update(i)
+                #i += 1
+         Create spectrum image, stop and return value
+        #threshold.mapped_parameters.title = (
+            #self.mapped_parameters.title + 
+            #' ZLP threshold')
+        #if self.tmp_parameters.has_item('filename'):
+            #threshold.tmp_parameters.filename = (
+                #self.tmp_parameters.filename +
+                #'_ZLP_threshold')
+            #threshold.tmp_parameters.folder = self.tmp_parameters.folder
+            #threshold.tmp_parameters.extension = \
+                #self.tmp_parameters.extension
+        #pbar.finish()
+        #return threshold
+    
+    def estimate_elastic_scattering_threshold(self, window=20, npoints=5,
+                                              tol = 0.1):
+        """Estimation of the elastic scattering signal by 
+        truncation of a EELS low-loss spectrum. Notice that two methods
+        are elegible using the METHOD string.
         #
         Parameters
         ----------
+           
         window : {None, float}
             If None, the search for the local minimum is performed 
             using the full energy range. A positive float will restrict
             the search to the (0,window] energy window.
+        npoints : int
+            If not zero performs order three Savitzky-Golay smoothing 
+            to the data to avoid falling in local minima caused by 
+            the noise.
+            
         Returns
         -------
         threshold : Signal instance
             A Signal of the same dimension as the input spectrum 
             navigation space containing the estimated threshold.
-
+            
         """
-        axis = self.axes_manager.signal_axes[0]
-        # Use the data from the current location to estimate
-        # the threshold as the position of the first maximum
-        # after the ZLP
+        # Create threshold with the same shape as the navigation dims.
         threshold = self._get_navigation_signal()
+        # Progress Bar
         maxval = self.axes_manager.navigation_size
-        #pbar = hyperspy.misc.progressbar.progressbar(maxval=maxval)
+        pbar = hyperspy.misc.progressbar.progressbar(maxval=maxval)
+        axis = self.axes_manager.signal_axes[0]
         max_index = axis.value2index(window)
-        i = 0
-        for s in self:
-            zlp_index = s.data.argmax()
-            data = (s()[zlp_index:max_index] / 
-                    axis.axis[zlp_index:max_index])
-            imin = ((data[1:] - data[:-1]) >
-             0).argmax() + zlp_index
+        for i, s in enumerate(self):
+            zlpi = s.data.argmax() + 1
+            if max_index -zlpi < 10:
+                max_index += (10 + zlpi - max_index)
+            data = s()[zlpi:max_index].copy()
+            if npoints:
+                data = np.abs(utils.sg(data, npoints, 1, diff_order=1))
+            imin = (data < tol).argmax() + zlpi
+            #imin = ((data[1:] - data[:-1]) > 0).argmin() + zlpi
+            #imin = data.argmin() + zlpi
             cthreshold = axis.index2value(imin)
-            if (cthreshold == 0): cthreshold = window # improve!
-            del data        
+            if (cthreshold == 0): cthreshold = window 
+            del data 
+            # If single spectrum, stop and return value
             if threshold is None:
                 threshold = cthreshold
+                pbar.finish()
                 return threshold
             else:
-                threshold.data[s.axes_manager.coordinates] = cthreshold    
-            #pbar.update(i)
-            i += 1
-        #pbar.finish()
-
+                threshold.data[self.axes_manager.coordinates] = \
+                    cthreshold
+                pbar.update(i)
+                
+        # Create spectrum image, stop and return value
         threshold.mapped_parameters.title = (
-            self.mapped_parameters.title + ' ZLP threshold')
+            self.mapped_parameters.title + 
+            ' ZLP threshold')
         if self.tmp_parameters.has_item('filename'):
             threshold.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
@@ -259,39 +332,9 @@ class EELSSpectrum(Spectrum):
             threshold.tmp_parameters.folder = self.tmp_parameters.folder
             threshold.tmp_parameters.extension = \
                 self.tmp_parameters.extension
+        pbar.finish()
         return threshold
         
-    def estimate_elastic_scattering_threshold_v1(self, win=20, axis=-1):
-        """ localmaximum(s,win) will search for the ZLP typical inflexion
-        point in a EELSSpectrum image or line, s, using a window width, win, 
-        specified in indices.
-        """
-        axis = self._get_positive_axis_index_index(axis)
-        C = self.data.shape[axis]
-        Ndim = self.data.ndim - 1
-        # Initialize
-        lm = np.ravel(np.zeros(self.data.shape[0:Ndim]))
-        # Progress bar is optional
-        #maxval = self.axes_manager.navigation_size
-        #pbar = hyperspy.misc.progressbar.progressbar(maxval=maxval)
-        # This index is not optional
-        i = 0
-        for s in self:
-            # Needs upside-down spectrum, from the ZLP max to the end
-            spc=s.data
-            zlpi=spc.argmax()
-            spc=-spc[zlpi:]
-            for k in xrange(1,C-2*win+1-zlpi):
-                if sum(spc[k+win:k+2*win-1]) <= sum(spc[k:k+win-1]):
-                    # This is it, notice that we add the ZLP index at the bottom
-                    lm[i] = plt.mlab.find(spc == max(spc[k:k+2*win-1]))[0] + zlpi
-                    break
-            i += 1
-            #pbar.update(i)
-        #pbar.finish()
-        # Then again, it will only work if self.data.shape = (N1,N2,C)
-        return np.reshape(lm,self.data.shape[0:Ndim])
-                
     def estimate_thickness(self, threshold=None, zlp=None,):
         """Estimates the thickness (relative to the mean free path) 
         of a sample using the log-ratio method.
