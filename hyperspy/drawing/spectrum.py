@@ -139,7 +139,7 @@ class SpectrumLine():
             lp['marker'] = None
         elif type == 'step':
             lp['color'] = color
-            lp['drawstyle'] = 'steps'
+            lp['drawstyle'] = 'steps-mid'
     def set_properties(self):
         for key in self.line_properties:
             plt.setp(self.line, **self.line_properties)
