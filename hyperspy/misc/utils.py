@@ -1627,12 +1627,15 @@ def _make_cascade_subplot(spectra, fig, subplot_position):
             max_value = spectrum_max_value
 
     ax = fig.add_subplot(subplot_position)
+    y_axis = spectra.axes_manager.navigation_axes[0]
     for spectrum_index, spectrum in enumerate(spectra):
         x_axis = spectrum.axes_manager.signal_axes[0]
         data = spectrum.data
-        data_to_plot = data/float(max_value) + spectrum_index 
+        data_to_plot = data/float(max_value) + y_axis.axis[spectrum_index]
         ax.plot(x_axis.axis, data_to_plot)
     ax.set_xlim(x_axis.low_value, x_axis.high_value)
+    ax.set_xlabel(x_axis.units)
+    ax.set_ylabel(y_axis.units)
     return(ax)
 
 def plot_spectra(
