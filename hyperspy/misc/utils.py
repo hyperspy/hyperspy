@@ -1602,6 +1602,23 @@ def get_linear_interpolation(p1, p2, x):
     y = a*x + b
     return y
 
+def _make_heatmap_subplot(spectra, fig, subplot_position):
+  ax = fig.add_subplot(subplot_position)
+  x_axis = spectra.axes_manager.signal_axes[0]
+  #Gets no navigation axis for some(?) spectra
+  #navigation_axis = spectrum.axes_manager.navigation_axes[0]
+  data = spectra.data
+  ax.imshow(
+      data,
+      extent=[
+        x_axis.low_value,
+        x_axis.high_value,
+        0,
+        1],
+      aspect='auto')
+  return(ax)
+
+
 def _make_cascade_subplot(spectra, fig, subplot_position):
     max_value = 0 
     for spectrum in spectra:
@@ -1679,19 +1696,7 @@ def plot_spectra(
 
     elif style == 'heatmap':
         fig = plt.figure()
-        ax = fig.add_subplot(111)
-        x_axis = spectrum.axes_manager.signal_axes[0]
-        #Gets no navigation axis for some(?) spectra
-        #navigation_axis = spectrum.axes_manager.navigation_axes[0]
-        data = spectra.data
-        ax.imshow(
-            data,
-            extent=[
-              x_axis.low_value,
-              x_axis.high_value,
-              0,
-              1],
-            aspect='auto')
+        _make_heatmap_subplot(spectra, fig, 111)
         if filename is None:
             return(fig)
         else:
