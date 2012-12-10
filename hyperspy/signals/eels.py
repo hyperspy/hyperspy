@@ -152,9 +152,10 @@ class EELSSpectrum(Spectrum):
             Truncation energy to estimate the intensity of the 
             elastic scattering. If None the threshold is calculated for 
             each spectrum as the first minimum after the ZLP centre. The
-            threshold can be provided as an array of the same shape as 
-            the navigation space. Note that for a single spectrum an 
-            array of shape 1, not a float, must be provided.
+            threshold can be provided as a signal of the same dimension 
+            as the input spectrum navigation space containing the 
+            estimated threshold. If the navigation size is 0 a float 
+            number must be provided.
             
         Returns
         -------
@@ -164,38 +165,43 @@ class EELSSpectrum(Spectrum):
         dimensions.
             
         """
+        I0 = self._get_navigation_signal()
         axis = self.axes_manager.signal_axes[0]
         # Use the data from the current location to estimate
         # the threshold as the position of the first maximum
         # after the ZLP
-        I0 = self._get_navigation_signal()
-        threshold_ = threshold
-        # Progress bar is optional
         maxval = self.axes_manager.navigation_size
         pbar = hyperspy.misc.progressbar.progressbar(maxval=maxval)
-        i = 0
-        for s in self:
-            if threshold_ is None:
+        for i, s in enumerate(self):
+            if threshold is None:
+                # No threshold has been specified, we calculate it
                 data = s()
                 index = data.argmax()
                 while data[index] > data[index + 1]:
                     index += 1
-                threshold = axis.index2value(index)
                 del data
-            else:
-                threshold = threshold_[self.axes_manager.coordinates]
+            elif hasattr(threshold,'data') is False: 
+                # No data attribute
                 index = axis.value2index(threshold)
+            else:
+                # Threshold specified, by an image instance 
+                cthreshold = threshold.data[self.axes_manager.coordinates]
+                index = axis.value2index(cthreshold)
             
             if I0 is None:
+                # Case1: no navigation signal 
                 I0 = s.data[0:index].sum()
+                pbar.finish()
                 return I0
             else:
-                I0.data[s.axes_manager.coordinates] = \
+                # Case2: navigation signal present
+                I0.data[self.axes_manager.coordinates] = \
                     s.data[0:index].sum()
+                
             pbar.update(i)
-            i += 1
+            
         pbar.finish()
-
+                
         I0.mapped_parameters.title = (
             self.mapped_parameters.title + ' elastic intensity')
         if self.tmp_parameters.has_item('filename'):
@@ -206,65 +212,6 @@ class EELSSpectrum(Spectrum):
             I0.tmp_parameters.extension = \
                 self.tmp_parameters.extension
         return I0
-        
-    #def estimate_elastic_scattering_threshold_grad(self, window=20):
-        #"""Rough estimation of the elastic scattering signal by 
-        #truncation of a EELS low-loss spectrum.
-        
-        #Parameters
-        #----------
-        #window : {None, float}
-            #If None, the search for the local minimum is performed 
-            #using the full energy range. A positive float will restrict
-            #the search to the (0,window] energy window.
-        #Returns
-        #-------
-        #threshold : Signal instance
-            #A Signal of the same dimension as the input spectrum 
-            #navigation space containing the estimated threshold.
-#
-        #"""
-        #axis = self.axes_manager.signal_axes[0]
-         Use the data from the current location to estimate
-         the threshold as the position of the first maximum
-         after the ZLP
-        #threshold = self._get_navigation_signal()
-        #maxval = self.axes_manager.navigation_size
-         Progress Bar
-        #pbar = hyperspy.misc.progressbar.progressbar(maxval=maxval)
-        #max_index = axis.value2index(window)
-        #i = 0
-        #for s in self:
-            #zlp_index = s.data.argmax()
-            #data = (s()[zlp_index:max_index] / 
-                    #axis.axis[zlp_index:max_index])
-            #imin = ((data[1:] - data[:-1]) > 0).argmax() + zlp_index
-            #cthreshold = axis.index2value(imin)
-            #if (cthreshold == 0): cthreshold = window 
-            #del data 
-             If single spectrum, stop and return value
-            #if threshold is None:
-                #threshold = cthreshold
-                #pbar.finish()
-                #return threshold
-            #else:
-                #threshold.data[self.axes_manager.coordinates] = \
-                    #cthreshold
-                #pbar.update(i)
-                #i += 1
-         Create spectrum image, stop and return value
-        #threshold.mapped_parameters.title = (
-            #self.mapped_parameters.title + 
-            #' ZLP threshold')
-        #if self.tmp_parameters.has_item('filename'):
-            #threshold.tmp_parameters.filename = (
-                #self.tmp_parameters.filename +
-                #'_ZLP_threshold')
-            #threshold.tmp_parameters.folder = self.tmp_parameters.folder
-            #threshold.tmp_parameters.extension = \
-                #self.tmp_parameters.extension
-        #pbar.finish()
-        #return threshold
     
     def estimate_elastic_scattering_threshold(self, window=20, npoints=5,
                                               tol = 0.1):
@@ -283,12 +230,16 @@ class EELSSpectrum(Spectrum):
             If not zero performs order three Savitzky-Golay smoothing 
             to the data to avoid falling in local minima caused by 
             the noise.
+        tol : float
+            The threshold tolerance for the derivative. If not provided 
+            it is set to 0.1
             
         Returns
         -------
-        threshold : Signal instance
+        threshold : {Signal instance, float}
             A Signal of the same dimension as the input spectrum 
-            navigation space containing the estimated threshold.
+            navigation space containing the estimated threshold. In the 
+            case of a single spectrum a float is returned.
             
         """
         # Create threshold with the same shape as the navigation dims.
@@ -313,7 +264,7 @@ class EELSSpectrum(Spectrum):
             del data 
             # If single spectrum, stop and return value
             if threshold is None:
-                threshold = cthreshold
+                threshold = float(cthreshold)
                 pbar.finish()
                 return threshold
             else:
