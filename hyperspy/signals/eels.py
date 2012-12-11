@@ -192,6 +192,10 @@ class EELSSpectrum(Spectrum):
                 # Case1: no navigation signal 
                 I0 = s.data[0:index].sum()
                 pbar.finish()
+                # We got out of the look before hitting the end
+                # so we manually set the axes_manager _index to
+                # None
+                self.axes_manager._index = None
                 return I0
             else:
                 # Case2: navigation signal present
@@ -266,6 +270,10 @@ class EELSSpectrum(Spectrum):
             if threshold is None:
                 threshold = float(cthreshold)
                 pbar.finish()
+                # We got out of the look before hitting the end
+                # so we manually set the axes_manager _index to
+                # None
+                self.axes_manager._index = None
                 return threshold
             else:
                 threshold.data[self.axes_manager.coordinates] = \
