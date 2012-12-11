@@ -1152,6 +1152,7 @@ class Model(list):
         components = [
             component for component in components if component.active]
         axis_dict = self.axes_manager.signal_axes[0].get_axis_dictionary()
+        axis_dict['index_in_array'] = 0
         for component in self:
             if component._position is not None:
                 set_value = component._position._setvalue
