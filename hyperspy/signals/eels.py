@@ -195,7 +195,7 @@ class EELSSpectrum(Spectrum):
                 # We got out of the look before hitting the end
                 # so we manually set the axes_manager _index to
                 # None
-                self.axes_manager._index = None
+                #self.axes_manager._index = None
                 return I0
             else:
                 # Case2: navigation signal present
@@ -219,9 +219,15 @@ class EELSSpectrum(Spectrum):
     
     def estimate_elastic_scattering_threshold(self, window=20, npoints=5,
                                               tol = 0.1):
-        """Estimation of the elastic scattering signal by 
-        truncation of a EELS low-loss spectrum. Notice that two methods
-        are elegible using the METHOD string.
+        """Estimation of the elastic scattering signal by truncation of 
+        a EELS low-loss spectrum. Calculates the inflexion of the ZLP 
+        derivative within a window using a specified tolerance. It 
+        previously smoothes the data using a Savitzky-Golay algorithm 
+        (can be turned off). 
+        
+        Notice that if a window parameter lower than the threshold is 
+        set, this routine will be unable to find the right point. In
+        these cases, the window parameter will be returned as threshold 
         #
         Parameters
         ----------
@@ -273,7 +279,7 @@ class EELSSpectrum(Spectrum):
                 # We got out of the look before hitting the end
                 # so we manually set the axes_manager _index to
                 # None
-                self.axes_manager._index = None
+                #self.axes_manager._index = None
                 return threshold
             else:
                 threshold.data[self.axes_manager.coordinates] = \
