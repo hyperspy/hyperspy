@@ -1902,6 +1902,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 
         
     def __iter__(self):
+        # Reset the _index that can have a value != None due to 
+        # a previous iteration that did not hit a StopIteration
+        self.axes_manager._index = None
         return self
         
     def next(self):
