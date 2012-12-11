@@ -328,6 +328,9 @@ class AxesManager(t.HasTraits):
         return val
 
     def __iter__(self):
+        # Reset the _index that can have a value != None due to 
+        # a previous iteration that did not hit a StopIteration
+        self._index = None
         return self
         
     def append_axis(self, *args, **kwargs):
