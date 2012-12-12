@@ -141,7 +141,7 @@ class EELSSpectrum(Spectrum):
                 saxis = sync_signal.axes_manager.axes[
                     axis.index_in_array]
                 saxis.offset += axis.offset - old_offset
-                
+    
     def estimate_elastic_scattering_intensity(self, threshold=None):
         """Rough estimation of the elastic scattering signal by 
         truncation of a EELS low-loss spectrum.
@@ -314,12 +314,16 @@ class EELSSpectrum(Spectrum):
             If None estimates the zero-loss peak by integrating the
             intensity of the spectrum up to the value defined in 
             threshold (i.e. by truncation). Otherwise the zero-loss
-             peak intensity is calculated from the ZLP spectrum
-              supplied.
-        threshold : {None, float}
+            peak intensity is calculated from the ZLP spectrum
+            supplied.
+        threshold : {None, float, Signal instance}
             Truncation energy to estimate the intensity of the 
-            elastic scattering. If None the threshold is taken as the
-             first minimum after the ZLP centre.
+            elastic scattering. Notice that in the case of a Signal the
+            instance has to be of the same dimension as the input 
+            spectrum navigation space containing the estimated 
+            threshold. In the case of a single spectrum a float is good
+            enough.If None the threshold is taken as the first minimum 
+            after the ZLP centre.
             
         Returns
         -------
@@ -414,6 +418,48 @@ class EELSSpectrum(Spectrum):
         else:
             return {'FWHM' : fwhm,
                      'FWHM_E' : pair_fwhm}
+                     
+    def splice_zero_loss_peak(self, threshold=None, mode=None):
+        """ Tool to crop the zero loss peak from the rest of the 
+        low-loss EELSSpectrum provided, using the inflexion points 
+        calculated from estimate_elastic_scattering_threshold, or any 
+        other threshold specified.   
+        
+        Parameters
+        ----------
+        threshold : {None, float, Signal instance}
+            Truncation energy to estimate the intensity of the 
+            elastic scattering. Notice that in the case of a Signal the
+            instance has to be of the same dimension as the input 
+            spectrum navigation space containing the estimated 
+            threshold. In the case of a single spectrum a float is good
+            enough.If None the threshold is taken as the first minimum 
+            after the ZLP centre.
+        
+        Returns
+        -------
+        zlp : EELSSpectrum
+            This instance should contain the spliced zero loss peak 
+            EELSSpectrum.
+        """       
+        zlp=self.copy()
+        axes=zlp.axes_manager
+        Eaxis=axes.signal_axes[0]
+        # Progress Bar
+        maxval = axes.navigation_size
+        pbar = hyperspy.misc.progressbar.progressbar(maxval=maxval)
+        for i, s in enumerate(zlp):
+            ith = int(Eaxis.value2index(threshold.data[axes.coordinates]))
+            # This does the threshold-selective cropping
+            s.data[ith:] = 0
+            if mode is 'smooth':
+                tmp_s = s[:ith].copy()
+                tmp_s.hanning_taper(side='right')
+                s.data[:ith] = tmp_s.data
+            pbar.update(i)
+        pbar.finish()
+        
+        return zlp                 
 
     def fourier_log_deconvolution(self, zlp, add_zlp=True, crop=True):
         """Performs fourier-log deconvolution.
