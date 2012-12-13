@@ -248,4 +248,6 @@ Estimate elastic scattering intensity
 
 Use :py:meth:`estimate_elastic_scattering_intensity` to calculate the integral below the zero loss peak (elastic intensity) from EELS low-loss spectra containing the zero loss peak. This integral can use the threshold image calculated by the :py:meth:`~.signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold` as end energy for the integration at each spectra or use the same energy value for all spectra. Also, if no threshold is specified, the routine will perform a rough estimation of the inflexion values at each spectrum.
 
-
+Splice zero loss peak
+^^^^^^^^^^^^^^^^^^^^^
+Once :py:meth:`~.signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold` has determined the elastic scattering threshold value(s), this tool can be used to separate the zero loss peak from the eels spectra. Use :py:meth:`~.signals.eels.EELSSpectrum.splice_zero_loss_peak` in order to obtain a ZLP suitable for Fourier-Log deconvolution from your EELS low-loss spectra by setting the "smooth" option, that will apply the hanning window to the righ end of the data.
