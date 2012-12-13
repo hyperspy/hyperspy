@@ -437,7 +437,7 @@ class EELSSpectrum(Spectrum):
             This instance should contain the spliced zero loss peak 
             EELSSpectrum.
         """       
-        zlp=self.copy()
+        zlp=self.deepcopy()
         axes=zlp.axes_manager
         Eaxis=axes.signal_axes[0]
         # Progress Bar
