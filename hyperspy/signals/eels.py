@@ -192,10 +192,6 @@ class EELSSpectrum(Spectrum):
                 # Case1: no navigation signal 
                 I0 = s.data[0:index].sum()
                 pbar.finish()
-                # We got out of the look before hitting the end
-                # so we manually set the axes_manager _index to
-                # None
-                #self.axes_manager._index = None
                 return I0
             else:
                 # Case2: navigation signal present
@@ -267,8 +263,6 @@ class EELSSpectrum(Spectrum):
             if npoints:
                 data = np.abs(utils.sg(data, npoints, 1, diff_order=1))
             imin = (data < tol).argmax() + zlpi
-            #imin = ((data[1:] - data[:-1]) > 0).argmin() + zlpi
-            #imin = data.argmin() + zlpi
             cthreshold = axis.index2value(imin)
             if (cthreshold == 0): cthreshold = window 
             del data 
@@ -276,10 +270,6 @@ class EELSSpectrum(Spectrum):
             if threshold is None:
                 threshold = float(cthreshold)
                 pbar.finish()
-                # We got out of the look before hitting the end
-                # so we manually set the axes_manager _index to
-                # None
-                #self.axes_manager._index = None
                 return threshold
             else:
                 threshold.data[self.axes_manager.coordinates] = \
@@ -435,8 +425,8 @@ class EELSSpectrum(Spectrum):
             threshold. In the case of a single spectrum a float is good
             enough.If None the threshold is taken as the first minimum 
             after the ZLP centre.
-	mode : {None, 'hanning'}
-	    Method for smoothing the right-hand-side of the cropped ZLP
+        mode : {None, 'hanning'}
+            Method for smoothing the right-hand-side of the cropped ZLP
 	   
             None: No method is applied.
             hanning: Hanning window is applied.
@@ -454,7 +444,20 @@ class EELSSpectrum(Spectrum):
         maxval = axes.navigation_size
         pbar = hyperspy.misc.progressbar.progressbar(maxval=maxval)
         for i, s in enumerate(zlp):
-            ith = int(Eaxis.value2index(threshold.data[axes.coordinates]))
+            if threshold is None:
+                # No threshold has been specified, we calculate it
+                data = s()
+                ith = data.argmax()
+                while data[ith] > data[ith + 1]:
+                    ith += 1
+                del data
+            elif hasattr(threshold,'data') is False: 
+                # No data attribute
+                ith = Eaxis.value2index(threshold)
+            else:
+                # Threshold specified, by an image instance 
+                ith = Eaxis.value2index(threshold.data[axes.coordinates])
+
             # This does the threshold-selective cropping
             s.data[ith:] = 0
             if mode is 'smooth':
