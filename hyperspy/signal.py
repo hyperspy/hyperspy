@@ -20,6 +20,7 @@ import copy
 import os.path
 
 import numpy as np
+from matplotlib import pyplot as plt
 import traits.api as t
 import traitsui.api as tui
 
@@ -34,8 +35,6 @@ from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import ensure_directory
-
-from matplotlib import pyplot as plt
 
 
 class Signal(t.HasTraits, MVA):
@@ -68,6 +67,8 @@ class Signal(t.HasTraits, MVA):
         self._axes_manager_before_unfolding = None
         self.auto_replot = True
         self.variance = None
+        self.navigation = SpecialSlicers(self, True)
+        self.signal = SpecialSlicers(self, False)
 
     def __repr__(self):
         string = '<'
@@ -77,6 +78,57 @@ class Signal(t.HasTraits, MVA):
         string += '>'
 
         return string
+
+    def __getitem__(self, slices, isNavigation=None,XYZ_ordering=True):
+        try:
+            len(slices)
+        except TypeError:
+            slices = (slices,)
+        _orig_slices = slices
+        has_nav = True
+        has_signal = True
+        if isNavigation is not None:
+            if isNavigation:
+                has_signal = False
+            else:
+                has_nav = False
+
+        _signal = self.deepcopy()
+
+        nav_indexes =  [el.index_in_array for el in
+                    _signal.axes_manager.navigation_axes]
+        signal_indexes =  [el.index_in_array for el in
+                    _signal.axes_manager.signal_axes]
+
+        if XYZ_ordering:
+            nav_idx = nav_indexes[::-1]
+            signal_idx = signal_indexes[::-1]
+        else:
+            nav_idx = nav_indexes
+            signal_idx = signal_indexes
+
+        index = nav_idx + signal_idx
+
+        if not has_signal:
+            idx =  nav_idx
+        elif not has_nav:
+            idx =  signal_idx
+        else:
+            idx =  index
+    
+        slices = np.array([slice(None,)] * 
+                           len(_signal.axes_manager.axes))
+            
+        slices[idx] = _orig_slices + (slice(None),) * max(
+                            0, len(idx) - len(_orig_slices))
+        axes = [_signal.axes_manager.axes[i] for i in index]
+        array_slices = [axis._get_slice(slice_)
+                        for slice_, axis in zip(slices,axes)]
+        _signal.data = _signal.data[array_slices]
+        _signal.get_dimensions_from_data()
+        _signal.squeeze()
+
+        return _signal
         
     def print_summary(self):
         string = "\n\tTitle: "
@@ -145,8 +197,8 @@ class Signal(t.HasTraits, MVA):
         """Remove single-dimensional entries from the shape of an array and the 
         axes.
         """
-        self.data = self.data.squeeze()
-        for axis in self.axes_manager.axes:
+        axes_list = list(self.axes_manager.axes)
+        for axis in axes_list:
             if axis.size == 1:
                 self.axes_manager.axes.remove(axis)
                 for ax in self.axes_manager.axes:
@@ -330,8 +382,6 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         dc = self.data
         for axis in self.axes_manager.axes:
             axis.size = int(dc.shape[axis.index_in_array])
-            print("%s size: %i" %
-            (axis.name, dc.shape[axis.index_in_array]))
 
     def crop_in_pixels(self, axis, i1=None, i2=None, copy=True):
         """Crops the data in a given axis. The range is given in pixels
@@ -1849,9 +1899,6 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 
         
     def __iter__(self):
-        # Reset the _index that can have a value != None due to 
-        # a previous iteration that did not hit a StopIteration
-        self.axes_manager._index = None
         return self
         
     def next(self):
@@ -1863,66 +1910,11 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             return 1
         else:
             return self.axes_manager.navigation_size
-        
 
-#
-#    def sum_every_n(self,n):
-#        """Bin a line spectrum
-#
-#        Parameters
-#        ----------
-#        step : float
-#            binning size
-#
-#        Returns
-#        -------
-#        Binned line spectrum
-#
-#        See also
-#        --------
-#        sum_every
-#        """
-#        dc = self.data_cube
-#        if dc.shape[1] % n != 0:
-#            messages.warning_exit(
-#            "n is not a divisor of the size of the line spectrum\n"
-#            "Try giving a different n or using sum_every instead")
-#        size_list = np.zeros((dc.shape[1] / n))
-#        size_list[:] = n
-#        return self.sum_every(size_list)
-#
-#    def sum_every(self,size_list):
-#        """Sum a line spectrum intervals given in a list and return the
-#        resulting SI
-#
-#        Parameters
-#        ----------
-#        size_list : list of floats
-#            A list of the size of each interval to sum.
-#
-#        Returns
-#        -------
-#        SI
-#
-#        See also
-#        --------
-#        sum_every_n
-#        """
-#        dc = self.data_cube
-#        dc_shape = self.data_cube.shape
-#        if np.sum(size_list) != dc.shape[1]:
-#            messages.warning_exit(
-#            "The sum of the elements of the size list is not equal to the size"
-#            " of the line spectrum")
-#        new_dc = np.zeros((dc_shape[0], len(size_list), 1))
-#        ch = 0
-#        for i in xrange(len(size_list)):
-#            new_dc[:,i,0] = dc[:,ch:ch + size_list[i], 0].sum(1)
-#            ch += size_list[i]
-#        sp = Spectrum()
-#        sp.data_cube = new_dc
-#        sp.get_dimensions_from_cube()
-#        return sp
-
-
+class SpecialSlicers:
+    def __init__(self, signal, isNavigation):
+        self.isNavigation = isNavigation
+        self.signal = signal
+    def __getitem__(self, slices):
+        return self.signal.__getitem__(slices, self.isNavigation)
 
