@@ -383,8 +383,6 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         dc = self.data
         for axis in self.axes_manager.axes:
             axis.size = int(dc.shape[axis.index_in_array])
-            print("%s size: %i" %
-            (axis.name, dc.shape[axis.index_in_array]))
 
     def crop_in_pixels(self, axis, i1=None, i2=None, copy=True):
         """Crops the data in a given axis. The range is given in pixels
@@ -1902,9 +1900,6 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 
         
     def __iter__(self):
-        # Reset the _index that can have a value != None due to 
-        # a previous iteration that did not hit a StopIteration
-        self.axes_manager._index = None
         return self
         
     def next(self):
