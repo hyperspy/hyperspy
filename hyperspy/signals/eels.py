@@ -506,10 +506,6 @@ class EELSSpectrum(Spectrum):
         j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array)
         j1 = z * np.nan_to_num(np.log(j / z))
         sdata = np.fft.irfft(j1, axis=axis.index_in_array)
-        def get_cropping_slice(axis, index):
-            cslice = [slice,] * len(self.axes_manager.axes)
-            cslice[axis] = slice(None, index)
-            return tuple(cslice)
         s.data = sdata[s.axes_manager._get_data_slice(
             [(axis.index_in_array, slice(None,self_size)),])]
         if add_zlp is True:
