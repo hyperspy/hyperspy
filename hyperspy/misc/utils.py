@@ -1,3 +1,4 @@
+import ipdb
 # -*- coding: utf-8 -*-
 # Copyright 2007-2011 The Hyperspy developers
 #
@@ -1602,31 +1603,29 @@ def get_linear_interpolation(p1, p2, x):
     y = a*x + b
     return y
 
-def _make_heatmap_subplot(spectra, fig, subplot_position):
-  ax = fig.add_subplot(subplot_position)
-  x_axis = spectra.axes_manager.signal_axes[0]
-  #Gets no navigation axis for some(?) spectra
-  #navigation_axis = spectrum.axes_manager.navigation_axes[0]
-  data = spectra.data
-  ax.imshow(
-      data,
-      extent=[
-        x_axis.low_value,
-        x_axis.high_value,
-        0,
-        1],
-      aspect='auto')
-  return(ax)
+def _make_heatmap_subplot(spectra, ax):
+    x_axis = spectra.axes_manager.signal_axes[0]
+    #Gets no navigation axis for some(?) spectra
+    navigation_axis = spectra.axes_manager.navigation_axes[0]
+    data = spectra.data
+    ax.imshow(
+        data,
+        cmap=plt.cm.jet,
+        extent=[
+            x_axis.low_value,
+            x_axis.high_value,
+            navigation_axis.low_value,
+            navigation_axis.high_value],
+        aspect='auto')
+    return(ax)
 
-
-def _make_cascade_subplot(spectra, fig, subplot_position):
+def _make_cascade_subplot(spectra, ax):
     max_value = 0 
     for spectrum in spectra:
         spectrum_max_value = spectrum.data.max()
         if spectrum_max_value  > max_value:
             max_value = spectrum_max_value
 
-    ax = fig.add_subplot(subplot_position)
     y_axis = spectra.axes_manager.navigation_axes[0]
     for spectrum_index, spectrum in enumerate(spectra):
         x_axis = spectrum.axes_manager.signal_axes[0]
@@ -1636,6 +1635,14 @@ def _make_cascade_subplot(spectra, fig, subplot_position):
     ax.set_xlim(x_axis.low_value, x_axis.high_value)
     ax.set_xlabel(x_axis.units)
     ax.set_ylabel(y_axis.units)
+    return(ax)
+
+def _make_mosaic_subplot(spectrum, ax):
+    x_axis = spectrum.axes_manager.signal_axes[0]
+    data = spectrum.data
+    ax.plot(x_axis.axis, data)
+    ax.set_xlim(x_axis.low_value, x_axis.high_value)
+    ax.set_xlabel(x_axis.units)
     return(ax)
 
 def plot_spectra(
@@ -1649,7 +1656,7 @@ def plot_spectra(
         possible to supply several lists of spectra of the same 
         lenght to plot multiple spectra in the same axes.
     style : {'cascade', 'mosaic', 'multiple_files', 'heatmap'}
-        The style of the plot. multiple files will plot every spectra
+        The style of the plot. multiple_files will plot every spectra
         in its own file.
     filename : None or string
         If None, raise a window with the plot and return the figure.
@@ -1661,7 +1668,8 @@ def plot_spectra(
     
     if style == 'cascade':
         fig = plt.figure()
-        _make_cascade_subplot(spectra, fig, 111)
+        ax = fig.add_subplot(111)
+        _make_cascade_subplot(spectra, ax)
 
         if filename is None:
             return(fig)
@@ -1670,13 +1678,9 @@ def plot_spectra(
 
     elif style == 'mosaic':
         #Need to find a way to automatically scale the figure size
-        fig = plt.figure()
-        number_of_spectra = len(spectra)
-        for spectrum_index, spectrum in enumerate(spectra):
-            x_axis = spectrum.axes_manager.signal_axes[0]
-            data = spectrum.data
-            ax = fig.add_subplot(1, number_of_spectra, spectrum_index)
-            ax.plot(x_axis.axis, data)
+        fig, subplots = plt.subplots(1, len(spectra))
+        for ax, spectrum in zip(subplots, spectra):
+            _make_mosaic_subplot(spectrum, ax)
         if filename is None:
             return(fig)
         else:
@@ -1686,10 +1690,9 @@ def plot_spectra(
         for spectrum_index, spectrum in enumerate(spectra):
             fig = plt.figure()
             ax = fig.add_subplot(111)
-            x_axis = spectrum.axes_manager.signal_axes[0]
-            data = spectrum.data
-            ax.plot(x_axis.axis, data)
+            _make_mosaic_subplot(spectrum, ax)
             #Currently only works with png images
+            #Should use some more clever method
             filename = filename.replace('.png', '')
             fig.savefig(
                     filename +
@@ -1699,7 +1702,8 @@ def plot_spectra(
 
     elif style == 'heatmap':
         fig = plt.figure()
-        _make_heatmap_subplot(spectra, fig, 111)
+        ax = fig.add_subplot(111)
+        _make_heatmap_subplot(spectra, ax) 
         if filename is None:
             return(fig)
         else:
