@@ -285,6 +285,7 @@ class Signal(t.HasTraits, MVA):
 
         if axes_manager.signal_dimension == 1:
             # Hyperspectrum
+            # TODO: complex optional plot
             self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
             
         elif axes_manager.signal_dimension == 2:
