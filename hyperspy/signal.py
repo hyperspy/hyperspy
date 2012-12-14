@@ -528,6 +528,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         for i in xrange(len(cut_node)-1):
             axes_dict[axis]['offset'] = \
                 self.axes_manager.axes[axis].index2value(cut_node[i])
+            axes_dict[axis]['size'] = cut_node[i + 1] - cut_node[i] 
             data = self.data[
             (slice(None), ) * axis + (slice(cut_node[i], cut_node[i + 1]),
             Ellipsis)]
@@ -535,7 +536,6 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             s = Signal(signal_dict)
             # TODO: When copying plotting does not work
 #            s.axes = copy.deepcopy(self.axes_manager)
-            s.get_dimensions_from_data()
             splitted.append(s)
         return splitted
 
