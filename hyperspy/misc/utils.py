@@ -1,4 +1,3 @@
-import ipdb
 # -*- coding: utf-8 -*-
 # Copyright 2007-2011 The Hyperspy developers
 #
