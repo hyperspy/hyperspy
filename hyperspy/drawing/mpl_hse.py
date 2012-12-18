@@ -234,6 +234,8 @@ class MPL_HyperSpectrum_Explorer(object):
             self.right_pointer.add_axes(self.navigator_plot.ax)
         rl = spectrum.SpectrumLine()
         rl.data_function = self.signal_data_function
+        # New !
+        rl.axvline_data = None        
         rl.line_properties_helper(self.right_pointer.color, 'step')
         self.signal_plot.create_right_axis()
         self.signal_plot.add_line(rl, ax = 'right')
