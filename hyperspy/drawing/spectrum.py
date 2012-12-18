@@ -105,6 +105,7 @@ class SpectrumLine():
         self.axis = None
         self.axes_manager = None
         self.auto_update = True
+        self.axvline_data = None
         
         # Properties
         self.line = None
