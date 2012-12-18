@@ -271,7 +271,7 @@ class Signal(t.HasTraits, MVA):
         else:
             return None
 
-    def plot(self, axes_manager=None):
+    def plot(self, axes_manager=None, axvline_data = None):
         if self._plot is not None:
                 try:
                     self._plot.close()
@@ -286,6 +286,7 @@ class Signal(t.HasTraits, MVA):
         if axes_manager.signal_dimension == 1:
             # Hyperspectrum
             self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
+            self._plot.axvline_data = axvline_data
             
         elif axes_manager.signal_dimension == 2:
             self._plot = mpl_hie.MPL_HyperImage_Explorer()
@@ -297,8 +298,7 @@ class Signal(t.HasTraits, MVA):
         if self.mapped_parameters.title:
             self._plot.signal_title = self.mapped_parameters.title
         elif self.tmp_parameters.has_item('filename'):
-            self._plot.signal_title = self.tmp_parameters.filename
-            
+            self._plot.signal_title = self.tmp_parameters.filename    
 
         # Navigator properties
         if self.axes_manager.navigation_axes:

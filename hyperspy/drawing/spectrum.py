@@ -150,6 +150,12 @@ class SpectrumLine():
         self.line, = self.ax.plot(
             self.axis, f(axes_manager = self.axes_manager),
                 **self.line_properties)
+        # New !
+        g = self.axvline_data
+        if g is not None:                
+			self.vline = self.ax.axvline(
+				g[self.axes_manager.coordinates])
+
         self.axes_manager.connect(self.update)
         if not self.axes_manager or self.axes_manager.navigation_size==0:
             self.plot_coordinates = False
@@ -170,6 +176,10 @@ class SpectrumLine():
             self.plot()
         ydata = self.data_function(axes_manager=self.axes_manager)
         self.line.set_ydata(ydata)
+        # New !
+        g = self.axvline_data
+        if g is not None:
+			self.vline.set_xdata(g[self.axes_manager.coordinates]	)
         
         if self.autoscale is True:
             self.ax.relim()
