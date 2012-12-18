@@ -150,7 +150,6 @@ class SpectrumLine():
         self.line, = self.ax.plot(
             self.axis, f(axes_manager = self.axes_manager),
                 **self.line_properties)
-        # New !
         g = self.axvline_data
         if g is not None:                
 			self.vline = self.ax.axvline(
@@ -176,7 +175,6 @@ class SpectrumLine():
             self.plot()
         ydata = self.data_function(axes_manager=self.axes_manager)
         self.line.set_ydata(ydata)
-        # New !
         g = self.axvline_data
         if g is not None:
 			self.vline.set_xdata(g[self.axes_manager.coordinates]	)

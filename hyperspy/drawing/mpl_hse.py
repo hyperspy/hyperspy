@@ -48,8 +48,6 @@ class MPL_HyperSpectrum_Explorer(object):
         self._auto_update_plot = True
         self.plot_navigator_scalebar = False
         self.plot_navigator_plot_ticks = True
-        
-        # New ! 
         self.axvline_data = None
         
     @property
@@ -182,7 +180,6 @@ class MPL_HyperSpectrum_Explorer(object):
         # Create a line to the left axis with the default coordinates
         sl = spectrum.SpectrumLine()
         sl.data_function = self.signal_data_function
-        # New !
         sl.axvline_data = self.axvline_data
         sl.plot_coordinates = True
         if self.pointer is not None:
@@ -234,7 +231,6 @@ class MPL_HyperSpectrum_Explorer(object):
             self.right_pointer.add_axes(self.navigator_plot.ax)
         rl = spectrum.SpectrumLine()
         rl.data_function = self.signal_data_function
-        # New !
         rl.axvline_data = None        
         rl.line_properties_helper(self.right_pointer.color, 'step')
         self.signal_plot.create_right_axis()
