@@ -91,9 +91,9 @@ class Spectrum(Signal):
         for dat, shift in zip(self.iterate_axis(axis),
                               utils.iterate_axis(shift_array, axis)):
                 si = sp.interpolate.interp1d(_axis ,dat,
-                                             bounds_error = False,
-                                             fill_value = 0.,
-                                             kind = interpolation_method)
+                                             bounds_error=False,
+                                             fill_value=0.,
+                                             kind=interpolation_method)
                 coord.offset = offset - shift[0]
                 dat[:] = si(coord.axis)
                 pbar.update(i)
@@ -103,14 +103,11 @@ class Spectrum(Signal):
         # Cropping time
         mini, maxi = shift_array.min(), shift_array.max()
         if mini < 0:
-            self.crop_in_units(axis, offset - mini)
+            self.crop_in_units(axis, None, coord.axis[-1] + mini +
+             coord.scale)
         if maxi > 0:
-            self.crop_in_units(axis, None, _axis[-1] - maxi)
+            self.crop_in_units(axis, offset + maxi)
             
-        # TODO: in some cases the first and last channels are wrongly
-        # set to zero. Until we find the time to fix it the following
-        # line is a walkaround
-        self.crop_in_pixels(-1,1,-1)
 
     def interpolate_in_index_1D(self, axis, i1, i2, delta=3, **kwargs):
         axis = self.axes_manager.axes[axis]
