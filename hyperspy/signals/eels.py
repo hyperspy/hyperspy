@@ -425,11 +425,11 @@ class EELSSpectrum(Spectrum):
             threshold. In the case of a single spectrum a float is good
             enough.If None the threshold is taken as the first minimum 
             after the ZLP centre.
-        mode : {None, 'hanning'}
+        mode : {None, 'smooth'}
             Method for smoothing the right-hand-side of the cropped ZLP
 	   
             None: No method is applied.
-            hanning: Hanning window is applied.
+            smooth: Hanning window is applied.
         
         Returns
         -------
