@@ -502,10 +502,10 @@ class EELSSpectrum(Spectrum):
         # performance
         size = int(2 ** np.ceil(np.log2(size)))
         axis = self.axes_manager.signal_axes[0]
-        z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
-        j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array)
+        z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array).astype('complex64')
+        j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array).astype('complex64')
         j1 = z * np.nan_to_num(np.log(j / z))
-        sdata = np.fft.irfft(j1, axis=axis.index_in_array)
+        sdata = np.fft.irfft(j1, axis=axis.index_in_array).astype('float32')
         s.data = sdata[s.axes_manager._get_data_slice(
             [(axis.index_in_array, slice(None,self_size)),])]
         if add_zlp is True:
