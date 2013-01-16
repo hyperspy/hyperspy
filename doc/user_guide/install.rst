@@ -151,6 +151,7 @@ In Windows and Mac the easiest way to install these packages is by installing th
 If you use an Ubuntu binary to install Hyperspy all the dependencies should install automatically. Installing the dependencies manually in Ubuntu 12.04 (and probably Debian and other Ubuntu versions) can be done using:
 
 .. code-block:: bash
+
     $ sudo apt-get install python-numpy python-matplotlib ipython python-traits python-traitsui python-h5py python-mdp python-scikits-learn python-nose
 
 .. _known-issues:
