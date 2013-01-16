@@ -493,7 +493,8 @@ class EELSSpectrum(Spectrum):
         
         """
         s = self.deepcopy()
-        tapped_channels = s.hanning_taper()
+        tapped_channels = 0
+        #tapped_channels = s.hanning_taper()
         zlp_size = zlp.axes_manager.signal_axes[0].size 
         self_size = self.axes_manager.signal_axes[0].size
         # Conservative new size to solve the wrap-around problem 
