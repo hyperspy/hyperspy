@@ -831,7 +831,8 @@ class EELSSpectrum(Spectrum):
             
     def power_law_extrapolation(self, window_size=20,
                                 extrapolation_size=1024,
-                                add_noise=False):
+                                add_noise=False,
+                                fix_neg_r=False):
         """Extrapolate the spectrum to the right using a powerlaw
         
         
@@ -845,6 +846,14 @@ class EELSSpectrum(Spectrum):
             Size of the extrapolation in number of channels
         add_noise : bool
             If True, add poissonian noise to the extrapolated spectrum.
+        fix_neg_r : bool
+            If True, the negative values for the "components.PowerLaw" 
+            parameter r will be substituted by zero. The spectrum will 
+            be extended, but with zeros instead the power law.
+        
+        Returns
+        -------
+        A new spectrum, with the extrapolation.
             
         """
         axis = self.axes_manager.signal_axes[0]
@@ -864,6 +873,10 @@ class EELSSpectrum(Spectrum):
         pl.estimate_parameters(
             s, axis.index2value(axis.size - window_size),
             axis.index2value(axis.size - 1))
+        if fix_neg_r is True:
+            _val = pl.r.map['values']
+            _val[_val<=0] = 0
+            pl.r.map['values'] = _val
         s.data[...,axis.size:] = (
             pl.A.map['values'][...,np.newaxis]*
             s.axes_manager.signal_axes[0].axis[np.newaxis,axis.size:]**(
