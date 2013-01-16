@@ -117,6 +117,12 @@ In any case, you must be sure to have all the dependencies installed, see :ref:`
 
     $ cd hyperspy
     $ sudo pip install -e ./
+
+In addition there as a bug with the IPython version packaged in Ubuntu 12.10, which can be fixed by upgrading it through pip:
+
+.. code-block:: bash
+
+    $ sudo pip install --upgrade ipython
  
 .. _create-debian-binary: 
     
