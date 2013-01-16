@@ -469,18 +469,23 @@ class EELSSpectrum(Spectrum):
         
         return zlp                 
 
-    def fourier_log_deconvolution(self, zlp, add_zlp=True, crop=True):
+    def fourier_log_deconvolution(self, zlp, prepared=False, 
+                                    add_zlp=False, crop=False):
         """Performs fourier-log deconvolution.
         
         Parameters
         ----------
         zlp : EELSSpectrum
             The corresponding zero-loss peak.
+        prepared : bool
+            Use True if the input EELSSpectra have been preparated with
+            split_zero_loss_peak_flog.
         add_zlp : bool
             If True, adds the ZLP to the deconvolved spectrum
         crop : bool
             If True crop the spectrum to leave out the channels that
-             have been modified to decay smoothly to zero at the sides of the spectrum.
+            have been modified to decay smoothly to zero at the sides 
+            of the spectrum.
         
         Returns
         -------
@@ -494,14 +499,20 @@ class EELSSpectrum(Spectrum):
         """
         s = self.deepcopy()
         tapped_channels = 0
-        #tapped_channels = s.hanning_taper()
+        
         zlp_size = zlp.axes_manager.signal_axes[0].size 
         self_size = self.axes_manager.signal_axes[0].size
-        # Conservative new size to solve the wrap-around problem 
-        size = zlp_size + self_size -1
-        # Increase to the closest multiple of two to enhance the FFT 
-        # performance
-        size = int(2 ** np.ceil(np.log2(size)))
+        if prepared is False:
+            tapped_channels = s.hanning_taper()
+            # Conservative new size to solve the wrap-around problem 
+            size = zlp_size + self_size -1
+            # Increase to the closest multiple of two to enhance the FFT 
+            # performance
+            size = int(2 ** np.ceil(np.log2(size)))
+        elif self_size == zlp_size:
+            print 'prepared'
+            tapped_channels = 0
+            size = self_size
         axis = self.axes_manager.signal_axes[0]
         z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array).astype('complex64')
         j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array).astype('complex64')
