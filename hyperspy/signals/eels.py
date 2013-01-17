@@ -567,6 +567,7 @@ class EELSSpectrum(Spectrum):
             pbar.update(i)
         
         # Zero loss peak is prepared for fourier log deconvolution
+        # TODO: Implement auto-dtype method in general parameters
         zlp.data = zlp.data.astype('float32')
         # Now, we prepare the input spectrum
         s = self.deepcopy()
@@ -598,6 +599,7 @@ class EELSSpectrum(Spectrum):
         # Finally, paste left zlp to the right side
         _s.data[slicer((-zlp_index,None))] = zlp.data[slicer((-zlp_index,None))]
         # Sign the work and leave...
+        # TODO: Implement auto-dtype method in general parameters
         _s.data = _s.data.astype('float32')
         _s.mapped_parameters.title = (_s.mapped_parameters.title + 
                                          ' prepared for Fourier-log deconvolution')
@@ -650,6 +652,7 @@ class EELSSpectrum(Spectrum):
             tapped_channels = 0
             size = self_size
         axis = self.axes_manager.signal_axes[0]
+        # TODO: Implement auto-dtype method in general parameters
         z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array).astype('complex64')
         j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array).astype('complex64')
         j1 = z * np.nan_to_num(np.log(j / z))
