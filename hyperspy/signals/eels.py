@@ -997,7 +997,8 @@ class EELSSpectrum(Spectrum):
         fix_neg_r : bool
             If True, the negative values for the "components.PowerLaw" 
             parameter r will be substituted by zero. The spectrum will 
-            be extended, but with zeros instead the power law.
+            be extended, but with a constant value instead of the power 
+            law.
         
         Returns
         -------
