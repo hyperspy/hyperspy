@@ -525,7 +525,11 @@ class EELSSpectrum(Spectrum):
         zlp.data = zlp.data.astype('float32')
         
         if mode is 'flog':
-            # TODO: Hanning tail for ZLP
+            # TODO: Vectorize hanning tail for ZLP
+            for s in zlp:
+                ith = Eaxis.value2index(td[axes.coordinates])
+                s.data[:ith] -= s.data[ith-1] * np.hanning((ith)*4)[:ith] 
+                s.data[ith:2*ith] = s.data[ith-1] * np.hanning((ith)*4)[-ith:] 
             # Now, we prepare the input spectrum
             s = self.deepcopy()
             Eaxis = s.axes_manager.signal_axes[0]
