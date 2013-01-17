@@ -526,6 +526,9 @@ class EELSSpectrum(Spectrum):
         
         if mode is 'flog':
             # TODO: Vectorize hanning tail for ZLP
+            #vh = vectorize(lambda x: {'': np.hanning((x)*4)[:x]}) 
+            #hann_dict = vh(td.squeeze()).reshape(np.insert(threshold.data.shape,
+            #        zlp.axes_manager.signal_axes[0].index_in_array, 1)) 
             for s in zlp:
                 ith = Eaxis.value2index(td[axes.coordinates])
                 s.data[:ith] -= s.data[ith-1] * np.hanning((ith)*4)[:ith] 
