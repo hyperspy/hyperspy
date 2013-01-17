@@ -176,7 +176,7 @@ class MPL_HyperSpectrum_Explorer(object):
         sf.create_axis()
         sf.axes_manager = self.axes_manager
         self.signal_plot = sf
-        # Create a line to the left axis with the default coordinates
+        # Create a line in the left axis with the default coordinates
         sl = spectrum.SpectrumLine()
         sl.data_function = self.signal_data_function
         sl.plot_coordinates = True
@@ -186,8 +186,19 @@ class MPL_HyperSpectrum_Explorer(object):
             color = 'red'
         sl.line_properties_helper(color, 'step')        
         # Add the line to the figure
-          
         sf.add_line(sl)
+        # If the data is complex create a line in the left axis with the
+        # default coordinates
+        sl = spectrum.SpectrumLine()
+        sl.data_function = self.signal_data_function
+        sl.plot_coordinates = True
+        sl.get_complex = any(np.iscomplex(sl.data_function()))        
+        if sl.get_complex:
+            sl.line_properties_helper("blue", 'step')        
+            # Add extra line to the figure
+            sf.add_line(sl)
+        
+        
         self.signal_plot = sf
         sf.plot()
         if self.navigator_plot is not None and sf.figure is not None:

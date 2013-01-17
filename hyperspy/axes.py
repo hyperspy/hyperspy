@@ -66,6 +66,7 @@ def generate_axis(offset, scale, size, offset_index=0):
     Returns
     -------
     Numpy array
+    
     """
     return np.linspace(offset - offset_index * scale,
                        offset + scale * (size - 1 - offset_index),
@@ -112,6 +113,57 @@ class DataAxis(t.HasTraits):
         # The slice must be updated even if the default value did not 
         # change to correctly set its value.
         self._update_slice(self.navigate)
+        
+    def _get_slice(self, slice_, to_values=False):
+        start = 0
+        stop = self.size
+        step = 1
+        
+        try:
+            # Suppose slice_ is a slice instance...
+            if slice_.start is not None:
+                start = slice_.start
+            if slice_.stop is not None:
+                stop = slice_.stop
+            if slice_.step is not None and abs(slice_.step) >=1 :
+                step = int(round(slice_.step)) # No non-int values for now 
+            else:
+                step = None # idem
+        except (AttributeError, TypeError):
+            start = slice_
+            if isinstance(start, float):
+                stop = self._axis.index2value(start) + 1
+            else:
+                stop = start + 1
+            step = None
+        if isinstance(start, float):
+            self.offset = start
+        else:
+            self.offset = self.index2value(start)
+        if step is not None:
+            self.scale *= step
+        if to_values:
+            i2v = self.index2value
+            return slice(i2v(start) 
+                            if not isinstance(start, float) 
+                            else start,
+                         i2v(stop) 
+                            if not isinstance(stop, float) 
+                            else stop,
+                         i2v(step) 
+                            if not isinstance(step, float) 
+                            else step)
+        else:
+            v2i = self.value2index
+            return slice(v2i(start) 
+                            if isinstance(start, float) 
+                            else start,
+                         v2i(stop) 
+                            if isinstance(stop, float)  
+                            else stop,
+                         v2i(step) 
+                            if isinstance(step, float) 
+                            else step)
 
     def __repr__(self):
         if self.name is not None:
@@ -272,6 +324,22 @@ class AxesManager(t.HasTraits):
         
         """
         return self.axes[i:j]
+        
+    def _get_data_slice(self, fill=None):
+        """Return a tuple of slice objects to slice the data.
+        
+        Parameters
+        ----------
+        fill: None or iterable of (int, slice)
+            If not None, fill the tuple of index int with the given
+            slice.
+            
+        """
+        cslice = [slice(None),] * len(self.axes)
+        if fill is not None:
+            for index, slice_ in fill:
+                cslice[index] = slice_
+        return tuple(cslice)
         
     def __init__(self, axes_list):
         super(AxesManager, self).__init__()
