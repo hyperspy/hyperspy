@@ -445,7 +445,7 @@ class EELSSpectrum(Spectrum):
             With this selection the behavior or the program is much 
             altered, choose wisely.
                 None: No method is applied.
-                smooth: Hanning window is applied to the right end.
+                smooth: Hanning window is applied to the right end - TODO
                 flog: Special preparation for fourier_log_deconvolution
         window_s : {int, float}
             For mode "flog", number of channels from the right end of 
@@ -496,6 +496,7 @@ class EELSSpectrum(Spectrum):
                                     self.data[slicer((zlp_index,old))]
             zlp.data[slicer((-zlp_index,None))] = \
                                     self.data[slicer((None,zlp_index))]
+            Eaxis.offset -= Eaxis.axis[0]
         if threshold is None:
             # No threshold has been specified, we calculate it
             zlp_index=Eaxis.value2index(0)
@@ -519,11 +520,12 @@ class EELSSpectrum(Spectrum):
             mask = td < zlp.axes_manager.signal_axes[0].axis
         # Crop
         zlp.data[mask] = 0
-        # Zero loss peak is prepared for fourier log deconvolution
+        # Zero loss peak is ready.
         # TODO: Implement auto-dtype method in general parameters
         zlp.data = zlp.data.astype('float32')
         
         if mode is 'flog':
+            # TODO: Hanning tail for ZLP
             # Now, we prepare the input spectrum
             s = self.deepcopy()
             Eaxis = s.axes_manager.signal_axes[0]
