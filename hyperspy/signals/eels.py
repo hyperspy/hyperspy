@@ -408,6 +408,7 @@ class EELSSpectrum(Spectrum):
         else:
             return {'FWHM' : fwhm,
                      'FWHM_E' : pair_fwhm}
+                     
     def extract_zero_loss_peak(self, threshold=None, mode=None, 
                         window_s=100, background=0.0): 
         """ General Tool to extract the zero loss peak (ZLP) from the 
