@@ -39,6 +39,10 @@ from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.misc.mpfit.mpfit import mpfit
 
+from hyperspy import gui
+
+import ipdb
+
 class Model(list):
     """Build and fit a model
     
@@ -1116,3 +1120,27 @@ class Model(list):
                     if not hasattr(parameter.value, '__iter__'):
                         print("\t\t%s\t%f" % (
                             parameter.name, parameter.value))
+
+    def fit_component(self, component, signal_range=None):
+        signal = self.spectrum
+        for model_component in self:
+            model_component.active = False
+        component.active = True
+
+        if signal_range==None:
+            self.fit()
+            for model_component in self:
+                model_component.active = True        
+
+        elif signal_range==tuple:
+            self.set_signal_range([signal_range[0]],[signal_range[1]])
+            for model_component in self:
+                model_component.active = False
+            component.active = True
+            self.fit()
+            for model_component in self:
+                model_component.active = True        
+        
+        elif signal_range=='interactive':
+            gui.tools.ComponentFit(signal, self, component)
+

@@ -34,6 +34,7 @@ from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.drawing.utils import does_figure_object_exists
 from hyperspy.gui.mpl_traits_editor import MPLFigureEditor
 
+
 import sys
 
 OurApplyButton = tu.Action(name = "Apply",
@@ -604,7 +605,51 @@ class ImageContrastEditor(t.HasTraits):
         
     def close(self):
         plt.close(self.ax.figure)
-        
+
+class ComponentFit(SpanSelectorInSpectrum):
+    def __init__(self, signal, model, component):
+        #super(ComponentFit, self).__init__(model)
+        SpanSelectorInSpectrum.__init__(self, signal)
+        self.model = model
+        self.component = component
+        self.signal = signal
 
 
+    def _ss_left_value_changed(self, old, new):
+        self.span_selector_changed()
         
+    def _ss_right_value_changed(self, old, new):
+        self.span_selector_changed()
+        
+    def span_selector_changed(self):
+        axis = self.signal.axes_manager.signal_axes[0]
+        energy2index = axis.value2index
+        i1 = energy2index(self.ss_left_value)
+        i2 = energy2index(self.ss_right_value)
+        
+        self.model.set_signal_range(
+                self.ss_left_value,
+                self.ss_right_value)
+
+        #setting some sane initial values
+        #currently only for gaussian, or components
+        #with the same parameters.
+        #Seem to only need the centre value to be changed
+        self.component.centre.value = (
+                self.ss_left_value +
+                self.ss_right_value)/2
+        cropped_signal = self.signal()[i1:i2]
+        max_value = cropped_signal.max()
+        self.component.A.value = max_value
+
+        for model_component in self.model:
+            model_component.active = False
+
+        self.component.active = True
+
+        self.model.fit()
+
+        for model_component in self.model:
+            model_component.active = True
+
+        self.model.reset_signal_range()
