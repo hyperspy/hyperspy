@@ -27,9 +27,14 @@ from hyperspy.signal import Signal
 from hyperspy.misc import progressbar
 from hyperspy.misc import utils
 from hyperspy.misc import utils_varia
-from hyperspy.gui.tools import (SpectrumCalibration, SmoothingSavitzkyGolay,
-    SmoothingLowess, SpectrumRangeSelector, SpanSelectorInSpectrum,
-    SmoothingTV, ButterworthFilter)
+from hyperspy.gui.tools import (
+    SpectrumCalibration,
+    SmoothingSavitzkyGolay,
+    SmoothingLowess,
+    SpectrumRangeSelector,
+    SpanSelectorInSpectrum,
+    SmoothingTV,
+    ButterworthFilter)
 from hyperspy.gui.egerton_quantification import BackgroundRemoval
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import only_interactive
@@ -44,6 +49,7 @@ class Spectrum(Signal):
     """
     """
     _default_record_by = 'spectrum'
+    
     def __init__(self, *args, **kwargs):
         Signal.__init__(self, *args, **kwargs)
         self.axes_manager.set_view('spectrum')
@@ -57,6 +63,7 @@ class Spectrum(Signal):
         ----------
         indexes : tuple of int
         axis : -1
+        
         """
         axis = self._get_positive_axis_index_index(axis)
         data = self.data
@@ -65,11 +72,12 @@ class Spectrum(Signal):
             (data[(slice(None),)*axis + (pixel - 1, Ellipsis)] + \
             data[(slice(None),)*axis + (pixel + 1, Ellipsis)]) / 2.
 
-
-    def align_with_array_1D(self, shift_array, axis = -1,
-                            interpolation_method = 'linear'):
-        """Shift each one dimensional object by the amount specify by a given
-        array
+    def align_with_array_1D(self,
+                            shift_array,
+                            axis=-1,
+                            interpolation_method='linear'):
+        """Shift each one dimensional object by the amount specify by a 
+        given array
 
         Parameters
         ----------
@@ -77,8 +85,10 @@ class Spectrum(Signal):
             The shift is specify in the units of the selected axis
         interpolation_method : str or int
             Specifies the kind of interpolation as a string ('linear',
-            'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an integer
-            specifying the order of the spline interpolator to use.
+            'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an 
+            integer specifying the order of the spline interpolator to 
+            use.
+            
         """
 
         axis = self._get_positive_axis_index_index(axis)
@@ -108,14 +118,13 @@ class Spectrum(Signal):
         if maxi > 0:
             self.crop_in_units(axis, offset + maxi)
             
-
     def interpolate_in_index_1D(self, axis, i1, i2, delta=3, **kwargs):
         axis = self.axes_manager.axes[axis]
         i0 = int(np.clip(i1 - delta, 0, np.inf))
         i3 = int(np.clip(i2 + delta, 0, axis.size))
         for dat in self.iterate_axis(axis.index_in_array):
-            dat_int = sp.interpolate.interp1d(range(i0,i1) + range(i2,i3),
-                dat[i0:i1].tolist() + dat[i2:i3].tolist(),
+            dat_int = sp.interpolate.interp1d(range(i0,i1) + 
+                range(i2,i3), dat[i0:i1].tolist() + dat[i2:i3].tolist(),
                 **kwargs)
             dat[i1:i2] = dat_int(range(i1,i2))
 
@@ -126,16 +135,20 @@ class Spectrum(Signal):
         self.interpolate_in_index_1D(axis.index_in_array, i1, i2, delta,
                                      **kwargs)
 
-    def estimate_shift_in_index_1D(self, irange = (None,None), axis = -1,
-                                   reference_indexes = None, max_shift = None,
-                                   interpolate = True,
-                                   number_of_interpolation_points = 5):
+    def estimate_shift_in_index_1D(self,
+                                   irange=(None,None),
+                                   axis=-1,
+                                   reference_indexes=None,
+                                   max_shift=None,
+                                   interpolate=True,
+                                   number_of_interpolation_points=5):
         """Estimate the shifts in a given axis using cross-correlation
 
-        This method can only estimate the shift by comparing unidimensional
-        features that should not change the position in the given axis. To
-        decrease the memory usage, the time of computation and the accuracy of
-        the results it is convenient to select the feature of interest setting
+        This method can only estimate the shift by comparing 
+        unidimensional features that should not change the position in 
+        the given axis. To decrease the memory usage, the time of 
+        computation and the accuracy of the results it is convenient to 
+        select the feature of interest setting
         the irange keyword.
 
         By default interpolation is used to obtain subpixel precision.
@@ -145,22 +158,27 @@ class Spectrum(Signal):
         axis : int
             The axis in which the analysis will be performed.
         irange : tuple of ints (i1, i2)
-             Define the range of the feature of interest. If i1 or i2 are None,
+             Define the range of the feature of interest. If i1 or i2 
+             are None,
              the range will not be limited in that side.
         reference_indexes : tuple of ints or None
-            Defines the coordinates of the spectrum that will be used as a
-            reference. If None the spectrum of 0 coordinates will be used.
+            Defines the coordinates of the spectrum that will be used 
+            as a
+            reference. If None the spectrum of 0 coordinates will be 
+            used.
         max_shift : int
 
         interpolate : bool
 
         number_of_interpolation_points : int
-            Number of interpolation points. Warning: making this number too big
+            Number of interpolation points. Warning: making this number 
+            too big
             can saturate the memory
 
         Return
         ------
-        An array with the result of the estimation
+        An array with the result of the estimation.
+        
         """
 
         ip = number_of_interpolation_points + 1
@@ -186,7 +204,8 @@ class Spectrum(Signal):
             dat = dat[i1:i2]
             if interpolate is True:
                 dat = utils.interpolate_1D(ip, dat)
-            shift[:] = np.argmax(np.correlate(ref, dat,'full')) - len(ref) + 1
+            shift[:] = np.argmax(
+                np.correlate(ref, dat,'full')) - len(ref) + 1
             i+=1
             pbar.update(i)
         pbar.finish()
@@ -200,17 +219,25 @@ class Spectrum(Signal):
         shift_array *= axis.scale
         return shift_array
 
-    def estimate_shift_in_units_1D(self, range_in_units = (None,None),
-                                   axis = -1, reference_indexes = None,
-                                   max_shift = None, interpolate = True,
-                                   number_of_interpolation_points = 5):
-        """Estimate the shifts in a given axis using cross-correlation. The
+    def estimate_shift_in_units_1D(self,
+        range_in_units=(None,None),
+        axis=-1,
+        reference_indexes=None,
+        max_shift=None,
+        interpolate=True,
+        number_of_interpolation_points=5):
+        """Estimate the shifts in a given axis using cross-correlation. 
+        The
         values are given in the units of the selected axis.
 
-        This method can only estimate the shift by comparing unidimensional
-        features that should not change the position in the given axis. To
-        decrease the memory usage, the time of computation and the accuracy of
-        the results it is convenient to select the feature of interest setting
+        This method can only estimate the shift by comparing 
+        unidimensional
+        features that should not change the position in the given axis. 
+        To
+        decrease the memory usage, the time of computation and the 
+        accuracy of
+        the results it is convenient to select the feature of interest 
+        setting
         the irange keyword.
 
         By default interpolation is used to obtain subpixel precision.
@@ -220,18 +247,23 @@ class Spectrum(Signal):
         axis : int
             The axis in which the analysis will be performed.
         range_in_units : tuple of floats (f1, f2)
-             Define the range of the feature of interest in the units of the
-             selected axis. If f1 or f2 are None, thee range will not be limited
+             Define the range of the feature of interest in the units of
+              the
+             selected axis. If f1 or f2 are None, thee range will not be
+              limited
              in that side.
         reference_indexes : tuple of ints or None
-            Defines the coordinates of the spectrum that will be used as a
-            reference. If None the spectrum of 0 coordinates will be used.
+            Defines the coordinates of the spectrum that will be used as
+             a
+            reference. If None the spectrum of 0 coordinates will be 
+            used.
         max_shift : float
 
         interpolate : bool
 
         number_of_interpolation_points : int
-            Number of interpolation points. Warning: making this number too big
+            Number of interpolation points. Warning: making this number 
+            too big
             can saturate the memory
 
         Return
@@ -241,6 +273,7 @@ class Spectrum(Signal):
         See also
         --------
         estimate_shift_in_index_1D, align_with_array_1D and align_1D
+        
         """
         axis = self.axes_manager.axes[axis]
         i1 = axis.value2index(range_in_units[0])
@@ -255,21 +288,32 @@ class Spectrum(Signal):
                                    number_of_interpolation_points =
                                    number_of_interpolation_points)
 
-    def align_1D(self, range_in_units = (None,None), axis = -1,
-                 reference_indexes = None, max_shift = None, interpolate = True,
-                 number_of_interpolation_points = 5, also_align = None):
-        """Estimates the shifts in a given axis using cross-correlation and uses
+    def align_1D(self,
+                 range_in_units=(None,None),
+                 axis=-1,
+                 reference_indexes=None,
+                 max_shift=None,
+                 interpolate=True,
+                 number_of_interpolation_points=5,
+                 also_align=None):
+        """Estimates the shifts in a given axis using cross-correlation 
+        and uses
          the estimation to align the data over that axis.
 
-        This method can only estimate the shift by comparing unidimensional
-        features that should not change the position in the given axis. To
-        decrease the memory usage, the time of computation and the accuracy of
-        the results it is convenient to select the feature of interest setting
+        This method can only estimate the shift by comparing 
+        unidimensional
+        features that should not change the position in the given axis. 
+        To
+        decrease the memory usage, the time of computation and the 
+        accuracy of
+        the results it is convenient to select the feature of interest 
+        setting
         the irange keyword.
 
         By default interpolation is used to obtain subpixel precision.
 
-        It is possible to align several signals using the shift map estimated
+        It is possible to align several signals using the shift map 
+        estimated
         for this signal using the also_align keyword.
 
         Parameters
@@ -277,23 +321,30 @@ class Spectrum(Signal):
         axis : int
             The axis in which the analysis will be performed.
         range_in_units : tuple of floats (f1, f2)
-             Define the range of the feature of interest in the units of the
-             selected axis. If f1 or f2 are None, thee range will not be limited
+             Define the range of the feature of interest in the units of
+              the
+             selected axis. If f1 or f2 are None, thee range will not be
+              limited
              in that side.
         reference_indexes : tuple of ints or None
-            Defines the coordinates of the spectrum that will be used as a
-            reference. If None the spectrum of 0 coordinates will be used.
+            Defines the coordinates of the spectrum that will be used as
+             a
+            reference. If None the spectrum of 0 coordinates will be
+             used.
         max_shift : float
 
         interpolate : bool
 
         number_of_interpolation_points : int
-            Number of interpolation points. Warning: making this number too big
+            Number of interpolation points. Warning: making this number
+             too big
             can saturate the memory
 
         also_align : list of signals
-            A list of Signal instances that has exactly the same dimensions
-            as this one and that will be aligned using the shift map estimated
+            A list of Signal instances that has exactly the same
+             dimensions
+            as this one and that will be aligned using the shift map
+             estimated
             using the this signal.
 
         Return
@@ -303,34 +354,44 @@ class Spectrum(Signal):
         See also
         --------
         estimate_shift_in_units_1D, estimate_shift_in_index_1D
+        
         """
 
-        shift_array = self.estimate_shift_in_units_1D(axis = axis,
-                             range_in_units = range_in_units, 
-                             reference_indexes = reference_indexes,
-                             max_shift = max_shift, interpolate = interpolate,
-                             number_of_interpolation_points = number_of_interpolation_points)
+        shift_array = self.estimate_shift_in_units_1D(
+            axis=axis,
+            range_in_units=range_in_units, 
+            reference_indexes=reference_indexes,
+            max_shift=max_shift,
+            interpolate=interpolate,
+            number_of_interpolation_points=
+            number_of_interpolation_points)
         if also_align is None:
             also_align = list()
         also_align.append(self)
         for signal in also_align:
-            signal.align_with_array_1D(shift_array = shift_array, axis = axis)
+            signal.align_with_array_1D(shift_array=shift_array,
+                                       axis=axis)
 
-    def peakfind_1D(self, xdim=None,slope_thresh=0.5, amp_thresh=None, subchannel=True,
-                    medfilt_radius=5, maxpeakn=30000, peakgroup=10):
+    def peakfind_1D(self, xdim=None,slope_thresh=0.5, amp_thresh=None, 
+                    subchannel=True, medfilt_radius=5, maxpeakn=30000, 
+                    peakgroup=10):
         """Find peaks along a 1D line (peaks in spectrum/spectra).
 
         Function to locate the positive peaks in a noisy x-y data set.
 
-        Detects peaks by looking for downward zero-crossings in the first
+        Detects peaks by looking for downward zero-crossings in the 
+        first
         derivative that exceed 'slope_thresh'.
 
-        Returns an array containing position, height, and width of each peak.
+        Returns an array containing position, height, and width of each 
+        peak.
 
-        'slope_thresh' and 'amp_thresh', control sensitivity: higher values will
+        'slope_thresh' and 'amp_thresh', control sensitivity: higher 
+        values will
         neglect smaller features.
 
-        peakgroup is the number of points around the top peak to search around
+        peakgroup is the number of points around the top peak to search 
+        around
 
         Parameters
         ---------
@@ -366,29 +427,41 @@ class Spectrum(Signal):
         -------
         P : array of shape (npeaks, 3)
             contains position, height, and width of each peak
+            
         """
         if len(self.data.shape)==1:
             # preallocate a large array for the results
-            self.peaks=one_dim_findpeaks(self.data, slope_thresh=slope_thresh, amp_thresh=amp_thresh,
-                                         medfilt_radius=medfilt_radius, maxpeakn=maxpeakn,
-                                         peakgroup=peakgroup, subchannel=subchannel)
+            self.peaks=one_dim_findpeaks(self.data,
+                slope_thresh=slope_thresh,
+                amp_thresh=amp_thresh,
+                medfilt_radius=medfilt_radius,
+                maxpeakn=maxpeakn,
+                peakgroup=peakgroup,
+                subchannel=subchannel)
+                
         elif len(self.data.shape)==2:
-            pbar=progressbar.ProgressBar(maxval=self.data.shape[1]).start()
+            pbar=progressbar.ProgressBar(
+                    maxval=self.data.shape[1]).start()
             # preallocate a large array for the results
-            # the third dimension is for the number of rows in your data.
-            # assumes spectra are rows of the 2D array, each col is a channel.
+            # the third dimension is for the number of rows in your 
+            # data.
+            # assumes spectra are rows of the 2D array, each col is a 
+            # channel.
             self.peaks=np.zeros((maxpeakn,3,self.data.shape[0]))
             for i in xrange(self.data.shape[1]):
-                tmp=one_dim_findpeaks(self.data[i], slope_thresh=slope_thresh,
-                                                    amp_thresh=amp_thresh,
-                                                    medfilt_radius=medfilt_radius,
-                                                    maxpeakn=maxpeakn,
-                                                    peakgroup=peakgroup,
-                                                    subchannel=subchannel)
+                tmp=one_dim_findpeaks(
+                                    self.data[i],
+                                    slope_thresh=slope_thresh,
+                                    amp_thresh=amp_thresh,
+                                    medfilt_radius=medfilt_radius,
+                                    maxpeakn=maxpeakn,
+                                    peakgroup=peakgroup,
+                                    subchannel=subchannel)
                 self.peaks[:tmp.shape[0],:,i]=tmp
                 pbar.update(i+1)
             # trim any extra blank space
-            # works by summing along axes to compress to a 1D line, then finds
+            # works by summing along axes to compress to a 1D line, then
+            # finds
             # the first 0 along that line.
             trim_id=np.min(np.nonzero(np.sum(np.sum(self.peaks,axis=2),
                                              axis=1)==0))
@@ -398,18 +471,25 @@ class Spectrum(Signal):
             # preallocate a large array for the results
             self.peaks=np.zeros((maxpeakn,3,self.data.shape[0],
                                  self.data.shape[1]))
-            pbar=progressbar.ProgressBar(maxval=self.data.shape[0]).start()
+            pbar=progressbar.ProgressBar(
+                maxval=self.data.shape[0]).start()
             for i in xrange(self.data.shape[0]):
                 for j in xrange(self.data.shape[1]):
-                    tmp=one_dim_findpeaks(self.data[i,j], slope_thresh=slope_thresh, amp_thresh=amp_thresh,
-                                         medfilt_radius=medfilt_radius, maxpeakn=maxpeakn,
-                                         peakgroup=peakgroup, subchannel=subchannel)
+                    tmp=one_dim_findpeaks(self.data[i,j],
+                            slope_thresh=slope_thresh,
+                            amp_thresh=amp_thresh,
+                            medfilt_radius=medfilt_radius,
+                            maxpeakn=maxpeakn,
+                            peakgroup=peakgroup,
+                            subchannel=subchannel)
                     self.peaks[:tmp.shape[0],:,i,j]=tmp
                 pbar.update(i+1)
             # trim any extra blank space
-            # works by summing along axes to compress to a 1D line, then finds
+            # works by summing along axes to compress to a 1D line, 
+            # then finds
             # the first 0 along that line.
-            trim_id=np.min(np.nonzero(np.sum(np.sum(np.sum(self.peaks,axis=3),axis=2),axis=1)==0))
+            trim_id=np.min(np.nonzero(np.sum(np.sum(np.sum(
+                            self.peaks,axis=3),axis=2),axis=1)==0))
             pbar.finish()
             self.peaks=self.peaks[:trim_id,:,:,:]
 
@@ -443,7 +523,8 @@ class Spectrum(Signal):
         return eels
         
     def to_simulation(self):
-        from hyperspy.signals.spectrum_simulation import SpectrumSimulation
+        from hyperspy.signals.spectrum_simulation import (
+                SpectrumSimulation)
         dic = self._get_signal_dict()
         signal_type = self.mapped_parameters.signal_type
         dic['mapped_parameters']['signal_type'] = \
@@ -456,18 +537,21 @@ class Spectrum(Signal):
     
     @only_interactive
     def calibrate(self, return_obj = False):
-        '''Calibrate the spectral dimension using a gui
+        """Calibrate the spectral dimension using a gui
 
         It displays a window where the new calibration can be set by:
         * Setting the offset, units and scale directly
-        * Selection a range by dragging the mouse on the spectrum figure and
+        * Selection a range by dragging the mouse on the spectrum figure
+         and
         setting the new values for the given range limits
 
         Notes
         -----
-        For this method to work the output_dimension must be 1. Set the view
+        For this method to work the output_dimension must be 1. Set the 
+        view
         accordingly
-        '''
+        
+        """
 
         calibration = SpectrumCalibration(self)
         calibration.edit_traits()
@@ -476,8 +560,11 @@ class Spectrum(Signal):
 
     def smooth_savitzky_golay(self, polynomial_order = None,
         number_of_points = None, differential_order = 0):
-        '''Savitzky-Golay data smoothing'''
-        if polynomial_order is not None and number_of_points is not None:
+        """Savitzky-Golay data smoothing
+        
+        """
+        if (polynomial_order is not None and 
+            number_of_points) is not None:
             for spectrum in self:
                 spectrum.data[:] = utils.sg(self(),
                                             number_of_points, 
@@ -495,7 +582,9 @@ class Spectrum(Signal):
             
     def smooth_lowess(self, smoothing_parameter = None,
         number_of_iterations=None, differential_order = 0):
-        '''Lowess data smoothing'''
+        """Lowess data smoothing
+        
+        """
         smoother = SmoothingLowess(self)
         smoother.differential_order = differential_order
         if smoothing_parameter is not None:
@@ -508,7 +597,9 @@ class Spectrum(Signal):
             smoother.apply()
 
     def smooth_tv(self, smoothing_parameter=None, differential_order=0):
-        '''Lowess data smoothing'''
+        """Lowess data smoothing
+        
+        """
         smoother = SmoothingTV(self)
         smoother.differential_order = differential_order
         if smoothing_parameter is not None:
@@ -518,9 +609,13 @@ class Spectrum(Signal):
         else:
             smoother.apply()
     
-    def filter_butterworth(self, cutoff_frequency_ratio=None, type='low',
-                           order = 2):
-        '''Butterworth filter'''
+    def filter_butterworth(self,
+                           cutoff_frequency_ratio=None,
+                           type='low',
+                           order=2):
+        """Butterworth filter
+        
+        """
         smoother = ButterworthFilter(self)
         if cutoff_frequency_ratio is not None:
             smoother.cutoff_frequency_ratio = cutoff_frequency_ratio
@@ -530,7 +625,9 @@ class Spectrum(Signal):
         
     @only_interactive
     def remove_background(self):
-        '''Remove the background using a gui'''
+        """Remove the background using a gui
+        
+        """
         br = BackgroundRemoval(self)
         br.edit_traits()
 
