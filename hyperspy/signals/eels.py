@@ -408,83 +408,26 @@ class EELSSpectrum(Spectrum):
         else:
             return {'FWHM' : fwhm,
                      'FWHM_E' : pair_fwhm}
-                     
-    def splice_zero_loss_peak(self, threshold=None, mode=None):
-        """ Tool to crop the zero loss peak from the rest of the 
-        low-loss EELSSpectrum provided, using the inflexion points 
-        calculated from estimate_elastic_scattering_threshold, or any 
-        other threshold specified.   
-        
-        Parameters
-        ----------
-        threshold : {None, float, Signal instance}
-            Truncation energy to estimate the intensity of the 
-            elastic scattering. Notice that in the case of a Signal the
-            instance has to be of the same dimension as the input 
-            spectrum navigation space containing the estimated 
-            threshold. In the case of a single spectrum a float is good
-            enough.If None the threshold is taken as the first minimum 
-            after the ZLP centre.
-        mode : {None, 'smooth'}
-            Method for smoothing the right-hand-side of the cropped ZLP
-	   
-            None: No method is applied.
-            smooth: Hanning window is applied.
-        
-        Returns
-        -------
-        zlp : EELSSpectrum
-            This instance should contain the spliced zero loss peak 
-            EELSSpectrum.
-        """       
-        zlp=self.deepcopy()
-        axes=zlp.axes_manager
-        Eaxis=axes.signal_axes[0]
-        # Progress Bar
-        maxval = axes.navigation_size
-        pbar = hyperspy.misc.progressbar.progressbar(maxval=maxval)
-        for i, s in enumerate(zlp):
-            if threshold is None:
-                # No threshold has been specified, we calculate it
-                data = s()
-                ith = data.argmax()
-                while data[ith] > data[ith + 1]:
-                    ith += 1
-                del data
-            elif hasattr(threshold,'data') is False: 
-                # No data attribute
-                ith = Eaxis.value2index(threshold)
-            else:
-                # Threshold specified, by an image instance 
-                ith = Eaxis.value2index(threshold.data[axes.coordinates])
-
-            # This does the threshold-selective cropping
-            s.data[ith:] = 0
-            if mode is 'smooth':
-                tmp_s = s[:ith].copy()
-                tmp_s.hanning_taper(side='right')
-                s.data[:ith] = tmp_s.data
-            pbar.update(i)
-        pbar.finish()
-        
-        return zlp                 
-    
-    def splice_zero_loss_peak_flog(self, threshold=None, window_s=100, background=0.0):
-        """ Alternative Tool to crop the zero loss peak (ZLP) from the 
+    def extract_zero_loss_peak(self, threshold=None, mode=None, 
+                        window_s=100, background=0.0): 
+        """ General Tool to extract the zero loss peak (ZLP) from the 
         rest of the low-loss EELSSpectrum provided, using the inflexion 
         points calculated from estimate_elastic_scattering_threshold, or
-        any other threshold specified.   
+        any other threshold specified. The input EELSSpectrum must have
+        been calibrated correctly (ZLP energy channel = 0 eV)    
         
-        Special preparation for fourier log-deconvolution in which the 
-        input EELSSpectrum is also be modified, according to Egerton (2011).
-        Both EELSSpectra (input and output ZLP) are expanded to the next 
-        power of two, and the left side of the ZLP moved to the right 
-        end. The discontinuities are smoothed using Hann window, 
-        preserving the value of the integral below the spectra. Input 
-        EELSSpectrum will be extrapolated to the right using 
-        power_law_extrapolation.
+        A special preparation for fourier log-deconvolution is available
+        in which the input EELSSpectrum is also be modified, according 
+        to Egerton (2011). Both EELSSpectra - input and output ZLP - are
+        expanded to the next power of two, and the left side of the ZLP
+        moved to the right end. The discontinuities are smoothed using 
+        Hann window, preserving the value of the integral below the
+        spectra. Input EELSSpectrum will be extrapolated to the right 
+        using a hanning tapered power law extrapolation (uses native
+        power_law_extrapolation method).
         
-        This method returns 2 EELSSpectrum instances, see below.
+        This special method will return 2 EELSSpectrum instances. Please
+        see sections below for more information.
 
         Parameters
         ----------
@@ -496,117 +439,129 @@ class EELSSpectrum(Spectrum):
             threshold. In the case of a single spectrum a float is good
             enough.If None the threshold is taken as the first minimum 
             after the ZLP centre.
-        window_s : int, float
-            Number of channels from the right end of the spectrum that are 
-            used for the power_law_extrapolation. If specified by a float 
-            value, the program will calculate the number of channels that 
-            correspond to that value using the signal axis scale.
+        mode : {None, 'smooth','flog'}
+            Method for smoothing the right-hand-side of the cropped ZLP. 
+            With this selection the behavior or the program is much 
+            altered, choose wisely.
+                None: No method is applied.
+                smooth: Hanning window is applied to the right end.
+                flog: Special preparation for fourier_log_deconvolution
+        window_s : {int, float}
+            For mode "flog", number of channels from the right end of 
+            the spectrum that are used for the power_law_extrapolation. 
+            If specified by a float value, the program will calculate 
+            the number of channels that correspond to that value using 
+            the signal axis scale.
         background: float
-            a background general level to be subtracted from the spectrum.
-            
+            For mode "flog", sets a background general level to be 
+            subtracted from the spectrum. Default is no background used.
         Returns
         -------
-        j : EELSSpectrum
-            This instance should contain the extended input EELSSpectrum,
-            prepared for fourier_log_deconvolution
         zlp : EELSSpectrum
             This instance should contain the extended zero loss peak 
             EELSSpectrum, prepared for fourier_log_deconvolution
         
-        Mode of use
-        -----------
-        Use: j, zlp = splice_zero_loss_peak_flog(self, thr, ...)
+        If mode "flog" is selected, it will return also,
+        j : EELSSpectrum
+            This instance should contain the extended input EELSSpectrum,
+            prepared for fourier_log_deconvolution
+        
+        Example of use: 
+            s_fft, zlp = s.extract_zero_loss_peak(mode='flog')
 
         Notes
         -----        
         For details see: Egerton, R. Electron Energy-Loss 
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
         """ 
-        zlp=self.deepcopy()
-        axes=zlp.axes_manager
-        Eaxis=axes.signal_axes[0]
-        # Progress Bar
-        maxval = axes.navigation_size
-        pbar = hyperspy.misc.progressbar.progressbar(maxval=maxval)
-        # Calculate the next Power of 2
-        old = Eaxis.size
-        npot = int(2 ** np.ceil(np.log2(old)))
-        new = npot + (npot-old)
-        # Extend the spectrum
-        new_shape = list(self.data.shape)
-        new_shape[Eaxis.index_in_array] += new
-        zlp.data =  np.zeros((new_shape))
-        zlp.get_dimensions_from_data()
-        
-        zlp_index=Eaxis.value2index(0)
-        # Slice the zlp left-side to the right!
-        slicer = lambda x: zlp.axes_manager._get_data_slice([(Eaxis.index_in_array, slice(x[0],x[1])),])
-        zlp.data[slicer((None,old-zlp_index))] = self.data[slicer((zlp_index,old))]
-        zlp.data[slicer((-zlp_index,None))] = self.data[slicer((None,zlp_index))]
-        
-        for i, s in enumerate(zlp):
-            if threshold is None:
-                # No threshold has been specified, we calculate it
-                data = s()
-                ith = data.argmax()
-                while data[ith] > data[ith + 1]:
-                    ith += 1
-                del data
-            elif hasattr(threshold,'data') is False: 
-                # No data attribute
-                ith = Eaxis.value2index(threshold)
-            else:
-                # Threshold specified, by an image instance 
-                ith = Eaxis.value2index(threshold.data[axes.coordinates])
-
-            # This does the threshold-selective cropping
-            s.data[ith:old] = 0
-            # Switch sides, using Hann window
-            s.data[:ith] -= s.data[ith-1] * np.hanning((ith)*4)[:ith] 
-            s.data[ith:2*ith] = s.data[ith-1] * np.hanning((ith)*4)[-ith:] 
-            pbar.update(i)
-        
+        zlp = self.deepcopy()
+        axes = zlp.axes_manager
+        Eaxis = axes.signal_axes[0]
+        slicer = lambda x: zlp.axes_manager._get_data_slice(
+                            [(Eaxis.index_in_array, slice(x[0],x[1])),])
+        if mode is 'flog':
+            # Calculate the next Power of 2
+            old = Eaxis.size
+            npot = int(2 ** np.ceil(np.log2(old)))
+            new = npot + (npot-old)
+            # Extend the spectrum
+            new_shape = list(self.data.shape)
+            new_shape[Eaxis.index_in_array] += new
+            zlp.data =  np.zeros((new_shape))
+            zlp.get_dimensions_from_data()
+            zlp_index=Eaxis.value2index(0)
+            # Slice the zlp left-side to the right!
+            zlp.data[slicer((None,old-zlp_index))] = \
+                                    self.data[slicer((zlp_index,old))]
+            zlp.data[slicer((-zlp_index,None))] = \
+                                    self.data[slicer((None,zlp_index))]
+        if threshold is None:
+            # No threshold has been specified, we calculate it
+            zlp_index=Eaxis.value2index(0)
+            threshold = (zlp.data[slicer((zlp_index,-1))] < 
+                zlp.data[slicer((1+zlp_index,None))]).argmax(Eaxis.index_in_array)
+            v2i = np.vectorize(lambda x: Eaxis.index2value(x))
+            threshold = v2i(threshold + zlp_index)
+            td = threshold.reshape(np.insert(threshold.shape,
+                    zlp.axes_manager.signal_axes[0].index_in_array, 1))
+        elif type(threshold) is float: 
+            # The threshold is a float
+            td = threshold
+        else:
+            # Threshold specified, by an image instance 
+            td = threshold.data.reshape(np.insert(threshold.data.shape,
+                    zlp.axes_manager.signal_axes[0].index_in_array, 1))    
+        # Build mask from provided threshold.
+        if mode is 'flog':
+            mask = td < zlp.axes_manager.signal_axes[0].axis[:Eaxis.size*.5]
+        else:
+            mask = td < zlp.axes_manager.signal_axes[0].axis
+        # Crop
+        zlp.data[mask] = 0
         # Zero loss peak is prepared for fourier log deconvolution
         # TODO: Implement auto-dtype method in general parameters
         zlp.data = zlp.data.astype('float32')
-        # Now, we prepare the input spectrum
-        s = self.deepcopy()
-        Eaxis = s.axes_manager.signal_axes[0]
-        # Signal data
-        self_size = Eaxis.size
-        zlp_index = Eaxis.value2index(0)
-        zlp_size = zlp.axes_manager.signal_axes[0].size
-        # Move E=0 to first channel
-        s.crop_in_units(Eaxis.index_in_array, 0, Eaxis.high_value)
-        s.data = s.data - background
-        s_size = Eaxis.size
-        # Compute next "Power of 2" size
-        size = int(2 ** np.ceil(np.log2(2*self_size-1)))
-        size_new = size - s_size
-        # Extrapolate s using a power law
-        if type(window_s) is float:
-            window_s = Eaxis.value2index(window_s)
-        _s=s.power_law_extrapolation(window_size=window_s,
-                                    extrapolation_size=size_new,
-                                    fix_neg_r=True)
-        # Subtract Hann window to the power law 
-        slicer = lambda x: _s.axes_manager._get_data_slice([(Eaxis.index_in_array, slice(x[0],x[1])),])
-        new_shape = list(self.data.shape)
-        new_shape[Eaxis.index_in_array] = size_new
-        cbell = 0.5*(1-np.cos(np.pi*np.arange(0,size_new)/(size_new-zlp_index-1)))
-        dext = _s.data[slicer((size-1,size))]
-        _s.data[slicer((s_size,None))] -= np.ones(new_shape)*cbell*dext
-        # Finally, paste left zlp to the right side
-        _s.data[slicer((-zlp_index,None))] = zlp.data[slicer((-zlp_index,None))]
-        # Sign the work and leave...
-        # TODO: Implement auto-dtype method in general parameters
-        _s.data = _s.data.astype('float32')
-        _s.mapped_parameters.title = (_s.mapped_parameters.title + 
-                                         ' prepared for Fourier-log deconvolution')
-        zlp.mapped_parameters.title = (zlp.mapped_parameters.title + 
-                                         ' prepared for Fourier-log deconvolution')
-        pbar.finish()
-        return _s, zlp
+        
+        if mode is 'flog':
+            # Now, we prepare the input spectrum
+            s = self.deepcopy()
+            Eaxis = s.axes_manager.signal_axes[0]
+            # Signal data
+            self_size = Eaxis.size
+            zlp_index = Eaxis.value2index(0)
+            zlp_size = zlp.axes_manager.signal_axes[0].size
+            # Move E=0 to first channel
+            s.crop_in_units(Eaxis.index_in_array, 0, Eaxis.high_value)
+            s.data = s.data - background
+            s_size = Eaxis.size
+            # Compute next "Power of 2" size
+            size = int(2 ** np.ceil(np.log2(2*self_size-1)))
+            size_new = size - s_size
+            # Extrapolate s using a power law
+            if type(window_s) is float:
+                window_s = Eaxis.value2index(window_s)
+            _s=s.power_law_extrapolation(window_size=window_s,
+                                        extrapolation_size=size_new,
+                                        fix_neg_r=True)
+            # Subtract Hann window to the power law 
+            slicer = lambda x: _s.axes_manager._get_data_slice([(Eaxis.index_in_array, slice(x[0],x[1])),])
+            new_shape = list(self.data.shape)
+            new_shape[Eaxis.index_in_array] = size_new
+            cbell = 0.5*(1-np.cos(np.pi*np.arange(0,size_new)/(size_new-zlp_index-1)))
+            dext = _s.data[slicer((size-1,size))]
+            _s.data[slicer((s_size,None))] -= np.ones(new_shape)*cbell*dext
+            # Finally, paste left zlp to the right side
+            _s.data[slicer((-zlp_index,None))] = zlp.data[slicer((-zlp_index,None))]
+            # Sign the work and leave...
+            # TODO: Implement auto-dtype method in general parameters
+            _s.data = _s.data.astype('float32')
+            _s.mapped_parameters.title = (_s.mapped_parameters.title + 
+                                             ' prepared for Fourier-log deconvolution')
+            zlp.mapped_parameters.title = (zlp.mapped_parameters.title + 
+                                             ' prepared for Fourier-log deconvolution')
+            return _s, zlp
+        else:
+            return zlp
 
     def fourier_log_deconvolution(self, zlp, prepared=False, 
                                     add_zlp=False, crop=False):
