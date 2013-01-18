@@ -432,13 +432,17 @@ class EELSSpectrum(Spectrum):
 
         Parameters
         ----------
-        threshold : {None, float, Signal instance}
+        threshold : {None, float, EELSSpectrum}
             Truncation energy to estimate the intensity of the 
-            elastic scattering. Notice that in the case of a Signal the
-            instance has to be of the same dimension as the input 
-            spectrum navigation space containing the estimated 
-            threshold. In the case of a single spectrum a float is good
-            enough.If None the threshold is taken as the first minimum 
+            elastic scattering. Notice that in the case of a 
+            multidimensional EELSSpectrum the instance has to be of the 
+            same dimension as the input spectrum navigation space 
+            containing the estimated threshold. 
+            A float number can be used as a general threshold for
+            multidimensional signals, but, it must be used in the case 
+            of a single spectrum. Notice that numpy float dtypes won't 
+            work (convert the data beforehand with the float() method).
+            If None, the threshold is taken as the first minimum 
             after the ZLP centre.
         mode : {None, 'smooth','flog'}
             Method for smoothing the right-hand-side of the cropped ZLP. 
@@ -508,7 +512,9 @@ class EELSSpectrum(Spectrum):
                     zlp.axes_manager.signal_axes[0].index_in_array, 1))
         elif type(threshold) is float: 
             # The threshold is a float
-            td = threshold
+            td = threshold * np.ones(zlp.axes_manager.navigation_shape)
+            td = td.reshape(np.insert(td.shape,
+                    zlp.axes_manager.signal_axes[0].index_in_array, 1))    
         else:
             # Threshold specified, by an image instance 
             td = threshold.data.reshape(np.insert(threshold.data.shape,
