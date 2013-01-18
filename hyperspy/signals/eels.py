@@ -512,7 +512,10 @@ class EELSSpectrum(Spectrum):
                     zlp.axes_manager.signal_axes[0].index_in_array, 1))
         elif type(threshold) is float: 
             # The threshold is a float
-            td = threshold * np.ones(zlp.axes_manager.navigation_shape)
+            if zlp.axes_manager.navigation_shape[0] > 0:
+                td = threshold * np.ones(zlp.axes_manager.navigation_shape)
+            else:
+                td = np.array(threshold)
             td = td.reshape(np.insert(td.shape,
                     zlp.axes_manager.signal_axes[0].index_in_array, 1))    
         else:
