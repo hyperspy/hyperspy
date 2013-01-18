@@ -527,7 +527,7 @@ class EELSSpectrum(Spectrum):
             # Crop
             zlp.data[td < E] = 0
             # TODO: Implement auto-dtype method in general parameters
-            zlp.data = zlp.data.astype('float32')
+            #zlp.data = zlp.data.astype('float32')
             # Zero loss peak is ready.
             return zlp
         else:
@@ -535,7 +535,7 @@ class EELSSpectrum(Spectrum):
             # Crop
             zlp.data[td < E] = 0
             # TODO: Implement auto-dtype method in general parameters
-            zlp.data = zlp.data.astype('float32')
+            #zlp.data = zlp.data.astype('float32')
             # Zero loss peak is ready.
             # TODO: Vectorize hanning tail for ZLP
             for s in zlp:
@@ -573,7 +573,7 @@ class EELSSpectrum(Spectrum):
             _s.data[slicer((-zlp_index,None))] = zlp.data[slicer((-zlp_index,None))]
             # Sign the work and leave...
             # TODO: Implement auto-dtype method in general parameters
-            _s.data = _s.data.astype('float32')
+            #_s.data = _s.data.astype('float32')
             _s.mapped_parameters.title = (_s.mapped_parameters.title + 
                                              ' prepared for Fourier-log deconvolution')
             zlp.mapped_parameters.title = (zlp.mapped_parameters.title + 
@@ -581,7 +581,8 @@ class EELSSpectrum(Spectrum):
             return _s, zlp
 
     def fourier_log_deconvolution(self, zlp, prepared=False, 
-                                    add_zlp=False, crop=False):
+                                    add_zlp=False, crop=False,
+                                    type_change=False):
         """Performs fourier-log deconvolution.
         
         Parameters
@@ -597,6 +598,9 @@ class EELSSpectrum(Spectrum):
             If True crop the spectrum to leave out the channels that
             have been modified to decay smoothly to zero at the sides 
             of the spectrum.
+        type_change : bool
+            If True, intermediate changes to float32 dtype are used. Use 
+            this option to avoid raising memory errors in huge datasets.
         
         Returns
         -------
@@ -625,10 +629,17 @@ class EELSSpectrum(Spectrum):
             size = self_size
         axis = self.axes_manager.signal_axes[0]
         # TODO: Implement auto-dtype method in general parameters
-        z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array).astype('complex64')
-        j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array).astype('complex64')
-        j1 = z * np.nan_to_num(np.log(j / z))
-        sdata = np.fft.irfft(j1, axis=axis.index_in_array).astype('float32')
+        if type_change is False:
+            z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
+            j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array)
+            j1 = z * np.nan_to_num(np.log(j / z))
+            sdata = np.fft.irfft(j1, axis=axis.index_in_array)
+        elif type_change is True:
+            z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array).astype('complex64')
+            j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array).astype('complex64')
+            j1 = z * np.nan_to_num(np.log(j / z))
+            sdata = np.fft.irfft(j1, axis=axis.index_in_array).astype('float32')
+        
         s.data = sdata[s.axes_manager._get_data_slice(
             [(axis.index_in_array, slice(None,self_size)),])]
         if add_zlp is True:
