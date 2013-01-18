@@ -509,35 +509,35 @@ class EELSSpectrum(Spectrum):
             v2i = np.vectorize(lambda x: Eaxis.index2value(x))
             threshold = v2i(threshold + zlp_index)
             td = threshold.reshape(np.insert(threshold.shape,
-                    zlp.axes_manager.signal_axes[0].index_in_array, 1))
+                    Eaxis.index_in_array, 1))
         elif type(threshold) is float: 
             # The threshold is a float
             if zlp.axes_manager.navigation_shape[0] > 0:
                 td = threshold * np.ones(zlp.axes_manager.navigation_shape)
             else:
                 td = np.array(threshold)
-            td = td.reshape(np.insert(td.shape,
-                    zlp.axes_manager.signal_axes[0].index_in_array, 1))    
+            td = td.reshape(np.insert(td.shape,Eaxis.index_in_array, 1))    
         else:
-            # Threshold specified, by an image instance 
+            # Threshold specified by an image instance
             td = threshold.data.reshape(np.insert(threshold.data.shape,
-                    zlp.axes_manager.signal_axes[0].index_in_array, 1))    
-        # Build mask from provided threshold.
-        if mode is 'flog':
-            mask = td < zlp.axes_manager.signal_axes[0].axis[:Eaxis.size*.5]
+                    Eaxis.index_in_array, 1))    
+        # The crop will use masks from provided threshold.
+        if mode is not 'flog':
+            E = Eaxis.axis
+            # Crop
+            zlp.data[td < E] = 0
+            # TODO: Implement auto-dtype method in general parameters
+            zlp.data = zlp.data.astype('float32')
+            # Zero loss peak is ready.
+            return zlp
         else:
-            mask = td < zlp.axes_manager.signal_axes[0].axis
-        # Crop
-        zlp.data[mask] = 0
-        # Zero loss peak is ready.
-        # TODO: Implement auto-dtype method in general parameters
-        zlp.data = zlp.data.astype('float32')
-        
-        if mode is 'flog':
+            E = Eaxis.axis[:Eaxis.size*.5]
+            # Crop
+            zlp.data[td < E] = 0
+            # TODO: Implement auto-dtype method in general parameters
+            zlp.data = zlp.data.astype('float32')
+            # Zero loss peak is ready.
             # TODO: Vectorize hanning tail for ZLP
-            #vh = vectorize(lambda x: {'': np.hanning((x)*4)[:x]}) 
-            #hann_dict = vh(td.squeeze()).reshape(np.insert(threshold.data.shape,
-            #        zlp.axes_manager.signal_axes[0].index_in_array, 1)) 
             for s in zlp:
                 ith = Eaxis.value2index(td[axes.coordinates])
                 s.data[:ith] -= s.data[ith-1] * np.hanning((ith)*4)[:ith] 
@@ -579,8 +579,6 @@ class EELSSpectrum(Spectrum):
             zlp.mapped_parameters.title = (zlp.mapped_parameters.title + 
                                              ' prepared for Fourier-log deconvolution')
             return _s, zlp
-        else:
-            return zlp
 
     def fourier_log_deconvolution(self, zlp, prepared=False, 
                                     add_zlp=False, crop=False):
