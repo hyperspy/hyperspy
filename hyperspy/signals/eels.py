@@ -971,9 +971,8 @@ class EELSSpectrum(Spectrum):
             If True, add poissonian noise to the extrapolated spectrum.
         fix_neg_r : bool
             If True, the negative values for the "components.PowerLaw" 
-            parameter r will be substituted by zero. The spectrum will 
-            be extended, but with a constant value instead of the power 
-            law.
+            parameter r will be flagged and the extrapolation will be 
+            done with a constant zero-value.
         
         Returns
         -------
@@ -998,9 +997,10 @@ class EELSSpectrum(Spectrum):
             s, axis.index2value(axis.size - window_size),
             axis.index2value(axis.size - 1))
         if fix_neg_r is True:
-            _val = pl.r.map['values']
-            _val[_val<=0] = 0
-            pl.r.map['values'] = _val
+            _r = pl.r.map['values']
+            _A = pl.A.map['values']
+            _A[_r<=0] = 0
+            pl.A.map['values'] = _A
         s.data[...,axis.size:] = (
             pl.A.map['values'][...,np.newaxis]*
             s.axes_manager.signal_axes[0].axis[np.newaxis,axis.size:]**(
