@@ -1144,3 +1144,6 @@ class Model(list):
         elif signal_range=='interactive':
             gui.tools.ComponentFit(signal, self, component)
 
+    def fit_all_components(self):
+        for component in self:
+            self.fit_component(component, signal_range="interactive")
