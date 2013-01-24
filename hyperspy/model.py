@@ -271,7 +271,7 @@ class Model(list):
         it with the current parameters."""
         for component in self:
             component.store_current_parameters_in_map(
-                                                 self.axes_manager.coordinates)
+                                                 self.axes_manager.indexes)
 
     def charge(self, only_fixed=False):
         """Charge the parameters for the current spectrum from the parameters 
@@ -286,7 +286,7 @@ class Model(list):
         if switch_aap is True:
             self.set_auto_update_plot(False)
         for component in self:
-            component.charge_value_from_map(self.axes_manager.coordinates,
+            component.charge_value_from_map(self.axes_manager.indexes,
                                             only_fixed=only_fixed)
         if switch_aap is True:
             self.set_auto_update_plot(True)

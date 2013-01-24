@@ -1870,9 +1870,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             basename = cs.tmp_parameters.filename
             ext = cs.tmp_parameters.extension
             cs.tmp_parameters.filename = (basename + '_' +
-                    str(self.axes_manager.coordinates) + '.' + ext)
+                    str(self.axes_manager.indexes) + '.' + ext)
         cs.mapped_parameters.title = (cs.mapped_parameters.title +
-                    ' ' + str(self.axes_manager.coordinates))
+                    ' ' + str(self.axes_manager.indexes))
         return cs
         
     def _get_navigation_signal(self):

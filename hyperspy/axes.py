@@ -144,6 +144,9 @@ class DataAxis(t.HasTraits):
             'navigate' : self.navigate
         }
         return adict
+        
+    def copy(self):
+        return DataAxis(**self.get_axis_dictionary())
 
     def update_value(self):
         self.value = self.axis[self.index]
@@ -168,12 +171,8 @@ class DataAxis(t.HasTraits):
             if self.size > index >= 0:
                 return index
             elif index < 0:
-                messages.warning(
-                    "The given value is below the axis limits")
                 return 0
             else:
-                messages.warning(
-                    "The given value is above the axis limits")
                 return int(self.size - 1)
 
     def index2value(self, index):
@@ -220,7 +219,7 @@ class AxesManager(t.HasTraits):
     """Contains and manages the data axes.
     
     It can iterate over the navigation coordiantes returning the 
-    coordinates at the current iteration.
+    indexes at the current iteration.
     
     
     Attributes
@@ -230,7 +229,13 @@ class AxesManager(t.HasTraits):
         Get and set the current coordinates if the navigation dimension
         is not 0. If the navigation dimension is 0 it raises 
         AttributeError when attempting to set its value.
-        
+
+    
+    indexes : tuple
+        Get and set the current indexes if the navigation dimension
+        is not 0. If the navigation dimension is 0 it raises 
+        AttributeError when attempting to set its value.
+
     Examples
     --------
     
@@ -245,7 +250,7 @@ class AxesManager(t.HasTraits):
     >>> s.axes_manager[1]
     <undefined axis, index: 1>
     >>> for i in s.axes_manager:
-    >>>     print i, s.axes_manager.coordinates
+    >>>     print i, s.axes_manager.indexes
     (0, 0, 0) (0, 0, 0)
     (0, 0, 1) (0, 0, 1)
     (0, 1, 0) (0, 1, 0)
@@ -312,19 +317,19 @@ class AxesManager(t.HasTraits):
         """
         if self._index is None:
             self._index = 0
-            self._coordinates_backup = self.coordinates
+            self._indexes_backup = self.indexes
             val = (0,) * self.navigation_dimension
-            self.coordinates = val
+            self.indexes = val
         elif (self._index >= self._max_index):
             self._index = None
-            self.coordinates = self._coordinates_backup
-            del self._coordinates_backup
+            self.indexes = self._indexes_backup
+            del self._indexes_backup
             raise StopIteration
         else:
             self._index += 1
             val = np.unravel_index(self._index, 
                                     tuple(self.navigation_shape))
-            self.coordinates = val
+            self.indexes = val
         return val
 
     def __iter__(self):
@@ -498,18 +503,18 @@ class AxesManager(t.HasTraits):
     
     @property        
     def coordinates(self):
-        """Get the index of the navigation axes.
+        """Get the coordinates of the navigation axes.
         
         Returns
         -------
         list
             
         """
-        return tuple([axis.index for axis in self.navigation_axes])
+        return tuple([axis.value for axis in self.navigation_axes])
         
     @coordinates.setter    
     def coordinates(self, coordinates):
-        """Set the index of the navigation axes.
+        """Set the coordinates of the navigation axes.
         
         Parameters
         ----------
@@ -524,5 +529,36 @@ class AxesManager(t.HasTraits):
             "The number of coordinates must be equal to the "
             "navigation dimension that is %i" % 
                 self.navigation_dimension)
-        for index, axis in zip(coordinates, self.navigation_axes):
+        for value, axis in zip(coordinates, self.navigation_axes):
+            axis.value = value
+            
+    @property        
+    def indexes(self):
+        """Get the index of the navigation axes.
+        
+        Returns
+        -------
+        list
+            
+        """
+        return tuple([axis.index for axis in self.navigation_axes])
+        
+    @indexes.setter    
+    def indexes(self, indexes):
+        """Set the index of the navigation axes.
+        
+        Parameters
+        ----------
+        indexes : tuple
+            The len of the the tuple must coincide with the navigation
+            dimension
+            
+        """
+        
+        if len(indexes) != self.navigation_dimension:
+            raise AttributeError(
+            "The number of indexes must be equal to the "
+            "navigation dimension that is %i" % 
+                self.navigation_dimension)
+        for index, axis in zip(indexes, self.navigation_axes):
             axis.index = index
