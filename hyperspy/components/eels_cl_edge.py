@@ -43,7 +43,8 @@ class EELSCLEdge(Component):
     Digital Micrograph (DM) software. If Digital Micrograph is installed
     in the system Hyperspy in the standard location HyperSpy should 
     find the path to the HS GOS folder. Otherwise, the location of the 
-    folder can be defined in Hyperspy preferences.
+    folder can be defined in Hyperspy preferences, which can be done through
+	preferences.gui() or the preferences.EELS.eels_gos_files_path variable.
     
     Calling this class with a numpy.array 
     
