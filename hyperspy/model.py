@@ -41,8 +41,6 @@ from hyperspy.misc.mpfit.mpfit import mpfit
 
 from hyperspy import gui
 
-import ipdb
-
 class Model(list):
     """Build and fit a model
     
