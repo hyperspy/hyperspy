@@ -357,7 +357,6 @@ class AxesManager(t.HasTraits):
                 self.signal_axes.append(axis)
                 
         self._getitem_tuple = getitem_tuple
-        self._values = np.array(values)
         self.signal_dimension = len(self.signal_axes)
         self.navigation_dimension = len(self.navigation_axes)
         if self.navigation_dimension != 0:
