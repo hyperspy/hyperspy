@@ -37,7 +37,7 @@ class DraggablePatch(object):
     """
     """
 
-    def __init__(self, axes_manager = None):
+    def __init__(self, axes_manager=None):
         """
         Add a cursor to ax.
         """
