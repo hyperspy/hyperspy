@@ -26,7 +26,7 @@ import numpy as np
 import traits
 
 from utils import on_figure_window_close
-
+from hyperspy.misc.utils import closest_nice_number
 
 class DraggablePatch(object):
     """
@@ -168,42 +168,51 @@ class DraggableSquare(ResizebleDraggablePatch):
         DraggablePatch.__init__(self, axes_manager)
 
     def set_patch(self):
-        indexes = np.array(self.axes_manager.coordinates[::-1])
-        self.patch = plt.Rectangle(
-            indexes - (self.size / 2.,) * 2,
-            self.size,
-            self.size, 
-            fill=False,
-            lw=2,
-            ec=self.color,
-            picker=True,)
+        self.calculate_size()
+        self.calculate_position()
+        self.patch = plt.Rectangle(self._position, self._xsize, self._ysize,
+            animated=self.blit, fill=False, lw=2,  ec=self.color, picker=True,)
+        
+    def calculate_size(self):
+        xaxis = self.axes_manager.navigation_axes[1]
+        yaxis = self.axes_manager.navigation_axes[0]
+        self._xsize = xaxis.scale * self.size
+        self._ysize = yaxis.scale * self.size
+        
+    def calculate_position(self):
+        coordinates = np.array(self.axes_manager.coordinates[::-1])
+        self._position = coordinates - (self._xsize / 2., self._ysize / 2.)
 
     def update_patch_size(self):
-        self.patch.set_width(self.size)
-        self.patch.set_height(self.size)
+        self.calculate_size()
+        self.patch.set_width(self._xsize)
+        self.patch.set_height(self._ysize)
         self.update_patch_position()
 
     def update_patch_position(self):
-        indexes = np.array(self.axes_manager.coordinates[::-1])
-        self.patch.set_xy(indexes - (self.size / 2.,) * 2)
+        self.calculate_position()
+        self.patch.set_xy(self._position)
         self.draw_patch()
 
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'
-
+        xaxis = self.axes_manager.navigation_axes[1]
+        yaxis = self.axes_manager.navigation_axes[0]
+        wxindex = xaxis.value2index(event.xdata)
+        wyindex = yaxis.value2index(event.ydata)
         if self.picked is True and event.inaxes:
-            if self.axes_manager.coordinates[0] != round(event.ydata):
+            wxindex = xaxis.value2index(event.xdata)
+            wyindex = yaxis.value2index(event.ydata)
+            if self.axes_manager.coordinates[0] != wyindex:
                 try:
-                    self.axes_manager.navigation_axes[0].index = \
-                    round(event.ydata)
+                    self.axes_manager.navigation_axes[0].index = wyindex
                 except traits.api.TraitError:
                     # Index out of range, we do nothing
                     pass
                     
-            if  self.axes_manager.coordinates[1] != round(event.xdata):
+            if  self.axes_manager.coordinates[1] != wxindex:
                 try:
-                    self.axes_manager.navigation_axes[1].index = \
-                    round(event.xdata)
+                    self.axes_manager.navigation_axes[1].index = wxindex
                 except traits.api.TraitError:
                     # Index out of range, we do nothing
                     pass
@@ -232,7 +241,7 @@ class DraggableHorizontalLine(DraggablePatch):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
             try:
-                self.axes_manager.navigation_axes[0].index = event.ydata
+                self.axes_manager.navigation_axes[0].value = event.ydata
             except traits.api.TraitError:
                 # Index out of range, we do nothing
                 pass
@@ -245,12 +254,12 @@ class DraggableVerticalLine(DraggablePatch):
 
     def update_patch_position(self):
         if self.patch is not None:
-            self.patch.set_xdata(self.axes_manager._values[0])
+            self.patch.set_xdata(self.axes_manager.coordinates[0])
             self.draw_patch()
 
     def set_patch(self):
         ax = self.ax
-        self.patch = ax.axvline(self.axes_manager._values[0],
+        self.patch = ax.axvline(self.axes_manager.coordinates[0],
                                 color=self.color,
                                 picker=5)
 
@@ -276,7 +285,7 @@ class DraggableVerticalLineWithLabel(DraggableVerticalLine):
         super(DraggableVerticalLineWithLabel, self
              ).update_patch_position()
         if self.patch is not None:
-            self.text.set_x(self.axes_manager._values[0])
+            self.text.set_x(self.axes_manager.coordinates[0])
             self.draw_patch()
 
     def set_patch(self):
@@ -285,7 +294,7 @@ class DraggableVerticalLineWithLabel(DraggableVerticalLine):
         trans = transforms.blended_transform_factory(
                 ax.transData, ax.transAxes)
         self.text = ax.text(
-            self.axes_manager._values[0],
+            self.axes_manager.coordinates[0],
             0.9, # Y value in axes coordinates
             self.string,
             color='black',
@@ -300,9 +309,33 @@ class DraggableVerticalLineWithLabel(DraggableVerticalLine):
         ax.add_artist(self.text)
 
 class Scale_Bar():
-    def __init__(self, ax, units, pixel_size, color = 'white', position = None,
-    ratio = 0.25, lw = 1, lenght_in_units = None):
-        self.axs = ax
+    def __init__(self, ax, units, pixel_size=None, color='white',
+        position=None, max_size_ratio=0.25, lw=2, lenght=None):
+        """Add a scale bar to an image.
+        
+        Parameteres
+        -----------
+        ax : matplotlib axes
+            The axes where to draw the scale bar.
+        units : string
+        pixel_size : {None, float}
+            If None the axes of the image are supposed to be calibrated.
+            Otherwise the pixel size must be specified.
+        color : a valid matplotlib color
+        position {None, (float, float)}
+            If None the position is automatically determined.
+        max_size_ratio : float
+            The maximum size of the scale bar in respect to the 
+            lenght of the x axis
+        lw : int
+            The line width
+        lenght : {None, float}
+            If None the lenght is automatically calculated using the 
+            max_size_ratio.
+        
+        """
+                     
+        self.ax = ax
         self.units = units
         self.pixel_size = pixel_size
         self.xmin, self.xmax = ax.get_xlim()
@@ -310,53 +343,66 @@ class Scale_Bar():
         self.text = None
         self.line = None
         self.tex_bold = False
-        self.lenght_in_units = lenght_in_units
+        if lenght is None:
+            self.calculate_size(max_size_ratio=max_size_ratio)
+        else:
+            self.lenght = lenght
         if position is None:
             self.position = self.calculate_line_position()
         else:
             self.position = position
-        self.calculate_scale_size(ratio = ratio)
         self.calculate_text_position()
-        self.plot_scale(line_width = lw)
+        self.plot_scale(line_width=lw)
         self.set_color(color)
 
     def get_units_string(self):
         if self.tex_bold is True:
             if (self.units[0] and self.units[-1]) == '$':
-                return r'$\mathbf{%i\,%s}$' % \
-            (self.lenght_in_units, self.units[1:-1])
+                return r'$\mathbf{%g\,%s}$' % \
+            (self.lenght, self.units[1:-1])
             else:
-                return r'$\mathbf{%i\,}$\textbf{%s}' % \
-            (self.lenght_in_units, self.units)
+                return r'$\mathbf{%g\,}$\textbf{%s}' % \
+            (self.lenght, self.units)
         else:
-            return r'$%i\,$%s' % (self.lenght_in_units, self.units)
-    def calculate_line_position(self):
-        return 0.95*self.xmin + 0.05*self.xmax, 0.95*self.ymin+0.05*self.ymax
-    def calculate_text_position(self, pad = 1/180.):
-        pad = float(pad)
+            return r'$%g\,$%s' % (self.lenght, self.units)
+    
+    def calculate_line_position(self, pad=0.05):
+        return ((1 - pad) * self.xmin + pad * self.xmax,
+                (1 - pad) * self.ymin + pad * self.ymax)
+    
+    def calculate_text_position(self, pad=1/100.):
+        ps = self.pixel_size if self.pixel_size is not None else 1
         x1, y1 = self.position
-        x2, y2 = x1 + self.lenght_in_pixels, y1
-        self.text_position = (x1+x2)/2, y2+self.ymax * pad
-    def calculate_scale_size(self, ratio = 0.25):
-        if self.lenght_in_units is None:
-            self.lenght_in_units = (self.xmax * self.pixel_size) // (1/ratio)
-        self.lenght_in_pixels = self.lenght_in_units / self.pixel_size
-    def delete_scale_if_exists(self):
+        x2, y2 = x1 + self.lenght / ps, y1
+        
+        self.text_position = ((x1 + x2) / 2.,
+                               y2 + (self.ymax - self.ymin) /ps * pad)
+    
+    def calculate_size(self, max_size_ratio=0.25):
+        ps = self.pixel_size if self.pixel_size is not None else 1
+        size = closest_nice_number(ps * (self.xmax - self.xmin) * 
+                                       max_size_ratio)
+        self.lenght = size
+    
+    def remove(self):
         if self.line is not None:
-            self.axs.lines.remove(self.line)
+            self.ax.lines.remove(self.line)
         if self.text is not None:
-            self.axs.texts.remove(self.text)
+            self.ax.texts.remove(self.text)
+    
     def plot_scale(self, line_width = 1):
-        self.delete_scale_if_exists()
+        self.remove()
+        ps = self.pixel_size if self.pixel_size is not None else 1
         x1, y1 = self.position
-        x2, y2 = x1 + self.lenght_in_pixels, y1
-        self.line, = self.axs.plot([x1,x2],[y1,y2], linestyle='-',
-        lw = line_width)
-        self.text = self.axs.text(*self.text_position, s=self.get_units_string(),
-        ha = 'center', size = 'medium')
-        self.axs.set_xlim(self.xmin, self.xmax)
-        self.axs.set_ylim(self.ymin, self.ymax)
-        self.axs.figure.canvas.draw_idle()
+        x2, y2 = x1 + self.lenght / ps, y1
+        self.line, = self.ax.plot([x1,x2],[y1,y2],
+                                  linestyle='-', lw = line_width)
+        self.text = self.ax.text(*self.text_position,
+            s=self.get_units_string(),ha='center', size='medium')
+        self.ax.set_xlim(self.xmin, self.xmax)
+        self.ax.set_ylim(self.ymin, self.ymax)
+        self.ax.figure.canvas.draw()
+    
     def set_position(self,x,y):
         self.position = x, y
         self.calculate_text_position()
@@ -365,25 +411,21 @@ class Scale_Bar():
     def set_color(self, c):
         self.line.set_color(c)
         self.text.set_color(c)
-        self.axs.figure.canvas.draw_idle()
-    def set_lenght_in_units(self, lenght):
+        self.ax.figure.canvas.draw_idle()
+    
+    def set_lenght(self, lenght):
         color = self.line.get_color()
-        self.lenght_in_units = lenght
+        self.lenght = lenght
         self.calculate_scale_size()
         self.calculate_text_position()
         self.plot_scale(line_width = self.line.get_linewidth())
         self.set_color(color)
+    
     def set_tex_bold(self):
         self.tex_bold = True
         self.text.set_text(self.get_units_string())
-        self.axs.figure.canvas.draw_idle()
+        self.ax.figure.canvas.draw_idle()
 
-
-def scale_bar(ax, units, pixel_size, color = 'white', position = None,
-    ratio = 0.25, lw = 1, lenght_in_units = None):
-    ax.scale_bar = Scale_Bar(ax = ax, units = units, pixel_size = pixel_size,
-    color = color, position = position, ratio = ratio, lw = lw,
-    lenght_in_units = lenght_in_units)
 
 def in_interval(number, interval):
         if number >= interval[0] and number <= interval[1]:

@@ -130,7 +130,7 @@ class SpectrumLine():
         self.line = None
         self.line_properties = dict()
         self.autoscale = True
-        self.plot_coordinates = False
+        self.plot_indexes = False
         self.text = None
         self.text_position = (-0.1, 1.05,)
 
@@ -159,7 +159,7 @@ class SpectrumLine():
             lp['marker'] = None
         elif type == 'step':
             lp['color'] = color
-            lp['drawstyle'] = 'steps'
+            lp['drawstyle'] = 'steps-mid'
     def set_properties(self):
         for key in self.line_properties:
             plt.setp(self.line, **self.line_properties)
@@ -173,10 +173,10 @@ class SpectrumLine():
         self.line.set_animated(True)
         self.axes_manager.connect(self.update)
         if not self.axes_manager or self.axes_manager.navigation_size==0:
-            self.plot_coordinates = False
-        if self.plot_coordinates is True:
+            self.plot_indexes = False
+        if self.plot_indexes is True:
             self.text = self.ax.text(*self.text_position,
-                            s=str(self.axes_manager.coordinates[::-1]),
+                            s=str(self.axes_manager.indexes[::-1]),
                             transform = self.ax.transAxes,
                             fontsize=12,
                             color=self.line.get_color(),
@@ -203,8 +203,8 @@ class SpectrumLine():
             y_max, y_min = (np.nanmax(clipped_ydata),
                             np.nanmin(clipped_ydata))
             self.ax.set_ylim(y_min, y_max)
-        if self.plot_coordinates is True:
-            self.text.set_text((self.axes_manager.coordinates[::-1]))
+        if self.plot_indexes is True:
+            self.text.set_text((self.axes_manager.indexes[::-1]))
         self.ax.hspy_fig._draw_animated()
         #self.ax.figure.canvas.draw_idle()
         

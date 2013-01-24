@@ -127,9 +127,13 @@ def file_reader(filename, encoding = 'latin-1', **kwds):
     for line in spectrum_file.readlines():
         if data_section is False:
             if line[0] == "#":
-                key,value = line.split(': ')
+                try:
+                    key,value = line.split(': ')
+                    value = value.strip()
+                except ValueError:
+                    key = line
+                    value = None
                 key = key.strip('#').strip()
-                value = value.strip()
                 
                 if key != 'SPECTRUM':
                     parameters[key] = value

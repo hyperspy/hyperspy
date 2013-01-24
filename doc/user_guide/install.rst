@@ -117,6 +117,12 @@ In any case, you must be sure to have all the dependencies installed, see :ref:`
 
     $ cd hyperspy
     $ sudo pip install -e ./
+
+In addition there as a bug with the IPython version packaged in Ubuntu 12.10, which can be fixed by upgrading it through pip:
+
+.. code-block:: bash
+
+    $ sudo pip install --upgrade ipython
  
 .. _create-debian-binary: 
     
@@ -151,6 +157,7 @@ In Windows and Mac the easiest way to install these packages is by installing th
 If you use an Ubuntu binary to install Hyperspy all the dependencies should install automatically. Installing the dependencies manually in Ubuntu 12.04 (and probably Debian and other Ubuntu versions) can be done using:
 
 .. code-block:: bash
+
     $ sudo apt-get install python-numpy python-matplotlib ipython python-traits python-traitsui python-h5py python-mdp python-scikits-learn python-nose
 
 .. _known-issues:

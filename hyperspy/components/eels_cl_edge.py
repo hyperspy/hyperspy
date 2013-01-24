@@ -40,10 +40,11 @@ class EELSCLEdge(Component):
 
     Currently it only supports Peter Rez's Hartree Slater cross sections
     parametrised as distributed by Gatan in their 
-    Digital Micrograph (DM) software. If Digital Micrograph is intalled
-    in the system Hyperespy in the standard location HyperSpy should 
+    Digital Micrograph (DM) software. If Digital Micrograph is installed
+    in the system Hyperspy in the standard location HyperSpy should 
     find the path to the HS GOS folder. Otherwise, the location of the 
-    folder can be defined in Hyperspy preferences.
+    folder can be defined in Hyperspy preferences, which can be done through
+	preferences.gui() or the preferences.EELS.eels_gos_files_path variable.
     
     Calling this class with a numpy.array 
     
@@ -215,8 +216,6 @@ class EELSCLEdge(Component):
         return self.GOS.onset_energy + self.energy_shift.value
     
     def _get_onset_energy(self):
-        print self.GOS.onset_energy
-        print self.energy_shift.value
         return self.GOS.onset_energy + self.energy_shift.value
         
     def _set_onset_energy(self, value):
@@ -346,12 +345,12 @@ class EELSCLEdge(Component):
             'axes' : self.intensity._axes_manager._get_axes_dicts()})
         s.get_dimensions_from_data()
         s.axes_manager.signal_axes[0].offset = self.onset_energy
-        current_coordinates = self.intensity._axes_manager.coordinates
+        current_indexes = self.intensity._axes_manager.indexes
         for spectrum in s:
-            self.charge_value_from_map(s.axes_manager.coordinates)
+            self.charge_value_from_map(s.axes_manager.indexes)
             spectrum.data[:] = self.function(
                                     s.axes_manager.signal_axes[0].axis)
-        self.charge_value_from_map(current_coordinates)
+        self.charge_value_from_map(current_indexesindexesindexes)
         s.mapped_parameters.title = self.name.replace(
         '_',' ') + ' fine structure'
         
