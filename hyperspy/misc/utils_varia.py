@@ -346,7 +346,7 @@ def ls(dic, pwd, sep='.'):
         except:
             pass
 
-def fsdict(nodes, value, dic):
+def fsdict(nodes, value, dictionary):
     """Populates the dictionary 'dic' in a file system-like
     fashion creating a dictionary of dictionaries from the
     items present in the list 'nodes' and assigning the value
@@ -358,12 +358,12 @@ def fsdict(nodes, value, dic):
     directories (nodes) or files (values)
     """
     node = nodes.pop(0)
-    if node not in dic:
-        dic[node] = {}
-    if len(nodes) != 0:
-        fsdict(nodes,value, dic[node])
+    if node not in dictionary:
+        dictionary[node] = {}
+    if len(nodes) != 0 and isinstance(dictionary[node], dict):
+        fsdict(nodes,value, dictionary[node])
     else:
-        dic[node] = value
+        dictionary[node] = value
         
 def cd(dic, pwd, sep='.'):
     """Return a sub-dictionary

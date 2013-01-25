@@ -382,8 +382,6 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         dc = self.data
         for axis in self.axes_manager.axes:
             axis.size = int(dc.shape[axis.index_in_array])
-            print("%s size: %i" %
-            (axis.name, dc.shape[axis.index_in_array]))
 
     def crop_in_pixels(self, axis, i1=None, i2=None, copy=True):
         """Crops the data in a given axis. The range is given in pixels
@@ -530,6 +528,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         for i in xrange(len(cut_node)-1):
             axes_dict[axis]['offset'] = \
                 self.axes_manager.axes[axis].index2value(cut_node[i])
+            axes_dict[axis]['size'] = cut_node[i + 1] - cut_node[i] 
             data = self.data[
             (slice(None), ) * axis + (slice(cut_node[i], cut_node[i + 1]),
             Ellipsis)]
@@ -537,7 +536,6 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             s = Signal(signal_dict)
             # TODO: When copying plotting does not work
 #            s.axes = copy.deepcopy(self.axes_manager)
-            s.get_dimensions_from_data()
             splitted.append(s)
         return splitted
 
@@ -1872,9 +1870,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             basename = cs.tmp_parameters.filename
             ext = cs.tmp_parameters.extension
             cs.tmp_parameters.filename = (basename + '_' +
-                    str(self.axes_manager.coordinates) + '.' + ext)
+                    str(self.axes_manager.indexes) + '.' + ext)
         cs.mapped_parameters.title = (cs.mapped_parameters.title +
-                    ' ' + str(self.axes_manager.coordinates))
+                    ' ' + str(self.axes_manager.indexes))
         return cs
         
     def _get_navigation_signal(self):
