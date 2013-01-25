@@ -1604,36 +1604,48 @@ def get_linear_interpolation(p1, p2, x):
 
 def _make_heatmap_subplot(spectra, ax):
     x_axis = spectra.axes_manager.signal_axes[0]
-    #Gets no navigation axis for some(?) spectra
-    navigation_axis = spectra.axes_manager.navigation_axes[0]
     data = spectra.data
-    ax.imshow(
-        data,
-        cmap=plt.cm.jet,
-        extent=[
-            x_axis.low_value,
-            x_axis.high_value,
-            navigation_axis.low_value,
-            navigation_axis.high_value],
-        aspect='auto')
+    if spectra.axes_manager.navigation_size == 0:
+        ax.imshow(
+            [data],
+            cmap=plt.cm.jet,
+            aspect='auto')
+    else:
+        y_axis = spectra.axes_manager.navigation_axes[0]
+        ax.imshow(
+            data,
+            cmap=plt.cm.jet,
+            extent=[
+                x_axis.low_value,
+                x_axis.high_value,
+                y_axis.low_value,
+                y_axis.high_value],
+            aspect='auto')
+        ax.set_ylabel(y_axis.units)
+    ax.set_xlabel(x_axis.units)
     return(ax)
 
 def _make_cascade_subplot(spectra, ax):
-    max_value = 0 
-    for spectrum in spectra:
-        spectrum_max_value = spectrum.data.max()
-        if spectrum_max_value  > max_value:
-            max_value = spectrum_max_value
+    if spectra.axes_manager.navigation_size == 0:
+        x_axis = spectra.axes_manager.signal_axes[0]
+        data = spectra.data
+        ax.plot(x_axis.axis, data)
+    else:
+        max_value = 0 
+        for spectrum in spectra:
+            spectrum_max_value = spectrum.data.max()
+            if spectrum_max_value > max_value:
+                max_value = spectrum_max_value
+        y_axis = spectra.axes_manager.navigation_axes[0]
+        for spectrum_index, spectrum in enumerate(spectra):
+            x_axis = spectrum.axes_manager.signal_axes[0]
+            data = spectrum.data
+            data_to_plot = data/float(max_value) + y_axis.axis[spectrum_index]
+            ax.plot(x_axis.axis, data_to_plot)
+        ax.set_ylabel(y_axis.units)
 
-    y_axis = spectra.axes_manager.navigation_axes[0]
-    for spectrum_index, spectrum in enumerate(spectra):
-        x_axis = spectrum.axes_manager.signal_axes[0]
-        data = spectrum.data
-        data_to_plot = data/float(max_value) + y_axis.axis[spectrum_index]
-        ax.plot(x_axis.axis, data_to_plot)
     ax.set_xlim(x_axis.low_value, x_axis.high_value)
     ax.set_xlabel(x_axis.units)
-    ax.set_ylabel(y_axis.units)
     return(ax)
 
 def _make_mosaic_subplot(spectrum, ax):
@@ -1660,11 +1672,13 @@ def plot_spectra(
     filename : None or string
         If None, raise a window with the plot and return the figure.
 
+    Note if spectra only contains one spectrum, cascade and multiple_files will
+    default to mosaic.
+
     Returns
     -----------
     Matplotlib figure"""
 
-    
     if style == 'cascade':
         fig = plt.figure()
         ax = fig.add_subplot(111)
