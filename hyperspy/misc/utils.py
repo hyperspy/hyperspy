@@ -1672,9 +1672,6 @@ def plot_spectra(
     filename : None or string
         If None, raise a window with the plot and return the figure.
 
-    Note if spectra only contains one spectrum, cascade and multiple_files will
-    default to mosaic.
-
     Returns
     -----------
     Matplotlib figure"""
