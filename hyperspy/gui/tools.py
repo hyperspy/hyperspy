@@ -607,49 +607,65 @@ class ImageContrastEditor(t.HasTraits):
         plt.close(self.ax.figure)
 
 class ComponentFit(SpanSelectorInSpectrum):
-    def __init__(self, signal, model, component):
-        #super(ComponentFit, self).__init__(model)
-        SpanSelectorInSpectrum.__init__(self, signal)
+    fit = t.Button()
+    
+    view = tu.View(
+                tu.Item('fit', show_label=False ),
+                buttons = [OKButton, CancelButton],
+                title = 'Fit single component',
+                handler = SpanSelectorInSpectrumHandler,
+                )
+    
+    def __init__(self, model, component, signal_range=None, **kwargs):
+        if model.spectrum.axes_manager.signal_dimension != 1:
+         raise SignalOutputDimensionError(
+                                    signal.axes.signal_dimension, 1)
+        
+        self.signal = model.spectrum
+        self.axis = self.signal.axes_manager.signal_axes[0]
+        self.span_selector = None
         self.model = model
         self.component = component
-        self.signal = signal
-
-
-    def _ss_left_value_changed(self, old, new):
-        self.span_selector_changed()
+        self.signal_range = signal_range
+        self.fit_kwargs = kwargs
+        if signal_range == "interactive":
+            if self.model._plot.is_active() is False:
+                self.model.plot()
+            self.span_selector_switch(on=True)
         
-    def _ss_right_value_changed(self, old, new):
-        self.span_selector_changed()
+    def _fit_fired(self):
+        if (self.signal_range != "interactive" and 
+            self.signal_range is not None):
+            self.model.set_signal_range(*self.signal_range)
+        elif self.signal_range == "interactive":
+            self.model.set_signal_range(self.ss_left_value,
+                                        self.ss_right_value)
         
-    def span_selector_changed(self):
-        axis = self.signal.axes_manager.signal_axes[0]
-        energy2index = axis.value2index
-        i1 = energy2index(self.ss_left_value)
-        i2 = energy2index(self.ss_right_value)
+        # Backup "free state" of the parameters and fix all but those
+        # of the chosen component
+        free_state = []
+        for component_ in self.model:
+            for parameter in component_.parameters:
+                free_state.append(parameter.free)
+                if component_ is not self.component:
+                    parameter.free = False
         
-        self.model.set_signal_range(
-                self.ss_left_value,
-                self.ss_right_value)
+        self.model.fit(**self.fit_kwargs)
+        
+        # Restore the signal range
+        if self.signal_range is not None:
+            self.model.channel_switches = (
+                self.model.backup_channel_switches.copy())
+        
+        self.model.update_plot()
+        
+        # Restore the "free state" of the components
+        for component_ in self.model:
+            for parameter in component_.parameters:
+                    parameter.free = free_state.pop(0)
+        
+    def apply(self):
+        self._fit_fired()
 
-        #setting some sane initial values
-        #currently only for gaussian, or components
-        #with the same parameters.
-        #Seem to only need the centre value to be changed
-        self.component.centre.value = (
-                self.ss_left_value +
-                self.ss_right_value)/2
-        cropped_signal = self.signal()[i1:i2]
-        max_value = cropped_signal.max()
-        self.component.A.value = max_value
 
-        for model_component in self.model:
-            model_component.active = False
-
-        self.component.active = True
-
-        self.model.fit()
-
-        for model_component in self.model:
-            model_component.active = True
-
-        self.model.reset_signal_range()
+    

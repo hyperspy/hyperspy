@@ -39,7 +39,7 @@ from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.misc.mpfit.mpfit import mpfit
 
-from hyperspy import gui
+from hyperspy.gui.tools import ComponentFit
 
 class Model(list):
     """Build and fit a model
@@ -1102,8 +1102,9 @@ class Model(list):
         Parameters
         ----------
         only_free : bool
-            If True, only the value of the parameters that are free will be
-            printed.
+            If True, only the value of the parameters that are free will
+             be printed.
+             
         """
         print "Components\tParameter\tValue"
         for component in self:
@@ -1118,27 +1119,37 @@ class Model(list):
                     if not hasattr(parameter.value, '__iter__'):
                         print("\t\t%s\t%f" % (
                             parameter.name, parameter.value))
+                            
 
-    def fit_component(self, component, signal_range=None):
-        signal = self.spectrum
-        for model_component in self:
-            model_component.active = False
-        component.active = True
+    def fit_component(self, component, signal_range="interactive",
+                      **kwargs):
+        """Fit just the given component in the given signal range.
 
-        if signal_range==None:
-            self.fit()
-            for model_component in self:
-                model_component.active = True        
 
-        elif signal_range==tuple:
-            self.set_signal_range([signal_range[0]],[signal_range[1]])
-            for model_component in self:
-                model_component.active = False
-            component.active = True
-            self.fit()
-            for model_component in self:
-                model_component.active = True        
+        This method is useful to obtain starting parameters for the 
+        components. Any keyword arguments are passed to the fit method.
+
+
+        Parameters
+        ----------
+        component: component instance
+            The component must be in the model, otherwise an exception 
+            is raised.
+        signal_range: {'interactive', (left_value, right_value), None}
+            If 'interactive' the signal range is selected using the span
+             selector on the spectrum plot. The signal range can also 
+             be manually specified by passing a tuple of floats. If None
+              the current signal range is used.
+              
+        """
         
-        elif signal_range=='interactive':
-            gui.tools.ComponentFit(signal, self, component)
+        cf = ComponentFit(self, component, signal_range, **kwargs)
+        if signal_range == "interactive":
+            cf.edit_traits()
+        else:
+            cf.apply()
+        
+
+            
+
 
