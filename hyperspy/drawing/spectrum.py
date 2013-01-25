@@ -53,6 +53,7 @@ class SpectrumFigure():
 
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
+        self.ax.yaxis.set_animated(True)
         ax = self.ax
         self.ax.hspy_fig = self
         
@@ -62,6 +63,7 @@ class SpectrumFigure():
         if self.right_ax is None:
             self.right_ax = self.ax.twinx()
             self.right_ax.hspy_fig = self
+            #~self.right_ax.set_animated(True)
         
     def add_line(self, line, ax = 'left'):
         if ax == 'left':
@@ -99,7 +101,7 @@ class SpectrumFigure():
             
     def _on_draw(self, *args):
         canvas = self.figure.canvas
-        self._background = canvas.copy_from_bbox(self.ax.bbox)
+        self._background = canvas.copy_from_bbox(self.figure.bbox)
         self._draw_animated()
         
     def _draw_animated(self):
@@ -113,7 +115,9 @@ class SpectrumFigure():
             artists.extend(ax.lines)
             artists.extend(ax.texts)
             artists.extend(ax.artists)
-            [ax.draw_artist(a) for a in artists if a.get_animated()]
+            artists.append(ax.get_yaxis())
+            [ax.draw_artist(a) for a in artists if 
+             a.get_animated() is True]
         canvas.blit()
         
 class SpectrumLine():

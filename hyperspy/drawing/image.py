@@ -281,7 +281,7 @@ class ImagePlot:
             
     def _on_draw(self, *args):
         canvas = self.figure.canvas
-        self._background = canvas.copy_from_bbox(self.ax.bbox)
+        self._background = canvas.copy_from_bbox(self.figure.bbox)
         self._draw_animated()
         
     def _draw_animated(self):
