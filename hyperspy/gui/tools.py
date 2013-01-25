@@ -712,7 +712,11 @@ class ComponentFit(SpanSelectorInSpectrum):
         self.signal_range = signal_range
         self.fit_kwargs = kwargs
         if signal_range == "interactive":
-            if self.model._plot.is_active() is False:
+            if not hasattr(self.model, '_plot'):
+                self.model.plot()
+            elif self.model._plot.is_active() is False:
+                self.model.plot()
+            elif self.model._plot is None:
                 self.model.plot()
             self.span_selector_switch(on=True)
         
