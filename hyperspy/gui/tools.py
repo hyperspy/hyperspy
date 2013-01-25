@@ -736,6 +736,13 @@ class ComponentFit(SpanSelectorInSpectrum):
                 free_state.append(parameter.free)
                 if component_ is not self.component:
                     parameter.free = False
+
+        #Setting reasonable initial value for the centre parameter,
+        #if the component has it.
+        if hasattr(self.component, 'centre'):
+            self.component.centre.value = (
+                    self.ss_left_value +
+                    self.ss_right_value)/2
         
         self.model.fit(**self.fit_kwargs)
         
