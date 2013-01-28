@@ -699,7 +699,8 @@ class ComponentFit(SpanSelectorInSpectrum):
                 handler = SpanSelectorInSpectrumHandler,
                 )
     
-    def __init__(self, model, component, signal_range=None, **kwargs):
+    def __init__(self, model, component, signal_range=None,
+            inverse_selection=False, **kwargs):
         if model.spectrum.axes_manager.signal_dimension != 1:
          raise SignalOutputDimensionError(
                                     signal.axes.signal_dimension, 1)
@@ -710,6 +711,7 @@ class ComponentFit(SpanSelectorInSpectrum):
         self.model = model
         self.component = component
         self.signal_range = signal_range
+        self.inverse_selection = inverse_selection
         self.fit_kwargs = kwargs
         if signal_range == "interactive":
             if not hasattr(self.model, '_plot'):
@@ -725,8 +727,16 @@ class ComponentFit(SpanSelectorInSpectrum):
             self.signal_range is not None):
             self.model.set_signal_range(*self.signal_range)
         elif self.signal_range == "interactive":
-            self.model.set_signal_range(self.ss_left_value,
-                                        self.ss_right_value)
+            if self.inverse_selection:
+                low_range_start = self.model.axes_manager.signal_axes[0].low_value
+                low_range_end = self.ss_left_value
+                high_range_start = self.ss_right_value
+                high_range_end = self.model.axes_manager.signal_axes[0].high_value
+                self.model.set_signal_range(low_range_start, low_range_end)
+                self.model.add_signal_range(high_range_start, high_range_end)
+            else:
+                self.model.set_signal_range(self.ss_left_value,
+                                            self.ss_right_value)
         
         # Backup "free state" of the parameters and fix all but those
         # of the chosen component

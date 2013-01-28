@@ -1122,7 +1122,7 @@ class Model(list):
                             
 
     def fit_component(self, component, signal_range="interactive",
-                      **kwargs):
+                      inverse_selection = False, **kwargs):
         """Fit just the given component in the given signal range.
 
 
@@ -1143,7 +1143,8 @@ class Model(list):
               
         """
         
-        cf = ComponentFit(self, component, signal_range, **kwargs)
+        cf = ComponentFit(self, component, signal_range, inverse_selection,
+                **kwargs)
         if signal_range == "interactive":
             cf.edit_traits()
         else:
