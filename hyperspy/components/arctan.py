@@ -40,16 +40,16 @@ class Arctan(Component):
 
     """
 
-    def __init__(self, A=1. , k=1. , x0=1.):
-        Component.__init__(self, ['A', 'k', 'x0'])
+    def __init__(self, A=1. , k=1. , centre=1.):
+        Component.__init__(self, ['A', 'k', 'centre'])
         self.A.value = A
         self.A.grad = self.grad_A
 
         self.k.value = k
         self.k.grad = self.grad_k
 
-        self.x0.value = x0
-        self.x0.grad = self.grad_x0
+        self.centre.value = centre
+        self.centre.grad = self.grad_centre
 
         self.isbackground = False
         self.isconvolved = False
@@ -57,23 +57,23 @@ class Arctan(Component):
     def function(self,x):
         A = self.A.value
         k = self.k.value
-        x0 = self.x0.value
-        return A*np.arctan(k*(x-x0))
+        centre = self.centre.value
+        return A*np.arctan(k*(x-centre))
     
     def grad_A(self,x):
         A = self.A.value
         k = self.k.value
-        x0 = self.x0.value
-        return np.arctan(k*(x-x0))
+        centre = self.centre.value
+        return np.arctan(k*(x-centre))
 
     def grad_k(self,x):
         A = self.A.value
         k = self.k.value
-        x0 = self.x0.value
-        return A*(x-x0)/(1+(k*(x-x0))**2)
+        centre = self.centre.value
+        return A*(x-centre)/(1+(k*(x-centre))**2)
 
-    def grad_x0(self, x):
+    def grad_centre(self, x):
         A = self.A.value
         k = self.k.value
-        x0 = self.x0.value
-        return -A*k/(1+(k*(x-x0))**2)
+        centre = self.centre.value
+        return -A*k/(1+(k*(x-centre))**2)
