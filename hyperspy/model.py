@@ -22,12 +22,18 @@ import tempfile
 
 import numpy as np
 import numpy.linalg
-from traits.trait_errors import TraitError
-
-import traits.api as t
 import scipy.odr as odr
-from scipy.optimize import (leastsq,fmin, fmin_cg, fmin_ncg, fmin_bfgs,
-    fmin_cobyla, fmin_l_bfgs_b, fmin_tnc, fmin_powell)
+from scipy.optimize import (leastsq,
+                            fmin,
+                            fmin_cg,
+                            fmin_ncg,
+                            fmin_bfgs,
+                            fmin_cobyla,
+                            fmin_l_bfgs_b,
+                            fmin_tnc,
+                            fmin_powell)
+from traits.trait_errors import TraitError
+import traits.api as t
 
 from hyperspy import messages
 import hyperspy.drawing.spectrum

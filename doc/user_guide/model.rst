@@ -160,6 +160,19 @@ For example:
 		    sigma	1.000000
 		    centre	0.000000   
     
+Setting the position of parameter interactively
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. versionadded:: 0.6
+    :py:meth:`~.model.Model.enable_adjust_position` provides an 
+    interactive way of setting the position of the components with a 
+    well define position.
+    
+.. figure::  images/model_adjust_position.png
+   :align:   center
+   :width:   500    
+
+   Adjust the position of the components interactively by dragging the 
+   vertical lines.
 
 
 Exclude data from the fitting process
