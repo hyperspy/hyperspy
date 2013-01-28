@@ -60,7 +60,8 @@ class DraggablePatch(object):
                 for container in [
                         self.ax.patches,
                         self.ax.lines,
-                        self.ax.artists]:
+                        self.ax.artists,
+                        self.ax.texts]:
                     if self.patch in container:
                         container.remove(self.patch)
                 self.disconnect(self.ax)
@@ -160,7 +161,8 @@ class ResizebleDraggablePatch(DraggablePatch):
     def connect(self, ax):
         DraggablePatch.connect(self, ax)
         canvas = ax.figure.canvas
-        self.cids.append(canvas.mpl_connect('key_press_event', self.on_key_press))
+        self.cids.append(canvas.mpl_connect('key_press_event',
+                                            self.on_key_press))
 
 class DraggableSquare(ResizebleDraggablePatch):
 
@@ -170,8 +172,13 @@ class DraggableSquare(ResizebleDraggablePatch):
     def set_patch(self):
         self.calculate_size()
         self.calculate_position()
-        self.patch = plt.Rectangle(self._position, self._xsize, self._ysize,
-            animated=self.blit, fill=False, lw=2,  ec=self.color, picker=True,)
+        self.patch = plt.Rectangle(
+                        self._position, self._xsize, self._ysize,
+                        animated=self.blit,
+                        fill=False,
+                        lw=2,
+                        ec=self.color,
+                        picker=True,)
         
     def calculate_size(self):
         xaxis = self.axes_manager.navigation_axes[1]
@@ -181,7 +188,8 @@ class DraggableSquare(ResizebleDraggablePatch):
         
     def calculate_position(self):
         coordinates = np.array(self.axes_manager.coordinates[::-1])
-        self._position = coordinates - (self._xsize / 2., self._ysize / 2.)
+        self._position = coordinates - (
+                            self._xsize / 2., self._ysize / 2.)
 
     def update_patch_size(self):
         self.calculate_size()
@@ -272,41 +280,36 @@ class DraggableVerticalLine(DraggablePatch):
                 # Index out of range, we do nothing
                 pass
                 
-class DraggableVerticalLineWithLabel(DraggableVerticalLine):
+class DraggableLabel(DraggablePatch):
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
         self._2D = False
-        # Despise the bug, we use blit for this one because otherwise the
-        # it gets really slow
-        self.blit = True
         self.string = ''
-
+        self.y = 0.9
+        self.text_color = 'black'
+        self.bbox = None
+        
     def update_patch_position(self):
-        super(DraggableVerticalLineWithLabel, self
-             ).update_patch_position()
         if self.patch is not None:
-            self.text.set_x(self.axes_manager.coordinates[0])
+            self.patch.set_x(self.axes_manager.coordinates[0])
             self.draw_patch()
 
     def set_patch(self):
-        super(DraggableVerticalLineWithLabel, self).set_patch()
         ax = self.ax
         trans = transforms.blended_transform_factory(
                 ax.transData, ax.transAxes)
-        self.text = ax.text(
+        self.patch = ax.text(
             self.axes_manager.coordinates[0],
-            0.9, # Y value in axes coordinates
+            self.y, # Y value in axes coordinates
             self.string,
-            color='black',
+            color=self.text_color,
             picker=5,
             transform=trans,
             horizontalalignment='right',
-            bbox=dict(facecolor=self.color, alpha=0.5),
-            animated=True)
-                            
-    def add_patch_to(self, ax):
-        super(DraggableVerticalLineWithLabel, self).add_patch_to(ax)
-        ax.add_artist(self.text)
+            bbox=self.bbox,
+            animated=self.blit)
+        
+                
 
 class Scale_Bar():
     def __init__(self, ax, units, pixel_size=None, color='white',
@@ -480,14 +483,17 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
         if in_interval(event.xdata, left_region) is True:
             self.on_move_cid = \
-            self.canvas.mpl_connect('motion_notify_event', self.move_left)
+            self.canvas.mpl_connect('motion_notify_event',
+                                    self.move_left)
         elif in_interval(event.xdata, right_region):
             self.on_move_cid = \
-            self.canvas.mpl_connect('motion_notify_event', self.move_right)
+            self.canvas.mpl_connect('motion_notify_event',
+                                    self.move_right)
         elif in_interval(event.xdata, middle_region):
             self.pressv = event.xdata
             self.on_move_cid = \
-            self.canvas.mpl_connect('motion_notify_event', self.move_rect)
+            self.canvas.mpl_connect('motion_notify_event',
+                                    self.move_rect)
         else:
             return
     def update_range(self):

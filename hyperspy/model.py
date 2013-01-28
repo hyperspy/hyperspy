@@ -40,7 +40,8 @@ from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.misc.mpfit.mpfit import mpfit
 from hyperspy.axes import AxesManager
-from hyperspy.drawing.widgets import DraggableVerticalLineWithLabel
+from hyperspy.drawing.widgets import (DraggableVerticalLine,
+                                      DraggableLabel)
 
 
 class Model(list):
@@ -1134,13 +1135,14 @@ class Model(list):
             Otherwise the feature is added only to the given components.
         fix_them : bool
             If True the position parameter of the components will be
-            temporarily fixed until disable adjust position. This can 
+            temporarily fixed until adjust position is disable.
+            This can 
             be useful to iteratively adjust the component positions and 
             fit the model.
             
         See also
         --------
-        disaable_adjust_position
+        disable_adjust_position
         
         """
         if self._position_widgets:
@@ -1169,16 +1171,25 @@ class Model(list):
             except TraitError:
                 # The value is outside of the axis range
                 continue
-            self._position_widgets.append(
-                hyperspy.drawing.widgets.DraggableVerticalLineWithLabel(
-                    am))
+            self._position_widgets.extend((
+                DraggableVerticalLine(am),
+                DraggableLabel(am),))
             w = self._position_widgets[-1]
             w.string = component._get_short_description().replace(
                                                     ' component', '')
             w.add_axes(self._plot.signal_plot.ax)
+            self._position_widgets[-2].add_axes(
+                                            self._plot.signal_plot.ax)
             am.axes[0].on_trait_change(set_value, 'value')
             
     def disable_adjust_position(self, components=None, fix_them=True):
+        """Disables the interactive adjust position feature
+        
+        See also:
+        ---------
+        enable_adjust_position
+        
+        """
         while self._position_widgets:
             self._position_widgets.pop().close()
 
