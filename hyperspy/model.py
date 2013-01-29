@@ -76,6 +76,7 @@ class Model(list):
         self.channel_switches=np.array([True] * len(self.axis.axis))
         self._low_loss = None
         self._position_widgets = []
+        self._plot = None
 
     @property
     def spectrum(self):
@@ -1151,6 +1152,9 @@ class Model(list):
         disable_adjust_position
         
         """
+        if (self._plot is None or 
+            self._plot.is_active() is False):
+            self.plot()
         if self._position_widgets:
             self.disable_adjust_position()
         components = components if components else self
