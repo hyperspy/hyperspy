@@ -524,56 +524,77 @@ class EELSSpectrum(Spectrum):
         # The crop will use masks from provided threshold.
         if mode is not 'flog':
             E = Eaxis.axis
-            # Crop
+            # Crop ZLP
             zlp.data[td < E] = 0
             # TODO: Implement auto-dtype method in general parameters
             #zlp.data = zlp.data.astype('float32')
             # Zero loss peak is ready.
             return zlp
         else:
+            # First part, crop ZLP and apply Hann window,
             E = Eaxis.axis[:Eaxis.size*.5]
-            # Crop
-            zlp.data[td < E] = 0
+            # get threshold indices array and threshold data value,
+            itd = np.vectorize(
+                lambda x: zlp.axes_manager.signal_axes[0].value2index(x))(td)
+            mask = (td+Eaxis.scale*0.5 > E) & (td-Eaxis.scale*0.5 < E)
+            if zlp.axes_manager.navigation_shape[0] > 0:
+                td_value = zlp.data[mask].reshape(
+                            zlp.axes_manager.navigation_shape)
+            else:
+                td_value = zlp.data[mask]
+            td_value = td_value.ravel()
+            # actual ZLP cropping is done now,
+            zlp.data[td-Eaxis.scale*0.5 < E] = 0
+            # design Hann window from 0 till twice the maximum threshold 
+            itd_max=  (2*td.max() > E).argmin() 
+            hann_tap = lambda x: np.concatenate(
+                                    (np.hanning((x)*4)[:x], 
+                                    -np.hanning((x)*4)[-x:], 
+                                    np.zeros(itd_max-2*x)))
+            vh = np.array(
+                [td_value[ix]*hann_tap(x) for ix, x in enumerate(itd.flat)])
+            # apply the designed Hann window into mask
+            td_max = td.copy()
+            td_max.fill(2 * td.max())
+            zlp.data[td_max > E] -=  vh.ravel()
+            # zero loss peak is ready.
             # TODO: Implement auto-dtype method in general parameters
             #zlp.data = zlp.data.astype('float32')
-            # Zero loss peak is ready.
-            # TODO: Vectorize hanning tail for ZLP
-            for s in zlp:
-                ith = Eaxis.value2index(td[axes.coordinates])
-                s.data[:ith] -= s.data[ith-1] * np.hanning((ith)*4)[:ith] 
-                s.data[ith:2*ith] = s.data[ith-1] * np.hanning((ith)*4)[-ith:] 
-            # Now, we prepare the input spectrum
+            
+            # Second part, prepare the input spectrum for F.L. deconv.,
             s = self.deepcopy()
             Eaxis = s.axes_manager.signal_axes[0]
-            # Signal data
+            # signal data,
             self_size = Eaxis.size
             zlp_index = Eaxis.value2index(0)
             zlp_size = zlp.axes_manager.signal_axes[0].size
-            # Move E=0 to first channel
+            # move E=0 to first channel,
             s.crop_in_units(Eaxis.index_in_array, 0, Eaxis.high_value)
             s.data = s.data - background
             s_size = Eaxis.size
-            # Compute next "Power of 2" size
+            # compute next "Power of 2" size,
             size = int(2 ** np.ceil(np.log2(2*self_size-1)))
             size_new = size - s_size
-            # Extrapolate s using a power law
+            # extrapolate s using a power law,
             if type(window_s) is float:
                 window_s = Eaxis.value2index(window_s)
             _s=s.power_law_extrapolation(window_size=window_s,
                                         extrapolation_size=size_new,
                                         fix_neg_r=True)
-            # Subtract Hann window to the power law 
+            # subtract Hann window to that power law,
             slicer = lambda x: _s.axes_manager._get_data_slice([(Eaxis.index_in_array, slice(x[0],x[1])),])
             new_shape = list(self.data.shape)
             new_shape[Eaxis.index_in_array] = size_new
             cbell = 0.5*(1-np.cos(np.pi*np.arange(0,size_new)/(size_new-zlp_index-1)))
             dext = _s.data[slicer((size-1,size))]
             _s.data[slicer((s_size,None))] -= np.ones(new_shape)*cbell*dext
-            # Finally, paste left zlp to the right side
+            # finally, paste ZLP left side to the right side
             _s.data[slicer((-zlp_index,None))] = zlp.data[slicer((-zlp_index,None))]
-            # Sign the work and leave...
+            # input spectrum is prepared for F.L. deconv.
             # TODO: Implement auto-dtype method in general parameters
             #_s.data = _s.data.astype('float32')
+            
+            # Sign the work and leave...
             _s.mapped_parameters.title = (_s.mapped_parameters.title + 
                                              ' prepared for Fourier-log deconvolution')
             zlp.mapped_parameters.title = (zlp.mapped_parameters.title + 
