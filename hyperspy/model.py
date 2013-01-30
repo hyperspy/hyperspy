@@ -1121,7 +1121,8 @@ class Model(list):
                             parameter.name, parameter.value))
                             
 
-    def fit_component(self, component, signal_range="interactive", **kwargs):
+    def fit_component(self, component, signal_range="interactive",
+            estimate_parameters=True, **kwargs):
         """Fit just the given component in the given signal range.
 
 
@@ -1139,10 +1140,15 @@ class Model(list):
              selector on the spectrum plot. The signal range can also 
              be manually specified by passing a tuple of floats. If None
               the current signal range is used.
+        estimate_parameters: bool, default True
+            If True will check if the component has an 
+            estimate_parameters function, and use it to estimate the
+            parameters in the component.
               
         """
         
-        cf = ComponentFit(self, component, signal_range, **kwargs)
+        cf = ComponentFit(self, component, signal_range,
+                estimate_parameters, **kwargs)
         if signal_range == "interactive":
             cf.edit_traits()
         else:
