@@ -1122,7 +1122,7 @@ class Model(list):
                             
 
     def fit_component(self, component, signal_range="interactive",
-            estimate_parameters=True, **kwargs):
+            estimate_parameters=True, fit_independent=False, **kwargs):
         """Fit just the given component in the given signal range.
 
 
@@ -1144,20 +1144,19 @@ class Model(list):
             If True will check if the component has an 
             estimate_parameters function, and use it to estimate the
             parameters in the component.
+        fit_independent: bool, default False
+            Fits component independently of the other components in the
+            model.
               
         """
         
         cf = ComponentFit(self, component, signal_range,
-                estimate_parameters, **kwargs)
+                estimate_parameters, fit_independent, **kwargs)
         if signal_range == "interactive":
             cf.edit_traits()
         else:
             cf.apply()
         
-
-            
-
-
     def fit_all_components(self):
         for component in self:
             self.fit_component(component, signal_range="interactive")

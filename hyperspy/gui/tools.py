@@ -700,7 +700,7 @@ class ComponentFit(SpanSelectorInSpectrum):
                 )
     
     def __init__(self, model, component, signal_range=None,
-            estimate_parameters=True, **kwargs):
+            estimate_parameters=True, fit_independent=False, **kwargs):
         if model.spectrum.axes_manager.signal_dimension != 1:
          raise SignalOutputDimensionError(
                                     signal.axes.signal_dimension, 1)
@@ -712,6 +712,7 @@ class ComponentFit(SpanSelectorInSpectrum):
         self.component = component
         self.signal_range = signal_range
         self.estimate_parameters = estimate_parameters
+        self.fit_independent = fit_independent
         self.fit_kwargs = kwargs
         if signal_range == "interactive":
             if not hasattr(self.model, '_plot'):
@@ -732,12 +733,17 @@ class ComponentFit(SpanSelectorInSpectrum):
         
         # Backup "free state" of the parameters and fix all but those
         # of the chosen component
-        free_state = []
-        for component_ in self.model:
-            for parameter in component_.parameters:
-                free_state.append(parameter.free)
+        if self.fit_independent:
+            for component_ in self.model:
                 if component_ is not self.component:
-                    parameter.free = False
+                    component_.active = False
+        else:
+            free_state = []
+            for component_ in self.model:
+                for parameter in component_.parameters:
+                    free_state.append(parameter.free)
+                    if component_ is not self.component:
+                        parameter.free = False
 
         #Setting reasonable initial value for parameters through
         #the components estimate_parameters function (if it has one)
@@ -758,11 +764,16 @@ class ComponentFit(SpanSelectorInSpectrum):
         
         self.model.update_plot()
         
-        # Restore the "free state" of the components
-        for component_ in self.model:
-            for parameter in component_.parameters:
-                    parameter.free = free_state.pop(0)
-        
+        if self.fit_independent:
+            for component_ in self.model:
+                component_.active = True
+        else:
+            # Restore the "free state" of the components
+            for component_ in self.model:
+                for parameter in component_.parameters:
+                        parameter.free = free_state.pop(0)
+       
+
     def apply(self):
         self._fit_fired()
 
