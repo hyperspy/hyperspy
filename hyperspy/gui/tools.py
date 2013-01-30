@@ -734,9 +734,13 @@ class ComponentFit(SpanSelectorInSpectrum):
         # Backup "free state" of the parameters and fix all but those
         # of the chosen component
         if self.fit_independent:
+            active_state = []
             for component_ in self.model:
+                active_state.append(component_.active)
                 if component_ is not self.component:
                     component_.active = False
+                else:
+                    component_.active = True
         else:
             free_state = []
             for component_ in self.model:
@@ -766,7 +770,7 @@ class ComponentFit(SpanSelectorInSpectrum):
         
         if self.fit_independent:
             for component_ in self.model:
-                component_.active = True
+                component_.active = active_state.pop(0)
         else:
             # Restore the "free state" of the components
             for component_ in self.model:
