@@ -71,7 +71,6 @@ class Parameter(object):
                  twin=None):
         
         self.component = None
-        self.connection_active = False
         self.connected_functions = list()
         self.ext_bounded = False
         self._number_of_elements = 1
@@ -107,9 +106,14 @@ class Parameter(object):
     def connect(self, f):
         if f not in self.connected_functions:
             self.connected_functions.append(f)
+            if self.twin:
+                self.twin.connect(f)
+                
     def disconnect(self, f):
         if f in self.connected_functions:
             self.connected_functions.remove(f)
+            if self.twin:
+                self.twin.disconnect(f)
             
     def _coerce(self):
         if self.twin is None:
@@ -133,12 +137,11 @@ class Parameter(object):
                         self.__value=arg
                 else :
                     self.__value=ar
-        if self.connection_active is True:
-            for f in self.connected_functions:
-                try:
-                    f()
-                except:
-                    self.disconnect(f)
+        for f in self.connected_functions:
+            try:
+                f()
+            except:
+                self.disconnect(f)
     value = property(_coerce, _decoerce)
 
     # Fix the parameter when coupled
@@ -158,9 +161,14 @@ class Parameter(object):
             if self.__twin is not None :
                 if self in self.__twin._twins:
                     self.__twin._twins.remove(self)
+                    for f in self.connected_functions:
+                        self.__twin.disconnect(f)
         else :
             if self not in arg._twins :
                 arg._twins.append(self)
+                for f in self.connected_functions:
+                    arg.connect(f)
+                
         self.__twin = arg
 
     def _get_twin(self):

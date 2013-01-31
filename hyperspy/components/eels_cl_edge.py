@@ -276,10 +276,8 @@ class EELSCLEdge(Component):
         # Connect them at this point where it is certain that all the 
         # parameters are well defined
         self.effective_angle.connect(self._integrate_GOS)
-        self.effective_angle.connection_active = True
         self.energy_shift.connect(self._integrate_GOS)
         self.energy_shift.connect(self._calculate_knots)
-        self.energy_shift.connection_active = True
         
     def _calculate_knots(self):    
         start = self.GOS.onset_energy + self.energy_shift.value
