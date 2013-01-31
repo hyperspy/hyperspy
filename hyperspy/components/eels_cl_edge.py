@@ -350,7 +350,7 @@ class EELSCLEdge(Component):
             self.charge_value_from_map(s.axes_manager.indexes)
             spectrum.data[:] = self.function(
                                     s.axes_manager.signal_axes[0].axis)
-        self.charge_value_from_map(current_indexesindexesindexes)
+        self.charge_value_from_map(current_indexes)
         s.mapped_parameters.title = self.name.replace(
         '_',' ') + ' fine structure'
         

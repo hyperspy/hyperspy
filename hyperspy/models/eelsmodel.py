@@ -487,7 +487,7 @@ class EELSModel(Model):
             self.fit(**kwargs)
             edge.energy_shift.free = False
             print "energy_shift = ", edge.energy_shift.value
-            self.__touch()
+            self._touch()
         elif edge.intensity.free is True:
             print "Fit without fine structure"
             self.enable_fine_structure(to_activate_fs)

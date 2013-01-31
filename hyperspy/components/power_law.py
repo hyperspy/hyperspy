@@ -121,6 +121,8 @@ class PowerLaw(Component):
             r = 2*np.log(I1 / I2) / math.log(x2/x1)
             k = 1 - r
             A = k * I2 / (x2**k - E3**k)
+            r = np.nan_to_num(r)
+            A = np.nan_to_num(A)
         except:
             return False
         if only_current is True:

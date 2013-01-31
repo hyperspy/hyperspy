@@ -25,7 +25,7 @@ import traits.api as t
 
 from hyperspy.signals.spectrum import Spectrum
 from hyperspy.signals.image import Image
-from hyperspy.misc.eels.elements import elements
+from hyperspy.misc.eels.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.gui.egerton_quantification import SpikesRemoval
 from hyperspy.decorators import only_interactive
@@ -73,7 +73,7 @@ class EELSSpectrum(Spectrum):
         
         """
         for element in elements:
-            if element in elements:
+            if element in elements_db:
                 self.elements.add(element)
             else:
                 print(
@@ -103,10 +103,10 @@ class EELSSpectrum(Spectrum):
         end_energy = Eaxis[-1]
         for element in self.elements:
             e_shells = list()
-            for shell in elements[element]['subshells']:
+            for shell in elements_db[element]['subshells']:
                 if shell[-1] != 'a':
                     if start_energy <= \
-                    elements[element]['subshells'][shell][
+                    elements_db[element]['subshells'][shell][
                         'onset_energy'] \
                     <= end_energy :
                         subshell = '%s_%s' % (element, shell)
