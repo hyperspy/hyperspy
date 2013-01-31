@@ -107,9 +107,14 @@ class Parameter(object):
     def connect(self, f):
         if f not in self.connected_functions:
             self.connected_functions.append(f)
+            if self.twin:
+                self.twin.connect(f)
+                
     def disconnect(self, f):
         if f in self.connected_functions:
             self.connected_functions.remove(f)
+            if self.twin:
+                self.twin.disconnect(f)
             
     def _coerce(self):
         if self.twin is None:
@@ -158,9 +163,14 @@ class Parameter(object):
             if self.__twin is not None :
                 if self in self.__twin._twins:
                     self.__twin._twins.remove(self)
+                    for f in self.connected_functions:
+                        self.__twin.disconnect(f)
         else :
             if self not in arg._twins :
                 arg._twins.append(self)
+                for f in self.connected_functions:
+                    arg.connect(f)
+                
         self.__twin = arg
 
     def _get_twin(self):
