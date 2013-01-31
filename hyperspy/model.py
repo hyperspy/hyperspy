@@ -51,7 +51,6 @@ class Model(list):
 
     def __init__(self, spectrum):
         self.convolved = False
-        self.auto_update_plot = False
         self.spectrum = spectrum
         self.axes_manager = self.spectrum.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
@@ -64,6 +63,8 @@ class Model(list):
         self.model_cube[:] = np.nan
         self.channel_switches=np.array([True] * len(self.axis.axis))
         self._low_loss = None
+        self._plot = None
+
 
     @property
     def spectrum(self):
@@ -132,7 +133,8 @@ class Model(list):
         This function is called everytime that we add or remove components
         from the model.
         """
-        self.connect_parameters2update_plot()
+        if self._get_auto_update_plot() is True:
+            self._connect_parameters2update_plot()
         
     __touch = _touch
     
@@ -149,27 +151,19 @@ class Model(list):
         self.convolution_axis = generate_axis(self.axis.offset, step, 
         dimension, knot_position)
                 
-    def connect_parameters2update_plot(self):   
+    def _connect_parameters2update_plot(self):   
         for component in self:
             component.connect(self.update_plot)
             for parameter in component.parameters:
                 if self.spectrum._plot is not None:
                     parameter.connect(self.update_plot)
-                parameter.connection_active = False
     
-    def disconnect_parameters2update_plot(self):
+    def _disconnect_parameters2update_plot(self):
         for component in self:
             component.disconnect(self.update_plot)
             for parameter in component.parameters:
                 parameter.disconnect(self.update_plot)
-                parameter.connection_active = False
-        self.set_auto_update_plot(False)
-                            
-    def set_auto_update_plot(self, tof):
-        for component in self:
-            for parameter in component.parameters:
-                parameter.connection_active = tof
-        self.auto_update_plot = tof
+    
 
     def generate_data_from_model(self, out_of_range_to_nan=True):
         """Generate a SI with the current model
@@ -192,6 +186,12 @@ class Model(list):
             if maxval > 0:
                 pbar.update(i)
         pbar.finish()
+        
+    def _get_auto_update_plot(self):
+        if self._plot is not None and self._plot.is_active() is True:
+            return True
+        else:
+            return False
             
 # TODO: port it                    
 #    def generate_chisq(self, degrees_of_freedom = 'auto') :
@@ -281,15 +281,16 @@ class Model(list):
         ----------
         only_fixed : bool
             If True, only the fixed parameters will be charged.
+            
         """
-        switch_aap = (False != self.auto_update_plot)
+        switch_aap = (False != self._get_auto_update_plot())
         if switch_aap is True:
-            self.set_auto_update_plot(False)
+            self._disconnect_parameters2update_plot()
         for component in self:
             component.charge_value_from_map(self.axes_manager.indexes,
                                             only_fixed=only_fixed)
         if switch_aap is True:
-            self.set_auto_update_plot(True)
+            self._connect_parameters2update_plot()
             self.update_plot()
 
     def update_plot(self):
@@ -298,7 +299,7 @@ class Model(list):
                 for line in self.spectrum._plot.signal_plot.ax_lines:
                         line.update()
             except:
-                self.disconnect_parameters2update_plot()
+                self._disconnect_parameters2update_plot()
                 
     def _charge_p0(self, p_std = None):
         """Charge the free data for the current coordinates (x,y) from the
@@ -417,7 +418,7 @@ class Model(list):
         self.backup_channel_switches = copy.copy(self.channel_switches)
         self.channel_switches[:] = False
         self.channel_switches[i1:i2] = True
-        if self.auto_update_plot is True:
+        if self._get_auto_update_plot() is True:
             self.update_plot()
             
     @interactive_range_selector   
@@ -447,7 +448,7 @@ class Model(list):
         x2 : None or float
         """
         self.channel_switches[i1:i2] = False
-        if self.auto_update_plot is True:
+        if self._get_auto_update_plot() is True:
             self.update_plot()
 
     @interactive_range_selector    
@@ -478,7 +479,7 @@ class Model(list):
         x2 : None or float
         """
         self.channel_switches[i1:i2] = True
-        if self.auto_update_plot is True:
+        if self._get_auto_update_plot() is True:
             self.update_plot()
 
     @interactive_range_selector    
@@ -497,7 +498,7 @@ class Model(list):
         
     def reset_the_signal_range(self):
         self.channel_switches[:] = True
-        if self.auto_update_plot is True:
+        if self._get_auto_update_plot() is True:
             self.update_plot()
 
     def _model_function(self,param):
@@ -687,7 +688,7 @@ class Model(list):
         update_plot : bool
             If True, the plot is updated during the optimization 
             process. It slows down the optimization but it permits
-            to visualize the optimization evolution. 
+            to visualize the optimization progress. 
         
         **kwargs : key word arguments
             Any extra key word argument will be passed to the chosen
@@ -700,9 +701,10 @@ class Model(list):
         """
         if fitter is None:
             fitter = preferences.Model.default_fitter
-        switch_aap = (update_plot != self.auto_update_plot)
-        if switch_aap is True:
-            self.set_auto_update_plot(update_plot)
+        switch_aap = (update_plot != self._get_auto_update_plot())
+        if switch_aap is True and update_plot is False:
+            self._disconnect_parameters2update_plot()
+            
         self.p_std = None
         self._set_p0()
         if ext_bounding:
@@ -854,11 +856,9 @@ class Model(list):
         self.set()
         if ext_bounding is True:
             self._disable_ext_bounding()
-        if switch_aap is True:
-            self.set_auto_update_plot(not update_plot)
-        if (update_plot is False and self.spectrum._plot 
-                is not None):
-            self.update_plot()
+        if switch_aap is True and update_plot is False:
+            self._connect_parameters2update_plot()
+            self.update_plot()            
                 
     def multifit(self, mask=None, charge_only_fixed=False,
                  autosave=False, autosave_every=10, **kwargs):
@@ -893,8 +893,9 @@ class Model(list):
         """
         
         if autosave is not False:
-            fd, autosave_fn = tempfile.mkstemp(prefix = 'hyperspy_autosave-', 
-            dir = '.', suffix = '.npz')
+            fd, autosave_fn = tempfile.mkstemp(
+                prefix = 'hyperspy_autosave-', 
+                dir = '.', suffix = '.npz')
             os.close(fd)
             autosave_fn = autosave_fn[:-4]
             messages.information(
@@ -982,7 +983,7 @@ class Model(list):
                 
         self.charge()
            
-    def plot(self, auto_update_plot = True):
+    def plot(self):
         """Plots the current spectrum to the screen and a map with a 
         cursor to explore the SI.
         
@@ -1000,15 +1001,12 @@ class Model(list):
         l2.data_function = self._model2plot
         l2.line_properties_helper('blue', 'line')        
         # Add the line to the figure
-          
         _plot.signal_plot.add_line(l2)
         l2.plot()
-        self.connect_parameters2update_plot()
         on_figure_window_close(_plot.signal_plot.figure, 
-                                self.disconnect_parameters2update_plot)
-        self.set_auto_update_plot(True)
+                                self._disconnect_parameters2update_plot)
         self._plot = self.spectrum._plot
-        # TODO Set autoupdate to False on close
+        self._connect_parameters2update_plot()
         
     def set_current_values_to(self, components_list=None, mask=None):
         if components_list is None:

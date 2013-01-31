@@ -71,7 +71,6 @@ class Parameter(object):
                  twin=None):
         
         self.component = None
-        self.connection_active = False
         self.connected_functions = list()
         self.ext_bounded = False
         self._number_of_elements = 1
@@ -138,12 +137,11 @@ class Parameter(object):
                         self.__value=arg
                 else :
                     self.__value=ar
-        if self.connection_active is True:
-            for f in self.connected_functions:
-                try:
-                    f()
-                except:
-                    self.disconnect(f)
+        for f in self.connected_functions:
+            try:
+                f()
+            except:
+                self.disconnect(f)
     value = property(_coerce, _decoerce)
 
     # Fix the parameter when coupled
