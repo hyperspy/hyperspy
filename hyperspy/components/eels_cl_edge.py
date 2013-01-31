@@ -261,6 +261,7 @@ class EELSCLEdge(Component):
         self._integrate_GOS()
                 
     def _integrate_GOS(self):
+        print "Integrating ", self.name
         # Integration over q using splines                                        
         angle = self.effective_angle.value * 1e-3 # in rad
         self.tab_xsection = self.GOS.integrateq(

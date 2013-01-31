@@ -1157,6 +1157,8 @@ class Model(list):
             self.plot()
         if self._position_widgets:
             self.disable_adjust_position()
+        on_figure_window_close(self._plot.signal_plot.figure, 
+                               self.disable_adjust_position)
         components = components if components else self
         if not components:
             # The model does not have components so we do nothing
@@ -1166,10 +1168,12 @@ class Model(list):
         axis_dict = self.axes_manager.signal_axes[0].get_axis_dictionary()
         axis_dict['index_in_array'] = 0
         for component in self:
-            if component._position is not None:
+            if (component._position is not None and
+                not component._position.twin):
                 set_value = component._position._setvalue
                 get_value = component._position._getvalue
-            elif component._id_name == 'EELSCLEdge':
+            elif (component._id_name == 'EELSCLEdge' and
+                  not component.energy_shift.twin):
                 set_value = component._set_onset_energy
                 get_value = component._onset_energy         
             else:
@@ -1202,6 +1206,7 @@ class Model(list):
         """
         while self._position_widgets:
             self._position_widgets.pop().close()
+
 
                 
                 
