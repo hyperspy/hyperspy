@@ -27,6 +27,7 @@ import traits
 
 from utils import on_figure_window_close
 from hyperspy.misc.utils import closest_nice_number
+from hyperspy.drawing.utils import does_figure_object_exists
 
 class DraggablePatch(object):
     """
@@ -66,8 +67,11 @@ class DraggablePatch(object):
                         container.remove(self.patch)
                 self.disconnect(self.ax)
             self.__is_on = value
-            self.ax.figure.canvas.draw()
-
+            if does_figure_object_exists(self.ax.figure):
+                self.ax.figure.canvas.draw()
+            else:
+                self.ax = None
+                
     def set_patch(self):
         pass
         # Must be provided by the subclass
