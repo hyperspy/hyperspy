@@ -1167,13 +1167,10 @@ class Model(list):
             if (component._position is not None and
                 not component._position.twin):
                 set_value = component._position._setvalue
-                get_value = component._position._getvalue
-            elif (component._id_name == 'EELSCLEdge' and
-                  not component.energy_shift.twin):
-                set_value = component._set_onset_energy
-                get_value = component._onset_energy         
+                get_value = component._position._getvalue        
             else:
                 continue
+            # Create an AxesManager for the widget
             am = AxesManager([axis_dict,])
             am.axes[0].navigate = True
             try:
@@ -1181,16 +1178,29 @@ class Model(list):
             except TraitError:
                 # The value is outside of the axis range
                 continue
+            # Create the vertical line and labels
             self._position_widgets.extend((
                 DraggableVerticalLine(am),
                 DraggableLabel(am),))
+            # Store the component to reset its twin when disabling
+            # adjust position
+            self._position_widgets[-1].component = component
             w = self._position_widgets[-1]
             w.string = component._get_short_description().replace(
                                                     ' component', '')
             w.add_axes(self._plot.signal_plot.ax)
             self._position_widgets[-2].add_axes(
                                             self._plot.signal_plot.ax)
+            # Create widget -> parameter connection
+            am.axes[0].continuous_value = True
             am.axes[0].on_trait_change(set_value, 'value')
+            # Create parameter -> widget connection
+            # This is done with a duck typing trick
+            # We disguise the AxesManager axis of Parameter by adding
+            # the _twin attribute
+            am.axes[0]._twins  = []
+            component._position.twin = am.axes[0]
+
             
     def disable_adjust_position(self, components=None, fix_them=True):
         """Disables the interactive adjust position feature
@@ -1201,7 +1211,12 @@ class Model(list):
         
         """
         while self._position_widgets:
-            self._position_widgets.pop().close()
+            pw = self._position_widgets.pop()
+            if hasattr(pw, 'component'):
+                pw.component._position.twin = None
+                del pw.component
+            pw.close()
+            del pw
 
 
                 

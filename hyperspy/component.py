@@ -42,9 +42,13 @@ class Parameter(object):
         a function of the given Parameter. The function is by default
         the identity function, but it can be defined by twin_function
     twin_function : function
-        Function that takes Parameter.value as its only argument
-        and returns a float or array that is set to be the current 
-        Parameter.value
+        Function that, if selt.twin is not None, takes self.twin.value 
+        as its only argument and returns a float or array that is 
+        returned when getting Parameter.value
+    twin_inverse_function : function
+        The inverse of twin_function. If it is None then it is not 
+        possible to set the value of the parameter twin by setting 
+        the value of the current parameter.
     ext_force_positive : bool
         If True, the parameter value is set to be the absolute value 
         of the input value i.e. if we set Parameter.value = -3, the 
@@ -67,7 +71,6 @@ class Parameter(object):
     
     
     """
-
     def __init__(self, value=0., free=True, bmin=None, bmax=None,
                  twin=None):
         
@@ -81,6 +84,7 @@ class Parameter(object):
         self.__twin = None
         self.twin = twin
         self.twin_function = lambda x: x
+        self.twin_inverse_function = lambda x: x
         self._twins = []
         self.ext_force_positive = False
         self.value = value
@@ -122,29 +126,49 @@ class Parameter(object):
         else:
             return self.twin_function(self.twin.value)
     def _setvalue(self, arg):
+        if hasattr(arg, "__len__"):
+            if len(arg) != self._number_of_elements:
+                raise ValueError(
+                    "The lenght of the parameter must be ", 
+                    self._number_of_elements)
+        elif self._number_of_elements != 1:
+            raise ValueError(
+                    "The lenght of the parameter must be ", 
+                    self._number_of_elements)
+        else:
+            # Do nothing if the argument is equal to the current one
+            # Note that this only works for _number_of_elements == 1
+            if hasattr(self, '_Parameter__value'):
+                if self.value == arg:
+                    return
+                        
+        if self.twin is not None:
+            if self.twin_inverse_function is not None:
+                self.twin.value = self.twin_inverse_function(arg)
+            return
 
         if self.ext_bounded is False:
                 self.__value = arg
         else:
             if self.ext_force_positive is True :
                 self.__value = abs(arg)
-            else :
+            else:
                 if self._number_of_elements == 1:
                     if self.bmin is not None and arg <= self.bmin:
                         self.__value=self.bmin
                     elif self.bmax is not None and arg >= self.bmax:
                         self.__value=self.bmax
                     else:
-                        self.__value=arg
-                else :
-                    self.__value=ar
+                        self.__value = arg
+                else:
+                    self.__value = arg
         for f in self.connected_functions:
             try:
                 f()
             except:
                 self.disconnect(f)
     value = property(_getvalue, _setvalue)
-
+    
     # Fix the parameter when coupled
     def _getfree(self):
         if self.twin is None:
@@ -158,19 +182,26 @@ class Parameter(object):
     free = property(_getfree,_setfree)
 
     def _set_twin(self,arg):
-        if arg is None :
-            if self.__twin is not None :
+        if arg is None:
+            if self.__twin is not None:
+                # Store the value of the twin in order to set the 
+                # value of the parameter when it is uncoupled
+                twin_value = self.value
                 if self in self.__twin._twins:
                     self.__twin._twins.remove(self)
                     for f in self.connected_functions:
                         self.__twin.disconnect(f)
+                # Setting the __value attribute directly avoids 
+                # calling the functions connected to the parameter
+                self.__value = twin_value
         else :
             if self not in arg._twins :
                 arg._twins.append(self)
                 for f in self.connected_functions:
-                    arg.connect(f)
-                
+                    arg.connect(f)                
         self.__twin = arg
+        if self.component is not None:
+            self.component._update_free_parameters()
 
     def _get_twin(self):
         return self.__twin
@@ -199,6 +230,26 @@ class Parameter(object):
         elif self._number_of_elements > 1 :
             self._bounds = [(self.bmin, arg)] * self._number_of_elements
     bmax = property(_get_bmax,_set_bmax)
+    
+    @property
+    def _number_of_elements(self):
+        return self.__number_of_elements
+        
+    @_number_of_elements.setter
+    def _number_of_elements(self, arg):
+        # Do nothing if the number of arguments stays the same
+        if hasattr(self, '_Parameter__number_of_elements'):
+            if self.__number_of_elements == arg:
+                return
+        if arg == 0:
+            raise ValueError("Please provide an integer number equal "
+                             "or greater to 1")
+        self.__number_of_elements = arg
+
+        if arg == 1:
+            self._Parameter__value = 0
+        else:
+            self._Parameter__value = [0,] * arg
 
     def store_current_value_in_array(self,indexes):
         self.map['values'][indexes] = self.value
@@ -418,13 +469,12 @@ class Component(object):
             parameters = set(self.parameters) - set(self.free_parameters)
         else:
             parameters = self.parameters
+        parameters = [parameter for parameter in parameters
+                      if parameter.twin is None]
         for parameter in parameters:
             if parameter.map['is_set'][indexes]:
                 parameter.value = parameter.map['values'][indexes]
                 parameter.std = parameter.map['std'][indexes]
-                if parameter._number_of_elements > 1:
-                    parameter.value = parameter.value.tolist()
-                    parameter.std = parameter.std.tolist()
 
     def plot(self, only_free = True):
         """Plot the value of the parameters of the model

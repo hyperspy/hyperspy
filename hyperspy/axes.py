@@ -88,11 +88,18 @@ class DataAxis(t.HasTraits):
     navigate = t.Bool(True)
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
+    continuous_value = t.Bool(False)
 
-    def __init__(self, size, index_in_array, name='', scale=1., offset=0.,
-                 units='undefined', navigate = True):
+    def __init__(self,
+                 size,
+                 index_in_array,
+                 name='',
+                 scale=1.,
+                 offset=0.,
+                 units='undefined',
+                 navigate=True):
+                     
         super(DataAxis, self).__init__()
-
         self.name = name
         self.units = units
         self.scale = scale
@@ -119,6 +126,12 @@ class DataAxis(t.HasTraits):
             text = '<%s axis, index: %s>' % (self.name,
                                                self.index_in_array)
             return text
+            
+    def connect(self, f, trait='value'):
+        self.on_trait_change(f, trait)
+
+    def disconnect(self, f, trait='value'):
+        self.on_trait_change(f, trait, remove=True)
 
     def update_index_bounds(self):
         self.high_index = self.size - 1
@@ -182,7 +195,8 @@ class DataAxis(t.HasTraits):
     def set_index_from_value(self, value):
         self.index = self.value2index(value)
         # If the value is above the limits we must correct the value
-        self.value = self.index2value(self.index)
+        if self.continuous_value is False:
+            self.value = self.index2value(self.index)
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration = True):
         scale = (value_tuple[1] - value_tuple[0]) /\
