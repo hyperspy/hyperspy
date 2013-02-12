@@ -1198,7 +1198,7 @@ class Model(list):
             # This is done with a duck typing trick
             # We disguise the AxesManager axis of Parameter by adding
             # the _twin attribute
-            am.axes[0]._twins  = []
+            am.axes[0]._twins  = set()
             component._position.twin = am.axes[0]
 
             

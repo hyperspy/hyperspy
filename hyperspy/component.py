@@ -76,23 +76,24 @@ class Parameter(object):
     __number_of_elements = 1
     __value = 0
     _bounds = (None, None)
-    component = None
     __twin = None
-    _twins = []
-    twin_function = lambda x: x
-    twin_inverse_function = lambda x: x
-    map = None
-    connected_functions = list()
     _axes_manager = None
     __ext_bounded = False
     __ext_force_positive = False
-    grad = None
-    name = ''
-    units = ''
+
     def __init__(self):
+        self._twins = set()
+        self.connected_functions = list()
+        self.twin_function = lambda x: x
+        self.twin_inverse_function = lambda x: x
         self.value = 0      
         self.std = None
+        self.component = None
         self.free = True
+        self.grad = None
+        self.name = ''
+        self.units = ''
+        self.map = None
     
     def __repr__(self):
         text = ''
@@ -187,23 +188,25 @@ class Parameter(object):
 
     def _set_twin(self,arg):
         if arg is None:
-            if self.__twin is not None:
+            if self.twin is not None:
                 # Store the value of the twin in order to set the 
                 # value of the parameter when it is uncoupled
                 twin_value = self.value
-                if self in self.__twin._twins:
-                    self.__twin._twins.remove(self)
+                if self in self.twin._twins:
+                    self.twin._twins.remove(self)
                     for f in self.connected_functions:
-                        self.__twin.disconnect(f)
+                        self.twin.disconnect(f)
                 # Setting the __value attribute directly avoids 
                 # calling the functions connected to the parameter
+                self.__twin = arg
                 self.__value = twin_value
-        else :
+        else:
             if self not in arg._twins :
-                arg._twins.append(self)
+                arg._twins.add(self)
                 for f in self.connected_functions:
                     arg.connect(f)                
-        self.__twin = arg
+            self.__twin = arg
+            
         if self.component is not None:
             self.component._update_free_parameters()
 
