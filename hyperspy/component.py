@@ -134,6 +134,8 @@ class Parameter(object):
                 raise ValueError(
                     "The lenght of the parameter must be ", 
                     self._number_of_elements)
+            elif not isinstance(arg, tuple):
+                arg = tuple(arg)
         elif self._number_of_elements != 1:
             raise ValueError(
                     "The lenght of the parameter must be ", 
@@ -252,7 +254,7 @@ class Parameter(object):
         if arg == 1:
             self._Parameter__value = 0
         else:
-            self._Parameter__value = [0,] * arg
+            self._Parameter__value = (0,) * arg
 
     def store_current_value_in_array(self,indexes):
         self.map['values'][indexes] = self.value

@@ -231,14 +231,14 @@ class Model(list):
             if component.active:
                 for param in component.free_parameters:
                     if p0 is not None:
-                        p0 = (p0 + [param.value,] 
-                        if not isinstance(param.value, list) 
+                        p0 = (p0 + (param.value,) 
+                        if not isinstance(param.value, tuple) 
                         else p0 + param.value)
                     else:
-                        p0 = ([param.value,] 
-                        if not isinstance(param.value, list) 
+                        p0 = ((param.value,) 
+                        if not isinstance(param.value, tuple) 
                         else param.value)
-        self.p0 = tuple(p0)
+        self.p0 = p0
     
     def set_boundaries(self):
         """Generate the boundary list.

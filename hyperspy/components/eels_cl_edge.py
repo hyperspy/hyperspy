@@ -298,7 +298,7 @@ class EELSCLEdge(Component):
             bfs = bsignal * (
                 E < (self.onset_energy.value + self.fine_structure_width))
             cts[bfs] = splev(E[bfs],
-                (self.__knots, self.fine_structure_coeff.value + [0,]*4,
+                (self.__knots, self.fine_structure_coeff.value + (0,)*4,
                  3))
             bsignal[bfs] = False
         itab = bsignal * (E <= Emax)
