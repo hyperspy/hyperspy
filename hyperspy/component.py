@@ -72,6 +72,7 @@ class Parameter(object):
     
     """
     __number_of_elements = 1
+    __value = 0
     _bounds = (None, None)
     component = None
     __twin = None
@@ -125,17 +126,22 @@ class Parameter(object):
                 raise ValueError(
                     "The lenght of the parameter must be ", 
                     self._number_of_elements)
+            else:
+                if not isinstance(arg, tuple):
+                    arg = tuple(arg)
+                # Do nothing if the argument is equal to the 
+                # current value
+                if self.value == arg:
+                    return
             
         elif self._number_of_elements != 1:
             raise ValueError(
                     "The lenght of the parameter must be ", 
                     self._number_of_elements)
         else:
-            # Do nothing if the argument is equal to the current one
-            # Note that this only works for _number_of_elements == 1
-            if hasattr(self, '_Parameter__value'):
-                if self.value == arg:
-                    return
+            # Do nothing if the argument is equal to the current value
+            if self.value == arg:
+                return
                         
         if self.twin is not None:
             if self.twin_inverse_function is not None:
@@ -145,18 +151,22 @@ class Parameter(object):
         if self.ext_bounded is False:
                 self.__value = arg
         else:
-            if self.ext_force_positive is True :
-                self.__value = abs(arg)
+            if self.ext_force_positive is True:
+                self.__value = np.abs(arg)
             else:
                 if self._number_of_elements == 1:
                     if self.bmin is not None and arg <= self.bmin:
-                        self.__value=self.bmin
+                        self.__value = self.bmin
                     elif self.bmax is not None and arg >= self.bmax:
-                        self.__value=self.bmax
+                        self.__value = self.bmax
                     else:
                         self.__value = arg
                 else:
-                    self.__value = arg
+                    bmin = (self.bmin if self.bmin is not None 
+                                      else -np.inf)
+                    bmax = (self.bmax if self.bmin is not None
+                                      else np.inf)
+                    self.__value = np.clip(arg, bmin, bmax)
         if (self._number_of_elements != 1 and 
             not isinstance(self.__value, tuple)):
                 self.__value = tuple(self.__value)
