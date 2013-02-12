@@ -68,6 +68,8 @@ class Parameter(object):
         Plots the value of the Parameter at all locations.
     export(folder=None, name=None, format=None, save_std=False)
         Saves the value of the parameter map to the specified format
+    connect, disconnect(function)
+        Call the functions connected when the value attribute changes.
     
     
     """
@@ -82,8 +84,8 @@ class Parameter(object):
     map = None
     connected_functions = list()
     _axes_manager = None
-    ext_bounded = False
-    ext_force_positive = False
+    __ext_bounded = False
+    __ext_force_positive = False
     grad = None
     name = ''
     units = ''
@@ -129,19 +131,12 @@ class Parameter(object):
             else:
                 if not isinstance(arg, tuple):
                     arg = tuple(arg)
-                # Do nothing if the argument is equal to the 
-                # current value
-                if self.value == arg:
-                    return
             
         elif self._number_of_elements != 1:
             raise ValueError(
                     "The lenght of the parameter must be ", 
                     self._number_of_elements)
-        else:
-            # Do nothing if the argument is equal to the current value
-            if self.value == arg:
-                return
+        old_value = self.__value
                         
         if self.twin is not None:
             if self.twin_inverse_function is not None:
@@ -152,29 +147,30 @@ class Parameter(object):
                 self.__value = arg
         else:
             if self.ext_force_positive is True:
-                self.__value = np.abs(arg)
-            else:
-                if self._number_of_elements == 1:
-                    if self.bmin is not None and arg <= self.bmin:
-                        self.__value = self.bmin
-                    elif self.bmax is not None and arg >= self.bmax:
-                        self.__value = self.bmax
-                    else:
-                        self.__value = arg
+                arg = np.abs(arg)
+            if self._number_of_elements == 1:
+                if self.bmin is not None and arg <= self.bmin:
+                    self.__value = self.bmin
+                elif self.bmax is not None and arg >= self.bmax:
+                    self.__value = self.bmax
                 else:
-                    bmin = (self.bmin if self.bmin is not None 
-                                      else -np.inf)
-                    bmax = (self.bmax if self.bmin is not None
-                                      else np.inf)
-                    self.__value = np.clip(arg, bmin, bmax)
+                    self.__value = arg
+            else:
+                bmin = (self.bmin if self.bmin is not None 
+                                  else -np.inf)
+                bmax = (self.bmax if self.bmin is not None
+                                  else np.inf)
+                self.__value = np.clip(arg, bmin, bmax)
+
         if (self._number_of_elements != 1 and 
             not isinstance(self.__value, tuple)):
                 self.__value = tuple(self.__value)
-        for f in self.connected_functions:
-            try:
-                f()
-            except:
-                self.disconnect(f)
+        if old_value != self.__value:
+            for f in self.connected_functions:
+                try:
+                    f()
+                except:
+                    self.disconnect(f)
     value = property(_getvalue, _setvalue)
     
     # Fix the parameter when coupled
@@ -225,6 +221,8 @@ class Parameter(object):
             self._bounds = (arg,self.bmax)
         else:
             self._bounds = ((arg, self.bmax),)*self._number_of_elements
+        # Update the value to take into account the new bounds
+        self.value = self.value
     bmin = property(_get_bmin,_set_bmin)
 
     def _get_bmax(self):
@@ -237,6 +235,8 @@ class Parameter(object):
             self._bounds = (self.bmin, arg)
         else:
             self._bounds = ((self.bmin, arg),)*self._number_of_elements
+        # Update the value to take into account the new bounds
+        self.value = self.value
     bmax = property(_get_bmax,_set_bmax)
     
     @property
@@ -258,7 +258,28 @@ class Parameter(object):
             self._Parameter__value = 0
         else:
             self._Parameter__value = (0,) * arg
-
+            
+    @property
+    def ext_bounded(self):
+        return self.__ext_bounded
+        
+    @ext_bounded.setter
+    def ext_bounded(self, arg):
+        if arg is not self.__ext_bounded:
+            self.__ext_bounded = arg
+            # Update the value to take into account the new bounds
+            self.value = self.value
+            
+    @property
+    def ext_force_positive(self):
+        return self.__ext_force_positive
+        
+    @ext_force_positive.setter
+    def ext_force_positive(self, arg):
+        if arg is not self.__ext_force_positive:
+            self.__ext_force_positive = arg
+            # Update the value to take into account the new bounds
+            self.value = self.value
 
     def store_current_value_in_array(self,indexes):
         self.map['values'][indexes] = self.value
