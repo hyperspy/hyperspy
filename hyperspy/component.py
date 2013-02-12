@@ -71,34 +71,25 @@ class Parameter(object):
     
     
     """
-    def __init__(self, value=0., free=True, bmin=None, bmax=None,
-                 twin=None):
-        
-        self.component = None
-        self.connected_functions = list()
-        self.ext_bounded = False
-        self._number_of_elements = 1
-        self._bounds = (None, None)
-        self.bmin = None
-        self.bmax = None
-        self.__twin = None
-        self.twin = twin
-        self.twin_function = lambda x: x
-        self.twin_inverse_function = lambda x: x
-        self._twins = []
-        self.ext_force_positive = False
-        self.value = value
-        self.free = free
-        self.map = None
-        self.std_map = None
-        self.grad = None
-        self.already_set_map = None
-        self.name = ''
-        self.units = ''
+    __number_of_elements = 1
+    _bounds = (None, None)
+    component = None
+    __twin = None
+    _twins = []
+    twin_function = lambda x: x
+    twin_inverse_function = lambda x: x
+    map = None
+    connected_functions = list()
+    _axes_manager = None
+    ext_bounded = False
+    ext_force_positive = False
+    grad = None
+    name = ''
+    units = ''
+    def __init__(self):
+        self.value = 0      
         self.std = None
-        self._axes_manager = None
-
-    # Define the bounding and coupling propertires
+        self.free = True
     
     def __repr__(self):
         text = ''
@@ -134,8 +125,7 @@ class Parameter(object):
                 raise ValueError(
                     "The lenght of the parameter must be ", 
                     self._number_of_elements)
-            elif not isinstance(arg, tuple):
-                arg = tuple(arg)
+            
         elif self._number_of_elements != 1:
             raise ValueError(
                     "The lenght of the parameter must be ", 
@@ -167,6 +157,9 @@ class Parameter(object):
                         self.__value = arg
                 else:
                     self.__value = arg
+        if (self._number_of_elements != 1 and 
+            not isinstance(self.__value, tuple)):
+                self.__value = tuple(self.__value)
         for f in self.connected_functions:
             try:
                 f()
@@ -213,27 +206,27 @@ class Parameter(object):
     twin = property(_get_twin, _set_twin)
 
     def _get_bmin(self):
-        if isinstance(self._bounds, tuple):
+        if self._number_of_elements == 1:
             return self._bounds[0]
-        elif isinstance(self._bounds, list):
+        else:
             return self._bounds[0][0]
     def _set_bmin(self,arg):
         if self._number_of_elements == 1 :
             self._bounds = (arg,self.bmax)
-        elif self._number_of_elements > 1 :
-            self._bounds = [(arg, self.bmax)] * self._number_of_elements
+        else:
+            self._bounds = ((arg, self.bmax),)*self._number_of_elements
     bmin = property(_get_bmin,_set_bmin)
 
     def _get_bmax(self):
-        if isinstance(self._bounds, tuple):
+        if self._number_of_elements == 1:
             return self._bounds[1]
-        elif isinstance(self._bounds, list):
+        else:
             return self._bounds[0][1]
     def _set_bmax(self,arg):
         if self._number_of_elements == 1 :
             self._bounds = (self.bmin, arg)
-        elif self._number_of_elements > 1 :
-            self._bounds = [(self.bmin, arg)] * self._number_of_elements
+        else:
+            self._bounds = ((self.bmin, arg),)*self._number_of_elements
     bmax = property(_get_bmax,_set_bmax)
     
     @property
@@ -243,12 +236,12 @@ class Parameter(object):
     @_number_of_elements.setter
     def _number_of_elements(self, arg):
         # Do nothing if the number of arguments stays the same
-        if hasattr(self, '_Parameter__number_of_elements'):
-            if self.__number_of_elements == arg:
-                return
-        if arg == 0:
+        if self.__number_of_elements == arg:
+            return
+        if arg <= 1:
             raise ValueError("Please provide an integer number equal "
                              "or greater to 1")
+        self._bounds = ((self.bmin, self.bmax),) * arg
         self.__number_of_elements = arg
 
         if arg == 1:
@@ -256,17 +249,20 @@ class Parameter(object):
         else:
             self._Parameter__value = (0,) * arg
 
+
     def store_current_value_in_array(self,indexes):
         self.map['values'][indexes] = self.value
         self.map['is_set'][indexes] = True
         if self.std is not None:
             self.map['std'][indexes] = self.std
-    def assign_current_value_to_all(self, mask = None):
-        '''Stores in the map the current value for all the rest of the pixels
+    def assign_current_value_to_all(self, mask=None):
+        '''Stores in the map the current value for all the rest of the 
+        pixels.
         
         Parameters
         ----------
         mask: numpy array
+        
         '''
         if mask is None:
             mask = np.zeros(self.map.shape, dtype = 'bool')
@@ -294,8 +290,8 @@ class Parameter(object):
     def as_signal(self, field='values'):
         """Get a parameter map as a signal object.
         
-        Please note that this method only works when the navigation dimension
-        is greater than 0.
+        Please note that this method only works when the navigation 
+        dimension is greater than 0.
         
         Parameters
         ----------
@@ -311,8 +307,9 @@ class Parameter(object):
         if self._axes_manager.navigation_dimension == 0:
             raise NavigationDimensionError(0, '>0')
             
-        s = Signal({'data' : self.map[field],
-                    'axes' : self._axes_manager._get_navigation_axes_dicts()})
+        s = Signal(
+            {'data' : self.map[field],
+             'axes' : self._axes_manager._get_navigation_axes_dicts()})
         s.mapped_parameters.title = self.name
         for axis in s.axes_manager.axes:
             axis.navigate = False
@@ -336,13 +333,13 @@ class Parameter(object):
         Parameters
         ----------
         folder : str or None
-            The path to the folder where the file will be saved. If `None` the
-            current folder is used by default.
+            The path to the folder where the file will be saved.
+             If `None` the current folder is used by default.
         name : str or None
-            The name of the file. If `None` the Components name followed by the
-            Parameter `name` attributes will be used by default. If a file with 
-            the same name exists the name will be modified by appending a number
-            to the file path.
+            The name of the file. If `None` the Components name followed
+             by the Parameter `name` attributes will be used by default.
+              If a file with the same name exists the name will be 
+              modified by appending a number to the file path.
         save_std : bool
             If True, also the standard deviation will be saved
         
@@ -471,7 +468,8 @@ class Component(object):
         if not indexes:
             indexes = (0,)
         if only_fixed is True:
-            parameters = set(self.parameters) - set(self.free_parameters)
+            parameters = set(self.parameters) - set(
+                                                   self.free_parameters)
         else:
             parameters = self.parameters
         parameters = [parameter for parameter in parameters
@@ -487,8 +485,8 @@ class Component(object):
         Parameters
         ----------
         only_free : bool
-            If True, only the value of the parameters that are free will be
-            plotted
+            If True, only the value of the parameters that are free will
+             be plotted
               
         """
         if only_free:
@@ -500,28 +498,36 @@ class Component(object):
         for parameter in parameters:
             parameter.plot()
             
-    def export(self, folder=None, format=None, save_std=False, only_free=True):
+    def export(self, folder=None, format=None, save_std=False,
+               only_free=True):
         """Plot the value of the parameters of the model
         
         Parameters
         ----------
         folder : str or None
-            The path to the folder where the file will be saved. If `None` the
+            The path to the folder where the file will be saved. If 
+            `None` the
             current folder is used by default.
         format : str
-            The format to which the data will be exported. It must be the
-            extension of any format supported by Hyperspy. If None, the default
-            format for exporting as defined in the `Preferences` will be used.
+            The format to which the data will be exported. It must be 
+            the
+            extension of any format supported by Hyperspy. If None, the 
+            default
+            format for exporting as defined in the `Preferences` will be
+             used.
         save_std : bool
             If True, also the standard deviation will be saved.
         only_free : bool
-            If True, only the value of the parameters that are free will be
+            If True, only the value of the parameters that are free will
+             be
             exported.
             
         Notes
         -----
-        The name of the files will be determined by each the Component and
-        each Parameter name attributes. Therefore, it is possible to customise
+        The name of the files will be determined by each the Component 
+        and
+        each Parameter name attributes. Therefore, it is possible to 
+        customise
         the file names modify the name attributes.
               
         """
@@ -532,7 +538,8 @@ class Component(object):
             
         parameters = [k for k in parameters if k.twin is None]
         for parameter in parameters:
-            parameter.export(folder=folder, format=format, save_std=save_std,)
+            parameter.export(folder=folder, format=format,
+                             save_std=save_std,)
             
     def summary(self):
         for parameter in self.parameters:
@@ -540,8 +547,10 @@ class Component(object):
                         is not None else 0
             if parameter.twin is None:
                 if dim <= 1:
-                    print '%s = %s ± %s %s' % (parameter.name, parameter.value, 
-                    parameter.std, parameter.units)
+                    print '%s = %s ± %s %s' % (parameter.name,
+                                               parameter.value, 
+                                               parameter.std,
+                                               parameter.units)
 
     def __call__(self, p, x, onlyfree = True) :
         self.charge(p , onlyfree = onlyfree)
