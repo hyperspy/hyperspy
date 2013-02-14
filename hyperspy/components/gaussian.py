@@ -165,7 +165,7 @@ class Gaussian(Component):
             return True
         else:
             if self.A.map is None:
-                self.create_arrays()
+                self._create_arrays()
             self.A.map['values'][:] = height * sigma * sqrt2pi
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma

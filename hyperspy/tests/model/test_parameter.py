@@ -100,7 +100,7 @@ class TestParameterLen1:
         
     def test_map_size0(self):
         self.par._axes_manager = DummyAxesManager()
-        self.par.create_array()
+        self.par._create_array()
         self.par.value = 1
         self.par.std = 0.1
         self.par.store_current_value_in_array()
@@ -111,7 +111,7 @@ class TestParameterLen1:
     def test_map_size1(self):
         self.par._axes_manager = DummyAxesManager()
         self.par._axes_manager.navigation_shape = [1,]
-        self.par.create_array()
+        self.par._create_array()
         self.par.value = 1
         self.par.std = 0.1
         self.par.store_current_value_in_array()
@@ -123,7 +123,7 @@ class TestParameterLen1:
         self.par._axes_manager = DummyAxesManager()
         self.par._axes_manager.navigation_shape = [2,]
         self.par._axes_manager.indices = (1,)
-        self.par.create_array()
+        self.par._create_array()
         self.par.value = 1
         self.par.std = 0.1
         self.par.store_current_value_in_array()
@@ -188,7 +188,7 @@ class TestParameterLen2:
         
     def test_map_size0(self):
         self.par._axes_manager = DummyAxesManager()
-        self.par.create_array()
+        self.par._create_array()
         self.par.value = (1, 1)
         self.par.std = (0.1, 0.1)
         self.par.store_current_value_in_array()
@@ -199,7 +199,7 @@ class TestParameterLen2:
     def test_map_size1(self):
         self.par._axes_manager = DummyAxesManager()
         self.par._axes_manager.navigation_shape = [1,]
-        self.par.create_array()
+        self.par._create_array()
         self.par.value = (1, 1)
         self.par.std = (0.1, 0.1)
         self.par.store_current_value_in_array()
@@ -211,7 +211,7 @@ class TestParameterLen2:
         self.par._axes_manager = DummyAxesManager()
         self.par._axes_manager.navigation_shape = [2,]
         self.par._axes_manager.indices = (1,)
-        self.par.create_array()
+        self.par._create_array()
         self.par.value = (1, 1)
         self.par.std = (0.1, 0.1)
         self.par.store_current_value_in_array()

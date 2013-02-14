@@ -339,9 +339,9 @@ class Parameter(object):
         self.map['values'][mask == False] = self.value
         self.map['is_set'][mask == False] = True
         
-    def create_array(self):
+    def _create_array(self):
         """Create the map array to store the information in
-        multidimensional datasets
+        multidimensional datasets.
         
         """
         shape = self._axes_manager.navigation_shape
@@ -537,9 +537,9 @@ class Component(object):
             
             i += lenght           
                 
-    def create_arrays(self):
+    def _create_arrays(self):
         for parameter in self.parameters:
-            parameter.create_array()
+            parameter._create_array()
     
     def store_current_parameters_in_map(self):
         for parameter in self.parameters:
