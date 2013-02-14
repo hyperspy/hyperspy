@@ -497,16 +497,17 @@ class Component(object):
             parameter.store_current_value_in_array(indexes)
         
     def charge_value_from_map(self, indexes, only_fixed=False):
-        # If it is a single spectrum indexes is () 
+        # If it is a single spectrum indexes is ()
         if not indexes:
             indexes = (0,)
         if only_fixed is True:
-            parameters = set(self.parameters) - set(
-                                                   self.free_parameters)
+            parameters = (set(self.parameters) - 
+                          set(self.free_parameters))
         else:
             parameters = self.parameters
         parameters = [parameter for parameter in parameters
-                      if parameter.twin is None]
+                      if (parameter.twin is None or
+                          not isinstance(parameter.twin, Parameter))]
         for parameter in parameters:
             if parameter.map['is_set'][indexes]:
                 parameter.value = parameter.map['values'][indexes]
