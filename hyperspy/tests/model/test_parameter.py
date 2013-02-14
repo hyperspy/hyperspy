@@ -33,6 +33,10 @@ class Dummy:
         
     def add_one(self):
         self.value += 1
+        
+class DummyAxesManager:
+    navigation_shape = [0,]
+    indices = ()
 
 class TestParameterLen1:
     def setUp(self):
@@ -95,28 +99,34 @@ class TestParameterLen1:
         assert_equal(dummy.value, 2)
         
     def test_map_size0(self):
-        self.par.create_array((0,))
+        self.par._axes_manager = DummyAxesManager()
+        self.par.create_array()
         self.par.value = 1
         self.par.std = 0.1
-        self.par.store_current_value_in_array((0,))
+        self.par.store_current_value_in_array()
         assert_equal(self.par.map['values'][0], 1)
         assert_true(self.par.map['is_set'][0])
         assert_equal(self.par.map['std'][0], 0.1)
         
     def test_map_size1(self):
-        self.par.create_array((1,))
+        self.par._axes_manager = DummyAxesManager()
+        self.par._axes_manager.navigation_shape = [1,]
+        self.par.create_array()
         self.par.value = 1
         self.par.std = 0.1
-        self.par.store_current_value_in_array((0,))
+        self.par.store_current_value_in_array()
         assert_equal(self.par.map['values'][0], 1)
         assert_true(self.par.map['is_set'][0])
         assert_equal(self.par.map['std'][0], 0.1)
         
     def test_map_size2(self):
-        self.par.create_array((2,))
+        self.par._axes_manager = DummyAxesManager()
+        self.par._axes_manager.navigation_shape = [2,]
+        self.par._axes_manager.indices = (1,)
+        self.par.create_array()
         self.par.value = 1
         self.par.std = 0.1
-        self.par.store_current_value_in_array((1,))
+        self.par.store_current_value_in_array()
         assert_equal(self.par.map['values'][1], 1)
         assert_true(self.par.map['is_set'][1])
         assert_equal(self.par.map['std'][1], 0.1)
@@ -177,28 +187,34 @@ class TestParameterLen2:
         assert_equal(dummy.value, 2)
         
     def test_map_size0(self):
-        self.par.create_array((0,))
+        self.par._axes_manager = DummyAxesManager()
+        self.par.create_array()
         self.par.value = (1, 1)
         self.par.std = (0.1, 0.1)
-        self.par.store_current_value_in_array((0,))
+        self.par.store_current_value_in_array()
         assert_equal(tuple(self.par.map['values'][0]), (1, 1))
         assert_true(self.par.map['is_set'][0])
         assert_equal(tuple(self.par.map['std'][0]), (0.1, 0.1))
         
     def test_map_size1(self):
-        self.par.create_array((0,))
+        self.par._axes_manager = DummyAxesManager()
+        self.par._axes_manager.navigation_shape = [1,]
+        self.par.create_array()
         self.par.value = (1, 1)
         self.par.std = (0.1, 0.1)
-        self.par.store_current_value_in_array((0,))
+        self.par.store_current_value_in_array()
         assert_equal(tuple(self.par.map['values'][0]), (1, 1))
         assert_true(self.par.map['is_set'][0])
         assert_equal(tuple(self.par.map['std'][0]), (0.1, 0.1))
         
     def test_map_size2(self):
-        self.par.create_array((2,))
+        self.par._axes_manager = DummyAxesManager()
+        self.par._axes_manager.navigation_shape = [2,]
+        self.par._axes_manager.indices = (1,)
+        self.par.create_array()
         self.par.value = (1, 1)
         self.par.std = (0.1, 0.1)
-        self.par.store_current_value_in_array((1,))
+        self.par.store_current_value_in_array()
         assert_equal(tuple(self.par.map['values'][1]), (1, 1))
         assert_true(self.par.map['is_set'][1])
         assert_equal(tuple(self.par.map['std'][1]), (0.1, 0.1))

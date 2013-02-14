@@ -235,8 +235,7 @@ class EELSCLEdge(Component):
         self.fine_structure_coeff.bmax = None
         self._calculate_knots()
         if self.fine_structure_coeff.map is not None:
-            self.fine_structure_coeff.create_array(
-                self.fine_structure_coeff.map.shape)
+            self.fine_structure_coeff.create_array()
             
     def set_microscope_parameters(self, E0, alpha, beta, energy_scale):
         """

@@ -82,7 +82,7 @@ class Offset(Component):
             return True
         else:
             if self.A.map is None:
-                self.create_arrays(signal.axes_manager.navigation_shape)
+                self.create_arrays()
             dc = signal.data
             gi = [slice(None),] * len(dc.shape)
             gi[axis.index_in_array] = slice(i1,i2)

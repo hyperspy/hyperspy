@@ -151,7 +151,7 @@ class Polynomial(Component):
             return True
         else:
             if self.coefficients.map is None:
-                self.create_arrays(signal.axes_manager.navigation_shape)
+                self.create_arrays()
             nav_shape = signal.axes_manager.navigation_shape
             signal.unfold()
             dc = signal.data

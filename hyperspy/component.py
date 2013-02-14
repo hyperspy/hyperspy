@@ -337,7 +337,12 @@ class Parameter(object):
         self.map['values'][mask == False] = self.value
         self.map['is_set'][mask == False] = True
         
-    def create_array(self, shape):
+    def create_array(self):
+        """Create the map array to store the information in
+        multidimensional datasets
+        
+        """
+        shape = self._axes_manager.navigation_shape
         if len(shape) == 1 and shape[0] == 0:
             shape = [1,]
         dtype_ = np.dtype([
@@ -529,9 +534,9 @@ class Component(object):
             
             i += lenght           
                 
-    def create_arrays(self, shape):
+    def create_arrays(self):
         for parameter in self.parameters:
-            parameter.create_array(shape)
+            parameter.create_array()
     
     def store_current_parameters_in_map(self):
         for parameter in self.parameters:

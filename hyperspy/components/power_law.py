@@ -131,7 +131,7 @@ class PowerLaw(Component):
             return True
         else:
             if self.A.map is None:
-                self.create_arrays(signal.axes_manager.navigation_shape)
+                self.create_arrays()
             self.A.map['values'][:] = A
             self.A.map['is_set'][:] = True
             self.r.map['values'][:] = r
