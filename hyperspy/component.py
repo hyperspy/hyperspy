@@ -196,10 +196,9 @@ class Parameter(object):
                     self.twin._twins.remove(self)
                     for f in self.connected_functions:
                         self.twin.disconnect(f)
-                # Setting the __value attribute directly avoids 
-                # calling the functions connected to the parameter
+
                 self.__twin = arg
-                self.__value = twin_value
+                self.value = twin_value
         else:
             if self not in arg._twins :
                 arg._twins.add(self)

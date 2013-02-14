@@ -243,6 +243,15 @@ class TestParameterTwin:
         self.p1.value = 2
         assert_equal(3, self.p2.value)
         
+    def test_twin_value_bounded(self):
+        self.p2.bmax = 2
+        self.p2.ext_bounded = True
+        self.p2.twin = self.p1
+        self.p1.value = 3
+        assert_equal(self.p1.value, self.p2.value)
+        self.p2.twin = None
+        assert_equal(self.p2.value, self.p2.bmax)        
+        
     def test_twin_function(self):
         self.p2.twin_function = lambda x: x + 2
         self.p2.twin_inverse_function = lambda x: x - 2
@@ -257,8 +266,10 @@ class TestParameterTwin:
         self.p2.twin = self.p1
         self.p1.value = 2
         assert_equal(dummy.value, 2)
+        # The next line calls add_one -> value = 3
         self.p2.twin = None
+        # Next one shouldn't call add_one -> value = 3
         self.p1.value = 4
-        assert_equal(dummy.value, 2)
-        self.p2.value = 10
         assert_equal(dummy.value, 3)
+        self.p2.value = 10
+        assert_equal(dummy.value, 4)
