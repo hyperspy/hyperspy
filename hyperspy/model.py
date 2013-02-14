@@ -226,19 +226,13 @@ class Model(list):
 #            print "The red_chisq could not been calculated"
 
     def _set_p0(self):
-        p0 = None
+        self.p0 = ()
         for component in self:
             if component.active:
-                for param in component.free_parameters:
-                    if p0 is not None:
-                        p0 = (p0 + (param.value,) 
-                        if not isinstance(param.value, tuple) 
-                        else p0 + param.value)
-                    else:
-                        p0 = ((param.value,) 
-                        if not isinstance(param.value, tuple) 
-                        else param.value)
-        self.p0 = p0
+                for parameter in component.free_parameters:
+                    self.p0 = (self.p0 + (parameter.value,) 
+                    if parameter._number_of_elements == 1
+                    else self.p0 + parameter.value)
     
     def set_boundaries(self):
         """Generate the boundary list.
@@ -860,7 +854,7 @@ class Model(list):
         
         if np.iterable(self.p0) == 0:
             self.p0 = (self.p0,)
-        self._charge_p0(p_std = self.p_std)
+        self._charge_p0(p_std=self.p_std)
         self.set()
         if ext_bounding is True:
             self._disable_ext_bounding()

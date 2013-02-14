@@ -261,6 +261,8 @@ class Parameter(object):
             self._Parameter__value = 0
         else:
             self._Parameter__value = (0,) * arg
+        if self.component is not None:
+            self.component.update_number_parameters()
             
     @property
     def ext_bounded(self):
@@ -514,10 +516,11 @@ class Component(object):
         self._nfree_param=i
 
     def update_number_parameters(self):
-        i=0
+        i = 0
         for parameter in self.parameters:
             i += parameter._number_of_elements
-        self.nparam=i
+        self.nparam = i
+        self._update_free_parameters()
 
     def charge(self, p, p_std=None, onlyfree = False):
         if onlyfree is True:
