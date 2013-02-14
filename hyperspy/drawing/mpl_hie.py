@@ -86,7 +86,7 @@ class MPL_HyperImage_Explorer():
             sf.axes_manager = self.axes_manager
             self.navigator_plot = sf
             # Create a line to the left axis with the default 
-            # indexes
+            # indices
             sl = spectrum.SpectrumLine()
             sl.data_function = self.navigator_data_function
             sl.line_properties_helper('blue', 'step')        

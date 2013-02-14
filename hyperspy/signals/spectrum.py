@@ -55,19 +55,19 @@ class Spectrum(Signal):
         self.axes_manager.set_view('spectrum')
 
     @auto_replot
-    def correct_bad_pixels(self, indexes, axis = -1):
+    def correct_bad_pixels(self, indices, axis = -1):
         """Substitutes the value of a given pixel by the average of the
         adjencent pixels
 
         Parameters
         ----------
-        indexes : tuple of int
+        indices : tuple of int
         axis : -1
         
         """
         axis = self._get_positive_axis_index_index(axis)
         data = self.data
-        for pixel in indexes:
+        for pixel in indices:
             data[(slice(None),)*axis + (pixel, Ellipsis)] = \
             (data[(slice(None),)*axis + (pixel - 1, Ellipsis)] + \
             data[(slice(None),)*axis + (pixel + 1, Ellipsis)]) / 2.
@@ -138,7 +138,7 @@ class Spectrum(Signal):
     def estimate_shift_in_index_1D(self,
                                    irange=(None,None),
                                    axis=-1,
-                                   reference_indexes=None,
+                                   reference_indices=None,
                                    max_shift=None,
                                    interpolate=True,
                                    number_of_interpolation_points=5):
@@ -161,7 +161,7 @@ class Spectrum(Signal):
              Define the range of the feature of interest. If i1 or i2 
              are None,
              the range will not be limited in that side.
-        reference_indexes : tuple of ints or None
+        reference_indices : tuple of ints or None
             Defines the coordinates of the spectrum that will be used 
             as a
             reference. If None the spectrum of 0 coordinates will be 
@@ -183,16 +183,16 @@ class Spectrum(Signal):
 
         ip = number_of_interpolation_points + 1
         axis = self.axes_manager.axes[axis]
-        if reference_indexes is None:
-            reference_indexes = [0,] * (len(self.axes_manager.axes) - 1)
+        if reference_indices is None:
+            reference_indices = [0,] * (len(self.axes_manager.axes) - 1)
         else:
-            reference_indexes = list(reference_indexes)
-        reference_indexes.insert(axis.index_in_array, slice(None))
+            reference_indices = list(reference_indices)
+        reference_indices.insert(axis.index_in_array, slice(None))
         i1, i2 = irange
         array_shape = [axis.size for axis in self.axes_manager.axes]
         array_shape[axis.index_in_array] = 1
         shift_array = np.zeros(array_shape)
-        ref = self.data[reference_indexes][i1:i2]
+        ref = self.data[reference_indices][i1:i2]
         if interpolate is True:
             ref = utils.interpolate_1D(ip, ref)
         maxval = self.axes_manager.navigation_size
@@ -222,7 +222,7 @@ class Spectrum(Signal):
     def estimate_shift_in_units_1D(self,
         range_in_units=(None,None),
         axis=-1,
-        reference_indexes=None,
+        reference_indices=None,
         max_shift=None,
         interpolate=True,
         number_of_interpolation_points=5):
@@ -252,7 +252,7 @@ class Spectrum(Signal):
              selected axis. If f1 or f2 are None, thee range will not be
               limited
              in that side.
-        reference_indexes : tuple of ints or None
+        reference_indices : tuple of ints or None
             Defines the coordinates of the spectrum that will be used as
              a
             reference. If None the spectrum of 0 coordinates will be 
@@ -283,7 +283,7 @@ class Spectrum(Signal):
 
         return self.estimate_shift_in_index_1D(axis = axis.index_in_array,
                                    irange = (i1, i2),
-                                   reference_indexes = reference_indexes,
+                                   reference_indices = reference_indices,
                                    max_shift = max_shift,
                                    number_of_interpolation_points =
                                    number_of_interpolation_points)
@@ -291,7 +291,7 @@ class Spectrum(Signal):
     def align_1D(self,
                  range_in_units=(None,None),
                  axis=-1,
-                 reference_indexes=None,
+                 reference_indices=None,
                  max_shift=None,
                  interpolate=True,
                  number_of_interpolation_points=5,
@@ -326,7 +326,7 @@ class Spectrum(Signal):
              selected axis. If f1 or f2 are None, thee range will not be
               limited
              in that side.
-        reference_indexes : tuple of ints or None
+        reference_indices : tuple of ints or None
             Defines the coordinates of the spectrum that will be used as
              a
             reference. If None the spectrum of 0 coordinates will be
@@ -360,7 +360,7 @@ class Spectrum(Signal):
         shift_array = self.estimate_shift_in_units_1D(
             axis=axis,
             range_in_units=range_in_units, 
-            reference_indexes=reference_indexes,
+            reference_indices=reference_indices,
             max_shift=max_shift,
             interpolate=interpolate,
             number_of_interpolation_points=

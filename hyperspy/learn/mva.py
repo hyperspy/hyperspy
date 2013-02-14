@@ -555,10 +555,10 @@ class MVA():
             
         factors /= by(factors,0)
         loadings *= by(factors,0)
-        sorting_indexes = np.argsort(loadings.max(0))
-        factors[:] = factors[:,sorting_indexes]
-        loadings[:] = loadings[:,sorting_indexes]
-        loadings[:] = loadings[:,sorting_indexes]
+        sorting_indices = np.argsort(loadings.max(0))
+        factors[:] = factors[:,sorting_indices]
+        loadings[:] = loadings[:,sorting_indices]
+        loadings[:] = loadings[:,sorting_indices]
 
     def reverse_bss_component(self, component_number):
         """Reverse the independent component
@@ -591,9 +591,9 @@ class MVA():
             # The output of ICA is not sorted in any way what makes it difficult
             # to compare results from different unmixings. The following code
             # is an experimental attempt to sort them in a more predictable way
-            sorting_indexes = np.argsort(np.dot(target.explained_variance[:n],
+            sorting_indices = np.argsort(np.dot(target.explained_variance[:n],
                 np.abs(w.T)))[::-1]
-            w[:] = w[sorting_indexes,:]
+            w[:] = w[sorting_indices,:]
         target.bss_factors = np.dot(target.factors[:,:n], w.T)
     
     def _auto_reverse_bss_component(self, target):

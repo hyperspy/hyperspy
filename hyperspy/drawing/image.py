@@ -39,7 +39,7 @@ class ImagePlot:
         arguments.
     pixel_units : {None, string}
         The pixel units for the scale bar. Normally 
-    plot_scalebar, plot_ticks, plot_colorbar, plot_indexes : bool
+    plot_scalebar, plot_ticks, plot_colorbar, plot_indices : bool
     title : str
         The title is printed at the top of the image.
     window_title : str
@@ -70,7 +70,7 @@ class ImagePlot:
         self.auto_contrast = True
         self._ylabel = ''
         self._xlabel = ''
-        self.plot_indexes = True
+        self.plot_indices = True
         self._text = None
         self._text_position = (0, 1.05,)
         self.axes_manager = None
@@ -168,10 +168,10 @@ class ImagePlot:
             self.optimize_contrast(data)
         if (not self.axes_manager or 
             self.axes_manager.navigation_size==0):
-            self.plot_indexes = False
-        if self.plot_indexes is True:
+            self.plot_indices = False
+        if self.plot_indices is True:
             self._text = self.ax.text(*self._text_position,
-                            s=str(self.axes_manager.indexes[::-1]),
+                            s=str(self.axes_manager.indices[::-1]),
                             transform = self.ax.transAxes,
                             fontsize=12,
                             color='red')
@@ -218,8 +218,8 @@ class ImagePlot:
                        vmax=self.vmax,
                        extent=self._extent,
                        aspect=self._aspect)
-        if self.plot_indexes is True:
-            self._text.set_text((self.axes_manager.indexes[::-1]))
+        if self.plot_indices is True:
+            self._text.set_text((self.axes_manager.indices[::-1]))
         self.figure.canvas.draw()
         
     def _update_image(self):

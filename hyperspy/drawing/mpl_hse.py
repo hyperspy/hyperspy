@@ -137,10 +137,10 @@ class MPL_HyperSpectrum_Explorer(object):
         sf.create_axis()
         sf.axes_manager = self.axes_manager
         self.signal_plot = sf
-        # Create a line to the left axis with the default indexes
+        # Create a line to the left axis with the default indices
         sl = spectrum.SpectrumLine()
         sl.data_function = self.signal_data_function
-        sl.plot_indexes = True
+        sl.plot_indices = True
         if self.pointer is not None:
             color = self.pointer.color
         else:
@@ -193,7 +193,7 @@ class MPL_HyperSpectrum_Explorer(object):
         rl.line_properties_helper(self.right_pointer.color, 'step')
         self.signal_plot.create_right_axis()
         self.signal_plot.add_line(rl, ax = 'right')
-        rl.plot_indexes = True
+        rl.plot_indices = True
         rl.text_position = (1., 1.05,)
         rl.plot()
         self.right_pointer_on = True

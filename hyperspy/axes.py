@@ -234,7 +234,7 @@ class AxesManager(t.HasTraits):
     """Contains and manages the data axes.
     
     It can iterate over the navigation coordiantes returning the 
-    indexes at the current iteration.
+    indices at the current iteration.
     
     
     Attributes
@@ -246,8 +246,8 @@ class AxesManager(t.HasTraits):
         AttributeError when attempting to set its value.
 
     
-    indexes : tuple
-        Get and set the current indexes if the navigation dimension
+    indices : tuple
+        Get and set the current indices if the navigation dimension
         is not 0. If the navigation dimension is 0 it raises 
         AttributeError when attempting to set its value.
 
@@ -265,7 +265,7 @@ class AxesManager(t.HasTraits):
     >>> s.axes_manager[1]
     <undefined axis, index: 1>
     >>> for i in s.axes_manager:
-    >>>     print i, s.axes_manager.indexes
+    >>>     print i, s.axes_manager.indices
     (0, 0, 0) (0, 0, 0)
     (0, 0, 1) (0, 0, 1)
     (0, 1, 0) (0, 1, 0)
@@ -348,19 +348,19 @@ class AxesManager(t.HasTraits):
         """
         if self._index is None:
             self._index = 0
-            self._indexes_backup = self.indexes
+            self._indices_backup = self.indices
             val = (0,) * self.navigation_dimension
-            self.indexes = val
+            self.indices = val
         elif (self._index >= self._max_index):
             self._index = None
-            self.indexes = self._indexes_backup
-            del self._indexes_backup
+            self.indices = self._indices_backup
+            del self._indices_backup
             raise StopIteration
         else:
             self._index += 1
             val = np.unravel_index(self._index, 
                                     tuple(self.navigation_shape))
-            self.indexes = val
+            self.indices = val
         return val
 
     def __iter__(self):
@@ -412,7 +412,7 @@ class AxesManager(t.HasTraits):
         ----------
         view : {'spectrum', 'image'}
             If spectrum all but the last index will be set to "navigate". If 
-            'image' the all but the last two indexes will be set to navigate.            
+            'image' the all but the last two indices will be set to navigate.            
         
         """
         tl = [True] * len(self.axes)
@@ -432,7 +432,7 @@ class AxesManager(t.HasTraits):
         ----------
 
         signal_axes: tuple of ints
-            A list of the axis indexes that we want to slice
+            A list of the axis indices that we want to slice
 
         '''
         for axis in self.axes:
@@ -563,7 +563,7 @@ class AxesManager(t.HasTraits):
             axis.value = value
             
     @property        
-    def indexes(self):
+    def indices(self):
         """Get the index of the navigation axes.
         
         Returns
@@ -573,22 +573,22 @@ class AxesManager(t.HasTraits):
         """
         return tuple([axis.index for axis in self.navigation_axes])
         
-    @indexes.setter    
-    def indexes(self, indexes):
+    @indices.setter    
+    def indices(self, indices):
         """Set the index of the navigation axes.
         
         Parameters
         ----------
-        indexes : tuple
+        indices : tuple
             The len of the the tuple must coincide with the navigation
             dimension
             
         """
         
-        if len(indexes) != self.navigation_dimension:
+        if len(indices) != self.navigation_dimension:
             raise AttributeError(
-            "The number of indexes must be equal to the "
+            "The number of indices must be equal to the "
             "navigation dimension that is %i" % 
                 self.navigation_dimension)
-        for index, axis in zip(indexes, self.navigation_axes):
+        for index, axis in zip(indices, self.navigation_axes):
             axis.index = index

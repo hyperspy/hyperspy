@@ -284,18 +284,52 @@ class Parameter(object):
             # Update the value to take into account the new bounds
             self.value = self.value
 
-    def store_current_value_in_array(self,indexes):
-        self.map['values'][indexes] = self.value
-        self.map['is_set'][indexes] = True
+    def store_current_value_in_array(self):
+        """Store the value and std attributes.
+        
+        See also
+        --------
+        fetch, assign_current_value_to_all
+        
+        """
+        indices = self._axes_manager.indices
+        # If it is a single spectrum indices is ()
+        if not indices:
+            indices = (0,)
+        self.map['values'][indices] = self.value
+        self.map['is_set'][indices] = True
         if self.std is not None:
-            self.map['std'][indexes] = self.std
+            self.map['std'][indices] = self.std
+            
+    def fetch(self):
+        """Fetch the stored value and std attributes.
+        
+        
+        See Also
+        --------
+        store_current_value_in_array, assign_current_value_to_all
+        
+        """
+        indices = self._axes_manager.indices
+        # If it is a single spectrum indices is ()
+        if not indices:
+            indices = (0,)
+        if self.map['is_set'][indices]:
+            self.value = self.map['values'][indices]
+            self.std = self.map['std'][indices]
+
     def assign_current_value_to_all(self, mask=None):
-        '''Stores in the map the current value for all the rest of the 
-        pixels.
+        '''Assign the current value attribute to all the  indices
         
         Parameters
         ----------
-        mask: numpy array
+        mask: {None, boolean numpy array}
+            Set only the indices that are not masked i.e. where 
+            mask is False.
+            
+        See Also
+        --------
+        store_current_value_in_array, fetch
         
         '''
         if mask is None:
@@ -391,6 +425,7 @@ class Parameter(object):
                 filename,'_std'))
                     
 class Component(object):
+    __axes_manager = None
     def __init__(self, parameter_name_list):
         self.connected_functions = list()
         self.parameters = []
@@ -404,6 +439,15 @@ class Component(object):
         self._id_name = self.__class__.__name__
         self._id_version = '1.0'
         self._position = None
+    
+    @property
+    def _axes_manager(self):
+        return self.__axes_manager
+    @_axes_manager.setter
+    def _axes_manager(self, value):
+        for parameter in self.parameters:
+            parameter._axes_manager = value
+        self.__axes_manager = value
         
     def connect(self, f):
         if f not in self.connected_functions:
@@ -489,17 +533,11 @@ class Component(object):
         for parameter in self.parameters:
             parameter.create_array(shape)
     
-    def store_current_parameters_in_map(self, indexes):
-        # If it is a single spectrum indexes is () 
-        if not indexes:
-            indexes = (0,)
+    def store_current_parameters_in_map(self):
         for parameter in self.parameters:
-            parameter.store_current_value_in_array(indexes)
+            parameter.store_current_value_in_array()
         
-    def charge_value_from_map(self, indexes, only_fixed=False):
-        # If it is a single spectrum indexes is ()
-        if not indexes:
-            indexes = (0,)
+    def charge_value_from_map(self, only_fixed=False):
         if only_fixed is True:
             parameters = (set(self.parameters) - 
                           set(self.free_parameters))
@@ -509,9 +547,7 @@ class Component(object):
                       if (parameter.twin is None or
                           not isinstance(parameter.twin, Parameter))]
         for parameter in parameters:
-            if parameter.map['is_set'][indexes]:
-                parameter.value = parameter.map['values'][indexes]
-                parameter.std = parameter.map['std'][indexes]
+            parameter.fetch()
 
     def plot(self, only_free = True):
         """Plot the value of the parameters of the model
@@ -590,6 +626,3 @@ class Component(object):
         self.charge(p , onlyfree = onlyfree)
         return self.function(x)
         
-    def set_axes(self, axes_manager):
-        for parameter in self.parameters:
-            parameter._axes_manager = axes_manager

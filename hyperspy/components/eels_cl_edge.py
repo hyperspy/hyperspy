@@ -342,12 +342,17 @@ class EELSCLEdge(Component):
             'axes' : self.intensity._axes_manager._get_axes_dicts()})
         s.get_dimensions_from_data()
         s.axes_manager.signal_axes[0].offset = self.onset_energy.value
-        current_indexes = self.intensity._axes_manager.indexes
+        # Backup the axes_manager
+        original_axes_manager = self._axes_manager
+        self._axes_manager = s.axes_manager
         for spectrum in s:
-            self.charge_value_from_map(s.axes_manager.indexes)
+            self.charge_value_from_map()
             spectrum.data[:] = self.function(
                                     s.axes_manager.signal_axes[0].axis)
-        self.charge_value_from_map(current_indexes)
+        # Restore the axes_manager and the values
+        self._axes_manager = original_axes_manager 
+        self.charge_value_from_map()
+        
         s.mapped_parameters.title = self.name.replace(
         '_',' ') + ' fine structure'
         
