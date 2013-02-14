@@ -377,8 +377,8 @@ The following methods are only available for :py:class:`~.models.eelsmodel.EELSM
 * :py:meth:`~.models.eelsmodel.EELSModel.disable_fine_structure`
 * :py:meth:`~.models.eelsmodel.EELSModel.set_all_edges_intensities_positive`
 * :py:meth:`~.models.eelsmodel.EELSModel.unset_all_edges_intensities_positive`
-* :py:meth:`~.models.eelsmodel.EELSModel.enable_free_energy_shift`
-* :py:meth:`~.models.eelsmodel.EELSModel.disable_free_energy_shift`
+* :py:meth:`~.models.eelsmodel.EELSModel.enable_free_onset_energy`
+* :py:meth:`~.models.eelsmodel.EELSModel.disable_free_onset_energy`
 * :py:meth:`~.models.eelsmodel.EELSModel.fix_edges`
 * :py:meth:`~.models.eelsmodel.EELSModel.free_edges`
 * :py:meth:`~.models.eelsmodel.EELSModel.fix_fine_structure`

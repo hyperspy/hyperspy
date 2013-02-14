@@ -60,25 +60,25 @@ class EELSCLEdge(Component):
     
     Attributes
     ----------
-    energy_shift : float
-        Energy shift of the CL edge in respect to the CL edge onset
-         energy as defined in the internal tables GOS.energy_onset.
-         It is a component.Parameter instance.
-    intensity : float
+    onset_energy : Parameter
+        The edge onset position
+    intensity : Parameter
         The factor by which the cross section is multiplied, what in 
         favourable cases is proportional to the number of atoms of 
-        the element. It is a component.Parameter instance.
-    fine_structure_coeff : list of floats
+        the element. It is a component.Parameter instance. 
+        It is fixed by default.
+    fine_structure_coeff : Parameter
         The coefficients of the spline that fits the fine structure. 
         Fix this parameter to fix the fine structure. It is a 
         component.Parameter instance.
+    effective_angle : Parameter
+        The effective collection angle. It is automatically 
+        calculated by set_microscope_parameters. It is a 
+        component.Parameter instance. It is fixed by default.
     fine_structure_smoothing : float between 0 and 1
         Controls the level of smoothing of the fine structure model.
         Decreasing the value increases the level of smoothing.
-    effective_angle : float
-        The effective collection angle. It is automatically 
-        calculated by set_microscope_parameters. It is a 
-        component.Parameter instance.
+
     fine_structure_active : bool
         Activates/deactivates the fine structure feature. Its 
         default value can be choosen in the preferences.
@@ -90,8 +90,7 @@ class EELSCLEdge(Component):
     def __init__(self, element_subshell, GOS=None):
         # Declare the parameters
         Component.__init__(self,
-            ['energy_shift',
-             'intensity',
+            ['intensity',
              'fine_structure_coeff',
              'effective_angle',
              'onset_energy'])
@@ -122,16 +121,10 @@ class EELSCLEdge(Component):
                 raise ValueError(
                     'gos must be one of: None, \'hydrogenic\''
                                   ' or \'Hartree-Slater\'')
+        self.onset_energy.value = self.GOS.onset_energy
         self.onset_energy.free = False
         self._position = self.onset_energy
-        self.free_energy_shift = False
-        self.energy_shift.twin = self.onset_energy
-        self.energy_shift.twin_function = (
-                                    lambda x: x - self.GOS.onset_energy)
-        self.energy_shift.twin_inverse_function = (
-                                    lambda x: x + self.GOS.onset_energy)
-        self.energy_shift.value = 0
-        
+        self.free_onset_energy = False        
         self.intensity.grad = self.grad_intensity
         self.intensity.value = 1
         self.intensity.bmin = 0.
@@ -262,10 +255,10 @@ class EELSCLEdge(Component):
         # Integration over q using splines                                        
         angle = self.effective_angle.value * 1e-3 # in rad
         self.tab_xsection = self.GOS.integrateq(
-                self.energy_shift.value, angle, self.E0)                
+                self.onset_energy.value, angle, self.E0)                
         # Calculate extrapolation powerlaw extrapolation parameters
-        E1 = self.GOS.energy_axis[-2] + self.energy_shift.value
-        E2 = self.GOS.energy_axis[-1] + self.energy_shift.value
+        E1 = self.GOS.energy_axis[-2] + self.GOS.energy_shift
+        E2 = self.GOS.energy_axis[-1] + self.GOS.energy_shift
         y1 = self.GOS.qint[-2] # in m**2/bin */
         y2 = self.GOS.qint[-1] # in m**2/bin */
         self.r = math.log(y2 / y1) / math.log(E1 / E2)
@@ -290,7 +283,7 @@ class EELSCLEdge(Component):
         """Returns the number of counts in barns
         
         """
-        Emax = self.GOS.energy_axis[-1] + self.energy_shift.value 
+        Emax = self.GOS.energy_axis[-1] + self.GOS.energy_shift
         cts = np.zeros((len(E)))
         bsignal = (E >= self.onset_energy.value)
         if self.fine_structure_active is True:

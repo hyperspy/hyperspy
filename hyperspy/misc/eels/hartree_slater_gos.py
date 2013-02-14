@@ -105,7 +105,9 @@ class HartreeSlaterGOS(GOSBase):
             info1_1, info1_2, ncol)
         self.energy_axis = self.rel_energy_axis + self.onset_energy
                       
-    def integrateq(self,energy_shift, angle,E0):
+    def integrateq(self,onset_energy, angle,E0):
+        energy_shift = onset_energy - self.onset_energy
+        self.energy_shift = energy_shift
         qint = np.zeros((self.energy_axis.shape[0]))
         # Calculate the cross section at each energy position of the 
         # tabulated GOS
