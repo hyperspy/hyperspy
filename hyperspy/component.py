@@ -470,7 +470,7 @@ class Component(object):
             i += parameter._number_of_elements
         self.nparam=i
 
-    def charge(self, p, p_std = None, onlyfree = False):
+    def charge(self, p, p_std=None, onlyfree = False):
         if onlyfree is True:
             parameters = self.free_parameters
         else:
@@ -478,13 +478,12 @@ class Component(object):
         i=0
         for parameter in parameters:
             lenght = parameter._number_of_elements
-            parameter.value = (p[i] if lenght == 1 else 
-            p[i:i+lenght].tolist())
+            parameter.value = (p[i] if lenght == 1 else p[i:i + lenght])
             if p_std is not None:
                 parameter.std = (p_std[i] if lenght == 1 else 
-                p_std[i:i+lenght].tolist())
+                tuple(p_std[i:i+lenght]))
             
-            i+=lenght           
+            i += lenght           
                 
     def create_arrays(self, shape):
         for parameter in self.parameters:
