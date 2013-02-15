@@ -221,7 +221,7 @@ class Signal(t.HasTraits, MVA):
         axes = []
         for i in xrange(len(self.data.shape)):
             axes.append({
-                        'name': 'undefined',
+                        'name': 'axis%i' % i,
                         'scale': 1.,
                         'offset': 0.,
                         'size': int(self.data.shape[i]),
