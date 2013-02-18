@@ -95,7 +95,8 @@ class HydrogenicGOS(GOSBase):
         print "\tSubshell: ", self.subshell[1:]
         print "\tOnset energy: ", self.onset_energy
 
-    def integrateq(self,energy_shift, angle,E0):
+    def integrateq(self,onset_energy, angle,E0):
+        energy_shift = onset_energy - self.onset_energy
         self.energy_shift = energy_shift
         gamma = 1 + E0 / 511.06
         T = 511060 * (1 - 1 / gamma**2) / 2
@@ -114,7 +115,8 @@ class HydrogenicGOS(GOSBase):
                     lambda x: self.gosfunc(E, np.exp(x)),
                     math.log(qa0sqmin), math.log(qa0sqmax))[0])
         self.qint = qint
-        return sp.interpolate.interp1d(self.energy_axis + energy_shift, qint)
+        return sp.interpolate.interp1d(self.energy_axis + energy_shift,
+                                       qint)
                       
     def gosfuncK(self, E, qa02):
     # gosfunc calculates (=DF/DE) which IS PER EV AND PER ATOM

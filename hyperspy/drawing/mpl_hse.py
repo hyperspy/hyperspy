@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import division
+
 import numpy as np
 
 import widgets
@@ -38,16 +40,12 @@ class MPL_HyperSpectrum_Explorer(object):
         self.navigator_title = ''
         self.navigator_plot = None
         self.signal_plot = None
-        self.pixel_size = None
-        self.pixel_units =  None
         self.axis = None
         self.pointer = None
         self.right_pointer = None
         self._key_nav_cid = None
         self._right_pointer_on = False
         self._auto_update_plot = True
-        self.plot_navigator_scalebar = False
-        self.plot_navigator_plot_ticks = True
         
     @property
     def auto_update_plot(self):
@@ -94,7 +92,6 @@ class MPL_HyperSpectrum_Explorer(object):
         return Pointer
    
     def plot(self):
-        self.generate_labels()
         if self.pointer is None:
             pointer = self.assign_pointer()  
             if pointer is not None:
@@ -104,60 +101,20 @@ class MPL_HyperSpectrum_Explorer(object):
             self.plot_navigator()
         self.plot_signal()
         
-    def generate_labels(self):
-        # Spectrum plot labels
-        self.xlabel = '%s (%s)' % (
-                self.axes_manager.signal_axes[0].name,
-                self.axes_manager.signal_axes[0].units)
-        self.ylabel = 'Intensity'
-        self.axis = self.axes_manager.signal_axes[0].axis
-        # Navigator labels
-        if self.axes_manager.navigation_dimension == 1:
-            scalebar_axis = self.axes_manager.signal_axes[0]
-            self.navigator_xlabel = '%s (%s)' % (
-                self.axes_manager.signal_axes[0].name,
-                self.axes_manager.signal_axes[0].units)
-            self.navigator_ylabel = '%s (%s)' % (
-                self.axes_manager.navigation_axes[0].name,
-                self.axes_manager.navigation_axes[0].units)
-            self.plot_navigator_scalebar = False
-            self.plot_navigator_ticks = True
-            self.pixel_units = scalebar_axis.units
-            self.pixel_size = scalebar_axis.scale
-
-
-        elif self.axes_manager.navigation_dimension == 2:
-            scalebar_axis = \
-                self.axes_manager.navigation_axes[-1]
-            self.navigator_ylabel = '%s (%s)' % (
-                self.axes_manager.navigation_axes[0].name,
-                self.axes_manager.navigation_axes[0].units)
-            self.navigator_xlabel = '%s (%s)' % (
-                self.axes_manager.navigation_axes[1].name,
-                self.axes_manager.navigation_axes[1].units)
-            if (self.axes_manager.navigation_axes[0].units == 
-                self.axes_manager.navigation_axes[1].units):
-                    self.plot_navigator_scalebar = True
-                    self.plot_navigator_ticks = False
-            else:
-                self.plot_navigator_scalebar = False
-                self.plot_navigator_ticks = True
-            self.pixel_units = scalebar_axis.units
-            self.pixel_size = scalebar_axis.scale
-        
-        
     def plot_navigator(self):
         if self.navigator_plot is not None:
             self.navigator_plot.plot()
             return
         imf = image.ImagePlot()
         imf.data_function = self.navigator_data_function
-        imf.pixel_units = self.pixel_units
-        imf.pixel_size = self.pixel_size
-        imf.xlabel = self.navigator_xlabel
-        imf.ylabel = self.navigator_ylabel
-        imf.plot_scalebar = self.plot_navigator_scalebar
-        imf.plot_ticks = self.plot_navigator_ticks
+        # Navigator labels
+        if self.axes_manager.navigation_dimension == 1:
+            imf.yaxis = self.axes_manager.navigation_axes[0]
+            imf.xaxis = self.axes_manager.signal_axes[0]
+        elif self.axes_manager.navigation_dimension == 2:
+            imf.yaxis = self.axes_manager.navigation_axes[0]
+            imf.xaxis = self.axes_manager.navigation_axes[1]
+        imf.title = self.signal_title + ' Navigator'
         imf.plot()
         self.pointer.add_axes(imf.ax)
         self.navigator_plot = imf
@@ -166,8 +123,12 @@ class MPL_HyperSpectrum_Explorer(object):
         if self.signal_plot is not None:
             self.signal_plot.plot()
             return
-        
         # Create the figure
+        self.xlabel = '%s (%s)' % (
+            self.axes_manager.signal_axes[0].name,
+            self.axes_manager.signal_axes[0].units)
+        self.ylabel = 'Intensity'
+        self.axis = self.axes_manager.signal_axes[0].axis
         sf = spectrum.SpectrumFigure()
         sf.xlabel = self.xlabel
         sf.ylabel = self.ylabel
@@ -176,10 +137,10 @@ class MPL_HyperSpectrum_Explorer(object):
         sf.create_axis()
         sf.axes_manager = self.axes_manager
         self.signal_plot = sf
-        # Create a line to the left axis with the default coordinates
+        # Create a line to the left axis with the default indices
         sl = spectrum.SpectrumLine()
         sl.data_function = self.signal_data_function
-        sl.plot_coordinates = True
+        sl.plot_indices = True
         if self.pointer is not None:
             color = self.pointer.color
         else:
@@ -232,7 +193,7 @@ class MPL_HyperSpectrum_Explorer(object):
         rl.line_properties_helper(self.right_pointer.color, 'step')
         self.signal_plot.create_right_axis()
         self.signal_plot.add_line(rl, ax = 'right')
-        rl.plot_coordinates = True
+        rl.plot_indices = True
         rl.text_position = (1., 1.05,)
         rl.plot()
         self.right_pointer_on = True

@@ -30,20 +30,21 @@ class SpectrumSimulation(Spectrum):
         Spectrum.__init__(self, dic)
 
     @auto_replot
-    def add_poissonian_noise(self):
+    def add_poissonian_noise(self, **kwargs):
         """Add Poissonian noise to the data"""
         original_type = self.data.dtype
-        self.data = np.random.poisson(self.data).astype(original_type)
+        self.data = np.random.poisson(self.data, **kwargs).astype(
+                                      original_type)
 
     @auto_replot
-    def add_gaussian_noise(self, std):
+    def add_gaussian_noise(self, std, **kwargs):
         """Add Gaussian noise to the data
         Parameters
         ----------
         std : float
 
         """
-        noise = np.random.normal(0, std, self.data.shape)
+        noise = np.random.normal(0, std, self.data.shape, **kwargs)
         self.data += noise
 
     @auto_replot    

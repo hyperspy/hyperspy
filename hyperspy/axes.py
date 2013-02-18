@@ -66,6 +66,7 @@ def generate_axis(offset, scale, size, offset_index=0):
     Returns
     -------
     Numpy array
+    
     """
     return np.linspace(offset - offset_index * scale,
                        offset + scale * (size - 1 - offset_index),
@@ -87,11 +88,18 @@ class DataAxis(t.HasTraits):
     navigate = t.Bool(True)
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
+    continuous_value = t.Bool(False)
 
-    def __init__(self, size, index_in_array, name='', scale=1., offset=0.,
-                 units='undefined', navigate = True):
+    def __init__(self,
+                 size,
+                 index_in_array,
+                 name='',
+                 scale=1.,
+                 offset=0.,
+                 units='undefined',
+                 navigate=True):
+                     
         super(DataAxis, self).__init__()
-
         self.name = name
         self.units = units
         self.scale = scale
@@ -169,6 +177,12 @@ class DataAxis(t.HasTraits):
             text = '<%s axis, index: %s>' % (self.name,
                                                self.index_in_array)
             return text
+            
+    def connect(self, f, trait='value'):
+        self.on_trait_change(f, trait)
+
+    def disconnect(self, f, trait='value'):
+        self.on_trait_change(f, trait, remove=True)
 
     def update_index_bounds(self):
         self.high_index = self.size - 1
@@ -195,6 +209,9 @@ class DataAxis(t.HasTraits):
             'navigate' : self.navigate
         }
         return adict
+        
+    def copy(self):
+        return DataAxis(**self.get_axis_dictionary())
 
     def update_value(self):
         self.value = self.axis[self.index]
@@ -219,12 +236,8 @@ class DataAxis(t.HasTraits):
             if self.size > index >= 0:
                 return index
             elif index < 0:
-                messages.warning(
-                    "The given value is below the axis limits")
                 return 0
             else:
-                messages.warning(
-                    "The given value is above the axis limits")
                 return int(self.size - 1)
 
     def index2value(self, index):
@@ -233,7 +246,8 @@ class DataAxis(t.HasTraits):
     def set_index_from_value(self, value):
         self.index = self.value2index(value)
         # If the value is above the limits we must correct the value
-        self.value = self.index2value(self.index)
+        if self.continuous_value is False:
+            self.value = self.index2value(self.index)
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration = True):
         scale = (value_tuple[1] - value_tuple[0]) /\
@@ -271,7 +285,7 @@ class AxesManager(t.HasTraits):
     """Contains and manages the data axes.
     
     It can iterate over the navigation coordiantes returning the 
-    coordinates at the current iteration.
+    indices at the current iteration.
     
     
     Attributes
@@ -281,7 +295,13 @@ class AxesManager(t.HasTraits):
         Get and set the current coordinates if the navigation dimension
         is not 0. If the navigation dimension is 0 it raises 
         AttributeError when attempting to set its value.
-        
+
+    
+    indices : tuple
+        Get and set the current indices if the navigation dimension
+        is not 0. If the navigation dimension is 0 it raises 
+        AttributeError when attempting to set its value.
+
     Examples
     --------
     
@@ -296,7 +316,7 @@ class AxesManager(t.HasTraits):
     >>> s.axes_manager[1]
     <undefined axis, index: 1>
     >>> for i in s.axes_manager:
-    >>>     print i, s.axes_manager.coordinates
+    >>>     print i, s.axes_manager.indices
     (0, 0, 0) (0, 0, 0)
     (0, 0, 1) (0, 0, 1)
     (0, 1, 0) (0, 1, 0)
@@ -323,6 +343,22 @@ class AxesManager(t.HasTraits):
         
         """
         return self.axes[i:j]
+        
+    def _get_data_slice(self, fill=None):
+        """Return a tuple of slice objects to slice the data.
+        
+        Parameters
+        ----------
+        fill: None or iterable of (int, slice)
+            If not None, fill the tuple of index int with the given
+            slice.
+            
+        """
+        cslice = [slice,] * len(self.axes)
+        if fill is not None:
+            for index, slice_ in fill:
+                cslice[index] = slice_
+        return tuple(cslice)
         
     def __init__(self, axes_list):
         super(AxesManager, self).__init__()
@@ -363,22 +399,25 @@ class AxesManager(t.HasTraits):
         """
         if self._index is None:
             self._index = 0
-            self._coordinates_backup = self.coordinates
+            self._indices_backup = self.indices
             val = (0,) * self.navigation_dimension
-            self.coordinates = val
+            self.indices = val
         elif (self._index >= self._max_index):
             self._index = None
-            self.coordinates = self._coordinates_backup
-            del self._coordinates_backup
+            self.indices = self._indices_backup
+            del self._indices_backup
             raise StopIteration
         else:
             self._index += 1
             val = np.unravel_index(self._index, 
                                     tuple(self.navigation_shape))
-            self.coordinates = val
+            self.indices = val
         return val
 
     def __iter__(self):
+        # Reset the _index that can have a value != None due to 
+        # a previous iteration that did not hit a StopIteration
+        self._index = None
         return self
         
     def append_axis(self, *args, **kwargs):
@@ -400,7 +439,6 @@ class AxesManager(t.HasTraits):
                 self.signal_axes.append(axis)
                 
         self._getitem_tuple = getitem_tuple
-        self._values = np.array(values)
         self.signal_dimension = len(self.signal_axes)
         self.navigation_dimension = len(self.navigation_axes)
         if self.navigation_dimension != 0:
@@ -425,7 +463,7 @@ class AxesManager(t.HasTraits):
         ----------
         view : {'spectrum', 'image'}
             If spectrum all but the last index will be set to "navigate". If 
-            'image' the all but the last two indexes will be set to navigate.            
+            'image' the all but the last two indices will be set to navigate.            
         
         """
         tl = [True] * len(self.axes)
@@ -445,7 +483,7 @@ class AxesManager(t.HasTraits):
         ----------
 
         signal_axes: tuple of ints
-            A list of the axis indexes that we want to slice
+            A list of the axis indices that we want to slice
 
         '''
         for axis in self.axes:
@@ -462,7 +500,7 @@ class AxesManager(t.HasTraits):
     def disconnect(self, f):
         for axis in self.axes:
             if axis.slice is None:
-                axis.on_trait_change(f, 'index', remove = True)
+                axis.on_trait_change(f, 'index', remove=True)
 
     def key_navigator(self, event):
         if len(self.navigation_axes) not in (1,2): return
@@ -546,18 +584,18 @@ class AxesManager(t.HasTraits):
     
     @property        
     def coordinates(self):
-        """Get the index of the navigation axes.
+        """Get the coordinates of the navigation axes.
         
         Returns
         -------
         list
             
         """
-        return tuple([axis.index for axis in self.navigation_axes])
+        return tuple([axis.value for axis in self.navigation_axes])
         
     @coordinates.setter    
     def coordinates(self, coordinates):
-        """Set the index of the navigation axes.
+        """Set the coordinates of the navigation axes.
         
         Parameters
         ----------
@@ -572,5 +610,36 @@ class AxesManager(t.HasTraits):
             "The number of coordinates must be equal to the "
             "navigation dimension that is %i" % 
                 self.navigation_dimension)
-        for index, axis in zip(coordinates, self.navigation_axes):
+        for value, axis in zip(coordinates, self.navigation_axes):
+            axis.value = value
+            
+    @property        
+    def indices(self):
+        """Get the index of the navigation axes.
+        
+        Returns
+        -------
+        list
+            
+        """
+        return tuple([axis.index for axis in self.navigation_axes])
+        
+    @indices.setter    
+    def indices(self, indices):
+        """Set the index of the navigation axes.
+        
+        Parameters
+        ----------
+        indices : tuple
+            The len of the the tuple must coincide with the navigation
+            dimension
+            
+        """
+        
+        if len(indices) != self.navigation_dimension:
+            raise AttributeError(
+            "The number of indices must be equal to the "
+            "navigation dimension that is %i" % 
+                self.navigation_dimension)
+        for index, axis in zip(indices, self.navigation_axes):
             axis.index = index
