@@ -243,15 +243,36 @@ class Signal(t.HasTraits, MVA):
             return self.data.squeeze().T
 
     def _get_hse_2D_explorer(self, *args, **kwargs):
-        islice = self.axes_manager.signal_axes[0].index_in_array
-        data = np.nan_to_num(self.data).sum(islice)
+        slices = [0,] * len(self.axes_manager.axes)
+        for i, axis in enumerate(
+                            self.axes_manager.navigation_axes[::-1]):
+            if i < 2:
+                slices[axis.index_in_array] = slice(None, None, None)
+            else:
+                slices[axis.index_in_array] = slice(
+                                        axis.index, axis.index+1,None)
+        isignal = self.axes_manager.signal_axes[0].index_in_array
+        slices[isignal] = slice(None, None, None)
+        data = np.nan_to_num(self.data.__getitem__(slices)
+                             ).sum(isignal).squeeze()
         return data
 
     def _get_hie_explorer(self, *args, **kwargs):
-        isslice = [self.axes_manager.signal_axes[0].index_in_array,
-                   self.axes_manager.signal_axes[1].index_in_array]
-        isslice.sort()
-        data = self.data.sum(isslice[1]).sum(isslice[0])
+        slices = [0,] * len(self.axes_manager.axes)
+        for i, axis in enumerate(
+                            self.axes_manager.navigation_axes[::-1]):
+            if i < 2:
+                slices[axis.index_in_array] = slice(None, None, None)
+            else:
+                slices[axis.index_in_array] = slice(
+                                        axis.index, axis.index+1,None)
+        isignal = [axis.index_in_array for axis in
+                   self.axes_manager.signal_axes]
+        isignal.sort()
+        slices[isignal[0]] = slice(None, None, None)
+        slices[isignal[1]] = slice(None, None, None)
+        data = np.nan_to_num(self.data.__getitem__(slices)
+                             ).sum(isignal[1]).sum(isignal[0]).squeeze()
         return data
 
     def _get_explorer(self, *args, **kwargs):
@@ -259,12 +280,11 @@ class Signal(t.HasTraits, MVA):
         if self.axes_manager.signal_dimension == 1:
             if nav_dim == 1:
                 return self._get_hse_1D_explorer(*args, **kwargs)
-            elif nav_dim == 2:
+            elif nav_dim >= 2:
                 return self._get_hse_2D_explorer(*args, **kwargs)
-            else:
-                return None
+
         if self.axes_manager.signal_dimension == 2:
-            if nav_dim == 1 or nav_dim == 2:
+            if nav_dim >= 1:
                 return self._get_hie_explorer(*args, **kwargs)
             else:
                 return None
