@@ -85,13 +85,8 @@ class Signal(t.HasTraits, MVA):
         except TypeError:
             slices = (slices,)
         _orig_slices = slices
-        has_nav = True
-        has_signal = True
-        if isNavigation is not None:
-            if isNavigation:
-                has_signal = False
-            else:
-                has_nav = False
+        has_nav = True if isNavigation is None else isNavigation
+        has_signal = True if isNavigation is None else not isNavigation
         
         # Create a deepcopy of self that contains a view of self.data
         data = self.data
@@ -133,6 +128,7 @@ class Signal(t.HasTraits, MVA):
         axes = [_signal.axes_manager.axes[i] for i in index]
         array_slices = [axis._get_slice(slice_)
                         for slice_, axis in zip(slices,axes)]
+        1/0
         _signal.data = _signal.data[array_slices]
         _signal.get_dimensions_from_data()
         _signal.squeeze()
