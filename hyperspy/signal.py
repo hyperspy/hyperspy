@@ -67,8 +67,8 @@ class Signal(t.HasTraits, MVA):
         self._axes_manager_before_unfolding = None
         self.auto_replot = True
         self.variance = None
-        self.navigation = SpecialSlicers(self, True)
-        self.signal = SpecialSlicers(self, False)
+        self.navigation_indexer = SpecialSlicers(self, True)
+        self.signal_indexer = SpecialSlicers(self, False)
 
     def __repr__(self):
         string = '<'
