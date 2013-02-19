@@ -129,7 +129,6 @@ class Signal(t.HasTraits, MVA):
             for slice_, axis in zip(slices,_signal.axes_manager.axes)]
         _signal.data = _signal.data[array_slices]
         _signal.get_dimensions_from_data()
-        #~_signal.squeeze()
 
         return _signal
         
