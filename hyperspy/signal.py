@@ -125,13 +125,11 @@ class Signal(t.HasTraits, MVA):
             
         slices[idx] = _orig_slices + (slice(None),) * max(
                             0, len(idx) - len(_orig_slices))
-        axes = [_signal.axes_manager.axes[i] for i in index]
         array_slices = [axis._get_slice(slice_)
-                        for slice_, axis in zip(slices,axes)]
-        1/0
+            for slice_, axis in zip(slices,_signal.axes_manager.axes)]
         _signal.data = _signal.data[array_slices]
         _signal.get_dimensions_from_data()
-        _signal.squeeze()
+        #~_signal.squeeze()
 
         return _signal
         
@@ -199,15 +197,15 @@ class Signal(t.HasTraits, MVA):
         self.squeeze()
                 
     def squeeze(self):
-        """Remove single-dimensional entries from the shape of an array and the 
-        axes.
+        """Remove single-dimensional entries from the shape of an array 
+        and the axes.
+        
         """
-        axes_list = list(self.axes_manager.axes)
-        for axis in axes_list:
+        for axis in self.axes_manager.axes:
             if axis.size == 1:
                 self.axes_manager.axes.remove(axis)
-                for ax in self.axes_manager.axes:
-                    ax.index_in_array -= 1
+        for i, axis in enumerate(self.axes_manager.axes):
+            axis.index_in_array = i
         self.data = self.data.squeeze()
 
     def _get_signal_dict(self):
