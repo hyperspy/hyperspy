@@ -1906,10 +1906,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         return self.get_current_signal()
         
     def __len__(self):
-        if self.axes_manager.navigation_size == 0:
-            return 1
-        else:
-            return self.axes_manager.navigation_size
+        return self.axes_manager.signal_shape[0]
+
 
 class SpecialSlicers:
     def __init__(self, signal, isNavigation):
@@ -1917,4 +1915,6 @@ class SpecialSlicers:
         self.signal = signal
     def __getitem__(self, slices):
         return self.signal.__getitem__(slices, self.isNavigation)
+    def __len__(self):
+        return self.signal.__len__()
 
