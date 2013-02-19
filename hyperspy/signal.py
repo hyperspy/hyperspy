@@ -79,7 +79,7 @@ class Signal(t.HasTraits, MVA):
 
         return string
 
-    def __getitem__(self, slices, isNavigation=None,XYZ_ordering=True):
+    def __getitem__(self, slices, isNavigation=None, XYZ_ordering=True):
         try:
             len(slices)
         except TypeError:
@@ -92,8 +92,14 @@ class Signal(t.HasTraits, MVA):
                 has_signal = False
             else:
                 has_nav = False
-
+        
+        # Do not deepcopy the data
+        data = self.data
+        self.data = None
         _signal = self.deepcopy()
+        self.data = data
+        _signal.data = data
+        del data
 
         nav_indices =  [el.index_in_array for el in
                     _signal.axes_manager.navigation_axes]
