@@ -93,7 +93,7 @@ class Signal(t.HasTraits, MVA):
             else:
                 has_nav = False
         
-        # Do not deepcopy the data
+        # Create a deepcopy of self that contains a view of self.data
         data = self.data
         self.data = None
         _signal = self.deepcopy()
@@ -121,6 +121,9 @@ class Signal(t.HasTraits, MVA):
             idx =  signal_idx
         else:
             idx =  index
+            
+        if len(_orig_slices) > len(idx):
+            raise IndexError("invalid index")
     
         slices = np.array([slice(None,)] * 
                            len(_signal.axes_manager.axes))
