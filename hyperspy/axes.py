@@ -121,11 +121,12 @@ class DataAxis(t.HasTraits):
         # change to correctly set its value.
         self._update_slice(self.navigate)
         
-    def _get_slice(self, slice_, to_values=False):
+    def _get_slice(self, slice_):
+        i2v = self.index2value
+        v2i = self.value2index
         start = 0
         stop = self.size
         step = 1
-        
         try:
             # Suppose slice_ is a slice instance...
             if slice_.start is not None:
@@ -139,38 +140,28 @@ class DataAxis(t.HasTraits):
         except (AttributeError, TypeError):
             start = slice_
             if isinstance(start, float):
-                stop = self._axis.index2value(start) + 1
+                stop = i2v(start) + 1
             else:
                 stop = start + 1
             step = None
+        my_slice = slice(v2i(start) 
+                    if isinstance(start, float) 
+                    else start,
+                 v2i(stop) 
+                    if isinstance(stop, float)  
+                    else stop,
+                 v2i(step) 
+                    if isinstance(step, float) 
+                    else step)
         if isinstance(start, float):
-            self.offset = start
+            self.offset = i2v(v2i(start))
         else:
-            self.offset = self.index2value(start)
+            self.offset = i2v(start)
         if step is not None:
             self.scale *= step
-        if to_values:
-            i2v = self.index2value
-            return slice(i2v(start) 
-                            if not isinstance(start, float) 
-                            else start,
-                         i2v(stop) 
-                            if not isinstance(stop, float) 
-                            else stop,
-                         i2v(step) 
-                            if not isinstance(step, float) 
-                            else step)
-        else:
-            v2i = self.value2index
-            return slice(v2i(start) 
-                            if isinstance(start, float) 
-                            else start,
-                         v2i(stop) 
-                            if isinstance(stop, float)  
-                            else stop,
-                         v2i(step) 
-                            if isinstance(step, float) 
-                            else step)
+            
+        return my_slice
+
 
     def __repr__(self):
         if self.name is not None:
