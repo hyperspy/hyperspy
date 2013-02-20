@@ -57,9 +57,14 @@ class Test1D:
                      np.sign(self.signal.axes_manager.axes[0].scale))
         assert_equal(s.axes_manager.axes[0].scale,
                      self.signal.axes_manager.axes[0].scale*2.)
+    
+    @raises(ValueError)    
+    def test_step0_slice(self):
+        s = self.signal[::0]        
 
     def test_index(self):
         s = self.signal[3]
+        assert_equal(s.data, 3)
         
     def test_signal_indexer_slice(self):
         s = self.signal.signal_indexer[1:-1]
@@ -192,18 +197,18 @@ class TestFloatArguments:
         self.data = self.signal.data.copy()
         
     def test_float_start(self):
-        s = self.signal[0.75:]
-        d = self.data[1:]
+        s = self.signal[0.75:-1]
+        d = self.data[1:-1]
         assert_true((s.data==d).all())
         assert_equal(s.axes_manager.axes[0].offset, 0.75)
         assert_equal(s.axes_manager.axes[0].scale,
                      self.signal.axes_manager.axes[0].scale)
 
     def test_float_end(self):
-        s = self.signal[:4.75]
-        d = self.data[:-1]
+        s = self.signal[1:4.75]
+        d = self.data[1:-1]
         assert_true((s.data==d).all())
-        assert_equal(s.axes_manager.axes[0].offset, 0.25)
+        assert_equal(s.axes_manager.axes[0].offset, 0.75)
         assert_equal(s.axes_manager.axes[0].scale,
                      self.signal.axes_manager.axes[0].scale)
                      
@@ -214,6 +219,19 @@ class TestFloatArguments:
         assert_equal(s.axes_manager.axes[0].offset, 0.75)
         assert_equal(s.axes_manager.axes[0].scale,
                      self.signal.axes_manager.axes[0].scale)
-
-    
-
+                     
+    def test_float_step(self):
+        s = self.signal[::1.1]
+        d = self.data[::2]
+        assert_true((s.data==d).all())
+        assert_equal(s.axes_manager.axes[0].offset, 0.25)
+        assert_equal(s.axes_manager.axes[0].scale,
+                     self.signal.axes_manager.axes[0].scale * 2)
+                     
+    def test_negative_float_step(self):
+        s = self.signal[::-1.1]
+        d = self.data[::-2]
+        assert_true((s.data==d).all())
+        assert_equal(s.axes_manager.axes[0].offset, 4.75)
+        assert_equal(s.axes_manager.axes[0].scale,
+                     self.signal.axes_manager.axes[0].scale * -2)

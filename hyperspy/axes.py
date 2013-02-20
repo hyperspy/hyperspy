@@ -124,39 +124,38 @@ class DataAxis(t.HasTraits):
     def _get_slice(self, slice_):
         i2v = self.index2value
         v2i = self.value2index
-        start = 0
-        stop = self.size
-        step = 1
-        try:
-            # Suppose slice_ is a slice instance...
-            if slice_.start is not None:
-                start = slice_.start
-            if slice_.stop is not None:
-                stop = slice_.stop
-            if slice_.step is not None and abs(slice_.step) >=1 :
-                step = int(round(slice_.step)) # No non-int values for now 
-            else:
-                step = None # idem
-        except (AttributeError, TypeError):
+
+        if isinstance(slice_, slice):
+            start = slice_.start
+            stop = slice_.stop
+            step = slice_.step
+        else:
             start = slice_
             if isinstance(start, float):
                 stop = i2v(start) + 1
             else:
                 stop = start + 1
             step = None
-        my_slice = slice(v2i(start) 
-                    if isinstance(start, float) 
-                    else start,
-                 v2i(stop) 
-                    if isinstance(stop, float)  
-                    else stop,
-                 v2i(step) 
-                    if isinstance(step, float) 
-                    else step)
+            
+        if isinstance(step, float):
+            step = int(round(step / self.scale))
         if isinstance(start, float):
-            self.offset = i2v(v2i(start))
-        else:
-            self.offset = i2v(start)
+            start = v2i(start)
+        if isinstance(stop, float):
+            stop = v2i(stop) 
+            
+        if step == 0:
+            raise ValueError("slice step cannot be zero")
+            
+        my_slice = slice(start, stop, step)
+        
+        if start is None:
+            if step > 0:
+                start = 0
+            else:
+                start = self.size - 1
+            
+        self.offset = i2v(start)
         if step is not None:
             self.scale *= step
             
@@ -180,8 +179,9 @@ class DataAxis(t.HasTraits):
 
     def update_axis(self):
         self.axis = generate_axis(self.offset, self.scale, self.size)
-        self.low_value, self.high_value = self.axis.min(), self.axis.max()
-#        self.update_value()
+        if len(self.axis) != 0:
+            self.low_value, self.high_value = (
+                self.axis.min(), self.axis.max())
 
     def _update_slice(self, value):
         if value is False:
