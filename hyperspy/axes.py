@@ -121,7 +121,19 @@ class DataAxis(t.HasTraits):
         # change to correctly set its value.
         self._update_slice(self.navigate)
         
-    def _get_slice(self, slice_):
+    def _slice_me(self, slice_):
+        """Returns a slice to slice the corresponding data axis and 
+        change the offset and scale of the DataAxis acordingly.
+        
+        Parameters
+        ----------
+        slice_ : {float, int, slice}
+        
+        Returns
+        -------
+        my_slice : slice
+        
+        """
         i2v = self.index2value
         v2i = self.value2index
 

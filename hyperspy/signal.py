@@ -125,7 +125,7 @@ class Signal(t.HasTraits, MVA):
             
         slices[idx] = _orig_slices + (slice(None),) * max(
                             0, len(idx) - len(_orig_slices))
-        array_slices = [axis._get_slice(slice_)
+        array_slices = [axis._slice_me(slice_)
             for slice_, axis in zip(slices,_signal.axes_manager.axes)]
         _signal.data = _signal.data[array_slices]
         _signal.get_dimensions_from_data()
