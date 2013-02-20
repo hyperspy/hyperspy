@@ -1163,7 +1163,3 @@ class Model(list):
             cf.edit_traits()
         else:
             cf.apply()
-        
-    def fit_all_components(self):
-        for component in self:
-            self.fit_component(component, signal_range="interactive")
