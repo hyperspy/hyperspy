@@ -66,6 +66,13 @@ Generic tools
 
 These are the methods which are available to all the signals.
 
+Fancy indexing
+^^^^^^^^^^^^^^
+.. versionadded:: 0.6
+
+Indexing the :py:class:`~.signal.Signal` class provides a powerful and convenient way to access and modify its data.
+
+
 Cropping
 ^^^^^^^^
 
