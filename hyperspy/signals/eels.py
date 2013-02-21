@@ -58,7 +58,9 @@ class EELSSpectrum(Spectrum):
         Parameters
         ----------
         elements : tuple of strings
-            The symbol of the elements.
+            The symbol of the elements. Note this input must always be
+            in the form of a tuple. Meaning: add_elements(('C',)) will
+            work, while add_elements(('C')) will NOT work.
         include_pre_edges : bool
             If True, the ionization edges with an onset below the lower 
             energy limit of the SI will be incluided
@@ -72,6 +74,9 @@ class EELSSpectrum(Spectrum):
         Adding O_K subshell
         
         """
+        if type(elements) is not tuple:
+            raise Exception, "Input must be in the form of a tuple. For example: s.add_elements(('C',)). See help(s.add_elements) for more information.o"
+
         for element in elements:
             if element in elements_db:
                 self.elements.add(element)
