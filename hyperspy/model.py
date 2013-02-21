@@ -114,27 +114,32 @@ class Model(list):
         object._axes_manager = self.axes_manager
         object._create_arrays()
         list.append(self,object)
+        object.model = self
         self._touch()
     
     def insert(self, object):
         object._create_arrays()
         object._axes_manager = self.axes_manager
         list.insert(self,object)
+        object.model = self
         self._touch()
    
     def extend(self, iterable):
         for object in iterable:
             object._create_arrays()
             object._axes_manager = self.axes_manager
+            object.model = self
         list.extend(self,iterable)
         self._touch()
                 
     def __delitem__(self, object):
         list.__delitem__(self,object)
+        object.model = None
         self._touch()
     
     def remove(self, object, touch=True):
         list.remove(self,object)
+        object.model = None
         if touch is True:
             self._touch() 
 
@@ -512,11 +517,11 @@ class Model(list):
             for component in self: # Cut the parameters list
                 if component.active is True:
                     if component.convolved is True:
-                        np.add(sum_convolved, component(param[\
+                        np.add(sum_convolved, component.__tempcall__(param[\
                         counter:counter+component._nfree_param],
                         self.convolution_axis), sum_convolved)
                     else:
-                        np.add(sum, component(param[counter:counter + \
+                        np.add(sum, component.__tempcall__(param[counter:counter + \
                         component._nfree_param], self.axis.axis), sum)
                     counter+=component._nfree_param
 
@@ -531,11 +536,11 @@ class Model(list):
             for component in self: # Cut the parameters list
                 if component.active is True:
                     if first is True:
-                        sum = component(param[counter:counter + \
+                        sum = component.__tempcall__(param[counter:counter + \
                         component._nfree_param],axis)
                         first = False
                     else:
-                        sum += component(param[counter:counter + \
+                        sum += component.__tempcall__(param[counter:counter + \
                         component._nfree_param], axis)
                     counter += component._nfree_param
             return sum
@@ -985,7 +990,7 @@ class Model(list):
                 
         self.charge()
            
-    def plot(self):
+    def plot(self, plot_components=False):
         """Plots the current spectrum to the screen and a map with a 
         cursor to explore the SI.
         
@@ -1005,6 +1010,16 @@ class Model(list):
         # Add the line to the figure
         _plot.signal_plot.add_line(l2)
         l2.plot()
+
+        if plot_components:
+            for component_ in self:
+                lComponent = hyperspy.drawing.spectrum.SpectrumLine()
+                lComponent.data_function = component_._component2plot
+                lComponent.line_properties_helper('blue', 'line')        
+                # Add the line to the figure
+                _plot.signal_plot.add_line(lComponent)
+                lComponent.plot()
+
         on_figure_window_close(_plot.signal_plot.figure, 
                                 self._disconnect_parameters2update_plot)
         self._plot = self.spectrum._plot
