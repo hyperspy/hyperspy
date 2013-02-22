@@ -73,16 +73,25 @@ class EELSSpectrum(Spectrum):
         Adding C_K subshell
         Adding O_K subshell
         
+        Raises
+        ------
+        ValueError
+        
         """
         if type(elements) is not tuple:
-            raise Exception, "Input must be in the form of a tuple. For example: s.add_elements(('C',)). See help(s.add_elements) for more information.o"
+            raise ValueError(
+            "Input must be in the form of a tuple. For example, "
+            "if `s` is the variable containing this EELS spectrum:\n "
+            ">>> s.add_elements(('C',))\n"
+            "See the docstring for more information.")
 
         for element in elements:
             if element in elements_db:
                 self.elements.add(element)
             else:
-                print(
-                    "%s is not a valid symbol of an element" % element)
+                raise ValueError(
+                    "%s is not a valid symbol of a chemical element" 
+                    % element)
         if not hasattr(self.mapped_parameters, 'Sample'):
             self.mapped_parameters.add_node('Sample')
         self.mapped_parameters.Sample.elements = list(self.elements)
