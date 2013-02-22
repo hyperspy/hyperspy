@@ -1601,6 +1601,11 @@ def get_linear_interpolation(p1, p2, x):
     b = (x2 * y1 - x1 * y2) / (x2-x1)
     y = a*x + b
     return y
+    
+def closest_nice_number(number):
+    oom = 10**math.floor(math.log10(number))
+    return oom * (number // oom)
+    
 
 def _make_heatmap_subplot(spectra, ax):
     x_axis = spectra.axes_manager.signal_axes[0]

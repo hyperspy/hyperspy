@@ -57,14 +57,6 @@ hyperspy Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`experiments` Module
--------------------------
-
-.. automodule:: hyperspy.experiments
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`hspy` Module
 ------------------
 

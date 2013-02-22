@@ -53,6 +53,7 @@ class Erf(Component):
         self.A.grad = self.grad_A
         self.sigma.grad = self.grad_sigma
         self.origin.grad = self.grad_origin
+        self._position = self.origin
 
     def function(self, x):
         A = self.A.value
