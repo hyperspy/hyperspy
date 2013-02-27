@@ -34,6 +34,7 @@ except:
 
 from hyperspy.misc.import_sklearn import *
 from hyperspy.misc import utils
+from hyperspy.misc import utils_varia 
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
 from hyperspy.defaults_parser import preferences
@@ -864,19 +865,28 @@ class LearningResults(object):
     navigation_mask = None
     signal_mask =  None
     
-    def save(self, filename):
+    def save(self, filename, overwrite=None):
         """Save the result of the decomposition and demixing analysis
 
         Parameters
         ----------
         filename : string
+        overwrite : None (by defect), bool
         """
         kwargs = {}
         for attribute in [
             v for v in dir(self) if type(getattr(self,v)) != 
             types.MethodType and not v.startswith('_')]:
             kwargs[attribute] = self.__getattribute__(attribute)
-        np.savez(filename, **kwargs)
+        # Check the extension
+        if filename[-4:] != '.npz':
+            filename = filename + '.npz'
+        # Check overwrite
+        if overwrite is None:
+            overwrite = utils_varia.overwrite(filename)
+        # Save, if all went well!
+        if overwrite is True:    
+            np.savez(filename, **kwargs)
 
 
     def load(self, filename):
