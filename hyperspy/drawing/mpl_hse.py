@@ -145,7 +145,7 @@ class MPL_HyperSpectrum_Explorer(object):
             color = self.pointer.color
         else:
             color = 'red'
-        sl.line_properties_helper(color, 'step')        
+        sl.set_line_properties(color=color, type='step')        
         # Add the line to the figure
           
         sf.add_line(sl)
@@ -190,7 +190,8 @@ class MPL_HyperSpectrum_Explorer(object):
             self.right_pointer.add_axes(self.navigator_plot.ax)
         rl = spectrum.SpectrumLine()
         rl.data_function = self.signal_data_function
-        rl.line_properties_helper(self.right_pointer.color, 'step')
+        rl.set_line_properties(color=self.right_pointer.color,
+                               type='step')
         self.signal_plot.create_right_axis()
         self.signal_plot.add_line(rl, ax = 'right')
         rl.plot_indices = True

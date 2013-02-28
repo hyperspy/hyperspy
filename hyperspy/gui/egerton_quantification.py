@@ -103,7 +103,9 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
     def create_background_line(self):
         self.bg_line = drawing.spectrum.SpectrumLine()
         self.bg_line.data_function = self.bg_to_plot
-        self.bg_line.line_properties_helper('blue', 'line')
+        self.bg_line.set_line_properties(
+            color='blue',
+            type='line')
         self.signal._plot.signal_plot.add_line(self.bg_line)
         self.bg_line.autoscale = False
         self.bg_line.plot()
@@ -350,7 +352,9 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.interpolated_line = drawing.spectrum.SpectrumLine()
         self.interpolated_line.data_function = \
             self.get_interpolated_spectrum
-        self.interpolated_line.line_properties_helper('blue', 'line')
+        self.interpolated_line.set_line_properties(
+            color='blue',
+            type='line')
         self.signal._plot.signal_plot.add_line(self.interpolated_line)
         self.interpolated_line.autoscale = False
         self.interpolated_line.plot()

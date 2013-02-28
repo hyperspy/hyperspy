@@ -1001,11 +1001,11 @@ class Model(list):
         _plot = self.spectrum._plot
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()
-        l1.line_properties_helper(color, 'scatter')
+        l1.set_line_properties(color=color, type='scatter')
         
         l2 = hyperspy.drawing.spectrum.SpectrumLine()
         l2.data_function = self._model2plot
-        l2.line_properties_helper('blue', 'line')        
+        l2.set_line_properties(color='blue', type='line')        
         # Add the line to the figure
         _plot.signal_plot.add_line(l2)
         l2.plot()
@@ -1014,7 +1014,9 @@ class Model(list):
             for component_ in self:
                 lComponent = hyperspy.drawing.spectrum.SpectrumLine()
                 lComponent.data_function = component_._component2plot
-                lComponent.line_properties_helper('blue', 'line')        
+                lComponent.set_line_properties(
+                    color='blue',
+                    type='line')        
                 # Add the line to the figure
                 _plot.signal_plot.add_line(lComponent)
                 lComponent.plot()
