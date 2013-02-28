@@ -121,6 +121,21 @@ class SpectrumFigure():
         canvas.blit()
         
 class SpectrumLine():
+    """Line that can be added to SpectrumFigure.
+    
+    Attributes
+    ----------
+    line_properties : dictionary
+        Accepts a dictionary of valid (i.e. recognized by mpl.plot) 
+        containing valid line properties.
+        
+    Methods
+    -------
+    set_line_properties
+        Enables setting the line_properties attribute using keyword 
+        arguments.
+        
+    """
     def __init__(self):
         """
         """
@@ -132,15 +147,14 @@ class SpectrumLine():
         
         # Properties
         self.line = None
-        self.line_properties = dict()
         self.autoscale = True
         self.plot_indices = False
         self.text = None
         self.text_position = (-0.1, 1.05,)
 
     def line_properties_helper(self, color, type):
-        """This function provides an easy way of defining some basic line 
-        properties.
+        """This function provides an easy way of defining some basic 
+        line properties.
         
         Further customization is possible by adding keys to the line_properties 
         attribute
@@ -150,8 +164,9 @@ class SpectrumLine():
         
         color : any valid matplotlib color definition, e.g. 'red'
         type : it can be one of 'scatter', 'step', 'line'
+        
         """
-        lp = self.line_properties
+        lp = {}
         if type == 'scatter':
             lp['marker'] = 'o'
             lp['linestyle'] = 'None'
@@ -164,10 +179,22 @@ class SpectrumLine():
         elif type == 'step':
             lp['color'] = color
             lp['drawstyle'] = 'steps-mid'
-    def set_properties(self):
-        for key in self.line_properties:
+        self.line_properties = lp
+        
+    @property
+    def line_properties(self):
+        return self._line_properties
+    
+    @line_properties.setter
+    def line_properties(self, **kwargs):
+        for key, item in kwargs.iteritems():
+            self._line_properties[key] = item
+        if self.line is not None:
             plt.setp(self.line, **self.line_properties)
-        self.ax.figure.canvas.draw()
+            self.ax.figure.canvas.draw()
+            
+    def set_line_properties(self, **kwargs):
+        self.line_properties=kwargs
         
     def plot(self, data = 1):
         f = self.data_function

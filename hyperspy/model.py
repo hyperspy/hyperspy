@@ -1002,7 +1002,6 @@ class Model(list):
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()
         l1.line_properties_helper(color, 'scatter')
-        l1.set_properties()
         
         l2 = hyperspy.drawing.spectrum.SpectrumLine()
         l2.data_function = self._model2plot
