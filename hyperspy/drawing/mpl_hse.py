@@ -139,6 +139,7 @@ class MPL_HyperSpectrum_Explorer(object):
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
         sl = spectrum.SpectrumLine()
+        sl.autoscale = True
         sl.data_function = self.signal_data_function
         sl.plot_indices = True
         if self.pointer is not None:
@@ -189,6 +190,7 @@ class MPL_HyperSpectrum_Explorer(object):
             self.right_pointer.color = 'blue'
             self.right_pointer.add_axes(self.navigator_plot.ax)
         rl = spectrum.SpectrumLine()
+        rl.autoscale = True
         rl.data_function = self.signal_data_function
         rl.set_line_properties(color=self.right_pointer.color,
                                type='step')

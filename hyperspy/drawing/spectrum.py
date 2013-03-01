@@ -34,7 +34,6 @@ class SpectrumFigure():
         self.right_ax = None
         self.ax_lines = list()
         self.right_ax_lines = list()
-        self.autoscale = True
         self.blit = False
         self.lines = list()
         self.axes_manager = None
@@ -84,7 +83,6 @@ class SpectrumFigure():
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
         line.axis = self.axis
-        line.autoscale = self.autoscale
         line.blit = self.blit
         # Automatically asign the color if not defined
         if line.color is None:
@@ -172,7 +170,7 @@ class SpectrumLine(object):
         
         # Properties
         self.line = None
-        self.autoscale = True
+        self.autoscale = False
         self.plot_indices = False
         self.text = None
         self.text_position = (-0.1, 1.05,)
