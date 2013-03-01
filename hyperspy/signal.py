@@ -730,7 +730,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         (64,64)
         # If we just want to plot the result of the operation
         s.sum(-1, True).plot()
+        
         """
+        
+        axis = self._get_positive_axis_index_index(axis)
         if return_signal is True:
             s = self.deepcopy()
         else:
@@ -821,7 +824,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         (64,64)
         # If we just want to plot the result of the operation
         s.mean(-1, True).plot()
+        
         """
+        
+        axis = self._get_positive_axis_index_index(axis)
         if return_signal is True:
             s = self.deepcopy()
         else:
