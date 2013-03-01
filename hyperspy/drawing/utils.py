@@ -16,9 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
+
 import numpy as np
 import matplotlib.pyplot as plt
-import copy
+import matplotlib as mpl
 
 def does_figure_object_exists(fig_obj):
     """Test if a figure really exist
@@ -160,3 +162,13 @@ def subplot_parameters(fig):
     top = fig.subplotpars.top
     bottom = fig.subplotpars.bottom
     return (left, bottom, right, top, wspace, hspace)
+    
+class ColorCycle():
+    _color_cycle = [mpl.colors.colorConverter.to_rgba(color) for color 
+        in ('b', 'g', 'r', 'c', 'm', 'y', 'k')]
+    def __init__(self):
+        self.color_cycle = copy.copy(self._color_cycle)
+    def __call__(self):
+        if not self.color_cycle:
+            self.color_cycle = copy.copy(self._color_cycle)
+        return self.color_cycle.pop(0)

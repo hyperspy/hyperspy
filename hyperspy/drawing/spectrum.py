@@ -18,6 +18,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from hyperspy import messages
@@ -45,6 +46,12 @@ class SpectrumFigure():
         self.title = ''
         self.create_figure()
         self.create_axis()
+        
+        # Color cycles
+        self._color_cycles = {
+            'line' : utils.ColorCycle(),
+            'step' : utils.ColorCycle(),
+            'scatter' : utils.ColorCycle(),}
 
     def create_figure(self):
         self.figure = utils.create_figure()
@@ -65,7 +72,7 @@ class SpectrumFigure():
             self.right_ax.hspy_fig = self
             #~self.right_ax.set_animated(True)
         
-    def add_line(self, line, ax = 'left'):
+    def add_line(self, line, ax='left'):
         if ax == 'left':
             line.ax = self.ax
             if line.axes_manager is None:
@@ -79,6 +86,16 @@ class SpectrumFigure():
         line.axis = self.axis
         line.autoscale = self.autoscale
         line.blit = self.blit
+        # Automatically asign the color if not defined
+        if line.color is None:
+            line.color = self._color_cycles[line.type]()
+        # Or remove it from the color cycle if part of the cycle
+        # in this round
+        else:
+            rgba_color = mpl.colors.colorConverter.to_rgba(line.color)
+            if rgba_color in self._color_cycles[line.type].color_cycle:
+                self._color_cycles[line.type].color_cycle.remove(
+                    rgba_color)
         
     def plot(self):
         self.ax.set_xlabel(self.xlabel)
@@ -125,6 +142,8 @@ class SpectrumLine(object):
     
     Attributes
     ----------
+    type : {'scatter', 'step', 'line'}
+        Select the line drawing style.
     line_properties : dictionary
         Accepts a dictionary of valid (i.e. recognized by mpl.plot) 
         containing valid line properties. In addition it understands 
@@ -144,10 +163,7 @@ class SpectrumLine(object):
         
     """
     
-    
     def __init__(self):
-        """
-        """
         # Data attributes
         self.data_function = None
         self.axis = None
@@ -160,53 +176,92 @@ class SpectrumLine(object):
         self.plot_indices = False
         self.text = None
         self.text_position = (-0.1, 1.05,)
-        self._type = None
         self._line_properties = {}
+        self.type = "line"
 
     @property    
     def line_properties(self):
         return self._line_properties
     @line_properties.setter
     def line_properties(self, kwargs):
-        if "type" in kwargs:
-            type_ = kwargs["type"]
-            del kwargs["type"]
-        else:
-            type_ = self._type
-            if 'color' in self._line_properties:
-                kwargs['color'] = self._line_properties['color']
-                del self._line_properties['color']
-            elif 'markeredgecolor' in self._line_properties:
-                kwargs['color'] = self._line_properties['markeredgecolor']
-                del self._line_properties['markeredgecolor']
+        if 'type' in kwargs:
+            self.type = kwargs['type']
+            del kwargs['type']
                 
-        if type_ is not None:
-            if type_ == 'scatter':
-                kwargs['marker'] = 'o'
-                kwargs['linestyle'] = 'None'
-                kwargs['markersize'] = 1
-                if 'color' in kwargs:
-                    kwargs['markeredgecolor'] = kwargs['color']
-                    del kwargs['color']
-            elif type_ == 'line':
-                kwargs['linestyle'] = '-'
-                kwargs['marker'] = None
-            elif type_ == 'step':
-                kwargs['drawstyle'] = 'steps-mid'
-            else:
-                raise ValueError(
-                    "`type` must be one of "
-                    "{\'scatter\', \'line\', \'step\'}"
-                    "but %s was given" % kwargs['type'])
+        if 'color' in kwargs:
+            color = kwargs['color']
+            del kwargs['color']
+            self.color = color
             
         for key, item in kwargs.iteritems():
-            self._line_properties[key] = item
+            if item is None and key in self._line_properties:
+                del self._line_properties[key]
+            else:
+                self._line_properties[key] = item
         if self.line is not None:
             plt.setp(self.line, **self.line_properties)
             self.ax.figure.canvas.draw()
             
     def set_line_properties(self, **kwargs):
         self.line_properties = kwargs
+    
+    @property
+    def type(self):
+        return self._type
+        
+    @type.setter
+    def type(self, value):
+        lp = {}
+        if value == 'scatter':
+            lp['marker'] = 'o'
+            lp['linestyle'] = 'None'
+            lp['markersize'] = 1
+
+        elif value == 'line':
+            lp['linestyle'] = '-'
+            lp['marker'] = "None"
+            lp['markersize'] = None
+            lp['drawstyle'] = "default"
+        elif value == 'step':
+            lp['drawstyle'] = 'steps-mid'
+            lp['marker'] = "None"
+            lp['markersize'] = None
+        else:
+            raise ValueError(
+                "`type` must be one of "
+                "{\'scatter\', \'line\', \'step\'}"
+                "but %s was given" % value)
+        self._type = value
+        self.line_properties = lp
+        if self.color is not None:
+            self.color = self.color
+        
+    @property
+    def color(self):
+        if 'color' in self.line_properties:
+            return self.line_properties['color']
+        elif 'markeredgecolor' in self.line_properties:
+            return self.line_properties['markeredgecolor']
+        else:
+            return None
+            
+    @color.setter
+    def color(self, color):
+        if self._type == 'scatter':
+            self.set_line_properties(markeredgecolor=color)
+            if 'color' in self._line_properties:
+                del self._line_properties['color']
+        else:
+            if color is None and 'color' in self._line_properties:
+                del self._line_properties['color']
+            else:
+                self._line_properties['color'] = color
+            self.set_line_properties(markeredgecolor=None)
+        
+        if self.line is not None:
+            plt.setp(self.line, **self.line_properties)
+            self.ax.figure.canvas.draw()
+        
         
     def plot(self, data = 1):
         f = self.data_function
@@ -261,6 +316,7 @@ class SpectrumLine(object):
             self.ax.figure.canvas.draw()
         except:
             pass
+    
 
 def _plot_component(factors, idx, ax=None, cal_axis=None, 
                     comp_label='PC'):
