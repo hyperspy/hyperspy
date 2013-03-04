@@ -363,8 +363,12 @@ class EELSModel(Model):
         multifit, depending on the value of kind.
         
         """
+        
+        # If there is no active background compenent do nothing
+        if not [bg for bg in self._background_components if bg.active]:
+            return
+            
         ea = self.axis.axis[self.channel_switches]
-
         print "Fitting the", self._backgroundtype, "background"
         edges = copy.copy(self.edges)
         edge = edges.pop(0)
