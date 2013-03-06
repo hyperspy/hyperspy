@@ -657,7 +657,7 @@ class Spectrum(Signal):
             raise ValueError(
                 "FWHM must be greater than zero")
         axis = self.axes_manager.signal_axes[0]
-        FWHM *= axis.scale
+        FWHM *= 1/axis.scale
         self.data = gaussian_filter1d(
             self.data,
             axis=axis.index_in_array, 
