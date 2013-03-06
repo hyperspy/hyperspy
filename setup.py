@@ -35,7 +35,7 @@ if os.path.exists('build'):
 
 install_req = ['scipy',
                'ipython',
-               'matplotlib',
+               'matplotlib (>= 1.2)',
                'numpy',
                'traits',
                'traitsui',]

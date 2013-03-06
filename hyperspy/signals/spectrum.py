@@ -22,6 +22,7 @@ import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
 import traits.api as t
+from scipy.ndimage.filters import gaussian_filter1d
 
 from hyperspy.signal import Signal
 from hyperspy.misc import progressbar
@@ -635,6 +636,32 @@ class Spectrum(Signal):
     def crop_spectrum(self, left_value = None, right_value = None,):
         iaxis = self.axes_manager.signal_axes[0].index_in_array
         self.crop_in_units(axis=iaxis, x1=left_value, x2=right_value)
+        
+    @auto_replot    
+    def gaussian_filter(self, FWHM):
+        """Applies a Gaussian filter in the spectral dimension.
+        
+        Parameters
+        ----------
+        FWHM : float
+            The Full Width at Half Maximum of the gaussian in the 
+            spectral axis units 
+            
+        Raises
+        ------
+        ValueError if FWHM is equal or less than zero.
+            
+        
+        """
+        if FWHM <= 0:
+            raise ValueError(
+                "FWHM must be greater than zero")
+        axis = self.axes_manager.signal_axes[0]
+        FWHM *= axis.scale
+        self.data = gaussian_filter1d(
+            self.data,
+            axis=axis.index_in_array, 
+            sigma=FWHM/2.35482)
     
     @auto_replot
     def hanning_taper(self, side='both', channels=None, offset=0):

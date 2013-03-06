@@ -90,7 +90,7 @@ class Voigt(Component):
             'shirley_background',
             'non_isochromaticity',
             'transmission_function'))
-        self._position = self.origin
+        self._position = self.centre
         self.FWHM.value = 1
         self.gamma.value = 0
         self.area.value = 1
