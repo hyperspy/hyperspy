@@ -85,6 +85,7 @@ class Signal(t.HasTraits, MVA):
         except TypeError:
             slices = (slices,)
         _orig_slices = slices
+
         has_nav = True if isNavigation is None else isNavigation
         has_signal = True if isNavigation is None else not isNavigation
         
@@ -116,6 +117,20 @@ class Signal(t.HasTraits, MVA):
             idx =  signal_idx
         else:
             idx =  index
+            
+        # Add support for Ellipsis
+        if Ellipsis in _orig_slices:
+            _orig_slices = list(_orig_slices)
+            # Expand the first Ellipsis
+            ellipsis_index = _orig_slices.index(Ellipsis)
+            _orig_slices.remove(Ellipsis)
+            _orig_slices = (_orig_slices[:ellipsis_index] +
+                [slice(None),] * max(0, len(idx) - len(_orig_slices)) +
+                _orig_slices[ellipsis_index:]) 
+            # Replace all the following Ellipses by :
+            while Ellipsis in _orig_slices:
+                _orig_slices[_orig_slices.index(Ellipsis)] = slice(None)
+            _orig_slices = tuple(_orig_slices)
             
         if len(_orig_slices) > len(idx):
             raise IndexError("invalid index")
