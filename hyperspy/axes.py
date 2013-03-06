@@ -335,6 +335,11 @@ class AxesManager(t.HasTraits):
     navigation_axes = t.List()
     _step = t.Int(1)
     
+    def _get_positive_axis_index(self, axis):
+        if axis < 0:
+            axis = len(self.axes) + axis
+        return axis
+    
     def __getitem__(self, y):
         """x.__getitem__(y) <==> x[y]
         
@@ -346,6 +351,25 @@ class AxesManager(t.HasTraits):
         
         """
         return self.axes[i:j]
+        
+    def remove(self, axis):
+        """Remove the given Axis.
+        
+        Raises
+        ------
+        ValueError if the Axis is not present.
+        
+        """
+        if axis not in self.axes:
+            return ValueError(
+                "AxesManager.remove(x): x not in AxesManager")
+        index = self.axes.index(axis)
+        self.axes.remove(axis)
+        for axis in self.axes[index:]:
+            axis.index_in_array -= 1
+            
+    def __delitem__(self, i):
+        self.remove(self[i])
         
     def _get_data_slice(self, fill=None):
         """Return a tuple of slice objects to slice the data.

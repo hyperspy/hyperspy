@@ -140,8 +140,17 @@ class Signal(t.HasTraits, MVA):
             
         slices[idx] = _orig_slices + (slice(None),) * max(
                             0, len(idx) - len(_orig_slices))
-        array_slices = [axis._slice_me(slice_)
+        array_slices = [
+            axis._slice_me(slice_)
+            if isinstance(slice_, slice)
+            else slice_
             for slice_, axis in zip(slices,_signal.axes_manager.axes)]
+            
+        array_slices = [
+            slice_ if not isinstance(slice_, float)
+            else axis.value2index(slice_)
+            for slice_, axis in zip(slices,_signal.axes_manager.axes)]
+            
         _signal.data = _signal.data[array_slices]
         _signal.get_dimensions_from_data()
 
@@ -217,9 +226,7 @@ class Signal(t.HasTraits, MVA):
         """
         for axis in self.axes_manager.axes:
             if axis.size == 1:
-                self.axes_manager.axes.remove(axis)
-        for i, axis in enumerate(self.axes_manager.axes):
-            axis.index_in_array = i
+                self.axes_manager.remove(axis)
         self.data = self.data.squeeze()
 
     def _get_signal_dict(self):
@@ -416,7 +423,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         crop_in_units
         
         """
-        axis = self._get_positive_axis_index_index(axis)
+        axis = self.axes_manager._get_positive_axis_index(axis)
         if i1 is not None:
             new_offset = self.axes_manager.axes[axis].axis[i1]
         # We take a copy to guarantee the continuity of the data
@@ -521,7 +528,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         ------
         tuple with the splitted signals
         """
-        axis = self._get_positive_axis_index_index(axis)
+        axis = self.axes_manager._get_positive_axis_index(axis)
         if number_of_parts is None and steps is None:
             if not self._splitting_steps:
                 messages.warning_exit(
@@ -670,17 +677,12 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             self._shape_before_unfolding = None
             self._axes_manager_before_unfolding = None
 
-    def _get_positive_axis_index_index(self, axis):
-        if axis < 0:
-            axis = len(self.data.shape) + axis
-        return axis
-
     def iterate_axis(self, axis = -1, copy=True):
         # We make a copy to guarantee that the data in contiguous,
         # otherwise it will not return a view of the data
         if copy is True:
             self.data = self.data.copy()
-        axis = self._get_positive_axis_index_index(axis)
+        axis = self.axes_manager._get_positive_axis_index(axis)
         unfolded_axis = axis - 1
         new_shape = [1] * len(self.data.shape)
         new_shape[axis] = self.data.shape[axis]
@@ -750,7 +752,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         """
         
-        axis = self._get_positive_axis_index_index(axis)
+        axis = self.axes_manager._get_positive_axis_index(axis)
         if return_signal is True:
             s = self.deepcopy()
         else:
@@ -844,7 +846,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         """
         
-        axis = self._get_positive_axis_index_index(axis)
+        axis = self.axes_manager._get_positive_axis_index(axis)
         if return_signal is True:
             s = self.deepcopy()
         else:
