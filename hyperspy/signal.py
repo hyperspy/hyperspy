@@ -140,17 +140,18 @@ class Signal(t.HasTraits, MVA):
             
         slices[idx] = _orig_slices + (slice(None),) * max(
                             0, len(idx) - len(_orig_slices))
-        array_slices = [
-            axis._slice_me(slice_)
-            if isinstance(slice_, slice)
-            else slice_
-            for slice_, axis in zip(slices,_signal.axes_manager.axes)]
-            
-        array_slices = [
-            slice_ if not isinstance(slice_, float)
-            else axis.value2index(slice_)
-            for slice_, axis in zip(slices,_signal.axes_manager.axes)]
-            
+        
+        array_slices = []
+        for slice_, axis in zip(slices,_signal.axes_manager.axes):
+            if (isinstance(slice_, slice) or 
+                len(_signal.axes_manager.axes) < 2):
+                array_slices.append(axis._slice_me(slice_))
+            else:
+                if isinstance(slice_, float):
+                    slice_ = axis.value2index(slice_)
+                array_slices.append(slice_)
+                _signal.axes_manager.remove(axis)
+        
         _signal.data = _signal.data[array_slices]
         _signal.get_dimensions_from_data()
 

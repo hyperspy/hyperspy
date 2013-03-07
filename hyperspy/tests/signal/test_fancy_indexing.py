@@ -65,6 +65,8 @@ class Test1D:
     def test_index(self):
         s = self.signal[3]
         assert_equal(s.data, 3)
+        assert_equal(len(s.axes_manager.axes), 1)
+        assert_equal(s.data.shape, (1,))
         
     def test_signal_indexer_slice(self):
         s = self.signal.signal_indexer[1:-1]
@@ -154,6 +156,14 @@ class Test3D_Navigate_0_and_1:
         assert_equal(s.axes_manager.signal_axes[0].scale,
                      self.signal.axes_manager.signal_axes[0].scale)
                      
+    def test_dimension_when_indexing(self):
+        s = self.signal[0]
+        assert_equal(s.data.shape, self.data[:,0,:].shape)
+        
+    def test_dimension_when_slicing(self):
+        s = self.signal[0:1]
+        assert_equal(s.data.shape, self.data[:,0:1,:].shape)
+                     
 class Test3D_Navigate_1:
     def setUp(self):
         self.signal = Signal({'data' : np.arange(24).reshape((2,3,4))})
@@ -235,3 +245,29 @@ class TestFloatArguments:
         assert_equal(s.axes_manager.axes[0].offset, 4.75)
         assert_equal(s.axes_manager.axes[0].scale,
                      self.signal.axes_manager.axes[0].scale * -2)
+                     
+class TestEllipsis:
+    def setUp(self):
+        self.signal = Signal({'data' : np.arange(2**4).reshape(
+            (2,2,2,2))})
+        self.data = self.signal.data.copy()
+        
+    def test_ellipsis_beginning(self):
+        s = self.signal[...,0,0]
+        assert_true((s.data == self.data[0, ...,0]).all())
+        
+    def test_in_between(self):
+        s = self.signal[0,...,0]
+        assert_true((s.data == self.data[...,0,0]).all())
+        
+    def test_ellipsis_navigation(self):
+        s = self.signal.navigation_indexer[...,0]
+        assert_true((s.data == self.data[0, ...]).all())
+        
+    def test_ellipsis_navigation(self):
+        self.signal.axes_manager[-2].navigate = False
+        self.signal.axes_manager[-3].navigate = False
+        s = self.signal.signal_indexer[...,0]
+        assert_true((s.data == self.data[:,0, ...]).all())
+                     
+            

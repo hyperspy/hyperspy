@@ -361,7 +361,7 @@ class AxesManager(t.HasTraits):
         
         """
         if axis not in self.axes:
-            return ValueError(
+            raise ValueError(
                 "AxesManager.remove(x): x not in AxesManager")
         index = self.axes.index(axis)
         self.axes.remove(axis)
