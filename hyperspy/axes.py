@@ -338,6 +338,8 @@ class AxesManager(t.HasTraits):
     def _get_positive_axis_index(self, axis):
         if axis < 0:
             axis = len(self.axes) + axis
+            if axis < 0:
+                raise IndexError("index out of bounds")
         return axis
     
     def __getitem__(self, y):
