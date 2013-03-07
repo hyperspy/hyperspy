@@ -120,6 +120,66 @@ class DataAxis(t.HasTraits):
         # The slice must be updated even if the default value did not 
         # change to correctly set its value.
         self._update_slice(self.navigate)
+        
+    def _get_positive_index(self, index):
+        if index < 0:
+            index = self.size + index
+            if index < 0:
+                raise IndexError("index out of bounds")
+        return index
+        
+    def _slice_me(self, slice_):
+        """Returns a slice to slice the corresponding data axis and 
+        change the offset and scale of the DataAxis acordingly.
+        
+        Parameters
+        ----------
+        slice_ : {float, int, slice}
+        
+        Returns
+        -------
+        my_slice : slice
+        
+        """
+        i2v = self.index2value
+        v2i = self.value2index
+
+        if isinstance(slice_, slice):
+            start = slice_.start
+            stop = slice_.stop
+            step = slice_.step
+        else:
+            start = self._get_positive_index(slice_)
+            if isinstance(start, float):
+                stop = i2v(start) + 1
+            else:
+                stop = start + 1
+            step = None
+            
+        if isinstance(step, float):
+            step = int(round(step / self.scale))
+        if isinstance(start, float):
+            start = v2i(start)
+        if isinstance(stop, float):
+            stop = v2i(stop) 
+            
+        if step == 0:
+            raise ValueError("slice step cannot be zero")
+            
+        my_slice = slice(start, stop, step)
+        
+        if start is None:
+            if step > 0:
+                start = 0
+            else:
+                start = self.size - 1
+            
+        self.offset = i2v(start)
+        if step is not None:
+            self.scale *= step
+            
+        return my_slice
+
 
     def __repr__(self):
         if self.name is not None:
@@ -138,8 +198,9 @@ class DataAxis(t.HasTraits):
 
     def update_axis(self):
         self.axis = generate_axis(self.offset, self.scale, self.size)
-        self.low_value, self.high_value = self.axis.min(), self.axis.max()
-#        self.update_value()
+        if len(self.axis) != 0:
+            self.low_value, self.high_value = (
+                self.axis.min(), self.axis.max())
 
     def _update_slice(self, value):
         if value is False:
@@ -281,6 +342,13 @@ class AxesManager(t.HasTraits):
     navigation_axes = t.List()
     _step = t.Int(1)
     
+    def _get_positive_index(self, axis):
+        if axis < 0:
+            axis = len(self.axes) + axis
+            if axis < 0:
+                raise IndexError("index out of bounds")
+        return axis
+    
     def __getitem__(self, y):
         """x.__getitem__(y) <==> x[y]
         
@@ -292,6 +360,25 @@ class AxesManager(t.HasTraits):
         
         """
         return self.axes[i:j]
+        
+    def remove(self, axis):
+        """Remove the given Axis.
+        
+        Raises
+        ------
+        ValueError if the Axis is not present.
+        
+        """
+        if axis not in self.axes:
+            raise ValueError(
+                "AxesManager.remove(x): x not in AxesManager")
+        index = self.axes.index(axis)
+        self.axes.remove(axis)
+        for axis in self.axes[index:]:
+            axis.index_in_array -= 1
+            
+    def __delitem__(self, i):
+        self.remove(self[i])
         
     def _get_data_slice(self, fill=None):
         """Return a tuple of slice objects to slice the data.

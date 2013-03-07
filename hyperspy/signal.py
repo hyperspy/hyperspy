@@ -67,8 +67,8 @@ class Signal(t.HasTraits, MVA):
         self._axes_manager_before_unfolding = None
         self.auto_replot = True
         self.variance = None
-        self.navigation = SpecialSlicers(self, True)
-        self.signal = SpecialSlicers(self, False)
+        self.navigation_indexer = SpecialSlicers(self, True)
+        self.signal_indexer = SpecialSlicers(self, False)
 
     def __repr__(self):
         string = '<'
@@ -79,21 +79,23 @@ class Signal(t.HasTraits, MVA):
 
         return string
 
-    def __getitem__(self, slices, isNavigation=None,XYZ_ordering=True):
+    def __getitem__(self, slices, isNavigation=None, XYZ_ordering=True):
         try:
             len(slices)
         except TypeError:
             slices = (slices,)
         _orig_slices = slices
-        has_nav = True
-        has_signal = True
-        if isNavigation is not None:
-            if isNavigation:
-                has_signal = False
-            else:
-                has_nav = False
 
+        has_nav = True if isNavigation is None else isNavigation
+        has_signal = True if isNavigation is None else not isNavigation
+        
+        # Create a deepcopy of self that contains a view of self.data
+        data = self.data
+        self.data = None
         _signal = self.deepcopy()
+        self.data = data
+        _signal.data = data
+        del data
 
         nav_indices =  [el.index_in_array for el in
                     _signal.axes_manager.navigation_axes]
@@ -115,18 +117,43 @@ class Signal(t.HasTraits, MVA):
             idx =  signal_idx
         else:
             idx =  index
+            
+        # Add support for Ellipsis
+        if Ellipsis in _orig_slices:
+            _orig_slices = list(_orig_slices)
+            # Expand the first Ellipsis
+            ellipsis_index = _orig_slices.index(Ellipsis)
+            _orig_slices.remove(Ellipsis)
+            _orig_slices = (_orig_slices[:ellipsis_index] +
+                [slice(None),] * max(0, len(idx) - len(_orig_slices)) +
+                _orig_slices[ellipsis_index:]) 
+            # Replace all the following Ellipses by :
+            while Ellipsis in _orig_slices:
+                _orig_slices[_orig_slices.index(Ellipsis)] = slice(None)
+            _orig_slices = tuple(_orig_slices)
+            
+        if len(_orig_slices) > len(idx):
+            raise IndexError("invalid index")
     
         slices = np.array([slice(None,)] * 
                            len(_signal.axes_manager.axes))
             
         slices[idx] = _orig_slices + (slice(None),) * max(
                             0, len(idx) - len(_orig_slices))
-        axes = [_signal.axes_manager.axes[i] for i in index]
-        array_slices = [axis._get_slice(slice_)
-                        for slice_, axis in zip(slices,axes)]
+        
+        array_slices = []
+        for slice_, axis in zip(slices,_signal.axes_manager.axes):
+            if (isinstance(slice_, slice) or 
+                len(_signal.axes_manager.axes) < 2):
+                array_slices.append(axis._slice_me(slice_))
+            else:
+                if isinstance(slice_, float):
+                    slice_ = axis.value2index(slice_)
+                array_slices.append(slice_)
+                _signal.axes_manager.remove(axis)
+        
         _signal.data = _signal.data[array_slices]
         _signal.get_dimensions_from_data()
-        _signal.squeeze()
 
         return _signal
         
@@ -194,15 +221,13 @@ class Signal(t.HasTraits, MVA):
         self.squeeze()
                 
     def squeeze(self):
-        """Remove single-dimensional entries from the shape of an array and the 
-        axes.
+        """Remove single-dimensional entries from the shape of an array 
+        and the axes.
+        
         """
-        axes_list = list(self.axes_manager.axes)
-        for axis in axes_list:
+        for axis in self.axes_manager.axes:
             if axis.size == 1:
-                self.axes_manager.axes.remove(axis)
-                for ax in self.axes_manager.axes:
-                    ax.index_in_array -= 1
+                self.axes_manager.remove(axis)
         self.data = self.data.squeeze()
 
     def _get_signal_dict(self):
@@ -399,7 +424,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         crop_in_units
         
         """
-        axis = self._get_positive_axis_index_index(axis)
+        axis = self.axes_manager._get_positive_index(axis)
         if i1 is not None:
             new_offset = self.axes_manager.axes[axis].axis[i1]
         # We take a copy to guarantee the continuity of the data
@@ -504,7 +529,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         ------
         tuple with the splitted signals
         """
-        axis = self._get_positive_axis_index_index(axis)
+        axis = self.axes_manager._get_positive_index(axis)
         if number_of_parts is None and steps is None:
             if not self._splitting_steps:
                 messages.warning_exit(
@@ -653,17 +678,12 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             self._shape_before_unfolding = None
             self._axes_manager_before_unfolding = None
 
-    def _get_positive_axis_index_index(self, axis):
-        if axis < 0:
-            axis = len(self.data.shape) + axis
-        return axis
-
     def iterate_axis(self, axis = -1, copy=True):
         # We make a copy to guarantee that the data in contiguous,
         # otherwise it will not return a view of the data
         if copy is True:
             self.data = self.data.copy()
-        axis = self._get_positive_axis_index_index(axis)
+        axis = self.axes_manager._get_positive_index(axis)
         unfolded_axis = axis - 1
         new_shape = [1] * len(self.data.shape)
         new_shape[axis] = self.data.shape[axis]
@@ -733,7 +753,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         """
         
-        axis = self._get_positive_axis_index_index(axis)
+        axis = self.axes_manager._get_positive_index(axis)
         if return_signal is True:
             s = self.deepcopy()
         else:
@@ -827,7 +847,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         """
         
-        axis = self._get_positive_axis_index_index(axis)
+        axis = self.axes_manager._get_positive_index(axis)
         if return_signal is True:
             s = self.deepcopy()
         else:
@@ -1912,10 +1932,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         return self.get_current_signal()
         
     def __len__(self):
-        if self.axes_manager.navigation_size == 0:
-            return 1
-        else:
-            return self.axes_manager.navigation_size
+        return self.axes_manager.signal_shape[0]
+
 
 class SpecialSlicers:
     def __init__(self, signal, isNavigation):
@@ -1923,4 +1941,6 @@ class SpecialSlicers:
         self.signal = signal
     def __getitem__(self, slices):
         return self.signal.__getitem__(slices, self.isNavigation)
+    def __len__(self):
+        return self.signal.__len__()
 
