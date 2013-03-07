@@ -66,7 +66,7 @@ class Spectrum(Signal):
         axis : -1
         
         """
-        axis = self.axes_manager._get_positive_axis_index(axis)
+        axis = self.axes_manager._get_positive_index(axis)
         data = self.data
         for pixel in indices:
             data[(slice(None),)*axis + (pixel, Ellipsis)] = \
@@ -92,7 +92,7 @@ class Spectrum(Signal):
             
         """
 
-        axis = self.axes_manager._get_positive_axis_index(axis)
+        axis = self.axes_manager._get_positive_index(axis)
         coord = self.axes_manager.axes[axis]
         offset = coord.offset
         _axis = coord.axis.copy()

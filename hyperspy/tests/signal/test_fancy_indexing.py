@@ -102,6 +102,10 @@ class Test1D:
     def test_navigation_indexer_navdim0(self):
         s = self.signal.navigation_indexer[3]
         
+    def test_minus_one_index(self):
+        s = self.signal[-1]
+        assert_equal(s.data, self.data[-1])
+        
         
 class Test3D_SignalDim0:
     def setUp(self):

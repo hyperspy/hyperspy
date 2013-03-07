@@ -121,6 +121,13 @@ class DataAxis(t.HasTraits):
         # change to correctly set its value.
         self._update_slice(self.navigate)
         
+    def _get_positive_index(self, index):
+        if index < 0:
+            index = self.size + index
+            if index < 0:
+                raise IndexError("index out of bounds")
+        return index
+        
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and 
         change the offset and scale of the DataAxis acordingly.
@@ -142,7 +149,7 @@ class DataAxis(t.HasTraits):
             stop = slice_.stop
             step = slice_.step
         else:
-            start = slice_
+            start = self._get_positive_index(slice_)
             if isinstance(start, float):
                 stop = i2v(start) + 1
             else:
@@ -335,7 +342,7 @@ class AxesManager(t.HasTraits):
     navigation_axes = t.List()
     _step = t.Int(1)
     
-    def _get_positive_axis_index(self, axis):
+    def _get_positive_index(self, axis):
         if axis < 0:
             axis = len(self.axes) + axis
             if axis < 0:

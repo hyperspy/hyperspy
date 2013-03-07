@@ -424,7 +424,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         crop_in_units
         
         """
-        axis = self.axes_manager._get_positive_axis_index(axis)
+        axis = self.axes_manager._get_positive_index(axis)
         if i1 is not None:
             new_offset = self.axes_manager.axes[axis].axis[i1]
         # We take a copy to guarantee the continuity of the data
@@ -529,7 +529,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         ------
         tuple with the splitted signals
         """
-        axis = self.axes_manager._get_positive_axis_index(axis)
+        axis = self.axes_manager._get_positive_index(axis)
         if number_of_parts is None and steps is None:
             if not self._splitting_steps:
                 messages.warning_exit(
@@ -683,7 +683,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         # otherwise it will not return a view of the data
         if copy is True:
             self.data = self.data.copy()
-        axis = self.axes_manager._get_positive_axis_index(axis)
+        axis = self.axes_manager._get_positive_index(axis)
         unfolded_axis = axis - 1
         new_shape = [1] * len(self.data.shape)
         new_shape[axis] = self.data.shape[axis]
@@ -753,7 +753,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         """
         
-        axis = self.axes_manager._get_positive_axis_index(axis)
+        axis = self.axes_manager._get_positive_index(axis)
         if return_signal is True:
             s = self.deepcopy()
         else:
@@ -847,7 +847,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         """
         
-        axis = self.axes_manager._get_positive_axis_index(axis)
+        axis = self.axes_manager._get_positive_index(axis)
         if return_signal is True:
             s = self.deepcopy()
         else:
