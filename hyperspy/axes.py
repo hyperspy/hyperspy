@@ -490,6 +490,8 @@ class AxesManager(t.HasTraits):
             self.signal_shape = [0,]
         self.navigation_size = \
             np.cumprod(self.navigation_shape)[-1]
+        self.signal_size = \
+            np.cumprod(self.size_shape)[-1]
         self._update_max_index()
 
     def set_view(self, view = 'spectrum'):
