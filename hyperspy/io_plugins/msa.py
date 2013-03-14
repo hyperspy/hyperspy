@@ -222,8 +222,8 @@ def file_reader(filename, encoding = 'latin-1', **kwds):
     mapped['original_filename'] = filename
     mapped['record_by'] = 'spectrum'
     if mapped.has_item('signal_type'):
-        if mapped.signal_type == 'ELS':
-            mapped.signal_type = 'EELS'
+        if mapped.signal_type == 'ELS':            
+           mapped.signal_type = 'EELS'        
     else:
         # Defaulting to EELS looks reasonable
         mapped.signal_type = 'EELS'

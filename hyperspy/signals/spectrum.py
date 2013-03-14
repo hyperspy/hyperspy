@@ -522,6 +522,16 @@ class Spectrum(Signal):
             eels.learning_results = copy.deepcopy(self.learning_results)
         eels.tmp_parameters = self.tmp_parameters.deepcopy()
         return eels
+    
+    def to_EDS(self):
+        from hyperspy.signals.eds import EDSSpectrum
+        dic = self._get_signal_dict()
+        dic['mapped_parameters']['signal_type'] = 'EDS'
+        eds = EDSSpectrum(dic)
+        #if hasattr(self, 'learning_results'):
+         #   eds.learning_results = copy.deepcopy(self.learning_results)
+        eds.tmp_parameters = self.tmp_parameters.deepcopy()
+        return eds
         
     def to_simulation(self):
         from hyperspy.signals.spectrum_simulation import (

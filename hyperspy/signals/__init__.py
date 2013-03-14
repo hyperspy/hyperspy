@@ -19,6 +19,7 @@
 from hyperspy.signals.spectrum import Spectrum
 from hyperspy.signals.image import Image
 from hyperspy.signals.eels import EELSSpectrum
+from hyperspy.signals.eds import EDSSpectrum
 from hyperspy.signals.spectrum_simulation import SpectrumSimulation
 from hyperspy.signals.eels_spectrum_simulation import (
     EELSSpectrumSimulation)
