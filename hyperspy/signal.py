@@ -157,6 +157,134 @@ class Signal(t.HasTraits, MVA):
 
         return _signal
         
+    
+    def _binary_operator_ruler(self, other, op_name):
+        exception_message = (
+            "Invalid dimensions for this operation")
+        if isinstance(other, Signal):
+            if other.data.shape != self.data.shape:
+                # Are they aligned?
+                are_aligned = utils.are_aligned(self.data.shape,
+                                       other.data.shape)
+                if are_aligned is True:
+                    sdata, odata = utils.homogenize_ndim(self.data,
+                                                     other.data)
+                else:
+                    # Let's align them if possible
+                    sig_and_nav = [s for s in [self, other] if
+                        s.axes_manager.signal_size > 1 and 
+                        s.axes_manager.navigation_size > 1]
+                        
+                    sig = [s for s in [self, other] if
+                        s.axes_manager.signal_size > 1 and 
+                        s.axes_manager.navigation_size == 0]
+                        
+                    nav = [s for s in [self, other] if
+                        s.axes_manager.signal_size == 0 and 
+                        s.axes_manager.navigation_size > 1]
+                    if sig_and_nav and sig:
+                        self = sig_and_nav[0]
+                        other = sig[0]
+                        if (self.axes_manager.signal_shape == 
+                                    other.axes_manager.signal_shape):
+                            sdata = self.data
+                            other_new_shape = [
+                                axis.size if axis.navigate is False
+                                else 1
+                                for axis in self.axes_manager.axes]
+                            odata = other.data.reshape(
+                                other_new_shape)
+                        elif (self.axes_manager.navigation_shape == 
+                                other.axes_manager.signal_shape):
+                            sdata = self.data
+                            other_new_shape = [
+                                axis.size if axis.navigate is True
+                                else 1
+                                for axis in self.axes_manager.axes]
+                            odata = other.data.reshape(
+                                other_new_shape)
+                        else:
+                            raise ValueError(exception_message)
+                    elif len(sig) == 2:
+                        sdata = self.data.reshape(
+                            (1,) * other.axes_manager.signal_dimension
+                            + self.data.shape)
+                        odata = other.data.reshape(
+                            other.data.shape + 
+                            (1,) * self.axes_manager.signal_dimension)
+                    else:
+                        raise ValueError(exception_message)
+                        
+
+                # The data are now aligned but the shapes are not the 
+                # same and therefore we have to calculate the resulting
+                # axes
+                ref_axes = self if (
+                    len(self.axes_manager.axes) > 
+                    len(other.axes_manager.axes)) else other
+                
+                new_axes = []
+                for i, (ssize, osize) in enumerate(
+                                    zip(sdata.shape, odata.shape)):
+                    if ssize > osize:
+                        if are_aligned or len(sig) != 2:
+                            new_axes.append(
+                                self.axes_manager.axes[i].copy())
+                        else:
+                            new_axes.append(self.axes_manager.axes[
+                                i - other.axes_manager.signal_dimension
+                                ].copy())
+                        
+                    elif ssize < osize:
+                        new_axes.append(
+                            other.axes_manager.axes[i].copy())
+                        
+                    else:
+                        new_axes.append(
+                            ref_axes.axes_manager.axes[i].copy())
+                
+            else:
+                sdata = self.data
+                odata = other.data
+                new_axes = [axis.copy()
+                            for axis in self.axes_manager.axes]            
+            exec("result = sdata.%s(odata)" % op_name)
+            new_signal = self.get_deepcopy_with_new_data(result)
+            new_signal.axes_manager.axes = new_axes
+            new_signal.axes_manager._set_axes_index_in_array_from_position()
+            new_signal.axes_manager.set_signal_dimension(
+                self.axes_manager.signal_dimension)
+            return new_signal
+        else:
+            exec("result = self.data.%s(other)" %  op_name)
+            return self.get_deepcopy_with_new_data(result)
+        
+    def _unary_operator_ruler(self, op_name):
+        exec("result = self.data.%s()" % op_name)
+        return self.get_deepcopy_with_new_data(result)
+            
+    def get_deepcopy_with_new_data(self, data=None):
+        """Returns a deepcopy of itself replacing the data.
+        
+        This method has the advantage over deepcopy that it does not
+        copy the data what can save precious memory
+        
+        Paramters
+        ---------
+        data : {None | np.array}
+        
+        Returns
+        -------
+        ns : Signal
+        
+        """
+        old_data = self.data
+        self.data = None
+        ns = self.deepcopy()
+        ns.data = data
+        self.data = old_data
+        return ns
+            
     def print_summary(self):
         string = "\n\tTitle: "
         string += self.mapped_parameters.title.decode('utf8')
@@ -218,7 +346,6 @@ class Signal(t.HasTraits, MVA):
             self.mapped_parameters.title = ''
         if not hasattr(self.mapped_parameters,'record_by'):
             self.mapped_parameters.record_by = self._default_record_by
-        self.squeeze()
                 
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array 
@@ -493,7 +620,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             c2.index_in_array, c1.index_in_array
         self.axes_manager.axes[axis1] = c2
         self.axes_manager.axes[axis2] = c1
-        self.axes_manager.set_signal_dimension()
+        self.axes_manager.update_attributes()
 
     def rebin(self, new_shape):
         """
@@ -763,7 +890,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         for _axis in s.axes_manager.axes:
             if _axis.index_in_array > axis:
                 _axis.index_in_array -= 1
-        s.axes_manager.set_signal_dimension()
+        s.axes_manager.update_attributes()
         if return_signal is True:
             return s
             
@@ -857,7 +984,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         for _axis in s.axes_manager.axes:
             if _axis.index_in_array > axis:
                 _axis.index_in_array -= 1
-        s.axes_manager.set_signal_dimension()
+        s.axes_manager.update_attributes()
         if return_signal is True:
             return s
 
@@ -1890,7 +2017,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         cs.data = self()
         for axis in cs.axes_manager.navigation_axes:
             cs.axes_manager.axes.remove(axis)
-            cs.axes_manager.set_signal_dimension()
+            cs.axes_manager.update_attributes()
         cs.axes_manager._set_axes_index_in_array_from_position()
         if cs.tmp_parameters.has_item('filename'):
             basename = cs.tmp_parameters.filename
@@ -1933,6 +2060,55 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
     def __len__(self):
         return self.axes_manager.signal_shape[0]
+        
+# Implement binary operators
+for name in (
+    # Arithmetic operators
+    "__add__",
+    "__sub__",
+    "__mul__",
+    "__floordiv__",
+    "__mod__",
+    "__divmod__",
+    "__pow__",
+    "__lshift__",
+    "__rshift__",
+    "__and__",
+    "__xor__",
+    "__or__",
+    "__div__",
+    "__truediv__",
+    # Comparison operators
+    "__lt__",
+    "__le__",
+    "__eq__",
+    "__ne__",
+    "__ge__",
+    "__gt__",
+    ):
+    exec(
+        ("def %s(self, other):\n" % name) + 
+        ("   return self._binary_operator_ruler(other, \'%s\')\n" %
+                                                                name))
+    exec("%s.__doc__ = int.%s.__doc__" % (name, name))
+    exec("setattr(Signal, \'%s\', %s)" % (name, name))
+    # The following commented line enables the operators with swapped
+    # operands. They should be defined only for commutative operators
+    # but for simplicity we don't support this at all atm. 
+    #~exec("setattr(Signal, \'%s\', %s)" % (name[:2] + "r" + name[2:],
+                                          #~name))
+
+# Implement unary arithmetic operations
+for name in (
+    "__neg__",
+    "__pos__",
+    "__abs__",
+    "__invert__",):
+    exec(
+        ("def %s(self):" % name) + 
+        ("   return self._unary_operator_ruler(\'%s\')" % name))
+    exec("%s.__doc__ = int.%s.__doc__" % (name, name))
+    exec("setattr(Signal, \'%s\', %s)" % (name, name))
 
 
 class SpecialSlicers:

@@ -3,6 +3,20 @@ What's new
 
 We only cover here the main highlights, for a detailed list of all the changes see `the github commits changelog <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
+
+.. _changes_0.6:
+
+v0.6
+====
+
+New features
+------------
+
+* Signal now supports indexing and slicing. See :ref:`signal.indexing`.
+* Most arithmetic and rich arithmetic operators work with signal.
+  See :ref:`signal.operations`
+
+
 .. _changes_0.5.1:
 
 v0.5.1

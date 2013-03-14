@@ -26,7 +26,6 @@ The different signals store other objects in what are called attributes. For exa
 
 .. _transforming.signal:
 
-
 Transforming between signal subclasses
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  
@@ -276,9 +275,66 @@ dimensions independently:
     >>> s.signal_indexer[0].data
     array([[ 0,  4,  8],
        [12, 16, 20]])
+       
+       
+.. _signal.operations:
+       
+Signal operations
+^^^^^^^^^^^^^^^^^
+.. versionadded:: 0.6
 
-    
-    
+:py:class:`~.signal.Signal` supports all the Python binary arithmetic
+opearations (+, -, *, //, %, divmod(), pow(), **, <<, >>, &, ^, |),
+augmented binary assignments (+=, -=, *=, /=, //=, %=, **=, <<=, >>=, 
+&=, ^=, |=), unary operations (-, +, abs() and ~) and rich comparisons 
+operations (<, <=, ==, x!=y, <>, >, >=).
+
+These operations are performed element-wise. When the dimensions of the 
+signals are not equal `numpy broadcasting rules apply  <http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_ 
+*first*. In addition Hyperspy extend numpy's broadcasting rules to 
+the following cases:
+
+
+
++------------+----------------------+------------------+
+| **Signal** | **NavigationShape**  | **SignalShape**  |
++============+======================+==================+
+|   s1       |        a             |      b           |
++------------+----------------------+------------------+
+|   s2       |       (0,)           |      a           |
++------------+----------------------+------------------+
+|   s1 + s2  |       a              |      b           |
++------------+----------------------+------------------+
+|   s2 + s1  |       a              |      b           |
++------------+----------------------+------------------+
+
+
++------------+----------------------+------------------+
+| **Signal** | **NavigationShape**  | **SignalShape**  |
++============+======================+==================+
+|   s1       |        a             |      b           |
++------------+----------------------+------------------+
+|   s2       |       (0,)           |      b           |
++------------+----------------------+------------------+
+|   s1 + s2  |       a              |      b           |
++------------+----------------------+------------------+
+|   s2 + s1  |       a              |      b           |
++------------+----------------------+------------------+
+
+
++------------+----------------------+------------------+
+| **Signal** | **NavigationShape**  | **SignalShape**  |
++============+======================+==================+
+|   s1       |       (0,)           |      a           |
++------------+----------------------+------------------+
+|   s2       |       (0,)           |      b           |
++------------+----------------------+------------------+
+|   s1 + s2  |       b              |      a           |
++------------+----------------------+------------------+
+|   s2 + s1  |       a              |      b           |
++------------+----------------------+------------------+
+
+
 Cropping
 ^^^^^^^^
 
