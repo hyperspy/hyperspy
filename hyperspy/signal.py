@@ -852,15 +852,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         ----------
         axis : int
             The axis over which the operation will be performed
-        return_signal : bool
-            If False the operation will be performed on the current object. If
-            True, the current object will not be modified and the operation
-             will be performed in a new signal object that will be returned.
 
         Returns
         -------
-        Depending on the value of the return_signal keyword, nothing or a
-        signal instance
+        s : Signal
 
         See also
         --------
@@ -872,8 +867,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         >>> s = Signal({'data' : np.random.random((64,64,1024))})
         >>> s.data.shape
         (64,64,1024)
-        >>> s.sum(-1)
-        >>> s.data.shape
+        >>> s.sum(-1).data.shape
         (64,64)
         # If we just want to plot the result of the operation
         s.sum(-1, True).plot()
@@ -881,19 +875,44 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         """
         
         axis = self.axes_manager._get_positive_index(axis)
-        if return_signal is True:
-            s = self.deepcopy()
-        else:
-            s = self
-        s.data = s.data.sum(axis)
-        s.axes_manager.axes.remove(s.axes_manager.axes[axis])
-        for _axis in s.axes_manager.axes:
-            if _axis.index_in_array > axis:
-                _axis.index_in_array -= 1
-        s.axes_manager.update_attributes()
-        if return_signal is True:
-            return s
+        s = self.get_deepcopy_with_new_data(self.data.sum(axis))
+        s.axes_manager.remove(s.axes_manager.axes[axis])
+        return s
+    
+    @auto_replot
+    def mean(self, axis):
+        """Average the data over the specify axis
+
+        Parameters
+        ----------
+        axis : int
+            The axis over which the operation will be performed
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum_in_mask, mean
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.mean(-1).data.shape
+        (64,64)
+        
+        """
+        
+        axis = self.axes_manager._get_positive_index(axis)
+        s = self.get_deepcopy_with_new_data(self.data.mean(axis))
+        s.axes_manager.remove(s.axes_manager.axes[axis])
+        return s
             
+    @auto_replot
     def diff(self, axis, order=1, return_signal=False):
         """Differentiate the data over the specify axis
 
@@ -902,15 +921,6 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         axis: int
             The axis over which the operation will be performed
         order: the order of the derivative
-        return_signal : bool
-            If False the operation will be performed on the current object. If
-            True, the current object will not be modified and the operation
-            will be performed in a new signal object that will be returned.
-
-        Returns
-        -------
-        Depending on the value of the return_signal keyword, nothing or a
-        signal instance
 
         See also
         --------
@@ -922,71 +932,17 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         >>> s = Signal({'data' : np.random.random((64,64,1024))})
         >>> s.data.shape
         (64,64,1024)
-        >>> s.diff(-1)
-        >>> s.data.shape
+        >>> s.diff(-1).data.shape
         (64,64,1023)
-        # If we just want to plot the result of the operation
-        s.diff(-1, True).plot()
+        
         """
-        if return_signal is True:
-            s = self.deepcopy()
-        else:
-            s = self
-        s.data = np.diff(s.data,order,axis)
+        
+        s = self.get_deepcopy_with_new_data(
+            np.diff(self.data,order,axis))
         axis = s.axes_manager.axes[axis]
-        axis.offset = axis.axis[:2].mean()
+        axis.offset += (axis.scale / 2)
         s.get_dimensions_from_data()
-        if return_signal is True:
-            return s
-
-    def mean(self, axis, return_signal = False):
-        """Average the data over the specify axis
-
-        Parameters
-        ----------
-        axis : int
-            The axis over which the operation will be performed
-        return_signal : bool
-            If False the operation will be performed on the current object. If
-            True, the current object will not be modified and the operation
-            will be performed in a new signal object that will be returned.
-
-        Returns
-        -------
-        Depending on the value of the return_signal keyword, nothing or a
-        signal instance
-
-        See also
-        --------
-        sum_in_mask, mean
-
-        Usage
-        -----
-        >>> import numpy as np
-        >>> s = Signal({'data' : np.random.random((64,64,1024))})
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.mean(-1)
-        >>> s.data.shape
-        (64,64)
-        # If we just want to plot the result of the operation
-        s.mean(-1, True).plot()
-        
-        """
-        
-        axis = self.axes_manager._get_positive_index(axis)
-        if return_signal is True:
-            s = self.deepcopy()
-        else:
-            s = self
-        s.data = s.data.mean(axis)
-        s.axes_manager.axes.remove(s.axes_manager.axes[axis])
-        for _axis in s.axes_manager.axes:
-            if _axis.index_in_array > axis:
-                _axis.index_in_array -= 1
-        s.axes_manager.update_attributes()
-        if return_signal is True:
-            return s
+        return s
 
     def copy(self):
         return copy.copy(self)
