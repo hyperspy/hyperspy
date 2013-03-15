@@ -537,8 +537,9 @@ class AxesManager(t.HasTraits):
                 "The signal dimension must be a positive integer")
                 
         tl = [True] * len(self.axes)
-        tl[-value:] = (False,) * value
-            
+        if value != 0:
+            tl[-value:] = (False,) * value
+        
         for axis in self.axes:
             axis.navigate = tl.pop(0)
 
