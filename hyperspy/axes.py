@@ -302,10 +302,11 @@ class AxesManager(t.HasTraits):
     It can iterate over the navigation coordinates returning the 
     indices at the current iteration.
     
-    It can only be indexed and sliced to access the DataAxis objects that it
-    contain. The indexing is in the same "natural order" as in Signal, i.e. 
-    [nX, nY, ...,sX, sY,...] where `n` indicates a navigation axis and 
-    `s` a signal axis.
+    It can only be indexed and sliced to access the DataAxis objects 
+    that it contain. The indexing is in the same "natural order" as in 
+    Signal, i.e. [nX, nY, ...,sX, sY,...] where `n` indicates a navigation axis and 
+    `s` a signal axis. In addition it can be indexed using the DataAxis
+    name.
     
     
     Attributes
@@ -338,6 +339,9 @@ class AxesManager(t.HasTraits):
     
     >>> s.axes_manager[1]
     <undefined navigation axis, size: 2, index: 0>
+    >>> s.axes_manager[1].name = "y"
+    >>> s.axes_manager['y']
+    <y navigation axis, size: 2, index: 0>
     >>> for i in s.axes_manager:
     >>>     print i, s.axes_manager.indices
     (0, 0, 0) (0, 0, 0)
@@ -366,9 +370,16 @@ class AxesManager(t.HasTraits):
         """x.__getitem__(y) <==> x[y]
         
         """
-        # Use the "natural order" as in Signal
-        
-        return self._get_axes_in_natural_order()[y]
+        if isinstance(y, basestring):
+            axes = self._get_axes_in_natural_order()
+            while axes:
+                axis = axes.pop()
+                if y == axis.name:
+                    return axis
+            raise ValueError("There is no DataAxis named %s" % y)
+        else:
+            # Use the "natural order" as in Signal
+            return self._get_axes_in_natural_order()[y]
         
     def __getslice__(self, i=None, j=None):
         """x.__getslice__(i, j) <==> x[i:j]
