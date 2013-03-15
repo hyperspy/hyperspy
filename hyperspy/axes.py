@@ -408,10 +408,10 @@ class AxesManager(t.HasTraits):
         # set_view is called only if there is no current view
         if not navigates or np.all(np.array(navigates) == True):
             self.set_view()
-        self.set_signal_dimension()
-        self.on_trait_change(self.set_signal_dimension, 'axes.slice')
-        self.on_trait_change(self.set_signal_dimension, 'axes.index')
-        self.on_trait_change(self.set_signal_dimension, 'axes.size')
+        self.update_attributes()
+        self.on_trait_change(self.update_attributes, 'axes.slice')
+        self.on_trait_change(self.update_attributes, 'axes.index')
+        self.on_trait_change(self.update_attributes, 'axes.size')
         self._index = None # index for the iterator
         
     def _update_max_index(self):
@@ -460,7 +460,7 @@ class AxesManager(t.HasTraits):
         axis = DataAxis(*args, **kwargs)
         self.axes.append(axis)
 
-    def set_signal_dimension(self):
+    def update_attributes(self):
         getitem_tuple = []
         values = []
         self.signal_axes = []
@@ -490,6 +490,8 @@ class AxesManager(t.HasTraits):
             self.signal_shape = [0,]
         self.navigation_size = \
             np.cumprod(self.navigation_shape)[-1]
+        self.signal_size = \
+            np.cumprod(self.signal_shape)[-1]
         self._update_max_index()
 
     def set_view(self, view = 'spectrum'):
@@ -509,6 +511,34 @@ class AxesManager(t.HasTraits):
         elif view == 'image':
             tl[-2:] = False, False
 
+        for axis in self.axes:
+            axis.navigate = tl.pop(0)
+            
+    def set_signal_dimension(self, value):
+        """Set the dimension of the signal.
+                
+        Attributes
+        ----------
+        value : int
+        
+        Raises
+        ------
+        ValueError if value if greater than the number of axes or 
+        is negative         
+        
+        """
+        if len(self.axes) == 0:
+            return
+        elif value > len(self.axes):
+            raise ValueError("The signal dimension cannot be greater"
+                " than the number of axes which is %i" % len(self.axes))
+        elif value < 0:
+            raise ValueError(
+                "The signal dimension must be a positive integer")
+                
+        tl = [True] * len(self.axes)
+        tl[-value:] = (False,) * value
+            
         for axis in self.axes:
             axis.navigate = tl.pop(0)
 
