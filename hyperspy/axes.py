@@ -408,10 +408,10 @@ class AxesManager(t.HasTraits):
         # set_view is called only if there is no current view
         if not navigates or np.all(np.array(navigates) == True):
             self.set_view()
-        self.update_attributes()
-        self.on_trait_change(self.update_attributes, 'axes.slice')
-        self.on_trait_change(self.update_attributes, 'axes.index')
-        self.on_trait_change(self.update_attributes, 'axes.size')
+        self._update_attributes()
+        self.on_trait_change(self._update_attributes, 'axes.slice')
+        self.on_trait_change(self._update_attributes, 'axes.index')
+        self.on_trait_change(self._update_attributes, 'axes.size')
         self._index = None # index for the iterator
         
     def _update_max_index(self):
@@ -460,7 +460,7 @@ class AxesManager(t.HasTraits):
         axis = DataAxis(*args, **kwargs)
         self.axes.append(axis)
 
-    def update_attributes(self):
+    def _update_attributes(self):
         getitem_tuple = []
         values = []
         self.signal_axes = []

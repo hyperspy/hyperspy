@@ -620,7 +620,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             c2.index_in_array, c1.index_in_array
         self.axes_manager.axes[axis1] = c2
         self.axes_manager.axes[axis2] = c1
-        self.axes_manager.update_attributes()
+        self.axes_manager._update_attributes()
 
     def rebin(self, new_shape):
         """
@@ -1973,7 +1973,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         cs.data = self()
         for axis in cs.axes_manager.navigation_axes:
             cs.axes_manager.axes.remove(axis)
-            cs.axes_manager.update_attributes()
+            cs.axes_manager._update_attributes()
         cs.axes_manager._set_axes_index_in_array_from_position()
         if cs.tmp_parameters.has_item('filename'):
             basename = cs.tmp_parameters.filename
