@@ -37,7 +37,7 @@ class Image(Signal):
     """    
     def __init__(self, *args, **kw):
         super(Image,self).__init__(*args, **kw)
-        self.axes_manager.set_view('image')
+        self.axes_manager.set_signal_dimension(2)
                 
     def to_spectrum(self):
         from hyperspy.signals.spectrum import Spectrum

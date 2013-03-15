@@ -53,7 +53,7 @@ class Spectrum(Signal):
     
     def __init__(self, *args, **kwargs):
         Signal.__init__(self, *args, **kwargs)
-        self.axes_manager.set_view('spectrum')
+        self.axes_manager.set_signal_dimension(1)
 
     @auto_replot
     def correct_bad_pixels(self, indices, axis = -1):

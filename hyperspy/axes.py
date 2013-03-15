@@ -405,9 +405,10 @@ class AxesManager(t.HasTraits):
                                                             **axis_dict)
         navigates = [i.navigate for i in self.axes if 
                                                 hasattr(i, 'navigate')]
-        # set_view is called only if there is no current view
+        # set_signal_dimension is called only if there is no current view
+        # It defaults to spectrum
         if not navigates or np.all(np.array(navigates) == True):
-            self.set_view()
+            self.set_signal_dimension(1)
         self._update_attributes()
         self.on_trait_change(self._update_attributes, 'axes.slice')
         self.on_trait_change(self._update_attributes, 'axes.index')
@@ -493,26 +494,6 @@ class AxesManager(t.HasTraits):
         self.signal_size = \
             np.cumprod(self.signal_shape)[-1]
         self._update_max_index()
-
-    def set_view(self, view = 'spectrum'):
-        """Adjust the navigate attribute depending on the desired view-
-        
-        Attributes
-        ----------
-        view : {'spectrum', 'image'}
-            If spectrum all but the last index will be set to "navigate". If 
-            'image' the all but the last two indices will be set to navigate.            
-        
-        """
-        tl = [True] * len(self.axes)
-        if view == 'spectrum':
-            # We limit the signal_dimension to 1 to get a spectrum
-            tl[-1] = False
-        elif view == 'image':
-            tl[-2:] = False, False
-
-        for axis in self.axes:
-            axis.navigate = tl.pop(0)
             
     def set_signal_dimension(self, value):
         """Set the dimension of the signal.
