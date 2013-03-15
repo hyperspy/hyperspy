@@ -23,6 +23,7 @@
 
 import codecs
 import os.path
+from StringIO import StringIO
 
 import numpy as np
 
@@ -94,10 +95,34 @@ rpl_keys = {
     'beam-energy' : float,
     }
 
+def correct_INCA_format(fp):
+    fp_list = list()
+    fp.seek(0)    
+    if '(' in fp.readline():
+        for line in fp:
+            line=line.replace("(MLX::","").replace(" : ", "\t").replace(" :", "\t").replace(" ","\t").lower().strip().replace(")","\n")
+            if "record-by" in line:
+                if "image" in line:
+                    line = "record-by\timage"
+                if "vector" in line:
+                    line = "record-by\tvector"
+                if "dont-care" in line:
+                    line = "record-by\tdont-care"                    
+            fp_list.append(line)
+        fp = StringIO()
+        fp.writelines(fp_list)
+    fp.seek(0)
+    return fp
+            
+
 def parse_ripple(fp):
     """Parse information from ripple (.rpl) file.
     Accepts file object 'fp. Returns dictionary rpl_info.
     """
+    
+
+    fp = correct_INCA_format(fp)
+                            
     rpl_info = {}
     for line in fp.readlines():
         line = line.replace(' ', '')
@@ -105,7 +130,7 @@ def parse_ripple(fp):
             line = line.strip('\r\n')
             #line = line.lower()
             if comment in line:
-                line = line[:line.find(comment)]
+                line = line[:line.find(comment)]           
             if not sep in line:
                 err = 'Separator in line "%s" is wrong, ' % line
                 err += 'it should be a <TAB> ("\\t")'
