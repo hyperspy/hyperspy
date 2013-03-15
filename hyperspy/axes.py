@@ -182,9 +182,14 @@ class DataAxis(t.HasTraits):
 
 
     def __repr__(self):
+        nav_status = "navigation" if self.navigate is True else "signal"
         if self.name is not None:
-            text = '<%s axis, index: %s>' % (self.name,
-                                               self.index_in_array)
+            text = '<%s %s axis, size: %i' % (self.name,
+                                              nav_status,
+                                              self.size,)
+            if self.navigate is True:
+                text += ", index: %i" % self.index
+            text += ">"
             return text
             
     def connect(self, f, trait='value'):
@@ -524,7 +529,7 @@ class AxesManager(t.HasTraits):
         for axis in self.axes:
             axis.navigate = tl.pop(0)
 
-    def setsignal_axes(self, signal_axes):
+    def set_signal_axes(self, signal_axes):
         '''Easily choose which axes are slicing
 
         Parameters
