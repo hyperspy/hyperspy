@@ -269,8 +269,8 @@ class TestEllipsis:
         assert_true((s.data == self.data[0, ...]).all())
         
     def test_ellipsis_navigation(self):
-        self.signal.axes_manager[-2].navigate = False
-        self.signal.axes_manager[-3].navigate = False
+        self.signal.axes_manager.axes[-2].navigate = False
+        self.signal.axes_manager.axes[-3].navigate = False
         s = self.signal.signal_indexer[...,0]
         assert_true((s.data == self.data[:,0, ...]).all())
                      

@@ -299,8 +299,13 @@ class DataAxis(t.HasTraits):
 class AxesManager(t.HasTraits):
     """Contains and manages the data axes.
     
-    It can iterate over the navigation coordiantes returning the 
+    It can iterate over the navigation coordinates returning the 
     indices at the current iteration.
+    
+    It can only be indexed and sliced to access the DataAxis objects that it
+    contain. The indexing is in the same "natural order" as in Signal, i.e. 
+    [nX, nY, ...,sX, sY,...] where `n` indicates a navigation axis and 
+    `s` a signal axis.
     
     
     Attributes
@@ -316,6 +321,9 @@ class AxesManager(t.HasTraits):
         Get and set the current indices if the navigation dimension
         is not 0. If the navigation dimension is 0 it raises 
         AttributeError when attempting to set its value.
+        
+    signal_axes, navigation_axes : list
+    	Contain the corresponding DataAxis objects
 
     Examples
     --------
@@ -329,7 +337,7 @@ class AxesManager(t.HasTraits):
     <Axes manager, 4 axes, signal dimension: 1, navigation dimension: 3>
     
     >>> s.axes_manager[1]
-    <undefined axis, index: 1>
+    <undefined navigation axis, size: 2, index: 0>
     >>> for i in s.axes_manager:
     >>>     print i, s.axes_manager.indices
     (0, 0, 0) (0, 0, 0)
@@ -358,13 +366,18 @@ class AxesManager(t.HasTraits):
         """x.__getitem__(y) <==> x[y]
         
         """
-        return self.axes[y]
+        # Use the "natural order" as in Signal
+        
+        return self._get_axes_in_natural_order()[y]
         
     def __getslice__(self, i=None, j=None):
         """x.__getslice__(i, j) <==> x[i:j]
         
         """
-        return self.axes[i:j]
+        return self._get_axes_in_natural_order()[i:j]
+        
+    def _get_axes_in_natural_order(self):
+        return self.navigation_axes[::-1] + self.signal_axes[::-1]
         
     def remove(self, axis):
         """Remove the given Axis.
