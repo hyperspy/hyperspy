@@ -79,7 +79,7 @@ class Signal(t.HasTraits, MVA):
 
         return string
 
-    def __getitem__(self, slices, isNavigation=None, XYZ_ordering=True):
+    def __getitem__(self, slices, isNavigation=None):
         try:
             len(slices)
         except TypeError:
@@ -96,21 +96,12 @@ class Signal(t.HasTraits, MVA):
         self.data = data
         _signal.data = data
         del data
-
-        nav_indices =  [el.index_in_array for el in
+        nav_idx =  [el.index_in_array for el in
                     _signal.axes_manager.navigation_axes]
-        signal_indices =  [el.index_in_array for el in
-                    _signal.axes_manager.signal_axes]
-
-        if XYZ_ordering:
-            nav_idx = nav_indices[::-1]
-            signal_idx = signal_indices[::-1]
-        else:
-            nav_idx = nav_indices
-            signal_idx = signal_indices
+        signal_idx =  [el.index_in_array for el in
+                       _signal.axes_manager.signal_axes]
 
         index = nav_idx + signal_idx
-
         if not has_signal:
             idx =  nav_idx
         elif not has_nav:
@@ -136,15 +127,15 @@ class Signal(t.HasTraits, MVA):
             raise IndexError("invalid index")
     
         slices = np.array([slice(None,)] * 
-                           len(_signal.axes_manager.axes))
+                           len(_signal.axes_manager._axes))
             
         slices[idx] = _orig_slices + (slice(None),) * max(
                             0, len(idx) - len(_orig_slices))
         
         array_slices = []
-        for slice_, axis in zip(slices,_signal.axes_manager.axes):
+        for slice_, axis in zip(slices,_signal.axes_manager._axes):
             if (isinstance(slice_, slice) or 
-                len(_signal.axes_manager.axes) < 2):
+                len(_signal.axes_manager._axes) < 2):
                 array_slices.append(axis._slice_me(slice_))
             else:
                 if isinstance(slice_, float):
@@ -191,7 +182,7 @@ class Signal(t.HasTraits, MVA):
                             other_new_shape = [
                                 axis.size if axis.navigate is False
                                 else 1
-                                for axis in self.axes_manager.axes]
+                                for axis in self.axes_manager._axes]
                             odata = other.data.reshape(
                                 other_new_shape)
                         elif (self.axes_manager.navigation_shape == 
@@ -200,7 +191,7 @@ class Signal(t.HasTraits, MVA):
                             other_new_shape = [
                                 axis.size if axis.navigate is True
                                 else 1
-                                for axis in self.axes_manager.axes]
+                                for axis in self.axes_manager._axes]
                             odata = other.data.reshape(
                                 other_new_shape)
                         else:
@@ -220,8 +211,8 @@ class Signal(t.HasTraits, MVA):
                 # same and therefore we have to calculate the resulting
                 # axes
                 ref_axes = self if (
-                    len(self.axes_manager.axes) > 
-                    len(other.axes_manager.axes)) else other
+                    len(self.axes_manager._axes) > 
+                    len(other.axes_manager._axes)) else other
                 
                 new_axes = []
                 for i, (ssize, osize) in enumerate(
@@ -229,28 +220,28 @@ class Signal(t.HasTraits, MVA):
                     if ssize > osize:
                         if are_aligned or len(sig) != 2:
                             new_axes.append(
-                                self.axes_manager.axes[i].copy())
+                                self.axes_manager._axes[i].copy())
                         else:
-                            new_axes.append(self.axes_manager.axes[
+                            new_axes.append(self.axes_manager._axes[
                                 i - other.axes_manager.signal_dimension
                                 ].copy())
                         
                     elif ssize < osize:
                         new_axes.append(
-                            other.axes_manager.axes[i].copy())
+                            other.axes_manager._axes[i].copy())
                         
                     else:
                         new_axes.append(
-                            ref_axes.axes_manager.axes[i].copy())
+                            ref_axes.axes_manager._axes[i].copy())
                 
             else:
                 sdata = self.data
                 odata = other.data
                 new_axes = [axis.copy()
-                            for axis in self.axes_manager.axes]            
+                            for axis in self.axes_manager._axes]            
             exec("result = sdata.%s(odata)" % op_name)
             new_signal = self.get_deepcopy_with_new_data(result)
-            new_signal.axes_manager.axes = new_axes
+            new_signal.axes_manager._axes = new_axes
             new_signal.axes_manager._set_axes_index_in_array_from_position()
             new_signal.axes_manager.set_signal_dimension(
                 self.axes_manager.signal_dimension)
@@ -352,7 +343,7 @@ class Signal(t.HasTraits, MVA):
         and the axes.
         
         """
-        for axis in self.axes_manager.axes:
+        for axis in self.axes_manager._axes:
             if axis.size == 1:
                 self.axes_manager.remove(axis)
         self.data = self.data.squeeze()
@@ -400,8 +391,8 @@ class Signal(t.HasTraits, MVA):
         return data
 
     def _get_hie_explorer(self, *args, **kwargs):
-        isslice = [self.axes_manager.signal_axes[0].index_in_array,
-                   self.axes_manager.signal_axes[1].index_in_array]
+        isslice = [self.axes_manager.signal_axes[1].index_in_array,
+                   self.axes_manager.signal_axes[0].index_in_array]
         isslice.sort()
         data = self.data.sum(isslice[1]).sum(isslice[0])
         return data
@@ -532,7 +523,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         a file
         """
         dc = self.data
-        for axis in self.axes_manager.axes:
+        for axis in self.axes_manager._axes:
             axis.size = int(dc.shape[axis.index_in_array])
 
     def crop_in_pixels(self, axis, i1=None, i2=None, copy=True):
@@ -553,13 +544,13 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         """
         axis = self.axes_manager._get_positive_index(axis)
         if i1 is not None:
-            new_offset = self.axes_manager.axes[axis].axis[i1]
+            new_offset = self.axes_manager._axes[axis].axis[i1]
         # We take a copy to guarantee the continuity of the data
         self.data = self.data[
         (slice(None),)*axis + (slice(i1, i2), Ellipsis)].copy()
 
         if i1 is not None:
-            self.axes_manager.axes[axis].offset = new_offset
+            self.axes_manager._axes[axis].offset = new_offset
         self.get_dimensions_from_data()
         self.squeeze()
 
@@ -581,8 +572,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         crop_in_pixels
 
         """
-        i1 = self.axes_manager.axes[axis].value2index(x1)
-        i2 = self.axes_manager.axes[axis].value2index(x2)
+        i1 = self.axes_manager._axes[axis].value2index(x1)
+        i2 = self.axes_manager._axes[axis].value2index(x2)
         self.crop_in_pixels(axis, i1, i2,copy=copy)
 
     @auto_replot
@@ -614,12 +605,12 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         axis2 : positive int
         """
         self.data = self.data.swapaxes(axis1, axis2)
-        c1 = self.axes_manager.axes[axis1]
-        c2 = self.axes_manager.axes[axis2]
+        c1 = self.axes_manager._axes[axis1]
+        c2 = self.axes_manager._axes[axis2]
         c1.index_in_array, c2.index_in_array =  \
             c2.index_in_array, c1.index_in_array
-        self.axes_manager.axes[axis1] = c2
-        self.axes_manager.axes[axis2] = c1
+        self.axes_manager._axes[axis1] = c2
+        self.axes_manager._axes[axis2] = c1
         self.axes_manager._update_attributes()
 
     def rebin(self, new_shape):
@@ -633,7 +624,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         """
         factors = np.array(self.data.shape) / np.array(new_shape)
         self.data = utils.rebin(self.data, new_shape)
-        for axis in self.axes_manager.axes:
+        for axis in self.axes_manager._axes:
             axis.scale *= factors[axis.index_in_array]
         self.get_dimensions_from_data()
 
@@ -679,15 +670,13 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         axes_dict = signal_dict['axes']
         for i in xrange(len(cut_node)-1):
             axes_dict[axis]['offset'] = \
-                self.axes_manager.axes[axis].index2value(cut_node[i])
+                self.axes_manager._axes[axis].index2value(cut_node[i])
             axes_dict[axis]['size'] = cut_node[i + 1] - cut_node[i] 
             data = self.data[
             (slice(None), ) * axis + (slice(cut_node[i], cut_node[i + 1]),
             Ellipsis)]
             signal_dict['data'] = data
             s = Signal(signal_dict)
-            # TODO: When copying plotting does not work
-#            s.axes = copy.deepcopy(self.axes_manager)
             splitted.append(s)
         return splitted
 
@@ -699,7 +688,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 
         Boolean. True if the data was unfolded by the function.
         """
-        if len(self.axes_manager.axes)>2:
+        if len(self.axes_manager._axes)>2:
             print "Automatically unfolding the data"
             self.unfold()
             return True
@@ -746,7 +735,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         uname = ''
         uunits = ''
         to_remove = []
-        for axis, dim in zip(self.axes_manager.axes, new_shape):
+        for axis, dim in zip(self.axes_manager._axes, new_shape):
             if dim == 1:
                 uname += ',' + axis.name
                 uunits = ',' + axis.units
@@ -754,12 +743,12 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             else:
                 axis.index_in_array = i
                 i += 1
-        self.axes_manager.axes[unfolded_axis].name += uname
-        self.axes_manager.axes[unfolded_axis].units += uunits
-        self.axes_manager.axes[unfolded_axis].size = \
+        self.axes_manager._axes[unfolded_axis].name += uname
+        self.axes_manager._axes[unfolded_axis].units += uunits
+        self.axes_manager._axes[unfolded_axis].size = \
                                                 self.data.shape[unfolded_axis]
         for axis in to_remove:
-            self.axes_manager.axes.remove(axis)
+            self.axes_manager._axes.remove(axis)
 
         self.data = self.data.squeeze()
 
@@ -781,7 +770,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         steady_axes = [
                         axis.index_in_array for axis in
                         self.axes_manager.signal_axes]
-        unfolded_axis = self.axes_manager.navigation_axes[-1].index_in_array
+        unfolded_axis = self.axes_manager.navigation_axes[0].index_in_array
         self._unfold(steady_axes, unfolded_axis)
 
     def unfold_signal_space(self):
@@ -793,7 +782,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         steady_axes = [
                         axis.index_in_array for axis in
                         self.axes_manager.navigation_axes]
-        unfolded_axis = self.axes_manager.signal_axes[-1].index_in_array
+        unfolded_axis = self.axes_manager.signal_axes[0].index_in_array
         self._unfold(steady_axes, unfolded_axis)
 
     @auto_replot
@@ -876,7 +865,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         axis = self.axes_manager._get_positive_index(axis)
         s = self.get_deepcopy_with_new_data(self.data.sum(axis))
-        s.axes_manager.remove(s.axes_manager.axes[axis])
+        s.axes_manager.remove(s.axes_manager._axes[axis])
         return s
     
     @auto_replot
@@ -909,7 +898,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         axis = self.axes_manager._get_positive_index(axis)
         s = self.get_deepcopy_with_new_data(self.data.mean(axis))
-        s.axes_manager.remove(s.axes_manager.axes[axis])
+        s.axes_manager.remove(s.axes_manager._axes[axis])
         return s
             
     @auto_replot
@@ -939,7 +928,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         s = self.get_deepcopy_with_new_data(
             np.diff(self.data,order,axis))
-        axis = s.axes_manager.axes[axis]
+        axis = s.axes_manager._axes[axis]
         axis.offset += (axis.scale / 2)
         s.get_dimensions_from_data()
         return s
@@ -1249,7 +1238,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             if self.axes_manager.signal_dimension==2:
                 # factor images
                 axes_dicts=[]
-                axes=self.axes_manager.signal_axes
+                axes=self.axes_manager.signal_axes[::-1]
                 shape=(axes[1].size,axes[0].size)
                 factor_data=np.rollaxis(
                         factors.reshape((shape[0],shape[1],-1)),2)
@@ -1386,7 +1375,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         elif multiple_files is False:
             if self.axes_manager.navigation_dimension==2:
                 axes_dicts=[]
-                axes=self.axes_manager.navigation_axes
+                axes=self.axes_manager.navigation_axes[::-1]
                 shape=(axes[1].size,axes[0].size)
                 loading_data=loadings.reshape((-1,shape[0],shape[1]))
                 axes_dicts.append(axes[0].get_axis_dictionary())
@@ -1440,7 +1429,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                     s.save(filename)
             elif self.axes_manager.navigation_dimension == 2:
                 axes_dicts=[]
-                axes=self.axes_manager.navigation_axes
+                axes=self.axes_manager.navigation_axes[::-1]
                 shape=(axes[0].size, axes[1].size)
                 loading_data=loadings.reshape((-1,shape[0],shape[1]))
                 axes_dicts.append(axes[0].get_axis_dictionary())
@@ -1965,15 +1954,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 np.Inf)
                 
     def get_current_signal(self):
-        data = self.data
-        self.data = None
-        cs = self.deepcopy()
-        self.data = data
-        del data
-        cs.data = self()
+        cs = s.get_deepcopy_with_new_data(self())
         for axis in cs.axes_manager.navigation_axes:
-            cs.axes_manager.axes.remove(axis)
-            cs.axes_manager._update_attributes()
+            cs.axes_manager.remove(axis)
         cs.axes_manager._set_axes_index_in_array_from_position()
         if cs.tmp_parameters.has_item('filename'):
             basename = cs.tmp_parameters.filename

@@ -137,7 +137,7 @@ class EELSSpectrum(Spectrum):
                 axis.offset - old_offset), axis.units))
         if also_apply_to:
             for sync_signal in also_apply_to:
-                saxis = sync_signal.axes_manager.axes[
+                saxis = sync_signal.axes_manager._axes[
                     axis.index_in_array]
                 saxis.offset += axis.offset - old_offset
                 
@@ -347,7 +347,7 @@ class EELSSpectrum(Spectrum):
         j1 = z * np.nan_to_num(np.log(j / z))
         sdata = np.fft.irfft(j1, axis=axis.index_in_array)
         def get_cropping_slice(axis, index):
-            cslice = [slice,] * len(self.axes_manager.axes)
+            cslice = [slice,] * len(self.axes_manager._axes)
             cslice[axis] = slice(None, index)
             return tuple(cslice)
         s.data = sdata[s.axes_manager._get_data_slice(

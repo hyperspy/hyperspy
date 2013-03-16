@@ -200,9 +200,9 @@ def load(filenames=None, record_by=None, signal_type=None,
                     # avoid its deletion when garbage collecting
                     if tempf is not None:
                         signal._data_temporary_file = tempf
-                    signal.axes_manager.axes[1:] = obj.axes_manager.axes
+                    signal.axes_manager._axes[1:] = obj.axes_manager._axes
                     signal.axes_manager._set_axes_index_in_array_from_position()
-                    eaxis = signal.axes_manager.axes[0]
+                    eaxis = signal.axes_manager._axes[0]
                     eaxis.name = 'stack_element'
                     eaxis.navigate = True
                     signal.mapped_parameters = obj.mapped_parameters

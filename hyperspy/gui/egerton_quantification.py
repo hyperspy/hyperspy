@@ -242,7 +242,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.coordinates = [coordinate for coordinate in np.ndindex(
                             tuple(signal.axes_manager.navigation_shape))
                             if (navigation_mask is None or not 
-                                navigation_mask[coordinate])]
+                                navigation_mask[coordinate[::-1]])]
         self.signal = signal
         sys.setrecursionlimit(np.cumprod(self.signal.data.shape)[-1])
         self.line = signal._plot.signal_plot.ax_lines[0]

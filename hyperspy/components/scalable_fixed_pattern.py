@@ -107,7 +107,7 @@ class ScalableFixedPattern(Component):
         
         """
                 
-        self.f = interp1d(self.spectrum.axes[0].axis,
+        self.f = interp1d(self.spectrum.axes_manager[-1].axis,
                           spectrum.data.squeeze(), 
                           bounds_error = False,
                           fill_value = 0.,

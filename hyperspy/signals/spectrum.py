@@ -55,24 +55,6 @@ class Spectrum(Signal):
         Signal.__init__(self, *args, **kwargs)
         self.axes_manager.set_signal_dimension(1)
 
-    @auto_replot
-    def correct_bad_pixels(self, indices, axis = -1):
-        """Substitutes the value of a given pixel by the average of the
-        adjencent pixels
-
-        Parameters
-        ----------
-        indices : tuple of int
-        axis : -1
-        
-        """
-        axis = self.axes_manager._get_positive_index(axis)
-        data = self.data
-        for pixel in indices:
-            data[(slice(None),)*axis + (pixel, Ellipsis)] = \
-            (data[(slice(None),)*axis + (pixel - 1, Ellipsis)] + \
-            data[(slice(None),)*axis + (pixel + 1, Ellipsis)]) / 2.
-
     def align_with_array_1D(self,
                             shift_array,
                             axis=-1,
@@ -93,7 +75,7 @@ class Spectrum(Signal):
         """
 
         axis = self.axes_manager._get_positive_index(axis)
-        coord = self.axes_manager.axes[axis]
+        coord = self.axes_manager._axes[axis]
         offset = coord.offset
         _axis = coord.axis.copy()
         maxval = np.cumprod(shift_array.shape)[-1] - 1
@@ -120,7 +102,7 @@ class Spectrum(Signal):
             self.crop_in_units(axis, offset + maxi)
             
     def interpolate_in_index_1D(self, axis, i1, i2, delta=3, **kwargs):
-        axis = self.axes_manager.axes[axis]
+        axis = self.axes_manager._axes[axis]
         i0 = int(np.clip(i1 - delta, 0, np.inf))
         i3 = int(np.clip(i2 + delta, 0, axis.size))
         for dat in self.iterate_axis(axis.index_in_array):
@@ -130,7 +112,7 @@ class Spectrum(Signal):
             dat[i1:i2] = dat_int(range(i1,i2))
 
     def interpolate_in_units_1D(self, axis, u1, u2, delta=3, **kwargs):
-        axis = self.axes_manager.axes[axis]
+        axis = self.axes_manager._axes[axis]
         i1 = axis.value2index(u1)
         i2 = axis.value2index(u2)
         self.interpolate_in_index_1D(axis.index_in_array, i1, i2, delta,
@@ -183,14 +165,14 @@ class Spectrum(Signal):
         """
 
         ip = number_of_interpolation_points + 1
-        axis = self.axes_manager.axes[axis]
+        axis = self.axes_manager._axes[axis]
         if reference_indices is None:
-            reference_indices = [0,] * (len(self.axes_manager.axes) - 1)
+            reference_indices = [0,] * (len(self.axes_manager._axes) - 1)
         else:
             reference_indices = list(reference_indices)
         reference_indices.insert(axis.index_in_array, slice(None))
         i1, i2 = irange
-        array_shape = [axis.size for axis in self.axes_manager.axes]
+        array_shape = [axis.size for axis in self.axes_manager._axes]
         array_shape[axis.index_in_array] = 1
         shift_array = np.zeros(array_shape)
         ref = self.data[reference_indices][i1:i2]
@@ -276,7 +258,7 @@ class Spectrum(Signal):
         estimate_shift_in_index_1D, align_with_array_1D and align_1D
         
         """
-        axis = self.axes_manager.axes[axis]
+        axis = self.axes_manager._axes[axis]
         i1 = axis.value2index(range_in_units[0])
         i2 = axis.value2index(range_in_units[1])
         if max_shift is not None:

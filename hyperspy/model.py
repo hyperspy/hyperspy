@@ -1164,9 +1164,9 @@ class Model(list):
                 continue
             # Create an AxesManager for the widget
             am = AxesManager([axis_dict,])
-            am.axes[0].navigate = True
+            am._axes[0].navigate = True
             try:
-                am.axes[0].value = get_value()
+                am._axes[0].value = get_value()
             except TraitError:
                 # The value is outside of the axis range
                 continue
@@ -1184,14 +1184,14 @@ class Model(list):
             self._position_widgets[-2].add_axes(
                                             self._plot.signal_plot.ax)
             # Create widget -> parameter connection
-            am.axes[0].continuous_value = True
-            am.axes[0].on_trait_change(set_value, 'value')
+            am._axes[0].continuous_value = True
+            am._axes[0].on_trait_change(set_value, 'value')
             # Create parameter -> widget connection
             # This is done with a duck typing trick
             # We disguise the AxesManager axis of Parameter by adding
             # the _twin attribute
-            am.axes[0]._twins  = set()
-            component._position.twin = am.axes[0]
+            am._axes[0]._twins  = set()
+            component._position.twin = am._axes[0]
 
             
     def disable_adjust_position(self, components=None, fix_them=True):

@@ -54,14 +54,14 @@ class TestBinaryOperatorsCase1:
         assert_true((n.data == 
             self.s1.data + self.s2.data[...,np.newaxis]).all())
         for i, size in enumerate(n.data.shape):
-            assert_equal(size, n.axes_manager.axes[i].size)
+            assert_equal(size, n.axes_manager._axes[i].size)
 
     def test_s2_plus_s1(self):
         n = self.s2 + self.s1
         assert_true((n.data == 
             self.s1.data + self.s2.data[...,np.newaxis]).all())
         for i, size in enumerate(n.data.shape):
-            assert_equal(size, n.axes_manager.axes[i].size)
+            assert_equal(size, n.axes_manager._axes[i].size)
         
     @raises(ValueError)
     def test_s3_plus_s1(self):
@@ -91,21 +91,21 @@ class TestBinaryOperatorsCase2:
         assert_true((n.data == 
             self.s1.data + self.s2.data).all())
         for i, size in enumerate(n.data.shape):
-            assert_equal(size, n.axes_manager.axes[i].size)
+            assert_equal(size, n.axes_manager._axes[i].size)
     
     def test_s2_plus_s1(self):
         n = self.s2 + self.s1
         assert_true((n.data == 
             self.s1.data + self.s2.data).all())
         for i, size in enumerate(n.data.shape):
-            assert_equal(size, n.axes_manager.axes[i].size)
+            assert_equal(size, n.axes_manager._axes[i].size)
         
     def test_s3_plus_s1(self):
         n = self.s3 + self.s1
         assert_true((n.data == 
         self.s1.data + self.s2.data).all())
         for i, size in enumerate(n.data.shape):
-            assert_equal(size, n.axes_manager.axes[i].size)
+            assert_equal(size, n.axes_manager._axes[i].size)
             
 class TestBinaryOperatorsCase3:
     """The signals are not aligned but can be aligned because their
@@ -133,7 +133,7 @@ class TestBinaryOperatorsCase3:
             self.s1.data[np.newaxis,...] *
             self.s2.data[:, np.newaxis, np.newaxis]).all())
         for i, size in enumerate(n.data.shape):
-            assert_equal(size, n.axes_manager.axes[i].size)
+            assert_equal(size, n.axes_manager._axes[i].size)
         assert_equal(n.axes_manager.signal_dimension, 2)
         
     def test_s2_times_s1(self):
@@ -142,7 +142,7 @@ class TestBinaryOperatorsCase3:
             (self.s2.data[np.newaxis, np.newaxis,:] * 
             self.s1.data[..., np.newaxis])).all())
         for i, size in enumerate(n.data.shape):
-            assert_equal(size, n.axes_manager.axes[i].size)
+            assert_equal(size, n.axes_manager._axes[i].size)
         assert_equal(n.axes_manager.signal_dimension, 1)
             
 class TestBinaryOperatorsCase4:

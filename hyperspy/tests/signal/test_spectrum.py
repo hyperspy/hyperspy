@@ -55,8 +55,8 @@ class TestAlignTools:
         assert_true((s.data[:,-1] == 2).all())
         assert_true((s.data[:,0] == 2).all())
         # Check that the calibration is correct
-        assert_equal(s.axes_manager.axes[1].offset, self.new_offset)
-        assert_equal(s.axes_manager.axes[1].scale, self.scale)
+        assert_equal(s.axes_manager._axes[1].offset, self.new_offset)
+        assert_equal(s.axes_manager._axes[1].scale, self.scale)
         
     def test_align(self):
         s = self.spectrum
@@ -69,5 +69,5 @@ class TestAlignTools:
         assert_true((s.data[:,-1] == 2).all())
         assert_true((s.data[:,0] == 2).all())
         # Check that the calibration is correct
-        assert_equal(s.axes_manager.axes[1].offset, self.new_offset)
-        assert_equal(s.axes_manager.axes[1].scale, self.scale)
+        assert_equal(s.axes_manager._axes[1].offset, self.new_offset)
+        assert_equal(s.axes_manager._axes[1].scale, self.scale)

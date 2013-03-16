@@ -171,7 +171,7 @@ def unfold_if_multidim(signal):
 
     Boolean. True if the SI was unfolded by the function.
     """
-    if len(signal.axes_manager.axes)>2:
+    if len(signal.axes_manager._axes)>2:
         print "Automatically unfolding the SI"
         signal.unfold()
         return True
