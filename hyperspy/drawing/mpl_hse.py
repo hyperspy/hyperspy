@@ -112,8 +112,7 @@ class MPL_HyperSpectrum_Explorer(object):
             imf.yaxis = self.axes_manager.navigation_axes[0]
             imf.xaxis = self.axes_manager.signal_axes[0]
         elif self.axes_manager.navigation_dimension == 2:
-            imf.yaxis = self.axes_manager.navigation_axes[0]
-            imf.xaxis = self.axes_manager.navigation_axes[1]
+            imf.xaxis, imf.yaxis = self.axes_manager.navigation_axes
         imf.title = self.signal_title + ' Navigator'
         imf.plot()
         self.pointer.add_axes(imf.ax)

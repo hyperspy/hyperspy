@@ -293,7 +293,7 @@ class Parameter(object):
         fetch, assign_current_value_to_all
         
         """
-        indices = self._axes_manager.indices
+        indices = self._axes_manager.indices[::-1]
         # If it is a single spectrum indices is ()
         if not indices:
             indices = (0,)
@@ -311,7 +311,7 @@ class Parameter(object):
         store_current_value_in_array, assign_current_value_to_all
         
         """
-        indices = self._axes_manager.indices
+        indices = self._axes_manager.indices[::-1]
         # If it is a single spectrum indices is ()
         if not indices:
             indices = (0,)
@@ -385,13 +385,13 @@ class Parameter(object):
             {'data' : self.map[field],
              'axes' : self._axes_manager._get_navigation_axes_dicts()})
         s.mapped_parameters.title = self.name
-        for axis in s.axes_manager.axes:
+        for axis in s.axes_manager._axes:
             axis.navigate = False
         if self._number_of_elements > 1:
             s.axes_manager.append_axis(
                 size=self._number_of_elements,
                 name=self.name,
-                index_in_array=len(s.axes_manager.axes),
+                index_in_array=len(s.axes_manager._axes),
                 navigate=True)
         return s
         

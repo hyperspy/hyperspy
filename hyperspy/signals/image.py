@@ -134,7 +134,6 @@ class Image(Signal):
         
         """
 
-        axes = self.axes_manager.signal_axes
         ref = None if reference == 'cascade' else \
             self.__call__().copy()
         shifts = []
@@ -287,7 +286,6 @@ class Image(Signal):
         Ultramicroscopy 102, no. 1 (December 2004): 27–36.
             
         """
-        axes = self.axes_manager.signal_axes
         if shifts is None:
             shifts = self.estimate_2D_translation(
                 roi=roi,sobel=sobel, medfilter=medfilter,
@@ -338,7 +336,7 @@ class Image(Signal):
         crop_in_units, crop_in_pixels
         
         """
-        vaxis, haxis = self.axes_manager.signal_axes
+        haxis, xaxis = self.axes_manager.signal_axes
         self.crop_in_pixels(vaxis.index_in_array, top, bottom)
         self.crop_in_pixels(haxis.index_in_array, left, right)
         
