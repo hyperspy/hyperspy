@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
-
+from __future__ import division
 
 import numpy as np
 import scipy.interpolate
@@ -33,6 +33,7 @@ from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.components.power_law import PowerLaw
+from hyperspy.io import load
 
 
 class EDSSpectrum(Spectrum):
@@ -47,6 +48,54 @@ class EDSSpectrum(Spectrum):
         hasattr(self.mapped_parameters.Sample, 'elements'):
             print('Elemental composition read from file')
             self.add_elements(self.mapped_parameters.Sample.elements)
+
+    def calibrate_on(self, filename_ref, nb_pix=1):
+        """Copy the calibration and all metadata of a reference.
+
+        Primary use: To add a calibration to ripple file from INCA software
+                
+        Parameters
+        ----------
+        filename_ref : str or list of strings
+            The filename of the reference.
+        nb_pix : int
+            The live time (real time corrected from the "dead time")
+            is divided by the number of pixel (spectrums), giving an average live time.          
+        """
+        
+        ref = load(filename_ref)
+        self.original_parameters = ref.original_parameters
+        # Setup the axes_manager
+        ax_m = self.axes_manager.signal_axes[0]
+        if hasattr(self.original_parameters, 'CHOFFSET'):
+            ax_m.scale = ref.original_parameters.CHOFFSET
+        if hasattr(self.original_parameters, 'OFFSET'):
+            ax_m.offset = ref.original_parameters.OFFSET
+        if hasattr(self.original_parameters, 'XUNITS'):            
+            ax_m.units = ref.original_parameters.XUNITS
+            if hasattr(self.original_parameters, 'CHOFFSET'):      
+                if self.original_parameters.XUNITS == 'keV':
+                    ax_m.scale = ref.original_parameters.CHOFFSET / 1000
+                    
+        # Setup mapped_parameters
+        mp = self.mapped_parameters
+        if mp.has_item('SEM') is False:
+            mp.add_node('SEM')      
+        if hasattr(self.original_parameters, 'LIVETIME'):
+            mp.SEM.live_time = ref.original_parameters.LIVETIME / nb_pix
+        if hasattr(self.original_parameters, 'XTILTSTGE'):
+            mp.SEM.tilt_stage = ref.original_parameters.XTILTSTGE
+        if hasattr(self.original_parameters, 'BEAMKV'):
+            mp.SEM.beam_energy = ref.original_parameters.BEAMKV
+
+        if mp.SEM.has_item('EDS') is False:
+            mp.SEM.add_node('EDS')
+        if hasattr(self.original_parameters, 'AZIMANGLE'):
+            mp.SEM.EDS.azimuth_angle = ref.original_parameters.AZIMANGLE
+        if hasattr(self.original_parameters, 'ELEVANGLE'):
+            mp.SEM.EDS.elevation_angle = ref.original_parameters.ELEVANGLE
+
+                    
 
     def add_elements(self, elements):
         """Declare the elemental composition of the sample.
