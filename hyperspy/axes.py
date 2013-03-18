@@ -369,7 +369,7 @@ class AxesManager(t.HasTraits):
         
         """
         if isinstance(y, basestring):
-            axes = self._get_axes_in_natural_order()
+            axes = list(self._get_axes_in_natural_order())
             while axes:
                 axis = axes.pop()
                 if y == axis.name:
