@@ -39,13 +39,32 @@ class Image(Signal):
         super(Image,self).__init__(*args, **kw)
         self.axes_manager.set_view('image')
                 
-    def to_spectrum(self):
+    def to_spectrum(self, signal_axis=0):
+        """Image to spectrum
+
+        Parameters
+        ----------
+        signal_axis : integer
+            Selected the signal axis.        
+            
+        Examples
+        --------        
+        >>> img = signals.Image({'data' : np.ones((3,4,5,6))})
+        Data dimensions: (3L, 4L, 5L, 6L)
+
+        >>> img.to_spectrum()
+        Data dimensions: (4L, 5L, 6L, 3L)
+
+        >>> img.to_spectrum(1)
+        Data dimensions: (3L, 5L, 6L, 4L)
+        
+        """
         from hyperspy.signals.spectrum import Spectrum
         dic = self._get_signal_dict()
         dim = len(self.data.shape)
-        dic['mapped_parameters']['record_by'] = 'spectrum'
-        dic['data'] = np.rollaxis(dic['data'], 0, dim)
-        dic['axes'] = utils_varia.rollelem(dic['axes'],0, dim)
+        dic['mapped_parameters']['record_by'] = 'spectrum'        
+        dic['data'] = np.rollaxis(dic['data'], signal_axis, dim)
+        dic['axes'] = utils_varia.rollelem(dic['axes'], signal_axis, dim)
         i = 0
         for axis in dic['axes']:
             axis['index_in_array'] = i
@@ -53,9 +72,13 @@ class Image(Signal):
         sp = Spectrum(dic)
         sp.axes_manager._set_axes_index_in_array_from_position()
         if hasattr(self, 'learning_results'):
-            sp.learning_results = copy.deepcopy(self.learning_results)
-            sp.learning_results._transpose_results()
-            sp.learning_results.original_shape = self.data.shape
+            if signal_axis != 0:
+                print("The learning results won't be transfered correctly")
+            else :
+                sp.learning_results = copy.deepcopy(self.learning_results)
+                sp.learning_results._transpose_results()
+                sp.learning_results.original_shape = self.data.shape
+                
         sp.tmp_parameters = self.tmp_parameters.deepcopy()
         return sp
         
