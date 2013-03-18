@@ -336,9 +336,9 @@ class Image(Signal):
         crop_in_units, crop_in_pixels
         
         """
-        haxis, xaxis = self.axes_manager.signal_axes
-        self.crop_in_pixels(vaxis.index_in_array, top, bottom)
-        self.crop_in_pixels(haxis.index_in_array, left, right)
+        xaxis, yaxis = self.axes_manager.signal_axes
+        self.crop_in_pixels(yaxis.index_in_array, top, bottom)
+        self.crop_in_pixels(xaxis.index_in_array, left, right)
         
           
         
