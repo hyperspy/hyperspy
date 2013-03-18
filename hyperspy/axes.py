@@ -182,10 +182,8 @@ class DataAxis(t.HasTraits):
 
 
     def __repr__(self):
-        nav_status = "navigation" if self.navigate is True else "signal"
         if self.name is not None:
-            text = '<%s %s axis, size: %i' % (self.name,
-                                              nav_status,
+            text = '<%s axis, size: %i' % (self.name,
                                               self.size,)
             if self.navigate is True:
                 text += ", index: %i" % self.index
@@ -652,9 +650,9 @@ class AxesManager(t.HasTraits):
         self.edit_traits(view = tui.View(*ag), context = context)
         
     def __repr__(self):
-        text = '<Axes manager, %i axes, signal dimension: %i, navigation dimension: %i>' % (
-            len(self._axes), self.signal_dimension,
-            self.navigation_dimension)
+        text = ('<Axes manager, axes: %s>' % 
+            self._get_axes_in_natural_order().__repr__())
+            
         return text
     
     @property        
