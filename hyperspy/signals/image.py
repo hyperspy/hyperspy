@@ -72,7 +72,7 @@ class Image(Signal):
         sp = Spectrum(dic)
         sp.axes_manager._set_axes_index_in_array_from_position()
         if hasattr(self, 'learning_results'):
-            if signal_axis != 0:
+            if signal_axis != 0 and self.learning_results.loadings is not None:
                 print("The learning results won't be transfered correctly")
             else :
                 sp.learning_results = copy.deepcopy(self.learning_results)

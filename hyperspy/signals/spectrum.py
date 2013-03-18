@@ -526,7 +526,7 @@ class Spectrum(Signal):
         im = Image(dic)
         
         if hasattr(self, 'learning_results'):
-            if signal_to_index != 0:
+            if signal_to_index != 0 and self.learning_results.loadings is not None:
                 print("The learning results won't be transfered correctly")
             else :
                 im.learning_results = copy.deepcopy(self.learning_results)
