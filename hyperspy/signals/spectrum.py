@@ -504,14 +504,15 @@ class Spectrum(Signal):
             
         Examples
         --------        
-        >>> img = signals.Spectrum({'data' : np.ones((3,4,5,6))})
-        Data dimensions: (3L, 4L, 5L, 6L)
+        >>> s = signals.Spectrum({'data' : np.ones((3,4,5,6))})
+        >>> s
+        <Spectrum, title: , dimensions: (3L, 4L, 5L, 6L)>
 
-        >>> img.to_spectrum()
-        Data dimensions: (6L, 3L, 4L, 5L)
+        >>> s.to_image()
+        <Image, title: , dimensions: (6L, 3L, 4L, 5L)>
 
-        >>> img.to_spectrum(1)
-        Data dimensions: (3L, 6L, 4L, 5L)
+        >>> s.to_image(1)
+        <Image, title: , dimensions: (3L, 6L, 4L, 5L)>
         
         """
         from hyperspy.signals.image import Image
