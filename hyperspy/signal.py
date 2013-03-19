@@ -490,9 +490,12 @@ class Signal(t.HasTraits, MVA):
             
         # Navigator properties
         if self.axes_manager.navigation_axes:
-            if navigator is not None and\
-            self.axes_manager.navigation_shape== navigator.axes_manager.signal_shape:
-                self._plot.navigator_data_function = get_explorer_wrapper
+            if navigator is not None:
+                if self.axes_manager.navigation_shape == navigator.axes_manager.signal_shape:
+                    self._plot.navigator_data_function = get_explorer_wrapper
+                else:
+                    print("The given navigator and the current signal have incompatible shape.")
+                    self._plot.navigator_data_function = self._get_explorer
             else:
                 self._plot.navigator_data_function = self._get_explorer
                 
