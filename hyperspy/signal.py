@@ -922,6 +922,72 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         s = self.get_deepcopy_with_new_data(self.data.sum(axis))
         s.axes_manager.remove(s.axes_manager.axes[axis])
         return s
+        
+    @auto_replot
+    def max(self, axis, return_signal=False):
+        """Max the data over the specify axis
+
+        Parameters
+        ----------
+        axis : int
+            The axis over which the operation will be performed
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum, mean, min
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.max(-1).data.shape
+        (64,64)        
+        
+        """
+        
+        axis = self.axes_manager._get_positive_index(axis)
+        s = self.get_deepcopy_with_new_data(self.data.max(axis))
+        s.axes_manager.remove(s.axes_manager.axes[axis])
+        return s
+        
+    @auto_replot
+    def min(self, axis, return_signal=False):
+        """Max the data over the specify axis
+
+        Parameters
+        ----------
+        axis : int
+            The axis over which the operation will be performed
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum, mean, max
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.min(-1).data.shape
+        (64,64)        
+        
+        """
+        
+        axis = self.axes_manager._get_positive_index(axis)
+        s = self.get_deepcopy_with_new_data(self.data.min(axis))
+        s.axes_manager.remove(s.axes_manager.axes[axis])
+        return s
     
     @auto_replot
     def mean(self, axis):
