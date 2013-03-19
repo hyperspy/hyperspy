@@ -443,7 +443,21 @@ class Signal(t.HasTraits, MVA):
         else:
             return None
 
-    def plot(self, axes_manager=None):
+    def plot(self, axes_manager=None, navigator=None):
+        """Plot hyperimage and hyperspectrum
+        
+        Parameters
+        ----------------
+        axes_manager : {None | axes_manager}
+            If None the axes_manager of the object is used.
+        
+        navigator : {None | Signal}
+            If None the navigator image/spectrum is the current signal 
+            summed over the signal axes. Alternatively a Signal whose 
+            signal_shape is equal to the navigation_shape of the 
+            current Signal can be provided.
+            
+        """
         if self._plot is not None:
                 try:
                     self._plot.close()
@@ -469,12 +483,19 @@ class Signal(t.HasTraits, MVA):
         if self.mapped_parameters.title:
             self._plot.signal_title = self.mapped_parameters.title
         elif self.tmp_parameters.has_item('filename'):
-            self._plot.signal_title = self.tmp_parameters.filename
+            self._plot.signal_title = self.tmp_parameters.filename            
+    
+        def get_explorer_wrapper(*args, **kwargs):
+            return navigator.data
             
-
         # Navigator properties
         if self.axes_manager.navigation_axes:
-            self._plot.navigator_data_function = self._get_explorer
+            if navigator is not None and\
+            self.axes_manager.navigation_shape== navigator.axes_manager.signal_shape:
+                self._plot.navigator_data_function = get_explorer_wrapper
+            else:
+                self._plot.navigator_data_function = self._get_explorer
+                
         self._plot.plot()
             
 
