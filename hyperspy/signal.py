@@ -901,7 +901,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
     @auto_replot
     def max(self, axis, return_signal=False):
-        """Max the data over the specify axis
+        """Returns a signal of the same type containing
+        the maximum along a given axis.
 
         Parameters
         ----------
@@ -934,7 +935,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
     @auto_replot
     def min(self, axis, return_signal=False):
-        """Max the data over the specify axis
+        """Returns a signal of the same type containing
+        the minimum along a given axis.
 
         Parameters
         ----------
