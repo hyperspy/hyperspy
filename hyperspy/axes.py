@@ -169,11 +169,10 @@ class DataAxis(t.HasTraits):
         my_slice = slice(start, stop, step)
         
         if start is None:
-            if step > 0:
+            if step > 0 or step is None:
                 start = 0
             else:
                 start = self.size - 1
-            
         self.offset = i2v(start)
         if step is not None:
             self.scale *= step
