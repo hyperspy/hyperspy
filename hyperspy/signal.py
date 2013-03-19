@@ -576,12 +576,14 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             new_offset = self.axes_manager.axes[axis].axis[i1]
         # We take a copy to guarantee the continuity of the data
         self.data = self.data[
-        (slice(None),)*axis + (slice(i1, i2), Ellipsis)].copy()
+        (slice(None),)*axis + (slice(i1, i2), Ellipsis)]
 
         if i1 is not None:
             self.axes_manager.axes[axis].offset = new_offset
         self.get_dimensions_from_data()
         self.squeeze()
+        if copy is True:
+            self.data = self.data.copy()
 
     def crop_in_units(self, axis, x1=None, x2=None, copy=True):
         """Crops the data in a given axis. The range is given in the units of
