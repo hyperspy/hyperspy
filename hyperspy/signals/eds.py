@@ -24,7 +24,7 @@ import traits.api as t
 
 from hyperspy.signals.spectrum import Spectrum
 from hyperspy.signals.image import Image
-from hyperspy.misc.eels.elements import elements as elements_db
+from hyperspy.misc.eds.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.gui.egerton_quantification import SpikesRemoval
 from hyperspy.decorators import only_interactive
@@ -49,7 +49,7 @@ class EDSSpectrum(Spectrum):
             print('Elemental composition read from file')
             self.add_elements(self.mapped_parameters.Sample.elements)
 
-    def calibrate_on(self, filename_ref, nb_pix=1):
+    def calibrate_on(self, ref, nb_pix=1):
         """Copy the calibration and all metadata of a reference.
 
         Primary use: To add a calibration to ripple file from INCA software
@@ -63,7 +63,7 @@ class EDSSpectrum(Spectrum):
             is divided by the number of pixel (spectrums), giving an average live time.          
         """
         
-        ref = load(filename_ref)
+        #ref = load(filename_ref)
         self.original_parameters = ref.original_parameters
         # Setup the axes_manager
         ax_m = self.axes_manager.signal_axes[0]
@@ -98,7 +98,7 @@ class EDSSpectrum(Spectrum):
                     
 
     def add_elements(self, elements):
-        """Declare the elemental composition of the sample.
+        """Declare the elements present in the sample.
         
         The ionisation edges of the elements present in the current 
         energy range will be added automatically.
@@ -114,7 +114,7 @@ class EDSSpectrum(Spectrum):
         Examples
         --------
         
-        >>> s = signals.EELSSpectrum({'data' : np.arange(1024)})
+        >>> s = signals.EDSSpectrum({'data' : np.arange(1024)})
         >>> s.add_elements(('C', 'O'))
         Adding C_K subshell
         Adding O_K subshell
