@@ -320,8 +320,7 @@ def load_with_reader(filename, reader, record_by=None,
                 == 'EELS'):
                 s = EELSSpectrum(file_data_dict)
             elif ('signal_type' in file_data_dict['mapped_parameters'] 
-                and file_data_dict['mapped_parameters']['signal_type'] 
-                == 'EDS'):
+                and 'EDS' in file_data_dict['mapped_parameters']['signal_type']):
                 s = EDSSpectrum(file_data_dict)
             else:
                 s = Spectrum(file_data_dict)

@@ -547,13 +547,36 @@ class Spectrum(Signal):
         eels.tmp_parameters = self.tmp_parameters.deepcopy()
         return eels
     
-    def to_EDS(self):
+    def to_EDS(self, microscope=None):
+        """Convert the Spectrum into EDSSpectrum
+        
+        The microscope, which define the quantification method can be 
+        changed. TEM is choosed by default.
+        
+        Parameters
+        ----------------
+        microscope : {None | 'TEM' | 'SEM'}
+            If None the microscope defined in signal_type is 
+            preferentially used (EDS_TEM or EDS_SEM).
+            
+        """
         from hyperspy.signals.eds import EDSSpectrum
+        
+        if microscope == None: 
+            microscope = 'TEM'
+            if self.mapped_parameters.signal_type == 'EDS_SEM':
+                microscope = 'SEM'
+            
         dic = self._get_signal_dict()
-        dic['mapped_parameters']['signal_type'] = 'EDS'
+        if microscope == 'SEM':
+            dic['mapped_parameters']['signal_type'] = 'EDS_SEM'
+        elif microscope == 'TEM':
+            dic['mapped_parameters']['signal_type'] = 'EDS_TEM'
+        else:
+            raise ValueError('Unkown microscope')
         eds = EDSSpectrum(dic)
-        #if hasattr(self, 'learning_results'):
-         #   eds.learning_results = copy.deepcopy(self.learning_results)
+        if hasattr(self, 'learning_results'):
+            eds.learning_results = copy.deepcopy(self.learning_results)
         eds.tmp_parameters = self.tmp_parameters.deepcopy()
         return eds
         
