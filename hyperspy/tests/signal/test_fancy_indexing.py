@@ -32,6 +32,16 @@ class Test1D:
         self.signal = Signal({'data' : np.arange(10)})
         self.data = self.signal.data.copy()
         
+    def test_slice_None(self):
+        s = self.signal[:]
+        d = self.data
+        assert_true((s.data==d).all())
+        assert_equal(s.axes_manager.axes[0].offset, 
+                     self.signal.axes_manager.axes[0].offset)
+        assert_equal(s.axes_manager.axes[0].scale,
+                     self.signal.axes_manager.axes[0].scale)
+        
+        
     def test_std_slice(self):
         s = self.signal[1:-1]
         d = self.data[1:-1]
