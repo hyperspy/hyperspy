@@ -633,3 +633,70 @@ class Component(object):
         self.charge(p , onlyfree = onlyfree)
         return self.function(x)
         
+    def set_parameters_free(self, parameter_name_list=None):
+        """
+        Sets parameters in a component to free.
+
+        Parameters:
+        -----------
+        parameter_name_list: None or list of strings, optional
+            If None, will set all the parameters to free.
+            If list of strings, will set all the parameters with the same name
+            as the strings in parameter_name_list to free.
+
+        Example:
+        --------
+        v1 = components.Voigt()
+        v1.set_parameters_free()
+
+        v1.set_parameters_free(['area','centre'])
+
+        See also:
+        ---------
+        set_parameters_not_free
+        """
+
+        parameter_list = []
+        if parameter_name_list == None:
+            parameter_list = self.parameters
+        else:
+            for _parameter in self.parameters:
+                if _parameter.name in parameter_name_list:
+                    parameter_list.append(_parameter)
+
+        for _parameter in parameter_list:
+            _parameter.free = True
+
+    def set_parameters_not_free(self, parameter_name_list=None):
+        """
+        Sets parameters in a component to not free.
+
+        Parameters:
+        -----------
+        parameter_name_list: None or list of strings, optional
+            If None, will set all the parameters to not free.
+            If list of strings, will set all the parameters with the same name
+            as the strings in parameter_name_list to not free.
+
+        Example:
+        --------
+        v1 = components.Voigt()
+        v1.set_parameters_not_free()
+
+        v1.set_parameters_not_free(['area','centre'])
+
+        See also:
+        ---------
+        set_parameter_free
+        """        
+
+        parameter_list = []
+        if parameter_name_list == None:
+            parameter_list = self.parameters
+        else:
+            for _parameter in self.parameters:
+                if _parameter.name in parameter_name_list:
+                    parameter_list.append(_parameter)        
+                
+        for _parameter in parameter_list:
+            _parameter.free = False
