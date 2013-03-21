@@ -82,7 +82,8 @@ keywords = {
                 ## Specimen
                 'THICKNESS' : {'dtype' : float, 'mapped_to': 
                     'Sample.thickness'},
-                'XTILTSTGE' : {'dtype' : float, 'mapped_to': None},
+                'XTILTSTGE' : {'dtype' : float, 'mapped_to':
+                    'TEM.tilt_stage'},
                 'YTILTSTGE' : {'dtype' : float, 'mapped_to': None},
                 'XPOSITION' : {'dtype' : float, 'mapped_to': None},
                 'YPOSITION' : {'dtype' : float, 'mapped_to': None},
@@ -98,11 +99,16 @@ keywords = {
                 'ELSDET' :  {'dtype' : unicode, 'mapped_to': None},
 
                 ## EDS
-                'ELEVANGLE' : {'dtype' : float, 'mapped_to': None},
-                'AZIMANGLE' : {'dtype' : float, 'mapped_to': None},
-                'SOLIDANGLE' : {'dtype' : float, 'mapped_to': None},
-                'LIVETIME' : {'dtype' : float, 'mapped_to': None},
-                'REALTIME' : {'dtype' : float, 'mapped_to': None},
+                'ELEVANGLE' : {'dtype' : float, 'mapped_to':
+                    'TEM.EDS.elevation_angle'},
+                'AZIMANGLE' : {'dtype' : float, 'mapped_to':
+                    'TEM.EDS.azimuth_angle'},
+                'SOLIDANGLE' : {'dtype' : float, 'mapped_to': 
+                    'TEM.EDS.solid_angle'},
+                'LIVETIME' : {'dtype' : float, 'mapped_to': 
+                    'TEM.EDS.live_time'},
+                'REALTIME' : {'dtype' : float, 'mapped_to': 
+                    'TEM.EDS.real_time'},
                 'TBEWIND' : {'dtype' : float, 'mapped_to': None},
                 'TAUWIND' : {'dtype' : float, 'mapped_to': None},
                 'TDEADLYR' : {'dtype' : float, 'mapped_to': None},
@@ -112,7 +118,8 @@ keywords = {
                 'TBNWIND' : {'dtype' : float, 'mapped_to': None},
                 'TDIWIND' : {'dtype' : float, 'mapped_to': None},
                 'THCWIND' : {'dtype' : float, 'mapped_to': None},
-                'EDSDET'  : {'dtype' : unicode, 'mapped_to': None},	
+                'EDSDET'  : {'dtype' : unicode, 'mapped_to': 
+                    'TEM.EDS.EDS_det'},	
             }
             
     

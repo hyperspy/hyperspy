@@ -548,33 +548,42 @@ class Spectrum(Signal):
         return eels
     
     def to_EDS(self, microscope=None):
-        """Convert the Spectrum into EDSSpectrum
+        """Return a EDSSpectrum from a Spectrum
         
-        The microscope, which define the quantification method can be 
-        changed. TEM is choosed by default.
+        The microscope, which defines the quantification methods, needs 
+        to be set.
         
         Parameters
         ----------------
         microscope : {None | 'TEM' | 'SEM'}
-            If None the microscope defined in signal_type is 
-            preferentially used (EDS_TEM or EDS_SEM).
+            If None the microscope defined in signal_type is used 
+            (EDS_TEM or EDS_SEM). If 'TEM' or 'SEM', the signal_type is 
+            overwritten.
             
         """
-        from hyperspy.signals.eds import EDSSpectrum
-        
-        if microscope == None: 
-            microscope = 'TEM'
+        from hyperspy.signals.eds_tem import EDSTEMSpectrum
+        from hyperspy.signals.eds_sem import EDSSEMSpectrum
+                
+        if microscope == None:             
             if self.mapped_parameters.signal_type == 'EDS_SEM':
                 microscope = 'SEM'
+            elif self.mapped_parameters.signal_type == 'EDS_TEM':
+                microscope = 'TEM'
+            else:
+                raise ValueError("Set a microscope. Valid microscopes " 
+                "are: 'SEM' or 'TEM'")
             
         dic = self._get_signal_dict()
         if microscope == 'SEM':
             dic['mapped_parameters']['signal_type'] = 'EDS_SEM'
+            eds = EDSSEMSpectrum(dic)
         elif microscope == 'TEM':
             dic['mapped_parameters']['signal_type'] = 'EDS_TEM'
+            eds = EDSTEMSpectrum(dic)
         else:
-            raise ValueError('Unkown microscope')
-        eds = EDSSpectrum(dic)
+            raise ValueError("Unkown microscope. Valid microscopes " 
+                "are: 'SEM' or 'TEM'")
+        
         if hasattr(self, 'learning_results'):
             eds.learning_results = copy.deepcopy(self.learning_results)
         eds.tmp_parameters = self.tmp_parameters.deepcopy()

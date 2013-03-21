@@ -39,17 +39,19 @@ class SEMParametersUI(t.HasTraits):
         label = 'Azimuth angle (degree)')
     elevation_angle = t.Float(t.Undefined,
         label = 'Elevation angle (degree)')
-        
+    energy_resolution_MnKa = t.Float(t.Undefined,
+        label = 'Energy resolution MnKa (eV)')
+
     traits_view = tu.View(
         tu.Group('beam_energy',
-        'live_time',
         'tilt_stage',
             label = 'SEM',show_border = True),
-        tu.Group('azimuth_angle',
-        'elevation_angle',
+        tu.Group('live_time','azimuth_angle',
+        'elevation_angle','energy_resolution_MnKa',
             label = 'EDS',show_border = True),
         kind = 'modal', buttons = [OKButton, CancelButton],
         title = 'SEM parameters definition wizard')  
+        
         
 class TEMParametersUI(t.HasTraits):
     
@@ -63,14 +65,15 @@ class TEMParametersUI(t.HasTraits):
         label = 'Azimuth angle (degree)')
     elevation_angle = t.Float(t.Undefined,
         label = 'Elevation angle (degree)')
+    energy_resolution_MnKa = t.Float(t.Undefined,
+        label = 'Energy resolution MnKa (eV)')
         
     traits_view = tu.View(
         tu.Group('beam_energy',
-        'live_time',
         'tilt_stage',
             label = 'TEM',show_border = True),
-        tu.Group('azimuth_angle',
-        'elevation_angle',
+        tu.Group('live_time','azimuth_angle',
+        'elevation_angle','energy_resolution_MnKa',
             label = 'EDS',show_border = True),
         kind = 'modal', buttons = [OKButton, CancelButton],
         title = 'TEM parameters definition wizard')   
