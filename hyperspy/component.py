@@ -657,7 +657,7 @@ class Component(object):
         """
 
         parameter_list = []
-        if parameter_name_list == None:
+        if not parameter_name_list:
             parameter_list = self.parameters
         else:
             for _parameter in self.parameters:
@@ -691,7 +691,7 @@ class Component(object):
         """        
 
         parameter_list = []
-        if parameter_name_list == None:
+        if not parameter_name_list:
             parameter_list = self.parameters
         else:
             for _parameter in self.parameters:
