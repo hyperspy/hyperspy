@@ -292,6 +292,8 @@ def load_with_reader(filename, reader, record_by=None,
     from hyperspy.signals.image import Image
     from hyperspy.signals.spectrum import Spectrum
     from hyperspy.signals.eels import EELSSpectrum
+    from hyperspy.signals.eds_sem import EDSSEMSpectrum
+    from hyperspy.signals.eds_tem import EDSTEMSpectrum
     if output_level>1:
         messages.information('Loading %s ...' % filename)
     
@@ -318,6 +320,11 @@ def load_with_reader(filename, reader, record_by=None,
                 and file_data_dict['mapped_parameters']['signal_type'] 
                 == 'EELS'):
                 s = EELSSpectrum(file_data_dict)
+            elif 'signal_type' in file_data_dict['mapped_parameters']:
+                if 'EDS_SEM' in file_data_dict['mapped_parameters']['signal_type']:
+                    s = EDSSEMSpectrum(file_data_dict)
+                if 'EDS_TEM' in file_data_dict['mapped_parameters']['signal_type']:
+                    s = EDSTEMSpectrum(file_data_dict)
             else:
                 s = Spectrum(file_data_dict)
         folder, filename = os.path.split(os.path.abspath(filename))
