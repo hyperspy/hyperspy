@@ -15,4 +15,6 @@ Subpackages
 .. toctree::
 
     hyperspy.tests.io
+    hyperspy.tests.model
+    hyperspy.tests.signal
 
