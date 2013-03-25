@@ -32,12 +32,14 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.misc import utils
 from hyperspy import tests
 from hyperspy.misc.eels.elements import elements
+from hyperspy.misc.eds.elements import elements as elements_eds
 
 __version__ = Release.version
 
 # start up the log file
 
 elements = utils.DictionaryBrowser(elements)
+elements_eds = utils.DictionaryBrowser(elements_eds)
 
 def get_configuration_directory_path():
     import hyperspy.misc.config_dir

@@ -15,15 +15,15 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
-
+from __future__ import division
 
 import numpy as np
 
 
 from hyperspy.signals.spectrum import Spectrum
 from hyperspy.signals.image import Image
-#from hyperspy.signals.eds_sem import EDSSEMSpectrum
-#from hyperspy.signals.eds_tem import EDSTEMSpectrum
+from hyperspy.misc.eds.elements import elements as elements_db
+from hyperspy.misc.eds.FWHM import FWHM_eds
 
 
 class EDSSpectrum(Spectrum):
@@ -32,42 +32,243 @@ class EDSSpectrum(Spectrum):
         Spectrum.__init__(self, *args, **kwards)
         # Attributes defaults  
         self.elements = set()
+        self.Xray_lines = set()
         if hasattr(self.mapped_parameters, 'Sample') and \
         hasattr(self.mapped_parameters.Sample, 'elements'):
             print('Elemental composition read from file')
             self.add_elements(self.mapped_parameters.Sample.elements)
+            
+    def set_elements(self, elements, lines=None):
+        """Set elements present in the sample and defined the corresponding
+        X-ray lines.
         
-    def add_elements(self, elements):
-        """Declare the elements present in the sample.
+        The X-ray lines can be choosed manually or automatically.
         
         
         Parameters
         ----------
-        elements : tuple of strings
-            The symbol of the elements.        
+        elements : list of strings
+            The symbol of the elements.  
+        
+        lines : list of strings
+            One X-ray line for each element ('K', 'L' or 'M'). If none 
+            the set of highest ionized lines with sufficient intensity 
+            is selected. The beam energy is needed.
+            
+        See also
+        --------
+        add_elements, 
             
         Examples
         --------
         
-        >>> s = signals.EDSSpectrum({'data' : np.arange(1024)})
-        >>> s.add_elements(('C', 'O'))        
+        >>> s = signals.EDSSEMSpectrum({'data' : np.arange(1024)})
+        >>> s.set_elements(['Ni', 'O'],['K','K'])   
+        Adding Ni_Ka Line
+        Adding O_Ka Line
+        
+        >>> s.mapped_paramters.SEM.beam_energy = 10
+        >>> s.set_elements(['Ni', 'O'])
+        Adding Ni_La Line
+        Adding O_Ka Line
+        
+        """          
+        #Erase previous elements and X-ray lines
+        self.elements = set()
+        self.Xray_lines = set()
+        if hasattr(self.mapped_parameters, 'Sample'):
+            self.mapped_parameters.Sample.elements = []
+            self.mapped_parameters.Sample.Xray_lines = []
+                
+        self.add_elements(elements, lines)
+           
+        
+        
+    def add_elements(self, elements, lines=None):
+        """Add elements present in the sample and defined the corresponding
+        X-ray lines.
+        
+        The X-ray lines can be choosed manually or automatically.
+        
+        
+        Parameters
+        ----------
+        elements : list of strings
+            The symbol of the elements.  
+        
+        lines : list of strings
+            One X-ray line for each element ('K', 'L' or 'M'). If none 
+            the set of highest ionized lines with sufficient intensity 
+            is selected. The beam energy is needed.
+            
+        See also
+        --------
+        set_elements, 
+            
+        Examples
+        --------
+        
+        >>> s = signals.EDSSEMSpectrum({'data' : np.arange(1024)})
+        >>> s.add_elements(['Ni', 'O'],['K','K'])   
+        Adding Ni_Ka Line
+        Adding O_Ka Line
+        
+        >>> s.mapped_paramters.SEM.beam_energy = 10
+        >>> s.add_elements(['Ni', 'O'])
+        Adding Ni_La Line
+        Adding O_Ka Line
         
         """
         
-        for element in elements:
-            
+        for element in elements:            
             if element in elements_db:               
                 self.elements.add(element)
             else:
                 print(
                     "%s is not a valid symbol of an element" % element)
+                    
         if not hasattr(self.mapped_parameters, 'Sample'):
             self.mapped_parameters.add_node('Sample')
         self.mapped_parameters.Sample.elements = list(self.elements)
         
+               
+        #Set X-ray lines
+        if lines is None:
+            self.add_lines_auto()
+        else:
+           self.add_lines(elements,lines)                
+        self.mapped_parameters.Sample.Xray_lines = list(self.Xray_lines)
+        
+    
+        
+    def add_lines(self,elements,lines):
+        
+        end_energy = self.axes_manager.signal_axes[0].axis[-1]            
+            
+        i = 0
+        for line in lines:
+            element = elements[i]
+            line = line + 'a'
+            if element in elements_db: 
+                if line in ('Ka','La','Ma'):
+                    if line in elements_db[element]['Xray_energy']:
+                        print("Adding %s_%s line" % (element,line))
+                        self.Xray_lines.add(element+'_'+line)                                                   
+                        if elements_db[element]['Xray_energy'][line] >\
+                        end_energy:
+                          print("Warning: %s %s is higher than signal range." 
+                          % (element,line))  
+                    else:
+                        print("%s is not a valid line of %s." % (line,element))
+                else:
+                    print(
+                    "%s is not a valid symbol of a line." % line)
+            else:
+                print(
+                    "%s is not a valid symbol of an element." % element)
+            i += 1
+        
+            
+    def add_lines_auto(self):
+        """Choose the highest set of X-ray lines for the elements 
+        present in self.elements  
+        
+        Possible line are in the current energy range and below the beam 
+        energy. The highest line above an overvoltage of 2 
+        (< beam energy / 2) is prefered.
+            
+        """
+        if not hasattr(self.mapped_parameters.SEM,'beam_energy'):
+            raise ValueError("Beam energy is needed in "
+            "mapped_parameters.SEM.beam_energy")
+        
+        end_energy = self.axes_manager.signal_axes[0].axis[-1]
+        beam_energy = self.mapped_parameters.SEM.beam_energy
+        if beam_energy < end_energy:
+           end_energy = beam_energy
+           
+        true_line = []
+        
+        for element in self.elements: 
+            
+            #Possible line           
+            for line in ('Ka','La','Ma'):
+                if line in elements_db[element]['Xray_energy']:
+                    if elements_db[element]['Xray_energy'][line] < \
+                    end_energy:
+                        true_line.append(line)
+            
+            #Choose the better line
+            i = 0
+            select_this = -1            
+            for line in true_line:
+                if elements_db[element]['Xray_energy'][line] < \
+                beam_energy/2:
+                    select_this = i
+                    break
+                i += 1           
+                     
+            if true_line == []:
+                print("No possible line for %s" % element)
+            else:       
+                self.Xray_lines.add(element+'_'+true_line[select_this])
+                print("Adding %s_%s line" % (element,true_line[select_this]))
                 
-    def test_hello(self):
-        print("Hello")
+    
+    def plot_intensity_map(self,width_energy_reso=1):
+        """Plot the intensity map of the Xray lines contains in 
+        self.X_ray_lines
+        
+        The intensity is the sum over several energy channels. The width
+        of the sum is determined using the energy resolution of the detector
+        defined with the FWHM of Mn Ka in
+        self.mapped_parameters.SEM.EDS.energy_resolution_MnKa
+        (by default 130eV). 
+        
+        
+        Parameters
+        ----------
+        
+        width_energy_reso: Float
+            factor to change the width used for the sum. 1 is equivalent
+            of a width of 2 X FWHM        
+        
+        """
+        
+        if not hasattr(self.mapped_parameters, 'Sample') and \
+        hasattr(self.mapped_parameters.Sample, 'Xray_lines'):
+            raise ValueError("Not X-ray line, set them with add_elements")        
+        Xray_lines = self.mapped_parameters.Sample.Xray_lines
+        if self.mapped_parameters.signal_type == 'EDS_SEM':
+            FWHM_MnKa = self.mapped_parameters.SEM.EDS.energy_resolution_MnKa
+        else:
+            FWHM_MnKa = self.mapped_parameters.TEM.EDS.energy_resolution_MnKa
+            
+        
+        if self.axes_manager.navigation_dimension > 1:
+            signal_to_index = self.axes_manager.navigation_dimension - 2        
+            for Xray_line in Xray_lines:
+                element = Xray_line[:-3]
+                line = Xray_line[-2:]            
+                line_energy = elements_db[element]['Xray_energy'][line]
+                line_FWHM = FWHM_eds(FWHM_MnKa,line_energy)
+                img = self.to_image(signal_to_index)
+                img.mapped_parameters.title = 'Intensity of ' + Xray_line +\
+                ' at ' + str(line_energy) + ' keV'
+                det = width_energy_reso*line_FWHM
+                img[line_energy-det:line_energy+det].sum(signal_to_index).plot()
+        else:
+            for Xray_line in Xray_lines:
+                element = Xray_line[:-3]
+                line = Xray_line[-2:]            
+                line_energy = elements_db[element]['Xray_energy'][line]
+                line_FWHM = FWHM_eds(FWHM_MnKa,line_energy)
+                det = width_energy_reso*line_FWHM
+                print("%s at %s keV : Intensity = %s" 
+                % (Xray_line, line_energy,\
+                 self[line_energy-det:line_energy+det].sum(0).data) )
+            
+    
        
        
 

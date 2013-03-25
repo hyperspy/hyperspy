@@ -36,8 +36,6 @@ from hyperspy.misc.progressbar import progressbar
 from hyperspy.components.power_law import PowerLaw
 from hyperspy.io import load
 
-
-
 class EDSSEMSpectrum(EDSSpectrum):
     
     def __init__(self, *args, **kwards):
@@ -177,13 +175,11 @@ class EDSSEMSpectrum(EDSSpectrum):
             mp_mic.EDS.elevation_angle = elevation_angle
         if energy_resolution_MnKa is not None:
             mp_mic.EDS.energy_resolution_MnKa  = energy_resolution_MnKa
-        
-        self._are_microscope_parameters_missing()
-                
+            
+        self._set_microscope_parameters()
             
     @only_interactive            
-    def _set_microscope_parameters(self):       
-        
+    def _set_microscope_parameters(self):    
         
         tem_par = SEMParametersUI()            
         mapping = {
@@ -215,8 +211,8 @@ class EDSSEMSpectrum(EDSSpectrum):
      
     def _are_microscope_parameters_missing(self):
         """Check if the EDS parameters necessary for quantification
-        are defined in mapped_parameters. Raise in interactive mode 
-         an UI item to fill or change the values"""
+        are defined in mapped_parameters. If not, in interactive mode 
+        raises an UI item to fill the values"""       
         
         must_exist = (
             'SEM.beam_energy',            
@@ -230,74 +226,19 @@ class EDSSEMSpectrum(EDSSpectrum):
             exists = self.mapped_parameters.has_item(item)
             if exists is False:
                 missing_parameters.append(item)
-        
-        if preferences.General.interactive is True:
-            par_str = "The following parameters are missing:\n"
-            for par in missing_parameters:
-                par_str += '%s\n' % par
-            par_str += 'Please set them in the following wizard'
-            is_ok = messagesui.information(par_str)
-            if is_ok:
-                self._set_microscope_parameters()                
+        if missing_parameters: 
+            if preferences.General.interactive is True:
+                par_str = "The following parameters are missing:\n"
+                for par in missing_parameters:
+                    par_str += '%s\n' % par
+                par_str += 'Please set them in the following wizard'
+                is_ok = messagesui.information(par_str)
+                if is_ok:
+                    self._set_microscope_parameters()                
+                else:
+                    return True
             else:
                 return True
         else:
-            return True
+            return False
                 
-           
-                        
-                      
-#    def build_SI_from_substracted_zl(self,ch, taper_nch = 20):
-#        """Modify the SI to have fit with a smoothly decaying ZL
-#        
-#        Parameters
-#        ----------
-#        ch : int
-#            channel index to start the ZL decay to 0
-#        taper_nch : int
-#            number of channels in which the ZL will decay to 0 from `ch`
-#        """
-#        sp = copy.deepcopy(self)
-#        dc = self.zl_substracted.data_cube.copy()
-#        dc[0:ch,:,:] *= 0
-#        for i in xrange(dc.shape[1]):
-#            for j in xrange(dc.shape[2]):
-#                dc[ch:ch+taper_nch,i,j] *= np.hanning(2 * taper_nch)[:taper_nch]
-#        sp.zl_substracted.data_cube = dc.copy()
-#        dc += self.zero_loss.data_cube
-#        sp.data_cube = dc.copy()
-#        return sp
-#        
-
-#        
-#    def correct_dual_camera_step(self, show_lev = False, mean_interval = 3, 
-#                                 pca_interval = 20, pcs = 2, 
-#                                 normalize_poissonian_noise = False):
-#        """Correct the gain difference in a dual camera using PCA.
-#        
-#        Parameters
-#        ----------
-#        show_lev : boolen
-#            Plot PCA lev
-#        mean_interval : int
-#        pca_interval : int
-#        pcs : int
-#            number of principal components
-#        normalize_poissonian_noise : bool
-#        """ 
-#        # The step is between pixels 1023 and 1024
-#        pw = pca_interval
-#        mw = mean_interval
-#        s = copy.deepcopy(self)
-#        s.energy_crop(1023-pw, 1023 + pw)
-#        s.decomposition(normalize_poissonian_noise)
-#        if show_lev:
-#            s.plot_lev()
-#            pcs = int(raw_input('Number of principal components? '))
-#        sc = s.get_decomposition_model(pcs)
-#        step = sc.data_cube[(pw-mw):(pw+1),:,:].mean(0) - \
-#        sc.data_cube[(pw+1):(pw+1+mw),:,:].mean(0)
-#        self.data_cube[1024:,:,:] += step.reshape((1, step.shape[0], 
-#        step.shape[1]))
-#        self._replot()
-#        return step

@@ -61,7 +61,7 @@ class EELSSpectrum(Spectrum):
             The symbol of the elements.
         include_pre_edges : bool
             If True, the ionization edges with an onset below the lower 
-            energy limit of the SI will be incluided
+            energy limit of the SI will be inclunded
             
         Examples
         --------

@@ -53,11 +53,13 @@ class EDSTEMSpectrum(EDSSpectrum):
         ----------
         ref : signal
             The ref contains in its original_parameters the calibration
+            
         nb_pix : int
             The live time (real time corrected from the "dead time")
-            is divided by the number of pixel (spectrums), giving an average live time.          
+            is divided by the number of pixel (spectrums), giving an 
+            average live time.          
+            
         """
-        
         
         self.original_parameters = ref.original_parameters
         # Setup the axes_manager
@@ -213,59 +215,4 @@ class EDSTEMSpectrum(EDSSpectrum):
             return True
                 
            
-                        
-                      
-#    def build_SI_from_substracted_zl(self,ch, taper_nch = 20):
-#        """Modify the SI to have fit with a smoothly decaying ZL
-#        
-#        Parameters
-#        ----------
-#        ch : int
-#            channel index to start the ZL decay to 0
-#        taper_nch : int
-#            number of channels in which the ZL will decay to 0 from `ch`
-#        """
-#        sp = copy.deepcopy(self)
-#        dc = self.zl_substracted.data_cube.copy()
-#        dc[0:ch,:,:] *= 0
-#        for i in xrange(dc.shape[1]):
-#            for j in xrange(dc.shape[2]):
-#                dc[ch:ch+taper_nch,i,j] *= np.hanning(2 * taper_nch)[:taper_nch]
-#        sp.zl_substracted.data_cube = dc.copy()
-#        dc += self.zero_loss.data_cube
-#        sp.data_cube = dc.copy()
-#        return sp
-#        
-
-#        
-#    def correct_dual_camera_step(self, show_lev = False, mean_interval = 3, 
-#                                 pca_interval = 20, pcs = 2, 
-#                                 normalize_poissonian_noise = False):
-#        """Correct the gain difference in a dual camera using PCA.
-#        
-#        Parameters
-#        ----------
-#        show_lev : boolen
-#            Plot PCA lev
-#        mean_interval : int
-#        pca_interval : int
-#        pcs : int
-#            number of principal components
-#        normalize_poissonian_noise : bool
-#        """ 
-#        # The step is between pixels 1023 and 1024
-#        pw = pca_interval
-#        mw = mean_interval
-#        s = copy.deepcopy(self)
-#        s.energy_crop(1023-pw, 1023 + pw)
-#        s.decomposition(normalize_poissonian_noise)
-#        if show_lev:
-#            s.plot_lev()
-#            pcs = int(raw_input('Number of principal components? '))
-#        sc = s.get_decomposition_model(pcs)
-#        step = sc.data_cube[(pw-mw):(pw+1),:,:].mean(0) - \
-#        sc.data_cube[(pw+1):(pw+1+mw),:,:].mean(0)
-#        self.data_cube[1024:,:,:] += step.reshape((1, step.shape[0], 
-#        step.shape[1]))
-#        self._replot()
-#        return step
+ 
