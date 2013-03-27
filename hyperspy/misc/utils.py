@@ -178,8 +178,12 @@ def unfold_if_multidim(signal):
     else:
         return False
         
-def _estimate_gain(ns, cs, weighted = False, higher_than = None, 
-    plot_results = False, binning = 0, pol_order = 1):
+def _estimate_gain(ns, cs,
+                   weighted=False,
+                   higher_than=None, 
+                   plot_results=False,
+                   binning=0,
+                   pol_order=1):
     if binning > 0:
         factor = 2 ** binning
         remainder = np.mod(ns.shape[1], factor)
@@ -239,13 +243,21 @@ def _estimate_correlation_factor(g0, gk,k):
     c = (1 - e)**2
     return c    
 
-def estimate_variance_parameters(noisy_signal, clean_signal, mask=None,
-    pol_order=1, higher_than=None, return_results=False,
-    plot_results=True, weighted=False):
+def estimate_variance_parameters(
+    noisy_signal,
+    clean_signal,
+    mask=None,
+    pol_order=1,
+    higher_than=None,
+    return_results=False,
+    plot_results=True,
+    weighted=False):
     """Find the scale and offset of the Poissonian noise
 
-    By comparing an SI with its denoised version (i.e. by PCA), this plots an
-    estimation of the variance as a function of the number of counts and fits a
+    By comparing an SI with its denoised version (i.e. by PCA), 
+    this plots an
+    estimation of the variance as a function of the number of counts 
+    and fits a
     polynomy to the result.
 
     Parameters
@@ -264,8 +276,9 @@ def estimate_variance_parameters(noisy_signal, clean_signal, mask=None,
 
     Returns
     -------
-    Dictionary with the result of a linear fit to estimate the offset and
-    scale factor
+    Dictionary with the result of a linear fit to estimate the offset 
+    and scale factor
+    
     """
     fold_back_noisy =  unfold_if_multidim(noisy_signal)
     fold_back_clean =  unfold_if_multidim(clean_signal)
@@ -273,38 +286,42 @@ def estimate_variance_parameters(noisy_signal, clean_signal, mask=None,
     cs = clean_signal.data.copy()
 
     if mask is not None:
-        ns = ns[~mask]
-        cs = cs[~mask]
+        _slice = [slice(None),] * len(ns.shape)
+        _slice[noisy_signal.axes_manager.signal_axes[0].index_in_array]\
+         = ~mask
+        ns = ns[_slice]
+        cs = cs[_slice]
 
-    results0 = _estimate_gain(ns, cs, weighted = weighted, 
-        higher_than = higher_than, plot_results = plot_results, binning = 0,
-        pol_order = pol_order)
+    results0 = _estimate_gain(ns, cs, weighted=weighted, 
+        higher_than=higher_than, plot_results=plot_results, binning=0,
+        pol_order=pol_order)
         
-    results2 = _estimate_gain(ns, cs, weighted = weighted, 
-        higher_than = higher_than, plot_results = False, binning = 2,
-        pol_order = pol_order)
+    results2 = _estimate_gain(ns, cs, weighted=weighted, 
+        higher_than=higher_than, plot_results=False, binning=2,
+        pol_order=pol_order)
         
-    c = _estimate_correlation_factor(results0['fit'][0], results2['fit'][0],
-        4)
+    c = _estimate_correlation_factor(results0['fit'][0],
+                                     results2['fit'][0], 4)
     
     message = ("Gain factor: %.2f\n" % results0['fit'][0] +
                "Gain offset: %.2f\n" % results0['fit'][1] +
                "Correlation factor: %.2f\n" % c )
     is_ok = True
     if hyperspy.defaults_parser.preferences.General.interactive is True:
-        is_ok = messagesui.information(message +
-                                       "Would you like to store the results?")
+        is_ok = messagesui.information(
+            message + "Would you like to store the results?")
     else:
         print message
     if is_ok:
-        if not noisy_signal.mapped_parameters.has_item('Variance_estimation'):
-            noisy_signal.mapped_parameters.add_node('Variance_estimation')
+        if not noisy_signal.mapped_parameters.has_item(
+            'Variance_estimation'):
+            noisy_signal.mapped_parameters.add_node(
+                'Variance_estimation')
         noisy_signal.mapped_parameters.Variance_estimation.gain_factor = \
             results0['fit'][0]
         noisy_signal.mapped_parameters.Variance_estimation.gain_offset = \
             results0['fit'][1]
-        noisy_signal.mapped_parameters.Variance_estimation.correlation_factor =\
-            c
+        noisy_signal.mapped_parameters.Variance_estimation.correlation_factor = c
         noisy_signal.mapped_parameters.Variance_estimation.\
         parameters_estimation_method = 'Hyperspy'
 
