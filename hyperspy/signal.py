@@ -157,6 +157,14 @@ class Signal(t.HasTraits, MVA):
 
         return _signal
         
+    def __setitem__(self, i, j):
+        """x.__setitem__(i, y) <==> x[i]=y
+        
+        """
+        if isinstance(j, Signal):
+            j = j.data
+        self.__getitem__(i).data[:] = j
+        
     
     def _binary_operator_ruler(self, other, op_name):
         exception_message = (
@@ -352,10 +360,13 @@ class Signal(t.HasTraits, MVA):
         and the axes.
         
         """
+        # We deepcopy everything but data
+        self = self.get_deepcopy_with_new_data(self.data)
         for axis in self.axes_manager.axes:
             if axis.size == 1:
                 self.axes_manager.remove(axis)
         self.data = self.data.squeeze()
+        return self
 
     def _get_signal_dict(self):
         dic = {}
@@ -2161,8 +2172,18 @@ class SpecialSlicers:
     def __init__(self, signal, isNavigation):
         self.isNavigation = isNavigation
         self.signal = signal
+        
     def __getitem__(self, slices):
         return self.signal.__getitem__(slices, self.isNavigation)
+        
+    def __setitem__(self, i, j):
+        """x.__setitem__(i, y) <==> x[i]=y
+        
+        """
+        if isinstance(j, Signal):
+            j = j.data
+        self.signal.__getitem__(i, self.isNavigation).data[:] = j
+        
     def __len__(self):
         return self.signal.__len__()
 
