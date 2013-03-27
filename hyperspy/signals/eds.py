@@ -20,6 +20,7 @@ from __future__ import division
 import numpy as np
 
 
+
 from hyperspy.signals.spectrum import Spectrum
 from hyperspy.signals.image import Image
 from hyperspy.misc.eds.elements import elements as elements_db
@@ -129,7 +130,7 @@ class EDSSpectrum(Spectrum):
                     
         if not hasattr(self.mapped_parameters, 'Sample'):
             self.mapped_parameters.add_node('Sample')
-        self.mapped_parameters.Sample.elements = list(self.elements)
+        self.mapped_parameters.Sample.elements = np.sort(list(self.elements))
         
                
         #Set X-ray lines
@@ -137,7 +138,7 @@ class EDSSpectrum(Spectrum):
             self.add_lines_auto()
         else:
            self.add_lines(elements,lines)                
-        self.mapped_parameters.Sample.Xray_lines = list(self.Xray_lines)
+        self.mapped_parameters.Sample.Xray_lines = np.sort(list(self.Xray_lines))
         
     
         

@@ -19,8 +19,11 @@ from __future__ import division
 
 import numpy as np
 import scipy.interpolate
+import scipy.optimize
 import matplotlib.pyplot as plt
 import traits.api as t
+import math
+
 
 from hyperspy.signals.spectrum import Spectrum
 from hyperspy.signals.eds import EDSSpectrum
@@ -35,6 +38,7 @@ import hyperspy.gui.messages as messagesui
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.components.power_law import PowerLaw
 from hyperspy.io import load
+from hyperspy.misc.eds.FWHM import FWHM_eds
 
 class EDSSEMSpectrum(EDSSpectrum):
     
@@ -241,4 +245,75 @@ class EDSSEMSpectrum(EDSSpectrum):
                 return True
         else:
             return False
+            
+    def link_standard(self,std_file,std_file_extension):
+        
+        if not hasattr(self.mapped_parameters, 'Sample') and \
+        hasattr(self.mapped_parameters.Sample, 'elements'):
+            raise ValueError("Add elements first")
+        
+        std_tot = load(std_file+"//*."+std_file_extension,signal_type = 'EDS_SEM')
+        mp = self.mapped_parameters        
+        mp.Sample.standard_spec = []
+        for element in mp.Sample.elements:            
+            for std in std_tot:    
+                mp_std = std.mapped_parameters
+                if element in mp_std.original_filename:
+                    print("Standard file for %s : %s" % (element, mp_std.original_filename))
+                    mp_std.title = element+"_std"
+                    mp.Sample.standard_spec.append(std)
+        
+    def top_hat(self, line_energy,width_windows = 1):
+        """
+        """
+        offset = self.axes_manager.signal_axes[0].offset
+        FWHM_MnKa = self.mapped_parameters.SEM.EDS.energy_resolution_MnKa
+        line_FWHM = FWHM_eds(FWHM_MnKa, line_energy)              
+        det = width_windows*line_FWHM
+        scale_s = self.axes_manager.signal_axes[0].scale
+        olob = int(round(line_FWHM/scale_s/2)*2)
+        g = []
+        for lob in range(-olob,olob):
+            if abs(lob) > olob/2:
+                g.append(-1./olob)
+            else:
+                g.append(1./(olob+1))    
+        g = np.array(g)
+        
+        bornA = [int(round((line_energy-det-offset)/scale_s)),\
+        int(round((line_energy+det-offset)/scale_s))]
+        
+        a = []
+        for i in range(bornA[0],bornA[1]):
+            a.append(self.data[...,i-olob:i+olob])
+        a = np.array(a)
+        
+        dim = len(self.data.shape)
+        spec_th = EDSSEMSpectrum({'data' : np.rollaxis(a.dot(g),0,dim)})
+        
+        #spec_th.get_calibration_from(self)
+        return spec_th
+        
+    def k_ratio(self):
+        mp = self.mapped_parameters  
+        i=0
+        width_windows=0.5
+        kratios = []        
+        for Xray_line in mp.Sample.Xray_lines:
+            element = Xray_line[:-3]
+            line = Xray_line[-2:] 
+            std = mp.Sample.standard_spec[i]
+            mp_std = std.mapped_parameters
+            def func(a):
+                return self.top_hat(line_energy,width_windows).data+a*std.top_hat(line_energy,width_windows).data
+            line_energy = -elements_db[element]['Xray_energy'][line]
+            diff_ltime = mp.SEM.EDS.live_time/mp_std.SEM.EDS.live_time            
+            kratio = scipy.optimize.leastsq(func,[0.5])[0][0]/diff_ltime
+            print("k-ratio of %s : %s" % (Xray_line, kratio))            
+            kratios.append(kratio)
+            i += 1
+        mp.Sample.kratios = kratios
+        
+        
+        
                 
