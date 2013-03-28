@@ -115,7 +115,7 @@ class ScalableFixedPattern(Component):
             **kwargs)
         
     def function(self, x):
-        if self.interporlate is True:
+        if self.interpolate is True:
             return self.offset.value + self.yscale.value * self.f(
                                     x * self.xscale.value - self.shift.value)
         else:
