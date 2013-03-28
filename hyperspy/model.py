@@ -76,6 +76,9 @@ class Model(list):
         self._low_loss = None
         self._position_widgets = []
         self._plot = None
+        
+    def insert(self):
+        raise NotImplementedError
 
     @property
     def spectrum(self):
@@ -116,18 +119,10 @@ class Model(list):
         list.append(self,object)
         self._touch()
     
-    def insert(self, object):
-        object._create_arrays()
-        object._axes_manager = self.axes_manager
-        list.insert(self,object)
-        self._touch()
    
     def extend(self, iterable):
         for object in iterable:
-            object._create_arrays()
-            object._axes_manager = self.axes_manager
-        list.extend(self,iterable)
-        self._touch()
+            self.append(object)
                 
     def __delitem__(self, object):
         list.__delitem__(self,object)
