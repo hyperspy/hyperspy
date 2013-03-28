@@ -270,7 +270,7 @@ class EELSModel(Model):
         weights : {None, True, numpy.array}
             If None, performs standard least squares. If True 
             performs weighted least squares where the weights are 
-            calculated using spectrum.Spectrum.estimate_variance. 
+            calculated using spectrum.Spectrum.estimate_poissonian_noise_variance. 
             Alternatively, external weights can be supplied by passing
             a weights array of the same dimensions as the signal.
         ext_bounding : bool

@@ -2016,33 +2016,42 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 #        """
 #        utils.copy_energy_calibration(s, self)
 #
-    def estimate_variance(self, dc = None, gaussian_noise_var = None):
-        """Variance estimation supposing Poissonian noise
+    def estimate_poissonian_noise_variance(self,
+            dc=None, gaussian_noise_var=None):
+        """Variance estimation supposing Poissonian noise.
 
         Parameters
         ----------
         dc : None or numpy array
-            If None the SI is used to estimate its variance. Otherwise, the
+            If None the SI is used to estimate its variance.
+            Otherwise, the
             provided array will be used.
         Note
         ----
-        The gain_factor and gain_offset from the aquisition parameters are used
+        The gain_factor and gain_offset from the aquisition parameters 
+        are used
+        
         """
         gain_factor = 1
         gain_offset = 0
         correlation_factor = 1
         if not self.mapped_parameters.has_item("Variance_estimation"):
-            print("No Variance estimation parameters found in mapped"
-                  " parameters. The variance will be estimated supposing "
-                  "perfect poissonian noise")
-        if self.mapped_parameters.has_item('Variance_estimation.gain_factor'):
-            gain_factor = self.mapped_parameters.Variance_estimation.gain_factor
-        if self.mapped_parameters.has_item('Variance_estimation.gain_offset'):
-            gain_offset = self.mapped_parameters.Variance_estimation.gain_offset
+            print("No Variance estimation parameters found in mapped "
+                  "parameters. The variance will be estimated supposing"
+                  " perfect poissonian noise")
+        if self.mapped_parameters.has_item(
+            'Variance_estimation.gain_factor'):
+            gain_factor = self.mapped_parameters.\
+                Variance_estimation.gain_factor
+        if self.mapped_parameters.has_item(
+            'Variance_estimation.gain_offset'):
+            gain_offset = self.mapped_parameters.Variance_estimation.\
+                gain_offset
         if self.mapped_parameters.has_item(
             'Variance_estimation.correlation_factor'):
             correlation_factor = \
-                self.mapped_parameters.Variance_estimation.correlation_factor
+                self.mapped_parameters.Variance_estimation.\
+                    correlation_factor
         print "Gain factor = ", gain_factor
         print "Gain offset = ", gain_offset
         print "Correlation factor = ", correlation_factor
@@ -2051,8 +2060,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         self.variance = dc * gain_factor + gain_offset
         if self.variance.min() < 0:
             if gain_offset == 0 and gaussian_noise_var is None:
-                print "The variance estimation results in negative values"
-                print "Maybe the gain_offset is wrong?"
+                raise ValueError("The variance estimation results"
+                       "in negative values"
+                       "Maybe the gain_offset is wrong?")
                 self.variance = None
                 return
             elif gaussian_noise_var is None:
@@ -2062,8 +2072,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 np.Inf)
             else:
                 print "Clipping the variance to the gaussian_noise_var"
-                self.variance = np.clip(self.variance, gaussian_noise_var,
-                np.Inf)
+                self.variance = np.clip(self.variance,
+                                        gaussian_noise_var,
+                                        np.Inf)
                 
     def get_current_signal(self):
         data = self.data
