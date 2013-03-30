@@ -76,6 +76,9 @@ class Model(list):
         self._low_loss = None
         self._position_widgets = []
         self._plot = None
+        
+    def insert(self):
+        raise NotImplementedError
 
     @property
     def spectrum(self):
@@ -116,18 +119,10 @@ class Model(list):
         list.append(self,object)
         self._touch()
     
-    def insert(self, object):
-        object._create_arrays()
-        object._axes_manager = self.axes_manager
-        list.insert(self,object)
-        self._touch()
    
     def extend(self, iterable):
         for object in iterable:
-            object._create_arrays()
-            object._axes_manager = self.axes_manager
-        list.extend(self,iterable)
-        self._touch()
+            self.append(object)
                 
     def __delitem__(self, object):
         list.__delitem__(self,object)
@@ -207,7 +202,7 @@ class Model(list):
 # TODO: port it                    
 #    def generate_chisq(self, degrees_of_freedom = 'auto') :
 #        if self.spectrum.variance is None:
-#            self.spectrum.estimate_variance()
+#            self.spectrum.estimate_poissonian_noise_variance()
 #        variance = self.spectrum.variance[self.channel_switches]
 #        differences = (self.model_cube - self.spectrum.data)[self.channel_switches]
 #        self.chisq = np.sum(differences**2 / variance, 0)
@@ -678,7 +673,7 @@ class Model(list):
         weights : {None, True, numpy.array}
             If None, performs standard least squares. If True 
             performs weighted least squares where the weights are 
-            calculated using spectrum.Spectrum.estimate_variance. 
+            calculated using spectrum.Spectrum.estimate_poissonian_noise_variance. 
             Alternatively, external weights can be supplied by passing
             a weights array of the same dimensions as the signal.
         ext_bounding : bool
@@ -727,7 +722,7 @@ class Model(list):
             weights = None
         if weights is True:
             if self.spectrum.variance is None:
-                self.spectrum.estimate_variance()
+                self.spectrum.estimate_poissonian_noise_variance()
             weights = 1. / np.sqrt(self.spectrum.variance.__getitem__(
             self.axes_manager._getitem_tuple)[self.channel_switches])
         elif weights is not None:

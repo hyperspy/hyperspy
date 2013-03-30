@@ -107,14 +107,15 @@ class ScalableFixedPattern(Component):
         
         """
                 
-        self.f = interp1d(self.spectrum.axes[0].axis,
-                          spectrum.data.squeeze(), 
-                          bounds_error = False,
-                          fill_value = 0.,
-                          **kwargs)
+        self.f = interp1d(
+            self.spectrum.axes_manager.signal_axes[0].axis,
+            self.spectrum.data.squeeze(), 
+            bounds_error = False,
+            fill_value = 0.,
+            **kwargs)
         
     def function(self, x):
-        if self.interporlate is True:
+        if self.interpolate is True:
             return self.offset.value + self.yscale.value * self.f(
                                     x * self.xscale.value - self.shift.value)
         else:

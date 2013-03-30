@@ -198,8 +198,8 @@ class ImagePlot:
         data = self.data_function()
         numrows, numcols = data.shape
         def format_coord(x, y):
-            col = int(x+0.5)
-            row = int(y+0.5)
+            col = self.xaxis.value2index(x)
+            row = self.yaxis.value2index(y)
             if col>=0 and col<numcols and row>=0 and row<numrows:
                 z = data[row,col]
                 return 'x=%1.4f, y=%1.4f, intensity=%1.4f'%(x, y, z)
