@@ -1205,7 +1205,80 @@ class Model(list):
             pw.close()
             del pw
 
+    def set_parameters_not_free(self, component_list=None,
+            parameter_name_list=None):
+        """
+        Sets the parameters in a component in a model to not free.
 
-                
-                
-        
+        Parameters:
+        -----------
+        component_list: None, or list of hyperspy components, optional
+            If None, will apply the function to all components in the model.
+            If list of components, will apply the functions to the components
+            in the list.
+        parameter_name_list: None or list of strings, optional
+            If None, will set all the parameters to not free.
+            If list of strings, will set all the parameters with the same name
+            as the strings in parameter_name_list to not free.
+
+        Example:
+        --------
+        v1 = components.Voigt()
+        m.append(v1)
+        m.set_parameters_not_free()
+
+        m.set_parameters_not_free(component_list=[v1], parameter_name_list=['area','centre'])
+
+        See also:
+        ---------
+        model.set_parameter_free
+        component.set_parameter_free
+        component.set_parameter_not_free
+        """        
+
+        if not component_list:
+            component_list = []
+            for _component in self:
+                component_list.append(_component)
+
+        for _component in component_list:
+            _component.set_parameters_not_free(parameter_name_list)    
+            
+    def set_parameters_free(self, component_list=None,
+            parameter_name_list=None):
+        """
+        Sets the parameters in a component in a model to free.
+
+        Parameters:
+        -----------
+        component_list: None, or list of hyperspy components, optional
+            If None, will apply the function to all components in the model.
+            If list of components, will apply the functions to the components
+            in the list.
+        parameter_name_list: None or list of strings, optional
+            If None, will set all the parameters to not free.
+            If list of strings, will set all the parameters with the same name
+            as the strings in parameter_name_list to not free.
+
+        Example:
+        --------
+        v1 = components.Voigt()
+        m.append(v1)
+        m.set_parameters_free()
+
+        m.set_parameters_free(component_list=[v1], parameter_name_list=['area','centre'])
+
+        See also:
+        ---------
+        model.set_parameter_not_free
+        component.set_parameter_free
+        component.set_parameter_not_free
+        """   
+
+        if not component_list:
+            component_list = []
+            for _component in self:
+                component_list.append(_component)
+
+        for _component in component_list:
+            _component.set_parameters_free(parameter_name_list)
