@@ -649,7 +649,7 @@ class Component(object):
         v1 = components.Voigt()
         v1.set_parameters_free()
 
-        v1.set_parameters_free(['area','centre'])
+        v1.set_parameters_free(parameter_name_list=['area','centre'])
 
         See also:
         ---------
@@ -683,7 +683,7 @@ class Component(object):
         v1 = components.Voigt()
         v1.set_parameters_not_free()
 
-        v1.set_parameters_not_free(['area','centre'])
+        v1.set_parameters_not_free(parameter_name_list=['area','centre'])
 
         See also:
         ---------
