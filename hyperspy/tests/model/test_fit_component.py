@@ -44,4 +44,12 @@ class TestFitOneComponent:
         g1 = Gaussian()
         m.append(g1)
         m.fit_component(g1, signal_range=(4000,6000))
-        return(m)
+        assert_true(
+                (g1.centre.value < self.centre*1.05) and 
+                (g1.centre.value > self.centre*0.95))
+        assert_true(
+                (g1.A.value < self.A*1.05) and 
+                (g1.A.value > self.A*0.95))
+        assert_true(
+                (g1.sigma.value < self.sigma*1.05) and 
+                (g1.sigma.value > self.sigma*0.95))
