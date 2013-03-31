@@ -753,11 +753,19 @@ class ComponentFit(SpanSelectorInSpectrum):
         #the components estimate_parameters function (if it has one)
         if self.estimate_parameters:
             if hasattr(self.component, 'estimate_parameters'):
-                self.component.estimate_parameters(
-                    self.signal,
-                    self.ss_left_value,
-                    self.ss_right_value,
-                    only_current = True)
+                if (self.signal_range != "interactive" and 
+                    self.signal_range is not None):
+                    self.component.estimate_parameters(
+                        self.signal,
+                        self.signal_range[0],
+                        self.signal_range[1],
+                        only_current = True)
+                elif self.signal_range == "interactive":
+                    self.component.estimate_parameters(
+                        self.signal,
+                        self.ss_left_value,
+                        self.ss_right_value,
+                        only_current = True)
         
         self.model.fit(**self.fit_kwargs)
         
