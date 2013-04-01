@@ -32,24 +32,126 @@ class TestFitOneComponent:
         g.A.value = 10000.0
         g.centre.value = 5000.0
         g.sigma.value = 500.0
-        s = Spectrum({'data' : g.function(np.arange(10000))})
+        axis = np.arange(10000)
+        s = Spectrum({'data' : g.function(axis)})
         m = create_model(s)
         self.A = g.A.value
         self.centre = g.centre.value
         self.sigma = g.sigma.value
         self.model = m
+        self.g = g
+        self.axis = axis
+        self.rtol = 0.01
 
     def test_fit_component(self):
         m = self.model 
+        axis = self.axis
+
         g1 = Gaussian()
         m.append(g1)
         m.fit_component(g1, signal_range=(4000,6000))
         assert_true(
-                (g1.centre.value < self.centre*1.05) and 
-                (g1.centre.value > self.centre*0.95))
+                np.allclose(
+                    self.g.function(axis), 
+                    g1.function(axis),
+                    rtol=self.rtol))
+
+class TestFitSeveralComponent:
+    def setUp(self):
+        gs1 = Gaussian()
+        gs1.A.value = 10000.0
+        gs1.centre.value = 5000.0
+        gs1.sigma.value = 500.0
+
+        gs2 = Gaussian()
+        gs2.A.value = 60000.0
+        gs2.centre.value = 2000.0
+        gs2.sigma.value = 300.0
+
+        gs3 = Gaussian()
+        gs3.A.value = 20000.0
+        gs3.centre.value = 6000.0
+        gs3.sigma.value = 100.0
+
+        axis = np.arange(10000)
+        total_signal = gs1.function(axis) + gs2.function(axis) + gs3.function(axis)
+        
+        s = Spectrum({'data' : total_signal})
+        m = create_model(s)
+
+        g1 = Gaussian()
+        g2 = Gaussian()
+        g3 = Gaussian()
+        m.append(g1)
+        m.append(g2)
+        m.append(g3)
+
+        self.model = m
+        self.gs1 = gs1
+        self.gs2 = gs2
+        self.gs3 = gs3
+        self.g1 = g1
+        self.g2 = g2
+        self.g3 = g3
+        self.axis = axis
+        self.rtol = 0.01
+
+    def test_fit_component_active_state(self):
+        m = self.model 
+        axis = self.axis
+        g1 = self.g1
+        g2 = self.g2
+        g3 = self.g3
+        g2.active = True
+        g3.active = False
+        m.fit_component(g1, signal_range=(4500,5200), fit_independent=True)
         assert_true(
-                (g1.A.value < self.A*1.05) and 
-                (g1.A.value > self.A*0.95))
+                np.allclose(
+                    self.gs1.function(axis), 
+                    g1.function(axis),
+                    rtol=self.rtol))
+        assert_true(g1.active)
+        assert_true(g2.active)
+        assert_true(not g3.active)
+
+    def test_fit_component_free_state(self):
+        m = self.model 
+        axis = self.axis
+        g1 = self.g1
+        g2 = self.g2
+        g3 = self.g3
+        g2.A.free = False
+        g2.sigma.free = False
+        m.fit_component(g1, signal_range=(4500,5200))
         assert_true(
-                (g1.sigma.value < self.sigma*1.05) and 
-                (g1.sigma.value > self.sigma*0.95))
+                np.allclose(
+                    self.gs1.function(axis), 
+                    g1.function(axis),
+                    rtol=self.rtol))
+
+        assert_true(g1.A.free)
+        assert_true(g1.sigma.free)
+        assert_true(g1.centre.free)
+
+        assert_true(not g2.A.free)
+        assert_true(not g2.sigma.free)
+        assert_true(g2.centre.free)
+
+        assert_true(g3.A.free)
+        assert_true(g3.sigma.free)
+        assert_true(g3.centre.free)
+
+    def test_fit_multiple_component(self):
+        m = self.model 
+        axis = self.axis
+        g1 = self.g1
+        g2 = self.g2
+        g3 = self.g3
+        m.fit_component(g1, signal_range=(4500,5200))
+        m.fit_component(g2, signal_range=(1500,2200))
+        m.fit_component(g3, signal_range=(5800,6150))
+        assert_true(
+                np.allclose(
+                    self.model.spectrum.data, 
+                    m(),
+                    rtol=self.rtol))
