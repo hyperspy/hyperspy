@@ -41,7 +41,7 @@ class TestFitOneComponent:
         self.model = m
         self.g = g
         self.axis = axis
-        self.rtol = 0.01
+        self.rtol = 0.00
 
     def test_fit_component(self):
         m = self.model 
