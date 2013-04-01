@@ -22,11 +22,18 @@ import tempfile
 
 import numpy as np
 import numpy.linalg
-
-import traits.api as t
 import scipy.odr as odr
-from scipy.optimize import (leastsq,fmin, fmin_cg, fmin_ncg, fmin_bfgs,
-    fmin_cobyla, fmin_l_bfgs_b, fmin_tnc, fmin_powell)
+from scipy.optimize import (leastsq,
+                            fmin,
+                            fmin_cg,
+                            fmin_ncg,
+                            fmin_bfgs,
+                            fmin_cobyla,
+                            fmin_l_bfgs_b,
+                            fmin_tnc,
+                            fmin_powell)
+from traits.trait_errors import TraitError
+import traits.api as t
 
 from hyperspy import messages
 import hyperspy.drawing.spectrum
@@ -38,6 +45,10 @@ from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.misc.mpfit.mpfit import mpfit
+from hyperspy.axes import AxesManager
+from hyperspy.drawing.widgets import (DraggableVerticalLine,
+                                      DraggableLabel)
+
 
 from hyperspy.gui.tools import ComponentFit
 
@@ -65,8 +76,11 @@ class Model(list):
         self.model_cube[:] = np.nan
         self.channel_switches=np.array([True] * len(self.axis.axis))
         self._low_loss = None
+        self._position_widgets = []
         self._plot = None
-
+        
+    def insert(self):
+        raise NotImplementedError
 
     @property
     def spectrum(self):
@@ -102,23 +116,15 @@ class Model(list):
         
     # Extend the list methods to call the _touch when the model is modified
     def append(self, object):
-        object.create_arrays(self.axes_manager.navigation_shape)
-        object.set_axes(self.axes_manager)
+        object._axes_manager = self.axes_manager
+        object._create_arrays()
         list.append(self,object)
         self._touch()
     
-    def insert(self, object):
-        object.create_arrays(self.axes_manager.navigation_shape)
-        object.set_axes(self.axes_manager)
-        list.insert(self,object)
-        self._touch()
    
     def extend(self, iterable):
         for object in iterable:
-            object.create_arrays(self.axes_manager.navigation_shape)
-            object.set_axes(self.axes_manager)
-        list.extend(self,iterable)
-        self._touch()
+            self.append(object)
                 
     def __delitem__(self, object):
         list.__delitem__(self,object)
@@ -198,7 +204,7 @@ class Model(list):
 # TODO: port it                    
 #    def generate_chisq(self, degrees_of_freedom = 'auto') :
 #        if self.spectrum.variance is None:
-#            self.spectrum.estimate_variance()
+#            self.spectrum.estimate_poissonian_noise_variance()
 #        variance = self.spectrum.variance[self.channel_switches]
 #        differences = (self.model_cube - self.spectrum.data)[self.channel_switches]
 #        self.chisq = np.sum(differences**2 / variance, 0)
@@ -217,19 +223,13 @@ class Model(list):
 #            print "The red_chisq could not been calculated"
 
     def _set_p0(self):
-        p0 = None
+        self.p0 = ()
         for component in self:
             if component.active:
-                for param in component.free_parameters:
-                    if p0 is not None:
-                        p0 = (p0 + [param.value,] 
-                        if not isinstance(param.value, list) 
-                        else p0 + param.value)
-                    else:
-                        p0 = ([param.value,] 
-                        if not isinstance(param.value, list) 
-                        else param.value)
-        self.p0 = tuple(p0)
+                for parameter in component.free_parameters:
+                    self.p0 = (self.p0 + (parameter.value,) 
+                    if parameter._number_of_elements == 1
+                    else self.p0 + parameter.value)
     
     def set_boundaries(self):
         """Generate the boundary list.
@@ -272,8 +272,7 @@ class Model(list):
         If the parameters array has not being defined yet it creates it filling 
         it with the current parameters."""
         for component in self:
-            component.store_current_parameters_in_map(
-                                                 self.axes_manager.indexes)
+            component.store_current_parameters_in_map()
 
     def charge(self, only_fixed=False):
         """Charge the parameters for the current spectrum from the parameters 
@@ -289,8 +288,7 @@ class Model(list):
         if switch_aap is True:
             self._disconnect_parameters2update_plot()
         for component in self:
-            component.charge_value_from_map(self.axes_manager.indexes,
-                                            only_fixed=only_fixed)
+            component.charge_value_from_map(only_fixed=only_fixed)
         if switch_aap is True:
             self._connect_parameters2update_plot()
             self.update_plot()
@@ -298,8 +296,7 @@ class Model(list):
     def update_plot(self):
         if self.spectrum._plot is not None:
             try:
-                for line in self.spectrum._plot.signal_plot.ax_lines:
-                        line.update()
+                self.spectrum._plot.signal_plot.ax_lines[1].update()
             except:
                 self._disconnect_parameters2update_plot()
                 
@@ -678,7 +675,7 @@ class Model(list):
         weights : {None, True, numpy.array}
             If None, performs standard least squares. If True 
             performs weighted least squares where the weights are 
-            calculated using spectrum.Spectrum.estimate_variance. 
+            calculated using spectrum.Spectrum.estimate_poissonian_noise_variance. 
             Alternatively, external weights can be supplied by passing
             a weights array of the same dimensions as the signal.
         ext_bounding : bool
@@ -727,7 +724,7 @@ class Model(list):
             weights = None
         if weights is True:
             if self.spectrum.variance is None:
-                self.spectrum.estimate_variance()
+                self.spectrum.estimate_poissonian_noise_variance()
             weights = 1. / np.sqrt(self.spectrum.variance.__getitem__(
             self.axes_manager._getitem_tuple)[self.channel_switches])
         elif weights is not None:
@@ -854,7 +851,7 @@ class Model(list):
         
         if np.iterable(self.p0) == 0:
             self.p0 = (self.p0,)
-        self._charge_p0(p_std = self.p_std)
+        self._charge_p0(p_std=self.p_std)
         self.set()
         if ext_bounding is True:
             self._disable_ext_bounding()
@@ -1118,6 +1115,98 @@ class Model(list):
                         print("\t\t%s\t%f" % (
                             parameter.name, parameter.value))
                             
+    def enable_adjust_position(self, components=None, fix_them=True):
+        """Allow changing the *x* position of component by dragging 
+        a vertical line that is plotted in the signal model figure
+        
+        Parameters
+        ----------
+        components : {None, list of components}
+            If None, the position of all the active components of the 
+            model that has a well defined *x* position with a value 
+            in the axis range will get a position adjustment line. 
+            Otherwise the feature is added only to the given components.
+        fix_them : bool
+            If True the position parameter of the components will be
+            temporarily fixed until adjust position is disable.
+            This can 
+            be useful to iteratively adjust the component positions and 
+            fit the model.
+            
+        See also
+        --------
+        disable_adjust_position
+        
+        """
+        if (self._plot is None or 
+            self._plot.is_active() is False):
+            self.plot()
+        if self._position_widgets:
+            self.disable_adjust_position()
+        on_figure_window_close(self._plot.signal_plot.figure, 
+                               self.disable_adjust_position)
+        components = components if components else self
+        if not components:
+            # The model does not have components so we do nothing
+            return
+        components = [
+            component for component in components if component.active]
+        axis_dict = self.axes_manager.signal_axes[0].get_axis_dictionary()
+        axis_dict['index_in_array'] = 0
+        for component in self:
+            if (component._position is not None and
+                not component._position.twin):
+                set_value = component._position._setvalue
+                get_value = component._position._getvalue        
+            else:
+                continue
+            # Create an AxesManager for the widget
+            am = AxesManager([axis_dict,])
+            am.axes[0].navigate = True
+            try:
+                am.axes[0].value = get_value()
+            except TraitError:
+                # The value is outside of the axis range
+                continue
+            # Create the vertical line and labels
+            self._position_widgets.extend((
+                DraggableVerticalLine(am),
+                DraggableLabel(am),))
+            # Store the component to reset its twin when disabling
+            # adjust position
+            self._position_widgets[-1].component = component
+            w = self._position_widgets[-1]
+            w.string = component._get_short_description().replace(
+                                                    ' component', '')
+            w.add_axes(self._plot.signal_plot.ax)
+            self._position_widgets[-2].add_axes(
+                                            self._plot.signal_plot.ax)
+            # Create widget -> parameter connection
+            am.axes[0].continuous_value = True
+            am.axes[0].on_trait_change(set_value, 'value')
+            # Create parameter -> widget connection
+            # This is done with a duck typing trick
+            # We disguise the AxesManager axis of Parameter by adding
+            # the _twin attribute
+            am.axes[0]._twins  = set()
+            component._position.twin = am.axes[0]
+
+            
+    def disable_adjust_position(self, components=None, fix_them=True):
+        """Disables the interactive adjust position feature
+        
+        See also:
+        ---------
+        enable_adjust_position
+        
+        """
+        while self._position_widgets:
+            pw = self._position_widgets.pop()
+            if hasattr(pw, 'component'):
+                pw.component._position.twin = None
+                del pw.component
+            pw.close()
+            del pw
 
     def fit_component(self, component, signal_range="interactive",
             estimate_parameters=True, fit_independent=False, **kwargs):

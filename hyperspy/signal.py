@@ -67,8 +67,8 @@ class Signal(t.HasTraits, MVA):
         self._axes_manager_before_unfolding = None
         self.auto_replot = True
         self.variance = None
-        self.navigation = SpecialSlicers(self, True)
-        self.signal = SpecialSlicers(self, False)
+        self.navigation_indexer = SpecialSlicers(self, True)
+        self.signal_indexer = SpecialSlicers(self, False)
 
     def __repr__(self):
         string = '<'
@@ -79,33 +79,35 @@ class Signal(t.HasTraits, MVA):
 
         return string
 
-    def __getitem__(self, slices, isNavigation=None,XYZ_ordering=True):
+    def __getitem__(self, slices, isNavigation=None, XYZ_ordering=True):
         try:
             len(slices)
         except TypeError:
             slices = (slices,)
         _orig_slices = slices
-        has_nav = True
-        has_signal = True
-        if isNavigation is not None:
-            if isNavigation:
-                has_signal = False
-            else:
-                has_nav = False
 
+        has_nav = True if isNavigation is None else isNavigation
+        has_signal = True if isNavigation is None else not isNavigation
+        
+        # Create a deepcopy of self that contains a view of self.data
+        data = self.data
+        self.data = None
         _signal = self.deepcopy()
+        self.data = data
+        _signal.data = data
+        del data
 
-        nav_indexes =  [el.index_in_array for el in
+        nav_indices =  [el.index_in_array for el in
                     _signal.axes_manager.navigation_axes]
-        signal_indexes =  [el.index_in_array for el in
+        signal_indices =  [el.index_in_array for el in
                     _signal.axes_manager.signal_axes]
 
         if XYZ_ordering:
-            nav_idx = nav_indexes[::-1]
-            signal_idx = signal_indexes[::-1]
+            nav_idx = nav_indices[::-1]
+            signal_idx = signal_indices[::-1]
         else:
-            nav_idx = nav_indexes
-            signal_idx = signal_indexes
+            nav_idx = nav_indices
+            signal_idx = signal_indices
 
         index = nav_idx + signal_idx
 
@@ -115,21 +117,182 @@ class Signal(t.HasTraits, MVA):
             idx =  signal_idx
         else:
             idx =  index
+            
+        # Add support for Ellipsis
+        if Ellipsis in _orig_slices:
+            _orig_slices = list(_orig_slices)
+            # Expand the first Ellipsis
+            ellipsis_index = _orig_slices.index(Ellipsis)
+            _orig_slices.remove(Ellipsis)
+            _orig_slices = (_orig_slices[:ellipsis_index] +
+                [slice(None),] * max(0, len(idx) - len(_orig_slices)) +
+                _orig_slices[ellipsis_index:]) 
+            # Replace all the following Ellipses by :
+            while Ellipsis in _orig_slices:
+                _orig_slices[_orig_slices.index(Ellipsis)] = slice(None)
+            _orig_slices = tuple(_orig_slices)
+            
+        if len(_orig_slices) > len(idx):
+            raise IndexError("invalid index")
     
         slices = np.array([slice(None,)] * 
                            len(_signal.axes_manager.axes))
             
         slices[idx] = _orig_slices + (slice(None),) * max(
                             0, len(idx) - len(_orig_slices))
-        axes = [_signal.axes_manager.axes[i] for i in index]
-        array_slices = [axis._get_slice(slice_)
-                        for slice_, axis in zip(slices,axes)]
+        
+        array_slices = []
+        for slice_, axis in zip(slices,_signal.axes_manager.axes):
+            if (isinstance(slice_, slice) or 
+                len(_signal.axes_manager.axes) < 2):
+                array_slices.append(axis._slice_me(slice_))
+            else:
+                if isinstance(slice_, float):
+                    slice_ = axis.value2index(slice_)
+                array_slices.append(slice_)
+                _signal.axes_manager.remove(axis)
+        
         _signal.data = _signal.data[array_slices]
         _signal.get_dimensions_from_data()
-        _signal.squeeze()
 
         return _signal
         
+    def __setitem__(self, i, j):
+        """x.__setitem__(i, y) <==> x[i]=y
+        
+        """
+        if isinstance(j, Signal):
+            j = j.data
+        self.__getitem__(i).data[:] = j
+        
+    
+    def _binary_operator_ruler(self, other, op_name):
+        exception_message = (
+            "Invalid dimensions for this operation")
+        if isinstance(other, Signal):
+            if other.data.shape != self.data.shape:
+                # Are they aligned?
+                are_aligned = utils.are_aligned(self.data.shape,
+                                       other.data.shape)
+                if are_aligned is True:
+                    sdata, odata = utils.homogenize_ndim(self.data,
+                                                     other.data)
+                else:
+                    # Let's align them if possible
+                    sig_and_nav = [s for s in [self, other] if
+                        s.axes_manager.signal_size > 1 and 
+                        s.axes_manager.navigation_size > 1]
+                        
+                    sig = [s for s in [self, other] if
+                        s.axes_manager.signal_size > 1 and 
+                        s.axes_manager.navigation_size == 0]
+                        
+                    nav = [s for s in [self, other] if
+                        s.axes_manager.signal_size == 0 and 
+                        s.axes_manager.navigation_size > 1]
+                    if sig_and_nav and sig:
+                        self = sig_and_nav[0]
+                        other = sig[0]
+                        if (self.axes_manager.signal_shape == 
+                                    other.axes_manager.signal_shape):
+                            sdata = self.data
+                            other_new_shape = [
+                                axis.size if axis.navigate is False
+                                else 1
+                                for axis in self.axes_manager.axes]
+                            odata = other.data.reshape(
+                                other_new_shape)
+                        elif (self.axes_manager.navigation_shape == 
+                                other.axes_manager.signal_shape):
+                            sdata = self.data
+                            other_new_shape = [
+                                axis.size if axis.navigate is True
+                                else 1
+                                for axis in self.axes_manager.axes]
+                            odata = other.data.reshape(
+                                other_new_shape)
+                        else:
+                            raise ValueError(exception_message)
+                    elif len(sig) == 2:
+                        sdata = self.data.reshape(
+                            (1,) * other.axes_manager.signal_dimension
+                            + self.data.shape)
+                        odata = other.data.reshape(
+                            other.data.shape + 
+                            (1,) * self.axes_manager.signal_dimension)
+                    else:
+                        raise ValueError(exception_message)
+                        
+
+                # The data are now aligned but the shapes are not the 
+                # same and therefore we have to calculate the resulting
+                # axes
+                ref_axes = self if (
+                    len(self.axes_manager.axes) > 
+                    len(other.axes_manager.axes)) else other
+                
+                new_axes = []
+                for i, (ssize, osize) in enumerate(
+                                    zip(sdata.shape, odata.shape)):
+                    if ssize > osize:
+                        if are_aligned or len(sig) != 2:
+                            new_axes.append(
+                                self.axes_manager.axes[i].copy())
+                        else:
+                            new_axes.append(self.axes_manager.axes[
+                                i - other.axes_manager.signal_dimension
+                                ].copy())
+                        
+                    elif ssize < osize:
+                        new_axes.append(
+                            other.axes_manager.axes[i].copy())
+                        
+                    else:
+                        new_axes.append(
+                            ref_axes.axes_manager.axes[i].copy())
+                
+            else:
+                sdata = self.data
+                odata = other.data
+                new_axes = [axis.copy()
+                            for axis in self.axes_manager.axes]            
+            exec("result = sdata.%s(odata)" % op_name)
+            new_signal = self.get_deepcopy_with_new_data(result)
+            new_signal.axes_manager.axes = new_axes
+            new_signal.axes_manager._set_axes_index_in_array_from_position()
+            new_signal.axes_manager.set_signal_dimension(
+                self.axes_manager.signal_dimension)
+            return new_signal
+        else:
+            exec("result = self.data.%s(other)" %  op_name)
+            return self.get_deepcopy_with_new_data(result)
+        
+    def _unary_operator_ruler(self, op_name):
+        exec("result = self.data.%s()" % op_name)
+        return self.get_deepcopy_with_new_data(result)
+            
+    def get_deepcopy_with_new_data(self, data=None):
+        """Returns a deepcopy of itself replacing the data.
+        
+        This method has the advantage over deepcopy that it does not
+        copy the data what can save precious memory
+        
+        Paramters
+        ---------
+        data : {None | np.array}
+        
+        Returns
+        -------
+        ns : Signal
+        
+        """
+        old_data = self.data
+        self.data = None
+        ns = self.deepcopy()
+        ns.data = data
+        self.data = old_data
+        return ns
+            
     def print_summary(self):
         string = "\n\tTitle: "
         string += self.mapped_parameters.title.decode('utf8')
@@ -191,19 +354,19 @@ class Signal(t.HasTraits, MVA):
             self.mapped_parameters.title = ''
         if not hasattr(self.mapped_parameters,'record_by'):
             self.mapped_parameters.record_by = self._default_record_by
-        self.squeeze()
                 
     def squeeze(self):
-        """Remove single-dimensional entries from the shape of an array and the 
-        axes.
+        """Remove single-dimensional entries from the shape of an array 
+        and the axes.
+        
         """
-        axes_list = list(self.axes_manager.axes)
-        for axis in axes_list:
+        # We deepcopy everything but data
+        self = self.get_deepcopy_with_new_data(self.data)
+        for axis in self.axes_manager.axes:
             if axis.size == 1:
-                self.axes_manager.axes.remove(axis)
-                for ax in self.axes_manager.axes:
-                    ax.index_in_array -= 1
+                self.axes_manager.remove(axis)
         self.data = self.data.squeeze()
+        return self
 
     def _get_signal_dict(self):
         dic = {}
@@ -221,7 +384,7 @@ class Signal(t.HasTraits, MVA):
         axes = []
         for i in xrange(len(self.data.shape)):
             axes.append({
-                        'name': 'undefined',
+                        'name': 'axis%i' % i,
                         'scale': 1.,
                         'offset': 0.,
                         'size': int(self.data.shape[i]),
@@ -243,15 +406,36 @@ class Signal(t.HasTraits, MVA):
             return self.data.squeeze().T
 
     def _get_hse_2D_explorer(self, *args, **kwargs):
-        islice = self.axes_manager.signal_axes[0].index_in_array
-        data = np.nan_to_num(self.data).sum(islice)
+        slices = [0,] * len(self.axes_manager.axes)
+        for i, axis in enumerate(
+                            self.axes_manager.navigation_axes[::-1]):
+            if i < 2:
+                slices[axis.index_in_array] = slice(None, None, None)
+            else:
+                slices[axis.index_in_array] = slice(
+                                        axis.index, axis.index+1,None)
+        isignal = self.axes_manager.signal_axes[0].index_in_array
+        slices[isignal] = slice(None, None, None)
+        data = np.nan_to_num(self.data.__getitem__(slices)
+                             ).sum(isignal).squeeze()
         return data
 
     def _get_hie_explorer(self, *args, **kwargs):
-        isslice = [self.axes_manager.signal_axes[0].index_in_array,
-                   self.axes_manager.signal_axes[1].index_in_array]
-        isslice.sort()
-        data = self.data.sum(isslice[1]).sum(isslice[0])
+        slices = [0,] * len(self.axes_manager.axes)
+        for i, axis in enumerate(
+                            self.axes_manager.navigation_axes[::-1]):
+            if i < 2:
+                slices[axis.index_in_array] = slice(None, None, None)
+            else:
+                slices[axis.index_in_array] = slice(
+                                        axis.index, axis.index+1,None)
+        isignal = [axis.index_in_array for axis in
+                   self.axes_manager.signal_axes]
+        isignal.sort()
+        slices[isignal[0]] = slice(None, None, None)
+        slices[isignal[1]] = slice(None, None, None)
+        data = np.nan_to_num(self.data.__getitem__(slices)
+                             ).sum(isignal[1]).sum(isignal[0]).squeeze()
         return data
 
     def _get_explorer(self, *args, **kwargs):
@@ -259,12 +443,11 @@ class Signal(t.HasTraits, MVA):
         if self.axes_manager.signal_dimension == 1:
             if nav_dim == 1:
                 return self._get_hse_1D_explorer(*args, **kwargs)
-            elif nav_dim == 2:
+            elif nav_dim >= 2:
                 return self._get_hse_2D_explorer(*args, **kwargs)
-            else:
-                return None
+
         if self.axes_manager.signal_dimension == 2:
-            if nav_dim == 1 or nav_dim == 2:
+            if nav_dim >= 1:
                 return self._get_hie_explorer(*args, **kwargs)
             else:
                 return None
@@ -399,17 +582,19 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         crop_in_units
         
         """
-        axis = self._get_positive_axis_index_index(axis)
+        axis = self.axes_manager._get_positive_index(axis)
         if i1 is not None:
             new_offset = self.axes_manager.axes[axis].axis[i1]
         # We take a copy to guarantee the continuity of the data
         self.data = self.data[
-        (slice(None),)*axis + (slice(i1, i2), Ellipsis)].copy()
+        (slice(None),)*axis + (slice(i1, i2), Ellipsis)]
 
         if i1 is not None:
             self.axes_manager.axes[axis].offset = new_offset
         self.get_dimensions_from_data()
         self.squeeze()
+        if copy is True:
+            self.data = self.data.copy()
 
     def crop_in_units(self, axis, x1=None, x2=None, copy=True):
         """Crops the data in a given axis. The range is given in the units of
@@ -468,7 +653,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             c2.index_in_array, c1.index_in_array
         self.axes_manager.axes[axis1] = c2
         self.axes_manager.axes[axis2] = c1
-        self.axes_manager.set_signal_dimension()
+        self.axes_manager.update_attributes()
 
     def rebin(self, new_shape):
         """
@@ -504,7 +689,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         ------
         tuple with the splitted signals
         """
-        axis = self._get_positive_axis_index_index(axis)
+        axis = self.axes_manager._get_positive_index(axis)
         if number_of_parts is None and steps is None:
             if not self._splitting_steps:
                 messages.warning_exit(
@@ -563,7 +748,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         Parameters
         ----------
         steady_axes : list
-            The indexes of the axes which dimensions do not change
+            The indices of the axes which dimensions do not change
         unfolded_axis : int
             The index of the axis over which all the rest of the axes (except
             the steady axes) will be unfolded
@@ -653,17 +838,12 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             self._shape_before_unfolding = None
             self._axes_manager_before_unfolding = None
 
-    def _get_positive_axis_index_index(self, axis):
-        if axis < 0:
-            axis = len(self.data.shape) + axis
-        return axis
-
     def iterate_axis(self, axis = -1, copy=True):
         # We make a copy to guarantee that the data in contiguous,
         # otherwise it will not return a view of the data
         if copy is True:
             self.data = self.data.copy()
-        axis = self._get_positive_axis_index_index(axis)
+        axis = self.axes_manager._get_positive_index(axis)
         unfolded_axis = axis - 1
         new_shape = [1] * len(self.data.shape)
         new_shape[axis] = self.data.shape[axis]
@@ -705,15 +885,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         ----------
         axis : int
             The axis over which the operation will be performed
-        return_signal : bool
-            If False the operation will be performed on the current object. If
-            True, the current object will not be modified and the operation
-             will be performed in a new signal object that will be returned.
 
         Returns
         -------
-        Depending on the value of the return_signal keyword, nothing or a
-        signal instance
+        s : Signal
 
         See also
         --------
@@ -725,25 +900,120 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         >>> s = Signal({'data' : np.random.random((64,64,1024))})
         >>> s.data.shape
         (64,64,1024)
-        >>> s.sum(-1)
-        >>> s.data.shape
+        >>> s.sum(-1).data.shape
         (64,64)
         # If we just want to plot the result of the operation
         s.sum(-1, True).plot()
+        
         """
-        if return_signal is True:
-            s = self.deepcopy()
-        else:
-            s = self
-        s.data = s.data.sum(axis)
-        s.axes_manager.axes.remove(s.axes_manager.axes[axis])
-        for _axis in s.axes_manager.axes:
-            if _axis.index_in_array > axis:
-                _axis.index_in_array -= 1
-        s.axes_manager.set_signal_dimension()
-        if return_signal is True:
-            return s
+        
+        axis = self.axes_manager._get_positive_index(axis)
+        s = self.get_deepcopy_with_new_data(self.data.sum(axis))
+        s.axes_manager.remove(s.axes_manager.axes[axis])
+        return s
+        
+    @auto_replot
+    def max(self, axis, return_signal=False):
+        """Returns a signal of the same type containing
+        the maximum along a given axis.
+
+        Parameters
+        ----------
+        axis : int
+            The axis over which the operation will be performed
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum, mean, min
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.max(-1).data.shape
+        (64,64)        
+        
+        """
+        
+        axis = self.axes_manager._get_positive_index(axis)
+        s = self.get_deepcopy_with_new_data(self.data.max(axis))
+        s.axes_manager.remove(s.axes_manager.axes[axis])
+        return s
+        
+    @auto_replot
+    def min(self, axis, return_signal=False):
+        """Returns a signal of the same type containing
+        the minimum along a given axis.
+
+        Parameters
+        ----------
+        axis : int
+            The axis over which the operation will be performed
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum, mean, max
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.min(-1).data.shape
+        (64,64)        
+        
+        """
+        
+        axis = self.axes_manager._get_positive_index(axis)
+        s = self.get_deepcopy_with_new_data(self.data.min(axis))
+        s.axes_manager.remove(s.axes_manager.axes[axis])
+        return s
+    
+    @auto_replot
+    def mean(self, axis):
+        """Average the data over the specify axis
+
+        Parameters
+        ----------
+        axis : int
+            The axis over which the operation will be performed
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum_in_mask, mean
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.mean(-1).data.shape
+        (64,64)
+        
+        """
+        
+        axis = self.axes_manager._get_positive_index(axis)
+        s = self.get_deepcopy_with_new_data(self.data.mean(axis))
+        s.axes_manager.remove(s.axes_manager.axes[axis])
+        return s
             
+    @auto_replot
     def diff(self, axis, order=1, return_signal=False):
         """Differentiate the data over the specify axis
 
@@ -752,15 +1022,6 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         axis: int
             The axis over which the operation will be performed
         order: the order of the derivative
-        return_signal : bool
-            If False the operation will be performed on the current object. If
-            True, the current object will not be modified and the operation
-            will be performed in a new signal object that will be returned.
-
-        Returns
-        -------
-        Depending on the value of the return_signal keyword, nothing or a
-        signal instance
 
         See also
         --------
@@ -772,68 +1033,17 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         >>> s = Signal({'data' : np.random.random((64,64,1024))})
         >>> s.data.shape
         (64,64,1024)
-        >>> s.diff(-1)
-        >>> s.data.shape
+        >>> s.diff(-1).data.shape
         (64,64,1023)
-        # If we just want to plot the result of the operation
-        s.diff(-1, True).plot()
+        
         """
-        if return_signal is True:
-            s = self.deepcopy()
-        else:
-            s = self
-        s.data = np.diff(s.data,order,axis)
+        
+        s = self.get_deepcopy_with_new_data(
+            np.diff(self.data,order,axis))
         axis = s.axes_manager.axes[axis]
-        axis.offset = axis.axis[:2].mean()
+        axis.offset += (axis.scale / 2)
         s.get_dimensions_from_data()
-        if return_signal is True:
-            return s
-
-    def mean(self, axis, return_signal = False):
-        """Average the data over the specify axis
-
-        Parameters
-        ----------
-        axis : int
-            The axis over which the operation will be performed
-        return_signal : bool
-            If False the operation will be performed on the current object. If
-            True, the current object will not be modified and the operation
-            will be performed in a new signal object that will be returned.
-
-        Returns
-        -------
-        Depending on the value of the return_signal keyword, nothing or a
-        signal instance
-
-        See also
-        --------
-        sum_in_mask, mean
-
-        Usage
-        -----
-        >>> import numpy as np
-        >>> s = Signal({'data' : np.random.random((64,64,1024))})
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.mean(-1)
-        >>> s.data.shape
-        (64,64)
-        # If we just want to plot the result of the operation
-        s.mean(-1, True).plot()
-        """
-        if return_signal is True:
-            s = self.deepcopy()
-        else:
-            s = self
-        s.data = s.data.mean(axis)
-        s.axes_manager.axes.remove(s.axes_manager.axes[axis])
-        for _axis in s.axes_manager.axes:
-            if _axis.index_in_array > axis:
-                _axis.index_in_array -= 1
-        s.axes_manager.set_signal_dimension()
-        if return_signal is True:
-            return s
+        return s
 
     def copy(self):
         return copy.copy(self)
@@ -1806,33 +2016,42 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 #        """
 #        utils.copy_energy_calibration(s, self)
 #
-    def estimate_variance(self, dc = None, gaussian_noise_var = None):
-        """Variance estimation supposing Poissonian noise
+    def estimate_poissonian_noise_variance(self,
+            dc=None, gaussian_noise_var=None):
+        """Variance estimation supposing Poissonian noise.
 
         Parameters
         ----------
         dc : None or numpy array
-            If None the SI is used to estimate its variance. Otherwise, the
+            If None the SI is used to estimate its variance.
+            Otherwise, the
             provided array will be used.
         Note
         ----
-        The gain_factor and gain_offset from the aquisition parameters are used
+        The gain_factor and gain_offset from the aquisition parameters 
+        are used
+        
         """
         gain_factor = 1
         gain_offset = 0
         correlation_factor = 1
         if not self.mapped_parameters.has_item("Variance_estimation"):
-            print("No Variance estimation parameters found in mapped"
-                  " parameters. The variance will be estimated supposing "
-                  "perfect poissonian noise")
-        if self.mapped_parameters.has_item('Variance_estimation.gain_factor'):
-            gain_factor = self.mapped_parameters.Variance_estimation.gain_factor
-        if self.mapped_parameters.has_item('Variance_estimation.gain_offset'):
-            gain_offset = self.mapped_parameters.Variance_estimation.gain_offset
+            print("No Variance estimation parameters found in mapped "
+                  "parameters. The variance will be estimated supposing"
+                  " perfect poissonian noise")
+        if self.mapped_parameters.has_item(
+            'Variance_estimation.gain_factor'):
+            gain_factor = self.mapped_parameters.\
+                Variance_estimation.gain_factor
+        if self.mapped_parameters.has_item(
+            'Variance_estimation.gain_offset'):
+            gain_offset = self.mapped_parameters.Variance_estimation.\
+                gain_offset
         if self.mapped_parameters.has_item(
             'Variance_estimation.correlation_factor'):
             correlation_factor = \
-                self.mapped_parameters.Variance_estimation.correlation_factor
+                self.mapped_parameters.Variance_estimation.\
+                    correlation_factor
         print "Gain factor = ", gain_factor
         print "Gain offset = ", gain_offset
         print "Correlation factor = ", correlation_factor
@@ -1841,8 +2060,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         self.variance = dc * gain_factor + gain_offset
         if self.variance.min() < 0:
             if gain_offset == 0 and gaussian_noise_var is None:
-                print "The variance estimation results in negative values"
-                print "Maybe the gain_offset is wrong?"
+                raise ValueError("The variance estimation results"
+                       "in negative values"
+                       "Maybe the gain_offset is wrong?")
                 self.variance = None
                 return
             elif gaussian_noise_var is None:
@@ -1852,8 +2072,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 np.Inf)
             else:
                 print "Clipping the variance to the gaussian_noise_var"
-                self.variance = np.clip(self.variance, gaussian_noise_var,
-                np.Inf)
+                self.variance = np.clip(self.variance,
+                                        gaussian_noise_var,
+                                        np.Inf)
                 
     def get_current_signal(self):
         data = self.data
@@ -1864,15 +2085,15 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         cs.data = self()
         for axis in cs.axes_manager.navigation_axes:
             cs.axes_manager.axes.remove(axis)
-            cs.axes_manager.set_signal_dimension()
+            cs.axes_manager.update_attributes()
         cs.axes_manager._set_axes_index_in_array_from_position()
         if cs.tmp_parameters.has_item('filename'):
             basename = cs.tmp_parameters.filename
             ext = cs.tmp_parameters.extension
             cs.tmp_parameters.filename = (basename + '_' +
-                    str(self.axes_manager.indexes) + '.' + ext)
+                    str(self.axes_manager.indices) + '.' + ext)
         cs.mapped_parameters.title = (cs.mapped_parameters.title +
-                    ' ' + str(self.axes_manager.indexes))
+                    ' ' + str(self.axes_manager.indices))
         return cs
         
     def _get_navigation_signal(self):
@@ -1906,15 +2127,74 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         return self.get_current_signal()
         
     def __len__(self):
-        if self.axes_manager.navigation_size == 0:
-            return 1
-        else:
-            return self.axes_manager.navigation_size
+        return self.axes_manager.signal_shape[0]
+        
+# Implement binary operators
+for name in (
+    # Arithmetic operators
+    "__add__",
+    "__sub__",
+    "__mul__",
+    "__floordiv__",
+    "__mod__",
+    "__divmod__",
+    "__pow__",
+    "__lshift__",
+    "__rshift__",
+    "__and__",
+    "__xor__",
+    "__or__",
+    "__div__",
+    "__truediv__",
+    # Comparison operators
+    "__lt__",
+    "__le__",
+    "__eq__",
+    "__ne__",
+    "__ge__",
+    "__gt__",
+    ):
+    exec(
+        ("def %s(self, other):\n" % name) + 
+        ("   return self._binary_operator_ruler(other, \'%s\')\n" %
+                                                                name))
+    exec("%s.__doc__ = int.%s.__doc__" % (name, name))
+    exec("setattr(Signal, \'%s\', %s)" % (name, name))
+    # The following commented line enables the operators with swapped
+    # operands. They should be defined only for commutative operators
+    # but for simplicity we don't support this at all atm. 
+    #~exec("setattr(Signal, \'%s\', %s)" % (name[:2] + "r" + name[2:],
+                                          #~name))
+
+# Implement unary arithmetic operations
+for name in (
+    "__neg__",
+    "__pos__",
+    "__abs__",
+    "__invert__",):
+    exec(
+        ("def %s(self):" % name) + 
+        ("   return self._unary_operator_ruler(\'%s\')" % name))
+    exec("%s.__doc__ = int.%s.__doc__" % (name, name))
+    exec("setattr(Signal, \'%s\', %s)" % (name, name))
+
 
 class SpecialSlicers:
     def __init__(self, signal, isNavigation):
         self.isNavigation = isNavigation
         self.signal = signal
+        
     def __getitem__(self, slices):
         return self.signal.__getitem__(slices, self.isNavigation)
+        
+    def __setitem__(self, i, j):
+        """x.__setitem__(i, y) <==> x[i]=y
+        
+        """
+        if isinstance(j, Signal):
+            j = j.data
+        self.signal.__getitem__(i, self.isNavigation).data[:] = j
+        
+    def __len__(self):
+        return self.signal.__len__()
 

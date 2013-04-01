@@ -54,6 +54,7 @@ class VolumePlasmonDrude(Component):
     def __init__(self):
         Component.__init__(self, ['intensity', 'plasmon_energy',
         'plasmon_linewidth'])
+        self._position = self.plasmon_energy
         self.intensity.value = 1
         self.plasmon_energy.value = 7.1
         self.plasmon_linewidth.value = 2.3

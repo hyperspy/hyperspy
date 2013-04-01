@@ -6,7 +6,8 @@ The Signal class and its subclasses
 -----------------------------------
 
 .. WARNING::
-    This subsection can be a bit confusing for beginners. Do not worry if you do not understand it all.
+    This subsection can be a bit confusing for beginners.
+    Do not worry if you do not understand it all.
     
 
 Hyperspy stores hyperspectra in the :py:class:`~.signal.Signal` class, that is the object that you get when e.g. you load a single file using :py:func:`~.io.load`. Most of the data analysis functions are also contained in this class or its specialized subclasses. The :py:class:`~.signal.Signal` class contains general functionality that is available to all the subclasses. The subclasses provide functionality that is normally specific to a particular type of data, e.g. the :py:class:`~.signals.spectrum.Spectrum` class provides common functionality to deal with spectral data and :py:class:`~.signals.eels.EELSSpectrum` (which is a subclass of :py:class:`~.signals.spectrum.Spectrum`) adds extra functionality to the :py:class:`~.signals.spectrum.Spectrum` class for electron energy-loss spectroscopy data analysis.
@@ -23,6 +24,7 @@ loading hyperspy.
 
 The different signals store other objects in what are called attributes. For examples, the hyperspectral data is stored in the :py:attr:`~.signal.Signal.data` attribute, the original parameters in the :py:attr:`~.signal.Signal.original_parameters` attribute, the mapped parameters in the :py:attr:`~.signal.Signal.mapped_parameters` attribute and the axes information (including calibration) can be accessed (and modified) in the :py:attr:`~.signal.Signal.axes_manager` attribute.
 
+.. _transforming.signal:
 
 Transforming between signal subclasses
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -61,10 +63,303 @@ When transforming between spectrum and image classes the order in which the data
 
 Below we briefly introduce some of the most commonly used tools (methods). For more details about a particular method click on its name. For a detailed list of all the methods available see the :py:class:`~.signal.Signal` documentation.
 
+The navigation and signal dimensions
+------------------------------------
+
+Hyperspy can deal with data of arbitrary dimensions. Each dimension is internally
+classified as either "navigation" or "signal" and the 
+way this classification is done determines the behaviour of the signal.
+
+The concept is probably best understood with 
+an example: let's imagine a three dimensional dataset. This dataset 
+could be an spectrum image acquired by scanning over a sample in two 
+dimensions. In Hyperspy's terminology the spectrum dimension would be 
+the signal dimension and the two other dimensions would be the navigation 
+dimensions. We could see the same dataset as an image stack instead. 
+Actually it could has been acquired by capturing two
+dimensional images at different wavelenghts. Then it would be natural 
+to identify the two spatial dimensions as the signal dimensions and 
+the wavelenght dimension as the navigation dimension. 
+However, for data analysis purposes, one may like to operate with an image stack 
+as if it was a set of spectra or viceversa. One can easily switch between these 
+two alternative ways of classifiying the dimensions of a three-dimensional dataset by :ref:`transforming between Spectrum and Image subclasses <transforming.signal>`.
+
+.. NOTE::
+    Although each dimension can be arbitrarily classified as "navigation dimension"
+    or "signal dimension", for most common tasks there is no need to modify 
+    Hyperspy's default choice.
+
+
 Generic tools
 -------------
 
-These are the methods which are available to all the signals.
+These are the tools that are available to all the signals.
+
+.. _signal.indexing:
+
+Indexing
+^^^^^^^^
+.. versionadded:: 0.6
+
+Indexing the :py:class:`~.signal.Signal`  provides a
+powerful, convenient and Pythonic way to access and modify its data.
+It is a concept that might take some time to grasp but, once 
+mastered, it can greatly simplify many common
+signal processing tasks.
+ 
+Indexing refers to any use of the square brackets ([]) to index the
+data stored in a :py:class:`~.signal.Signal`. The result of indexing 
+a :py:class:`~.signal.Signal` is another :py:class:`~.signal.Signal` 
+that shares a subset of the data of the original :py:class:`~.signal.Signal`.
+ 
+ 
+Hyperspy's Signal indexing is similar to numpy array indexing and, therefore, rather that 
+explaining this feature in detail we will just give some examples of usage here. The interested
+reader is encouraged to read the `numpy documentation on the subject  <http://ipython.org/>`_ 
+for a detailed explanation of the concept. When doing so it is worth to keep in mind the following main differences:
+
+* Hyperspy (unlike numpy) does not support:
+
+    * Indexing using arrays.
+    * Adding new axes using the newaxis object.
+    
+* Hyperspy (unlike numpy):
+
+    * Supports indexing with decimal numbers.
+    * Uses the natural order when indexing i.e. [x, y, z,...] (hyperspy) vs [...,z,y,x] (numpy)
+    
+Lets start by indexing a single spectrum:
+
+
+.. code-block:: python
+    
+    >>> s = signals.Spectrum({'data' : np.arange(10)})
+    >>> s
+    <Spectrum, title: , dimensions: (10,)>
+    >>> s.data
+    array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    >>> s[0]
+    <Spectrum, title: , dimensions: (1,)>
+    >>> s[0].data
+    array([0])
+    >>> s[9].data
+    array([9])
+    >>> s[-1].data
+    array([9])
+    >>> s[:5]
+    <Spectrum, title: , dimensions: (5,)>
+    >>> s[:5].data
+    array([0, 1, 2, 3, 4])
+    >>> s[5::-1]
+    <Spectrum, title: , dimensions: (6,)>
+    >>> s[5::-1]
+    array([5, 4, 3, 2, 1, 0])
+    >>> s[5::2]
+    <Spectrum, title: , dimensions: (3,)>
+    >>> s[5::2].data
+    array([5, 7, 9])   
+    
+
+Unlike numpy, Hyperspy supports indexing using decimal numbers, in which case
+Hyperspy indexes using the axis scales instead of the indices.
+ 
+.. code-block:: python
+
+    >>> s = signals.Spectrum({'data' : np.arange(10)})
+    >>> s
+    <Spectrum, title: , dimensions: (10,)>
+    >>> s.data
+    array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    >>> s.axes_manager[0].scale = 0.5
+    >>> s.axes_manager[0].axis
+    array([ 0. ,  0.5,  1. ,  1.5,  2. ,  2.5,  3. ,  3.5,  4. ,  4.5])
+    >>> s[0.5:4.].data
+    array([1, 2, 3, 4, 5, 6, 7])
+    >>> s[0.5:4].data
+    array([1, 2, 3])
+    >>> s[0.5:4:2].data
+    array([1, 3])
+
+
+Importantly the original :py:class:`~.signal.Signal` and its "indexed self" share their data and, therefore, modifying the value of the data in one modifies the same value in the other.
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum({'data' : np.arange(10)})
+    >>> s
+    <Spectrum, title: , dimensions: (10,)>
+    >>> s.data
+    array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    >>> si = s[::2]
+    >>> si.data
+    array([0, 2, 4, 6, 8])
+    >>> si.data[:] = 10
+    >>> si.data
+    array([10, 10, 10, 10, 10])
+    >>> s.data
+    array([10,  1, 10,  3, 10,  5, 10,  7, 10,  9])
+    >>> s.data[:] = 0
+    >>> si.data
+    array([0, 0, 0, 0, 0])
+    
+
+Of course it is also possible to use the same syntax to index multidimensional data.
+The first indexes are always the navigation indices in "natural order" i.e. x,y,z...
+and the following indexes are the signal indices also in natural order.
+    
+.. code-block:: python
+    
+    >>> s = signals.Spectrum({'data' : np.arange(2*3*4).reshape((2,3,4))})
+    >>> s
+    <Spectrum, title: , dimensions: (10, 10, 10)>
+    >>> s.data
+    array([[[ 0,  1,  2,  3],
+        [ 4,  5,  6,  7],
+        [ 8,  9, 10, 11]],
+
+       [[12, 13, 14, 15],
+        [16, 17, 18, 19],
+        [20, 21, 22, 23]]])
+    >>> s.axes_manager[0].name = 'y'
+    >>> s.axes_manager[1].name = 'x'
+    >>> s.axes_manager[2].name = 't'
+    >>> s.axes_manager.signal_axes
+    [<t axis, index: 2>]
+    >>> s.axes_manager.navigation_axes
+    [<y axis, index: 0>, <x axis, index: 1>]
+    >>> s[0,0].data
+    array([0, 1, 2, 3])
+    >>> s[0,0].axes_manager.axes
+    [<t axis, index: 0>]
+    >>> s[0,0,::-1].data
+    array([3, 2, 1, 0])
+    >>> s[...,0]
+    <Spectrum, title: , dimensions: (2, 3)>
+    >>> s[...,0].axes_manager.axes
+    [<y axis, index: 0>, <x axis, index: 1>]
+    >>> s[...,0].data
+    array([[ 0,  4,  8],
+       [12, 16, 20]])
+       
+For convenience and clarity it is possible to index the signal and navigation
+dimensions independently:
+
+.. code-block:: python
+    
+    >>> s = signals.Spectrum({'data' : np.arange(2*3*4).reshape((2,3,4))})
+    >>> s
+    <Spectrum, title: , dimensions: (10, 10, 10)>
+    >>> s.data
+    array([[[ 0,  1,  2,  3],
+        [ 4,  5,  6,  7],
+        [ 8,  9, 10, 11]],
+
+       [[12, 13, 14, 15],
+        [16, 17, 18, 19],
+        [20, 21, 22, 23]]])
+    >>> s.axes_manager[0].name = 'y'
+    >>> s.axes_manager[1].name = 'x'
+    >>> s.axes_manager[2].name = 't'
+    >>> s.axes_manager.signal_axes
+    [<t axis, index: 2>]
+    >>> s.axes_manager.navigation_axes
+    [<y axis, index: 0>, <x axis, index: 1>]
+    >>> s.navigation_indexer[0,0].data
+    array([0, 1, 2, 3])
+    >>> s.navigation_indexer[0,0].axes_manager.axes
+    [<t axis, index: 0>]
+    >>> s.signal_indexer[0]
+    <Spectrum, title: , dimensions: (2, 3)>
+    >>> s.signal_indexer[0].axes_manager.axes
+    [<y axis, index: 0>, <x axis, index: 1>]
+    >>> s.signal_indexer[0].data
+    array([[ 0,  4,  8],
+       [12, 16, 20]])
+       
+
+The same syntax can be used to set the data values:
+
+.. code-block:: python
+    
+    >>> s = signals.Spectrum({'data' : np.arange(2*3*4).reshape((2,3,4))})
+    >>> s
+    <Spectrum, title: , dimensions: (10, 10, 10)>
+    >>> s.data
+    array([[[ 0,  1,  2,  3],
+        [ 4,  5,  6,  7],
+        [ 8,  9, 10, 11]],
+
+       [[12, 13, 14, 15],
+        [16, 17, 18, 19],
+        [20, 21, 22, 23]]])
+    >>> s.navigation_indexer[0,0].data
+    array([0, 1, 2, 3])
+    >>> s.navigation_indexer[0,0] = 1
+    >>> s.navigation_indexer[0,0].data
+    array([1, 1, 1, 1])
+    >>> s.navigation_indexer[0,0] = s[1,1]
+    >>> s.navigation_indexer[0,0].data
+    array([16, 17, 18, 19])
+
+
+       
+.. _signal.operations:
+       
+Signal operations
+^^^^^^^^^^^^^^^^^
+.. versionadded:: 0.6
+
+:py:class:`~.signal.Signal` supports all the Python binary arithmetic
+opearations (+, -, *, //, %, divmod(), pow(), **, <<, >>, &, ^, |),
+augmented binary assignments (+=, -=, *=, /=, //=, %=, **=, <<=, >>=, 
+&=, ^=, |=), unary operations (-, +, abs() and ~) and rich comparisons 
+operations (<, <=, ==, x!=y, <>, >, >=).
+
+These operations are performed element-wise. When the dimensions of the 
+signals are not equal `numpy broadcasting rules apply  <http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_ 
+*first*. In addition Hyperspy extend numpy's broadcasting rules to 
+the following cases:
+
+
+
++------------+----------------------+------------------+
+| **Signal** | **NavigationShape**  | **SignalShape**  |
++============+======================+==================+
+|   s1       |        a             |      b           |
++------------+----------------------+------------------+
+|   s2       |       (0,)           |      a           |
++------------+----------------------+------------------+
+|   s1 + s2  |       a              |      b           |
++------------+----------------------+------------------+
+|   s2 + s1  |       a              |      b           |
++------------+----------------------+------------------+
+
+
++------------+----------------------+------------------+
+| **Signal** | **NavigationShape**  | **SignalShape**  |
++============+======================+==================+
+|   s1       |        a             |      b           |
++------------+----------------------+------------------+
+|   s2       |       (0,)           |      b           |
++------------+----------------------+------------------+
+|   s1 + s2  |       a              |      b           |
++------------+----------------------+------------------+
+|   s2 + s1  |       a              |      b           |
++------------+----------------------+------------------+
+
+
++------------+----------------------+------------------+
+| **Signal** | **NavigationShape**  | **SignalShape**  |
++============+======================+==================+
+|   s1       |       (0,)           |      a           |
++------------+----------------------+------------------+
+|   s2       |       (0,)           |      b           |
++------------+----------------------+------------------+
+|   s1 + s2  |       b              |      a           |
++------------+----------------------+------------------+
+|   s2 + s1  |       a              |      b           |
++------------+----------------------+------------------+
+
 
 Cropping
 ^^^^^^^^

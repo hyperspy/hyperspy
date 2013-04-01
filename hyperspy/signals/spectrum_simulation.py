@@ -17,7 +17,6 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from scipy.ndimage.filters import gaussian_filter1d
 
 from hyperspy.decorators import auto_replot
 from hyperspy.signals.spectrum import Spectrum
@@ -47,16 +46,5 @@ class SpectrumSimulation(Spectrum):
         noise = np.random.normal(0, std, self.data.shape, **kwargs)
         self.data += noise
 
-    @auto_replot    
-    def apply_spectral_gaussian_filter(self, FWHM):
-        """Applies a Gaussian filter in the spectral dimension.
-        
-        Parameters
-        ----------
-        FWHM : float
-        
-        """
-        if FWHM > 0:
-            self.data = gaussian_filter1d(self.data, axis = -1, 
-            sigma = FWHM/2.35482)
+
 

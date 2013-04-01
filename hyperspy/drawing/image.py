@@ -39,7 +39,7 @@ class ImagePlot:
         arguments.
     pixel_units : {None, string}
         The pixel units for the scale bar. Normally 
-    plot_scalebar, plot_ticks, plot_colorbar, plot_indexes : bool
+    plot_scalebar, plot_ticks, plot_colorbar, plot_indices : bool
     title : str
         The title is printed at the top of the image.
     window_title : str
@@ -70,7 +70,7 @@ class ImagePlot:
         self.auto_contrast = True
         self._ylabel = ''
         self._xlabel = ''
-        self.plot_indexes = True
+        self.plot_indices = True
         self._text = None
         self._text_position = (0, 1.05,)
         self.axes_manager = None
@@ -118,7 +118,7 @@ class ImagePlot:
                 self.plot_ticks = True
             else:
                 factor = 1
-        self._aspect = factor * xaxis.scale / yaxis.scale
+        self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
 
     def optimize_contrast(self, data, perc = 0.01):
         dc = data.copy().ravel()
@@ -134,6 +134,7 @@ class ImagePlot:
         
     def create_figure(self, max_size=8, min_size=2):
         if self.plot_scalebar is True:
+        
             wfactor = 1.1
         else:
             wfactor = 1
@@ -143,6 +144,8 @@ class ImagePlot:
                            (width * wfactor, height))
         self.figure = utils.create_figure(
                         figsize=figsize.clip(min_size, max_size))
+        self.figure.canvas.mpl_connect('draw_event', self._on_draw)
+
         
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
@@ -152,6 +155,8 @@ class ImagePlot:
         if self.plot_ticks is False:
             self.ax.set_xticks([])
             self.ax.set_yticks([])
+        self.ax.hspy_fig = self
+
         
     def plot(self):
         self.configure()
@@ -163,10 +168,10 @@ class ImagePlot:
             self.optimize_contrast(data)
         if (not self.axes_manager or 
             self.axes_manager.navigation_size==0):
-            self.plot_indexes = False
-        if self.plot_indexes is True:
+            self.plot_indices = False
+        if self.plot_indices is True:
             self._text = self.ax.text(*self._text_position,
-                            s=str(self.axes_manager.indexes[::-1]),
+                            s=str(self.axes_manager.indices[::-1]),
                             transform = self.ax.transAxes,
                             fontsize=12,
                             color='red')
@@ -193,8 +198,8 @@ class ImagePlot:
         data = self.data_function()
         numrows, numcols = data.shape
         def format_coord(x, y):
-            col = int(x+0.5)
-            row = int(y+0.5)
+            col = self.xaxis.value2index(x)
+            row = self.yaxis.value2index(y)
             if col>=0 and col<numcols and row>=0 and row<numrows:
                 z = data[row,col]
                 return 'x=%1.4f, y=%1.4f, intensity=%1.4f'%(x, y, z)
@@ -213,8 +218,8 @@ class ImagePlot:
                        vmax=self.vmax,
                        extent=self._extent,
                        aspect=self._aspect)
-        if self.plot_indexes is True:
-            self._text.set_text((self.axes_manager.indexes[::-1]))
+        if self.plot_indices is True:
+            self._text.set_text((self.axes_manager.indices[::-1]))
         self.figure.canvas.draw()
         
     def _update_image(self):
@@ -273,3 +278,21 @@ class ImagePlot:
     def close(self):
         if utils.does_figure_object_exists(self.figure) is True:
             plt.close(self.figure)
+            
+    def _on_draw(self, *args):
+        canvas = self.figure.canvas
+        self._background = canvas.copy_from_bbox(self.figure.bbox)
+        self._draw_animated()
+        
+    def _draw_animated(self):
+        canvas = self.ax.figure.canvas
+        canvas.restore_region(self._background)
+        ax = self.ax
+        artists = []
+        artists.extend(ax.collections)
+        artists.extend(ax.patches)
+        artists.extend(ax.lines)
+        artists.extend(ax.texts)
+        artists.extend(ax.artists)
+        [ax.draw_artist(a) for a in artists if a.get_animated()]
+        canvas.blit()

@@ -60,25 +60,25 @@ class EELSCLEdge(Component):
     
     Attributes
     ----------
-    energy_shift : float
-        Energy shift of the CL edge in respect to the CL edge onset
-         energy as defined in the internal tables GOS.energy_onset.
-         It is a component.Parameter instance.
-    intensity : float
+    onset_energy : Parameter
+        The edge onset position
+    intensity : Parameter
         The factor by which the cross section is multiplied, what in 
         favourable cases is proportional to the number of atoms of 
-        the element. It is a component.Parameter instance.
-    fine_structure_coeff : list of floats
+        the element. It is a component.Parameter instance. 
+        It is fixed by default.
+    fine_structure_coeff : Parameter
         The coefficients of the spline that fits the fine structure. 
         Fix this parameter to fix the fine structure. It is a 
         component.Parameter instance.
+    effective_angle : Parameter
+        The effective collection angle. It is automatically 
+        calculated by set_microscope_parameters. It is a 
+        component.Parameter instance. It is fixed by default.
     fine_structure_smoothing : float between 0 and 1
         Controls the level of smoothing of the fine structure model.
         Decreasing the value increases the level of smoothing.
-    effective_angle : float
-        The effective collection angle. It is automatically 
-        calculated by set_microscope_parameters. It is a 
-        component.Parameter instance.
+
     fine_structure_active : bool
         Activates/deactivates the fine structure feature. Its 
         default value can be choosen in the preferences.
@@ -90,7 +90,10 @@ class EELSCLEdge(Component):
     def __init__(self, element_subshell, GOS=None):
         # Declare the parameters
         Component.__init__(self,
-            ['energy_shift', 'intensity', 'fine_structure_coeff', 'effective_angle'])
+            ['intensity',
+             'fine_structure_coeff',
+             'effective_angle',
+             'onset_energy'])
         self.name = element_subshell
         self.element, self.subshell = element_subshell.split('_')
         self.energy_scale = None
@@ -98,16 +101,6 @@ class EELSCLEdge(Component):
         self.fine_structure_active = preferences.EELS.fine_structure_active
         self.fine_structure_width = preferences.EELS.fine_structure_width
         self.fine_structure_coeff.ext_force_positive = False
-        
-        self.energy_shift.value = 0
-        self.energy_shift.free = False
-        self.energy_shift.ext_force_positive = False
-        self.free_energy_shift = False
-        
-        self.intensity.grad = self.grad_intensity
-        self.intensity.value = 1
-        self.intensity.bmin = 0.
-        self.intensity.bmax = None
         self.GOS = None
         # Set initial actions
         if GOS is None:
@@ -119,15 +112,24 @@ class EELSCLEdge(Component):
                 messages.information(
                     'Hartree-Slater GOS not available'
                     'Using hydrogenic GOS')
-        if self.GOS is not None:
-            return
-        if GOS=='Hartree-Slater':
-            self.GOS = HartreeSlaterGOS(element_subshell)
-        elif GOS == 'hydrogenic':
-            self.GOS = HydrogenicGOS(element_subshell)
-        else:
-            raise ValueError('gos must be one of: None, \'hydrogenic\''
-                              ' or \'Hartree-Slater\'')
+        if self.GOS is None:
+            if GOS=='Hartree-Slater':
+                self.GOS = HartreeSlaterGOS(element_subshell)
+            elif GOS == 'hydrogenic':
+                self.GOS = HydrogenicGOS(element_subshell)
+            else:
+                raise ValueError(
+                    'gos must be one of: None, \'hydrogenic\''
+                                  ' or \'Hartree-Slater\'')
+        self.onset_energy.value = self.GOS.onset_energy
+        self.onset_energy.free = False
+        self._position = self.onset_energy
+        self.free_onset_energy = False        
+        self.intensity.grad = self.grad_intensity
+        self.intensity.value = 1
+        self.intensity.bmin = 0.
+        self.intensity.bmax = None
+
                     
     # Automatically fix the fine structure when the fine structure is 
     # disable.
@@ -213,15 +215,7 @@ class EELSCLEdge(Component):
     
     # It is needed because the property cannot be used to sort the edges
     def _onset_energy(self):
-        return self.GOS.onset_energy + self.energy_shift.value
-    
-    @property
-    def onset_energy(self):
-        return self.GOS.onset_energy + self.energy_shift.value
-        
-    @onset_energy.setter
-    def onset_energy(self, value):
-        self.energy_shift.value = value - self.GOS.onset_energy
+        return self.onset_energy.value
         
     def _set_fine_structure_coeff(self):
         if self.energy_scale is None:
@@ -232,12 +226,9 @@ class EELSCLEdge(Component):
                   self.energy_scale)) + 4        
         self.fine_structure_coeff.bmin = None
         self.fine_structure_coeff.bmax = None
-        self.fine_structure_coeff.value = np.zeros(
-            self.fine_structure_coeff._number_of_elements).tolist()
         self._calculate_knots()
         if self.fine_structure_coeff.map is not None:
-            self.fine_structure_coeff.create_array(
-                self.fine_structure_coeff.map.shape)
+            self.fine_structure_coeff._create_array()
             
     def set_microscope_parameters(self, E0, alpha, beta, energy_scale):
         """
@@ -264,10 +255,10 @@ class EELSCLEdge(Component):
         # Integration over q using splines                                        
         angle = self.effective_angle.value * 1e-3 # in rad
         self.tab_xsection = self.GOS.integrateq(
-                self.energy_shift.value, angle, self.E0)                
+                self.onset_energy.value, angle, self.E0)                
         # Calculate extrapolation powerlaw extrapolation parameters
-        E1 = self.GOS.energy_axis[-2] + self.energy_shift.value
-        E2 = self.GOS.energy_axis[-1] + self.energy_shift.value
+        E1 = self.GOS.energy_axis[-2] + self.GOS.energy_shift
+        E2 = self.GOS.energy_axis[-1] + self.GOS.energy_shift
         y1 = self.GOS.qint[-2] # in m**2/bin */
         y2 = self.GOS.qint[-1] # in m**2/bin */
         self.r = math.log(y2 / y1) / math.log(E1 / E2)
@@ -276,11 +267,11 @@ class EELSCLEdge(Component):
         # Connect them at this point where it is certain that all the 
         # parameters are well defined
         self.effective_angle.connect(self._integrate_GOS)
-        self.energy_shift.connect(self._integrate_GOS)
-        self.energy_shift.connect(self._calculate_knots)
+        self.onset_energy.connect(self._integrate_GOS)
+        self.onset_energy.connect(self._calculate_knots)
         
     def _calculate_knots(self):    
-        start = self.GOS.onset_energy + self.energy_shift.value
+        start = self.onset_energy.value
         stop = start + self.fine_structure_width
         self.__knots = np.r_[[start]*4,
         np.linspace(start,
@@ -292,14 +283,14 @@ class EELSCLEdge(Component):
         """Returns the number of counts in barns
         
         """
-        Emax = self.GOS.energy_axis[-1] + self.energy_shift.value 
+        Emax = self.GOS.energy_axis[-1] + self.GOS.energy_shift
         cts = np.zeros((len(E)))
-        bsignal = (E >= self.onset_energy)
+        bsignal = (E >= self.onset_energy.value)
         if self.fine_structure_active is True:
             bfs = bsignal * (
-                E < (self.onset_energy + self.fine_structure_width))
+                E < (self.onset_energy.value + self.fine_structure_width))
             cts[bfs] = splev(E[bfs],
-                (self.__knots, self.fine_structure_coeff.value + [0,]*4,
+                (self.__knots, self.fine_structure_coeff.value + (0,)*4,
                  3))
             bsignal[bfs] = False
         itab = bsignal * (E <= Emax)
@@ -342,13 +333,18 @@ class EELSCLEdge(Component):
             'data' : data,
             'axes' : self.intensity._axes_manager._get_axes_dicts()})
         s.get_dimensions_from_data()
-        s.axes_manager.signal_axes[0].offset = self.onset_energy
-        current_indexes = self.intensity._axes_manager.indexes
+        s.axes_manager.signal_axes[0].offset = self.onset_energy.value
+        # Backup the axes_manager
+        original_axes_manager = self._axes_manager
+        self._axes_manager = s.axes_manager
         for spectrum in s:
-            self.charge_value_from_map(s.axes_manager.indexes)
+            self.charge_value_from_map()
             spectrum.data[:] = self.function(
                                     s.axes_manager.signal_axes[0].axis)
-        self.charge_value_from_map(current_indexes)
+        # Restore the axes_manager and the values
+        self._axes_manager = original_axes_manager 
+        self.charge_value_from_map()
+        
         s.mapped_parameters.title = self.name.replace(
         '_',' ') + ' fine structure'
         

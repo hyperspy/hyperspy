@@ -57,6 +57,7 @@ class Arctan(Component):
 
         self.isbackground = False
         self.isconvolved = False
+        self._position = self.x0
 
     def function(self,x):
         A = self.A.value

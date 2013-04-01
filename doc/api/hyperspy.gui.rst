@@ -9,6 +9,14 @@ gui Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`axes` Module
+------------------
+
+.. automodule:: hyperspy.gui.axes
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`eels` Module
 ------------------
 

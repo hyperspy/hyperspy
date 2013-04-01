@@ -17,6 +17,14 @@ components Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`arctan` Module
+--------------------
+
+.. automodule:: hyperspy.components.arctan
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`bleasdale` Module
 -----------------------
 
