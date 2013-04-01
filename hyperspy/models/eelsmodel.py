@@ -93,7 +93,10 @@ class EELSModel(Model):
             self._spectrum = value
             self.spectrum._are_microscope_parameters_missing()
         else:
-            raise WrongObjectError(str(type(value)), 'EELSSpectrum')
+            raise ValueError(
+                "This attribute can only contain an EELSSpectrum "
+                "but an object of type %s was provided" % 
+                str(type(value)))
                     
             
     def _touch(self):
