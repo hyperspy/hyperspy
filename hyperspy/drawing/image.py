@@ -118,7 +118,7 @@ class ImagePlot:
                 self.plot_ticks = True
             else:
                 factor = 1
-        self._aspect = factor * xaxis.scale / yaxis.scale
+        self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
 
     def optimize_contrast(self, data, perc = 0.01):
         dc = data.copy().ravel()
