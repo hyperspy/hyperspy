@@ -637,23 +637,24 @@ class Component(object):
         """
         Sets parameters in a component to free.
 
-        Parameters:
-        -----------
-        parameter_name_list: None or list of strings, optional
+        Parameters
+        ----------
+        parameter_name_list : None or list of strings, optional
             If None, will set all the parameters to free.
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to free.
 
-        Example:
+        Examples
         --------
-        v1 = components.Voigt()
-        v1.set_parameters_free()
+        >>> v1 = components.Voigt()
+        >>> v1.set_parameters_free()
+        >>> v1.set_parameters_free(parameter_name_list=['area','centre'])
 
-        v1.set_parameters_free(parameter_name_list=['area','centre'])
-
-        See also:
-        ---------
+        See also
+        --------
         set_parameters_not_free
+        hyperspy.model.Model.set_parameters_free
+        hyperspy.model.Model.set_parameters_not_free
         """
 
         parameter_list = []
@@ -671,23 +672,24 @@ class Component(object):
         """
         Sets parameters in a component to not free.
 
-        Parameters:
-        -----------
-        parameter_name_list: None or list of strings, optional
+        Parameters
+        ----------
+        parameter_name_list : None or list of strings, optional
             If None, will set all the parameters to not free.
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to not free.
 
-        Example:
+        Examples
         --------
-        v1 = components.Voigt()
-        v1.set_parameters_not_free()
+        >>> v1 = components.Voigt()
+        >>> v1.set_parameters_not_free()
+        >>> v1.set_parameters_not_free(parameter_name_list=['area','centre'])
 
-        v1.set_parameters_not_free(parameter_name_list=['area','centre'])
-
-        See also:
-        ---------
-        set_parameter_free
+        See also
+        --------
+        set_parameters_free
+        hyperspy.model.Model.set_parameters_free
+        hyperspy.model.Model.set_parameters_not_free
         """        
 
         parameter_list = []
