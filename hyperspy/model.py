@@ -1236,11 +1236,13 @@ class Model(list):
         Examples
         --------
         Signal range set interactivly
+
         >>> g1 = components.Gaussian()
         >>> m.append(g1)
         >>> m.fit_component(g1)
         
         Signal range set through direct input
+
         >>> m.fit_component(g1, signal_range=(50,100))
         """
         
