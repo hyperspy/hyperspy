@@ -149,6 +149,7 @@ Similar functions exist for :py:class:`~.model.Model`: :py:func:`~.model.set_par
     >>> g2.free_parameters 
     set([<Parameter A of Gaussian component>])
     >>> m.set_parameters_free([g1], parameter_name_list=['sigma'])
+    >>> g1.free_parameters 
     set([<Parameter A of Gaussian component>,
          <Parameter sigma of Gaussian component>])
     >>> g2.free_parameters 
