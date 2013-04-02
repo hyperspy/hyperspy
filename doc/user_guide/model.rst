@@ -121,6 +121,7 @@ The value of a particular parameter can be accessed in the :py:attr:`~.component
 To set the the `free` state of a parameter change the :py:attr:`~.component.Parameter.free` attribute. To change the `free` state of all parameters in a component to `True` use :py:func:`~.component.set_parameters_free`, and :py:func:`~.component.set_parameters_not_free` for setting them to `False`. Specific parameter-names can also be specified by using `parameter_name_list`, shown in the example:
 
 .. code-block:: python
+
     >>> g = components.Gaussian()
     >>> g.free_parameters
     set([<Parameter A of Gaussian component>,
@@ -132,9 +133,11 @@ To set the the `free` state of a parameter change the :py:attr:`~.component.Para
     set([<Parameter A of Gaussian component>,
          <Parameter centre of Gaussian component>])
 
+
 Similar functions exist for :py:class:`~.model.Model`: :py:func:`~.model.set_parameters_free` and :py:func:`~.model.set_parameters_free`. Which sets the `free` states for the parameters in components in a model. Specific components and parameter-names can also be specified. For example:
 
 .. code-block:: python
+
     >>> g1 = components.Gaussian()
     >>> g2 = components.Gaussian()
     >>> m.extend([g1,g2])
@@ -154,6 +157,7 @@ Similar functions exist for :py:class:`~.model.Model`: :py:func:`~.model.set_par
          <Parameter sigma of Gaussian component>])
     >>> g2.free_parameters 
     set([<Parameter A of Gaussian component>])
+
 
 The value of a parameter can be coupled to the value of another by setting the :py:attr:`~.component.Parameter.twin` attribute.
 
