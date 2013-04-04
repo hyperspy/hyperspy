@@ -1294,7 +1294,7 @@ class Model(list):
             The new value of the parameter
         component_list : list of hyperspy components, optional
             A list of components whos parameters will changed
-        only_currenty : bool, default False
+        only_current : bool, default False
             If True, will only change the parameter value at the current position in the model
             If False, will change the parameter value for all the positions.
         
