@@ -76,6 +76,9 @@ class Model(list):
         self._low_loss = None
         self._position_widgets = []
         self._plot = None
+        
+    def insert(self):
+        raise NotImplementedError
 
     @property
     def spectrum(self):
@@ -116,18 +119,10 @@ class Model(list):
         list.append(self,object)
         self._touch()
     
-    def insert(self, object):
-        object._create_arrays()
-        object._axes_manager = self.axes_manager
-        list.insert(self,object)
-        self._touch()
    
     def extend(self, iterable):
         for object in iterable:
-            object._create_arrays()
-            object._axes_manager = self.axes_manager
-        list.extend(self,iterable)
-        self._touch()
+            self.append(object)
                 
     def __delitem__(self, object):
         list.__delitem__(self,object)
@@ -207,7 +202,7 @@ class Model(list):
 # TODO: port it                    
 #    def generate_chisq(self, degrees_of_freedom = 'auto') :
 #        if self.spectrum.variance is None:
-#            self.spectrum.estimate_variance()
+#            self.spectrum.estimate_poissonian_noise_variance()
 #        variance = self.spectrum.variance[self.channel_switches]
 #        differences = (self.model_cube - self.spectrum.data)[self.channel_switches]
 #        self.chisq = np.sum(differences**2 / variance, 0)
@@ -678,7 +673,7 @@ class Model(list):
         weights : {None, True, numpy.array}
             If None, performs standard least squares. If True 
             performs weighted least squares where the weights are 
-            calculated using spectrum.Spectrum.estimate_variance. 
+            calculated using spectrum.Spectrum.estimate_poissonian_noise_variance. 
             Alternatively, external weights can be supplied by passing
             a weights array of the same dimensions as the signal.
         ext_bounding : bool
@@ -727,7 +722,7 @@ class Model(list):
             weights = None
         if weights is True:
             if self.spectrum.variance is None:
-                self.spectrum.estimate_variance()
+                self.spectrum.estimate_poissonian_noise_variance()
             weights = 1. / np.sqrt(self.spectrum.variance.__getitem__(
             self.axes_manager._getitem_tuple)[self.channel_switches])
         elif weights is not None:
@@ -1210,7 +1205,123 @@ class Model(list):
             pw.close()
             del pw
 
+    def set_parameters_not_free(self, component_list=None,
+            parameter_name_list=None):
+        """
+        Sets the parameters in a component in a model to not free.
 
-                
-                
+        Parameters
+        ----------
+        component_list : None, or list of hyperspy components, optional
+            If None, will apply the function to all components in the model.
+            If list of components, will apply the functions to the components
+            in the list.
+        parameter_name_list : None or list of strings, optional
+            If None, will set all the parameters to not free.
+            If list of strings, will set all the parameters with the same name
+            as the strings in parameter_name_list to not free.
+
+        Examples
+        --------
+        >>> v1 = components.Voigt()
+        >>> m.append(v1)
+        >>> m.set_parameters_not_free()
+
+        >>> m.set_parameters_not_free(component_list=[v1], parameter_name_list=['area','centre'])
+
+        See also
+        --------
+        set_parameters_free
+        hyperspy.component.Component.set_parameters_free
+        hyperspy.component.Component.set_parameters_not_free
+        """        
+
+        if not component_list:
+            component_list = []
+            for _component in self:
+                component_list.append(_component)
+
+        for _component in component_list:
+            _component.set_parameters_not_free(parameter_name_list)    
+            
+    def set_parameters_free(self, component_list=None,
+            parameter_name_list=None):
+        """
+        Sets the parameters in a component in a model to free.
+
+        Parameters
+        ----------
+        component_list : None, or list of hyperspy components, optional
+            If None, will apply the function to all components in the model.
+            If list of components, will apply the functions to the components
+            in the list.
+        parameter_name_list : None or list of strings, optional
+            If None, will set all the parameters to not free.
+            If list of strings, will set all the parameters with the same name
+            as the strings in parameter_name_list to not free.
+
+        Examples
+        --------
+        >>> v1 = components.Voigt()
+        >>> m.append(v1)
+        >>> m.set_parameters_free()
+        >>> m.set_parameters_free(component_list=[v1], parameter_name_list=['area','centre'])
+
+        See also
+        --------
+        set_parameters_not_free
+        hyperspy.component.Component.set_parameters_free
+        hyperspy.component.Component.set_parameters_not_free
+        """   
+
+        if not component_list:
+            component_list = []
+            for _component in self:
+                component_list.append(_component)
+
+        for _component in component_list:
+            _component.set_parameters_free(parameter_name_list)
+
+    def set_parameters_value(self, parameter_name, value, component_list=None, only_current=False):
+        """
+        Sets the value of a parameter in components in a model to a specified value
+
+        Parameters
+        ----------
+        parameter_name : string
+            Name of the parameter whos value will be changed
+        value : number
+            The new value of the parameter
+        component_list : list of hyperspy components, optional
+            A list of components whos parameters will changed
+        only_current : bool, default False
+            If True, will only change the parameter value at the current position in the model
+            If False, will change the parameter value for all the positions.
         
+        Examples
+        --------
+        >>> v1 = components.Voigt()
+        >>> v2 = components.Voigt()
+        >>> m.extend([v1,v2])
+        >>> m.set_parameters_value('area', 5)
+        >>> m.set_parameters_value('area', 5, component_list=[v1])
+        >>> m.set_parameters_value('area', 5, component_list=[v1], only_current=True)
+        
+        """
+
+
+        if not component_list:
+            component_list = []
+            for _component in self:
+                component_list.append(_component)
+
+        for _component in component_list:
+            for _parameter in _component.parameters:
+                if _parameter.name == parameter_name:
+                    if only_current:
+                        _parameter.value = value
+                        _parameter.store_current_value_in_array()
+                    else:
+                        _parameter.value = value
+                        _parameter.assign_current_value_to_all()
+

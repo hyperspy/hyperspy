@@ -78,6 +78,12 @@ class Test1D:
         assert_equal(len(s.axes_manager.axes), 1)
         assert_equal(s.data.shape, (1,))
         
+    def test_float_index(self):
+        s = self.signal[3.4]
+        assert_equal(s.data, 3)
+        assert_equal(len(s.axes_manager.axes), 1)
+        assert_equal(s.data.shape, (1,))
+        
     def test_signal_indexer_slice(self):
         s = self.signal.signal_indexer[1:-1]
         d = self.data[1:-1]
