@@ -1038,10 +1038,11 @@ def power_law_perc_area(E1,E2, r):
     b = E2
     return 100*((a**r*r-a**r)*(a/(a**r*r-a**r)-(b+a)/((b+a)**r*r-(b+a)**r)))/a
 
-def rel_std_of_fraction(a,std_a,b,std_b,corr_factor = 1):
+def rel_std_of_fraction(a, std_a, b, std_b, corr_factor=1):
     rel_a = std_a/a
     rel_b = std_b/b
-    return np.sqrt(rel_a**2 +  rel_b**2-2*rel_a*rel_b*corr_factor)
+    return np.sqrt(rel_a**2 + rel_b**2 -
+                   2 * rel_a * rel_b * corr_factor)
 
 def ratio(edge_A, edge_B):
     a = edge_A.intensity.value
@@ -1049,9 +1050,12 @@ def ratio(edge_A, edge_B):
     b = edge_B.intensity.value
     std_b = edge_B.intensity.std
     ratio = a/b
-    ratio_std = ratio * rel_std_of_fraction(a,std_a,b, std_b)
-    print "Ratio %s/%s %1.3f +- %1.3f " % (edge_A.name, edge_B.name, a/b,
-    1.96*ratio_std )
+    ratio_std = ratio * rel_std_of_fraction(a, std_a,b, std_b)
+    print "Ratio %s/%s %1.3f +- %1.3f " % (
+        edge_A.name,
+        edge_B.name,
+        a/b,
+        1.96*ratio_std)
     return ratio, ratio_std
 
 def iterate_axis(data, axis = -1):
