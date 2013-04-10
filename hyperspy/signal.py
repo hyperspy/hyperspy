@@ -689,6 +689,15 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             The new shape must be a divisor of the original shape
         """
         factors = np.array(self.data.shape) / np.array(new_shape)
+        if ('EDS' in self.mapped_parameters.signal_type):
+            if hasattr(self.mapped_parameters, 'SEM'):            
+                mp = self.mapped_parameters.SEM
+            else:
+                mp = self.mapped_parameters.TEM
+            if hasattr(mp, 'EDS') and hasattr(mp.EDS, 'live_time'):
+                for factor in factors:
+                    mp.EDS.live_time = mp.EDS.live_time * factor
+            
         self.data = utils.rebin(self.data, new_shape)
         for axis in self.axes_manager.axes:
             axis.scale *= factors[axis.index_in_array]

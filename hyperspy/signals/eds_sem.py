@@ -39,6 +39,9 @@ from hyperspy.misc.progressbar import progressbar
 from hyperspy.components.power_law import PowerLaw
 from hyperspy.io import load
 from hyperspy.misc.eds.FWHM import FWHM_eds
+import hyperspy.components as components
+
+
 
 class EDSSEMSpectrum(EDSSpectrum):
     
@@ -295,24 +298,57 @@ class EDSSEMSpectrum(EDSSpectrum):
         return spec_th
         
     def k_ratio(self):
-        mp = self.mapped_parameters  
-        i=0
-        width_windows=0.5
-        kratios = []        
+        from hyperspy.hspy import create_model        
+        width_windows=0.75 
+        mp = self.mapped_parameters         
+        mp.Sample.kratios = []   
+        i=0    
         for Xray_line in mp.Sample.Xray_lines:
             element = Xray_line[:-3]
             line = Xray_line[-2:] 
             std = mp.Sample.standard_spec[i]
             mp_std = std.mapped_parameters
-            def func(a):
-                return self.top_hat(line_energy,width_windows).data+a*std.top_hat(line_energy,width_windows).data
-            line_energy = -elements_db[element]['Xray_energy'][line]
-            diff_ltime = mp.SEM.EDS.live_time/mp_std.SEM.EDS.live_time            
-            kratio = scipy.optimize.leastsq(func,[0.5])[0][0]/diff_ltime
-            print("k-ratio of %s : %s" % (Xray_line, kratio))            
-            kratios.append(kratio)
+            line_energy = elements_db[element]['Xray_energy'][line]
+            diff_ltime = mp.SEM.EDS.live_time/mp_std.SEM.EDS.live_time
+            #Fit with least square
+            m = create_model(self.top_hat(line_energy,width_windows))
+            fp = components.ScalableFixedPattern(std.top_hat(line_energy,width_windows))
+            fp.set_parameters_not_free(['offset','xscale','shift'])
+            m.append(fp)
+            m.multifit(fitter='leastsq')
+            #Store k-ratio
+            if (self.axes_manager.navigation_dimension == 0):
+                kratio = fp.yscale.value/diff_ltime
+                print("k-ratio of %s : %s" % (Xray_line, kratio))
+            else:
+                kratio = self.to_image()[1].deepcopy()
+                kratio.data = fp.yscale.as_signal().data/diff_ltime
+                kratio.mapped_parameters.title = 'k-ratio ' + Xray_line
+                kratio.plot()
+                      
+            mp.Sample.kratios.append(kratio)
             i += 1
-        mp.Sample.kratios = kratios
+       
+        
+    #def k_ratio(self):
+        #mp = self.mapped_parameters  
+        #i=0
+        #width_windows=0.5
+        #kratios = []        
+        #for Xray_line in mp.Sample.Xray_lines:
+            #element = Xray_line[:-3]
+            #line = Xray_line[-2:] 
+            #std = mp.Sample.standard_spec[i]
+            #mp_std = std.mapped_parameters
+            #def residuals(a):
+                #return -self.top_hat(line_energy,width_windows).data+a*std.top_hat(line_energy,width_windows).data
+            #line_energy = elements_db[element]['Xray_energy'][line]
+            #diff_ltime = mp.SEM.EDS.live_time/mp_std.SEM.EDS.live_time            
+            #kratio = scipy.optimize.leastsq(residuals,[0.5])[0][0]/diff_ltime
+            #print("k-ratio of %s : %s" % (Xray_line, kratio))            
+            #kratios.append(kratio)
+            #i += 1
+        #mp.Sample.kratios = kratios
         
         
         
