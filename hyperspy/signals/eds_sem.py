@@ -249,13 +249,35 @@ class EDSSEMSpectrum(EDSSpectrum):
         else:
             return False
             
-    def link_standard(self,std_file,std_file_extension):
+    def link_standard(self, std_folder, std_file_extension='msa'):
+        """
+        Seek for standard spectra (spectrum recorded on known composition
+        sample) in the std_file folder and link them to the analyzed 
+        elements of 'mapped_parameters.Sample.elements'. A standard spectrum 
+        is linked if its file name contains the elements name. 
         
-        if not hasattr(self.mapped_parameters, 'Sample') and \
-        hasattr(self.mapped_parameters.Sample, 'elements'):
-            raise ValueError("Add elements first")
+        Store the standard spectra in 'mapped_parameters.Sample.standard_spec'
         
-        std_tot = load(std_file+"//*."+std_file_extension,signal_type = 'EDS_SEM')
+        Parameters
+        ----------------
+        std_folder: path name
+            The path of the folder containing the standard file.
+            
+        std_file_extension: extension name
+            The name of the standard file extension.
+            
+        See also
+        --------
+        set_elements, add_elements
+        
+        """
+        
+        if not hasattr(self.mapped_parameters, 'Sample') :
+            raise ValueError("Add elements first, see 'set_elements'")
+        if not hasattr(self.mapped_parameters.Sample, 'elements'):
+            raise ValueError("Add elements first, see 'set_elements'")
+        
+        std_tot = load(std_folder+"//*."+std_file_extension,signal_type = 'EDS_SEM')
         mp = self.mapped_parameters        
         mp.Sample.standard_spec = []
         for element in mp.Sample.elements:            
@@ -266,8 +288,27 @@ class EDSSEMSpectrum(EDSSpectrum):
                     mp_std.title = element+"_std"
                     mp.Sample.standard_spec.append(std)
         
-    def top_hat(self, line_energy,width_windows = 1):
+    def top_hat(self, line_energy, width_windows = 1):
         """
+        Substact the background with a top hat filter. The width of the
+        lobs are defined with the width of the peak at the line_energy.
+        
+        Parameters
+        ----------------
+        line_energy: float
+            The energy in keV used to set the lob width calculate with
+            FHWM_eds.
+            
+        width_windows: float
+            The width of the windows on which is applied the top_hat. 
+            By default set to 1, which is equivalent to the size of the 
+            filtering object. 
+                       
+        Notes
+        -----
+        See the textbook of Goldstein et al., Plenum publisher, 
+        third edition p 399
+        
         """
         offset = self.axes_manager.signal_axes[0].offset
         FWHM_MnKa = self.mapped_parameters.SEM.EDS.energy_resolution_MnKa
@@ -298,6 +339,27 @@ class EDSSEMSpectrum(EDSSpectrum):
         return spec_th
         
     def k_ratio(self):
+        """
+        Calculate the k-ratios by least-square fitting of the standard 
+        sepectrum after background substraction with a top hat filtering
+        
+        Return a display of the resutls and store them in 
+        'mapped_parameters.Sample.k_ratios'
+        
+        See also
+        --------
+        set_elements, link_standard, top_hat 
+        
+        """
+        
+        if not hasattr(self.mapped_parameters, 'Sample') :
+            raise ValueError("Add elements first, see 'set_elements'")
+        if not hasattr(self.mapped_parameters.Sample, 'elements'):
+            raise ValueError("Add elements first, see 'set_elements'")
+        if not hasattr(self.mapped_parameters.Sample, 'standard_spec') :
+            raise ValueError("Add Standard, see 'link_standard'")
+        
+        
         from hyperspy.hspy import create_model        
         width_windows=0.75 
         mp = self.mapped_parameters         

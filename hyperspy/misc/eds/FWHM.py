@@ -18,7 +18,8 @@ def FWHM_eds(energy_resolution_MnKa,E):
     
     Notes
     -----
-    From Goldstein textbook, third edition p 315
+    From the textbook of Goldstein et al., Plenum publisher, 
+    third edition p 315
     
     """
     FWHM_ref = energy_resolution_MnKa
