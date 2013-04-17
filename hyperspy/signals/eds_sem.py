@@ -257,6 +257,7 @@ class EDSSEMSpectrum(EDSSpectrum):
         is linked if its file name contains the elements name. 
         
         Store the standard spectra in 'mapped_parameters.Sample.standard_spec'
+
         
         Parameters
         ----------------
@@ -277,6 +278,7 @@ class EDSSEMSpectrum(EDSSpectrum):
         if not hasattr(self.mapped_parameters.Sample, 'elements'):
             raise ValueError("Add elements first, see 'set_elements'")
         
+
         std_tot = load(std_folder+"//*."+std_file_extension,signal_type = 'EDS_SEM')
         mp = self.mapped_parameters        
         mp.Sample.standard_spec = []
