@@ -149,11 +149,11 @@ class DataAxis(t.HasTraits):
             stop = slice_.stop
             step = slice_.step
         else:
-            start = self._get_positive_index(slice_)
-            if isinstance(start, float):
-                stop = i2v(start) + 1
+            if isinstance(slice_, float):
+                start = v2i(slice_)
             else:
-                stop = start + 1
+                start = self._get_positive_index(slice_)
+            stop = start + 1
             step = None
             
         if isinstance(step, float):

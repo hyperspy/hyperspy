@@ -118,7 +118,7 @@ class ImagePlot:
                 self.plot_ticks = True
             else:
                 factor = 1
-        self._aspect = factor * xaxis.scale / yaxis.scale
+        self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
 
     def optimize_contrast(self, data, perc = 0.01):
         dc = data.copy().ravel()
@@ -198,8 +198,8 @@ class ImagePlot:
         data = self.data_function()
         numrows, numcols = data.shape
         def format_coord(x, y):
-            col = int(x+0.5)
-            row = int(y+0.5)
+            col = self.xaxis.value2index(x)
+            row = self.yaxis.value2index(y)
             if col>=0 and col<numcols and row>=0 and row<numrows:
                 z = data[row,col]
                 return 'x=%1.4f, y=%1.4f, intensity=%1.4f'%(x, y, z)
