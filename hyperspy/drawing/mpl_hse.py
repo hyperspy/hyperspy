@@ -99,6 +99,7 @@ class MPL_HyperSpectrum_Explorer(object):
         if self.pointer is not None:
             self.plot_navigator()
         self.plot_signal()
+        self.axes_manager.connect(self.navigator_plot._update_image)
         
     def plot_navigator(self):
         if self.navigator_data_function == None:            
@@ -111,21 +112,23 @@ class MPL_HyperSpectrum_Explorer(object):
         imf = image.ImagePlot()
         imf.data_function = self.navigator_data_function
         # Navigator labels
+        imf.title = self.signal_title + ' Navigator'
+        
         if self.axes_manager.navigation_dimension == 1:
             imf.yaxis = self.axes_manager.navigation_axes[0]
             imf.xaxis = self.axes_manager.signal_axes[0]
+            imf.plot()
+            self.pointer.add_axes(imf.ax)
         elif self.axes_manager.navigation_dimension >= 2:
             imf.yaxis = self.axes_manager.navigation_axes[-2]
             imf.xaxis = self.axes_manager.navigation_axes[-1]
+            imf.plot()
+            self.pointer.add_axes(imf.ax)
             if self.axes_manager.navigation_dimension > 2:
                 navigation_sliders(
                     self.axes_manager.navigation_axes[::-1])
                 for axis in self.axes_manager.navigation_axes[:-2]:
-                    axis.connect(imf.update_image)
-            
-        imf.title = self.signal_title + ' Navigator'
-        imf.plot()
-        self.pointer.add_axes(imf.ax)
+                    axis.connect(imf.update_image)    
         self.navigator_plot = imf
         
     def plot_signal(self):

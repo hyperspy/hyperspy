@@ -257,7 +257,7 @@ class EDSSpectrum(Spectrum):
                 img.mapped_parameters.title = 'Intensity of ' + Xray_line +\
                 ' at ' + str(line_energy) + ' keV'
                 det = width_energy_reso*line_FWHM
-                img[line_energy-det:line_energy+det].sum(signal_to_index).plot()
+                img[line_energy-det:line_energy+det].sum(signal_to_index).plot(None,False)
         else:
             for Xray_line in Xray_lines:
                 element = Xray_line[:-3]

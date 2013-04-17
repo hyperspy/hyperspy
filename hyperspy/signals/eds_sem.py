@@ -391,7 +391,7 @@ class EDSSEMSpectrum(EDSSpectrum):
                     kratio = self.to_image()[1].deepcopy()
                 kratio.data = fp.yscale.as_signal().data/diff_ltime
                 kratio.mapped_parameters.title = 'k-ratio ' + Xray_line
-                kratio.plot()
+                kratio.plot(None,False)
                       
             mp.Sample.kratios.append(kratio)
             i += 1
