@@ -99,6 +99,7 @@ class MPL_HyperSpectrum_Explorer(object):
         if self.pointer is not None:
             self.plot_navigator()
         self.plot_signal()
+        self.axes_manager.connect(self.navigator_plot._update_image)
         
     def plot_navigator(self):
         if self.navigator_data_function == None:            
