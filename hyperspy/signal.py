@@ -510,8 +510,9 @@ class Signal(t.HasTraits, MVA):
         def get_explorer_wrapper(*args, **kwargs):
             return navigator.data
             
-        def get_explorer_wrapper_3D(*args, **kwargs):            
-            isignal = self._plot.axes_manager._getitem_tuple[0]            
+
+        def get_explorer_wrapper_3D(*args, **kwargs):
+            isignal = self._plot.axes_manager._getitem_tuple[0]
             return navigator[isignal].data
             
         # Navigator properties
@@ -528,7 +529,8 @@ class Signal(t.HasTraits, MVA):
                 #3D
                 elif self.axes_manager.navigation_shape == \
                 navigator.axes_manager.navigation_shape + navigator.axes_manager.signal_shape:
-                     self._plot.navigator_data_function = get_explorer_wrapper_3D
+                    self._plot.navigator_data_function = get_explorer_wrapper_3D
+
                 elif self.axes_manager.navigation_shape[-1] == \
                 navigator.axes_manager.signal_shape[-1]:
                     self._plot.navigator_data_function = get_explorer_wrapper
