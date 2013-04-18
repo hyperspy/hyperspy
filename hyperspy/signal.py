@@ -513,6 +513,15 @@ class Signal(t.HasTraits, MVA):
 
         def get_explorer_wrapper_3D(*args, **kwargs):
             isignal = self._plot.axes_manager._getitem_tuple[0]
+            
+            #isignal = self._plot.axes_manager.indices[0]
+            #if navigator.axes_manager.signal_shape =..>2
+                #isignal = self._plot.axes_manager.indices[:-2]
+            #if navigator.axes_manager.signal_shape =..=1   
+                #isignal = self._plot.axes_manager.indices[:-1]
+            
+            #navigator.axes_manager.indices = self._plot.axes_manager.indices
+            #return navigator()
             return navigator[isignal].data
             
         # Navigator properties

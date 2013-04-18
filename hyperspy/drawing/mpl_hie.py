@@ -61,7 +61,7 @@ class MPL_HyperImage_Explorer():
                     'key_press_event', self.axes_manager.key_navigator)
                     
     def plot_navigator(self):
-        if self.navigator_data_function == None:            
+        if self.navigator_data_function is None:            
             navigation_sliders(
                 self.axes_manager.navigation_axes[::-1])
         elif self.navigator_plot is not None:

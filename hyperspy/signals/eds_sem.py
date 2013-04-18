@@ -18,27 +18,27 @@
 from __future__ import division
 
 import numpy as np
-import scipy.interpolate
-import scipy.optimize
+#import scipy.interpolate
+#import scipy.optimize
 import matplotlib.pyplot as plt
 import traits.api as t
 import math
-
+import codecs
+import subprocess
+import os
 
 from hyperspy.signals.spectrum import Spectrum
 from hyperspy.signals.eds import EDSSpectrum
 from hyperspy.signals.image import Image
 from hyperspy.misc.eds.elements import elements as elements_db
 import hyperspy.axes
-from hyperspy.gui.egerton_quantification import SpikesRemoval
-from hyperspy.decorators import only_interactive
 from hyperspy.gui.eds import SEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
-from hyperspy.misc.progressbar import progressbar
-from hyperspy.components.power_law import PowerLaw
+from hyperspy.decorators import only_interactive
 from hyperspy.io import load
 from hyperspy.misc.eds.FWHM import FWHM_eds
+from hyperspy.misc.eds.TOA import TOA
 import hyperspy.components as components
 
 
@@ -416,7 +416,127 @@ class EDSSEMSpectrum(EDSSpectrum):
             #kratios.append(kratio)
             #i += 1
         #mp.Sample.kratios = kratios
+    
+    def quant(self):        
+        """
+        Quantify using stratagem, a commercial software. A licence is needed.
         
+        k-ratios needs to be calculated before. Return a display of the 
+        results and store them in 'mapped_parameters.Sample.quants'
+        
+        See also
+        --------
+        set_elements, link_standard, top_hat, k_ratio
+        
+        """
+        
+        foldername = os.path.realpath("")+"//algo//v1_6Quant//"
+        self.write_nbData_tsv(foldername + 'essai')
+        self.write_donnee_tsv(foldername + 'essai')
+        p = subprocess.Popen(foldername + 'Debug//essai.exe')
+        p.wait()
+        self.read_result_tsv(foldername + 'essai')
+        
+    def read_result_tsv(self,foldername):
+        encoding = 'latin-1'
+        mp=self.mapped_parameters
+        f = codecs.open(foldername+'//result.tsv', encoding = encoding,errors = 'replace') 
+        dim = list(self.data.shape)
+        a = []
+        for Xray_line in mp.Sample.Xray_lines:
+            a.append([])        
+        for line in f.readlines():
+            for i in range(len(mp.Sample.Xray_lines)):
+                a[i].append(float(line.split()[3+i]))            
+        f.close()
+        i=0
+        mp.Sample.quants = []
+        for Xray_line in mp.Sample.Xray_lines:       
+            if (self.axes_manager.navigation_dimension == 0):
+                    quant = a[i][0]
+                    print("quant of %s : %s" % (Xray_line, quant))
+            else:
+                if (self.axes_manager.navigation_dimension == 3):
+                    quant = self.to_image(1)[1].deepcopy()
+                    quant.data = np.array(a[i]).reshape((dim[2],dim[1],dim[0])).T
+                else:
+                    quant = self.to_image()[1].deepcopy()
+                    quant.data = np.array(a[i]).reshape((dim[1],dim[0])).T
+                quant.mapped_parameters.title = 'Quant ' + Xray_line
+                quant.plot(None,False)
+            mp.Sample.quants.append(quant)
+            i += 1
+        
+    def write_donnee_tsv(self, foldername):
+        encoding = 'latin-1'
+        mp=self.mapped_parameters
+        f = codecs.open(foldername+'//donnee.tsv', 'w', encoding = encoding,errors = 'ignore') 
+        dim = np.copy(self.axes_manager.navigation_shape).tolist()
+        if self.axes_manager.navigation_dimension == 0:
+            f.write("1_1\r\n")
+            for i in range(len(mp.Sample.Xray_lines)):
+                f.write("%s\t" % mp.Sample.kratios[i])
+        elif self.axes_manager.navigation_dimension == 2:
+            for x in range(dim[1]):
+                for y in range(dim[0]):
+                    f.write("%s_%s\r\n" % (x+1,y+1))            
+                    for i in range(len(mp.Sample.Xray_lines)):
+                        f.write("%s\t" % mp.Sample.kratios[i].data[y,x])
+                    f.write('\r\n')
+        elif self.axes_manager.navigation_dimension == 3:
+            for x in range(dim[2]):
+                for y in range(dim[1]):
+                    f.write("%s_%s\r\n" % (x+1,y+1))
+                    for z in range(dim[0]):
+                        for i in range(len(mp.Sample.Xray_lines)):
+                            f.write("%s\t" % mp.Sample.kratios[i].data[z,y,x])
+                        f.write('\r\n')
+        f.close()       
+        
+    
+    def write_nbData_tsv(self, foldername):
+        encoding = 'latin-1'
+        mp=self.mapped_parameters
+        f = codecs.open(foldername+'//nbData.tsv', 'w', encoding = encoding,errors = 'ignore') 
+        dim = np.copy(self.axes_manager.navigation_shape).tolist()
+        dim.reverse()
+        dim.append(1)
+        dim.append(1)
+        if dim[0] == 0:
+            dim[0] =1
+        f.write("nbpixel_x\t%s\r\n" % dim[0])
+        f.write('nbpixel_y\t%s\r\n' % dim[1])
+        f.write('nbpixel_z\t%s\r\n' % dim[2])
+        #f.write('pixelsize_z\t%s' % self.axes_manager[0].scale*1000)
+        f.write('pixelsize_z\t100\r\n')
+        f.write('nblayermax\t5\r\n')
+        f.write('Limitkratio0\t0.001\r\n')
+        f.write('Limitcompsame\t0.01\r\n')
+        f.write('Itermax\t49\r\n')
+        f.write('\r\n')
+        f.write('HV\t%s\r\n'% mp.SEM.beam_energy)
+        f.write('TOA\t%s\r\n'% TOA(self))
+        f.write('azimuth\t%s\r\n'% mp.SEM.EDS.azimuth_angle)
+        f.write('tilt\t%s\r\n'% mp.SEM.tilt_stage)
+        f.write('\r\n')
+        f.write('nbelement\t%s\r\n'% mp.Sample.Xray_lines.shape[0])
+        elements = 'Element'
+        z_el = 'Z'
+        line_el = 'line'
+        for Xray_line in mp.Sample.Xray_lines:
+            elements = elements + '\t' + Xray_line[:-3]
+            z_el = z_el + '\t' + str(elements_db[Xray_line[:-3]]['Z'])
+            if Xray_line[-2:] == 'Ka':
+                line_el = line_el + '\t0'
+            if Xray_line[-2:]== 'La':
+                line_el = line_el + '\t1'
+            if Xray_line[-2:] == 'Ma':
+                line_el = line_el + '\t2'    
+        f.write('%s\r\n'% elements)
+        f.write('%s\r\n'% z_el)
+        f.write('%s\r\n'% line_el)
+        f.close()
+            
         
         
                 
