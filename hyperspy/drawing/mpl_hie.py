@@ -61,7 +61,7 @@ class MPL_HyperImage_Explorer():
                     'key_press_event', self.axes_manager.key_navigator)
                     
     def plot_navigator(self):
-        if self.navigator_data_function == None:            
+        if self.navigator_data_function is None:            
             navigation_sliders(
                 self.axes_manager.navigation_axes[::-1])
         elif self.navigator_plot is not None:
@@ -78,7 +78,7 @@ class MPL_HyperImage_Explorer():
             if self.axes_manager.navigation_dimension > 2:
                 navigation_sliders(
                     self.axes_manager.navigation_axes[::-1])
-                for axis in self.axes_manager.navigation_axes[:-2]:
+                for axis in self.axes_manager.navigation_axes[:-1]:
                     axis.connect(imf.update_image)
             self.navigator_plot = imf
         #elif self.axes_manager.navigation_dimension == 1
@@ -100,7 +100,7 @@ class MPL_HyperImage_Explorer():
             sl.line_properties_helper('blue', 'step')        
             # Add the line to the figure
             sf.add_line(sl)
-            self.navigator_plot = sf
+            
             sf.plot()
             self.pointer.add_axes(sf.ax)
             
@@ -108,7 +108,8 @@ class MPL_HyperImage_Explorer():
                 navigation_sliders(
                     self.axes_manager.navigation_axes[::-1])
                 for axis in self.axes_manager.navigation_axes[:-2]:
-                    axis.connect(imf.update_image)
+                    axis.connect(sf.update_image)
+            self.navigator_plot = sf
      
     
     def close_navigator_plot(self):

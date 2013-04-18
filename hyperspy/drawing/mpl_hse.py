@@ -101,7 +101,7 @@ class MPL_HyperSpectrum_Explorer(object):
         self.plot_signal()
         
     def plot_navigator(self):
-        if self.navigator_data_function == None:            
+        if self.navigator_data_function is None:            
             navigation_sliders(
                 self.axes_manager.navigation_axes[::-1])
             return
