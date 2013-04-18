@@ -512,17 +512,10 @@ class Signal(t.HasTraits, MVA):
             
 
         def get_explorer_wrapper_3D(*args, **kwargs):
-            isignal = self._plot.axes_manager._getitem_tuple[0]
-            
-            #isignal = self._plot.axes_manager.indices[0]
-            #if navigator.axes_manager.signal_shape =..>2
-                #isignal = self._plot.axes_manager.indices[:-2]
-            #if navigator.axes_manager.signal_shape =..=1   
-                #isignal = self._plot.axes_manager.indices[:-1]
-            
-            #navigator.axes_manager.indices = self._plot.axes_manager.indices
-            #return navigator()
-            return navigator[isignal].data
+            navigator.axes_manager.indices = \
+            self.axes_manager.indices[:-self.axes_manager.navigation_dimension+1]
+            return navigator()
+
             
         # Navigator properties
         if self.axes_manager.navigation_axes:
@@ -539,10 +532,9 @@ class Signal(t.HasTraits, MVA):
                 elif self.axes_manager.navigation_shape == \
                 navigator.axes_manager.navigation_shape + navigator.axes_manager.signal_shape:
                     self._plot.navigator_data_function = get_explorer_wrapper_3D
-
-                elif self.axes_manager.navigation_shape[-1] == \
-                navigator.axes_manager.signal_shape[-1]:
-                    self._plot.navigator_data_function = get_explorer_wrapper
+                #elif self.axes_manager.navigation_shape[-1] == \
+                #navigator.axes_manager.signal_shape[-1]:
+                    #self._plot.navigator_data_function = get_explorer_wrapper
                 else:
                     print("The given navigator and the current signal have incompatible shape.")
                     self._plot.navigator_data_function = self._get_explorer
