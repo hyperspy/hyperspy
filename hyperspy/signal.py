@@ -454,7 +454,27 @@ class Signal(t.HasTraits, MVA):
         else:
             return None
 
-    def plot(self, axes_manager=None):
+
+    def plot(self, axes_manager=None, navigator="auto"):
+
+        """Plot hyperimage and hyperspectrum
+        
+        If navigation_dimension > 0, a navigator is provided to explore 
+        the data. If navigation_dimension > 2, sliders are
+        provided.
+        
+        Parameters
+        ----------------
+        axes_manager : {None | axes_manager}
+            If None the axes_manager of the object is used.
+        
+        navigator : {"auto" | False | Spectrum | Image}
+            If "auto", a spectrum/image is automatically genererated  
+            and used as a navigator. If false, only sliders
+            are provided. An external spectrum/image can be provided as 
+            a navigator.
+
+        """
         if self._plot is not None:
                 try:
                     self._plot.close()
@@ -480,12 +500,36 @@ class Signal(t.HasTraits, MVA):
         if self.mapped_parameters.title:
             self._plot.signal_title = self.mapped_parameters.title
         elif self.tmp_parameters.has_item('filename'):
-            self._plot.signal_title = self.tmp_parameters.filename
+            self._plot.signal_title = self.tmp_parameters.filename            
+    
+        def get_explorer_wrapper(*args, **kwargs):
+            return navigator.data
             
-
+        def get_explorer_wrapper_3D(*args, **kwargs):
+            navigator.axes_manager.indices = \
+            self.axes_manager.indices[:-self.axes_manager.navigation_dimension+1]
+            return navigator()
+            
         # Navigator properties
         if self.axes_manager.navigation_axes:
-            self._plot.navigator_data_function = self._get_explorer
+            if navigator is "auto":
+                self._plot.navigator_data_function = self._get_explorer
+            elif navigator is False:
+                self._plot.navigator_data_function = None           
+            else:
+                #same dimension
+                if self.axes_manager.navigation_shape ==\
+                navigator.axes_manager.signal_shape:
+                    self._plot.navigator_data_function = get_explorer_wrapper
+                #higher dimension
+                elif self.axes_manager.navigation_shape == \
+                navigator.axes_manager.navigation_shape + navigator.axes_manager.signal_shape:
+                    self._plot.navigator_data_function = get_explorer_wrapper_3D
+                else:
+                    print("The given navigator and the current signal have incompatible shape.")
+                    self._plot.navigator_data_function = self._get_explorer
+
+                
         self._plot.plot()
             
 

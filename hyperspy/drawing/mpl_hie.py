@@ -61,10 +61,12 @@ class MPL_HyperImage_Explorer():
                     'key_press_event', self.axes_manager.key_navigator)
                     
     def plot_navigator(self):
-        if self.navigator_plot is not None:
+        if self.navigator_data_function is None:            
+            navigation_sliders(
+                self.axes_manager.navigation_axes[::-1])
+        elif self.navigator_plot is not None:
             self.navigator_plot.plot()
-            return
-        if self.axes_manager.navigation_dimension >= 2:
+        elif len(self.navigator_data_function().shape) >= 2:
             imf = image.ImagePlot()
             imf.data_function = self.navigator_data_function
             imf.title = self.signal_title + ' Navigator'
@@ -75,14 +77,13 @@ class MPL_HyperImage_Explorer():
             if self.axes_manager.navigation_dimension > 2:
                 navigation_sliders(
                     self.axes_manager.navigation_axes[::-1])
-                for axis in self.axes_manager.navigation_axes[:-2]:
+                for axis in self.axes_manager.navigation_axes[:-1]:
                     axis.connect(imf.update_image)
             self.navigator_plot = imf
-            
-        if self.axes_manager.navigation_dimension == 1:
+        elif len(self.navigator_data_function().shape) == 1: 
             # Create the figure
             sf = spectrum.SpectrumFigure()
-            axis = self.axes_manager.navigation_axes[0]
+            axis = self.axes_manager.navigation_axes[-1]
             sf.xlabel = '%s (%s)' % (axis.name, axis.units)
             sf.ylabel = r'$\Sigma\mathrm{Image\,intensity}$'
             sf.title = self.signal_title + ' Navigator'
@@ -96,9 +97,16 @@ class MPL_HyperImage_Explorer():
             sl.line_properties_helper('blue', 'step')        
             # Add the line to the figure
             sf.add_line(sl)
-            self.navigator_plot = sf
             sf.plot()
             self.pointer.add_axes(sf.ax)
+            
+            if self.axes_manager.navigation_dimension > 1:
+                navigation_sliders(
+                    self.axes_manager.navigation_axes[::-1])
+                for axis in self.axes_manager.navigation_axes[:-2]:
+                    axis.connect(sf.update_image)
+            self.navigator_plot = sf
+     
     
     def close_navigator_plot(self):
         self._disconnect()
