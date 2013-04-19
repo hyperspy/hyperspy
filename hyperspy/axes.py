@@ -460,17 +460,17 @@ class AxesManager(t.HasTraits):
         self.axes.append(axis)
 
     def update_attributes(self):
-        getitem_tuple = []
+        getitem_tuple = ()
         values = []
         self.signal_axes = []
         self.navigation_axes = []
         for axis in self.axes:
             if axis.slice is None:
-                getitem_tuple.append(axis.index)
+                getitem_tuple += axis.index,
                 values.append(axis.value)
                 self.navigation_axes.append(axis)
             else:
-                getitem_tuple.append(axis.slice)
+                getitem_tuple += axis.slice,
                 self.signal_axes.append(axis)
                 
         self._getitem_tuple = getitem_tuple
