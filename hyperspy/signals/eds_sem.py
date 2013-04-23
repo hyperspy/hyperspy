@@ -254,7 +254,8 @@ class EDSSEMSpectrum(EDSSpectrum):
         Seek for standard spectra (spectrum recorded on known composition
         sample) in the std_file folder and link them to the analyzed 
         elements of 'mapped_parameters.Sample.elements'. A standard spectrum 
-        is linked if its file name contains the elements name. 
+        is linked if its file name contains the elements name. "C.msa",
+        "Co.msa" but not "Co4.msa".
         
         Store the standard spectra in 'mapped_parameters.Sample.standard_spec'
 
@@ -282,10 +283,12 @@ class EDSSEMSpectrum(EDSSpectrum):
         std_tot = load(std_folder+"//*."+std_file_extension,signal_type = 'EDS_SEM')
         mp = self.mapped_parameters        
         mp.Sample.standard_spec = []
-        for element in mp.Sample.elements:            
+        #for element in mp.Sample.elements:
+        for Xray_line in mp.Sample.Xray_lines:
+            element = Xray_line[:-3]           
             for std in std_tot:    
                 mp_std = std.mapped_parameters
-                if element in mp_std.original_filename:
+                if element + "." in mp_std.original_filename:
                     print("Standard file for %s : %s" % (element, mp_std.original_filename))
                     mp_std.title = element+"_std"
                     mp.Sample.standard_spec.append(std)

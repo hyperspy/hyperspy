@@ -216,9 +216,8 @@ class EDSSpectrum(Spectrum):
                 print("Adding %s_%s line" % (element,true_line[select_this]))
                 
     
-    def plot_intensity_map(self,width_energy_reso=1):
-        """Plot the intensity map of the Xray lines contains in 
-        self.X_ray_lines
+    def plot_intensity_map(self, Xray_lines = None, width_energy_reso=1):
+        """Plot the intensity map of selected Xray lines.
         
         The intensity is the sum over several energy channels. The width
         of the sum is determined using the energy resolution of the detector
@@ -230,16 +229,27 @@ class EDSSpectrum(Spectrum):
         Parameters
         ----------
         
+        Xray_lines: list of string
+            If None, the lines defined with set_elements are used, which 
+            are in 'mapped.parameters.Sample.X_ray_lines'. 
+        
         width_energy_reso: Float
             factor to change the width used for the sum. 1 is equivalent
-            of a width of 2 X FWHM        
+            of a width of 2 X FWHM 
+            
+        Examples
+        --------
+        
+        >>> specImg.plot_intensity_map(["C_Ka", "Ta_Ma"])
         
         """
         
         if not hasattr(self.mapped_parameters, 'Sample') and \
         hasattr(self.mapped_parameters.Sample, 'Xray_lines'):
             raise ValueError("Not X-ray line, set them with add_elements")        
-        Xray_lines = self.mapped_parameters.Sample.Xray_lines
+        if Xray_lines == None:
+            Xray_lines = self.mapped_parameters.Sample.Xray_lines
+        
         if self.mapped_parameters.signal_type == 'EDS_SEM':
             FWHM_MnKa = self.mapped_parameters.SEM.EDS.energy_resolution_MnKa
         else:
