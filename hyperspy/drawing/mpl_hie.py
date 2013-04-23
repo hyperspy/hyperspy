@@ -66,7 +66,6 @@ class MPL_HyperImage_Explorer():
                 self.axes_manager.navigation_axes[::-1])
         elif self.navigator_plot is not None:
             self.navigator_plot.plot()
-        #elif self.axes_manager.navigation_dimension >= 2 
         elif len(self.navigator_data_function().shape) >= 2:
             imf = image.ImagePlot()
             imf.data_function = self.navigator_data_function
@@ -81,11 +80,9 @@ class MPL_HyperImage_Explorer():
                 for axis in self.axes_manager.navigation_axes[:-1]:
                     axis.connect(imf.update_image)
             self.navigator_plot = imf
-        #elif self.axes_manager.navigation_dimension == 1
         elif len(self.navigator_data_function().shape) == 1: 
             # Create the figure
             sf = spectrum.SpectrumFigure()
-            #axis = self.axes_manager.navigation_axes[0]
             axis = self.axes_manager.navigation_axes[-1]
             sf.xlabel = '%s (%s)' % (axis.name, axis.units)
             sf.ylabel = r'$\Sigma\mathrm{Image\,intensity}$'
@@ -100,7 +97,7 @@ class MPL_HyperImage_Explorer():
             sl.line_properties_helper('blue', 'step')        
             # Add the line to the figure
             sf.add_line(sl)
-            
+
             sf.plot()
             self.pointer.add_axes(sf.ax)
             

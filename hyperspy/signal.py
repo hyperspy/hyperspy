@@ -459,25 +459,21 @@ class Signal(t.HasTraits, MVA):
 
         """Plot hyperimage and hyperspectrum
         
+
+        If navigation_dimension > 0, a navigator is provided to explore 
+        the data. If navigation_dimension > 2, sliders are
+        provided.
+
         Parameters
         ----------------
         axes_manager : {None | axes_manager}
             If None the axes_manager of the object is used.
-        
-        navigator : {None | Signal}
-            If None the navigator image/spectrum is the current signal 
-            summed over the signal axes. Alternatively a Signal whose 
-            signal_shape is equal to the navigation_shape of the 
-            current Signal can be provided.
 
-        plot_navigator : {"auto", False, "spectrum", "image"}
-             If "auto" plot a spectrum navigator is 
-             navigation_dimension==1, an image navigator if 
-             navigation_dimension == 2 and an image_navigator and 
-             sliders if navigation_dimension > 2. If "spectrum"/"image" 
-             plot a spectrum/image navigator with sliders if necessary 
-             and if False don't plot any navigator and provide sliders 
-             if navigation_size > 1
+        navigator : {"auto" | False | Spectrum | Image}
+            If "auto", a spectrum/image is automatically genererated  
+            and used as a navigator. If false, only sliders
+            are provided. An external spectrum/image can be provided as 
+            a navigator.
 
         """
         if self._plot is not None:
@@ -510,13 +506,11 @@ class Signal(t.HasTraits, MVA):
         def get_explorer_wrapper(*args, **kwargs):
             return navigator.data
             
-
         def get_explorer_wrapper_3D(*args, **kwargs):
             navigator.axes_manager.indices = \
             self.axes_manager.indices[:-self.axes_manager.navigation_dimension+1]
             return navigator()
 
-            
         # Navigator properties
         if self.axes_manager.navigation_axes:
             if navigator is "auto":
@@ -528,13 +522,10 @@ class Signal(t.HasTraits, MVA):
                 if self.axes_manager.navigation_shape ==\
                 navigator.axes_manager.signal_shape:
                     self._plot.navigator_data_function = get_explorer_wrapper
-                #3D
+                #higher dimension
                 elif self.axes_manager.navigation_shape == \
                 navigator.axes_manager.navigation_shape + navigator.axes_manager.signal_shape:
                     self._plot.navigator_data_function = get_explorer_wrapper_3D
-                #elif self.axes_manager.navigation_shape[-1] == \
-                #navigator.axes_manager.signal_shape[-1]:
-                    #self._plot.navigator_data_function = get_explorer_wrapper
                 else:
                     print("The given navigator and the current signal have incompatible shape.")
                     self._plot.navigator_data_function = self._get_explorer
@@ -973,6 +964,15 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         axis = self.axes_manager._get_positive_index(axis)
         s = self.get_deepcopy_with_new_data(self.data.sum(axis))
         s.axes_manager.remove(s.axes_manager.axes[axis])
+        
+        #change the live time
+        if ('EDS' in s.mapped_parameters.signal_type):
+            if hasattr(s.mapped_parameters, 'SEM'):            
+                mp = s.mapped_parameters.SEM
+            else:
+                mp = s.mapped_parameters.TEM
+            if hasattr(mp, 'EDS') and hasattr(mp.EDS, 'live_time'):
+                mp.EDS.live_time = mp.EDS.live_time * self.axes_manager[0].size
         return s
         
     @auto_replot

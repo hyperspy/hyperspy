@@ -268,6 +268,45 @@ class EDSSpectrum(Spectrum):
                 print("%s at %s keV : Intensity = %s" 
                 % (Xray_line, line_energy,\
                  self[line_energy-det:line_energy+det].sum(0).data) )
+                 
+    def running_sum(self) :
+        dim = self.data.shape
+        if len(dim)==3:
+            s = np.zeros(np.array(dim)+[1,1,0])
+        elif len(dim)==4:
+            s = np.zeros(np.array(dim)+[0,1,1,0])
+        else:
+            raise ValueError("Data dimension not supported")
+        dat = self.deepcopy().data
+        def add_beg(nb,si) :
+            ap = range(si)
+            ap.reverse()
+            return np.append(ap,range(nb))
+        def add_end(nb,si) :
+            ap = range(-1,-si-1,-1)
+            return np.append(range(nb),ap)  
+        no = 1
+        if len(dim)==3:
+            s = s + dat[add_beg(dim[0],no)][...,add_end(dim[1],no),...]
+            s = s + dat[add_end(dim[0],no)][...,add_end(dim[1],no),...]
+            s = s + dat[add_beg(dim[0],no)][...,add_end(dim[1],no),...]
+            s = s + dat[add_end(dim[0],no)][...,add_end(dim[1],no),...]
+            s = s[1::][...,1::,...]
+        elif len(dim)==4:
+            s = s + dat[...,add_beg(dim[1],no),...,...][...,...,add_end(dim[2],no),...]
+            s = s + dat[...,add_end(dim[1],no),...,...][...,...,add_end(dim[2],no),...]
+            s = s + dat[...,add_beg(dim[1],no),...,...][...,...,add_end(dim[2],no),...]
+            s = s + dat[...,add_end(dim[1],no),...,...][...,...,add_end(dim[2],no),...]
+            s = s[...,1::,...,...][...,...,1::,...]
+        
+        if hasattr(self.mapped_parameters, 'SEM'):            
+            mp = self.mapped_parameters.SEM
+        else:
+            mp = self.mapped_parameters.TEM
+        if hasattr(mp, 'EDS') and hasattr(mp.EDS, 'live_time'):
+            mp.EDS.live_time = mp.EDS.live_time * 4
+            
+        return self.get_deepcopy_with_new_data(s.astype(int))
             
     
        
