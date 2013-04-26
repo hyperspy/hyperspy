@@ -18,6 +18,7 @@
 from __future__ import division
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 
@@ -215,9 +216,10 @@ class EDSSpectrum(Spectrum):
                 self.Xray_lines.add(element+'_'+true_line[select_this])
                 print("Adding %s_%s line" % (element,true_line[select_this]))
                 
+         
     
-    def plot_intensity_map(self, Xray_lines = None, width_energy_reso=1):
-        """Plot the intensity map of selected Xray lines.
+    def get_intensity_map(self, Xray_lines = None,plot_result=True , width_energy_reso=1):
+        """Return the intensity map of selected Xray lines.
         
         The intensity is the sum over several energy channels. The width
         of the sum is determined using the energy resolution of the detector
@@ -244,18 +246,21 @@ class EDSSpectrum(Spectrum):
         
         """
         
-        if not hasattr(self.mapped_parameters, 'Sample') and \
-        hasattr(self.mapped_parameters.Sample, 'Xray_lines'):
-            raise ValueError("Not X-ray line, set them with add_elements")        
+                
         if Xray_lines == None:
-            Xray_lines = self.mapped_parameters.Sample.Xray_lines
+            if hasattr(self.mapped_parameters, 'Sample') and \
+            hasattr(self.mapped_parameters.Sample, 'Xray_lines'):
+                Xray_lines = self.mapped_parameters.Sample.Xray_lines
+            else:
+                raise ValueError("Not X-ray line, set them with add_elements")
+            
         
         if self.mapped_parameters.signal_type == 'EDS_SEM':
             FWHM_MnKa = self.mapped_parameters.SEM.EDS.energy_resolution_MnKa
         else:
             FWHM_MnKa = self.mapped_parameters.TEM.EDS.energy_resolution_MnKa
             
-        
+        intensities = []
         if self.axes_manager.navigation_dimension > 1:
             signal_to_index = self.axes_manager.navigation_dimension - 2        
             for Xray_line in Xray_lines:
@@ -267,7 +272,9 @@ class EDSSpectrum(Spectrum):
                 img.mapped_parameters.title = 'Intensity of ' + Xray_line +\
                 ' at ' + str(line_energy) + ' keV'
                 det = width_energy_reso*line_FWHM
-                img[line_energy-det:line_energy+det].sum(signal_to_index).plot(None,False)
+                if plot_result:
+                    img[line_energy-det:line_energy+det].sum(signal_to_index).plot(None,False)
+                intensities.append(img[line_energy-det:line_energy+det].sum(signal_to_index))
         else:
             for Xray_line in Xray_lines:
                 element = Xray_line[:-3]
@@ -275,9 +282,12 @@ class EDSSpectrum(Spectrum):
                 line_energy = elements_db[element]['Xray_energy'][line]
                 line_FWHM = FWHM_eds(FWHM_MnKa,line_energy)
                 det = width_energy_reso*line_FWHM
-                print("%s at %s keV : Intensity = %s" 
-                % (Xray_line, line_energy,\
-                 self[line_energy-det:line_energy+det].sum(0).data) )
+                if plot_result:
+                    print("%s at %s keV : Intensity = %s" 
+                    % (Xray_line, line_energy,\
+                     self[line_energy-det:line_energy+det].sum(0).data) )
+                intensities.append(self[line_energy-det:line_energy+det].sum(0).data)
+        return intensities
                  
     def running_sum(self) :
         dim = self.data.shape
@@ -317,6 +327,31 @@ class EDSSpectrum(Spectrum):
             mp.EDS.live_time = mp.EDS.live_time * 4
             
         return self.get_deepcopy_with_new_data(s.astype(int))
+        
+    def plot_Xray_line(self):
+        """
+        Annotate a spec.plot() with the name of the different X-ray 
+        lines
+        
+        """
+        if self.axes_manager.navigation_dimension > 0:
+            raise ValueError("Works only for single spectrum")
+        
+        
+        mp = self.mapped_parameters
+        line_energy =[]
+        intensity = []
+        Xray_lines = mp.Sample.Xray_lines
+        for Xray_line in Xray_lines:
+            element = Xray_line[:-3]
+            line = Xray_line[-2:] 
+            line_energy.append(elements_db[element]['Xray_energy'][line])
+            intensity.append(self[line_energy[-1]].data[0])
+        
+        self.plot() 
+        for i in range(len(line_energy)):
+            plt.annotate(Xray_lines[i],xy = (line_energy[i],intensity[i]))
+    
             
     
        

@@ -285,15 +285,19 @@ class EDSSEMSpectrum(EDSSpectrum):
         mp.Sample.standard_spec = []
         #for element in mp.Sample.elements:
         for Xray_line in mp.Sample.Xray_lines:
-            element = Xray_line[:-3]           
+            element = Xray_line[:-3]
+            test_file_exist=False           
             for std in std_tot:    
                 mp_std = std.mapped_parameters
                 if element + "." in mp_std.original_filename:
+                    test_file_exist=True
                     print("Standard file for %s : %s" % (element, mp_std.original_filename))
                     mp_std.title = element+"_std"
                     mp.Sample.standard_spec.append(std)
+            if test_file_exist == False:
+                print("\nStandard file for %s not found\n" % element)
         
-    def top_hat(self, line_energy, width_windows = 1):
+    def top_hat(self, line_energy, width_windows = 1.):
         """
         Substact the background with a top hat filter. The width of the
         lobs are defined with the width of the peak at the line_energy.
@@ -304,7 +308,7 @@ class EDSSEMSpectrum(EDSSpectrum):
             The energy in keV used to set the lob width calculate with
             FHWM_eds.
             
-        width_windows: float
+        width_windows: float or list(min,max)
             The width of the windows on which is applied the top_hat. 
             By default set to 1, which is equivalent to the size of the 
             filtering object. 
@@ -317,8 +321,11 @@ class EDSSEMSpectrum(EDSSpectrum):
         """
         offset = self.axes_manager.signal_axes[0].offset
         FWHM_MnKa = self.mapped_parameters.SEM.EDS.energy_resolution_MnKa
-        line_FWHM = FWHM_eds(FWHM_MnKa, line_energy)              
-        det = width_windows*line_FWHM
+        line_FWHM = FWHM_eds(FWHM_MnKa, line_energy) 
+        if np.ndim(width_windows) == 0:            
+            det = [width_windows*line_FWHM,width_windows*line_FWHM]
+        else :
+            det = width_windows
         scale_s = self.axes_manager.signal_axes[0].scale
         olob = int(round(line_FWHM/scale_s/2)*2)
         g = []
@@ -329,8 +336,8 @@ class EDSSEMSpectrum(EDSSpectrum):
                 g.append(1./(olob+1))    
         g = np.array(g)
         
-        bornA = [int(round((line_energy-det-offset)/scale_s)),\
-        int(round((line_energy+det-offset)/scale_s))]
+        bornA = [int(round((line_energy-det[0]-offset)/scale_s)),\
+        int(round((line_energy+det[1]-offset)/scale_s))]
         
         a = []
         for i in range(bornA[0],bornA[1]):
@@ -343,13 +350,61 @@ class EDSSEMSpectrum(EDSSpectrum):
         #spec_th.get_calibration_from(self)
         return spec_th
         
-    def k_ratio(self):
+    def _get_kratio(self,Xray_lines,plot_result):
+        from hyperspy.hspy import create_model        
+        width_windows=0.75 
+        mp = self.mapped_parameters    
+        if (self.axes_manager.navigation_dimension == 3):
+            axes_kratio = self.to_image(1)[1].axes_manager 
+        else:              
+            axes_kratio = self.to_image()[1].axes_manager
+        
+        for Xray_line in Xray_lines :
+            element = Xray_line[:-3]
+            line = Xray_line[-2:] 
+            for std in mp.Sample.standard_spec:
+                if std.mapped_parameters.title[:-4] == element:
+                    break
+            mp_std = std.mapped_parameters
+            line_energy = elements_db[element]['Xray_energy'][line]
+            diff_ltime = mp.SEM.EDS.live_time/mp_std.SEM.EDS.live_time
+            #Fit with least square
+            m = create_model(self.top_hat(line_energy,width_windows))
+            fp = components.ScalableFixedPattern(std.top_hat(line_energy,width_windows))
+            fp.set_parameters_not_free(['offset','xscale','shift'])
+            m.append(fp)          
+            m.multifit(fitter='leastsq') 
+            #store k-ratio
+            for j in range(len(mp.Sample.Xray_lines)):
+                if Xray_line == mp.Sample.Xray_lines[j]:
+                    break  
+            if (self.axes_manager.navigation_dimension == 0):
+                kratio = fp.yscale.value/diff_ltime               
+                print("k-ratio of %s : %s" % (Xray_line, kratio))
+            else:
+                kratio = Image({'data' : fp.yscale.as_signal().data/diff_ltime})
+                kratio.axes_manager = axes_kratio
+                kratio.mapped_parameters.title = 'k-ratio ' + Xray_line
+                if plot_result:
+                    kratio.plot(None,False)
+                else:
+                    print("k-ratio of %s calculated" % (Xray_line))
+            mp.Sample.kratios[j] = kratio
+    
+        
+    def get_kratio(self,deconvolution=None,plot_result=True):
+        
         """
         Calculate the k-ratios by least-square fitting of the standard 
         sepectrum after background substraction with a top hat filtering
         
         Return a display of the resutls and store them in 
         'mapped_parameters.Sample.k_ratios'
+        
+        Parameters
+        ----------
+        plot_result : bool
+            If True (default option), plot the k-ratio map.
         
         See also
         --------
@@ -363,64 +418,183 @@ class EDSSEMSpectrum(EDSSpectrum):
             raise ValueError("Add elements first, see 'set_elements'")
         if not hasattr(self.mapped_parameters.Sample, 'standard_spec') :
             raise ValueError("Add Standard, see 'link_standard'")
-        
-        
-        from hyperspy.hspy import create_model        
-        width_windows=0.75 
+            
         mp = self.mapped_parameters         
-        mp.Sample.kratios = []   
-        i=0    
-        for Xray_line in mp.Sample.Xray_lines:
-            element = Xray_line[:-3]
-            line = Xray_line[-2:] 
-            std = mp.Sample.standard_spec[i]
-            mp_std = std.mapped_parameters
-            line_energy = elements_db[element]['Xray_energy'][line]
-            diff_ltime = mp.SEM.EDS.live_time/mp_std.SEM.EDS.live_time
-            #Fit with least square
-            m = create_model(self.top_hat(line_energy,width_windows))
+        mp.Sample.kratios = list(np.zeros(len(mp.Sample.Xray_lines)))
+        Xray_lines = list(mp.Sample.Xray_lines)
+        if deconvolution is not None: 
+            for deconvo in deconvolution:
+                self._deconvolve_kratio(deconvo[0],deconvo[1],deconvo[2],plot_result)
+                for Xray_line in deconvo[0]:
+                    Xray_lines.remove(Xray_line)
+        if len(Xray_lines) > 0:            
+            self._get_kratio(Xray_lines,plot_result)
+    
+    def _deconvolve_kratio(self,Xray_lines,elements,width_energy,\
+        plot_result=True):
+        from hyperspy.hspy import create_model 
+        line_energy = np.mean(width_energy)
+        width_windows=[line_energy-width_energy[0],width_energy[1]-line_energy]
+        m = create_model(self.top_hat(line_energy, width_windows))
+        mp = self.mapped_parameters 
+        if (self.axes_manager.navigation_dimension == 3):
+            axes_kratio = self.to_image(1)[1].axes_manager 
+        else:              
+            axes_kratio = self.to_image()[1].axes_manager
+        
+        diff_ltime =[]
+        fps = []
+        for element in elements:
+            for std in mp.Sample.standard_spec:
+                if std.mapped_parameters.title[:-4] == element:
+                    break
             fp = components.ScalableFixedPattern(std.top_hat(line_energy,width_windows))
             fp.set_parameters_not_free(['offset','xscale','shift'])
-            m.append(fp)
-            m.multifit(fitter='leastsq')
-            #Store k-ratio
-            if (self.axes_manager.navigation_dimension == 0):
-                kratio = fp.yscale.value/diff_ltime
-                print("k-ratio of %s : %s" % (Xray_line, kratio))
-            else:
-                if (self.axes_manager.navigation_dimension == 3):
-                    kratio = self.to_image(1)[1].deepcopy()
-                else:
-                    kratio = self.to_image()[1].deepcopy()
-                kratio.data = fp.yscale.as_signal().data/diff_ltime
-                kratio.mapped_parameters.title = 'k-ratio ' + Xray_line
-                kratio.plot(None,False)
-                      
-            mp.Sample.kratios.append(kratio)
-            i += 1
-       
+            fps.append(fp)    
+            m.append(fps[-1])
+            diff_ltime.append(mp.SEM.EDS.live_time/std.mapped_parameters.SEM.EDS.live_time)
+        m.multifit(fitter='leastsq')
         
-    #def k_ratio(self):
-        #mp = self.mapped_parameters  
-        #i=0
-        #width_windows=0.5
-        #kratios = []        
-        #for Xray_line in mp.Sample.Xray_lines:
-            #element = Xray_line[:-3]
-            #line = Xray_line[-2:] 
-            #std = mp.Sample.standard_spec[i]
-            #mp_std = std.mapped_parameters
-            #def residuals(a):
-                #return -self.top_hat(line_energy,width_windows).data+a*std.top_hat(line_energy,width_windows).data
-            #line_energy = elements_db[element]['Xray_energy'][line]
-            #diff_ltime = mp.SEM.EDS.live_time/mp_std.SEM.EDS.live_time            
-            #kratio = scipy.optimize.leastsq(residuals,[0.5])[0][0]/diff_ltime
-            #print("k-ratio of %s : %s" % (Xray_line, kratio))            
-            #kratios.append(kratio)
-            #i += 1
-        #mp.Sample.kratios = kratios
+        for i in range(len(Xray_lines)):
+            for j in range(len(mp.Sample.Xray_lines)):
+                if Xray_lines[i] == mp.Sample.Xray_lines[j]:
+                    break  
+            if (self.axes_manager.navigation_dimension == 0):
+                kratio = fps[i].yscale.value/diff_ltime[i]               
+                print("k-ratio of %s : %s" % (Xray_lines[i], kratio))
+            else:
+                kratio = Image({'data' : fps[i].yscale.as_signal().data/diff_ltime[i]})
+                kratio.axes_manager = axes_kratio
+                kratio.mapped_parameters.title = 'k-ratio ' + Xray_lines[i]
+                if plot_result:
+                    kratio.plot(None,False)
+                else:
+                    print("k-ratio of %s calculated" % (Xray_lines[i]))
+            mp.Sample.kratios[j] = kratio
+            
+    def deconvolve_intensity(self,width_windows=None,plot_result=True):
+        from hyperspy.hspy import create_model 
+        m = create_model(self)
+        mp = self.mapped_parameters 
+        if (self.axes_manager.navigation_dimension == 3):
+            axes_kratio = self.to_image(1)[1].axes_manager 
+        else:              
+            axes_kratio = self.to_image()[1].axes_manager
+        
+        elements = mp.Sample.elements
+       
+        fps = []
+        for element in elements:
+            for std in mp.Sample.standard_spec:
+                if std.mapped_parameters.title[:-4] == element:
+                    break
+            fp = components.ScalableFixedPattern(std)
+            fp.set_parameters_not_free(['offset','xscale','shift'])
+            fps.append(fp)    
+            m.append(fps[-1])
+        if width_windows is not None:
+            m.set_signal_range(width_windows[0],width_windows[1])
+        m.multifit(fitter='leastsq')
+        mp.Sample.intensities = []
+        i=0
+        for element in elements:
+            if (self.axes_manager.navigation_dimension == 0):
+                intensity = fps[i].yscale.value                
+                if plot_result and i == 0:
+                    m.plot()            
+                print("Intensity of %s : %s" % (element, intensity))
+            else:
+                intensity = Image({'data' : fps[i].yscale.as_signal().data})
+                intensity.axes_manager = axes_kratio
+                intensity.mapped_parameters.title = 'Intensity '+ element
+                if plot_result:
+                    intensity.plot(None,False)
+                else:
+                    print("intensity of %s calculated" % (element))
+            mp.Sample.intensities.append(intensity)
+            i += 1
+            
+    def check_kratio(self,Xray_lines,width_energy=None):
+        """
+        Plot
+        """
+        if width_energy==None:
+            line_energy =[]
+            for Xray_line in Xray_lines:
+                element = Xray_line[:-3]
+                line = Xray_line[-2:] 
+                line_energy.append(elements_db[element]['Xray_energy'][line])
+            width_energy = [0,0]
+            width_energy[0] = np.min(line_energy)-FWHM_eds(130,np.min(line_energy))
+            width_energy[1] = np.max(line_energy)+FWHM_eds(130,np.max(line_energy))
+                
+        line_energy = np.mean(width_energy)
+        width_windows=[line_energy-width_energy[0],width_energy[1]-line_energy]
+            
+        mp = self.mapped_parameters
+        fig = plt.figure()
+        self_data = self.top_hat(line_energy, width_windows).data
+        plt.plot(self_data)
+        leg_plot = ["Spec"]
+        line_energies =[]
+        intensities = []
+        spec_sum = np.zeros(len(self.top_hat(line_energy, width_windows).data))
+        for Xray_line in Xray_lines:
+            element = Xray_line[:-3]
+            line = Xray_line[-2:] 
+            line_energy = elements_db[element]['Xray_energy'][line]
+            width_windows=[line_energy-width_energy[0],width_energy[1]-line_energy]
+            leg_plot.append(Xray_line)
+            for std_spec in mp.Sample.standard_spec:
+                    if std_spec.mapped_parameters.title[:-4] == element:
+                        break
+            for j in range(len(mp.Sample.Xray_lines)):
+                    if Xray_line == mp.Sample.Xray_lines[j]:
+                        break 
+            diff_ltime = mp.SEM.EDS.live_time/std_spec.mapped_parameters.SEM.EDS.live_time
+            std_data = std_spec.top_hat(line_energy,width_windows).data*mp.Sample.kratios[j]*diff_ltime
+            plt.plot(std_data)
+            line_energies.append((line_energy-width_energy[0])/self.axes_manager[0].scale-self.axes_manager[0].offset)
+            intensities.append(std_data[int(line_energies[-1])])
+            spec_sum = spec_sum + std_data
+        plt.plot(spec_sum)
+        plt.plot(self_data-spec_sum)
+        leg_plot.append("Sum")
+        leg_plot.append("Residual")
+        plt.legend(leg_plot)
+        print("Tot residual: %s" % np.abs(self_data-spec_sum).sum())
+        for i in range(len(line_energies)):
+                plt.annotate(Xray_lines[i],xy = (line_energies[i],intensities[i]))
+        fig.show()
+        
+    def save_result(self, result, filename, Xray_lines = None,extension = 'hdf5'):
+        mp = self.mapped_parameters 
+        if Xray_lines is None:
+            if result == 'intensities':
+                 Xray_lines = mp.Sample.elements
+            else:
+                Xray_lines = mp.Sample.Xray_lines
+        for Xray_line in Xray_lines:
+            if result == 'intensitiesS':
+                res = self.intensity_map([Xray_line],plot_result=False)[0]
+            else:
+                res = self.get_result(Xray_line, result)
+            if res.data.dtype == 'float64':
+                a = 1
+                res.change_dtype('float32')
+                #res.change_dtype('uint32')
+            res.save(filename=filename+"_"+result+"_"+Xray_line,extension = extension, overwrite = True)
+        
+    def get_result(self, Xray_line, result):
+        mp = self.mapped_parameters 
+        for res in mp.Sample[result]:
+            if Xray_line in res.mapped_parameters.title:
+                return res
+        print("Didn't find it")
     
-    def quant(self):        
+    
+    
+    def quant(self,plot_result=True):        
         """
         Quantify using stratagem, a commercial software. A licence is needed.
         
@@ -438,11 +612,15 @@ class EDSSEMSpectrum(EDSSpectrum):
         self.write_donnee_tsv(foldername + 'essai')
         p = subprocess.Popen(foldername + 'Debug//essai.exe')
         p.wait()
-        self.read_result_tsv(foldername + 'essai')
+        self.read_result_tsv(foldername + 'essai',plot_result)
         
-    def read_result_tsv(self,foldername):
+    def read_result_tsv(self,foldername,plot_result):
         encoding = 'latin-1'
         mp=self.mapped_parameters
+        if (self.axes_manager.navigation_dimension == 3):
+            axes_quant = self.to_image(1)[1].axes_manager 
+        else:              
+            axes_quant = self.to_image()[1].axes_manager
         f = codecs.open(foldername+'//result.tsv', encoding = encoding,errors = 'replace') 
         dim = list(self.data.shape)
         a = []
@@ -460,13 +638,17 @@ class EDSSEMSpectrum(EDSSpectrum):
                     print("quant of %s : %s" % (Xray_line, quant))
             else:
                 if (self.axes_manager.navigation_dimension == 3):
-                    quant = self.to_image(1)[1].deepcopy()
-                    quant.data = np.array(a[i]).reshape((dim[2],dim[1],dim[0])).T
+                    #quant = self.to_image(1)[1].deepcopy()
+                    #quant.data = np.array(a[i]).reshape((dim[2],dim[1],dim[0])).T
+                    quant = Image({'data' : np.array(a[i]).reshape((dim[2],dim[1],dim[0])).T})
                 else:
-                    quant = self.to_image()[1].deepcopy()
-                    quant.data = np.array(a[i]).reshape((dim[1],dim[0])).T
+                    quant = Image({'data' : np.array(a[i]).reshape((dim[1],dim[0])).T})
+                    #quant = self.to_image()[1].deepcopy()
+                    #quant.data = np.array(a[i]).reshape((dim[1],dim[0])).T
+                quant.axes_manager=axes_quant
                 quant.mapped_parameters.title = 'Quant ' + Xray_line
-                quant.plot(None,False)
+                if plot_result:
+                    quant.plot(None,False)                
             mp.Sample.quants.append(quant)
             i += 1
         
