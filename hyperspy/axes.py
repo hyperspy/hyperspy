@@ -425,22 +425,39 @@ class AxesManager(t.HasTraits):
         
     def __init__(self, axes_list):
         super(AxesManager, self).__init__()
-        ncoord = len(axes_list)
-        self._axes = [None] * ncoord
-        for axis_dict in axes_list:
-            self._axes[axis_dict['index_in_array']] = DataAxis(
-                                                            **axis_dict)
+        self.create_axes(axes_list)
+        # set_signal_dimension is called only if there is no current 
+        # view. It defaults to spectrum
         navigates = [i.navigate for i in self._axes if 
                                                 hasattr(i, 'navigate')]
-        # set_signal_dimension is called only if there is no current view
-        # It defaults to spectrum
-        if not navigates or np.all(np.array(navigates) == True):
+        
+        if not navigates:
             self.set_signal_dimension(1)
         self._update_attributes()
         self.on_trait_change(self._update_attributes, '_axes.slice')
         self.on_trait_change(self._update_attributes, '_axes.index')
         self.on_trait_change(self._update_attributes, '_axes.size')
         self._index = None # index for the iterator
+        
+    def create_axes(self, axes_list):
+        """Given a list of dictionaries defining the axes properties
+        create the DataAxis instances and add them to the AxesManager.
+        
+        The index of the axis in the array is defined by the 
+        index_in_array keyword.
+        
+        See also
+        --------
+        append_axis
+        
+        """
+        ncoord = len(axes_list)
+        self._axes = [None] * ncoord
+        for axis_dict in axes_list:
+            axis = DataAxis(**axis_dict)
+            axis.axes_manager = self
+            self._axes[axis_dict['index_in_array']] = axis
+
         
     def _update_max_index(self):
         self._max_index = 1
