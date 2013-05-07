@@ -47,11 +47,7 @@ class Image(Signal):
         dic['data'] = np.rollaxis(dic['data'], 0, dim)
         dic['axes'] = utils_varia.rollelem(dic['axes'],0, dim)
         i = 0
-        for axis in dic['axes']:
-            axis['index_in_array'] = i
-            i += 1
         sp = Spectrum(dic)
-        sp.axes_manager._set_axes_index_in_array_from_position()
         if hasattr(self, 'learning_results'):
             sp.learning_results = copy.deepcopy(self.learning_results)
             sp.learning_results._transpose_results()

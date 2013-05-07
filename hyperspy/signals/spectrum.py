@@ -482,10 +482,6 @@ class Spectrum(Signal):
         dic['mapped_parameters']['record_by'] = 'image'
         dic['data'] = np.rollaxis(dic['data'], -1, 0)
         dic['axes'] = utils_varia.rollelem(dic['axes'],-1,0)
-        i = 0
-        for axis in dic['axes']:
-            axis['index_in_array'] = i
-            i += 1
         im = Image(dic)
         if hasattr(self, 'learning_results'):
             im.learning_results = copy.deepcopy(self.learning_results)

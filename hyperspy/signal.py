@@ -242,7 +242,6 @@ class Signal(t.HasTraits, MVA):
             exec("result = sdata.%s(odata)" % op_name)
             new_signal = self.get_deepcopy_with_new_data(result)
             new_signal.axes_manager._axes = new_axes
-            new_signal.axes_manager._set_axes_index_in_array_from_position()
             new_signal.axes_manager.set_signal_dimension(
                 self.axes_manager.signal_dimension)
             return new_signal
@@ -368,8 +367,7 @@ class Signal(t.HasTraits, MVA):
                         'scale': 1.,
                         'offset': 0.,
                         'size': int(self.data.shape[i]),
-                        'units': 'undefined',
-                        'index_in_array': i, })
+                        'units': 'undefined',})
         return axes
 
     def __call__(self, axes_manager=None):
@@ -607,8 +605,6 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         self.data = self.data.swapaxes(axis1, axis2)
         c1 = self.axes_manager._axes[axis1]
         c2 = self.axes_manager._axes[axis2]
-        c1.index_in_array, c2.index_in_array =  \
-            c2.index_in_array, c1.index_in_array
         self.axes_manager._axes[axis1] = c2
         self.axes_manager._axes[axis2] = c1
         self.axes_manager._update_attributes()
@@ -1957,7 +1953,6 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         cs = s.get_deepcopy_with_new_data(self())
         for axis in cs.axes_manager.navigation_axes:
             cs.axes_manager.remove(axis)
-        cs.axes_manager._set_axes_index_in_array_from_position()
         if cs.tmp_parameters.has_item('filename'):
             basename = cs.tmp_parameters.filename
             ext = cs.tmp_parameters.extension

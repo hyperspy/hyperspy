@@ -391,7 +391,6 @@ class Parameter(object):
             s.axes_manager.append_axis(
                 size=self._number_of_elements,
                 name=self.name,
-                index_in_array=len(s.axes_manager._axes),
                 navigate=True)
         return s
         

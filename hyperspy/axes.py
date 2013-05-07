@@ -25,19 +25,19 @@ from traits.trait_errors import TraitError
 
 from hyperspy import messages
 
-def get_axis_group(n , label = ''):
+def get_axis_group(n , label=''):
     group = tui.Group(
             tui.Group(
                 tui.Item('axis%i.name' % n),
-                tui.Item('axis%i.size' % n, style = 'readonly'),
-                tui.Item('axis%i.index_in_array' % n, style = 'readonly'),
-                tui.Item('axis%i.low_index' % n, style = 'readonly'),
-                tui.Item('axis%i.high_index' % n, style = 'readonly'),
+                tui.Item('axis%i.size' % n, style='readonly'),
+                tui.Item('axis%i.index_in_array' % n, style='readonly'),
+                tui.Item('axis%i.low_index' % n, style='readonly'),
+                tui.Item('axis%i.high_index' % n, style='readonly'),
                 # The style of the index is chosen to be readonly because of 
                 # a bug in Traits 4.0.0 when using context with a Range traits
                 # where the limits are defined by another traits_view
-                tui.Item('axis%i.index' % n, style = 'readonly'),
-                tui.Item('axis%i.value' % n, style = 'readonly'),
+                tui.Item('axis%i.index' % n, style='readonly'),
+                tui.Item('axis%i.value' % n, style='readonly'),
                 tui.Item('axis%i.units' % n),
                 tui.Item('axis%i.navigate' % n, label = 'slice'),
             show_border = True,),
@@ -73,12 +73,11 @@ def generate_axis(offset, scale, size, offset_index=0):
                        size)
 
 class DataAxis(t.HasTraits):
-    name = t.Str()
+    name=t.Str()
     units = t.Str()
     scale = t.Float()
     offset = t.Float()
     size = t.CInt()
-    index_in_array = t.Int()
     low_value = t.Float()
     high_value = t.Float()
     value = t.Range('low_value', 'high_value')
@@ -92,7 +91,7 @@ class DataAxis(t.HasTraits):
 
     def __init__(self,
                  size,
-                 index_in_array,
+                 index_in_array=None,
                  name='',
                  scale=1.,
                  offset=0.,
@@ -100,7 +99,7 @@ class DataAxis(t.HasTraits):
                  navigate=True):
                      
         super(DataAxis, self).__init__()
-        self.name = name
+        self.name=name
         self.units = units
         self.scale = scale
         self.offset = offset
@@ -108,9 +107,9 @@ class DataAxis(t.HasTraits):
         self.high_index = self.size - 1
         self.low_index = 0
         self.index = 0
-        self.index_in_array = index_in_array
         self.update_axis()
         self.navigate = navigate
+        self.axes_manager = None
         self.on_trait_change(self.update_axis,
                              ['scale', 'offset', 'size'])
         self.on_trait_change(self.update_value, 'index')
@@ -120,7 +119,27 @@ class DataAxis(t.HasTraits):
         # The slice must be updated even if the default value did not 
         # change to correctly set its value.
         self._update_slice(self.navigate)
-        
+    
+    @property
+    def index_in_array(self):
+        if self.axes_manager is not None:
+            return self.axes_manager._axes.index(self)
+        else:
+            raise AttributeError(
+                "This DataAxis does not belong to an AxesManager"
+                " and therefore its index_in_array attribute "
+                " is not defined")
+    @property
+    def index_in_axes_manager(self):
+        if self.axes_manager is not None:
+            return self.axes_manager._get_axes_in_natural_order().\
+                   index(self)
+        else:
+            raise AttributeError(
+                "This DataAxis does not belong to an AxesManager"
+                " and therefore its index_in_array attribute "
+                " is not defined")
+                        
     def _get_positive_index(self, index):
         if index < 0:
             index = self.size + index
@@ -276,17 +295,17 @@ class DataAxis(t.HasTraits):
     tui.View(
         tui.Group(
             tui.Group(
-                tui.Item(name = 'name'),
-                tui.Item(name = 'size', style = 'readonly'),
-                tui.Item(name = 'index_in_array', style = 'readonly'),
-                tui.Item(name = 'index'),
-                tui.Item(name = 'value', style = 'readonly'),
-                tui.Item(name = 'units'),
-                tui.Item(name = 'navigate', label = 'navigate'),
+                tui.Item(name='name'),
+                tui.Item(name='size', style='readonly'),
+                tui.Item(name='index_in_array', style='readonly'),
+                tui.Item(name='index'),
+                tui.Item(name='value', style='readonly'),
+                tui.Item(name='units'),
+                tui.Item(name='navigate', label = 'navigate'),
             show_border = True,),
             tui.Group(
-                tui.Item(name = 'scale'),
-                tui.Item(name = 'offset'),
+                tui.Item(name='scale'),
+                tui.Item(name='offset'),
             label = 'Calibration',
             show_border = True,),
         label = "Data Axis properties",
@@ -337,7 +356,7 @@ class AxesManager(t.HasTraits):
     
     >>> s.axes_manager[1]
     <undefined navigation axis, size: 2, index: 0>
-    >>> s.axes_manager[1].name = "y"
+    >>> s.axes_manager[1].name="y"
     >>> s.axes_manager['y']
     <y navigation axis, size: 2, index: 0>
     >>> for i in s.axes_manager:
@@ -401,8 +420,6 @@ class AxesManager(t.HasTraits):
                 "AxesManager.remove(x): x not in AxesManager")
         index = self._axes.index(axis)
         self._axes.remove(axis)
-        for axis in self._axes[index:]:
-            axis.index_in_array -= 1
             
     def __delitem__(self, i):
         self.remove(self[i])
@@ -443,22 +460,23 @@ class AxesManager(t.HasTraits):
         """Given a list of dictionaries defining the axes properties
         create the DataAxis instances and add them to the AxesManager.
         
-        The index of the axis in the array is defined by the 
-        index_in_array keyword.
+        The index of the axis in the array and in the `_axes` lists 
+        can be defined by the index_in_array keyword if given 
+        for all axes. Otherwise it is defined by their index in the 
+        list.
         
         See also
         --------
         append_axis
         
         """
-        ncoord = len(axes_list)
-        self._axes = [None] * ncoord
-        for axis_dict in axes_list:
-            axis = DataAxis(**axis_dict)
-            axis.axes_manager = self
-            self._axes[axis_dict['index_in_array']] = axis
-
+        # Reorder axes_list using index_in_array if defined
+        indices = set([axis['index_in_array'] for axis in axes_list if
+                   'index_in_array' in axis])
         
+        for axis_dict in axes_list:
+            self.append_axis(**axis_dict)
+
     def _update_max_index(self):
         self._max_index = 1
         for i in self.navigation_shape:
@@ -503,6 +521,7 @@ class AxesManager(t.HasTraits):
         
     def append_axis(self, *args, **kwargs):
         axis = DataAxis(*args, **kwargs)
+        axis.axes_manager = self
         self._axes.append(axis)
 
     def _update_attributes(self):
@@ -570,22 +589,6 @@ class AxesManager(t.HasTraits):
         for axis in self._axes:
             axis.navigate = tl.pop(0)
 
-    def set_signal_axes(self, signal_axes):
-        '''Easily choose which axes are slicing
-
-        Parameters
-        ----------
-
-        signal_axes: tuple of ints
-            A list of the axis indices that we want to slice
-
-        '''
-        for axis in self._axes:
-            if axis.index_in_array in signal_axes:
-                axis.navigate = False
-            else:
-                axis.navigate = True
-
     def connect(self, f):
         for axis in self._axes:
             if axis.slice is None:
@@ -638,24 +641,12 @@ class AxesManager(t.HasTraits):
         return axes_dicts
         
     def _get_signal_axes_dicts(self):
-        axes_dicts = []
-        for i, axis in enumerate(self.signal_axes[::-1]):
-            axes_dicts.append(axis.get_axis_dictionary())
-            axes_dicts[-1]['index_in_array'] = i
-        return axes_dicts
+        return [axis.get_axis_dictionary() for axis in 
+                self.signal_axes[::-1]]
 
     def _get_navigation_axes_dicts(self):
-        axes_dicts = []
-        for axis in enumerate(self.navigation_axes[::-1]):
-            axes_dicts.append(axis.get_axis_dictionary())
-            axes_dicts[-1]['index_in_array'] = i
-        return axes_dicts
-        
-    def _set_axes_index_in_array_from_position(self):
-        i = 0
-        for axis in self._axes:
-            axis.index_in_array = i
-            i += 1
+        return [axis.get_axis_dictionary() for axis in 
+                self.navigation_axes[::-1]]
         
     def show(self):
         context = {}

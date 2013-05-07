@@ -206,7 +206,6 @@ class LineInSpectrum(t.HasTraits):
         self.signal = signal
         self.signal.plot()
         axis_dict = signal.axes_manager.signal_axes[0].get_axis_dictionary()
-        axis_dict['index_in_array'] = 0
         am = AxesManager([axis_dict,])
         am._axes[0].navigate = True
         # Set the position of the line in the middle of the spectral
