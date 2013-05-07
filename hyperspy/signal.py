@@ -148,6 +148,14 @@ class Signal(t.HasTraits, MVA):
 
         return _signal
         
+    def __setitem__(self, i, j):
+        """x.__setitem__(i, y) <==> x[i]=y
+        
+        """
+        if isinstance(j, Signal):
+            j = j.data
+        self.__getitem__(i).data[:] = j
+        
     
     def _binary_operator_ruler(self, other, op_name):
         exception_message = (
@@ -342,10 +350,13 @@ class Signal(t.HasTraits, MVA):
         and the axes.
         
         """
+        # We deepcopy everything but data
+        self = self.get_deepcopy_with_new_data(self.data)
         for axis in self.axes_manager._axes:
             if axis.size == 1:
                 self.axes_manager.remove(axis)
         self.data = self.data.squeeze()
+        return self
 
     def _get_signal_dict(self):
         dic = {}
@@ -363,7 +374,7 @@ class Signal(t.HasTraits, MVA):
         axes = []
         for i in xrange(len(self.data.shape)):
             axes.append({
-                        'name': 'undefined',
+                        'name': 'axis%i' % i,
                         'scale': 1.,
                         'offset': 0.,
                         'size': int(self.data.shape[i]),
@@ -384,15 +395,36 @@ class Signal(t.HasTraits, MVA):
             return self.data.squeeze().T
 
     def _get_hse_2D_explorer(self, *args, **kwargs):
-        islice = self.axes_manager.signal_axes[0].index_in_array
-        data = np.nan_to_num(self.data).sum(islice)
+        slices = [0,] * len(self.axes_manager.axes)
+        for i, axis in enumerate(
+                            self.axes_manager.navigation_axes[::-1]):
+            if i < 2:
+                slices[axis.index_in_array] = slice(None, None, None)
+            else:
+                slices[axis.index_in_array] = slice(
+                                        axis.index, axis.index+1,None)
+        isignal = self.axes_manager.signal_axes[0].index_in_array
+        slices[isignal] = slice(None, None, None)
+        data = np.nan_to_num(self.data.__getitem__(slices)
+                             ).sum(isignal).squeeze()
         return data
 
     def _get_hie_explorer(self, *args, **kwargs):
-        isslice = [self.axes_manager.signal_axes[1].index_in_array,
-                   self.axes_manager.signal_axes[0].index_in_array]
-        isslice.sort()
-        data = self.data.sum(isslice[1]).sum(isslice[0])
+        slices = [0,] * len(self.axes_manager._axes)
+        for i, axis in enumerate(
+                            self.axes_manager.navigation_axes):
+            if i < 2:
+                slices[axis.index_in_array] = slice(None, None, None)
+            else:
+                slices[axis.index_in_array] = slice(
+                                        axis.index, axis.index+1,None)
+        isignal = [axis.index_in_array for axis in
+                   self.axes_manager.signal_axes]
+        isignal.sort()
+        slices[isignal[0]] = slice(None, None, None)
+        slices[isignal[1]] = slice(None, None, None)
+        data = np.nan_to_num(self.data.__getitem__(slices)
+                             ).sum(isignal[1]).sum(isignal[0]).squeeze()
         return data
 
     def _get_explorer(self, *args, **kwargs):
@@ -400,12 +432,11 @@ class Signal(t.HasTraits, MVA):
         if self.axes_manager.signal_dimension == 1:
             if nav_dim == 1:
                 return self._get_hse_1D_explorer(*args, **kwargs)
-            elif nav_dim == 2:
+            elif nav_dim >= 2:
                 return self._get_hse_2D_explorer(*args, **kwargs)
-            else:
-                return None
+
         if self.axes_manager.signal_dimension == 2:
-            if nav_dim == 1 or nav_dim == 2:
+            if nav_dim >= 1:
                 return self._get_hie_explorer(*args, **kwargs)
             else:
                 return None
@@ -545,12 +576,14 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             new_offset = self.axes_manager._axes[axis].axis[i1]
         # We take a copy to guarantee the continuity of the data
         self.data = self.data[
-        (slice(None),)*axis + (slice(i1, i2), Ellipsis)].copy()
+        (slice(None),)*axis + (slice(i1, i2), Ellipsis)]
 
         if i1 is not None:
             self.axes_manager._axes[axis].offset = new_offset
         self.get_dimensions_from_data()
         self.squeeze()
+        if copy is True:
+            self.data = self.data.copy()
 
     def crop_in_units(self, axis, x1=None, x2=None, copy=True):
         """Crops the data in a given axis. The range is given in the units of
@@ -862,6 +895,74 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         axis = self.axes_manager._get_positive_index(axis)
         s = self.get_deepcopy_with_new_data(self.data.sum(axis))
         s.axes_manager.remove(s.axes_manager._axes[axis])
+        return s
+        
+    @auto_replot
+    def max(self, axis, return_signal=False):
+        """Returns a signal of the same type containing
+        the maximum along a given axis.
+
+        Parameters
+        ----------
+        axis : int
+            The axis over which the operation will be performed
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum, mean, min
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.max(-1).data.shape
+        (64,64)        
+        
+        """
+        
+        axis = self.axes_manager._get_positive_index(axis)
+        s = self.get_deepcopy_with_new_data(self.data.max(axis))
+        s.axes_manager.remove(s.axes_manager.axes[axis])
+        return s
+        
+    @auto_replot
+    def min(self, axis, return_signal=False):
+        """Returns a signal of the same type containing
+        the minimum along a given axis.
+
+        Parameters
+        ----------
+        axis : int
+            The axis over which the operation will be performed
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum, mean, max
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.min(-1).data.shape
+        (64,64)        
+        
+        """
+        
+        axis = self.axes_manager._get_positive_index(axis)
+        s = self.get_deepcopy_with_new_data(self.data.min(axis))
+        s.axes_manager.remove(s.axes_manager.axes[axis])
         return s
     
     @auto_replot
@@ -1900,33 +2001,42 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 #        """
 #        utils.copy_energy_calibration(s, self)
 #
-    def estimate_variance(self, dc = None, gaussian_noise_var = None):
-        """Variance estimation supposing Poissonian noise
+    def estimate_poissonian_noise_variance(self,
+            dc=None, gaussian_noise_var=None):
+        """Variance estimation supposing Poissonian noise.
 
         Parameters
         ----------
         dc : None or numpy array
-            If None the SI is used to estimate its variance. Otherwise, the
+            If None the SI is used to estimate its variance.
+            Otherwise, the
             provided array will be used.
         Note
         ----
-        The gain_factor and gain_offset from the aquisition parameters are used
+        The gain_factor and gain_offset from the aquisition parameters 
+        are used
+        
         """
         gain_factor = 1
         gain_offset = 0
         correlation_factor = 1
         if not self.mapped_parameters.has_item("Variance_estimation"):
-            print("No Variance estimation parameters found in mapped"
-                  " parameters. The variance will be estimated supposing "
-                  "perfect poissonian noise")
-        if self.mapped_parameters.has_item('Variance_estimation.gain_factor'):
-            gain_factor = self.mapped_parameters.Variance_estimation.gain_factor
-        if self.mapped_parameters.has_item('Variance_estimation.gain_offset'):
-            gain_offset = self.mapped_parameters.Variance_estimation.gain_offset
+            print("No Variance estimation parameters found in mapped "
+                  "parameters. The variance will be estimated supposing"
+                  " perfect poissonian noise")
+        if self.mapped_parameters.has_item(
+            'Variance_estimation.gain_factor'):
+            gain_factor = self.mapped_parameters.\
+                Variance_estimation.gain_factor
+        if self.mapped_parameters.has_item(
+            'Variance_estimation.gain_offset'):
+            gain_offset = self.mapped_parameters.Variance_estimation.\
+                gain_offset
         if self.mapped_parameters.has_item(
             'Variance_estimation.correlation_factor'):
             correlation_factor = \
-                self.mapped_parameters.Variance_estimation.correlation_factor
+                self.mapped_parameters.Variance_estimation.\
+                    correlation_factor
         print "Gain factor = ", gain_factor
         print "Gain offset = ", gain_offset
         print "Correlation factor = ", correlation_factor
@@ -1935,8 +2045,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         self.variance = dc * gain_factor + gain_offset
         if self.variance.min() < 0:
             if gain_offset == 0 and gaussian_noise_var is None:
-                print "The variance estimation results in negative values"
-                print "Maybe the gain_offset is wrong?"
+                raise ValueError("The variance estimation results"
+                       "in negative values"
+                       "Maybe the gain_offset is wrong?")
                 self.variance = None
                 return
             elif gaussian_noise_var is None:
@@ -1946,8 +2057,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 np.Inf)
             else:
                 print "Clipping the variance to the gaussian_noise_var"
-                self.variance = np.clip(self.variance, gaussian_noise_var,
-                np.Inf)
+                self.variance = np.clip(self.variance,
+                                        gaussian_noise_var,
+                                        np.Inf)
                 
     def get_current_signal(self):
         cs = s.get_deepcopy_with_new_data(self())
@@ -2049,8 +2161,18 @@ class SpecialSlicers:
     def __init__(self, signal, isNavigation):
         self.isNavigation = isNavigation
         self.signal = signal
+        
     def __getitem__(self, slices):
         return self.signal.__getitem__(slices, self.isNavigation)
+        
+    def __setitem__(self, i, j):
+        """x.__setitem__(i, y) <==> x[i]=y
+        
+        """
+        if isinstance(j, Signal):
+            j = j.data
+        self.signal.__getitem__(i, self.isNavigation).data[:] = j
+        
     def __len__(self):
         return self.signal.__len__()
 

@@ -476,17 +476,41 @@ class Spectrum(Signal):
             pbar.finish()
             self.peaks=self.peaks[:trim_id,:,:,:]
 
-    def to_image(self):
+    def to_image(self, signal_to_index=0):
+        """Spectrum to image
+
+        Parameters
+        ----------
+        signal_to_index : integer
+            Position to move the signal axis.        
+            
+        Examples
+        --------        
+        >>> s = signals.Spectrum({'data' : np.ones((3,4,5,6))})
+        >>> s
+        <Spectrum, title: , dimensions: (3L, 4L, 5L, 6L)>
+
+        >>> s.to_image()
+        <Image, title: , dimensions: (6L, 3L, 4L, 5L)>
+
+        >>> s.to_image(1)
+        <Image, title: , dimensions: (3L, 6L, 4L, 5L)>
+        
+        """
         from hyperspy.signals.image import Image
         dic = self._get_signal_dict()
         dic['mapped_parameters']['record_by'] = 'image'
-        dic['data'] = np.rollaxis(dic['data'], -1, 0)
-        dic['axes'] = utils_varia.rollelem(dic['axes'],-1,0)
+        dic['data'] = np.rollaxis(dic['data'], -1, signal_to_index)
+        dic['axes'] = utils_varia.rollelem(dic['axes'],-1,signal_to_index)
         im = Image(dic)
+        
         if hasattr(self, 'learning_results'):
-            im.learning_results = copy.deepcopy(self.learning_results)
-            im.learning_results._transpose_results()
-            im.learning_results.original_shape = self.data.shape
+            if signal_to_index != 0 and self.learning_results.loadings is not None:
+                print("The learning results won't be transfered correctly")
+            else :
+                im.learning_results = copy.deepcopy(self.learning_results)
+                im.learning_results._transpose_results()
+                im.learning_results.original_shape = self.data.shape
 
         im.tmp_parameters = self.tmp_parameters.deepcopy()
         return im

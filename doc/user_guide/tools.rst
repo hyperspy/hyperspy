@@ -276,6 +276,32 @@ dimensions independently:
     array([[ 0,  4,  8],
        [12, 16, 20]])
        
+
+The same syntax can be used to set the data values:
+
+.. code-block:: python
+    
+    >>> s = signals.Spectrum({'data' : np.arange(2*3*4).reshape((2,3,4))})
+    >>> s
+    <Spectrum, title: , dimensions: (10, 10, 10)>
+    >>> s.data
+    array([[[ 0,  1,  2,  3],
+        [ 4,  5,  6,  7],
+        [ 8,  9, 10, 11]],
+
+       [[12, 13, 14, 15],
+        [16, 17, 18, 19],
+        [20, 21, 22, 23]]])
+    >>> s.navigation_indexer[0,0].data
+    array([0, 1, 2, 3])
+    >>> s.navigation_indexer[0,0] = 1
+    >>> s.navigation_indexer[0,0].data
+    array([1, 1, 1, 1])
+    >>> s.navigation_indexer[0,0] = s[1,1]
+    >>> s.navigation_indexer[0,0].data
+    array([16, 17, 18, 19])
+
+
        
 .. _signal.operations:
        

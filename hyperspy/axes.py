@@ -99,7 +99,7 @@ class DataAxis(t.HasTraits):
                  navigate=True):
                      
         super(DataAxis, self).__init__()
-        self.name=name
+        self.name = name
         self.units = units
         self.scale = scale
         self.offset = offset
@@ -168,11 +168,11 @@ class DataAxis(t.HasTraits):
             stop = slice_.stop
             step = slice_.step
         else:
-            start = self._get_positive_index(slice_)
-            if isinstance(start, float):
-                stop = i2v(start) + 1
+            if isinstance(slice_, float):
+                start = v2i(slice_)
             else:
-                stop = start + 1
+                start = self._get_positive_index(slice_)
+            stop = start + 1
             step = None
             
         if isinstance(step, float):
@@ -188,11 +188,10 @@ class DataAxis(t.HasTraits):
         my_slice = slice(start, stop, step)
         
         if start is None:
-            if step > 0:
+            if step > 0 or step is None:
                 start = 0
             else:
                 start = self.size - 1
-            
         self.offset = i2v(start)
         if step is not None:
             self.scale *= step
@@ -524,22 +523,22 @@ class AxesManager(t.HasTraits):
         axis.axes_manager = self
         self._axes.append(axis)
 
-    def _update_attributes(self):
-        getitem_tuple = []
+    def update_attributes(self):
+        getitem_tuple = ()
         values = []
-        signal_axes = []
-        navigation_axes = []
-        for axis in self._axes:
+        self.signal_axes = []
+        self.navigation_axes = []
+        for axis in self.axes:
             if axis.slice is None:
-                getitem_tuple.append(axis.index)
+                getitem_tuple += axis.index,
                 values.append(axis.value)
-                navigation_axes.append(axis)
+                self.navigation_axes.append(axis)
             else:
-                getitem_tuple.append(axis.slice)
-                signal_axes.append(axis)
-        self.signal_axes = tuple(signal_axes[::-1])
-        self.navigation_axes = tuple(navigation_axes[::-1])
-                
+                getitem_tuple += axis.slice,
+                self.signal_axes.append(axis)
+
+        self.signal_axes = tuple(self.signal_axes[::-]) 
+        self.navigation_axes = tuple(self.navigation_axes[::-])       
         self._getitem_tuple = getitem_tuple
         self.signal_dimension = len(self.signal_axes)
         self.navigation_dimension = len(self.navigation_axes)

@@ -191,7 +191,7 @@ class DraggableSquare(ResizebleDraggablePatch):
         self._ysize = yaxis.scale * self.size
         
     def calculate_position(self):
-        coordinates = np.array(self.axes_manager.coordinates)
+        coordinates = np.array(self.axes_manager.coordinates[:2])
         self._position = coordinates - (
                             self._xsize / 2., self._ysize / 2.)
 
@@ -217,14 +217,14 @@ class DraggableSquare(ResizebleDraggablePatch):
             wyindex = yaxis.value2index(event.ydata)
             if self.axes_manager.indices[1] != wyindex:
                 try:
-                    self.axes_manager.navigation_axes[1].index = wyindex
+                    yaxis.index = wyindex
                 except traits.api.TraitError:
                     # Index out of range, we do nothing
                     pass
                     
             if  self.axes_manager.indices[0] != wxindex:
                 try:
-                    self.axes_manager.navigation_axes[0].index = wxindex
+                    xaxis.index = wxindex
                 except traits.api.TraitError:
                     # Index out of range, we do nothing
                     pass

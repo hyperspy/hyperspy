@@ -705,6 +705,7 @@ class EELSSpectrum(Spectrum):
         s.get_dimensions_from_data()
         s.data[...,:axis.size] = self.data
         pl = PowerLaw()
+        pl._axes_manager = self.axes_manager
         pl.estimate_parameters(
             s, axis.index2value(axis.size - window_size),
             axis.index2value(axis.size - 1))
