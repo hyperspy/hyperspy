@@ -124,8 +124,8 @@ class Signal(t.HasTraits, MVA):
             _orig_slices = tuple(_orig_slices)
             
         if len(_orig_slices) > len(idx):
-            raise IndexError("invalid index")
-    
+            raise IndexError("too many indices")
+                    
         slices = np.array([slice(None,)] * 
                            len(_signal.axes_manager._axes))
             
@@ -395,7 +395,7 @@ class Signal(t.HasTraits, MVA):
             return self.data.squeeze().T
 
     def _get_hse_2D_explorer(self, *args, **kwargs):
-        slices = [0,] * len(self.axes_manager.axes)
+        slices = [0,] * len(self.axes_manager._axes)
         for i, axis in enumerate(
                             self.axes_manager.navigation_axes[::-1]):
             if i < 2:
@@ -769,9 +769,6 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 uname += ',' + axis.name
                 uunits = ',' + axis.units
                 to_remove.append(axis)
-            else:
-                axis.index_in_array = i
-                i += 1
         self.axes_manager._axes[unfolded_axis].name += uname
         self.axes_manager._axes[unfolded_axis].units += uunits
         self.axes_manager._axes[unfolded_axis].size = \
@@ -928,7 +925,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         axis = self.axes_manager._get_positive_index(axis)
         s = self.get_deepcopy_with_new_data(self.data.max(axis))
-        s.axes_manager.remove(s.axes_manager.axes[axis])
+        s.axes_manager.remove(s.axes_manager._axes[axis])
         return s
         
     @auto_replot
@@ -962,7 +959,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         axis = self.axes_manager._get_positive_index(axis)
         s = self.get_deepcopy_with_new_data(self.data.min(axis))
-        s.axes_manager.remove(s.axes_manager.axes[axis])
+        s.axes_manager.remove(s.axes_manager._axes[axis])
         return s
     
     @auto_replot

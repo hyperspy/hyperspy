@@ -84,7 +84,7 @@ class DataAxis(t.HasTraits):
     low_index = t.Int(0)
     high_index = t.Int()
     slice = t.Instance(slice)
-    navigate = t.Bool(True)
+    navigate = t.Bool(t.Undefined)
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
     continuous_value = t.Bool(False)
@@ -96,7 +96,7 @@ class DataAxis(t.HasTraits):
                  scale=1.,
                  offset=0.,
                  units='undefined',
-                 navigate=True):
+                 navigate=t.Undefined):
                      
         super(DataAxis, self).__init__()
         self.name = name
@@ -375,6 +375,22 @@ class AxesManager(t.HasTraits):
     navigation_axes = t.Tuple()
     _step = t.Int(1)
     
+    def __init__(self, axes_list):
+        super(AxesManager, self).__init__()
+        self.create_axes(axes_list)
+        # set_signal_dimension is called only if there is no current 
+        # view. It defaults to spectrum
+        navigates = [i.navigate for i in self._axes]
+        if t.Undefined in navigates:
+            # Default to Spectrum view if the view is not fully defined
+            self.set_signal_dimension(1)
+        
+        self._update_attributes()
+        self.on_trait_change(self._update_attributes, '_axes.slice')
+        self.on_trait_change(self._update_attributes, '_axes.index')
+        self.on_trait_change(self._update_attributes, '_axes.size')
+        self._index = None # index for the iterator
+    
     def _get_positive_index(self, axis):
         if axis < 0:
             axis = len(self._axes) + axis
@@ -439,21 +455,6 @@ class AxesManager(t.HasTraits):
                 cslice[index] = slice_
         return tuple(cslice)
         
-    def __init__(self, axes_list):
-        super(AxesManager, self).__init__()
-        self.create_axes(axes_list)
-        # set_signal_dimension is called only if there is no current 
-        # view. It defaults to spectrum
-        navigates = [i.navigate for i in self._axes if 
-                                                hasattr(i, 'navigate')]
-        
-        if not navigates:
-            self.set_signal_dimension(1)
-        self._update_attributes()
-        self.on_trait_change(self._update_attributes, '_axes.slice')
-        self.on_trait_change(self._update_attributes, '_axes.index')
-        self.on_trait_change(self._update_attributes, '_axes.size')
-        self._index = None # index for the iterator
         
     def create_axes(self, axes_list):
         """Given a list of dictionaries defining the axes properties
@@ -523,22 +524,22 @@ class AxesManager(t.HasTraits):
         axis.axes_manager = self
         self._axes.append(axis)
 
-    def update_attributes(self):
+    def _update_attributes(self):
         getitem_tuple = ()
         values = []
-        self.signal_axes = []
-        self.navigation_axes = []
-        for axis in self.axes:
+        self.signal_axes = ()
+        self.navigation_axes = ()
+        for axis in self._axes:
             if axis.slice is None:
                 getitem_tuple += axis.index,
                 values.append(axis.value)
-                self.navigation_axes.append(axis)
+                self.navigation_axes += axis,
             else:
                 getitem_tuple += axis.slice,
-                self.signal_axes.append(axis)
+                self.signal_axes += axis,
 
-        self.signal_axes = tuple(self.signal_axes[::-]) 
-        self.navigation_axes = tuple(self.navigation_axes[::-])       
+        self.signal_axes = self.signal_axes[::-1]
+        self.navigation_axes = self.navigation_axes[::-1]
         self._getitem_tuple = getitem_tuple
         self.signal_dimension = len(self.signal_axes)
         self.navigation_dimension = len(self.navigation_axes)

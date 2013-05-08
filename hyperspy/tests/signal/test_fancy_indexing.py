@@ -36,10 +36,10 @@ class Test1D:
         s = self.signal[:]
         d = self.data
         assert_true((s.data==d).all())
-        assert_equal(s.axes_manager.axes[0].offset, 
-                     self.signal.axes_manager.axes[0].offset)
-        assert_equal(s.axes_manager.axes[0].scale,
-                     self.signal.axes_manager.axes[0].scale)
+        assert_equal(s.axes_manager._axes[0].offset, 
+                     self.signal.axes_manager._axes[0].offset)
+        assert_equal(s.axes_manager._axes[0].scale,
+                     self.signal.axes_manager._axes[0].scale)
         
         
     def test_std_slice(self):
@@ -81,7 +81,7 @@ class Test1D:
     def test_float_index(self):
         s = self.signal[3.4]
         assert_equal(s.data, 3)
-        assert_equal(len(s.axes_manager.axes), 1)
+        assert_equal(len(s.axes_manager._axes), 1)
         assert_equal(s.data.shape, (1,))
         
     def test_signal_indexer_slice(self):
@@ -136,7 +136,17 @@ class Test3D_SignalDim0:
     def test_signal_indexer_signal_dim0(self):
         s = self.signal
         assert((s.signal_indexer[:].data == s.data).all())
-        
+    
+    @raises(IndexError)  
+    def test_signal_indexer_signal_dim0(self):
+        s = self.signal
+        assert((s.signal_indexer[:,:].data == s.data).all())
+
+    @raises(IndexError)  
+    def test_signal_indexer_signal_dim0(self):
+        s = self.signal
+        s.signal_indexer[0]
+    
     def test_navigation_indexer_signal_dim0(self):
         s = self.signal
         assert((s.navigation_indexer[:].data == s.data).all())
