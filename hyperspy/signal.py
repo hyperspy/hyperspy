@@ -53,13 +53,14 @@ class Signal(t.HasTraits, MVA):
         -----------
         dictionary : dictionary
            see load_dictionary for the format
+           
         """
         super(Signal, self).__init__()
         self.mapped_parameters = DictionaryBrowser()
         self.original_parameters = DictionaryBrowser()
         self.tmp_parameters = DictionaryBrowser()
-        self.learning_results=LearningResults()
-        self.peak_learning_results=LearningResults()
+        self.learning_results = LearningResults()
+        self.peak_learning_results = LearningResults()
         if file_data_dict is not None:
             self.load_dictionary(file_data_dict)
         self._plot = None

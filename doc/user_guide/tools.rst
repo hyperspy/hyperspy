@@ -220,23 +220,23 @@ and the following indexes are the signal indices also in natural order.
        [[12, 13, 14, 15],
         [16, 17, 18, 19],
         [20, 21, 22, 23]]])
-    >>> s.axes_manager[0].name = 'y'
-    >>> s.axes_manager[1].name = 'x'
+    >>> s.axes_manager[0].name = 'x'
+    >>> s.axes_manager[1].name = 'y'
     >>> s.axes_manager[2].name = 't'
     >>> s.axes_manager.signal_axes
-    [<t axis, index: 2>]
+    (<t axis, size: 4>,)
     >>> s.axes_manager.navigation_axes
-    [<y axis, index: 0>, <x axis, index: 1>]
+    (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)
     >>> s[0,0].data
     array([0, 1, 2, 3])
-    >>> s[0,0].axes_manager.axes
-    [<t axis, index: 0>]
+    >>> s[0,0].axes_manager
+    <Axes manager, axes: (<t axis, size: 4>,)>
     >>> s[0,0,::-1].data
     array([3, 2, 1, 0])
     >>> s[...,0]
     <Spectrum, title: , dimensions: (2, 3)>
-    >>> s[...,0].axes_manager.axes
-    [<y axis, index: 0>, <x axis, index: 1>]
+    >>> s[...,0].axes_manager
+    <Axes manager, axes: (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)>
     >>> s[...,0].data
     array([[ 0,  4,  8],
        [12, 16, 20]])
@@ -257,21 +257,21 @@ dimensions independently:
        [[12, 13, 14, 15],
         [16, 17, 18, 19],
         [20, 21, 22, 23]]])
-    >>> s.axes_manager[0].name = 'y'
-    >>> s.axes_manager[1].name = 'x'
+    >>> s.axes_manager[0].name = 'x'
+    >>> s.axes_manager[1].name = 'y'
     >>> s.axes_manager[2].name = 't'
     >>> s.axes_manager.signal_axes
-    [<t axis, index: 2>]
+    (<t axis, size: 4>,)
     >>> s.axes_manager.navigation_axes
-    [<y axis, index: 0>, <x axis, index: 1>]
+    (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)
     >>> s.navigation_indexer[0,0].data
     array([0, 1, 2, 3])
-    >>> s.navigation_indexer[0,0].axes_manager.axes
-    [<t axis, index: 0>]
+    >>> s.navigation_indexer[0,0].axes_manager
+    <Axes manager, axes: (<t axis, size: 4>,)>
     >>> s.signal_indexer[0]
     <Spectrum, title: , dimensions: (2, 3)>
-    >>> s.signal_indexer[0].axes_manager.axes
-    [<y axis, index: 0>, <x axis, index: 1>]
+    >>> s.signal_indexer[0].axes_manager
+    <Axes manager, axes: (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)>
     >>> s.signal_indexer[0].data
     array([[ 0,  4,  8],
        [12, 16, 20]])

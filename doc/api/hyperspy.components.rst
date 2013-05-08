@@ -161,6 +161,38 @@ components Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`scalable_fixed_pattern.py.BACKUP.25854` Module
+----------------------------------------------------
+
+.. automodule:: hyperspy.components.scalable_fixed_pattern.py.BACKUP.25854
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`scalable_fixed_pattern.py.BASE.25854` Module
+--------------------------------------------------
+
+.. automodule:: hyperspy.components.scalable_fixed_pattern.py.BASE.25854
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`scalable_fixed_pattern.py.LOCAL.25854` Module
+---------------------------------------------------
+
+.. automodule:: hyperspy.components.scalable_fixed_pattern.py.LOCAL.25854
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`scalable_fixed_pattern.py.REMOTE.25854` Module
+----------------------------------------------------
+
+.. automodule:: hyperspy.components.scalable_fixed_pattern.py.REMOTE.25854
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`spline` Module
 --------------------
 
