@@ -556,57 +556,35 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         for axis in self.axes_manager._axes:
             axis.size = int(dc.shape[axis.index_in_array])
 
-    def crop_in_pixels(self, axis, i1=None, i2=None, copy=True):
+    def crop(self, axis, start=None, end=None):
         """Crops the data in a given axis. The range is given in pixels
-        axis : int
-        i1 : int
-            Start index
-        i2 : int
-            End index
-        copy : bool
-            If True makes a copy of the data, otherwise the cropping
-            performs just a view.
-
-        See also:
-        ---------
-        crop_in_units
         
+        Parameters
+        ----------
+        axis : {int | string}
+            Specify the data axis in which to perform the cropping 
+            operation. The axis can be specified using the index of the 
+            axis in `axes_manager` or the axis name.
+        start, end : {int | float | None}
+            The beginning and end of the cropping interval. If int
+            the value is taken as the axis index. If float the index 
+            is calculated using the axis calibration. If start/end is 
+            None crop from/to the low/high end of the axis.
+                    
         """
-        axis = self.axes_manager._get_positive_index(axis)
+        axis = self.axes_manager[axis]
+        i1, i2 = axis._get_index(start), axis._get_index(end) 
         if i1 is not None:
-            new_offset = self.axes_manager._axes[axis].axis[i1]
+            new_offset = axis.axis[i1]
         # We take a copy to guarantee the continuity of the data
         self.data = self.data[
-        (slice(None),)*axis + (slice(i1, i2), Ellipsis)]
+            (slice(None),) * axis.index_in_array + (slice(i1, i2),
+            Ellipsis)]
 
         if i1 is not None:
-            self.axes_manager._axes[axis].offset = new_offset
+            axis.offset = new_offset
         self.get_dimensions_from_data()
         self.squeeze()
-        if copy is True:
-            self.data = self.data.copy()
-
-    def crop_in_units(self, axis, x1=None, x2=None, copy=True):
-        """Crops the data in a given axis. The range is given in the units of
-        the axis
-
-        axis : int
-        i1 : float
-            Start value
-        i2 : float
-            End value
-        copy : bool
-            If True makes a copy of the data, otherwise the cropping
-            performs just a view.
-
-        See also:
-        ---------
-        crop_in_pixels
-
-        """
-        i1 = self.axes_manager._axes[axis].value2index(x1)
-        i2 = self.axes_manager._axes[axis].value2index(x2)
-        self.crop_in_pixels(axis, i1, i2,copy=copy)
 
     @auto_replot
     def roll_xy(self, n_x, n_y = 1):

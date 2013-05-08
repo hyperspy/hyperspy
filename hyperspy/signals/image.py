@@ -342,23 +342,21 @@ class Image(Signal):
             return shifts
         
     def crop_image(self,top=None, bottom=None,
-                         left=None, right=None):
-        """Crops an image according to the values given in pixels
+                        left=None, right=None):
+        """Crops an image.
         
-        top : int
-        bottom : int
-        left : int
-        right : int
-
+        top, bottom, left, right : int or float
+            
+            If int the values are taken as indices. If float the values are 
+            converted to indices.        
 
         See also:
         ---------
-        crop_in_units, crop_in_pixels
+        crop
         
         """
-        xaxis, yaxis = self.axes_manager.signal_axes
-        self.crop_in_pixels(yaxis.index_in_array, top, bottom)
-        self.crop_in_pixels(xaxis.index_in_array, left, right)
+        self.crop(1, top, bottom)
+        self.crop(0, left, right)
         
           
         

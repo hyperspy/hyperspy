@@ -96,10 +96,10 @@ class Spectrum(Signal):
         # Cropping time
         mini, maxi = shift_array.min(), shift_array.max()
         if mini < 0:
-            self.crop_in_units(axis, None, coord.axis[-1] + mini +
+            self.crop(axis, None, coord.axis[-1] + mini +
              coord.scale)
         if maxi > 0:
-            self.crop_in_units(axis, offset + maxi)
+            self.crop(axis, float(offset + maxi))
             
     def interpolate_in_index_1D(self, axis, i1, i2, delta=3, **kwargs):
         axis = self.axes_manager._axes[axis]
@@ -635,9 +635,22 @@ class Spectrum(Signal):
         br.edit_traits()
 
     @interactive_range_selector    
-    def crop_spectrum(self, left_value = None, right_value = None,):
-        iaxis = self.axes_manager.signal_axes[0].index_in_array
-        self.crop_in_units(axis=iaxis, x1=left_value, x2=right_value)
+    def crop_spectrum(self, left_value=None, right_value=None,):
+        """Crop in place the spectral dimension.
+        
+        Parameters
+        ----------
+        left_value, righ_value: {int | float | None}
+            If int the values are taken as indices. If float they are 
+            converted to indices using the spectral axis calibration.
+            If left_value is None crops from the beginning of the axis.
+            If right_value is None crops up to the end of the axis. If both are
+            None the interactive cropping interface is activated enabling 
+            cropping the spectrum using a span selector in the signal plot.
+            
+        """
+       
+        self.crop(axis=-1, start=left_value, end=right_value)
         
     @auto_replot    
     def gaussian_filter(self, FWHM):

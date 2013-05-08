@@ -147,6 +147,12 @@ class DataAxis(t.HasTraits):
                 raise IndexError("index out of bounds")
         return index
         
+    def _get_index(self, value):
+        if isinstance(value, float):
+            return self.value2index(value)
+        else:
+            return value
+        
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and 
         change the offset and scale of the DataAxis acordingly.

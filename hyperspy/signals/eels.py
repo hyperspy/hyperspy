@@ -368,8 +368,8 @@ class EELSSpectrum(Spectrum):
                     self.tmp_parameters.filename +
                     '_after_fourier_log_deconvolution')
         if crop is True:
-            s.crop_in_pixels(axis.index_in_array,
-                             None, -tapped_channels)
+            s.crop(axis.index_in_axes_manager,
+                             None, int(-tapped_channels))
         return s
 
     def fourier_ratio_deconvolution(self, ll, fwhm=None,
@@ -462,7 +462,7 @@ class EELSSpectrum(Spectrum):
         cl.data = np.fft.irfft(z.reshape(zshape) * jk / jl,
                              axis=axis.index_in_array)
         cl.data *= I0
-        cl.crop_in_pixels(-1,None,orig_cl_size)
+        cl.crop(-1,None,int(orig_cl_size))
         cl.mapped_parameters.title = (self.mapped_parameters.title + 
             ' after Fourier-ratio deconvolution')
         if cl.tmp_parameters.has_item('filename'):

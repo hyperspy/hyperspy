@@ -427,7 +427,7 @@ class Smoothing(t.HasTraits):
         if self.differential_order > 0:
             self.signal.axes_manager.signal_axes[0].offset = \
                 self.smooth_diff_line.axis[0]
-            self.signal.crop_in_pixels(-1,0,-self.differential_order)
+            self.signal.crop(-1,0,int(-self.differential_order))
         self.signal._replot()
         self.signal._plot.auto_update_plot = True
         

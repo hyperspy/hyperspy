@@ -364,10 +364,7 @@ the following cases:
 Cropping
 ^^^^^^^^
 
-The following methods are available to crop a given axis:
-
-* :py:meth:`~.signal.Signal.crop_in_pixels`
-* :py:meth:`~.signal.Signal.crop_in_units`
+* :py:meth:`~.signal.Signal.crop`
 
 Rebinning
 ^^^^^^^^^
