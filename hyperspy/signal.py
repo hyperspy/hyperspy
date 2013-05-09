@@ -480,17 +480,21 @@ class Signal(t.HasTraits, MVA):
             
 
     def plot_residual(self, axes_manager=None):
-        """Plot the residual between original data and reconstructed data
+        """Plot the residual between original data and reconstructed 
+        data
 
-        Requires you to have already run PCA or ICA, and to reconstruct data
-        using either the get_decomposition_model or get_bss_model methods.
+        Requires you to have already run PCA or ICA, and to reconstruct 
+        data using either the get_decomposition_model or 
+        get_bss_model methods.
+        
         """
 
         if hasattr(self, 'residual'):
             self.residual.plot(axes_manager)
         else:
-            print "Object does not have any residual information.  Is it a \
-reconstruction created using either get_decomposition_model or get_bss_model methods?"
+            print("Object does not have any residual information."
+                  "Is it a reconstruction created using either "
+                  "get_decomposition_model or get_bss_model methods?")
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
@@ -502,8 +506,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             - msa for EMSA/MSA single spectrum saving.
             - Many image formats such as png, tiff, jpeg...
 
-        If no extension is provided the default file format as defined in the
-        `preferences` is used.
+        If no extension is provided the default file format as defined 
+        in the `preferences` is used.
         Please note that not all the formats supports saving datasets of
         arbitrary dimensions, e.g. msa only suports 1D data.
         
@@ -548,9 +552,10 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 
     @auto_replot
     def get_dimensions_from_data(self):
-        """Get the dimension parameters from the data_cube. Useful when the
-        data_cube was externally modified, or when the SI was not loaded from
-        a file
+        """Get the dimension parameters from the data_cube. Useful when 
+        the data_cube was externally modified, or when the SI was not 
+        loaded from a file
+        
         """
         dc = self.data
         for axis in self.axes_manager._axes:
@@ -588,18 +593,23 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 
     @auto_replot
     def roll_xy(self, n_x, n_y = 1):
-        """Roll over the x axis n_x positions and n_y positions the former rows
+        """Roll over the x axis n_x positions and n_y positions the 
+        former rows.
 
-        This method has the purpose of "fixing" a bug in the acquisition of the
-        Orsay's microscopes and probably it does not have general interest
+        This method has the purpose of "fixing" a bug in the acquisition
+         of the Orsay's microscopes and probably it does not have 
+         general interest.
 
         Parameters
         ----------
         n_x : int
         n_y : int
 
-        Note: Useful to correct the SI column storing bug in Marcel's
+        Notes
+        -----
+        Useful to correct the SI column storing bug in Marcel's
         acquisition routines.
+        
         """
         self.data = np.roll(self.data, n_x, 0)
         self.data[:n_x, ...] = np.roll(self.data[:n_x, ...], n_y, 1)
@@ -607,13 +617,18 @@ reconstruction created using either get_decomposition_model or get_bss_model met
     # TODO: After using this function the plotting does not work
     @auto_replot
     def swap_axis(self, axis1, axis2):
-        """Swaps the axes
+        """Swaps the axes.
 
         Parameters
         ----------
-        axis1 : positive int
-        axis2 : positive int
+        axis1, axis2 : {int | str}
+            Specify the data axes in which to perform the operation.
+            The axis can be specified using the index of the 
+            axis in `axes_manager` or the axis name.
+        
         """
+        axis1 = self.axes_manager[axis1].index_in_array
+        axis2 = self.axes_manager[axis1].index_in_array
         self.data = self.data.swapaxes(axis1, axis2)
         c1 = self.axes_manager._axes[axis1]
         c2 = self.axes_manager._axes[axis2]
@@ -760,7 +775,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         if len(self.data.squeeze().shape) < 3:
             return False
 
-        # We need to store the original shape and coordinates to be used by
+        # We need to store the original shape and coordinates to be used
+        # by
         # the fold function only if it has not been already stored by a
         # previous unfold
         if self._shape_before_unfolding is None:
@@ -785,7 +801,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         self.axes_manager._axes[unfolded_axis].name += uname
         self.axes_manager._axes[unfolded_axis].units += uunits
         self.axes_manager._axes[unfolded_axis].size = \
-                                                self.data.shape[unfolded_axis]
+                                        self.data.shape[unfolded_axis]
         for axis in to_remove:
             self.axes_manager._axes.remove(axis)
 
@@ -809,7 +825,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         steady_axes = [
                         axis.index_in_array for axis in
                         self.axes_manager.signal_axes]
-        unfolded_axis = self.axes_manager.navigation_axes[0].index_in_array
+        unfolded_axis = (
+                    self.axes_manager.navigation_axes[0].index_in_array)
         self._unfold(steady_axes, unfolded_axis)
 
     def unfold_signal_space(self):
@@ -833,12 +850,12 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             self._shape_before_unfolding = None
             self._axes_manager_before_unfolding = None
 
-    def iterate_axis(self, axis = -1, copy=True):
+    def iterate_axis(self, axis=-1, copy=True):
         # We make a copy to guarantee that the data in contiguous,
         # otherwise it will not return a view of the data
         if copy is True:
             self.data = self.data.copy()
-        axis = self.axes_manager._get_positive_index(axis)
+        axis = self.axes_manager[axis].index_in_array
         unfolded_axis = axis - 1
         new_shape = [1] * len(self.data.shape)
         new_shape[axis] = self.data.shape[axis]
@@ -858,7 +875,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             self.data = self.data.copy()
         axes = [axis.index_in_array for 
                 axis in self.axes_manager.signal_axes]
-        unfolded_axis = self.axes_manager.navigation_axes[-1].index_in_array
+        unfolded_axis = (
+                self.axes_manager.navigation_axes[-1].index_in_array)
         new_shape = [1] * len(self.data.shape)
         for axis in axes:
             new_shape[axis] = self.data.shape[axis]
@@ -902,7 +920,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         """
         
-        axis = self.axes_manager._get_positive_index(axis)
+        axis = self.axes_manager[axis].index_in_array
         s = self.get_deepcopy_with_new_data(self.data.sum(axis))
         s.axes_manager.remove(s.axes_manager._axes[axis])
         return s
@@ -936,7 +954,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         """
         
-        axis = self.axes_manager._get_positive_index(axis)
+        axis = self.axes_manager[axis].index_in_array
         s = self.get_deepcopy_with_new_data(self.data.max(axis))
         s.axes_manager.remove(s.axes_manager._axes[axis])
         return s
@@ -970,7 +988,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         """
         
-        axis = self.axes_manager._get_positive_index(axis)
+        axis = self.axes_manager[axis].index_in_array
         s = self.get_deepcopy_with_new_data(self.data.min(axis))
         s.axes_manager.remove(s.axes_manager._axes[axis])
         return s
@@ -1003,7 +1021,7 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         """
         
-        axis = self.axes_manager._get_positive_index(axis)
+        axis = self.axes_manager[axis].index_in_array
         s = self.get_deepcopy_with_new_data(self.data.mean(axis))
         s.axes_manager.remove(s.axes_manager._axes[axis])
         return s
@@ -1089,15 +1107,21 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 
         comp_ids : None, int, or list of ints
             if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given int.
-            if list of ints, returns maps of components with ids in given list.
+            if int, returns maps of components with ids from 0 to given 
+            int.
+            if list of ints, returns maps of components with ids in 
+            given list.
         calibrate : bool
-            if True, plots are calibrated according to the data in the axes
+            if True, plots are calibrated according to the data in the 
+            axes
             manager.
         same_window : bool
-            if True, plots each factor to the same window.  They are not scaled.
-        comp_label : string, the label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting in the 
+            if True, plots each factor to the same window.  They are 
+            not scaled.
+        comp_label : string, the label that is either the plot title 
+        (if plotting in
+            separate windows) or the label in the legend (if plotting 
+            in the 
             same window)
         cmap : a matplotlib colormap
             The colormap used for factor images or
@@ -1112,7 +1136,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
             defaults to the average image of your stack.
 
         plot_shifts - bool, default is True
-            If true, plots a quiver (arrow) plot showing the shifts for each
+            If true, plots a quiver (arrow) plot showing the shifts for 
+            each
             peak present in the component being plotted.
 
         plot_char - None or int
@@ -1399,7 +1424,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                                 'mapped_parameters' : {
                             'title':'%s from %s'%(factor_prefix, 
                                 self.mapped_parameters.title),}})
-                    filename = '%s-%i.%s' % (factor_prefix, dim, factor_format)
+                    filename = '%s-%i.%s' % (factor_prefix,
+                                             dim,
+                                             factor_format)
                     if folder is not None:
                         filename = os.path.join(folder, filename)
                     s.save(filename)
@@ -1423,7 +1450,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                                 'title' : '%s from %s' % (factor_prefix,
                                     self.mapped_parameters.title),
                                 }})
-                    filename = '%s-%i.%s' % (factor_prefix, dim, factor_format)
+                    filename = '%s-%i.%s' % (factor_prefix,
+                                             dim,
+                                             factor_format)
                     if folder is not None:
                         filename = os.path.join(folder, filename)
                     im.save(filename)
@@ -1530,7 +1559,9 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                 for dim,index in zip(comp_ids,range(len(comp_ids))):
                     s=Spectrum({'data':loadings[index],
                                 'axes': [axis_dict,]})
-                    filename = '%s-%i.%s' % (loading_prefix, dim,loading_format)
+                    filename = '%s-%i.%s' % (loading_prefix,
+                                             dim,
+                                             loading_format)
                     if folder is not None:
                         filename = os.path.join(folder, filename)
                     s.save(filename)
@@ -1551,13 +1582,18 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                                     loading_prefix, 
                                     self.mapped_parameters.title),
                                 }})
-                    filename = '%s-%i.%s' % (loading_prefix, dim, loading_format)
+                    filename = '%s-%i.%s' % (loading_prefix,
+                                             dim,
+                                             loading_format)
                     if folder is not None:
                         filename = os.path.join(folder, filename)
                     s.save(filename)
 
-    def plot_decomposition_factors(self,comp_ids=None, calibrate=True,
-                        same_window=None, comp_label='Decomposition factor', 
+    def plot_decomposition_factors(self,
+                        comp_ids=None,
+                        calibrate=True,
+                        same_window=None,
+                        comp_label='Decomposition factor', 
                         per_row=3):
         """Plot factors from a decomposition
 
@@ -1566,25 +1602,32 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 
         comp_ids : None, int, or list of ints
             if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given int.
-            if list of ints, returns maps of components with ids in given list.
+            if int, returns maps of components with ids from 0 to given 
+            int.
+            if list of ints, returns maps of components with ids in 
+            given list.
 
         calibrate : bool
-            if True, calibrates plots where calibration is available from
+            if True, calibrates plots where calibration is available 
+            from
             the axes_manager.  If False, plots are in pixels/channels.
 
         same_window : bool
-            if True, plots each factor to the same window.  They are not scaled.
+            if True, plots each factor to the same window.  They are 
+            not scaled.
         
-        comp_label : string, the label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting in the 
+        comp_label : string, the label that is either the plot title 
+        (if plotting in
+            separate windows) or the label in the legend (if plotting 
+            in the 
             same window)
 
         cmap : The colormap used for the factor image, or for peak 
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
         
-        per_row : int, the number of plots in each row, when the same_window
+        per_row : int, the number of plots in each row, when the 
+        same_window
             parameter is True.
         """
         if same_window is None:
@@ -1610,25 +1653,32 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 
         comp_ids : None, int, or list of ints
             if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given int.
-            if list of ints, returns maps of components with ids in given list.
+            if int, returns maps of components with ids from 0 to 
+            given int.
+            if list of ints, returns maps of components with ids in 
+            given list.
 
         calibrate : bool
-            if True, calibrates plots where calibration is available from
+            if True, calibrates plots where calibration is available 
+            from
             the axes_manager.  If False, plots are in pixels/channels.
 
         same_window : bool
-            if True, plots each factor to the same window.  They are not scaled.
+            if True, plots each factor to the same window.  They are 
+            not scaled.
         
-        comp_label : string, the label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting in the 
+        comp_label : string, the label that is either the plot title 
+        (if plotting in
+            separate windows) or the label in the legend (if plotting 
+            in the 
             same window)
 
         cmap : The colormap used for the factor image, or for peak 
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
         
-        per_row : int, the number of plots in each row, when the same_window
+        per_row : int, the number of plots in each row, when the 
+        same_window
             parameter is True.
         """
         if same_window is None:
@@ -1641,10 +1691,15 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                                             comp_label=comp_label, 
                                             per_row=per_row)
 
-    def plot_decomposition_loadings(self, comp_ids=None, calibrate=True,
-                       same_window=None, comp_label='Decomposition loading', 
-                       with_factors=False, cmap=plt.cm.gray, 
-                       no_nans=False,per_row=3):
+    def plot_decomposition_loadings(self,
+                       comp_ids=None,
+                       calibrate=True,
+                       same_window=None,
+                       comp_label='Decomposition loading', 
+                       with_factors=False,
+                       cmap=plt.cm.gray, 
+                       no_nans=False,
+                       per_row=3):
         """Plot loadings from PCA
 
         Parameters
@@ -1652,19 +1707,24 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 
         comp_ids : None, int, or list of ints
             if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given int.
-            if list of ints, returns maps of components with ids in given list.
+            if int, returns maps of components with ids from 0 to 
+            given int.
+            if list of ints, returns maps of components with ids in 
+            given list.
 
         calibrate : bool
-            if True, calibrates plots where calibration is available from
+            if True, calibrates plots where calibration is available 
+            from
             the axes_manager.  If False, plots are in pixels/channels.
 
         same_window : bool
-            if True, plots each factor to the same window.  They are not scaled.
+            if True, plots each factor to the same window.  They are 
+            not scaled.
         
         comp_label : string, 
             The label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting in the 
+            separate windows) or the label in the legend (if plotting 
+            in the 
             same window)
 
         with_factors : bool
@@ -1693,10 +1753,16 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         if comp_ids is None:
             comp_ids = self.learning_results.output_dimension
-        return self._plot_loadings(loadings, comp_ids=comp_ids, 
-                                 with_factors=with_factors, factors=factors,
-                                 same_window=same_window, comp_label=comp_label,
-                                 cmap=cmap, no_nans=no_nans,per_row=per_row)
+        return self._plot_loadings(
+                                 loadings,
+                                 comp_ids=comp_ids, 
+                                 with_factors=with_factors,
+                                 factors=factors,
+                                 same_window=same_window,
+                                 comp_label=comp_label,
+                                 cmap=cmap,
+                                 no_nans=no_nans,
+                                 per_row=per_row)
 
     def plot_bss_loadings(self, comp_ids=None, calibrate=True,
                        same_window=None, comp_label='BSS loading', 
@@ -1709,19 +1775,24 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 
         comp_ids : None, int, or list of ints
             if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given int.
-            if list of ints, returns maps of components with ids in given list.
+            if int, returns maps of components with ids from 0 to 
+            given int.
+            if list of ints, returns maps of components with ids in 
+            given list.
 
         calibrate : bool
-            if True, calibrates plots where calibration is available from
+            if True, calibrates plots where calibration is available 
+            from
             the axes_manager.  If False, plots are in pixels/channels.
 
         same_window : bool
-            if True, plots each factor to the same window.  They are not scaled.
+            if True, plots each factor to the same window.  They are 
+            not scaled.
         
         comp_label : string, 
             The label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting in the 
+            separate windows) or the label in the legend (if plotting 
+            in the 
             same window)
 
         with_factors : bool
@@ -1746,10 +1817,16 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         if with_factors:
             factors=self.learning_results.bss_factors
         else: factors=None
-        return self._plot_loadings(loadings, comp_ids=comp_ids, 
-                                 with_factors=with_factors, factors=factors,
-                                 same_window=same_window, comp_label=comp_label,
-                                 cmap=cmap, no_nans=no_nans,per_row=per_row)
+        return self._plot_loadings(
+                                    loadings,
+                                    comp_ids=comp_ids, 
+                                    with_factors=with_factors,
+                                    factors=factors,
+                                    same_window=same_window,
+                                    comp_label=comp_label,
+                                    cmap=cmap,
+                                    no_nans=no_nans,
+                                    per_row=per_row)
 
     def export_decomposition_results(self, comp_ids=None,
                                      folder=None,
@@ -1766,50 +1843,66 @@ reconstruction created using either get_decomposition_model or get_bss_model met
                                      per_row=3,
                                      save_figures=False,
                                      save_figures_format ='png'):
-        """Export results from a decomposition to any of the supported formats.
+        """Export results from a decomposition to any of the supported 
+        formats.
 
         Parameters
         ----------
         comp_ids : None, int, or list of ints
             if None, returns all components/loadings.
-            if int, returns components/loadings with ids from 0 to given int.
-            if list of ints, returns components/loadings with ids in given list.
+            if int, returns components/loadings with ids from 0 to 
+            given int.
+            if list of ints, returns components/loadings with ids in 
+            given list.
         folder : str or None
-            The path to the folder where the file will be saved. If `None` the
+            The path to the folder where the file will be saved. 
+            If `None` the
             current folder is used by default.
         factor_prefix : string
-            The prefix that any exported filenames for factors/components 
+            The prefix that any exported filenames for 
+            factors/components 
             begin with
         factor_format : string
             The extension of the format that you wish to save to.
         loading_prefix : string
-            The prefix that any exported filenames for factors/components 
+            The prefix that any exported filenames for 
+            factors/components 
             begin with
         loading_format : string
-            The extension of the format that you wish to save to.  Determines
+            The extension of the format that you wish to save to. 
+            Determines
             the kind of output.
-                - For image formats (tif, png, jpg, etc.), plots are created 
-                  using the plotting flags as below, and saved at 600 dpi.
+                - For image formats (tif, png, jpg, etc.), plots are 
+                created 
+                  using the plotting flags as below, and saved at 
+                  600 dpi.
                   One plot per loading is saved.
-                - For multidimensional formats (rpl, hdf5), arrays are saved
-                  in single files.  All loadings are contained in the one
+                - For multidimensional formats (rpl, hdf5), arrays are 
+                saved
+                  in single files.  All loadings are contained in the 
+                  one
                   file.
                 - For spectral formats (msa), each loading is saved to a
                   separate file.
         multiple_files : Bool
-            If True, on exporting a file per factor and per loading will be 
-            created. Otherwise only two files will be created, one for the
-            factors and another for the loadings. The default value can be
+            If True, on exporting a file per factor and per loading will
+             be 
+            created. Otherwise only two files will be created, one for 
+            the
+            factors and another for the loadings. The default value can 
+            be
             chosen in the preferences.
         save_figures : Bool
-            If True the same figures that are obtained when using the plot 
+            If True the same figures that are obtained when using the 
+            plot 
             methods will be saved with 600 dpi resolution
 
         Plotting options (for save_figures = True ONLY)
         ----------------------------------------------
 
         calibrate : bool
-            if True, calibrates plots where calibration is available from
+            if True, calibrates plots where calibration is available 
+            from
             the axes_manager.  If False, plots are in pixels/channels.
         same_window : bool
             if True, plots each factor to the same window.
@@ -1819,7 +1912,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         cmap : The colormap used for the factor image, or for peak 
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
-        per_row : int, the number of plots in each row, when the same_window
+        per_row : int, the number of plots in each row, when the 
+        same_window
             parameter is True.
         save_figures_format : str
             The image format extension.
@@ -1828,25 +1922,34 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         
         factors=self.learning_results.factors
         loadings=self.learning_results.loadings.T
-        self._export_factors(factors, folder=folder,comp_ids=comp_ids,
-                             calibrate=calibrate, multiple_files=multiple_files,
-                             factor_prefix=factor_prefix,
-                             factor_format=factor_format,
-                             comp_label=comp_label, save_figures = save_figures,
-                             cmap=cmap,
-                             no_nans=no_nans,
-                             same_window=same_window,
-                             per_row=per_row,
-                             save_figures_format=save_figures_format)
-        self._export_loadings(loadings,comp_ids=comp_ids,folder=folder,
-                            calibrate=calibrate, multiple_files=multiple_files,
-                            loading_prefix=loading_prefix,
-                            loading_format=loading_format,
-                            comp_label=comp_label,
-                            cmap=cmap, save_figures = save_figures,
-                            same_window=same_window,
-                            no_nans=no_nans,
-                            per_row=per_row)
+        self._export_factors(
+                                factors,
+                                folder=folder,
+                                comp_ids=comp_ids,
+                                calibrate=calibrate,
+                                multiple_files=multiple_files,
+                                factor_prefix=factor_prefix,
+                                factor_format=factor_format,
+                                comp_label=comp_label,
+                                save_figures = save_figures,
+                                cmap=cmap,
+                                no_nans=no_nans,
+                                same_window=same_window,
+                                per_row=per_row,
+                                save_figures_format=save_figures_format)
+        self._export_loadings(
+                                loadings,
+                                comp_ids=comp_ids,folder=folder,
+                                calibrate=calibrate,
+                                multiple_files=multiple_files,
+                                loading_prefix=loading_prefix,
+                                loading_format=loading_format,
+                                comp_label=comp_label,
+                                cmap=cmap,
+                                save_figures=save_figures,
+                                same_window=same_window,
+                                no_nans=no_nans,
+                                per_row=per_row)
 
     def export_bss_results(self,
                            comp_ids=None,
@@ -1869,55 +1972,71 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         ----------
         comp_ids : None, int, or list of ints
             if None, returns all components/loadings.
-            if int, returns components/loadings with ids from 0 to given int.
-            if list of ints, returns components/loadings with ids in given list.
+            if int, returns components/loadings with ids from 0 to given
+             int.
+            if list of ints, returns components/loadings with ids in 
+            iven list.
         folder : str or None
-            The path to the folder where the file will be saved. If `None` the
+            The path to the folder where the file will be saved. If 
+            `None` the
             current folder is used by default.
         factor_prefix : string
-            The prefix that any exported filenames for factors/components 
+            The prefix that any exported filenames for 
+            factors/components 
             begin with
         factor_format : string
-            The extension of the format that you wish to save to.  Determines
+            The extension of the format that you wish to save to. 
+            Determines
             the kind of output.
-                - For image formats (tif, png, jpg, etc.), plots are created 
-                  using the plotting flags as below, and saved at 600 dpi.
+                - For image formats (tif, png, jpg, etc.), plots are 
+                created 
+                  using the plotting flags as below, and saved at 
+                  600 dpi.
                   One plot per factor is saved.
-                - For multidimensional formats (rpl, hdf5), arrays are saved
+                - For multidimensional formats (rpl, hdf5), arrays are 
+                saved
                   in single files.  All factors are contained in the one
                   file.
                 - For spectral formats (msa), each factor is saved to a
                   separate file.
                 
         loading_prefix : string
-            The prefix that any exported filenames for factors/components 
+            The prefix that any exported filenames for 
+            factors/components 
             begin with
         loading_format : string
             The extension of the format that you wish to save to.
         multiple_files : Bool
-            If True, on exporting a file per factor and per loading will be 
-            created. Otherwise only two files will be created, one for the
-            factors and another for the loadings. The default value can be
+            If True, on exporting a file per factor and per loading 
+            will be 
+            created. Otherwise only two files will be created, one 
+            for the
+            factors and another for the loadings. The default value 
+            can be
             chosen in the preferences.
         save_figures : Bool
-            If True the same figures that are obtained when using the plot 
+            If True the same figures that are obtained when using the 
+            plot 
             methods will be saved with 600 dpi resolution
 
         Plotting options (for save_figures = True ONLY)
         ----------------------------------------------
         calibrate : bool
-            if True, calibrates plots where calibration is available from
+            if True, calibrates plots where calibration is available 
+            from
             the axes_manager.  If False, plots are in pixels/channels.
         same_window : bool
             if True, plots each factor to the same window.
         comp_label : string
             the label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting in the 
+            separate windows) or the label in the legend (if plotting 
+            in the 
             same window)
         cmap : The colormap used for the factor image, or for peak 
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
-        per_row : int, the number of plots in each row, when the same_window
+        per_row : int, the number of plots in each row, when the 
+        same_window
             parameter is True.
         save_figures_format : str
             The image format extension.
@@ -1966,7 +2085,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 #
 #        Returns
 #        -------
-#        Spectrum
+#        Signal
+
 #        """
 #        dc = self.data_cube.copy()
 #        mask3D = mask.reshape([1,] + list(mask.shape)) * np.ones(dc.shape)
@@ -1976,41 +2096,8 @@ reconstruction created using either get_decomposition_model or get_bss_model met
 #        s.get_dimensions_from_cube()
 #        utils.copy_energy_calibration(self,s)
 #        return s
-#
-#    def mean(self, axis):
-#        """Average the SI over the given axis
-#
-#        Parameters
-#        ----------
-#        axis : int
-#        """
-#        dc = self.data_cube
-#        dc = dc.mean(axis)
-#        dc = dc.reshape(list(dc.shape) + [1,])
-#        self.data_cube = dc
-#        self.get_dimensions_from_cube()
-#
-#    def roll(self, axis = 2, shift = 1):
-#        """Roll the SI. see numpy.roll
-#
-#        Parameters
-#        ----------
-#        axis : int
-#        shift : int
-#        """
-#        self.data_cube = np.roll(self.data_cube, shift, axis)
-#        self._replot()
-#
 
-#
-#    def get_calibration_from(self, s):
-#        """Copy the calibration from another Spectrum instance
-#        Parameters
-#        ----------
-#        s : spectrum instance
-#        """
-#        utils.copy_energy_calibration(s, self)
-#
+
     def estimate_poissonian_noise_variance(self,
             dc=None, gaussian_noise_var=None):
         """Variance estimation supposing Poissonian noise.
@@ -2090,20 +2177,20 @@ reconstruction created using either get_decomposition_model or get_bss_model met
         elif self.axes_manager.navigation_dimension == 1:
             from hyperspy.signals.spectrum import Spectrum
             s = Spectrum({
-                'data' : np.zeros(
-                    self.axes_manager.navigation_shape),
-                'axes' : self.axes_manager._get_navigation_axes_dicts()})
+            'data' : np.zeros(
+                self.axes_manager.navigation_shape),
+            'axes' : self.axes_manager._get_navigation_axes_dicts()})
         elif self.axes_manager.navigation_dimension == 2:
             from hyperspy.signals.image import Image
             s = Image({
-                'data' : np.zeros(
-                    self.axes_manager.navigation_shape),
-                'axes' : self.axes_manager._get_navigation_axes_dicts()})
+            'data' : np.zeros(
+                self.axes_manager.navigation_shape),
+            'axes' : self.axes_manager._get_navigation_axes_dicts()})
         else:
             s = Signal({
-                'data' : np.zeros(
-                    self.axes_manager.navigation_shape),
-                'axes' : self.axes_manager._get_navigation_axes_dicts()})
+            'data' : np.zeros(
+                self.axes_manager.navigation_shape),
+            'axes' : self.axes_manager._get_navigation_axes_dicts()})
         return s
                 
         

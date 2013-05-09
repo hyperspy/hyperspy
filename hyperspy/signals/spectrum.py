@@ -74,7 +74,7 @@ class Spectrum(Signal):
             
         """
 
-        axis = self.axes_manager._get_positive_index(axis)
+        axis = self.axes_manager[axis].index_in_array
         coord = self.axes_manager._axes[axis]
         offset = coord.offset
         _axis = coord.axis.copy()
@@ -102,7 +102,7 @@ class Spectrum(Signal):
             self.crop(axis, float(offset + maxi))
             
     def interpolate_in_index_1D(self, axis, i1, i2, delta=3, **kwargs):
-        axis = self.axes_manager._axes[axis]
+        axis = self.axes_manager[axis]
         i0 = int(np.clip(i1 - delta, 0, np.inf))
         i3 = int(np.clip(i2 + delta, 0, axis.size))
         for dat in self.iterate_axis(axis.index_in_array):
