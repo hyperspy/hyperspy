@@ -13,7 +13,11 @@ class Test2D:
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "E"
         self.signal.axes_manager[0].scale = 0.5
+        self.signal.mapped_parameters.set_item('splitting.axis', 0)
+        self.signal.mapped_parameters.set_item(
+                                        'splitting.step_sizes',[2,2])
         self.data = self.signal.data.copy()
+
         
     def test_axis_by_str(self):
         s1 = self.signal.deepcopy()
@@ -31,6 +35,33 @@ class Test2D:
     def test_crop_float(self):
         s = self.signal
         d = self.data
-        s.crop(0, 2,2.)
+        s.crop(0, 2, 2.)
         assert_true((s.data==d[2:4,:]).all())
+        
+    def test_split_axis0(self):
+        result = self.signal.split(0,2)
+        assert_true(len(result) == 2)
+        assert_true((result[0].data == self.data[:2,:]).all())
+        assert_true((result[1].data == self.data[2:4,:]).all())
+    
+    def test_split_axis1(self):
+        result = self.signal.split(1,2)
+        assert_true(len(result) == 2)
+        assert_true((result[0].data == self.data[:,:5]).all())
+        assert_true((result[1].data == self.data[:,5:]).all())
+        
+    def test_split_axisE(self):
+        result = self.signal.split("E",2)
+        assert_true(len(result) == 2)
+        assert_true((result[0].data == self.data[:,:5]).all())
+        assert_true((result[1].data == self.data[:,5:]).all())
+        
+    def test_split_default(self):
+        result = self.signal.split()
+        assert_true(len(result) == 2)
+        assert_true((result[0].data == self.data[:2,:]).all())
+        assert_true((result[1].data == self.data[2:4,:]).all()) 
+        
+        
+        
 
