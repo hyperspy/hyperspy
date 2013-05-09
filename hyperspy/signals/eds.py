@@ -218,7 +218,8 @@ class EDSSpectrum(Spectrum):
                 
          
     
-    def get_intensity_map(self, Xray_lines = None,plot_result=True , width_energy_reso=1):
+    def get_intensity_map(self, Xray_lines = 'auto',plot_result=True,\
+        width_energy_reso=1):
         """Return the intensity map of selected Xray lines.
         
         The intensity is the sum over several energy channels. The width
@@ -231,8 +232,8 @@ class EDSSpectrum(Spectrum):
         Parameters
         ----------
         
-        Xray_lines: list of string
-            If None, the lines defined with set_elements are used, which 
+        Xray_lines: list of string | 'auto'
+            If 'auto' (default option), the lines defined with set_elements are used, which 
             are in 'mapped.parameters.Sample.X_ray_lines'. 
         
         width_energy_reso: Float
@@ -244,10 +245,15 @@ class EDSSpectrum(Spectrum):
         
         >>> specImg.plot_intensity_map(["C_Ka", "Ta_Ma"])
         
+        See also
+        --------
+        
+        deconvolve_intensity
+        
         """
         
                 
-        if Xray_lines == None:
+        if Xray_lines == 'auto':
             if hasattr(self.mapped_parameters, 'Sample') and \
             hasattr(self.mapped_parameters.Sample, 'Xray_lines'):
                 Xray_lines = self.mapped_parameters.Sample.Xray_lines
@@ -292,46 +298,38 @@ class EDSSpectrum(Spectrum):
     def running_sum(self) :
         dim = self.data.shape
         if len(dim)==3:
-            s = np.zeros(np.array(dim)+[1,1,0])
+            data_s = np.zeros(np.array(dim)+[1,1,0])
         elif len(dim)==4:
-            s = np.zeros(np.array(dim)+[0,1,1,0])
+            data_s = np.zeros(np.array(dim)+[0,1,1,0])
         else:
             raise ValueError("Data dimension not supported")
-        dat = self.deepcopy().data
-        def add_beg(nb,si) :
-            ap = range(si)
-            ap.reverse()
-            return np.append(ap,range(nb))
-        def add_end(nb,si) :
-            ap = range(-1,-si-1,-1)
-            return np.append(range(nb),ap)  
-        no = 1
-        if len(dim)==3:
-            s = s + dat[add_beg(dim[0],no)][...,add_end(dim[1],no),...]
-            s = s + dat[add_end(dim[0],no)][...,add_end(dim[1],no),...]
-            s = s + dat[add_beg(dim[0],no)][...,add_end(dim[1],no),...]
-            s = s + dat[add_end(dim[0],no)][...,add_end(dim[1],no),...]
-            s = s[1::][...,1::,...]
-        elif len(dim)==4:
-            s = s + dat[...,add_beg(dim[1],no),...,...][...,...,add_end(dim[2],no),...]
-            s = s + dat[...,add_end(dim[1],no),...,...][...,...,add_end(dim[2],no),...]
-            s = s + dat[...,add_beg(dim[1],no),...,...][...,...,add_end(dim[2],no),...]
-            s = s + dat[...,add_end(dim[1],no),...,...][...,...,add_end(dim[2],no),...]
-            s = s[...,1::,...,...][...,...,1::,...]
+        
+        end_mirrors = [[0,0],[-1,0],[0,-1],[-1,-1]]
+        
+        for end_mirror in end_mirrors:            
+            tmp_s=np.insert(self.data, end_mirror[0], self.data[...,end_mirror[0],:,:],axis=-3)
+            data_s += np.insert(tmp_s, end_mirror[1], tmp_s[...,end_mirror[1],:],axis=-2)
+        data_s = data_s[...,1::,:,:][...,1::,:]
+        
         
         if hasattr(self.mapped_parameters, 'SEM'):            
             mp = self.mapped_parameters.SEM
         else:
             mp = self.mapped_parameters.TEM
         if hasattr(mp, 'EDS') and hasattr(mp.EDS, 'live_time'):
-            mp.EDS.live_time = mp.EDS.live_time * 4
+            mp.EDS.live_time = mp.EDS.live_time * len(end_mirrors)
             
-        return self.get_deepcopy_with_new_data(s.astype(int))
+        return self.get_deepcopy_with_new_data(data_s.astype(int))
         
     def plot_Xray_line(self):
         """
-        Annotate a spec.plot() with the name of the different X-ray 
+        Annotate a spec.plot() with the name of the selected X-ray 
         lines
+        
+        See also
+        --------
+        
+        set_elements
         
         """
         if self.axes_manager.navigation_dimension > 0:
