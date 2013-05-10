@@ -261,6 +261,14 @@ class Signal(t.HasTraits, MVA):
     def _unary_operator_ruler(self, op_name):
         exec("result = self.data.%s()" % op_name)
         return self.get_deepcopy_with_new_data(result)
+        
+    def _check_signal_dimension_equals_one(self):
+        if self.axes_manager.signal_dimension != 1:
+            raise SignalSizeError(self.axes_manager.signal_dimension, 1)
+            
+    def _check_signal_dimension_equals_two(self):
+        if self.axes_manager.signal_dimension != 2:
+            raise SignalSizeError(self.axes_manager.signal_dimension, 2)
             
     def get_deepcopy_with_new_data(self, data=None):
         """Returns a deepcopy of itself replacing the data.
@@ -616,7 +624,7 @@ class Signal(t.HasTraits, MVA):
 
     # TODO: After using this function the plotting does not work
     @auto_replot
-    def swap_axis(self, axis1, axis2):
+    def swap_axes(self, axis1, axis2):
         """Swaps the axes.
 
         Parameters
@@ -628,7 +636,7 @@ class Signal(t.HasTraits, MVA):
         
         """
         axis1 = self.axes_manager[axis1].index_in_array
-        axis2 = self.axes_manager[axis1].index_in_array
+        axis2 = self.axes_manager[axis2].index_in_array
         self.data = self.data.swapaxes(axis1, axis2)
         c1 = self.axes_manager._axes[axis1]
         c2 = self.axes_manager._axes[axis2]
@@ -849,34 +857,25 @@ class Signal(t.HasTraits, MVA):
             self.axes_manager = self._axes_manager_before_unfolding
             self._shape_before_unfolding = None
             self._axes_manager_before_unfolding = None
-
-    def iterate_axis(self, axis=-1, copy=True):
-        # We make a copy to guarantee that the data in contiguous,
-        # otherwise it will not return a view of the data
-        if copy is True:
-            self.data = self.data.copy()
-        axis = self.axes_manager[axis].index_in_array
-        unfolded_axis = axis - 1
-        new_shape = [1] * len(self.data.shape)
-        new_shape[axis] = self.data.shape[axis]
-        new_shape[unfolded_axis] = -1
-        # Warning! if the data is not contigous it will make a copy!!
-        data = self.data.reshape(new_shape)
-        for i in xrange(data.shape[unfolded_axis]):
-            getitem = [0] * len(data.shape)
-            getitem[axis] = slice(None)
-            getitem[unfolded_axis] = i
-            yield(data[getitem])
             
-    def _iterate_signal(self, copy=True):
-        # We make a copy to guarantee that the data in contiguous,
-        # otherwise it will not return a view of the data
-        if copy is True:
-            self.data = self.data.copy()
+    def _make_sure_data_is_contiguous(self):
+        if self.data.flags['C_CONTIGUOUS'] is False:
+            self.data = np.ascontiguousarray(self.data)
+            
+    def _iterate_signal(self):
+        """Iterates over the signal data.
+        
+        It is faster than using the signal iterator.
+        
+        """
+        if self.axes_manager.navigation_size < 2:
+            yield self()
+            return
+        self._make_sure_data_is_contiguous()
         axes = [axis.index_in_array for 
                 axis in self.axes_manager.signal_axes]
         unfolded_axis = (
-                self.axes_manager.navigation_axes[-1].index_in_array)
+                self.axes_manager.navigation_axes[0].index_in_array)
         new_shape = [1] * len(self.data.shape)
         for axis in axes:
             new_shape[axis] = self.data.shape[axis]
@@ -1057,7 +1056,7 @@ class Signal(t.HasTraits, MVA):
         axis.offset += (axis.scale / 2)
         s.get_dimensions_from_data()
         return s
-
+        
     def copy(self):
         return copy.copy(self)
 
@@ -2159,7 +2158,7 @@ class Signal(t.HasTraits, MVA):
                                         np.Inf)
                 
     def get_current_signal(self):
-        cs = s.get_deepcopy_with_new_data(self())
+        cs = self.get_deepcopy_with_new_data(self())
         for axis in cs.axes_manager.navigation_axes:
             cs.axes_manager.remove(axis)
         if cs.tmp_parameters.has_item('filename'):

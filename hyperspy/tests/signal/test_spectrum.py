@@ -41,12 +41,12 @@ class TestAlignTools:
         
     def test_estimate_shift(self):
         s = self.spectrum
-        eshifts = -1 * s.estimate_shift_in_units_1D().squeeze()
+        eshifts = -1 * s.estimate_shift_1D()
         assert_true(np.allclose(eshifts, self.ishifts * self.scale))
         
-    def test_align_with_array_1D(self):
+    def test_shift_1D(self):
         s = self.spectrum
-        s.align_with_array_1D(-1 * self.ishifts[:, np.newaxis] * self.scale)
+        s.shift_1D(-1 * self.ishifts[:, np.newaxis] * self.scale)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         assert_true(np.allclose(s.data[:, i_zlp], 12))
         # Check that at the edges of the spectrum the value == to the
@@ -61,6 +61,22 @@ class TestAlignTools:
     def test_align(self):
         s = self.spectrum
         s.align_1D()
+        i_zlp = s.axes_manager.signal_axes[0].value2index(0)
+        assert_true(np.allclose(s.data[:, i_zlp], 12))
+        # Check that at the edges of the spectrum the value == to the
+        # background value. If it wasn't it'll mean that the cropping
+        # code is buggy
+        assert_true((s.data[:,-1] == 2).all())
+        assert_true((s.data[:,0] == 2).all())
+        # Check that the calibration is correct
+        assert_equal(s.axes_manager._axes[1].offset, self.new_offset)
+        assert_equal(s.axes_manager._axes[1].scale, self.scale)
+        
+    def test_align_axis0(self):
+        s = self.spectrum
+        s.swap_axes(0, 1)
+        s.align_1D()
+        s.swap_axes(0, 1)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         assert_true(np.allclose(s.data[:, i_zlp], 12))
         # Check that at the edges of the spectrum the value == to the

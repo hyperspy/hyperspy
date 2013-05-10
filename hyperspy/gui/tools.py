@@ -27,7 +27,7 @@ from traitsui.menu import (OKButton, ApplyButton, CancelButton,
 from hyperspy.misc import utils
 from hyperspy import drawing
 from hyperspy.misc.interactive_ns import interactive_ns
-from hyperspy.exceptions import SignalOutputDimensionError
+from hyperspy.exceptions import SignalDimensionError
 from hyperspy.gui import messages
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
@@ -138,7 +138,7 @@ class SpanSelectorInSpectrum(t.HasTraits):
             
     def __init__(self, signal):
         if signal.axes_manager.signal_dimension != 1:
-         raise SignalOutputDimensionError(
+         raise SignalDimensionError(
             signal.axes_manager.signal_dimension, 1)
         
         self.signal = signal
@@ -200,7 +200,7 @@ class LineInSpectrum(t.HasTraits):
             
     def __init__(self, signal):
         if signal.axes_manager.signal_dimension != 1:
-         raise SignalOutputDimensionError(
+         raise SignalDimensionError(
             signal.axes_manager.signal_dimension, 1)
             
         self.signal = signal
@@ -277,7 +277,7 @@ class SpectrumCalibration(SpanSelectorInSpectrum):
     def __init__(self, signal):
         super(SpectrumCalibration, self).__init__(signal)
         if signal.axes_manager.signal_dimension != 1:
-            raise SignalOutputDimensionError(
+            raise SignalDimensionError(
                     signal.axes_manager.signal_dimension, 1)
         self.units = self.axis.units
         self.last_calibration_stored = True

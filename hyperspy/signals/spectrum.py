@@ -43,8 +43,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.decorators import auto_replot
 from hyperspy.misc.utils import one_dim_findpeaks
-
-
+from hyperspy.exceptions import SignalSizeError
             
 class Spectrum(Signal):
     """
@@ -55,305 +54,267 @@ class Spectrum(Signal):
         Signal.__init__(self, *args, **kwargs)
         self.axes_manager.set_signal_dimension(1)
 
-    def align_with_array_1D(self,
-                            shift_array,
-                            axis=-1,
-                            interpolation_method='linear'):
-        """Shift each one dimensional object by the amount specify by a 
-        given array
+    def shift_1D(self,
+                 shift_array,
+                 interpolation_method='linear',
+                 crop=True,
+                 fill_value=np.nan):
+        """Shift the data over the signal axis by the amount specified
+        by an array.
 
         Parameters
         ----------
-        shift_map : numpy array
-            The shift is specify in the units of the selected axis
+        shift_array : numpy array
+            An array containing the shifting amount. It must have
+            `axes_manager.navigation_shape` shape.
         interpolation_method : str or int
             Specifies the kind of interpolation as a string ('linear',
             'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an 
             integer specifying the order of the spline interpolator to 
             use.
+        crop : bool
+            If True automatically crop the signal axis at both ends if 
+            needed.
+        fill_value : float
+            If crop is False fill the data outside of the original 
+            interval with the given value where needed.
+            
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
             
         """
-
-        axis = self.axes_manager[axis].index_in_array
-        coord = self.axes_manager._axes[axis]
-        offset = coord.offset
-        _axis = coord.axis.copy()
-        maxval = np.cumprod(shift_array.shape)[-1] - 1
-        pbar = progressbar.progressbar(maxval = maxval)
-        i = 0
-        for dat, shift in zip(self.iterate_axis(axis),
-                              utils.iterate_axis(shift_array, axis)):
-                si = sp.interpolate.interp1d(_axis ,dat,
-                                             bounds_error=False,
-                                             fill_value=0.,
-                                             kind=interpolation_method)
-                coord.offset = offset - shift[0]
-                dat[:] = si(coord.axis)
-                pbar.update(i)
-                i += 1
-        coord.offset = offset
-
-        # Cropping time
-        mini, maxi = shift_array.min(), shift_array.max()
-        if mini < 0:
-            self.crop(axis, None, coord.axis[-1] + mini +
-             coord.scale)
-        if maxi > 0:
-            self.crop(axis, float(offset + maxi))
+        
+        self._check_signal_dimension_equals_one()
+        axis = self.axes_manager.signal_axes[0]
+        offset = axis.offset
+        original_axis = axis.axis.copy()
+        pbar = progressbar.progressbar(
+            maxval=self.axes_manager.navigation_size)
+        for i, (dat, shift) in enumerate(zip(
+                self._iterate_signal(),
+                shift_array)):
+            si = sp.interpolate.interp1d(original_axis,
+                                         dat,
+                                         bounds_error=False,
+                                         fill_value=fill_value,
+                                         kind=interpolation_method)
+            axis.offset = float(offset - shift)
+            dat[:] = si(axis.axis)
+            pbar.update(i + 1)
             
-    def interpolate_in_index_1D(self, axis, i1, i2, delta=3, **kwargs):
-        axis = self.axes_manager[axis]
+        axis.offset = offset
+
+        if crop is True:
+            mini, maxi = shift_array.min(), shift_array.max()
+            if mini < 0:
+                self.crop(axis.index_in_axes_manager,
+                          None,
+                          axis.axis[-1] + mini + axis.scale)
+            if maxi > 0:
+                self.crop(axis.index_in_axes_manager,
+                          float(offset + maxi))
+            
+    def interpolate_in_between(self, start, end, delta=3, **kwargs):
+        """Replace the data in a given range by interpolation.
+        
+        The operation is performed in place.
+        
+        Parameters
+        ----------
+        start, end : {int | float}
+            The limits of the interval. If int they are taken as the 
+            axis index. If float they are taken as the axis value.
+        
+        All extra keyword arguments are passed to 
+        scipy.interpolate.interp1d. See the function documentation 
+        for details.
+        
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
+        
+        """
+        self._check_signal_dimension_equals_one()
+        axis = self.axes_manager.signal_axes[0]
+        i1 = axis._get_index(start)
+        i2 = axis._get_index(end)
         i0 = int(np.clip(i1 - delta, 0, np.inf))
         i3 = int(np.clip(i2 + delta, 0, axis.size))
-        for dat in self.iterate_axis(axis.index_in_array):
-            dat_int = sp.interpolate.interp1d(range(i0,i1) + 
-                range(i2,i3), dat[i0:i1].tolist() + dat[i2:i3].tolist(),
+        pbar = progressbar.progressbar(
+            maxval=self.axes_manager.navigation_size)
+        for i, dat in enumerate(self._iterate_signal()):
+            dat_int = sp.interpolate.interp1d(
+                range(i0,i1) + range(i2,i3),
+                dat[i0:i1].tolist() + dat[i2:i3].tolist(),
                 **kwargs)
             dat[i1:i2] = dat_int(range(i1,i2))
-
-    def interpolate_in_units_1D(self, axis, u1, u2, delta=3, **kwargs):
-        axis = self.axes_manager._axes[axis]
-        i1 = axis.value2index(u1)
-        i2 = axis.value2index(u2)
-        self.interpolate_in_index_1D(axis.index_in_array, i1, i2, delta,
-                                     **kwargs)
-
-    def estimate_shift_in_index_1D(self,
-                                   irange=(None,None),
-                                   axis=-1,
-                                   reference_indices=None,
-                                   max_shift=None,
-                                   interpolate=True,
-                                   number_of_interpolation_points=5):
-        """Estimate the shifts in a given axis using cross-correlation
+            pbar.update(i + 1)
+            
+    def estimate_shift_1D(self,
+                          start=None,
+                          end=None,
+                          reference_indices=None,
+                          max_shift=None,
+                          interpolate=True,
+                          number_of_interpolation_points=5):
+        """Estimate the shifts in the current signal axis using
+         cross-correlation.
 
         This method can only estimate the shift by comparing 
         unidimensional features that should not change the position in 
-        the given axis. To decrease the memory usage, the time of 
+        the signal axis. To decrease the memory usage, the time of 
         computation and the accuracy of the results it is convenient to 
-        select the feature of interest setting
-        the irange keyword.
-
-        By default interpolation is used to obtain subpixel precision.
+        select the feature of interest providing sensible values for 
+        `start` and `end`. By default interpolation is used to obtain 
+        subpixel precision.
 
         Parameters
         ----------
-        axis : int
-            The axis in which the analysis will be performed.
-        irange : tuple of ints (i1, i2)
-             Define the range of the feature of interest. If i1 or i2 
-             are None,
-             the range will not be limited in that side.
+        start, end : {int | float | None}
+            The limits of the interval. If int they are taken as the 
+            axis index. If float they are taken as the axis value.
         reference_indices : tuple of ints or None
             Defines the coordinates of the spectrum that will be used 
-            as a
-            reference. If None the spectrum of 0 coordinates will be 
-            used.
+            as eference. If None the spectrum at the current 
+            coordinates is used for this purpose.
         max_shift : int
-
+            "Saturation limit" for the shift.
         interpolate : bool
-
+            If True, interpolation is used to provide sub-pixel 
+            accuracy.
         number_of_interpolation_points : int
             Number of interpolation points. Warning: making this number 
-            too big
-            can saturate the memory
+            too big can saturate the memory
 
         Return
         ------
-        An array with the result of the estimation.
+        An array with the result of the estimation in the axis units.
+        
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
         
         """
-
+        self._check_signal_dimension_equals_one()
         ip = number_of_interpolation_points + 1
-        axis = self.axes_manager._axes[axis]
+        axis = self.axes_manager.signal_axes[0]
         if reference_indices is None:
-            reference_indices = [0,] * (len(self.axes_manager._axes) - 1)
-        else:
-            reference_indices = list(reference_indices)
-        reference_indices.insert(axis.index_in_array, slice(None))
-        i1, i2 = irange
-        array_shape = [axis.size for axis in self.axes_manager._axes]
-        array_shape[axis.index_in_array] = 1
-        shift_array = np.zeros(array_shape)
-        ref = self.data[reference_indices][i1:i2]
+            reference_indices = self.axes_manager.indices
+
+        i1, i2 = axis._get_index(start), axis._get_index(end) 
+        shift_array = np.zeros(self.axes_manager.navigation_shape)
+        ref = self.navigation_indexer[reference_indices].data[i1:i2]
         if interpolate is True:
             ref = utils.interpolate_1D(ip, ref)
-        maxval = self.axes_manager.navigation_size
-        pbar = progressbar.progressbar(maxval=maxval)
-        i = 0
-        for dat, shift in zip(self.iterate_axis(axis.index_in_array),
-                              utils.iterate_axis(shift_array,
-                                                 axis.index_in_array)):
+        pbar = progressbar.progressbar(
+            maxval=self.axes_manager.navigation_size)
+        for i, (dat, indices) in enumerate(zip(
+                    self._iterate_signal(),
+                    np.ndindex(shift_array.shape))):
             dat = dat[i1:i2]
             if interpolate is True:
                 dat = utils.interpolate_1D(ip, dat)
-            shift[:] = np.argmax(
+            shift_array[indices] = np.argmax(
                 np.correlate(ref, dat,'full')) - len(ref) + 1
-            i+=1
-            pbar.update(i)
+            pbar.update(i + 1)
         pbar.finish()
 
         if max_shift is not None:
             if interpolate is True:
                 max_shift *= ip
-            shift_array.clip(a_min = -max_shift, a_max = max_shift)
+            shift_array.clip(a_min=-max_shift, a_max=max_shift)
         if interpolate is True:
             shift_array /= ip
         shift_array *= axis.scale
         return shift_array
 
-    def estimate_shift_in_units_1D(self,
-        range_in_units=(None,None),
-        axis=-1,
-        reference_indices=None,
-        max_shift=None,
-        interpolate=True,
-        number_of_interpolation_points=5):
-        """Estimate the shifts in a given axis using cross-correlation. 
-        The
-        values are given in the units of the selected axis.
-
-        This method can only estimate the shift by comparing 
-        unidimensional
-        features that should not change the position in the given axis. 
-        To
-        decrease the memory usage, the time of computation and the 
-        accuracy of
-        the results it is convenient to select the feature of interest 
-        setting
-        the irange keyword.
-
-        By default interpolation is used to obtain subpixel precision.
-
-        Parameters
-        ----------
-        axis : int
-            The axis in which the analysis will be performed.
-        range_in_units : tuple of floats (f1, f2)
-             Define the range of the feature of interest in the units of
-              the
-             selected axis. If f1 or f2 are None, thee range will not be
-              limited
-             in that side.
-        reference_indices : tuple of ints or None
-            Defines the coordinates of the spectrum that will be used as
-             a
-            reference. If None the spectrum of 0 coordinates will be 
-            used.
-        max_shift : float
-
-        interpolate : bool
-
-        number_of_interpolation_points : int
-            Number of interpolation points. Warning: making this number 
-            too big
-            can saturate the memory
-
-        Return
-        ------
-        An array with the result of the estimation. The shift will be
-
-        See also
-        --------
-        estimate_shift_in_index_1D, align_with_array_1D and align_1D
-        
-        """
-        axis = self.axes_manager._axes[axis]
-        i1 = axis.value2index(range_in_units[0])
-        i2 = axis.value2index(range_in_units[1])
-        if max_shift is not None:
-            max_shift = int(round(max_shift / axis.scale))
-
-        return self.estimate_shift_in_index_1D(axis = axis.index_in_array,
-                                   irange = (i1, i2),
-                                   reference_indices = reference_indices,
-                                   max_shift = max_shift,
-                                   number_of_interpolation_points =
-                                   number_of_interpolation_points)
-
     def align_1D(self,
-                 range_in_units=(None,None),
-                 axis=-1,
+                 start=None,
+                 end=None,
                  reference_indices=None,
                  max_shift=None,
                  interpolate=True,
                  number_of_interpolation_points=5,
+                 interpolation_method='linear',
+                 crop=True,
+                 fill_value=np.nan,
                  also_align=None):
-        """Estimates the shifts in a given axis using cross-correlation 
-        and uses
-         the estimation to align the data over that axis.
+        """Estimates the shifts in the signal axis using 
+        cross-correlation and uses
+         the estimation to align the data.
 
         This method can only estimate the shift by comparing 
         unidimensional
-        features that should not change the position in the given axis. 
-        To
-        decrease the memory usage, the time of computation and the 
-        accuracy of
-        the results it is convenient to select the feature of interest 
-        setting
-        the irange keyword.
-
-        By default interpolation is used to obtain subpixel precision.
-
-        It is possible to align several signals using the shift map 
-        estimated
-        for this signal using the also_align keyword.
+        features that should not change the position. 
+        To decrease memory usage, time of computation and improve 
+        accuracy it is convenient to select the feature of interest 
+        setting the `start` and `end` keywords. By default interpolation is used to obtain subpixel precision.
 
         Parameters
         ----------
-        axis : int
-            The axis in which the analysis will be performed.
-        range_in_units : tuple of floats (f1, f2)
-             Define the range of the feature of interest in the units of
-              the
-             selected axis. If f1 or f2 are None, thee range will not be
-              limited
-             in that side.
+        start, end : {int | float | None}
+            The limits of the interval. If int they are taken as the 
+            axis index. If float they are taken as the axis value.
         reference_indices : tuple of ints or None
-            Defines the coordinates of the spectrum that will be used as
-             a
-            reference. If None the spectrum of 0 coordinates will be
-             used.
-        max_shift : float
-
+            Defines the coordinates of the spectrum that will be used 
+            as eference. If None the spectrum at the current 
+            coordinates is used for this purpose.
+        max_shift : int
+            "Saturation limit" for the shift.
         interpolate : bool
-
+            If True, interpolation is used to provide sub-pixel 
+            accuracy.
         number_of_interpolation_points : int
-            Number of interpolation points. Warning: making this number
-             too big
-            can saturate the memory
-
+            Number of interpolation points. Warning: making this number 
+            too big can saturate the memory
+        interpolation_method : str or int
+            Specifies the kind of interpolation as a string ('linear',
+            'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an 
+            integer specifying the order of the spline interpolator to 
+            use.
+        crop : bool
+            If True automatically crop the signal axis at both ends if 
+            needed.
+        fill_value : float
+            If crop is False fill the data outside of the original 
+            interval with the given value where needed.
         also_align : list of signals
-            A list of Signal instances that has exactly the same
-             dimensions
+            A list of Signal instances that has exactly the same 
+            dimensions
             as this one and that will be aligned using the shift map
-             estimated
-            using the this signal.
+            estimated using the this signal.
 
         Return
         ------
         An array with the result of the estimation. The shift will be
+        
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
 
         See also
         --------
         estimate_shift_in_units_1D, estimate_shift_in_index_1D
         
         """
-
-        shift_array = self.estimate_shift_in_units_1D(
-            axis=axis,
-            range_in_units=range_in_units, 
+        self._check_signal_dimension_equals_one()
+        shift_array = self.estimate_shift_1D(
+            start=start,
+            end=end,
             reference_indices=reference_indices,
             max_shift=max_shift,
             interpolate=interpolate,
             number_of_interpolation_points=
-            number_of_interpolation_points)
+                number_of_interpolation_points)
         if also_align is None:
             also_align = list()
         also_align.append(self)
         for signal in also_align:
-            signal.align_with_array_1D(shift_array=shift_array,
-                                       axis=axis)
+            signal.shift_1D(shift_array=shift_array,
+                            interpolation_method=interpolation_method,
+                            crop=crop,
+                            fill_value=fill_value)
 
     def peakfind_1D(self, xdim=None,slope_thresh=0.5, amp_thresh=None, 
                     subchannel=True, medfilt_radius=5, maxpeakn=30000, 
@@ -411,7 +372,13 @@ class Spectrum(Signal):
         P : array of shape (npeaks, 3)
             contains position, height, and width of each peak
             
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
+            
         """
+        # TODO: generalize the code
+        self._check_signal_dimension_equals_one()
         if len(self.data.shape)==1:
             # preallocate a large array for the results
             self.peaks=one_dim_findpeaks(self.data,
@@ -441,7 +408,7 @@ class Spectrum(Signal):
                                     peakgroup=peakgroup,
                                     subchannel=subchannel)
                 self.peaks[:tmp.shape[0],:,i]=tmp
-                pbar.update(i+1)
+                pbar.update(i + 1)
             # trim any extra blank space
             # works by summing along axes to compress to a 1D line, then
             # finds
@@ -466,7 +433,7 @@ class Spectrum(Signal):
                             peakgroup=peakgroup,
                             subchannel=subchannel)
                     self.peaks[:tmp.shape[0],:,i,j]=tmp
-                pbar.update(i+1)
+                pbar.update(i + 1)
             # trim any extra blank space
             # works by summing along axes to compress to a 1D line, 
             # then finds
@@ -505,10 +472,12 @@ class Spectrum(Signal):
         im = Image(dic)
         
         if hasattr(self, 'learning_results'):
-            if signal_to_index != 0 and self.learning_results.loadings is not None:
+            if (signal_to_index != 0 and 
+                self.learning_results.loadings is not None):
                 print("The learning results won't be transfered correctly")
-            else :
-                im.learning_results = copy.deepcopy(self.learning_results)
+            else:
+                im.learning_results = copy.deepcopy(
+                    self.learning_results)
                 im.learning_results._transpose_results()
                 im.learning_results.original_shape = self.data.shape
 
@@ -554,18 +523,23 @@ class Spectrum(Signal):
         view
         accordingly
         
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
+        
         """
-
+        self._check_signal_dimension_equals_one()
         calibration = SpectrumCalibration(self)
         calibration.edit_traits()
         if return_obj is True:
             return calibration
 
-    def smooth_savitzky_golay(self, polynomial_order = None,
-        number_of_points = None, differential_order = 0):
-        """Savitzky-Golay data smoothing
+    def smooth_savitzky_golay(self, polynomial_order=None,
+        number_of_points=None, differential_order=0):
+        """Savitzky-Golay data smoothing.
         
         """
+        self._check_signal_dimension_equals_one()
         if (polynomial_order is not None and 
             number_of_points) is not None:
             for spectrum in self:
@@ -583,11 +557,16 @@ class Spectrum(Signal):
 
             smoother.edit_traits()
             
-    def smooth_lowess(self, smoothing_parameter = None,
-        number_of_iterations=None, differential_order = 0):
-        """Lowess data smoothing
+    def smooth_lowess(self, smoothing_parameter=None,
+        number_of_iterations=None, differential_order=0):
+        """Lowess data smoothing.
+        
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
         
         """
+        self._check_signal_dimension_equals_one()
         smoother = SmoothingLowess(self)
         smoother.differential_order = differential_order
         if smoothing_parameter is not None:
@@ -600,9 +579,14 @@ class Spectrum(Signal):
             smoother.apply()
 
     def smooth_tv(self, smoothing_parameter=None, differential_order=0):
-        """Lowess data smoothing
+        """Total variation data smoothing.
+        
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
         
         """
+        self._check_signal_dimension_equals_one()
         smoother = SmoothingTV(self)
         smoother.differential_order = differential_order
         if smoothing_parameter is not None:
@@ -616,9 +600,14 @@ class Spectrum(Signal):
                            cutoff_frequency_ratio=None,
                            type='low',
                            order=2):
-        """Butterworth filter
+        """Butterworth filter.
+        
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
         
         """
+        self._check_signal_dimension_equals_one()
         smoother = ButterworthFilter(self)
         if cutoff_frequency_ratio is not None:
             smoother.cutoff_frequency_ratio = cutoff_frequency_ratio
@@ -628,9 +617,14 @@ class Spectrum(Signal):
         
     @only_interactive
     def remove_background(self):
-        """Remove the background using a gui
+        """Remove the background using a gui.
+        
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
         
         """
+        self._check_signal_dimension_equals_one()
         br = BackgroundRemoval(self)
         br.edit_traits()
 
@@ -644,13 +638,22 @@ class Spectrum(Signal):
             If int the values are taken as indices. If float they are 
             converted to indices using the spectral axis calibration.
             If left_value is None crops from the beginning of the axis.
-            If right_value is None crops up to the end of the axis. If both are
-            None the interactive cropping interface is activated enabling 
-            cropping the spectrum using a span selector in the signal plot.
+            If right_value is None crops up to the end of the axis. If 
+            both are
+            None the interactive cropping interface is activated 
+            enabling 
+            cropping the spectrum using a span selector in the signal 
+            plot.
+        
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
             
         """
-       
-        self.crop(axis=-1, start=left_value, end=right_value)
+        self._check_signal_dimension_equals_one()
+        self.crop(
+            axis=self.axes_manager.signal_axes[0].index_in_axes_manager,
+            start=left_value, end=right_value)
         
     @auto_replot    
     def gaussian_filter(self, FWHM):
@@ -665,9 +668,12 @@ class Spectrum(Signal):
         Raises
         ------
         ValueError if FWHM is equal or less than zero.
+        
+        SignalDimensionError if the signal dimension is not 1.
             
         
         """
+        self._check_signal_dimension_equals_one()
         if FWHM <= 0:
             raise ValueError(
                 "FWHM must be greater than zero")
@@ -694,7 +700,13 @@ class Spectrum(Signal):
         -------
         channels
         
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
+        
         """
+        # TODO: generalize it
+        self._check_signal_dimension_equals_one()
         if channels is None:
             channels = int(round(len(self()) * 0.02))
             if channels < 20:

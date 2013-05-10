@@ -443,7 +443,7 @@ Aligning
 The following methods use sub-pixel cross-correlation or user-provided shifts to align spectra. They support applying the same transformation to multiple files.
 
 * :py:meth:`~.signals.spectrum.Spectrum.align_1D`
-* :py:meth:`~.signals.spectrum.Spectrum.align_with_array_1D`
+* :py:meth:`~.signals.spectrum.Spectrum.shift_1D`
 
 
 Data smoothing
