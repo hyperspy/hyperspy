@@ -296,21 +296,20 @@ class EDSSpectrum(Spectrum):
         return intensities
                  
     def running_sum(self) :
-        dim = self.data.shape
-        if len(dim)==3:
-            data_s = np.zeros(np.array(dim)+[1,1,0])
-        elif len(dim)==4:
-            data_s = np.zeros(np.array(dim)+[0,1,1,0])
-        else:
-            raise ValueError("Data dimension not supported")
+        """
+        Apply a running sum on the data.
         
+        """
+        dim = self.data.shape
+        data_s = np.zeros_like(self.data)        
+        data_s = np.insert(data_s, 0, 0,axis=-3)
+        data_s = np.insert(data_s, 0, 0,axis=-2)
         end_mirrors = [[0,0],[-1,0],[0,-1],[-1,-1]]
         
-        for end_mirror in end_mirrors:            
+        for end_mirror in end_mirrors:  
             tmp_s=np.insert(self.data, end_mirror[0], self.data[...,end_mirror[0],:,:],axis=-3)
             data_s += np.insert(tmp_s, end_mirror[1], tmp_s[...,end_mirror[1],:],axis=-2)
         data_s = data_s[...,1::,:,:][...,1::,:]
-        
         
         if hasattr(self.mapped_parameters, 'SEM'):            
             mp = self.mapped_parameters.SEM
@@ -318,8 +317,7 @@ class EDSSpectrum(Spectrum):
             mp = self.mapped_parameters.TEM
         if hasattr(mp, 'EDS') and hasattr(mp.EDS, 'live_time'):
             mp.EDS.live_time = mp.EDS.live_time * len(end_mirrors)
-            
-        return self.get_deepcopy_with_new_data(data_s.astype(int))
+        self.data = data_s
         
     def plot_Xray_line(self):
         """
