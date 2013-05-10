@@ -91,11 +91,11 @@ class Polynomial(Component):
     
     """
 
-    def __init__(self, order = 2):
+    def __init__(self, order=2):
         Component.__init__(self, ['coefficients',])
+        self.coefficients._number_of_elements = order + 1
         self.coefficients.value = np.zeros((order + 1,))
         self.coefficients.grad = self.grad_coefficients
-        self.coefficients._number_of_elements = order + 1
         
     def get_polynomial_order(self):
         return len(self.coefficients.value) - 1
