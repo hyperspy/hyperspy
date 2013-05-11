@@ -108,6 +108,30 @@ class TestFindPeaks1D:
         peaks = self.spectrum.find_peaks_1D_ohaver()
         assert_true(np.allclose(peaks[1]['position'],
                     self.peak_positions1, rtol=1e-5, atol=1e-4))
+                    
+class TestInterpolateInBetween:
+    def setUp(self):
+        s = Spectrum({'data' : np.arange(40).reshape((2,20))})
+        s.axes_manager.signal_axes[0].scale = 0.1
+        s[:,8:12] = 0
+        self.s = s
+        
+    def test_single_spectrum(self):
+        s = self.s[0]
+        s.interpolate_in_between(8,12)
+        assert_true((s.data == np.arange(20)).all())
+        
+    def test_single_spectrum_in_units(self):
+        s = self.s[0]
+        s.interpolate_in_between(0.8,1.2)
+        assert_true((s.data == np.arange(20)).all())
+        
+    def test_two_spectra(self):
+        s = self.s
+        s.interpolate_in_between(8,12)
+        assert_true((s.data == np.arange(40).reshape(2,20)).all())
+        
+
         
         
 
