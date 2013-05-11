@@ -238,7 +238,7 @@ class _Signal2DTools(object):
                 dtype='float',
                 correlation_threshold=None, 
                 chunk_size=30):
-        """Align the images using user provided shifts or by 
+        """Align the images in place using user provided shifts or by 
         estimating the shifts. 
         
         Please, see `estimate_2D_translation` docstring for details
@@ -316,7 +316,7 @@ class _Signal2DTools(object):
         
     def crop_image(self,top=None, bottom=None,
                         left=None, right=None):
-        """Crops an image.
+        """Crops an image in place.
         
         top, bottom, left, right : int or float
             
@@ -343,7 +343,7 @@ class _Signal1DTools(object):
                  interpolation_method='linear',
                  crop=True,
                  fill_value=np.nan):
-        """Shift the data over the signal axis by the amount specified
+        """Shift the data in place over the signal axis by the amount specified
         by an array.
 
         Parameters
@@ -524,9 +524,8 @@ class _Signal1DTools(object):
                  crop=True,
                  fill_value=np.nan,
                  also_align=None):
-        """Estimates the shifts in the signal axis using 
-        cross-correlation and uses
-         the estimation to align the data.
+        """Estimate the shifts in the signal axis using 
+        cross-correlation and use the estimation to align the data in place.
 
         This method can only estimate the shift by comparing 
         unidimensional
@@ -602,8 +601,8 @@ class _Signal1DTools(object):
                             fill_value=fill_value)
                             
     @only_interactive
-    def calibrate(self, return_obj = False):
-        """Calibrate the spectral dimension using a gui
+    def calibrate(self):
+        """Calibrate the spectral dimension using a gui.
 
         It displays a window where the new calibration can be set by:
         * Setting the offset, units and scale directly
@@ -625,12 +624,10 @@ class _Signal1DTools(object):
         self._check_signal_dimension_equals_one()
         calibration = SpectrumCalibration(self)
         calibration.edit_traits()
-        if return_obj is True:
-            return calibration
 
     def smooth_savitzky_golay(self, polynomial_order=None,
         number_of_points=None, differential_order=0):
-        """Savitzky-Golay data smoothing.
+        """Savitzky-Golay data smoothing in place.
         
         """
         self._check_signal_dimension_equals_one()
@@ -653,7 +650,7 @@ class _Signal1DTools(object):
             
     def smooth_lowess(self, smoothing_parameter=None,
         number_of_iterations=None, differential_order=0):
-        """Lowess data smoothing.
+        """Lowess data smoothing in place.
         
         Raises
         ------
@@ -673,7 +670,7 @@ class _Signal1DTools(object):
             smoother.apply()
 
     def smooth_tv(self, smoothing_parameter=None, differential_order=0):
-        """Total variation data smoothing.
+        """Total variation data smoothing in place.
         
         Raises
         ------
@@ -694,7 +691,7 @@ class _Signal1DTools(object):
                            cutoff_frequency_ratio=None,
                            type='low',
                            order=2):
-        """Butterworth filter.
+        """Butterworth filter in place.
         
         Raises
         ------
@@ -711,7 +708,7 @@ class _Signal1DTools(object):
         
     @only_interactive
     def remove_background(self):
-        """Remove the background using a gui.
+        """Remove the background  in place using a gui.
         
         Raises
         ------
@@ -751,7 +748,7 @@ class _Signal1DTools(object):
         
     @auto_replot    
     def gaussian_filter(self, FWHM):
-        """Applies a Gaussian filter in the spectral dimension.
+        """Applies a Gaussian filter in the spectral dimension in place. 
         
         Parameters
         ----------
@@ -780,7 +777,7 @@ class _Signal1DTools(object):
     
     @auto_replot
     def hanning_taper(self, side='both', channels=None, offset=0):
-        """Hanning taper
+        """Apply a hanning taper to the data in place.
         
         Parameters
         ----------
