@@ -901,1061 +901,8 @@ class _Signal1DTools(object):
                                                 subchannel=subchannel)
         return peaks
         
-
-class Signal(t.HasTraits, MVA, _Signal1DTools, _Signal2DTools):
-    data = t.Any()
-    axes_manager = t.Instance(AxesManager)
-    original_parameters = t.Instance(DictionaryBrowser)
-    mapped_parameters = t.Instance(DictionaryBrowser)
-    tmp_parameters = t.Instance(DictionaryBrowser)
-    _default_record_by = 'image'
-
-    def __init__(self, file_data_dict=None, *args, **kw):
-        """All data interaction is made through this class or its subclasses
-
-
-        Parameters:
-        -----------
-        dictionary : dictionary
-           see load_dictionary for the format
-           
-        """
-        super(Signal, self).__init__()
-        self.mapped_parameters = DictionaryBrowser()
-        self.original_parameters = DictionaryBrowser()
-        self.tmp_parameters = DictionaryBrowser()
-        self.learning_results = LearningResults()
-        self.peak_learning_results = LearningResults()
-        if file_data_dict is not None:
-            self.load_dictionary(file_data_dict)
-        self._plot = None
-        self._shape_before_unfolding = None
-        self._axes_manager_before_unfolding = None
-        self.auto_replot = True
-        self.variance = None
-        self.navigation_indexer = SpecialSlicers(self, True)
-        self.signal_indexer = SpecialSlicers(self, False)
-
-    def __repr__(self):
-        string = '<'
-        string += self.__class__.__name__
-        string+=", title: %s" % self.mapped_parameters.title
-        string += ", dimensions: %s" % (str(self.data.shape))
-        string += '>'
-
-        return string
-
-    def __getitem__(self, slices, isNavigation=None):
-        try:
-            len(slices)
-        except TypeError:
-            slices = (slices,)
-        _orig_slices = slices
-
-        has_nav = True if isNavigation is None else isNavigation
-        has_signal = True if isNavigation is None else not isNavigation
-        
-        # Create a deepcopy of self that contains a view of self.data
-        data = self.data
-        self.data = None
-        _signal = self.deepcopy()
-        self.data = data
-        _signal.data = data
-        del data
-        nav_idx =  [el.index_in_array for el in
-                    _signal.axes_manager.navigation_axes]
-        signal_idx =  [el.index_in_array for el in
-                       _signal.axes_manager.signal_axes]
-
-        index = nav_idx + signal_idx
-        if not has_signal:
-            idx =  nav_idx
-        elif not has_nav:
-            idx =  signal_idx
-        else:
-            idx =  index
-            
-        # Add support for Ellipsis
-        if Ellipsis in _orig_slices:
-            _orig_slices = list(_orig_slices)
-            # Expand the first Ellipsis
-            ellipsis_index = _orig_slices.index(Ellipsis)
-            _orig_slices.remove(Ellipsis)
-            _orig_slices = (_orig_slices[:ellipsis_index] +
-                [slice(None),] * max(0, len(idx) - len(_orig_slices)) +
-                _orig_slices[ellipsis_index:]) 
-            # Replace all the following Ellipses by :
-            while Ellipsis in _orig_slices:
-                _orig_slices[_orig_slices.index(Ellipsis)] = slice(None)
-            _orig_slices = tuple(_orig_slices)
-            
-        if len(_orig_slices) > len(idx):
-            raise IndexError("too many indices")
-                    
-        slices = np.array([slice(None,)] * 
-                           len(_signal.axes_manager._axes))
-            
-        slices[idx] = _orig_slices + (slice(None),) * max(
-                            0, len(idx) - len(_orig_slices))
-        
-        array_slices = []
-        for slice_, axis in zip(slices,_signal.axes_manager._axes):
-            if (isinstance(slice_, slice) or 
-                len(_signal.axes_manager._axes) < 2):
-                array_slices.append(axis._slice_me(slice_))
-            else:
-                if isinstance(slice_, float):
-                    slice_ = axis.value2index(slice_)
-                array_slices.append(slice_)
-                _signal.axes_manager.remove(axis)
-        
-        _signal.data = _signal.data[array_slices]
-        _signal.get_dimensions_from_data()
-
-        return _signal
-        
-    def __setitem__(self, i, j):
-        """x.__setitem__(i, y) <==> x[i]=y
-        
-        """
-        if isinstance(j, Signal):
-            j = j.data
-        self.__getitem__(i).data[:] = j
-        
-    
-    def _binary_operator_ruler(self, other, op_name):
-        exception_message = (
-            "Invalid dimensions for this operation")
-        if isinstance(other, Signal):
-            if other.data.shape != self.data.shape:
-                # Are they aligned?
-                are_aligned = utils.are_aligned(self.data.shape,
-                                       other.data.shape)
-                if are_aligned is True:
-                    sdata, odata = utils.homogenize_ndim(self.data,
-                                                     other.data)
-                else:
-                    # Let's align them if possible
-                    sig_and_nav = [s for s in [self, other] if
-                        s.axes_manager.signal_size > 1 and 
-                        s.axes_manager.navigation_size > 1]
-                        
-                    sig = [s for s in [self, other] if
-                        s.axes_manager.signal_size > 1 and 
-                        s.axes_manager.navigation_size == 0]
-                        
-                    nav = [s for s in [self, other] if
-                        s.axes_manager.signal_size == 0 and 
-                        s.axes_manager.navigation_size > 1]
-                    if sig_and_nav and sig:
-                        self = sig_and_nav[0]
-                        other = sig[0]
-                        if (self.axes_manager.signal_shape == 
-                                    other.axes_manager.signal_shape):
-                            sdata = self.data
-                            other_new_shape = [
-                                axis.size if axis.navigate is False
-                                else 1
-                                for axis in self.axes_manager._axes]
-                            odata = other.data.reshape(
-                                other_new_shape)
-                        elif (self.axes_manager.navigation_shape == 
-                                other.axes_manager.signal_shape):
-                            sdata = self.data
-                            other_new_shape = [
-                                axis.size if axis.navigate is True
-                                else 1
-                                for axis in self.axes_manager._axes]
-                            odata = other.data.reshape(
-                                other_new_shape)
-                        else:
-                            raise ValueError(exception_message)
-                    elif len(sig) == 2:
-                        sdata = self.data.reshape(
-                            (1,) * other.axes_manager.signal_dimension
-                            + self.data.shape)
-                        odata = other.data.reshape(
-                            other.data.shape + 
-                            (1,) * self.axes_manager.signal_dimension)
-                    else:
-                        raise ValueError(exception_message)
-                        
-
-                # The data are now aligned but the shapes are not the 
-                # same and therefore we have to calculate the resulting
-                # axes
-                ref_axes = self if (
-                    len(self.axes_manager._axes) > 
-                    len(other.axes_manager._axes)) else other
-                
-                new_axes = []
-                for i, (ssize, osize) in enumerate(
-                                    zip(sdata.shape, odata.shape)):
-                    if ssize > osize:
-                        if are_aligned or len(sig) != 2:
-                            new_axes.append(
-                                self.axes_manager._axes[i].copy())
-                        else:
-                            new_axes.append(self.axes_manager._axes[
-                                i - other.axes_manager.signal_dimension
-                                ].copy())
-                        
-                    elif ssize < osize:
-                        new_axes.append(
-                            other.axes_manager._axes[i].copy())
-                        
-                    else:
-                        new_axes.append(
-                            ref_axes.axes_manager._axes[i].copy())
-                
-            else:
-                sdata = self.data
-                odata = other.data
-                new_axes = [axis.copy()
-                            for axis in self.axes_manager._axes]            
-            exec("result = sdata.%s(odata)" % op_name)
-            new_signal = self.get_deepcopy_with_new_data(result)
-            new_signal.axes_manager._axes = new_axes
-            new_signal.axes_manager.set_signal_dimension(
-                self.axes_manager.signal_dimension)
-            return new_signal
-        else:
-            exec("result = self.data.%s(other)" %  op_name)
-            return self.get_deepcopy_with_new_data(result)
-        
-    def _unary_operator_ruler(self, op_name):
-        exec("result = self.data.%s()" % op_name)
-        return self.get_deepcopy_with_new_data(result)
-        
-    def _check_signal_dimension_equals_one(self):
-        if self.axes_manager.signal_dimension != 1:
-            raise SignalSizeError(self.axes_manager.signal_dimension, 1)
-            
-    def _check_signal_dimension_equals_two(self):
-        if self.axes_manager.signal_dimension != 2:
-            raise SignalSizeError(self.axes_manager.signal_dimension, 2)
-            
-    def get_deepcopy_with_new_data(self, data=None):
-        """Returns a deepcopy of itself replacing the data.
-        
-        This method has the advantage over deepcopy that it does not
-        copy the data what can save precious memory
-        
-        Paramters
-        ---------
-        data : {None | np.array}
-        
-        Returns
-        -------
-        ns : Signal
-        
-        """
-        old_data = self.data
-        self.data = None
-        ns = self.deepcopy()
-        ns.data = data
-        self.data = old_data
-        return ns
-            
-    def print_summary(self):
-        string = "\n\tTitle: "
-        string += self.mapped_parameters.title.decode('utf8')
-        if hasattr(self.mapped_parameters,'signal_type'):
-            string += "\n\tSignal type: "
-            string += self.mapped_parameters.signal_type
-        string += "\n\tData dimensions: "
-        string += str(self.data.shape)
-        if hasattr(self.mapped_parameters, 'record_by'):
-            string += "\n\tData representation: "
-            string += self.mapped_parameters.record_by
-            string += "\n\tData type: "
-            string += str(self.data.dtype)
-        print string
-
-    def load_dictionary(self, file_data_dict):
-        """Parameters:
-        -----------
-        file_data_dict : dictionary
-            A dictionary containing at least a 'data' keyword with an array of
-            arbitrary dimensions. Additionally the dictionary can contain the
-            following keys:
-                axes: a dictionary that defines the axes (see the
-                    AxesManager class)
-                attributes: a dictionary which keywords are stored as
-                    attributes of the signal class
-                mapped_parameters: a dictionary containing a set of parameters
-                    that will be stored as attributes of a Parameters class.
-                    For some subclasses some particular parameters might be
-                    mandatory.
-                original_parameters: a dictionary that will be accesible in the
-                    original_parameters attribute of the signal class and that
-                    typically contains all the parameters that has been
-                    imported from the original data file.
-
-        """
-        self.data = file_data_dict['data']
-        if 'axes' not in file_data_dict:
-            file_data_dict['axes'] = self._get_undefined_axes_list()
-        self.axes_manager = AxesManager(
-            file_data_dict['axes'])
-        if not 'mapped_parameters' in file_data_dict:
-            file_data_dict['mapped_parameters'] = {}
-        if not 'original_parameters' in file_data_dict:
-            file_data_dict['original_parameters'] = {}
-        if 'attributes' in file_data_dict:
-            for key, value in file_data_dict['attributes'].iteritems():
-                if hasattr(self,key):
-                    if isinstance(value,dict):
-                        for k,v in value.iteritems():
-                            eval('self.%s.__setattr__(k,v)'%key)
-                    else:
-                        self.__setattr__(key, value)
-        self.original_parameters._load_dictionary(
-            file_data_dict['original_parameters'])
-        self.mapped_parameters._load_dictionary(
-            file_data_dict['mapped_parameters'])
-        if not hasattr(self.mapped_parameters,'title'):
-            self.mapped_parameters.title = ''
-        if not hasattr(self.mapped_parameters,'record_by'):
-            self.mapped_parameters.record_by = self._default_record_by
-                
-    def squeeze(self):
-        """Remove single-dimensional entries from the shape of an array 
-        and the axes.
-        
-        """
-        # We deepcopy everything but data
-        self = self.get_deepcopy_with_new_data(self.data)
-        for axis in self.axes_manager._axes:
-            if axis.size == 1:
-                self.axes_manager.remove(axis)
-        self.data = self.data.squeeze()
-        return self
-
-    def _get_signal_dict(self, add_learning_results=True):
-        dic = {}
-        dic['data'] = self.data.copy()
-        dic['axes'] = self.axes_manager._get_axes_dicts()
-        dic['mapped_parameters'] = \
-        self.mapped_parameters.as_dictionary()
-        dic['original_parameters'] = \
-        self.original_parameters.as_dictionary()
-        if add_learning_results and hasattr(self,'learning_results'):
-            dic['learning_results'] = self.learning_results.__dict__
-        return dic
-
-    def _get_undefined_axes_list(self):
-        axes = []
-        for i in xrange(len(self.data.shape)):
-            axes.append({
-                        'name': 'axis%i' % i,
-                        'scale': 1.,
-                        'offset': 0.,
-                        'size': int(self.data.shape[i]),
-                        'units': 'undefined',})
-        return axes
-
-    def __call__(self, axes_manager=None):
-        if axes_manager is None:
-            axes_manager = self.axes_manager
-        return self.data.__getitem__(axes_manager._getitem_tuple)
-
-    def _get_hse_1D_explorer(self, *args, **kwargs):
-        islice = self.axes_manager.signal_axes[0].index_in_array
-        inslice = self.axes_manager.navigation_axes[0].index_in_array
-        if islice > inslice:
-            return self.data.squeeze()
-        else:
-            return self.data.squeeze().T
-
-    def _get_hse_2D_explorer(self, *args, **kwargs):
-        slices = [0,] * len(self.axes_manager._axes)
-        for i, axis in enumerate(
-                            self.axes_manager.navigation_axes[::-1]):
-            if i < 2:
-                slices[axis.index_in_array] = slice(None, None, None)
-            else:
-                slices[axis.index_in_array] = slice(
-                                        axis.index, axis.index+1,None)
-        isignal = self.axes_manager.signal_axes[0].index_in_array
-        slices[isignal] = slice(None, None, None)
-        data = np.nan_to_num(self.data.__getitem__(slices)
-                             ).sum(isignal).squeeze()
-        return data
-
-    def _get_hie_explorer(self, *args, **kwargs):
-        slices = [0,] * len(self.axes_manager._axes)
-        for i, axis in enumerate(
-                            self.axes_manager.navigation_axes):
-            if i < 2:
-                slices[axis.index_in_array] = slice(None, None, None)
-            else:
-                slices[axis.index_in_array] = slice(
-                                        axis.index, axis.index+1,None)
-        isignal = [axis.index_in_array for axis in
-                   self.axes_manager.signal_axes]
-        isignal.sort()
-        slices[isignal[0]] = slice(None, None, None)
-        slices[isignal[1]] = slice(None, None, None)
-        data = np.nan_to_num(self.data.__getitem__(slices)
-                             ).sum(isignal[1]).sum(isignal[0]).squeeze()
-        return data
-
-    def _get_explorer(self, *args, **kwargs):
-        nav_dim = self.axes_manager.navigation_dimension
-        if self.axes_manager.signal_dimension == 1:
-            if nav_dim == 1:
-                return self._get_hse_1D_explorer(*args, **kwargs)
-            elif nav_dim >= 2:
-                return self._get_hse_2D_explorer(*args, **kwargs)
-
-        if self.axes_manager.signal_dimension == 2:
-            if nav_dim >= 1:
-                return self._get_hie_explorer(*args, **kwargs)
-            else:
-                return None
-        else:
-            return None
-
-    def plot(self, axes_manager=None):
-        if self._plot is not None:
-                try:
-                    self._plot.close()
-                except:
-                    # If it was already closed it will raise an exception,
-                    # but we want to carry on...
-                    pass
-
-        if axes_manager is None:
-            axes_manager = self.axes_manager
-
-        if axes_manager.signal_dimension == 1:
-            # Hyperspectrum
-            self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
-            
-        elif axes_manager.signal_dimension == 2:
-            self._plot = mpl_hie.MPL_HyperImage_Explorer()
-        else:
-            raise ValueError('Plotting is not supported for this view')
-        
-        self._plot.axes_manager = axes_manager
-        self._plot.signal_data_function = self.__call__
-        if self.mapped_parameters.title:
-            self._plot.signal_title = self.mapped_parameters.title
-        elif self.tmp_parameters.has_item('filename'):
-            self._plot.signal_title = self.tmp_parameters.filename
-            
-
-        # Navigator properties
-        if self.axes_manager.navigation_axes:
-            self._plot.navigator_data_function = self._get_explorer
-        self._plot.plot()
-            
-
-    def plot_residual(self, axes_manager=None):
-        """Plot the residual between original data and reconstructed 
-        data
-
-        Requires you to have already run PCA or ICA, and to reconstruct 
-        data using either the get_decomposition_model or 
-        get_bss_model methods.
-        
-        """
-
-        if hasattr(self, 'residual'):
-            self.residual.plot(axes_manager)
-        else:
-            print("Object does not have any residual information."
-                  "Is it a reconstruction created using either "
-                  "get_decomposition_model or get_bss_model methods?")
-
-    def save(self, filename=None, overwrite=None, extension=None,
-             **kwds):
-        """Saves the signal in the specified format.
-
-        The function gets the format from the extension. You can use:
-            - hdf5 for HDF5
-            - rpl for Ripple (usefult to export to Digital Micrograph)
-            - msa for EMSA/MSA single spectrum saving.
-            - Many image formats such as png, tiff, jpeg...
-
-        If no extension is provided the default file format as defined 
-        in the `preferences` is used.
-        Please note that not all the formats supports saving datasets of
-        arbitrary dimensions, e.g. msa only suports 1D data.
-        
-        Each format accepts a different set of parameters. For details 
-        see the specific format documentation.
-
-        Parameters
-        ----------
-        filename : str or None
-            If None and tmp_parameters.filename and 
-            tmp_paramters.folder are defined, the
-            filename and extension will be taken from them.
-        overwrite : None, bool
-            If None, if the file exists it will query the user. If 
-            True(False) it (does not) overwrites the file if it exists.
-        extension : str
-            The extension of the file that defines the file format, 
-            e.g. 'rpl'. It overwrite the extension given in filename
-            if any.
-            
-        """
-        if filename is None:
-            if (self.tmp_parameters.has_item('filename') and 
-                self.tmp_parameters.has_item('folder')):
-                filename = os.path.join(
-                    self.tmp_parameters.folder,
-                    self.tmp_parameters.filename + '.' +
-                    self.tmp_parameters.extension)
-            elif self.mapped_parameters.has_item('original_filename'):
-                filename = self.mapped_parameters.original_filename
-            else:
-                raise ValueError('File name not defined')
-        if extension is not None:
-            basename, ext = os.path.splitext(filename)
-            filename = basename + '.' + extension
-        io.save(filename, self, overwrite=overwrite, **kwds)
-
-    def _replot(self):
-        if self._plot is not None:
-            if self._plot.is_active() is True:
-                self.plot()
-
-    @auto_replot
-    def get_dimensions_from_data(self):
-        """Get the dimension parameters from the data_cube. Useful when 
-        the data_cube was externally modified, or when the SI was not 
-        loaded from a file
-        
-        """
-        dc = self.data
-        for axis in self.axes_manager._axes:
-            axis.size = int(dc.shape[axis.index_in_array])
-
-    def crop(self, axis, start=None, end=None):
-        """Crops the data in a given axis. The range is given in pixels
-        
-        Parameters
-        ----------
-        axis : {int | string}
-            Specify the data axis in which to perform the cropping 
-            operation. The axis can be specified using the index of the 
-            axis in `axes_manager` or the axis name.
-        start, end : {int | float | None}
-            The beginning and end of the cropping interval. If int
-            the value is taken as the axis index. If float the index 
-            is calculated using the axis calibration. If start/end is 
-            None crop from/to the low/high end of the axis.
-                    
-        """
-        axis = self.axes_manager[axis]
-        i1, i2 = axis._get_index(start), axis._get_index(end) 
-        if i1 is not None:
-            new_offset = axis.axis[i1]
-        # We take a copy to guarantee the continuity of the data
-        self.data = self.data[
-            (slice(None),) * axis.index_in_array + (slice(i1, i2),
-            Ellipsis)]
-
-        if i1 is not None:
-            axis.offset = new_offset
-        self.get_dimensions_from_data()
-        self.squeeze()
-
-    @auto_replot
-    def roll_xy(self, n_x, n_y = 1):
-        """Roll over the x axis n_x positions and n_y positions the 
-        former rows.
-
-        This method has the purpose of "fixing" a bug in the acquisition
-         of the Orsay's microscopes and probably it does not have 
-         general interest.
-
-        Parameters
-        ----------
-        n_x : int
-        n_y : int
-
-        Notes
-        -----
-        Useful to correct the SI column storing bug in Marcel's
-        acquisition routines.
-        
-        """
-        self.data = np.roll(self.data, n_x, 0)
-        self.data[:n_x, ...] = np.roll(self.data[:n_x, ...], n_y, 1)
-
-    # TODO: After using this function the plotting does not work
-    @auto_replot
-    def swap_axes(self, axis1, axis2):
-        """Swaps the axes.
-
-        Parameters
-        ----------
-        axis1, axis2 : {int | str}
-            Specify the data axes in which to perform the operation.
-            The axis can be specified using the index of the 
-            axis in `axes_manager` or the axis name.
-        
-        """
-        axis1 = self.axes_manager[axis1].index_in_array
-        axis2 = self.axes_manager[axis2].index_in_array
-        self.data = self.data.swapaxes(axis1, axis2)
-        c1 = self.axes_manager._axes[axis1]
-        c2 = self.axes_manager._axes[axis2]
-        self.axes_manager._axes[axis1] = c2
-        self.axes_manager._axes[axis2] = c1
-        self.axes_manager._update_attributes()
-
-    def rebin(self, new_shape):
-        """
-        Rebins the data to the new shape
-
-        Parameters
-        ----------
-        new_shape: tuple of ints
-            The new shape must be a divisor of the original shape
-        """
-        factors = np.array(self.data.shape) / np.array(new_shape)
-        self.data = utils.rebin(self.data, new_shape)
-        for axis in self.axes_manager._axes:
-            axis.scale *= factors[axis.index_in_array]
-        self.get_dimensions_from_data()
-
-    def split(self, axis=None, number_of_parts=None, step_sizes=None):
-        """Splits the data into several signals.
-
-        The split can be defined either by giving either 
-        the number_of_parts for homogenous splitting or a list
-        of customized step sizes. If number_of_pars and step_sizes are
-        not defined (None) the default values are read from
-        mapped_parameters.splitting in they are defined there.
-
-        Parameters
-        ----------
-
-        axis : {int | string | None}
-            Specify the data axis in which to perform the splitting 
-            operation. The axis can be specified using the index of the 
-            axis in `axes_manager` or the axis name. It can only be None
-            when the value is defined in mapped_parameters.splitting
-        number_of_parts : {int | None}
-            Number of parts in which the SI will be splitted. The 
-            splitting is homegenous. When the axis size is not divisible
-            by the number_of_parts the reminder data is lost without
-            warning.
-        step_sizes : {list of ints | None}
-            Size of the splitted parts.
-
-
-        Return
-        ------
-        tuple with the splitted signals
-        
-        """
-        
-        shape = self.data.shape
-        signal_dict = self._get_signal_dict(add_learning_results=False)
-        if axis is None:
-            if self.mapped_parameters.has_item("splitting.axis"):
-                axis = self.mapped_parameters.splitting.axis
-            else:
-                raise ValueError(
-                    "Please specify the axis over which I should "
-                    "perform the operation")
-        else:
-            axis = self.axes_manager[axis].index_in_array
-        
-        if number_of_parts is None and step_sizes is None:
-            if not self.mapped_parameters.has_item(
-                                                "splitting.step_sizes"):
-                raise ValueError(
-                    "Please provide either number_of_parts "
-                    "or a step_sizes list.")
-            else:
-                step_sizes = self.mapped_parameters.splitting.step_sizes
-                # Remove the splitting subsection of mapped_parameters
-                # because it must not be inherited by the splitted
-                # signals.
-                del signal_dict['mapped_parameters']['splitting']
-                messages.information(
-                    "Automatically splitting in %s step sizes"  %
-                                     step_sizes)
-        elif number_of_parts is not None and step_sizes is not None:
-            raise ValueError(
-                "Print define step_sizes or number_of_part "
-                "but not both.")
-        elif step_sizes is None:
-            if number_of_parts > shape[axis]:
-                raise ValueError(
-                    "The number of parts is greater than "
-                    "the axis size.")
-            else:
-                step_sizes = ([shape[axis] // number_of_parts,] * 
-                              number_of_parts)
-        splitted = ()
-        cut_index = np.array([0] + step_sizes).cumsum()
-            
-        axes_dict = signal_dict['axes']
-        for i in xrange(len(cut_index)-1):
-            axes_dict[axis]['offset'] = \
-                self.axes_manager._axes[axis].index2value(cut_index[i])
-            axes_dict[axis]['size'] = cut_index[i + 1] - cut_index[i] 
-            data = self.data[
-                (slice(None), ) * axis +
-                (slice(cut_index[i], cut_index[i + 1]), Ellipsis)]
-            signal_dict['data'] = data
-            splitted += self.__class__(signal_dict),
-        return splitted
-
-    def unfold_if_multidim(self):
-        """Unfold the datacube if it is >2D
-
-        Returns
-        -------
-
-        Boolean. True if the data was unfolded by the function.
-        """
-        if len(self.axes_manager._axes)>2:
-            print "Automatically unfolding the data"
-            self.unfold()
-            return True
-        else:
-            return False
-
-    @auto_replot
-    def _unfold(self, steady_axes, unfolded_axis):
-        """Modify the shape of the data by specifying the axes the axes which
-        dimension do not change and the axis over which the remaining axes will
-        be unfolded
-
-        Parameters
-        ----------
-        steady_axes : list
-            The indices of the axes which dimensions do not change
-        unfolded_axis : int
-            The index of the axis over which all the rest of the axes (except
-            the steady axes) will be unfolded
-
-        See also
-        --------
-        fold
-        """
-
-        # It doesn't make sense unfolding when dim < 3
-        if len(self.data.squeeze().shape) < 3:
-            return False
-
-        # We need to store the original shape and coordinates to be used
-        # by
-        # the fold function only if it has not been already stored by a
-        # previous unfold
-        if self._shape_before_unfolding is None:
-            self._shape_before_unfolding = self.data.shape
-            self._axes_manager_before_unfolding = self.axes_manager
-
-        new_shape = [1] * len(self.data.shape)
-        for index in steady_axes:
-            new_shape[index] = self.data.shape[index]
-        new_shape[unfolded_axis] = -1
-        self.data = self.data.reshape(new_shape)
-        self.axes_manager = self.axes_manager.deepcopy()
-        i = 0
-        uname = ''
-        uunits = ''
-        to_remove = []
-        for axis, dim in zip(self.axes_manager._axes, new_shape):
-            if dim == 1:
-                uname += ',' + axis.name
-                uunits = ',' + axis.units
-                to_remove.append(axis)
-        self.axes_manager._axes[unfolded_axis].name += uname
-        self.axes_manager._axes[unfolded_axis].units += uunits
-        self.axes_manager._axes[unfolded_axis].size = \
-                                        self.data.shape[unfolded_axis]
-        for axis in to_remove:
-            self.axes_manager._axes.remove(axis)
-
-        self.data = self.data.squeeze()
-
-    def unfold(self):
-        """Modifies the shape of the data by unfolding the signal and
-        navigation dimensions separaterly
-
-        """
-        self.unfold_navigation_space()
-        self.unfold_signal_space()
-
-    def unfold_navigation_space(self):
-        """Modify the shape of the data to obtain a navigation space of
-        dimension 1
-        """
-
-        if self.axes_manager.navigation_dimension < 2:
-            return False
-        steady_axes = [
-                        axis.index_in_array for axis in
-                        self.axes_manager.signal_axes]
-        unfolded_axis = (
-                    self.axes_manager.navigation_axes[0].index_in_array)
-        self._unfold(steady_axes, unfolded_axis)
-
-    def unfold_signal_space(self):
-        """Modify the shape of the data to obtain a signal space of
-        dimension 1
-        """
-        if self.axes_manager.signal_dimension < 2:
-            return False
-        steady_axes = [
-                        axis.index_in_array for axis in
-                        self.axes_manager.navigation_axes]
-        unfolded_axis = self.axes_manager.signal_axes[0].index_in_array
-        self._unfold(steady_axes, unfolded_axis)
-
-    @auto_replot
-    def fold(self):
-        """If the signal was previously unfolded, folds it back"""
-        if self._shape_before_unfolding is not None:
-            self.data = self.data.reshape(self._shape_before_unfolding)
-            self.axes_manager = self._axes_manager_before_unfolding
-            self._shape_before_unfolding = None
-            self._axes_manager_before_unfolding = None
-            
-    def _make_sure_data_is_contiguous(self):
-        if self.data.flags['C_CONTIGUOUS'] is False:
-            self.data = np.ascontiguousarray(self.data)
-            
-    def _iterate_signal(self):
-        """Iterates over the signal data.
-        
-        It is faster than using the signal iterator.
-        
-        """
-        if self.axes_manager.navigation_size < 2:
-            yield self()
-            return
-        self._make_sure_data_is_contiguous()
-        axes = [axis.index_in_array for 
-                axis in self.axes_manager.signal_axes]
-        unfolded_axis = (
-                self.axes_manager.navigation_axes[0].index_in_array)
-        new_shape = [1] * len(self.data.shape)
-        for axis in axes:
-            new_shape[axis] = self.data.shape[axis]
-        new_shape[unfolded_axis] = -1
-        # Warning! if the data is not contigous it will make a copy!!
-        data = self.data.reshape(new_shape)
-        for i in xrange(data.shape[unfolded_axis]):
-            getitem = [0] * len(data.shape)
-            for axis in axes:
-                getitem[axis] = slice(None)
-            getitem[unfolded_axis] = i
-            yield(data[getitem])
-
-    @auto_replot
-    def sum(self, axis, return_signal=False):
-        """Sum the data over the specify axis
-
-        Parameters
-        ----------
-        axis : int
-            The axis over which the operation will be performed
-
-        Returns
-        -------
-        s : Signal
-
-        See also
-        --------
-        sum_in_mask, mean
-
-        Usage
-        -----
-        >>> import numpy as np
-        >>> s = Signal({'data' : np.random.random((64,64,1024))})
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.sum(-1).data.shape
-        (64,64)
-        # If we just want to plot the result of the operation
-        s.sum(-1, True).plot()
-        
-        """
-        
-        axis = self.axes_manager[axis].index_in_array
-        s = self.get_deepcopy_with_new_data(self.data.sum(axis))
-        s.axes_manager.remove(s.axes_manager._axes[axis])
-        return s
-        
-    @auto_replot
-    def max(self, axis, return_signal=False):
-        """Returns a signal of the same type containing
-        the maximum along a given axis.
-
-        Parameters
-        ----------
-        axis : int
-            The axis over which the operation will be performed
-
-        Returns
-        -------
-        s : Signal
-
-        See also
-        --------
-        sum, mean, min
-
-        Usage
-        -----
-        >>> import numpy as np
-        >>> s = Signal({'data' : np.random.random((64,64,1024))})
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.max(-1).data.shape
-        (64,64)        
-        
-        """
-        
-        axis = self.axes_manager[axis].index_in_array
-        s = self.get_deepcopy_with_new_data(self.data.max(axis))
-        s.axes_manager.remove(s.axes_manager._axes[axis])
-        return s
-        
-    @auto_replot
-    def min(self, axis, return_signal=False):
-        """Returns a signal of the same type containing
-        the minimum along a given axis.
-
-        Parameters
-        ----------
-        axis : int
-            The axis over which the operation will be performed
-
-        Returns
-        -------
-        s : Signal
-
-        See also
-        --------
-        sum, mean, max
-
-        Usage
-        -----
-        >>> import numpy as np
-        >>> s = Signal({'data' : np.random.random((64,64,1024))})
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.min(-1).data.shape
-        (64,64)        
-        
-        """
-        
-        axis = self.axes_manager[axis].index_in_array
-        s = self.get_deepcopy_with_new_data(self.data.min(axis))
-        s.axes_manager.remove(s.axes_manager._axes[axis])
-        return s
-    
-    @auto_replot
-    def mean(self, axis):
-        """Average the data over the specify axis
-
-        Parameters
-        ----------
-        axis : int
-            The axis over which the operation will be performed
-
-        Returns
-        -------
-        s : Signal
-
-        See also
-        --------
-        sum_in_mask, mean
-
-        Usage
-        -----
-        >>> import numpy as np
-        >>> s = Signal({'data' : np.random.random((64,64,1024))})
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.mean(-1).data.shape
-        (64,64)
-        
-        """
-        
-        axis = self.axes_manager[axis].index_in_array
-        s = self.get_deepcopy_with_new_data(self.data.mean(axis))
-        s.axes_manager.remove(s.axes_manager._axes[axis])
-        return s
-            
-    @auto_replot
-    def diff(self, axis, order=1, return_signal=False):
-        """Differentiate the data over the specify axis
-
-        Parameters
-        ----------
-        axis: int
-            The axis over which the operation will be performed
-        order: the order of the derivative
-
-        See also
-        --------
-        mean, sum
-
-        Usage
-        -----
-        >>> import numpy as np
-        >>> s = Signal({'data' : np.random.random((64,64,1024))})
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.diff(-1).data.shape
-        (64,64,1023)
-        
-        """
-        
-        s = self.get_deepcopy_with_new_data(
-            np.diff(self.data,order,axis))
-        axis = s.axes_manager._axes[axis]
-        axis.offset += (axis.scale / 2)
-        s.get_dimensions_from_data()
-        return s
-        
-    def copy(self):
-        return copy.copy(self)
-
-    def deepcopy(self):
-        s = copy.deepcopy(self)
-        if self.data is not None:
-            s.data = s.data.copy()
-        return s
-        
-    def change_dtype(self, dtype):
-        """Change the data type
-        
-        Parameters
-        ----------
-
-        dtype : str or dtype
-            Typecode or data-type to which the array is cast.
-            
-        Example
-        -------
-        >>> import numpy as np
-        >>> from hyperspy.signals.spectrum import Spectrum        ns = 
-        ns.data = self.data.copy()
-        >>> s = signals.Spectrum({'data' : np.array([1,2,3,4,5])})
-        >>> s.data
-        array([1, 2, 3, 4, 5])
-        >>> s.change_dtype('float')
-        >>> s.data
-        array([ 1.,  2.,  3.,  4.,  5.])
-        
-        """
-        
-        self.data = self.data.astype(dtype)
-        
+class _MVATools(object):
+    # TODO: All of the plotting methods here should move to drawing
     def _plot_factors_or_pchars(self, factors, comp_ids=None, 
                                 calibrate=True, avg_char=False,
                                 same_window=None, comp_label='PC', 
@@ -2938,6 +1885,1067 @@ class Signal(t.HasTraits, MVA, _Signal1DTools, _Signal2DTools):
                               no_nans=no_nans,
                               per_row=per_row,
                               save_figures_format=save_figures_format)
+                              
+
+    def plot_residual(self, axes_manager=None):
+        """Plot the residual between original data and reconstructed 
+        data
+
+        Requires you to have already run PCA or ICA, and to reconstruct 
+        data using either the get_decomposition_model or 
+        get_bss_model methods.
+        
+        """
+
+        if hasattr(self, 'residual'):
+            self.residual.plot(axes_manager)
+        else:
+            print("Object does not have any residual information."
+                  "Is it a reconstruction created using either "
+                  "get_decomposition_model or get_bss_model methods?")
+
+        
+
+class Signal(t.HasTraits,
+             MVA,
+             _MVATools,
+             _Signal1DTools,
+             _Signal2DTools):
+    data = t.Any()
+    axes_manager = t.Instance(AxesManager)
+    original_parameters = t.Instance(DictionaryBrowser)
+    mapped_parameters = t.Instance(DictionaryBrowser)
+    tmp_parameters = t.Instance(DictionaryBrowser)
+    _default_record_by = 'image'
+
+    def __init__(self, file_data_dict=None, *args, **kw):
+        """All data interaction is made through this class or its subclasses
+
+
+        Parameters:
+        -----------
+        dictionary : dictionary
+           see load_dictionary for the format
+           
+        """
+        super(Signal, self).__init__()
+        self.mapped_parameters = DictionaryBrowser()
+        self.original_parameters = DictionaryBrowser()
+        self.tmp_parameters = DictionaryBrowser()
+        self.learning_results = LearningResults()
+        self.peak_learning_results = LearningResults()
+        if file_data_dict is not None:
+            self.load_dictionary(file_data_dict)
+        self._plot = None
+        self._shape_before_unfolding = None
+        self._axes_manager_before_unfolding = None
+        self.auto_replot = True
+        self.variance = None
+        self.navigation_indexer = SpecialSlicers(self, True)
+        self.signal_indexer = SpecialSlicers(self, False)
+
+    def __repr__(self):
+        string = '<'
+        string += self.__class__.__name__
+        string+=", title: %s" % self.mapped_parameters.title
+        string += ", dimensions: %s" % (str(self.data.shape))
+        string += '>'
+
+        return string
+
+    def __getitem__(self, slices, isNavigation=None):
+        try:
+            len(slices)
+        except TypeError:
+            slices = (slices,)
+        _orig_slices = slices
+
+        has_nav = True if isNavigation is None else isNavigation
+        has_signal = True if isNavigation is None else not isNavigation
+        
+        # Create a deepcopy of self that contains a view of self.data
+        data = self.data
+        self.data = None
+        _signal = self.deepcopy()
+        self.data = data
+        _signal.data = data
+        del data
+        nav_idx =  [el.index_in_array for el in
+                    _signal.axes_manager.navigation_axes]
+        signal_idx =  [el.index_in_array for el in
+                       _signal.axes_manager.signal_axes]
+
+        index = nav_idx + signal_idx
+        if not has_signal:
+            idx =  nav_idx
+        elif not has_nav:
+            idx =  signal_idx
+        else:
+            idx =  index
+            
+        # Add support for Ellipsis
+        if Ellipsis in _orig_slices:
+            _orig_slices = list(_orig_slices)
+            # Expand the first Ellipsis
+            ellipsis_index = _orig_slices.index(Ellipsis)
+            _orig_slices.remove(Ellipsis)
+            _orig_slices = (_orig_slices[:ellipsis_index] +
+                [slice(None),] * max(0, len(idx) - len(_orig_slices)) +
+                _orig_slices[ellipsis_index:]) 
+            # Replace all the following Ellipses by :
+            while Ellipsis in _orig_slices:
+                _orig_slices[_orig_slices.index(Ellipsis)] = slice(None)
+            _orig_slices = tuple(_orig_slices)
+            
+        if len(_orig_slices) > len(idx):
+            raise IndexError("too many indices")
+                    
+        slices = np.array([slice(None,)] * 
+                           len(_signal.axes_manager._axes))
+            
+        slices[idx] = _orig_slices + (slice(None),) * max(
+                            0, len(idx) - len(_orig_slices))
+        
+        array_slices = []
+        for slice_, axis in zip(slices,_signal.axes_manager._axes):
+            if (isinstance(slice_, slice) or 
+                len(_signal.axes_manager._axes) < 2):
+                array_slices.append(axis._slice_me(slice_))
+            else:
+                if isinstance(slice_, float):
+                    slice_ = axis.value2index(slice_)
+                array_slices.append(slice_)
+                _signal.axes_manager.remove(axis)
+        
+        _signal.data = _signal.data[array_slices]
+        _signal.get_dimensions_from_data()
+
+        return _signal
+        
+    def __setitem__(self, i, j):
+        """x.__setitem__(i, y) <==> x[i]=y
+        
+        """
+        if isinstance(j, Signal):
+            j = j.data
+        self.__getitem__(i).data[:] = j
+        
+    
+    def _binary_operator_ruler(self, other, op_name):
+        exception_message = (
+            "Invalid dimensions for this operation")
+        if isinstance(other, Signal):
+            if other.data.shape != self.data.shape:
+                # Are they aligned?
+                are_aligned = utils.are_aligned(self.data.shape,
+                                       other.data.shape)
+                if are_aligned is True:
+                    sdata, odata = utils.homogenize_ndim(self.data,
+                                                     other.data)
+                else:
+                    # Let's align them if possible
+                    sig_and_nav = [s for s in [self, other] if
+                        s.axes_manager.signal_size > 1 and 
+                        s.axes_manager.navigation_size > 1]
+                        
+                    sig = [s for s in [self, other] if
+                        s.axes_manager.signal_size > 1 and 
+                        s.axes_manager.navigation_size == 0]
+                        
+                    nav = [s for s in [self, other] if
+                        s.axes_manager.signal_size == 0 and 
+                        s.axes_manager.navigation_size > 1]
+                    if sig_and_nav and sig:
+                        self = sig_and_nav[0]
+                        other = sig[0]
+                        if (self.axes_manager.signal_shape == 
+                                    other.axes_manager.signal_shape):
+                            sdata = self.data
+                            other_new_shape = [
+                                axis.size if axis.navigate is False
+                                else 1
+                                for axis in self.axes_manager._axes]
+                            odata = other.data.reshape(
+                                other_new_shape)
+                        elif (self.axes_manager.navigation_shape == 
+                                other.axes_manager.signal_shape):
+                            sdata = self.data
+                            other_new_shape = [
+                                axis.size if axis.navigate is True
+                                else 1
+                                for axis in self.axes_manager._axes]
+                            odata = other.data.reshape(
+                                other_new_shape)
+                        else:
+                            raise ValueError(exception_message)
+                    elif len(sig) == 2:
+                        sdata = self.data.reshape(
+                            (1,) * other.axes_manager.signal_dimension
+                            + self.data.shape)
+                        odata = other.data.reshape(
+                            other.data.shape + 
+                            (1,) * self.axes_manager.signal_dimension)
+                    else:
+                        raise ValueError(exception_message)
+                        
+
+                # The data are now aligned but the shapes are not the 
+                # same and therefore we have to calculate the resulting
+                # axes
+                ref_axes = self if (
+                    len(self.axes_manager._axes) > 
+                    len(other.axes_manager._axes)) else other
+                
+                new_axes = []
+                for i, (ssize, osize) in enumerate(
+                                    zip(sdata.shape, odata.shape)):
+                    if ssize > osize:
+                        if are_aligned or len(sig) != 2:
+                            new_axes.append(
+                                self.axes_manager._axes[i].copy())
+                        else:
+                            new_axes.append(self.axes_manager._axes[
+                                i - other.axes_manager.signal_dimension
+                                ].copy())
+                        
+                    elif ssize < osize:
+                        new_axes.append(
+                            other.axes_manager._axes[i].copy())
+                        
+                    else:
+                        new_axes.append(
+                            ref_axes.axes_manager._axes[i].copy())
+                
+            else:
+                sdata = self.data
+                odata = other.data
+                new_axes = [axis.copy()
+                            for axis in self.axes_manager._axes]            
+            exec("result = sdata.%s(odata)" % op_name)
+            new_signal = self.get_deepcopy_with_new_data(result)
+            new_signal.axes_manager._axes = new_axes
+            new_signal.axes_manager.set_signal_dimension(
+                self.axes_manager.signal_dimension)
+            return new_signal
+        else:
+            exec("result = self.data.%s(other)" %  op_name)
+            return self.get_deepcopy_with_new_data(result)
+        
+    def _unary_operator_ruler(self, op_name):
+        exec("result = self.data.%s()" % op_name)
+        return self.get_deepcopy_with_new_data(result)
+        
+    def _check_signal_dimension_equals_one(self):
+        if self.axes_manager.signal_dimension != 1:
+            raise SignalSizeError(self.axes_manager.signal_dimension, 1)
+            
+    def _check_signal_dimension_equals_two(self):
+        if self.axes_manager.signal_dimension != 2:
+            raise SignalSizeError(self.axes_manager.signal_dimension, 2)
+            
+    def get_deepcopy_with_new_data(self, data=None):
+        """Returns a deepcopy of itself replacing the data.
+        
+        This method has the advantage over deepcopy that it does not
+        copy the data what can save precious memory
+        
+        Paramters
+        ---------
+        data : {None | np.array}
+        
+        Returns
+        -------
+        ns : Signal
+        
+        """
+        old_data = self.data
+        self.data = None
+        ns = self.deepcopy()
+        ns.data = data
+        self.data = old_data
+        return ns
+            
+    def print_summary(self):
+        string = "\n\tTitle: "
+        string += self.mapped_parameters.title.decode('utf8')
+        if hasattr(self.mapped_parameters,'signal_type'):
+            string += "\n\tSignal type: "
+            string += self.mapped_parameters.signal_type
+        string += "\n\tData dimensions: "
+        string += str(self.data.shape)
+        if hasattr(self.mapped_parameters, 'record_by'):
+            string += "\n\tData representation: "
+            string += self.mapped_parameters.record_by
+            string += "\n\tData type: "
+            string += str(self.data.dtype)
+        print string
+
+    def load_dictionary(self, file_data_dict):
+        """Parameters:
+        -----------
+        file_data_dict : dictionary
+            A dictionary containing at least a 'data' keyword with an array of
+            arbitrary dimensions. Additionally the dictionary can contain the
+            following keys:
+                axes: a dictionary that defines the axes (see the
+                    AxesManager class)
+                attributes: a dictionary which keywords are stored as
+                    attributes of the signal class
+                mapped_parameters: a dictionary containing a set of parameters
+                    that will be stored as attributes of a Parameters class.
+                    For some subclasses some particular parameters might be
+                    mandatory.
+                original_parameters: a dictionary that will be accesible in the
+                    original_parameters attribute of the signal class and that
+                    typically contains all the parameters that has been
+                    imported from the original data file.
+
+        """
+        self.data = file_data_dict['data']
+        if 'axes' not in file_data_dict:
+            file_data_dict['axes'] = self._get_undefined_axes_list()
+        self.axes_manager = AxesManager(
+            file_data_dict['axes'])
+        if not 'mapped_parameters' in file_data_dict:
+            file_data_dict['mapped_parameters'] = {}
+        if not 'original_parameters' in file_data_dict:
+            file_data_dict['original_parameters'] = {}
+        if 'attributes' in file_data_dict:
+            for key, value in file_data_dict['attributes'].iteritems():
+                if hasattr(self,key):
+                    if isinstance(value,dict):
+                        for k,v in value.iteritems():
+                            eval('self.%s.__setattr__(k,v)'%key)
+                    else:
+                        self.__setattr__(key, value)
+        self.original_parameters._load_dictionary(
+            file_data_dict['original_parameters'])
+        self.mapped_parameters._load_dictionary(
+            file_data_dict['mapped_parameters'])
+        if not hasattr(self.mapped_parameters,'title'):
+            self.mapped_parameters.title = ''
+        if not hasattr(self.mapped_parameters,'record_by'):
+            self.mapped_parameters.record_by = self._default_record_by
+                
+    def squeeze(self):
+        """Remove single-dimensional entries from the shape of an array 
+        and the axes.
+        
+        """
+        # We deepcopy everything but data
+        self = self.get_deepcopy_with_new_data(self.data)
+        for axis in self.axes_manager._axes:
+            if axis.size == 1:
+                self.axes_manager.remove(axis)
+        self.data = self.data.squeeze()
+        return self
+
+    def _get_signal_dict(self, add_learning_results=True):
+        dic = {}
+        dic['data'] = self.data.copy()
+        dic['axes'] = self.axes_manager._get_axes_dicts()
+        dic['mapped_parameters'] = \
+        self.mapped_parameters.as_dictionary()
+        dic['original_parameters'] = \
+        self.original_parameters.as_dictionary()
+        if add_learning_results and hasattr(self,'learning_results'):
+            dic['learning_results'] = self.learning_results.__dict__
+        return dic
+
+    def _get_undefined_axes_list(self):
+        axes = []
+        for i in xrange(len(self.data.shape)):
+            axes.append({
+                        'name': 'axis%i' % i,
+                        'scale': 1.,
+                        'offset': 0.,
+                        'size': int(self.data.shape[i]),
+                        'units': 'undefined',})
+        return axes
+
+    def __call__(self, axes_manager=None):
+        if axes_manager is None:
+            axes_manager = self.axes_manager
+        return self.data.__getitem__(axes_manager._getitem_tuple)
+
+    def _get_hse_1D_explorer(self, *args, **kwargs):
+        islice = self.axes_manager.signal_axes[0].index_in_array
+        inslice = self.axes_manager.navigation_axes[0].index_in_array
+        if islice > inslice:
+            return self.data.squeeze()
+        else:
+            return self.data.squeeze().T
+
+    def _get_hse_2D_explorer(self, *args, **kwargs):
+        slices = [0,] * len(self.axes_manager._axes)
+        for i, axis in enumerate(
+                            self.axes_manager.navigation_axes[::-1]):
+            if i < 2:
+                slices[axis.index_in_array] = slice(None, None, None)
+            else:
+                slices[axis.index_in_array] = slice(
+                                        axis.index, axis.index+1,None)
+        isignal = self.axes_manager.signal_axes[0].index_in_array
+        slices[isignal] = slice(None, None, None)
+        data = np.nan_to_num(self.data.__getitem__(slices)
+                             ).sum(isignal).squeeze()
+        return data
+
+    def _get_hie_explorer(self, *args, **kwargs):
+        slices = [0,] * len(self.axes_manager._axes)
+        for i, axis in enumerate(
+                            self.axes_manager.navigation_axes):
+            if i < 2:
+                slices[axis.index_in_array] = slice(None, None, None)
+            else:
+                slices[axis.index_in_array] = slice(
+                                        axis.index, axis.index+1,None)
+        isignal = [axis.index_in_array for axis in
+                   self.axes_manager.signal_axes]
+        isignal.sort()
+        slices[isignal[0]] = slice(None, None, None)
+        slices[isignal[1]] = slice(None, None, None)
+        data = np.nan_to_num(self.data.__getitem__(slices)
+                             ).sum(isignal[1]).sum(isignal[0]).squeeze()
+        return data
+
+    def _get_explorer(self, *args, **kwargs):
+        nav_dim = self.axes_manager.navigation_dimension
+        if self.axes_manager.signal_dimension == 1:
+            if nav_dim == 1:
+                return self._get_hse_1D_explorer(*args, **kwargs)
+            elif nav_dim >= 2:
+                return self._get_hse_2D_explorer(*args, **kwargs)
+
+        if self.axes_manager.signal_dimension == 2:
+            if nav_dim >= 1:
+                return self._get_hie_explorer(*args, **kwargs)
+            else:
+                return None
+        else:
+            return None
+
+    def plot(self, axes_manager=None):
+        if self._plot is not None:
+                try:
+                    self._plot.close()
+                except:
+                    # If it was already closed it will raise an exception,
+                    # but we want to carry on...
+                    pass
+
+        if axes_manager is None:
+            axes_manager = self.axes_manager
+
+        if axes_manager.signal_dimension == 1:
+            # Hyperspectrum
+            self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
+            
+        elif axes_manager.signal_dimension == 2:
+            self._plot = mpl_hie.MPL_HyperImage_Explorer()
+        else:
+            raise ValueError('Plotting is not supported for this view')
+        
+        self._plot.axes_manager = axes_manager
+        self._plot.signal_data_function = self.__call__
+        if self.mapped_parameters.title:
+            self._plot.signal_title = self.mapped_parameters.title
+        elif self.tmp_parameters.has_item('filename'):
+            self._plot.signal_title = self.tmp_parameters.filename
+            
+
+        # Navigator properties
+        if self.axes_manager.navigation_axes:
+            self._plot.navigator_data_function = self._get_explorer
+        self._plot.plot()
+            
+    def save(self, filename=None, overwrite=None, extension=None,
+             **kwds):
+        """Saves the signal in the specified format.
+
+        The function gets the format from the extension. You can use:
+            - hdf5 for HDF5
+            - rpl for Ripple (usefult to export to Digital Micrograph)
+            - msa for EMSA/MSA single spectrum saving.
+            - Many image formats such as png, tiff, jpeg...
+
+        If no extension is provided the default file format as defined 
+        in the `preferences` is used.
+        Please note that not all the formats supports saving datasets of
+        arbitrary dimensions, e.g. msa only suports 1D data.
+        
+        Each format accepts a different set of parameters. For details 
+        see the specific format documentation.
+
+        Parameters
+        ----------
+        filename : str or None
+            If None and tmp_parameters.filename and 
+            tmp_paramters.folder are defined, the
+            filename and extension will be taken from them.
+        overwrite : None, bool
+            If None, if the file exists it will query the user. If 
+            True(False) it (does not) overwrites the file if it exists.
+        extension : str
+            The extension of the file that defines the file format, 
+            e.g. 'rpl'. It overwrite the extension given in filename
+            if any.
+            
+        """
+        if filename is None:
+            if (self.tmp_parameters.has_item('filename') and 
+                self.tmp_parameters.has_item('folder')):
+                filename = os.path.join(
+                    self.tmp_parameters.folder,
+                    self.tmp_parameters.filename + '.' +
+                    self.tmp_parameters.extension)
+            elif self.mapped_parameters.has_item('original_filename'):
+                filename = self.mapped_parameters.original_filename
+            else:
+                raise ValueError('File name not defined')
+        if extension is not None:
+            basename, ext = os.path.splitext(filename)
+            filename = basename + '.' + extension
+        io.save(filename, self, overwrite=overwrite, **kwds)
+
+    def _replot(self):
+        if self._plot is not None:
+            if self._plot.is_active() is True:
+                self.plot()
+
+    @auto_replot
+    def get_dimensions_from_data(self):
+        """Get the dimension parameters from the data_cube. Useful when 
+        the data_cube was externally modified, or when the SI was not 
+        loaded from a file
+        
+        """
+        dc = self.data
+        for axis in self.axes_manager._axes:
+            axis.size = int(dc.shape[axis.index_in_array])
+
+    def crop(self, axis, start=None, end=None):
+        """Crops the data in a given axis. The range is given in pixels
+        
+        Parameters
+        ----------
+        axis : {int | string}
+            Specify the data axis in which to perform the cropping 
+            operation. The axis can be specified using the index of the 
+            axis in `axes_manager` or the axis name.
+        start, end : {int | float | None}
+            The beginning and end of the cropping interval. If int
+            the value is taken as the axis index. If float the index 
+            is calculated using the axis calibration. If start/end is 
+            None crop from/to the low/high end of the axis.
+                    
+        """
+        axis = self.axes_manager[axis]
+        i1, i2 = axis._get_index(start), axis._get_index(end) 
+        if i1 is not None:
+            new_offset = axis.axis[i1]
+        # We take a copy to guarantee the continuity of the data
+        self.data = self.data[
+            (slice(None),) * axis.index_in_array + (slice(i1, i2),
+            Ellipsis)]
+
+        if i1 is not None:
+            axis.offset = new_offset
+        self.get_dimensions_from_data()
+        self.squeeze()
+
+    @auto_replot
+    def roll_xy(self, n_x, n_y = 1):
+        """Roll over the x axis n_x positions and n_y positions the 
+        former rows.
+
+        This method has the purpose of "fixing" a bug in the acquisition
+         of the Orsay's microscopes and probably it does not have 
+         general interest.
+
+        Parameters
+        ----------
+        n_x : int
+        n_y : int
+
+        Notes
+        -----
+        Useful to correct the SI column storing bug in Marcel's
+        acquisition routines.
+        
+        """
+        self.data = np.roll(self.data, n_x, 0)
+        self.data[:n_x, ...] = np.roll(self.data[:n_x, ...], n_y, 1)
+
+    # TODO: After using this function the plotting does not work
+    @auto_replot
+    def swap_axes(self, axis1, axis2):
+        """Swaps the axes.
+
+        Parameters
+        ----------
+        axis1, axis2 : {int | str}
+            Specify the data axes in which to perform the operation.
+            The axis can be specified using the index of the 
+            axis in `axes_manager` or the axis name.
+        
+        """
+        axis1 = self.axes_manager[axis1].index_in_array
+        axis2 = self.axes_manager[axis2].index_in_array
+        self.data = self.data.swapaxes(axis1, axis2)
+        c1 = self.axes_manager._axes[axis1]
+        c2 = self.axes_manager._axes[axis2]
+        self.axes_manager._axes[axis1] = c2
+        self.axes_manager._axes[axis2] = c1
+        self.axes_manager._update_attributes()
+
+    def rebin(self, new_shape):
+        """
+        Rebins the data to the new shape
+
+        Parameters
+        ----------
+        new_shape: tuple of ints
+            The new shape must be a divisor of the original shape
+        """
+        factors = np.array(self.data.shape) / np.array(new_shape)
+        self.data = utils.rebin(self.data, new_shape)
+        for axis in self.axes_manager._axes:
+            axis.scale *= factors[axis.index_in_array]
+        self.get_dimensions_from_data()
+
+    def split(self, axis=None, number_of_parts=None, step_sizes=None):
+        """Splits the data into several signals.
+
+        The split can be defined either by giving either 
+        the number_of_parts for homogenous splitting or a list
+        of customized step sizes. If number_of_pars and step_sizes are
+        not defined (None) the default values are read from
+        mapped_parameters.splitting in they are defined there.
+
+        Parameters
+        ----------
+
+        axis : {int | string | None}
+            Specify the data axis in which to perform the splitting 
+            operation. The axis can be specified using the index of the 
+            axis in `axes_manager` or the axis name. It can only be None
+            when the value is defined in mapped_parameters.splitting
+        number_of_parts : {int | None}
+            Number of parts in which the SI will be splitted. The 
+            splitting is homegenous. When the axis size is not divisible
+            by the number_of_parts the reminder data is lost without
+            warning.
+        step_sizes : {list of ints | None}
+            Size of the splitted parts.
+
+
+        Return
+        ------
+        tuple with the splitted signals
+        
+        """
+        
+        shape = self.data.shape
+        signal_dict = self._get_signal_dict(add_learning_results=False)
+        if axis is None:
+            if self.mapped_parameters.has_item("splitting.axis"):
+                axis = self.mapped_parameters.splitting.axis
+            else:
+                raise ValueError(
+                    "Please specify the axis over which I should "
+                    "perform the operation")
+        else:
+            axis = self.axes_manager[axis].index_in_array
+        
+        if number_of_parts is None and step_sizes is None:
+            if not self.mapped_parameters.has_item(
+                                                "splitting.step_sizes"):
+                raise ValueError(
+                    "Please provide either number_of_parts "
+                    "or a step_sizes list.")
+            else:
+                step_sizes = self.mapped_parameters.splitting.step_sizes
+                # Remove the splitting subsection of mapped_parameters
+                # because it must not be inherited by the splitted
+                # signals.
+                del signal_dict['mapped_parameters']['splitting']
+                messages.information(
+                    "Automatically splitting in %s step sizes"  %
+                                     step_sizes)
+        elif number_of_parts is not None and step_sizes is not None:
+            raise ValueError(
+                "Print define step_sizes or number_of_part "
+                "but not both.")
+        elif step_sizes is None:
+            if number_of_parts > shape[axis]:
+                raise ValueError(
+                    "The number of parts is greater than "
+                    "the axis size.")
+            else:
+                step_sizes = ([shape[axis] // number_of_parts,] * 
+                              number_of_parts)
+        splitted = ()
+        cut_index = np.array([0] + step_sizes).cumsum()
+            
+        axes_dict = signal_dict['axes']
+        for i in xrange(len(cut_index)-1):
+            axes_dict[axis]['offset'] = \
+                self.axes_manager._axes[axis].index2value(cut_index[i])
+            axes_dict[axis]['size'] = cut_index[i + 1] - cut_index[i] 
+            data = self.data[
+                (slice(None), ) * axis +
+                (slice(cut_index[i], cut_index[i + 1]), Ellipsis)]
+            signal_dict['data'] = data
+            splitted += self.__class__(signal_dict),
+        return splitted
+
+    def unfold_if_multidim(self):
+        """Unfold the datacube if it is >2D
+
+        Returns
+        -------
+
+        Boolean. True if the data was unfolded by the function.
+        """
+        if len(self.axes_manager._axes)>2:
+            print "Automatically unfolding the data"
+            self.unfold()
+            return True
+        else:
+            return False
+
+    @auto_replot
+    def _unfold(self, steady_axes, unfolded_axis):
+        """Modify the shape of the data by specifying the axes the axes which
+        dimension do not change and the axis over which the remaining axes will
+        be unfolded
+
+        Parameters
+        ----------
+        steady_axes : list
+            The indices of the axes which dimensions do not change
+        unfolded_axis : int
+            The index of the axis over which all the rest of the axes (except
+            the steady axes) will be unfolded
+
+        See also
+        --------
+        fold
+        """
+
+        # It doesn't make sense unfolding when dim < 3
+        if len(self.data.squeeze().shape) < 3:
+            return False
+
+        # We need to store the original shape and coordinates to be used
+        # by
+        # the fold function only if it has not been already stored by a
+        # previous unfold
+        if self._shape_before_unfolding is None:
+            self._shape_before_unfolding = self.data.shape
+            self._axes_manager_before_unfolding = self.axes_manager
+
+        new_shape = [1] * len(self.data.shape)
+        for index in steady_axes:
+            new_shape[index] = self.data.shape[index]
+        new_shape[unfolded_axis] = -1
+        self.data = self.data.reshape(new_shape)
+        self.axes_manager = self.axes_manager.deepcopy()
+        i = 0
+        uname = ''
+        uunits = ''
+        to_remove = []
+        for axis, dim in zip(self.axes_manager._axes, new_shape):
+            if dim == 1:
+                uname += ',' + axis.name
+                uunits = ',' + axis.units
+                to_remove.append(axis)
+        self.axes_manager._axes[unfolded_axis].name += uname
+        self.axes_manager._axes[unfolded_axis].units += uunits
+        self.axes_manager._axes[unfolded_axis].size = \
+                                        self.data.shape[unfolded_axis]
+        for axis in to_remove:
+            self.axes_manager._axes.remove(axis)
+
+        self.data = self.data.squeeze()
+
+    def unfold(self):
+        """Modifies the shape of the data by unfolding the signal and
+        navigation dimensions separaterly
+
+        """
+        self.unfold_navigation_space()
+        self.unfold_signal_space()
+
+    def unfold_navigation_space(self):
+        """Modify the shape of the data to obtain a navigation space of
+        dimension 1
+        """
+
+        if self.axes_manager.navigation_dimension < 2:
+            return False
+        steady_axes = [
+                        axis.index_in_array for axis in
+                        self.axes_manager.signal_axes]
+        unfolded_axis = (
+                    self.axes_manager.navigation_axes[0].index_in_array)
+        self._unfold(steady_axes, unfolded_axis)
+
+    def unfold_signal_space(self):
+        """Modify the shape of the data to obtain a signal space of
+        dimension 1
+        """
+        if self.axes_manager.signal_dimension < 2:
+            return False
+        steady_axes = [
+                        axis.index_in_array for axis in
+                        self.axes_manager.navigation_axes]
+        unfolded_axis = self.axes_manager.signal_axes[0].index_in_array
+        self._unfold(steady_axes, unfolded_axis)
+
+    @auto_replot
+    def fold(self):
+        """If the signal was previously unfolded, folds it back"""
+        if self._shape_before_unfolding is not None:
+            self.data = self.data.reshape(self._shape_before_unfolding)
+            self.axes_manager = self._axes_manager_before_unfolding
+            self._shape_before_unfolding = None
+            self._axes_manager_before_unfolding = None
+            
+    def _make_sure_data_is_contiguous(self):
+        if self.data.flags['C_CONTIGUOUS'] is False:
+            self.data = np.ascontiguousarray(self.data)
+            
+    def _iterate_signal(self):
+        """Iterates over the signal data.
+        
+        It is faster than using the signal iterator.
+        
+        """
+        if self.axes_manager.navigation_size < 2:
+            yield self()
+            return
+        self._make_sure_data_is_contiguous()
+        axes = [axis.index_in_array for 
+                axis in self.axes_manager.signal_axes]
+        unfolded_axis = (
+                self.axes_manager.navigation_axes[0].index_in_array)
+        new_shape = [1] * len(self.data.shape)
+        for axis in axes:
+            new_shape[axis] = self.data.shape[axis]
+        new_shape[unfolded_axis] = -1
+        # Warning! if the data is not contigous it will make a copy!!
+        data = self.data.reshape(new_shape)
+        for i in xrange(data.shape[unfolded_axis]):
+            getitem = [0] * len(data.shape)
+            for axis in axes:
+                getitem[axis] = slice(None)
+            getitem[unfolded_axis] = i
+            yield(data[getitem])
+
+    @auto_replot
+    def sum(self, axis, return_signal=False):
+        """Sum the data over the specify axis
+
+        Parameters
+        ----------
+        axis : int
+            The axis over which the operation will be performed
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum_in_mask, mean
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.sum(-1).data.shape
+        (64,64)
+        # If we just want to plot the result of the operation
+        s.sum(-1, True).plot()
+        
+        """
+        
+        axis = self.axes_manager[axis].index_in_array
+        s = self.get_deepcopy_with_new_data(self.data.sum(axis))
+        s.axes_manager.remove(s.axes_manager._axes[axis])
+        return s
+        
+    @auto_replot
+    def max(self, axis, return_signal=False):
+        """Returns a signal of the same type containing
+        the maximum along a given axis.
+
+        Parameters
+        ----------
+        axis : int
+            The axis over which the operation will be performed
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum, mean, min
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.max(-1).data.shape
+        (64,64)        
+        
+        """
+        
+        axis = self.axes_manager[axis].index_in_array
+        s = self.get_deepcopy_with_new_data(self.data.max(axis))
+        s.axes_manager.remove(s.axes_manager._axes[axis])
+        return s
+        
+    @auto_replot
+    def min(self, axis, return_signal=False):
+        """Returns a signal of the same type containing
+        the minimum along a given axis.
+
+        Parameters
+        ----------
+        axis : int
+            The axis over which the operation will be performed
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum, mean, max
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.min(-1).data.shape
+        (64,64)        
+        
+        """
+        
+        axis = self.axes_manager[axis].index_in_array
+        s = self.get_deepcopy_with_new_data(self.data.min(axis))
+        s.axes_manager.remove(s.axes_manager._axes[axis])
+        return s
+    
+    @auto_replot
+    def mean(self, axis):
+        """Average the data over the specify axis
+
+        Parameters
+        ----------
+        axis : int
+            The axis over which the operation will be performed
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum_in_mask, mean
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.mean(-1).data.shape
+        (64,64)
+        
+        """
+        
+        axis = self.axes_manager[axis].index_in_array
+        s = self.get_deepcopy_with_new_data(self.data.mean(axis))
+        s.axes_manager.remove(s.axes_manager._axes[axis])
+        return s
+            
+    @auto_replot
+    def diff(self, axis, order=1, return_signal=False):
+        """Differentiate the data over the specify axis
+
+        Parameters
+        ----------
+        axis: int
+            The axis over which the operation will be performed
+        order: the order of the derivative
+
+        See also
+        --------
+        mean, sum
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.diff(-1).data.shape
+        (64,64,1023)
+        
+        """
+        
+        s = self.get_deepcopy_with_new_data(
+            np.diff(self.data,order,axis))
+        axis = s.axes_manager._axes[axis]
+        axis.offset += (axis.scale / 2)
+        s.get_dimensions_from_data()
+        return s
+        
+    def copy(self):
+        return copy.copy(self)
+
+    def deepcopy(self):
+        s = copy.deepcopy(self)
+        if self.data is not None:
+            s.data = s.data.copy()
+        return s
+        
+    def change_dtype(self, dtype):
+        """Change the data type
+        
+        Parameters
+        ----------
+
+        dtype : str or dtype
+            Typecode or data-type to which the array is cast.
+            
+        Example
+        -------
+        >>> import numpy as np
+        >>> from hyperspy.signals.spectrum import Spectrum        ns = 
+        ns.data = self.data.copy()
+        >>> s = signals.Spectrum({'data' : np.array([1,2,3,4,5])})
+        >>> s.data
+        array([1, 2, 3, 4, 5])
+        >>> s.change_dtype('float')
+        >>> s.data
+        array([ 1.,  2.,  3.,  4.,  5.])
+        
+        """
+        
+        self.data = self.data.astype(dtype)
+        
 
    
 #    def sum_in_mask(self, mask):
