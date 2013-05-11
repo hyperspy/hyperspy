@@ -403,6 +403,11 @@ class AxesManager(t.HasTraits):
             if axis < 0:
                 raise IndexError("index out of bounds")
         return axis
+        
+    def _indices_generator(self):
+        shape = (self.navigation_shape if self.navigation_size > 0 else
+                 [1,])
+        return np.ndindex(*shape)
     
     def __getitem__(self, y):
         """x.__getitem__(y) <==> x[y]

@@ -87,3 +87,27 @@ class TestAlignTools:
         # Check that the calibration is correct
         assert_equal(s.axes_manager._axes[1].offset, self.new_offset)
         assert_equal(s.axes_manager._axes[1].scale, self.scale)
+        
+class TestFindPeaks1D:
+    def setUp(self):
+        x = np.arange(0,50,0.01)
+        s = Spectrum({'data' : np.vstack((np.cos(x), np.sin(x)))})
+        s.axes_manager.signal_axes[0].scale = 0.01
+        self.peak_positions0 = np.arange(8) *2 * np.pi
+        self.peak_positions1 = np.arange(8) *2 * np.pi + np.pi/2
+        self.spectrum = s
+        
+        
+    def test_single_spectrum(self):
+        peaks = self.spectrum[0].find_peaks_1D_ohaver()
+        assert_true(np.allclose(peaks[0]['position'],
+                    self.peak_positions0, rtol=1e-5, atol=1e-4))
+                    
+    def test_two_spectra(self):
+        peaks = self.spectrum.find_peaks_1D_ohaver()
+        peaks = self.spectrum.find_peaks_1D_ohaver()
+        assert_true(np.allclose(peaks[1]['position'],
+                    self.peak_positions1, rtol=1e-5, atol=1e-4))
+        
+        
+

@@ -24,7 +24,6 @@ import glob
 import os
 import re
 from StringIO import StringIO
-import string
 import codecs
 try:
     from collections import OrderedDict
@@ -39,17 +38,8 @@ import scipy.interpolate
 import scipy.signal
 import scipy.ndimage
 from scipy.signal import medfilt
-
-def import_rpy():
-    try:
-        import rpy
-        print "rpy imported..."
-    except:
-        print "python-rpy is not installed"
-
 import matplotlib.pyplot as plt
 
-from hyperspy import messages
 from hyperspy.gui import messages as messagesui
 import hyperspy.defaults_parser
 
@@ -1128,9 +1118,9 @@ class DictionaryBrowser(object):
                         symbol = u'├── '
                     string += u'%s%s%s\n' % (padding, symbol, key)
                     if j == eoi - 1:
-                        extra_padding = u'    '
+                        extra_padding = u'    '
                     else:
-                        extra_padding = u'│   '
+                        extra_padding = u'│   '
                     string += value._get_print_items(
                         padding + extra_padding)
                 else:
@@ -1254,8 +1244,8 @@ class DictionaryBrowser(object):
         >>> dict_browser.set_item('First.Second.Third', 3)
         >>> dict_browser
         └── First
-           └── Second
-                └── Third = 3
+           └── Second
+                └── Third = 3
         
         """
         if not self.has_item(item_path):
@@ -1286,7 +1276,7 @@ class DictionaryBrowser(object):
         >>> dict_browser.First.Second = 3
         >>> dict_browser
         └── First
-            └── Second = 3
+            └── Second = 3
 
         """
         keys = node_path.split('.')
@@ -1401,11 +1391,9 @@ def ensure_unicode(stuff, encoding = 'utf8', encoding2 = 'latin-1'):
         string = string.decode(encoding2, errors = 'ignore')
     return string
     
-def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
-    medfilt_radius=5, maxpeakn=30000, peakgroup=10, subchannel=True,
-    peak_array=None):
-    """
-    Find peaks along a 1D line.
+def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
+    medfilt_radius=5, maxpeakn=30000, peakgroup=10, subchannel=True,):
+    """Find peaks along a 1D line.
 
     Function to locate the positive peaks in a noisy x-y data set.
     
@@ -1452,14 +1440,24 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
     subchannel : bool (optional)
              default is set to True
 
-    peak_array : array of shape (n, 3) (optional)
-             A pre-allocated numpy array to fill with peaks.  Saves memory,
-             especially when using the 2D peakfinder.
-
     Returns
     -------
-    P : array of shape (npeaks, 3)
+    P : structured array of shape (npeaks) and fields: position, width, height
         contains position, height, and width of each peak
+        
+    Examples
+    --------
+    >>> x = arange(0,50,0.01)
+    >>> y = cos(x)
+    >>> one_dim_findpeaks(y, x,0,0)
+    array([[  1.68144859e-05,   9.99999943e-01,   3.57487961e+00],
+           [  6.28318614e+00,   1.00000003e+00,   3.57589018e+00],
+           [  1.25663708e+01,   1.00000002e+00,   3.57600673e+00],
+           [  1.88495565e+01,   1.00000002e+00,   3.57597295e+00],
+           [  2.51327421e+01,   1.00000003e+00,   3.57590284e+00],
+           [  3.14159267e+01,   1.00000002e+00,   3.57600856e+00],
+           [  3.76991124e+01,   1.00000002e+00,   3.57597984e+00],
+           [  4.39822980e+01,   1.00000002e+00,   3.57591479e+00]])
     
     Notes
     -----
@@ -1467,6 +1465,7 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
     Version 2  Last revised Oct 27, 2006 Converted to Python by 
     Michael Sarahan, Feb 2011.
     Revised to handle edges better.  MCS, Mar 2011
+    
     """
 
     if x is None:
@@ -1479,12 +1478,10 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
     else:
         d = np.gradient(y)
     n = np.round(peakgroup / 2 + 1)
-    if peak_array is None:
-        # allocate a result array for 'maxpeakn' peaks
-        P = np.zeros((maxpeakn, 3))
-    else:
-        maxpeakn=peak_array.shape[0]
-        P=peak_array
+    peak_dt = np.dtype([('position', np.float),
+                              ('width', np.float),
+                              ('height', np.float)])
+    P = np.array([], dtype=peak_dt)
     peak = 0
     for j in xrange(len(y) - 4):
         if np.sign(d[j]) > np.sign(d[j+1]): # Detects zero-crossing
@@ -1530,26 +1527,28 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
                         # of y in the sub-group of points near peak.
 			if peakgroup < 7:
 			    height = np.max(yy)
-			    location = xx[np.argmin(np.abs(yy - height))]
+			    position = xx[np.argmin(np.abs(yy - height))]
 			else:
-                            location =- ((stdev * c2 / (2 * c3)) - avg)
+                            position =- ((stdev * c2 / (2 * c3)) - avg)
 			    height = np.exp( c1 - c3 * (c2 / (2 * c3))**2)    
                     # Fill results array P. One row for each peak 
                     # detected, containing the
                     # peak position (x-value) and peak height (y-value).
 		    else:
-			location = x[j]
+			position = x[j]
 			height = y[j]
                         # no way to know peak width without
                         # the above measurements.
 			width = 0
-                    if (location > 0 and not np.isnan(location)
-                        and location < x[-1]):
-                        P[peak] = np.array([location, height, width])
+                    if (position > 0 and not np.isnan(position)
+                        and position < x[-1]):
+                        P = np.hstack((P,
+                                       np.array([(position, height, width)],
+                                       dtype=peak_dt)))
                         peak = peak + 1
     # return only the part of the array that contains peaks
     # (not the whole maxpeakn x 3 array)
-    return P[:peak,:]
+    return P
     
 def strlist2enumeration(lst):
     lst = tuple(lst)

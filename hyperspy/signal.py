@@ -46,7 +46,7 @@ from hyperspy.gui.egerton_quantification import BackgroundRemoval
 from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
 from scipy.ndimage.filters import gaussian_filter1d
-from hyperspy.misc.utils import one_dim_findpeaks
+from hyperspy.misc.utils import find_peaks_ohaver
 
 
 class _Signal1DTools(object):
@@ -207,7 +207,7 @@ class _Signal1DTools(object):
             maxval=self.axes_manager.navigation_size)
         for i, (dat, indices) in enumerate(zip(
                     self._iterate_signal(),
-                    np.ndindex(shift_array.shape))):
+                    self.axes_manager._indices_generator())):
             dat = dat[i1:i2]
             if interpolate is True:
                 dat = utils.interpolate_1D(ip, dat)
@@ -533,7 +533,7 @@ class _Signal1DTools(object):
                 dc[..., -offset:] *= 0.
         return channels
         
-    def peakfind_1D(self, xdim=None,slope_thresh=0.5, amp_thresh=None, 
+    def find_peaks_1D_ohaver(self, xdim=None,slope_thresh=0, amp_thresh=None, 
                     subchannel=True, medfilt_radius=5, maxpeakn=30000, 
                     peakgroup=10):
         """Find peaks along a 1D line (peaks in spectrum/spectra).
@@ -586,80 +586,36 @@ class _Signal1DTools(object):
 
         Returns
         -------
-        P : array of shape (npeaks, 3)
-            contains position, height, and width of each peak
+        peaks : structured array of shape navigation_shape in which each cells
+        contains an array that contains as many structured arrays as peaks
+        where found at that location and which fields: position, width, height
+        contains position, height, and width of each peak.
             
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
             
         """
-        # TODO: generalize the code
-        # TODO: look at scipy.signal.find_peaks_cwt
+        # TODO: add scipy.signal.find_peaks_cwt
         self._check_signal_dimension_equals_one()
-        if len(self.data.shape)==1:
-            # preallocate a large array for the results
-            self.peaks=one_dim_findpeaks(self.data,
-                slope_thresh=slope_thresh,
-                amp_thresh=amp_thresh,
-                medfilt_radius=medfilt_radius,
-                maxpeakn=maxpeakn,
-                peakgroup=peakgroup,
-                subchannel=subchannel)
-                
-        elif len(self.data.shape)==2:
-            pbar=progressbar.ProgressBar(
-                    maxval=self.data.shape[1]).start()
-            # preallocate a large array for the results
-            # the third dimension is for the number of rows in your 
-            # data.
-            # assumes spectra are rows of the 2D array, each col is a 
-            # channel.
-            self.peaks=np.zeros((maxpeakn,3,self.data.shape[0]))
-            for i in xrange(self.data.shape[1]):
-                tmp=one_dim_findpeaks(
-                                    self.data[i],
-                                    slope_thresh=slope_thresh,
-                                    amp_thresh=amp_thresh,
-                                    medfilt_radius=medfilt_radius,
-                                    maxpeakn=maxpeakn,
-                                    peakgroup=peakgroup,
-                                    subchannel=subchannel)
-                self.peaks[:tmp.shape[0],:,i]=tmp
-                pbar.update(i + 1)
-            # trim any extra blank space
-            # works by summing along axes to compress to a 1D line, then
-            # finds
-            # the first 0 along that line.
-            trim_id=np.min(np.nonzero(np.sum(np.sum(self.peaks,axis=2),
-                                             axis=1)==0))
-            pbar.finish()
-            self.peaks=self.peaks[:trim_id,:,:]
-        elif len(self.data.shape)==3:
-            # preallocate a large array for the results
-            self.peaks=np.zeros((maxpeakn,3,self.data.shape[0],
-                                 self.data.shape[1]))
-            pbar=progressbar.ProgressBar(
-                maxval=self.data.shape[0]).start()
-            for i in xrange(self.data.shape[0]):
-                for j in xrange(self.data.shape[1]):
-                    tmp=one_dim_findpeaks(self.data[i,j],
-                            slope_thresh=slope_thresh,
-                            amp_thresh=amp_thresh,
-                            medfilt_radius=medfilt_radius,
-                            maxpeakn=maxpeakn,
-                            peakgroup=peakgroup,
-                            subchannel=subchannel)
-                    self.peaks[:tmp.shape[0],:,i,j]=tmp
-                pbar.update(i + 1)
-            # trim any extra blank space
-            # works by summing along axes to compress to a 1D line, 
-            # then finds
-            # the first 0 along that line.
-            trim_id=np.min(np.nonzero(np.sum(np.sum(np.sum(
-                            self.peaks,axis=3),axis=2),axis=1)==0))
-            pbar.finish()
-            self.peaks=self.peaks[:trim_id,:,:,:]
+        axis = self.axes_manager.signal_axes[0].axis
+        arr_shape = (self.axes_manager.navigation_shape
+                 if self.axes_manager.navigation_size > 0
+                 else [1,])
+        peaks = np.zeros(arr_shape, dtype=object)
+        for y, indices in zip(self._iterate_signal(),
+                              self.axes_manager._indices_generator()):
+            peaks[indices] = find_peaks_ohaver(
+                                                y,
+                                                axis,
+                                                slope_thresh=slope_thresh,
+                                                amp_thresh=amp_thresh,
+                                                medfilt_radius=medfilt_radius,
+                                                maxpeakn=maxpeakn,
+                                                peakgroup=peakgroup,
+                                                subchannel=subchannel)
+        return peaks
+        
 
 class Signal(t.HasTraits, MVA, _Signal1DTools):
     data = t.Any()
