@@ -66,7 +66,6 @@ class Image(Signal):
         dic['mapped_parameters']['record_by'] = 'spectrum'        
         dic['data'] = np.rollaxis(dic['data'], signal_axis, dim)
         dic['axes'] = utils_varia.rollelem(dic['axes'], signal_axis, dim)
-        i = 0
         sp = Spectrum(dic)
         if hasattr(self, 'learning_results'):
             if signal_axis != 0 and self.learning_results.loadings is not None:
@@ -153,7 +152,7 @@ class Image(Signal):
         Ultramicroscopy 102, no. 1 (December 2004): 27–36.
         
         """
-
+        self._check_signal_dimension_equals_two()
         ref = None if reference == 'cascade' else \
             self.__call__().copy()
         shifts = []
@@ -248,7 +247,6 @@ class Image(Signal):
                     correlation_threshold] = ma.masked
                 shifts.mask[ref_index,:] = False
                 
-            std_ = shifts.std(0)
             shifts = shifts.mean(0)
         else:
             shifts = np.array(shifts)
@@ -306,6 +304,7 @@ class Image(Signal):
         Ultramicroscopy 102, no. 1 (December 2004): 27–36.
             
         """
+        self._check_signal_dimension_equals_two()
         if shifts is None:
             shifts = self.estimate_2D_translation(
                 roi=roi,sobel=sobel, medfilter=medfilter,
@@ -355,8 +354,10 @@ class Image(Signal):
         crop
         
         """
-        self.crop(1, top, bottom)
-        self.crop(0, left, right)
-        
-          
-        
+        self._check_signal_dimension_equals_two()
+        self.crop(self.axes_manager.signal_axes[1].index_in_axes_manager,
+                  top,
+                  bottom)
+        self.crop(self.axes_manager.signal_axes[0].index_in_axes_manager,
+                  left,
+                  right)
