@@ -51,7 +51,11 @@ from hyperspy.misc.utils import find_peaks_ohaver
 from hyperspy.misc.image_utils import (shift_image, estimate_image_shift)
 from hyperspy.misc.utils import symmetrize, antisymmetrize
 
-class _Signal2DTools(object):
+class TestMe(object):
+    def testme(self):
+        pass
+
+class Signal2DTools(object):
     def estimate_2D_translation(self, reference='current',
                                 correlation_threshold=None,
                                 chunk_size=30,
@@ -337,7 +341,7 @@ class _Signal2DTools(object):
                   right)
 
 
-class _Signal1DTools(object):
+class Signal1DTools(object):
     def shift_1D(self,
                  shift_array,
                  interpolation_method='linear',
@@ -901,7 +905,7 @@ class _Signal1DTools(object):
                                                 subchannel=subchannel)
         return peaks
         
-class _MVATools(object):
+class MVATools(object):
     # TODO: All of the plotting methods here should move to drawing
     def _plot_factors_or_pchars(self, factors, comp_ids=None, 
                                 calibrate=True, avg_char=False,
@@ -1908,9 +1912,9 @@ class _MVATools(object):
 
 class Signal(t.HasTraits,
              MVA,
-             _MVATools,
-             _Signal1DTools,
-             _Signal2DTools):
+             MVATools,
+             Signal1DTools,
+             Signal2DTools):
     data = t.Any()
     axes_manager = t.Instance(AxesManager)
     original_parameters = t.Instance(DictionaryBrowser)
@@ -2743,15 +2747,22 @@ class Signal(t.HasTraits,
                 getitem[axis] = slice(None)
             getitem[unfolded_axis] = i
             yield(data[getitem])
+            
+    def _apply_function_on_data_and_remove_axis(self, function, axis):
+        axis = self.axes_manager[axis].index_in_array
+        s = self.get_deepcopy_with_new_data(
+            function(self.data, axis=axis))
+        s.axes_manager.remove(s.axes_manager._axes[axis])
+        return s
 
-    @auto_replot
-    def sum(self, axis, return_signal=False):
-        """Sum the data over the specify axis
+    def sum(self, axis):
+        """Sum the data over the given axis.
 
         Parameters
         ----------
-        axis : int
-            The axis over which the operation will be performed
+        axis : {int | string}
+           The axis can be specified using the index of the axis in 
+           `axes_manager` or the axis name.
 
         Returns
         -------
@@ -2773,21 +2784,16 @@ class Signal(t.HasTraits,
         s.sum(-1, True).plot()
         
         """
-        
-        axis = self.axes_manager[axis].index_in_array
-        s = self.get_deepcopy_with_new_data(self.data.sum(axis))
-        s.axes_manager.remove(s.axes_manager._axes[axis])
-        return s
-        
-    @auto_replot
+        return self._apply_function_on_data_and_remove_axis(np.sum, axis)
+                
     def max(self, axis, return_signal=False):
-        """Returns a signal of the same type containing
-        the maximum along a given axis.
+        """Returns a signal with the maximum of the signal along an axis.
 
         Parameters
         ----------
-        axis : int
-            The axis over which the operation will be performed
+        axis : {int | string}
+           The axis can be specified using the index of the axis in 
+           `axes_manager` or the axis name.
 
         Returns
         -------
@@ -2807,21 +2813,16 @@ class Signal(t.HasTraits,
         (64,64)        
         
         """
-        
-        axis = self.axes_manager[axis].index_in_array
-        s = self.get_deepcopy_with_new_data(self.data.max(axis))
-        s.axes_manager.remove(s.axes_manager._axes[axis])
-        return s
-        
-    @auto_replot
-    def min(self, axis, return_signal=False):
-        """Returns a signal of the same type containing
-        the minimum along a given axis.
+        return self._apply_function_on_data_and_remove_axis(np.max, axis)
+                
+    def min(self, axis):
+        """Returns a signal with the minimum of the signal along an axis.
 
         Parameters
         ----------
-        axis : int
-            The axis over which the operation will be performed
+        axis : {int | string}
+           The axis can be specified using the index of the axis in 
+           `axes_manager` or the axis name.
 
         Returns
         -------
@@ -2829,7 +2830,7 @@ class Signal(t.HasTraits,
 
         See also
         --------
-        sum, mean, max
+        sum, mean, max, std, var
 
         Usage
         -----
@@ -2842,19 +2843,16 @@ class Signal(t.HasTraits,
         
         """
         
-        axis = self.axes_manager[axis].index_in_array
-        s = self.get_deepcopy_with_new_data(self.data.min(axis))
-        s.axes_manager.remove(s.axes_manager._axes[axis])
-        return s
+        return self._apply_function_on_data_and_remove_axis(np.min, axis)
     
-    @auto_replot
     def mean(self, axis):
-        """Average the data over the specify axis
+        """Returns a signal with the average of the signal along an axis.
 
         Parameters
         ----------
-        axis : int
-            The axis over which the operation will be performed
+        axis : {int | string}
+           The axis can be specified using the index of the axis in 
+           `axes_manager` or the axis name.
 
         Returns
         -------
@@ -2874,20 +2872,76 @@ class Signal(t.HasTraits,
         (64,64)
         
         """
+        return self._apply_function_on_data_and_remove_axis(np.min, axis)
         
-        axis = self.axes_manager[axis].index_in_array
-        s = self.get_deepcopy_with_new_data(self.data.mean(axis))
-        s.axes_manager.remove(s.axes_manager._axes[axis])
-        return s
-            
-    @auto_replot
-    def diff(self, axis, order=1, return_signal=False):
-        """Differentiate the data over the specify axis
+    def std(self, axis):
+        """Returns a signal with the standard deviation of the signal along 
+        an axis.
+        
+        Parameters
+        ----------
+        axis : {int | string}
+           The axis can be specified using the index of the axis in 
+           `axes_manager` or the axis name.
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum_in_mask, mean
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.std(-1).data.shape
+        (64,64)
+        
+        """
+        return self._apply_function_on_data_and_remove_axis(np.std, axis)
+        
+    def var(self, axis):
+        """Returns a signal with the variances of the signal along an axis.
 
         Parameters
         ----------
-        axis: int
-            The axis over which the operation will be performed
+        axis : {int | string}
+           The axis can be specified using the index of the axis in 
+           `axes_manager` or the axis name.
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum_in_mask, mean
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.var(-1).data.shape
+        (64,64)
+        
+        """
+        return self._apply_function_on_data_and_remove_axis(np.var, axis)
+            
+    def diff(self, axis, order=1):
+        """Returns a signal with the n-th order discrete difference along 
+        given axis.
+
+        Parameters
+        ----------
+        axis : {int | string}
+           The axis can be specified using the index of the axis in 
+           `axes_manager` or the axis name.
         order: the order of the derivative
 
         See also

@@ -97,38 +97,6 @@ hyperspy Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`signal.py.BACKUP.25289` Module
-------------------------------------
-
-.. automodule:: hyperspy.signal.py.BACKUP.25289
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`signal.py.BASE.25289` Module
-----------------------------------
-
-.. automodule:: hyperspy.signal.py.BASE.25289
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`signal.py.LOCAL.25289` Module
------------------------------------
-
-.. automodule:: hyperspy.signal.py.LOCAL.25289
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`signal.py.REMOTE.25289` Module
-------------------------------------
-
-.. automodule:: hyperspy.signal.py.REMOTE.25289
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Subpackages
 -----------
 

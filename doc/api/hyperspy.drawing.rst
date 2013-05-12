@@ -65,35 +65,3 @@ drawing Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`widgets.py.BACKUP.22748` Module
--------------------------------------
-
-.. automodule:: hyperspy.drawing.widgets.py.BACKUP.22748
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`widgets.py.BASE.22748` Module
------------------------------------
-
-.. automodule:: hyperspy.drawing.widgets.py.BASE.22748
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`widgets.py.LOCAL.22748` Module
-------------------------------------
-
-.. automodule:: hyperspy.drawing.widgets.py.LOCAL.22748
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`widgets.py.REMOTE.22748` Module
--------------------------------------
-
-.. automodule:: hyperspy.drawing.widgets.py.REMOTE.22748
-    :members:
-    :undoc-members:
-    :show-inheritance:
-

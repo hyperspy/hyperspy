@@ -364,6 +364,11 @@ the following cases:
 Cropping
 ^^^^^^^^
 
+Cropping can be performed in a very compact and powerful way using 
+:ref:`signal.indexing` . In addition it can be performed using the 
+following method or GUIs if cropping :ref:`spectra <>` or 
+:ref:`images <>`
+
 * :py:meth:`~.signal.Signal.crop`
 
 Rebinning
@@ -384,11 +389,16 @@ It is also possible to unfold only the navigation or only the signal space:
 * :py:meth:`~.signal.Signal.unfold_navigation_space`
 * :py:meth:`~.signal.Signal.unfold_signal_space`
 
-Sum or average over one axis
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Simple operations over one axis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * :py:meth:`~.signal.Signal.sum`
 * :py:meth:`~.signal.Signal.mean`
+* :py:meth:`~.signal.Signal.max`
+* :py:meth:`~.signal.Signal.min`
+* :py:meth:`~.signal.Signal.std`
+* :py:meth:`~.signal.Signal.var`
+* :py:meth:`~.signal.Signal.diff`
 
 Changing the data type
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -416,34 +426,36 @@ Even if the original data is recorded with a limited dynamic range, it is often 
 Spectrum tools
 --------------
 
-These methods are only available for the following signals:
+These methods are only available for Signal object with signal_dimension 
+equal to one.
 
-* :py:class:`~.signals.spectrum.Spectrum`
-* :py:class:`~.signals.eels.EELSSpectrum`
-* :py:class:`~.signals.spectrum_simulation.SpectrumSimulation`
-
+.. _spectrum.crop:
 
 Cropping
 ^^^^^^^^
 
-The :py:meth:`~.signals.spectrum.Spectrum.crop_spectrum`, method is used to crop the spectral energy range. If no parameter is passed, a user interface appears in which to crop the spectrum.
+In addition to cropping using the powerful and compact 
+:ref:`Signal indexing <signal.indexing>` syntax
+the following method is available to crop spectra using a GUI:
+
+The :py:meth:`~.signal.Signal1DTools.crop_spectrum`, method is used to crop the spectral energy range. If no parameter is passed, a user interface appears in which to crop the spectrum.
 
 Background removal
 ^^^^^^^^^^^^^^^^^^
 
-The :py:meth:`~.signals.spectrum.Spectrum.remove_background` method provides a user interface to remove some background functions.
+The :py:meth:`~.signal.Signal1DTools.remove_background` method provides a user interface to remove some background functions.
 
 Calibration
 ^^^^^^^^^^^
-The :py:meth:`~.signals.spectrum.Spectrum.calibrate` method provides a user interface to calibrate the spectral axis.
+The :py:meth:`~.signal.Signal1DTools.calibrate` method provides a user interface to calibrate the spectral axis.
 
 Aligning
 ^^^^^^^^
 
 The following methods use sub-pixel cross-correlation or user-provided shifts to align spectra. They support applying the same transformation to multiple files.
 
-* :py:meth:`~.signals.spectrum.Spectrum.align_1D`
-* :py:meth:`~.signals.spectrum.Spectrum.shift_1D`
+* :py:meth:`~.signal.Signal1DTools.align_1D`
+* :py:meth:`~.signal.Signal1DTools.shift_1D`
 
 
 Data smoothing
@@ -451,31 +463,43 @@ Data smoothing
 
 The following methods (that include user interfaces when no arguments are passed) can perform data smoothing with different algorithms:
 
-* :py:meth:`~.signals.spectrum.Spectrum.smooth_lowess`
-* :py:meth:`~.signals.spectrum.Spectrum.smooth_tv`
-* :py:meth:`~.signals.spectrum.Spectrum.smooth_savitzky_golay`
+* :py:meth:`~.signal.Signal1DTools.smooth_lowess`
+* :py:meth:`~.signal.Signal1DTools.smooth_tv`
+* :py:meth:`~.signal.Signal1DTools.smooth_savitzky_golay`
 
 Other methods
 ^^^^^^^^^^^^^^
 
-* :py:meth:`~.signals.spectrum.Spectrum.hanning_taper`
+
+* Apply a hanning taper to the spectra :py:meth:`~.signal.Signal1DTools.hanning_taper`
+* Find peaks in spectra :py:meth:`~.signal.Signal1DTools.find_peaks_1D_ohaver`
+* Interpolate the spectra in between two positions :py:meth:`~.signal.Signal1DTools.interpolate_in_between`
+* Convolve the spectra with a gaussian :py:meth:`~.signal.Signal1DTools.gaussian_filter`
 
 
 
 Image tools
 -----------
 
-* :py:meth:`~.signals.image.Image.crop_image`
-
+These methods are only available for Signal object with signal_dimension 
+equal to two.
 
 Image registration (alignment)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.5
 
-The :py:meth:`~.signals.image.Image.align2D` method provides advanced image alignment functionality, including subpixel alignment.
+The :py:meth:`~.signal.Signal2DTools.align2D` method provides advanced image alignment functionality, including subpixel alignment.
 
+.. image.crop:
 
+Cropping an image
+^^^^^^^^^^^^^^^^^
+In addition to cropping using the powerful and compact :ref:`signal.indexing`
+the following method is available to crop spectra the familiar 
+top, bottom, left, right syntax.
+
+* :py:meth:`~.signal.Signal2DTools.crop_image`
 
 
 EELS tools
