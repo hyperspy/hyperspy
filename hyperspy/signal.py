@@ -1930,13 +1930,26 @@ class Signal(t.HasTraits,
     _default_record_by = 'image'
 
     def __init__(self, data, **kwds):
-        """All data interaction is made through this class or its subclasses
-
+        """Create a Signal from a numpy array.
 
         Parameters:
         -----------
-        dictionary : dictionary
-           see _load_dictionary for the format
+        data : numpy array
+           The signal data. It can be an array of any dimensions.
+        axes : dictionary (optional) 
+            Dictionary to define the axes (see the 
+            documentation of the AxesManager class for more details).
+        attributes : dictionary (optional) 
+            A dictionary whose items are stored as attributes.
+        mapped_parameters : dictionary (optional) 
+            A dictionary containing a set of parameters
+            that will to stores in the `mapped_parameters` attribute.
+            Some parameters might be mandatory in some cases.
+        original_parameters : dictionary (optional) 
+            A dictionary containing a set of parameters
+            that will to stores in the `original_parameters` attribute. It
+            typically contains all the parameters that has been
+            imported from the original data file.        
            
         """
         super(Signal, self).__init__()
@@ -2199,21 +2212,26 @@ class Signal(t.HasTraits,
         file_data_dict : dictionary
             A dictionary containing at least a 'data' keyword with an array of
             arbitrary dimensions. Additionally the dictionary can contain the
-            following keys:
-                axes: a dictionary that defines the axes (see the
-                    AxesManager class)
-                attributes: a dictionary which keywords are stored as
-                    attributes of the signal class
-                mapped_parameters: a dictionary containing a set of parameters
-                    that will be stored as attributes of a Parameters class.
-                    For some subclasses some particular parameters might be
-                    mandatory.
-                original_parameters: a dictionary that will be accesible in the
-                    original_parameters attribute of the signal class and that
-                    typically contains all the parameters that has been
-                    imported from the original data file.
+            following items:
+            data : numpy array
+               The signal data. It can be an array of any dimensions.
+            axes : dictionary (optional) 
+                Dictionary to define the axes (see the 
+                documentation of the AxesManager class for more details).
+            attributes : dictionary (optional) 
+                A dictionary whose items are stored as attributes.
+            mapped_parameters : dictionary (optional) 
+                A dictionary containing a set of parameters
+                that will to stores in the `mapped_parameters` attribute.
+                Some parameters might be mandatory in some cases.
+            original_parameters : dictionary (optional) 
+                A dictionary containing a set of parameters
+                that will to stores in the `original_parameters` attribute. It
+                typically contains all the parameters that has been
+                imported from the original data file.
 
         """
+        
         self.data = file_data_dict['data']
         if 'axes' not in file_data_dict:
             file_data_dict['axes'] = self._get_undefined_axes_list()
