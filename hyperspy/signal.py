@@ -1936,7 +1936,7 @@ class Signal(t.HasTraits,
         Parameters:
         -----------
         dictionary : dictionary
-           see load_dictionary for the format
+           see _load_dictionary for the format
            
         """
         super(Signal, self).__init__()
@@ -1946,7 +1946,7 @@ class Signal(t.HasTraits,
         self.learning_results = LearningResults()
         self.peak_learning_results = LearningResults()
         kwds['data'] = data
-        self.load_dictionary(kwds)
+        self._load_dictionary(kwds)
         self._plot = None
         self._shape_before_unfolding = None
         self._axes_manager_before_unfolding = None
@@ -2191,7 +2191,7 @@ class Signal(t.HasTraits,
             string += str(self.data.dtype)
         print string
 
-    def load_dictionary(self, file_data_dict):
+    def _load_dictionary(self, file_data_dict):
         """Load data from dictionary.
         
         Parameters:
