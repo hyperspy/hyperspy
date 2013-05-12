@@ -8,7 +8,7 @@ simulated hyperspectrum.
 
 
 # Create an empty spectrum
-s = signals.Spectrum({'data' : np.zeros((32,32,1024))})
+s = signals.Spectrum(np.zeros((32,32,1024)))
 
 # Generate some simple data: two Gaussians with random centers and area
 

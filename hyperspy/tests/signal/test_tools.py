@@ -9,7 +9,7 @@ from hyperspy.signal import Signal
 
 class Test2D:
     def setUp(self):
-        self.signal = Signal({'data' : np.arange(5*10).reshape(5,10)})
+        self.signal = Signal(np.arange(5*10).reshape(5,10))
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "E"
         self.signal.axes_manager[0].scale = 0.5

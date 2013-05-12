@@ -25,7 +25,7 @@ from hyperspy.signals.spectrum import Spectrum
 
 class TestAlignTools:
     def setUp(self):
-        s = Spectrum({'data' : np.zeros((10,100))})
+        s = Spectrum(np.zeros((10,100)))
         self.scale = 0.1
         self.offset = -2
         eaxis = s.axes_manager.signal_axes[0]
@@ -91,7 +91,7 @@ class TestAlignTools:
 class TestFindPeaks1D:
     def setUp(self):
         x = np.arange(0,50,0.01)
-        s = Spectrum({'data' : np.vstack((np.cos(x), np.sin(x)))})
+        s = Spectrum(np.vstack((np.cos(x), np.sin(x))))
         s.axes_manager.signal_axes[0].scale = 0.01
         self.peak_positions0 = np.arange(8) *2 * np.pi
         self.peak_positions1 = np.arange(8) *2 * np.pi + np.pi/2
@@ -111,7 +111,7 @@ class TestFindPeaks1D:
                     
 class TestInterpolateInBetween:
     def setUp(self):
-        s = Spectrum({'data' : np.arange(40).reshape((2,20))})
+        s = Spectrum(np.arange(40).reshape((2,20)))
         s.axes_manager.signal_axes[0].scale = 0.1
         s[:,8:12] = 0
         self.s = s

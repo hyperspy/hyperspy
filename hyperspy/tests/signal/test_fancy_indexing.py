@@ -29,7 +29,7 @@ from hyperspy.signal import Signal
 
 class Test1D:
     def setUp(self):
-        self.signal = Signal({'data' : np.arange(10)})
+        self.signal = Signal(np.arange(10))
         self.data = self.signal.data.copy()
         
     def test_slice_None(self):
@@ -125,7 +125,7 @@ class Test1D:
         
 class Test3D_SignalDim0:
     def setUp(self):
-        self.signal = Signal({'data' : np.arange(24).reshape((2,3,4))})
+        self.signal = Signal(np.arange(24).reshape((2,3,4)))
         self.data = self.signal.data.copy()
         self.signal.axes_manager._axes[2].navigate = True
         
@@ -153,7 +153,7 @@ class Test3D_SignalDim0:
         
 class Test3D_Navigate_0_and_1:
     def setUp(self):
-        self.signal = Signal({'data' : np.arange(24).reshape((2,3,4))})
+        self.signal = Signal(np.arange(24).reshape((2,3,4)))
         self.data = self.signal.data.copy()
         self.signal.axes_manager._axes[0].navigate = True
         self.signal.axes_manager._axes[1].navigate = True
@@ -196,7 +196,7 @@ class Test3D_Navigate_0_and_1:
                      
 class Test3D_Navigate_1:
     def setUp(self):
-        self.signal = Signal({'data' : np.arange(24).reshape((2,3,4))})
+        self.signal = Signal(np.arange(24).reshape((2,3,4)))
         self.data = self.signal.data.copy()
         self.signal.axes_manager._axes[0].navigate = False
         self.signal.axes_manager._axes[1].navigate = True
@@ -231,7 +231,7 @@ class Test3D_Navigate_1:
                      
 class TestFloatArguments:
     def setUp(self):
-        self.signal = Signal({'data' : np.arange(10)})
+        self.signal = Signal(np.arange(10))
         self.signal.axes_manager[0].scale = 0.5
         self.signal.axes_manager[0].offset = 0.25
         self.data = self.signal.data.copy()
@@ -278,8 +278,8 @@ class TestFloatArguments:
                      
 class TestEllipsis:
     def setUp(self):
-        self.signal = Signal({'data' : np.arange(2**4).reshape(
-            (2,2,2,2))})
+        self.signal = Signal(np.arange(2**4).reshape(
+            (2,2,2,2)))
         self.data = self.signal.data.copy()
         
     def test_ellipsis_beginning(self):

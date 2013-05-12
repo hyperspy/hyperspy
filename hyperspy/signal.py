@@ -1197,12 +1197,13 @@ class MVATools(object):
                         'size': int(factors.shape[1]),
                         'units': 'factor',
                         'index_in_array': 0, })
-                s=Image({'data':factor_data,
-                         'axes':axes_dicts,
-                         'mapped_parameters':{
-                            'title':'%s from %s'%(factor_prefix,
+                s=Image(factor_data,
+                        axes=axes_dicts,
+                        mapped_parameters = {
+                            'title' : '%s from %s' % (
+                                factor_prefix,
                                 self.mapped_parameters.title),
-                            }})
+                        })
             elif self.axes_manager.signal_dimension==1:
                 axes=[]
                 axes.append(
@@ -1218,11 +1219,12 @@ class MVATools(object):
                     'units': 'factor',
                     'index_in_array': 0,
                         })
-                s=Spectrum({'data' : factors.T,
-                            'axes' : axes,
-                            'mapped_parameters' : {
-                            'title':'%s from %s'%(factor_prefix, 
-                                self.mapped_parameters.title),}})
+                s=Spectrum(factors.T,
+                           axes=axes,
+                           mapped_parameters = {
+                               'title':'%s from %s' % (
+                                   factor_prefix, self.mapped_parameters.title),
+                           })
             filename = '%ss.%s' % (factor_prefix, factor_format)
             if folder is not None:
                 filename = os.path.join(folder, filename)
@@ -1234,11 +1236,13 @@ class MVATools(object):
                     get_axis_dictionary()
                 axis_dict['index_in_array']=0
                 for dim,index in zip(comp_ids,range(len(comp_ids))):
-                    s=Spectrum({'data':factors[:,index],
-                                'axes': [axis_dict,],
-                                'mapped_parameters' : {
-                            'title':'%s from %s'%(factor_prefix, 
-                                self.mapped_parameters.title),}})
+                    s=Spectrum(factors[:,index],
+                               axes=[axis_dict,],
+                               mapped_parameters = {
+                                   'title':'%s from %s'%(
+                                       factor_prefix,
+                                       self.mapped_parameters.title),
+                               })
                     filename = '%s-%i.%s' % (factor_prefix,
                                              dim,
                                              factor_format)
@@ -1258,13 +1262,13 @@ class MVATools(object):
                     self.axes_manager.signal_shape + [-1,])
                 
                 for dim,index in zip(comp_ids,range(len(comp_ids))):
-                    im = Image({
-                                'data' : factor_data[...,index],
-                                'axes' : axes_dicts,
-                                'mapped_parameters' : {
-                                'title' : '%s from %s' % (factor_prefix,
-                                    self.mapped_parameters.title),
-                                }})
+                    im = Image(factor_data[...,index],
+                               axes=axes_dicts,
+                               mapped_parameters = {
+                                   'title' : '%s from %s' % (
+                                       factor_prefix,
+                                       self.mapped_parameters.title),
+                               })
                     filename = '%s-%i.%s' % (factor_prefix,
                                              dim,
                                              factor_format)
@@ -1339,12 +1343,13 @@ class MVATools(object):
                         'size': int(loadings.shape[0]),
                         'units': 'factor',
                         'index_in_array': 0, })
-                s=Image({'data':loading_data,
-                         'axes':axes_dicts,
-                         'mapped_parameters':{
-                            'title':'%s from %s'%(loading_prefix, 
+                s=Image(loading_data,
+                        axes=axes_dicts,
+                        mapped_parameters = {
+                            'title' : '%s from %s' % (
+                                loading_prefix, 
                                 self.mapped_parameters.title),
-                            }})
+                        })
             elif self.axes_manager.navigation_dimension==1:
                 cal_axis=self.axes_manager.navigation_axes[0].\
                     get_axis_dictionary()
@@ -1357,11 +1362,13 @@ class MVATools(object):
                         'units': 'comp_id',
                         'index_in_array': 0, })
                 axes.append(cal_axis)
-                s=Image({'data':loadings,
-                            'axes':axes,
-                            'mapped_parameters':{
-                            'title':'%s from %s'%(loading_prefix,
-                                self.mapped_parameters.title),}})
+                s=Image(loadings,
+                        axes=axes,
+                        mapped_parameters = {
+                            'title' : '%s from %s' % (
+                                loading_prefix,
+                                self.mapped_parameters.title),
+                        })
             filename = '%ss.%s' % (loading_prefix, loading_format)
             if folder is not None:
                 filename = os.path.join(folder, filename)
@@ -1372,8 +1379,8 @@ class MVATools(object):
                     get_axis_dictionary()
                 axis_dict['index_in_array']=0
                 for dim,index in zip(comp_ids,range(len(comp_ids))):
-                    s=Spectrum({'data':loadings[index],
-                                'axes': [axis_dict,]})
+                    s=Spectrum(loadings[index],
+                               axes = [axis_dict,])
                     filename = '%s-%i.%s' % (loading_prefix,
                                              dim,
                                              loading_format)
@@ -1390,13 +1397,13 @@ class MVATools(object):
                 axes_dicts.append(axes[1].get_axis_dictionary())
                 axes_dicts[1]['index_in_array']=1
                 for dim,index in zip(comp_ids,range(len(comp_ids))):
-                    s=Image({'data':loading_data[index,...],
-                             'axes':axes_dicts,
-                             'mapped_parameters':{
-                                'title':'%s from %s'%(
+                    s=Image(loading_data[index,...],
+                            axes = axes_dicts,
+                            mapped_parameters = {
+                                'title' : '%s from %s' % (
                                     loading_prefix, 
                                     self.mapped_parameters.title),
-                                }})
+                            })
                     filename = '%s-%i.%s' % (loading_prefix,
                                              dim,
                                              loading_format)
@@ -1922,7 +1929,7 @@ class Signal(t.HasTraits,
     tmp_parameters = t.Instance(DictionaryBrowser)
     _default_record_by = 'image'
 
-    def __init__(self, file_data_dict=None, *args, **kw):
+    def __init__(self, data, **kwds):
         """All data interaction is made through this class or its subclasses
 
 
@@ -1938,8 +1945,8 @@ class Signal(t.HasTraits,
         self.tmp_parameters = DictionaryBrowser()
         self.learning_results = LearningResults()
         self.peak_learning_results = LearningResults()
-        if file_data_dict is not None:
-            self.load_dictionary(file_data_dict)
+        kwds['data'] = data
+        self.load_dictionary(kwds)
         self._plot = None
         self._shape_before_unfolding = None
         self._axes_manager_before_unfolding = None
@@ -2185,7 +2192,9 @@ class Signal(t.HasTraits,
         print string
 
     def load_dictionary(self, file_data_dict):
-        """Parameters:
+        """Load data from dictionary.
+        
+        Parameters:
         -----------
         file_data_dict : dictionary
             A dictionary containing at least a 'data' keyword with an array of
@@ -2601,7 +2610,7 @@ class Signal(t.HasTraits,
                 (slice(None), ) * axis +
                 (slice(cut_index[i], cut_index[i + 1]), Ellipsis)]
             signal_dict['data'] = data
-            splitted += self.__class__(signal_dict),
+            splitted += self.__class__(**signal_dict),
         return splitted
 
     def unfold_if_multidim(self):
@@ -2775,7 +2784,7 @@ class Signal(t.HasTraits,
         Usage
         -----
         >>> import numpy as np
-        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.sum(-1).data.shape
@@ -2806,7 +2815,7 @@ class Signal(t.HasTraits,
         Usage
         -----
         >>> import numpy as np
-        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.max(-1).data.shape
@@ -2835,7 +2844,7 @@ class Signal(t.HasTraits,
         Usage
         -----
         >>> import numpy as np
-        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.min(-1).data.shape
@@ -2865,7 +2874,7 @@ class Signal(t.HasTraits,
         Usage
         -----
         >>> import numpy as np
-        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.mean(-1).data.shape
@@ -2895,7 +2904,7 @@ class Signal(t.HasTraits,
         Usage
         -----
         >>> import numpy as np
-        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.std(-1).data.shape
@@ -2924,7 +2933,7 @@ class Signal(t.HasTraits,
         Usage
         -----
         >>> import numpy as np
-        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.var(-1).data.shape
@@ -2951,7 +2960,7 @@ class Signal(t.HasTraits,
         Usage
         -----
         >>> import numpy as np
-        >>> s = Signal({'data' : np.random.random((64,64,1024))})
+        >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.diff(-1).data.shape
@@ -2989,7 +2998,7 @@ class Signal(t.HasTraits,
         >>> import numpy as np
         >>> from hyperspy.signals.spectrum import Spectrum        ns = 
         ns.data = self.data.copy()
-        >>> s = signals.Spectrum({'data' : np.array([1,2,3,4,5])})
+        >>> s = signals.Spectrum(np.array([1,2,3,4,5]))
         >>> s.data
         array([1, 2, 3, 4, 5])
         >>> s.change_dtype('float')
@@ -3102,21 +3111,15 @@ class Signal(t.HasTraits,
             return None
         elif self.axes_manager.navigation_dimension == 1:
             from hyperspy.signals.spectrum import Spectrum
-            s = Spectrum({
-            'data' : np.zeros(
-                self.axes_manager.navigation_shape),
-            'axes' : self.axes_manager._get_navigation_axes_dicts()})
+            s = Spectrum(np.zeros(self.axes_manager.navigation_shape),
+                         axes=self.axes_manager._get_navigation_axes_dicts())
         elif self.axes_manager.navigation_dimension == 2:
             from hyperspy.signals.image import Image
-            s = Image({
-            'data' : np.zeros(
-                self.axes_manager.navigation_shape),
-            'axes' : self.axes_manager._get_navigation_axes_dicts()})
+            s = Image(np.zeros(self.axes_manager.navigation_shape),
+                      axes=self.axes_manager._get_navigation_axes_dicts())
         else:
-            s = Signal({
-            'data' : np.zeros(
-                self.axes_manager.navigation_shape),
-            'axes' : self.axes_manager._get_navigation_axes_dicts()})
+            s = Signal(np.zeros(self.axes_manager.navigation_shape),
+                       axes=self.axes_manager._get_navigation_axes_dicts())
         return s
                 
         

@@ -41,7 +41,7 @@ class Spectrum(Signal):
             
         Examples
         --------        
-        >>> s = signals.Spectrum({'data' : np.ones((3,4,5,6))})
+        >>> s = signals.Spectrum(np.ones((3,4,5,6)))
         >>> s
         <Spectrum, title: , dimensions: (3L, 4L, 5L, 6L)>
 
@@ -58,7 +58,7 @@ class Spectrum(Signal):
         dic['mapped_parameters']['record_by'] = 'image'
         dic['data'] = np.rollaxis(dic['data'], -1, signal_to_index)
         dic['axes'] = utils_varia.rollelem(dic['axes'],-1,signal_to_index)
-        im = Image(dic)
+        im = Image(**dic)
         
         if hasattr(self, 'learning_results'):
             if (signal_to_index != 0 and 
@@ -77,7 +77,7 @@ class Spectrum(Signal):
         from hyperspy.signals.eels import EELSSpectrum
         dic = self._get_signal_dict()
         dic['mapped_parameters']['signal_type'] = 'EELS'
-        eels = EELSSpectrum(dic)
+        eels = EELSSpectrum(**dic)
         if hasattr(self, 'learning_results'):
             eels.learning_results = copy.deepcopy(self.learning_results)
         eels.tmp_parameters = self.tmp_parameters.deepcopy()
@@ -90,7 +90,7 @@ class Spectrum(Signal):
         signal_type = self.mapped_parameters.signal_type
         dic['mapped_parameters']['signal_type'] = \
             signal_type + '_simulation'
-        simu = SpectrumSimulation(dic)
+        simu = SpectrumSimulation(**dic)
         if hasattr(self, 'learning_results'):
             simu.learning_results = copy.deepcopy(self.learning_results)
         simu.tmp_parameters = self.tmp_parameters.deepcopy()

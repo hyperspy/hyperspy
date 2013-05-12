@@ -311,14 +311,14 @@ def load_with_reader(filename, reader, record_by=None,
             file_data_dict['mapped_parameters']['signal_type'] = signal_type
 
         if file_data_dict['mapped_parameters']['record_by'] == 'image':
-            s = Image(file_data_dict)
+            s = Image(**file_data_dict)
         else:
             if ('signal_type' in file_data_dict['mapped_parameters'] 
                 and file_data_dict['mapped_parameters']['signal_type'] 
                 == 'EELS'):
-                s = EELSSpectrum(file_data_dict)
+                s = EELSSpectrum(**file_data_dict)
             else:
-                s = Spectrum(file_data_dict)
+                s = Spectrum(**file_data_dict)
         folder, filename = os.path.split(os.path.abspath(filename))
         filename, extension = os.path.splitext(filename)
         s.tmp_parameters.folder = folder

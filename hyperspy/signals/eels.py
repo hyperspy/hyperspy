@@ -66,7 +66,7 @@ class EELSSpectrum(Spectrum):
         Examples
         --------
         
-        >>> s = signals.EELSSpectrum({'data' : np.arange(1024)})
+        >>> s = signals.EELSSpectrum(np.arange(1024))
         >>> s.add_elements(('C', 'O'))
         Adding C_K subshell
         Adding O_K subshell

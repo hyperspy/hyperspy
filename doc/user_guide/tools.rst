@@ -133,7 +133,7 @@ Lets start by indexing a single spectrum:
 
 .. code-block:: python
     
-    >>> s = signals.Spectrum({'data' : np.arange(10)})
+    >>> s = signals.Spectrum(np.arange(10))
     >>> s
     <Spectrum, title: , dimensions: (10,)>
     >>> s.data
@@ -165,7 +165,7 @@ Hyperspy indexes using the axis scales instead of the indices.
  
 .. code-block:: python
 
-    >>> s = signals.Spectrum({'data' : np.arange(10)})
+    >>> s = signals.Spectrum(np.arange(10))
     >>> s
     <Spectrum, title: , dimensions: (10,)>
     >>> s.data
@@ -185,7 +185,7 @@ Importantly the original :py:class:`~.signal.Signal` and its "indexed self" shar
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum({'data' : np.arange(10)})
+    >>> s = signals.Spectrum(np.arange(10))
     >>> s
     <Spectrum, title: , dimensions: (10,)>
     >>> s.data
@@ -209,7 +209,7 @@ and the following indexes are the signal indices also in natural order.
     
 .. code-block:: python
     
-    >>> s = signals.Spectrum({'data' : np.arange(2*3*4).reshape((2,3,4))})
+    >>> s = signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Spectrum, title: , dimensions: (10, 10, 10)>
     >>> s.data
@@ -246,7 +246,7 @@ dimensions independently:
 
 .. code-block:: python
     
-    >>> s = signals.Spectrum({'data' : np.arange(2*3*4).reshape((2,3,4))})
+    >>> s = signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Spectrum, title: , dimensions: (10, 10, 10)>
     >>> s.data
@@ -281,7 +281,7 @@ The same syntax can be used to set the data values:
 
 .. code-block:: python
     
-    >>> s = signals.Spectrum({'data' : np.arange(2*3*4).reshape((2,3,4))})
+    >>> s = signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Spectrum, title: , dimensions: (10, 10, 10)>
     >>> s.data

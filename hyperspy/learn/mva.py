@@ -388,8 +388,7 @@ class MVA():
     
     def get_factors_as_spectrum(self):
         from hyperspy.signals.spectrum import Spectrum
-        return Spectrum(
-            {'data' : self.learning_results.factors.T.copy()})
+        return Spectrum(self.learning_results.factors.T.copy())
     
     def blind_source_separation(self,
                                 number_of_components=None,
@@ -459,7 +458,7 @@ class MVA():
                     
             if pretreatment is not None:
                 from hyperspy.signals.spectrum import Spectrum
-                sfactors = Spectrum({'data' : factors.T})
+                sfactors = Spectrum(factors.T)
                 if pretreatment['algorithm'] == 'savitzky_golay':
                     sfactors.smooth_savitzky_golay(
                         number_of_points=pretreatment[

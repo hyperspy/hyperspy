@@ -44,7 +44,7 @@ class Image(Signal):
             
         Examples
         --------        
-        >>> img = signals.Image({'data' : np.ones((3,4,5,6))})
+        >>> img = signals.Image(np.ones((3,4,5,6)))
         >>> img
         <Image, title: , dimensions: (3L, 4L, 5L, 6L)>
 
@@ -61,7 +61,7 @@ class Image(Signal):
         dic['mapped_parameters']['record_by'] = 'spectrum'        
         dic['data'] = np.rollaxis(dic['data'], signal_axis, dim)
         dic['axes'] = utils_varia.rollelem(dic['axes'], signal_axis, dim)
-        sp = Spectrum(dic)
+        sp = Spectrum(**dic)
         if hasattr(self, 'learning_results'):
             if signal_axis != 0 and self.learning_results.loadings is not None:
                 print("The learning results won't be transfered correctly")

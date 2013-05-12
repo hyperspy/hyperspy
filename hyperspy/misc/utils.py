@@ -206,7 +206,7 @@ def _estimate_gain(ns, cs,
         from hyperspy.signals.spectrum import Spectrum
         from hyperspy.model import Model
         from hyperspy.components import Line
-        s = Spectrum({'data' : varso[avesoh]})
+        s = Spectrum(varso[avesoh])
         s.axes_manager.signal_axes[0].axis = aveso[avesoh]
         m = Model(s)
         l = Line()
@@ -869,58 +869,58 @@ def multi_readout_analyze(folder, ccd_height = 100., plot = True, freq = None):
     dictio = {'pixels': pixels, 'variances': variances, 'fit' : fit,
     'spectra' : spectra}
     return dictio
-
-def chrono_align_and_sum(spectrum, energy_range = (None, None),
-                         spatial_shape = None):
-    """Alignment and sum of a chrono-spim SI
-
-    Parameters
-    ----------
-    spectrum : Spectrum instance
-        Chrono-spim
-    energy_range : tuple of floats
-        energy interval in which to perform the alignment in energy units
-    axis : int
-    """
-    from spectrum import Spectrum
-    dc = spectrum.data_cube
-    min_energy_size = dc.shape[0]
-#    i = 0
-    new_dc = None
-
-    # For the progress bar to work properly we must capture the output of the
-    # functions that are called during the alignment process
-    import cStringIO
-    import sys
-    capture_output = cStringIO.StringIO()
-
-    from hyperspy.misc.progressbar import progressbar
-    pbar = progressbar(maxval = dc.shape[2] - 1)
-    for i in xrange(dc.shape[2]):
-        pbar.update(i)
-        sys.stdout = capture_output
-        s = Spectrum({'calibration': {'data_cube' : dc[:,:,i]}})
-        s.get_calibration_from(spectrum)
-        s.find_low_loss_origin()
-        s.align(energy_range, progress_bar = False)
-        min_energy_size = min(s.data_cube.shape[0], min_energy_size)
-        if new_dc is None:
-            new_dc = s.data_cube.sum(1)
-        else:
-            new_dc = np.concatenate([new_dc[:min_energy_size],
-                                     s.data_cube.sum(1)[:min_energy_size]], 1)
-        sys.stdout = sys.__stdout__
-    pbar.finish()
-    spectrum.data_cube = new_dc
-    spectrum.get_dimensions_from_cube()
-    spectrum.find_low_loss_origin()
-    spectrum.align(energy_range)
-    spectrum.find_low_loss_origin()
-    if spatial_shape is not None:
-        spectrum.data_cube = spectrum.data_cube.reshape(
-        [spectrum.data_cube.shape[0]] + list(spatial_shape))
-        spectrum.data_cube = spectrum.data_cube.swapaxes(1,2)
-        spectrum.get_dimensions_from_cube()
+# 
+# def chrono_align_and_sum(spectrum, energy_range = (None, None),
+                         # spatial_shape = None):
+    # """Alignment and sum of a chrono-spim SI
+# 
+    # Parameters
+    # ----------
+    # spectrum : Spectrum instance
+        # Chrono-spim
+    # energy_range : tuple of floats
+        # energy interval in which to perform the alignment in energy units
+    # axis : int
+    # """
+    # from spectrum import Spectrum
+    # dc = spectrum.data_cube
+    # min_energy_size = dc.shape[0]
+# #    i = 0
+    # new_dc = None
+# 
+    # # For the progress bar to work properly we must capture the output of the
+    # # functions that are called during the alignment process
+    # import cStringIO
+    # import sys
+    # capture_output = cStringIO.StringIO()
+# 
+    # from hyperspy.misc.progressbar import progressbar
+    # pbar = progressbar(maxval = dc.shape[2] - 1)
+    # for i in xrange(dc.shape[2]):
+        # pbar.update(i)
+        # sys.stdout = capture_output
+        # s = Spectrum({'calibration': {'data_cube' : dc[:,:,i]}})
+        # s.get_calibration_from(spectrum)
+        # s.find_low_loss_origin()
+        # s.align(energy_range, progress_bar = False)
+        # min_energy_size = min(s.data_cube.shape[0], min_energy_size)
+        # if new_dc is None:
+            # new_dc = s.data_cube.sum(1)
+        # else:
+            # new_dc = np.concatenate([new_dc[:min_energy_size],
+                                     # s.data_cube.sum(1)[:min_energy_size]], 1)
+        # sys.stdout = sys.__stdout__
+    # pbar.finish()
+    # spectrum.data_cube = new_dc
+    # spectrum.get_dimensions_from_cube()
+    # spectrum.find_low_loss_origin()
+    # spectrum.align(energy_range)
+    # spectrum.find_low_loss_origin()
+    # if spatial_shape is not None:
+        # spectrum.data_cube = spectrum.data_cube.reshape(
+        # [spectrum.data_cube.shape[0]] + list(spatial_shape))
+        # spectrum.data_cube = spectrum.data_cube.swapaxes(1,2)
+        # spectrum.get_dimensions_from_cube()
 
 def copy_energy_calibration(from_spectrum, to_spectrum):
     """Copy the energy calibration between two SIs

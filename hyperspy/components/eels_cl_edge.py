@@ -329,9 +329,9 @@ class EELSCLEdge(Component):
                         self.fine_structure_width / self.energy_scale))
         data = np.zeros(self.fine_structure_coeff.map.shape + 
                         (channels,))
-        s = EELSSpectrum({
-            'data' : data,
-            'axes' : self.intensity._axes_manager._get_axes_dicts()})
+        s = EELSSpectrum(
+            data,
+            axes=self.intensity._axes_manager._get_axes_dicts())
         s.get_dimensions_from_data()
         s.axes_manager.signal_axes[0].offset = self.onset_energy.value
         # Backup the axes_manager

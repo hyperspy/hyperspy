@@ -4,7 +4,7 @@ import numpy as np
 
 #Generate the data and make the spectrum
 x_range = np.array(range(-500,500))
-s = signals.SpectrumSimulation({"data":np.arctan(x_range)})
+s = signals.SpectrumSimulation(np.arctan(x_range))
 s.axes_manager._axes[0].offset = -500
 s.axes_manager._axes[0].units = ""
 s.axes_manager._axes[0].name = "x"

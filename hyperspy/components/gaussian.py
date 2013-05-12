@@ -123,7 +123,7 @@ class Gaussian(Component):
         x = np.arange(-10,10, 0.01)
         data = np.zeros((32,32,2000))
         data[:] = g.function(x).reshape((1,1,2000))
-        s = Spectrum({'data' : data})
+        s = Spectrum(data)
         s.axes_manager._axes[-1].offset = -10
         s.axes_manager._axes[-1].scale = 0.01
         g.estimate_parameters(s, -10,10, False)

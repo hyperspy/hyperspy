@@ -122,7 +122,7 @@ If a model contains several components with the same parameters, it is possible 
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum({'data':np.arange(100).reshape(10,10)})
+    >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
     >>> g1 = components.Gaussian()
     >>> g2 = components.Gaussian()
     >>> m.extend([g1,g2])
