@@ -23,7 +23,6 @@ import numpy as np
 import numpy.ma as ma
 import scipy as sp
 from matplotlib import pyplot as plt
-import traits.api as t
 
 from hyperspy import messages
 from hyperspy.axes import AxesManager
@@ -50,6 +49,7 @@ from scipy.ndimage.filters import gaussian_filter1d
 from hyperspy.misc.utils import find_peaks_ohaver
 from hyperspy.misc.image_utils import (shift_image, estimate_image_shift)
 from hyperspy.misc.utils import symmetrize, antisymmetrize
+from hyperspy.exceptions import SignalDimensionError
 
 
 class Signal2DTools(object):
@@ -984,15 +984,6 @@ class MVATools(object):
         n=len(comp_ids)
         if same_window:
             rows=int(np.ceil(n/float(per_row)))
-
-        if plot_char==4:
-            cbar_label='Peak Height'
-        elif plot_char==5:
-            cbar_label='Peak Orientation'
-        elif plot_char==6:
-            cbar_label='Peak Eccentricity'
-        else:
-            cbar_label=None
 
         fig_list=[]
 
@@ -2068,9 +2059,6 @@ class Signal(MVA,
                         s.axes_manager.signal_size > 1 and 
                         s.axes_manager.navigation_size == 0]
                         
-                    nav = [s for s in [self, other] if
-                        s.axes_manager.signal_size == 0 and 
-                        s.axes_manager.navigation_size > 1]
                     if sig_and_nav and sig:
                         self = sig_and_nav[0]
                         other = sig[0]
@@ -2153,11 +2141,11 @@ class Signal(MVA,
         
     def _check_signal_dimension_equals_one(self):
         if self.axes_manager.signal_dimension != 1:
-            raise SignalSizeError(self.axes_manager.signal_dimension, 1)
+            raise SignalDimensionError(self.axes_manager.signal_dimension, 1)
             
     def _check_signal_dimension_equals_two(self):
         if self.axes_manager.signal_dimension != 2:
-            raise SignalSizeError(self.axes_manager.signal_dimension, 2)
+            raise SignalDimensionError(self.axes_manager.signal_dimension, 2)
             
     def _deepcopy_with_new_data(self, data=None):
         """Returns a deepcopy of itself replacing the data.
@@ -2675,7 +2663,6 @@ class Signal(MVA,
         new_shape[unfolded_axis] = -1
         self.data = self.data.reshape(new_shape)
         self.axes_manager = self.axes_manager.deepcopy()
-        i = 0
         uname = ''
         uunits = ''
         to_remove = []
