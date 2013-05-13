@@ -455,7 +455,7 @@ Aligning
 The following methods use sub-pixel cross-correlation or user-provided shifts to align spectra. They support applying the same transformation to multiple files.
 
 * :py:meth:`~.signal.Signal1DTools.align1D`
-* :py:meth:`~.signal.Signal1DTools.shift_1D`
+* :py:meth:`~.signal.Signal1DTools.shift1D`
 
 
 Data smoothing
@@ -472,7 +472,7 @@ Other methods
 
 
 * Apply a hanning taper to the spectra :py:meth:`~.signal.Signal1DTools.hanning_taper`
-* Find peaks in spectra :py:meth:`~.signal.Signal1DTools.find_peaks_1D_ohaver`
+* Find peaks in spectra :py:meth:`~.signal.Signal1DTools.find_peaks1D_ohaver`
 * Interpolate the spectra in between two positions :py:meth:`~.signal.Signal1DTools.interpolate_in_between`
 * Convolve the spectra with a gaussian :py:meth:`~.signal.Signal1DTools.gaussian_filter`
 

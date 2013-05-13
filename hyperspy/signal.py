@@ -51,12 +51,9 @@ from hyperspy.misc.utils import find_peaks_ohaver
 from hyperspy.misc.image_utils import (shift_image, estimate_image_shift)
 from hyperspy.misc.utils import symmetrize, antisymmetrize
 
-class TestMe(object):
-    def testme(self):
-        pass
 
 class Signal2DTools(object):
-    def estimate_2D_translation(self, reference='current',
+    def estimate_shift2D(self, reference='current',
                                 correlation_threshold=None,
                                 chunk_size=30,
                                 roi=None,
@@ -245,7 +242,7 @@ class Signal2DTools(object):
         """Align the images in place using user provided shifts or by 
         estimating the shifts. 
         
-        Please, see `estimate_2D_translation` docstring for details
+        Please, see `estimate_shift2D` docstring for details
         on the rest of the parameters not documented in the following
         section
         
@@ -259,7 +256,7 @@ class Signal2DTools(object):
             Default is nan.
         shifts : None or list of tuples
             If None the shifts are estimated using 
-            `estimate_2D_translation`.
+            `estimate_shift2D`.
             
         Returns
         -------
@@ -284,7 +281,7 @@ class Signal2DTools(object):
         """
         self._check_signal_dimension_equals_two()
         if shifts is None:
-            shifts = self.estimate_2D_translation(
+            shifts = self.estimate_shift2D(
                 roi=roi,sobel=sobel, medfilter=medfilter,
                 hanning=hanning, plot=plot,reference=reference,
                 dtype=dtype, correlation_threshold=
@@ -342,7 +339,7 @@ class Signal2DTools(object):
 
 
 class Signal1DTools(object):
-    def shift_1D(self,
+    def shift1D(self,
                  shift_array,
                  interpolation_method='linear',
                  crop=True,
@@ -439,7 +436,7 @@ class Signal1DTools(object):
             dat[i1:i2] = dat_int(range(i1,i2))
             pbar.update(i + 1)
             
-    def estimate_shift_1D(self,
+    def estimate_shift1D(self,
                           start=None,
                           end=None,
                           reference_indices=None,
@@ -494,7 +491,7 @@ class Signal1DTools(object):
         shift_array = np.zeros(self.axes_manager.navigation_shape)
         ref = self.navigation_indexer[reference_indices].data[i1:i2]
         if interpolate is True:
-            ref = utils.interpolate_1D(ip, ref)
+            ref = utils.interpolate1D(ip, ref)
         pbar = progressbar.progressbar(
             maxval=self.axes_manager.navigation_size)
         for i, (dat, indices) in enumerate(zip(
@@ -502,7 +499,7 @@ class Signal1DTools(object):
                     self.axes_manager._indices_generator())):
             dat = dat[i1:i2]
             if interpolate is True:
-                dat = utils.interpolate_1D(ip, dat)
+                dat = utils.interpolate1D(ip, dat)
             shift_array[indices] = np.argmax(
                 np.correlate(ref, dat,'full')) - len(ref) + 1
             pbar.update(i + 1)
@@ -583,11 +580,11 @@ class Signal1DTools(object):
 
         See also
         --------
-        estimate_shift_in_units_1D, estimate_shift_in_index_1D
+        estimate_shift1D
         
         """
         self._check_signal_dimension_equals_one()
-        shift_array = self.estimate_shift_1D(
+        shift_array = self.estimate_shift1D(
             start=start,
             end=end,
             reference_indices=reference_indices,
@@ -599,7 +596,7 @@ class Signal1DTools(object):
             also_align = list()
         also_align.append(self)
         for signal in also_align:
-            signal.shift_1D(shift_array=shift_array,
+            signal.shift1D(shift_array=shift_array,
                             interpolation_method=interpolation_method,
                             crop=crop,
                             fill_value=fill_value)
@@ -822,7 +819,7 @@ class Signal1DTools(object):
                 dc[..., -offset:] *= 0.
         return channels
         
-    def find_peaks_1D_ohaver(self, xdim=None,slope_thresh=0, amp_thresh=None, 
+    def find_peaks1D_ohaver(self, xdim=None,slope_thresh=0, amp_thresh=None, 
                     subchannel=True, medfilt_radius=5, maxpeakn=30000, 
                     peakgroup=10):
         """Find peaks along a 1D line (peaks in spectrum/spectra).

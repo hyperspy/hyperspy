@@ -1049,7 +1049,7 @@ def ratio(edge_A, edge_B):
     return ratio, ratio_std
 
   
-def interpolate_1D(number_of_interpolation_points, data):
+def interpolate1D(number_of_interpolation_points, data):
     ip = number_of_interpolation_points
     ch = len(data)
     old_ax = np.linspace(0, 100, ch)

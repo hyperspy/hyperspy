@@ -41,12 +41,12 @@ class TestAlignTools:
         
     def test_estimate_shift(self):
         s = self.spectrum
-        eshifts = -1 * s.estimate_shift_1D()
+        eshifts = -1 * s.estimate_shift1D()
         assert_true(np.allclose(eshifts, self.ishifts * self.scale))
         
-    def test_shift_1D(self):
+    def test_shift1D(self):
         s = self.spectrum
-        s.shift_1D(-1 * self.ishifts[:, np.newaxis] * self.scale)
+        s.shift1D(-1 * self.ishifts[:, np.newaxis] * self.scale)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         assert_true(np.allclose(s.data[:, i_zlp], 12))
         # Check that at the edges of the spectrum the value == to the
@@ -99,13 +99,13 @@ class TestFindPeaks1D:
         
         
     def test_single_spectrum(self):
-        peaks = self.spectrum[0].find_peaks_1D_ohaver()
+        peaks = self.spectrum[0].find_peaks1D_ohaver()
         assert_true(np.allclose(peaks[0]['position'],
                     self.peak_positions0, rtol=1e-5, atol=1e-4))
                     
     def test_two_spectra(self):
-        peaks = self.spectrum.find_peaks_1D_ohaver()
-        peaks = self.spectrum.find_peaks_1D_ohaver()
+        peaks = self.spectrum.find_peaks1D_ohaver()
+        peaks = self.spectrum.find_peaks1D_ohaver()
         assert_true(np.allclose(peaks[1]['position'],
                     self.peak_positions1, rtol=1e-5, atol=1e-4))
                     
