@@ -87,9 +87,9 @@ class Spectrum(Signal):
         from hyperspy.signals.spectrum_simulation import (
                 SpectrumSimulation)
         dic = self._get_signal_dict()
-        signal_type = self.mapped_parameters.signal_type
-        dic['mapped_parameters']['signal_type'] = \
-            signal_type + '_simulation'
+        if self.mapped_parameters.has_item("signal_type"):
+            dic['mapped_parameters']['signal_type'] = (
+                self.mapped_parameters.signal_type + '_simulation')
         simu = SpectrumSimulation(**dic)
         if hasattr(self, 'learning_results'):
             simu.learning_results = copy.deepcopy(self.learning_results)
