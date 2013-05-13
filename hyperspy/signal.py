@@ -517,7 +517,7 @@ class Signal1DTools(object):
         shift_array *= axis.scale
         return shift_array
 
-    def align_1D(self,
+    def align1D(self,
                  start=None,
                  end=None,
                  reference_indices=None,

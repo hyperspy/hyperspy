@@ -454,7 +454,7 @@ Aligning
 
 The following methods use sub-pixel cross-correlation or user-provided shifts to align spectra. They support applying the same transformation to multiple files.
 
-* :py:meth:`~.signal.Signal1DTools.align_1D`
+* :py:meth:`~.signal.Signal1DTools.align1D`
 * :py:meth:`~.signal.Signal1DTools.shift_1D`
 
 

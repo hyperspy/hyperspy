@@ -60,7 +60,7 @@ class TestAlignTools:
         
     def test_align(self):
         s = self.spectrum
-        s.align_1D()
+        s.align1D()
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         assert_true(np.allclose(s.data[:, i_zlp], 12))
         # Check that at the edges of the spectrum the value == to the
@@ -75,7 +75,7 @@ class TestAlignTools:
     def test_align_axis0(self):
         s = self.spectrum
         s.swap_axes(0, 1)
-        s.align_1D()
+        s.align1D()
         s.swap_axes(0, 1)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         assert_true(np.allclose(s.data[:, i_zlp], 12))
