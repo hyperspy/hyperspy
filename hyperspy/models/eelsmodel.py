@@ -441,7 +441,7 @@ class EELSModel(Model):
         
         if powerlaw.estimate_parameters(
             self.spectrum, E1, E2, False) is True:
-            self.charge()
+            self.fetch_stored_values()
         else:
             messages.warning(
             "The power law background parameters could not "

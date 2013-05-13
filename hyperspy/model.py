@@ -65,7 +65,7 @@ class Model(list):
         self.spectrum = spectrum
         self.axes_manager = self.spectrum.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
-        self.axes_manager.connect(self.charge)
+        self.axes_manager.connect(self.fetch_stored_values)
          
         self.free_parameters_boundaries = None
         # TODO: model cube should dissapear or at least be an option
@@ -181,7 +181,7 @@ class Model(list):
             pbar = progressbar.progressbar(maxval=maxval)
         i = 0
         for index in self.axes_manager:
-            self.charge(only_fixed=False)
+            self.fetch_stored_values(only_fixed=False)
             self.model_cube[self.axes_manager._getitem_tuple][
             self.channel_switches] = self.__call__(
                 non_convolved=not self.convolved, onlyactive=True)
@@ -263,7 +263,7 @@ class Model(list):
                         {'limited' : limited,
                          'limits' : limits})
 
-    def set(self):
+    def store_current_values(self):
         """ Store the parameters of the current coordinates into the 
         parameters array.
         
@@ -272,21 +272,24 @@ class Model(list):
         for component in self:
             component.store_current_parameters_in_map()
 
-    def charge(self, only_fixed=False):
-        """Charge the parameters for the current spectrum from the parameters 
-        array
+    def fetch_stored_values(self, only_fixed=False):
+        """Fetch the value of the parameters that has been previously stored.
         
         Parameters
         ----------
         only_fixed : bool
-            If True, only the fixed parameters will be charged.
+            If True, only the fixed parameters are fetched.
+            
+        See Also
+        --------
+        store_current_values
             
         """
         switch_aap = (False != self._get_auto_update_plot())
         if switch_aap is True:
             self._disconnect_parameters2update_plot()
         for component in self:
-            component.charge_value_from_map(only_fixed=only_fixed)
+            component.fetch_stored_values(only_fixed=only_fixed)
         if switch_aap is True:
             self._connect_parameters2update_plot()
             self.update_plot()
@@ -298,14 +301,15 @@ class Model(list):
             except:
                 self._disconnect_parameters2update_plot()
                 
-    def _charge_p0(self, p_std = None):
-        """Charge the free data for the current coordinates (x,y) from the
-        p0 array.
+    def _fetch_values_from_p0(self, p_std=None):
+        """Fetch the parameter values from the output of the optimzer `self.p0`
         
         Parameters
         ----------
         p_std : array
-            array containing the corresponding standard deviation
+            array containing the corresponding standard deviatio
+            n
+            
         """
         comp_p_std = None
         counter = 0
@@ -313,9 +317,9 @@ class Model(list):
             if component.active is True:
                 if p_std is not None:
                     comp_p_std = p_std[counter: counter + component._nfree_param]
-                component.charge(
+                component.fetch_values_from_array(
                 self.p0[counter: counter + component._nfree_param], 
-                comp_p_std, onlyfree = True)
+                comp_p_std, onlyfree=True)
                 counter += component._nfree_param
 
     # Defines the functions for the fitting process -------------------------
@@ -324,11 +328,11 @@ class Model(list):
         if axes_manager is not self.axes_manager:
             old_axes_manager = self.axes_manager
             self.axes_manager = axes_manager
-            self.charge()
+            self.fetch_stored_values()
         s = self.__call__(non_convolved=False, onlyactive=True)
         if old_axes_manager is not None:
             self.axes_manager = old_axes_manager
-            self.charge()
+            self.fetch_stored_values()
         if out_of_range2nans is True:
             ns = np.zeros((self.axis.axis.shape))
             ns[:] = np.nan
@@ -541,8 +545,8 @@ class Model(list):
             grad = np.zeros(len(self.axis.axis))
             for component in self: # Cut the parameters list
                 if component.active:
-                    component.charge(param[counter:counter + \
-                    component._nfree_param] , onlyfree = True)
+                    component.fetch_values_from_array(param[counter:counter + \
+                    component._nfree_param] , onlyfree=True)
                     if component.convolved:
                         for parameter in component.free_parameters :
                             par_grad = np.convolve(
@@ -577,8 +581,8 @@ class Model(list):
             grad = axis
             for component in self: # Cut the parameters list
                 if component.active:
-                    component.charge(param[counter:counter + \
-                    component._nfree_param] , onlyfree = True)
+                    component.fetch_values_from_array(param[counter:counter + \
+                    component._nfree_param] , onlyfree=True)
                     for parameter in component.free_parameters :
                         par_grad = parameter.grad(axis)
                         if parameter._twins:
@@ -849,15 +853,15 @@ class Model(list):
         
         if np.iterable(self.p0) == 0:
             self.p0 = (self.p0,)
-        self._charge_p0(p_std=self.p_std)
-        self.set()
+        self._fetch_values_from_p0(p_std=self.p_std)
+        self.store_current_values()
         if ext_bounding is True:
             self._disable_ext_bounding()
         if switch_aap is True and update_plot is False:
             self._connect_parameters2update_plot()
             self.update_plot()            
                 
-    def multifit(self, mask=None, charge_only_fixed=False,
+    def multifit(self, mask=None, fetch_only_fixed=False,
                  autosave=False, autosave_every=10, **kwargs):
         """Fit the data to the model at all the positions of the 
         navigation dimensions.        
@@ -869,7 +873,7 @@ class Model(list):
             To mask (do not fit) at certain position pass a numpy.array
             of type bool where True indicates that the data will not be
             fitted at the given position.
-        charge_only_fixed : bool
+        fetch_only_fixed : bool
             If True, only the fixed parameters values will be updated
             when changing the positon.
         autosave : bool
@@ -978,7 +982,7 @@ class Model(list):
                 param.map = f['%s_%s.%s' % (i, cname, pname)]
             i += 1
                 
-        self.charge()
+        self.fetch_stored_values()
            
     def plot(self):
         """Plots the current spectrum to the screen and a map with a 
