@@ -1914,16 +1914,11 @@ class MVATools(object):
 
         
 
-class Signal(t.HasTraits,
-             MVA,
+class Signal(MVA,
              MVATools,
              Signal1DTools,
              Signal2DTools):
-    data = t.Any()
-    axes_manager = t.Instance(AxesManager)
-    original_parameters = t.Instance(DictionaryBrowser)
-    mapped_parameters = t.Instance(DictionaryBrowser)
-    tmp_parameters = t.Instance(DictionaryBrowser)
+    
     _default_record_by = 'image'
 
     def __init__(self, data, **kwds):
@@ -1949,7 +1944,7 @@ class Signal(t.HasTraits,
             imported from the original data file.        
            
         """
-        super(Signal, self).__init__()
+        
         self.mapped_parameters = DictionaryBrowser()
         self.original_parameters = DictionaryBrowser()
         self.tmp_parameters = DictionaryBrowser()
