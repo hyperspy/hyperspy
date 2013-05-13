@@ -2143,18 +2143,18 @@ class Signal(t.HasTraits,
                 new_axes = [axis.copy()
                             for axis in self.axes_manager._axes]            
             exec("result = sdata.%s(odata)" % op_name)
-            new_signal = self.get_deepcopy_with_new_data(result)
+            new_signal = self._deepcopy_with_new_data(result)
             new_signal.axes_manager._axes = new_axes
             new_signal.axes_manager.set_signal_dimension(
                 self.axes_manager.signal_dimension)
             return new_signal
         else:
             exec("result = self.data.%s(other)" %  op_name)
-            return self.get_deepcopy_with_new_data(result)
+            return self._deepcopy_with_new_data(result)
         
     def _unary_operator_ruler(self, op_name):
         exec("result = self.data.%s()" % op_name)
-        return self.get_deepcopy_with_new_data(result)
+        return self._deepcopy_with_new_data(result)
         
     def _check_signal_dimension_equals_one(self):
         if self.axes_manager.signal_dimension != 1:
@@ -2164,7 +2164,7 @@ class Signal(t.HasTraits,
         if self.axes_manager.signal_dimension != 2:
             raise SignalSizeError(self.axes_manager.signal_dimension, 2)
             
-    def get_deepcopy_with_new_data(self, data=None):
+    def _deepcopy_with_new_data(self, data=None):
         """Returns a deepcopy of itself replacing the data.
         
         This method has the advantage over deepcopy that it does not
@@ -2261,7 +2261,7 @@ class Signal(t.HasTraits,
         
         """
         # We deepcopy everything but data
-        self = self.get_deepcopy_with_new_data(self.data)
+        self = self._deepcopy_with_new_data(self.data)
         for axis in self.axes_manager._axes:
             if axis.size == 1:
                 self.axes_manager.remove(axis)
@@ -2774,7 +2774,7 @@ class Signal(t.HasTraits,
             
     def _apply_function_on_data_and_remove_axis(self, function, axis):
         axis = self.axes_manager[axis].index_in_array
-        s = self.get_deepcopy_with_new_data(
+        s = self._deepcopy_with_new_data(
             function(self.data, axis=axis))
         s.axes_manager.remove(s.axes_manager._axes[axis])
         return s
@@ -2983,7 +2983,7 @@ class Signal(t.HasTraits,
         
         """
         
-        s = self.get_deepcopy_with_new_data(
+        s = self._deepcopy_with_new_data(
             np.diff(self.data,order,axis))
         axis = s.axes_manager._axes[axis]
         axis.offset += (axis.scale / 2)
@@ -3109,7 +3109,7 @@ class Signal(t.HasTraits,
                                         np.Inf)
                 
     def get_current_signal(self):
-        cs = self.get_deepcopy_with_new_data(self())
+        cs = self._deepcopy_with_new_data(self())
         for axis in cs.axes_manager.navigation_axes:
             cs.axes_manager.remove(axis)
         if cs.tmp_parameters.has_item('filename'):
