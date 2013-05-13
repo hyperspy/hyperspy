@@ -296,7 +296,7 @@ class Signal2DTools(object):
             return_shifts = False
         # Translate with sub-pixel precision if necesary 
         for im, shift in zip(self._iterate_signal(copy=False),
-                              shifts):
+                              shifts.ravel()):
             if np.any(shift):
                 shift_image(im, -shift,
                     fill_value=fill_value)
@@ -381,7 +381,7 @@ class Signal1DTools(object):
             maxval=self.axes_manager.navigation_size)
         for i, (dat, shift) in enumerate(zip(
                 self._iterate_signal(),
-                shift_array)):
+                shift_array.ravel(()))):
             si = sp.interpolate.interp1d(original_axis,
                                          dat,
                                          bounds_error=False,
