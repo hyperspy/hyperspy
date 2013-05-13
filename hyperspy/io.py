@@ -229,7 +229,7 @@ def load(filenames=None, record_by=None, signal_type=None,
                     obj.mapped_parameters.as_dictionary()
                 del obj
             messages.information('Individual files loaded correctly')
-            signal.print_summary()
+            signal._print_summary()
             objects = [signal,]
         else:
             objects=[load_single_file(filename, output_level=0,
@@ -325,7 +325,7 @@ def load_with_reader(filename, reader, record_by=None,
         s.tmp_parameters.filename = filename
         s.tmp_parameters.extension = extension.replace('.','')
         objects.append(s)
-        s.print_summary()
+        s._print_summary()
 
     if len(objects) == 1:
         objects = objects[0]

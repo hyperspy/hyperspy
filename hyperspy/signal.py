@@ -2186,7 +2186,7 @@ class Signal(t.HasTraits,
         self.data = old_data
         return ns
             
-    def print_summary(self):
+    def _print_summary(self):
         string = "\n\tTitle: "
         string += self.mapped_parameters.title.decode('utf8')
         if hasattr(self.mapped_parameters,'signal_type'):
