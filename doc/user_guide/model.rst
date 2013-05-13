@@ -60,7 +60,7 @@ In fact, components may be created automatically in some cases. For example, if 
 .. code-block:: python
     
     >>> gaussian = components.Gaussian() # Create a Gaussian function component
-    >>> m.append(gaussian) # Add it to the model_cube
+    >>> m.append(gaussian) # Add it to the model
     >>> m # Print the model components 
     [<Gaussian component>]
     >>> gaussian2 = components.Gaussian() # Create another gaussian components

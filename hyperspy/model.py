@@ -68,10 +68,6 @@ class Model(list):
         self.axes_manager.connect(self.fetch_stored_values)
          
         self.free_parameters_boundaries = None
-        # TODO: model cube should dissapear or at least be an option
-        self.model_cube = np.zeros(self.spectrum.data.shape, 
-                                   dtype = 'float')
-        self.model_cube[:] = np.nan
         self.channel_switches=np.array([True] * len(self.axis.axis))
         self._low_loss = None
         self._position_widgets = []
@@ -171,27 +167,48 @@ class Model(list):
                 parameter.disconnect(self.update_plot)
     
 
-    def generate_data_from_model(self, out_of_range_to_nan=True):
-        """Generate a SI with the current model
+    def as_signal(self, out_of_range_to_nan=True):
+        """Returns a recreation of the dataset using the model.
+        the spectral range that is not fitted is filled with nans.
         
-        The SI is stored in self.model_cube
+        Parameters
+        ----------
+        out_of_range_to_nan : bool
+            If True the spectral range that is not fitted is filled with nans.
+            
+        Returns
+        -------
+        spectrum : An instance of the same class as `spectrum`.
+    
         """
+        # TODO: model cube should dissapear or at least be an option
+        data = np.zeros(self.spectrum.data.shape,dtype='float')
+        data[:] = np.nan
+        if out_of_range_to_nan is True:
+            channel_switches_backup = copy.copy(self.channel_switches)
+            self.channel_switches[:] = True
         maxval = self.axes_manager.navigation_size
         if maxval > 0:
             pbar = progressbar.progressbar(maxval=maxval)
         i = 0
         for index in self.axes_manager:
             self.fetch_stored_values(only_fixed=False)
-            self.model_cube[self.axes_manager._getitem_tuple][
+            data[self.axes_manager._getitem_tuple][
             self.channel_switches] = self.__call__(
                 non_convolved=not self.convolved, onlyactive=True)
-            if out_of_range_to_nan is True:
-                self.model_cube[self.axes_manager._getitem_tuple][
-                self.channel_switches == False] = np.nan
             i += 1
             if maxval > 0:
                 pbar.update(i)
         pbar.finish()
+        if out_of_range_to_nan is True:
+            self.channel_switches[:] = channel_switches_backup
+        spectrum = self.spectrum.__class__(
+            data,
+            axes=self.spectrum.axes_manager._get_axes_dicts())
+        spectrum.mapped_parameters.title = (
+            self.spectrum.mapped_parameters.title + " from fitted model")
+        return spectrum
+        
         
     def _get_auto_update_plot(self):
         if self._plot is not None and self._plot.is_active() is True:
