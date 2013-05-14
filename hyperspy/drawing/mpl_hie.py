@@ -68,7 +68,7 @@ class MPL_HyperImage_Explorer():
             imf = image.ImagePlot()
             imf.data_function = self.navigator_data_function
             imf.title = self.signal_title + ' Navigator'
-            imf.xaxis, imf.yaxis = self.axes_manager.navigation_axes
+            imf.xaxis, imf.yaxis = self.axes_manager.navigation_axes[:2]
             imf.plot()
             self.pointer.add_axes(imf.ax)
             if self.axes_manager.navigation_dimension > 2:
