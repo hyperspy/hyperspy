@@ -2164,9 +2164,12 @@ class Signal(MVA,
         """
         old_data = self.data
         self.data = None
+        old_plot = self._plot
+        self._plot = None
         ns = self.deepcopy()
         ns.data = data
         self.data = old_data
+        self._plot = old_plot
         return ns
             
     def _print_summary(self):

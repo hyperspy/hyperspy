@@ -23,7 +23,6 @@ import traits.api as t
 import traitsui.api as tui
 from traits.trait_errors import TraitError
 
-from hyperspy import messages
 
 def get_axis_group(n , label=''):
     group = tui.Group(
