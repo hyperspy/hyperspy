@@ -142,13 +142,6 @@ class DataAxis(t.HasTraits):
                 "This DataAxis does not belong to an AxesManager"
                 " and therefore its index_in_array attribute "
                 " is not defined")
-    @property            
-    def _navigation_shape_in_array(self):
-        return self.navigation_shape[::-1]
-        
-    @property            
-    def _signal_shape_in_array(self):
-        return self.signal_shape[::-1]
                         
     def _get_positive_index(self, index):
         if index < 0:
@@ -448,6 +441,14 @@ class AxesManager(t.HasTraits):
     def _get_axes_in_natural_order(self):
         return self.navigation_axes + self.signal_axes
         
+    @property            
+    def _navigation_shape_in_array(self):
+        return self.navigation_shape[::-1]
+        
+    @property            
+    def _signal_shape_in_array(self):
+        return self.signal_shape[::-1]
+        
     def remove(self, axis):
         """Remove the given Axis.
         
@@ -459,7 +460,6 @@ class AxesManager(t.HasTraits):
         if axis not in self._axes:
             raise ValueError(
                 "AxesManager.remove(x): x not in AxesManager")
-        index = self._axes.index(axis)
         self._axes.remove(axis)
             
     def __delitem__(self, i):
@@ -535,7 +535,7 @@ class AxesManager(t.HasTraits):
         else:
             self._index += 1
             val = np.unravel_index(self._index, 
-                                   tuple(self.navigation_shape[::-1]))[::-1]
+                                   tuple(self._navigation_shape_in_array))[::-1]
             self.indices = val
         return val
 

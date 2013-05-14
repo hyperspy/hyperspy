@@ -118,7 +118,7 @@ def _plot_2D_component(factors, idx, axes_manager,
     if ax==None:
         ax=plt.gca()
     axes=axes_manager.signal_axes[::-1]
-    shape=axes_manager.signal_shape[::-1]
+    shape=axes_manager._signal_shape_in_array
     extent=None
     if calibrate:
         extent=(axes[1].low_value,
@@ -171,13 +171,14 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
     if axes_manager.navigation_dimension==2:
         extent=None
         # get calibration from a passed axes_manager
-        shape=axes_manager.navigation_shape
+        shape=axes_manager._navigation_shape_in_array
         if calibrate:
             extent=(axes[0].low_value,
                     axes[0].high_value,
                     axes[1].high_value,
                     axes[1].low_value)
-        im=ax.imshow(loadings[idx].reshape(shape),cmap=cmap,extent=extent,
+        im=ax.imshow(loadings[idx].reshape(shape),
+                     cmap=cmap,extent=extent,
                      interpolation='nearest')
         if calibrate:
             plt.xlabel(axes[0].units)

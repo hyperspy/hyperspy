@@ -363,7 +363,7 @@ class MVA():
             if not isinstance(signal_mask, slice):
                 # Store the (inverted, as inputed) signal mask 
                 target.signal_mask = ~signal_mask.reshape(
-                    self.axes_manager.signal_shape)
+                    self.axes_manager._signal_shape_in_array)
                 if reproject not in ('both', 'signal'):
                     factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
                     factors[signal_mask == True,:] = target.factors
@@ -372,7 +372,7 @@ class MVA():
             if not isinstance(navigation_mask, slice):
                 # Store the (inverted, as inputed) navigation mask
                 target.navigation_mask = ~navigation_mask.reshape(
-                    self.axes_manager.navigation_shape)
+                    self.axes_manager._navigation_shape_in_array)
                 if reproject not in ('both', 'navigation'):
                     loadings = np.zeros((dc.shape[0], target.loadings.shape[1]))
                     loadings[navigation_mask == True,:] = target.loadings

@@ -343,7 +343,7 @@ class Parameter(object):
         multidimensional datasets.
         
         """
-        shape = self._axes_manager.navigation_shape
+        shape = self._axes_manager._navigation_shape_in_array
         if len(shape) == 1 and shape[0] == 0:
             shape = [1,]
         dtype_ = np.dtype([
@@ -381,9 +381,8 @@ class Parameter(object):
         if self._axes_manager.navigation_dimension == 0:
             raise NavigationDimensionError(0, '>0')
             
-        s = Signal(
-            {'data' : self.map[field],
-             'axes' : self._axes_manager._get_navigation_axes_dicts()})
+        s = Signal(data=self.map[field],
+                   axes=self._axes_manager._get_navigation_axes_dicts())
         s.mapped_parameters.title = self.name
         for axis in s.axes_manager._axes:
             axis.navigate = False

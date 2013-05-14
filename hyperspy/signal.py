@@ -351,7 +351,7 @@ class Signal1DTools(object):
         ----------
         shift_array : numpy array
             An array containing the shifting amount. It must have
-            `axes_manager.navigation_shape` shape.
+            `axes_manager._navigation_shape_in_array` shape.
         interpolation_method : str or int
             Specifies the kind of interpolation as a string ('linear',
             'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an 
@@ -488,7 +488,7 @@ class Signal1DTools(object):
             reference_indices = self.axes_manager.indices
 
         i1, i2 = axis._get_index(start), axis._get_index(end) 
-        shift_array = np.zeros(self.axes_manager.navigation_shape)
+        shift_array = np.zeros(self.axes_manager._navigation_shape_in_array)
         ref = self.navigation_indexer[reference_indices].data[i1:i2]
         if interpolate is True:
             ref = utils.interpolate1D(ip, ref)
@@ -872,10 +872,10 @@ class Signal1DTools(object):
 
         Returns
         -------
-        peaks : structured array of shape navigation_shape in which each cells
-        contains an array that contains as many structured arrays as peaks
-        where found at that location and which fields: position, width, height
-        contains position, height, and width of each peak.
+        peaks : structured array of shape _navigation_shape_in_array in which
+        each cell contains an array that contains as many structured arrays as 
+        peaks where found at that location and which fields: position, width, 
+        height contains position, height, and width of each peak.
             
         Raises
         ------
@@ -885,7 +885,7 @@ class Signal1DTools(object):
         # TODO: add scipy.signal.find_peaks_cwt
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0].axis
-        arr_shape = (self.axes_manager.navigation_shape
+        arr_shape = (self.axes_manager._navigation_shape_in_array
                  if self.axes_manager.navigation_size > 0
                  else [1,])
         peaks = np.zeros(arr_shape, dtype=object)
@@ -1247,7 +1247,7 @@ class MVATools(object):
                 axes_dicts[1]['index_in_array'] = 1
                 
                 factor_data = factors.reshape(
-                    self.axes_manager.signal_shape + [-1,])
+                    self.axes_manager._signal_shape_in_array + [-1,])
                 
                 for dim,index in zip(comp_ids,range(len(comp_ids))):
                     im = Image(factor_data[...,index],
@@ -3113,14 +3113,14 @@ class Signal(MVA,
             return None
         elif self.axes_manager.navigation_dimension == 1:
             from hyperspy.signals.spectrum import Spectrum
-            s = Spectrum(np.zeros(self.axes_manager.navigation_shape),
+            s = Spectrum(np.zeros(self.axes_manager._navigation_shape_in_array),
                          axes=self.axes_manager._get_navigation_axes_dicts())
         elif self.axes_manager.navigation_dimension == 2:
             from hyperspy.signals.image import Image
-            s = Image(np.zeros(self.axes_manager.navigation_shape),
+            s = Image(np.zeros(self.axes_manager._navigation_shape_in_array),
                       axes=self.axes_manager._get_navigation_axes_dicts())
         else:
-            s = Signal(np.zeros(self.axes_manager.navigation_shape),
+            s = Signal(np.zeros(self.axes_manager._navigation_shape_in_array),
                        axes=self.axes_manager._get_navigation_axes_dicts())
         return s
                 
@@ -3133,7 +3133,7 @@ class Signal(MVA,
         return self.get_current_signal()
         
     def __len__(self):
-        return self.axes_manager.signal_shape[0]
+        return self.axes_manager.signal_shape[-1]
         
 # Implement binary operators
 for name in (

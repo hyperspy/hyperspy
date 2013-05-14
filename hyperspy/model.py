@@ -922,11 +922,11 @@ class Model(list):
             messages.information(
             "When multifit finishes its job the file will be deleted")
         if mask is not None and \
-        (mask.shape != tuple(self.axes_manager.navigation_shape)):
+        (mask.shape != tuple(self.axes_manager._navigation_shape_in_array)):
            messages.warning_exit(
            "The mask must be a numpy array of boolen type with "
-           " the same shape as the navigation: %s" % 
-           self.axes_manager.navigation_shape)
+           " shape: %s" % 
+           self.axes_manager._navigation_shape_in_array)
         masked_elements = 0 if mask is None else mask.sum()
         maxval=self.axes_manager.navigation_size - masked_elements
         if maxval > 0:

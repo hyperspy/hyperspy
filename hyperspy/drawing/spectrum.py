@@ -246,7 +246,7 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
     if axes_manager.navigation_dimension==2:
         extent=None
         # get calibration from a passed axes_manager
-        shape=axes_manager.navigation_shape
+        shape=axes_manager._navigation_shape_in_array
         if calibrate:
             extent=(axes_manager._axes[0].low_value,
                     axes_manager._axes[0].high_value,

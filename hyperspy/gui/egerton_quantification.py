@@ -239,8 +239,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
     def __init__(self, signal,navigation_mask=None, signal_mask=None):
         super(SpikesRemoval, self).__init__(signal)
         self.interpolated_line = None
-        self.coordinates = [coordinate for coordinate in np.ndindex(
-                            tuple(signal.axes_manager.navigation_shape))
+        self.coordinates = [coordinate for coordinate in 
+                            signal.axes_manager._am_indices_generator()
                             if (navigation_mask is None or not 
                                 navigation_mask[coordinate[::-1]])]
         self.signal = signal
