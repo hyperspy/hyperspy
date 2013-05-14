@@ -3094,9 +3094,11 @@ class Signal(MVA,
                                         np.Inf)
                 
     def get_current_signal(self):
-        cs = self._deepcopy_with_new_data(self())
-        for axis in cs.axes_manager.navigation_axes:
-            cs.axes_manager.remove(axis)
+        cs = self.__class__(
+                    self(),
+                    axes=self.axes_manager._get_signal_axes_dicts(),
+                    mapped_parameters=self.mapped_parameters.as_dictionary(),)
+
         if cs.tmp_parameters.has_item('filename'):
             basename = cs.tmp_parameters.filename
             ext = cs.tmp_parameters.extension
