@@ -23,6 +23,10 @@ import traits.api as t
 import traitsui.api as tui
 from traits.trait_errors import TraitError
 
+class ndindex_nat(np.ndindex):
+    def next(self):
+        return super(ndindex_nat, self).next()[::-1]
+
 
 def get_axis_group(n , label=''):
     group = tui.Group(
@@ -138,6 +142,13 @@ class DataAxis(t.HasTraits):
                 "This DataAxis does not belong to an AxesManager"
                 " and therefore its index_in_array attribute "
                 " is not defined")
+    @property            
+    def _navigation_shape_in_array(self):
+        return self.navigation_shape[::-1]
+        
+    @property            
+    def _signal_shape_in_array(self):
+        return self.signal_shape[::-1]
                         
     def _get_positive_index(self, index):
         if index < 0:
@@ -403,10 +414,15 @@ class AxesManager(t.HasTraits):
                 raise IndexError("index out of bounds")
         return axis
         
-    def _indices_generator(self):
+    def _array_indices_generator(self):
         shape = (self.navigation_shape if self.navigation_size > 0 else
                  [1,])
         return np.ndindex(*shape)
+        
+    def _am_indices_generator(self):
+        shape = (self.navigation_shape if self.navigation_size > 0 else
+                 [1,])[::-1]
+        return ndindex_nat(*shape)
     
     def __getitem__(self, y):
         """x.__getitem__(y) <==> x[y]
@@ -519,7 +535,7 @@ class AxesManager(t.HasTraits):
         else:
             self._index += 1
             val = np.unravel_index(self._index, 
-                                    tuple(self.navigation_shape))
+                                   tuple(self.navigation_shape[::-1]))[::-1]
             self.indices = val
         return val
 

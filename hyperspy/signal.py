@@ -496,7 +496,7 @@ class Signal1DTools(object):
             maxval=self.axes_manager.navigation_size)
         for i, (dat, indices) in enumerate(zip(
                     self._iterate_signal(),
-                    self.axes_manager._indices_generator())):
+                    self.axes_manager._array_indices_generator())):
             dat = dat[i1:i2]
             if interpolate is True:
                 dat = utils.interpolate1D(ip, dat)
@@ -890,7 +890,7 @@ class Signal1DTools(object):
                  else [1,])
         peaks = np.zeros(arr_shape, dtype=object)
         for y, indices in zip(self._iterate_signal(),
-                              self.axes_manager._indices_generator()):
+                              self.axes_manager._array_indices_generator()):
             peaks[indices] = find_peaks_ohaver(
                                                 y,
                                                 axis,
