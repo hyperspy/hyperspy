@@ -2293,7 +2293,7 @@ class Signal(MVA,
     def _get_hse_2D_explorer(self, *args, **kwargs):
         slices = [0,] * len(self.axes_manager._axes)
         for i, axis in enumerate(
-                            self.axes_manager.navigation_axes[::-1]):
+                            self.axes_manager.navigation_axes):
             if i < 2:
                 slices[axis.index_in_array] = slice(None, None, None)
             else:
