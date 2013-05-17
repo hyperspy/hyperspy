@@ -1,5 +1,7 @@
 syntax: glob
+.spyderworkspace
 *.pyc
+*.swp
 *~
 *.bak
 *.mex

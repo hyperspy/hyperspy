@@ -8,7 +8,7 @@
 
 !addplugindir ".\release"
 
-!define S_NAME "Hyperspy_32bit"
+!define S_NAME "Hyperspy_64bit"
 !define APPNAME "Hyperspy"
 !define S_DEFINSTDIR_USER "$LocalAppData\${APPNAME}"
 !define S_DEFINSTDIR_ADMIN "$ProgramFiles\${APPNAME}"
@@ -175,19 +175,19 @@ Section "Required Files"
 SectionIn RO
   setOutPath $INSTDIR
   ;ADD YOUR OWN FILES HERE...
-  File /r "WinPython32\*"
+  File /r "WinPython64\*"
   ${If} $InstMode > 0
       ; Create right-click context menu entries for Hyperspy Here
 	  Exec 'cmd.exe /C ""$INSTDIR\WinPython Command Prompt.exe" install_hyperspy_here & exit"'
 
   ${EndIf}
   CreateDirectory "$SMPROGRAMS\${APPNAME}"
-  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\python-2.7.4\Scripts\hyperspy.bat"
+  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\python-2.7.4.amd64\Scripts\hyperspy.bat"
   ;Write uninstall start menu shortcut
   createShortCut "$SMPROGRAMS\${APPNAME}\Uninstall ${APPNAME}.lnk" '"${UNINSTALLER_FULLPATH}"'
-  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME} QtConsole.lnk" "$INSTDIR\python-2.7.4\Scripts\hyperspy_qtconsole.bat" "" "$INSTDIR\python-2.7.4\Lib\site-packages\hyperspy\data\hyperspy_qtconsole_logo.ico" 0
-  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME} Notebook.lnk" "$INSTDIR\python-2.7.4\Scripts\hyperspy_notebook.bat" "" "$INSTDIR\python-2.7.4\Lib\site-packages\hyperspy\data\hyperspy_notebook_logo.ico" 0
-  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME} Notebook.lnk" "$INSTDIR\python-2.7.4\Scripts\hyperspy_notebook.bat" "" "$INSTDIR\python-2.7.4\Lib\site-packages\hyperspy\data\hyperspy_notebook_logo.ico" 0
+  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME} QtConsole.lnk" "$INSTDIR\python-2.7.4.amd64\Scripts\hyperspy_qtconsole.bat" "" "$INSTDIR\python-2.7.4.amd64\Lib\site-packages\hyperspy\data\hyperspy_qtconsole_logo.ico" 0
+  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME} Notebook.lnk" "$INSTDIR\python-2.7.4.amd64\Scripts\hyperspy_notebook.bat" "" "$INSTDIR\python-2.7.4.amd64\Lib\site-packages\hyperspy\data\hyperspy_notebook_logo.ico" 0
+  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME} Notebook.lnk" "$INSTDIR\python-2.7.4.amd64\Scripts\hyperspy_notebook.bat" "" "$INSTDIR\python-2.7.4.amd64\Lib\site-packages\hyperspy\data\hyperspy_notebook_logo.ico" 0
 SectionEnd
 
 Section Uninstaller

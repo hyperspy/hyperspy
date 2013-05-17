@@ -93,7 +93,10 @@ class EELSModel(Model):
             self._spectrum = value
             self.spectrum._are_microscope_parameters_missing()
         else:
-            raise WrongObjectError(str(type(value)), 'EELSSpectrum')
+            raise ValueError(
+                "This attribute can only contain an EELSSpectrum "
+                "but an object of type %s was provided" % 
+                str(type(value)))
                     
             
     def _touch(self):
@@ -270,7 +273,7 @@ class EELSModel(Model):
         weights : {None, True, numpy.array}
             If None, performs standard least squares. If True 
             performs weighted least squares where the weights are 
-            calculated using spectrum.Spectrum.estimate_variance. 
+            calculated using spectrum.Spectrum.estimate_poissonian_noise_variance. 
             Alternatively, external weights can be supplied by passing
             a weights array of the same dimensions as the signal.
         ext_bounding : bool
@@ -347,8 +350,8 @@ class EELSModel(Model):
             self._fit_edge(i, start_energy, **kwargs)
             
     def fit_background(self,start_energy=None, kind='single', **kwargs):
-        """Fit an EELS spectrum ionization edge by ionization edge from left 
-        to right to optimize convergence.
+        """Fit the background to the first active ionization edge 
+        in the energy range.
         
         Parameters
         ----------
@@ -363,23 +366,26 @@ class EELSModel(Model):
         multifit, depending on the value of kind.
         
         """
+        
+        # If there is no active background compenent do nothing
+        if not [bg for bg in self._background_components if bg.active]:
+            return
+            
         ea = self.axis.axis[self.channel_switches]
-
-        print "Fitting the", self._backgroundtype, "background"
+        #~print "Fitting the", self._backgroundtype, "background"
         edges = copy.copy(self.edges)
         edge = edges.pop(0)
         if start_energy is None:
             start_energy = ea[0]
         i = 0
-        while edge.onset_energy.value < start_energy or edge.active is False:
+        while (edge.onset_energy.value < start_energy or 
+               edge.active is False):
             i+=1
             edge = edges.pop(0)
-        self.set_signal_range(start_energy,edge.onset_energy.value - \
-        preferences.EELS.preedge_safe_window_width)
-        active_edges = []
-        for edge in self.edges[i:]:
-            if edge.active:
-                active_edges.append(edge)
+        self.set_signal_range(
+            start_energy, edge.onset_energy.value - 
+            preferences.EELS.preedge_safe_window_width)
+        active_edges = [edge for edge in self.edges[i:] if bg.active]
         self.disable_edges(active_edges)
         if kind == 'single':
             self.fit(**kwargs)
@@ -435,7 +441,7 @@ class EELSModel(Model):
         
         if powerlaw.estimate_parameters(
             self.spectrum, E1, E2, False) is True:
-            self.charge()
+            self.fetch_stored_values()
         else:
             messages.warning(
             "The power law background parameters could not "
@@ -454,19 +460,19 @@ class EELSModel(Model):
         if edge.intensity.twin is not None or edge.active is False or \
         edge.onset_energy.value < start_energy or edge.onset_energy.value > ea[-1]:
             return 1
-        print "Fitting edge ", edge.name 
+        #~print "Fitting edge ", edge.name 
         last_index = len(self.edges) - 1
         i = 1
         twins = []
-        print "Last edge index", last_index
+        #~print "Last edge index", last_index
         while edgenumber + i <= last_index and (
         self.edges[edgenumber+i].intensity.twin is not None or 
         self.edges[edgenumber+i].active is False):
             if self.edges[edgenumber+i].intensity.twin is not None:
                 twins.append(self.edges[edgenumber+i])
             i+=1
-        print "twins", twins
-        print "next_edge_index", edgenumber + i
+        #~print "twins", twins
+        #~print "next_edge_index", edgenumber + i
         if  (edgenumber + i) > last_index:
             nextedgeenergy = ea[-1]
         else:
@@ -482,7 +488,7 @@ class EELSModel(Model):
         
         # Smart Fitting
 
-        print("Fitting region: %s-%s" % (start_energy,nextedgeenergy))
+        #~print("Fitting region: %s-%s" % (start_energy,nextedgeenergy))
 
         # Without fine structure to determine onset_energy
         edges_to_activate = []
@@ -490,19 +496,19 @@ class EELSModel(Model):
             if edge_.active is True and edge_.onset_energy.value >= nextedgeenergy:
                 edge_.active = False
                 edges_to_activate.append(edge_)
-        print "edges_to_activate", edges_to_activate
-        print "Fine structure to fit", to_activate_fs
+        #~print "edges_to_activate", edges_to_activate
+        #~print "Fine structure to fit", to_activate_fs
         
         self.set_signal_range(start_energy, nextedgeenergy)
         if edge.free_onset_energy is True:
-            print "Fit without fine structure, onset_energy free"
+            #~print "Fit without fine structure, onset_energy free"
             edge.onset_energy.free = True
             self.fit(**kwargs)
             edge.onset_energy.free = False
             print "onset_energy = ", edge.onset_energy.value
             self._touch()
         elif edge.intensity.free is True:
-            print "Fit without fine structure"
+            #~print "Fit without fine structure"
             self.enable_fine_structure(to_activate_fs)
             self.remove_fine_structure_data(to_activate_fs)
             self.disable_fine_structure(to_activate_fs)
@@ -511,7 +517,7 @@ class EELSModel(Model):
         if len(to_activate_fs) > 0:
             self.set_signal_range(start_energy, nextedgeenergy)
             self.enable_fine_structure(to_activate_fs)
-            print "Fit with fine structure"
+            #~print "Fit with fine structure"
             self.fit(**kwargs)
             
         self.enable_edges(edges_to_activate)

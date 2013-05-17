@@ -16,10 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-import image
-import spectrum
-import widgets
-import utils
+from hyperspy.drawing import widgets, spectrum, image, utils
+from hyperspy.gui.axes import navigation_sliders
 
 class MPL_HyperImage_Explorer():
     """
@@ -45,14 +43,14 @@ class MPL_HyperImage_Explorer():
         imf.axes_manager = self.axes_manager
         imf.data_function = self.signal_data_function
         imf.title = self.signal_title
-        imf.yaxis, imf.xaxis = self.axes_manager.signal_axes
+        imf.xaxis, imf.yaxis = self.axes_manager.signal_axes
         imf.plot_colorbar = True
         imf.plot()
         self.signal_plot = imf
         
         if self.navigator_plot is not None and imf.figure is not None:
             utils.on_figure_window_close(self.navigator_plot.figure, 
-            self._close_pointer)
+            self._disconnect)
             utils.on_figure_window_close(
                 imf.figure, self.close_navigator_plot)
             self._key_nav_cid = \
@@ -66,13 +64,18 @@ class MPL_HyperImage_Explorer():
         if self.navigator_plot is not None:
             self.navigator_plot.plot()
             return
-        if self.axes_manager.navigation_dimension == 2:
+        if self.axes_manager.navigation_dimension >= 2:
             imf = image.ImagePlot()
             imf.data_function = self.navigator_data_function
             imf.title = self.signal_title + ' Navigator'
-            imf.yaxis, imf.xaxis = self.axes_manager.navigation_axes
+            imf.xaxis, imf.yaxis = self.axes_manager.navigation_axes[:2]
             imf.plot()
             self.pointer.add_axes(imf.ax)
+            if self.axes_manager.navigation_dimension > 2:
+                navigation_sliders(
+                    self.axes_manager.navigation_axes[::-1])
+                for axis in self.axes_manager.navigation_axes[:-2]:
+                    axis.connect(imf.update_image)
             self.navigator_plot = imf
             
         if self.axes_manager.navigation_dimension == 1:
@@ -97,7 +100,7 @@ class MPL_HyperImage_Explorer():
             self.pointer.add_axes(sf.ax)
     
     def close_navigator_plot(self):
-        self._close_pointer()
+        self._disconnect()
         self.navigator_plot.close()
     
     def is_active(self):
@@ -114,7 +117,7 @@ class MPL_HyperImage_Explorer():
             
     def assign_pointer(self):
         nav_dim = self.axes_manager.navigation_dimension
-        if nav_dim == 2:
+        if nav_dim >= 2:
             Pointer = widgets.DraggableSquare
         elif nav_dim == 1:
             Pointer = widgets.DraggableVerticalLine
@@ -122,7 +125,11 @@ class MPL_HyperImage_Explorer():
             Pointer = None
         return Pointer
         
-    def _close_pointer(self):
+    def _disconnect(self):
+        if (self.axes_manager.navigation_dimension > 2 and 
+            self.navigator_plot is not None):
+                for axis in self.axes_manager.navigation_axes[:-2]:
+                    axis.disconnect(self.navigator_plot.update_image)
         if self.pointer is not None:
             self.pointer.disconnect(self.navigator_plot.ax)            
     def close(self):         

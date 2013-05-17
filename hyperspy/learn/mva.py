@@ -364,7 +364,7 @@ class MVA():
             if not isinstance(signal_mask, slice):
                 # Store the (inverted, as inputed) signal mask 
                 target.signal_mask = ~signal_mask.reshape(
-                    self.axes_manager.signal_shape)
+                    self.axes_manager._signal_shape_in_array)
                 if reproject not in ('both', 'signal'):
                     factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
                     factors[signal_mask == True,:] = target.factors
@@ -373,7 +373,7 @@ class MVA():
             if not isinstance(navigation_mask, slice):
                 # Store the (inverted, as inputed) navigation mask
                 target.navigation_mask = ~navigation_mask.reshape(
-                    self.axes_manager.navigation_shape)
+                    self.axes_manager._navigation_shape_in_array)
                 if reproject not in ('both', 'navigation'):
                     loadings = np.zeros((dc.shape[0], target.loadings.shape[1]))
                     loadings[navigation_mask == True,:] = target.loadings
@@ -389,8 +389,7 @@ class MVA():
     
     def get_factors_as_spectrum(self):
         from hyperspy.signals.spectrum import Spectrum
-        return Spectrum(
-            {'data' : self.learning_results.factors.T.copy()})
+        return Spectrum(self.learning_results.factors.T.copy())
     
     def blind_source_separation(self,
                                 number_of_components=None,
@@ -460,7 +459,7 @@ class MVA():
                     
             if pretreatment is not None:
                 from hyperspy.signals.spectrum import Spectrum
-                sfactors = Spectrum({'data' : factors.T})
+                sfactors = Spectrum(factors.T)
                 if pretreatment['algorithm'] == 'savitzky_golay':
                     sfactors.smooth_savitzky_golay(
                         number_of_points=pretreatment[

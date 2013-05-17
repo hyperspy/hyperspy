@@ -91,11 +91,11 @@ class Polynomial(Component):
     
     """
 
-    def __init__(self, order = 2):
+    def __init__(self, order=2):
         Component.__init__(self, ['coefficients',])
+        self.coefficients._number_of_elements = order + 1
         self.coefficients.value = np.zeros((order + 1,))
         self.coefficients.grad = self.grad_coefficients
-        self.coefficients._number_of_elements = order + 1
         
     def get_polynomial_order(self):
         return len(self.coefficients.value) - 1
@@ -152,17 +152,17 @@ class Polynomial(Component):
         else:
             if self.coefficients.map is None:
                 self._create_arrays()
-            nav_shape = signal.axes_manager.navigation_shape
+            nav_shape = signal.axes_manager._navigation_shape_in_array
             signal.unfold()
             dc = signal.data
             # For polyfit the spectrum goes in the first axis
             if axis.index_in_array > 0:
-                dc = dc.T
+                dc = np.rollaxis(dc, axis.index_in_array, 0)
             cmaps = np.polyfit(axis.axis[i1:i2],
                 dc[i1:i2,:], self.get_polynomial_order()).reshape([
                 self.get_polynomial_order() + 1,] + nav_shape)
             self.coefficients.map['values'][:] = np.rollaxis(cmaps, 0, 
-                len(cmaps.shape))
+                axis.index_in_array)
             self.coefficients.map['is_set'][:] = True
             signal.fold()
             return True
