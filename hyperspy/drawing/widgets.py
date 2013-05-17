@@ -21,22 +21,19 @@ import copy
 
 import matplotlib.pyplot as plt
 import matplotlib.widgets
+import matplotlib.transforms as transforms
 import numpy as np
 import traits
 
 from utils import on_figure_window_close
-#if self.blit is True:
-#                self.patch.set_animated(True)
-#                canvas = self.ax.figure.canvas
-#                canvas.draw()
-#                self.background = canvas.copy_from_bbox(self.ax.bbox)
-#                self.ax.draw_artist(self.patch)
-#                self.ax.figure.canvas.blit()
+from hyperspy.misc.utils import closest_nice_number
+from hyperspy.drawing.utils import does_figure_object_exists
+
 class DraggablePatch(object):
     """
     """
 
-    def __init__(self, axes_manager = None):
+    def __init__(self, axes_manager=None):
         """
         Add a cursor to ax.
         """
@@ -46,13 +43,11 @@ class DraggablePatch(object):
         self.size = 1.
         self.color = 'red'
         self.__is_on = True
-        self._2D = True # Whether the cursor lives in the 2D dimension
+        self._2D = True  # Whether the cursor lives in the 2D dimension
         self.patch = None
         self.cids = list()
-        # Blitting seems to be supported by all the backends but Qt4
-        # however, ATM there is a bug in Hyperspy that precludes using 2 pointers
-        # when blit is active, therefore it is disable by default for the moment
-        self.blit = False #(plt.get_backend() !=  'Qt4Agg')
+        self.blit = True
+        self.background = None
 
     def is_on(self):
         return self.__is_on
@@ -63,48 +58,45 @@ class DraggablePatch(object):
                 self.add_patch_to(self.ax)
                 self.connect(self.ax)
             elif value is False:
-                if self._2D:
-                    self.ax.patches.remove(self.patch)
-                else:
-                    self.ax.lines.remove(self.patch)
-                self.we_are_animated.remove(self.patch)
+                for container in [
+                        self.ax.patches,
+                        self.ax.lines,
+                        self.ax.artists,
+                        self.ax.texts]:
+                    if self.patch in container:
+                        container.remove(self.patch)
                 self.disconnect(self.ax)
             self.__is_on = value
-            self.ax.figure.canvas.draw()
-
+            if does_figure_object_exists(self.ax.figure):
+                self.ax.figure.canvas.draw()
+            else:
+                self.ax = None
+                
     def set_patch(self):
         pass
         # Must be provided by the subclass
 
     def add_patch_to(self, ax):
         self.set_patch()
-        if self._2D is True:
-            ax.add_patch(self.patch)
-        else:
-            ax.add_line(self.patch)
+        ax.add_artist(self.patch)
         canvas = ax.figure.canvas
-        if not hasattr(canvas, 'we_are_animated'):
-            canvas.we_are_animated = list()
-        ax.figure.canvas.we_are_animated.append(self.patch)
+        self.patch.set_animated(hasattr(ax, 'hspy_fig'))
 
     def add_axes(self, ax):
         self.ax = ax
         canvas = ax.figure.canvas
-
         if self.is_on() is True:
             self.add_patch_to(ax)
             self.connect(ax)
             canvas.draw()
-
+            
     def connect(self, ax):
         canvas = ax.figure.canvas
-        self.cids.append(canvas.mpl_connect('motion_notify_event', self.onmove))
+        self.cids.append(
+            canvas.mpl_connect('motion_notify_event', self.onmove))
         self.cids.append(canvas.mpl_connect('pick_event', self.onpick))
-        if self.blit is True:
-            self.cids.append(
-            canvas.mpl_connect('draw_event', self.update_background))
-        self.cids.append(canvas.mpl_connect('button_release_event',
-        self.button_release))
+        self.cids.append(canvas.mpl_connect(
+            'button_release_event', self.button_release))
         self.axes_manager.connect(self.update_patch_position)
         on_figure_window_close(ax.figure, self.close)
 
@@ -116,15 +108,8 @@ class DraggablePatch(object):
                 pass
         self.axes_manager.disconnect(self.update_patch_position)
 
-    def close(self, window = None):
-        ax = self.ax
-        if self._2D is True:
-            if self.patch in ax.patches:
-                ax.patches.remove(self.patch)
-        else:
-            if self.patch in ax.lines:
-                ax.lines.remove(self.patch)
-        self.disconnect(ax)
+    def close(self, window=None):
+        self.set_on(False)
 
     def onpick(self, event):
         if event.artist is self.patch:
@@ -144,25 +129,11 @@ class DraggablePatch(object):
         if self.picked is True:
             self.picked = False
 
-    def update_background(self, *args):
-        if self.blit is True:
-            canvas = self.ax.figure.canvas
-            self.background = canvas.copy_from_bbox(self.ax.bbox)
-            for artist in canvas.we_are_animated:
-                self.ax.draw_artist(artist)
-            self.ax.figure.canvas.blit()
-
     def draw_patch(self, *args):
-        canvas = self.ax.figure.canvas
-        if self.blit is True:
-            canvas.restore_region(self.background)
-            # redraw just the current rectangle
-            for artist in canvas.we_are_animated:
-                self.ax.draw_artist(artist)
-            # blit just the redrawn area
-            canvas.blit()
+        if hasattr(self.ax, 'hspy_fig'):
+            self.ax.hspy_fig._draw_animated()
         else:
-            canvas.draw()
+            self.ax.figure.canvas.draw_idle()
 
 class ResizebleDraggablePatch(DraggablePatch):
 
@@ -194,7 +165,8 @@ class ResizebleDraggablePatch(DraggablePatch):
     def connect(self, ax):
         DraggablePatch.connect(self, ax)
         canvas = ax.figure.canvas
-        self.cids.append(canvas.mpl_connect('key_press_event', self.on_key_press))
+        self.cids.append(canvas.mpl_connect('key_press_event',
+                                            self.on_key_press))
 
 class DraggableSquare(ResizebleDraggablePatch):
 
@@ -202,38 +174,57 @@ class DraggableSquare(ResizebleDraggablePatch):
         DraggablePatch.__init__(self, axes_manager)
 
     def set_patch(self):
-        indexes = np.array(self.axes_manager.coordinates[::-1])
-        self.patch = \
-        plt.Rectangle(indexes - (self.size / 2.,) * 2,
-        self.size, self.size, animated = self.blit,
-        fill = False, lw = 2,  ec = self.color, picker = True,)
+        self.calculate_size()
+        self.calculate_position()
+        self.patch = plt.Rectangle(
+                        self._position, self._xsize, self._ysize,
+                        animated=self.blit,
+                        fill=False,
+                        lw=2,
+                        ec=self.color,
+                        picker=True,)
+        
+    def calculate_size(self):
+        xaxis = self.axes_manager.navigation_axes[0]
+        yaxis = self.axes_manager.navigation_axes[1]
+        self._xsize = xaxis.scale * self.size
+        self._ysize = yaxis.scale * self.size
+        
+    def calculate_position(self):
+        coordinates = np.array(self.axes_manager.coordinates[:2])
+        self._position = coordinates - (
+                            self._xsize / 2., self._ysize / 2.)
 
     def update_patch_size(self):
-        self.patch.set_width(self.size)
-        self.patch.set_height(self.size)
+        self.calculate_size()
+        self.patch.set_width(self._xsize)
+        self.patch.set_height(self._ysize)
         self.update_patch_position()
 
     def update_patch_position(self):
-        indexes = np.array(self.axes_manager.coordinates[::-1])
-        self.patch.set_xy(indexes - (self.size / 2.,) * 2)
+        self.calculate_position()
+        self.patch.set_xy(self._position)
         self.draw_patch()
 
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'
-
+        xaxis = self.axes_manager.navigation_axes[0]
+        yaxis = self.axes_manager.navigation_axes[1]
+        wxindex = xaxis.value2index(event.xdata)
+        wyindex = yaxis.value2index(event.ydata)
         if self.picked is True and event.inaxes:
-            if self.axes_manager.coordinates[0] != round(event.ydata):
+            wxindex = xaxis.value2index(event.xdata)
+            wyindex = yaxis.value2index(event.ydata)
+            if self.axes_manager.indices[1] != wyindex:
                 try:
-                    self.axes_manager.navigation_axes[0].index = \
-                    round(event.ydata)
+                    yaxis.index = wyindex
                 except traits.api.TraitError:
                     # Index out of range, we do nothing
                     pass
                     
-            if  self.axes_manager.coordinates[1] != round(event.xdata):
+            if  self.axes_manager.indices[0] != wxindex:
                 try:
-                    self.axes_manager.navigation_axes[1].index = \
-                    round(event.xdata)
+                    xaxis.index = wxindex
                 except traits.api.TraitError:
                     # Index out of range, we do nothing
                     pass
@@ -244,7 +235,6 @@ class DraggableHorizontalLine(DraggablePatch):
         self._2D = False
         # Despise the bug, we use blit for this one because otherwise the
         # it gets really slow
-        self.blit = True
 
     def update_patch_position(self):
         if self.patch is not None:
@@ -253,15 +243,16 @@ class DraggableHorizontalLine(DraggablePatch):
 
     def set_patch(self):
         ax = self.ax
-        self.patch = ax.axhline(self.axes_manager.coordinates[0],
-                                color = self.color,
-                               picker = 5, animated = self.blit)
+        self.patch = ax.axhline(
+            self.axes_manager.coordinates[0],
+            color=self.color,
+            picker=5)
 
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
             try:
-                self.axes_manager.navigation_axes[0].index = event.ydata
+                self.axes_manager.navigation_axes[0].value = event.ydata
             except traits.api.TraitError:
                 # Index out of range, we do nothing
                 pass
@@ -270,20 +261,17 @@ class DraggableVerticalLine(DraggablePatch):
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
         self._2D = False
-        # Despise the bug, we use blit for this one because otherwise the
-        # it gets really slow
-        self.blit = True
 
     def update_patch_position(self):
         if self.patch is not None:
-            self.patch.set_xdata(self.axes_manager._values[0])
+            self.patch.set_xdata(self.axes_manager.coordinates[0])
             self.draw_patch()
 
     def set_patch(self):
         ax = self.ax
-        self.patch = ax.axvline(self.axes_manager._values[0],
-                                color = self.color,
-                               picker = 5, animated = self.blit)
+        self.patch = ax.axvline(self.axes_manager.coordinates[0],
+                                color=self.color,
+                                picker=5)
 
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'
@@ -293,11 +281,66 @@ class DraggableVerticalLine(DraggablePatch):
             except traits.api.TraitError:
                 # Index out of range, we do nothing
                 pass
+                
+class DraggableLabel(DraggablePatch):
+    def __init__(self, axes_manager):
+        DraggablePatch.__init__(self, axes_manager)
+        self._2D = False
+        self.string = ''
+        self.y = 0.9
+        self.text_color = 'black'
+        self.bbox = None
+        
+    def update_patch_position(self):
+        if self.patch is not None:
+            self.patch.set_x(self.axes_manager.coordinates[0])
+            self.draw_patch()
+
+    def set_patch(self):
+        ax = self.ax
+        trans = transforms.blended_transform_factory(
+                ax.transData, ax.transAxes)
+        self.patch = ax.text(
+            self.axes_manager.coordinates[0],
+            self.y, # Y value in axes coordinates
+            self.string,
+            color=self.text_color,
+            picker=5,
+            transform=trans,
+            horizontalalignment='right',
+            bbox=self.bbox,
+            animated=self.blit)
+        
+                
 
 class Scale_Bar():
-    def __init__(self, ax, units, pixel_size, color = 'white', position = None,
-    ratio = 0.25, lw = 1, lenght_in_units = None):
-        self.axs = ax
+    def __init__(self, ax, units, pixel_size=None, color='white',
+        position=None, max_size_ratio=0.25, lw=2, lenght=None):
+        """Add a scale bar to an image.
+        
+        Parameteres
+        -----------
+        ax : matplotlib axes
+            The axes where to draw the scale bar.
+        units : string
+        pixel_size : {None, float}
+            If None the axes of the image are supposed to be calibrated.
+            Otherwise the pixel size must be specified.
+        color : a valid matplotlib color
+        position {None, (float, float)}
+            If None the position is automatically determined.
+        max_size_ratio : float
+            The maximum size of the scale bar in respect to the 
+            lenght of the x axis
+        lw : int
+            The line width
+        lenght : {None, float}
+            If None the lenght is automatically calculated using the 
+            max_size_ratio.
+        
+        """
+                     
+        self.ax = ax
         self.units = units
         self.pixel_size = pixel_size
         self.xmin, self.xmax = ax.get_xlim()
@@ -305,53 +348,66 @@ class Scale_Bar():
         self.text = None
         self.line = None
         self.tex_bold = False
-        self.lenght_in_units = lenght_in_units
+        if lenght is None:
+            self.calculate_size(max_size_ratio=max_size_ratio)
+        else:
+            self.lenght = lenght
         if position is None:
             self.position = self.calculate_line_position()
         else:
             self.position = position
-        self.calculate_scale_size(ratio = ratio)
         self.calculate_text_position()
-        self.plot_scale(line_width = lw)
+        self.plot_scale(line_width=lw)
         self.set_color(color)
 
     def get_units_string(self):
         if self.tex_bold is True:
             if (self.units[0] and self.units[-1]) == '$':
-                return r'$\mathbf{%i\,%s}$' % \
-            (self.lenght_in_units, self.units[1:-1])
+                return r'$\mathbf{%g\,%s}$' % \
+            (self.lenght, self.units[1:-1])
             else:
-                return r'$\mathbf{%i\,}$\textbf{%s}' % \
-            (self.lenght_in_units, self.units)
+                return r'$\mathbf{%g\,}$\textbf{%s}' % \
+            (self.lenght, self.units)
         else:
-            return r'$%i\,$%s' % (self.lenght_in_units, self.units)
-    def calculate_line_position(self):
-        return 0.95*self.xmin + 0.05*self.xmax, 0.95*self.ymin+0.05*self.ymax
-    def calculate_text_position(self, pad = 1/180.):
-        pad = float(pad)
+            return r'$%g\,$%s' % (self.lenght, self.units)
+    
+    def calculate_line_position(self, pad=0.05):
+        return ((1 - pad) * self.xmin + pad * self.xmax,
+                (1 - pad) * self.ymin + pad * self.ymax)
+    
+    def calculate_text_position(self, pad=1/100.):
+        ps = self.pixel_size if self.pixel_size is not None else 1
         x1, y1 = self.position
-        x2, y2 = x1 + self.lenght_in_pixels, y1
-        self.text_position = (x1+x2)/2, y2+self.ymax * pad
-    def calculate_scale_size(self, ratio = 0.25):
-        if self.lenght_in_units is None:
-            self.lenght_in_units = (self.xmax * self.pixel_size) // (1/ratio)
-        self.lenght_in_pixels = self.lenght_in_units / self.pixel_size
-    def delete_scale_if_exists(self):
+        x2, y2 = x1 + self.lenght / ps, y1
+        
+        self.text_position = ((x1 + x2) / 2.,
+                               y2 + (self.ymax - self.ymin) /ps * pad)
+    
+    def calculate_size(self, max_size_ratio=0.25):
+        ps = self.pixel_size if self.pixel_size is not None else 1
+        size = closest_nice_number(ps * (self.xmax - self.xmin) * 
+                                       max_size_ratio)
+        self.lenght = size
+    
+    def remove(self):
         if self.line is not None:
-            self.axs.lines.remove(self.line)
+            self.ax.lines.remove(self.line)
         if self.text is not None:
-            self.axs.texts.remove(self.text)
+            self.ax.texts.remove(self.text)
+    
     def plot_scale(self, line_width = 1):
-        self.delete_scale_if_exists()
+        self.remove()
+        ps = self.pixel_size if self.pixel_size is not None else 1
         x1, y1 = self.position
-        x2, y2 = x1 + self.lenght_in_pixels, y1
-        self.line, = self.axs.plot([x1,x2],[y1,y2], linestyle='-',
-        lw = line_width)
-        self.text = self.axs.text(*self.text_position, s=self.get_units_string(),
-        ha = 'center', size = 'medium')
-        self.axs.set_xlim(self.xmin, self.xmax)
-        self.axs.set_ylim(self.ymin, self.ymax)
-        self.axs.figure.canvas.draw_idle()
+        x2, y2 = x1 + self.lenght / ps, y1
+        self.line, = self.ax.plot([x1,x2],[y1,y2],
+                                  linestyle='-', lw = line_width)
+        self.text = self.ax.text(*self.text_position,
+            s=self.get_units_string(),ha='center', size='medium')
+        self.ax.set_xlim(self.xmin, self.xmax)
+        self.ax.set_ylim(self.ymin, self.ymax)
+        self.ax.figure.canvas.draw()
+    
     def set_position(self,x,y):
         self.position = x, y
         self.calculate_text_position()
@@ -360,25 +416,21 @@ class Scale_Bar():
     def set_color(self, c):
         self.line.set_color(c)
         self.text.set_color(c)
-        self.axs.figure.canvas.draw_idle()
-    def set_lenght_in_units(self, lenght):
+        self.ax.figure.canvas.draw_idle()
+    
+    def set_lenght(self, lenght):
         color = self.line.get_color()
-        self.lenght_in_units = lenght
+        self.lenght = lenght
         self.calculate_scale_size()
         self.calculate_text_position()
         self.plot_scale(line_width = self.line.get_linewidth())
         self.set_color(color)
+    
     def set_tex_bold(self):
         self.tex_bold = True
         self.text.set_text(self.get_units_string())
-        self.axs.figure.canvas.draw_idle()
+        self.ax.figure.canvas.draw_idle()
 
-
-def scale_bar(ax, units, pixel_size, color = 'white', position = None,
-    ratio = 0.25, lw = 1, lenght_in_units = None):
-    ax.scale_bar = Scale_Bar(ax = ax, units = units, pixel_size = pixel_size,
-    color = color, position = position, ratio = ratio, lw = lw,
-    lenght_in_units = lenght_in_units)
 
 def in_interval(number, interval):
         if number >= interval[0] and number <= interval[1]:
@@ -433,14 +485,17 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
         if in_interval(event.xdata, left_region) is True:
             self.on_move_cid = \
-            self.canvas.mpl_connect('motion_notify_event', self.move_left)
+            self.canvas.mpl_connect('motion_notify_event',
+                                    self.move_left)
         elif in_interval(event.xdata, right_region):
             self.on_move_cid = \
-            self.canvas.mpl_connect('motion_notify_event', self.move_right)
+            self.canvas.mpl_connect('motion_notify_event',
+                                    self.move_right)
         elif in_interval(event.xdata, middle_region):
             self.pressv = event.xdata
             self.on_move_cid = \
-            self.canvas.mpl_connect('motion_notify_event', self.move_rect)
+            self.canvas.mpl_connect('motion_notify_event',
+                                    self.move_rect)
         else:
             return
     def update_range(self):

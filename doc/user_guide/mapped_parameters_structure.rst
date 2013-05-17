@@ -40,13 +40,13 @@ record_by
 time
     type: datetime.time
     
-    The acquistion or creation time
+    The acquistion or creation time.
     
 date
     type: datetime.time
     
-    The acquistion or creation date
-    
+    The acquistion or creation date.
+        
 Variance_estimation
 -------------------
 
@@ -141,6 +141,17 @@ elements
 thickness
     type: Float
     
-    The thickness of the sample in m
+    The thickness of the sample in m.
+    
+Splitting
+---------
 
+step_sizes
+    type: list of int
+    
+    Default splitting step sizes.
+axis
+    type: int
+    
+    The default axis in array over which to split the dataset.
 

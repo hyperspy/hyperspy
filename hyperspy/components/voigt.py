@@ -67,7 +67,7 @@ class Voigt(Component):
     ----------
     
     area : Parameter
-    origin: Parameter
+    centre: Parameter
     FWHM : Parameter
     gamma : Parameter
     resolution : Parameter
@@ -83,14 +83,14 @@ class Voigt(Component):
     def __init__(self):
         Component.__init__(self, (
             'area',
-            'origin',
+            'centre',
             'FWHM',
             'gamma',
             'resolution',
             'shirley_background',
             'non_isochromaticity',
             'transmission_function'))
-
+        self._position = self.centre
         self.FWHM.value = 1
         self.gamma.value = 0
         self.area.value = 1
@@ -112,7 +112,7 @@ class Voigt(Component):
 
     def function(self, x):
         area = self.area.value * self.transmission_function.value
-        origin = self.origin.value
+        centre = self.centre.value
         ab = self.non_isochromaticity.value
         if self.resolution.value == 0:
             FWHM = self.FWHM.value
@@ -121,12 +121,12 @@ class Voigt(Component):
         gamma = self.gamma.value
         k = self.shirley_background.value
         f = voigt(x, 
-        FWHM = FWHM, gamma = gamma, center = origin - ab, scale = area)
+        FWHM = FWHM, gamma = gamma, center = centre - ab, scale = area)
         if self.spin_orbit_splitting is True:
             ratio = self.spin_orbit_branching_ratio
             shift = self.spin_orbit_splitting_energy
             f2 = voigt(x, FWHM = FWHM, gamma = gamma, 
-            center = origin - ab - shift, scale = area*ratio)
+            center = centre - ab - shift, scale = area*ratio)
             f += f2
         if self.shirley_background.active:
             cf = np.cumsum(f)

@@ -363,7 +363,7 @@ class MVA():
             if not isinstance(signal_mask, slice):
                 # Store the (inverted, as inputed) signal mask 
                 target.signal_mask = ~signal_mask.reshape(
-                    self.axes_manager.signal_shape)
+                    self.axes_manager._signal_shape_in_array)
                 if reproject not in ('both', 'signal'):
                     factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
                     factors[signal_mask == True,:] = target.factors
@@ -372,7 +372,7 @@ class MVA():
             if not isinstance(navigation_mask, slice):
                 # Store the (inverted, as inputed) navigation mask
                 target.navigation_mask = ~navigation_mask.reshape(
-                    self.axes_manager.navigation_shape)
+                    self.axes_manager._navigation_shape_in_array)
                 if reproject not in ('both', 'navigation'):
                     loadings = np.zeros((dc.shape[0], target.loadings.shape[1]))
                     loadings[navigation_mask == True,:] = target.loadings
@@ -388,8 +388,7 @@ class MVA():
     
     def get_factors_as_spectrum(self):
         from hyperspy.signals.spectrum import Spectrum
-        return Spectrum(
-            {'data' : self.learning_results.factors.T.copy()})
+        return Spectrum(self.learning_results.factors.T.copy())
     
     def blind_source_separation(self,
                                 number_of_components=None,
@@ -459,7 +458,7 @@ class MVA():
                     
             if pretreatment is not None:
                 from hyperspy.signals.spectrum import Spectrum
-                sfactors = Spectrum({'data' : factors.T})
+                sfactors = Spectrum(factors.T)
                 if pretreatment['algorithm'] == 'savitzky_golay':
                     sfactors.smooth_savitzky_golay(
                         number_of_points=pretreatment[
@@ -555,10 +554,10 @@ class MVA():
             
         factors /= by(factors,0)
         loadings *= by(factors,0)
-        sorting_indexes = np.argsort(loadings.max(0))
-        factors[:] = factors[:,sorting_indexes]
-        loadings[:] = loadings[:,sorting_indexes]
-        loadings[:] = loadings[:,sorting_indexes]
+        sorting_indices = np.argsort(loadings.max(0))
+        factors[:] = factors[:,sorting_indices]
+        loadings[:] = loadings[:,sorting_indices]
+        loadings[:] = loadings[:,sorting_indices]
 
     def reverse_bss_component(self, component_number):
         """Reverse the independent component
@@ -591,9 +590,9 @@ class MVA():
             # The output of ICA is not sorted in any way what makes it difficult
             # to compare results from different unmixings. The following code
             # is an experimental attempt to sort them in a more predictable way
-            sorting_indexes = np.argsort(np.dot(target.explained_variance[:n],
+            sorting_indices = np.argsort(np.dot(target.explained_variance[:n],
                 np.abs(w.T)))[::-1]
-            w[:] = w[sorting_indexes,:]
+            w[:] = w[sorting_indices,:]
         target.bss_factors = np.dot(target.factors[:,:n], w.T)
     
     def _auto_reverse_bss_component(self, target):

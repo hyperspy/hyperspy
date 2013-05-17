@@ -21,18 +21,20 @@ import scipy as sp
 import matplotlib.pyplot as plt
 import traits.api as t
 import traitsui.api as tu
-from traitsui.menu import (OKButton, ApplyButton, CancelButton, ModalButtons,
-    OKCancelButtons)
+from traitsui.menu import (OKButton, ApplyButton, CancelButton, 
+    ModalButtons, OKCancelButtons)
 
 from hyperspy.misc import utils
 from hyperspy import drawing
 from hyperspy.misc.interactive_ns import interactive_ns
-from hyperspy.exceptions import SignalOutputDimensionError
+from hyperspy.exceptions import SignalDimensionError
 from hyperspy.gui import messages
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.drawing.utils import does_figure_object_exists
 from hyperspy.gui.mpl_traits_editor import MPLFigureEditor
+from hyperspy.axes import AxesManager
+from hyperspy.drawing.widgets import DraggableVerticalLine
 
 import sys
 
@@ -136,13 +138,14 @@ class SpanSelectorInSpectrum(t.HasTraits):
             
     def __init__(self, signal):
         if signal.axes_manager.signal_dimension != 1:
-         raise SignalOutputDimensionError(signal.axes.signal_dimension, 1)
+         raise SignalDimensionError(
+            signal.axes_manager.signal_dimension, 1)
         
         self.signal = signal
         self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
         self.signal.plot()
-        self.span_selector_switch(on = True)
+        self.span_selector_switch(on=True)
         
     def on_disabling_span_selector(self):
         pass
@@ -174,10 +177,80 @@ class SpanSelectorInSpectrum(t.HasTraits):
         self.ss_right_value = 0
         self.span_selector_switch(True)
         
+class LineInSpectrum(t.HasTraits):
+    """Adds a vertical draggable line to a spectrum that reports its
+    position to the position attribute of the class.
+    
+    Attributes:
+    -----------
+    position : float
+        The position of the vertical line in the spectrum. Moving the 
+        line changes the position but the reverse is not true.
+    on : bool
+        Turns on and off the line
+    color : wx.Colour
+        The color of the line. It automatically redraws the line.
+        
+    """
+    position = t.Float()
+    is_ok = t.Bool(False)
+    on = t.Bool(False)
+    color = t.Color("black")
+
+            
+    def __init__(self, signal):
+        if signal.axes_manager.signal_dimension != 1:
+         raise SignalDimensionError(
+            signal.axes_manager.signal_dimension, 1)
+            
+        self.signal = signal
+        self.signal.plot()
+        axis_dict = signal.axes_manager.signal_axes[0].get_axis_dictionary()
+        am = AxesManager([axis_dict,])
+        am._axes[0].navigate = True
+        # Set the position of the line in the middle of the spectral
+        # range by default
+        am._axes[0].index = int(round(am._axes[0].size / 2))
+        self.axes_manager = am
+        self.axes_manager.connect(self.update_position)
+        self.on_trait_change(self.switch_on_off, 'on')
+        
+    def draw(self):
+        self.signal._plot.signal_plot.figure.canvas.draw()
+        
+    def switch_on_off(self, obj, trait_name, old, new):
+        if not self.signal._plot.is_active(): return
+        
+        if new is True and old is False:
+            self._line = DraggableVerticalLine(self.axes_manager)
+            self._line.add_axes(self.signal._plot.signal_plot.ax)
+            self._line.patch.set_linewidth(2)
+            self._color_changed("black","black")
+            # There is not need to call draw because setting the 
+            # color calls it.
+
+        elif new is False and old is True:
+            self._line.close()
+            self._line = None
+            self.draw()
+
+    def update_position(self, *args, **kwargs):
+        if not self.signal._plot.is_active(): return
+        self.position = self.axes_manager.coordinates[0]
+        
+    def _color_changed(self, old, new):
+        if self.on is False: return
+        
+        self._line.patch.set_color((self.color.Red()/255.,
+                                    self.color.Green()/255.,
+                                    self.color.Blue()/255.,))
+        self.draw()
+        
+            
 
 class SpectrumCalibration(SpanSelectorInSpectrum):
-    left_value = t.Float(label = 'New left value')
-    right_value = t.Float(label = 'New right value')
+    left_value = t.Float(label='New left value')
+    right_value = t.Float(label='New right value')
     offset = t.Float()
     scale = t.Float()
     units = t.Unicode()
@@ -185,10 +258,16 @@ class SpectrumCalibration(SpanSelectorInSpectrum):
         tu.Group(
             'left_value',
             'right_value',
-            tu.Item('ss_left_value', label = 'Left', style = 'readonly'),
-            tu.Item('ss_right_value', label = 'Right', style = 'readonly'),
-            tu.Item(name = 'offset', style = 'readonly'),
-            tu.Item(name = 'scale', style = 'readonly'),
+            tu.Item('ss_left_value',
+                    label='Left',
+                    style='readonly'),
+            tu.Item('ss_right_value',
+                    label='Right',
+                    style='readonly'),
+            tu.Item(name='offset',
+                    style='readonly'),
+            tu.Item(name='scale',
+                    style='readonly'),
             'units',),
         handler = CalibrationHandler,
         buttons = [OKButton, OurApplyButton, CancelButton],
@@ -198,14 +277,16 @@ class SpectrumCalibration(SpanSelectorInSpectrum):
     def __init__(self, signal):
         super(SpectrumCalibration, self).__init__(signal)
         if signal.axes_manager.signal_dimension != 1:
-            raise SignalOutputDimensionError(signal.axes.signal_dimension, 1)
+            raise SignalDimensionError(
+                    signal.axes_manager.signal_dimension, 1)
         self.units = self.axis.units
         self.last_calibration_stored = True
             
     def _left_value_changed(self, old, new):
         if self.span_selector is not None and \
         self.span_selector.range is None:
-            messages.information('Please select a range in the spectrum figure' 
+            messages.information(
+            'Please select a range in the spectrum figure' 
             'by dragging the mouse over it')
             return
         else:
@@ -213,7 +294,8 @@ class SpectrumCalibration(SpanSelectorInSpectrum):
     
     def _right_value_changed(self, old, new):
         if self.span_selector.range is None:
-            messages.information('Please select a range in the spectrum figure' 
+            messages.information(
+            'Please select a range in the spectrum figure' 
             'by dragging the mouse over it')
             return
         else:
@@ -345,7 +427,7 @@ class Smoothing(t.HasTraits):
         if self.differential_order > 0:
             self.signal.axes_manager.signal_axes[0].offset = \
                 self.smooth_diff_line.axis[0]
-            self.signal.crop_in_pixels(-1,0,-self.differential_order)
+            self.signal.crop(-1,0,int(-self.differential_order))
         self.signal._replot()
         self.signal._plot.auto_update_plot = True
         

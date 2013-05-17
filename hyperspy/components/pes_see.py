@@ -42,6 +42,7 @@ class SEE(Component):
         self.A.value, self.Phi.value, self.B.value,self.sigma.value = \
         A, Phi, B, sigma
         
+        self._position = self.Phi
         # Boundaries
         self.A.bmin = 0.
         self.A.bmax = None

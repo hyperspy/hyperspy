@@ -43,6 +43,7 @@ class Logistic(Component):
         self.b.grad = self.grad_b
         self.c.grad = self.grad_c
         self.origin.grad = self.grad_origin
+        self._position = self.origin
 
     def function(self, x):
         """

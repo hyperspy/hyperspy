@@ -45,21 +45,25 @@ class SpectrumFigure():
         self.title = ''
         self.create_figure()
         self.create_axis()
-#        self.create_right_axis()
 
     def create_figure(self):
         self.figure = utils.create_figure()
         utils.on_figure_window_close(self.figure, self.close)
-        
+        self.figure.canvas.mpl_connect('draw_event', self._on_draw)
+
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
+        self.ax.yaxis.set_animated(True)
         ax = self.ax
+        self.ax.hspy_fig = self
         
     def create_right_axis(self):
         if self.ax is None:
             self.create_axis()
         if self.right_ax is None:
             self.right_ax = self.ax.twinx()
+            self.right_ax.hspy_fig = self
+            #~self.right_ax.set_animated(True)
         
     def add_line(self, line, ax = 'left'):
         if ax == 'left':
@@ -94,7 +98,27 @@ class SpectrumFigure():
             line.close()
         if utils.does_figure_object_exists(self.figure):
             plt.close(self.figure)
-
+            
+    def _on_draw(self, *args):
+        canvas = self.figure.canvas
+        self._background = canvas.copy_from_bbox(self.figure.bbox)
+        self._draw_animated()
+        
+    def _draw_animated(self):
+        canvas = self.ax.figure.canvas
+        canvas.restore_region(self._background)
+        for ax in [ax for ax in [self.ax, self.right_ax]
+                if ax is not None]:
+            artists = []
+            artists.extend(ax.collections)
+            artists.extend(ax.patches)
+            artists.extend(ax.lines)
+            artists.extend(ax.texts)
+            artists.extend(ax.artists)
+            artists.append(ax.get_yaxis())
+            [ax.draw_artist(a) for a in artists if 
+             a.get_animated() is True]
+        canvas.blit()
         
 class SpectrumLine():
     def __init__(self):
@@ -111,7 +135,7 @@ class SpectrumLine():
         self.line = None
         self.line_properties = dict()
         self.autoscale = True
-        self.plot_coordinates = False
+        self.plot_indices = False
         self.text = None
         self.text_position = (-0.1, 1.05,)
 
@@ -154,18 +178,20 @@ class SpectrumLine():
             data = f(axes_manager = self.axes_manager).imag
         self.line, = self.ax.plot(self.axis, data, 
                                   **self.line_properties)
+        self.line.set_animated(True)
         self.axes_manager.connect(self.update)
         if not self.axes_manager or self.axes_manager.navigation_size==0:
-            self.plot_coordinates = False
-        if self.plot_coordinates is True:
+            self.plot_indices = False
+        if self.plot_indices is True:
             self.text = self.ax.text(*self.text_position,
-                            s=str(self.axes_manager.coordinates[::-1]),
+                            s=str(self.axes_manager.indices),
                             transform = self.ax.transAxes,
                             fontsize=12,
-                            color=self.line.get_color())
+                            color=self.line.get_color(),
+                            animated=True)
         self.ax.figure.canvas.draw()
                   
-    def update(self, force_replot=True):
+    def update(self, force_replot=False):
         """Update the current spectrum figure"""
         if self.auto_update is False:
             return           
@@ -188,9 +214,10 @@ class SpectrumLine():
             y_max, y_min = (np.nanmax(clipped_ydata),
                             np.nanmin(clipped_ydata))
             self.ax.set_ylim(y_min, y_max)
-        if self.plot_coordinates is True:
-            self.text.set_text((self.axes_manager.coordinates[::-1]))
-        self.ax.figure.canvas.draw()
+        if self.plot_indices is True:
+            self.text.set_text((self.axes_manager.indices))
+        self.ax.hspy_fig._draw_animated()
+        #self.ax.figure.canvas.draw_idle()
         
     def close(self):
         if self.line in self.ax.lines:
@@ -226,12 +253,12 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
     if axes_manager.navigation_dimension==2:
         extent=None
         # get calibration from a passed axes_manager
-        shape=axes_manager.navigation_shape
+        shape=axes_manager._navigation_shape_in_array
         if calibrate:
-            extent=(axes_manager.axes[0].low_value,
-                    axes_manager.axes[0].high_value,
-                    axes_manager.axes[1].high_value,
-                    axes_manager.axes[1].low_value)
+            extent=(axes_manager._axes[0].low_value,
+                    axes_manager._axes[0].high_value,
+                    axes_manager._axes[1].high_value,
+                    axes_manager._axes[1].low_value)
         im=ax.imshow(loadings[idx].reshape(shape),cmap=cmap,extent=extent, 
                      interpolation = 'nearest')
         div=make_axes_locatable(ax)
@@ -239,9 +266,9 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
         plt.colorbar(im,cax=cax)
     elif axes_manager.navigation_dimension ==1:
         if calibrate:
-            x=axes_manager.axes[0].axis
+            x=axes_manager._axes[0].axis
         else:
-            x=np.arange(axes_manager.axes[0].size)
+            x=np.arange(axes_manager._axes[0].size)
         ax.step(x,loadings[idx])
     else:
         messages.warning_exit('View not supported')

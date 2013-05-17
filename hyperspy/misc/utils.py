@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import division
 import copy
 import types
 import  math
@@ -23,7 +24,6 @@ import glob
 import os
 import re
 from StringIO import StringIO
-import string
 import codecs
 try:
     from collections import OrderedDict
@@ -38,17 +38,8 @@ import scipy.interpolate
 import scipy.signal
 import scipy.ndimage
 from scipy.signal import medfilt
-
-def import_rpy():
-    try:
-        import rpy
-        print "rpy imported..."
-    except:
-        print "python-rpy is not installed"
-
 import matplotlib.pyplot as plt
 
-from hyperspy import messages
 from hyperspy.gui import messages as messagesui
 import hyperspy.defaults_parser
 
@@ -171,15 +162,19 @@ def unfold_if_multidim(signal):
 
     Boolean. True if the SI was unfolded by the function.
     """
-    if len(signal.axes_manager.axes)>2:
+    if len(signal.axes_manager._axes)>2:
         print "Automatically unfolding the SI"
         signal.unfold()
         return True
     else:
         return False
         
-def _estimate_gain(ns, cs, weighted = False, higher_than = None, 
-    plot_results = False, binning = 0, pol_order = 1):
+def _estimate_gain(ns, cs,
+                   weighted=False,
+                   higher_than=None, 
+                   plot_results=False,
+                   binning=0,
+                   pol_order=1):
     if binning > 0:
         factor = 2 ** binning
         remainder = np.mod(ns.shape[1], factor)
@@ -211,7 +206,7 @@ def _estimate_gain(ns, cs, weighted = False, higher_than = None,
         from hyperspy.signals.spectrum import Spectrum
         from hyperspy.model import Model
         from hyperspy.components import Line
-        s = Spectrum({'data' : varso[avesoh]})
+        s = Spectrum(varso[avesoh])
         s.axes_manager.signal_axes[0].axis = aveso[avesoh]
         m = Model(s)
         l = Line()
@@ -239,13 +234,21 @@ def _estimate_correlation_factor(g0, gk,k):
     c = (1 - e)**2
     return c    
 
-def estimate_variance_parameters(noisy_signal, clean_signal, mask=None,
-    pol_order=1, higher_than=None, return_results=False,
-    plot_results=True, weighted=False):
+def estimate_variance_parameters(
+    noisy_signal,
+    clean_signal,
+    mask=None,
+    pol_order=1,
+    higher_than=None,
+    return_results=False,
+    plot_results=True,
+    weighted=False):
     """Find the scale and offset of the Poissonian noise
 
-    By comparing an SI with its denoised version (i.e. by PCA), this plots an
-    estimation of the variance as a function of the number of counts and fits a
+    By comparing an SI with its denoised version (i.e. by PCA), 
+    this plots an
+    estimation of the variance as a function of the number of counts 
+    and fits a
     polynomy to the result.
 
     Parameters
@@ -264,8 +267,9 @@ def estimate_variance_parameters(noisy_signal, clean_signal, mask=None,
 
     Returns
     -------
-    Dictionary with the result of a linear fit to estimate the offset and
-    scale factor
+    Dictionary with the result of a linear fit to estimate the offset 
+    and scale factor
+    
     """
     fold_back_noisy =  unfold_if_multidim(noisy_signal)
     fold_back_clean =  unfold_if_multidim(clean_signal)
@@ -273,38 +277,42 @@ def estimate_variance_parameters(noisy_signal, clean_signal, mask=None,
     cs = clean_signal.data.copy()
 
     if mask is not None:
-        ns = ns[~mask]
-        cs = cs[~mask]
+        _slice = [slice(None),] * len(ns.shape)
+        _slice[noisy_signal.axes_manager.signal_axes[0].index_in_array]\
+         = ~mask
+        ns = ns[_slice]
+        cs = cs[_slice]
 
-    results0 = _estimate_gain(ns, cs, weighted = weighted, 
-        higher_than = higher_than, plot_results = plot_results, binning = 0,
-        pol_order = pol_order)
+    results0 = _estimate_gain(ns, cs, weighted=weighted, 
+        higher_than=higher_than, plot_results=plot_results, binning=0,
+        pol_order=pol_order)
         
-    results2 = _estimate_gain(ns, cs, weighted = weighted, 
-        higher_than = higher_than, plot_results = False, binning = 2,
-        pol_order = pol_order)
+    results2 = _estimate_gain(ns, cs, weighted=weighted, 
+        higher_than=higher_than, plot_results=False, binning=2,
+        pol_order=pol_order)
         
-    c = _estimate_correlation_factor(results0['fit'][0], results2['fit'][0],
-        4)
+    c = _estimate_correlation_factor(results0['fit'][0],
+                                     results2['fit'][0], 4)
     
     message = ("Gain factor: %.2f\n" % results0['fit'][0] +
                "Gain offset: %.2f\n" % results0['fit'][1] +
                "Correlation factor: %.2f\n" % c )
     is_ok = True
     if hyperspy.defaults_parser.preferences.General.interactive is True:
-        is_ok = messagesui.information(message +
-                                       "Would you like to store the results?")
+        is_ok = messagesui.information(
+            message + "Would you like to store the results?")
     else:
         print message
     if is_ok:
-        if not noisy_signal.mapped_parameters.has_item('Variance_estimation'):
-            noisy_signal.mapped_parameters.add_node('Variance_estimation')
+        if not noisy_signal.mapped_parameters.has_item(
+            'Variance_estimation'):
+            noisy_signal.mapped_parameters.add_node(
+                'Variance_estimation')
         noisy_signal.mapped_parameters.Variance_estimation.gain_factor = \
             results0['fit'][0]
         noisy_signal.mapped_parameters.Variance_estimation.gain_offset = \
             results0['fit'][1]
-        noisy_signal.mapped_parameters.Variance_estimation.correlation_factor =\
-            c
+        noisy_signal.mapped_parameters.Variance_estimation.correlation_factor = c
         noisy_signal.mapped_parameters.Variance_estimation.\
         parameters_estimation_method = 'Hyperspy'
 
@@ -861,58 +869,58 @@ def multi_readout_analyze(folder, ccd_height = 100., plot = True, freq = None):
     dictio = {'pixels': pixels, 'variances': variances, 'fit' : fit,
     'spectra' : spectra}
     return dictio
-
-def chrono_align_and_sum(spectrum, energy_range = (None, None),
-                         spatial_shape = None):
-    """Alignment and sum of a chrono-spim SI
-
-    Parameters
-    ----------
-    spectrum : Spectrum instance
-        Chrono-spim
-    energy_range : tuple of floats
-        energy interval in which to perform the alignment in energy units
-    axis : int
-    """
-    from spectrum import Spectrum
-    dc = spectrum.data_cube
-    min_energy_size = dc.shape[0]
-#    i = 0
-    new_dc = None
-
-    # For the progress bar to work properly we must capture the output of the
-    # functions that are called during the alignment process
-    import cStringIO
-    import sys
-    capture_output = cStringIO.StringIO()
-
-    from hyperspy.misc.progressbar import progressbar
-    pbar = progressbar(maxval = dc.shape[2] - 1)
-    for i in xrange(dc.shape[2]):
-        pbar.update(i)
-        sys.stdout = capture_output
-        s = Spectrum({'calibration': {'data_cube' : dc[:,:,i]}})
-        s.get_calibration_from(spectrum)
-        s.find_low_loss_origin()
-        s.align(energy_range, progress_bar = False)
-        min_energy_size = min(s.data_cube.shape[0], min_energy_size)
-        if new_dc is None:
-            new_dc = s.data_cube.sum(1)
-        else:
-            new_dc = np.concatenate([new_dc[:min_energy_size],
-                                     s.data_cube.sum(1)[:min_energy_size]], 1)
-        sys.stdout = sys.__stdout__
-    pbar.finish()
-    spectrum.data_cube = new_dc
-    spectrum.get_dimensions_from_cube()
-    spectrum.find_low_loss_origin()
-    spectrum.align(energy_range)
-    spectrum.find_low_loss_origin()
-    if spatial_shape is not None:
-        spectrum.data_cube = spectrum.data_cube.reshape(
-        [spectrum.data_cube.shape[0]] + list(spatial_shape))
-        spectrum.data_cube = spectrum.data_cube.swapaxes(1,2)
-        spectrum.get_dimensions_from_cube()
+# 
+# def chrono_align_and_sum(spectrum, energy_range = (None, None),
+                         # spatial_shape = None):
+    # """Alignment and sum of a chrono-spim SI
+# 
+    # Parameters
+    # ----------
+    # spectrum : Spectrum instance
+        # Chrono-spim
+    # energy_range : tuple of floats
+        # energy interval in which to perform the alignment in energy units
+    # axis : int
+    # """
+    # from spectrum import Spectrum
+    # dc = spectrum.data_cube
+    # min_energy_size = dc.shape[0]
+# #    i = 0
+    # new_dc = None
+# 
+    # # For the progress bar to work properly we must capture the output of the
+    # # functions that are called during the alignment process
+    # import cStringIO
+    # import sys
+    # capture_output = cStringIO.StringIO()
+# 
+    # from hyperspy.misc.progressbar import progressbar
+    # pbar = progressbar(maxval = dc.shape[2] - 1)
+    # for i in xrange(dc.shape[2]):
+        # pbar.update(i)
+        # sys.stdout = capture_output
+        # s = Spectrum({'calibration': {'data_cube' : dc[:,:,i]}})
+        # s.get_calibration_from(spectrum)
+        # s.find_low_loss_origin()
+        # s.align(energy_range, progress_bar = False)
+        # min_energy_size = min(s.data_cube.shape[0], min_energy_size)
+        # if new_dc is None:
+            # new_dc = s.data_cube.sum(1)
+        # else:
+            # new_dc = np.concatenate([new_dc[:min_energy_size],
+                                     # s.data_cube.sum(1)[:min_energy_size]], 1)
+        # sys.stdout = sys.__stdout__
+    # pbar.finish()
+    # spectrum.data_cube = new_dc
+    # spectrum.get_dimensions_from_cube()
+    # spectrum.find_low_loss_origin()
+    # spectrum.align(energy_range)
+    # spectrum.find_low_loss_origin()
+    # if spatial_shape is not None:
+        # spectrum.data_cube = spectrum.data_cube.reshape(
+        # [spectrum.data_cube.shape[0]] + list(spatial_shape))
+        # spectrum.data_cube = spectrum.data_cube.swapaxes(1,2)
+        # spectrum.get_dimensions_from_cube()
 
 def copy_energy_calibration(from_spectrum, to_spectrum):
     """Copy the energy calibration between two SIs
@@ -1020,10 +1028,11 @@ def power_law_perc_area(E1,E2, r):
     b = E2
     return 100*((a**r*r-a**r)*(a/(a**r*r-a**r)-(b+a)/((b+a)**r*r-(b+a)**r)))/a
 
-def rel_std_of_fraction(a,std_a,b,std_b,corr_factor = 1):
+def rel_std_of_fraction(a, std_a, b, std_b, corr_factor=1):
     rel_a = std_a/a
     rel_b = std_b/b
-    return np.sqrt(rel_a**2 +  rel_b**2-2*rel_a*rel_b*corr_factor)
+    return np.sqrt(rel_a**2 + rel_b**2 -
+                   2 * rel_a * rel_b * corr_factor)
 
 def ratio(edge_A, edge_B):
     a = edge_A.intensity.value
@@ -1031,34 +1040,16 @@ def ratio(edge_A, edge_B):
     b = edge_B.intensity.value
     std_b = edge_B.intensity.std
     ratio = a/b
-    ratio_std = ratio * rel_std_of_fraction(a,std_a,b, std_b)
-    print "Ratio %s/%s %1.3f +- %1.3f " % (edge_A.name, edge_B.name, a/b,
-    1.96*ratio_std )
+    ratio_std = ratio * rel_std_of_fraction(a, std_a,b, std_b)
+    print "Ratio %s/%s %1.3f +- %1.3f " % (
+        edge_A.name,
+        edge_B.name,
+        a/b,
+        1.96*ratio_std)
     return ratio, ratio_std
 
-def iterate_axis(data, axis = -1):
-        # We make a copy to guarantee that the data in contiguous, otherwise
-        # it will not return a view of the data
-#        data = data.copy()
-        if axis < 0:
-            axis = len(data.shape) + axis
-        unfolded_axis = axis - 1
-        new_shape = [1] * len(data.shape)
-        new_shape[axis] = data.shape[axis]
-        new_shape[unfolded_axis] = -1
-        data = data.reshape(new_shape)
-        for i in xrange(data.shape[unfolded_axis]):
-            getitem = [0] * len(data.shape)
-            getitem[axis] = slice(None)
-            getitem[unfolded_axis] = i
-            yield(data[getitem])
-
-#  
-#  name: interpolate_1D
-#  @param
-#  @return
-#  
-def interpolate_1D(number_of_interpolation_points, data):
+  
+def interpolate1D(number_of_interpolation_points, data):
     ip = number_of_interpolation_points
     ch = len(data)
     old_ax = np.linspace(0, 100, ch)
@@ -1127,9 +1118,9 @@ class DictionaryBrowser(object):
                         symbol = u'├── '
                     string += u'%s%s%s\n' % (padding, symbol, key)
                     if j == eoi - 1:
-                        extra_padding = u'    '
+                        extra_padding = u'    '
                     else:
-                        extra_padding = u'│   '
+                        extra_padding = u'│   '
                     string += value._get_print_items(
                         padding + extra_padding)
                 else:
@@ -1253,8 +1244,8 @@ class DictionaryBrowser(object):
         >>> dict_browser.set_item('First.Second.Third', 3)
         >>> dict_browser
         └── First
-           └── Second
-                └── Third = 3
+           └── Second
+                └── Third = 3
         
         """
         if not self.has_item(item_path):
@@ -1285,7 +1276,7 @@ class DictionaryBrowser(object):
         >>> dict_browser.First.Second = 3
         >>> dict_browser
         └── First
-            └── Second = 3
+            └── Second = 3
 
         """
         keys = node_path.split('.')
@@ -1400,11 +1391,9 @@ def ensure_unicode(stuff, encoding = 'utf8', encoding2 = 'latin-1'):
         string = string.decode(encoding2, errors = 'ignore')
     return string
     
-def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
-    medfilt_radius=5, maxpeakn=30000, peakgroup=10, subchannel=True,
-    peak_array=None):
-    """
-    Find peaks along a 1D line.
+def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
+    medfilt_radius=5, maxpeakn=30000, peakgroup=10, subchannel=True,):
+    """Find peaks along a 1D line.
 
     Function to locate the positive peaks in a noisy x-y data set.
     
@@ -1451,14 +1440,24 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
     subchannel : bool (optional)
              default is set to True
 
-    peak_array : array of shape (n, 3) (optional)
-             A pre-allocated numpy array to fill with peaks.  Saves memory,
-             especially when using the 2D peakfinder.
-
     Returns
     -------
-    P : array of shape (npeaks, 3)
+    P : structured array of shape (npeaks) and fields: position, width, height
         contains position, height, and width of each peak
+        
+    Examples
+    --------
+    >>> x = arange(0,50,0.01)
+    >>> y = cos(x)
+    >>> one_dim_findpeaks(y, x,0,0)
+    array([[  1.68144859e-05,   9.99999943e-01,   3.57487961e+00],
+           [  6.28318614e+00,   1.00000003e+00,   3.57589018e+00],
+           [  1.25663708e+01,   1.00000002e+00,   3.57600673e+00],
+           [  1.88495565e+01,   1.00000002e+00,   3.57597295e+00],
+           [  2.51327421e+01,   1.00000003e+00,   3.57590284e+00],
+           [  3.14159267e+01,   1.00000002e+00,   3.57600856e+00],
+           [  3.76991124e+01,   1.00000002e+00,   3.57597984e+00],
+           [  4.39822980e+01,   1.00000002e+00,   3.57591479e+00]])
     
     Notes
     -----
@@ -1466,6 +1465,7 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
     Version 2  Last revised Oct 27, 2006 Converted to Python by 
     Michael Sarahan, Feb 2011.
     Revised to handle edges better.  MCS, Mar 2011
+    
     """
 
     if x is None:
@@ -1478,12 +1478,10 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
     else:
         d = np.gradient(y)
     n = np.round(peakgroup / 2 + 1)
-    if peak_array is None:
-        # allocate a result array for 'maxpeakn' peaks
-        P = np.zeros((maxpeakn, 3))
-    else:
-        maxpeakn=peak_array.shape[0]
-        P=peak_array
+    peak_dt = np.dtype([('position', np.float),
+                              ('width', np.float),
+                              ('height', np.float)])
+    P = np.array([], dtype=peak_dt)
     peak = 0
     for j in xrange(len(y) - 4):
         if np.sign(d[j]) > np.sign(d[j+1]): # Detects zero-crossing
@@ -1529,26 +1527,28 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
                         # of y in the sub-group of points near peak.
 			if peakgroup < 7:
 			    height = np.max(yy)
-			    location = xx[np.argmin(np.abs(yy - height))]
+			    position = xx[np.argmin(np.abs(yy - height))]
 			else:
-                            location =- ((stdev * c2 / (2 * c3)) - avg)
+                            position =- ((stdev * c2 / (2 * c3)) - avg)
 			    height = np.exp( c1 - c3 * (c2 / (2 * c3))**2)    
                     # Fill results array P. One row for each peak 
                     # detected, containing the
                     # peak position (x-value) and peak height (y-value).
 		    else:
-			location = x[j]
+			position = x[j]
 			height = y[j]
                         # no way to know peak width without
                         # the above measurements.
 			width = 0
-                    if (location > 0 and not np.isnan(location)
-                        and location < x[-1]):
-                        P[peak] = np.array([location, height, width])
+                    if (position > 0 and not np.isnan(position)
+                        and position < x[-1]):
+                        P = np.hstack((P,
+                                       np.array([(position, height, width)],
+                                       dtype=peak_dt)))
                         peak = peak + 1
     # return only the part of the array that contains peaks
     # (not the whole maxpeakn x 3 array)
-    return P[:peak,:]
+    return P
     
 def strlist2enumeration(lst):
     lst = tuple(lst)
@@ -1600,4 +1600,48 @@ def get_linear_interpolation(p1, p2, x):
     b = (x2 * y1 - x1 * y2) / (x2-x1)
     y = a*x + b
     return y
+    
+def closest_nice_number(number):
+    oom = 10**math.floor(math.log10(number))
+    return oom * (number // oom)
+    
+def are_aligned(shape1, shape2):
+    """Check if two numpy arrays are aligned.
+    
+    Parameters
+    ----------
+    shape1, shape2 : iterable
+       
+    Returns
+    -------
+    isaligned : bool
+    
+    """
+    isaligned = True
+    shape1 = list(shape1)
+    shape2 = list(shape2)
+    try:
+        while isaligned is True:
+            dim1 = shape1.pop()
+            dim2 = shape2.pop()
+            if dim1 != dim2 and (dim1 != 1 and dim2 != 1):
+                isaligned = False
+    except IndexError:
+        return isaligned
+    return isaligned
+    
+def homogenize_ndim(*args):
+    """Given any number of arrays returns the same arrays
+    reshaped by adding facing dimensions of size 1.
+    
+    """
+    
+    max_len = max([len(ary.shape) for ary in args])
+    
+    return [ary.reshape((1,) * (max_len - len(ary.shape)) + ary.shape)
+            for ary in args]
+                    
+    
+    
+    
 

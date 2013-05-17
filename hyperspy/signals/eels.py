@@ -25,7 +25,7 @@ import traits.api as t
 
 from hyperspy.signals.spectrum import Spectrum
 from hyperspy.signals.image import Image
-from hyperspy.misc.eels.elements import elements
+from hyperspy.misc.eels.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.gui.egerton_quantification import SpikesRemoval
 from hyperspy.decorators import only_interactive
@@ -67,14 +67,14 @@ class EELSSpectrum(Spectrum):
         Examples
         --------
         
-        >>> s = signals.EELSSpectrum({'data' : np.arange(1024)})
+        >>> s = signals.EELSSpectrum(np.arange(1024))
         >>> s.add_elements(('C', 'O'))
         Adding C_K subshell
         Adding O_K subshell
         
         """
         for element in elements:
-            if element in elements:
+            if element in elements_db:
                 self.elements.add(element)
             else:
                 print(
@@ -104,10 +104,10 @@ class EELSSpectrum(Spectrum):
         end_energy = Eaxis[-1]
         for element in self.elements:
             e_shells = list()
-            for shell in elements[element]['subshells']:
+            for shell in elements_db[element]['subshells']:
                 if shell[-1] != 'a':
                     if start_energy <= \
-                    elements[element]['subshells'][shell][
+                    elements_db[element]['subshells'][shell][
                         'onset_energy'] \
                     <= end_energy :
                         subshell = '%s_%s' % (element, shell)
@@ -138,7 +138,7 @@ class EELSSpectrum(Spectrum):
                 axis.offset - old_offset), axis.units))
         if also_apply_to:
             for sync_signal in also_apply_to:
-                saxis = sync_signal.axes_manager.axes[
+                saxis = sync_signal.axes_manager._axes[
                     axis.index_in_array]
                 saxis.offset += axis.offset - old_offset
     
@@ -660,7 +660,6 @@ class EELSSpectrum(Spectrum):
             j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array).astype('complex64')
             j1 = z * np.nan_to_num(np.log(j / z))
             sdata = np.fft.irfft(j1, axis=axis.index_in_array).astype('float32')
-        
         s.data = sdata[s.axes_manager._get_data_slice(
             [(axis.index_in_array, slice(None,self_size)),])]
         if add_zlp is True:
@@ -679,8 +678,8 @@ class EELSSpectrum(Spectrum):
                     self.tmp_parameters.filename +
                     '_after_fourier_log_deconvolution')
         if crop is True:
-            s.crop_in_pixels(axis.index_in_array,
-                             None, -tapped_channels)
+            s.crop(axis.index_in_axes_manager,
+                             None, int(-tapped_channels))
         return s
 
     def fourier_ratio_deconvolution(self, ll, fwhm=None,
@@ -773,7 +772,7 @@ class EELSSpectrum(Spectrum):
         cl.data = np.fft.irfft(z.reshape(zshape) * jk / jl,
                              axis=axis.index_in_array)
         cl.data *= I0
-        cl.crop_in_pixels(-1,None,orig_cl_size)
+        cl.crop(-1,None,int(orig_cl_size))
         cl.mapped_parameters.title = (self.mapped_parameters.title + 
             ' after Fourier-ratio deconvolution')
         if cl.tmp_parameters.has_item('filename'):
@@ -1025,6 +1024,7 @@ class EELSSpectrum(Spectrum):
         s.get_dimensions_from_data()
         s.data[...,:axis.size] = self.data
         pl = PowerLaw()
+        pl._axes_manager = self.axes_manager
         pl.estimate_parameters(
             s, axis.index2value(axis.size - window_size),
             axis.index2value(axis.size - 1))

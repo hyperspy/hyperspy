@@ -239,16 +239,16 @@ class SpikesRemoval(SpanSelectorInSpectrum):
     def __init__(self, signal,navigation_mask=None, signal_mask=None):
         super(SpikesRemoval, self).__init__(signal)
         self.interpolated_line = None
-        self.coordinates = [coordinate for coordinate in np.ndindex(
-                            tuple(signal.axes_manager.navigation_shape))
+        self.coordinates = [coordinate for coordinate in 
+                            signal.axes_manager._am_indices_generator()
                             if (navigation_mask is None or not 
-                                navigation_mask[coordinate])]
+                                navigation_mask[coordinate[::-1]])]
         self.signal = signal
         sys.setrecursionlimit(np.cumprod(self.signal.data.shape)[-1])
         self.line = signal._plot.signal_plot.ax_lines[0]
         self.ax = signal._plot.signal_plot.ax
         signal._plot.auto_update_plot = False
-        signal.axes_manager.coordinates = self.coordinates[0]
+        signal.axes_manager.indices = self.coordinates[0]
         self.threshold = 400
         self.index = 0
         self.argmax = None
@@ -320,7 +320,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.line.auto_update = False
         
     def _index_changed(self, old, new):
-        self.signal.axes_manager.coordinates = self.coordinates[new]
+        self.signal.axes_manager.indices = self.coordinates[new]
         self.argmax = None
         self._temp_mask[:] = False
         

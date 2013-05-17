@@ -117,6 +117,12 @@ In any case, you must be sure to have all the dependencies installed, see :ref:`
 
     $ cd hyperspy
     $ sudo pip install -e ./
+
+In addition there as a bug with the IPython version packaged in Ubuntu 12.10, which can be fixed by upgrading it through pip:
+
+.. code-block:: bash
+
+    $ sudo pip install --upgrade ipython
  
 .. _create-debian-binary: 
     
@@ -144,13 +150,14 @@ Installing the required libraries
     Read at least up to the second paragraph of this instruction before taking any action
     
     
-Before installing Hyperspy Python and the following libraries be installed in the system: numpy, scipy, matplotlib, ipython, traits and traitsui. For full functionality it is recommended to also install h5py, mdp and scikit-learn. In Windows Hyperspy uses the Ipython's QtConsole nd therefore Qt and PyQt or PySide are also required.
+Before installing Hyperspy Python and the following libraries be installed in the system: numpy, scipy, matplotlib (>= 1.2), ipython, traits and traitsui. For full functionality it is recommended to also install h5py, mdp and scikit-learn. In Windows Hyperspy uses the Ipython's QtConsole nd therefore Qt and PyQt or PySide are also required.
 
 In Windows and Mac the easiest way to install these packages is by installing the `enthought python distribution. <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default. Academics can get it free `here <http://www.enthought.com/products/edudownload.php>`_ .  Since version 0.5 Hyperspy runs (with limited functionality) in `EPD free <https://www.enthought.com/repo/free/>`_ .
 
 If you use an Ubuntu binary to install Hyperspy all the dependencies should install automatically. Installing the dependencies manually in Ubuntu 12.04 (and probably Debian and other Ubuntu versions) can be done using:
 
 .. code-block:: bash
+
     $ sudo apt-get install python-numpy python-matplotlib ipython python-traits python-traitsui python-h5py python-mdp python-scikits-learn python-nose
 
 .. _known-issues:

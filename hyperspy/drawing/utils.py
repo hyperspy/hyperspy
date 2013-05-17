@@ -36,8 +36,27 @@ def does_figure_object_exists(fig_obj):
             fig_obj = None
             return False
                 
-def create_figure(window_title = None, _on_figure_window_close = None):
-    fig = plt.figure()
+def create_figure(window_title=None,
+                  _on_figure_window_close=None,
+                  **kwargs):
+    """Create a matplotlib figure.
+    
+    This function adds the possibility to execute another function 
+    when the figure is closed and to easily set the window title. Any
+    keyword argument is passed to the plt.figure function
+    
+    Parameters
+    ----------
+    window_title : string
+    _on_figure_window_close : function
+    
+    Returns
+    -------
+    
+    fig : plt.figure    
+    
+    """
+    fig = plt.figure(**kwargs)
     if window_title is not None:
         fig.canvas.set_window_title(window_title)
     if _on_figure_window_close is not None:

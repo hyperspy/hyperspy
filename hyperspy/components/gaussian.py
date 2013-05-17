@@ -50,6 +50,7 @@ class Gaussian(Component):
         self.A.value = A
         self.sigma.value = sigma
         self.centre.value = centre
+        self._position = self.centre
 
         # Boundaries
         self.A.bmin = 0.
@@ -65,6 +66,7 @@ class Gaussian(Component):
         self.A.grad = self.grad_A
         self.sigma.grad = self.grad_sigma
         self.centre.grad = self.grad_centre
+        
 
     def function(self, x) :
         A = self.A.value
@@ -121,9 +123,9 @@ class Gaussian(Component):
         x = np.arange(-10,10, 0.01)
         data = np.zeros((32,32,2000))
         data[:] = g.function(x).reshape((1,1,2000))
-        s = Spectrum({'data' : data})
-        s.axes_manager.axes[-1].offset = -10
-        s.axes_manager.axes[-1].scale = 0.01
+        s = Spectrum(data)
+        s.axes_manager._axes[-1].offset = -10
+        s.axes_manager._axes[-1].scale = 0.01
         g.estimate_parameters(s, -10,10, False)
             
         """
@@ -163,7 +165,7 @@ class Gaussian(Component):
             return True
         else:
             if self.A.map is None:
-                self.create_arrays(signal.axes_manager.navigation_shape)
+                self._create_arrays()
             self.A.map['values'][:] = height * sigma * sqrt2pi
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma

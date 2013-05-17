@@ -127,9 +127,13 @@ def file_reader(filename, encoding = 'latin-1', **kwds):
     for line in spectrum_file.readlines():
         if data_section is False:
             if line[0] == "#":
-                key,value = line.split(': ')
+                try:
+                    key,value = line.split(': ')
+                    value = value.strip()
+                except ValueError:
+                    key = line
+                    value = None
                 key = key.strip('#').strip()
-                value = value.strip()
                 
                 if key != 'SPECTRUM':
                     parameters[key] = value
@@ -264,16 +268,16 @@ def file_writer(filename, signal, format = None, separator = ', ',
         'DATE' : '',
         'TIME' : '',
         'OWNER' : '',
-        'NPOINTS' : signal.axes_manager.axes[0].size,
+        'NPOINTS' : signal.axes_manager._axes[0].size,
         'NCOLUMNS' : 1,
         'DATATYPE' : format,
-        'XPERCHAN' : signal.axes_manager.axes[0].scale,
-        'OFFSET' : signal.axes_manager.axes[0].offset,
+        'XPERCHAN' : signal.axes_manager._axes[0].scale,
+        'OFFSET' : signal.axes_manager._axes[0].offset,
         ## Spectrum characteristics
 
-        'XLABEL' : signal.axes_manager.axes[0].name,
+        'XLABEL' : signal.axes_manager._axes[0].name,
 #        'YLABEL' : '',
-        'XUNITS' : signal.axes_manager.axes[0].units,
+        'XUNITS' : signal.axes_manager._axes[0].units,
 #        'YUNITS' : '',
         'COMMENT' : 'File created by Hyperspy version %s' % Release.version,
 #        ## Microscope
@@ -326,7 +330,7 @@ def file_writer(filename, signal, format = None, separator = ', ',
     f.write(u'#%-12s: Spectral Data Starts Here\u000D\u000A' % 'SPECTRUM')
 
     if format == 'XY':        
-        for x,y in zip(signal.axes_manager.axes[0].axis, signal.data):
+        for x,y in zip(signal.axes_manager._axes[0].axis, signal.data):
             f.write("%g%s%g" % (x, separator, y))
             f.write(u'\u000D\u000A')
     elif format == 'Y':
