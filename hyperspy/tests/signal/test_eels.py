@@ -25,7 +25,7 @@ from hyperspy.components import Lorentzian, Bleasdale
 class Test_Estimate_Elastic_Scattering_Threshold:
     def setUp(self):
         # Create an empty spectrum
-        s = EELSSpectrum({'data' : np.zeros((32,32,1024))})
+        s = EELSSpectrum(np.zeros((32,32,1024)))
         ejeE = s.axes_manager.signal_axes[0]
         ejeE.scale = 0.02
         ejeE.offset = -5
