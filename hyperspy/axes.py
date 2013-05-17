@@ -408,7 +408,7 @@ class AxesManager(t.HasTraits):
         return axis
         
     def _array_indices_generator(self):
-        shape = (self.navigation_shape if self.navigation_size > 0 else
+        shape = (self.navigation_shape[::-1] if self.navigation_size > 0 else
                  [1,])
         return np.ndindex(*shape)
         
