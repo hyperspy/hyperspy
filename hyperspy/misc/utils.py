@@ -536,7 +536,7 @@ def smooth(data, coeff):
     rightpad=np.zeros(N)+2*lastval
     leftchunk=data[1:1+N]
     leftpad=leftpad-leftchunk[::-1]
-    rightchunk=data[len(data)-N-1:len(data)-1]
+    rightchunk=data[len(data)-N:len(data)-1]
     rightpad=rightpad-rightchunk[::-1]
     data = np.concatenate((leftpad, data))
     data = np.concatenate((data, rightpad))
