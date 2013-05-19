@@ -19,6 +19,8 @@
 from __future__ import division
 import copy
 
+import numpy as np
+
 from hyperspy.drawing import widgets, spectrum, image, utils
 from hyperspy.gui.axes import navigation_sliders
 
