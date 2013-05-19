@@ -870,16 +870,16 @@ class LearningResults(object):
         Parameters
         ----------
         filename : string
-        overwrite : None (by defect), bool
+        overwrite : {True, False, None}
+            If True(False) overwrite(don't overwrite) the file if it exists.
+            If None (default) ask what to do if file exists.        
+        
         """
         kwargs = {}
         for attribute in [
             v for v in dir(self) if type(getattr(self,v)) != 
             types.MethodType and not v.startswith('_')]:
             kwargs[attribute] = self.__getattribute__(attribute)
-        # Check the extension
-        if filename[-4:] != '.npz':
-            filename = filename + '.npz'
         # Check overwrite
         if overwrite is None:
             overwrite = utils_varia.overwrite(filename)
