@@ -17,57 +17,52 @@
 
 
 import numpy as np
-
 from nose.tools import assert_true, assert_equal, assert_not_equal
-from hyperspy.signals.eels import EELSSpectrum
-from hyperspy.components import Lorentzian, Bleasdale
+
+from hyperspy.signals import EELSSpectrumSimulation
+from hyperspy.components import Gaussian
 
 class Test_Estimate_Elastic_Scattering_Threshold:
     def setUp(self):
         # Create an empty spectrum
-        s = EELSSpectrum(np.zeros((32,32,1024)))
-        ejeE = s.axes_manager.signal_axes[0]
-        ejeE.scale = 0.02
-        ejeE.offset = -5
+        s = EELSSpectrumSimulation(np.zeros((3,2,1024)))
+        energy_axis = s.axes_manager.signal_axes[0]
+        energy_axis.scale = 0.02
+        energy_axis.offset = -5
 
-        LOR = Lorentzian()
-        GAP = Bleasdale()
-
-        rnd=np.random.random
-        ij=s.axes_manager
-        LOR.gamma.value = 0.2
-
-        GAP.b.value = 10000
-        GAP.c.value = -2 #sqrt
-
-        for i in enumerate(s):
-            LOR.centre.value = 0
-            LOR.A.value = 5000 + (rnd() - 0.5) * 5000
-            # The ZLP
-            s.data[ij.coordinates] = LOR.function(ejeE.axis)
-            # NOTICE THE GAP IS SET AT 3+-.5 eV
-            GAP.a.value = -3 + (rnd() - 0.5) 
-            data = GAP.function(ejeE.axis)
-            whereAreNaNs = np.isnan(data)
-            data[whereAreNaNs] = 0
-            # The Gap
-            s.data[ij.coordinates] += data
-            
-        s.data = np.random.poisson(s.data)
+        gauss = Gaussian()
+        gauss.centre.value = 0
+        gauss.A.value = 5000
+        gauss.sigma.value = 0.5
+        gauss2 = Gaussian() 
+        gauss2.sigma.value = 0.5
+        # Inflexion point 1.5
+        gauss2.A.value = 5000
+        gauss2.centre.value = 5
+        s.data[:] = (gauss.function(energy_axis.axis) + 
+                     gauss2.function(energy_axis.axis))
+#        s.add_poissonian_noise()
         self.signal = s
         
-    def test_min_in_window(self):
+    def test_min_in_window_with_smoothing(self):
         s = self.signal
         thr = s.estimate_elastic_scattering_threshold(
-                        window = 7,
-                        npoints=20,
-                        tol=0.05)
-        np.allclose(thr.data, 3, rtol = 0.5)
+                        window = 5,
+                        number_of_points=5,
+                        tol=0.00001)
+        assert_true(np.allclose(thr.data, 2.5))
+        
+    def test_min_in_window_without_smoothing(self):
+        s = self.signal
+        thr = s.estimate_elastic_scattering_threshold(
+                        window = 5,
+                        number_of_points=0,
+                        tol=0.001)
+        assert_true(np.allclose(thr.data, 2.49))
             
     def test_min_not_in_window(self):
         # If I use a much lower window, this is the value that has to be
         # returned as threshold.
-        window =1.5 
         s = self.signal
-        thr = s.estimate_elastic_scattering_threshold(window)
-        np.allclose(thr.data,1.5, rtol = 0.01)
+        data = s.estimate_elastic_scattering_threshold(window=1.5).data
+        assert_true(np.all(np.isnan(data)))

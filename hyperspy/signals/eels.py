@@ -33,7 +33,6 @@ from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.components.power_law import PowerLaw
-import hyperspy.misc.utils as utils
 
 
 class EELSSpectrum(Spectrum):
@@ -212,69 +211,76 @@ class EELSSpectrum(Spectrum):
                 self.tmp_parameters.extension
         return I0
     
-    def estimate_elastic_scattering_threshold(self, window=20, npoints=5,
-                                              tol = 0.1):
-        """Estimation of the elastic scattering signal by truncation of 
-        a EELS low-loss spectrum. Calculates the inflexion of the ZLP 
-        derivative within a window using a specified tolerance. It 
-        previously smoothes the data using a Savitzky-Golay algorithm 
-        (can be turned off). 
+    def estimate_elastic_scattering_threshold(self, window=20, tol=0.1,
+                                              number_of_points=5,
+                                              polynomial_order=3,):
+        """Calculates the first inflexion point of the spectrum derivative 
+        within a window using a specified tolerance.
         
-        Notice that if a window parameter lower than the threshold is 
-        set, this routine will be unable to find the right point. In
-        these cases, the window parameter will be returned as threshold 
-        #
+        It previously smoothes the data using a Savitzky-Golay algorithm 
+        (can be turned off). This method assumes that the zero-loss peak is 
+        located at position zero in all the spectra.
+        
         Parameters
         ----------
            
         window : {None, float}
             If None, the search for the local minimum is performed 
             using the full energy range. A positive float will restrict
-            the search to the (0,window] energy window.
-        npoints : int
-            If not zero performs order three Savitzky-Golay smoothing 
+            the search to the (0,window] energy window, where window is given
+            in the axis units. If no inflexion point is found in this
+            spectral range the window value is returned instead.
+        tol : float
+            The threshold tolerance for the derivative.
+        number_of_points : int
+            If non zero performs order three Savitzky-Golay smoothing 
             to the data to avoid falling in local minima caused by 
             the noise.
-        tol : float
-            The threshold tolerance for the derivative. If not provided 
-            it is set to 0.1
+        polynomial_order : int
+            Savitzky-Golay filter polynomial order.
+
             
         Returns
         -------
-        threshold : {Signal instance, float}
+        threshold : Signal
             A Signal of the same dimension as the input spectrum 
-            navigation space containing the estimated threshold. In the 
-            case of a single spectrum a float is returned.
+            navigation space containing the estimated threshold.
             
         """
         # Create threshold with the same shape as the navigation dims.
         threshold = self._get_navigation_signal()
+        if threshold is None:
+            threshold = Spectrum(np.array([0.]))
+        threshold.axes_manager.set_signal_dimension(0)
+
         # Progress Bar
-        maxval = self.axes_manager.navigation_size
-        pbar = hyperspy.misc.progressbar.progressbar(maxval=maxval)
+        pbar = hyperspy.misc.progressbar.progressbar(
+            maxval=self.axes_manager.navigation_size)
         axis = self.axes_manager.signal_axes[0]
-        max_index = axis.value2index(window)
+        max_index = min(axis.value2index(window), axis.size - 1)
+        zlpi = axis.value2index(0)
+        if max_index < zlpi + 10:
+            raise ValueError("Please select a bigger window")
         for i, s in enumerate(self):
-            zlpi = s.data.argmax() + 1
-            if max_index -zlpi < 10:
-                max_index += (10 + zlpi - max_index)
-            data = s()[zlpi:max_index].copy()
-            if npoints:
-                data = np.abs(utils.sg(data, npoints, 1, diff_order=1))
-            imin = (data < tol).argmax() + zlpi
-            cthreshold = axis.index2value(imin)
-            if (cthreshold == 0): cthreshold = window 
-            del data 
-            # If single spectrum, stop and return value
-            if threshold is None:
-                threshold = float(cthreshold)
-                pbar.finish()
-                return threshold
+            s = s[..., zlpi + 1: max_index].deepcopy()
+            if number_of_points:
+                s.smooth_savitzky_golay(polynomial_order=polynomial_order,
+                                        number_of_points=number_of_points,
+                                        differential_order=1)
             else:
-                threshold.data[self.axes_manager.coordinates] = \
-                    cthreshold
-                pbar.update(i)
-                
+                s = s.diff(0)
+#            zlpi = axis.value2index(0)
+            inflexion = (np.abs(s.data) <= tol).argmax()
+            cthreshold = s.axes_manager[0].index2value(inflexion)
+            print "window", window
+            print "threshold", cthreshold
+            if inflexion == 0:
+                cthreshold = np.nan 
+            del s 
+            threshold[self.axes_manager.indices] = cthreshold
+            pbar.update(i)
+        pbar.finish()
+ 
         # Create spectrum image, stop and return value
         threshold.mapped_parameters.title = (
             self.mapped_parameters.title + 
@@ -286,7 +292,8 @@ class EELSSpectrum(Spectrum):
             threshold.tmp_parameters.folder = self.tmp_parameters.folder
             threshold.tmp_parameters.extension = \
                 self.tmp_parameters.extension
-        pbar.finish()
+        threshold.axes_manager.set_signal_dimension(
+                                min(2, self.axes_manager.navigation_dimension))
         return threshold
         
     def estimate_thickness(self, threshold=None, zlp=None,):
