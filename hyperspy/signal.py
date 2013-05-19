@@ -633,7 +633,7 @@ class Signal1DTools(object):
         """
         self._check_signal_dimension_equals_one()
         if (polynomial_order is not None and 
-            number_of_points) is not None:
+            number_of_points is not None):
             for spectrum in self:
                 spectrum.data[:] = utils.sg(self(),
                                             number_of_points, 
@@ -2280,7 +2280,8 @@ class Signal(MVA,
     def __call__(self, axes_manager=None):
         if axes_manager is None:
             axes_manager = self.axes_manager
-        return self.data.__getitem__(axes_manager._getitem_tuple)
+        return np.atleast_1d(
+            self.data.__getitem__(axes_manager._getitem_tuple))
 
     def _get_hse_1D_explorer(self, *args, **kwargs):
         islice = self.axes_manager.signal_axes[0].index_in_array
