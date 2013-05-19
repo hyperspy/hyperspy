@@ -54,7 +54,6 @@ class SpectrumFigure():
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
         self.ax.yaxis.set_animated(True)
-        ax = self.ax
         self.ax.hspy_fig = self
         
     def create_right_axis(self):
@@ -170,12 +169,12 @@ class SpectrumLine():
             plt.setp(self.line, **self.line_properties)
         self.ax.figure.canvas.draw()
         
-    def plot(self, data = 1):
+    def plot(self, data=1):
         f = self.data_function
         if self.get_complex is False:
-            data = f(axes_manager = self.axes_manager).real
+            data = f(axes_manager=self.axes_manager).real
         else:
-            data = f(axes_manager = self.axes_manager).imag
+            data = f(axes_manager=self.axes_manager).imag
         self.line, = self.ax.plot(self.axis, data, 
                                   **self.line_properties)
         self.line.set_animated(True)
