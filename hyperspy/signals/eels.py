@@ -119,6 +119,8 @@ class EELSSpectrum(Spectrum):
         """Calculates the position of the zero loss origin as the 
         average of the position of the maximum of all the spectra and 
          calibrates energy axis.
+         
+         
         
         Parameters
         ----------
@@ -141,20 +143,30 @@ class EELSSpectrum(Spectrum):
                     axis.index_in_array]
                 saxis.offset += axis.offset - old_offset
     
-    def estimate_elastic_scattering_intensity(self, threshold=None):
+    def estimate_elastic_scattering_intensity(self,
+                                              threshold=None,
+                                              window=20,
+                                              tol=0.1,
+                                              number_of_points=5,
+                                              polynomial_order=3,):
         """Rough estimation of the elastic scattering intensity by 
         truncation of a EELS low-loss spectrum.
         
         Parameters
         ----------
-        threshold : {None, array}
+        threshold : {None, Signal, float, int}
             Truncation energy to estimate the intensity of the 
-            elastic scattering. If None the threshold is calculated for 
-            each spectrum as the first minimum after the ZLP centre. The
+            elastic scattering. The
             threshold can be provided as a signal of the same dimension 
             as the input spectrum navigation space containing the 
-            estimated threshold. If the navigation size is 0 a float 
-            number must be provided.
+            threshold value in the energy units. Alternatively a constant 
+            threshold can be specified in energy/index units by passing 
+            float/int. If None the threshold is calculated for 
+            each spectrum as the first minimum after the ZLP centre. `window`,
+            `tol`, `number_of_points` and `polynomial_order` are passed to 
+            the estimate_elastic_scattering_threshold method. See its docstring
+            for details.      
+
             
         Returns
         -------
@@ -164,45 +176,47 @@ class EELSSpectrum(Spectrum):
             Signal, depending on the currenct spectrum navigation 
             dimensions.
             
+        See Also
+        --------
+        estimate_elastic_scattering_threshold
+            
         """
         self._check_signal_dimension_equals_one()
-        I0 = self._get_navigation_signal()
-        axis = self.axes_manager.signal_axes[0]
-        # Use the data from the current location to estimate
-        # the threshold as the position of the first maximum
-        # after the ZLP
-        maxval = self.axes_manager.navigation_size
-        pbar = hyperspy.misc.progressbar.progressbar(maxval=maxval)
-        for i, s in enumerate(self):
-            if threshold is None:
-                # No threshold has been specified, we calculate it
-                data = s()
-                index = data.argmax()
-                while data[index] > data[index + 1]:
-                    index += 1
-                del data
-            elif hasattr(threshold,'data') is False: 
-                # No data attribute
-                index = axis.value2index(threshold)
-            else:
-                # Threshold specified, by an image instance 
-                cthreshold = threshold.data[self.axes_manager.coordinates]
-                index = axis.value2index(cthreshold)
-            
-            if I0 is None:
-                # Case1: no navigation signal 
-                I0 = s.data[0:index].sum()
-                pbar.finish()
-                return I0
-            else:
-                # Case2: navigation signal present
-                I0.data[self.axes_manager.coordinates] = \
-                    s.data[0:index].sum()
-                
-            pbar.update(i)
-            
-        pbar.finish()
-                
+        if threshold is None:
+            threshold = self.estimate_elastic_scattering_threshold(
+                                          window=window,
+                                          tol=tol,
+                                          number_of_points=number_of_points,
+                                          polynomial_order=polynomial_order,)
+        if isinstance(threshold, float):
+            I0 = self.signal_indexer[:threshold].sum(-1)
+            I0.axes_manager.set_signal_dimension(
+                                min(2, self.axes_manager.navigation_dimension))
+        
+        else:
+            bk_threshold_navigate = (
+                threshold.axes_manager._get_axis_attribute_values('navigate'))
+            threshold.axes_manager.set_signal_dimension(0)
+            I0 = self._get_navigation_signal()
+            bk_I0_navigate = (
+                I0.axes_manager._get_axis_attribute_values('navigate'))
+            I0.axes_manager.set_signal_dimension(0)
+            pbar = hyperspy.misc.progressbar.progressbar(
+                                    maxval=self.axes_manager.navigation_size)
+            for i, s in enumerate(self):
+                threshold_ = threshold[self.axes_manager.indices].data[0]
+                if np.isnan(threshold_):
+                    I0[self.axes_manager.indices] = np.nan
+                else:
+                    I0[self.axes_manager.indices].data[:] = s[:threshold_].data.sum()
+                pbar.update(i)
+            pbar.finish()
+            threshold.axes_manager._set_axis_attribute_values(
+                    'navigate',
+                    bk_threshold_navigate)
+            I0.axes_manager._set_axis_attribute_values(
+                    'navigate',
+                    bk_I0_navigate)
         I0.mapped_parameters.title = (
             self.mapped_parameters.title + ' elastic intensity')
         if self.tmp_parameters.has_item('filename'):
@@ -253,8 +267,6 @@ class EELSSpectrum(Spectrum):
         self._check_signal_dimension_equals_one()
         # Create threshold with the same shape as the navigation dims.
         threshold = self._get_navigation_signal()
-        if threshold is None:
-            threshold = Spectrum(np.array([0.]))
         threshold.axes_manager.set_signal_dimension(0)
 
         # Progress Bar
@@ -273,11 +285,8 @@ class EELSSpectrum(Spectrum):
                                         differential_order=1)
             else:
                 s = s.diff(0)
-#            zlpi = axis.value2index(0)
             inflexion = (np.abs(s.data) <= tol).argmax()
             cthreshold = s.axes_manager[0].index2value(inflexion)
-            print "window", window
-            print "threshold", cthreshold
             if inflexion == 0:
                 cthreshold = np.nan 
             del s 
@@ -396,6 +405,7 @@ class EELSSpectrum(Spectrum):
                 derivative if der_roots is True (False by default)
                 
         """
+        # TODO: make it work for ndimensions
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         i0, i1 = (axis.value2index(energy_range[0]), 
