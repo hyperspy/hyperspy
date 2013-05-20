@@ -3111,17 +3111,21 @@ class Signal(MVA,
         
     def _get_navigation_signal(self):
         if self.axes_manager.navigation_dimension == 0:
-            return self.__class__(np.array([0,]))
+            return self.__class__(np.array([0,]).astype(self.data.dtype))
         elif self.axes_manager.navigation_dimension == 1:
             from hyperspy.signals.spectrum import Spectrum
-            s = Spectrum(np.zeros(self.axes_manager._navigation_shape_in_array),
+            s = Spectrum(
+                    np.zeros(self.axes_manager._navigation_shape_in_array,
+                             dtype=self.data.dtype),
                          axes=self.axes_manager._get_navigation_axes_dicts())
         elif self.axes_manager.navigation_dimension == 2:
             from hyperspy.signals.image import Image
-            s = Image(np.zeros(self.axes_manager._navigation_shape_in_array),
+            s = Image(np.zeros(self.axes_manager._navigation_shape_in_array,
+                               dtype=self.data.dtype),
                       axes=self.axes_manager._get_navigation_axes_dicts())
         else:
-            s = Signal(np.zeros(self.axes_manager._navigation_shape_in_array),
+            s = Signal(np.zeros(self.axes_manager._navigation_shape_in_array,
+                                dtype=self.data.dtype),
                        axes=self.axes_manager._get_navigation_axes_dicts())
         return s
                 
