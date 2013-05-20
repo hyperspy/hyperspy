@@ -475,7 +475,7 @@ class AxesManager(t.HasTraits):
             slice.
             
         """
-        cslice = [slice,] * len(self._axes)
+        cslice = [slice(None),] * len(self._axes)
         if fill is not None:
             for index, slice_ in fill:
                 cslice[index] = slice_
