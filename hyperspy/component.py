@@ -293,7 +293,7 @@ class Parameter(object):
         fetch, assign_current_value_to_all
         
         """
-        indices = self._axes_manager.indices
+        indices = self._axes_manager.indices[::-1]
         # If it is a single spectrum indices is ()
         if not indices:
             indices = (0,)
@@ -311,7 +311,7 @@ class Parameter(object):
         store_current_value_in_array, assign_current_value_to_all
         
         """
-        indices = self._axes_manager.indices
+        indices = self._axes_manager.indices[::-1]
         # If it is a single spectrum indices is ()
         if not indices:
             indices = (0,)
@@ -343,7 +343,7 @@ class Parameter(object):
         multidimensional datasets.
         
         """
-        shape = self._axes_manager.navigation_shape
+        shape = self._axes_manager._navigation_shape_in_array
         if len(shape) == 1 and shape[0] == 0:
             shape = [1,]
         dtype_ = np.dtype([
@@ -355,7 +355,7 @@ class Parameter(object):
             self.map = np.zeros(shape, dtype_)       
             self.map['std'][:] = np.nan
             # TODO: in the future this class should have access to 
-            # axes manager and should be able to charge its own
+            # axes manager and should be able to fetch its own
             # values. Until then, the next line is necessary to avoid
             # erros when self.std is defined and the shape is different
             # from the newly defined arrays
@@ -381,17 +381,15 @@ class Parameter(object):
         if self._axes_manager.navigation_dimension == 0:
             raise NavigationDimensionError(0, '>0')
             
-        s = Signal(
-            {'data' : self.map[field],
-             'axes' : self._axes_manager._get_navigation_axes_dicts()})
+        s = Signal(data=self.map[field],
+                   axes=self._axes_manager._get_navigation_axes_dicts())
         s.mapped_parameters.title = self.name
-        for axis in s.axes_manager.axes:
+        for axis in s.axes_manager._axes:
             axis.navigate = False
         if self._number_of_elements > 1:
             s.axes_manager.append_axis(
                 size=self._number_of_elements,
                 name=self.name,
-                index_in_array=len(s.axes_manager.axes),
                 navigate=True)
         return s
         
@@ -521,7 +519,7 @@ class Component(object):
         self.nparam = i
         self._update_free_parameters()
 
-    def charge(self, p, p_std=None, onlyfree = False):
+    def fetch_values_from_array(self, p, p_std=None, onlyfree=False):
         if onlyfree is True:
             parameters = self.free_parameters
         else:
@@ -544,7 +542,7 @@ class Component(object):
         for parameter in self.parameters:
             parameter.store_current_value_in_array()
         
-    def charge_value_from_map(self, only_fixed=False):
+    def fetch_stored_values(self, only_fixed=False):
         if only_fixed is True:
             parameters = (set(self.parameters) - 
                           set(self.free_parameters))
@@ -629,8 +627,8 @@ class Component(object):
                                                parameter.std,
                                                parameter.units)
 
-    def __call__(self, p, x, onlyfree = True) :
-        self.charge(p , onlyfree = onlyfree)
+    def __call__(self, p, x, onlyfree=True) :
+        self.fetch_values_from_array(p , onlyfree=onlyfree)
         return self.function(x)
         
     def set_parameters_free(self, parameter_name_list=None):

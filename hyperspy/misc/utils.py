@@ -24,7 +24,6 @@ import glob
 import os
 import re
 from StringIO import StringIO
-import string
 import codecs
 try:
     from collections import OrderedDict
@@ -39,17 +38,8 @@ import scipy.interpolate
 import scipy.signal
 import scipy.ndimage
 from scipy.signal import medfilt
-
-def import_rpy():
-    try:
-        import rpy
-        print "rpy imported..."
-    except:
-        print "python-rpy is not installed"
-
 import matplotlib.pyplot as plt
 
-from hyperspy import messages
 from hyperspy.gui import messages as messagesui
 import hyperspy.defaults_parser
 
@@ -172,7 +162,7 @@ def unfold_if_multidim(signal):
 
     Boolean. True if the SI was unfolded by the function.
     """
-    if len(signal.axes_manager.axes)>2:
+    if len(signal.axes_manager._axes)>2:
         print "Automatically unfolding the SI"
         signal.unfold()
         return True
@@ -216,7 +206,7 @@ def _estimate_gain(ns, cs,
         from hyperspy.signals.spectrum import Spectrum
         from hyperspy.model import Model
         from hyperspy.components import Line
-        s = Spectrum({'data' : varso[avesoh]})
+        s = Spectrum(varso[avesoh])
         s.axes_manager.signal_axes[0].axis = aveso[avesoh]
         m = Model(s)
         l = Line()
@@ -879,58 +869,58 @@ def multi_readout_analyze(folder, ccd_height = 100., plot = True, freq = None):
     dictio = {'pixels': pixels, 'variances': variances, 'fit' : fit,
     'spectra' : spectra}
     return dictio
-
-def chrono_align_and_sum(spectrum, energy_range = (None, None),
-                         spatial_shape = None):
-    """Alignment and sum of a chrono-spim SI
-
-    Parameters
-    ----------
-    spectrum : Spectrum instance
-        Chrono-spim
-    energy_range : tuple of floats
-        energy interval in which to perform the alignment in energy units
-    axis : int
-    """
-    from spectrum import Spectrum
-    dc = spectrum.data_cube
-    min_energy_size = dc.shape[0]
-#    i = 0
-    new_dc = None
-
-    # For the progress bar to work properly we must capture the output of the
-    # functions that are called during the alignment process
-    import cStringIO
-    import sys
-    capture_output = cStringIO.StringIO()
-
-    from hyperspy.misc.progressbar import progressbar
-    pbar = progressbar(maxval = dc.shape[2] - 1)
-    for i in xrange(dc.shape[2]):
-        pbar.update(i)
-        sys.stdout = capture_output
-        s = Spectrum({'calibration': {'data_cube' : dc[:,:,i]}})
-        s.get_calibration_from(spectrum)
-        s.find_low_loss_origin()
-        s.align(energy_range, progress_bar = False)
-        min_energy_size = min(s.data_cube.shape[0], min_energy_size)
-        if new_dc is None:
-            new_dc = s.data_cube.sum(1)
-        else:
-            new_dc = np.concatenate([new_dc[:min_energy_size],
-                                     s.data_cube.sum(1)[:min_energy_size]], 1)
-        sys.stdout = sys.__stdout__
-    pbar.finish()
-    spectrum.data_cube = new_dc
-    spectrum.get_dimensions_from_cube()
-    spectrum.find_low_loss_origin()
-    spectrum.align(energy_range)
-    spectrum.find_low_loss_origin()
-    if spatial_shape is not None:
-        spectrum.data_cube = spectrum.data_cube.reshape(
-        [spectrum.data_cube.shape[0]] + list(spatial_shape))
-        spectrum.data_cube = spectrum.data_cube.swapaxes(1,2)
-        spectrum.get_dimensions_from_cube()
+# 
+# def chrono_align_and_sum(spectrum, energy_range = (None, None),
+                         # spatial_shape = None):
+    # """Alignment and sum of a chrono-spim SI
+# 
+    # Parameters
+    # ----------
+    # spectrum : Spectrum instance
+        # Chrono-spim
+    # energy_range : tuple of floats
+        # energy interval in which to perform the alignment in energy units
+    # axis : int
+    # """
+    # from spectrum import Spectrum
+    # dc = spectrum.data_cube
+    # min_energy_size = dc.shape[0]
+# #    i = 0
+    # new_dc = None
+# 
+    # # For the progress bar to work properly we must capture the output of the
+    # # functions that are called during the alignment process
+    # import cStringIO
+    # import sys
+    # capture_output = cStringIO.StringIO()
+# 
+    # from hyperspy.misc.progressbar import progressbar
+    # pbar = progressbar(maxval = dc.shape[2] - 1)
+    # for i in xrange(dc.shape[2]):
+        # pbar.update(i)
+        # sys.stdout = capture_output
+        # s = Spectrum({'calibration': {'data_cube' : dc[:,:,i]}})
+        # s.get_calibration_from(spectrum)
+        # s.find_low_loss_origin()
+        # s.align(energy_range, progress_bar = False)
+        # min_energy_size = min(s.data_cube.shape[0], min_energy_size)
+        # if new_dc is None:
+            # new_dc = s.data_cube.sum(1)
+        # else:
+            # new_dc = np.concatenate([new_dc[:min_energy_size],
+                                     # s.data_cube.sum(1)[:min_energy_size]], 1)
+        # sys.stdout = sys.__stdout__
+    # pbar.finish()
+    # spectrum.data_cube = new_dc
+    # spectrum.get_dimensions_from_cube()
+    # spectrum.find_low_loss_origin()
+    # spectrum.align(energy_range)
+    # spectrum.find_low_loss_origin()
+    # if spatial_shape is not None:
+        # spectrum.data_cube = spectrum.data_cube.reshape(
+        # [spectrum.data_cube.shape[0]] + list(spatial_shape))
+        # spectrum.data_cube = spectrum.data_cube.swapaxes(1,2)
+        # spectrum.get_dimensions_from_cube()
 
 def copy_energy_calibration(from_spectrum, to_spectrum):
     """Copy the energy calibration between two SIs
@@ -1058,29 +1048,8 @@ def ratio(edge_A, edge_B):
         1.96*ratio_std)
     return ratio, ratio_std
 
-def iterate_axis(data, axis = -1):
-        # We make a copy to guarantee that the data in contiguous, otherwise
-        # it will not return a view of the data
-#        data = data.copy()
-        if axis < 0:
-            axis = len(data.shape) + axis
-        unfolded_axis = axis - 1
-        new_shape = [1] * len(data.shape)
-        new_shape[axis] = data.shape[axis]
-        new_shape[unfolded_axis] = -1
-        data = data.reshape(new_shape)
-        for i in xrange(data.shape[unfolded_axis]):
-            getitem = [0] * len(data.shape)
-            getitem[axis] = slice(None)
-            getitem[unfolded_axis] = i
-            yield(data[getitem])
-
-#  
-#  name: interpolate_1D
-#  @param
-#  @return
-#  
-def interpolate_1D(number_of_interpolation_points, data):
+  
+def interpolate1D(number_of_interpolation_points, data):
     ip = number_of_interpolation_points
     ch = len(data)
     old_ax = np.linspace(0, 100, ch)
@@ -1149,9 +1118,9 @@ class DictionaryBrowser(object):
                         symbol = u'├── '
                     string += u'%s%s%s\n' % (padding, symbol, key)
                     if j == eoi - 1:
-                        extra_padding = u'    '
+                        extra_padding = u'    '
                     else:
-                        extra_padding = u'│   '
+                        extra_padding = u'│   '
                     string += value._get_print_items(
                         padding + extra_padding)
                 else:
@@ -1275,8 +1244,8 @@ class DictionaryBrowser(object):
         >>> dict_browser.set_item('First.Second.Third', 3)
         >>> dict_browser
         └── First
-           └── Second
-                └── Third = 3
+           └── Second
+                └── Third = 3
         
         """
         if not self.has_item(item_path):
@@ -1307,7 +1276,7 @@ class DictionaryBrowser(object):
         >>> dict_browser.First.Second = 3
         >>> dict_browser
         └── First
-            └── Second = 3
+            └── Second = 3
 
         """
         keys = node_path.split('.')
@@ -1422,11 +1391,9 @@ def ensure_unicode(stuff, encoding = 'utf8', encoding2 = 'latin-1'):
         string = string.decode(encoding2, errors = 'ignore')
     return string
     
-def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
-    medfilt_radius=5, maxpeakn=30000, peakgroup=10, subchannel=True,
-    peak_array=None):
-    """
-    Find peaks along a 1D line.
+def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
+    medfilt_radius=5, maxpeakn=30000, peakgroup=10, subchannel=True,):
+    """Find peaks along a 1D line.
 
     Function to locate the positive peaks in a noisy x-y data set.
     
@@ -1473,14 +1440,24 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
     subchannel : bool (optional)
              default is set to True
 
-    peak_array : array of shape (n, 3) (optional)
-             A pre-allocated numpy array to fill with peaks.  Saves memory,
-             especially when using the 2D peakfinder.
-
     Returns
     -------
-    P : array of shape (npeaks, 3)
+    P : structured array of shape (npeaks) and fields: position, width, height
         contains position, height, and width of each peak
+        
+    Examples
+    --------
+    >>> x = arange(0,50,0.01)
+    >>> y = cos(x)
+    >>> one_dim_findpeaks(y, x,0,0)
+    array([[  1.68144859e-05,   9.99999943e-01,   3.57487961e+00],
+           [  6.28318614e+00,   1.00000003e+00,   3.57589018e+00],
+           [  1.25663708e+01,   1.00000002e+00,   3.57600673e+00],
+           [  1.88495565e+01,   1.00000002e+00,   3.57597295e+00],
+           [  2.51327421e+01,   1.00000003e+00,   3.57590284e+00],
+           [  3.14159267e+01,   1.00000002e+00,   3.57600856e+00],
+           [  3.76991124e+01,   1.00000002e+00,   3.57597984e+00],
+           [  4.39822980e+01,   1.00000002e+00,   3.57591479e+00]])
     
     Notes
     -----
@@ -1488,6 +1465,7 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
     Version 2  Last revised Oct 27, 2006 Converted to Python by 
     Michael Sarahan, Feb 2011.
     Revised to handle edges better.  MCS, Mar 2011
+    
     """
 
     if x is None:
@@ -1500,12 +1478,10 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
     else:
         d = np.gradient(y)
     n = np.round(peakgroup / 2 + 1)
-    if peak_array is None:
-        # allocate a result array for 'maxpeakn' peaks
-        P = np.zeros((maxpeakn, 3))
-    else:
-        maxpeakn=peak_array.shape[0]
-        P=peak_array
+    peak_dt = np.dtype([('position', np.float),
+                              ('width', np.float),
+                              ('height', np.float)])
+    P = np.array([], dtype=peak_dt)
     peak = 0
     for j in xrange(len(y) - 4):
         if np.sign(d[j]) > np.sign(d[j+1]): # Detects zero-crossing
@@ -1551,26 +1527,28 @@ def one_dim_findpeaks(y, x=None, slope_thresh=0.5, amp_thresh=None,
                         # of y in the sub-group of points near peak.
 			if peakgroup < 7:
 			    height = np.max(yy)
-			    location = xx[np.argmin(np.abs(yy - height))]
+			    position = xx[np.argmin(np.abs(yy - height))]
 			else:
-                            location =- ((stdev * c2 / (2 * c3)) - avg)
+                            position =- ((stdev * c2 / (2 * c3)) - avg)
 			    height = np.exp( c1 - c3 * (c2 / (2 * c3))**2)    
                     # Fill results array P. One row for each peak 
                     # detected, containing the
                     # peak position (x-value) and peak height (y-value).
 		    else:
-			location = x[j]
+			position = x[j]
 			height = y[j]
                         # no way to know peak width without
                         # the above measurements.
 			width = 0
-                    if (location > 0 and not np.isnan(location)
-                        and location < x[-1]):
-                        P[peak] = np.array([location, height, width])
+                    if (position > 0 and not np.isnan(position)
+                        and position < x[-1]):
+                        P = np.hstack((P,
+                                       np.array([(position, height, width)],
+                                       dtype=peak_dt)))
                         peak = peak + 1
     # return only the part of the array that contains peaks
     # (not the whole maxpeakn x 3 array)
-    return P[:peak,:]
+    return P
     
 def strlist2enumeration(lst):
     lst = tuple(lst)

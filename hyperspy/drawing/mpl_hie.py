@@ -43,7 +43,7 @@ class MPL_HyperImage_Explorer():
         imf.axes_manager = self.axes_manager
         imf.data_function = self.signal_data_function
         imf.title = self.signal_title
-        imf.yaxis, imf.xaxis = self.axes_manager.signal_axes
+        imf.xaxis, imf.yaxis = self.axes_manager.signal_axes
         imf.plot_colorbar = True
         imf.plot()
         self.signal_plot = imf
@@ -70,8 +70,7 @@ class MPL_HyperImage_Explorer():
             imf = image.ImagePlot()
             imf.data_function = self.navigator_data_function
             imf.title = self.signal_title + ' Navigator'
-            imf.yaxis, imf.xaxis = \
-                self.axes_manager.navigation_axes[-2:]
+            imf.xaxis, imf.yaxis = self.axes_manager.navigation_axes[:2]
             imf.plot()
             self.pointer.add_axes(imf.ax)
             if self.axes_manager.navigation_dimension > 2:

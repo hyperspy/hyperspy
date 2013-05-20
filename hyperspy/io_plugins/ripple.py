@@ -494,8 +494,8 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
         depth_axis = signal.axes_manager.signal_axes[0]
         ev_per_chan = int(round(depth_axis.scale))
         if dimension == 3:
-            width_axis = signal.axes_manager.navigation_axes[1]
-            height_axis = signal.axes_manager.navigation_axes[0]
+            width_axis = signal.axes_manager.navigation_axes[0]
+            height_axis = signal.axes_manager.navigation_axes[1]
             depth, width, height = \
                             depth_axis.size, width_axis.size, height_axis.size
         elif dimension == 2:
@@ -506,8 +506,8 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
             depth, width, height = depth_axis.size, 1, 1
 
     elif signal.axes_manager.signal_dimension == 2:
-        width_axis = signal.axes_manager.signal_axes[1]
-        height_axis = signal.axes_manager.signal_axes[0]
+        width_axis = signal.axes_manager.signal_axes[0]
+        height_axis = signal.axes_manager.signal_axes[1]
         if dimension == 3:
             depth_axis = signal.axes_manager.navigation_axes[0]
             record_by = 'image'

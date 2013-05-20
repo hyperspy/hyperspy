@@ -66,7 +66,7 @@ class EELSSpectrum(Spectrum):
         Examples
         --------
         
-        >>> s = signals.EELSSpectrum({'data' : np.arange(1024)})
+        >>> s = signals.EELSSpectrum(np.arange(1024))
         >>> s.add_elements(('C', 'O'))
         Adding C_K subshell
         Adding O_K subshell
@@ -137,7 +137,7 @@ class EELSSpectrum(Spectrum):
                 axis.offset - old_offset), axis.units))
         if also_apply_to:
             for sync_signal in also_apply_to:
-                saxis = sync_signal.axes_manager.axes[
+                saxis = sync_signal.axes_manager._axes[
                     axis.index_in_array]
                 saxis.offset += axis.offset - old_offset
                 
@@ -347,7 +347,7 @@ class EELSSpectrum(Spectrum):
         j1 = z * np.nan_to_num(np.log(j / z))
         sdata = np.fft.irfft(j1, axis=axis.index_in_array)
         def get_cropping_slice(axis, index):
-            cslice = [slice,] * len(self.axes_manager.axes)
+            cslice = [slice,] * len(self.axes_manager._axes)
             cslice[axis] = slice(None, index)
             return tuple(cslice)
         s.data = sdata[s.axes_manager._get_data_slice(
@@ -368,8 +368,8 @@ class EELSSpectrum(Spectrum):
                     self.tmp_parameters.filename +
                     '_after_fourier_log_deconvolution')
         if crop is True:
-            s.crop_in_pixels(axis.index_in_array,
-                             None, -tapped_channels)
+            s.crop(axis.index_in_axes_manager,
+                             None, int(-tapped_channels))
         return s
 
     def fourier_ratio_deconvolution(self, ll, fwhm=None,
@@ -462,7 +462,7 @@ class EELSSpectrum(Spectrum):
         cl.data = np.fft.irfft(z.reshape(zshape) * jk / jl,
                              axis=axis.index_in_array)
         cl.data *= I0
-        cl.crop_in_pixels(-1,None,orig_cl_size)
+        cl.crop(-1,None,int(orig_cl_size))
         cl.mapped_parameters.title = (self.mapped_parameters.title + 
             ' after Fourier-ratio deconvolution')
         if cl.tmp_parameters.has_item('filename'):

@@ -200,9 +200,8 @@ def load(filenames=None, record_by=None, signal_type=None,
                     # avoid its deletion when garbage collecting
                     if tempf is not None:
                         signal._data_temporary_file = tempf
-                    signal.axes_manager.axes[1:] = obj.axes_manager.axes
-                    signal.axes_manager._set_axes_index_in_array_from_position()
-                    eaxis = signal.axes_manager.axes[0]
+                    signal.axes_manager._axes[1:] = obj.axes_manager._axes
+                    eaxis = signal.axes_manager._axes[0]
                     eaxis.name = 'stack_element'
                     eaxis.navigate = True
                     signal.mapped_parameters = obj.mapped_parameters
@@ -230,7 +229,7 @@ def load(filenames=None, record_by=None, signal_type=None,
                     obj.mapped_parameters.as_dictionary()
                 del obj
             messages.information('Individual files loaded correctly')
-            signal.print_summary()
+            signal._print_summary()
             objects = [signal,]
         else:
             objects=[load_single_file(filename, output_level=0,
@@ -312,21 +311,21 @@ def load_with_reader(filename, reader, record_by=None,
             file_data_dict['mapped_parameters']['signal_type'] = signal_type
 
         if file_data_dict['mapped_parameters']['record_by'] == 'image':
-            s = Image(file_data_dict)
+            s = Image(**file_data_dict)
         else:
             if ('signal_type' in file_data_dict['mapped_parameters'] 
                 and file_data_dict['mapped_parameters']['signal_type'] 
                 == 'EELS'):
-                s = EELSSpectrum(file_data_dict)
+                s = EELSSpectrum(**file_data_dict)
             else:
-                s = Spectrum(file_data_dict)
+                s = Spectrum(**file_data_dict)
         folder, filename = os.path.split(os.path.abspath(filename))
         filename, extension = os.path.splitext(filename)
         s.tmp_parameters.folder = folder
         s.tmp_parameters.filename = filename
         s.tmp_parameters.extension = extension.replace('.','')
         objects.append(s)
-        s.print_summary()
+        s._print_summary()
 
     if len(objects) == 1:
         objects = objects[0]

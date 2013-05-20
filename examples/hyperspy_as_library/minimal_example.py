@@ -4,7 +4,7 @@ import hyperspy.hspy as hspy
 import numpy as np
 import matplotlib.pyplot as plt
 
-s = hspy.signals.Spectrum({'data' : np.random.rand(1024)})
+s = hspy.signals.Spectrum(np.random.rand(1024))
 s.plot()
 
 plt.savefig("testSpectrum.png")

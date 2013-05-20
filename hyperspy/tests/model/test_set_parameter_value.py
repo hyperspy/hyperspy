@@ -31,7 +31,7 @@ class TestSetParameterInModel:
         g1 = Gaussian()
         g2 = Gaussian()
         g3 = Gaussian()
-        s = Spectrum({'data' : np.arange(1000).reshape(10,10,10)})
+        s = Spectrum(np.arange(1000).reshape(10,10,10))
         m = create_model(s)
         m.append(g1)
         m.append(g2)
