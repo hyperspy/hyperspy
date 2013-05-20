@@ -127,6 +127,7 @@ class EELSSpectrum(Spectrum):
             transformation is applied to all the other signals.
             
         """
+        self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0] 
         old_offset = axis.offset
         imax = np.mean(np.argmax(self.data,axis.index_in_array))
@@ -141,7 +142,7 @@ class EELSSpectrum(Spectrum):
                 saxis.offset += axis.offset - old_offset
     
     def estimate_elastic_scattering_intensity(self, threshold=None):
-        """Rough estimation of the elastic scattering signal by 
+        """Rough estimation of the elastic scattering intensity by 
         truncation of a EELS low-loss spectrum.
         
         Parameters
@@ -157,12 +158,14 @@ class EELSSpectrum(Spectrum):
             
         Returns
         -------
-        The elastic scattering intensity. If the navigation size is 0 
-        returns a float. Otherwise it returns a Spectrum, Image or a 
-        Signal, depending on the currenct spectrum navigation 
-        dimensions.
+        I0: Signal
+            The elastic scattering intensity. If the navigation size is 0 
+            returns a float. Otherwise it returns a Spectrum, Image or a 
+            Signal, depending on the currenct spectrum navigation 
+            dimensions.
             
         """
+        self._check_signal_dimension_equals_one()
         I0 = self._get_navigation_signal()
         axis = self.axes_manager.signal_axes[0]
         # Use the data from the current location to estimate
@@ -247,6 +250,7 @@ class EELSSpectrum(Spectrum):
             navigation space containing the estimated threshold.
             
         """
+        self._check_signal_dimension_equals_one()
         # Create threshold with the same shape as the navigation dims.
         threshold = self._get_navigation_signal()
         if threshold is None:
@@ -334,7 +338,7 @@ class EELSSpectrum(Spectrum):
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
         
         """       
-        
+        self._check_signal_dimension_equals_one()
         dc = self.data
         axis = self.axes_manager.signal_axes[0]
         total_intensity = dc.sum(axis.index_in_array)
@@ -392,6 +396,7 @@ class EELSSpectrum(Spectrum):
                 derivative if der_roots is True (False by default)
                 
         """
+        self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         i0, i1 = (axis.value2index(energy_range[0]), 
                   axis.value2index(energy_range[1]))
@@ -484,7 +489,8 @@ class EELSSpectrum(Spectrum):
         -----        
         For details see: Egerton, R. Electron Energy-Loss 
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
-        """ 
+        """
+        self._check_signal_dimension_equals_one()
         zlp = self.deepcopy()
         axes = zlp.axes_manager
         Eaxis = axes.signal_axes[0]
@@ -639,6 +645,7 @@ class EELSSpectrum(Spectrum):
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
         
         """
+        self._check_signal_dimension_equals_one()
         s = self.deepcopy()
         tapped_channels = 0
         
@@ -722,6 +729,7 @@ class EELSSpectrum(Spectrum):
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
         
         """
+        self._check_signal_dimension_equals_one()
         orig_cl_size = self.axes_manager.signal_axes[0].size
         if extrapolate_coreloss is True:
             cl = self.power_law_extrapolation(
@@ -810,7 +818,7 @@ class EELSSpectrum(Spectrum):
         Ultramicroscopy 96, no. 3–4 (September 2003): 385–400.
         
         """
-
+        self._check_signal_dimension_equals_one()
         ds = self.deepcopy()
         ds.data = ds.data.copy()
         ds.mapped_parameters.title += (
@@ -868,8 +876,8 @@ class EELSSpectrum(Spectrum):
         spikes_removal_tool
         
         """
+        self._check_signal_dimension_equals_one()
         dc = self.data
-        axis = self.axes_manager.signal_axes[0]
         if signal_mask is not None:
             dc = dc[..., ~signal_mask]
         if navigation_mask is not None:
@@ -900,7 +908,9 @@ class EELSSpectrum(Spectrum):
         _spikes_diagnosis, 
 
         """
-        sr = SpikesRemoval(self,navigation_mask=navigation_mask,
+        self._check_signal_dimension_equals_one()
+        sr = SpikesRemoval(self,
+                           navigation_mask=navigation_mask,
                            signal_mask=signal_mask)
         sr.edit_traits()
         return sr
@@ -1016,6 +1026,7 @@ class EELSSpectrum(Spectrum):
         A new spectrum, with the extrapolation.
             
         """
+        self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         s = self.deepcopy()
         s.mapped_parameters.title += (
