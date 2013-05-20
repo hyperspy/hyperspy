@@ -24,7 +24,6 @@ import distutils.dir_util
 import os
 import subprocess
 import sys
-import shutil
 import fileinput
 
 import hyperspy.Release as Release
@@ -143,8 +142,11 @@ with update_version_when_dev() as version:
                     'hyperspy.signals', 
                     'hyperspy.gui',
                     'hyperspy.tests',
-                    'hyperspy.models',
+                    'hyperspy.tests.component',
                     'hyperspy.tests.io',
+                    'hyperspy.tests.model',
+                    'hyperspy.tests.signal',
+                    'hyperspy.models',
                     'hyperspy.misc',
                     'hyperspy.misc.eels',
                     'hyperspy.misc.mpfit', 

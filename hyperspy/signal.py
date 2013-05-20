@@ -3073,6 +3073,43 @@ class Signal(MVA,
         s.get_dimensions_from_data()
         return s
         
+    def integrate_simpson(self, axis):
+        """Returns a signal with the result of calculating the integral 
+        of the signal along an axis using Simpson's rule.
+
+        Parameters
+        ----------
+        axis : {int | string}
+           The axis can be specified using the index of the axis in 
+           `axes_manager` or the axis name.
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum_in_mask, mean
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.var(-1).data.shape
+        (64,64)
+        
+        """
+        axis = self.axes_manager[axis]
+        s = self._deepcopy_with_new_data(
+            sp.integrate.simps(y=self.data,
+                               x=axis.axis,
+                               axis=axis.index_in_array))
+        s.axes_manager.remove(s.axes_manager._axes[axis.index_in_array])
+        return s
+        
+        
     def copy(self):
         return copy.copy(self)
 
@@ -3208,17 +3245,21 @@ class Signal(MVA,
         
     def _get_navigation_signal(self):
         if self.axes_manager.navigation_dimension == 0:
-            return self.__class__(np.array([0,]))
+            return self.__class__(np.array([0,]).astype(self.data.dtype))
         elif self.axes_manager.navigation_dimension == 1:
             from hyperspy.signals.spectrum import Spectrum
-            s = Spectrum(np.zeros(self.axes_manager._navigation_shape_in_array),
+            s = Spectrum(
+                    np.zeros(self.axes_manager._navigation_shape_in_array,
+                             dtype=self.data.dtype),
                          axes=self.axes_manager._get_navigation_axes_dicts())
         elif self.axes_manager.navigation_dimension == 2:
             from hyperspy.signals.image import Image
-            s = Image(np.zeros(self.axes_manager._navigation_shape_in_array),
+            s = Image(np.zeros(self.axes_manager._navigation_shape_in_array,
+                               dtype=self.data.dtype),
                       axes=self.axes_manager._get_navigation_axes_dicts())
         else:
-            s = Signal(np.zeros(self.axes_manager._navigation_shape_in_array),
+            s = Signal(np.zeros(self.axes_manager._navigation_shape_in_array,
+                                dtype=self.data.dtype),
                        axes=self.axes_manager._get_navigation_axes_dicts())
         return s
                 
