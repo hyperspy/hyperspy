@@ -1693,6 +1693,7 @@ def plot_spectra(
     Returns
     -----------
     Matplotlib figure"""
+    navigation_length = spectra.axes_manager.navigation_size
     if isinstance(color, str):
         if navigation_length == 0:
             color_array = [color] 
