@@ -194,13 +194,14 @@ def load(filenames=None, record_by=None, signal_type=None,
                                          dtype=obj.data.dtype,
                                          mode = 'w+',
                                          shape=stack_shape,)
-                    signal = type(obj)(
-                        {'data' : data})
+                    signal = type(obj)(data=data)
                     # Store the temporary file in the signal class to
                     # avoid its deletion when garbage collecting
                     if tempf is not None:
                         signal._data_temporary_file = tempf
                     signal.axes_manager._axes[1:] = obj.axes_manager._axes
+                    for axis in signal.axes_manager._axes[1:]:
+                        axis.axes_manager = signal.axes_manager
                     eaxis = signal.axes_manager._axes[0]
                     eaxis.name = 'stack_element'
                     eaxis.navigate = True
