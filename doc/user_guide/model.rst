@@ -25,7 +25,7 @@ In Hyperspy a model consists of a linear combination of :py:mod:`~.components`. 
 
 
 * :py:class:`~.components.eels_cl_edge.EELSCLEdge`
-* :py:class:`~.components.components.VolumePlasmonDrude`
+* :py:class:`~.components.volume_plasmon_drude.VolumePlasmonDrude`
 * :py:class:`~.components.power_law.PowerLaw`
 * :py:class:`~.components.offset.Offset`
 * :py:class:`~.components.exponential.Exponential`
@@ -60,7 +60,7 @@ In fact, components may be created automatically in some cases. For example, if 
 .. code-block:: python
     
     >>> gaussian = components.Gaussian() # Create a Gaussian function component
-    >>> m.append(gaussian) # Add it to the model_cube
+    >>> m.append(gaussian) # Add it to the model
     >>> m # Print the model components 
     [<Gaussian component>]
     >>> gaussian2 = components.Gaussian() # Create another gaussian components
@@ -95,20 +95,14 @@ We can customise the name of the components
 Fitting the model to the data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To fit the model to the data at the current coordinates (e.g. to fit one spectrum at a particular point in a spectrum-image) use :py:meth:`~.optimizers.Optimizers.fit`. To fit the model to the data in all the coordinates use :py:meth:`~.model.Model.multifit` and to visualise the result :py:meth:`~.model.Model.plot`, e.g.:
+To fit the model to the data at the current coordinates (e.g. to fit one spectrum at a particular point in a spectrum-image) use :py:meth:`~.optimizers.Optimizers.fit`.
+To visualise the result :py:meth:`~.model.Model.plot`, e.g.:
 
 .. code-block:: python
     
     >>> m.fit() # Fit the data at the current coordinates
     >>> m.plot() # Visualise the results
-    
-Because we like what we see, we will fit the model to the data in all the coordinates
-
-.. code-block:: python
-
-    >>> m.multifit() # warning: this can be a lengthy process on large datasets
-    
-    
+        
 Getting and setting parameter values and attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -122,7 +116,7 @@ If a model contains several components with the same parameters, it is possible 
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum({'data':np.arange(100).reshape(10,10)})
+    >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
     >>> g1 = components.Gaussian()
     >>> g2 = components.Gaussian()
     >>> m.extend([g1,g2])
@@ -241,10 +235,10 @@ For example:
 
 
 By default the coupling function is the identity function. However it is
- possible to set a different coupling function by setting the 
- :py:attr:`~.component.Parameter.twin_function` and 
- :py:attr:`~.component.Parameter.twin_inverse_function` attributes. 
- For example:
+possible to set a different coupling function by setting the 
+:py:attr:`~.component.Parameter.twin_function` and 
+:py:attr:`~.component.Parameter.twin_inverse_function` attributes. 
+For example:
  
     >>> gaussian2.A.twin_function = lambda x: x**2
     >>> gaussian2.A.twin_inverse_function = lambda x: np.sqrt(np.abs(x))
@@ -284,9 +278,12 @@ By default the coupling function is the identity function. However it is
 Setting the position of parameter interactively
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. versionadded:: 0.6
-    :py:meth:`~.model.Model.enable_adjust_position` provides an 
-    interactive way of setting the position of the components with a 
-    well define position.
+
+:py:meth:`~.model.Model.enable_adjust_position` provides an 
+interactive way of setting the position of the components with a 
+well define position. :py:meth:`~.model.Model.disable_adjust_position` 
+disables the tool. This feature will be made from user friendly but 
+adding a button to the UI to enable/disable it.
     
 .. figure::  images/model_adjust_position.png
    :align:   center
@@ -299,12 +296,31 @@ Setting the position of parameter interactively
 Exclude data from the fitting process
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
 The following :py:class:`~.model.Model` methods can be used to exclude undesired spectral channels from the fitting process:
 
 * :py:meth:`~.model.Model.set_signal_range`
 * :py:meth:`~.model.Model.remove_signal_range`
 * :py:meth:`~.model.Model.reset_signal_range`
+
+Working with multidimensional datasets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To fit the model to the full datataset use :py:meth:`~.model.Model.multifit`, 
+e.g.:
+    
+.. code-block:: python
+
+    >>> m.multifit() # warning: this can be a lengthy process on large datasets
+
+:py:meth:`~.model.Model.multifit` fits the model at the first position, 
+store the result of the fit internally and move to the next position until 
+reaching the end of the dataset.
+
+Sometimes one may like to store and fetch the value of the parameters at a 
+given position manually. This is possible using 
+:py:meth:`~.model.Model.store_current_values` and 
+:py:meth:`~.model.Model.fetch_stored_values`.
+
 
 Visualising the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -322,6 +338,18 @@ Exporting the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The :py:class:`~.model.Model` :py:meth:`~.model.Model.export_results`, :py:class:`~.component.Component` :py:meth:`~.component.Component.export` and :py:class:`~.component.Parameter` :py:meth:`~.component.Parameter.export` methods can be used to export the result of the optimization in all supported formats.
+
+Batch setting of parameter attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. versionadded:: 0.6
+
+The following methods can be used to ease the task of setting some important 
+parameter attributes:
+
+* :py:meth:`~.model.Model.set_parameters_not_free`
+* :py:meth:`~.model.Model.set_parameters_free`
+* :py:meth:`~.model.Model.set_parameters_value`
+
 
 EELS curve fitting
 ------------------
@@ -426,17 +454,31 @@ Visualize the result
 
    Curve fitting quantification of a boron nitride EELS core-loss spectrum from `The EELS Data Base <http://pc-web.cemes.fr/eelsdb/index.php?page=home.php>`_
    
-   
-The following methods are only available for :py:class:`~.models.eelsmodel.EELSModel`: 
 
-* :py:meth:`~.models.eelsmodel.EELSModel.smart_fit`
-* :py:meth:`~.models.eelsmodel.EELSModel.quantify`
-* :py:meth:`~.models.eelsmodel.EELSModel.remove_fine_structure_data`
+There are several methods that are only available in :py:class:`~.models.eelsmodel.EELSModel`:
+
+* :py:meth:`~.models.eelsmodel.EELSModel.smart_fit` is a fit method that is 
+  more robust than the standard routine when fitting EELS data.
+* :py:meth:`~.models.eelsmodel.EELSModel.quantify` prints the intensity at 
+  the current locations of all the EELS ionisation edges in the model.
+* :py:meth:`~.models.eelsmodel.EELSModel.remove_fine_structure_data` removes 
+  the fine structure spectral data range (as defined by the 
+  :py:attr:`~.components.eels_cl_edge.EELSCLEdge.fine_structure_width)` 
+  ionisation edge components. It is specially useful when fitting without 
+  convolving with a zero-loss peak.
+
+The following methods permit to easily enable/disable background and ionisation
+edges components:
+
 * :py:meth:`~.models.eelsmodel.EELSModel.enable_edges`
 * :py:meth:`~.models.eelsmodel.EELSModel.enable_background`
 * :py:meth:`~.models.eelsmodel.EELSModel.disable_background`
 * :py:meth:`~.models.eelsmodel.EELSModel.enable_fine_structure`
 * :py:meth:`~.models.eelsmodel.EELSModel.disable_fine_structure`
+
+The following methods permit to easily enable/disable several ionisation 
+edge functionalities:
+
 * :py:meth:`~.models.eelsmodel.EELSModel.set_all_edges_intensities_positive`
 * :py:meth:`~.models.eelsmodel.EELSModel.unset_all_edges_intensities_positive`
 * :py:meth:`~.models.eelsmodel.EELSModel.enable_free_onset_energy`
@@ -445,8 +487,3 @@ The following methods are only available for :py:class:`~.models.eelsmodel.EELSM
 * :py:meth:`~.models.eelsmodel.EELSModel.free_edges`
 * :py:meth:`~.models.eelsmodel.EELSModel.fix_fine_structure`
 * :py:meth:`~.models.eelsmodel.EELSModel.free_fine_structure`
-* :py:meth:`~.models.eelsmodel.EELSModel.free_fine_structure`
-* :py:meth:`~.models.eelsmodel.EELSModel.free_fine_structure`
-
-
-

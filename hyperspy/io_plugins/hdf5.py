@@ -214,7 +214,7 @@ def write_signal(signal,group, compression='gzip'):
     group.create_dataset('data',
                          data=signal.data,
                          compression=compression)
-    for axis in signal.axes_manager.axes:
+    for axis in signal.axes_manager._axes:
         axis_dict = axis.get_axis_dictionary()
         # For the moment we don't store the navigate attribute
         del(axis_dict['navigate'])

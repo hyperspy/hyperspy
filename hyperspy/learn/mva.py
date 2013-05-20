@@ -34,6 +34,7 @@ except:
 
 from hyperspy.misc.import_sklearn import *
 from hyperspy.misc import utils
+from hyperspy.misc import utils_varia 
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
 from hyperspy.defaults_parser import preferences
@@ -363,7 +364,7 @@ class MVA():
             if not isinstance(signal_mask, slice):
                 # Store the (inverted, as inputed) signal mask 
                 target.signal_mask = ~signal_mask.reshape(
-                    self.axes_manager.signal_shape)
+                    self.axes_manager._signal_shape_in_array)
                 if reproject not in ('both', 'signal'):
                     factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
                     factors[signal_mask == True,:] = target.factors
@@ -372,7 +373,7 @@ class MVA():
             if not isinstance(navigation_mask, slice):
                 # Store the (inverted, as inputed) navigation mask
                 target.navigation_mask = ~navigation_mask.reshape(
-                    self.axes_manager.navigation_shape)
+                    self.axes_manager._navigation_shape_in_array)
                 if reproject not in ('both', 'navigation'):
                     loadings = np.zeros((dc.shape[0], target.loadings.shape[1]))
                     loadings[navigation_mask == True,:] = target.loadings
@@ -388,8 +389,7 @@ class MVA():
     
     def get_factors_as_spectrum(self):
         from hyperspy.signals.spectrum import Spectrum
-        return Spectrum(
-            {'data' : self.learning_results.factors.T.copy()})
+        return Spectrum(self.learning_results.factors.T.copy())
     
     def blind_source_separation(self,
                                 number_of_components=None,
@@ -459,7 +459,7 @@ class MVA():
                     
             if pretreatment is not None:
                 from hyperspy.signals.spectrum import Spectrum
-                sfactors = Spectrum({'data' : factors.T})
+                sfactors = Spectrum(factors.T)
                 if pretreatment['algorithm'] == 'savitzky_golay':
                     sfactors.smooth_savitzky_golay(
                         number_of_points=pretreatment[
@@ -864,19 +864,28 @@ class LearningResults(object):
     navigation_mask = None
     signal_mask =  None
     
-    def save(self, filename):
+    def save(self, filename, overwrite=None):
         """Save the result of the decomposition and demixing analysis
 
         Parameters
         ----------
         filename : string
+        overwrite : {True, False, None}
+            If True(False) overwrite(don't overwrite) the file if it exists.
+            If None (default) ask what to do if file exists.        
+        
         """
         kwargs = {}
         for attribute in [
             v for v in dir(self) if type(getattr(self,v)) != 
             types.MethodType and not v.startswith('_')]:
             kwargs[attribute] = self.__getattribute__(attribute)
-        np.savez(filename, **kwargs)
+        # Check overwrite
+        if overwrite is None:
+            overwrite = utils_varia.overwrite(filename)
+        # Save, if all went well!
+        if overwrite is True:    
+            np.savez(filename, **kwargs)
 
 
     def load(self, filename):

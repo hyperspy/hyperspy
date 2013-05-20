@@ -22,11 +22,8 @@ from hyperspy.decorators import auto_replot
 from hyperspy.signals.spectrum import Spectrum
 
 class SpectrumSimulation(Spectrum):
-    def __init__(self, dic = None, shape = None, dtype = 'float64'):
-        if dic is None and shape is not None:
-            data = np.zeros((shape), dtype = dtype)
-            dic = {'data' : data}
-        Spectrum.__init__(self, dic)
+    def __init__(self, *args, **kwargs):
+        super(SpectrumSimulation, self).__init__(*args, **kwargs)
 
     @auto_replot
     def add_poissonian_noise(self, **kwargs):

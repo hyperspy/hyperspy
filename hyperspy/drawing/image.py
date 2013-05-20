@@ -171,7 +171,7 @@ class ImagePlot:
             self.plot_indices = False
         if self.plot_indices is True:
             self._text = self.ax.text(*self._text_position,
-                            s=str(self.axes_manager.indices[::-1]),
+                            s=str(self.axes_manager.indices),
                             transform = self.ax.transAxes,
                             fontsize=12,
                             color='red')
@@ -219,7 +219,7 @@ class ImagePlot:
                        extent=self._extent,
                        aspect=self._aspect)
         if self.plot_indices is True:
-            self._text.set_text((self.axes_manager.indices[::-1]))
+            self._text.set_text((self.axes_manager.indices))
         self.figure.canvas.draw()
         
     def _update_image(self):

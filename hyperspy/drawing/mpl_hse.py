@@ -121,15 +121,29 @@ class MPL_HyperSpectrum_Explorer(object):
             imf.plot()
             self.pointer.add_axes(imf.ax)
         elif self.axes_manager.navigation_dimension >= 2:
-            imf.yaxis = self.axes_manager.navigation_axes[-2]
-            imf.xaxis = self.axes_manager.navigation_axes[-1]
-            imf.plot()
-            self.pointer.add_axes(imf.ax)
+#<<<<<<< HEAD
+            #imf.yaxis = self.axes_manager.navigation_axes[-2]
+            #imf.xaxis = self.axes_manager.navigation_axes[-1]
+            #imf.plot()
+            #self.pointer.add_axes(imf.ax)
+            #if self.axes_manager.navigation_dimension > 2:
+                #navigation_sliders(
+                    #self.axes_manager.navigation_axes[::-1])
+                #for axis in self.axes_manager.navigation_axes[:-2]:
+                    #axis.connect(imf.update_image)    
+#=======
+            imf.yaxis = self.axes_manager.navigation_axes[1]
+            imf.xaxis = self.axes_manager.navigation_axes[0]
             if self.axes_manager.navigation_dimension > 2:
                 navigation_sliders(
-                    self.axes_manager.navigation_axes[::-1])
-                for axis in self.axes_manager.navigation_axes[:-2]:
-                    axis.connect(imf.update_image)    
+                    self.axes_manager.navigation_axes)
+                for axis in self.axes_manager.navigation_axes[2:]:
+                    axis.connect(imf.update_image)
+            
+        imf.title = self.signal_title + ' Navigator'
+        imf.plot()
+        self.pointer.add_axes(imf.ax)
+#>>>>>>> ENH_plot_external_navigator
         self.navigator_plot = imf
         
     def plot_signal(self):

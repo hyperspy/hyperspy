@@ -133,7 +133,7 @@ Lets start by indexing a single spectrum:
 
 .. code-block:: python
     
-    >>> s = signals.Spectrum({'data' : np.arange(10)})
+    >>> s = signals.Spectrum(np.arange(10))
     >>> s
     <Spectrum, title: , dimensions: (10,)>
     >>> s.data
@@ -165,7 +165,7 @@ Hyperspy indexes using the axis scales instead of the indices.
  
 .. code-block:: python
 
-    >>> s = signals.Spectrum({'data' : np.arange(10)})
+    >>> s = signals.Spectrum(np.arange(10))
     >>> s
     <Spectrum, title: , dimensions: (10,)>
     >>> s.data
@@ -185,7 +185,7 @@ Importantly the original :py:class:`~.signal.Signal` and its "indexed self" shar
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum({'data' : np.arange(10)})
+    >>> s = signals.Spectrum(np.arange(10))
     >>> s
     <Spectrum, title: , dimensions: (10,)>
     >>> s.data
@@ -209,7 +209,7 @@ and the following indexes are the signal indices also in natural order.
     
 .. code-block:: python
     
-    >>> s = signals.Spectrum({'data' : np.arange(2*3*4).reshape((2,3,4))})
+    >>> s = signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Spectrum, title: , dimensions: (10, 10, 10)>
     >>> s.data
@@ -220,23 +220,23 @@ and the following indexes are the signal indices also in natural order.
        [[12, 13, 14, 15],
         [16, 17, 18, 19],
         [20, 21, 22, 23]]])
-    >>> s.axes_manager[0].name = 'y'
-    >>> s.axes_manager[1].name = 'x'
+    >>> s.axes_manager[0].name = 'x'
+    >>> s.axes_manager[1].name = 'y'
     >>> s.axes_manager[2].name = 't'
     >>> s.axes_manager.signal_axes
-    [<t axis, index: 2>]
+    (<t axis, size: 4>,)
     >>> s.axes_manager.navigation_axes
-    [<y axis, index: 0>, <x axis, index: 1>]
+    (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)
     >>> s[0,0].data
     array([0, 1, 2, 3])
-    >>> s[0,0].axes_manager.axes
-    [<t axis, index: 0>]
+    >>> s[0,0].axes_manager
+    <Axes manager, axes: (<t axis, size: 4>,)>
     >>> s[0,0,::-1].data
     array([3, 2, 1, 0])
     >>> s[...,0]
     <Spectrum, title: , dimensions: (2, 3)>
-    >>> s[...,0].axes_manager.axes
-    [<y axis, index: 0>, <x axis, index: 1>]
+    >>> s[...,0].axes_manager
+    <Axes manager, axes: (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)>
     >>> s[...,0].data
     array([[ 0,  4,  8],
        [12, 16, 20]])
@@ -246,7 +246,7 @@ dimensions independently:
 
 .. code-block:: python
     
-    >>> s = signals.Spectrum({'data' : np.arange(2*3*4).reshape((2,3,4))})
+    >>> s = signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Spectrum, title: , dimensions: (10, 10, 10)>
     >>> s.data
@@ -257,21 +257,21 @@ dimensions independently:
        [[12, 13, 14, 15],
         [16, 17, 18, 19],
         [20, 21, 22, 23]]])
-    >>> s.axes_manager[0].name = 'y'
-    >>> s.axes_manager[1].name = 'x'
+    >>> s.axes_manager[0].name = 'x'
+    >>> s.axes_manager[1].name = 'y'
     >>> s.axes_manager[2].name = 't'
     >>> s.axes_manager.signal_axes
-    [<t axis, index: 2>]
+    (<t axis, size: 4>,)
     >>> s.axes_manager.navigation_axes
-    [<y axis, index: 0>, <x axis, index: 1>]
+    (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)
     >>> s.navigation_indexer[0,0].data
     array([0, 1, 2, 3])
-    >>> s.navigation_indexer[0,0].axes_manager.axes
-    [<t axis, index: 0>]
+    >>> s.navigation_indexer[0,0].axes_manager
+    <Axes manager, axes: (<t axis, size: 4>,)>
     >>> s.signal_indexer[0]
     <Spectrum, title: , dimensions: (2, 3)>
-    >>> s.signal_indexer[0].axes_manager.axes
-    [<y axis, index: 0>, <x axis, index: 1>]
+    >>> s.signal_indexer[0].axes_manager
+    <Axes manager, axes: (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)>
     >>> s.signal_indexer[0].data
     array([[ 0,  4,  8],
        [12, 16, 20]])
@@ -281,7 +281,7 @@ The same syntax can be used to set the data values:
 
 .. code-block:: python
     
-    >>> s = signals.Spectrum({'data' : np.arange(2*3*4).reshape((2,3,4))})
+    >>> s = signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Spectrum, title: , dimensions: (10, 10, 10)>
     >>> s.data
@@ -364,10 +364,12 @@ the following cases:
 Cropping
 ^^^^^^^^
 
-The following methods are available to crop a given axis:
+Cropping can be performed in a very compact and powerful way using 
+:ref:`signal.indexing` . In addition it can be performed using the 
+following method or GUIs if cropping :ref:`spectra <>` or 
+:ref:`images <>`
 
-* :py:meth:`~.signal.Signal.crop_in_pixels`
-* :py:meth:`~.signal.Signal.crop_in_units`
+* :py:meth:`~.signal.Signal.crop`
 
 Rebinning
 ^^^^^^^^^
@@ -387,11 +389,16 @@ It is also possible to unfold only the navigation or only the signal space:
 * :py:meth:`~.signal.Signal.unfold_navigation_space`
 * :py:meth:`~.signal.Signal.unfold_signal_space`
 
-Sum or average over one axis
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Simple operations over one axis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * :py:meth:`~.signal.Signal.sum`
 * :py:meth:`~.signal.Signal.mean`
+* :py:meth:`~.signal.Signal.max`
+* :py:meth:`~.signal.Signal.min`
+* :py:meth:`~.signal.Signal.std`
+* :py:meth:`~.signal.Signal.var`
+* :py:meth:`~.signal.Signal.diff`
 
 Changing the data type
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -419,34 +426,36 @@ Even if the original data is recorded with a limited dynamic range, it is often 
 Spectrum tools
 --------------
 
-These methods are only available for the following signals:
+These methods are only available for Signal object with signal_dimension 
+equal to one.
 
-* :py:class:`~.signals.spectrum.Spectrum`
-* :py:class:`~.signals.eels.EELSSpectrum`
-* :py:class:`~.signals.spectrum_simulation.SpectrumSimulation`
-
+.. _spectrum.crop:
 
 Cropping
 ^^^^^^^^
 
-The :py:meth:`~.signals.spectrum.Spectrum.crop_spectrum`, method is used to crop the spectral energy range. If no parameter is passed, a user interface appears in which to crop the spectrum.
+In addition to cropping using the powerful and compact 
+:ref:`Signal indexing <signal.indexing>` syntax
+the following method is available to crop spectra using a GUI:
+
+The :py:meth:`~.signal.Signal1DTools.crop_spectrum`, method is used to crop the spectral energy range. If no parameter is passed, a user interface appears in which to crop the spectrum.
 
 Background removal
 ^^^^^^^^^^^^^^^^^^
 
-The :py:meth:`~.signals.spectrum.Spectrum.remove_background` method provides a user interface to remove some background functions.
+The :py:meth:`~.signal.Signal1DTools.remove_background` method provides a user interface to remove some background functions.
 
 Calibration
 ^^^^^^^^^^^
-The :py:meth:`~.signals.spectrum.Spectrum.calibrate` method provides a user interface to calibrate the spectral axis.
+The :py:meth:`~.signal.Signal1DTools.calibrate` method provides a user interface to calibrate the spectral axis.
 
 Aligning
 ^^^^^^^^
 
 The following methods use sub-pixel cross-correlation or user-provided shifts to align spectra. They support applying the same transformation to multiple files.
 
-* :py:meth:`~.signals.spectrum.Spectrum.align_1D`
-* :py:meth:`~.signals.spectrum.Spectrum.align_with_array_1D`
+* :py:meth:`~.signal.Signal1DTools.align1D`
+* :py:meth:`~.signal.Signal1DTools.shift1D`
 
 
 Data smoothing
@@ -454,31 +463,43 @@ Data smoothing
 
 The following methods (that include user interfaces when no arguments are passed) can perform data smoothing with different algorithms:
 
-* :py:meth:`~.signals.spectrum.Spectrum.smooth_lowess`
-* :py:meth:`~.signals.spectrum.Spectrum.smooth_tv`
-* :py:meth:`~.signals.spectrum.Spectrum.smooth_savitzky_golay`
+* :py:meth:`~.signal.Signal1DTools.smooth_lowess`
+* :py:meth:`~.signal.Signal1DTools.smooth_tv`
+* :py:meth:`~.signal.Signal1DTools.smooth_savitzky_golay`
 
 Other methods
 ^^^^^^^^^^^^^^
 
-* :py:meth:`~.signals.spectrum.Spectrum.hanning_taper`
+
+* Apply a hanning taper to the spectra :py:meth:`~.signal.Signal1DTools.hanning_taper`
+* Find peaks in spectra :py:meth:`~.signal.Signal1DTools.find_peaks1D_ohaver`
+* Interpolate the spectra in between two positions :py:meth:`~.signal.Signal1DTools.interpolate_in_between`
+* Convolve the spectra with a gaussian :py:meth:`~.signal.Signal1DTools.gaussian_filter`
 
 
 
 Image tools
 -----------
 
-* :py:meth:`~.signals.image.Image.crop_image`
-
+These methods are only available for Signal object with signal_dimension 
+equal to two.
 
 Image registration (alignment)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.5
 
-The :py:meth:`~.signals.image.Image.align2D` method provides advanced image alignment functionality, including subpixel alignment.
+The :py:meth:`~.signal.Signal2DTools.align2D` method provides advanced image alignment functionality, including subpixel alignment.
 
+.. image.crop:
 
+Cropping an image
+^^^^^^^^^^^^^^^^^
+In addition to cropping using the powerful and compact :ref:`signal.indexing`
+the following method is available to crop spectra the familiar 
+top, bottom, left, right syntax.
+
+* :py:meth:`~.signal.Signal2DTools.crop_image`
 
 
 EELS tools
