@@ -1630,11 +1630,19 @@ def _make_heatmap_subplot(spectra, ax):
     ax.set_xlabel(x_axis.units)
     return(ax)
 
-def _make_cascade_subplot(spectra, ax):
+def _make_cascade_subplot(spectra, ax, color='red'):
+    navigation_length = spectra.axes_manager.navigation_size
+    if isinstance(color, str):
+        if navigation_length == 0:
+            color_array = [color] 
+        else:
+            color_array = [color]*navigation_length
+    else:
+        color_array = color
     if spectra.axes_manager.navigation_size == 0:
         x_axis = spectra.axes_manager.signal_axes[0]
         data = spectra.data
-        ax.plot(x_axis.axis, data)
+        ax.plot(x_axis.axis, data, color=color_array[0])
     else:
         max_value = 0 
         for spectrum in spectra:
@@ -1646,17 +1654,17 @@ def _make_cascade_subplot(spectra, ax):
             x_axis = spectrum.axes_manager.signal_axes[0]
             data = spectrum.data
             data_to_plot = data/float(max_value) + y_axis.axis[spectrum_index]
-            ax.plot(x_axis.axis, data_to_plot)
+            ax.plot(x_axis.axis, data_to_plot, color=color_array[spectrum_index])
         ax.set_ylabel(y_axis.units)
 
     ax.set_xlim(x_axis.low_value, x_axis.high_value)
     ax.set_xlabel(x_axis.units)
     return(ax)
 
-def _make_mosaic_subplot(spectrum, ax):
+def _make_mosaic_subplot(spectrum, ax, color='red'):
     x_axis = spectrum.axes_manager.signal_axes[0]
     data = spectrum.data
-    ax.plot(x_axis.axis, data)
+    ax.plot(x_axis.axis, data, color=color)
     ax.set_xlim(x_axis.low_value, x_axis.high_value)
     ax.set_xlabel(x_axis.units)
     return(ax)
@@ -1664,6 +1672,7 @@ def _make_mosaic_subplot(spectrum, ax):
 def plot_spectra(
     spectra, 
     style='cascade', 
+    color='red',
     filename=None):
     """Parameters
     -----------------
@@ -1674,17 +1683,28 @@ def plot_spectra(
     style : {'cascade', 'mosaic', 'multiple_files', 'heatmap'}
         The style of the plot. multiple_files will plot every spectra
         in its own file.
+    color : string or list of strings, optional
+        Sets the color of the plots. If string sets all plots to color.
+        If list of strings: the list must be the same length as the
+        navigation length of the spectra to be plotted. Default is red
     filename : None or string
         If None, raise a window with the plot and return the figure.
 
     Returns
     -----------
     Matplotlib figure"""
+    if isinstance(color, str):
+        if navigation_length == 0:
+            color_array = [color] 
+        else:
+            color_array = [color]*navigation_length
+    else:
+        color_array = color
 
     if style == 'cascade':
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        _make_cascade_subplot(spectra, ax)
+        _make_cascade_subplot(spectra, ax, color=color_array)
 
         if filename is None:
             return(fig)
@@ -1694,8 +1714,8 @@ def plot_spectra(
     elif style == 'mosaic':
         #Need to find a way to automatically scale the figure size
         fig, subplots = plt.subplots(1, len(spectra))
-        for ax, spectrum in zip(subplots, spectra):
-            _make_mosaic_subplot(spectrum, ax)
+        for ax, spectrum, color in zip(subplots, spectra, color_array):
+            _make_mosaic_subplot(spectrum, ax, color=color)
         if filename is None:
             return(fig)
         else:
@@ -1705,7 +1725,7 @@ def plot_spectra(
         for spectrum_index, spectrum in enumerate(spectra):
             fig = plt.figure()
             ax = fig.add_subplot(111)
-            _make_mosaic_subplot(spectrum, ax)
+            _make_mosaic_subplot(spectrum, ax, color=color_array[spectrum_index])
             #Currently only works with png images
             #Should use some more clever method
             filename = filename.replace('.png', '')
