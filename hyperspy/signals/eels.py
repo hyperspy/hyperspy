@@ -189,7 +189,7 @@ class EELSSpectrum(Spectrum):
                                           number_of_points=number_of_points,
                                           polynomial_order=polynomial_order,)
         if isinstance(threshold, float):
-            I0 = self.signal_indexer[:threshold].sum(-1)
+            I0 = self.signal_indexer[:threshold].integrate_simpson(-1)
             I0.axes_manager.set_signal_dimension(
                                 min(2, self.axes_manager.navigation_dimension))
         
@@ -209,7 +209,7 @@ class EELSSpectrum(Spectrum):
                     I0[self.axes_manager.indices] = np.nan
                 else:
                     I0[self.axes_manager.indices].data[:] = (
-                                                    s[:threshold_].data.sum())
+                        s[:threshold_].integrate_simpson(-1).data)
                 pbar.update(i)
             pbar.finish()
             threshold.axes_manager._set_axis_attribute_values(
