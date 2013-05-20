@@ -208,7 +208,8 @@ class EELSSpectrum(Spectrum):
                 if np.isnan(threshold_):
                     I0[self.axes_manager.indices] = np.nan
                 else:
-                    I0[self.axes_manager.indices].data[:] = s[:threshold_].data.sum()
+                    I0[self.axes_manager.indices].data[:] = (
+                                                    s[:threshold_].data.sum())
                 pbar.update(i)
             pbar.finish()
             threshold.axes_manager._set_axis_attribute_values(
@@ -309,7 +310,13 @@ class EELSSpectrum(Spectrum):
                                 min(2, self.axes_manager.navigation_dimension))
         return threshold
         
-    def estimate_thickness(self, threshold=None, zlp=None,):
+    def estimate_thickness(self,
+                           zlp=None,
+                           threshold=None,
+                           window=20,
+                           tol=0.1,
+                           number_of_points=5,
+                           polynomial_order=3,):
         """Estimates the thickness (relative to the mean free path) 
         of a sample using the log-ratio method.
         
@@ -320,26 +327,20 @@ class EELSSpectrum(Spectrum):
         Parameters
         ----------
         zlp : {None, EELSSpectrum}
-            If None estimates the zero-loss peak by integrating the
-            intensity of the spectrum up to the value defined in 
-            threshold (i.e. by truncation). Otherwise the zero-loss
+            If not None the zero-loss
             peak intensity is calculated from the ZLP spectrum
-            supplied.
-        threshold : {None, float, Signal instance}
-            Truncation energy to estimate the intensity of the 
-            elastic scattering. Notice that in the case of a Signal the
-            instance has to be of the same dimension as the input 
-            spectrum navigation space containing the estimated 
-            threshold. In the case of a single spectrum a float is good
-            enough.If None the threshold is taken as the first minimum 
-            after the ZLP centre.
+            supplied by integration using Simpson's rule. If None estimates 
+            the zero-loss peak intensity using 
+            `estimate_elastic_scattering_intensity`. All other parameters
+            are passed to this function, see its docstring for more 
+            information.
             
         Returns
         -------
-        The thickness relative to the MFP. If it is a single spectrum 
-        returns a float. Otherwise it returns a Spectrum, Image or a 
-        Signal, depending on the currenct spectrum navigation 
-        dimensions.
+        s : Signal
+            The thickness relative to the MFP. It returns a Spectrum, 
+            Image or a Signal, depending on the currenct spectrum navigation 
+            dimensions.
             
         Notes
         -----        
@@ -348,32 +349,31 @@ class EELSSpectrum(Spectrum):
         
         """       
         self._check_signal_dimension_equals_one()
-        dc = self.data
         axis = self.axes_manager.signal_axes[0]
-        total_intensity = dc.sum(axis.index_in_array)
+        total_intensity = self.integrate_simpson(axis.index_in_array).data
         if zlp is not None:
-            I0 = zlp.data.sum(axis.index_in_array)            
+            I0 = zlp.integrate_simpson(axis.index_in_array).data 
         else:
             I0 = self.estimate_elastic_scattering_intensity(
-                                                threshold=threshold)
-            if self.axes_manager.navigation_size > 0:
-                I0 = I0.data
+                                    threshold=threshold,
+                                    window=window,
+                                    tol=tol,
+                                    number_of_points=number_of_points,
+                                    polynomial_order=polynomial_order,).data
+
         t_over_lambda = np.log(total_intensity / I0)
         s = self._get_navigation_signal()
-        if s is None:
-            return t_over_lambda
-        else:
-            s.data = t_over_lambda
-            s.mapped_parameters.title = (self.mapped_parameters.title + 
-                ' $\\frac{t}{\\lambda}$')
-            if self.tmp_parameters.has_item('filename'):
-                s.tmp_parameters.filename = (
-                    self.tmp_parameters.filename +
-                    '_relative_thickness')
-                s.tmp_parameters.folder = self.tmp_parameters.folder
-                s.tmp_parameters.extension = \
-                    self.tmp_parameters.extension
-            return s
+        s.data = t_over_lambda
+        s.mapped_parameters.title = (self.mapped_parameters.title + 
+            ' $\\frac{t}{\\lambda}$')
+        if self.tmp_parameters.has_item('filename'):
+            s.tmp_parameters.filename = (
+                self.tmp_parameters.filename +
+                '_relative_thickness')
+            s.tmp_parameters.folder = self.tmp_parameters.folder
+            s.tmp_parameters.extension = \
+                self.tmp_parameters.extension
+        return s
                 
                 
     def estimate_FWHM(self, factor=0.5, energy_range=(-10.,10.),
@@ -432,7 +432,7 @@ class EELSSpectrum(Spectrum):
                      
     def extract_zero_loss_peak(self, threshold=None, mode=None, 
                         window_s=100, background=0.0): 
-        """ General Tool to extract the zero loss peak (ZLP) from the 
+        """General Tool to extract the zero loss peak (ZLP) from the 
         rest of the low-loss EELSSpectrum provided, using the inflexion 
         points calculated from estimate_elastic_scattering_threshold, or
         any other threshold specified. The input EELSSpectrum must have
@@ -499,6 +499,7 @@ class EELSSpectrum(Spectrum):
         -----        
         For details see: Egerton, R. Electron Energy-Loss 
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
+        
         """
         self._check_signal_dimension_equals_one()
         zlp = self.deepcopy()
