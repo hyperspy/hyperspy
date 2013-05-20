@@ -3111,7 +3111,7 @@ class Signal(MVA,
         
     def _get_navigation_signal(self):
         if self.axes_manager.navigation_dimension == 0:
-            return None
+            return self.__class__(np.array([0,]))
         elif self.axes_manager.navigation_dimension == 1:
             from hyperspy.signals.spectrum import Spectrum
             s = Spectrum(np.zeros(self.axes_manager._navigation_shape_in_array),
