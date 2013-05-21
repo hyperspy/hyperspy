@@ -2260,7 +2260,10 @@ class Signal(MVA,
 
     def _get_signal_dict(self, add_learning_results=True):
         dic = {}
-        dic['data'] = self.data.copy()
+        if hasattr(self.data, "copy"):
+            dic['data'] = self.data.copy()
+        else:
+            dic['data'] = self.data            
         dic['axes'] = self.axes_manager._get_axes_dicts()
         dic['mapped_parameters'] = \
         self.mapped_parameters.deepcopy().as_dictionary()
