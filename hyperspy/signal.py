@@ -2182,7 +2182,8 @@ class Signal(MVA,
             string += "\n\tSignal type: "
             string += self.mapped_parameters.signal_type
         string += "\n\tData dimensions: "
-        string += str(self.data.shape)
+        string += str(self.axes_manager.navigation_shape + 
+                      self.axes_manager.signal_shape)
         if hasattr(self.mapped_parameters, 'record_by'):
             string += "\n\tData representation: "
             string += self.mapped_parameters.record_by
@@ -2262,11 +2263,12 @@ class Signal(MVA,
         dic['data'] = self.data.copy()
         dic['axes'] = self.axes_manager._get_axes_dicts()
         dic['mapped_parameters'] = \
-        self.mapped_parameters.as_dictionary()
+        self.mapped_parameters.deepcopy().as_dictionary()
         dic['original_parameters'] = \
-        self.original_parameters.as_dictionary()
+        self.original_parameters.deepcopy().as_dictionary()
         if add_learning_results and hasattr(self,'learning_results'):
-            dic['learning_results'] = self.learning_results.__dict__
+            dic['learning_results'] = copy.deepcopy(
+                                                self.learning_results.__dict__)
         return dic
 
     def _get_undefined_axes_list(self):
@@ -3017,18 +3019,18 @@ class Signal(MVA,
         
         
     def copy(self):
-        return copy.copy(self)
-
-    def deepcopy(self):
         try:
-            plot_backup = self._plot
+            backup_plot = self._plot
             self._plot = None
-            s = copy.deepcopy(self)
-            if self.data is not None:
-                s.data = s.data.copy()
-            return s
+            return copy.copy(self)
         finally:
-            self._plot = plot_backup
+            self._plot = backup_plot
+
+    def __deepcopy__(self, memo):
+        return type(self)(**self._get_signal_dict())
+            
+    def deepcopy(self):
+        return copy.deepcopy(self)
         
     def change_dtype(self, dtype):
         """Change the data type
