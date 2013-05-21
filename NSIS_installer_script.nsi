@@ -1,8 +1,7 @@
 ; Hyperspy installer script for Nullsoft installer system.
 ; Tested using version 2.46.
-; requires installation of 2 extra plugins:
+; requires installation of 1 extra plugins:
 ; UAC - http://nsis.sourceforge.net/UAC_plug-in
-; registry - http://nsis.sourceforge.net/Registry_plug-in
 
 ; This file based heavily on UAC_DualMode from the UAC plugin.
 
@@ -25,7 +24,6 @@ OutFile "${S_NAME}.exe"
 !include MUI2.nsh
 !include UAC.nsh
 !include nsDialogs.nsh
-!include registry.nsh
 
 !ifndef BCM_SETSHIELD
 !define BCM_SETSHIELD 0x0000160C
