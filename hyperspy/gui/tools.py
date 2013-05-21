@@ -341,13 +341,13 @@ class Smoothing(t.HasTraits):
         hse = self.signal._plot
         l1 = hse.signal_plot.ax_lines[0]
         self.original_color = l1.line.get_color()
-        l1.line_properties_helper(self.original_color, 'scatter')
-        l1.set_properties()
-        
+        l1.set_line_properties(color=self.original_color,
+                               type='scatter')        
         l2 = drawing.spectrum.SpectrumLine()
         l2.data_function = self.model2plot
-        l2.line_properties_helper(np.array(
-            self.line_color.Get())/255., 'line')   
+        l2.set_line_properties(
+            color=np.array(self.line_color.Get())/255.,
+            type='line')   
         # Add the line to the figure
         hse.signal_plot.add_line(l2)
         l2.plot()
@@ -365,8 +365,9 @@ class Smoothing(t.HasTraits):
         self.signal._plot.signal_plot.create_right_axis()
         self.smooth_diff_line = drawing.spectrum.SpectrumLine()
         self.smooth_diff_line.data_function = self.diff_model2plot
-        self.smooth_diff_line.line_properties_helper(np.array(
-            self.line_color.Get())/255., 'line')   
+        self.smooth_diff_line.set_line_properties(
+            color=np.array(self.line_color.Get())/255.,
+            type='line')   
         self.signal._plot.signal_plot.add_line(self.smooth_diff_line,
                                                  ax = 'right')
         self.smooth_diff_line.axes_manager = self.signal.axes_manager
@@ -390,13 +391,11 @@ class Smoothing(t.HasTraits):
         self.smooth_diff_line.update(force_replot = True)    
         
     def _line_color_changed(self, old, new):
-        self.smooth_line.line_properties['color'] = np.array(
-            self.line_color.Get())/255.
-        self.smooth_line.set_properties()
+        self.smooth_line.line_properties = {
+            'color' : np.array(self.line_color.Get())/255.}
         if self.smooth_diff_line is not None:
-            self.smooth_diff_line.line_properties['color'] = np.array(
-            self.line_color.Get())/255.
-            self.smooth_diff_line.set_properties()
+            self.smooth_diff_line.line_properties = {
+                'color' : np.array(self.line_color.Get())/255.}
         self.update_lines()
             
     def diff_model2plot(self, axes_manager = None):
@@ -437,9 +436,9 @@ class Smoothing(t.HasTraits):
             if self.differential_order != 0:
                 self.turn_diff_line_off()
             self.smooth_line.close()
-            self.data_line.line_properties_helper(self.original_color, 'line')
-            self.data_line.set_properties()
-        
+            self.data_line.set_line_properties(
+                color=self.original_color,
+                type='line')        
 
 class SmoothingSavitzkyGolay(Smoothing):
     polynomial_order = t.Int(3)

@@ -994,6 +994,11 @@ class Model(list):
         """Plots the current spectrum to the screen and a map with a 
         cursor to explore the SI.
         
+        Paramaters
+        ----------
+        plot_components : bool
+            If True, add a line per component to the signal figure.
+        
         """
         
         # If new coordinates are assigned
@@ -1001,29 +1006,42 @@ class Model(list):
         _plot = self.spectrum._plot
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()
-        l1.line_properties_helper(color, 'scatter')
-        l1.set_properties()
+        l1.set_line_properties(color=color, type='scatter')
         
         l2 = hyperspy.drawing.spectrum.SpectrumLine()
         l2.data_function = self._model2plot
-        l2.line_properties_helper('blue', 'line')        
+        l2.set_line_properties(color='blue', type='line')        
         # Add the line to the figure
         _plot.signal_plot.add_line(l2)
         l2.plot()
-
-        if plot_components:
-            for component_ in self:
-                lComponent = hyperspy.drawing.spectrum.SpectrumLine()
-                lComponent.data_function = component_._component2plot
-                lComponent.line_properties_helper('blue', 'line')        
-                # Add the line to the figure
-                _plot.signal_plot.add_line(lComponent)
-                lComponent.plot()
-
         on_figure_window_close(_plot.signal_plot.figure, 
                                 self._disconnect_parameters2update_plot)
         self._plot = self.spectrum._plot
         self._connect_parameters2update_plot()
+        if plot_components is True:
+            self._enable_plot_components()
+        
+    def _enable_plot_components(self):
+        if self._plot is None:
+            return
+        for component in [component for component in self if
+                             component.active is True]:
+            line = hyperspy.drawing.spectrum.SpectrumLine()
+            line.data_function = component._component2plot       
+            # Add the line to the figure
+            self._plot.signal_plot.add_line(line)
+            line.plot()
+            component._model_plot_line = line
+        on_figure_window_close(self._plot.signal_plot.figure, 
+                                self._disable_plot_components)
+                
+    def _disable_plot_components(self):
+        if self._plot is None:
+            return
+        for component in self:
+            if hasattr(component, "_model_plot_line"):
+                component._model_plot_line.close()
+                del component._model_plot_line        
         
     def set_current_values_to(self, components_list=None, mask=None):
         if components_list is None:
