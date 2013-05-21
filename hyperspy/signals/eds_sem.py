@@ -347,8 +347,8 @@ class EDSSEMSpectrum(EDSSpectrum):
         data_s = np.array(data_s)
  
         dim = len(self.data.shape)
-        #spec_th = EDSSEMSpectrum({'data' : np.rollaxis(data_s.dot(g),0,dim)})
-        spec_th = EDSSEMSpectrum({'data' : np.rollaxis(data_s,0,dim)})
+        #spec_th = EDSSEMSpectrum(np.rollaxis(data_s.dot(g),0,dim))
+        spec_th = EDSSEMSpectrum(np.rollaxis(data_s,0,dim))
 
         #spec_th.get_calibration_from(self)
         return spec_th
@@ -673,9 +673,9 @@ class EDSSEMSpectrum(EDSSpectrum):
                 break
                 
         if self.axes_manager.navigation_dimension == 0:
-            res_img = Spectrum({'data' : np.array([data_res])})
+            res_img = Spectrum(np.array([data_res]))
         else:
-            res_img = Image({'data' : data_res})
+            res_img = Image(data_res)
         res_img.axes_manager = axes_res
         res_img.mapped_parameters.title = result + ' ' + Xray_line
         if plot_result:                

@@ -64,7 +64,7 @@ class EDSSpectrum(Spectrum):
         Examples
         --------
         
-        >>> s = signals.EDSSEMSpectrum({'data' : np.arange(1024)})
+        >>> s = signals.EDSSEMSpectrum(np.arange(1024))
         >>> s.set_elements(['Ni', 'O'],['K','K'])   
         Adding Ni_Ka Line
         Adding O_Ka Line
@@ -110,7 +110,7 @@ class EDSSpectrum(Spectrum):
         Examples
         --------
         
-        >>> s = signals.EDSSEMSpectrum({'data' : np.arange(1024)})
+        >>> s = signals.EDSSEMSpectrum(np.arange(1024))
         >>> s.add_elements(['Ni', 'O'],['K','K'])   
         Adding Ni_Ka Line
         Adding O_Ka Line

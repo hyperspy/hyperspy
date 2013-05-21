@@ -112,10 +112,10 @@ class Spectrum(Signal):
         dic = self._get_signal_dict()
         if microscope == 'SEM':
             dic['mapped_parameters']['signal_type'] = 'EDS_SEM'
-            eds = EDSSEMSpectrum(dic)
+            eds = EDSSEMSpectrum(**dic)
         elif microscope == 'TEM':
             dic['mapped_parameters']['signal_type'] = 'EDS_TEM'
-            eds = EDSTEMSpectrum(dic)
+            eds = EDSTEMSpectrum(**dic)
         else:
             raise ValueError("Unkown microscope. Valid microscopes " 
                 "are: 'SEM' or 'TEM'")
