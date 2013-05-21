@@ -1630,7 +1630,7 @@ def _make_heatmap_subplot(spectra, ax):
     ax.set_xlabel(x_axis.units)
     return(ax)
 
-def _make_cascade_subplot(spectra, ax, color='red'):
+def _make_cascade_subplot(spectra, ax, color='red', reverse_yaxis=False):
     navigation_length = spectra.axes_manager.navigation_size
     if isinstance(color, str):
         if navigation_length == 0:
@@ -1650,10 +1650,13 @@ def _make_cascade_subplot(spectra, ax, color='red'):
             if spectrum_max_value > max_value:
                 max_value = spectrum_max_value
         y_axis = spectra.axes_manager.navigation_axes[0]
-        for spectrum_index, spectrum in enumerate(spectra):
+        if reverse_yaxis:
+            spectra_data = spectra.data[::-1]
+        else:
+            spectra_data = spectra.data
+        for spectrum_index, spectrum_data in enumerate(spectra_data):
             x_axis = spectrum.axes_manager.signal_axes[0]
-            data = spectrum.data
-            data_to_plot = data/float(max_value) + y_axis.axis[spectrum_index]
+            data_to_plot = spectrum_data/float(max_value) + y_axis.axis[spectrum_index]
             ax.plot(x_axis.axis, data_to_plot, color=color_array[spectrum_index])
         ax.set_ylabel(y_axis.units)
 
@@ -1673,6 +1676,7 @@ def plot_spectra(
     spectra, 
     style='cascade', 
     color='red',
+    reverse_yaxis=False,
     filename=None):
     """Parameters
     -----------------
@@ -1687,6 +1691,9 @@ def plot_spectra(
         Sets the color of the plots. If string sets all plots to color.
         If list of strings: the list must be the same length as the
         navigation length of the spectra to be plotted. Default is red
+    reverse_yaxis : bool, optional
+        Reverse the plotting direction of the navigational axis for 
+        cascade style plotting.
     filename : None or string
         If None, raise a window with the plot and return the figure.
 
@@ -1705,7 +1712,7 @@ def plot_spectra(
     if style == 'cascade':
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        _make_cascade_subplot(spectra, ax, color=color_array)
+        _make_cascade_subplot(spectra, ax, color=color_array, reverse_yaxis=reverse_yaxis)
 
         if filename is None:
             return(fig)
