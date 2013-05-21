@@ -350,7 +350,6 @@ class EDSSEMSpectrum(EDSSpectrum):
         #spec_th = EDSSEMSpectrum(np.rollaxis(data_s.dot(g),0,dim))
         spec_th = EDSSEMSpectrum(np.rollaxis(data_s,0,dim))
 
-        #spec_th.get_calibration_from(self)
         return spec_th
         
     def _get_kratio(self,Xray_lines,plot_result):
@@ -359,11 +358,7 @@ class EDSSEMSpectrum(EDSSpectrum):
         """
         from hyperspy.hspy import create_model        
         width_windows=0.75 
-        mp = self.mapped_parameters    
-        if (self.axes_manager.navigation_dimension == 3):
-            axes_kratio = self.to_image(1)[1].axes_manager 
-        else:              
-            axes_kratio = self.to_image()[1].axes_manager
+        mp = self.mapped_parameters  
         
         for Xray_line in Xray_lines :
             element = Xray_line[:-3]
@@ -381,10 +376,10 @@ class EDSSEMSpectrum(EDSSpectrum):
             #store k-ratio
             if (self.axes_manager.navigation_dimension == 0):
                 self._set_result( Xray_line, 'kratios',\
-                    fp.yscale.value/diff_ltime, axes_kratio, plot_result)
+                    fp.yscale.value/diff_ltime, plot_result)
             else:
                 self._set_result( Xray_line, 'kratios',\
-                    fp.yscale.as_signal().data/diff_ltime, axes_kratio, plot_result)
+                    fp.yscale.as_signal().data/diff_ltime, plot_result)
             
     
         
@@ -407,7 +402,6 @@ class EDSSEMSpectrum(EDSSpectrum):
         set_elements, link_standard, top_hat 
         
         """
-        print("0")
         
         if not hasattr(self.mapped_parameters, 'Sample') :
             raise ValueError("Add elements first, see 'set_elements'")
@@ -420,7 +414,6 @@ class EDSSEMSpectrum(EDSSpectrum):
         mp.Sample.kratios = list(np.zeros(len(mp.Sample.Xray_lines)))
         Xray_lines = list(mp.Sample.Xray_lines)
         
-        #return 0
         if deconvolution is not None: 
             for deconvo in deconvolution:
                 print("1")
@@ -462,10 +455,10 @@ class EDSSEMSpectrum(EDSSpectrum):
         for Xray_line in Xray_lines:
             if (self.axes_manager.navigation_dimension == 0):
                 self._set_result( Xray_line, 'kratios',\
-                    fps[i].yscale.value/diff_ltime[i], axes_kratio, plot_result)
+                    fps[i].yscale.value/diff_ltime[i], plot_result)
             else:
                 self._set_result( Xray_line, 'kratios',\
-                    fps[i].yscale.as_signal().data/diff_ltime[i], axes_kratio, plot_result)
+                    fps[i].yscale.as_signal().data/diff_ltime[i], plot_result)
             i += 1
 
     def deconvolve_intensity(self,width_windows='all',plot_result=True):
@@ -497,11 +490,7 @@ class EDSSEMSpectrum(EDSSpectrum):
         from hyperspy.hspy import create_model 
         m = create_model(self)
         mp = self.mapped_parameters 
-        if (self.axes_manager.navigation_dimension == 3):
-            axes_res = self.to_image(1)[1].axes_manager 
-        else:              
-            axes_res = self.to_image()[1].axes_manager
-        
+                
         elements = mp.Sample.elements
        
         fps = []
@@ -519,13 +508,13 @@ class EDSSEMSpectrum(EDSSpectrum):
         for element in elements:
             if (self.axes_manager.navigation_dimension == 0):
                 self._set_result( element, 'intensities',\
-                    fps[i].yscale.value, axes_res, plot_result)
+                    fps[i].yscale.value, plot_result)
                 if plot_result and i == 0:
                     m.plot()
                     plt.title('Fitted standard') 
             else:
                 self._set_result( element, 'intensities',\
-                    fps[i].yscale.as_signal().data, axes_res, plot_result)
+                    fps[i].yscale.as_signal().data, plot_result)
             i += 1
             
     def check_kratio(self,Xray_lines,width_energy='auto'):
@@ -554,11 +543,11 @@ class EDSSEMSpectrum(EDSSpectrum):
                 line = Xray_line[-2:] 
                 line_energy.append(elements_db[element]['Xray_energy'][line])
             width_energy = [0,0]
-            width_energy[0] = np.min(line_energy)-FWHM_eds(130,np.min(line_energy))
-            width_energy[1] = np.max(line_energy)+FWHM_eds(130,np.max(line_energy))
+            width_energy[0] = np.min(line_energy)-FWHM_eds(130,np.min(line_energy))*2
+            width_energy[1] = np.max(line_energy)+FWHM_eds(130,np.max(line_energy))*2
                 
         line_energy = np.mean(width_energy)
-        width_windows=[line_energy-width_energy[0]*2,width_energy[1]*2-line_energy]
+        width_windows=[line_energy-width_energy[0],width_energy[1]-line_energy]
             
         mp = self.mapped_parameters
         fig = plt.figure()
@@ -573,6 +562,7 @@ class EDSSEMSpectrum(EDSSpectrum):
             line = Xray_line[-2:] 
             line_energy = elements_db[element]['Xray_energy'][line]
             width_windows=[line_energy-width_energy[0],width_energy[1]-line_energy]
+            print("%s" % width_windows)
             leg_plot.append(Xray_line)
             std_spec = self.get_result(element,'standard_spec')
             kratio = self.get_result(Xray_line,'kratios').data[0]
@@ -656,7 +646,7 @@ class EDSSEMSpectrum(EDSSpectrum):
                 return res
         print("Didn't find it")
         
-    def _set_result(self, Xray_line, result, data_res,axes_res,plot_result):
+    def _set_result(self, Xray_line, result, data_res, plot_result):
         """
         Transform data_res (a result) into an image or a spectrum and
         stored it in 'mapped_parameters.Sample'
@@ -672,6 +662,17 @@ class EDSSEMSpectrum(EDSSpectrum):
             if Xray_line == Xray_lines[j]:
                 break
                 
+        #axes_res= self[...,0].axes_manager 
+        #Should work but doesn't for 2D
+         
+        if (self.axes_manager.navigation_dimension == 3):
+            axes_res = self.to_image(1)[1].axes_manager 
+        elif (self.axes_manager.navigation_dimension == 2):
+            axes_res = self.to_image()[1].axes_manager 
+        else:              
+            axes_res = self[...,0].axes_manager
+        
+                
         if self.axes_manager.navigation_dimension == 0:
             res_img = Spectrum(np.array([data_res]))
         else:
@@ -683,7 +684,7 @@ class EDSSEMSpectrum(EDSSpectrum):
                 #to be changed with new version
                 print("%s of %s : %s" % (result, Xray_line, data_res))
             else:
-                res_img.plot(None,False)
+                res_img.plot(False)
         else:
             print("%s of %s calculated" % (result, Xray_line))
         mp.Sample[result][j] = res_img   
@@ -717,10 +718,7 @@ class EDSSEMSpectrum(EDSSpectrum):
     def _read_result_tsv(self,foldername,plot_result):
         encoding = 'latin-1'
         mp=self.mapped_parameters
-        if (self.axes_manager.navigation_dimension == 3):
-            axes_quant = self.to_image(1)[1].axes_manager 
-        else:              
-            axes_quant = self.to_image()[1].axes_manager
+        
         f = codecs.open(foldername+'//result.tsv', encoding = encoding,errors = 'replace') 
         dim = list(self.data.shape)
         a = []
@@ -740,7 +738,7 @@ class EDSSEMSpectrum(EDSSpectrum):
                     data_quant=np.array(a[i]).reshape((dim[2],dim[1],dim[0])).T
                 else:
                     data_quant=np.array(a[i]).reshape((dim[1],dim[0])).T
-            self._set_result( Xray_line, 'quant',data_quant, axes_quant, plot_result)        
+            self._set_result( Xray_line, 'quant',data_quant, plot_result)        
             i += 1
         
     def _write_donnee_tsv(self, foldername):
@@ -749,6 +747,7 @@ class EDSSEMSpectrum(EDSSpectrum):
         Xray_lines = mp.Sample.Xray_lines
         f = codecs.open(foldername+'//donnee.tsv', 'w', encoding = encoding,errors = 'ignore') 
         dim = np.copy(self.axes_manager.navigation_shape).tolist()
+        dim.reverse()
         if self.axes_manager.navigation_dimension == 0:
             f.write("1_1\r\n")
             for i in range(len(mp.Sample.Xray_lines)):

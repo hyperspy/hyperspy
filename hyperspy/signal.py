@@ -2155,7 +2155,7 @@ class Signal(MVA,
         This method has the advantage over deepcopy that it does not
         copy the data what can save precious memory
         
-        Paramters
+        Parameters
         ---------
         data : {None | np.array}
         
@@ -2164,15 +2164,18 @@ class Signal(MVA,
         ns : Signal
         
         """
-        old_data = self.data
-        self.data = None
-        old_plot = self._plot
-        self._plot = None
-        ns = self.deepcopy()
-        ns.data = data
-        self.data = old_data
-        self._plot = old_plot
-        return ns
+        try:
+            old_data = self.data
+            self.data = None
+            old_plot = self._plot
+            self._plot = None
+            ns = self.deepcopy()
+            ns.data = data
+            return ns
+        finally:
+            self.data = old_data
+            self._plot = old_plot
+            
             
     def _print_summary(self):
         string = "\n\tTitle: "
@@ -3114,10 +3117,15 @@ class Signal(MVA,
         return copy.copy(self)
 
     def deepcopy(self):
-        s = copy.deepcopy(self)
-        if self.data is not None:
-            s.data = s.data.copy()
-        return s
+        try:
+            plot_backup = self._plot
+            self._plot = None
+            s = copy.deepcopy(self)
+            if self.data is not None:
+                s.data = s.data.copy()
+            return s
+        finally:
+            self._plot = plot_backup
         
     def change_dtype(self, dtype):
         """Change the data type
