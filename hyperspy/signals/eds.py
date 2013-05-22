@@ -218,7 +218,7 @@ class EDSSpectrum(Spectrum):
                 
          
     
-    def get_intensity_map(self, Xray_lines = 'auto',plot_result=True,\
+    def get_intensity_map(self, Xray_lines = 'auto',plot_result=True,
         width_energy_reso=1):
         """Return the intensity map of selected Xray lines.
         

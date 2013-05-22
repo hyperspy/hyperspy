@@ -425,7 +425,8 @@ class EDSSEMSpectrum(EDSSpectrum):
     def _deconvolve_kratio(self,Xray_lines,elements,width_energy,\
         plot_result=True):
         """
-        Calculate the k-ratio with deconvolution
+        Calculate the k-ratio, applying a fit on a larger region with 
+        selected X-ray lines
         """
         
         from hyperspy.hspy import create_model 
@@ -511,9 +512,11 @@ class EDSSEMSpectrum(EDSSpectrum):
                     fps[i].yscale.as_signal().data, plot_result)
             i += 1
             
-    def check_kratio(self,Xray_lines,width_energy='auto'):
+    def check_kratio(self,Xray_lines,width_energy='auto',
+      top_hat_applied=False, plot_all_standard=False):
         """
-        Plot the spectrum, the standard spectra and the sum of the sectra.
+        Compare the spectrum to the sum of the standard spectra scaled 
+        in y with the k-ratios. The residual is ploted as well.
        
         Works only for spectrum.
         
@@ -527,6 +530,12 @@ class EDSSEMSpectrum(EDSSpectrum):
             Set the width of the display windows If 'auto'
             (default option), the display is adjusted to the higest/lowest
             energy line.
+            
+        top_hat_applied: boolean
+            If True, apply the top hat to all spectra
+            
+        plot_all_standard: boolean
+            If True, plot all standard spectra
         
         
         """
@@ -545,24 +554,35 @@ class EDSSEMSpectrum(EDSSpectrum):
             
         mp = self.mapped_parameters
         fig = plt.figure()
-        self_data = self.top_hat(line_energy, width_windows).data
+        if top_hat_applied:
+            self_data = self.top_hat(line_energy, width_windows).data
+        else:
+            self_data = self[width_energy[0]:width_energy[1]].data
         plt.plot(self_data)
         leg_plot = ["Spec"]
         line_energies =[]
         intensities = []
-        spec_sum = np.zeros(len(self.top_hat(line_energy, width_windows).data))
+        spec_sum = np.zeros(len(self.top_hat(line_energy, 
+          width_windows).data))
         for Xray_line in Xray_lines:
             element = Xray_line[:-3]
             line = Xray_line[-2:] 
             line_energy = elements_db[element]['Xray_energy'][line]
             width_windows=[line_energy-width_energy[0],width_energy[1]-line_energy]
-            leg_plot.append(Xray_line)
+            
             std_spec = self.get_result(element,'standard_spec')
             kratio = self.get_result(Xray_line,'kratios').data[0]
             diff_ltime = mp.SEM.EDS.live_time/std_spec.mapped_parameters.SEM.EDS.live_time
-            std_data = std_spec.top_hat(line_energy,width_windows).data*kratio*diff_ltime
-            plt.plot(std_data)
-            line_energies.append((line_energy-width_energy[0])/self.axes_manager[0].scale-self.axes_manager[0].offset)
+            if top_hat_applied:
+                std_data = std_spec.top_hat(line_energy,
+                width_windows).data*kratio*diff_ltime
+            else:
+                std_data = std_spec[width_energy[0]:width_energy[1]].data*kratio*diff_ltime
+            if plot_all_standard:
+                plt.plot(std_data)
+                leg_plot.append(Xray_line)
+            line_energies.append((line_energy-width_energy[0])/
+              self.axes_manager[0].scale-self.axes_manager[0].offset)
             intensities.append(std_data[int(line_energies[-1])])
             spec_sum = spec_sum + std_data
         plt.plot(spec_sum)
