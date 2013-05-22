@@ -22,6 +22,7 @@ import numpy as np
 
 from hyperspy import messages
 from hyperspy.misc.utils import ensure_unicode
+from hyperspy.axes import AxesManager
 
 # Plugin characteristics
 # ----------------------
@@ -36,6 +37,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
+version = 1.1
 
 # -----------------------
 # File format description
@@ -143,7 +145,7 @@ def hdfgroup2signaldict(group):
         
     return exp
 
-def dict2hdfgroup(dictionary, group, compression = None):
+def dict2hdfgroup(dictionary, group, compression=None):
     from hyperspy.misc.utils import DictionaryBrowser
     from hyperspy.signal import Signal
     for key, value in dictionary.iteritems():
@@ -157,11 +159,11 @@ def dict2hdfgroup(dictionary, group, compression = None):
         elif isinstance(value, Signal):
             if key.startswith('_sig_'):
                 try:
-                    write_signal(value,group[key])
+                    write_signal(value, group[key])
                 except:
-                    write_signal(value,group.create_group(key))
+                    write_signal(value, group.create_group(key))
             else:
-                write_signal(value,group.create_group('_sig_'+key))
+                write_signal(value, group.create_group('_sig_' + key))
         elif isinstance(value, np.ndarray):
             group.create_dataset(key,
                                  data=value,
@@ -171,6 +173,12 @@ def dict2hdfgroup(dictionary, group, compression = None):
         elif isinstance(value, basestring):
             group.attrs[key] = value.encode('utf8',
                                             errors='ignore')
+        elif isinstance(value, AxesManager):
+            dict2hdfgroup(value.as_dictionary(),
+                          group.create_group('_hspy_AxesManager_'
+                                             + key), 
+                          compression=compression)
+            
         else:
             try:
                 group.attrs[key] = value
@@ -190,6 +198,8 @@ def hdfgroup2dict(group, dictionary = {}):
                 except UnicodeError:
                     # For old files
                     value = value.decode('latin-1')
+        elif type(value) is np.bool_:
+            value = bool(value)
                     
         elif type(value) is np.ndarray and \
                 value.dtype == np.dtype('|S1'):
@@ -199,18 +209,25 @@ def hdfgroup2dict(group, dictionary = {}):
             pass
         else:
             dictionary[key] = value
-    if not isinstance(group,h5py.Dataset):
+    if not isinstance(group, h5py.Dataset):
         for key in group.keys():
             if key.startswith('_sig_'):
-                dictionary[key[5:]] = hdfgroup2signaldict(group[key])
+                from hyperspy.io import dict2signal
+                dictionary[key[len('_sig_'):]] = (
+                dict2signal(hdfgroup2signaldict(group[key])))
             elif isinstance(group[key],h5py.Dataset):
                 dictionary[key]=np.array(group[key])
+            elif key.startswith('_hspy_AxesManager_'):
+                dictionary[key[len('_hspy_AxesManager_'):]] = \
+                    AxesManager([i 
+                        for k, i in sorted(iter(
+                            hdfgroup2dict(group[key]).iteritems()))])
             else:
                 dictionary[key] = {}
                 hdfgroup2dict(group[key], dictionary[key])
     return dictionary
 
-def write_signal(signal,group, compression='gzip'):
+def write_signal(signal, group, compression='gzip'):
     group.create_dataset('data',
                          data=signal.data,
                          compression=compression)
@@ -235,7 +252,7 @@ def write_signal(signal,group, compression='gzip'):
             'peak_learning_results')
         dict2hdfgroup(signal.peak_learning_results.__dict__, 
                   peak_learning_results, compression = compression)
-                                    
+                                                                        
 def file_writer(filename, signal, compression = 'gzip', *args, **kwds):
     with h5py.File(filename, mode = 'w') as f:
         exps = f.create_group('Experiments')

@@ -1936,22 +1936,31 @@ class Signal(MVA,
             typically contains all the parameters that has been
             imported from the original data file.        
            
-        """        
 
-        self.mapped_parameters = DictionaryBrowser()
-        self.original_parameters = DictionaryBrowser()
-        self.tmp_parameters = DictionaryBrowser()
+        """
+        
+        self._create_mapped_parameters()
         self.learning_results = LearningResults()
         self.peak_learning_results = LearningResults()
         kwds['data'] = data
         self._load_dictionary(kwds)
         self._plot = None
-        self._shape_before_unfolding = None
-        self._axes_manager_before_unfolding = None
         self.auto_replot = True
         self.variance = None
         self.navigation_indexer = SpecialSlicers(self, True)
         self.signal_indexer = SpecialSlicers(self, False)
+        
+    def _create_mapped_parameters(self):
+        self.mapped_parameters = DictionaryBrowser()
+        mp = self.mapped_parameters
+        mp.add_node("_internal_parameters")
+        mp._internal_parameters.add_node("folding")
+        folding = mp._internal_parameters.folding
+        folding.unfolded = False
+        folding.original_shape = None
+        folding.original_axes_manager = None
+        self.original_parameters = DictionaryBrowser()
+        self.tmp_parameters = DictionaryBrowser()
 
     def __repr__(self):
         string = '<'
@@ -2732,9 +2741,11 @@ class Signal(MVA,
         # by
         # the fold function only if it has not been already stored by a
         # previous unfold
-        if self._shape_before_unfolding is None:
-            self._shape_before_unfolding = self.data.shape
-            self._axes_manager_before_unfolding = self.axes_manager
+        folding = self.mapped_parameters._internal_parameters.folding
+        if folding.unfolded is False:
+            folding.original_shape = self.data.shape
+            folding.original_axes_manager = self.axes_manager
+            folding.unfolded = True
 
         new_shape = [1] * len(self.data.shape)
         for index in steady_axes:
@@ -2796,11 +2807,15 @@ class Signal(MVA,
     @auto_replot
     def fold(self):
         """If the signal was previously unfolded, folds it back"""
-        if self._shape_before_unfolding is not None:
-            self.data = self.data.reshape(self._shape_before_unfolding)
-            self.axes_manager = self._axes_manager_before_unfolding
-            self._shape_before_unfolding = None
-            self._axes_manager_before_unfolding = None
+        folding = self.mapped_parameters._internal_parameters.folding
+        # Note that == must be used instead of is True because 
+        # if the value was loaded from a file its type can be np.bool_
+        if folding.unfolded == True:
+            self.data = self.data.reshape(folding.original_shape)
+            self.axes_manager = folding.original_axes_manager
+            folding.original_shape = None
+            folding.original_axes_manager = None
+            folding.unfolded = False
             
     def _make_sure_data_is_contiguous(self):
         if self.data.flags['C_CONTIGUOUS'] is False:

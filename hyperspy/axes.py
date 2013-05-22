@@ -496,10 +496,12 @@ class AxesManager(t.HasTraits):
         append_axis
         
         """
-        # Reorder axes_list using index_in_array if defined
+        # Reorder axes_list using index_in_array if it is defined
+        # for all axes and the indices are not repeated.
         indices = set([axis['index_in_array'] for axis in axes_list if
                    'index_in_array' in axis])
-        
+        if len(indices) == len(axes_list):
+            axes_list.sort(key=lambda x: x['index_in_array'])
         for axis_dict in axes_list:
             self.append_axis(**axis_dict)
 
@@ -665,6 +667,12 @@ class AxesManager(t.HasTraits):
         for axis in self._axes:
             axes_dicts.append(axis.get_axis_dictionary())
         return axes_dicts
+        
+    def as_dictionary(self):
+        am_dict = {}
+        for i, axis in enumerate(self._axes):
+            am_dict['axis-%i' % i] = axis.get_axis_dictionary()
+        return am_dict
         
     def _get_signal_axes_dicts(self):
         return [axis.get_axis_dictionary() for axis in 
