@@ -448,6 +448,9 @@ class AxesManager(t.HasTraits):
     @property            
     def _signal_shape_in_array(self):
         return self.signal_shape[::-1]
+    @property    
+    def shape(self):
+        return self.navigation_shape + self.signal_shape
         
     def remove(self, axis):
         """Remove the given Axis.

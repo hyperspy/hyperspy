@@ -1963,7 +1963,7 @@ class Signal(MVA,
         string = '<'
         string += self.__class__.__name__
         string+=", title: %s" % self.mapped_parameters.title
-        string += ", dimensions: %s" % (str(self.data.shape))
+        string += ", dimensions: %s" % (str(self.axes_manager.shape))
         string += '>'
 
         return string
@@ -2190,8 +2190,7 @@ class Signal(MVA,
             string += "\n\tSignal type: "
             string += self.mapped_parameters.signal_type
         string += "\n\tData dimensions: "
-        string += str(self.axes_manager.navigation_shape + 
-                      self.axes_manager.signal_shape)
+        string += str(self.axes_manager.shape)
         if hasattr(self.mapped_parameters, 'record_by'):
             string += "\n\tData representation: "
             string += self.mapped_parameters.record_by
