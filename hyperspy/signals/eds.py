@@ -33,12 +33,12 @@ class EDSSpectrum(Spectrum):
     def __init__(self, *args, **kwards):
         Spectrum.__init__(self, *args, **kwards)
         # Attributes defaults  
-        self.elements = set()
-        self.Xray_lines = set()
-        if hasattr(self.mapped_parameters, 'Sample') and \
-        hasattr(self.mapped_parameters.Sample, 'elements'):
-            print('Elemental composition read from file')
-            self.add_elements(self.mapped_parameters.Sample.elements)
+        #self.elements = set()
+        #self.Xray_lines = set()
+        #if hasattr(self.mapped_parameters, 'Sample') and \
+        #hasattr(self.mapped_parameters.Sample, 'elements'):
+            #print('Elemental composition read from file')
+            #self.add_elements(self.mapped_parameters.Sample.elements)
             
     def set_elements(self, elements, lines=None):
         """Set elements present in the sample and defined the corresponding
@@ -258,17 +258,16 @@ class EDSSpectrum(Spectrum):
             hasattr(self.mapped_parameters.Sample, 'Xray_lines'):
                 Xray_lines = self.mapped_parameters.Sample.Xray_lines
             else:
-                raise ValueError("Not X-ray line, set them with add_elements")
-            
+                raise ValueError("Not X-ray line, set them with add_elements")            
         
         if self.mapped_parameters.signal_type == 'EDS_SEM':
             FWHM_MnKa = self.mapped_parameters.SEM.EDS.energy_resolution_MnKa
         else:
             FWHM_MnKa = self.mapped_parameters.TEM.EDS.energy_resolution_MnKa
-            
+                        
         intensities = []
         if self.axes_manager.navigation_dimension > 1:
-            signal_to_index = self.axes_manager.navigation_dimension - 2        
+            signal_to_index = self.axes_manager.navigation_dimension - 2                  
             for Xray_line in Xray_lines:
                 element = Xray_line[:-3]
                 line = Xray_line[-2:]            
@@ -279,8 +278,8 @@ class EDSSpectrum(Spectrum):
                 ' at ' + str(line_energy) + ' keV'
                 det = width_energy_reso*line_FWHM
                 if plot_result:
-                    img[line_energy-det:line_energy+det].sum(signal_to_index).plot(False)
-                intensities.append(img[line_energy-det:line_energy+det].sum(signal_to_index))
+                    img[line_energy-det:line_energy+det].sum(0).plot(False)
+                intensities.append(img[...,line_energy-det:line_energy+det].sum(0))
         else:
             for Xray_line in Xray_lines:
                 element = Xray_line[:-3]

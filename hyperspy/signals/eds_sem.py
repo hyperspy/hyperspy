@@ -416,9 +416,7 @@ class EDSSEMSpectrum(EDSSpectrum):
         
         if deconvolution is not None: 
             for deconvo in deconvolution:
-                print("1")
                 self._deconvolve_kratio(deconvo[0],deconvo[1],deconvo[2],plot_result)
-                print("2")
                 for Xray_line in deconvo[0]:
                     Xray_lines.remove(Xray_line)
         if len(Xray_lines) > 0:     
@@ -436,11 +434,7 @@ class EDSSEMSpectrum(EDSSpectrum):
         
         m = create_model(self.top_hat(line_energy, width_windows))
         mp = self.mapped_parameters 
-
-        if (self.axes_manager.navigation_dimension == 3):
-            axes_kratio = self.to_image(1)[1].axes_manager 
-        else:              
-            axes_kratio = self.to_image()[1].axes_manager        
+      
         diff_ltime =[]
         fps = []
         for element in elements:
@@ -562,7 +556,6 @@ class EDSSEMSpectrum(EDSSpectrum):
             line = Xray_line[-2:] 
             line_energy = elements_db[element]['Xray_energy'][line]
             width_windows=[line_energy-width_energy[0],width_energy[1]-line_energy]
-            print("%s" % width_windows)
             leg_plot.append(Xray_line)
             std_spec = self.get_result(element,'standard_spec')
             kratio = self.get_result(Xray_line,'kratios').data[0]
@@ -775,7 +768,7 @@ class EDSSEMSpectrum(EDSSpectrum):
         mp=self.mapped_parameters
         f = codecs.open(foldername+'//nbData.tsv', 'w', encoding = encoding,errors = 'ignore') 
         dim = np.copy(self.axes_manager.navigation_shape).tolist()
-        dim.reverse()
+        #dim.reverse()
         dim.append(1)
         dim.append(1)
         if dim[0] == 0:
