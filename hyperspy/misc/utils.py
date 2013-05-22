@@ -1640,6 +1640,8 @@ def homogenize_ndim(*args):
     
     return [ary.reshape((1,) * (max_len - len(ary.shape)) + ary.shape)
             for ary in args]
+
+
                     
     
     

@@ -253,9 +253,9 @@ class EDSSEMSpectrum(EDSSpectrum):
         """
         Seek for standard spectra (spectrum recorded on known composition
         sample) in the std_file folder and link them to the analyzed 
-        elements of 'mapped_parameters.Sample.elements'. A standard spectrum 
-        is linked if its file name contains the elements name. "C.msa",
-        "Co.msa" but not "Co4.msa".
+        elements of 'mapped_parameters.Sample.elements'. A standard 
+        spectrum is linked if its file name contains the elements name. 
+        "C.msa", "Co.msa" but not "Co4.msa".
         
         Store the standard spectra in 'mapped_parameters.Sample.standard_spec'
 
@@ -280,7 +280,8 @@ class EDSSEMSpectrum(EDSSpectrum):
             raise ValueError("Add elements first, see 'set_elements'")
         
 
-        std_tot = load(std_folder+"//*."+std_file_extension,signal_type = 'EDS_SEM')
+        std_tot = load(std_folder+"//*."+std_file_extension,signal_type 
+          = 'EDS_SEM')
         mp = self.mapped_parameters        
         mp.Sample.standard_spec = []
         #for element in mp.Sample.elements:
@@ -291,7 +292,8 @@ class EDSSEMSpectrum(EDSSpectrum):
                 mp_std = std.mapped_parameters
                 if element + "." in mp_std.original_filename:
                     test_file_exist=True
-                    print("Standard file for %s : %s" % (element, mp_std.original_filename))
+                    print("Standard file for %s : %s" % (element, 
+                      mp_std.original_filename))
                     mp_std.title = element+"_std"
                     mp.Sample.standard_spec.append(std)
             if test_file_exist == False:
@@ -369,7 +371,8 @@ class EDSSEMSpectrum(EDSSpectrum):
             diff_ltime = mp.SEM.EDS.live_time/mp_std.SEM.EDS.live_time
             #Fit with least square
             m = create_model(self.top_hat(line_energy,width_windows))
-            fp = components.ScalableFixedPattern(std.top_hat(line_energy,width_windows))
+            fp = components.ScalableFixedPattern(std.top_hat(line_energy, 
+              width_windows))
             fp.set_parameters_not_free(['offset','xscale','shift'])
             m.append(fp)          
             m.multifit(fitter='leastsq') 
@@ -380,7 +383,8 @@ class EDSSEMSpectrum(EDSSpectrum):
             else:
                 self._set_result( Xray_line, 'kratios',\
                     fp.yscale.as_signal().data/diff_ltime, plot_result)
-            
+                    
+               
     
         
     def get_kratio(self,deconvolution=None,plot_result=True):
@@ -416,7 +420,8 @@ class EDSSEMSpectrum(EDSSpectrum):
         
         if deconvolution is not None: 
             for deconvo in deconvolution:
-                self._deconvolve_kratio(deconvo[0],deconvo[1],deconvo[2],plot_result)
+                self._deconvolve_kratio(deconvo[0],deconvo[1],deconvo[2],
+                  plot_result)
                 for Xray_line in deconvo[0]:
                     Xray_lines.remove(Xray_line)
         if len(Xray_lines) > 0:     
@@ -440,11 +445,13 @@ class EDSSEMSpectrum(EDSSpectrum):
         fps = []
         for element in elements:
             std = self.get_result(element,'standard_spec')
-            fp = components.ScalableFixedPattern(std.top_hat(line_energy,width_windows))
+            fp = components.ScalableFixedPattern(std.top_hat(line_energy,
+              width_windows))
             fp.set_parameters_not_free(['offset','xscale','shift'])
             fps.append(fp)    
             m.append(fps[-1])
-            diff_ltime.append(mp.SEM.EDS.live_time/std.mapped_parameters.SEM.EDS.live_time)
+            diff_ltime.append(mp.SEM.EDS.live_time/
+              std.mapped_parameters.SEM.EDS.live_time)
         m.multifit(fitter='leastsq')
         i=0
         for Xray_line in Xray_lines:
@@ -453,7 +460,8 @@ class EDSSEMSpectrum(EDSSpectrum):
                     fps[i].yscale.value/diff_ltime[i], plot_result)
             else:
                 self._set_result( Xray_line, 'kratios',\
-                    fps[i].yscale.as_signal().data/diff_ltime[i], plot_result)
+                    fps[i].yscale.as_signal().data/diff_ltime[i], 
+                      plot_result)
             i += 1
 
     def deconvolve_intensity(self,width_windows='all',plot_result=True):
@@ -512,6 +520,21 @@ class EDSSEMSpectrum(EDSSpectrum):
                     fps[i].yscale.as_signal().data, plot_result)
             i += 1
             
+    def check_total(self):
+        img_0 = self.get_result(Xray_lines[0],'kratios')
+        
+        data_total = np.zeros_like(img_0.data) 
+        for Xray_line in Xray_lines:
+            data_total += self.get_result(Xray_line,'kratios').data
+            
+        img_total = img_0.deepcopy
+        img_total.data = data_total
+        return img_total
+        
+    
+            
+        
+            
     def check_kratio(self,Xray_lines,width_energy='auto',
       top_hat_applied=False, plot_all_standard=False):
         """
@@ -546,11 +569,14 @@ class EDSSEMSpectrum(EDSSpectrum):
                 line = Xray_line[-2:] 
                 line_energy.append(elements_db[element]['Xray_energy'][line])
             width_energy = [0,0]
-            width_energy[0] = np.min(line_energy)-FWHM_eds(130,np.min(line_energy))*2
-            width_energy[1] = np.max(line_energy)+FWHM_eds(130,np.max(line_energy))*2
+            width_energy[0] = np.min(line_energy)-FWHM_eds(130,np.min(
+              line_energy))*2
+            width_energy[1] = np.max(line_energy)+FWHM_eds(130,np.max(
+              line_energy))*2
                 
         line_energy = np.mean(width_energy)
-        width_windows=[line_energy-width_energy[0],width_energy[1]-line_energy]
+        width_windows=[line_energy-width_energy[0],width_energy[1]\
+            -line_energy]
             
         mp = self.mapped_parameters
         fig = plt.figure()
@@ -568,16 +594,19 @@ class EDSSEMSpectrum(EDSSpectrum):
             element = Xray_line[:-3]
             line = Xray_line[-2:] 
             line_energy = elements_db[element]['Xray_energy'][line]
-            width_windows=[line_energy-width_energy[0],width_energy[1]-line_energy]
+            width_windows=[line_energy-width_energy[0],width_energy[1]-\
+              line_energy]
             
             std_spec = self.get_result(element,'standard_spec')
             kratio = self.get_result(Xray_line,'kratios').data[0]
-            diff_ltime = mp.SEM.EDS.live_time/std_spec.mapped_parameters.SEM.EDS.live_time
+            diff_ltime = mp.SEM.EDS.live_time/\
+              std_spec.mapped_parameters.SEM.EDS.live_time
             if top_hat_applied:
                 std_data = std_spec.top_hat(line_energy,
                 width_windows).data*kratio*diff_ltime
             else:
-                std_data = std_spec[width_energy[0]:width_energy[1]].data*kratio*diff_ltime
+                std_data = std_spec[width_energy[0]:width_energy[1]].data\
+                        *kratio*diff_ltime
             if plot_all_standard:
                 plt.plot(std_data)
                 leg_plot.append(Xray_line)
@@ -592,10 +621,12 @@ class EDSSEMSpectrum(EDSSpectrum):
         plt.legend(leg_plot)
         print("Tot residual: %s" % np.abs(self_data-spec_sum).sum())
         for i in range(len(line_energies)):
-                plt.annotate(Xray_lines[i],xy = (line_energies[i],intensities[i]))
+                plt.annotate(Xray_lines[i],xy = (line_energies[i],
+                  intensities[i]))
         fig.show()
         
-    def save_result(self, result, filename, Xray_lines = 'all',extension = 'hdf5'):
+    def save_result(self, result, filename, Xray_lines='all',
+      extension='hdf5'):
         """
         Save the result in a file (results stored in 
         'mapped_parameters.Sample')
@@ -637,7 +668,8 @@ class EDSSEMSpectrum(EDSSpectrum):
                 a = 1
                 res.change_dtype('float32')
                 #res.change_dtype('uint32')
-            res.save(filename=filename+"_"+result+"_"+Xray_line,extension = extension, overwrite = True)
+            res.save(filename=filename+"_"+result+"_"+Xray_line,
+              extension = extension, overwrite = True)
         
     def get_result(self, Xray_line, result):
         """
@@ -674,9 +706,6 @@ class EDSSEMSpectrum(EDSSpectrum):
         for j in range(len(Xray_lines)):
             if Xray_line == Xray_lines[j]:
                 break
-                
-        #axes_res= self[...,0].axes_manager 
-        #Should work but doesn't for 2D
          
         if (self.axes_manager.navigation_dimension == 3):
             axes_res = self.to_image(1)[1].axes_manager 
@@ -705,7 +734,8 @@ class EDSSEMSpectrum(EDSSpectrum):
     
     def quant(self,plot_result=True):        
         """
-        Quantify using stratagem, a commercial software. A licence is needed.
+        Quantify using stratagem, a commercial software. A licence is 
+        needed.
         
         k-ratios needs to be calculated before. Return a display of the 
         results and store them in 'mapped_parameters.Sample.quants'
@@ -732,7 +762,8 @@ class EDSSEMSpectrum(EDSSpectrum):
         encoding = 'latin-1'
         mp=self.mapped_parameters
         
-        f = codecs.open(foldername+'//result.tsv', encoding = encoding,errors = 'replace') 
+        f = codecs.open(foldername+'//result.tsv', encoding = encoding,
+          errors = 'replace') 
         dim = list(self.data.shape)
         a = []
         for Xray_line in mp.Sample.Xray_lines:
@@ -748,7 +779,8 @@ class EDSSEMSpectrum(EDSSpectrum):
                     data_quant=a[i][0]
             else:
                 if (self.axes_manager.navigation_dimension == 3):                    
-                    data_quant=np.array(a[i]).reshape((dim[2],dim[1],dim[0])).T
+                    data_quant=np.array(a[i]).reshape((dim[2],dim[1],
+                      dim[0])).T
                 else:
                     data_quant=np.array(a[i]).reshape((dim[1],dim[0])).T
             self._set_result( Xray_line, 'quant',data_quant, plot_result)        
@@ -758,7 +790,8 @@ class EDSSEMSpectrum(EDSSpectrum):
         encoding = 'latin-1'
         mp=self.mapped_parameters
         Xray_lines = mp.Sample.Xray_lines
-        f = codecs.open(foldername+'//donnee.tsv', 'w', encoding = encoding,errors = 'ignore') 
+        f = codecs.open(foldername+'//donnee.tsv', 'w', 
+          encoding = encoding,errors = 'ignore') 
         dim = np.copy(self.axes_manager.navigation_shape).tolist()
         dim.reverse()
         if self.axes_manager.navigation_dimension == 0:
@@ -770,7 +803,8 @@ class EDSSEMSpectrum(EDSSpectrum):
                 for y in range(dim[0]):
                     f.write("%s_%s\r\n" % (x+1,y+1))
                     for Xray_line in Xray_lines:
-                        f.write("%s\t" % self.get_result(Xray_line,'kratios').data[y,x])
+                        f.write("%s\t" % self.get_result(Xray_line,
+                          'kratios').data[y,x])
                     f.write('\r\n')
         elif self.axes_manager.navigation_dimension == 3:
             for x in range(dim[2]):
@@ -778,7 +812,8 @@ class EDSSEMSpectrum(EDSSpectrum):
                     f.write("%s_%s\r\n" % (x+1,y+1))
                     for z in range(dim[0]):
                         for Xray_line in Xray_lines:
-                            f.write("%s\t" % self.get_result(Xray_line,'kratios').data[z,y,x])
+                            f.write("%s\t" % self.get_result(Xray_line,
+                              'kratios').data[z,y,x])
                         f.write('\r\n')
         f.close()       
         
@@ -786,7 +821,8 @@ class EDSSEMSpectrum(EDSSpectrum):
     def _write_nbData_tsv(self, foldername):
         encoding = 'latin-1'
         mp=self.mapped_parameters
-        f = codecs.open(foldername+'//nbData.tsv', 'w', encoding = encoding,errors = 'ignore') 
+        f = codecs.open(foldername+'//nbData.tsv', 'w', 
+          encoding = encoding,errors = 'ignore') 
         dim = np.copy(self.axes_manager.navigation_shape).tolist()
         #dim.reverse()
         dim.append(1)
