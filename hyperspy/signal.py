@@ -2262,7 +2262,10 @@ class Signal(MVA,
 
     def _get_signal_dict(self, add_learning_results=True):
         dic = {}
-        dic['data'] = self.data.copy()
+        if hasattr(self.data, "copy"):
+            dic['data'] = self.data.copy()
+        else:
+            dic['data'] = self.data            
         dic['axes'] = self.axes_manager._get_axes_dicts()
         dic['mapped_parameters'] = \
         self.mapped_parameters.deepcopy().as_dictionary()
@@ -2433,7 +2436,7 @@ class Signal(MVA,
                     self._plot.navigator_data_function = get_explorer_wrapper
                 #higher dimension
                 elif self.axes_manager.navigation_shape == \
-                navigator.axes_manager.navigation_shape + navigator.axes_manager.signal_shape:
+                navigator.axes_manager.signal_shape + navigator.axes_manager.navigation_shape:
                     self._plot.navigator_data_function = get_explorer_wrapper_3D
                 else:
                     print("The given navigator and the current signal have incompatible shape.")
