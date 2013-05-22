@@ -1641,7 +1641,7 @@ def homogenize_ndim(*args):
     return [ary.reshape((1,) * (max_len - len(ary.shape)) + ary.shape)
             for ary in args]
 
-def stack(self):
+def stack_list(self):
     """
     Transform a list of signals into a single signal with one more 
     dimension.

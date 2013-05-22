@@ -29,7 +29,7 @@ from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
     ripple, tiff)
 from hyperspy.gui.tools import Load
 from hyperspy.misc.utils import (ensure_directory, DictionaryBrowser, 
-    strlist2enumeration)
+    strlist2enumeration, stack_list)
 from hyperspy.misc.natsort import natsorted
 import hyperspy.misc.utils_varia
 
@@ -173,65 +173,21 @@ def load(filenames=None, record_by=None, signal_type=None,
         if len(filenames) > 1:
             messages.information('Loading individual files')
         if stack is True:
-            original_shape = None
+            signal = []
             for i, filename in enumerate(filenames):
                 obj = load_single_file(filename, output_level=0,
                     signal_type=signal_type, **kwds)
-                if original_shape is None:
-                    original_shape = obj.data.shape
-                    record_by = obj.mapped_parameters.record_by
-                    stack_shape = tuple([len(filenames),]) + original_shape
-                    tempf = None
-                    if mmap is False:
-                        data = np.empty(stack_shape,
-                                           dtype=obj.data.dtype)
-                    else:
-                        #filename = os.path.join(tempfile.mkdtemp(),
-                                             #'newfile.dat')
-                        tempf = tempfile.NamedTemporaryFile(
-                                                        dir=mmap_dir)
-                        data = np.memmap(tempf,
-                                         dtype=obj.data.dtype,
-                                         mode = 'w+',
-                                         shape=stack_shape,)
-                    signal = type(obj)(data=data)
-                    # Store the temporary file in the signal class to
-                    # avoid its deletion when garbage collecting
-                    if tempf is not None:
-                        signal._data_temporary_file = tempf
-                    signal.axes_manager._axes[1:] = obj.axes_manager._axes
-                    for axis in signal.axes_manager._axes[1:]:
-                        axis.axes_manager = signal.axes_manager
-                    eaxis = signal.axes_manager._axes[0]
-                    eaxis.name = 'stack_element'
-                    eaxis.navigate = True
-                    signal.mapped_parameters = obj.mapped_parameters
-                    # Get the title from the folder name
-                    signal.mapped_parameters.title = \
+                signal.append(obj)
+            signal = stack_list(signal)
+            signal.mapped_parameters.title = \
+                os.path.split(
                     os.path.split(
-                        os.path.split(
-                            os.path.abspath(filenames[0])
-                                     )[0]
-                                  )[1]
-                    signal.original_parameters = DictionaryBrowser({})
-                    signal.original_parameters.add_node('stack_elements')
-                if obj.data.shape != original_shape:
-                    raise IOError(
-                "Only files with data of the same shape can be stacked")
-                
-                signal.data[i,...] = obj.data
-                signal.original_parameters.stack_elements.add_node(
-                    'element%i' % i)
-                node = signal.original_parameters.stack_elements[
-                    'element%i' % i]
-                node.original_parameters = \
-                    obj.original_parameters.as_dictionary()
-                node.mapped_parameters = \
-                    obj.mapped_parameters.as_dictionary()
-                del obj
+                        os.path.abspath(filenames[0])
+                                 )[0]
+                              )[1]                              
             messages.information('Individual files loaded correctly')
             signal._print_summary()
-            objects = [signal,]
+            objects = [signal,] 
         else:
             objects=[load_single_file(filename, output_level=0,
                      signal_type=signal_type, **kwds) 
