@@ -2420,7 +2420,10 @@ class Signal(MVA,
             
         def get_explorer_wrapper_3D(*args, **kwargs):
             navigator.axes_manager.indices = \
-            self.axes_manager.indices[:-self.axes_manager.navigation_dimension+1]
+            self.axes_manager.indices[2:]
+            #old version: axes z,y,x
+            #self.axes_manager.indices[:-self.axes_manager.navigation_dimension+1]
+            
             return navigator()
             
         # Navigator properties
@@ -2436,7 +2439,7 @@ class Signal(MVA,
                     self._plot.navigator_data_function = get_explorer_wrapper
                 #higher dimension
                 elif self.axes_manager.navigation_shape == \
-                navigator.axes_manager.navigation_shape + navigator.axes_manager.signal_shape:
+                navigator.axes_manager.signal_shape + navigator.axes_manager.navigation_shape:
                     self._plot.navigator_data_function = get_explorer_wrapper_3D
                 else:
                     print("The given navigator and the current signal have incompatible shape.")
@@ -2445,40 +2448,7 @@ class Signal(MVA,
                 
         self._plot.plot()
 
-    #def plot(self, axes_manager=None):
-        #if self._plot is not None:
-                #try:
-                    #self._plot.close()
-                #except:
-                    ## If it was already closed it will raise an exception,
-                    ## but we want to carry on...
-                    #pass
-
-        #if axes_manager is None:
-            #axes_manager = self.axes_manager
-
-        #if axes_manager.signal_dimension == 1:
-            ## Hyperspectrum
-            #self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
-            
-        #elif axes_manager.signal_dimension == 2:
-            #self._plot = mpl_hie.MPL_HyperImage_Explorer()
-        #else:
-            #raise ValueError('Plotting is not supported for this view')
-        
-        #self._plot.axes_manager = axes_manager
-        #self._plot.signal_data_function = self.__call__
-        #if self.mapped_parameters.title:
-            #self._plot.signal_title = self.mapped_parameters.title
-        #elif self.tmp_parameters.has_item('filename'):
-            #self._plot.signal_title = self.tmp_parameters.filename
-            
-
-        ## Navigator properties
-        #if self.axes_manager.navigation_axes:
-            #self._plot.navigator_data_function = self._get_explorer
-        #self._plot.plot()
-            
+              
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
         """Saves the signal in the specified format.
