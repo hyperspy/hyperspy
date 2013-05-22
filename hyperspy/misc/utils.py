@@ -1640,6 +1640,54 @@ def homogenize_ndim(*args):
     
     return [ary.reshape((1,) * (max_len - len(ary.shape)) + ary.shape)
             for ary in args]
+
+def stack(self):
+    """
+    Transform a list of signals into a single signal with one more 
+    dimension.
+    """  
+    
+    original_shape = None
+    i=0
+    for obj in self:        
+        if original_shape is None:
+            original_shape = obj.data.shape
+            record_by = obj.mapped_parameters.record_by
+            stack_shape = tuple([len(self),]) + original_shape
+            tempf = None
+            data = np.empty(stack_shape,
+                                   dtype=obj.data.dtype)
+            signal = type(obj)(data=data)
+            signal.axes_manager._axes[1:] = obj.axes_manager._axes
+            axis_name = 'stack_element'
+            for axis in signal.axes_manager._axes[1:]:
+                axis.axes_manager = signal.axes_manager
+                if axis.name == 'stack_element':
+                    axis_name = 'stack_element2'                    
+            eaxis = signal.axes_manager._axes[0] 
+            eaxis.name = axis_name           
+            eaxis.navigate = True
+            signal.mapped_parameters = obj.mapped_parameters
+            # Get the title from 1st object
+            signal.mapped_parameters.title = "Stack of " + obj.mapped_parameters.title
+            signal.original_parameters = DictionaryBrowser({})
+            signal.original_parameters.add_node('stack_elements')
+        if obj.data.shape != original_shape:
+            raise IOError(
+          "Only files with data of the same shape can be stacked")
+        
+        signal.data[i,...] = obj.data
+        signal.original_parameters.stack_elements.add_node(
+            'element%i' % i)
+        node = signal.original_parameters.stack_elements[
+            'element%i' % i]
+        node.original_parameters = \
+            obj.original_parameters.as_dictionary()
+        node.mapped_parameters = \
+            obj.mapped_parameters.as_dictionary()
+        del obj
+        i+=1
+    return signal
                     
     
     
