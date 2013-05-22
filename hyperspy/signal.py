@@ -2436,7 +2436,7 @@ class Signal(MVA,
                     self._plot.navigator_data_function = get_explorer_wrapper
                 #higher dimension
                 elif self.axes_manager.navigation_shape == \
-                navigator.axes_manager.navigation_shape + navigator.axes_manager.signal_shape:
+                navigator.axes_manager.signal_shape + navigator.axes_manager.navigation_shape:
                     self._plot.navigator_data_function = get_explorer_wrapper_3D
                 else:
                     print("The given navigator and the current signal have incompatible shape.")
