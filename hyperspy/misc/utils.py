@@ -1110,7 +1110,7 @@ class DictionaryBrowser(object):
         eoi = len(self.__dict__)
         j = 0
         for key_, value in iter(sorted(self.__dict__.iteritems())):
-            if key_[:2] == "_":
+            if key_[:1] == "_":
                 eoi -= 1
                 continue
             if type(key_) != types.MethodType:
