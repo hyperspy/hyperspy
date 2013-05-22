@@ -1107,7 +1107,7 @@ class DictionaryBrowser(object):
         string = ''
         eoi = len(self.__dict__)
         j = 0
-        for key_, value in self.__dict__.iteritems():
+        for key_, value in iter(sorted(self.__dict__.iteritems())):
             if type(key_) != types.MethodType:
                 key = ensure_unicode(value['key'])
                 value = ensure_unicode(value['value'])
