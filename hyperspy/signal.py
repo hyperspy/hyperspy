@@ -2537,9 +2537,17 @@ class Signal(MVA,
         ----------
         new_shape: tuple of ints
             The new shape must be a divisor of the original shape
+            
         """
-        factors = np.array(self.data.shape) / np.array(new_shape)
-        self.data = utils.rebin(self.data, new_shape)
+        if len(new_shape) != len(self.data.shape):
+            raise ValueError("Wrong shape size")
+        new_shape_in_array = []
+        for axis in self.axes_manager._axes:
+            new_shape_in_array.append(
+                new_shape[axis.index_in_axes_manager])
+        factors = (np.array(self.data.shape) / 
+                           np.array(new_shape_in_array))
+        self.data = utils.rebin(self.data, new_shape_in_array)
         for axis in self.axes_manager._axes:
             axis.scale *= factors[axis.index_in_array]
         self.get_dimensions_from_data()
