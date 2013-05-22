@@ -212,11 +212,12 @@ def hdfgroup2dict(group, dictionary = {}):
     if not isinstance(group, h5py.Dataset):
         for key in group.keys():
             if key.startswith('_sig_'):
-                dictionary[key[len('_sig_'):]] = hdfgroup2signaldict(
-                                                            group[key])
+                from hyperspy.io import dict2signal
+                dictionary[key[len('_sig_'):]] = (
+                dict2signal(hdfgroup2signaldict(group[key])))
             elif isinstance(group[key],h5py.Dataset):
                 dictionary[key]=np.array(group[key])
-            if key.startswith('_hspy_AxesManager_'):
+            elif key.startswith('_hspy_AxesManager_'):
                 dictionary[key[len('_hspy_AxesManager_'):]] = \
                     AxesManager([i 
                         for k, i in sorted(iter(
