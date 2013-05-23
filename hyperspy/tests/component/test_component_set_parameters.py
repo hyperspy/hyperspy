@@ -16,10 +16,6 @@
 # along with Hyperspy. If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
-
-import numpy as np
-
 from nose.tools import (assert_true,
                         assert_false,
                         assert_equal,
@@ -39,14 +35,14 @@ class TestSetParameters:
 
     def test_set_parameters_not_free2(self):
         g = self.gaussian
-        g.set_parameters_not_free(parameter_name_list=['area'])
+        g.set_parameters_not_free(parameter_name_list=['A'])
         free_parameters = len(g.free_parameters)
         parameters = len(g.parameters) - 1
         assert_equal(free_parameters, parameters)
 
     def test_set_parameters_free1(self):
         g = self.gaussian
-        g.area.free = False
+        g.A.free = False
         g.set_parameters_free()
         free_parameters = len(g.free_parameters)
         parameters = len(g.parameters)
@@ -54,10 +50,10 @@ class TestSetParameters:
 
     def test_set_parameters_free2(self):
         g = self.gaussian
-        g.area.free = False
+        g.A.free = False
         g.centre.free = False
         g.sigma.free = False
-        g.set_parameters_free(parameter_name_list=['area'])
+        g.set_parameters_free(parameter_name_list=['A'])
         free_parameters = len(g.free_parameters)
         parameters = len(g.parameters) - 2
         assert_equal(free_parameters, parameters)
