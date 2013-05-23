@@ -185,7 +185,7 @@ class Signal2DTools(object):
                     break
                 # Iterate to fill the columns of pcarray
                 for i2, im2 in enumerate(
-                                    self._iterate_signal(copy=False)):
+                                    self._iterate_signal()):
                     if i2 > i1:
                         nshift, max_value = estimate_image_shift(
                                       im,
@@ -292,7 +292,7 @@ class Signal2DTools(object):
         else:
             return_shifts = False
         # Translate with sub-pixel precision if necesary 
-        for im, shift in zip(self._iterate_signal(copy=False),
+        for im, shift in zip(self._iterate_signal(),
                               shifts.ravel()):
             if np.any(shift):
                 shift_image(im, -shift,
