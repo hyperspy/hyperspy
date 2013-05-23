@@ -246,9 +246,6 @@ def load_single_file(filename, record_by=None, output_level=2,
 
 def load_with_reader(filename, reader, record_by=None,
         signal_type=None, output_level=1, **kwds):
-    from hyperspy.signals.image import Image
-    from hyperspy.signals.spectrum import Spectrum
-    from hyperspy.signals.eels import EELSSpectrum
     if output_level>1:
         messages.information('Loading %s ...' % filename)
     
@@ -257,39 +254,46 @@ def load_with_reader(filename, reader, record_by=None,
                                         output_level=output_level,
                                         **kwds)
     objects = []
-    for file_data_dict in file_data_list:
-        if record_by is not None:
-            file_data_dict['mapped_parameters']['record_by'] = record_by
-        # The record_by can still be None if it was not defined by the reader
-        if file_data_dict['mapped_parameters']['record_by'] is None:
-            print "No data type provided.  Defaulting to image."
-            file_data_dict['mapped_parameters']['record_by']= 'image'
-
-        if signal_type is not None:
-            file_data_dict['mapped_parameters']['signal_type'] = signal_type
-
-        if file_data_dict['mapped_parameters']['record_by'] == 'image':
-            s = Image(**file_data_dict)
-        else:
-            if ('signal_type' in file_data_dict['mapped_parameters'] 
-                and file_data_dict['mapped_parameters']['signal_type'] 
-                == 'EELS'):
-                s = EELSSpectrum(**file_data_dict)
-            else:
-                s = Spectrum(**file_data_dict)
+    for signal_dict in file_data_list:
+        objects.append(dict2signal(signal_dict,
+                                   record_by=record_by,
+                                   signal_type=signal_type))
         folder, filename = os.path.split(os.path.abspath(filename))
         filename, extension = os.path.splitext(filename)
-        s.tmp_parameters.folder = folder
-        s.tmp_parameters.filename = filename
-        s.tmp_parameters.extension = extension.replace('.','')
-        objects.append(s)
-        s._print_summary()
+        objects[-1].tmp_parameters.folder = folder
+        objects[-1].tmp_parameters.filename = filename
+        objects[-1].tmp_parameters.extension = extension.replace('.','')
 
     if len(objects) == 1:
         objects = objects[0]
     if output_level>1:
         messages.information('%s correctly loaded' % filename)
     return objects
+    
+def dict2signal(signal_dict, record_by=None, signal_type=None):
+    from hyperspy.signals.image import Image
+    from hyperspy.signals.spectrum import Spectrum
+    from hyperspy.signals.eels import EELSSpectrum
+    if record_by is not None:
+        signal_dict['mapped_parameters']['record_by'] = record_by
+    # The record_by can still be None if it was not defined by the reader
+    if signal_dict['mapped_parameters']['record_by'] is None:
+        print "No data type provided.  Defaulting to image."
+        signal_dict['mapped_parameters']['record_by']= 'image'
+
+    if signal_type is not None:
+        signal_dict['mapped_parameters']['signal_type'] = signal_type
+
+    if signal_dict['mapped_parameters']['record_by'] == 'image':
+        s = Image(**signal_dict)
+    else:
+        if ('signal_type' in signal_dict['mapped_parameters'] 
+            and signal_dict['mapped_parameters']['signal_type'] 
+            == 'EELS'):
+            s = EELSSpectrum(**signal_dict)
+        else:
+            s = Spectrum(**signal_dict)
+    return s
 
 def save(filename, signal, overwrite=None, **kwds):
     extension = os.path.splitext(filename)[1][1:]

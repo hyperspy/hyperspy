@@ -1078,7 +1078,9 @@ def slugify(value, valid_variable_name=False):
     return value
     
 class DictionaryBrowser(object):
-    """A class to comfortably access some parameters as attributes"""
+    """A class to comfortably access some parameters as attributes
+    
+    """
 
     def __init__(self, dictionary={}):
         super(DictionaryBrowser, self).__init__()
@@ -1107,7 +1109,10 @@ class DictionaryBrowser(object):
         string = ''
         eoi = len(self.__dict__)
         j = 0
-        for key_, value in self.__dict__.iteritems():
+        for key_, value in iter(sorted(self.__dict__.iteritems())):
+            if key_[:1] == "_":
+                eoi -= 1
+                continue
             if type(key_) != types.MethodType:
                 key = ensure_unicode(value['key'])
                 value = ensure_unicode(value['value'])
