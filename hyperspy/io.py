@@ -292,15 +292,16 @@ def dict2signal(signal_dict, record_by=None, signal_type=None):
     if signal_dict['mapped_parameters']['record_by'] == 'image':
         s = Image(**signal_dict)
     else:
-        if ('signal_type' in signal_dict['mapped_parameters'] 
-            and signal_dict['mapped_parameters']['signal_type'] 
-            == 'EELS'):
-            s = EELSSpectrum(**signal_dict)
-        elif 'signal_type' in signal_dict['mapped_parameters']:
-            if 'EDS_SEM' in signal_dict['mapped_parameters']['signal_type']:
+        if 'signal_type' in signal_dict['mapped_parameters']:
+            signal_type = signal_dict['mapped_parameters']['signal_type']
+            if (signal_type == 'EELS'):
+                s = EELSSpectrum(**signal_dict)
+            elif (signal_type == 'EDS_SEM'):
                 s = EDSSEMSpectrum(**signal_dict)
-            if 'EDS_TEM' in signal_dict['mapped_parameters']['signal_type']:
+            elif (signal_type == 'EDS_TEM'):
                 s = EDSTEMSpectrum(**signal_dict)
+            else:
+                s = Spectrum(**signal_dict)
         else:
             s = Spectrum(**signal_dict)
     return s
