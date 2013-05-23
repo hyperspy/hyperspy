@@ -3046,7 +3046,13 @@ class Signal(MVA,
             self._plot = backup_plot
 
     def __deepcopy__(self, memo):
-        return type(self)(**self._get_signal_dict())
+        dc = type(self)(**self._get_signal_dict())
+        # The Signal subclasses might change the view on init
+        # The following code just copies the original view
+        for oaxis, caxis in zip(self.axes_manager._axes,
+                                dc.axes_manager._axes):
+            caxis.navigate = oaxis.navigate
+        return dc
             
     def deepcopy(self):
         return copy.deepcopy(self)
