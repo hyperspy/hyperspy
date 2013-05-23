@@ -293,7 +293,7 @@ class Signal2DTools(object):
             return_shifts = False
         # Translate with sub-pixel precision if necesary 
         for im, shift in zip(self._iterate_signal(),
-                              shifts.ravel()):
+                              shifts):
             if np.any(shift):
                 shift_image(im, -shift,
                     fill_value=fill_value)
@@ -310,7 +310,7 @@ class Signal2DTools(object):
                                     shifts[:,1].min() < 0 else None,
                            np.ceil(shifts[:,1].max()) if 
                                     shifts[:,1].max() > 0 else 0)
-            self.crop_image(top, bottom, left, right)
+            self.crop_image(int(top), int(bottom), int(left), int(right))
             shifts = -shifts
         if return_shifts:
             return shifts
