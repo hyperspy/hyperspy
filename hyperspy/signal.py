@@ -302,15 +302,15 @@ class Signal2DTools(object):
         # Crop the image to the valid size
         if crop is True:
             shifts = -shifts
-            bottom, top = (np.floor(shifts[:,0].min()) if 
+            bottom, top = (int(np.floor(shifts[:,0].min())) if 
                                     shifts[:,0].min() < 0 else None,
-                           np.ceil(shifts[:,0].max()) if 
+                           int(np.ceil(shifts[:,0].max())) if 
                                     shifts[:,0].max() > 0 else 0)
-            right, left = (np.floor(shifts[:,1].min()) if 
+            right, left = (int(np.floor(shifts[:,1].min())) if 
                                     shifts[:,1].min() < 0 else None,
-                           np.ceil(shifts[:,1].max()) if 
+                           int(np.ceil(shifts[:,1].max())) if 
                                     shifts[:,1].max() > 0 else 0)
-            self.crop_image(int(top), int(bottom), int(left), int(right))
+            self.crop_image(top, bottom, left, right)
             shifts = -shifts
         if return_shifts:
             return shifts
