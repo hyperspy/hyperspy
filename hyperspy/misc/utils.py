@@ -1696,7 +1696,6 @@ def stack(signal_list, mmap=False, mmap_dir=None,
     for obj in signal_list:        
         if original_shape is None:
             original_shape = obj.data.shape
-            record_by = obj.mapped_parameters.record_by
             stack_shape = tuple([len(signal_list),]) + original_shape
             tempf = None
             if mmap is False:
@@ -1712,6 +1711,8 @@ def stack(signal_list, mmap=False, mmap_dir=None,
 
             signal = type(obj)(data=data)
             signal.axes_manager._axes[1:] = obj.axes_manager._axes
+            for axis in signal.axes_manager._axes:
+                axis.axes_manager = signal.axes_manager
             axis_name = new_axis_name
             axis_names = [axis.name for axis in 
                           signal.axes_manager._axes[1:]]
