@@ -143,8 +143,8 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         top, bottom, left, right = [None,] * 4
         
     # Select region of interest
-    ref = ref[top:bottom, left:right]
-    image = image[top:bottom, left:right]
+    ref = ref[left:right, top:bottom]
+    image = image[left:right, top:bottom]
     
     # Apply filters
     for im in (ref,image):
