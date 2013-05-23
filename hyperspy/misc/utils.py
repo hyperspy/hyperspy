@@ -24,6 +24,7 @@ import glob
 import os
 import re
 from StringIO import StringIO
+import tempfile
 import codecs
 try:
     from collections import OrderedDict
@@ -1646,7 +1647,7 @@ def homogenize_ndim(*args):
     return [ary.reshape((1,) * (max_len - len(ary.shape)) + ary.shape)
             for ary in args]
 
-def stack(signal_list):
+def stack(signal_list, mmap=False, mmap_dir=None):
     """Transform a list of signals into a single signal with one more 
     dimension.
     
@@ -1656,6 +1657,17 @@ def stack(signal_list):
     Parameters
     ----------
     signal_list : list of Signal instances
+    mmap: bool
+        If True and stack is True, then the data is stored
+        in a memory-mapped temporary file.The memory-mapped data is 
+        stored on disk, and not directly loaded into memory.  
+        Memory mapping is especially useful for accessing small 
+        fragments of large files without reading the entire file into 
+        memory.
+    mmap_dir : string
+        If mmap_dir is not None, and stack and mmap are True, the memory
+        mapped file will be created in the given directory,
+        otherwise the default directory is used.
     
     Returns
     -------
@@ -1682,8 +1694,17 @@ def stack(signal_list):
             record_by = obj.mapped_parameters.record_by
             stack_shape = tuple([len(signal_list),]) + original_shape
             tempf = None
-            data = np.empty(stack_shape,
-                                   dtype=obj.data.dtype)
+            if mmap is False:
+                data = np.empty(stack_shape,
+                                       dtype=obj.data.dtype)
+            else:
+                tempf = tempfile.NamedTemporaryFile(
+                                                dir=mmap_dir)
+                data = np.memmap(tempf,
+                                 dtype=obj.data.dtype,
+                                 mode = 'w+',
+                                 shape=stack_shape,)
+
             signal = type(obj)(data=data)
             signal.axes_manager._axes[1:] = obj.axes_manager._axes
             axis_name = 'stack_element'

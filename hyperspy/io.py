@@ -179,7 +179,7 @@ def load(filenames=None, record_by=None, signal_type=None,
                 obj = load_single_file(filename, output_level=0,
                     signal_type=signal_type, **kwds)
                 signal.append(obj)
-            signal = utils.stack(signal)
+            signal = utils.stack(signal, mmap=mmap, mmap_dir=mmap_dir)
             signal.mapped_parameters.title = \
                 os.path.split(
                     os.path.split(
