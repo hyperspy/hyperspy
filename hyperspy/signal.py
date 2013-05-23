@@ -35,7 +35,7 @@ from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import ensure_directory
-from hyperspy.misc import progressbar
+from hyperspy.misc.progressbar import progressbar
 from hyperspy.gui.tools import (
     SpectrumCalibration,
     SmoothingSavitzkyGolay,
@@ -374,7 +374,7 @@ class Signal1DTools(object):
         axis = self.axes_manager.signal_axes[0]
         offset = axis.offset
         original_axis = axis.axis.copy()
-        pbar = progressbar.progressbar(
+        pbar = progressbar(
             maxval=self.axes_manager.navigation_size)
         for i, (dat, shift) in enumerate(zip(
                 self._iterate_signal(),
@@ -426,7 +426,7 @@ class Signal1DTools(object):
         i2 = axis._get_index(end)
         i0 = int(np.clip(i1 - delta, 0, np.inf))
         i3 = int(np.clip(i2 + delta, 0, axis.size))
-        pbar = progressbar.progressbar(
+        pbar = progressbar(
             maxval=self.axes_manager.navigation_size)
         for i, dat in enumerate(self._iterate_signal()):
             dat_int = sp.interpolate.interp1d(
@@ -492,7 +492,7 @@ class Signal1DTools(object):
         ref = self.navigation_indexer[reference_indices].data[i1:i2]
         if interpolate is True:
             ref = utils.interpolate1D(ip, ref)
-        pbar = progressbar.progressbar(
+        pbar = progressbar(
             maxval=self.axes_manager.navigation_size)
         for i, (dat, indices) in enumerate(zip(
                     self._iterate_signal(),
