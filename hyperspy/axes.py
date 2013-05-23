@@ -450,7 +450,13 @@ class AxesManager(t.HasTraits):
         return self.signal_shape[::-1]
     @property    
     def shape(self):
-        return self.navigation_shape + self.signal_shape
+        nav_shape = (self.navigation_shape
+                     if self.navigation_shape != (0,)
+                     else tuple())
+        sig_shape = (self.signal_shape
+             if self.signal_shape != (0,)
+             else tuple())
+        return nav_shape + sig_shape
         
     def remove(self, axis):
         """Remove the given Axis.
