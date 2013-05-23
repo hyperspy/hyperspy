@@ -597,9 +597,9 @@ class Signal1DTools(object):
         also_align.append(self)
         for signal in also_align:
             signal.shift1D(shift_array=shift_array,
-                            interpolation_method=interpolation_method,
-                            crop=crop,
-                            fill_value=fill_value)
+                           interpolation_method=interpolation_method,
+                           crop=crop,
+                           fill_value=fill_value)
                             
     @only_interactive
     def calibrate(self):
@@ -1979,24 +1979,19 @@ class Signal(MVA,
         has_signal = True if isNavigation is None else not isNavigation
         
         # Create a deepcopy of self that contains a view of self.data
-        data = self.data
-        self.data = None
-        _signal = self.deepcopy()
-        self.data = data
-        _signal.data = data
-        del data
+        _signal = self._deepcopy_with_new_data(self.data)
+        
         nav_idx =  [el.index_in_array for el in
                     _signal.axes_manager.navigation_axes]
         signal_idx =  [el.index_in_array for el in
                        _signal.axes_manager.signal_axes]
 
-        index = nav_idx + signal_idx
         if not has_signal:
             idx =  nav_idx
         elif not has_nav:
             idx =  signal_idx
         else:
-            idx =  index
+            idx =  nav_idx + signal_idx
             
         # Add support for Ellipsis
         if Ellipsis in _orig_slices:
