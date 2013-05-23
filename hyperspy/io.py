@@ -28,8 +28,9 @@ import hyperspy.defaults_parser
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
     ripple, tiff)
 from hyperspy.gui.tools import Load
+from hyperspy.misc import utils
 from hyperspy.misc.utils import (ensure_directory, DictionaryBrowser, 
-    strlist2enumeration, stack_list)
+    strlist2enumeration)
 from hyperspy.misc.natsort import natsorted
 import hyperspy.misc.utils_varia
 
@@ -178,7 +179,7 @@ def load(filenames=None, record_by=None, signal_type=None,
                 obj = load_single_file(filename, output_level=0,
                     signal_type=signal_type, **kwds)
                 signal.append(obj)
-            signal = stack_list(signal)
+            signal = utils.stack(signal, mmap=mmap, mmap_dir=mmap_dir)
             signal.mapped_parameters.title = \
                 os.path.split(
                     os.path.split(

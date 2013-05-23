@@ -1966,7 +1966,7 @@ class Signal(MVA,
         string = '<'
         string += self.__class__.__name__
         string+=", title: %s" % self.mapped_parameters.title
-        string += ", dimensions: %s" % (str(self.data.shape))
+        string += ", dimensions: %s" % (str(self.axes_manager.shape))
         string += '>'
 
         return string
@@ -2193,8 +2193,7 @@ class Signal(MVA,
             string += "\n\tSignal type: "
             string += self.mapped_parameters.signal_type
         string += "\n\tData dimensions: "
-        string += str(self.axes_manager.navigation_shape + 
-                      self.axes_manager.signal_shape)
+        string += str(self.axes_manager.shape)
         if hasattr(self.mapped_parameters, 'record_by'):
             string += "\n\tData representation: "
             string += self.mapped_parameters.record_by
@@ -2606,9 +2605,17 @@ class Signal(MVA,
         ----------
         new_shape: tuple of ints
             The new shape must be a divisor of the original shape
+            
         """
-        factors = np.array(self.data.shape) / np.array(new_shape)
-        self.data = utils.rebin(self.data, new_shape)
+        if len(new_shape) != len(self.data.shape):
+            raise ValueError("Wrong shape size")
+        new_shape_in_array = []
+        for axis in self.axes_manager._axes:
+            new_shape_in_array.append(
+                new_shape[axis.index_in_axes_manager])
+        factors = (np.array(self.data.shape) / 
+                           np.array(new_shape_in_array))
+        self.data = utils.rebin(self.data, new_shape_in_array)
         for axis in self.axes_manager._axes:
             axis.scale *= factors[axis.index_in_array]
         self.get_dimensions_from_data()
