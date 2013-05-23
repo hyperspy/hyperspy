@@ -159,7 +159,7 @@ class Signal2DTools(object):
             
         # Main iteration loop. Fills the rows of pcarray when reference 
         # is stat
-        for i1, im in enumerate(self._iterate_signal(copy=False)):
+        for i1, im in enumerate(self._iterate_signal()):
             if reference in ['current', 'cascade']:
                 if ref is None:
                     ref = im.copy()
