@@ -149,6 +149,7 @@ with update_version_when_dev() as version:
                     'hyperspy.models',
                     'hyperspy.misc',
                     'hyperspy.misc.eels',
+                    'hyperspy.misc.eds',
                     'hyperspy.misc.mpfit', 
                     'hyperspy.misc.mpfit.tests'],
         requires = install_req,
