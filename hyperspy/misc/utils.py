@@ -1641,19 +1641,41 @@ def homogenize_ndim(*args):
     return [ary.reshape((1,) * (max_len - len(ary.shape)) + ary.shape)
             for ary in args]
 
-def stack_list(self):
-    """
-    Transform a list of signals into a single signal with one more 
+def stack(signal_list):
+    """Transform a list of signals into a single signal with one more 
     dimension.
+    
+    All signals must match in shape. The title is set to that of the 
+    first signal in the list.
+    
+    Parameters
+    ----------
+    signal_list : list of Signal instances
+    
+    Returns
+    -------
+    signal : Signal instance (or subclass, determined by the objects in
+        signal list)
+        
+    Examples
+    --------
+    >>> data = np.arange(20)
+    >>> s = utils.stack([signals.Spectrum(data[:10]), signals.Spectrum(data[10:])])
+    >>> s
+    <Spectrum, title: Stack of , dimensions: (2, 10)>
+    >>> s.data
+    array([[ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9],
+           [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
+    
     """  
     
     original_shape = None
     i=0
-    for obj in self:        
+    for obj in signal_list:        
         if original_shape is None:
             original_shape = obj.data.shape
             record_by = obj.mapped_parameters.record_by
-            stack_shape = tuple([len(self),]) + original_shape
+            stack_shape = tuple([len(signal_list),]) + original_shape
             tempf = None
             data = np.empty(stack_shape,
                                    dtype=obj.data.dtype)
@@ -1669,7 +1691,8 @@ def stack_list(self):
             eaxis.navigate = True
             signal.mapped_parameters = obj.mapped_parameters
             # Get the title from 1st object
-            signal.mapped_parameters.title = "Stack of " + obj.mapped_parameters.title
+            signal.mapped_parameters.title = (
+                "Stack of " + obj.mapped_parameters.title)
             signal.original_parameters = DictionaryBrowser({})
             signal.original_parameters.add_node('stack_elements')
         if obj.data.shape != original_shape:
