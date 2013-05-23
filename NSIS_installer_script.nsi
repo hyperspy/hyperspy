@@ -249,13 +249,14 @@ SectionEnd
 
 /***************************************************/
 !macro CreateUninstaller extractTo mode
-!tempfile UNINSTEXE
-!system '"${NSISDIR}\MakeNSIS" /DBUILDUNINST=${mode} /DUNINSTEXE=${UNINSTEXE} "${__FILE__}"' = 0
-!system '"${UNINSTEXE}"' = 0
-File "/oname=${extractTo}" "${UNINSTEXE}.un"
-!delfile "${UNINSTEXE}"
-!delfile "${UNINSTEXE}.un"
-!undef UNINSTEXE
+    !tempfile UNINSTEXE
+    !system '"${NSISDIR}\MakeNSIS" /DBUILDUNINST=${mode} /DUNINSTEXE=${UNINSTEXE}.exe "${__FILE__}"' = 0
+    !system '"${UNINSTEXE}.exe"' = 0
+    /* We run it two times as a workaround because otherwise the file might
+       not still exists when running the next command */
+    !system '"${UNINSTEXE}.exe"' = 0
+    File "/oname=${extractTo}" "${UNINSTEXE}.exe.un"
+    !undef UNINSTEXE
 !macroend
 
 !ifndef BUILDUNINST

@@ -1648,7 +1648,8 @@ def homogenize_ndim(*args):
             for ary in args]
 
 
-def stack(signal_list, mmap=False, mmap_dir=None):
+def stack(signal_list, mmap=False, mmap_dir=None,
+          new_axis_name='stack_element'):
     """Transform a list of signals into a single signal with one more 
     dimension.
     
@@ -1669,6 +1670,10 @@ def stack(signal_list, mmap=False, mmap_dir=None):
         If mmap_dir is not None, and stack and mmap are True, the memory
         mapped file will be created in the given directory,
         otherwise the default directory is used.
+    new_axis_name : string
+        The name of the new axis. If an axis with this name already 
+        exists it automatically append '-i', where `i` are integers,
+        until it finds a name that is not yet in use.
     
     Returns
     -------
@@ -1708,11 +1713,13 @@ def stack(signal_list, mmap=False, mmap_dir=None):
 
             signal = type(obj)(data=data)
             signal.axes_manager._axes[1:] = obj.axes_manager._axes
-            axis_name = 'stack_element'
-            for axis in signal.axes_manager._axes[1:]:
-                axis.axes_manager = signal.axes_manager
-                if axis.name == 'stack_element':
-                    axis_name = 'stack_element2'                    
+            axis_name = new_axis_name
+            axis_names = [axis.name for axis in 
+                          signal.axes_manager._axes[1:]]
+            j = 1
+            while axis_name in axis_names:
+                axis_name = new_axis_name + "-%i" % j
+                j += 1             
             eaxis = signal.axes_manager._axes[0] 
             eaxis.name = axis_name           
             eaxis.navigate = True
