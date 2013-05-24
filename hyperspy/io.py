@@ -18,10 +18,7 @@
 
 import os
 import glob
-import tempfile
-import os.path as path
 
-import numpy as np
 
 from hyperspy import messages
 import hyperspy.defaults_parser
@@ -29,8 +26,7 @@ from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
     ripple, tiff)
 from hyperspy.gui.tools import Load
 from hyperspy.misc import utils
-from hyperspy.misc.utils import (ensure_directory, DictionaryBrowser, 
-    strlist2enumeration)
+from hyperspy.misc.utils import (ensure_directory,strlist2enumeration)
 from hyperspy.misc.natsort import natsorted
 import hyperspy.misc.utils_varia
 
@@ -72,7 +68,8 @@ for plugin in io_plugins:
             plugin.file_extensions[plugin.default_extension])
 
 def load(filenames=None, record_by=None, signal_type=None, 
-         stack=False, mmap=False, mmap_dir=None, **kwds):
+         stack=False, stack_axis=None, new_axis_name="stack_element",
+         mmap=False, mmap_dir=None, **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
     Supported formats: HDF5, msa, Gatan dm3, Ripple (rpl+raw)
@@ -109,6 +106,17 @@ def load(filenames=None, record_by=None, signal_type=None,
         in shape. It is possible to store the data in a memory mapped
         temporary file instead of in memory setting mmap_mode. The title is set
         to the name of the folder containing the files.
+    stack_axis : {None, int, str}
+        If None, the signals are stacked over a new axis. The data must 
+        have the same dimensions. Otherwise the 
+        signals are stacked over the axis given by its integer index or
+        its name. The data must have the same shape, except in the dimension
+        corresponding to `axis`.
+    new_axis_name : string
+        The name of the new axis when `axis` is None.
+        If an axis with this name already 
+        exists it automatically append '-i', where `i` are integers,
+        until it finds a name that is not yet in use.
         
     mmap: bool
         If True and stack is True, then the data is stored
@@ -179,7 +187,10 @@ def load(filenames=None, record_by=None, signal_type=None,
                 obj = load_single_file(filename, output_level=0,
                     signal_type=signal_type, **kwds)
                 signal.append(obj)
-            signal = utils.stack(signal, mmap=mmap, mmap_dir=mmap_dir)
+            signal = utils.stack(signal,
+                                 axis=stack_axis,
+                                 new_axis_name=new_axis_name,
+                                 mmap=mmap, mmap_dir=mmap_dir)
             signal.mapped_parameters.title = \
                 os.path.split(
                     os.path.split(
