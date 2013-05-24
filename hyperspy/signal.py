@@ -2627,7 +2627,7 @@ class Signal(MVA,
         Parameters
         ----------
 
-        axis : {int | string | None}
+        axis : {int, string, None}
             Specify the data axis in which to perform the splitting 
             operation. The axis can be specified using the index of the 
             axis in `axes_manager` or the axis name. It can only be None
@@ -2862,7 +2862,7 @@ class Signal(MVA,
 
         Parameters
         ----------
-        axis : {int | string}
+        axis : {int, string}
            The axis can be specified using the index of the axis in 
            `axes_manager` or the axis name.
 

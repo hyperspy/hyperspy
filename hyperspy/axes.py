@@ -469,6 +469,7 @@ class AxesManager(t.HasTraits):
         if axis not in self._axes:
             raise ValueError(
                 "AxesManager.remove(x): x not in AxesManager")
+        axis.axes_manager = None
         self._axes.remove(axis)
             
     def __delitem__(self, i):
@@ -567,6 +568,9 @@ class AxesManager(t.HasTraits):
         self.signal_axes = ()
         self.navigation_axes = ()
         for axis in self._axes:
+            # Until we find a better place, take property of the axes
+            # here to avoid difficult to debug bugs.
+            axis.axes_manager = self
             if axis.slice is None:
                 getitem_tuple += axis.index,
                 values.append(axis.value)
