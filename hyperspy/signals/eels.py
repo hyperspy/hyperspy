@@ -403,7 +403,7 @@ class EELSSpectrum(Spectrum):
             'der_roots' : tuple
                 Position in energy units of the roots of the first
                 derivative if der_roots is True (False by default)
-                
+                                
         """
         # TODO: make it work for ndimensions
         self._check_signal_dimension_equals_one()
@@ -430,221 +430,23 @@ class EELSSpectrum(Spectrum):
             return {'FWHM' : fwhm,
                      'FWHM_E' : pair_fwhm}
                      
-    def extract_zero_loss_peak(self, threshold=None, mode=None, 
-                        window_s=100, background=0.0): 
-        """General Tool to extract the zero loss peak (ZLP) from the 
-        rest of the low-loss EELSSpectrum provided, using the inflexion 
-        points calculated from estimate_elastic_scattering_threshold, or
-        any other threshold specified. The input EELSSpectrum must have
-        been calibrated correctly (ZLP energy channel = 0 eV)    
-        
-        A special preparation for fourier log-deconvolution is available
-        in which the input EELSSpectrum is also be modified, according 
-        to Egerton (2011). Both EELSSpectra - input and output ZLP - are
-        expanded to the next power of two, and the left side of the ZLP
-        moved to the right end. The discontinuities are smoothed using 
-        Hann window, preserving the value of the integral below the
-        spectra. Input EELSSpectrum will be extrapolated to the right 
-        using a hanning tapered power law extrapolation (uses native
-        power_law_extrapolation method).
-        
-        This special method will return 2 EELSSpectrum instances. Please
-        see sections below for more information.
-
-        Parameters
-        ----------
-        threshold : {None, float, EELSSpectrum}
-            Truncation energy to estimate the intensity of the 
-            elastic scattering. Notice that in the case of a 
-            multidimensional EELSSpectrum the instance has to be of the 
-            same dimension as the input spectrum navigation space 
-            containing the estimated threshold. 
-            A float number can be used as a general threshold for
-            multidimensional signals, but, it must be used in the case 
-            of a single spectrum. Notice that numpy float dtypes won't 
-            work (convert the data beforehand with the float() method).
-            If None, the threshold is taken as the first minimum 
-            after the ZLP centre.
-        mode : {None, 'smooth','flog'}
-            Method for smoothing the right-hand-side of the cropped ZLP. 
-            With this selection the behavior or the program is much 
-            altered, choose wisely.
-                None: No method is applied.
-                smooth: Hanning window is applied to the right end - TODO
-                flog: Special preparation for fourier_log_deconvolution
-        window_s : {int, float}
-            For mode "flog", number of channels from the right end of 
-            the spectrum that are used for the power_law_extrapolation. 
-            If specified by a float value, the program will calculate 
-            the number of channels that correspond to that value using 
-            the signal axis scale.
-        background: float
-            For mode "flog", sets a background general level to be 
-            subtracted from the spectrum. Default is no background used.
-        Returns
-        -------
-        zlp : EELSSpectrum
-            This instance should contain the extended zero loss peak 
-            EELSSpectrum, prepared for fourier_log_deconvolution
-        
-        If mode "flog" is selected, it will return also,
-        j : EELSSpectrum
-            This instance should contain the extended input EELSSpectrum,
-            prepared for fourier_log_deconvolution
-        
-        Example of use: 
-            s_fft, zlp = s.extract_zero_loss_peak(mode='flog')
-
-        Notes
-        -----        
-        For details see: Egerton, R. Electron Energy-Loss 
-        Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
-        
-        """
-        self._check_signal_dimension_equals_one()
-        zlp = self.deepcopy()
-        axes = zlp.axes_manager
-        Eaxis = axes.signal_axes[0]
-        slicer = lambda x: zlp.axes_manager._get_data_slice(
-                            [(Eaxis.index_in_array, slice(x[0],x[1])),])
-        if mode is 'flog':
-            # Calculate the next Power of 2
-            old = Eaxis.size
-            npot = int(2 ** np.ceil(np.log2(old)))
-            new = npot + (npot-old)
-            # Extend the spectrum
-            new_shape = list(self.data.shape)
-            new_shape[Eaxis.index_in_array] += new
-            zlp.data =  np.zeros((new_shape))
-            zlp.get_dimensions_from_data()
-            zlp_index=Eaxis.value2index(0)
-            # Slice the zlp left-side to the right!
-            zlp.data[slicer((None,old-zlp_index))] = \
-                                    self.data[slicer((zlp_index,old))]
-            zlp.data[slicer((-zlp_index,None))] = \
-                                    self.data[slicer((None,zlp_index))]
-            Eaxis.offset -= Eaxis.axis[0]
-        if threshold is None:
-            # No threshold has been specified, we calculate it
-            zlp_index=Eaxis.value2index(0)
-            threshold = (zlp.data[slicer((zlp_index,-1))] < 
-                zlp.data[slicer((1+zlp_index,None))]).argmax(Eaxis.index_in_array)
-            v2i = np.vectorize(lambda x: Eaxis.index2value(x))
-            threshold = v2i(threshold + zlp_index)
-            td = threshold.reshape(np.insert(threshold.shape,
-                    Eaxis.index_in_array, 1))
-        elif type(threshold) is float: 
-            # The threshold is a float
-            if zlp.axes_manager.navigation_shape[0] > 0:
-                td = threshold * np.ones(zlp.axes_manager.navigation_shape)
-            else:
-                td = np.array(threshold)
-            td = td.reshape(np.insert(td.shape,Eaxis.index_in_array, 1))    
-        else:
-            # Threshold specified by an image instance
-            td = threshold.data.reshape(np.insert(threshold.data.shape,
-                    Eaxis.index_in_array, 1))    
-        # The crop will use masks from provided threshold.
-        if mode is not 'flog':
-            E = Eaxis.axis
-            # Crop ZLP
-            zlp.data[td < E] = 0
-            # TODO: Implement auto-dtype method in general parameters
-            #zlp.data = zlp.data.astype('float32')
-            # Zero loss peak is ready.
-            return zlp
-        else:
-            # First part, crop ZLP and apply Hann window,
-            E = Eaxis.axis[:Eaxis.size*.5]
-            # get threshold indices array and threshold data value,
-            itd = np.vectorize(
-                lambda x: zlp.axes_manager.signal_axes[0].value2index(x))(td)
-            mask = (td+Eaxis.scale*0.5 > E) & (td-Eaxis.scale*0.5 < E)
-            if zlp.axes_manager.navigation_shape[0] > 0:
-                td_value = zlp.data[mask].reshape(
-                            zlp.axes_manager.navigation_shape)
-            else:
-                td_value = zlp.data[mask]
-            td_value = td_value.ravel()
-            # actual ZLP cropping is done now,
-            zlp.data[td-Eaxis.scale*0.5 < E] = 0
-            # design Hann window from 0 till twice the maximum threshold 
-            itd_max=  (2*td.max() > E).argmin() 
-            hann_tap = lambda x: np.concatenate(
-                                    (np.hanning((x)*4)[:x], 
-                                    -np.hanning((x)*4)[-x:], 
-                                    np.zeros(itd_max-2*x)))
-            vh = np.array(
-                [td_value[ix]*hann_tap(x) for ix, x in enumerate(itd.flat)])
-            # apply the designed Hann window into mask
-            td_max = td.copy()
-            td_max.fill(2 * td.max())
-            zlp.data[td_max > E] -=  vh.ravel()
-            # zero loss peak is ready.
-            # TODO: Implement auto-dtype method in general parameters
-            #zlp.data = zlp.data.astype('float32')
-            
-            # Second part, prepare the input spectrum for F.L. deconv.,
-            s = self.deepcopy()
-            Eaxis = s.axes_manager.signal_axes[0]
-            # signal data,
-            self_size = Eaxis.size
-            zlp_index = Eaxis.value2index(0)
-            zlp_size = zlp.axes_manager.signal_axes[0].size
-            # move E=0 to first channel,
-            s.crop_in_units(Eaxis.index_in_array, 0, Eaxis.high_value)
-            s.data = s.data - background
-            s_size = Eaxis.size
-            # compute next "Power of 2" size,
-            size = int(2 ** np.ceil(np.log2(2*self_size-1)))
-            size_new = size - s_size
-            # extrapolate s using a power law,
-            if type(window_s) is float:
-                window_s = Eaxis.value2index(window_s)
-            _s=s.power_law_extrapolation(window_size=window_s,
-                                        extrapolation_size=size_new,
-                                        fix_neg_r=True)
-            # subtract Hann window to that power law,
-            slicer = lambda x: _s.axes_manager._get_data_slice([(Eaxis.index_in_array, slice(x[0],x[1])),])
-            new_shape = list(self.data.shape)
-            new_shape[Eaxis.index_in_array] = size_new
-            cbell = 0.5*(1-np.cos(np.pi*np.arange(0,size_new)/(size_new-zlp_index-1)))
-            dext = _s.data[slicer((size-1,size))]
-            _s.data[slicer((s_size,None))] -= np.ones(new_shape)*cbell*dext
-            # finally, paste ZLP left side to the right side
-            _s.data[slicer((-zlp_index,None))] = zlp.data[slicer((-zlp_index,None))]
-            # input spectrum is prepared for F.L. deconv.
-            # TODO: Implement auto-dtype method in general parameters
-            #_s.data = _s.data.astype('float32')
-            
-            # Sign the work and leave...
-            _s.mapped_parameters.title = (_s.mapped_parameters.title + 
-                                             ' prepared for Fourier-log deconvolution')
-            zlp.mapped_parameters.title = (zlp.mapped_parameters.title + 
-                                             ' prepared for Fourier-log deconvolution')
-            return _s, zlp
-
-    def fourier_log_deconvolution(self, zlp, prepared=False, 
-                                    add_zlp=False, crop=False,
-                                    type_change=False):
+    def fourier_log_deconvolution(self,
+                                  zlp,
+                                  add_zlp=False,
+                                  crop=False):
         """Performs fourier-log deconvolution.
         
         Parameters
         ----------
         zlp : EELSSpectrum
             The corresponding zero-loss peak.
-        prepared : bool
-            Use True if the input EELSSpectra have been preparated with
-            split_zero_loss_peak_flog.
+
         add_zlp : bool
             If True, adds the ZLP to the deconvolved spectrum
         crop : bool
             If True crop the spectrum to leave out the channels that
             have been modified to decay smoothly to zero at the sides 
             of the spectrum.
-        type_change : bool
-            If True, intermediate changes to float32 dtype are used. Use 
-            this option to avoid raising memory errors in huge datasets.
         
         Returns
         -------
@@ -657,33 +459,22 @@ class EELSSpectrum(Spectrum):
         
         """
         self._check_signal_dimension_equals_one()
-        s = self.deepcopy()
-        tapped_channels = 0
-        
+        s = self.deepcopy()        
         zlp_size = zlp.axes_manager.signal_axes[0].size 
         self_size = self.axes_manager.signal_axes[0].size
-        if prepared is False:
-            tapped_channels = s.hanning_taper()
-            # Conservative new size to solve the wrap-around problem 
-            size = zlp_size + self_size -1
-            # Increase to the closest multiple of two to enhance the FFT 
-            # performance
-            size = int(2 ** np.ceil(np.log2(size)))
-        elif self_size == zlp_size:
-            tapped_channels = 0
-            size = self_size
+        tapped_channels = s.hanning_taper()
+        # Conservative new size to solve the wrap-around problem 
+        size = zlp_size + self_size -1
+        # Increase to the closest multiple of two to enhance the FFT 
+        # performance
+        size = int(2 ** np.ceil(np.log2(size)))
+
         axis = self.axes_manager.signal_axes[0]
-        # TODO: Implement auto-dtype method in general parameters
-        if type_change is False:
-            z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
-            j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array)
-            j1 = z * np.nan_to_num(np.log(j / z))
-            sdata = np.fft.irfft(j1, axis=axis.index_in_array)
-        elif type_change is True:
-            z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array).astype('complex64')
-            j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array).astype('complex64')
-            j1 = z * np.nan_to_num(np.log(j / z))
-            sdata = np.fft.irfft(j1, axis=axis.index_in_array).astype('float32')
+        z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
+        j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array)
+        j1 = z * np.nan_to_num(np.log(j / z))
+        sdata = np.fft.irfft(j1, axis=axis.index_in_array)
+
         s.data = sdata[s.axes_manager._get_data_slice(
             [(axis.index_in_array, slice(None,self_size)),])]
         if add_zlp is True:
@@ -706,7 +497,8 @@ class EELSSpectrum(Spectrum):
                              None, int(-tapped_channels))
         return s
 
-    def fourier_ratio_deconvolution(self, ll, fwhm=None,
+    def fourier_ratio_deconvolution(self, ll,
+                                    fwhm=None,
                                     threshold=None,
                                     extrapolate_lowloss=True,
                                     extrapolate_coreloss=True):
