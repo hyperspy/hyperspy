@@ -1,8 +1,7 @@
 ; Hyperspy installer script for Nullsoft installer system.
 ; Tested using version 2.46.
-; requires installation of 2 extra plugins:
+; requires installation of 1 extra plugins:
 ; UAC - http://nsis.sourceforge.net/UAC_plug-in
-; registry - http://nsis.sourceforge.net/Registry_plug-in
 
 ; This file based heavily on UAC_DualMode from the UAC plugin.
 
@@ -25,7 +24,6 @@ OutFile "${S_NAME}.exe"
 !include MUI2.nsh
 !include UAC.nsh
 !include nsDialogs.nsh
-!include registry.nsh
 
 !ifndef BCM_SETSHIELD
 !define BCM_SETSHIELD 0x0000160C
@@ -251,13 +249,14 @@ SectionEnd
 
 /***************************************************/
 !macro CreateUninstaller extractTo mode
-!tempfile UNINSTEXE
-!system '"${NSISDIR}\MakeNSIS" /DBUILDUNINST=${mode} /DUNINSTEXE=${UNINSTEXE} "${__FILE__}"' = 0
-!system '"${UNINSTEXE}"' = 0
-File "/oname=${extractTo}" "${UNINSTEXE}.un"
-!delfile "${UNINSTEXE}"
-!delfile "${UNINSTEXE}.un"
-!undef UNINSTEXE
+    !tempfile UNINSTEXE
+    !system '"${NSISDIR}\MakeNSIS" /DBUILDUNINST=${mode} /DUNINSTEXE=${UNINSTEXE}.exe "${__FILE__}"' = 0
+    !system '"${UNINSTEXE}.exe"' = 0
+    /* We run it two times as a workaround because otherwise the file might
+       not still exists when running the next command */
+    !system '"${UNINSTEXE}.exe"' = 0
+    File "/oname=${extractTo}" "${UNINSTEXE}.exe.un"
+    !undef UNINSTEXE
 !macroend
 
 !ifndef BUILDUNINST

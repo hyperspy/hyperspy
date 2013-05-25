@@ -57,7 +57,11 @@ class Spectrum(Signal):
         dic = self._get_signal_dict()
         dic['mapped_parameters']['record_by'] = 'image'
         dic['data'] = np.rollaxis(dic['data'], -1, signal_to_index)
-        dic['axes'] = utils_varia.rollelem(dic['axes'],-1,signal_to_index)
+        dic['axes'] = utils_varia.rollelem(dic['axes'],
+                                           -1,
+                                           signal_to_index)
+        for axis in dic['axes']:
+            del axis['index_in_array']
         im = Image(**dic)
         
         if hasattr(self, 'learning_results'):

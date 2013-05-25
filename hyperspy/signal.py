@@ -35,7 +35,7 @@ from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import ensure_directory
-from hyperspy.misc import progressbar
+from hyperspy.misc.progressbar import progressbar
 from hyperspy.gui.tools import (
     SpectrumCalibration,
     SmoothingSavitzkyGolay,
@@ -159,7 +159,7 @@ class Signal2DTools(object):
             
         # Main iteration loop. Fills the rows of pcarray when reference 
         # is stat
-        for i1, im in enumerate(self._iterate_signal(copy=False)):
+        for i1, im in enumerate(self._iterate_signal()):
             if reference in ['current', 'cascade']:
                 if ref is None:
                     ref = im.copy()
@@ -185,7 +185,7 @@ class Signal2DTools(object):
                     break
                 # Iterate to fill the columns of pcarray
                 for i2, im2 in enumerate(
-                                    self._iterate_signal(copy=False)):
+                                    self._iterate_signal()):
                     if i2 > i1:
                         nshift, max_value = estimate_image_shift(
                                       im,
@@ -292,8 +292,8 @@ class Signal2DTools(object):
         else:
             return_shifts = False
         # Translate with sub-pixel precision if necesary 
-        for im, shift in zip(self._iterate_signal(copy=False),
-                              shifts.ravel()):
+        for im, shift in zip(self._iterate_signal(),
+                              shifts):
             if np.any(shift):
                 shift_image(im, -shift,
                     fill_value=fill_value)
@@ -302,13 +302,13 @@ class Signal2DTools(object):
         # Crop the image to the valid size
         if crop is True:
             shifts = -shifts
-            bottom, top = (np.floor(shifts[:,0].min()) if 
+            bottom, top = (int(np.floor(shifts[:,0].min())) if 
                                     shifts[:,0].min() < 0 else None,
-                           np.ceil(shifts[:,0].max()) if 
+                           int(np.ceil(shifts[:,0].max())) if 
                                     shifts[:,0].max() > 0 else 0)
-            right, left = (np.floor(shifts[:,1].min()) if 
+            right, left = (int(np.floor(shifts[:,1].min())) if 
                                     shifts[:,1].min() < 0 else None,
-                           np.ceil(shifts[:,1].max()) if 
+                           int(np.ceil(shifts[:,1].max())) if 
                                     shifts[:,1].max() > 0 else 0)
             self.crop_image(top, bottom, left, right)
             shifts = -shifts
@@ -374,7 +374,7 @@ class Signal1DTools(object):
         axis = self.axes_manager.signal_axes[0]
         offset = axis.offset
         original_axis = axis.axis.copy()
-        pbar = progressbar.progressbar(
+        pbar = progressbar(
             maxval=self.axes_manager.navigation_size)
         for i, (dat, shift) in enumerate(zip(
                 self._iterate_signal(),
@@ -426,7 +426,7 @@ class Signal1DTools(object):
         i2 = axis._get_index(end)
         i0 = int(np.clip(i1 - delta, 0, np.inf))
         i3 = int(np.clip(i2 + delta, 0, axis.size))
-        pbar = progressbar.progressbar(
+        pbar = progressbar(
             maxval=self.axes_manager.navigation_size)
         for i, dat in enumerate(self._iterate_signal()):
             dat_int = sp.interpolate.interp1d(
@@ -492,7 +492,7 @@ class Signal1DTools(object):
         ref = self.navigation_indexer[reference_indices].data[i1:i2]
         if interpolate is True:
             ref = utils.interpolate1D(ip, ref)
-        pbar = progressbar.progressbar(
+        pbar = progressbar(
             maxval=self.axes_manager.navigation_size)
         for i, (dat, indices) in enumerate(zip(
                     self._iterate_signal(),
@@ -597,9 +597,9 @@ class Signal1DTools(object):
         also_align.append(self)
         for signal in also_align:
             signal.shift1D(shift_array=shift_array,
-                            interpolation_method=interpolation_method,
-                            crop=crop,
-                            fill_value=fill_value)
+                           interpolation_method=interpolation_method,
+                           crop=crop,
+                           fill_value=fill_value)
                             
     @only_interactive
     def calibrate(self):
@@ -1936,26 +1936,34 @@ class Signal(MVA,
            
         """
         
-        self.mapped_parameters = DictionaryBrowser()
-        self.original_parameters = DictionaryBrowser()
-        self.tmp_parameters = DictionaryBrowser()
+        self._create_mapped_parameters()
         self.learning_results = LearningResults()
         self.peak_learning_results = LearningResults()
         kwds['data'] = data
         self._load_dictionary(kwds)
         self._plot = None
-        self._shape_before_unfolding = None
-        self._axes_manager_before_unfolding = None
         self.auto_replot = True
         self.variance = None
         self.navigation_indexer = SpecialSlicers(self, True)
         self.signal_indexer = SpecialSlicers(self, False)
+        
+    def _create_mapped_parameters(self):
+        self.mapped_parameters = DictionaryBrowser()
+        mp = self.mapped_parameters
+        mp.add_node("_internal_parameters")
+        mp._internal_parameters.add_node("folding")
+        folding = mp._internal_parameters.folding
+        folding.unfolded = False
+        folding.original_shape = None
+        folding.original_axes_manager = None
+        self.original_parameters = DictionaryBrowser()
+        self.tmp_parameters = DictionaryBrowser()
 
     def __repr__(self):
         string = '<'
         string += self.__class__.__name__
         string+=", title: %s" % self.mapped_parameters.title
-        string += ", dimensions: %s" % (str(self.data.shape))
+        string += ", dimensions: %s" % (str(self.axes_manager.shape))
         string += '>'
 
         return string
@@ -1971,24 +1979,19 @@ class Signal(MVA,
         has_signal = True if isNavigation is None else not isNavigation
         
         # Create a deepcopy of self that contains a view of self.data
-        data = self.data
-        self.data = None
-        _signal = self.deepcopy()
-        self.data = data
-        _signal.data = data
-        del data
+        _signal = self._deepcopy_with_new_data(self.data)
+        
         nav_idx =  [el.index_in_array for el in
                     _signal.axes_manager.navigation_axes]
         signal_idx =  [el.index_in_array for el in
                        _signal.axes_manager.signal_axes]
 
-        index = nav_idx + signal_idx
         if not has_signal:
             idx =  nav_idx
         elif not has_nav:
             idx =  signal_idx
         else:
-            idx =  index
+            idx =  nav_idx + signal_idx
             
         # Add support for Ellipsis
         if Ellipsis in _orig_slices:
@@ -2153,7 +2156,7 @@ class Signal(MVA,
         This method has the advantage over deepcopy that it does not
         copy the data what can save precious memory
         
-        Paramters
+        Parameters
         ---------
         data : {None | np.array}
         
@@ -2162,15 +2165,18 @@ class Signal(MVA,
         ns : Signal
         
         """
-        old_data = self.data
-        self.data = None
-        old_plot = self._plot
-        self._plot = None
-        ns = self.deepcopy()
-        ns.data = data
-        self.data = old_data
-        self._plot = old_plot
-        return ns
+        try:
+            old_data = self.data
+            self.data = None
+            old_plot = self._plot
+            self._plot = None
+            ns = self.deepcopy()
+            ns.data = data
+            return ns
+        finally:
+            self.data = old_data
+            self._plot = old_plot
+            
             
     def _print_summary(self):
         string = "\n\tTitle: "
@@ -2179,7 +2185,7 @@ class Signal(MVA,
             string += "\n\tSignal type: "
             string += self.mapped_parameters.signal_type
         string += "\n\tData dimensions: "
-        string += str(self.data.shape)
+        string += str(self.axes_manager.shape)
         if hasattr(self.mapped_parameters, 'record_by'):
             string += "\n\tData representation: "
             string += self.mapped_parameters.record_by
@@ -2256,14 +2262,18 @@ class Signal(MVA,
 
     def _get_signal_dict(self, add_learning_results=True):
         dic = {}
-        dic['data'] = self.data.copy()
+        if hasattr(self.data, "copy"):
+            dic['data'] = self.data.copy()
+        else:
+            dic['data'] = self.data            
         dic['axes'] = self.axes_manager._get_axes_dicts()
         dic['mapped_parameters'] = \
-        self.mapped_parameters.as_dictionary()
+        self.mapped_parameters.deepcopy().as_dictionary()
         dic['original_parameters'] = \
-        self.original_parameters.as_dictionary()
+        self.original_parameters.deepcopy().as_dictionary()
         if add_learning_results and hasattr(self,'learning_results'):
-            dic['learning_results'] = self.learning_results.__dict__
+            dic['learning_results'] = copy.deepcopy(
+                                                self.learning_results.__dict__)
         return dic
 
     def _get_undefined_axes_list(self):
@@ -2522,9 +2532,17 @@ class Signal(MVA,
         ----------
         new_shape: tuple of ints
             The new shape must be a divisor of the original shape
+            
         """
-        factors = np.array(self.data.shape) / np.array(new_shape)
-        self.data = utils.rebin(self.data, new_shape)
+        if len(new_shape) != len(self.data.shape):
+            raise ValueError("Wrong shape size")
+        new_shape_in_array = []
+        for axis in self.axes_manager._axes:
+            new_shape_in_array.append(
+                new_shape[axis.index_in_axes_manager])
+        factors = (np.array(self.data.shape) / 
+                           np.array(new_shape_in_array))
+        self.data = utils.rebin(self.data, new_shape_in_array)
         for axis in self.axes_manager._axes:
             axis.scale *= factors[axis.index_in_array]
         self.get_dimensions_from_data()
@@ -2541,7 +2559,7 @@ class Signal(MVA,
         Parameters
         ----------
 
-        axis : {int | string | None}
+        axis : {int, string, None}
             Specify the data axis in which to perform the splitting 
             operation. The axis can be specified using the index of the 
             axis in `axes_manager` or the axis name. It can only be None
@@ -2657,9 +2675,11 @@ class Signal(MVA,
         # by
         # the fold function only if it has not been already stored by a
         # previous unfold
-        if self._shape_before_unfolding is None:
-            self._shape_before_unfolding = self.data.shape
-            self._axes_manager_before_unfolding = self.axes_manager
+        folding = self.mapped_parameters._internal_parameters.folding
+        if folding.unfolded is False:
+            folding.original_shape = self.data.shape
+            folding.original_axes_manager = self.axes_manager
+            folding.unfolded = True
 
         new_shape = [1] * len(self.data.shape)
         for index in steady_axes:
@@ -2721,11 +2741,15 @@ class Signal(MVA,
     @auto_replot
     def fold(self):
         """If the signal was previously unfolded, folds it back"""
-        if self._shape_before_unfolding is not None:
-            self.data = self.data.reshape(self._shape_before_unfolding)
-            self.axes_manager = self._axes_manager_before_unfolding
-            self._shape_before_unfolding = None
-            self._axes_manager_before_unfolding = None
+        folding = self.mapped_parameters._internal_parameters.folding
+        # Note that == must be used instead of is True because 
+        # if the value was loaded from a file its type can be np.bool_
+        if folding.unfolded == True:
+            self.data = self.data.reshape(folding.original_shape)
+            self.axes_manager = folding.original_axes_manager
+            folding.original_shape = None
+            folding.original_axes_manager = None
+            folding.unfolded = False
             
     def _make_sure_data_is_contiguous(self):
         if self.data.flags['C_CONTIGUOUS'] is False:
@@ -2770,7 +2794,7 @@ class Signal(MVA,
 
         Parameters
         ----------
-        axis : {int | string}
+        axis : {int, string}
            The axis can be specified using the index of the axis in 
            `axes_manager` or the axis name.
 
@@ -3014,13 +3038,24 @@ class Signal(MVA,
         
         
     def copy(self):
-        return copy.copy(self)
+        try:
+            backup_plot = self._plot
+            self._plot = None
+            return copy.copy(self)
+        finally:
+            self._plot = backup_plot
 
+    def __deepcopy__(self, memo):
+        dc = type(self)(**self._get_signal_dict())
+        # The Signal subclasses might change the view on init
+        # The following code just copies the original view
+        for oaxis, caxis in zip(self.axes_manager._axes,
+                                dc.axes_manager._axes):
+            caxis.navigate = oaxis.navigate
+        return dc
+            
     def deepcopy(self):
-        s = copy.deepcopy(self)
-        if self.data is not None:
-            s.data = s.data.copy()
-        return s
+        return copy.deepcopy(self)
         
     def change_dtype(self, dtype):
         """Change the data type

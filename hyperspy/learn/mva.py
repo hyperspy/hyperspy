@@ -329,7 +329,9 @@ class MVA():
             target.bss_algorithm = None
 
             if self._unfolded4decomposition is True:
-                target.original_shape = self._shape_before_unfolding
+                folding = \
+                    self.mapped_parameters._internal_parameters.folding
+                target.original_shape = folding.original_shape
 
             # Reproject
             if mean is None:

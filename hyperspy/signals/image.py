@@ -61,6 +61,8 @@ class Image(Signal):
         dic['mapped_parameters']['record_by'] = 'spectrum'        
         dic['data'] = np.rollaxis(dic['data'], signal_axis, dim)
         dic['axes'] = utils_varia.rollelem(dic['axes'], signal_axis, dim)
+        for axis in dic['axes']:
+            del axis['index_in_array']
         sp = Spectrum(**dic)
         if hasattr(self, 'learning_results'):
             if signal_axis != 0 and self.learning_results.loadings is not None:
