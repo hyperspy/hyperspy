@@ -154,29 +154,20 @@ class EELSSpectrum(Spectrum):
         return vmax
     
     def estimate_elastic_scattering_intensity(self,
-                                              threshold=None,
-                                              window=20,
-                                              tol=0.1,
-                                              number_of_points=5,
-                                              polynomial_order=3,):
+                                              threshold=None,):
         """Rough estimation of the elastic scattering intensity by 
         truncation of a EELS low-loss spectrum.
         
         Parameters
         ----------
-        threshold : {None, Signal, float, int}
+        threshold : {Signal, float, int}
             Truncation energy to estimate the intensity of the 
             elastic scattering. The
             threshold can be provided as a signal of the same dimension 
             as the input spectrum navigation space containing the 
             threshold value in the energy units. Alternatively a constant 
             threshold can be specified in energy/index units by passing 
-            float/int. If None the threshold is calculated for 
-            each spectrum as the first minimum after the ZLP centre. `window`,
-            `tol`, `number_of_points` and `polynomial_order` are passed to 
-            the estimate_elastic_scattering_threshold method. See its docstring
-            for details.      
-
+            float/int.
             
         Returns
         -------
@@ -192,12 +183,7 @@ class EELSSpectrum(Spectrum):
             
         """
         self._check_signal_dimension_equals_one()
-        if threshold is None:
-            threshold = self.estimate_elastic_scattering_threshold(
-                                          window=window,
-                                          tol=tol,
-                                          number_of_points=number_of_points,
-                                          polynomial_order=polynomial_order,)
+        
         if isinstance(threshold, float):
             I0 = self.signal_indexer[:threshold].integrate_simpson(-1)
             I0.axes_manager.set_signal_dimension(
@@ -239,7 +225,9 @@ class EELSSpectrum(Spectrum):
                 self.tmp_parameters.extension
         return I0
     
-    def estimate_elastic_scattering_threshold(self, window=20, tol=0.1,
+    def estimate_elastic_scattering_threshold(self,
+                                              window=20,
+                                              tol=0.1,
                                               number_of_points=5,
                                               polynomial_order=3,):
         """Calculates the first inflexion point of the spectrum derivative 
@@ -322,11 +310,7 @@ class EELSSpectrum(Spectrum):
         
     def estimate_thickness(self,
                            zlp=None,
-                           threshold=None,
-                           window=20,
-                           tol=0.1,
-                           number_of_points=5,
-                           polynomial_order=3,):
+                           threshold=None,):
         """Estimates the thickness (relative to the mean free path) 
         of a sample using the log-ratio method.
         
@@ -341,9 +325,17 @@ class EELSSpectrum(Spectrum):
             peak intensity is calculated from the ZLP spectrum
             supplied by integration using Simpson's rule. If None estimates 
             the zero-loss peak intensity using 
-            `estimate_elastic_scattering_intensity`. All other parameters
-            are passed to this function, see its docstring for more 
-            information.
+            `estimate_elastic_scattering_intensity` by truncation.
+            
+        threshold : {Signal, float, int}
+            Truncation energy to estimate the intensity of the 
+            elastic scattering. The
+            threshold can be provided as a signal of the same dimension 
+            as the input spectrum navigation space containing the 
+            threshold value in the energy units. Alternatively a constant 
+            threshold can be specified in energy/index units by passing 
+            float/int.
+            
             
         Returns
         -------
@@ -365,11 +357,7 @@ class EELSSpectrum(Spectrum):
             I0 = zlp.integrate_simpson(axis.index_in_array).data 
         else:
             I0 = self.estimate_elastic_scattering_intensity(
-                                    threshold=threshold,
-                                    window=window,
-                                    tol=tol,
-                                    number_of_points=number_of_points,
-                                    polynomial_order=polynomial_order,).data
+                                    threshold=threshold,).data
 
         t_over_lambda = np.log(total_intensity / I0)
         s = self._get_navigation_signal()
