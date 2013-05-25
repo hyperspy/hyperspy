@@ -182,6 +182,7 @@ class EELSSpectrum(Spectrum):
         estimate_elastic_scattering_threshold
             
         """
+        # TODO: Write units tests
         self._check_signal_dimension_equals_one()
         
         if isinstance(threshold, float):
@@ -229,7 +230,8 @@ class EELSSpectrum(Spectrum):
                                               window=20,
                                               tol=0.1,
                                               number_of_points=5,
-                                              polynomial_order=3,):
+                                              polynomial_order=3,
+                                              start=1.):
         """Calculates the first inflexion point of the spectrum derivative 
         within a window using a specified tolerance.
         
@@ -254,6 +256,9 @@ class EELSSpectrum(Spectrum):
             the noise.
         polynomial_order : int
             Savitzky-Golay filter polynomial order.
+        start : float
+            Position from the zero-loss peak centre from where to start
+            looking for the inflexion point.
 
             
         Returns
@@ -261,6 +266,10 @@ class EELSSpectrum(Spectrum):
         threshold : Signal
             A Signal of the same dimension as the input spectrum 
             navigation space containing the estimated threshold.
+            
+        See Also
+        --------
+        align1D
             
         """
         self._check_signal_dimension_equals_one()
@@ -273,17 +282,18 @@ class EELSSpectrum(Spectrum):
             maxval=self.axes_manager.navigation_size)
         axis = self.axes_manager.signal_axes[0]
         max_index = min(axis.value2index(window), axis.size - 1)
-        zlpi = axis.value2index(0)
-        if max_index < zlpi + 10:
+        min_index = max(0, axis.value2index(start))
+        if max_index < min_index + 10:
             raise ValueError("Please select a bigger window")
         for i, s in enumerate(self):
-            s = s[..., zlpi + 1: max_index].deepcopy()
+            s = s[..., min_index: max_index].deepcopy()
             if number_of_points:
                 s.smooth_savitzky_golay(polynomial_order=polynomial_order,
                                         number_of_points=number_of_points,
                                         differential_order=1)
             else:
                 s = s.diff(0)
+            print s.data
             inflexion = (np.abs(s.data) <= tol).argmax()
             cthreshold = s.axes_manager[0].index2value(inflexion)
             if inflexion == 0:
@@ -349,7 +359,8 @@ class EELSSpectrum(Spectrum):
         For details see: Egerton, R. Electron Energy-Loss 
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
         
-        """       
+        """
+        # TODO: Write units tests
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         total_intensity = self.integrate_simpson(axis.index_in_array).data
