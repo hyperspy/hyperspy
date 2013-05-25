@@ -227,8 +227,8 @@ class EELSSpectrum(Spectrum):
         return I0
     
     def estimate_elastic_scattering_threshold(self,
-                                              window=20,
-                                              tol=0.1,
+                                              window=10.,
+                                              tol=None,
                                               number_of_points=5,
                                               polynomial_order=3,
                                               start=1.):
@@ -248,8 +248,11 @@ class EELSSpectrum(Spectrum):
             the search to the (0,window] energy window, where window is given
             in the axis units. If no inflexion point is found in this
             spectral range the window value is returned instead.
-        tol : float
-            The threshold tolerance for the derivative.
+        tol : {None, float}
+            The threshold tolerance for the derivative. If "auto" it is 
+            automatically calculated as the minimum value that guarantees 
+            finding an inflexion point in all the spectra in given energy
+            range.
         number_of_points : int
             If non zero performs order three Savitzky-Golay smoothing 
             to the data to avoid falling in local minima caused by 
@@ -278,30 +281,25 @@ class EELSSpectrum(Spectrum):
         threshold.axes_manager.set_signal_dimension(0)
 
         # Progress Bar
-        pbar = hyperspy.misc.progressbar.progressbar(
-            maxval=self.axes_manager.navigation_size)
         axis = self.axes_manager.signal_axes[0]
         max_index = min(axis.value2index(window), axis.size - 1)
         min_index = max(0, axis.value2index(start))
         if max_index < min_index + 10:
             raise ValueError("Please select a bigger window")
-        for i, s in enumerate(self):
-            s = s[..., min_index: max_index].deepcopy()
-            if number_of_points:
-                s.smooth_savitzky_golay(polynomial_order=polynomial_order,
-                                        number_of_points=number_of_points,
-                                        differential_order=1)
-            else:
-                s = s.diff(0)
-            print s.data
-            inflexion = (np.abs(s.data) <= tol).argmax()
-            cthreshold = s.axes_manager[0].index2value(inflexion)
-            if inflexion == 0:
-                cthreshold = np.nan 
-            del s 
-            threshold[self.axes_manager.indices] = cthreshold
-            pbar.update(i)
-        pbar.finish()
+        s = self[..., min_index: max_index].deepcopy()
+        if number_of_points:
+            s.smooth_savitzky_golay(polynomial_order=polynomial_order,
+                                    number_of_points=number_of_points,
+                                    differential_order=1)
+        else:
+            s = s.diff(-1)
+        if tol == None:
+            tol = np.max(np.abs(s.data).min(axis.index_in_array))
+        saxis = s.axes_manager[-1]
+        inflexion = (np.abs(s.data) <= tol).argmax(saxis.index_in_array)
+        threshold.data[:] = saxis.offset + saxis.scale * inflexion
+        threshold.data[inflexion==0] = np.nan
+        del s 
  
         # Create spectrum image, stop and return value
         threshold.mapped_parameters.title = (
