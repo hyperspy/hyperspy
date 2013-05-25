@@ -115,33 +115,43 @@ class EELSSpectrum(Spectrum):
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
                     
-    def estimate_zero_loss_peak_centre(self, also_apply_to=None):
-        """Calculates the position of the zero loss origin as the 
-        average of the position of the maximum of all the spectra and 
-         calibrates energy axis.
+    def estimate_zero_loss_peak_centre(self,
+                                       calibrate=True,
+                                       also_apply_to=None):
+        """Returns the average position over all spectra of the maximum 
+        intensity feature that, in most low-loss EELS spectra, it corresponds
+        to the zero-loss peak centre.
+        
+        By default it also modifies the offset of the spectral axis so that
+        the average position of the zero-loss peak becomes zero.
          
          
         
         Parameters
         ----------
+        calibrate : bool
+            If True, modify the offset of the spectral axis so that
+            the zero-loss peak average position becomes zero.
         also_apply_to : None or list of EELSSPectrum
-            If a list of signals is provided, the same offset
-            transformation is applied to all the other signals.
+            If a list of signals is provided and `calibrate` is True,
+            the same offset transformation is applied to all the other signals.
+            
+        Returns
+        -------
+        vmax : float
+            The average position over all spectra of the zero-loss peak.
             
         """
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0] 
-        old_offset = axis.offset
-        imax = np.mean(np.argmax(self.data,axis.index_in_array))
-        axis.offset = hyperspy.axes.generate_axis(0, axis.scale, 
-            axis.size, imax)[0]
-        print('Energy offset applied: %f %s' % ((
-                axis.offset - old_offset), axis.units))
+        imax = float(np.mean(np.argmax(self.data, axis.index_in_array)))
+        vmax = axis.offset + imax*axis.axes_manager[-1].scale
+        if calibrate is True:
+            axis.offset -= vmax
         if also_apply_to:
             for sync_signal in also_apply_to:
-                saxis = sync_signal.axes_manager._axes[
-                    axis.index_in_array]
-                saxis.offset += axis.offset - old_offset
+                sync_signal.axes_manager.signal_axes[0].offset -=vmax
+        return vmax
     
     def estimate_elastic_scattering_intensity(self,
                                               threshold=None,

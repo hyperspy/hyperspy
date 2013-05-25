@@ -66,3 +66,27 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         s = self.signal
         data = s.estimate_elastic_scattering_threshold(window=1.5).data
         assert_true(np.all(np.isnan(data)))
+        
+class TestEstimateZLPCentre():
+    def setUp(self):
+        s = EELSSpectrumSimulation(np.diag(np.arange(1.5,3.5,0.2)))
+        s.axes_manager[-1].scale = 0.1
+        s.axes_manager[-1].offset = 100
+        self.spectrum = s
+    def test_calibrate_false(self):
+        s = self.spectrum
+        assert_equal(s.estimate_zero_loss_peak_centre(calibrate=False), 100.45)
+        
+    def test_calibrate_true(self):
+        s = self.spectrum
+        s.estimate_zero_loss_peak_centre()
+        assert_true(np.allclose(s.estimate_zero_loss_peak_centre(), 0))
+        
+    def test_also_align(self):
+        s = self.spectrum
+        sc = s.deepcopy()
+        s.estimate_zero_loss_peak_centre(calibrate=True, also_apply_to=[sc,])
+        assert_true(np.allclose(sc.estimate_zero_loss_peak_centre(), 0))
+                
+    
+        
