@@ -29,12 +29,18 @@ except:
     # far in future version as a temporary workaround.
     ipy_version = StrictVersion('100.2')
 ipy_011 = StrictVersion('0.11')
+ipy_1 = StrictVersion('1.0')
 
 if ipy_version < ipy_011:
     from IPython import ipapi
-else:
+    ip = ipapi.get()
+elif ipy_version < ipy_1:
     from IPython.core import ipapi
-ip = ipapi.get()
+    ip = ipapi.get()
+else:
+    import IPython.core.getipython
+    ip = IPython.core.getipython.get_ipython()
+
 if ip is None:
     # Ipython is not installed, using Python's namespace.
     # TODO: this does not work with IPython > 0.11
