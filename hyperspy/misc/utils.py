@@ -348,7 +348,6 @@ def rebin(a, new_shape):
     """
     shape = a.shape
     lenShape = len(shape)
-    factor = np.asarray(shape)/np.asarray(new_shape)
     evList = ['a.reshape('] + \
              ['new_shape[%d],factor[%d],'%(i,i) for i in xrange(lenShape)] + \
              [')'] + ['.sum(%d)'%(i+1) for i in xrange(lenShape)]
@@ -528,7 +527,7 @@ def smooth(data, coeff):
     http://www.procoders.net
     """
     # temporary data, extended with a mirror image to the left and right
-    N = np.size(coeff-1)/2
+    N = np.size(coeff-1) // 2
     firstval=data[0]
     lastval=data[len(data)-1]
 #    left extension: f(x0-x) = f(x0)-(f(x)-f(x0)) = 2f(x0)-f(x)

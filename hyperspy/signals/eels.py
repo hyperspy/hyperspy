@@ -24,7 +24,6 @@ import traits.api as t
 
 
 from hyperspy.signals.spectrum import Spectrum
-from hyperspy.signals.image import Image
 from hyperspy.misc.eels.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.gui.egerton_quantification import SpikesRemoval
@@ -61,7 +60,7 @@ class EELSSpectrum(Spectrum):
             The symbol of the elements.
         include_pre_edges : bool
             If True, the ionization edges with an onset below the lower 
-            energy limit of the SI will be inclunded
+            energy limit of the SI will be incluided
             
         Examples
         --------
@@ -116,85 +115,210 @@ class EELSSpectrum(Spectrum):
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
                     
-    def estimate_zero_loss_peak_centre(self, also_apply_to=None):
-        """Calculates the position of the zero loss origin as the 
-        average of the position of the maximum of all the spectra and 
-         calibrates energy axis.
+    def estimate_zero_loss_peak_centre(self,
+                                       calibrate=True,
+                                       also_apply_to=None):
+        """Returns the average position over all spectra of the maximum 
+        intensity feature that, in most low-loss EELS spectra, it corresponds
+        to the zero-loss peak centre.
+        
+        By default it also modifies the offset of the spectral axis so that
+        the average position of the zero-loss peak becomes zero.
+         
+         
         
         Parameters
         ----------
+        calibrate : bool
+            If True, modify the offset of the spectral axis so that
+            the zero-loss peak average position becomes zero.
         also_apply_to : None or list of EELSSPectrum
-            If a list of signals is provided, the same offset
-            transformation is applied to all the other signals.
+            If a list of signals is provided and `calibrate` is True,
+            the same offset transformation is applied to all the other signals.
+            
+        Returns
+        -------
+        vmax : float
+            The average position over all spectra of the zero-loss peak.
             
         """
+        self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0] 
-        old_offset = axis.offset
-        imax = np.mean(np.argmax(self.data,axis.index_in_array))
-        axis.offset = hyperspy.axes.generate_axis(0, axis.scale, 
-            axis.size, imax)[0]
-        print('Energy offset applied: %f %s' % ((
-                axis.offset - old_offset), axis.units))
+        imax = float(np.mean(np.argmax(self.data, axis.index_in_array)))
+        vmax = axis.offset + imax*axis.axes_manager[-1].scale
+        if calibrate is True:
+            axis.offset -= vmax
         if also_apply_to:
             for sync_signal in also_apply_to:
-                saxis = sync_signal.axes_manager._axes[
-                    axis.index_in_array]
-                saxis.offset += axis.offset - old_offset
-                
-    def estimate_elastic_scattering_intensity(self, threshold=None):
-        """Rough estimation of the elastic scattering signal by 
+                sync_signal.axes_manager.signal_axes[0].offset -=vmax
+        return vmax
+    
+    def estimate_elastic_scattering_intensity(self,
+                                              threshold=None,):
+        """Rough estimation of the elastic scattering intensity by 
         truncation of a EELS low-loss spectrum.
         
         Parameters
         ----------
-        threshold : {None, float}
+        threshold : {Signal, float, int}
             Truncation energy to estimate the intensity of the 
-            elastic scattering. If None the threshold is taken as the
-            first minimum after the ZLP centre.
+            elastic scattering. The
+            threshold can be provided as a signal of the same dimension 
+            as the input spectrum navigation space containing the 
+            threshold value in the energy units. Alternatively a constant 
+            threshold can be specified in energy/index units by passing 
+            float/int.
             
         Returns
         -------
-        The elastic scattering intensity. If the navigation size is 0 
-        returns a float. Otherwise it returns a Spectrum, Image or a 
-        Signal, depending on the currenct spectrum navigation 
-        dimensions.
+        I0: Signal
+            The elastic scattering intensity. If the navigation size is 0 
+            returns a float. Otherwise it returns a Spectrum, Image or a 
+            Signal, depending on the currenct spectrum navigation 
+            dimensions.
+            
+        See Also
+        --------
+        estimate_elastic_scattering_threshold
             
         """
-        axis = self.axes_manager.signal_axes[0]
-        if threshold is None:
-            # Use the data from the current location to estimate
-            # the threshold as the position of the first maximum
-            # after the ZLP
-            data = self()
-            index = data.argmax()
-            while data[index] > data[index + 1]:
-                index += 1
-            threshold = axis.index2value(index)
-            print("Threshold = %1.2f" % threshold)
-            del data
-        I0 = self.data[
-        (slice(None),) * axis.index_in_array + (
-            slice(None, axis.value2index(threshold)), 
-            Ellipsis,)].sum(axis.index_in_array)
-            
-        s = self._get_navigation_signal()
-        if s is None:
-            return I0
+        # TODO: Write units tests
+        self._check_signal_dimension_equals_one()
+        
+        if isinstance(threshold, float):
+            I0 = self.signal_indexer[:threshold].integrate_simpson(-1)
+            I0.axes_manager.set_signal_dimension(
+                                min(2, self.axes_manager.navigation_dimension))
+        
         else:
-            s.data = I0
-            s.mapped_parameters.title = (self.mapped_parameters.title + 
-                ' elastic intensity')
-            if self.tmp_parameters.has_item('filename'):
-                s.tmp_parameters.filename = (
-                    self.tmp_parameters.filename +
-                    '_elastic_intensity')
-                s.tmp_parameters.folder = self.tmp_parameters.folder
-                s.tmp_parameters.extension = \
-                    self.tmp_parameters.extension
-            return s
+            bk_threshold_navigate = (
+                threshold.axes_manager._get_axis_attribute_values('navigate'))
+            threshold.axes_manager.set_signal_dimension(0)
+            I0 = self._get_navigation_signal()
+            bk_I0_navigate = (
+                I0.axes_manager._get_axis_attribute_values('navigate'))
+            I0.axes_manager.set_signal_dimension(0)
+            pbar = hyperspy.misc.progressbar.progressbar(
+                                    maxval=self.axes_manager.navigation_size)
+            for i, s in enumerate(self):
+                threshold_ = threshold[self.axes_manager.indices].data[0]
+                if np.isnan(threshold_):
+                    I0[self.axes_manager.indices] = np.nan
+                else:
+                    I0[self.axes_manager.indices].data[:] = (
+                        s[:threshold_].integrate_simpson(-1).data)
+                pbar.update(i)
+            pbar.finish()
+            threshold.axes_manager._set_axis_attribute_values(
+                    'navigate',
+                    bk_threshold_navigate)
+            I0.axes_manager._set_axis_attribute_values(
+                    'navigate',
+                    bk_I0_navigate)
+        I0.mapped_parameters.title = (
+            self.mapped_parameters.title + ' elastic intensity')
+        if self.tmp_parameters.has_item('filename'):
+            I0.tmp_parameters.filename = (
+                self.tmp_parameters.filename +
+                '_elastic_intensity')
+            I0.tmp_parameters.folder = self.tmp_parameters.folder
+            I0.tmp_parameters.extension = \
+                self.tmp_parameters.extension
+        return I0
     
-                
-    def estimate_thickness(self, threshold=None, zlp=None,):
+    def estimate_elastic_scattering_threshold(self,
+                                              window=10.,
+                                              tol=None,
+                                              number_of_points=5,
+                                              polynomial_order=3,
+                                              start=1.):
+        """Calculates the first inflexion point of the spectrum derivative 
+        within a window using a specified tolerance.
+        
+        It previously smoothes the data using a Savitzky-Golay algorithm 
+        (can be turned off). This method assumes that the zero-loss peak is 
+        located at position zero in all the spectra.
+        
+        Parameters
+        ----------
+           
+        window : {None, float}
+            If None, the search for the local minimum is performed 
+            using the full energy range. A positive float will restrict
+            the search to the (0,window] energy window, where window is given
+            in the axis units. If no inflexion point is found in this
+            spectral range the window value is returned instead.
+        tol : {None, float}
+            The threshold tolerance for the derivative. If "auto" it is 
+            automatically calculated as the minimum value that guarantees 
+            finding an inflexion point in all the spectra in given energy
+            range.
+        number_of_points : int
+            If non zero performs order three Savitzky-Golay smoothing 
+            to the data to avoid falling in local minima caused by 
+            the noise.
+        polynomial_order : int
+            Savitzky-Golay filter polynomial order.
+        start : float
+            Position from the zero-loss peak centre from where to start
+            looking for the inflexion point.
+
+            
+        Returns
+        -------
+        threshold : Signal
+            A Signal of the same dimension as the input spectrum 
+            navigation space containing the estimated threshold.
+            
+        See Also
+        --------
+        align1D
+            
+        """
+        self._check_signal_dimension_equals_one()
+        # Create threshold with the same shape as the navigation dims.
+        threshold = self._get_navigation_signal()
+        threshold.axes_manager.set_signal_dimension(0)
+
+        # Progress Bar
+        axis = self.axes_manager.signal_axes[0]
+        max_index = min(axis.value2index(window), axis.size - 1)
+        min_index = max(0, axis.value2index(start))
+        if max_index < min_index + 10:
+            raise ValueError("Please select a bigger window")
+        s = self[..., min_index: max_index].deepcopy()
+        if number_of_points:
+            s.smooth_savitzky_golay(polynomial_order=polynomial_order,
+                                    number_of_points=number_of_points,
+                                    differential_order=1)
+        else:
+            s = s.diff(-1)
+        if tol == None:
+            tol = np.max(np.abs(s.data).min(axis.index_in_array))
+        saxis = s.axes_manager[-1]
+        inflexion = (np.abs(s.data) <= tol).argmax(saxis.index_in_array)
+        threshold.data[:] = saxis.offset + saxis.scale * inflexion
+        threshold.data[inflexion==0] = np.nan
+        del s 
+ 
+        # Create spectrum image, stop and return value
+        threshold.mapped_parameters.title = (
+            self.mapped_parameters.title + 
+            ' ZLP threshold')
+        if self.tmp_parameters.has_item('filename'):
+            threshold.tmp_parameters.filename = (
+                self.tmp_parameters.filename +
+                '_ZLP_threshold')
+            threshold.tmp_parameters.folder = self.tmp_parameters.folder
+            threshold.tmp_parameters.extension = \
+                self.tmp_parameters.extension
+        threshold.axes_manager.set_signal_dimension(
+                                min(2, self.axes_manager.navigation_dimension))
+        return threshold
+        
+    def estimate_thickness(self,
+                           zlp=None,
+                           threshold=None,):
         """Estimates the thickness (relative to the mean free path) 
         of a sample using the log-ratio method.
         
@@ -205,56 +329,58 @@ class EELSSpectrum(Spectrum):
         Parameters
         ----------
         zlp : {None, EELSSpectrum}
-            If None estimates the zero-loss peak by integrating the
-            intensity of the spectrum up to the value defined in 
-            threshold (i.e. by truncation). Otherwise the zero-loss
-             peak intensity is calculated from the ZLP spectrum
-              supplied.
-        threshold : {None, float}
+            If not None the zero-loss
+            peak intensity is calculated from the ZLP spectrum
+            supplied by integration using Simpson's rule. If None estimates 
+            the zero-loss peak intensity using 
+            `estimate_elastic_scattering_intensity` by truncation.
+            
+        threshold : {Signal, float, int}
             Truncation energy to estimate the intensity of the 
-            elastic scattering. If None the threshold is taken as the
-             first minimum after the ZLP centre.
+            elastic scattering. The
+            threshold can be provided as a signal of the same dimension 
+            as the input spectrum navigation space containing the 
+            threshold value in the energy units. Alternatively a constant 
+            threshold can be specified in energy/index units by passing 
+            float/int.
+            
             
         Returns
         -------
-        The thickness relative to the MFP. If it is a single spectrum 
-        returns a float. Otherwise it returns a Spectrum, Image or a 
-        Signal, depending on the currenct spectrum navigation 
-        dimensions.
+        s : Signal
+            The thickness relative to the MFP. It returns a Spectrum, 
+            Image or a Signal, depending on the currenct spectrum navigation 
+            dimensions.
             
         Notes
         -----        
         For details see: Egerton, R. Electron Energy-Loss 
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
         
-        """       
-        
-        dc = self.data
+        """
+        # TODO: Write units tests
+        self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
-        total_intensity = dc.sum(axis.index_in_array)
+        total_intensity = self.integrate_simpson(axis.index_in_array).data
         if zlp is not None:
-            I0 = zlp.data.sum(axis.index_in_array)            
+            I0 = zlp.integrate_simpson(axis.index_in_array).data 
         else:
             I0 = self.estimate_elastic_scattering_intensity(
-                                                threshold=threshold)
-            if self.axes_manager.navigation_size > 0:
-                I0 = I0.data
+                                    threshold=threshold,).data
+
         t_over_lambda = np.log(total_intensity / I0)
         s = self._get_navigation_signal()
-        if s is None:
-            return t_over_lambda
-        else:
-            s.data = t_over_lambda
-            s.mapped_parameters.title = (self.mapped_parameters.title + 
-                ' $\\frac{t}{\\lambda}$')
-            if self.tmp_parameters.has_item('filename'):
-                s.tmp_parameters.filename = (
-                    self.tmp_parameters.filename +
-                    '_relative_thickness')
-                s.tmp_parameters.folder = self.tmp_parameters.folder
-                s.tmp_parameters.extension = \
-                    self.tmp_parameters.extension
-            return s
+        s.data = t_over_lambda
+        s.mapped_parameters.title = (self.mapped_parameters.title + 
+            ' $\\frac{t}{\\lambda}$')
+        if self.tmp_parameters.has_item('filename'):
+            s.tmp_parameters.filename = (
+                self.tmp_parameters.filename +
+                '_relative_thickness')
+            s.tmp_parameters.folder = self.tmp_parameters.folder
+            s.tmp_parameters.extension = \
+                self.tmp_parameters.extension
+        return s
                 
                 
     def estimate_FWHM(self, factor=0.5, energy_range=(-10.,10.),
@@ -284,8 +410,10 @@ class EELSSpectrum(Spectrum):
             'der_roots' : tuple
                 Position in energy units of the roots of the first
                 derivative if der_roots is True (False by default)
-                
+                                
         """
+        # TODO: make it work for ndimensions
+        self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         i0, i1 = (axis.value2index(energy_range[0]), 
                   axis.value2index(energy_range[1]))
@@ -308,19 +436,24 @@ class EELSSpectrum(Spectrum):
         else:
             return {'FWHM' : fwhm,
                      'FWHM_E' : pair_fwhm}
-
-    def fourier_log_deconvolution(self, zlp, add_zlp=True, crop=True):
+                     
+    def fourier_log_deconvolution(self,
+                                  zlp,
+                                  add_zlp=False,
+                                  crop=False):
         """Performs fourier-log deconvolution.
         
         Parameters
         ----------
         zlp : EELSSpectrum
             The corresponding zero-loss peak.
+
         add_zlp : bool
             If True, adds the ZLP to the deconvolved spectrum
         crop : bool
             If True crop the spectrum to leave out the channels that
-             have been modified to decay smoothly to zero at the sides of the spectrum.
+            have been modified to decay smoothly to zero at the sides 
+            of the spectrum.
         
         Returns
         -------
@@ -332,24 +465,23 @@ class EELSSpectrum(Spectrum):
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
         
         """
-        s = self.deepcopy()
-        tapped_channels = s.hanning_taper()
+        self._check_signal_dimension_equals_one()
+        s = self.deepcopy()        
         zlp_size = zlp.axes_manager.signal_axes[0].size 
         self_size = self.axes_manager.signal_axes[0].size
+        tapped_channels = s.hanning_taper()
         # Conservative new size to solve the wrap-around problem 
         size = zlp_size + self_size -1
         # Increase to the closest multiple of two to enhance the FFT 
         # performance
         size = int(2 ** np.ceil(np.log2(size)))
+
         axis = self.axes_manager.signal_axes[0]
         z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
         j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array)
         j1 = z * np.nan_to_num(np.log(j / z))
         sdata = np.fft.irfft(j1, axis=axis.index_in_array)
-        def get_cropping_slice(axis, index):
-            cslice = [slice,] * len(self.axes_manager._axes)
-            cslice[axis] = slice(None, index)
-            return tuple(cslice)
+
         s.data = sdata[s.axes_manager._get_data_slice(
             [(axis.index_in_array, slice(None,self_size)),])]
         if add_zlp is True:
@@ -372,7 +504,8 @@ class EELSSpectrum(Spectrum):
                              None, int(-tapped_channels))
         return s
 
-    def fourier_ratio_deconvolution(self, ll, fwhm=None,
+    def fourier_ratio_deconvolution(self, ll,
+                                    fwhm=None,
                                     threshold=None,
                                     extrapolate_lowloss=True,
                                     extrapolate_coreloss=True):
@@ -406,6 +539,7 @@ class EELSSpectrum(Spectrum):
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
         
         """
+        self._check_signal_dimension_equals_one()
         orig_cl_size = self.axes_manager.signal_axes[0].size
         if extrapolate_coreloss is True:
             cl = self.power_law_extrapolation(
@@ -494,7 +628,7 @@ class EELSSpectrum(Spectrum):
         Ultramicroscopy 96, no. 3–4 (September 2003): 385–400.
         
         """
-
+        self._check_signal_dimension_equals_one()
         ds = self.deepcopy()
         ds.data = ds.data.copy()
         ds.mapped_parameters.title += (
@@ -552,8 +686,8 @@ class EELSSpectrum(Spectrum):
         spikes_removal_tool
         
         """
+        self._check_signal_dimension_equals_one()
         dc = self.data
-        axis = self.axes_manager.signal_axes[0]
         if signal_mask is not None:
             dc = dc[..., ~signal_mask]
         if navigation_mask is not None:
@@ -584,7 +718,9 @@ class EELSSpectrum(Spectrum):
         _spikes_diagnosis, 
 
         """
-        sr = SpikesRemoval(self,navigation_mask=navigation_mask,
+        self._check_signal_dimension_equals_one()
+        sr = SpikesRemoval(self,
+                           navigation_mask=navigation_mask,
                            signal_mask=signal_mask)
         sr.edit_traits()
         return sr
@@ -675,7 +811,8 @@ class EELSSpectrum(Spectrum):
             
     def power_law_extrapolation(self, window_size=20,
                                 extrapolation_size=1024,
-                                add_noise=False):
+                                add_noise=False,
+                                fix_neg_r=False):
         """Extrapolate the spectrum to the right using a powerlaw
         
         
@@ -689,8 +826,17 @@ class EELSSpectrum(Spectrum):
             Size of the extrapolation in number of channels
         add_noise : bool
             If True, add poissonian noise to the extrapolated spectrum.
+        fix_neg_r : bool
+            If True, the negative values for the "components.PowerLaw" 
+            parameter r will be flagged and the extrapolation will be 
+            done with a constant zero-value.
+        
+        Returns
+        -------
+        A new spectrum, with the extrapolation.
             
         """
+        self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         s = self.deepcopy()
         s.mapped_parameters.title += (
@@ -709,6 +855,11 @@ class EELSSpectrum(Spectrum):
         pl.estimate_parameters(
             s, axis.index2value(axis.size - window_size),
             axis.index2value(axis.size - 1))
+        if fix_neg_r is True:
+            _r = pl.r.map['values']
+            _A = pl.A.map['values']
+            _A[_r<=0] = 0
+            pl.A.map['values'] = _A
         s.data[...,axis.size:] = (
             pl.A.map['values'][...,np.newaxis]*
             s.axes_manager.signal_axes[0].axis[np.newaxis,axis.size:]**(
@@ -775,3 +926,4 @@ class EELSSpectrum(Spectrum):
 #        step.shape[1]))
 #        self._replot()
 #        return step
+

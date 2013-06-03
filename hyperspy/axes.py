@@ -771,3 +771,11 @@ class AxesManager(t.HasTraits):
                 self.navigation_dimension)
         for index, axis in zip(indices, self.navigation_axes):
             axis.index = index
+            
+    def _get_axis_attribute_values(self, attr):
+        return [getattr(axis, attr) for axis in self._axes]
+    
+    def _set_axis_attribute_values(self, attr, values):
+        for axis, value in zip(self._axes,values):
+            setattr(axis, attr, value)
+            

@@ -860,7 +860,7 @@ class Signal1DTools(object):
                      (see scipy.signal.medfilt)
                      if 0, no filter will be applied.
                      default is set to 5
-
+                     
         peakgroup : int (optional)
                     number of points around the "top part" of the peak
                     default is set to 10
