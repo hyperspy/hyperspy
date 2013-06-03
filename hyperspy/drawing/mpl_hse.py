@@ -190,6 +190,7 @@ class MPL_HyperSpectrum_Explorer(object):
             self.signal_plot.figure.canvas.mpl_connect(
                 'key_press_event', self.key2switch_right_pointer)
             self.navigator_plot.figure.canvas.mpl_connect(
+                'key_press_event', self.key2switch_right_pointer) 
     
     def close_navigator_plot(self):
         self._disconnect()
