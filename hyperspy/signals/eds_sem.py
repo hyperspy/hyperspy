@@ -520,16 +520,7 @@ class EDSSEMSpectrum(EDSSpectrum):
                     fps[i].yscale.as_signal().data, plot_result)
             i += 1
             
-    def check_total(self):
-        img_0 = self.get_result(Xray_lines[0],'kratios')
-        
-        data_total = np.zeros_like(img_0.data) 
-        for Xray_line in Xray_lines:
-            data_total += self.get_result(Xray_line,'kratios').data
-            
-        img_total = img_0.deepcopy
-        img_total.data = data_total
-        return img_total
+
         
     
             
@@ -861,3 +852,14 @@ class EDSSEMSpectrum(EDSSpectrum):
         f.write('%s\r\n'% z_el)
         f.write('%s\r\n'% line_el)
         f.close()
+        
+    #def check_total(self):
+        #img_0 = self.get_result(Xray_lines[0],'kratios')
+        
+        #data_total = np.zeros_like(img_0.data) 
+        #for Xray_line in Xray_lines:
+            #data_total += self.get_result(Xray_line,'kratios').data
+            
+        #img_total = img_0.deepcopy
+        #img_total.data = data_total
+        #return img_total
