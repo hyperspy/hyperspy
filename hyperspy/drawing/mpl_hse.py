@@ -103,6 +103,10 @@ class MPL_HyperSpectrum_Explorer(object):
         self.plot_signal()
         
     def plot_navigator(self):
+        if self.navigator_data_function is None:            
+            navigation_sliders(
+                self.axes_manager.navigation_axes[::-1])
+            return
         if self.navigator_plot is not None:
             self.navigator_plot.plot()
             return
@@ -124,7 +128,8 @@ class MPL_HyperSpectrum_Explorer(object):
         imf.title = self.signal_title + ' Navigator'
         imf.plot()
         self.pointer.add_axes(imf.ax)
-        self.navigator_plot = imf
+        self.navigator_plot = imf        
+
         
     def plot_signal(self):
         if self.signal_plot is not None:
@@ -185,7 +190,6 @@ class MPL_HyperSpectrum_Explorer(object):
             self.signal_plot.figure.canvas.mpl_connect(
                 'key_press_event', self.key2switch_right_pointer)
             self.navigator_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.key2switch_right_pointer)
     
     def close_navigator_plot(self):
         self._disconnect()
@@ -237,4 +241,4 @@ class MPL_HyperSpectrum_Explorer(object):
         self._disconnect()
         self.signal_plot.close()
         self.navigator_plot.close()
-
+        
