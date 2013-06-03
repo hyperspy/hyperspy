@@ -19,6 +19,8 @@
 from __future__ import division
 import copy
 
+import numpy as np
+
 from hyperspy.drawing import widgets, spectrum, image, utils
 from hyperspy.gui.axes import navigation_sliders
 
@@ -126,7 +128,8 @@ class MPL_HyperSpectrum_Explorer(object):
         imf.title = self.signal_title + ' Navigator'
         imf.plot()
         self.pointer.add_axes(imf.ax)
-        self.navigator_plot = imf
+        self.navigator_plot = imf        
+
         
     def plot_signal(self):
         if self.signal_plot is not None:
@@ -156,8 +159,19 @@ class MPL_HyperSpectrum_Explorer(object):
             color = 'red'
         sl.line_properties_helper(color, 'step')        
         # Add the line to the figure
-          
         sf.add_line(sl)
+        # If the data is complex create a line in the left axis with the
+        # default coordinates
+        sl = spectrum.SpectrumLine()
+        sl.data_function = self.signal_data_function
+        sl.plot_coordinates = True
+        sl.get_complex = any(np.iscomplex(sl.data_function()))        
+        if sl.get_complex:
+            sl.line_properties_helper("blue", 'step')        
+            # Add extra line to the figure
+            sf.add_line(sl)
+        
+        
         self.signal_plot = sf
         sf.plot()
         if self.navigator_plot is not None and sf.figure is not None:
@@ -176,7 +190,6 @@ class MPL_HyperSpectrum_Explorer(object):
             self.signal_plot.figure.canvas.mpl_connect(
                 'key_press_event', self.key2switch_right_pointer)
             self.navigator_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.key2switch_right_pointer)
     
     def close_navigator_plot(self):
         self._disconnect()

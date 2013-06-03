@@ -552,8 +552,18 @@ Deconvolutions
 * :py:meth:`~.signals.eels.EELSSpectrum.fourier_ratio_deconvolution`
 * :py:meth:`~.signals.eels.EELSSpectrum.richardson_lucy_deconvolution`
 
- 
+Estimate elastic scattering threshold
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Use :py:meth:`~.signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold` to calculate separation point between elastic and inelastic scattering on some EELS low-loss spectra. This algorithm calculates the derivative of the signal and assigns the inflexion point to the first point below a certain tolerance. This tolerance value can be set using the tol keyword.
 
+Currently, the method uses smoothing to reduce the impact of the noise in the measure. The number of points used for the smoothing window can be specified by the npoints keyword. 
 
+Estimate elastic scattering intensity
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Use :py:meth:`estimate_elastic_scattering_intensity` to calculate the integral below the zero loss peak (elastic intensity) from EELS low-loss spectra containing the zero loss peak. This integral can use the threshold image calculated by the :py:meth:`~.signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold` as end energy for the integration at each spectra or use the same energy value for all spectra. Also, if no threshold is specified, the routine will perform a rough estimation of the inflexion values at each spectrum.
+
+Splice zero loss peak
+^^^^^^^^^^^^^^^^^^^^^
+Once :py:meth:`~.signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold` has determined the elastic scattering threshold value(s), this tool can be used to separate the zero loss peak from the eels spectra. Use :py:meth:`~.signals.eels.EELSSpectrum.splice_zero_loss_peak` in order to obtain a ZLP suitable for Fourier-Log deconvolution from your EELS low-loss spectra by setting the "smooth" option, that will apply the hanning window to the righ end of the data.

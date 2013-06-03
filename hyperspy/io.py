@@ -18,18 +18,15 @@
 
 import os
 import glob
-import tempfile
-import os.path as path
 
-import numpy as np
 
 from hyperspy import messages
 import hyperspy.defaults_parser
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
     ripple, tiff)
 from hyperspy.gui.tools import Load
-from hyperspy.misc.utils import (ensure_directory, DictionaryBrowser, 
-    strlist2enumeration)
+from hyperspy.misc import utils
+from hyperspy.misc.utils import (ensure_directory,strlist2enumeration)
 from hyperspy.misc.natsort import natsorted
 import hyperspy.misc.utils_varia
 
@@ -71,7 +68,8 @@ for plugin in io_plugins:
             plugin.file_extensions[plugin.default_extension])
 
 def load(filenames=None, record_by=None, signal_type=None, 
-         stack=False, mmap=False, mmap_dir=None, **kwds):
+         stack=False, stack_axis=None, new_axis_name="stack_element",
+         mmap=False, mmap_dir=None, **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
     Supported formats: HDF5, msa, Gatan dm3, Ripple (rpl+raw)
@@ -108,6 +106,17 @@ def load(filenames=None, record_by=None, signal_type=None,
         in shape. It is possible to store the data in a memory mapped
         temporary file instead of in memory setting mmap_mode. The title is set
         to the name of the folder containing the files.
+    stack_axis : {None, int, str}
+        If None, the signals are stacked over a new axis. The data must 
+        have the same dimensions. Otherwise the 
+        signals are stacked over the axis given by its integer index or
+        its name. The data must have the same shape, except in the dimension
+        corresponding to `axis`.
+    new_axis_name : string
+        The name of the new axis when `axis` is None.
+        If an axis with this name already 
+        exists it automatically append '-i', where `i` are integers,
+        until it finds a name that is not yet in use.
         
     mmap: bool
         If True and stack is True, then the data is stored
@@ -173,65 +182,24 @@ def load(filenames=None, record_by=None, signal_type=None,
         if len(filenames) > 1:
             messages.information('Loading individual files')
         if stack is True:
-            original_shape = None
+            signal = []
             for i, filename in enumerate(filenames):
                 obj = load_single_file(filename, output_level=0,
                     signal_type=signal_type, **kwds)
-                if original_shape is None:
-                    original_shape = obj.data.shape
-                    record_by = obj.mapped_parameters.record_by
-                    stack_shape = tuple([len(filenames),]) + original_shape
-                    tempf = None
-                    if mmap is False:
-                        data = np.empty(stack_shape,
-                                           dtype=obj.data.dtype)
-                    else:
-                        #filename = os.path.join(tempfile.mkdtemp(),
-                                             #'newfile.dat')
-                        tempf = tempfile.NamedTemporaryFile(
-                                                        dir=mmap_dir)
-                        data = np.memmap(tempf,
-                                         dtype=obj.data.dtype,
-                                         mode = 'w+',
-                                         shape=stack_shape,)
-                    signal = type(obj)(data=data)
-                    # Store the temporary file in the signal class to
-                    # avoid its deletion when garbage collecting
-                    if tempf is not None:
-                        signal._data_temporary_file = tempf
-                    signal.axes_manager._axes[1:] = obj.axes_manager._axes
-                    for axis in signal.axes_manager._axes[1:]:
-                        axis.axes_manager = signal.axes_manager
-                    eaxis = signal.axes_manager._axes[0]
-                    eaxis.name = 'stack_element'
-                    eaxis.navigate = True
-                    signal.mapped_parameters = obj.mapped_parameters
-                    # Get the title from the folder name
-                    signal.mapped_parameters.title = \
+                signal.append(obj)
+            signal = utils.stack(signal,
+                                 axis=stack_axis,
+                                 new_axis_name=new_axis_name,
+                                 mmap=mmap, mmap_dir=mmap_dir)
+            signal.mapped_parameters.title = \
+                os.path.split(
                     os.path.split(
-                        os.path.split(
-                            os.path.abspath(filenames[0])
-                                     )[0]
-                                  )[1]
-                    signal.original_parameters = DictionaryBrowser({})
-                    signal.original_parameters.add_node('stack_elements')
-                if obj.data.shape != original_shape:
-                    raise IOError(
-                "Only files with data of the same shape can be stacked")
-                
-                signal.data[i,...] = obj.data
-                signal.original_parameters.stack_elements.add_node(
-                    'element%i' % i)
-                node = signal.original_parameters.stack_elements[
-                    'element%i' % i]
-                node.original_parameters = \
-                    obj.original_parameters.as_dictionary()
-                node.mapped_parameters = \
-                    obj.mapped_parameters.as_dictionary()
-                del obj
+                        os.path.abspath(filenames[0])
+                                 )[0]
+                              )[1]                              
             messages.information('Individual files loaded correctly')
             signal._print_summary()
-            objects = [signal,]
+            objects = [signal,] 
         else:
             objects=[load_single_file(filename, output_level=0,
                      signal_type=signal_type, **kwds) 
@@ -289,9 +257,6 @@ def load_single_file(filename, record_by=None, output_level=2,
 
 def load_with_reader(filename, reader, record_by=None,
         signal_type=None, output_level=1, **kwds):
-    from hyperspy.signals.image import Image
-    from hyperspy.signals.spectrum import Spectrum
-    from hyperspy.signals.eels import EELSSpectrum
     if output_level>1:
         messages.information('Loading %s ...' % filename)
     
@@ -300,39 +265,46 @@ def load_with_reader(filename, reader, record_by=None,
                                         output_level=output_level,
                                         **kwds)
     objects = []
-    for file_data_dict in file_data_list:
-        if record_by is not None:
-            file_data_dict['mapped_parameters']['record_by'] = record_by
-        # The record_by can still be None if it was not defined by the reader
-        if file_data_dict['mapped_parameters']['record_by'] is None:
-            print "No data type provided.  Defaulting to image."
-            file_data_dict['mapped_parameters']['record_by']= 'image'
-
-        if signal_type is not None:
-            file_data_dict['mapped_parameters']['signal_type'] = signal_type
-
-        if file_data_dict['mapped_parameters']['record_by'] == 'image':
-            s = Image(**file_data_dict)
-        else:
-            if ('signal_type' in file_data_dict['mapped_parameters'] 
-                and file_data_dict['mapped_parameters']['signal_type'] 
-                == 'EELS'):
-                s = EELSSpectrum(**file_data_dict)
-            else:
-                s = Spectrum(**file_data_dict)
+    for signal_dict in file_data_list:
+        objects.append(dict2signal(signal_dict,
+                                   record_by=record_by,
+                                   signal_type=signal_type))
         folder, filename = os.path.split(os.path.abspath(filename))
         filename, extension = os.path.splitext(filename)
-        s.tmp_parameters.folder = folder
-        s.tmp_parameters.filename = filename
-        s.tmp_parameters.extension = extension.replace('.','')
-        objects.append(s)
-        s._print_summary()
+        objects[-1].tmp_parameters.folder = folder
+        objects[-1].tmp_parameters.filename = filename
+        objects[-1].tmp_parameters.extension = extension.replace('.','')
 
     if len(objects) == 1:
         objects = objects[0]
     if output_level>1:
         messages.information('%s correctly loaded' % filename)
     return objects
+    
+def dict2signal(signal_dict, record_by=None, signal_type=None):
+    from hyperspy.signals.image import Image
+    from hyperspy.signals.spectrum import Spectrum
+    from hyperspy.signals.eels import EELSSpectrum
+    if record_by is not None:
+        signal_dict['mapped_parameters']['record_by'] = record_by
+    # The record_by can still be None if it was not defined by the reader
+    if signal_dict['mapped_parameters']['record_by'] is None:
+        print "No data type provided.  Defaulting to image."
+        signal_dict['mapped_parameters']['record_by']= 'image'
+
+    if signal_type is not None:
+        signal_dict['mapped_parameters']['signal_type'] = signal_type
+
+    if signal_dict['mapped_parameters']['record_by'] == 'image':
+        s = Image(**signal_dict)
+    else:
+        if ('signal_type' in signal_dict['mapped_parameters'] 
+            and signal_dict['mapped_parameters']['signal_type'] 
+            == 'EELS'):
+            s = EELSSpectrum(**signal_dict)
+        else:
+            s = Spectrum(**signal_dict)
+    return s
 
 def save(filename, signal, overwrite=None, **kwds):
     extension = os.path.splitext(filename)[1][1:]

@@ -54,7 +54,6 @@ class SpectrumFigure():
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
         self.ax.yaxis.set_animated(True)
-        ax = self.ax
         self.ax.hspy_fig = self
         
     def create_right_axis(self):
@@ -129,6 +128,7 @@ class SpectrumLine():
         self.axis = None
         self.axes_manager = None
         self.auto_update = True
+        self.get_complex = False
         
         # Properties
         self.line = None
@@ -169,11 +169,14 @@ class SpectrumLine():
             plt.setp(self.line, **self.line_properties)
         self.ax.figure.canvas.draw()
         
-    def plot(self, data = 1):
+    def plot(self, data=1):
         f = self.data_function
-        self.line, = self.ax.plot(
-            self.axis, f(axes_manager = self.axes_manager),
-                **self.line_properties)
+        if self.get_complex is False:
+            data = f(axes_manager=self.axes_manager).real
+        else:
+            data = f(axes_manager=self.axes_manager).imag
+        self.line, = self.ax.plot(self.axis, data, 
+                                  **self.line_properties)
         self.line.set_animated(True)
         self.axes_manager.connect(self.update)
         if not self.axes_manager or self.axes_manager.navigation_size==0:
@@ -194,7 +197,10 @@ class SpectrumLine():
         if force_replot is True:
             self.close()
             self.plot()
-        ydata = self.data_function(axes_manager=self.axes_manager)
+        if self.get_complex is False:
+            ydata = self.data_function(axes_manager=self.axes_manager).real
+        else:
+            ydata = self.data_function(axes_manager=self.axes_manager).imag
         self.line.set_ydata(ydata)
         
         if self.autoscale is True:
