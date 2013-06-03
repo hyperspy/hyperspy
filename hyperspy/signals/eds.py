@@ -21,19 +21,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 
-
-
 from hyperspy.signals.spectrum import Spectrum
 from hyperspy.signals.image import Image
 from hyperspy.misc.eds.elements import elements as elements_db
 from hyperspy.misc.eds.FWHM import FWHM_eds
 from hyperspy.misc import utils
 
+
 class EDSSpectrum(Spectrum):
     
     def __init__(self, *args, **kwards):
         Spectrum.__init__(self, *args, **kwards)
-        # Attributes defaults  
+        # Attributes defaults
+        if hasattr(self,'elements')==False:
+            self.elements = set()
+        if hasattr(self,'Xray_lines')==False:
+            self.Xray_lines = set()
+              
         #self.elements = set()
         #self.Xray_lines = set()
         #if hasattr(self.mapped_parameters, 'Sample') and \
@@ -54,7 +58,7 @@ class EDSSpectrum(Spectrum):
             The symbol of the elements.  
         
         lines : list of strings
-            One X-ray line for each element ('K', 'L' or 'M'). If none 
+            One X-ray line for each element ('Ka', 'La', 'Ma',...). If none 
             the set of highest ionized lines with sufficient intensity 
             is selected. The beam energy is needed.
             
@@ -66,7 +70,7 @@ class EDSSpectrum(Spectrum):
         --------
         
         >>> s = signals.EDSSEMSpectrum(np.arange(1024))
-        >>> s.set_elements(['Ni', 'O'],['K','K'])   
+        >>> s.set_elements(['Ni', 'O'],['Ka','Ka'])   
         Adding Ni_Ka Line
         Adding O_Ka Line
         
@@ -100,7 +104,7 @@ class EDSSpectrum(Spectrum):
             The symbol of the elements.  
         
         lines : list of strings
-            One X-ray line for each element ('K', 'L' or 'M'). If none 
+            One X-ray line for each element ('Ka', 'La', 'Ma',...). If none 
             the set of highest ionized lines with sufficient intensity 
             is selected. The beam energy is needed.
             
@@ -112,7 +116,7 @@ class EDSSpectrum(Spectrum):
         --------
         
         >>> s = signals.EDSSEMSpectrum(np.arange(1024))
-        >>> s.add_elements(['Ni', 'O'],['K','K'])   
+        >>> s.add_elements(['Ni', 'O'],['Ka','Ka'])   
         Adding Ni_Ka Line
         Adding O_Ka Line
         
@@ -137,42 +141,37 @@ class EDSSpectrum(Spectrum):
                
         #Set X-ray lines
         if lines is None:
-            self.add_lines_auto()
+            self._add_lines_auto(elements)
         else:
-           self.add_lines(elements,lines)                
+           self._add_lines(elements,lines)                
         self.mapped_parameters.Sample.Xray_lines = np.sort(list(self.Xray_lines))
         
     
         
-    def add_lines(self,elements,lines):
+    def _add_lines(self,elements,lines):
         
         end_energy = self.axes_manager.signal_axes[0].axis[-1]            
             
         i = 0
         for line in lines:
             element = elements[i]
-            line = line + 'a'
             if element in elements_db: 
-                if line in ('Ka','La','Ma'):
-                    if line in elements_db[element]['Xray_energy']:
-                        print("Adding %s_%s line" % (element,line))
-                        self.Xray_lines.add(element+'_'+line)                                                   
-                        if elements_db[element]['Xray_energy'][line] >\
-                        end_energy:
-                          print("Warning: %s %s is higher than signal range." 
-                          % (element,line))  
-                    else:
-                        print("%s is not a valid line of %s." % (line,element))
+                if line in elements_db[element]['Xray_energy']:
+                    print("Adding %s_%s line" % (element,line))
+                    self.Xray_lines.add(element+'_'+line)                                                   
+                    if elements_db[element]['Xray_energy'][line] >\
+                    end_energy:
+                      print("Warning: %s %s is higher than signal range." 
+                      % (element,line))  
                 else:
-                    print(
-                    "%s is not a valid symbol of a line." % line)
+                    print("%s is not a valid line of %s." % (line,element))
             else:
                 print(
                     "%s is not a valid symbol of an element." % element)
             i += 1
         
             
-    def add_lines_auto(self):
+    def _add_lines_auto(self,elements):
         """Choose the highest set of X-ray lines for the elements 
         present in self.elements  
         
@@ -192,15 +191,15 @@ class EDSSpectrum(Spectrum):
            
         true_line = []
         
-        for element in self.elements: 
-            
-            #Possible line           
+        for element in elements: 
+                        
+            #Possible line (existing and excited by electron)         
             for line in ('Ka','La','Ma'):
                 if line in elements_db[element]['Xray_energy']:
                     if elements_db[element]['Xray_energy'][line] < \
                     end_energy:
                         true_line.append(line)
-            
+                        
             #Choose the better line
             i = 0
             select_this = -1            
@@ -267,7 +266,7 @@ class EDSSpectrum(Spectrum):
             FWHM_MnKa = self.mapped_parameters.TEM.EDS.energy_resolution_MnKa
                         
         intensities = []
-        #test for 0D object, to be modified (deepcoy?, new image? supress test)
+        #test 1D Spectrum (0D problem)
         if self.axes_manager.navigation_dimension > 1:
             signal_to_index = self.axes_manager.navigation_dimension - 2                  
             for Xray_line in Xray_lines:
@@ -296,120 +295,7 @@ class EDSSpectrum(Spectrum):
                 intensities.append(self[line_energy-det:line_energy+det].sum(0).data)
         return intensities
                  
-    def running_sum(self) :
-        """
-        Apply a running sum on the data.
-        
-        """
-        dim = self.data.shape
-        data_s = np.zeros_like(self.data)        
-        data_s = np.insert(data_s, 0, 0,axis=-3)
-        data_s = np.insert(data_s, 0, 0,axis=-2)
-        end_mirrors = [[0,0],[-1,0],[0,-1],[-1,-1]]
-        
-        for end_mirror in end_mirrors:  
-            tmp_s=np.insert(self.data, end_mirror[0], self.data[...,end_mirror[0],:,:],axis=-3)
-            data_s += np.insert(tmp_s, end_mirror[1], tmp_s[...,end_mirror[1],:],axis=-2)
-        data_s = data_s[...,1::,:,:][...,1::,:]
-        
-        if hasattr(self.mapped_parameters, 'SEM'):            
-            mp = self.mapped_parameters.SEM
-        else:
-            mp = self.mapped_parameters.TEM
-        if hasattr(mp, 'EDS') and hasattr(mp.EDS, 'live_time'):
-            mp.EDS.live_time = mp.EDS.live_time * len(end_mirrors)
-        self.data = data_s
-        
-    def plot_Xray_line(self):
-        """
-        Annotate a spec.plot() with the name of the selected X-ray 
-        lines
-        
-        See also
-        --------
-        
-        set_elements
-        
-        """
-        if self.axes_manager.navigation_dimension > 0:
-            raise ValueError("Works only for single spectrum")
-        
-        
-        mp = self.mapped_parameters
-        line_energy =[]
-        intensity = []
-        Xray_lines = mp.Sample.Xray_lines
-        for Xray_line in Xray_lines:
-            element = Xray_line[:-3]
-            line = Xray_line[-2:] 
-            line_energy.append(elements_db[element]['Xray_energy'][line])
-            intensity.append(self[line_energy[-1]].data[0])
-        
-        self.plot() 
-        for i in range(len(line_energy)):
-            plt.annotate(Xray_lines[i],xy = (line_energy[i],intensity[i]))
-            
-def phase_inspector(self,bins=[20,20,20],plot_result=True):
-    """
-    Generate an binary image of different channel
-    """
-    bins=[20,20,20]
-    minmax = []
-    
-    #generate the bins
-    for s in self:    
-        minmax.append([s.data.min(),s.data.max()])
-    center = []
-    for i, mm in enumerate(minmax):
-        temp = list(mlab.frange(mm[0],mm[1],(mm[1]-mm[0])/bins[i]))
-        temp[-1]+= 1
-        center.append(temp)
-        
-    #calculate the Binary images
-    dataBin = []
-    if len(self) ==1:
-        for x in range(bins[0]):
-            temp = self[0].deepcopy()
-            dataBin.append(temp)
-            dataBin[x].data = ((temp.data >= center[0][x])*
-              (temp.data < center[0][x+1])).astype('int')
-    elif len(self) == 2 :    
-        for x in range(bins[0]):
-            dataBin.append([])
-            for y in range(bins[1]):
-                temp = self[0].deepcopy()
-                temp.data = np.ones_like(temp.data)
-                dataBin[-1].append(temp)
-                a = [x,y]
-                for i, s in enumerate(self):
-                    dataBin[x][y].data *= ((s.data >= center[i][a[i]])*
-                     (s.data < center[i][a[i]+1])).astype('int')
-            dataBin[x] = utils.stack(dataBin[x])
-    elif len(self) == 3 :    
-        for x in range(bins[0]):
-            dataBin.append([])
-            for y in range(bins[1]):
-                dataBin[x].append([])                    
-                for z in range(bins[2]):
-                    temp = self[0].deepcopy()
-                    temp.data = np.ones_like(temp.data)
-                    dataBin[-1][-1].append(temp)
-                    a = [x,y,z]
-                    for i, s in enumerate(self):
-                        dataBin[x][y][z].data *= ((s.data >=
-                         center[i][a[i]])*(s.data < 
-                         center[i][a[i]+1])).astype('int')
-                dataBin[x][y] = utils.stack(dataBin[x][y])
-            dataBin[x] = utils.stack(dataBin[x])
-    img = utils.stack(dataBin)
-
-    for i in range(len(self)):
-        img.axes_manager[i].name = self[i].mapped_parameters.title
-        img.axes_manager[i].scale = (minmax[i][1]-minmax[i][0])/bins[i]
-        img.axes_manager[i].offest = minmax[i][0]
-        img.axes_manager[i].units = '-'
-    img.get_dimensions_from_data()
-    return img
+   
     
         
     

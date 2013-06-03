@@ -36,8 +36,9 @@ from hyperspy.misc.progressbar import progressbar
 from hyperspy.components.power_law import PowerLaw
 from hyperspy.io import load
 
-
+#TEM spectrum is just a copy of the basic function of SEM spectrum.
 class EDSTEMSpectrum(EDSSpectrum):
+    
     
     def __init__(self, *args, **kwards):
         EDSSpectrum.__init__(self, *args, **kwards)
