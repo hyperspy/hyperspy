@@ -177,6 +177,7 @@ SectionIn RO
   ${If} $InstMode > 0
       ; Create right-click context menu entries for Hyperspy Here
 	  Exec 'cmd.exe /C ""$INSTDIR\WinPython Command Prompt.exe" install_hyperspy_here & exit"'
+      Sleep 3000    
 
   ${EndIf}
   CreateDirectory "$SMPROGRAMS\${APPNAME}"
@@ -235,6 +236,7 @@ FunctionEnd
 
 Section -un.Main
   Exec 'cmd.exe /C ""$INSTDIR\WinPython Command Prompt.exe" uninstall_hyperspy_here & exit"'
+  Sleep 3000
   Delete "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk"
   Delete "$SMPROGRAMS\${APPNAME}\${APPNAME} QtConsole.lnk"
   Delete "$SMPROGRAMS\${APPNAME}\${APPNAME} Notebook.lnk"

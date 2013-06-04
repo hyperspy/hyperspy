@@ -24,6 +24,7 @@ OutFile "${S_NAME}.exe"
 !include MUI2.nsh
 !include UAC.nsh
 !include nsDialogs.nsh
+
 !ifndef BCM_SETSHIELD
 !define BCM_SETSHIELD 0x0000160C
 !endif
@@ -176,6 +177,7 @@ SectionIn RO
   ${If} $InstMode > 0
       ; Create right-click context menu entries for Hyperspy Here
 	  Exec 'cmd.exe /C ""$INSTDIR\WinPython Command Prompt.exe" install_hyperspy_here & exit"'
+      Sleep 3000    
 
   ${EndIf}
   CreateDirectory "$SMPROGRAMS\${APPNAME}"
@@ -234,6 +236,7 @@ FunctionEnd
 
 Section -un.Main
   Exec 'cmd.exe /C ""$INSTDIR\WinPython Command Prompt.exe" uninstall_hyperspy_here & exit"'
+  Sleep 3000
   Delete "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk"
   Delete "$SMPROGRAMS\${APPNAME}\${APPNAME} QtConsole.lnk"
   Delete "$SMPROGRAMS\${APPNAME}\${APPNAME} Notebook.lnk"
@@ -251,6 +254,8 @@ SectionEnd
     !tempfile UNINSTEXE
     !system '"${NSISDIR}\MakeNSIS" /DBUILDUNINST=${mode} /DUNINSTEXE=${UNINSTEXE}.exe "${__FILE__}"' = 0
     !system '"${UNINSTEXE}.exe"' = 0
+    /* We run it two times as a workaround because otherwise the file might
+       not still exists when running the next command */
     !system '"${UNINSTEXE}.exe"' = 0
     File "/oname=${extractTo}" "${UNINSTEXE}.exe.un"
     !undef UNINSTEXE
