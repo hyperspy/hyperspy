@@ -168,7 +168,7 @@ class EDSConfig(t.HasTraits):
     eds_tilt_stage = t.CFloat(0.,
         label = 'Stage tilt',
         desc = 'default value for the stage tilt in degree')
-    eds_detector_azimuth = t.CFloat(90.,
+    eds_detector_azimuth = t.CFloat(0.,
         label = 'Azimuth angle',
         desc = 'default value for the azimuth angle in degree')
     eds_detector_elevation = t.CFloat(35.,

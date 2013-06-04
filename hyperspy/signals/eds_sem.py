@@ -135,8 +135,6 @@ class EDSSEMSpectrum(EDSSpectrum):
                 mp.SEM.EDS.azimuth_angle = mp.TEM.EDS.azimuth_angle 
             if hasattr(mp.TEM.EDS, 'elevation_angle'):
                 mp.SEM.EDS.elevation_angle = mp.TEM.EDS.elevation_angle
-               
-        
                 
                
     def set_microscope_parameters(self, beam_energy=None, live_time=None,

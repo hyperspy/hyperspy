@@ -37,13 +37,6 @@ class EDSSpectrum(Spectrum):
             self.elements = set()
         if hasattr(self,'Xray_lines')==False:
             self.Xray_lines = set()
-              
-        #self.elements = set()
-        #self.Xray_lines = set()
-        #if hasattr(self.mapped_parameters, 'Sample') and \
-        #hasattr(self.mapped_parameters.Sample, 'elements'):
-            #print('Elemental composition read from file')
-            #self.add_elements(self.mapped_parameters.Sample.elements)
             
     def set_elements(self, elements, lines=None):
         """Set elements present in the sample and defined the corresponding
