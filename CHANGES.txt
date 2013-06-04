@@ -85,7 +85,6 @@ API changes
   Signal.__init__ takes keywords e.g with  a new syntax 
   ``>>> s = signals.Spectrum(np.arange(10))`` instead of 
   ``>>> s = signals.Spectrum({'data' : np.arange(10)})``
-* 
 
 
 
