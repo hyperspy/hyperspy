@@ -37,9 +37,9 @@ class EDSSpectrum(Spectrum):
             self.elements = set()
         if hasattr(self,'Xray_lines')==False:
             self.Xray_lines = set()
-            
+    
     def set_elements(self, elements, lines=None):
-        """Set elements present in the sample and defined the corresponding
+        """Erase all elements and set them with the corresponding
         X-ray lines.
         
         The X-ray lines can be choosed manually or automatically.
@@ -85,11 +85,9 @@ class EDSSpectrum(Spectrum):
         
         
     def add_elements(self, elements, lines=None):
-        """Add elements present in the sample and defined the corresponding
-        X-ray lines.
+        """Add elements and the corresponding X-ray lines.
         
-        The X-ray lines can be choosed manually or automatically.
-        
+        The X-ray lines can be choosed manually or automatically.        
         
         Parameters
         ----------
@@ -99,24 +97,12 @@ class EDSSpectrum(Spectrum):
         lines : list of strings
             One X-ray line for each element ('Ka', 'La', 'Ma',...). If none 
             the set of highest ionized lines with sufficient intensity 
-            is selected. The beam energy is needed.
+            is selected. The beam energy is needed. All available lines
+            are return for a wrong lines.
             
         See also
         --------
         set_elements, 
-            
-        Examples
-        --------
-        
-        >>> s = signals.EDSSEMSpectrum(np.arange(1024))
-        >>> s.add_elements(['Ni', 'O'],['Ka','Ka'])   
-        Adding Ni_Ka Line
-        Adding O_Ka Line
-        
-        >>> s.mapped_paramters.SEM.beam_energy = 10
-        >>> s.add_elements(['Ni', 'O'])
-        Adding Ni_La Line
-        Adding O_Ka Line
         
         """
         
@@ -158,6 +144,10 @@ class EDSSpectrum(Spectrum):
                       % (element,line))  
                 else:
                     print("%s is not a valid line of %s." % (line,element))
+                    print("Valid lines for %s are (importance):" % element)
+                    for li in elements_db[element]['Xray_energy']:
+                        print("%s (%s)" % (li,
+                         elements_db['lines']['ratio_line'][li]))
             else:
                 print(
                     "%s is not a valid symbol of an element." % element)
@@ -263,8 +253,7 @@ class EDSSpectrum(Spectrum):
         if self.axes_manager.navigation_dimension > 1:
             signal_to_index = self.axes_manager.navigation_dimension - 2                  
             for Xray_line in Xray_lines:
-                element = Xray_line[:-3]
-                line = Xray_line[-2:]            
+                element, line = utils._get_element_and_line(Xray_line)           
                 line_energy = elements_db[element]['Xray_energy'][line]
                 line_FWHM = FWHM_eds(FWHM_MnKa,line_energy)
                 img = self.to_image(signal_to_index)
@@ -276,8 +265,7 @@ class EDSSpectrum(Spectrum):
                 intensities.append(img[line_energy-det:line_energy+det].sum(0))
         else:
             for Xray_line in Xray_lines:
-                element = Xray_line[:-3]
-                line = Xray_line[-2:]            
+                element, line = utils._get_element_and_line(Xray_line)           
                 line_energy = elements_db[element]['Xray_energy'][line]
                 line_FWHM = FWHM_eds(FWHM_MnKa,line_energy)
                 det = width_energy_reso*line_FWHM
@@ -287,6 +275,7 @@ class EDSSpectrum(Spectrum):
                      self[line_energy-det:line_energy+det].sum(0).data) )
                 intensities.append(self[line_energy-det:line_energy+det].sum(0).data)
         return intensities
+
                  
    
     

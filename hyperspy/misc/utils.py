@@ -1758,6 +1758,11 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         signal.get_dimensions_from_data()
     return signal
 
+def _get_element_and_line(Xray_line):
+    lim = Xray_line.find('_')
+    return Xray_line[:lim], Xray_line[lim+1:]
+    
+
                     
     
     
