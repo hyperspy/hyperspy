@@ -37,6 +37,33 @@ class EDSSpectrum(Spectrum):
             self.elements = set()
         if hasattr(self,'Xray_lines')==False:
             self.Xray_lines = set()
+            
+    def sum(self,axis):
+        #modify time spend per spectrum
+        if hasattr(self.mapped_parameters, 'SEM'):
+            mp = self.mapped_parameters.SEM
+        else:
+            mp = self.mapped_parameters.TEM
+        if hasattr(mp, 'EDS') and hasattr(mp.EDS, 'live_time'):
+            mp.EDS.live_time = mp.EDS.live_time * self.axes_manager.shape[axis]
+        return Spectrum.sum(self, axis)
+        
+    def rebin(self, new_shape):
+        new_shape_in_array = []
+        for axis in self.axes_manager._axes:
+            new_shape_in_array.append(
+                new_shape[axis.index_in_axes_manager])
+        factors = (np.array(self.data.shape) / 
+                           np.array(new_shape_in_array))
+        #modify time per spectrum
+        if hasattr(self.mapped_parameters, 'SEM'):
+            mp = self.mapped_parameters.SEM
+        else:
+            mp = self.mapped_parameters.TEM
+        if hasattr(mp, 'EDS') and hasattr(mp.EDS, 'live_time'):
+            for factor in factors:
+                mp.EDS.live_time = mp.EDS.live_time * factor
+        Spectrum.rebin(self, new_shape)
     
     def set_elements(self, elements, lines=None):
         """Erase all elements and set them with the corresponding
@@ -275,6 +302,9 @@ class EDSSpectrum(Spectrum):
                      self[line_energy-det:line_energy+det].sum(0).data) )
                 intensities.append(self[line_energy-det:line_energy+det].sum(0).data)
         return intensities
+        
+        
+        
 
                  
    
