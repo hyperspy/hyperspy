@@ -2974,7 +2974,8 @@ class Signal(MVA,
         (64,64)
         
         """
-        return self._apply_function_on_data_and_remove_axis(np.min, axis)
+        return self._apply_function_on_data_and_remove_axis(np.mean, 
+                                                            axis)
         
     def std(self, axis):
         """Returns a signal with the standard deviation of the signal along 
