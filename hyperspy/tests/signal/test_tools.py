@@ -60,7 +60,23 @@ class Test2D:
         result = self.signal.split()
         assert_true(len(result) == 2)
         assert_true((result[0].data == self.data[:2,:]).all())
-        assert_true((result[1].data == self.data[2:4,:]).all()) 
+        assert_true((result[1].data == self.data[2:4,:]).all())
+        
+class Test3D:
+    def setUp(self):
+        self.signal = Signal(np.arange(2*4*6).reshape(2,4,6))
+        self.signal.axes_manager[0].name = "x"
+        self.signal.axes_manager[1].name = "y"
+        self.signal.axes_manager[2].name = "E"
+        self.signal.axes_manager[0].scale = 0.5
+        self.signal.mapped_parameters.set_item('splitting.axis', 0)
+        self.signal.mapped_parameters.set_item(
+                                        'splitting.step_sizes',[2,2])
+        self.data = self.signal.data.copy()
+    def test_rebin(self):
+        s = self.signal
+        s.rebin((2,1,6))
+        assert_true(s.data.shape == (1,2,6))
         
         
         
