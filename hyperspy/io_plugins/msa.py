@@ -60,7 +60,7 @@ keywords = {
                 # Optional parameters
                 ## Spectrum characteristics
                 'SIGNALTYPE' : {'dtype' : unicode, 'mapped_to' : 
-                    None},
+                    'signal_type'},
                 'XLABEL' : {'dtype' : unicode, 'mapped_to': None},
                 'YLABEL' : {'dtype' : unicode, 'mapped_to': None},
                 'XUNITS' : {'dtype' : unicode, 'mapped_to': None},
@@ -278,6 +278,7 @@ def file_writer(filename, signal, format = None, separator = ', ',
         'NPOINTS' : signal.axes_manager._axes[0].size,
         'NCOLUMNS' : 1,
         'DATATYPE' : format,
+        'SIGNALTYPE' : signal.mapped_parameters.signal_type,
         'XPERCHAN' : signal.axes_manager._axes[0].scale,
         'OFFSET' : signal.axes_manager._axes[0].offset,
         ## Spectrum characteristics

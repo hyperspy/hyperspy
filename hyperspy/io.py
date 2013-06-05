@@ -311,6 +311,8 @@ def dict2signal(signal_dict, record_by=None, signal_type=None):
                 s = EDSSEMSpectrum(**signal_dict)
             elif (signal_type == 'EDS_TEM'):
                 s = EDSTEMSpectrum(**signal_dict)
+            elif (signal_type == 'EDS'):
+                s = EDSTEMSpectrum(**signal_dict)
             else:
                 s = Spectrum(**signal_dict)
         else:
