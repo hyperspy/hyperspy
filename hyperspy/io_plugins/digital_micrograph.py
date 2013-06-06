@@ -194,7 +194,7 @@ import hyperspy.misc.utils
 import hyperspy.misc.io.tools
 from hyperspy.misc.utils_varia import overwrite, swapelem
 from hyperspy.misc.utils_varia import DictBrowser, fsdict
-from hyperspy.misc.dm3reader import parseDM3
+from hyperspy.misc.io.dm3reader import parseDM3
 
 
 # Plugin characteristics

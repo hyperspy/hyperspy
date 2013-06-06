@@ -32,7 +32,7 @@ except:
     mdp_installed = False
     
 
-from hyperspy.misc.import_sklearn import *
+from hyperspy.misc.machine_learning.import_sklearn import *
 from hyperspy.misc import utils
 from hyperspy.misc import utils_varia 
 from hyperspy.learn.svd_pca import svd_pca

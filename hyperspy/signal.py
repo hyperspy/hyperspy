@@ -47,7 +47,7 @@ from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
 from scipy.ndimage.filters import gaussian_filter1d
 from hyperspy.misc.spectrum_tools import find_peaks_ohaver
-from hyperspy.misc.image_utils import (shift_image, estimate_image_shift)
+from hyperspy.misc.image_tools import (shift_image, estimate_image_shift)
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.misc import array_tools
