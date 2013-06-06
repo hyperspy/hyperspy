@@ -184,17 +184,15 @@ from __future__ import division
 import os
 import mmap
 import re
-from types import StringType
 import numpy as np
 
-from hyperspy.axes import DataAxis
-from hyperspy.misc.utils_readfile import *
+from hyperspy.misc.io.utils_readfile import *
 from hyperspy.exceptions import *
 import hyperspy.misc.utils
 import hyperspy.misc.io.tools
 from hyperspy.misc.utils import swapelem
 from hyperspy.misc.io.tools import overwrite
-from hyperspy.misc.utils_varia import DictBrowser, fsdict
+from hyperspy.misc.utils import DictBrowser, fsdict
 from hyperspy.misc.io.dm3reader import parseDM3
 
 

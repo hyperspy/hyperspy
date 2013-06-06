@@ -1,4 +1,5 @@
 import os
+from hyperspy.messages import information
 
 def dump_dictionary(file, dic, string='root', node_separator='.',
                     value_separator=' = '):
@@ -74,5 +75,7 @@ def overwrite(fname):
             return information(message)
     else:
         return True
+        
+
     
 
