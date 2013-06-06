@@ -43,64 +43,47 @@ class EDSTEMSpectrum(EDSSpectrum):
     def __init__(self, *args, **kwards):
         EDSSpectrum.__init__(self, *args, **kwards)
         # Attributes defaults
+        if hasattr(self.mapped_parameters, 'TEM.EDS') == False: 
+            self._load_from_SEM_param()
+        self._set_default_param()
         
-
-    def get_calibration_from(self, ref, nb_pix=1):
-        """Copy the calibration and all metadata of a reference.
-
-        Primary use: To add a calibration to ripple file from INCA software
-                
-        Parameters
-        ----------
-        ref : signal
-            The ref contains in its original_parameters the calibration
-            
-        nb_pix : int
-            The live time (real time corrected from the "dead time")
-            is divided by the number of pixel (spectrums), giving an 
-            average live time.          
-            
-        """
+    def _load_from_SEM_param(self): 
+        """Transfer mapped_parameters.SEM to mapped_parameters.TEM"""      
+         
+        mp = self.mapped_parameters                     
+        if mp.has_item('TEM') is False:
+            mp.add_node('TEM')
+        if mp.has_item('TEM.EDS') is False:
+            mp.TEM.add_node('EDS') 
         
-        self.original_parameters = ref.original_parameters
-        # Setup the axes_manager
-        ax_m = self.axes_manager.signal_axes[0]
-        if hasattr(self.original_parameters, 'CHOFFSET'):
-            ax_m.scale = ref.original_parameters.CHOFFSET
-        if hasattr(self.original_parameters, 'OFFSET'):
-            ax_m.offset = ref.original_parameters.OFFSET
-        if hasattr(self.original_parameters, 'XUNITS'):            
-            ax_m.units = ref.original_parameters.XUNITS
-            if hasattr(self.original_parameters, 'CHOFFSET'):      
-                if self.original_parameters.XUNITS == 'keV':
-                    ax_m.scale = ref.original_parameters.CHOFFSET / 1000
-                   
+        #Transfer    
+        if hasattr(mp,'SEM'):
+            mp.TEM = mp.SEM
+            del mp.__dict__['SEM']
+        
+    def _set_default_param(self): 
+        """Set to value to default (defined in preferences)
+        """    
+        
+        mp = self.mapped_parameters                     
         if mp.has_item('TEM') is False:
             mp.add_node('TEM')
         if mp.has_item('TEM.EDS') is False:
             mp.TEM.add_node('EDS')
             
-        # Setup mapped_parameters
-        if hasattr(ref.mapped_parameters, 'TEM'):
-            mp_ref = ref.mapped_parameters.TEM 
-        elif hasattr(ref.mapped_parameters, 'SEM'):
-            mp_ref = ref.mapped_parameters.SEM
-        else:
-            raise ValueError("The reference has no mapped_parameters.TEM"
-            "\n nor mapped_parameters.SEM ")
-            
+        mp.signal_type = 'EDS_TEM'
+           
         mp = self.mapped_parameters
-                 
-        if hasattr(mp_ref, 'tilt_stage'):
-            mp.TEM.tilt_stage = mp_ref.tilt_stage
-        if hasattr(mp_ref, 'beam_energy'):
-            mp.TEM.beam_energy = mp_ref.beam_energy  
-        if hasattr(mp_ref.EDS, 'live_time'):
-            mp.TEM.EDS.live_time = mp_ref.EDS.live_time / nb_pix
-        if hasattr(mp_ref.EDS, 'azimuth_angle'):
-            mp.TEM.EDS.azimuth_angle = mp_ref.EDS.azimuth_angle
-        if hasattr(mp_ref.EDS, 'elevation_angle'):
-            mp.TEM.EDS.elevation_angle = mp_ref.EDS.elevation_angle
+        if hasattr(mp.TEM, 'tilt_stage') is False:
+            mp.TEM.tilt_stage = preferences.EDS.eds_tilt_stage
+        if hasattr(mp.TEM.EDS, 'elevation_angle') is False:
+            mp.TEM.EDS.elevation_angle = preferences.EDS.eds_detector_elevation
+        if hasattr(mp.TEM.EDS, 'energy_resolution_MnKa') is False:
+            mp.TEM.EDS.energy_resolution_MnKa = preferences.EDS.eds_mn_ka
+        if hasattr(mp.TEM.EDS, 'azimuth_angle') is False:
+            mp.TEM.EDS.azimuth_angle = preferences.EDS.eds_detector_azimuth  
+        
+
 
                
     def set_microscope_parameters(self, beam_energy=None, live_time=None,
@@ -147,19 +130,17 @@ class EDSTEMSpectrum(EDSSpectrum):
             mp_mic.EDS.elevation_angle = elevation_angle
         if energy_resolution_MnKa is not None:
             mp_mic.EDS.energy_resolution_MnKa  = energy_resolution_MnKa
-            
-        mp_mic.EDSenergy_resolution_MnKa = 130
         
-        self._are_microscope_parameters_missing()
+        self._set_microscope_parameters()
                 
             
     @only_interactive            
     def _set_microscope_parameters(self):
-        mp = self.mapped_parameters                     
-        if mp.has_item('TEM') is False:
-            mp.add_node('TEM')
-        if mp.has_item('TEM.EDS') is False:
-            mp.TEM.add_node('EDS')         
+        #mp = self.mapped_parameters                     
+        #if mp.has_item('TEM') is False:
+            #mp.add_node('TEM')
+        #if mp.has_item('TEM.EDS') is False:
+            #mp.TEM.add_node('EDS')         
         tem_par = TEMParametersUI() 
         mapping = {
         'TEM.beam_energy' : 'tem_par.beam_energy',        
@@ -192,28 +173,93 @@ class EDSTEMSpectrum(EDSSpectrum):
          an UI item to fill or cahnge the values"""        
         must_exist = (
             'TEM.beam_energy',             
-            'TEM.tilt_stage', 
-            'TEM.EDS.live_time', 
-            'TEM.EDS.azimuth_angle',
-            'TEM.EDS.elevation_angle',)
+            'TEM.EDS.live_time',) 
+
         missing_parameters = []
         for item in must_exist:
             exists = self.mapped_parameters.has_item(item)
             if exists is False:
                 missing_parameters.append(item)
-        
-        if preferences.General.interactive is True:
-            par_str = "The following parameters are missing:\n"
-            for par in missing_parameters:
-                par_str += '%s\n' % par
-            par_str += 'Please set them in the following wizard'
-            is_ok = messagesui.information(par_str)
-            if is_ok:
-                self._set_microscope_parameters()
+        if missing_parameters: 
+            if preferences.General.interactive is True:
+                par_str = "The following parameters are missing:\n"
+                for par in missing_parameters:
+                    par_str += '%s\n' % par
+                par_str += 'Please set them in the following wizard'
+                is_ok = messagesui.information(par_str)
+                if is_ok:
+                    self._set_microscope_parameters()
+                else:
+                    return True
             else:
                 return True
         else:
-            return True
+            return False          
+
                 
+                
+    def get_calibration_from(self, ref, nb_pix=1):
+        """Copy the calibration and all metadata of a reference.
+
+        Primary use: To add a calibration to ripple file from INCA 
+        software
+                
+        Parameters
+        ----------
+        ref : signal
+            The reference contains the calibration in its 
+            mapped_parameters 
+        nb_pix : int
+            The live time (real time corrected from the "dead time")
+            is divided by the number of pixel (spectrums), giving an 
+            average live time.          
+        """
+        
+        
+        self.original_parameters = ref.original_parameters.deepcopy()
+        # Setup the axes_manager
+        ax_m = self.axes_manager.signal_axes[0]
+        ax_ref = ref.axes_manager.signal_axes[0]
+        ax_m.scale = ax_ref.scale
+        ax_m.units = ax_ref.units 
+        ax_m.offset = ax_ref.offset
+        
+        #if hasattr(self.original_parameters, 'CHOFFSET'):
+            #ax_m.scale = ref.original_parameters.CHOFFSET
+        #if hasattr(self.original_parameters, 'OFFSET'):
+            #ax_m.offset = ref.original_parameters.OFFSET
+        #if hasattr(self.original_parameters, 'XUNITS'):            
+            #ax_m.units = ref.original_parameters.XUNITS
+            #if hasattr(self.original_parameters, 'CHOFFSET'):      
+                #if self.original_parameters.XUNITS == 'keV':
+                    #ax_m.scale = ref.original_parameters.CHOFFSET / 1000
+         
+        
+        # Setup mapped_parameters
+        if hasattr(ref.mapped_parameters, 'TEM'):
+            mp_ref = ref.mapped_parameters.TEM 
+        elif hasattr(ref.mapped_parameters, 'SEM'):
+            mp_ref = ref.mapped_parameters.SEM
+        else:
+            raise ValueError("The reference has no mapped_parameters.TEM"
+            "\n nor mapped_parameters.SEM ")
+            
+        mp = self.mapped_parameters
+        
+        mp.TEM = mp_ref.deepcopy()
+        
+        #if hasattr(mp_ref, 'tilt_stage'):
+            #mp.SEM.tilt_stage = mp_ref.tilt_stage
+        #if hasattr(mp_ref, 'beam_energy'):
+            #mp.SEM.beam_energy = mp_ref.beam_energy
+        #if hasattr(mp_ref.EDS, 'energy_resolution_MnKa'):
+            #mp.SEM.EDS.energy_resolution_MnKa = mp_ref.EDS.energy_resolution_MnKa
+        #if hasattr(mp_ref.EDS, 'azimuth_angle'):
+            #mp.SEM.EDS.azimuth_angle = mp_ref.EDS.azimuth_angle
+        #if hasattr(mp_ref.EDS, 'elevation_angle'):
+            #mp.SEM.EDS.elevation_angle = mp_ref.EDS.elevation_angle
+        
+        if hasattr(mp_ref.EDS, 'live_time'):
+            mp.TEM.EDS.live_time = mp_ref.EDS.live_time / nb_pix
            
  

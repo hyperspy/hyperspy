@@ -48,8 +48,9 @@ class EDSSEMSpectrum(EDSSpectrum):
     def __init__(self, *args, **kwards):
         EDSSpectrum.__init__(self, *args, **kwards)
         # Attributes defaults        
-        if hasattr(self.mapped_parameters, 'SEM.EDS') == False:            
-            self._load_microscope_param()
+        if hasattr(self.mapped_parameters, 'SEM.EDS') == False: 
+            self._load_from_TEM_param()
+        self._set_default_param()
         
 
     def get_calibration_from(self, ref, nb_pix=1):
@@ -70,19 +71,14 @@ class EDSSEMSpectrum(EDSSpectrum):
         """
         
         
-        self.original_parameters = ref.original_parameters
+        self.original_parameters = ref.original_parameters.deepcopy()
         # Setup the axes_manager
         ax_m = self.axes_manager.signal_axes[0]
-        if hasattr(self.original_parameters, 'CHOFFSET'):
-            ax_m.scale = ref.original_parameters.CHOFFSET
-        if hasattr(self.original_parameters, 'OFFSET'):
-            ax_m.offset = ref.original_parameters.OFFSET
-        if hasattr(self.original_parameters, 'XUNITS'):            
-            ax_m.units = ref.original_parameters.XUNITS
-            if hasattr(self.original_parameters, 'CHOFFSET'):      
-                if self.original_parameters.XUNITS == 'keV':
-                    ax_m.scale = ref.original_parameters.CHOFFSET / 1000
-         
+        ax_ref = ref.axes_manager.signal_axes[0]
+        ax_m.scale = ax_ref.scale
+        ax_m.units = ax_ref.units 
+        ax_m.offset = ax_ref.offset
+ 
         
         # Setup mapped_parameters
         if hasattr(ref.mapped_parameters, 'SEM'):
@@ -94,47 +90,42 @@ class EDSSEMSpectrum(EDSSpectrum):
             "\n nor mapped_parameters.SEM ")
             
         mp = self.mapped_parameters
-                 
-        if hasattr(mp_ref, 'tilt_stage'):
-            mp.SEM.tilt_stage = mp_ref.tilt_stage
-        if hasattr(mp_ref, 'beam_energy'):
-            mp.SEM.beam_energy = mp_ref.beam_energy  
+        
+        mp.SEM = mp_ref.deepcopy()
+        
         if hasattr(mp_ref.EDS, 'live_time'):
             mp.SEM.EDS.live_time = mp_ref.EDS.live_time / nb_pix
-        if hasattr(mp_ref.EDS, 'azimuth_angle'):
-            mp.SEM.EDS.azimuth_angle = mp_ref.EDS.azimuth_angle
-        if hasattr(mp_ref.EDS, 'elevation_angle'):
-            mp.SEM.EDS.elevation_angle = mp_ref.EDS.elevation_angle
+                 
+
+    
             
-    def _load_microscope_param(self): 
-        """Transfer mapped_parameters.TEM to mapped_parameters.SEM,
-            defined default value"""      
+    def _load_from_TEM_param(self): 
+        """Transfer mapped_parameters.TEM to mapped_parameters.SEM"""      
          
         mp = self.mapped_parameters                     
         if mp.has_item('SEM') is False:
             mp.add_node('SEM')
         if mp.has_item('SEM.EDS') is False:
-            mp.SEM.add_node('EDS')        
-               
-        
-        #Set to value to default 
-        mp.SEM.tilt_stage = preferences.EDS.eds_tilt_stage
-        mp.SEM.EDS.elevation_angle = preferences.EDS.eds_detector_elevation
-        mp.SEM.EDS.energy_resolution_MnKa = preferences.EDS.eds_mn_ka
-        mp.SEM.EDS.azimuth_angle = preferences.EDS.eds_detector_azimuth
+            mp.SEM.add_node('EDS') 
         
         #Transfer    
         if hasattr(mp,'TEM'):
-            if hasattr(mp.TEM, 'tilt_stage'):
-                mp.SEM.tilt_stage = mp.TEM.tilt_stage
-            if hasattr(mp.TEM, 'beam_energy'):
-                mp.SEM.beam_energy = mp.TEM.beam_energy  
-            if hasattr(mp.TEM.EDS, 'live_time'):
-                mp.SEM.EDS.live_time = mp.TEM.EDS.live_time
-            if hasattr(mp.TEM.EDS, 'azimuth_angle'):
-                mp.SEM.EDS.azimuth_angle = mp.TEM.EDS.azimuth_angle 
-            if hasattr(mp.TEM.EDS, 'elevation_angle'):
-                mp.SEM.EDS.elevation_angle = mp.TEM.EDS.elevation_angle
+            mp.SEM = mp.TEM
+            del mp.__dict__['TEM']
+        
+    def _set_default_param(self): 
+        """Set to value to default (defined in preferences)
+        """  
+        mp = self.mapped_parameters         
+        if hasattr(mp.SEM, 'tilt_stage') is False:
+            mp.SEM.tilt_stage = preferences.EDS.eds_tilt_stage
+        if hasattr(mp.SEM.EDS, 'elevation_angle') is False:
+            mp.SEM.EDS.elevation_angle = preferences.EDS.eds_detector_elevation
+        if hasattr(mp.SEM.EDS, 'energy_resolution_MnKa') is False:
+            mp.SEM.EDS.energy_resolution_MnKa = preferences.EDS.eds_mn_ka
+        if hasattr(mp.SEM.EDS, 'azimuth_angle') is False:
+            mp.SEM.EDS.azimuth_angle = preferences.EDS.eds_detector_azimuth              
+        
                 
                
     def set_microscope_parameters(self, beam_energy=None, live_time=None,
@@ -222,10 +213,8 @@ class EDSSEMSpectrum(EDSSpectrum):
         
         must_exist = (
             'SEM.beam_energy',            
-            'SEM.tilt_stage',
-            'SEM.EDS.live_time', 
-            'SEM.EDS.azimuth_angle',
-            'SEM.EDS.elevation_angle',)
+            'SEM.EDS.live_time', )
+
         
         missing_parameters = []
         for item in must_exist:

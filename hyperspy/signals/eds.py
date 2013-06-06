@@ -303,6 +303,8 @@ class EDSSpectrum(Spectrum):
                 intensities.append(self[line_energy-det:line_energy+det].sum(0).data)
         return intensities
         
+    
+        
         
         
 
