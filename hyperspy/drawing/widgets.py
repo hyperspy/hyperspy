@@ -26,7 +26,7 @@ import numpy as np
 import traits
 
 from utils import on_figure_window_close
-from hyperspy.misc.utils import closest_nice_number
+from hyperspy.misc.math_tools import closest_nice_number
 from hyperspy.drawing.utils import does_figure_object_exists
 
 class DraggablePatch(object):

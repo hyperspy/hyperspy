@@ -26,7 +26,7 @@ except ImportError:
 
 import numpy as np
 
-from hyperspy.misc.utils import sarray2dict
+from hyperspy.misc.array_tools import sarray2dict
 from hyperspy.misc import xmlreader
 
 ser_extensions = ('ser', 'SER')

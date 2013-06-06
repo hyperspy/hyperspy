@@ -191,6 +191,7 @@ from hyperspy.axes import DataAxis
 from hyperspy.misc.utils_readfile import *
 from hyperspy.exceptions import *
 import hyperspy.misc.utils
+import hyperspy.misc.io.tools
 from hyperspy.misc.utils_varia import overwrite, swapelem
 from hyperspy.misc.utils_varia import DictBrowser, fsdict
 from hyperspy.misc.dm3reader import parseDM3
@@ -1137,7 +1138,7 @@ def file_reader(filename, record_by=None, order = None, data_id=1,
     if dump is True:
         import codecs
         f = codecs.open(filename.replace('.dm3', '_tags_dumped.txt'), 'w')
-        hyperspy.misc.utils.dump_dictionary(f, dm3.data_dict.dic)
+        hyperspy.misc.io.tools.dump_dictionary(f, dm3.data_dict.dic)
         f.close()
     mapped_parameters={}
 

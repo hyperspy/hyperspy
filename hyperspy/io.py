@@ -26,7 +26,9 @@ from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
     ripple, tiff)
 from hyperspy.gui.tools import Load
 from hyperspy.misc import utils
-from hyperspy.misc.utils import (ensure_directory,strlist2enumeration)
+from hyperspy.misc.io.tools import ensure_directory
+from hyperspy.misc.utils import strlist2enumeration
+
 from hyperspy.misc.natsort import natsorted
 import hyperspy.misc.utils_varia
 
