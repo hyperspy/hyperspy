@@ -21,7 +21,7 @@ import copy
 import numpy as np
 
 from hyperspy.signal import Signal
-from hyperspy.misc import utils_varia
+from hyperspy.misc import utils
 
 
 
@@ -60,7 +60,7 @@ class Image(Signal):
         dim = len(self.data.shape)
         dic['mapped_parameters']['record_by'] = 'spectrum'        
         dic['data'] = np.rollaxis(dic['data'], signal_axis, dim)
-        dic['axes'] = utils_varia.rollelem(dic['axes'], signal_axis, dim)
+        dic['axes'] = utils.rollelem(dic['axes'], signal_axis, dim)
         for axis in dic['axes']:
             del axis['index_in_array']
         sp = Spectrum(**dic)

@@ -192,7 +192,8 @@ from hyperspy.misc.utils_readfile import *
 from hyperspy.exceptions import *
 import hyperspy.misc.utils
 import hyperspy.misc.io.tools
-from hyperspy.misc.utils_varia import overwrite, swapelem
+from hyperspy.misc.utils import swapelem
+from hyperspy.misc.io.tools import overwrite
 from hyperspy.misc.utils_varia import DictBrowser, fsdict
 from hyperspy.misc.io.dm3reader import parseDM3
 

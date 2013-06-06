@@ -340,9 +340,44 @@ def ensure_unicode(stuff, encoding = 'utf8', encoding2 = 'latin-1'):
         string = string.decode(encoding2, errors = 'ignore')
     return string
         
+def swapelem(obj, i, j):
+    """Swaps element having index i with 
+    element having index j in object obj IN PLACE.
 
+    E.g.
+    >>> L = ['a', 'b', 'c']
+    >>> spwapelem(L, 1, 2)
+    >>> print L
+        ['a', 'c', 'b']
+    """
+    if len(obj) > 1:
+        buf = obj[i]
+        obj[i] = obj[j]
+        obj[j] = buf
+        
+def rollelem(a, index, start = 0):
+    """Roll the specified axis backwards, until it lies in a given position.
+    
+    Parameters
+    ----------
+    a : list
+        Input list.
+    index : int
+        The index of the item to roll backwards.  The positions of the items 
+        do not change relative to one another.
+    start : int, optional
+        The item is rolled until it lies before this position.  The default,
+        0, results in a "complete" roll.
+    
+    Returns
+    -------
+    res : list
+        Output list.
 
-    
-    
+    """
+
+    res = copy.copy(a) 
+    res.insert(start, res.pop(index))
+    return res
     
 

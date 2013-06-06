@@ -49,3 +49,30 @@ def ensure_directory(path):
     directory = os.path.split(path)[0]
     if directory and not os.path.exists(directory):
         os.makedirs(directory)
+        
+def overwrite(fname):
+    """ If file exists 'fname', ask for overwriting and return True or False,
+    else return True.
+    
+    """
+    if os.path.isfile(fname):
+        message = "Overwrite '%s' (y/n)?\n" % fname
+        try:
+            answer = raw_input(message)
+            answer = answer.lower()
+            while (answer != 'y') and (answer != 'n'):
+                print('Please answer y or n.')
+                answer = raw_input(message)
+            if answer.lower() == 'y':
+                return True
+            elif answer.lower() == 'n':
+                # print('Operation canceled.')
+                return False
+        except:
+            # We are running in the IPython notebook that does not
+            # support raw_input
+            return information(message)
+    else:
+        return True
+    
+

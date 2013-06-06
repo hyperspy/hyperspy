@@ -34,7 +34,7 @@ except:
 
 from hyperspy.misc.machine_learning.import_sklearn import *
 from hyperspy.misc import utils
-from hyperspy.misc import utils_varia 
+import hyperspy.misc.io.tools as io_tools 
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
 from hyperspy.defaults_parser import preferences
@@ -885,7 +885,7 @@ class LearningResults(object):
             kwargs[attribute] = self.__getattribute__(attribute)
         # Check overwrite
         if overwrite is None:
-            overwrite = utils_varia.overwrite(filename)
+            overwrite = io_tools.overwrite(filename)
         # Save, if all went well!
         if overwrite is True:    
             np.savez(filename, **kwargs)
