@@ -288,7 +288,7 @@ class EDSSpectrum(Spectrum):
                 ' at ' + str(line_energy) + ' keV'
                 det = width_energy_reso*line_FWHM
                 if plot_result:
-                    img[line_energy-det:line_energy+det].sum(0).plot(False)
+                    img[line_energy-det:line_energy+det].sum(0).plot(None)
                 intensities.append(img[line_energy-det:line_energy+det].sum(0))
         else:
             for Xray_line in Xray_lines:

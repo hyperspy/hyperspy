@@ -2336,6 +2336,7 @@ class Signal(MVA,
         data = np.nan_to_num(self.data.__getitem__(slices)
                              ).sum(isignal[1]).sum(isignal[0]).squeeze()
         return data
+    
 
     def _get_explorer(self, *args, **kwargs):
         nav_dim = self.axes_manager.navigation_dimension
@@ -2404,8 +2405,7 @@ class Signal(MVA,
                     
         if axes_manager.signal_dimension == 1:
             # Hyperspectrum
-            self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
-            
+            self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()            
         elif axes_manager.signal_dimension == 2:
             self._plot = mpl_hie.MPL_HyperImage_Explorer()
         else:
@@ -2421,20 +2421,29 @@ class Signal(MVA,
         def get_explorer_wrapper(*args, **kwargs):
             return navigator.data
             
+        def get_explorer_wrapper_spec(*args, **kwargs):
+            navigator = self
+            for i in range(100):
+                if len(navigator.axes_manager.shape) > 1:
+                    navigator = navigator.sum(-1)
+                else:
+                    break
+            data = np.nan_to_num(navigator.data).squeeze()
+            return data
+
         def get_explorer_wrapper_3D(*args, **kwargs):
             navigator.axes_manager.indices = \
             self.axes_manager.indices[2:]
-            #old version: axes z,y,x
-            #self.axes_manager.indices[:-self.axes_manager.navigation_dimension+1]
-            
             return navigator()
-            
+
         # Navigator properties
         if self.axes_manager.navigation_axes:
             if navigator is "auto":
                 self._plot.navigator_data_function = self._get_explorer
-            elif navigator is False:
-                self._plot.navigator_data_function = None           
+            elif navigator is None:
+                self._plot.navigator_data_function = None        
+            elif navigator is "Spectrum":
+                self._plot.navigator_data_function = get_explorer_wrapper_spec
             else:
                 #same dimension
                 if self.axes_manager.navigation_shape ==\
