@@ -2442,7 +2442,11 @@ class Signal(MVA,
             elif navigator is None:
                 self._plot.navigator_data_function = None        
             elif navigator is "spectrum":
-                self._plot.navigator_data_function = get_explorer_wrapper_spec
+                if axes_manager.signal_dimension == 2:
+                    self._plot.navigator_data_function = get_explorer_wrapper_spec
+                else:
+                    print("This option works only with Image.")
+                    self._plot.navigator_data_function = self._get_explorer                    
             else:
                 #same dimension
                 if self.axes_manager.navigation_shape ==\
