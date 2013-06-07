@@ -2441,7 +2441,7 @@ class Signal(MVA,
                 self._plot.navigator_data_function = self._get_explorer
             elif navigator is None:
                 self._plot.navigator_data_function = None        
-            elif navigator is "Spectrum":
+            elif navigator is "spectrum":
                 self._plot.navigator_data_function = get_explorer_wrapper_spec
             else:
                 #same dimension
