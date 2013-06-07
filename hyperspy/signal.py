@@ -2442,20 +2442,34 @@ class Signal(MVA,
                 self._plot.navigator_data_function = self._get_explorer
             elif navigator is None:
                 self._plot.navigator_data_function = None        
-            elif navigator is "Spectrum":
-                self._plot.navigator_data_function = get_explorer_wrapper_spec
-            else:
-                #same dimension
+            elif navigator is "spectrum":
+                if axes_manager.signal_dimension == 2:
+                    self._plot.navigator_data_function = get_explorer_wrapper_spec
+                else:
+                    print("Navigator = \"spectrum\" works only with Image.")
+                    self._plot.navigator_data_function = self._get_explorer                    
+            elif isinstance(navigator, str) is False:
+                #Same dimensition
                 if self.axes_manager.navigation_shape ==\
                 navigator.axes_manager.signal_shape:
                     self._plot.navigator_data_function = get_explorer_wrapper
-                #higher dimension
+                #Higher dimension: Dynamic navigator
                 elif self.axes_manager.navigation_shape == \
                 navigator.axes_manager.signal_shape + navigator.axes_manager.navigation_shape:
                     self._plot.navigator_data_function = get_explorer_wrapper_3D
+                #Higher dimension: Fixed navigator
+                elif self.axes_manager.navigation_shape[:2] == \
+                navigator.axes_manager.signal_shape:
+                    self._plot.navigator_data_function = get_explorer_wrapper
+                elif self.axes_manager.navigation_shape[0] == \
+                navigator.axes_manager.signal_shape:
+                    self._plot.navigator_data_function = get_explorer_wrapper
                 else:
                     print("The given navigator and the current signal have incompatible shape.")
                     self._plot.navigator_data_function = self._get_explorer
+            else:
+                print("Unknown navigator option.")
+                self._plot.navigator_data_function = self._get_explorer
 
                 
         self._plot.plot()
