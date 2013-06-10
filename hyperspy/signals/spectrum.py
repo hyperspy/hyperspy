@@ -25,8 +25,7 @@ from hyperspy.misc import utils_varia
 class Spectrum(Signal):
     """
     """
-    _default_record_by = 'spectrum'
-    
+    _record_by = 'spectrum'
     def __init__(self, *args, **kwargs):
         Signal.__init__(self, *args, **kwargs)
         self.axes_manager.set_signal_dimension(1)

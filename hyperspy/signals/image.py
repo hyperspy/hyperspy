@@ -29,7 +29,9 @@ from hyperspy.misc import utils_varia
 
 class Image(Signal):
     """
-    """    
+    """
+    _record_by = "image"
+    
     def __init__(self, *args, **kw):
         super(Image,self).__init__(*args, **kw)
         self.axes_manager.set_signal_dimension(2)

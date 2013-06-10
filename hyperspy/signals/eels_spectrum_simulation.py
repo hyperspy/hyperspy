@@ -24,7 +24,6 @@ class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
     pass
 
 
-
 #    @auto_replot       
 #    def add_energy_instability(self, std):
 #        """Introduce random energy instability

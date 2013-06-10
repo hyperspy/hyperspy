@@ -1910,7 +1910,9 @@ class Signal(MVA,
              Signal1DTools,
              Signal2DTools):
     
-    _default_record_by = 'image'
+    _record_by = ""
+    _signal_type = ""
+    _signal_origin = ""
 
     def __init__(self, data, **kwds):
         """Create a Signal from a numpy array.
@@ -2242,10 +2244,15 @@ class Signal(MVA,
             file_data_dict['original_parameters'])
         self.mapped_parameters._load_dictionary(
             file_data_dict['mapped_parameters'])
-        if not hasattr(self.mapped_parameters,'title'):
+        if not hasattr(self.mapped_parameters, 'title'):
             self.mapped_parameters.title = ''
-        if not hasattr(self.mapped_parameters,'record_by'):
-            self.mapped_parameters.record_by = self._default_record_by
+        if self._record_by:
+            self.mapped_parameters.record_by = self._record_by
+        if self._signal_origin:
+            self.mapped_parameters.signal_origin = self._signal_origin
+        if self._signal_type:
+            self.mapped_parameters.signal_type = self._signal_type
+            
                 
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array 

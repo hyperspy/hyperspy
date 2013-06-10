@@ -17,6 +17,7 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
+import inspect
 import copy
 import types
 import  math
@@ -1764,7 +1765,21 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         signal.get_dimensions_from_data()
     return signal
                     
+def find_subclasses(mod, cls):
+    """Find all the subclasses in a module.
     
+    Parameters
+    ----------
+    mod : module
+    cls : class
+    
+    Returns
+    -------
+    dictonary in which key, item = subclass name, subclass
+    
+    """
+    return dict([(name, obj) for name, obj in inspect.getmembers(mod)
+                if inspect.isclass(obj) and issubclass(obj, cls)])
     
     
 

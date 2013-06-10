@@ -90,7 +90,7 @@ def load(filenames=None, record_by=None, signal_type=None,
         files can be loaded by using simple shell-style wildcards, 
         e.g. 'my_file*.msa' loads all the files that starts
         by 'my_file' and has the '.msa' extension.
-    record_by : None | 'spectrum' | 'image' 
+    record_by : {None, 'spectrum', 'image'}
         Manually set the way in which the data will be read. Possible
         values are 'spectrum' or 'image'.
     signal_type : str
@@ -255,8 +255,13 @@ def load_single_file(filename, record_by=None, output_level=2,
                     output_level=output_level, **kwds)
 
 
-def load_with_reader(filename, reader, record_by=None,
-        signal_type=None, output_level=1, **kwds):
+def load_with_reader(filename,
+                     reader,
+                     record_by=None,
+                     signal_type=None,
+                     signal_origin=None,
+                     output_level=1,
+                     **kwds):
     if output_level>1:
         messages.information('Loading %s ...' % filename)
     
@@ -266,9 +271,14 @@ def load_with_reader(filename, reader, record_by=None,
                                         **kwds)
     objects = []
     for signal_dict in file_data_list:
-        objects.append(dict2signal(signal_dict,
-                                   record_by=record_by,
-                                   signal_type=signal_type))
+        if record_by is not None:
+            signal_dict['record_by'] = record_by
+        if signal_type is not None:
+            signal_dict['signal_type'] = signal_type
+        if signal_origin is not None:
+            signal_dict['signal_origin'] = signal_origin
+            
+        objects.append(dict2signal(signal_dict))
         folder, filename = os.path.split(os.path.abspath(filename))
         filename, extension = os.path.splitext(filename)
         objects[-1].tmp_parameters.folder = folder
@@ -281,30 +291,72 @@ def load_with_reader(filename, reader, record_by=None,
         messages.information('%s correctly loaded' % filename)
     return objects
     
-def dict2signal(signal_dict, record_by=None, signal_type=None):
-    from hyperspy.signals.image import Image
-    from hyperspy.signals.spectrum import Spectrum
-    from hyperspy.signals.eels import EELSSpectrum
-    if record_by is not None:
-        signal_dict['mapped_parameters']['record_by'] = record_by
-    # The record_by can still be None if it was not defined by the reader
-    if signal_dict['mapped_parameters']['record_by'] is None:
-        print "No data type provided.  Defaulting to image."
-        signal_dict['mapped_parameters']['record_by']= 'image'
+def assign_signal_subclass(record_by="",
+                           signal_type="",
+                           signal_origin="",):
+    """Given record_by and signal_type return the matching Signal subclass.
+    
+    Parameters
+    ----------
+    record_by: {"spectrum", "image", ""}
+    signal_type : {"EELS", "", etcb = set}
+    signal_origin : {"experiment", "simulation", ""}
+    
+    Returns
+    -------
+    Signal or subclass
+        
+    """
+    import hyperspy.signals
+    from hyperspy.signal import Signal
+        
+    signals = utils.find_subclasses(hyperspy.signals, Signal)
+    signals['Signal'] = Signal
+    
+    if signal_origin == "experiment":
+        signal_origin = ""
+    
+    preselection = [s for s in
+                    [s for s in signals.itervalues()
+                     if record_by == s._record_by]
+                    if signal_origin == s._signal_origin]
+    perfect_match = [s for s in preselection
+                     if signal_type == s._signal_type]
+    selection = perfect_match[0] if perfect_match else \
+                [s for s in preselection if s._signal_type == ""][0]
+    return selection
+    
+    
+def dict2signal(signal_dict):
+    """Create a signal (or subclass) instance defined by a dictionary
+    
+    Parameters
+    ----------
+    signal_dict : dictionary
 
-    if signal_type is not None:
-        signal_dict['mapped_parameters']['signal_type'] = signal_type
-
-    if signal_dict['mapped_parameters']['record_by'] == 'image':
-        s = Image(**signal_dict)
-    else:
-        if ('signal_type' in signal_dict['mapped_parameters'] 
-            and signal_dict['mapped_parameters']['signal_type'] 
-            == 'EELS'):
-            s = EELSSpectrum(**signal_dict)
-        else:
-            s = Spectrum(**signal_dict)
-    return s
+    Returns
+    -------
+    s : Signal or subclass
+    
+    """
+    record_by = ""
+    signal_type = ""
+    signal_origin = ""
+    if "mapped_parameters" in signal_dict:
+        mp = signal_dict["mapped_parameters"]
+        if "record_by" in mp:
+            record_by = mp['record_by']
+        if "signal_type" in mp:
+            signal_type = mp['signal_type']
+        if "signal_origin" in mp:
+            signal_origin = mp['signal_origin']
+    if (not record_by and 'data' in signal_dict and 
+                                                signal_dict['data'].ndim < 2):
+        record_by = "spectrum"
+    
+    return assign_signal_subclass(record_by=record_by,
+                                  signal_type=signal_type,
+                                  signal_origin=signal_origin)(**signal_dict)
 
 def save(filename, signal, overwrite=None, **kwds):
     extension = os.path.splitext(filename)[1][1:]

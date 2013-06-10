@@ -36,6 +36,7 @@ from hyperspy.components.power_law import PowerLaw
 
 
 class EELSSpectrum(Spectrum):
+    _signal_type = "EELS"
     
     def __init__(self, *args, **kwards):
         Spectrum.__init__(self, *args, **kwards)
