@@ -34,7 +34,7 @@ from hyperspy.misc.utils import DictionaryBrowser
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.utils import ensure_directory
+from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.gui.tools import (
     SpectrumCalibration,
@@ -46,10 +46,12 @@ from hyperspy.gui.egerton_quantification import BackgroundRemoval
 from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
 from scipy.ndimage.filters import gaussian_filter1d
-from hyperspy.misc.utils import find_peaks_ohaver
-from hyperspy.misc.image_utils import (shift_image, estimate_image_shift)
-from hyperspy.misc.utils import symmetrize, antisymmetrize
+from hyperspy.misc.spectrum_tools import find_peaks_ohaver
+from hyperspy.misc.image_tools import (shift_image, estimate_image_shift)
+from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.exceptions import SignalDimensionError
+from hyperspy.misc import array_tools
+from hyperspy.misc import spectrum_tools
 
 
 class Signal2DTools(object):
@@ -491,7 +493,7 @@ class Signal1DTools(object):
         shift_array = np.zeros(self.axes_manager._navigation_shape_in_array)
         ref = self.navigation_indexer[reference_indices].data[i1:i2]
         if interpolate is True:
-            ref = utils.interpolate1D(ip, ref)
+            ref = spectrum_tools.interpolate1D(ip, ref)
         pbar = progressbar(
             maxval=self.axes_manager.navigation_size)
         for i, (dat, indices) in enumerate(zip(
@@ -499,7 +501,7 @@ class Signal1DTools(object):
                     self.axes_manager._array_indices_generator())):
             dat = dat[i1:i2]
             if interpolate is True:
-                dat = utils.interpolate1D(ip, dat)
+                dat = spectrum_tools.interpolate1D(ip, dat)
             shift_array[indices] = np.argmax(
                 np.correlate(ref, dat,'full')) - len(ref) + 1
             pbar.update(i + 1)
@@ -635,7 +637,7 @@ class Signal1DTools(object):
         if (polynomial_order is not None and 
             number_of_points is not None):
             for spectrum in self:
-                spectrum.data[:] = utils.sg(self(),
+                spectrum.data[:] = spectrum_tools.sg(self(),
                                             number_of_points, 
                                             polynomial_order,
                                             differential_order)
@@ -2049,10 +2051,10 @@ class Signal(MVA,
         if isinstance(other, Signal):
             if other.data.shape != self.data.shape:
                 # Are they aligned?
-                are_aligned = utils.are_aligned(self.data.shape,
+                are_aligned = array_tools.are_aligned(self.data.shape,
                                        other.data.shape)
                 if are_aligned is True:
-                    sdata, odata = utils.homogenize_ndim(self.data,
+                    sdata, odata = array_tools.homogenize_ndim(self.data,
                                                      other.data)
                 else:
                     # Let's align them if possible
@@ -2549,7 +2551,7 @@ class Signal(MVA,
                 new_shape[axis.index_in_axes_manager])
         factors = (np.array(self.data.shape) / 
                            np.array(new_shape_in_array))
-        self.data = utils.rebin(self.data, new_shape_in_array)
+        self.data = array_tools.rebin(self.data, new_shape_in_array)
         for axis in self.axes_manager._axes:
             axis.scale *= factors[axis.index_in_array]
         self.get_dimensions_from_data()

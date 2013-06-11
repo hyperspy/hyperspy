@@ -35,6 +35,7 @@ from hyperspy.drawing.utils import does_figure_object_exists
 from hyperspy.gui.mpl_traits_editor import MPLFigureEditor
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import DraggableVerticalLine
+from hyperspy.misc import spectrum_tools
 
 import sys
 
@@ -464,12 +465,12 @@ class SmoothingSavitzkyGolay(Smoothing):
         self.update_lines()
         
     def diff_model2plot(self, axes_manager = None):
-        smoothed = utils.sg(self.signal(), self.number_of_points, 
+        smoothed = spectrum_tools.sg(self.signal(), self.number_of_points, 
                             self.polynomial_order, self.differential_order)
         return smoothed
                                         
     def model2plot(self, axes_manager = None):
-        smoothed = utils.sg(self.signal(), self.number_of_points, 
+        smoothed = spectrum_tools.sg(self.signal(), self.number_of_points, 
                             self.polynomial_order, 0)
         return smoothed
             

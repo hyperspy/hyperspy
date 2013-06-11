@@ -20,7 +20,7 @@ import copy
 
 import numpy as np
 from hyperspy.signal import Signal
-from hyperspy.misc import utils_varia
+from hyperspy.misc import utils
             
 class Spectrum(Signal):
     """
@@ -56,7 +56,7 @@ class Spectrum(Signal):
         dic = self._get_signal_dict()
         dic['mapped_parameters']['record_by'] = 'image'
         dic['data'] = np.rollaxis(dic['data'], -1, signal_to_index)
-        dic['axes'] = utils_varia.rollelem(dic['axes'],
+        dic['axes'] = utils.rollelem(dic['axes'],
                                            -1,
                                            signal_to_index)
         for axis in dic['axes']:

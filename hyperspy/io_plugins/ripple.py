@@ -27,7 +27,7 @@ from StringIO import StringIO
 
 import numpy as np
 
-from hyperspy.misc.utils_readfile import *
+from hyperspy.misc.io.utils_readfile import *
 from hyperspy import Release
 from hyperspy.misc.utils import DictionaryBrowser
 

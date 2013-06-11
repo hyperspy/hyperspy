@@ -24,7 +24,7 @@ import os
 
 import numpy as np
 
-from hyperspy.misc.utils import sarray2dict
+from hyperspy.misc.array_tools import sarray2dict
 
 
 # Plugin characteristics

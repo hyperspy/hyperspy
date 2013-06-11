@@ -26,9 +26,11 @@ from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
     ripple, tiff)
 from hyperspy.gui.tools import Load
 from hyperspy.misc import utils
-from hyperspy.misc.utils import (ensure_directory,strlist2enumeration)
+from hyperspy.misc.io.tools import ensure_directory
+from hyperspy.misc.utils import strlist2enumeration
+
 from hyperspy.misc.natsort import natsorted
-import hyperspy.misc.utils_varia
+import hyperspy.misc.io.tools
 
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff]
 
@@ -393,7 +395,7 @@ def save(filename, signal, overwrite=None, **kwds):
             strlist2enumeration(yes_we_can))
         ensure_directory(filename)
         if overwrite is None:
-            overwrite = hyperspy.misc.utils_varia.overwrite(filename)
+            overwrite = hyperspy.misc.io.tools.overwrite(filename)
         if overwrite is True:
             writer.file_writer(filename, signal, **kwds)
             print('The %s file was created' % filename)
