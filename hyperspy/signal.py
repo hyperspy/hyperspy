@@ -3222,6 +3222,123 @@ class Signal(MVA,
     def __len__(self):
         return self.axes_manager.signal_shape[-1]
         
+    def set_signal_type(signal_type):
+        """
+        
+        Parameters
+        ----------
+        signal_type : {"EELS" or any other string describing the signal}
+        
+        """        
+        from hyperspy.signals.eels import EELSSpectrum
+        dic = self._get_signal_dict()
+        dic['mapped_parameters']['signal_type'] = 'EELS'
+        eels = EELSSpectrum(**dic)
+        if hasattr(self, 'learning_results'):
+            eels.learning_results = copy.deepcopy(self.learning_results)
+        eels.tmp_parameters = self.tmp_parameters.deepcopy()
+        return eels
+        
+    def to_simulation(self):
+        from hyperspy.signals.spectrum_simulation import (
+                SpectrumSimulation)
+        dic = self._get_signal_dict()
+        if self.mapped_parameters.has_item("signal_type"):
+            dic['mapped_parameters']['signal_type'] = (
+                self.mapped_parameters.signal_type + '_simulation')
+        simu = SpectrumSimulation(**dic)
+        if hasattr(self, 'learning_results'):
+            simu.learning_results = copy.deepcopy(self.learning_results)
+        simu.tmp_parameters = self.tmp_parameters.deepcopy()
+        return simu
+        
+    def to_image(self, signal_to_index=0):
+        """Spectrum to image
+
+        Parameters
+        ----------
+        signal_to_index : integer
+            Position to move the signal axis.        
+            
+        Examples
+        --------        
+        >>> s = signals.Spectrum(np.ones((3,4,5,6)))
+        >>> s
+        <Spectrum, title: , dimensions: (3L, 4L, 5L, 6L)>
+
+        >>> s.to_image()
+        <Image, title: , dimensions: (6L, 3L, 4L, 5L)>
+
+        >>> s.to_image(1)
+        <Image, title: , dimensions: (3L, 6L, 4L, 5L)>
+        
+        """
+        
+        from hyperspy.signals.image import Image
+        dic = self._get_signal_dict()
+        dic['mapped_parameters']['record_by'] = 'image'
+        dic['data'] = np.rollaxis(dic['data'], -1, signal_to_index)
+        dic['axes'] = utils_varia.rollelem(dic['axes'],
+                                           -1,
+                                           signal_to_index)
+        for axis in dic['axes']:
+            del axis['index_in_array']
+        im = Image(**dic)
+        
+        if hasattr(self, 'learning_results'):
+            if (signal_to_index != 0 and 
+                self.learning_results.loadings is not None):
+                print("The learning results won't be transfered correctly")
+            else:
+                im.learning_results = copy.deepcopy(
+                    self.learning_results)
+                im.learning_results._transpose_results()
+                im.learning_results.original_shape = self.data.shape
+
+        im.tmp_parameters = self.tmp_parameters.deepcopy()
+        return im
+        
+    def to_spectrum(self, signal_axis=0):
+        """Image to spectrum
+
+        Parameters
+        ----------
+        signal_axis : integer
+            Selected the signal axis.        
+            
+        Examples
+        --------        
+        >>> img = signals.Image(np.ones((3,4,5,6)))
+        >>> img
+        <Image, title: , dimensions: (3L, 4L, 5L, 6L)>
+
+        >>> img.to_spectrum()
+        <Spectrum, title: , dimensions: (4L, 5L, 6L, 3L)>
+
+        >>> img.to_spectrum(1)
+        <Spectrum, title: , dimensions: (3L, 5L, 6L, 4L)>
+        
+        """
+        from hyperspy.signals.spectrum import Spectrum
+        dic = self._get_signal_dict()
+        dim = len(self.data.shape)
+        dic['mapped_parameters']['record_by'] = 'spectrum'        
+        dic['data'] = np.rollaxis(dic['data'], signal_axis, dim)
+        dic['axes'] = utils_varia.rollelem(dic['axes'], signal_axis, dim)
+        for axis in dic['axes']:
+            del axis['index_in_array']
+        sp = Spectrum(**dic)
+        if hasattr(self, 'learning_results'):
+            if signal_axis != 0 and self.learning_results.loadings is not None:
+                print("The learning results won't be transfered correctly")
+            else :
+                sp.learning_results = copy.deepcopy(self.learning_results)
+                sp.learning_results._transpose_results()
+                sp.learning_results.original_shape = self.data.shape
+                
+        sp.tmp_parameters = self.tmp_parameters.deepcopy()
+        return sp
+        
 # Implement binary operators
 for name in (
     # Arithmetic operators
