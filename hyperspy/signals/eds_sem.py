@@ -100,7 +100,9 @@ class EDSSEMSpectrum(EDSSpectrum):
     
             
     def _load_from_TEM_param(self): 
-        """Transfer mapped_parameters.TEM to mapped_parameters.SEM"""      
+        """Transfer mapped_parameters.TEM to mapped_parameters.SEM
+        
+        """      
          
         mp = self.mapped_parameters                     
         if mp.has_item('SEM') is False:
@@ -115,6 +117,7 @@ class EDSSEMSpectrum(EDSSpectrum):
         
     def _set_default_param(self): 
         """Set to value to default (defined in preferences)
+        
         """  
         mp = self.mapped_parameters         
         if hasattr(mp.SEM, 'tilt_stage') is False:
@@ -124,8 +127,7 @@ class EDSSEMSpectrum(EDSSpectrum):
         if hasattr(mp.SEM.EDS, 'energy_resolution_MnKa') is False:
             mp.SEM.EDS.energy_resolution_MnKa = preferences.EDS.eds_mn_ka
         if hasattr(mp.SEM.EDS, 'azimuth_angle') is False:
-            mp.SEM.EDS.azimuth_angle = preferences.EDS.eds_detector_azimuth              
-        
+            mp.SEM.EDS.azimuth_angle = preferences.EDS.eds_detector_azimuth 
                 
                
     def set_microscope_parameters(self, beam_energy=None, live_time=None,
@@ -209,7 +211,9 @@ class EDSSEMSpectrum(EDSSpectrum):
     def _are_microscope_parameters_missing(self):
         """Check if the EDS parameters necessary for quantification
         are defined in mapped_parameters. If not, in interactive mode 
-        raises an UI item to fill the values"""       
+        raises an UI item to fill the values
+        
+        """       
         
         must_exist = (
             'SEM.beam_energy',            

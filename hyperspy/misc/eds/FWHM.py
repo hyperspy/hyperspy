@@ -3,7 +3,7 @@ import math
 from hyperspy.misc.eds.elements import elements as elements_db
 
 def FWHM_eds(energy_resolution_MnKa,E):
-    """Calculates the FWHM of a peak at
+    """Calculates the FWHM of a peak at energy E.
     
     Parameters
     ----------

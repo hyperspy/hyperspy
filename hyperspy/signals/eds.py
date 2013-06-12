@@ -39,6 +39,34 @@ class EDSSpectrum(Spectrum):
             self.Xray_lines = set()
             
     def sum(self,axis):
+        """Sum the data over the given axis.
+
+        Parameters
+        ----------
+        axis : {int, string}
+           The axis can be specified using the index of the axis in 
+           `axes_manager` or the axis name.
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum_in_mask, mean
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.sum(-1).data.shape
+        (64,64)
+        # If we just want to plot the result of the operation
+        s.sum(-1, True).plot()
+        
+        """
         #modify time spend per spectrum
         if hasattr(self.mapped_parameters, 'SEM'):
             mp = self.mapped_parameters.SEM
@@ -46,9 +74,17 @@ class EDSSpectrum(Spectrum):
             mp = self.mapped_parameters.TEM
         if hasattr(mp, 'EDS') and hasattr(mp.EDS, 'live_time'):
             mp.EDS.live_time = mp.EDS.live_time * self.axes_manager.shape[axis]
-        return Spectrum.sum(self, axis)
+        return super(EDSSpectrum, self).sum( axis)
         
     def rebin(self, new_shape):
+        """Rebins the data to the new shape
+
+        Parameters
+        ----------
+        new_shape: tuple of ints
+            The new shape must be a divisor of the original shape
+            
+        """
         new_shape_in_array = []
         for axis in self.axes_manager._axes:
             new_shape_in_array.append(
@@ -78,7 +114,7 @@ class EDSSpectrum(Spectrum):
             The symbol of the elements.  
         
         lines : list of strings
-            One X-ray line for each element ('Ka', 'La', 'Ma',...). If none 
+            One X-ray line for each element ('Ka', 'La', 'Ma',...). If None 
             the set of highest ionized lines with sufficient intensity 
             is selected. The beam energy is needed.
             

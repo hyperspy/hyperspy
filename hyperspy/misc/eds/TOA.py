@@ -33,7 +33,6 @@ def TOA(self,tilt_stage=None,azimuth_angle=None,elevation_angle=None):
     """
         
     if tilt_stage == None:
-        print("1")
         a = math.radians(90+self.mapped_parameters.SEM.tilt_stage)
     else:
         a = math.radians(90+tilt_stage)

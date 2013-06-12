@@ -17,6 +17,14 @@ gui Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`eds` Module
+-----------------
+
+.. automodule:: hyperspy.gui.eds
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`eels` Module
 ------------------
 

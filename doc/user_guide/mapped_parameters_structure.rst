@@ -71,7 +71,8 @@ Transmission electron microscope keys
 -------------------------------------
 
 These keys are stored in the `TEM` node and contain parameters relevant to the 
-transmission electron microscope signals.
+transmission electron microscope signals. This node is called `SEM`, if the signal
+is 'EDS_SEM'.
 
 microscope
     type: Str
@@ -108,6 +109,11 @@ exposure
     
     The exposure time in seconds. This is relevant for TEM acquistion.
     
+tilt_stage
+    type: Float
+    
+    The tilt of the stage in degree.
+    
 Electron energy loss spectroscopy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -124,6 +130,43 @@ collection_angle
     
     The collection angle in mrad.
     
+X-ray energy dispersive spectroscopy
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These keys are stored in the `EDS` node of the `TEM` (or `SEM`) node and contain 
+parameters relevant to electron X-ray energy dispersive spectroscopy data.
+
+
+azimuth_angle
+    type: Float
+    
+    The azimuth angle of the detector in degree. If the azimuth is zero,
+    the detector is perpendicular to the tilt axis.
+    
+elevation_angle
+    type: Float
+    
+    The elevation angle of the detector in degree. The detector is perpendicular
+    to the surface with an angle of 90.
+    
+energy_resolution_MnKa
+    type: Float
+    
+    The full width at half maximum (FWHM) of the manganese K alpha 
+    (Mn Ka) peak in eV. This value is used as a first approximation
+    of the energy resolution of the detector.
+
+real_time
+    type: Float
+    
+    The time spent to record the spectrum in second.
+    
+live_time
+    type: Float
+    
+    The time spent to record the spectrum in second, compensated for the
+    dead time of the detector.
+   
 Sample
 ------
 
@@ -138,10 +181,18 @@ elements
     A list of the symbols of the elements composing the sample, e.g. ['B', 'N'] 
     for a sample composed of Boron and Nitrogen.
     
+Xray_lines
+    type: list
+    
+    A list of the symbols of the X-ray lines to be used for processing, 
+    e.g. ['Al_Ka', 'Ni_Lb'] for the K alpha line of Aluminum 
+    and the L beta line of Nickel.
+    
 thickness
     type: Float
     
-    The thickness of the sample in m.
+    The thickness of the sample in m.     
+
     
 Splitting
 ---------

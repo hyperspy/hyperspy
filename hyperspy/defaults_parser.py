@@ -164,16 +164,18 @@ class EDSConfig(t.HasTraits):
     eds_mn_ka = t.CFloat(130.,
         label = 'Energy resolution at Mn Ka (eV)',
         desc = 'default value for FWHM of the Mn Ka peak in eV,'
-                'used to calibrate the energy resolution of the detector')
+                'This value is used as a first approximation'
+                'of the energy resolution of the detector.')
     eds_tilt_stage = t.CFloat(0.,
         label = 'Stage tilt',
-        desc = 'default value for the stage tilt in degree')
+        desc = 'default value for the stage tilt in degree.')
     eds_detector_azimuth = t.CFloat(0.,
         label = 'Azimuth angle',
-        desc = 'default value for the azimuth angle in degree')
+        desc = 'default value for the azimuth angle in degree. If the azimuth'
+                ' is zero, the detector is perpendicular to the tilt axis.')
     eds_detector_elevation = t.CFloat(35.,
         label = 'Elevation angle',
-        desc = 'default value for the elevation angle in degree')  
+        desc = 'default value for the elevation angle in degree.')  
    
     
 template = {
