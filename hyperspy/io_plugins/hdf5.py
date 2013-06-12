@@ -20,7 +20,6 @@ import h5py
 
 import numpy as np
 
-from hyperspy import messages
 from hyperspy.misc.utils import ensure_unicode
 from hyperspy.axes import AxesManager
 
