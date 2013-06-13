@@ -60,6 +60,7 @@ def unfold_if_multidim(signal):
     -------
 
     Boolean. True if the SI was unfolded by the function.
+    
     """
     if len(signal.axes_manager._axes) > 2:
         print "Automatically unfolding the SI"
@@ -80,6 +81,7 @@ def str2num(string, **kargs):
     Returns
     -------
     numpy array
+    
     """
     stringIO = StringIO(string)
     return np.loadtxt(stringIO, **kargs)
@@ -93,6 +95,7 @@ def slugify(value, valid_variable_name=False):
     and converts spaces to hyphens.
     
     Adapted from Django's "django/template/defaultfilters.py".
+    
     """
     import unicodedata
     if not isinstance(value, unicode):
@@ -127,13 +130,16 @@ class DictionaryBrowser(object):
             The name of the file without the extension that is
             txt by default
         encoding : valid encoding str
+        
         """
         f = codecs.open(filename, 'w', encoding = encoding)
         f.write(self._get_print_items(max_len=None))
         f.close()
 
     def _get_print_items(self, padding = '', max_len=20):
-        """Prints only the attributes that are not methods"""
+        """Prints only the attributes that are not methods
+        
+        """
         string = ''
         eoi = len(self.__dict__)
         j = 0
@@ -234,7 +240,6 @@ class DictionaryBrowser(object):
         True
         >>> dict_browser.has_item('To.be.or')
         False
-        
         
         """
         if type(item_path) is str:
@@ -350,13 +355,14 @@ def swapelem(obj, i, j):
     >>> spwapelem(L, 1, 2)
     >>> print L
         ['a', 'c', 'b']
+        
     """
     if len(obj) > 1:
         buf = obj[i]
         obj[i] = obj[j]
         obj[j] = buf
         
-def rollelem(a, index, start = 0):
+def rollelem(a, index, to_index=0):
     """Roll the specified axis backwards, until it lies in a given position.
     
     Parameters
@@ -366,7 +372,7 @@ def rollelem(a, index, start = 0):
     index : int
         The index of the item to roll backwards.  The positions of the items 
         do not change relative to one another.
-    start : int, optional
+    to_index : int, optional
         The item is rolled until it lies before this position.  The default,
         0, results in a "complete" roll.
     
@@ -378,7 +384,7 @@ def rollelem(a, index, start = 0):
     """
 
     res = copy.copy(a) 
-    res.insert(start, res.pop(index))
+    res.insert(to_index, res.pop(index))
     return res
     
 def fsdict(nodes, value, dictionary):
@@ -391,6 +397,7 @@ def fsdict(nodes, value, dictionary):
     dic['node1']['node2']['node3']...['nodeN'] = value
     where each node is like a directory that contains other
     directories (nodes) or files (values)
+    
     """
     node = nodes.pop(0)
     if node not in dictionary:
@@ -459,6 +466,7 @@ class DictBrowser(object):
         E.g.
         obj.ls('root.dir1.dir2.dir3')
         obj.ls(['root', 'dir1', 'dir2', 'dir3'])
+        
         """
         pwd = pwd[:] # don't modify the input object, work with a copy
 
@@ -534,6 +542,7 @@ class DictBrowser(object):
         E.g.
         obj.cd('root.dir1.dir2.dir3')
         obj.cd(['root', 'dir1', 'dir2', 'dir3'])
+        
         """
 
         pwd = pwd[:] # don't modify the input object, work with a copy
@@ -645,4 +654,3 @@ def find_subclasses(mod, cls):
     return dict([(name, obj) for name, obj in inspect.getmembers(mod)
                 if inspect.isclass(obj) and issubclass(obj, cls)])
     
-
