@@ -28,8 +28,8 @@ from hyperspy import messages
 from hyperspy.axes import AxesManager
 from hyperspy import io
 from hyperspy.drawing import mpl_hie, mpl_hse
-from hyperspy.misc import utils
 from hyperspy.learn.mva import MVA, LearningResults
+import hyperspy.misc.utils
 from hyperspy.misc.utils import DictionaryBrowser
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
@@ -2269,12 +2269,26 @@ class Signal(MVA,
         self.data = self.data.squeeze()
         return self
 
-    def _get_signal_dict(self, add_learning_results=True):
+    def _to_dictionary(self, add_learning_results=True):
+        """Returns a dictionary that can be used to recreate the signal.
+        
+        All items but `data` are copies.
+        
+        Parameters
+        ----------
+        add_learning_results : bool
+        
+        Returns
+        -------
+        dic : dictionary
+        
+        """
         dic = {}
-        if hasattr(self.data, "copy"):
-            dic['data'] = self.data.copy()
-        else:
-            dic['data'] = self.data            
+#        if hasattr(self.data, "copy"):
+#            dic['data'] = self.data.copy()
+#        else:
+#            dic['data'] = self.data
+        dic['data'] = self.data
         dic['axes'] = self.axes_manager._get_axes_dicts()
         dic['mapped_parameters'] = \
         self.mapped_parameters.deepcopy().as_dictionary()
@@ -2361,12 +2375,12 @@ class Signal(MVA,
 
     def plot(self, axes_manager=None):
         if self._plot is not None:
-                try:
-                    self._plot.close()
-                except:
-                    # If it was already closed it will raise an exception,
-                    # but we want to carry on...
-                    pass
+            try:
+                self._plot.close()
+            except:
+                # If it was already closed it will raise an exception,
+                # but we want to carry on...
+                pass
 
         if axes_manager is None:
             axes_manager = self.axes_manager
@@ -2532,6 +2546,55 @@ class Signal(MVA,
         self.axes_manager._axes[axis1] = c2
         self.axes_manager._axes[axis2] = c1
         self.axes_manager._update_attributes()
+        self._make_sure_data_is_contiguous()
+        
+    def rollaxis(self, axis, to_axis):
+        """Roll the specified axis backwards, until it lies in a given position.
+
+        Parameters
+        ----------
+        axis : {int, str}
+            The axis to roll backwards.  The positions of the other axes do not
+            change relative to one another.
+        to_axis : {int, str}
+            The axis is rolled until it lies before this other axis.
+        
+        Returns
+        -------
+        s : Signal or subclass
+            Output signal.
+        
+        See Also
+        --------
+        roll : swap_axes
+        
+        Examples
+        --------
+        >>> s = signals.Spectrum(np.ones((5,4,3,6)))
+        >>> s
+        <Spectrum, title: , dimensions: (3, 4, 5, 6)>
+        >>> s.rollaxis(3, 1)
+        <Spectrum, title: , dimensions: (3, 4, 5, 6)>
+        >>> s.rollaxis(2,0)
+        <Spectrum, title: , dimensions: (5, 3, 4, 6)>
+        
+        """
+        axis = self.axes_manager[axis].index_in_array
+        to_index = self.axes_manager[to_axis].index_in_array
+        new_axes_indices = hyperspy.misc.utils.rollelem(
+                [axis_.index_in_array for axis_ in self.axes_manager._axes],
+                index=axis,
+                to_index=to_index)
+
+        
+        s = self._deepcopy_with_new_data(self.data.transpose(new_axes_indices))
+        s.axes_manager._axes = hyperspy.misc.utils.rollelem(
+                                                    s.axes_manager._axes,
+                                                    index=axis,
+                                                    to_index=to_index)
+        s.axes_manager._update_attributes()
+        s._make_sure_data_is_contiguous()
+        return s
 
     def rebin(self, new_shape):
         """
@@ -2589,7 +2652,7 @@ class Signal(MVA,
         """
         
         shape = self.data.shape
-        signal_dict = self._get_signal_dict(add_learning_results=False)
+        signal_dict = self._to_dictionary(add_learning_results=False)
         if axis is None:
             if self.mapped_parameters.has_item("splitting.axis"):
                 axis = self.mapped_parameters.splitting.axis
@@ -3056,7 +3119,9 @@ class Signal(MVA,
             self._plot = backup_plot
 
     def __deepcopy__(self, memo):
-        dc = type(self)(**self._get_signal_dict())
+        dc = type(self)(**self._to_dictionary())
+        if dc.data is not None:
+            dc.data = dc.data.copy()
         # The Signal subclasses might change the view on init
         # The following code just copies the original view
         for oaxis, caxis in zip(self.axes_manager._axes,
@@ -3231,7 +3296,7 @@ class Signal(MVA,
         
         """        
         from hyperspy.signals.eels import EELSSpectrum
-        dic = self._get_signal_dict()
+        dic = self._to_dictionary()
         dic['mapped_parameters']['signal_type'] = 'EELS'
         eels = EELSSpectrum(**dic)
         if hasattr(self, 'learning_results'):
@@ -3240,20 +3305,17 @@ class Signal(MVA,
         return eels
         
     def to_simulation(self):
-        from hyperspy.signals.spectrum_simulation import (
-                SpectrumSimulation)
-        dic = self._get_signal_dict()
-        if self.mapped_parameters.has_item("signal_type"):
-            dic['mapped_parameters']['signal_type'] = (
-                self.mapped_parameters.signal_type + '_simulation')
-        simu = SpectrumSimulation(**dic)
+        import hyperspy.io
+        dic = self._to_dictionary()
+        dic['mapped_parameters']['signal_origin'] = "simulation"
+        simu = hyperspy.io.dict2signal(dic)
         if hasattr(self, 'learning_results'):
             simu.learning_results = copy.deepcopy(self.learning_results)
         simu.tmp_parameters = self.tmp_parameters.deepcopy()
         return simu
         
     def to_image(self, signal_to_index=0):
-        """Spectrum to image
+        """Convert signal to image.
 
         Parameters
         ----------
@@ -3272,18 +3334,21 @@ class Signal(MVA,
         >>> s.to_image(1)
         <Image, title: , dimensions: (3L, 6L, 4L, 5L)>
         
-        """
+        Raises
+        ------
         
-        from hyperspy.signals.image import Image
-        dic = self._get_signal_dict()
+        """
+        import hyperspy.io
+        dic = self._to_dictionary()
         dic['mapped_parameters']['record_by'] = 'image'
         dic['data'] = np.rollaxis(dic['data'], -1, signal_to_index)
-        dic['axes'] = utils_varia.rollelem(dic['axes'],
+        dic['axes'] = hyperspy.misc.utils.rollelem(dic['axes'],
                                            -1,
                                            signal_to_index)
         for axis in dic['axes']:
             del axis['index_in_array']
-        im = Image(**dic)
+        im = hyperspy.io.dict2signal(dic)
+        im._make_sure_data_is_contiguous()
         
         if hasattr(self, 'learning_results'):
             if (signal_to_index != 0 and 
@@ -3298,13 +3363,13 @@ class Signal(MVA,
         im.tmp_parameters = self.tmp_parameters.deepcopy()
         return im
         
-    def to_spectrum(self, signal_axis=0):
-        """Image to spectrum
+    def to_spectrum(self, spectral_axis=0):
+        """Return the Signal as a spectrum.
 
         Parameters
         ----------
-        signal_axis : integer
-            Selected the signal axis.        
+        spectral_axis : {int, str}
+            Select the spectral axis to-be using its index or name.       
             
         Examples
         --------        
@@ -3319,17 +3384,17 @@ class Signal(MVA,
         <Spectrum, title: , dimensions: (3L, 5L, 6L, 4L)>
         
         """
-        from hyperspy.signals.spectrum import Spectrum
-        dic = self._get_signal_dict()
-        dim = len(self.data.shape)
-        dic['mapped_parameters']['record_by'] = 'spectrum'        
-        dic['data'] = np.rollaxis(dic['data'], signal_axis, dim)
-        dic['axes'] = utils_varia.rollelem(dic['axes'], signal_axis, dim)
-        for axis in dic['axes']:
-            del axis['index_in_array']
-        sp = Spectrum(**dic)
+        import hyperspy.io
+        # Roll the spectral axis to-be to the latex index in the array
+        sp = self.rollaxis(spectral_axis, 
+                           [axis_.index_in_array
+                            for axis_ in self.axes_manager._axes].argmax())
+        if sp.mapped_parameters.record_by != "spectrum":
+            sp.mapped_parameters.record_by = "spectrum"
+            sp = hyperspy.io.dict2signal(sp._to_dictionary())
+
         if hasattr(self, 'learning_results'):
-            if signal_axis != 0 and self.learning_results.loadings is not None:
+            if spectral_axis != 0 and self.learning_results.loadings is not None:
                 print("The learning results won't be transfered correctly")
             else :
                 sp.learning_results = copy.deepcopy(self.learning_results)
