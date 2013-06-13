@@ -2294,6 +2294,8 @@ class Signal(MVA,
         self.mapped_parameters.deepcopy().as_dictionary()
         dic['original_parameters'] = \
         self.original_parameters.deepcopy().as_dictionary()
+        dic['tmp_parameters'] = \
+                        self.tmp_parameters.deepcopy().as_dictionary()
         if add_learning_results and hasattr(self,'learning_results'):
             dic['learning_results'] = copy.deepcopy(
                                                 self.learning_results.__dict__)
@@ -3314,13 +3316,13 @@ class Signal(MVA,
         simu.tmp_parameters = self.tmp_parameters.deepcopy()
         return simu
         
-    def to_image(self, signal_to_index=0):
+    def to_image(self, image_axes=(0,1)):
         """Convert signal to image.
 
         Parameters
         ----------
-        signal_to_index : integer
-            Position to move the signal axis.        
+        image_axes : tuple of {int, complex, str}
+            Select the image axes. Defaults to the first two navigation axes.
             
         Examples
         --------        
@@ -3331,7 +3333,7 @@ class Signal(MVA,
         >>> s.to_image()
         <Image, title: , dimensions: (6L, 3L, 4L, 5L)>
 
-        >>> s.to_image(1)
+        >>> s.to_image((1,2))
         <Image, title: , dimensions: (3L, 6L, 4L, 5L)>
         
         Raises
@@ -3339,7 +3341,13 @@ class Signal(MVA,
         
         """
         import hyperspy.io
-        dic = self._to_dictionary()
+        # Roll the spectral axis to-be to the latex index in the array
+        im = self.rollaxis(spectral_axis, -1j)
+        if sp.mapped_parameters.record_by != "image":
+            sp.mapped_parameters.record_by = "image"
+            sp = hyperspy.io.dict2signal(sp._to_dictionary())
+        import hyperspy.io
+        im = self._deepcopy
         dic['mapped_parameters']['record_by'] = 'image'
         dic['data'] = np.rollaxis(dic['data'], -1, signal_to_index)
         dic['axes'] = hyperspy.misc.utils.rollelem(dic['axes'],
@@ -3363,13 +3371,19 @@ class Signal(MVA,
         im.tmp_parameters = self.tmp_parameters.deepcopy()
         return im
         
-    def to_spectrum(self, spectral_axis=0):
+    def to_spectrum(self, spectral_axis=1-1j):
         """Return the Signal as a spectrum.
+        
+        The chosen spectral axis is moved to the last index in the 
+        array and the data is made contiguous for effecient 
+        iteration over spectra.
+
 
         Parameters
         ----------
-        spectral_axis : {int, str}
-            Select the spectral axis to-be using its index or name.       
+        spectral_axis : {int, complex, str}
+            Select the spectral axis to-be using its index or name.
+            By default it is the last navigation index.
             
         Examples
         --------        
@@ -3386,22 +3400,19 @@ class Signal(MVA,
         """
         import hyperspy.io
         # Roll the spectral axis to-be to the latex index in the array
-        sp = self.rollaxis(spectral_axis, 
-                           [axis_.index_in_array
-                            for axis_ in self.axes_manager._axes].argmax())
-        if sp.mapped_parameters.record_by != "spectrum":
-            sp.mapped_parameters.record_by = "spectrum"
-            sp = hyperspy.io.dict2signal(sp._to_dictionary())
+        sp = self.rollaxis(spectral_axis, -1j)
+        sp.mapped_parameters.record_by = "spectrum"
+        sp = hyperspy.io.dict2signal(sp._to_dictionary())
 
         if hasattr(self, 'learning_results'):
-            if spectral_axis != 0 and self.learning_results.loadings is not None:
+            if (self.axes_manager[spectral_axis].index_in_array != 0 and
+                    self.learning_results.loadings is not None):
                 print("The learning results won't be transfered correctly")
             else :
                 sp.learning_results = copy.deepcopy(self.learning_results)
                 sp.learning_results._transpose_results()
                 sp.learning_results.original_shape = self.data.shape
                 
-        sp.tmp_parameters = self.tmp_parameters.deepcopy()
         return sp
         
 # Implement binary operators
