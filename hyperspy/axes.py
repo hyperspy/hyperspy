@@ -428,6 +428,8 @@ class AxesManager(t.HasTraits):
                 if y == axis.name:
                     return axis
             raise ValueError("There is no DataAxis named %s" % y)
+        elif isinstance(y, complex):
+            return self._axes[y]
         else:
             # Use the "natural order" as in Signal
             return self._get_axes_in_natural_order()[y]
