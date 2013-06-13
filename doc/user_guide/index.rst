@@ -18,6 +18,7 @@ Hyperspy User Guide (DRAFT)
     tools.rst
     mva.rst
     model.rst
+    visualisation.rst
     mapped_parameters_structure.rst
     credits.rst
     bibliography.rst

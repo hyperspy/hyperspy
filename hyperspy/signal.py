@@ -2461,7 +2461,7 @@ class Signal(MVA,
                 elif self.axes_manager.navigation_shape[:2] == \
                 navigator.axes_manager.signal_shape:
                     self._plot.navigator_data_function = get_explorer_wrapper
-                elif self.axes_manager.navigation_shape[0] == \
+                elif (self.axes_manager.navigation_shape[0],) == \
                 navigator.axes_manager.signal_shape:
                     self._plot.navigator_data_function = get_explorer_wrapper
                 else:
