@@ -128,3 +128,9 @@ For example:
    :width:   450    
 
    Visualisation of isosurfaces with mayavi.
+   
+.. NOTE::
+
+    The sample and the data used in this chapter are described in 
+    P. Burdet, `et al.`, Acta Materialia, 61, p. 3090-3098 (2013) (see
+    `abstract <http://infoscience.epfl.ch/record/185861/>`_).
