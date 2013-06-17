@@ -109,6 +109,7 @@ class EDSSEMSpectrum(EDSSpectrum):
             mp.add_node('SEM')
         if mp.has_item('SEM.EDS') is False:
             mp.SEM.add_node('EDS') 
+        mp.signal_type = 'EDS_SEM'
         
         #Transfer    
         if hasattr(mp,'TEM'):
