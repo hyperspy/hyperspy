@@ -258,6 +258,8 @@ class DictionaryBrowser(object):
                     return False
         else:
             return False
+    def __contains__(self, item):
+        return self.has_item(item_path=item)
         
     def copy(self):
         return copy.copy(self)
