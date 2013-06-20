@@ -18,6 +18,7 @@
 
 import warnings
 
+from hyperspy.exceptions import DataDimensionError
 from hyperspy.signal import Signal
             
 class Spectrum(Signal):
@@ -31,6 +32,30 @@ class Spectrum(Signal):
     def to_EELS(self):
         warnings.warn(
             'This method is deprecated and and will be removed '
-            'in 0.7. Please use `set_signal_type("EELS")` instead',
+            'in the next version. '
+            'Please use `set_signal_type("EELS")` instead',
               DeprecationWarning)
-        self.set_signal_type("EELS")
+        s = self.deepcopy()
+        s.set_signal_type("EELS")
+        return s
+    
+    def to_image(self):
+        """Returns the spectrum as an image.
+        
+        See Also:
+        ---------
+        as_image : a method for the same purpose with more options.  
+        signals.Spectrum.to_image : performs the inverse operation on images.
+        
+        Raises
+        ------
+        DataDimensionError: when data.ndim < 2
+    
+        """
+        if self.data.ndim < 2:
+            raise DataDimensionError(
+                "A Signal dimension must be >= 2 to be converted to an Image")
+        im = self.rollaxis(-1j, 0j)
+        im.mapped_parameters.record_by = "image"
+        im._assign_subclass()
+        return im

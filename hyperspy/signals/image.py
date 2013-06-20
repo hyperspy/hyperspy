@@ -28,3 +28,14 @@ class Image(Signal):
         super(Image,self).__init__(*args, **kw)
         self.axes_manager.set_signal_dimension(2)
         
+    def to_spectrum(self):
+        """Returns the image as a spectrum.
+        
+        See Also:
+        ---------
+        as_spectrum : a method for the same purpose with more options.  
+        signals.Image.to_spectrum : performs the inverse operation on images.
+
+        """
+        return self.as_spectrum(0j)
+

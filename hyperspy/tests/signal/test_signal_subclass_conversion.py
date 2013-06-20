@@ -2,6 +2,7 @@ from nose.tools import assert_true, assert_equal, raises
 import numpy as np
 
 from hyperspy.signal import Signal
+from hyperspy import signals
 from hyperspy.exceptions import DataDimensionError
 
 class Test1d():
@@ -14,6 +15,12 @@ class Test1d():
         
     def test_as_spectrum(self):
         assert_true((self.s.data == self.s.as_spectrum(0).data).all())
+        
+    def test_set_EELS(self):
+        s = self.s.as_spectrum(0)
+        s.set_signal_type("EELS")
+        assert_equal(s.mapped_parameters.signal_type, "EELS")
+        assert_true(isinstance(s, signals.EELSSpectrum))
 
 class Test2d():
     def setUp(self):    
@@ -31,8 +38,15 @@ class Test2d():
 
     def test_as_spectrum(self):
         assert_true(
-            self.s.data.shape == self.s.as_spectrum(1).data.shape)    
-
+            self.s.data.shape == self.s.as_spectrum(1).data.shape)
+    def test_s2EELS2im2s(self):
+        s = self.s.as_spectrum(0)
+        s.set_signal_type("EELS")
+        im = s.as_image((1, 0))
+        assert_equal(im.mapped_parameters.signal_type, "EELS")
+        s = im.as_spectrum((0))
+        assert_equal(s.mapped_parameters.signal_type, "EELS")
+        assert_true(isinstance(s, signals.EELSSpectrum))
 
 class Test3d():
     def setUp(self):    
@@ -71,3 +85,4 @@ class Test3d():
     def test_as_spectrum_3(self):
         assert_equal(
             self.s.as_spectrum(2).data.shape, (2, 3, 4))
+                

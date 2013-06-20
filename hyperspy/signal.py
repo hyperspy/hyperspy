@@ -49,7 +49,7 @@ from scipy.ndimage.filters import gaussian_filter1d
 from hyperspy.misc.spectrum_tools import find_peaks_ohaver
 from hyperspy.misc.image_tools import (shift_image, estimate_image_shift)
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
-from hyperspy.exceptions import SignalDimensionError
+from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
 from hyperspy.misc import spectrum_tools
 
@@ -1910,7 +1910,7 @@ class MVATools(object):
 class Signal(MVA,
              MVATools,
              Signal1DTools,
-             Signal2DTools):
+             Signal2DTools,):
     
     _record_by = ""
     _signal_type = ""
@@ -3288,90 +3288,8 @@ class Signal(MVA,
         
     def __len__(self):
         return self.axes_manager.signal_shape[-1]
-        
-    def set_signal_type(signal_type):
-        """
-        
-        Parameters
-        ----------
-        signal_type : {"EELS" or any other string describing the signal}
-        
-        """        
-        from hyperspy.signals.eels import EELSSpectrum
-        dic = self._to_dictionary()
-        dic['mapped_parameters']['signal_type'] = 'EELS'
-        eels = EELSSpectrum(**dic)
-        if hasattr(self, 'learning_results'):
-            eels.learning_results = copy.deepcopy(self.learning_results)
-        eels.tmp_parameters = self.tmp_parameters.deepcopy()
-        return eels
-        
-    def to_simulation(self):
-        import hyperspy.io
-        dic = self._to_dictionary()
-        dic['mapped_parameters']['signal_origin'] = "simulation"
-        simu = hyperspy.io.dict2signal(dic)
-        if hasattr(self, 'learning_results'):
-            simu.learning_results = copy.deepcopy(self.learning_results)
-        simu.tmp_parameters = self.tmp_parameters.deepcopy()
-        return simu
-        
-    def to_image(self, image_axes=(0,1)):
-        """Convert signal to image.
 
-        Parameters
-        ----------
-        image_axes : tuple of {int, complex, str}
-            Select the image axes. Defaults to the first two navigation axes.
-            
-        Examples
-        --------        
-        >>> s = signals.Spectrum(np.ones((3,4,5,6)))
-        >>> s
-        <Spectrum, title: , dimensions: (3L, 4L, 5L, 6L)>
-
-        >>> s.to_image()
-        <Image, title: , dimensions: (6L, 3L, 4L, 5L)>
-
-        >>> s.to_image((1,2))
-        <Image, title: , dimensions: (3L, 6L, 4L, 5L)>
-        
-        Raises
-        ------
-        
-        """
-        import hyperspy.io
-        # Roll the spectral axis to-be to the latex index in the array
-        im = self.rollaxis(spectral_axis, -1j)
-        if sp.mapped_parameters.record_by != "image":
-            sp.mapped_parameters.record_by = "image"
-            sp = hyperspy.io.dict2signal(sp._to_dictionary())
-        import hyperspy.io
-        im = self._deepcopy
-        dic['mapped_parameters']['record_by'] = 'image'
-        dic['data'] = np.rollaxis(dic['data'], -1, signal_to_index)
-        dic['axes'] = hyperspy.misc.utils.rollelem(dic['axes'],
-                                           -1,
-                                           signal_to_index)
-        for axis in dic['axes']:
-            del axis['index_in_array']
-        im = hyperspy.io.dict2signal(dic)
-        im._make_sure_data_is_contiguous()
-        
-        if hasattr(self, 'learning_results'):
-            if (signal_to_index != 0 and 
-                self.learning_results.loadings is not None):
-                print("The learning results won't be transfered correctly")
-            else:
-                im.learning_results = copy.deepcopy(
-                    self.learning_results)
-                im.learning_results._transpose_results()
-                im.learning_results.original_shape = self.data.shape
-
-        im.tmp_parameters = self.tmp_parameters.deepcopy()
-        return im
-        
-    def to_spectrum(self, spectral_axis=1-1j):
+    def as_spectrum(self, spectral_axis):
         """Return the Signal as a spectrum.
         
         The chosen spectral axis is moved to the last index in the 
@@ -3383,37 +3301,106 @@ class Signal(MVA,
         ----------
         spectral_axis : {int, complex, str}
             Select the spectral axis to-be using its index or name.
-            By default it is the last navigation index.
             
         Examples
         --------        
         >>> img = signals.Image(np.ones((3,4,5,6)))
         >>> img
-        <Image, title: , dimensions: (3L, 4L, 5L, 6L)>
+        <Image, title: , dimensions: (4, 3, 6, 5)>
+        >>> img.to_spectrum(1-1j)
+        <Spectrum, title: , dimensions: (6, 5, 4, 3)>
+        >>> img.to_spectrum(0)
+        <Spectrum, title: , dimensions: (6, 5, 3, 4)>
 
-        >>> img.to_spectrum()
-        <Spectrum, title: , dimensions: (4L, 5L, 6L, 3L)>
-
-        >>> img.to_spectrum(1)
-        <Spectrum, title: , dimensions: (3L, 5L, 6L, 4L)>
-        
         """
         import hyperspy.io
         # Roll the spectral axis to-be to the latex index in the array
         sp = self.rollaxis(spectral_axis, -1j)
         sp.mapped_parameters.record_by = "spectrum"
         sp = hyperspy.io.dict2signal(sp._to_dictionary())
-
-        if hasattr(self, 'learning_results'):
-            if (self.axes_manager[spectral_axis].index_in_array != 0 and
-                    self.learning_results.loadings is not None):
-                print("The learning results won't be transfered correctly")
-            else :
-                sp.learning_results = copy.deepcopy(self.learning_results)
-                sp.learning_results._transpose_results()
-                sp.learning_results.original_shape = self.data.shape
-                
         return sp
+        
+    def as_image(self, image_axes):
+        """Convert signal to image.
+        
+        The chosen image axes are moved to the last indices in the 
+        array and the data is made contiguous for effecient 
+        iteration over images.
+
+        Parameters
+        ----------
+        image_axes : tuple of {int, complex, str}
+            Select the image axes. Note that the order of the axes matters 
+            and it is given in the "natural" i.e. X, Y, Z... order.
+            
+        Examples
+        --------        
+        >>> s = signals.Spectrum(np.ones((2,3,4,5)))
+        >>> s
+        <Spectrum, title: , dimensions: (4, 3, 2, 5)>
+        >>> s.as_image((0,1))
+        <Image, title: , dimensions: (5, 2, 4, 3)>
+
+        >>> s.to_image((1,2))
+        <Image, title: , dimensions: (4, 5, 3, 2)>
+        
+        Raises
+        ------
+        DataDimensionError : when data.ndim < 2
+        
+        """
+        import hyperspy.io
+        if self.data.ndim < 2:
+            raise DataDimensionError(
+                "A Signal dimension must be >= 2 to be converted to an Image")
+        axes = (self.axes_manager[image_axes[0]],
+                self.axes_manager[image_axes[1]])
+        iaxes = [axis.index_in_array for axis in axes]
+        im = self.rollaxis(complex(0, iaxes[0]), -1j).rollaxis(
+                           complex(0, iaxes[1]-np.argmax(iaxes)), -2j)
+        im.mapped_parameters.record_by = "image"
+        return hyperspy.io.dict2signal(im._to_dictionary())
+        
+    def _assign_subclass(self):
+        mp = self.mapped_parameters
+        self.__class__ = hyperspy.io.assign_signal_subclass(
+            record_by = mp.record_by if "record_by" in mp
+                                     else self._record_by,
+            signal_type = mp.signal_type if "signal_type" in mp
+                                     else self._signal_type,
+            signal_origin = mp.signal_origin if "signal_origin" in mp
+                                             else self._signal_origin) 
+        
+        
+    def set_signal_type(self, signal_type):
+        """
+        
+        Parameters
+        ----------
+        signal_type : {"EELS" or any other string describing the signal}
+        
+        """        
+        self.mapped_parameters.signal_type = signal_type
+        self._assign_subclass()
+        
+        
+    def set_signal_origin(self, origin):
+        """
+        
+        Parameters
+        ----------
+        origin : {'experiment', 'simulation'}
+        
+        Raises
+        ------
+        ValueError if origin is not 'experiment' or 'simulation'
+        
+        """
+        if origin not in ['experiment', 'simulation']:
+            raise ValueError("`origin` must be one of: experiment, simulation" )
+        self.mapped_parameters.signal_origin = origin
+        self._assign_subclass()    
+
         
 # Implement binary operators
 for name in (
