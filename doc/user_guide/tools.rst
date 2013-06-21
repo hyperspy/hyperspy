@@ -31,8 +31,14 @@ Currently the following signal subclasses are available:
 * :py:class:`~.signals.spectrum_simulation.SpectrumSimulation`
 * :py:class:`~.signals.image_simulation.ImageSimulation`
 
-The :py:mod:`~.signals` module is imported in the user namespace when
-loading hyperspy.
+The :py:mod:`~.signals` module, which contains all available signal subclasses,
+is imported in the user namespace when loading hyperspy. In the following
+example we create an Image instance from a 2D numpy array:
+
+.. code-block:: python
+    
+    >>> im = signals.Image(np.random.random((64,64)))
+    
 
 The different signals store other objects in what are called attributes. For
 examples, the hyperspectral data is stored in the
@@ -47,46 +53,104 @@ information (including calibration) can be accessed (and modified) in the
 Transforming between signal subclasses
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Hyperspy tries to determine the most convenient signal subclass for a given 
-datase. However, sometimes it is necessary to manually determine the 
-signal subclass.  
-It is possible to transform between signal subclasses, e.g.:
+The different subclasses are characterized by three
+:py:attr:`~.signal.Signal.mapped_parameters` attributes (see the table below):
+
+`record_by`
+    Can be "spectrum", "image" or "", the latter meaning undefined.
+    It describes the way the data is arranged in memory.
+    It is possible to transform any :py:class:`~.signal.Signal` subclass in a 
+    :py:class:`~.signals.spectrum.Spectrum` or :py:class:`~.signals.image.Image` 
+    subclass using the following :py:class:`~.signal.Signal` methods: 
+    :py:meth:`~.signal.Signal.as_image`, * :py:meth:`~.signal.Signal.as_spectrum`.
+    In addition :py:class:`~.signals.spectrum.Spectrum` instances can be 
+    transformed in images using :py:meth:`~.signals.spectrum.Spectrum.to_image` 
+    and image instances in spectrum instances using 
+    :py:meth:`~.signals.image.Image.to_spectrum`. When transforming between 
+    spectrum and image classes the order in which the
+    data array is stored in memory is modified to improve performance and several
+    functions, e.g. plotting or decomposing, will behave differently.
+    
+`signal_type`
+    Describes the nature of the signal. It can be any string, normally the 
+    acronym associated with a
+    particular signal. In certain cases Hyperspy provides features that are 
+    only available for a 
+    particular signal type through :py:class:`~.signal.Signal` subclasses.
+    The :py:class:`~.signal.Signal` method 
+    :py:meth:`~.signal.Signal.set_signal_type`
+    changes the signal_type in place, what may result in a 
+    :py:class:`~.signal.Signal`
+    subclass transformation.
+    
+`signal_origin`
+    Describes the origin of the signal and can be "simulation" or 
+    "experiment" or "",
+    the latter meaning undefined. In certain cases Hyperspy provides features 
+    that are only available for a 
+    particular signal origin. The :py:class:`~.signal.Signal` method 
+    :py:meth:`~.signal.Signal.set_signal_origin`
+    changes the signal_origin in place, what may result in a 
+    :py:class:`~.signal.Signal`
+    subclass transformation.
+    
+.. table:: Signal subclass :py:attr:`~.signal.Signal.mapped_parameters` attributes.
+
+    +---------------------------------------------------------------+------------+--------------+---------------+
+    |                       Signal subclass                         | record_by  | signal_type  | signal_origin |
+    +===============================================================+============+==============+===============+
+    |                 :py:class:`~.signal.Signal`                   |     -      |      -       |       -       |
+    +---------------------------------------------------------------+------------+--------------+---------------+
+    |           :py:class:`~.signals.spectrum.Spectrum`             | spectrum   |      -       |       -       |
+    +---------------------------------------------------------------+------------+--------------+---------------+
+    | :py:class:`~.signals.spectrum_simulation.SpectrumSimulation`  | spectrum   |      -       |  simulation   |
+    +---------------------------------------------------------------+------------+--------------+---------------+
+    |           :py:class:`~.signals.eels.EELSSpectrum`             | spectrum   |    EELS      |       -       |
+    +---------------------------------------------------------------+------------+--------------+---------------+
+    |              :py:class:`~.signals.image.Image`                |   image    |      -       |       -       |
+    +---------------------------------------------------------------+------------+--------------+---------------+
+    |    :py:class:`~.signals.image_simulation.ImageSimulation`     |   image    |      -       |  simulation   |
+    +---------------------------------------------------------------+------------+--------------+---------------+
+
+
+The following example shows how to transform between different subclasses.
 
 .. code-block:: python
     
-    >>> s = load('EELS Spectrum Image (high-loss).dm3')
-
-	Title: EELS Spectrum Image (high-loss).dm3
-	Signal type: EELS
-	Data dimensions: (21, 42, 2048)
-	Data representation: spectrum
-
-    
-    # We check the type of object that loading the file has created:
+    >>> s = signals.Spectrum(np.random.random((10,20,100)))
     >>> s
-    <EELSSpectrum, title: EELS Spectrum Image (high-loss).dm3, dimensions: (21, 42, 2048)>
+    <Spectrum, title: , dimensions: (20, 10, 100)>
+    >>> s.mapped_parameters
+    ├── record_by = spectrum
+    └── title = 
     
-    # We convert it into an Image object
     >>> im = s.to_image()
     >>> im
-    <Image, title: EELS Spectrum Image (high-loss).dm3, dimensions: (2048, 21, 42)>
-    # And now we turn it into a Spectrum
-    s2 = im.to_spectrum()
-    >>> s2
-    <Spectrum, title: EELS Spectrum Image (high-loss).dm3, dimensions: (21, 42, 2048)>
-    # And now back to EELSSpectrum
-    >>> s3 = s2.to_EELS()
-    >>> s3
-    <EELSSpectrum, title: EELS Spectrum Image (high-loss).dm3, dimensions: (21, 42, 2048)>
+    <Image, title: , dimensions: (20, 10, 100)>
+    >>> im.ma
+    im.mapped_parameters  im.max                
+    >>> im.mapped_parameters
+    ├── record_by = image
+    └── title = 
     
+    >>> s.set_signal_type("EELS")
+    >>> s
+    <EELSSpectrum, title: , dimensions: (20, 10, 100)>
+    >>> s.mapped_parameters
+    ├── record_by = spectrum
+    ├── signal_type = EELS
+    └── title = 
+    
+    >>> s.set_signal_origin("simulation")
+    >>> s
+    <EELSSpectrumSimulation, title: , dimensions: (20, 10, 100)>
+    >>> s.mapped_parameters
+    ├── record_by = spectrum
+    ├── signal_origin = simulation
+    ├── signal_type = EELS
+    └── title = 
 
-When transforming between spectrum and image classes the order in which the
-data array is stored in memory is modified to improve performance and several
-functions, e.g. plotting or decomposing, will behave differently.
 
-Below we briefly introduce some of the most commonly used tools (methods). For
-more details about a particular method click on its name. For a detailed list
-of all the methods available see the :py:class:`~.signal.Signal` documentation.
 
 The navigation and signal dimensions
 ------------------------------------
@@ -120,7 +184,12 @@ dataset by
 Generic tools
 -------------
 
-These are the tools that are available to all the signals.
+Below we briefly introduce some of the most commonly used tools (methods). For
+more details about a particular method click on its name. For a detailed list
+of all the methods available see the :py:class:`~.signal.Signal` documentation.
+
+The methods of this section are available to all the signals. In the subsections
+we describe methods that are only available in specialized subclasses.
 
 .. _signal.indexing:
 
@@ -636,12 +705,3 @@ end energy for the integration at each spectra or use the same energy value for
 all spectra. Also, if no threshold is specified, the routine will perform a
 rough estimation of the inflexion values at each spectrum.
 
-Splice zero loss peak
-^^^^^^^^^^^^^^^^^^^^^ Once
-:py:meth:`~.signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold`
-has determined the elastic scattering threshold value(s), this tool can be used
-to separate the zero loss peak from the eels spectra. Use
-:py:meth:`~.signals.eels.EELSSpectrum.splice_zero_loss_peak` in order to obtain
-a ZLP suitable for Fourier-Log deconvolution from your EELS low-loss spectra by
-setting the "smooth" option, that will apply the hanning window to the righ end
-of the data.
