@@ -16,11 +16,9 @@
 # along with Hyperspy. If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
-
 import numpy as np
 
-from nose.tools import assert_true, assert_equal, assert_not_equal
+from nose.tools import assert_true, assert_equal, assert_not_equal, raises
 from hyperspy.signals.spectrum import Spectrum
 from hyperspy.hspy import create_model 
 from hyperspy.components import Gaussian
@@ -33,7 +31,7 @@ class TestFitOneComponent:
         g.centre.value = 5000.0
         g.sigma.value = 500.0
         axis = np.arange(10000)
-        s = Spectrum({'data' : g.function(axis)})
+        s = Spectrum(g.function(axis))
         m = create_model(s)
         self.A = g.A.value
         self.centre = g.centre.value
@@ -76,7 +74,7 @@ class TestFitSeveralComponent:
         axis = np.arange(10000)
         total_signal = gs1.function(axis) + gs2.function(axis) + gs3.function(axis)
         
-        s = Spectrum({'data' : total_signal})
+        s = Spectrum(total_signal)
         m = create_model(s)
 
         g1 = Gaussian()
@@ -143,7 +141,6 @@ class TestFitSeveralComponent:
 
     def test_fit_multiple_component(self):
         m = self.model 
-        axis = self.axis
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
