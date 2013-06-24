@@ -1242,14 +1242,14 @@ class Model(list):
             If 'interactive' the signal range is selected using the span
              selector on the spectrum plot. The signal range can also 
              be manually specified by passing a tuple of floats. If None
-              the current signal range is used.
+             the current signal range is used.
         estimate_parameters : bool, default True
             If True will check if the component has an 
             estimate_parameters function, and use it to estimate the
             parameters in the component.
         fit_independent : bool, default False
-            Fits component independently of the other components in the
-            model.
+            If True, all other components are disabled. If False, all other
+            component paramemeters are fixed.
 
         Examples
         --------
