@@ -17,12 +17,13 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
+import copy
 
 import numpy as np
 
-import widgets
-import spectrum, image, utils
-import copy
+from hyperspy.drawing import widgets, spectrum, image, utils
+from hyperspy.gui.axes import navigation_sliders
+
 
 class MPL_HyperSpectrum_Explorer(object):
     """Plots the current spectrum to the screen and a map with a cursor 
@@ -83,7 +84,7 @@ class MPL_HyperSpectrum_Explorer(object):
     
     def assign_pointer(self):
         nav_dim = self.axes_manager.navigation_dimension
-        if nav_dim == 2:
+        if nav_dim >= 2:
             Pointer = widgets.DraggableSquare
         elif nav_dim == 1:
             Pointer = widgets.DraggableHorizontalLine
@@ -111,9 +112,15 @@ class MPL_HyperSpectrum_Explorer(object):
         if self.axes_manager.navigation_dimension == 1:
             imf.yaxis = self.axes_manager.navigation_axes[0]
             imf.xaxis = self.axes_manager.signal_axes[0]
-        elif self.axes_manager.navigation_dimension == 2:
-            imf.yaxis = self.axes_manager.navigation_axes[0]
-            imf.xaxis = self.axes_manager.navigation_axes[1]
+        elif self.axes_manager.navigation_dimension >= 2:
+            imf.yaxis = self.axes_manager.navigation_axes[1]
+            imf.xaxis = self.axes_manager.navigation_axes[0]
+            if self.axes_manager.navigation_dimension > 2:
+                navigation_sliders(
+                    self.axes_manager.navigation_axes)
+                for axis in self.axes_manager.navigation_axes[2:]:
+                    axis.connect(imf.update_image)
+            
         imf.title = self.signal_title + ' Navigator'
         imf.plot()
         self.pointer.add_axes(imf.ax)
@@ -147,13 +154,24 @@ class MPL_HyperSpectrum_Explorer(object):
             color = 'red'
         sl.line_properties_helper(color, 'step')        
         # Add the line to the figure
-          
         sf.add_line(sl)
+        # If the data is complex create a line in the left axis with the
+        # default coordinates
+        sl = spectrum.SpectrumLine()
+        sl.data_function = self.signal_data_function
+        sl.plot_coordinates = True
+        sl.get_complex = any(np.iscomplex(sl.data_function()))        
+        if sl.get_complex:
+            sl.line_properties_helper("blue", 'step')        
+            # Add extra line to the figure
+            sf.add_line(sl)
+        
+        
         self.signal_plot = sf
         sf.plot()
         if self.navigator_plot is not None and sf.figure is not None:
             utils.on_figure_window_close(self.navigator_plot.figure, 
-            self._close_pointer)
+            self._disconnect)
             utils.on_figure_window_close(sf.figure,
                                             self.close_navigator_plot)
             self._key_nav_cid = \
@@ -170,7 +188,7 @@ class MPL_HyperSpectrum_Explorer(object):
                 'key_press_event', self.key2switch_right_pointer)
     
     def close_navigator_plot(self):
-        self._close_pointer()
+        self._disconnect()
         self.navigator_plot.close()
                 
     def key2switch_right_pointer(self, event):
@@ -206,11 +224,16 @@ class MPL_HyperSpectrum_Explorer(object):
         self.right_pointer = None
         self.navigator_plot.update_image()
         
-    def _close_pointer(self):
+    def _disconnect(self):
+        if (self.axes_manager.navigation_dimension > 2 and 
+            self.navigator_plot is not None):
+                for axis in self.axes_manager.navigation_axes[:-2]:
+                    axis.disconnect(self.navigator_plot.update_image)
+        
         if self.pointer is not None:
             self.pointer.disconnect(self.navigator_plot.ax)
     
     def close(self):
-        self._close_pointer()
+        self._disconnect()
         self.signal_plot.close()
         self.navigator_plot.close()

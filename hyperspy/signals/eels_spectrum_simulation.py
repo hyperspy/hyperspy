@@ -24,7 +24,6 @@ class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
     pass
 
 
-
 #    @auto_replot       
 #    def add_energy_instability(self, std):
 #        """Introduce random energy instability
@@ -96,7 +95,7 @@ class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
 #            if energy_instability != 0:
 #                instability_map = self.add_energy_instability(energy_instability)
 #            for edge in self.edges:
-#                edge.charge_value_from_map(0,0)
+#                edge.fetch_stored_values(0,0)
 #            self.create_data_cube()
 #            self.model = Model(self, auto_background=False)
 #            self.model.charge()

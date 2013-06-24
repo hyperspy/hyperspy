@@ -26,7 +26,7 @@ import numpy as np
 from hyperspy.misc.config_dir import os_name
 from hyperspy.misc.utils import generate_axis
 from hyperspy import messages
-from hyperspy.misc.utils_varia import overwrite
+from hyperspy.misc.io.tools import overwrite
 from hyperspy import Release
 from hyperspy.misc.utils import DictionaryBrowser
 
@@ -268,16 +268,16 @@ def file_writer(filename, signal, format = None, separator = ', ',
         'DATE' : '',
         'TIME' : '',
         'OWNER' : '',
-        'NPOINTS' : signal.axes_manager.axes[0].size,
+        'NPOINTS' : signal.axes_manager._axes[0].size,
         'NCOLUMNS' : 1,
         'DATATYPE' : format,
-        'XPERCHAN' : signal.axes_manager.axes[0].scale,
-        'OFFSET' : signal.axes_manager.axes[0].offset,
+        'XPERCHAN' : signal.axes_manager._axes[0].scale,
+        'OFFSET' : signal.axes_manager._axes[0].offset,
         ## Spectrum characteristics
 
-        'XLABEL' : signal.axes_manager.axes[0].name,
+        'XLABEL' : signal.axes_manager._axes[0].name,
 #        'YLABEL' : '',
-        'XUNITS' : signal.axes_manager.axes[0].units,
+        'XUNITS' : signal.axes_manager._axes[0].units,
 #        'YUNITS' : '',
         'COMMENT' : 'File created by Hyperspy version %s' % Release.version,
 #        ## Microscope
@@ -330,7 +330,7 @@ def file_writer(filename, signal, format = None, separator = ', ',
     f.write(u'#%-12s: Spectral Data Starts Here\u000D\u000A' % 'SPECTRUM')
 
     if format == 'XY':        
-        for x,y in zip(signal.axes_manager.axes[0].axis, signal.data):
+        for x,y in zip(signal.axes_manager._axes[0].axis, signal.data):
             f.write("%g%s%g" % (x, separator, y))
             f.write(u'\u000D\u000A')
     elif format == 'Y':

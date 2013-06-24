@@ -2,7 +2,7 @@ from __future__ import division
 
 import numpy as np
 
-from hyperspy.misc.utils import get_linear_interpolation
+from hyperspy.misc.math_tools import get_linear_interpolation
 from hyperspy.misc.eels.elements import elements
 
 

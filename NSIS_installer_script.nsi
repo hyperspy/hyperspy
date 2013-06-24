@@ -1,23 +1,22 @@
 ; Hyperspy installer script for Nullsoft installer system.
 ; Tested using version 2.46.
-; requires installation of 2 extra plugins:
+; requires installation of 1 extra plugins:
 ; UAC - http://nsis.sourceforge.net/UAC_plug-in
-; registry - http://nsis.sourceforge.net/Registry_plug-in
 
 ; This file based heavily on UAC_DualMode from the UAC plugin.
 
 !addplugindir ".\release"
 
-!define S_NAME "Hyperspy_0.3_dev_x86"
+!define S_NAME "Hyperspy_32bit"
 !define APPNAME "Hyperspy"
 !define S_DEFINSTDIR_USER "$LocalAppData\${APPNAME}"
 !define S_DEFINSTDIR_ADMIN "$ProgramFiles\${APPNAME}"
 !define UNINSTALLER_FULLPATH "$InstDir\Uninstaller.exe"
 
-!define MUI_ICON "doc\_static\hyperspy_logo.ico"
+!define MUI_ICON "hyperspy\data\hyperspy_bundle_installer.ico"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall.ico"
 
-SetCompressor lzma
+SetCompressor ZLIB
 
 Name "${S_NAME}"
 OutFile "${S_NAME}.exe"
@@ -25,7 +24,6 @@ OutFile "${S_NAME}.exe"
 !include MUI2.nsh
 !include UAC.nsh
 !include nsDialogs.nsh
-!include registry.nsh
 
 !ifndef BCM_SETSHIELD
 !define BCM_SETSHIELD 0x0000160C
@@ -175,49 +173,20 @@ Section "Required Files"
 SectionIn RO
   setOutPath $INSTDIR
   ;ADD YOUR OWN FILES HERE...
-  File /r "PortableInstall\*"
-  ;File /r "PortableInstall\python.exe"
+  File /r "WinPython32\*"
   ${If} $InstMode > 0
       ; Create right-click context menu entries for Hyperspy Here
-      ; This is sloppy, and should be replaced by a shell extension (one day)
-      
-      ; For all files
-      ${registry::CreateKey} "HKEY_CLASSES_ROOT\*\shell\Hyperspy" $R0
-      ${registry::Write} "HKEY_CLASSES_ROOT\*\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
-      ${registry::CreateKey} "HKEY_CLASSES_ROOT\*\shell\Hyperspy\command" $R0
-      ${registry::Write} "HKEY_CLASSES_ROOT\*\shell\Hyperspy\command" "" '$INSTDIR\Scripts\hyperspy.bat' "REG_EXPAND_SZ" $R0
-
-      ; For folders
-      ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy" $R0
-      ;${registry::Write} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
-      ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy\command" $R0
-      ;${registry::Write} "HKEY_CLASSES_ROOT\Folder\shell\Hyperspy\command" "" '$INSTDIR\Scripts\hyperspy.bat' "REG_EXPAND_SZ" $R0
-
-      ; For right-clicking on directories
-      ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy" $R0
-      ;${registry::Write} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
-      ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy\command" $R0
-      ;${registry::Write} "HKEY_CLASSES_ROOT\Directory\shell\Hyperspy\command" "" 'cmd.exe /k cd %1 & "$INSTDIR\Scripts\hyperspy.bat"' "REG_EXPAND_SZ" $R0
-
-      ; For right-clicking on drives
-      ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy" $R0
-      ;${registry::Write} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy" "" "Hyperspy Here" "REG_EXPAND_SZ" $R0
-      ;${registry::CreateKey} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy\command" $R0
-      ;${registry::Write} "HKEY_CLASSES_ROOT\Drive\shell\Hyperspy\command" "" '$INSTDIR\Scripts\ipython.exe qtconsole --profile=hyperspy --pylab=wx' "REG_EXPAND_SZ" $R0
-
-      ; Make the update script run with admin rights. Since hyperspy
-      ; will be installed as admin, the folder is not writable by normal users.
-      ; Thus, only admins can update.
-      WriteRegStr SHCTX "SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers" '$INSTDIR\Scripts\hyperspy_update.bat' 'RUNASADMIN'
+	  Exec 'cmd.exe /C ""$INSTDIR\WinPython Command Prompt.exe" install_hyperspy_here & exit"'
+      Sleep 3000    
 
   ${EndIf}
-  Exec 'cmd.exe /C ""$INSTDIR\Scripts\easy_install.exe" ipython"'
-  Exec 'cmd.exe /C ""$INSTDIR\Scripts\easy_install.exe" pip"'
   CreateDirectory "$SMPROGRAMS\${APPNAME}"
-  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\Scripts\hyperspy.bat"
-  createShortCut "$SMPROGRAMS\${APPNAME}\Update ${APPNAME}.lnk" "$INSTDIR\Scripts\hyperspy_update.bat"
+  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\python-2.7.4\Scripts\hyperspy.bat"
   ;Write uninstall start menu shortcut
   createShortCut "$SMPROGRAMS\${APPNAME}\Uninstall ${APPNAME}.lnk" '"${UNINSTALLER_FULLPATH}"'
+  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME} QtConsole.lnk" "$INSTDIR\python-2.7.4\Scripts\hyperspy_qtconsole.bat" "" "$INSTDIR\python-2.7.4\Lib\site-packages\hyperspy\data\hyperspy_qtconsole_logo.ico" 0
+  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME} Notebook.lnk" "$INSTDIR\python-2.7.4\Scripts\hyperspy_notebook.bat" "" "$INSTDIR\python-2.7.4\Lib\site-packages\hyperspy\data\hyperspy_notebook_logo.ico" 0
+  createShortCut "$SMPROGRAMS\${APPNAME}\${APPNAME} Notebook.lnk" "$INSTDIR\python-2.7.4\Scripts\hyperspy_notebook.bat" "" "$INSTDIR\python-2.7.4\Lib\site-packages\hyperspy\data\hyperspy_notebook_logo.ico" 0
 SectionEnd
 
 Section Uninstaller
@@ -266,35 +235,30 @@ Function UN.onInit
 FunctionEnd
 
 Section -un.Main
+  Exec 'cmd.exe /C ""$INSTDIR\WinPython Command Prompt.exe" uninstall_hyperspy_here & exit"'
+  Sleep 3000
   Delete "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk"
-  Delete "$SMPROGRAMS\${APPNAME}\Update ${APPNAME}.lnk"
+  Delete "$SMPROGRAMS\${APPNAME}\${APPNAME} QtConsole.lnk"
+  Delete "$SMPROGRAMS\${APPNAME}\${APPNAME} Notebook.lnk"
   Delete "$SMPROGRAMS\${APPNAME}\Uninstall ${APPNAME}.lnk"
   RMDir "$SMPROGRAMS\${APPNAME}"
   Delete "${UNINSTALLER_FULLPATH}"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
   RMDir /r /REBOOTOK $instdir
   DeleteRegKey /ifempty HKCU "Software\Hyperspy"
-  DeleteRegValue SHCTX "SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers\${INSTDIR}\Scripts\hyperspy_update.bat" $R0
-  DeleteRegKey HKCR "*\shell\Hyperspy\command"
-  DeleteRegKey HKCR "*\shell\Hyperspy"
-  DeleteRegKey HKCR "Folder\shell\Hyperspy\command"
-  DeleteRegKey HKCR "Folder\shell\Hyperspy"
-  DeleteRegKey HKCR "Drive\shell\Hyperspy\command"
-  DeleteRegKey HKCR "Drive\shell\Hyperspy"
-  DeleteRegKey HKCR "Directory\shell\Hyperspy\command"
-  DeleteRegKey HKCR "Directory\shell\Hyperspy"
 SectionEnd
 !macroend
 
 /***************************************************/
 !macro CreateUninstaller extractTo mode
-!tempfile UNINSTEXE
-!system '"${NSISDIR}\MakeNSIS" /DBUILDUNINST=${mode} /DUNINSTEXE=${UNINSTEXE} "${__FILE__}"' = 0
-!system '"${UNINSTEXE}"' = 0
-File "/oname=${extractTo}" "${UNINSTEXE}.un"
-!delfile "${UNINSTEXE}"
-!delfile "${UNINSTEXE}.un"
-!undef UNINSTEXE
+    !tempfile UNINSTEXE
+    !system '"${NSISDIR}\MakeNSIS" /DBUILDUNINST=${mode} /DUNINSTEXE=${UNINSTEXE}.exe "${__FILE__}"' = 0
+    !system '"${UNINSTEXE}.exe"' = 0
+    /* We run it two times as a workaround because otherwise the file might
+       not still exists when running the next command */
+    !system '"${UNINSTEXE}.exe"' = 0
+    File "/oname=${extractTo}" "${UNINSTEXE}.exe.un"
+    !undef UNINSTEXE
 !macroend
 
 !ifndef BUILDUNINST

@@ -54,7 +54,6 @@ class SpectrumFigure():
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
         self.ax.yaxis.set_animated(True)
-        ax = self.ax
         self.ax.hspy_fig = self
         
     def create_right_axis(self):
@@ -129,6 +128,7 @@ class SpectrumLine():
         self.axis = None
         self.axes_manager = None
         self.auto_update = True
+        self.get_complex = False
         
         # Properties
         self.line = None
@@ -169,18 +169,21 @@ class SpectrumLine():
             plt.setp(self.line, **self.line_properties)
         self.ax.figure.canvas.draw()
         
-    def plot(self, data = 1):
+    def plot(self, data=1):
         f = self.data_function
-        self.line, = self.ax.plot(
-            self.axis, f(axes_manager = self.axes_manager),
-                **self.line_properties)
+        if self.get_complex is False:
+            data = f(axes_manager=self.axes_manager).real
+        else:
+            data = f(axes_manager=self.axes_manager).imag
+        self.line, = self.ax.plot(self.axis, data, 
+                                  **self.line_properties)
         self.line.set_animated(True)
         self.axes_manager.connect(self.update)
         if not self.axes_manager or self.axes_manager.navigation_size==0:
             self.plot_indices = False
         if self.plot_indices is True:
             self.text = self.ax.text(*self.text_position,
-                            s=str(self.axes_manager.indices[::-1]),
+                            s=str(self.axes_manager.indices),
                             transform = self.ax.transAxes,
                             fontsize=12,
                             color=self.line.get_color(),
@@ -194,7 +197,10 @@ class SpectrumLine():
         if force_replot is True:
             self.close()
             self.plot()
-        ydata = self.data_function(axes_manager=self.axes_manager)
+        if self.get_complex is False:
+            ydata = self.data_function(axes_manager=self.axes_manager).real
+        else:
+            ydata = self.data_function(axes_manager=self.axes_manager).imag
         self.line.set_ydata(ydata)
         
         if self.autoscale is True:
@@ -208,7 +214,7 @@ class SpectrumLine():
                             np.nanmin(clipped_ydata))
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
-            self.text.set_text((self.axes_manager.indices[::-1]))
+            self.text.set_text((self.axes_manager.indices))
         self.ax.hspy_fig._draw_animated()
         #self.ax.figure.canvas.draw_idle()
         
@@ -246,12 +252,12 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
     if axes_manager.navigation_dimension==2:
         extent=None
         # get calibration from a passed axes_manager
-        shape=axes_manager.navigation_shape
+        shape=axes_manager._navigation_shape_in_array
         if calibrate:
-            extent=(axes_manager.axes[0].low_value,
-                    axes_manager.axes[0].high_value,
-                    axes_manager.axes[1].high_value,
-                    axes_manager.axes[1].low_value)
+            extent=(axes_manager._axes[0].low_value,
+                    axes_manager._axes[0].high_value,
+                    axes_manager._axes[1].high_value,
+                    axes_manager._axes[1].low_value)
         im=ax.imshow(loadings[idx].reshape(shape),cmap=cmap,extent=extent, 
                      interpolation = 'nearest')
         div=make_axes_locatable(ax)
@@ -259,9 +265,9 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
         plt.colorbar(im,cax=cax)
     elif axes_manager.navigation_dimension ==1:
         if calibrate:
-            x=axes_manager.axes[0].axis
+            x=axes_manager._axes[0].axis
         else:
-            x=np.arange(axes_manager.axes[0].size)
+            x=np.arange(axes_manager._axes[0].size)
         ax.step(x,loadings[idx])
     else:
         messages.warning_exit('View not supported')

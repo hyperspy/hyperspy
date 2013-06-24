@@ -27,7 +27,7 @@ from traitsui.menu import (OKButton, ApplyButton, CancelButton,
 from hyperspy.misc import utils
 from hyperspy import drawing
 from hyperspy.misc.interactive_ns import interactive_ns
-from hyperspy.exceptions import SignalOutputDimensionError
+from hyperspy.exceptions import SignalDimensionError
 from hyperspy.gui import messages
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
@@ -35,6 +35,7 @@ from hyperspy.drawing.utils import does_figure_object_exists
 from hyperspy.gui.mpl_traits_editor import MPLFigureEditor
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import DraggableVerticalLine
+from hyperspy.misc import spectrum_tools
 
 import sys
 
@@ -138,8 +139,8 @@ class SpanSelectorInSpectrum(t.HasTraits):
             
     def __init__(self, signal):
         if signal.axes_manager.signal_dimension != 1:
-         raise SignalOutputDimensionError(
-            signal.axes.signal_dimension, 1)
+         raise SignalDimensionError(
+            signal.axes_manager.signal_dimension, 1)
         
         self.signal = signal
         self.axis = self.signal.axes_manager.signal_axes[0]
@@ -200,18 +201,17 @@ class LineInSpectrum(t.HasTraits):
             
     def __init__(self, signal):
         if signal.axes_manager.signal_dimension != 1:
-         raise SignalOutputDimensionError(
-            signal.axes.signal_dimension, 1)
+         raise SignalDimensionError(
+            signal.axes_manager.signal_dimension, 1)
             
         self.signal = signal
         self.signal.plot()
         axis_dict = signal.axes_manager.signal_axes[0].get_axis_dictionary()
-        axis_dict['index_in_array'] = 0
         am = AxesManager([axis_dict,])
-        am.axes[0].navigate = True
+        am._axes[0].navigate = True
         # Set the position of the line in the middle of the spectral
         # range by default
-        am.axes[0].index = int(round(am.axes[0].size / 2))
+        am._axes[0].index = int(round(am._axes[0].size / 2))
         self.axes_manager = am
         self.axes_manager.connect(self.update_position)
         self.on_trait_change(self.switch_on_off, 'on')
@@ -278,8 +278,8 @@ class SpectrumCalibration(SpanSelectorInSpectrum):
     def __init__(self, signal):
         super(SpectrumCalibration, self).__init__(signal)
         if signal.axes_manager.signal_dimension != 1:
-            raise SignalOutputDimensionError(
-                    signal.axes.signal_dimension, 1)
+            raise SignalDimensionError(
+                    signal.axes_manager.signal_dimension, 1)
         self.units = self.axis.units
         self.last_calibration_stored = True
             
@@ -428,7 +428,7 @@ class Smoothing(t.HasTraits):
         if self.differential_order > 0:
             self.signal.axes_manager.signal_axes[0].offset = \
                 self.smooth_diff_line.axis[0]
-            self.signal.crop_in_pixels(-1,0,-self.differential_order)
+            self.signal.crop(-1,0,int(-self.differential_order))
         self.signal._replot()
         self.signal._plot.auto_update_plot = True
         
@@ -465,12 +465,12 @@ class SmoothingSavitzkyGolay(Smoothing):
         self.update_lines()
         
     def diff_model2plot(self, axes_manager = None):
-        smoothed = utils.sg(self.signal(), self.number_of_points, 
+        smoothed = spectrum_tools.sg(self.signal(), self.number_of_points, 
                             self.polynomial_order, self.differential_order)
         return smoothed
                                         
     def model2plot(self, axes_manager = None):
-        smoothed = utils.sg(self.signal(), self.number_of_points, 
+        smoothed = spectrum_tools.sg(self.signal(), self.number_of_points, 
                             self.polynomial_order, 0)
         return smoothed
             

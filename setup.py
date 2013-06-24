@@ -24,7 +24,6 @@ import distutils.dir_util
 import os
 import subprocess
 import sys
-import shutil
 import fileinput
 
 import hyperspy.Release as Release
@@ -35,7 +34,7 @@ if os.path.exists('build'):
 
 install_req = ['scipy',
                'ipython',
-               'matplotlib',
+               'matplotlib (>= 1.2)',
                'numpy',
                'traits',
                'traitsui',]
@@ -143,12 +142,18 @@ with update_version_when_dev() as version:
                     'hyperspy.signals', 
                     'hyperspy.gui',
                     'hyperspy.tests',
-                    'hyperspy.models',
+                    'hyperspy.tests.component',
                     'hyperspy.tests.io',
+                    'hyperspy.tests.model',
+                    'hyperspy.tests.signal',
+                    'hyperspy.models',
                     'hyperspy.misc',
                     'hyperspy.misc.eels',
+                    'hyperspy.misc.io',
+                    'hyperspy.misc.machine_learning',
                     'hyperspy.misc.mpfit', 
-                    'hyperspy.misc.mpfit.tests'],
+                    'hyperspy.misc.mpfit.tests',
+                    ],
         requires = install_req,
         scripts = scripts,
         package_data = 

@@ -19,7 +19,7 @@
 import numpy as np
 import scipy.linalg
 
-from hyperspy.misc.import_sklearn import *
+from hyperspy.misc.machine_learning.import_sklearn import *
 from hyperspy import messages
 
 def svd_pca(data, fast = False, output_dimension = None, centre = None,

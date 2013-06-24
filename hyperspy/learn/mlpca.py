@@ -26,7 +26,7 @@
 
 import numpy as np
 import scipy.linalg
-from hyperspy.misc.import_sklearn import *
+from hyperspy.misc.machine_learning.import_sklearn import *
 
 
 def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000, fast=False):

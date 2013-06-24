@@ -22,8 +22,12 @@ import os
 from time import strftime
 
 import IPython
-
-ipy_version = StrictVersion(IPython.__version__)
+try:
+    ipy_version = StrictVersion(IPython.__version__)
+except:
+    # If it is a dev version StrictVersion may fail, so give an
+    # far in future version as a temporary workaround.
+    ipy_version = StrictVersion('100.2')
 ipy_011 = StrictVersion('0.11')
 
 if ipy_version < ipy_011:

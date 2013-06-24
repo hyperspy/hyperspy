@@ -184,16 +184,16 @@ from __future__ import division
 import os
 import mmap
 import re
-from types import StringType
 import numpy as np
 
-from hyperspy.axes import DataAxis
-from hyperspy.misc.utils_readfile import *
+from hyperspy.misc.io.utils_readfile import *
 from hyperspy.exceptions import *
 import hyperspy.misc.utils
-from hyperspy.misc.utils_varia import overwrite, swapelem
-from hyperspy.misc.utils_varia import DictBrowser, fsdict
-from hyperspy.misc.dm3reader import parseDM3
+import hyperspy.misc.io.tools
+from hyperspy.misc.utils import swapelem
+from hyperspy.misc.io.tools import overwrite
+from hyperspy.misc.utils import DictBrowser, fsdict
+from hyperspy.misc.io.dm3reader import parseDM3
 
 
 # Plugin characteristics
@@ -1137,7 +1137,7 @@ def file_reader(filename, record_by=None, order = None, data_id=1,
     if dump is True:
         import codecs
         f = codecs.open(filename.replace('.dm3', '_tags_dumped.txt'), 'w')
-        hyperspy.misc.utils.dump_dictionary(f, dm3.data_dict.dic)
+        hyperspy.misc.io.tools.dump_dictionary(f, dm3.data_dict.dic)
         f.close()
     mapped_parameters={}
 

@@ -3,6 +3,91 @@ What's new
 
 We only cover here the main highlights, for a detailed list of all the changes see `the github commits changelog <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
+
+.. _changes_0.6:
+
+v0.6
+====
+
+New features
+------------
+
+* Signal now supports indexing and slicing. See :ref:`signal.indexing`.
+* Most arithmetic and rich arithmetic operators work with signal.
+  See :ref:`signal.operations`.
+* Much improved EELSSpectrum methods:
+  :py:meth:`~.signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre`,  
+  :py:meth:`~.signals.eels.EELSSpectrum.estimate_elastic_scattering_intensity` and  
+  :py:meth:`~.signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold`.
+  
+* The axes can now be given using their name e.g. ``s.crop("x", 1,10)``
+* New syntax to specify position over axes: an integer specifies the indexes
+  over the axis and a floating number specifies the position in the axis units
+  e.g. ``s.crop("x", 1, 10.)`` crops over the axis `x` (in meters) from index 1 
+  to value 10 meters. Note that this may make your old scripts behave in 
+  unexpected ways as just renaming the old *_in_units and *_in_values methods
+  won't work in most cases.
+* Most methods now use the natural order i.e. X,Y,Z.. to index the axes.
+* Add padding to fourier-log and fourier-ratio deconvolution to fix the 
+  wrap-around problem and increase its performance.
+* New 
+  :py:meth:`~.components.eels_cl_edge.EELSCLEdge.get_fine_structure_as_spectrum`
+  EELSCLEdge method.
+* New :py:class:`~.components.arctan.Arctan` model component.
+* New 
+  :py:meth:`~.model.Model.enable_adjust_position`     
+  and :py:meth:`~.model.Model.disable_adjust_position`
+  to easily change the position of components using the mouse on the plot.
+* New Model methods
+  :py:meth:`~.model.Model.set_parameters_value`, 
+  :py:meth:`~.model.Model.set_parameters_free` and
+  :py:meth:`~.model.Model.set_parameters_not_free`
+  to easily set several important component attributes of a list of components 
+  at once.
+* New
+  :py:func:`~.misc.utils.stack` function to stack signals.
+* New Signal methods:
+  :py:meth:`~.signal.Signal.integrate_simpson`, 
+  :py:meth:`~.signal.Signal.max`,  
+  :py:meth:`~.signal.Signal.min`, 
+  :py:meth:`~.signal.Signal.var`, and
+  :py:meth:`~.signal.Signal.std`.
+* New sliders window to easily navigate signals with navigation_dimension > 2
+* The Ripple (rpl) reader can now read rpl files produced by INCA.   
+
+API changes
+-----------
+* The following functions has been renamed or removed:
+
+    * components.EELSCLEdge
+    
+        * knots_factor -> fine_structure_smoothing
+        * edge_position -> onset_energy
+        * energy_shift removed
+        
+    * components.Voigt.origin -> centre
+    * signals.Spectrum
+    
+        * find_peaks_1D -> Signal.find_peaks1D_ohaver
+        * align_1D -> Signal.align1D
+        * shift_1D -> Signal.shift1D
+        * interpolate_1D -> Signal.interpolate1D
+        
+    * signals.Image.estimate_2D_translation -> Signal.estimate_shift2D
+    * Signal
+    
+        * split_in -> split
+        * crop_in_units -> crop
+        * crop_in_pixels -> crop
+        
+    
+* Change syntax to create Signal objects. Instead of a dictionary 
+  Signal.__init__ takes keywords e.g with  a new syntax 
+  ``>>> s = signals.Spectrum(np.arange(10))`` instead of 
+  ``>>> s = signals.Spectrum({'data' : np.arange(10)})``
+
+
+
 .. _changes_0.5.1:
 
 v0.5.1
