@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from nose.tools import assert_true, assert_equal, assert_not_equal, raises
+from nose.tools import assert_true, assert_equal, assert_not_equal
 from hyperspy.signals.spectrum import Spectrum
 from hyperspy.hspy import create_model 
 from hyperspy.components import Gaussian
@@ -72,7 +72,9 @@ class TestFitSeveralComponent:
         gs3.sigma.value = 100.0
 
         axis = np.arange(10000)
-        total_signal = gs1.function(axis) + gs2.function(axis) + gs3.function(axis)
+        total_signal = (gs1.function(axis) + 
+                        gs2.function(axis) + 
+                        gs3.function(axis))
         
         s = Spectrum(total_signal)
         m = create_model(s)

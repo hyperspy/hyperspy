@@ -48,8 +48,6 @@ from hyperspy.misc.mpfit.mpfit import mpfit
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
-
-
 from hyperspy.gui.tools import ComponentFit
 
 class Model(list):
