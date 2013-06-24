@@ -24,7 +24,8 @@
 
 import struct
 import os
-from exceptions import *
+
+from hyperspy.exceptions import *
 
 # Declare simple TagDataType structures for faster execution.
 # The variables are named as following:
@@ -249,7 +250,6 @@ def read_data_array(filename, byte_size=0, byte_address=0,
     dt = np.dtype(data_type).itemsize
     size = byte_size // dt
     shape = (size,)
-    bytes = byte_address + byte_size
     acc = mmap.ACCESS_READ
     fmap = mmap.mmap(fobj.fileno(), map_bytes, access=acc, offset=byte_offset)
     fmap.seek(byte_remainder)
@@ -260,15 +260,4 @@ def read_data_array(filename, byte_size=0, byte_address=0,
     fobj.close()
     return data
 
-# def read_chunk(file_obj, chunk_size=1024):
-#     """To be used in a loop
-#     chunk_size in Bytes (defaults to 1 kByte)... or whatever
-#     """
-#     # see also
-#     # http://stackoverflow.com/questions/519633/lazy-method-for-reading-big-file-in-python
-#     while True:
-#         data = file_obj.read(chunk_size)
-#         if not data:
-#             break
-#         yield data
 

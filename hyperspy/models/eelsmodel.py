@@ -93,7 +93,10 @@ class EELSModel(Model):
             self._spectrum = value
             self.spectrum._are_microscope_parameters_missing()
         else:
-            raise WrongObjectError(str(type(value)), 'EELSSpectrum')
+            raise ValueError(
+                "This attribute can only contain an EELSSpectrum "
+                "but an object of type %s was provided" % 
+                str(type(value)))
                     
             
     def _touch(self):
@@ -347,8 +350,8 @@ class EELSModel(Model):
             self._fit_edge(i, start_energy, **kwargs)
             
     def fit_background(self,start_energy=None, kind='single', **kwargs):
-        """Fit an EELS spectrum ionization edge by ionization edge from left 
-        to right to optimize convergence.
+        """Fit the background to the first active ionization edge 
+        in the energy range.
         
         Parameters
         ----------
@@ -375,15 +378,14 @@ class EELSModel(Model):
         if start_energy is None:
             start_energy = ea[0]
         i = 0
-        while edge.onset_energy.value < start_energy or edge.active is False:
+        while (edge.onset_energy.value < start_energy or 
+               edge.active is False):
             i+=1
             edge = edges.pop(0)
-        self.set_signal_range(start_energy,edge.onset_energy.value - \
-        preferences.EELS.preedge_safe_window_width)
-        active_edges = []
-        for edge in self.edges[i:]:
-            if edge.active:
-                active_edges.append(edge)
+        self.set_signal_range(
+            start_energy, edge.onset_energy.value - 
+            preferences.EELS.preedge_safe_window_width)
+        active_edges = [edge for edge in self.edges[i:] if bg.active]
         self.disable_edges(active_edges)
         if kind == 'single':
             self.fit(**kwargs)
@@ -439,7 +441,7 @@ class EELSModel(Model):
         
         if powerlaw.estimate_parameters(
             self.spectrum, E1, E2, False) is True:
-            self.charge()
+            self.fetch_stored_values()
         else:
             messages.warning(
             "The power law background parameters could not "

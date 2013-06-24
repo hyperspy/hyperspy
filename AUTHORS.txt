@@ -1,6 +1,4 @@
-Hyperspy, formely EELSLab, was created by Francisco de la Peña in 2007 during his PhD supervised by Michael Walls and he continues to lead the project to this day.
-
-Since 2010 Hyperspy is maintened by `an active community of developers <https://github.com/hyperspy/hyperspy/contributors>`_.
+Hyperspy is maintened by `an active community of developers <https://github.com/hyperspy/hyperspy/contributors>`_.
 
 The Hyperspy logo was created by Stefano Mazzucco. It is a modified version of `this figure <http://en.wikipedia.org/wiki/File:Hypercube.svg>`_ and the same GFDL license applies.
  

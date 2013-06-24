@@ -19,6 +19,8 @@
 from __future__ import division
 import copy
 
+import numpy as np
+
 from hyperspy.drawing import widgets, spectrum, image, utils
 from hyperspy.gui.axes import navigation_sliders
 
@@ -111,12 +113,12 @@ class MPL_HyperSpectrum_Explorer(object):
             imf.yaxis = self.axes_manager.navigation_axes[0]
             imf.xaxis = self.axes_manager.signal_axes[0]
         elif self.axes_manager.navigation_dimension >= 2:
-            imf.yaxis = self.axes_manager.navigation_axes[-2]
-            imf.xaxis = self.axes_manager.navigation_axes[-1]
+            imf.yaxis = self.axes_manager.navigation_axes[1]
+            imf.xaxis = self.axes_manager.navigation_axes[0]
             if self.axes_manager.navigation_dimension > 2:
                 navigation_sliders(
-                    self.axes_manager.navigation_axes[::-1])
-                for axis in self.axes_manager.navigation_axes[:-2]:
+                    self.axes_manager.navigation_axes)
+                for axis in self.axes_manager.navigation_axes[2:]:
                     axis.connect(imf.update_image)
             
         imf.title = self.signal_title + ' Navigator'
@@ -152,8 +154,19 @@ class MPL_HyperSpectrum_Explorer(object):
             color = 'red'
         sl.line_properties_helper(color, 'step')        
         # Add the line to the figure
-          
         sf.add_line(sl)
+        # If the data is complex create a line in the left axis with the
+        # default coordinates
+        sl = spectrum.SpectrumLine()
+        sl.data_function = self.signal_data_function
+        sl.plot_coordinates = True
+        sl.get_complex = any(np.iscomplex(sl.data_function()))        
+        if sl.get_complex:
+            sl.line_properties_helper("blue", 'step')        
+            # Add extra line to the figure
+            sf.add_line(sl)
+        
+        
         self.signal_plot = sf
         sf.plot()
         if self.navigator_plot is not None and sf.figure is not None:

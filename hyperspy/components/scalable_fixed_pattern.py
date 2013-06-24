@@ -33,8 +33,6 @@ class ScalableFixedPattern(Component):
     +------------+-----------+
     |     b      |  xscale   |
     +------------+-----------+
-    |     c      |  offset   |
-    +------------+-----------+
     |    x0      |  shift    |
     +------------+-----------+
 
@@ -50,10 +48,7 @@ class ScalableFixedPattern(Component):
     Attributes
     ----------
     
-    a : Float
-    b : Float
-    shift : Float
-    offset : Float
+    yscale, xscale, shift : Float
     interpolate : Bool
         If False no interpolation is performed and only a y-scaled spectrum is
         returned.
@@ -67,14 +62,13 @@ class ScalableFixedPattern(Component):
 
     def __init__(self, spectrum):
     
-        Component.__init__(self, ['yscale', 'xscale', 'shift', 'offset'])
+        Component.__init__(self, ['yscale', 'xscale', 'shift'])
         
         self._position = self.shift
         self.spectrum = spectrum
         self.yscale.free = True
         self.yscale.value = 1.
         self.xscale.value = 1.
-        self.offset.value = 0.
         self.shift.value = 0.
         
         self.prepare_interpolator()
@@ -116,9 +110,12 @@ class ScalableFixedPattern(Component):
         
     def function(self, x):
         if self.interpolate is True:
-            return self.offset.value + self.yscale.value * self.f(
+            return self.yscale.value * self.f(
                                     x * self.xscale.value - self.shift.value)
         else:
             return self.yscale.value * self.spectrum.data
+            
+    def grad_yscale(self, x):
+        return self.function(x) / self.yscale.value
                                     
     
