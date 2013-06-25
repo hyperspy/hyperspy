@@ -36,6 +36,7 @@ from hyperspy.components.power_law import PowerLaw
 
 
 class EELSSpectrum(Spectrum):
+    _signal_type = "EELS"
     
     def __init__(self, *args, **kwards):
         Spectrum.__init__(self, *args, **kwards)
@@ -57,7 +58,9 @@ class EELSSpectrum(Spectrum):
         Parameters
         ----------
         elements : tuple of strings
-            The symbol of the elements.
+            The symbol of the elements. Note this input must always be
+            in the form of a tuple. Meaning: add_elements(('C',)) will
+            work, while add_elements(('C')) will NOT work.
         include_pre_edges : bool
             If True, the ionization edges with an onset below the lower 
             energy limit of the SI will be incluided
@@ -70,13 +73,25 @@ class EELSSpectrum(Spectrum):
         Adding C_K subshell
         Adding O_K subshell
         
+        Raises
+        ------
+        ValueError
+        
         """
+        if type(elements) is not tuple:
+            raise ValueError(
+            "Input must be in the form of a tuple. For example, "
+            "if `s` is the variable containing this EELS spectrum:\n "
+            ">>> s.add_elements(('C',))\n"
+            "See the docstring for more information.")
+
         for element in elements:
             if element in elements_db:
                 self.elements.add(element)
             else:
-                print(
-                    "%s is not a valid symbol of an element" % element)
+                raise ValueError(
+                    "%s is not a valid symbol of a chemical element" 
+                    % element)
         if not hasattr(self.mapped_parameters, 'Sample'):
             self.mapped_parameters.add_node('Sample')
         self.mapped_parameters.Sample.elements = list(self.elements)

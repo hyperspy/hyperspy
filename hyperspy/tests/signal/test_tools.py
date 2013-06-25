@@ -6,6 +6,7 @@ from nose.tools import (
     raises)
 
 from hyperspy.signal import Signal
+from hyperspy import signals
 
 class Test2D:
     def setUp(self):
@@ -78,6 +79,18 @@ class Test3D:
         s.rebin((2,1,6))
         assert_true(s.data.shape == (1,2,6))
         
+class TestRollAxis:
+    def setUp(self):
+        s = signals.Spectrum(np.ones((5,4,3,6)))
+        for axis, name in zip(
+            s.axes_manager._get_axes_in_natural_order(),
+            ['x', 'y', 'z', 'E']):
+            axis.name = name
+        self.s = s
+    def test_int(self):
+        assert_equal(self.s.rollaxis(2,0).data.shape, (4, 3, 5, 6))
+    def test_str(self):
+        assert_equal(self.s.rollaxis("z", "x").data.shape, (4, 3, 5, 6))        
         
         
 

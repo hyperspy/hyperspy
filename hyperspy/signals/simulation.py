@@ -16,26 +16,37 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import numpy as np
 
+from hyperspy.decorators import auto_replot
 from hyperspy.signal import Signal
 
-class Image(Signal):
-    """
-    """
-    _record_by = "image"
+class Simulation(Signal):
+    _signal_origin = "simulation"
     
-    def __init__(self, *args, **kw):
-        super(Image,self).__init__(*args, **kw)
-        self.axes_manager.set_signal_dimension(2)
-        
-    def to_spectrum(self):
-        """Returns the image as a spectrum.
-        
-        See Also:
-        ---------
-        as_spectrum : a method for the same purpose with more options.  
-        signals.Image.to_spectrum : performs the inverse operation on images.
+    def __init__(self, *args, **kwargs):
+        super(Simulation, self).__init__(*args, **kwargs)
+
+    @auto_replot
+    def add_poissonian_noise(self, **kwargs):
+        """Add Poissonian noise to the data"""
+        original_type = self.data.dtype
+        self.data = np.random.poisson(self.data, **kwargs).astype(
+                                      original_type)
+
+    @auto_replot
+    def add_gaussian_noise(self, std, **kwargs):
+        """Add Gaussian noise to the data
+        Parameters
+        ----------
+        std : float
 
         """
-        return self.as_spectrum(0j)
+        noise = np.random.normal(0, std, self.data.shape, **kwargs)
+        self.data += noise
+
+
+
+
+
 

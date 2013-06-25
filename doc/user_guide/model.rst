@@ -103,6 +103,13 @@ To visualise the result :py:meth:`~.model.Model.plot`, e.g.:
     >>> m.fit() # Fit the data at the current coordinates
     >>> m.plot() # Visualise the results
         
+.. versionadded:: 0.7
+
+In addition, it is possible to fit a given component  independently 
+using the :py:meth:`~.model.Model.fit_component` method, that is specially
+useful to ease setting starting parameters.
+
+
 Getting and setting parameter values and attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
