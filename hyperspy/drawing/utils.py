@@ -244,8 +244,7 @@ def plot_spectra(
     spectra, 
     style='cascade', 
     color='red',
-    reverse_yaxis=False,
-    filename=None):
+    reverse_yaxis=False):
     """Parameters
     -----------------
     spectra : iterable
@@ -262,8 +261,6 @@ def plot_spectra(
     reverse_yaxis : bool, optional
         Reverse the plotting direction of the navigational axis for 
         cascade style plotting.
-    filename : None or string
-        If None, raise a window with the plot and return the figure.
 
     Returns
     -----------
@@ -275,7 +272,7 @@ def plot_spectra(
         if navigation_length == 0:
             color_array = [color] 
         else:
-            color_array = [color]*navigation_length
+            color_array = [color] * navigation_length
     else:
         color_array = color
 
@@ -286,41 +283,15 @@ def plot_spectra(
                               color=color_array,
                               reverse_yaxis=reverse_yaxis)
 
-        if filename is None:
-            return(fig)
-        else:
-            fig.savefig(filename)
-
     elif style == 'mosaic':
         #Need to find a way to automatically scale the figure size
         fig, subplots = plt.subplots(1, len(spectra))
         for ax, spectrum, color in zip(subplots, spectra, color_array):
             _make_mosaic_subplot(spectrum, ax, color=color)
-        if filename is None:
-            return(fig)
-        else:
-            fig.savefig(filename)
-    
-    elif style == 'multiple_files':
-        for spectrum_index, spectrum in enumerate(spectra):
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-            _make_mosaic_subplot(spectrum, ax,
-                                 color=color_array[spectrum_index])
-            #Currently only works with png images
-            #Should use some more clever method
-            filename = filename.replace('.png', '')
-            fig.savefig(
-                    filename +
-                    '_' +
-                    str(spectrum_index) +
-                    '.png')
 
     elif style == 'heatmap':
         fig = plt.figure()
         ax = fig.add_subplot(111)
         _make_heatmap_subplot(spectra, ax) 
-        if filename is None:
-            return(fig)
-        else:
-            fig.savefig(filename)
+        
+    return fig
