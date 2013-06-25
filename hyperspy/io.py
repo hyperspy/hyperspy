@@ -295,43 +295,7 @@ def load_with_reader(filename,
     if output_level>1:
         messages.information('%s correctly loaded' % filename)
     return objects
-    
-#<<<<<<< HEAD
-#def dict2signal(signal_dict, record_by=None, signal_type=None):
-    #from hyperspy.signals.image import Image
-    #from hyperspy.signals.spectrum import Spectrum
-    #from hyperspy.signals.eels import EELSSpectrum
-    #from hyperspy.signals.eds_sem import EDSSEMSpectrum
-    #from hyperspy.signals.eds_tem import EDSTEMSpectrum
-    #if record_by is not None:
-        #signal_dict['mapped_parameters']['record_by'] = record_by
-    ## The record_by can still be None if it was not defined by the reader
-    #if signal_dict['mapped_parameters']['record_by'] is None:
-        #print "No data type provided.  Defaulting to image."
-        #signal_dict['mapped_parameters']['record_by']= 'image'
 
-    #if signal_type is not None:
-        #signal_dict['mapped_parameters']['signal_type'] = signal_type
-
-    #if signal_dict['mapped_parameters']['record_by'] == 'image':
-        #s = Image(**signal_dict)
-    #else:
-        #if 'signal_type' in signal_dict['mapped_parameters']:
-            #signal_type = signal_dict['mapped_parameters']['signal_type']
-            #if (signal_type == 'EELS'):
-                #s = EELSSpectrum(**signal_dict)
-            #elif (signal_type == 'EDS_SEM'):
-                #s = EDSSEMSpectrum(**signal_dict)
-            #elif (signal_type == 'EDS_TEM'):
-                #s = EDSTEMSpectrum(**signal_dict)
-            #elif (signal_type == 'EDS'):
-                #s = EDSTEMSpectrum(**signal_dict)
-            #else:
-                #s = Spectrum(**signal_dict)
-        #else:
-            #s = Spectrum(**signal_dict)
-    #return s
-#=======
 def assign_signal_subclass(record_by="",
                            signal_type="",
                            signal_origin="",):
@@ -398,7 +362,6 @@ def dict2signal(signal_dict):
     return assign_signal_subclass(record_by=record_by,
                                   signal_type=signal_type,
                                   signal_origin=signal_origin)(**signal_dict)
-#>>>>>>> ENH_plot_external_navigator
 
 def save(filename, signal, overwrite=None, **kwds):
     extension = os.path.splitext(filename)[1][1:]

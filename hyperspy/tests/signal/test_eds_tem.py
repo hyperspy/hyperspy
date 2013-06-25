@@ -19,27 +19,27 @@
 import numpy as np
 from nose.tools import assert_true, assert_equal, assert_not_equal
 
-from hyperspy.signals import EDSSEMSpectrum
+from hyperspy.signals import EDSTEMSpectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.io import load
 
 class Test_mapped_parameters:
     def setUp(self):
         # Create an empty spectrum
-        s = EDSSEMSpectrum(np.ones((4,2,1024)))
-        s.mapped_parameters.SEM.EDS.live_time = 3.1              
+        s = EDSTEMSpectrum(np.ones((4,2,1024)))
+        s.mapped_parameters.TEM.EDS.live_time = 3.1              
         self.signal = s
         
     def test_sum_live_time(self):
         s = self.signal
         sSum = s.sum(0)
-        assert_equal(sSum.mapped_parameters.SEM.EDS.live_time, 3.1*2)
+        assert_equal(sSum.mapped_parameters.TEM.EDS.live_time, 3.1*2)
     
     def test_rebin_live_time(self):
         s = self.signal
         dim = s.axes_manager.shape
         s.rebin([dim[0]/2,dim[1]/2,dim[2]])
-        assert_equal(s.mapped_parameters.SEM.EDS.live_time, 3.1*2*2)
+        assert_equal(s.mapped_parameters.TEM.EDS.live_time, 3.1*2*2)
  
     def test_set_X_line(self):
         s = self.signal
@@ -48,10 +48,10 @@ class Test_mapped_parameters:
         s.set_elements(['Al','Ni'],['Ka','La'])
         results.append(mp.Sample.Xray_lines[0])
         results.append(mp.Sample.elements[1])
-        mp.SEM.beam_energy = 15.0
+        mp.TEM.beam_energy = 15.0
         s.set_elements(['Al','Ni'])
         results.append(mp.Sample.Xray_lines[1])
-        mp.SEM.beam_energy = 10.0
+        mp.TEM.beam_energy = 10.0
         s.set_elements(['Al','Ni'])
         results.append(mp.Sample.Xray_lines[1])
         s.add_elements(['Fe'])
@@ -61,26 +61,26 @@ class Test_mapped_parameters:
     def test_default_param(self):
         s = self.signal
         mp = s.mapped_parameters
-        assert_equal(mp.SEM.EDS.energy_resolution_MnKa,
+        assert_equal(mp.TEM.EDS.energy_resolution_MnKa,
             preferences.EDS.eds_mn_ka)
             
     def test_SEM_to_TEM(self):
         s = self.signal[0,0]
-        signal_type = 'EDS_TEM'
+        signal_type = 'EDS_SEM'
         mp = s.mapped_parameters
-        mp.SEM.EDS.energy_resolution_MnKa = 125.3
-        sTEM = s.deepcopy()
-        sTEM.set_signal_type(signal_type)        
-        mpTEM = sTEM.mapped_parameters            
-        results = [mp.SEM.EDS.energy_resolution_MnKa]
+        mp.TEM.EDS.energy_resolution_MnKa = 125.3
+        sSEM = s.deepcopy()
+        sSEM.set_signal_type(signal_type)        
+        mpSEM = sSEM.mapped_parameters            
+        results = [mp.TEM.EDS.energy_resolution_MnKa]
         results.append(signal_type)        
-        resultsTEM = [mpTEM.TEM.EDS.energy_resolution_MnKa]
-        resultsTEM.append(mpTEM.signal_type)        
-        assert_equal(results,resultsTEM )
+        resultsSEM = [mpSEM.SEM.EDS.energy_resolution_MnKa]
+        resultsSEM.append(mpSEM.signal_type)        
+        assert_equal(results,resultsSEM )
         
     def test_get_calibration_from(self):
         s = self.signal
-        scalib = EDSSEMSpectrum(np.ones((1024)))
+        scalib = EDSTEMSpectrum(np.ones((1024)))
         energy_axis = scalib.axes_manager.signal_axes[0]
         energy_axis.scale = 0.01
         energy_axis.offset = -0.10
@@ -92,7 +92,7 @@ class Test_mapped_parameters:
 class Test_get_intentisity_map:
     def setUp(self):
         # Create an empty spectrum
-        s = EDSSEMSpectrum(np.ones((4,2,1024)))
+        s = EDSTEMSpectrum(np.ones((4,2,1024)))
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 0.01
         energy_axis.offset = -0.10

@@ -656,7 +656,4 @@ def find_subclasses(mod, cls):
     return dict([(name, obj) for name, obj in inspect.getmembers(mod)
                 if inspect.isclass(obj) and issubclass(obj, cls)])
                 
-def _get_element_and_line(Xray_line):
-    lim = Xray_line.find('_')
-    return Xray_line[:lim], Xray_line[lim+1:]
-    
+   
