@@ -1033,9 +1033,9 @@ class Model(list):
         self._plot = self.spectrum._plot
         self._connect_parameters2update_plot()
         if plot_components is True:
-            self._enable_plot_components()
+            self.enable_plot_components()
         
-    def _enable_plot_components(self):
+    def enable_plot_components(self):
         if self._plot is None:
             return
         for component in [component for component in self if
@@ -1047,9 +1047,9 @@ class Model(list):
             line.plot()
             component._model_plot_line = line
         on_figure_window_close(self._plot.signal_plot.figure, 
-                                self._disable_plot_components)
+                                self.disable_plot_components)
                 
-    def _disable_plot_components(self):
+    def disable_plot_components(self):
         if self._plot is None:
             return
         for component in self:

@@ -112,11 +112,6 @@ class MPL_HyperSpectrum_Explorer(object):
         if self.axes_manager.navigation_dimension == 1:
             imf.yaxis = self.axes_manager.navigation_axes[0]
             imf.xaxis = self.axes_manager.signal_axes[0]
-<<<<<<< HEAD
-        elif self.axes_manager.navigation_dimension == 2:
-            imf.yaxis = self.axes_manager.navigation_axes[0]
-            imf.xaxis = self.axes_manager.navigation_axes[1]
-=======
         elif self.axes_manager.navigation_dimension >= 2:
             imf.yaxis = self.axes_manager.navigation_axes[1]
             imf.xaxis = self.axes_manager.navigation_axes[0]
@@ -126,7 +121,6 @@ class MPL_HyperSpectrum_Explorer(object):
                 for axis in self.axes_manager.navigation_axes[2:]:
                     axis.connect(imf.update_image)
             
->>>>>>> master
         imf.title = self.signal_title + ' Navigator'
         imf.plot()
         self.pointer.add_axes(imf.ax)
