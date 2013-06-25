@@ -222,8 +222,10 @@ def _make_cascade_subplot(spectra, ax, color='red', reverse_yaxis=False):
             spectra_data = spectra.data
         for spectrum_index, spectrum_data in enumerate(spectra_data):
             x_axis = spectrum.axes_manager.signal_axes[0]
-            data_to_plot = spectrum_data/float(max_value) + y_axis.axis[spectrum_index]
-            ax.plot(x_axis.axis, data_to_plot, color=color_array[spectrum_index])
+            data_to_plot = (spectrum_data/float(max_value) + 
+                            y_axis.axis[spectrum_index])
+            ax.plot(x_axis.axis, data_to_plot,
+                    color=color_array[spectrum_index])
         ax.set_ylabel(y_axis.units)
 
     ax.set_xlim(x_axis.low_value, x_axis.high_value)
@@ -265,7 +267,9 @@ def plot_spectra(
 
     Returns
     -----------
-    Matplotlib figure"""
+    fig: Matplotlib figure
+    
+    """
     navigation_length = spectra.axes_manager.navigation_size
     if isinstance(color, str):
         if navigation_length == 0:
@@ -278,7 +282,9 @@ def plot_spectra(
     if style == 'cascade':
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        _make_cascade_subplot(spectra, ax, color=color_array, reverse_yaxis=reverse_yaxis)
+        _make_cascade_subplot(spectra, ax,
+                              color=color_array,
+                              reverse_yaxis=reverse_yaxis)
 
         if filename is None:
             return(fig)
@@ -299,7 +305,8 @@ def plot_spectra(
         for spectrum_index, spectrum in enumerate(spectra):
             fig = plt.figure()
             ax = fig.add_subplot(111)
-            _make_mosaic_subplot(spectrum, ax, color=color_array[spectrum_index])
+            _make_mosaic_subplot(spectrum, ax,
+                                 color=color_array[spectrum_index])
             #Currently only works with png images
             #Should use some more clever method
             filename = filename.replace('.png', '')
