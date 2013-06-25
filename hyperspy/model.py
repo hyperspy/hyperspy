@@ -113,6 +113,7 @@ class Model(list):
         object._axes_manager = self.axes_manager
         object._create_arrays()
         list.append(self,object)
+        object.model = self
         self._touch()
     
    
@@ -122,10 +123,12 @@ class Model(list):
                 
     def __delitem__(self, object):
         list.__delitem__(self,object)
+        object.model = None
         self._touch()
     
     def remove(self, object, touch=True):
         list.remove(self,object)
+        object.model = None
         if touch is True:
             self._touch() 
 
@@ -528,11 +531,11 @@ class Model(list):
             for component in self: # Cut the parameters list
                 if component.active is True:
                     if component.convolved is True:
-                        np.add(sum_convolved, component(param[\
+                        np.add(sum_convolved, component.__tempcall__(param[\
                         counter:counter+component._nfree_param],
                         self.convolution_axis), sum_convolved)
                     else:
-                        np.add(sum, component(param[counter:counter + \
+                        np.add(sum, component.__tempcall__(param[counter:counter + \
                         component._nfree_param], self.axis.axis), sum)
                     counter+=component._nfree_param
 
@@ -547,11 +550,11 @@ class Model(list):
             for component in self: # Cut the parameters list
                 if component.active is True:
                     if first is True:
-                        sum = component(param[counter:counter + \
+                        sum = component.__tempcall__(param[counter:counter + \
                         component._nfree_param],axis)
                         first = False
                     else:
-                        sum += component(param[counter:counter + \
+                        sum += component.__tempcall__(param[counter:counter + \
                         component._nfree_param], axis)
                     counter += component._nfree_param
             return sum
@@ -1001,9 +1004,14 @@ class Model(list):
                 
         self.fetch_stored_values()
            
-    def plot(self):
+    def plot(self, plot_components=False):
         """Plots the current spectrum to the screen and a map with a 
         cursor to explore the SI.
+        
+        Paramaters
+        ----------
+        plot_components : bool
+            If True, add a line per component to the signal figure.
         
         """
         
@@ -1012,12 +1020,11 @@ class Model(list):
         _plot = self.spectrum._plot
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()
-        l1.line_properties_helper(color, 'scatter')
-        l1.set_properties()
+        l1.set_line_properties(color=color, type='scatter')
         
         l2 = hyperspy.drawing.spectrum.SpectrumLine()
         l2.data_function = self._model2plot
-        l2.line_properties_helper('blue', 'line')        
+        l2.set_line_properties(color='blue', type='line')        
         # Add the line to the figure
         _plot.signal_plot.add_line(l2)
         l2.plot()
@@ -1025,6 +1032,30 @@ class Model(list):
                                 self._disconnect_parameters2update_plot)
         self._plot = self.spectrum._plot
         self._connect_parameters2update_plot()
+        if plot_components is True:
+            self.enable_plot_components()
+        
+    def enable_plot_components(self):
+        if self._plot is None:
+            return
+        for component in [component for component in self if
+                             component.active is True]:
+            line = hyperspy.drawing.spectrum.SpectrumLine()
+            line.data_function = component._component2plot       
+            # Add the line to the figure
+            self._plot.signal_plot.add_line(line)
+            line.plot()
+            component._model_plot_line = line
+        on_figure_window_close(self._plot.signal_plot.figure, 
+                                self.disable_plot_components)
+                
+    def disable_plot_components(self):
+        if self._plot is None:
+            return
+        for component in self:
+            if hasattr(component, "_model_plot_line"):
+                component._model_plot_line.close()
+                del component._model_plot_line        
         
     def set_current_values_to(self, components_list=None, mask=None):
         if components_list is None:

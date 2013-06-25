@@ -25,7 +25,8 @@ import hyperspy.defaults_parser
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
     ripple, tiff)
 from hyperspy.gui.tools import Load
-from hyperspy.misc import utils
+import hyperspy.utils
+import hyperspy.misc.utils
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import strlist2enumeration
 
@@ -189,7 +190,7 @@ def load(filenames=None, record_by=None, signal_type=None,
                 obj = load_single_file(filename, output_level=0,
                     signal_type=signal_type, **kwds)
                 signal.append(obj)
-            signal = utils.stack(signal,
+            signal = hyperspy.utils.stack(signal,
                                  axis=stack_axis,
                                  new_axis_name=new_axis_name,
                                  mmap=mmap, mmap_dir=mmap_dir)
@@ -312,7 +313,7 @@ def assign_signal_subclass(record_by="",
     import hyperspy.signals
     from hyperspy.signal import Signal
         
-    signals = utils.find_subclasses(hyperspy.signals, Signal)
+    signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, Signal)
     signals['Signal'] = Signal
     
     if signal_origin == "experiment":
