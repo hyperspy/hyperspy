@@ -81,7 +81,8 @@ class MPL_HyperImage_Explorer():
             # indices
             sl = spectrum.SpectrumLine()
             sl.data_function = self.navigator_data_function
-            sl.line_properties_helper('blue', 'step')        
+            sl.set_line_properties(color='blue',
+                                   type='step')        
             # Add the line to the figure
             sf.add_line(sl)
 
