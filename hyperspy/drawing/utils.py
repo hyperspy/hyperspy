@@ -185,13 +185,13 @@ def _make_heatmap_subplot(spectra, ax):
         y_axis = spectra.axes_manager.navigation_axes[0]
         ax.imshow(
             data,
-            cmap=plt.cm.jet,
             extent=[
                 x_axis.low_value,
                 x_axis.high_value,
                 y_axis.low_value,
                 y_axis.high_value],
-            aspect='auto')
+            aspect='auto',
+            interpolation="none")
         ax.set_ylabel(y_axis.units)
     ax.set_xlabel(x_axis.units)
     return(ax)
