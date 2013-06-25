@@ -48,7 +48,7 @@ from hyperspy.misc.mpfit.mpfit import mpfit
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
-
+from hyperspy.gui.tools import ComponentFit
 
 class Model(list):
     """Build and fit a model
@@ -1116,8 +1116,9 @@ class Model(list):
         Parameters
         ----------
         only_free : bool
-            If True, only the value of the parameters that are free will be
-            printed.
+            If True, only the value of the parameters that are free will
+             be printed.
+             
         """
         print "Components\tParameter\tValue"
         for component in self:
@@ -1212,8 +1213,8 @@ class Model(list):
     def disable_adjust_position(self, components=None, fix_them=True):
         """Disables the interactive adjust position feature
         
-        See also:
-        ---------
+        See also
+        --------
         enable_adjust_position
         
         """
@@ -1224,6 +1225,51 @@ class Model(list):
                 del pw.component
             pw.close()
             del pw
+
+    def fit_component(self, component, signal_range="interactive",
+            estimate_parameters=True, fit_independent=False, **kwargs):
+        """Fit just the given component in the given signal range.
+
+        This method is useful to obtain starting parameters for the 
+        components. Any keyword arguments are passed to the fit method.
+
+        Parameters
+        ----------
+        component : component instance
+            The component must be in the model, otherwise an exception 
+            is raised.
+        signal_range : {'interactive', (left_value, right_value), None}
+            If 'interactive' the signal range is selected using the span
+             selector on the spectrum plot. The signal range can also 
+             be manually specified by passing a tuple of floats. If None
+             the current signal range is used.
+        estimate_parameters : bool, default True
+            If True will check if the component has an 
+            estimate_parameters function, and use it to estimate the
+            parameters in the component.
+        fit_independent : bool, default False
+            If True, all other components are disabled. If False, all other
+            component paramemeters are fixed.
+
+        Examples
+        --------
+        Signal range set interactivly
+
+        >>> g1 = components.Gaussian()
+        >>> m.append(g1)
+        >>> m.fit_component(g1)
+        
+        Signal range set through direct input
+
+        >>> m.fit_component(g1, signal_range=(50,100))
+        """
+        
+        cf = ComponentFit(self, component, signal_range,
+                estimate_parameters, fit_independent, **kwargs)
+        if signal_range == "interactive":
+            cf.edit_traits()
+        else:
+            cf.apply()
 
     def set_parameters_not_free(self, component_list=None,
             parameter_name_list=None):

@@ -38,7 +38,7 @@ from hyperspy.io import load
 
 #TEM spectrum is just a copy of the basic function of SEM spectrum.
 class EDSTEMSpectrum(EDSSpectrum):
-    
+    _signal_type = "EDS_TEM"    
     
     def __init__(self, *args, **kwards):
         EDSSpectrum.__init__(self, *args, **kwards)
@@ -84,8 +84,6 @@ class EDSTEMSpectrum(EDSSpectrum):
         if hasattr(mp.TEM.EDS, 'azimuth_angle') is False:
             mp.TEM.EDS.azimuth_angle = preferences.EDS.eds_detector_azimuth  
         
-
-
                
     def set_microscope_parameters(self, beam_energy=None, live_time=None,
      tilt_stage=None, azimuth_angle=None, elevation_angle=None,

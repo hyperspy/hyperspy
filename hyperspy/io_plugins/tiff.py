@@ -21,7 +21,7 @@ import numpy as np
 import warnings
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    from hyperspy.misc.tifffile import imsave, imread
+    from hyperspy.misc.io.tifffile import imsave, imread
 
 # Plugin characteristics
 # ----------------------

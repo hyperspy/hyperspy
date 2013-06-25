@@ -150,8 +150,11 @@ with update_version_when_dev() as version:
                     'hyperspy.misc',
                     'hyperspy.misc.eels',
                     'hyperspy.misc.eds',
+                    'hyperspy.misc.io',
+                    'hyperspy.misc.machine_learning',
                     'hyperspy.misc.mpfit', 
-                    'hyperspy.misc.mpfit.tests'],
+                    'hyperspy.misc.mpfit.tests',
+                    ],
         requires = install_req,
         scripts = scripts,
         package_data = 

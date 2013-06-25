@@ -21,9 +21,9 @@ import os
 import numpy as np
 
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.utils import (incremental_filename,
-                                  append2pathname,
-                                  slugify)
+from hyperspy.misc.utils import slugify
+from hyperspy.misc.io.tools import (incremental_filename,
+                                    append2pathname,) 
 from hyperspy.exceptions import NavigationDimensionError
 
 

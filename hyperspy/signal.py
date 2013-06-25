@@ -28,13 +28,13 @@ from hyperspy import messages
 from hyperspy.axes import AxesManager
 from hyperspy import io
 from hyperspy.drawing import mpl_hie, mpl_hse
-from hyperspy.misc import utils
 from hyperspy.learn.mva import MVA, LearningResults
+import hyperspy.misc.utils
 from hyperspy.misc.utils import DictionaryBrowser
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.utils import ensure_directory
+from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.gui.tools import (
     SpectrumCalibration,
@@ -46,10 +46,12 @@ from hyperspy.gui.egerton_quantification import BackgroundRemoval
 from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
 from scipy.ndimage.filters import gaussian_filter1d
-from hyperspy.misc.utils import find_peaks_ohaver
-from hyperspy.misc.image_utils import (shift_image, estimate_image_shift)
-from hyperspy.misc.utils import symmetrize, antisymmetrize
-from hyperspy.exceptions import SignalDimensionError
+from hyperspy.misc.spectrum_tools import find_peaks_ohaver
+from hyperspy.misc.image_tools import (shift_image, estimate_image_shift)
+from hyperspy.misc.math_tools import symmetrize, antisymmetrize
+from hyperspy.exceptions import SignalDimensionError, DataDimensionError
+from hyperspy.misc import array_tools
+from hyperspy.misc import spectrum_tools
 
 
 class Signal2DTools(object):
@@ -491,7 +493,7 @@ class Signal1DTools(object):
         shift_array = np.zeros(self.axes_manager._navigation_shape_in_array)
         ref = self.navigation_indexer[reference_indices].data[i1:i2]
         if interpolate is True:
-            ref = utils.interpolate1D(ip, ref)
+            ref = spectrum_tools.interpolate1D(ip, ref)
         pbar = progressbar(
             maxval=self.axes_manager.navigation_size)
         for i, (dat, indices) in enumerate(zip(
@@ -499,7 +501,7 @@ class Signal1DTools(object):
                     self.axes_manager._array_indices_generator())):
             dat = dat[i1:i2]
             if interpolate is True:
-                dat = utils.interpolate1D(ip, dat)
+                dat = spectrum_tools.interpolate1D(ip, dat)
             shift_array[indices] = np.argmax(
                 np.correlate(ref, dat,'full')) - len(ref) + 1
             pbar.update(i + 1)
@@ -635,7 +637,7 @@ class Signal1DTools(object):
         if (polynomial_order is not None and 
             number_of_points is not None):
             for spectrum in self:
-                spectrum.data[:] = utils.sg(self(),
+                spectrum.data[:] = spectrum_tools.sg(self(),
                                             number_of_points, 
                                             polynomial_order,
                                             differential_order)
@@ -1910,9 +1912,11 @@ class MVATools(object):
 class Signal(MVA,
              MVATools,
              Signal1DTools,
-             Signal2DTools):
+             Signal2DTools,):
     
-    _default_record_by = 'image'
+    _record_by = ""
+    _signal_type = ""
+    _signal_origin = ""
 
     def __init__(self, data, **kwds):
         """Create a Signal from a numpy array.
@@ -2050,10 +2054,10 @@ class Signal(MVA,
         if isinstance(other, Signal):
             if other.data.shape != self.data.shape:
                 # Are they aligned?
-                are_aligned = utils.are_aligned(self.data.shape,
+                are_aligned = array_tools.are_aligned(self.data.shape,
                                        other.data.shape)
                 if are_aligned is True:
-                    sdata, odata = utils.homogenize_ndim(self.data,
+                    sdata, odata = array_tools.homogenize_ndim(self.data,
                                                      other.data)
                 else:
                     # Let's align them if possible
@@ -2245,10 +2249,15 @@ class Signal(MVA,
             file_data_dict['original_parameters'])
         self.mapped_parameters._load_dictionary(
             file_data_dict['mapped_parameters'])
-        if not hasattr(self.mapped_parameters,'title'):
+        if not hasattr(self.mapped_parameters, 'title'):
             self.mapped_parameters.title = ''
-        if not hasattr(self.mapped_parameters,'record_by'):
-            self.mapped_parameters.record_by = self._default_record_by
+        if self._record_by:
+            self.mapped_parameters.record_by = self._record_by
+        if self._signal_origin:
+            self.mapped_parameters.signal_origin = self._signal_origin
+        if self._signal_type:
+            self.mapped_parameters.signal_type = self._signal_type
+            
                 
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array 
@@ -2263,17 +2272,33 @@ class Signal(MVA,
         self.data = self.data.squeeze()
         return self
 
-    def _get_signal_dict(self, add_learning_results=True):
+    def _to_dictionary(self, add_learning_results=True):
+        """Returns a dictionary that can be used to recreate the signal.
+        
+        All items but `data` are copies.
+        
+        Parameters
+        ----------
+        add_learning_results : bool
+        
+        Returns
+        -------
+        dic : dictionary
+        
+        """
         dic = {}
-        if hasattr(self.data, "copy"):
-            dic['data'] = self.data.copy()
-        else:
-            dic['data'] = self.data            
+#        if hasattr(self.data, "copy"):
+#            dic['data'] = self.data.copy()
+#        else:
+#            dic['data'] = self.data
+        dic['data'] = self.data
         dic['axes'] = self.axes_manager._get_axes_dicts()
         dic['mapped_parameters'] = \
         self.mapped_parameters.deepcopy().as_dictionary()
         dic['original_parameters'] = \
         self.original_parameters.deepcopy().as_dictionary()
+        dic['tmp_parameters'] = \
+                        self.tmp_parameters.deepcopy().as_dictionary()
         if add_learning_results and hasattr(self,'learning_results'):
             dic['learning_results'] = copy.deepcopy(
                                                 self.learning_results.__dict__)
@@ -2394,12 +2419,13 @@ class Signal(MVA,
 
         """
         if self._plot is not None:
-                try:
-                    self._plot.close()
-                except:
-                    # If it was already closed it will raise an exception,
-                    # but we want to carry on...
-                    pass
+            try:
+                self._plot.close()
+            except:
+                # If it was already closed it will raise an exception,
+                # but we want to carry on...
+                pass
+
         if axes_manager is None:
             axes_manager = self.axes_manager
                     
@@ -2614,6 +2640,55 @@ class Signal(MVA,
         self.axes_manager._axes[axis1] = c2
         self.axes_manager._axes[axis2] = c1
         self.axes_manager._update_attributes()
+        self._make_sure_data_is_contiguous()
+        
+    def rollaxis(self, axis, to_axis):
+        """Roll the specified axis backwards, until it lies in a given position.
+
+        Parameters
+        ----------
+        axis : {int, str}
+            The axis to roll backwards.  The positions of the other axes do not
+            change relative to one another.
+        to_axis : {int, str}
+            The axis is rolled until it lies before this other axis.
+        
+        Returns
+        -------
+        s : Signal or subclass
+            Output signal.
+        
+        See Also
+        --------
+        roll : swap_axes
+        
+        Examples
+        --------
+        >>> s = signals.Spectrum(np.ones((5,4,3,6)))
+        >>> s
+        <Spectrum, title: , dimensions: (3, 4, 5, 6)>
+        >>> s.rollaxis(3, 1)
+        <Spectrum, title: , dimensions: (3, 4, 5, 6)>
+        >>> s.rollaxis(2,0)
+        <Spectrum, title: , dimensions: (5, 3, 4, 6)>
+        
+        """
+        axis = self.axes_manager[axis].index_in_array
+        to_index = self.axes_manager[to_axis].index_in_array
+        new_axes_indices = hyperspy.misc.utils.rollelem(
+                [axis_.index_in_array for axis_ in self.axes_manager._axes],
+                index=axis,
+                to_index=to_index)
+
+        
+        s = self._deepcopy_with_new_data(self.data.transpose(new_axes_indices))
+        s.axes_manager._axes = hyperspy.misc.utils.rollelem(
+                                                    s.axes_manager._axes,
+                                                    index=axis,
+                                                    to_index=to_index)
+        s.axes_manager._update_attributes()
+        s._make_sure_data_is_contiguous()
+        return s
 
     def rebin(self, new_shape):
         """
@@ -2633,7 +2708,7 @@ class Signal(MVA,
                 new_shape[axis.index_in_axes_manager])
         factors = (np.array(self.data.shape) / 
                            np.array(new_shape_in_array))
-        self.data = utils.rebin(self.data, new_shape_in_array)
+        self.data = array_tools.rebin(self.data, new_shape_in_array)
         for axis in self.axes_manager._axes:
             axis.scale *= factors[axis.index_in_array]
         self.get_dimensions_from_data()
@@ -2671,7 +2746,7 @@ class Signal(MVA,
         """
         
         shape = self.data.shape
-        signal_dict = self._get_signal_dict(add_learning_results=False)
+        signal_dict = self._to_dictionary(add_learning_results=False)
         if axis is None:
             if self.mapped_parameters.has_item("splitting.axis"):
                 axis = self.mapped_parameters.splitting.axis
@@ -3138,7 +3213,9 @@ class Signal(MVA,
             self._plot = backup_plot
 
     def __deepcopy__(self, memo):
-        dc = type(self)(**self._get_signal_dict())
+        dc = type(self)(**self._to_dictionary())
+        if dc.data is not None:
+            dc.data = dc.data.copy()
         # The Signal subclasses might change the view on init
         # The following code just copies the original view
         for oaxis, caxis in zip(self.axes_manager._axes,
@@ -3303,6 +3380,122 @@ class Signal(MVA,
         
     def __len__(self):
         return self.axes_manager.signal_shape[-1]
+
+    def as_spectrum(self, spectral_axis):
+        """Return the Signal as a spectrum.
+        
+        The chosen spectral axis is moved to the last index in the 
+        array and the data is made contiguous for effecient 
+        iteration over spectra.
+
+
+        Parameters
+        ----------
+        spectral_axis : {int, complex, str}
+            Select the spectral axis to-be using its index or name.
+            
+        Examples
+        --------        
+        >>> img = signals.Image(np.ones((3,4,5,6)))
+        >>> img
+        <Image, title: , dimensions: (4, 3, 6, 5)>
+        >>> img.to_spectrum(1-1j)
+        <Spectrum, title: , dimensions: (6, 5, 4, 3)>
+        >>> img.to_spectrum(0)
+        <Spectrum, title: , dimensions: (6, 5, 3, 4)>
+
+        """
+        import hyperspy.io
+        # Roll the spectral axis to-be to the latex index in the array
+        sp = self.rollaxis(spectral_axis, -1j)
+        sp.mapped_parameters.record_by = "spectrum"
+        sp = hyperspy.io.dict2signal(sp._to_dictionary())
+        return sp
+        
+    def as_image(self, image_axes):
+        """Convert signal to image.
+        
+        The chosen image axes are moved to the last indices in the 
+        array and the data is made contiguous for effecient 
+        iteration over images.
+
+        Parameters
+        ----------
+        image_axes : tuple of {int, complex, str}
+            Select the image axes. Note that the order of the axes matters 
+            and it is given in the "natural" i.e. X, Y, Z... order.
+            
+        Examples
+        --------        
+        >>> s = signals.Spectrum(np.ones((2,3,4,5)))
+        >>> s
+        <Spectrum, title: , dimensions: (4, 3, 2, 5)>
+        >>> s.as_image((0,1))
+        <Image, title: , dimensions: (5, 2, 4, 3)>
+
+        >>> s.to_image((1,2))
+        <Image, title: , dimensions: (4, 5, 3, 2)>
+        
+        Raises
+        ------
+        DataDimensionError : when data.ndim < 2
+        
+        """
+        import hyperspy.io
+        if self.data.ndim < 2:
+            raise DataDimensionError(
+                "A Signal dimension must be >= 2 to be converted to an Image")
+        axes = (self.axes_manager[image_axes[0]],
+                self.axes_manager[image_axes[1]])
+        iaxes = [axis.index_in_array for axis in axes]
+        im = self.rollaxis(complex(0, iaxes[0]), -1j).rollaxis(
+                           complex(0, iaxes[1]-np.argmax(iaxes)), -2j)
+        im.mapped_parameters.record_by = "image"
+        return hyperspy.io.dict2signal(im._to_dictionary())
+        
+    def _assign_subclass(self):
+        mp = self.mapped_parameters
+        current_class = self.__class__
+        self.__class__ = hyperspy.io.assign_signal_subclass(
+            record_by = mp.record_by if "record_by" in mp
+                                     else self._record_by,
+            signal_type = mp.signal_type if "signal_type" in mp
+                                     else self._signal_type,
+            signal_origin = mp.signal_origin if "signal_origin" in mp
+                                             else self._signal_origin) 
+        if self.__class__ != current_class:
+            self.__init__(**self._to_dictionary())
+        
+        
+    def set_signal_type(self, signal_type):
+        """
+        
+        Parameters
+        ----------
+        signal_type : {"EELS" or any other string describing the signal}
+        
+        """        
+        self.mapped_parameters.signal_type = signal_type
+        self._assign_subclass()
+        
+        
+    def set_signal_origin(self, origin):
+        """
+        
+        Parameters
+        ----------
+        origin : {'experiment', 'simulation'}
+        
+        Raises
+        ------
+        ValueError if origin is not 'experiment' or 'simulation'
+        
+        """
+        if origin not in ['experiment', 'simulation']:
+            raise ValueError("`origin` must be one of: experiment, simulation" )
+        self.mapped_parameters.signal_origin = origin
+        self._assign_subclass()    
+
         
 # Implement binary operators
 for name in (

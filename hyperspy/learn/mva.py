@@ -32,15 +32,16 @@ except:
     mdp_installed = False
     
 
-from hyperspy.misc.import_sklearn import *
+from hyperspy.misc.machine_learning.import_sklearn import *
 from hyperspy.misc import utils
-from hyperspy.misc import utils_varia 
+import hyperspy.misc.io.tools as io_tools 
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
 from hyperspy.defaults_parser import preferences
 from hyperspy import messages
 from hyperspy.decorators import auto_replot, do_not_replot
 from scipy import linalg
+from hyperspy.misc.machine_learning.orthomax import orthomax
 
 
 def centering_and_whitening(X):
@@ -490,7 +491,7 @@ class MVA():
             # first center and scale the data
             factors,invsqcovmat = centering_and_whitening(factors)
             if algorithm == 'orthomax':
-                _, unmixing_matrix = utils.orthomax(factors, **kwargs)
+                _, unmixing_matrix = orthomax(factors, **kwargs)
                 unmixing_matrix = unmixing_matrix.T
             
             elif algorithm == 'sklearn_fastica':
@@ -884,7 +885,7 @@ class LearningResults(object):
             kwargs[attribute] = self.__getattribute__(attribute)
         # Check overwrite
         if overwrite is None:
-            overwrite = utils_varia.overwrite(filename)
+            overwrite = io_tools.overwrite(filename)
         # Save, if all went well!
         if overwrite is True:    
             np.savez(filename, **kwargs)

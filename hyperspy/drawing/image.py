@@ -27,6 +27,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
 from hyperspy.gui.tools import ImageContrastEditor
+from hyperspy.misc import math_tools
 
 class ImagePlot:
     """Class to plot an image with the necessary machinery to update
@@ -253,7 +254,7 @@ class ImagePlot:
         vmin, vmax = self.vmin, self.vmax
         _range = vmax - vmin
         step = _range / (number_of_ticks - 1)
-        step_oom = utils.order_of_magnitude(step)
+        step_oom = math_tools.order_of_magnitude(step)
         def optimize_for_oom(oom):
             self.colorbar_step = math.floor(step / 10**oom)*10**oom
             self.colorbar_vmin = math.floor(vmin / 10**oom)*10**oom

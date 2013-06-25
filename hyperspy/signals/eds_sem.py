@@ -44,6 +44,7 @@ import hyperspy.components as components
 
 
 class EDSSEMSpectrum(EDSSpectrum):
+    _signal_type = "EDS_SEM"
     
     def __init__(self, *args, **kwards):
         EDSSpectrum.__init__(self, *args, **kwards)
