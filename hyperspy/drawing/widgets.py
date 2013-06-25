@@ -26,7 +26,7 @@ import numpy as np
 import traits
 
 from utils import on_figure_window_close
-from hyperspy.misc.utils import closest_nice_number
+from hyperspy.misc.math_tools import closest_nice_number
 from hyperspy.drawing.utils import does_figure_object_exists
 
 class DraggablePatch(object):
@@ -185,13 +185,13 @@ class DraggableSquare(ResizebleDraggablePatch):
                         picker=True,)
         
     def calculate_size(self):
-        xaxis = self.axes_manager.navigation_axes[1]
-        yaxis = self.axes_manager.navigation_axes[0]
+        xaxis = self.axes_manager.navigation_axes[0]
+        yaxis = self.axes_manager.navigation_axes[1]
         self._xsize = xaxis.scale * self.size
         self._ysize = yaxis.scale * self.size
         
     def calculate_position(self):
-        coordinates = np.array(self.axes_manager.coordinates[::-1])
+        coordinates = np.array(self.axes_manager.coordinates[:2])
         self._position = coordinates - (
                             self._xsize / 2., self._ysize / 2.)
 
@@ -208,23 +208,23 @@ class DraggableSquare(ResizebleDraggablePatch):
 
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'
-        xaxis = self.axes_manager.navigation_axes[1]
-        yaxis = self.axes_manager.navigation_axes[0]
+        xaxis = self.axes_manager.navigation_axes[0]
+        yaxis = self.axes_manager.navigation_axes[1]
         wxindex = xaxis.value2index(event.xdata)
         wyindex = yaxis.value2index(event.ydata)
         if self.picked is True and event.inaxes:
             wxindex = xaxis.value2index(event.xdata)
             wyindex = yaxis.value2index(event.ydata)
-            if self.axes_manager.coordinates[0] != wyindex:
+            if self.axes_manager.indices[1] != wyindex:
                 try:
-                    self.axes_manager.navigation_axes[0].index = wyindex
+                    yaxis.index = wyindex
                 except traits.api.TraitError:
                     # Index out of range, we do nothing
                     pass
                     
-            if  self.axes_manager.coordinates[1] != wxindex:
+            if  self.axes_manager.indices[0] != wxindex:
                 try:
-                    self.axes_manager.navigation_axes[1].index = wxindex
+                    xaxis.index = wxindex
                 except traits.api.TraitError:
                     # Index out of range, we do nothing
                     pass

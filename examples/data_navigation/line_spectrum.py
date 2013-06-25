@@ -2,7 +2,7 @@
 """
 
 # Create a line spectrum with random data
-s = signals.Spectrum({'data' : np.random.random((100,1024))})
+s = signals.Spectrum(np.random.random((100,1024)))
 
 # Define the axis properties
 s.axes_manager.signal_axes[0].name = 'Energy'

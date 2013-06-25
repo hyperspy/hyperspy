@@ -16,47 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-from scipy.ndimage.filters import gaussian_filter1d
 
-from hyperspy.decorators import auto_replot
 from hyperspy.signals.spectrum import Spectrum
+from hyperspy.signals.simulation import Simulation
 
-class SpectrumSimulation(Spectrum):
-    def __init__(self, dic = None, shape = None, dtype = 'float64'):
-        if dic is None and shape is not None:
-            data = np.zeros((shape), dtype = dtype)
-            dic = {'data' : data}
-        Spectrum.__init__(self, dic)
+class SpectrumSimulation(Simulation, Spectrum):
+    pass
 
-    @auto_replot
-    def add_poissonian_noise(self, **kwargs):
-        """Add Poissonian noise to the data"""
-        original_type = self.data.dtype
-        self.data = np.random.poisson(self.data, **kwargs).astype(
-                                      original_type)
 
-    @auto_replot
-    def add_gaussian_noise(self, std, **kwargs):
-        """Add Gaussian noise to the data
-        Parameters
-        ----------
-        std : float
 
-        """
-        noise = np.random.normal(0, std, self.data.shape, **kwargs)
-        self.data += noise
-
-    @auto_replot    
-    def apply_spectral_gaussian_filter(self, FWHM):
-        """Applies a Gaussian filter in the spectral dimension.
-        
-        Parameters
-        ----------
-        FWHM : float
-        
-        """
-        if FWHM > 0:
-            self.data = gaussian_filter1d(self.data, axis = -1, 
-            sigma = FWHM/2.35482)
 

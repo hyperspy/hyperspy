@@ -103,7 +103,9 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
     def create_background_line(self):
         self.bg_line = drawing.spectrum.SpectrumLine()
         self.bg_line.data_function = self.bg_to_plot
-        self.bg_line.line_properties_helper('blue', 'line')
+        self.bg_line.set_line_properties(
+            color='blue',
+            type='line')
         self.signal._plot.signal_plot.add_line(self.bg_line)
         self.bg_line.autoscale = False
         self.bg_line.plot()
@@ -239,10 +241,10 @@ class SpikesRemoval(SpanSelectorInSpectrum):
     def __init__(self, signal,navigation_mask=None, signal_mask=None):
         super(SpikesRemoval, self).__init__(signal)
         self.interpolated_line = None
-        self.coordinates = [coordinate for coordinate in np.ndindex(
-                            tuple(signal.axes_manager.navigation_shape))
+        self.coordinates = [coordinate for coordinate in 
+                            signal.axes_manager._am_indices_generator()
                             if (navigation_mask is None or not 
-                                navigation_mask[coordinate])]
+                                navigation_mask[coordinate[::-1]])]
         self.signal = signal
         sys.setrecursionlimit(np.cumprod(self.signal.data.shape)[-1])
         self.line = signal._plot.signal_plot.ax_lines[0]
@@ -350,7 +352,9 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.interpolated_line = drawing.spectrum.SpectrumLine()
         self.interpolated_line.data_function = \
             self.get_interpolated_spectrum
-        self.interpolated_line.line_properties_helper('blue', 'line')
+        self.interpolated_line.set_line_properties(
+            color='blue',
+            type='line')
         self.signal._plot.signal_plot.add_line(self.interpolated_line)
         self.interpolated_line.autoscale = False
         self.interpolated_line.plot()

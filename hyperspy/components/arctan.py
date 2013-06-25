@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Hyperspy. If not, see <http://www.gnu.org/licenses/>.
 
+import math
+
 import numpy as np
 
 from hyperspy.component import Component
@@ -40,7 +42,7 @@ class Arctan(Component):
 
     """
 
-    def __init__(self, A=1. , k=1. , x0=1.):
+    def __init__(self, A=1. , k=1. , x0=1., minimum_at_zero=False):
         Component.__init__(self, ['A', 'k', 'x0'])
         self.A.value = A
         self.A.grad = self.grad_A
@@ -51,6 +53,8 @@ class Arctan(Component):
         self.x0.value = x0
         self.x0.grad = self.grad_x0
 
+        self.minimum_at_zero = minimum_at_zero
+
         self.isbackground = False
         self.isconvolved = False
         self._position = self.x0
@@ -59,13 +63,19 @@ class Arctan(Component):
         A = self.A.value
         k = self.k.value
         x0 = self.x0.value
-        return A*np.arctan(k*(x-x0))
+        if self.minimum_at_zero:
+            return A*(math.pi/2+np.arctan(k*(x-x0)))
+        else:
+            return A*np.arctan(k*(x-x0))
     
     def grad_A(self,x):
         A = self.A.value
         k = self.k.value
         x0 = self.x0.value
-        return np.arctan(k*(x-x0))
+        if self.minimum_at_zero:
+            return offset+np.arctan(k*(x-x0))
+        else:
+            return np.arctan(k*(x-x0))
 
     def grad_k(self,x):
         A = self.A.value
