@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 
 name = 'hyperspy'
 
@@ -27,17 +26,11 @@ name = 'hyperspy'
 # When running setup.py the "+dev" string will be replaced (if possible)
 # by the output of "git describe" if git is available or the git 
 # hash if .git is present.
-version = "0.5.1+dev"
+version = "0.6.dev"
 description = "Hyperspectral data analysis toolbox"
 license = 'GPL v3'
 
 authors = {
-    'F_DLP' : (u'Francisco de la Peña',
-               'hyperspy-devel@googlegroups.com'),
-    'S_M'    : ('Stefano Mazzucco',
-                'hyperspy-devel@googlegroups.com'),
-    'M_S'    : ('Michael Sarahan',
-                'hyperspy-devel@googlegroups.com'),
     'all'    : ('The Hyperspy developers',
                 'hyperspy-devel@googlegroups.com'),}
 

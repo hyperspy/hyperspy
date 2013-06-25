@@ -8,7 +8,7 @@ simulated hyperspectrum.
 
 
 # Create an empty spectrum
-s = signals.Spectrum({'data' : np.zeros((32,32,1024))})
+s = signals.Spectrum(np.zeros((32,32,1024)))
 
 # Generate some simple data: two Gaussians with random centers and area
 
@@ -47,14 +47,16 @@ gs2.A.map['values'][:] = 20000 * np.random.random((32,32))
 gs2.A.map['is_set'][:] = True
 
 # Create the dataset
-m.generate_data_from_model()
+s_model = m.as_signal()
 
-# Assign the data generated to the Spectrum with some poissonian noise
-s.data = np.random.poisson(m.model_cube)
+# Add noise
+s_model = s_model.to_simulation()
+s_model.add_poissonian_noise()
 
 # Plot the result
+s_model.plot()
 
-s.plot()
+show()
 
 
 

@@ -37,6 +37,9 @@ class Dummy:
 class DummyAxesManager:
     navigation_shape = [0,]
     indices = ()
+    @property            
+    def _navigation_shape_in_array(self):
+        return self.navigation_shape[::-1]
 
 class TestParameterLen1:
     def setUp(self):
