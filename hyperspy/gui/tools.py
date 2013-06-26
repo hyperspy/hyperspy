@@ -572,7 +572,7 @@ class ImageContrastHandler(tu.Handler):
 #        if is_ok is True:
 #            self.apply(info)
         if is_ok is False:
-            info.object.image.update_image(auto_contrast=True)
+            info.object.image.update(auto_contrast=True)
         info.object.close()
         return True
 
@@ -669,7 +669,7 @@ class ImageContrastEditor(t.HasTraits):
     def reset(self):
         data = self.image.data_function().ravel()
         self.image.vmin, self.image.vmax = np.nanmin(data),np.nanmax(data)
-        self.image.update_image(auto_contrast=False)
+        self.image.update(auto_contrast=False)
         self.update_histogram()
         
     def update_histogram(self):
@@ -682,7 +682,7 @@ class ImageContrastEditor(t.HasTraits):
             return
         self.image.vmin = self.ss_left_value
         self.image.vmax = self.ss_right_value
-        self.image.update_image(auto_contrast=False)
+        self.image.update(auto_contrast=False)
         self.update_histogram()
         
     def close(self):

@@ -75,7 +75,7 @@ class MPL_HyperImage_Explorer():
                 navigation_sliders(
                     self.axes_manager.navigation_axes[::-1])
                 for axis in self.axes_manager.navigation_axes[:-2]:
-                    axis.connect(imf.update_image)
+                    axis.connect(imf.update)
             self.navigator_plot = imf
             
         if self.axes_manager.navigation_dimension == 1:
@@ -114,7 +114,7 @@ class MPL_HyperImage_Explorer():
             self.pointer.color = 'red'
             self.plot_navigator()
         self.plot_signal()
-        self.axes_manager.connect(self.signal_plot._update_image)
+        self.axes_manager.connect(self.signal_plot._update)
             
     def assign_pointer(self):
         nav_dim = self.axes_manager.navigation_dimension
@@ -130,7 +130,7 @@ class MPL_HyperImage_Explorer():
         if (self.axes_manager.navigation_dimension > 2 and 
             self.navigator_plot is not None):
                 for axis in self.axes_manager.navigation_axes[:-2]:
-                    axis.disconnect(self.navigator_plot.update_image)
+                    axis.disconnect(self.navigator_plot.update)
         if self.pointer is not None:
             self.pointer.disconnect(self.navigator_plot.ax)            
     def close(self):         

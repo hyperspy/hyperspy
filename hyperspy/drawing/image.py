@@ -176,7 +176,7 @@ class ImagePlot:
                             transform = self.ax.transAxes,
                             fontsize=12,
                             color='red')
-        self.update_image()
+        self.update()
         if self.plot_scalebar is True:
             if self.pixel_units is not None:
                 self.ax.scalebar = widgets.Scale_Bar(
@@ -192,7 +192,7 @@ class ImagePlot:
             self.figure.tight_layout()
         self.connect()
         
-    def update_image(self, auto_contrast=None):
+    def update(self, auto_contrast=None):
         ims = self.ax.images
         if ims:
             ims.remove(ims[0])
@@ -223,10 +223,10 @@ class ImagePlot:
             self._text.set_text((self.axes_manager.indices))
         self.figure.canvas.draw()
         
-    def _update_image(self):
+    def _update(self):
         # This "wrapper" because on_trait_change fiddles with the 
         # method arguments and auto_contrast does not work then
-        self.update_image()
+        self.update()
     def adjust_contrast(self):
         ceditor = ImageContrastEditor(self)
         ceditor.edit_traits()
@@ -243,7 +243,7 @@ class ImagePlot:
                     
     def set_contrast(self, vmin, vmax):
         self.vmin, self.vmax =  vmin, vmax
-        self.update_image()
+        self.update()
             
     # TODO The next function must be improved
     

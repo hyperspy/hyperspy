@@ -119,7 +119,7 @@ class MPL_HyperSpectrum_Explorer(object):
                 navigation_sliders(
                     self.axes_manager.navigation_axes)
                 for axis in self.axes_manager.navigation_axes[2:]:
-                    axis.connect(imf.update_image)
+                    axis.connect(imf.update)
             
         imf.title = self.signal_title + ' Navigator'
         imf.plot()
@@ -226,13 +226,13 @@ class MPL_HyperSpectrum_Explorer(object):
             line.close()
         self.right_pointer.close()
         self.right_pointer = None
-        self.navigator_plot.update_image()
+        self.navigator_plot.update()
         
     def _disconnect(self):
         if (self.axes_manager.navigation_dimension > 2 and 
             self.navigator_plot is not None):
                 for axis in self.axes_manager.navigation_axes[:-2]:
-                    axis.disconnect(self.navigator_plot.update_image)
+                    axis.disconnect(self.navigator_plot.update)
         
         if self.pointer is not None:
             self.pointer.disconnect(self.navigator_plot.ax)
