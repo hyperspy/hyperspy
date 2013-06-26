@@ -23,6 +23,8 @@ import traits.api as t
 import traitsui.api as tui
 from traits.trait_errors import TraitError
 
+from hyperspy.misc.utils import isiterable
+
 class ndindex_nat(np.ndindex):
     def next(self):
         return super(ndindex_nat, self).next()[::-1]
@@ -812,6 +814,24 @@ class AxesManager(t.HasTraits):
         return [getattr(axis, attr) for axis in self._axes]
     
     def _set_axis_attribute_values(self, attr, values):
+        """Set the given attribute of all the axes to the given
+        value(s)
+        
+        Parameters
+        ----------
+        attr : string
+            The DataAxis attribute to set.
+        values: any
+            If iterable, it must have the same number of items
+            as axes are in this AxesManager instance. If not iterable,
+            the attribute of all the axes are set to the given value.
+            
+        """
+        if not isiterable(values):
+            values = [values, ] * len(self._axes)
+        elif len(values) != len(self._axes):
+            raise ValueError("Values must have the same number"
+                "of items are axes are in this AxesManager")
         for axis, value in zip(self._axes,values):
             setattr(axis, attr, value)
             
