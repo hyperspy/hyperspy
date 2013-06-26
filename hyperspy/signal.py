@@ -3293,6 +3293,7 @@ class Signal(MVA,
         if auto_title is True:
             cs.mapped_parameters.title = (cs.mapped_parameters.title +              
                     ' ' + str(self.axes_manager.indices))                       
+        cs.axes_manager._set_axis_attribute_values("navigate", False)        
         return cs
                 
         
