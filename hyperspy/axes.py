@@ -259,8 +259,7 @@ class DataAxis(t.HasTraits):
         self.value = self.axis[self.index]
 
     def value2index(self, value):
-        """Return the closest index to the given value if between the limits,
-        otherwise it will return either the upper or lower limits
+        """Return the closest index to the given value if between the limit.
 
         Parameters
         ----------
@@ -269,18 +268,21 @@ class DataAxis(t.HasTraits):
         Returns
         -------
         int
+
+        Raises
+        ------
+        ValueError if value is out of the axis limits.
+
         """
         if value is None:
             return None
         else:
-            index = int(round((value - self.offset) / \
-            self.scale))
+            index = int(round((value - self.offset) / 
+                              self.scale))
             if self.size > index >= 0:
                 return index
-            elif index < 0:
-                return 0
             else:
-                return int(self.size - 1)
+                raise ValueError("The value is out of the axis limits")                
 
     def index2value(self, index):
         return self.axis[index]
