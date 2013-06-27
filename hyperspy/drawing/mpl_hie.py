@@ -66,6 +66,7 @@ class MPL_HyperImage_Explorer():
             return
         if self.axes_manager.navigation_dimension >= 2:
             imf = image.ImagePlot()
+            imf.axes_manager = self.axes_manager
             imf.data_function = self.navigator_data_function
             imf.title = self.signal_title + ' Navigator'
             imf.xaxis, imf.yaxis = self.axes_manager.navigation_axes[:2]
@@ -114,7 +115,6 @@ class MPL_HyperImage_Explorer():
             self.pointer.color = 'red'
             self.plot_navigator()
         self.plot_signal()
-        self.axes_manager.connect(self.signal_plot._update)
             
     def assign_pointer(self):
         nav_dim = self.axes_manager.navigation_dimension
@@ -129,11 +129,13 @@ class MPL_HyperImage_Explorer():
     def _disconnect(self):
         if (self.axes_manager.navigation_dimension > 2 and 
             self.navigator_plot is not None):
-                for axis in self.axes_manager.navigation_axes[:-2]:
+                for axis in self.axes_manager.navigation_axes:
                     axis.disconnect(self.navigator_plot.update)
         if self.pointer is not None:
-            self.pointer.disconnect(self.navigator_plot.ax)            
-    def close(self):         
+            self.pointer.disconnect(self.navigator_plot.ax)  
+            
+    def close(self):
+        self._disconnect()
         self.signal_plot.close()
         self.navigator_plot.close()        
            

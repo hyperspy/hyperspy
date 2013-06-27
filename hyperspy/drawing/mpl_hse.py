@@ -231,7 +231,7 @@ class MPL_HyperSpectrum_Explorer(object):
     def _disconnect(self):
         if (self.axes_manager.navigation_dimension > 2 and 
             self.navigator_plot is not None):
-                for axis in self.axes_manager.navigation_axes[:-2]:
+                for axis in self.axes_manager.navigation_axes:
                     axis.disconnect(self.navigator_plot.update)
         
         if self.pointer is not None:

@@ -236,6 +236,7 @@ class ImagePlot:
         self.figure.canvas.mpl_connect('key_press_event',
                                         self.on_key_press)
         self.figure.canvas.draw()
+        self.axes_manager.connect(self._update)
 
     def on_key_press(self, event):
         if event.key == 'h':
@@ -276,7 +277,11 @@ class ImagePlot:
             optimize_for_oom(step_oom - i)
             i += 1
             
+    def disconnect(self):
+        self.axes_manager.disconnect(self._update)
+            
     def close(self):
+        self.disconnect()
         if utils.does_figure_object_exists(self.figure) is True:
             plt.close(self.figure)
             
