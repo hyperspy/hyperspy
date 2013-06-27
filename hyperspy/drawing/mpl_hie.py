@@ -85,7 +85,6 @@ class MPL_HyperImage_Explorer():
                                    type='step')        
             # Add the line to the figure
             sf.add_line(sl)
-
             sf.plot()
             self.pointer.add_axes(sf.ax)
             
