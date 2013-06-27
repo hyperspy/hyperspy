@@ -764,7 +764,6 @@ class Signal1DTools(object):
         ValueError if FWHM is equal or less than zero.
         
         SignalDimensionError if the signal dimension is not 1.
-            
         
         """
         self._check_signal_dimension_equals_one()
@@ -2532,8 +2531,6 @@ class Signal(MVA,
         self.data = np.roll(self.data, n_x, 0)
         self.data[:n_x, ...] = np.roll(self.data[:n_x, ...], n_y, 1)
 
-    # TODO: After using this function the plotting does not work
-    @auto_replot
     def swap_axes(self, axis1, axis2):
         """Swaps the axes.
 
@@ -2543,17 +2540,22 @@ class Signal(MVA,
             Specify the data axes in which to perform the operation.
             The axis can be specified using the index of the 
             axis in `axes_manager` or the axis name.
+            
+        Returns
+        -------
+        s : a copy of the object with the axes swapped.
         
         """
         axis1 = self.axes_manager[axis1].index_in_array
         axis2 = self.axes_manager[axis2].index_in_array
-        self.data = self.data.swapaxes(axis1, axis2)
-        c1 = self.axes_manager._axes[axis1]
-        c2 = self.axes_manager._axes[axis2]
-        self.axes_manager._axes[axis1] = c2
-        self.axes_manager._axes[axis2] = c1
-        self.axes_manager._update_attributes()
-        self._make_sure_data_is_contiguous()
+        s = self._deepcopy_with_new_data(self.data.swapaxes(axis1, axis2))
+        c1 = s.axes_manager._axes[axis1]
+        c2 = s.axes_manager._axes[axis2]
+        s.axes_manager._axes[axis1] = c2
+        s.axes_manager._axes[axis2] = c1
+        s.axes_manager._update_attributes()
+        s._make_sure_data_is_contiguous()
+        return s
         
     def rollaxis(self, axis, to_axis):
         """Roll the specified axis backwards, until it lies in a given position.

@@ -79,6 +79,11 @@ class Test3D:
         s.rebin((2,1,6))
         assert_true(s.data.shape == (1,2,6))
         
+    def test_swap_axes(self):
+        s = self.signal
+        assert_equal(s.swap_axes(0,1).data.shape, (4,2,6))
+        assert_true(s.swap_axes(0,2).data.flags['C_CONTIGUOUS'])
+        
 class TestRollAxis:
     def setUp(self):
         s = signals.Spectrum(np.ones((5,4,3,6)))
