@@ -2378,14 +2378,13 @@ class Signal(MVA,
             return None
             
     def plot(self, navigator="auto", axes_manager=None):
-
         """Plot the signal at the current coordinates.
             
         For multidimensional datasets an optional figure,
         the "navigator", with a cursor to navigate that data is
         raised. In any case it is possible to navigate the data using
-        the sliders. Currently only signals of dimensions 0, 1 and 2
-        can be plotted.
+        the sliders. Currently only signals with signal_dimension equal to
+        1 and 2 can be plotted.
         
         Parameters
         ----------
@@ -2416,7 +2415,10 @@ class Signal(MVA,
             over all other axes.
             Altenatively a Signal instance can be provided. The signal
             dimension must be 1 (for a spectrum navigator) or 2 (for a
-            image navigator) and navigation_dimension must be 0.
+            image navigator) and navigation_shape must be 0 (for a static 
+            navigator) or navigation_shape + signal_shape must be equal
+            to the navigator_shape of the current object (for a dynamic
+            navigator).
 
         axes_manager : {None, axes_manager}
             If None `axes_manager` is used.
