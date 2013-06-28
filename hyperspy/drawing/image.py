@@ -182,7 +182,6 @@ class ImagePlot:
                     units=self.pixel_units,)
                  
         if self.plot_colorbar is True:
-            fig = self.ax.figure
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
         
         self.figure.canvas.draw()
@@ -245,8 +244,6 @@ class ImagePlot:
         self.vmin, self.vmax =  vmin, vmax
         self.update()
             
-    # TODO The next function must be improved
-    
     def optimize_colorbar(self,
                           number_of_ticks=5,
                           tolerance=5,

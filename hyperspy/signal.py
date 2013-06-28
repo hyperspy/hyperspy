@@ -764,7 +764,7 @@ class Signal1DTools(object):
         ValueError if FWHM is equal or less than zero.
         
         SignalDimensionError if the signal dimension is not 1.
-        
+            
         """
         self._check_signal_dimension_equals_one()
         if FWHM <= 0:
@@ -838,11 +838,13 @@ class Signal1DTools(object):
         values will
         neglect smaller features.
 
+
         peakgroup is the number of points around the top peak to search 
         around
 
         Parameters
         ---------
+        
 
         slope_thresh : float (optional)
                        1st derivative threshold to count the peak
@@ -2357,6 +2359,7 @@ class Signal(MVA,
         data = np.nan_to_num(self.data.__getitem__(slices)
                              ).sum(isignal[1]).sum(isignal[0]).squeeze()
         return data
+    
 
     def _get_explorer(self, *args, **kwargs):
         nav_dim = self.axes_manager.navigation_dimension
@@ -2373,8 +2376,54 @@ class Signal(MVA,
                 return None
         else:
             return None
+            
+    def plot(self, navigator="auto", axes_manager=None):
+        """Plot the signal at the current coordinates.
+            
+        For multidimensional datasets an optional figure,
+        the "navigator", with a cursor to navigate that data is
+        raised. In any case it is possible to navigate the data using
+        the sliders. Currently only signals with signal_dimension equal to
+        1 and 2 can be plotted.
+        
+        Parameters
+        ----------
+        navigator : {"auto", None, "spectrum", Signal}
+            If "auto", if navigation_dimension > 0, a navigator is
+            provided to explore the data.
+            If navigation_dimension is 1 and the signal is an image
+            the navigator is a spectrum obtained by integrating 
+            over the signal axes (the image).
+            If navigation_dimension is 1 and the signal is a spectrum
+            the navigator is an image obtained by stacking horizontally
+            all the spectra in the dataset.
+            If navigation_dimension is > 1, the navigator is an image
+            obtained by integrating the data over the signal axes.
+            Additionaly, if navigation_dimension > 2 a window                   
+            with one slider per axis is raised to navigate the data.
+            For example,
+            if the dataset consists of 3 navigation axes X, Y, Z and one
+            signal axis, E, the default navigator will be an image
+            obtained by integrating the data over E at the current Z
+            index and a window with sliders for the X, Y and Z axes 
+            will be raised. Notice that changing the Z-axis index
+            changes the navigator in this case.
+            If None and the navigation dimension > 0 a window
+            with one slider per axis is raised to navigate the data.
+            If "spectrum" and navigation_dimension > 0 the navigator
+            is always a spectrum obtained by integrating the data 
+            over all other axes.
+            Altenatively a Signal instance can be provided. The signal
+            dimension must be 1 (for a spectrum navigator) or 2 (for a
+            image navigator) and navigation_shape must be 0 (for a static 
+            navigator) or navigation_shape + signal_shape must be equal
+            to the navigator_shape of the current object (for a dynamic
+            navigator).
 
-    def plot(self, axes_manager=None):
+        axes_manager : {None, axes_manager}
+            If None `axes_manager` is used.
+
+        """
         if self._plot is not None:
             try:
                 self._plot.close()
@@ -2385,11 +2434,10 @@ class Signal(MVA,
 
         if axes_manager is None:
             axes_manager = self.axes_manager
-
+                    
         if axes_manager.signal_dimension == 1:
             # Hyperspectrum
-            self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
-            
+            self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()            
         elif axes_manager.signal_dimension == 2:
             self._plot = mpl_hie.MPL_HyperImage_Explorer()
         else:
@@ -2400,14 +2448,58 @@ class Signal(MVA,
         if self.mapped_parameters.title:
             self._plot.signal_title = self.mapped_parameters.title
         elif self.tmp_parameters.has_item('filename'):
-            self._plot.signal_title = self.tmp_parameters.filename
+            self._plot.signal_title = self.tmp_parameters.filename            
+    
+        def get_static_explorer_wrapper(*args, **kwargs):
+            return navigator()
             
+        def get_1D_sum_explorer_wrapper(*args, **kwargs):
+            navigator = self
+            # Sum over all but the first navigation axis.
+            while len(navigator.axes_manager.shape) > 1:
+                navigator = navigator.sum(-1)
+            return np.nan_to_num(navigator.data).squeeze()
+
+        def get_dynamic_explorer_wrapper(*args, **kwargs):
+            navigator.axes_manager.indices = self.axes_manager.indices[
+                    navigator.axes_manager.signal_dimension:]
+            return navigator()
 
         # Navigator properties
-        if self.axes_manager.navigation_axes:
-            self._plot.navigator_data_function = self._get_explorer
+        if axes_manager.navigation_axes:
+            if navigator is "auto":
+                self._plot.navigator_data_function = self._get_explorer
+            elif navigator is None:
+                self._plot.navigator_data_function = None        
+            elif navigator is "spectrum":
+                self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
+            elif isinstance(navigator, Signal):
+                # Dynamic navigator
+                if (axes_manager.navigation_shape == 
+                      navigator.axes_manager.signal_shape + 
+                      navigator.axes_manager.navigation_shape):
+                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
+ 
+                elif (  axes_manager.navigation_shape == 
+                        navigator.axes_manager.signal_shape or
+                        axes_manager.navigation_shape[:2] == 
+                        navigator.axes_manager.signal_shape or
+                        (axes_manager.navigation_shape[0],) == 
+                        navigator.axes_manager.signal_shape):
+                    self._plot.navigator_data_function = get_static_explorer_wrapper
+
+                else:
+                    raise ValueError(
+                            "The navigator dimensions are not compatible with those"
+                            "of self.")
+                    self._plot.navigator_data_function = self._get_explorer
+            else:
+                raise ValueError("navigator must be one of \"spectrum\",\"auto\","
+                        " None, a Signal instance")
+                
         self._plot.plot()
-            
+
+              
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
         """Saves the signal in the specified format.
@@ -2540,7 +2632,7 @@ class Signal(MVA,
             Specify the data axes in which to perform the operation.
             The axis can be specified using the index of the 
             axis in `axes_manager` or the axis name.
-            
+        
         Returns
         -------
         s : a copy of the object with the axes swapped.
