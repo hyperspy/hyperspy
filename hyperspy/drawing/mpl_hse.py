@@ -83,7 +83,9 @@ class MPL_HyperSpectrum_Explorer(object):
         return utils.does_figure_object_exists(self.signal_plot.figure)
     
     def assign_pointer(self):
-        if self.navigator_data_function is None:              
+        if (self.navigator_data_function is None or
+            len(self.navigator_data_function().shape) > 
+            self.axes_manager.navigation_dimension):              
             nav_dim = self.axes_manager.navigation_dimension
         else:
             nav_dim = len(self.navigator_data_function().shape)
