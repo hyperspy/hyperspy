@@ -72,7 +72,7 @@ class MPL_HyperImage_Explorer():
             sf = spectrum.SpectrumFigure()
             axis = self.axes_manager.navigation_axes[0]
             sf.xlabel = '%s (%s)' % (axis.name, axis.units)
-            sf.ylabel = r'$\Sigma\mathrm{Image\,intensity}$'
+            sf.ylabel = r'$\Sigma\mathrm{data\,over\,all\,other\,axes}$'
             sf.title = self.signal_title + ' Navigator'
             sf.axis = axis.axis
             sf.axes_manager = self.axes_manager
