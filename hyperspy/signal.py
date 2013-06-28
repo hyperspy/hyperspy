@@ -2391,26 +2391,32 @@ class Signal(MVA,
         ----------
         navigator : {"auto", None, "spectrum", Signal}
             If "auto", if navigation_dimension > 0, a navigator is
-            provided to explore the data. If navigation_dimension is 1
-            the navigator is a spectrum and if navigation_dimension is
-            equal or greater than 2 it is an image. The navigator
-            spectrum/image is obtained by integrating the dataset
-            over the signal axes and displaying the spectrum/image
-            corresponding to the first one/two axes. For example,
-            if the dataset consists of 2 navigation axes X, Y, Z and one
+            provided to explore the data.
+            If navigation_dimension is 1 and the signal is an image
+            the navigator is a spectrum obtained by integrating 
+            over the signal axes (the image).
+            If navigation_dimension is 1 and the signal is a spectrum
+            the navigator is an image obtained by stacking horizontally
+            all the spectra in the dataset.
+            If navigation_dimension is > 1, the navigator is an image
+            obtained by integrating the data over the signal axes.
+            Additionaly, if navigation_dimension > 2 a window                   
+            with one slider per axis is raised to navigate the data.
+            For example,
+            if the dataset consists of 3 navigation axes X, Y, Z and one
             signal axis, E, the default navigator will be an image
             obtained by integrating the data over E at the current Z
-            index.
-            If None the navigator figure is not raised.
-            If "spectrum" the navigator is always an spectrum, even
-            if navigation_dimension > 1.
+            index and a window with sliders for the X, Y and Z axes 
+            will be raised. Notice that changing the Z-axis index
+            changes the navigator in this case.
+            If None and the navigation dimension > 0 a window
+            with one slider per axis is raised to navigate the data.
+            If "spectrum" and navigation_dimension > 0 the navigator
+            is always a spectrum obtained by integrating the data 
+            over all other axes.
             Altenatively a Signal instance can be provided. The signal
             dimension must be 1 (for a spectrum navigator) or 2 (for a
-            image navigator) and the navigation axes must be of the same
-            dimensions as the remaining axes of the current signals.
-            For example if we want to navigate a 4D dataset of signal
-            dimension one with a spectrum navigator we must provide a
-            3D dataset of signal dimension 1.
+            image navigator) and navigation_dimension must be 0.
 
         axes_manager : {None, axes_manager}
             If None `axes_manager` is used.
