@@ -1,11 +1,10 @@
 Visualisation of multi-dimensional data
 ****************************************
 
-Hyperspy is built to process multi-dimensionnal data. In this chapter, 
-the visualisation of signal of 3 or more dimensions is described. 
-The example used here is an acquisition in 3D with two detectors. One 
-detector records X-ray spectrum (EDS map), and the other detector 
-records the intensity of secondary electron (SE image).
+With the aim to ease the data analysis of multidimensionnal data, Hyperspy provides
+a powerful and flexible :py:meth:`~.signal.Signal.plot` method to visualize 
+n-dimensional data. In this chapter, the visualisation of data of 3 or more dimensions is exemplified with a image stack and a 4D hyperspectrum obtained by recording two signals in
+parallele in a FIB/SEM: the intensity of the secondary electron emission (SE image) and the X-ray spectrum (EDS map).
 
 The plot() function
 -------------------
@@ -49,8 +48,8 @@ with sliders.
 
    Visualisation of a 3D spectrum image with sliders.
    
-If the 3D images has the same spatial dimension than the 3D spectrum image,
-it can be used as an external signals for the navigator.
+If the 3D images has the same spatial dimension as the 3D spectrum image,
+it can be used as an external signal for the navigator.
    
    
 .. code-block:: python
@@ -71,7 +70,7 @@ an alternative display.
 
 .. code-block:: python
 
-    >>> imgSpec = spec.to_image(1)
+    >>> imgSpec = spec.to_image((0, 1))
     >>> imgSpec.plot(navigator='spectrum')
     
     
@@ -97,17 +96,14 @@ the "maximum spectrum" for which each channel is the maximum of all pixels.
    Visualisation of a stack of 2D spectral images. 
    The navigator is the "maximum spectrum".
 
-External function
------------------
+Using Mayavi to visualize 3D data
+---------------------------------
 
-3D plotting
-^^^^^^^^^^^
+Although Hyperspy does not currently support plotting when signal_dimension 
+is greater than 2, `Mayavi <http://docs.enthought.com/mayavi/mayavi/>`_ 
+can be used for this purpose.
 
-Other python packages can be imported for further process or visualisation.
-For example: 
-
-* `mayavi <http://docs.enthought.com/mayavi/mayavi/>`_ for 3D plotting.
-* `scikit-image <http://scikit-image.org/>`_ for image processing.
+In the following example we also use `scikit-image <http://scikit-image.org/>`_ for noise reduction: 
 
 .. code-block:: python
 

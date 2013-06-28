@@ -765,7 +765,6 @@ class Signal1DTools(object):
         
         SignalDimensionError if the signal dimension is not 1.
             
-        
         """
         self._check_signal_dimension_equals_one()
         if FWHM <= 0:
@@ -2380,39 +2379,47 @@ class Signal(MVA,
             return None
             
     def plot(self, navigator="auto", axes_manager=None):
-
         """Plot the signal at the current coordinates.
             
         For multidimensional datasets an optional figure,
         the "navigator", with a cursor to navigate that data is
         raised. In any case it is possible to navigate the data using
-        the sliders. Currently only signals of dimensions 0, 1 and 2
-        can be plotted.
+        the sliders. Currently only signals with signal_dimension equal to
+        1 and 2 can be plotted.
         
         Parameters
         ----------
         navigator : {"auto", None, "spectrum", Signal}
             If "auto", if navigation_dimension > 0, a navigator is
-            provided to explore the data. If navigation_dimension is 1
-            the navigator is a spectrum and if navigation_dimension is
-            equal or greater than 2 it is an image. The navigator
-            spectrum/image is obtained by integrating the dataset
-            over the signal axes and displaying the spectrum/image
-            corresponding to the first one/two axes. For example,
-            if the dataset consists of 2 navigation axes X, Y, Z and one
+            provided to explore the data.
+            If navigation_dimension is 1 and the signal is an image
+            the navigator is a spectrum obtained by integrating 
+            over the signal axes (the image).
+            If navigation_dimension is 1 and the signal is a spectrum
+            the navigator is an image obtained by stacking horizontally
+            all the spectra in the dataset.
+            If navigation_dimension is > 1, the navigator is an image
+            obtained by integrating the data over the signal axes.
+            Additionaly, if navigation_dimension > 2 a window                   
+            with one slider per axis is raised to navigate the data.
+            For example,
+            if the dataset consists of 3 navigation axes X, Y, Z and one
             signal axis, E, the default navigator will be an image
             obtained by integrating the data over E at the current Z
-            index.
-            If None the navigator figure is not raised.
-            If "spectrum" the navigator is always an spectrum, even
-            if navigation_dimension > 1.
+            index and a window with sliders for the X, Y and Z axes 
+            will be raised. Notice that changing the Z-axis index
+            changes the navigator in this case.
+            If None and the navigation dimension > 0 a window
+            with one slider per axis is raised to navigate the data.
+            If "spectrum" and navigation_dimension > 0 the navigator
+            is always a spectrum obtained by integrating the data 
+            over all other axes.
             Altenatively a Signal instance can be provided. The signal
             dimension must be 1 (for a spectrum navigator) or 2 (for a
-            image navigator) and the navigation axes must be of the same
-            dimensions as the remaining axes of the current signals.
-            For example if we want to navigate a 4D dataset of signal
-            dimension one with a spectrum navigator we must provide a
-            3D dataset of signal dimension 1.
+            image navigator) and navigation_shape must be 0 (for a static 
+            navigator) or navigation_shape + signal_shape must be equal
+            to the navigator_shape of the current object (for a dynamic
+            navigator).
 
         axes_manager : {None, axes_manager}
             If None `axes_manager` is used.
@@ -2444,59 +2451,52 @@ class Signal(MVA,
         elif self.tmp_parameters.has_item('filename'):
             self._plot.signal_title = self.tmp_parameters.filename            
     
-        def get_explorer_wrapper(*args, **kwargs):
-            return navigator.data
+        def get_static_explorer_wrapper(*args, **kwargs):
+            return navigator()
             
-        def get_explorer_wrapper_spec(*args, **kwargs):
+        def get_1D_sum_explorer_wrapper(*args, **kwargs):
             navigator = self
-            for i in range(100):
-                if len(navigator.axes_manager.shape) > 1:
+            # Sum over all but the first navigation axis.
+            while len(navigator.axes_manager.shape) > 1:
                     navigator = navigator.sum(-1)
-                else:
-                    break
-            data = np.nan_to_num(navigator.data).squeeze()
-            return data
+            return np.nan_to_num(navigator.data).squeeze()
 
-        def get_explorer_wrapper_3D(*args, **kwargs):
-            navigator.axes_manager.indices = \
-            self.axes_manager.indices[2:]
+        def get_dynamic_explorer_wrapper(*args, **kwargs):
+            navigator.axes_manager.indices = self.axes_manager.indices[
+                    navigator.axes_manager.signal_dimension:]
             return navigator()
 
         # Navigator properties
-        if self.axes_manager.navigation_axes:
+        if axes_manager.navigation_axes:
             if navigator is "auto":
                 self._plot.navigator_data_function = self._get_explorer
             elif navigator is None:
                 self._plot.navigator_data_function = None        
             elif navigator is "spectrum":
-                if axes_manager.signal_dimension == 2:
-                    self._plot.navigator_data_function = get_explorer_wrapper_spec
+                self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
+            elif isinstance(navigator, Signal):
+                # Dynamic navigator
+                if (axes_manager.navigation_shape == 
+                      navigator.axes_manager.signal_shape + 
+                      navigator.axes_manager.navigation_shape):
+                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
+ 
+                elif (  axes_manager.navigation_shape == 
+                        navigator.axes_manager.signal_shape or
+                        axes_manager.navigation_shape[:2] == 
+                        navigator.axes_manager.signal_shape or
+                        (axes_manager.navigation_shape[0],) == 
+                        navigator.axes_manager.signal_shape):
+                    self._plot.navigator_data_function = get_static_explorer_wrapper
+
                 else:
-                    print("Navigator = \"spectrum\" works only with Image.")
-                    self._plot.navigator_data_function = self._get_explorer                    
-            elif isinstance(navigator, str) is False:
-                #Same dimensition
-                if self.axes_manager.navigation_shape ==\
-                navigator.axes_manager.signal_shape:
-                    self._plot.navigator_data_function = get_explorer_wrapper
-                #Higher dimension: Dynamic navigator
-                elif self.axes_manager.navigation_shape == \
-                navigator.axes_manager.signal_shape + navigator.axes_manager.navigation_shape:
-                    self._plot.navigator_data_function = get_explorer_wrapper_3D
-                #Higher dimension: Fixed navigator
-                elif self.axes_manager.navigation_shape[:2] == \
-                navigator.axes_manager.signal_shape:
-                    self._plot.navigator_data_function = get_explorer_wrapper
-                elif (self.axes_manager.navigation_shape[0],) == \
-                navigator.axes_manager.signal_shape:
-                    self._plot.navigator_data_function = get_explorer_wrapper
-                else:
-                    print("The given navigator and the current signal have incompatible shape.")
+                    raise ValueError(
+                            "The navigator dimensions are not compatible with those"
+                            "of self.")
                     self._plot.navigator_data_function = self._get_explorer
             else:
-                print("Unknown navigator option.")
-                self._plot.navigator_data_function = self._get_explorer
-
+                raise ValueError("navigator must be one of \"spectrum\",\"auto\","
+                        " None, a Signal instance")
                 
         self._plot.plot()
 
@@ -2624,8 +2624,6 @@ class Signal(MVA,
         self.data = np.roll(self.data, n_x, 0)
         self.data[:n_x, ...] = np.roll(self.data[:n_x, ...], n_y, 1)
 
-    # TODO: After using this function the plotting does not work
-    @auto_replot
     def swap_axes(self, axis1, axis2):
         """Swaps the axes.
 
@@ -2636,16 +2634,21 @@ class Signal(MVA,
             The axis can be specified using the index of the 
             axis in `axes_manager` or the axis name.
         
+        Returns
+        -------
+        s : a copy of the object with the axes swapped.
+        
         """
         axis1 = self.axes_manager[axis1].index_in_array
         axis2 = self.axes_manager[axis2].index_in_array
-        self.data = self.data.swapaxes(axis1, axis2)
-        c1 = self.axes_manager._axes[axis1]
-        c2 = self.axes_manager._axes[axis2]
-        self.axes_manager._axes[axis1] = c2
-        self.axes_manager._axes[axis2] = c1
-        self.axes_manager._update_attributes()
-        self._make_sure_data_is_contiguous()
+        s = self._deepcopy_with_new_data(self.data.swapaxes(axis1, axis2))
+        c1 = s.axes_manager._axes[axis1]
+        c2 = s.axes_manager._axes[axis2]
+        s.axes_manager._axes[axis1] = c2
+        s.axes_manager._axes[axis2] = c1
+        s.axes_manager._update_attributes()
+        s._make_sure_data_is_contiguous()
+        return s
         
     def rollaxis(self, axis, to_axis):
         """Roll the specified axis backwards, until it lies in a given position.

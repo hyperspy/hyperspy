@@ -83,14 +83,17 @@ class MPL_HyperSpectrum_Explorer(object):
         return utils.does_figure_object_exists(self.signal_plot.figure)
     
     def assign_pointer(self):
-        if self.navigator_data_function is None:              
-            nav_dim = self.axes_manager.navigation_dimension
-        else:
-            nav_dim = len(self.navigator_data_function().shape)
-        if nav_dim >= 2:
-            Pointer = widgets.DraggableSquare
-        elif nav_dim == 1:
-            Pointer = widgets.DraggableHorizontalLine
+        nav_dim = (len(self.navigator_data_function().shape) if
+                   self.navigator_data_function is not None
+                   else 0)
+
+        if nav_dim == 2: # It is an image
+            if self.axes_manager.navigation_dimension > 1:
+                Pointer = widgets.DraggableSquare
+            else: # It is the image of a "spectrum stack"
+                Pointer = widgets.DraggableHorizontalLine
+        elif nav_dim == 1: # It is a spectrum
+            Pointer = widgets.DraggableVerticalLine
         else:
             Pointer = None
         return Pointer
@@ -101,14 +104,15 @@ class MPL_HyperSpectrum_Explorer(object):
             if pointer is not None:
                 self.pointer = pointer(self.axes_manager)
                 self.pointer.color = 'red'
-        if self.pointer is not None:
             self.plot_navigator()
         self.plot_signal()
         
     def plot_navigator(self):
+        if self.axes_manager.navigation_dimension == 0:
+            return
         if self.navigator_data_function is None:            
             navigation_sliders(
-                self.axes_manager.navigation_axes[::-1])
+                self.axes_manager.navigation_axes)
             return
         if self.navigator_plot is not None:
             self.navigator_plot.plot()
@@ -118,7 +122,7 @@ class MPL_HyperSpectrum_Explorer(object):
             sf = spectrum.SpectrumFigure()
             axis = self.axes_manager.navigation_axes[0]
             sf.xlabel = '%s (%s)' % (axis.name, axis.units)
-            sf.ylabel = r'$\Sigma\mathrm{Image\,intensity}$'
+            sf.ylabel = r'$\Sigma\mathrm{data\,over\,all\,other\,axes}$'
             sf.title = self.signal_title + ' Navigator'
             sf.axis = axis.axis
             sf.axes_manager = self.axes_manager
@@ -127,16 +131,17 @@ class MPL_HyperSpectrum_Explorer(object):
             # indices
             sl = spectrum.SpectrumLine()
             sl.data_function = self.navigator_data_function
-            sl.line_properties_helper('blue', 'step')        
+            sl.set_line_properties(color='blue',
+                                   type='step') 
             # Add the line to the figure
             sf.add_line(sl)
             sf.plot()
             self.pointer.add_axes(sf.ax)
             if self.axes_manager.navigation_dimension > 1:
                 navigation_sliders(
-                    self.axes_manager.navigation_axes[::-1])
+                    self.axes_manager.navigation_axes)
                 for axis in self.axes_manager.navigation_axes[:-2]:
-                    axis.connect(sf.update_image)
+                    axis.connect(sf.update)
             self.navigator_plot = sf
         elif len(self.navigator_data_function().shape) >= 2:
             imf = image.ImagePlot()
@@ -152,7 +157,7 @@ class MPL_HyperSpectrum_Explorer(object):
                     navigation_sliders(
                         self.axes_manager.navigation_axes)
                     for axis in self.axes_manager.navigation_axes[2:]:
-                        axis.connect(imf.update_image)
+                        axis.connect(imf.update)
                 
             imf.title = self.signal_title + ' Navigator'
             imf.plot()
@@ -260,13 +265,13 @@ class MPL_HyperSpectrum_Explorer(object):
             line.close()
         self.right_pointer.close()
         self.right_pointer = None
-        self.navigator_plot.update_image()
+        self.navigator_plot.update()
         
     def _disconnect(self):
         if (self.axes_manager.navigation_dimension > 2 and 
             self.navigator_plot is not None):
-                for axis in self.axes_manager.navigation_axes[:-2]:
-                    axis.disconnect(self.navigator_plot.update_image)
+                for axis in self.axes_manager.navigation_axes:
+                    axis.disconnect(self.navigator_plot.update)
         
         if self.pointer is not None:
             self.pointer.disconnect(self.navigator_plot.ax)

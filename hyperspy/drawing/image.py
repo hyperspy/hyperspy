@@ -21,8 +21,6 @@ from __future__ import division
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.widgets
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
@@ -176,7 +174,7 @@ class ImagePlot:
                             transform = self.ax.transAxes,
                             fontsize=12,
                             color='red')
-        self.update_image()
+        self.update()
         if self.plot_scalebar is True:
             if self.pixel_units is not None:
                 self.ax.scalebar = widgets.Scale_Bar(
@@ -184,7 +182,6 @@ class ImagePlot:
                     units=self.pixel_units,)
                  
         if self.plot_colorbar is True:
-            fig = self.ax.figure
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
         
         self.figure.canvas.draw()
@@ -192,7 +189,7 @@ class ImagePlot:
             self.figure.tight_layout()
         self.connect()
         
-    def update_image(self, auto_contrast=None):
+    def update(self, auto_contrast=None):
         ims = self.ax.images
         if ims:
             ims.remove(ims[0])
@@ -223,10 +220,10 @@ class ImagePlot:
             self._text.set_text((self.axes_manager.indices))
         self.figure.canvas.draw()
         
-    def _update_image(self):
+    def _update(self):
         # This "wrapper" because on_trait_change fiddles with the 
         # method arguments and auto_contrast does not work then
-        self.update_image()
+        self.update()
     def adjust_contrast(self):
         ceditor = ImageContrastEditor(self)
         ceditor.edit_traits()
@@ -236,6 +233,8 @@ class ImagePlot:
         self.figure.canvas.mpl_connect('key_press_event',
                                         self.on_key_press)
         self.figure.canvas.draw()
+        if self.axes_manager:
+            self.axes_manager.connect(self._update)
 
     def on_key_press(self, event):
         if event.key == 'h':
@@ -243,10 +242,8 @@ class ImagePlot:
                     
     def set_contrast(self, vmin, vmax):
         self.vmin, self.vmax =  vmin, vmax
-        self.update_image()
+        self.update()
             
-    # TODO The next function must be improved
-    
     def optimize_colorbar(self,
                           number_of_ticks=5,
                           tolerance=5,
@@ -276,7 +273,12 @@ class ImagePlot:
             optimize_for_oom(step_oom - i)
             i += 1
             
+    def disconnect(self):
+        if self.axes_manager:
+            self.axes_manager.disconnect(self._update)
+            
     def close(self):
+        self.disconnect()
         if utils.does_figure_object_exists(self.figure) is True:
             plt.close(self.figure)
             

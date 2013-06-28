@@ -254,6 +254,8 @@ def write_signal(signal, group, compression='gzip'):
                                                                         
 def file_writer(filename, signal, compression = 'gzip', *args, **kwds):
     with h5py.File(filename, mode = 'w') as f:
+        f.attrs['file_format'] = "Hyperspy"
+        f.attrs['file_format_version'] = version
         exps = f.create_group('Experiments')
         group_name = signal.mapped_parameters.title if \
                      signal.mapped_parameters.title else '__unnamed__'
