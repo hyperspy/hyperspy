@@ -63,7 +63,7 @@ class MPL_HyperImage_Explorer():
     def plot_navigator(self):
         if self.navigator_data_function is None:            
             navigation_sliders(
-                self.axes_manager.navigation_axes[::-1])
+                self.axes_manager.navigation_axes)
             return
         elif self.navigator_plot is not None:
             self.navigator_plot.plot()
@@ -90,7 +90,7 @@ class MPL_HyperImage_Explorer():
             
             if self.axes_manager.navigation_dimension > 1:
                 navigation_sliders(
-                    self.axes_manager.navigation_axes[::-1])
+                    self.axes_manager.navigation_axes)
                 for axis in self.axes_manager.navigation_axes[:-2]:
                     axis.connect(sf.update)
             self.navigator_plot = sf
@@ -103,7 +103,7 @@ class MPL_HyperImage_Explorer():
             self.pointer.add_axes(imf.ax)
             if self.axes_manager.navigation_dimension > 2:
                 navigation_sliders(
-                    self.axes_manager.navigation_axes[::-1])
+                    self.axes_manager.navigation_axes)
                 for axis in self.axes_manager.navigation_axes[:-1]:
                     axis.connect(imf.update)
             self.navigator_plot = imf
