@@ -2448,59 +2448,52 @@ class Signal(MVA,
         elif self.tmp_parameters.has_item('filename'):
             self._plot.signal_title = self.tmp_parameters.filename            
     
-        def get_explorer_wrapper(*args, **kwargs):
-            return navigator.data
+        def get_static_explorer_wrapper(*args, **kwargs):
+            return navigator()
             
-        def get_explorer_wrapper_spec(*args, **kwargs):
+        def get_1D_sum_explorer_wrapper(*args, **kwargs):
             navigator = self
-            for i in range(100):
-                if len(navigator.axes_manager.shape) > 1:
-                    navigator = navigator.sum(-1)
-                else:
-                    break
-            data = np.nan_to_num(navigator.data).squeeze()
-            return data
+            # Sum over all but the first navigation axis.
+            while len(navigator.axes_manager.shape) > 1:
+                navigator = navigator.sum(-1)
+            return np.nan_to_num(navigator.data).squeeze()
 
-        def get_explorer_wrapper_3D(*args, **kwargs):
-            navigator.axes_manager.indices = \
-            self.axes_manager.indices[2:]
+        def get_dynamic_explorer_wrapper(*args, **kwargs):
+            navigator.axes_manager.indices = self.axes_manager.indices[
+                    navigator.axes_manager.signal_dimension:]
             return navigator()
 
         # Navigator properties
-        if self.axes_manager.navigation_axes:
+        if axes_manager.navigation_axes:
             if navigator is "auto":
                 self._plot.navigator_data_function = self._get_explorer
             elif navigator is None:
                 self._plot.navigator_data_function = None        
             elif navigator is "spectrum":
-                if axes_manager.signal_dimension == 2:
-                    self._plot.navigator_data_function = get_explorer_wrapper_spec
+                self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
+            elif isinstance(navigator, Signal):
+                # Dynamic navigator
+                if (axes_manager.navigation_shape == 
+                      navigator.axes_manager.signal_shape + 
+                      navigator.axes_manager.navigation_shape):
+                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
+ 
+                elif (  axes_manager.navigation_shape == 
+                        navigator.axes_manager.signal_shape or
+                        axes_manager.navigation_shape[:2] == 
+                        navigator.axes_manager.signal_shape or
+                        (axes_manager.navigation_shape[0],) == 
+                        navigator.axes_manager.signal_shape):
+                    self._plot.navigator_data_function = get_static_explorer_wrapper
+
                 else:
-                    print("Navigator = \"spectrum\" works only with Image.")
-                    self._plot.navigator_data_function = self._get_explorer                    
-            elif isinstance(navigator, str) is False:
-                #Same dimensition
-                if self.axes_manager.navigation_shape ==\
-                navigator.axes_manager.signal_shape:
-                    self._plot.navigator_data_function = get_explorer_wrapper
-                #Higher dimension: Dynamic navigator
-                elif self.axes_manager.navigation_shape == \
-                navigator.axes_manager.signal_shape + navigator.axes_manager.navigation_shape:
-                    self._plot.navigator_data_function = get_explorer_wrapper_3D
-                #Higher dimension: Fixed navigator
-                elif self.axes_manager.navigation_shape[:2] == \
-                navigator.axes_manager.signal_shape:
-                    self._plot.navigator_data_function = get_explorer_wrapper
-                elif (self.axes_manager.navigation_shape[0],) == \
-                navigator.axes_manager.signal_shape:
-                    self._plot.navigator_data_function = get_explorer_wrapper
-                else:
-                    print("The given navigator and the current signal have incompatible shape.")
+                    raise ValueError(
+                            "The navigator dimensions are not compatible with those"
+                            "of self.")
                     self._plot.navigator_data_function = self._get_explorer
             else:
-                print("Unknown navigator option.")
-                self._plot.navigator_data_function = self._get_explorer
-
+                raise ValueError("navigator must be one of \"spectrum\",\"auto\","
+                        " None, a Signal instance")
                 
         self._plot.plot()
 

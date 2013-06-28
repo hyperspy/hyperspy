@@ -61,7 +61,9 @@ class MPL_HyperImage_Explorer():
                     'key_press_event', self.axes_manager.key_navigator)
                     
     def plot_navigator(self):
-        if self.navigator_data_function is None:            
+        if self.axes_manager.navigation_dimension == 0:
+            return
+        if self.navigator_data_function is None:
             navigation_sliders(
                 self.axes_manager.navigation_axes)
             return
@@ -120,17 +122,20 @@ class MPL_HyperImage_Explorer():
         if self.pointer is not None:
             self.pointer = self.pointer(self.axes_manager)
             self.pointer.color = 'red'
-            self.plot_navigator()
+        self.plot_navigator()
         self.plot_signal()
             
     def assign_pointer(self):
-        if self.navigator_data_function is None:              
-            nav_dim = self.axes_manager.navigation_dimension
-        else:
-            nav_dim = len(self.navigator_data_function().shape)
-        if nav_dim >= 2:
-            Pointer = widgets.DraggableSquare
-        elif nav_dim == 1:
+        nav_dim = (len(self.navigator_data_function().shape) if
+                   self.navigator_data_function is not None
+                   else 0)
+
+        if nav_dim == 2: # It is an image
+            if self.axes_manager.navigation_dimension > 1:
+                Pointer = widgets.DraggableSquare
+            else: # It is the image of a "spectrum stack"
+                Pointer = widgets.DraggableHorizontalLine
+        elif nav_dim == 1: # It is a spectrum
             Pointer = widgets.DraggableVerticalLine
         else:
             Pointer = None

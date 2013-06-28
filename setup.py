@@ -146,6 +146,7 @@ with update_version_when_dev() as version:
                     'hyperspy.tests.io',
                     'hyperspy.tests.model',
                     'hyperspy.tests.signal',
+                    'hyperspy.tests.drawing',
                     'hyperspy.models',
                     'hyperspy.misc',
                     'hyperspy.misc.eels',
