@@ -2505,9 +2505,9 @@ class Signal(MVA,
              **kwds):
         """Saves the signal in the specified format.
 
-        The function gets the format from the extension. You can use:
+        The function gets the format from the extension.:
             - hdf5 for HDF5
-            - rpl for Ripple (usefult to export to Digital Micrograph)
+            - rpl for Ripple (useful to export to Digital Micrograph)
             - msa for EMSA/MSA single spectrum saving.
             - Many image formats such as png, tiff, jpeg...
 
@@ -2522,16 +2522,19 @@ class Signal(MVA,
         Parameters
         ----------
         filename : str or None
-            If None and tmp_parameters.filename and 
-            tmp_paramters.folder are defined, the
-            filename and extension will be taken from them.
+            If None (default) and tmp_parameters.filename and 
+            `tmp_paramters.folder` are defined, the
+            filename and path will be taken from there. A valid
+            extension can be provided e.g. "my_file.rpl", see `extension`.
         overwrite : None, bool
             If None, if the file exists it will query the user. If 
             True(False) it (does not) overwrites the file if it exists.
-        extension : str
-            The extension of the file that defines the file format, 
-            e.g. 'rpl'. It overwrite the extension given in filename
-            if any.
+        extension : {None, 'hdf5', 'rpl', 'msa',common image extensions e.g. 'tiff', 'png'}
+            The extension of the file that defines the file format. 
+            If None, the extesion is taken from the first not None in the follwoing list:
+            i) the filename 
+            ii)  `tmp_parameters.extension`
+            iii) `preferences.General.default_file_format` in this order. 
             
         """
         if filename is None:
@@ -2539,8 +2542,10 @@ class Signal(MVA,
                 self.tmp_parameters.has_item('folder')):
                 filename = os.path.join(
                     self.tmp_parameters.folder,
-                    self.tmp_parameters.filename + '.' +
-                    self.tmp_parameters.extension)
+                    self.tmp_parameters.filename)
+                extesion = (self.tmp_parameters.extension
+                            if not extension
+                            else extension)
             elif self.mapped_parameters.has_item('original_filename'):
                 filename = self.mapped_parameters.original_filename
             else:
@@ -3334,21 +3339,55 @@ class Signal(MVA,
                 self.variance = np.clip(self.variance,
                                         gaussian_noise_var,
                                         np.Inf)
-                
-    def get_current_signal(self):
-        cs = self.__class__(
-                    self(),
-                    axes=self.axes_manager._get_signal_axes_dicts(),
-                    mapped_parameters=self.mapped_parameters.as_dictionary(),)
+                                        
+    def get_current_signal(self, auto_title=True, auto_filename=True):
+        """Returns the data at the current coordinates as a Signal subclass.
 
-        if cs.tmp_parameters.has_item('filename'):
-            basename = cs.tmp_parameters.filename
-            ext = cs.tmp_parameters.extension
-            cs.tmp_parameters.filename = (basename + '_' +
-                    str(self.axes_manager.indices) + '.' + ext)
-        cs.mapped_parameters.title = (cs.mapped_parameters.title +
-                    ' ' + str(self.axes_manager.indices))
+        The signal subclass is the same as that of the current object. All the 
+        axes navigation attribute are set to False.
+        
+        Parameters
+        ----------
+        auto_title : bool
+            If True an space followed by the current indices in parenthesis
+            are appended to the title.
+        auto_filename : bool
+            If True and `tmp_parameters.filename` is defined 
+            (what is always the case when the Signal has been read from a file),
+            the filename is modified by appending an underscore and a parenthesis
+            containing the current indices.
+
+        Returns
+        -------
+        cs : Signal subclass instance.
+
+        Examples
+        --------
+        >>> im = signals.Image(np.zeros((2,3, 32,32)))
+        >>> im
+        <Image, title: , dimensions: (3, 2, 32, 32)>
+        >>> im.axes_manager.indices = 2,1
+        >>> im.get_current_signal()
+        <Image, title:  (2, 1), dimensions: (32, 32)>
+
+        """
+        cs = self.__class__(                                                    
+                    self(),                                                     
+                    axes=self.axes_manager._get_signal_axes_dicts(),            
+                    mapped_parameters=self.mapped_parameters.as_dictionary(),)  
+                                                                                
+        if auto_filename is True and self.tmp_parameters.has_item('filename'):                            
+            cs.tmp_parameters.filename = (self.tmp_parameters.filename + 
+                                          '_' + 
+                                          str(self.axes_manager.indices))                             
+            cs.tmp_parameters.extension = self.tmp_parameters.extension
+            cs.tmp_parameters.folder = self.tmp_parameters.folder
+        if auto_title is True:
+            cs.mapped_parameters.title = (cs.mapped_parameters.title +              
+                    ' ' + str(self.axes_manager.indices))                       
+        cs.axes_manager._set_axis_attribute_values("navigate", False)        
         return cs
+                
         
     def _get_navigation_signal(self):
         if self.axes_manager.navigation_dimension == 0:
@@ -3376,7 +3415,7 @@ class Signal(MVA,
         
     def next(self):
         self.axes_manager.next()
-        return self.get_current_signal()
+        return self.get_current_signal()                                               
         
     def __len__(self):
         return self.axes_manager.signal_shape[-1]

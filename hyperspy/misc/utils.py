@@ -23,6 +23,7 @@ import types
 import re
 from StringIO import StringIO
 import codecs
+import collections
 
 import numpy as np
 
@@ -655,5 +656,10 @@ def find_subclasses(mod, cls):
     """
     return dict([(name, obj) for name, obj in inspect.getmembers(mod)
                 if inspect.isclass(obj) and issubclass(obj, cls)])
-                
-   
+    
+def isiterable(obj):
+    if isinstance(obj, collections.Iterable):
+        return True
+    else:
+        return False
+

@@ -355,4 +355,3 @@ def file_writer(filename, signal, format = None, separator = ', ',
 
     f.write(u'#%-12s: End Of Data and File' % 'ENDOFDATA')
     f.close()   
-
