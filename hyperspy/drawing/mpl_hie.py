@@ -50,7 +50,7 @@ class MPL_HyperImage_Explorer():
         
         if self.navigator_plot is not None and imf.figure is not None:
             utils.on_figure_window_close(self.navigator_plot.figure, 
-            self._disconnect)
+                                         self.close_navigator_plot)
             utils.on_figure_window_close(
                 imf.figure, self.close_navigator_plot)
             self._key_nav_cid = \
@@ -92,7 +92,7 @@ class MPL_HyperImage_Explorer():
                 navigation_sliders(
                     self.axes_manager.navigation_axes[::-1])
                 for axis in self.axes_manager.navigation_axes[:-2]:
-                    axis.connect(sf.update_image)
+                    axis.connect(sf.update)
             self.navigator_plot = sf
         elif len(self.navigator_data_function().shape) >= 2:
             imf = image.ImagePlot()
@@ -105,7 +105,7 @@ class MPL_HyperImage_Explorer():
                 navigation_sliders(
                     self.axes_manager.navigation_axes[::-1])
                 for axis in self.axes_manager.navigation_axes[:-1]:
-                    axis.connect(imf.update_image)
+                    axis.connect(imf.update)
             self.navigator_plot = imf
     
     def close_navigator_plot(self):
@@ -122,7 +122,6 @@ class MPL_HyperImage_Explorer():
             self.pointer.color = 'red'
             self.plot_navigator()
         self.plot_signal()
-        self.axes_manager.connect(self.signal_plot._update_image)
             
     def assign_pointer(self):
         if self.navigator_data_function is None:              
@@ -140,11 +139,13 @@ class MPL_HyperImage_Explorer():
     def _disconnect(self):
         if (self.axes_manager.navigation_dimension > 2 and 
             self.navigator_plot is not None):
-                for axis in self.axes_manager.navigation_axes[:-2]:
-                    axis.disconnect(self.navigator_plot.update_image)
+                for axis in self.axes_manager.navigation_axes:
+                    axis.disconnect(self.navigator_plot.update)
         if self.pointer is not None:
             self.pointer.disconnect(self.navigator_plot.ax)            
+            
     def close(self):         
+        self._disconnect()
         self.signal_plot.close()
         self.navigator_plot.close()        
            
