@@ -170,21 +170,44 @@ class Model(list):
                 parameter.disconnect(self.update_plot)
     
 
-    def as_signal(self, out_of_range_to_nan=True):
+    def as_signal(self, component_list=None, out_of_range_to_nan=True):
         """Returns a recreation of the dataset using the model.
         the spectral range that is not fitted is filled with nans.
         
         Parameters
         ----------
+        component_list : list of hyperspy components, optional
+            If a list of components is given, only the components given in the
+            list is used in making the returned spectrum
         out_of_range_to_nan : bool
             If True the spectral range that is not fitted is filled with nans.
             
         Returns
         -------
         spectrum : An instance of the same class as `spectrum`.
+
+        Example
+        -------
+        >>>> s = signals.Spectrum(np.random.random((10,100)))
+        >>>> m = create_model(s)
+        >>>> l1 = components.Lorentzian()
+        >>>> l2 = components.Lorentzian()
+        >>>> m.append(l1)
+        >>>> m.append(l2)
+        >>>> s1 = m.as_signal()
+        >>>> s2 = m.as_signal(component_list=[l1])
     
         """
+
         # TODO: model cube should dissapear or at least be an option
+        if component_list:
+            active_state = []
+            for component_ in self:
+                active_state.append(component_.active)
+                if component_ in component_list:
+                    component_.active = True 
+                else:
+                    component_.active = False
         data = np.zeros(self.spectrum.data.shape,dtype='float')
         data[:] = np.nan
         if out_of_range_to_nan is True:
@@ -210,6 +233,9 @@ class Model(list):
             axes=self.spectrum.axes_manager._get_axes_dicts())
         spectrum.mapped_parameters.title = (
             self.spectrum.mapped_parameters.title + " from fitted model")
+        if component_list:
+            for component_ in self:
+                component_.active = active_state.pop(0)
         return spectrum
         
         
