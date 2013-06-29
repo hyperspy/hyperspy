@@ -33,6 +33,8 @@ from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.components.power_law import PowerLaw
+from hyperspy.misc.utils import isiterable
+
 
 
 class EELSSpectrum(Spectrum):
@@ -78,7 +80,7 @@ class EELSSpectrum(Spectrum):
         ValueError
         
         """
-        if type(elements) is not tuple:
+        if not isiterable(elements) or isinstance(elements, basestring):
             raise ValueError(
             "Input must be in the form of a tuple. For example, "
             "if `s` is the variable containing this EELS spectrum:\n "
