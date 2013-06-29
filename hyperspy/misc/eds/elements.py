@@ -1,3 +1,5 @@
+from hyperspy.misc import utils
+
 elements = {
     'lines': {'ratio_line':{'Ka': 1,
         'Kb': 0.1,
@@ -1287,3 +1289,4 @@ elements = {
 		'Z': 42,
 		'name': 'molybdenum',
 		'density': 10.28}}
+elements_db = utils.DictionaryBrowser(elements)
