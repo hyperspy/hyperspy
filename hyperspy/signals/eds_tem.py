@@ -17,24 +17,13 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
 
-import numpy as np
-import scipy.interpolate
-import matplotlib.pyplot as plt
 import traits.api as t
 
-from hyperspy.signals.spectrum import Spectrum
 from hyperspy.signals.eds import EDSSpectrum
-from hyperspy.signals.image import Image
-from hyperspy.misc.eds.elements import elements as elements_db
-import hyperspy.axes
-from hyperspy.gui.egerton_quantification import SpikesRemoval
 from hyperspy.decorators import only_interactive
 from hyperspy.gui.eds import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
-from hyperspy.misc.progressbar import progressbar
-from hyperspy.components.power_law import PowerLaw
-from hyperspy.io import load
 
 #TEM spectrum is just a copy of the basic function of SEM spectrum.
 class EDSTEMSpectrum(EDSSpectrum):
@@ -260,5 +249,3 @@ class EDSTEMSpectrum(EDSSpectrum):
         
         if hasattr(mp_ref.EDS, 'live_time'):
             mp.TEM.EDS.live_time = mp_ref.EDS.live_time / nb_pix
-           
- 

@@ -18,11 +18,8 @@
 from __future__ import division
 
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.mlab as mlab
 
 from hyperspy.signals.spectrum import Spectrum
-from hyperspy.signals.image import Image
 from hyperspy.misc.eds.elements import elements as elements_db
 from hyperspy.misc.eds.FWHM import FWHM_eds
 from hyperspy.misc.eds import utils as utils_eds
@@ -348,20 +345,3 @@ class EDSSpectrum(Spectrum):
                      self[line_energy-det:line_energy+det].sum(0).data) )
                 intensities.append(self[line_energy-det:line_energy+det].sum(0).data)
         return intensities
-        
-    
-        
-        
-        
-
-                 
-   
-    
-        
-    
-            
-    
-       
-       
-
-    
