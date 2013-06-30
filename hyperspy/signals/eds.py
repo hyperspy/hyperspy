@@ -166,7 +166,10 @@ class EDSSpectrum(Spectrum):
         self.mapped_parameters.Sample.elements = sorted(list(elements_))
                                                         
                                             
-    def set_lines(self, lines, only_one=True):
+    def set_lines(self,
+                  lines,
+                  only_one=True,
+                  only_subshells=("Ka", "La", "Ma")):
         """Erase all Xrays lines and set them.
         
         See add_lines for details.
@@ -184,19 +187,24 @@ class EDSSpectrum(Spectrum):
             defined in lines. If True (default), 
             only add the line at the highest energy
             above an overvoltage of 2 (< beam energy / 2).
+        only_subshells : {None, list of strings}
+            If not None, only the given subshells will be added.
                
         See also
         --------
         add_lines, add_elements, set_elements..
-            S
         
         """          
         if "Sample.Xray_lines" in self.mapped_parameters:
             del self.mapped_parameters.Sample.Xray_lines
         self.add_lines(lines=lines,
-                       only_one=only_one)
+                       only_one=only_one,
+                       only_subshells=only_subshells)
     
-    def add_lines(self, lines=(), only_one=True):
+    def add_lines(self,
+                  lines=(),
+                  only_one=True,
+                  only_subshells=("Ka", "La", "Ma")):
         """Add X-rays lines to the internal list.
         
         Although most functions do not require an internal list of 
@@ -221,6 +229,8 @@ class EDSSpectrum(Spectrum):
             defined in lines. If True (default), 
             only add the line at the highest energy
             above an overvoltage of 2 (< beam energy / 2).
+        only_subshells : {None, list of strings}
+            If not None, only the given subshells will be added.
                
         See also
         --------
@@ -264,8 +274,10 @@ class EDSSpectrum(Spectrum):
                               elements)
             if elements:
                 self.add_lines(
-                    self._get_lines_from_elements(extra_elements,
-                                                  only_one=only_one))
+                    self._get_lines_from_elements(
+                                            extra_elements,
+                                            only_one=only_one,
+                                            only_subshells=only_subshells))
         else:
             self.add_elements(elements)
         if not hasattr(self.mapped_parameters, 'Sample'):
@@ -341,9 +353,11 @@ class EDSSpectrum(Spectrum):
         return lines
                              
     def get_lines_intensity(self,
-                            Xray_lines="best",
+                            Xray_lines=None,
                             plot_result=False,
-                            integration_window_factor=2.,):
+                            integration_window_factor=2.,
+                            only_one=True,
+                            only_subshells=("Ka", "La", "Ma"),):
         """Return the intensity map of selected Xray lines.
         
         The intensity maps are computed by integrating the spectrum over the 
@@ -363,11 +377,8 @@ class EDSSpectrum(Spectrum):
             list of lines use those.
             If `mapped.parameters.Sample.elements.Xray_lines` is undefined
             or empty but `mapped.parameters.Sample.elements` is defined, 
-            compute the maps of all the lines of all the elements in 
-            `mapped.parameters.Sample.elements` in the data spectral range.
-            If "best" compute only one line per element. The chosen line is
-            the one with the highest energy
-            above an overvoltage of 2 (< beam energy / 2).
+            use the same syntax as `add_line` to select a subset of lines
+            for the operation.
             Alternatively, provide an iterable containing 
             a list of valid X-ray lines symbols.
         plot_result : bool
@@ -377,6 +388,12 @@ class EDSSpectrum(Spectrum):
             The integration window is centered at the center of the X-ray
             line and its width is defined by this factor (2 by default) 
             times the calculated FWHM of the line.
+        only_one : bool
+            If False, use all the lines of each element in the data spectral
+            range. If True use only the line at the highest energy
+            above an overvoltage of 2 (< beam energy / 2).
+        only_subshells : {None, list of strings}
+            If not None, use only the given subshells.
             
         Returns
         -------
@@ -394,17 +411,15 @@ class EDSSpectrum(Spectrum):
         set_elements, add_elements.
         
         """
-        if Xray_lines == "best":
-            only_one = True
-            Xray_lines = None
-        else:
-            only_one = False
+
         if Xray_lines is None:
             if 'Sample.Xray_lines' in self.mapped_parameters:
                 Xray_lines = self.mapped_parameters.Sample.Xray_lines
             elif 'Sample.elements' in self.mapped_parameters:
                 Xray_lines = self._get_lines_from_elements(
-                    self.mapped_parameters.Sample.elements, only_one=only_one)
+                        self.mapped_parameters.Sample.elements,
+                        only_one=only_one,
+                        only_subshells=only_subshells)
             else:
                 raise ValueError(
                     "Not X-ray line, set them with `add_elements`")
