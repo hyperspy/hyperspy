@@ -260,10 +260,12 @@ class EDSSpectrum(Spectrum):
                 raise ValueError(
                     "%s is not a valid symbol of an element." % element)
         if "Sample.elements" in self.mapped_parameters:
-            elements = set(self.mapped_parameters.Sample.elements) - elements
+            extra_elements = (set(self.mapped_parameters.Sample.elements) - 
+                              elements)
             if elements:
-                Xray_lines = Xray_lines.union(
-                self._get_lines_from_elements(elements, only_one=only_one))
+                self.add_lines(
+                    self._get_lines_from_elements(extra_elements,
+                                                  only_one=only_one))
         else:
             self.add_elements(elements)
         if not hasattr(self.mapped_parameters, 'Sample'):
