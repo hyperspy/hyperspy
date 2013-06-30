@@ -108,15 +108,22 @@ class MissingParametersError(Exception):
     def __str__(self):
         return repr(self.error)
 
+
+class DataDimensionError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+    def __str__(self):
+        return repr(self.msg)
+
 class SignalDimensionError(Exception):
     def __init__(self, output_dimension, expected_output_dimension):
         self.output_dimension = output_dimension
         self.expected_output_dimension = expected_output_dimension
         self.msg = 'output dimension=%i, %i expected' % (
-        self.output_dimension, self.expected_output_dimension)
+            self.output_dimension, self.expected_output_dimension)
 
     def __str__(self):
-     return repr(self.msg)
+        return repr(self.msg)
      
 class NavigationDimensionError(Exception):
     def __init__(self,
@@ -126,24 +133,24 @@ class NavigationDimensionError(Exception):
         self.expected_navigation_dimension = \
             expected_navigation_dimension
         self.msg = 'navigation dimension=%i, %s expected' % (
-        self.navigation_dimension, self.expected_navigation_dimension)
+            self.navigation_dimension, self.expected_navigation_dimension)
 
     def __str__(self):
-     return repr(self.msg)
+        return repr(self.msg)
      
 class SignalSizeError(Exception):
     def __init__(self, signal_size, expected_signal_size):
         self.signal_size = signal_size
         self.expected_signal_size = expected_signal_size
         self.msg = 'signal_size=%i, %i expected' % (
-        self.signal_size, self.expected_signal_size)
+            self.signal_size, self.expected_signal_size)
 
     def __str__(self):
-     return repr(self.msg)
+        return repr(self.msg)
      
 class NavigationSizeError(Exception):
     def __init__(self, navigation_size, expected_navigation_size):
         self.navigation_size = navigation_size
         self.expected_navigation_size = expected_navigation_size
         self.msg = 'navigation_size =%i, %i expected' % (
-        self.navigation_size, self.expected_navigation_size)
+            self.navigation_size, self.expected_navigation_size)

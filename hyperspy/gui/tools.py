@@ -35,6 +35,8 @@ from hyperspy.drawing.utils import does_figure_object_exists
 from hyperspy.gui.mpl_traits_editor import MPLFigureEditor
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import DraggableVerticalLine
+from hyperspy.misc import spectrum_tools
+
 
 import sys
 
@@ -340,13 +342,13 @@ class Smoothing(t.HasTraits):
         hse = self.signal._plot
         l1 = hse.signal_plot.ax_lines[0]
         self.original_color = l1.line.get_color()
-        l1.line_properties_helper(self.original_color, 'scatter')
-        l1.set_properties()
-        
+        l1.set_line_properties(color=self.original_color,
+                               type='scatter')        
         l2 = drawing.spectrum.SpectrumLine()
         l2.data_function = self.model2plot
-        l2.line_properties_helper(np.array(
-            self.line_color.Get())/255., 'line')   
+        l2.set_line_properties(
+            color=np.array(self.line_color.Get())/255.,
+            type='line')   
         # Add the line to the figure
         hse.signal_plot.add_line(l2)
         l2.plot()
@@ -364,8 +366,9 @@ class Smoothing(t.HasTraits):
         self.signal._plot.signal_plot.create_right_axis()
         self.smooth_diff_line = drawing.spectrum.SpectrumLine()
         self.smooth_diff_line.data_function = self.diff_model2plot
-        self.smooth_diff_line.line_properties_helper(np.array(
-            self.line_color.Get())/255., 'line')   
+        self.smooth_diff_line.set_line_properties(
+            color=np.array(self.line_color.Get())/255.,
+            type='line')   
         self.signal._plot.signal_plot.add_line(self.smooth_diff_line,
                                                  ax = 'right')
         self.smooth_diff_line.axes_manager = self.signal.axes_manager
@@ -389,13 +392,11 @@ class Smoothing(t.HasTraits):
         self.smooth_diff_line.update(force_replot = True)    
         
     def _line_color_changed(self, old, new):
-        self.smooth_line.line_properties['color'] = np.array(
-            self.line_color.Get())/255.
-        self.smooth_line.set_properties()
+        self.smooth_line.line_properties = {
+            'color' : np.array(self.line_color.Get())/255.}
         if self.smooth_diff_line is not None:
-            self.smooth_diff_line.line_properties['color'] = np.array(
-            self.line_color.Get())/255.
-            self.smooth_diff_line.set_properties()
+            self.smooth_diff_line.line_properties = {
+                'color' : np.array(self.line_color.Get())/255.}
         self.update_lines()
             
     def diff_model2plot(self, axes_manager = None):
@@ -436,9 +437,9 @@ class Smoothing(t.HasTraits):
             if self.differential_order != 0:
                 self.turn_diff_line_off()
             self.smooth_line.close()
-            self.data_line.line_properties_helper(self.original_color, 'line')
-            self.data_line.set_properties()
-        
+            self.data_line.set_line_properties(
+                color=self.original_color,
+                type='line')        
 
 class SmoothingSavitzkyGolay(Smoothing):
     polynomial_order = t.Int(3)
@@ -464,12 +465,12 @@ class SmoothingSavitzkyGolay(Smoothing):
         self.update_lines()
         
     def diff_model2plot(self, axes_manager = None):
-        smoothed = utils.sg(self.signal(), self.number_of_points, 
+        smoothed = spectrum_tools.sg(self.signal(), self.number_of_points, 
                             self.polynomial_order, self.differential_order)
         return smoothed
                                         
     def model2plot(self, axes_manager = None):
-        smoothed = utils.sg(self.signal(), self.number_of_points, 
+        smoothed = spectrum_tools.sg(self.signal(), self.number_of_points, 
                             self.polynomial_order, 0)
         return smoothed
             
@@ -571,7 +572,7 @@ class ImageContrastHandler(tu.Handler):
 #        if is_ok is True:
 #            self.apply(info)
         if is_ok is False:
-            info.object.image.update_image(auto_contrast=True)
+            info.object.image.update(auto_contrast=True)
         info.object.close()
         return True
 
@@ -668,7 +669,7 @@ class ImageContrastEditor(t.HasTraits):
     def reset(self):
         data = self.image.data_function().ravel()
         self.image.vmin, self.image.vmax = np.nanmin(data),np.nanmax(data)
-        self.image.update_image(auto_contrast=False)
+        self.image.update(auto_contrast=False)
         self.update_histogram()
         
     def update_histogram(self):
@@ -681,12 +682,111 @@ class ImageContrastEditor(t.HasTraits):
             return
         self.image.vmin = self.ss_left_value
         self.image.vmax = self.ss_right_value
-        self.image.update_image(auto_contrast=False)
+        self.image.update(auto_contrast=False)
         self.update_histogram()
         
     def close(self):
         plt.close(self.ax.figure)
+
+class ComponentFit(SpanSelectorInSpectrum):
+    fit = t.Button()
+    
+    view = tu.View(
+                tu.Item('fit', show_label=False ),
+                buttons = [OKButton, CancelButton],
+                title = 'Fit single component',
+                handler = SpanSelectorInSpectrumHandler,
+                )
+    
+    def __init__(self, model, component, signal_range=None,
+            estimate_parameters=True, fit_independent=False, **kwargs):
+        if model.spectrum.axes_manager.signal_dimension != 1:
+            raise SignalDimensionError(
+                    model.spectrum.axes_manager.signal_dimension, 1)
         
+        self.signal = model.spectrum
+        self.axis = self.signal.axes_manager.signal_axes[0]
+        self.span_selector = None
+        self.model = model
+        self.component = component
+        self.signal_range = signal_range
+        self.estimate_parameters = estimate_parameters
+        self.fit_independent = fit_independent
+        self.fit_kwargs = kwargs
+        if signal_range == "interactive":
+            if not hasattr(self.model, '_plot'):
+                self.model.plot()
+            elif self.model._plot is None:
+                self.model.plot()
+            elif self.model._plot.is_active() is False:
+                self.model.plot()
+            self.span_selector_switch(on=True)
+        
+    def _fit_fired(self):
+        if (self.signal_range != "interactive" and 
+            self.signal_range is not None):
+            self.model.set_signal_range(*self.signal_range)
+        elif self.signal_range == "interactive":
+            self.model.set_signal_range(self.ss_left_value,
+                                        self.ss_right_value)
+        
+        # Backup "free state" of the parameters and fix all but those
+        # of the chosen component
+        if self.fit_independent:
+            active_state = []
+            for component_ in self.model:
+                active_state.append(component_.active)
+                if component_ is not self.component:
+                    component_.active = False
+                else:
+                    component_.active = True
+        else:
+            free_state = []
+            for component_ in self.model:
+                for parameter in component_.parameters:
+                    free_state.append(parameter.free)
+                    if component_ is not self.component:
+                        parameter.free = False
+
+        #Setting reasonable initial value for parameters through
+        #the components estimate_parameters function (if it has one)
+        if self.estimate_parameters:
+            if hasattr(self.component, 'estimate_parameters'):
+                if (self.signal_range != "interactive" and 
+                    self.signal_range is not None):
+                    self.component.estimate_parameters(
+                        self.signal,
+                        self.signal_range[0],
+                        self.signal_range[1],
+                        only_current = True)
+                elif self.signal_range == "interactive":
+                    self.component.estimate_parameters(
+                        self.signal,
+                        self.ss_left_value,
+                        self.ss_right_value,
+                        only_current = True)
+        
+        self.model.fit(**self.fit_kwargs)
+        
+        # Restore the signal range
+        if self.signal_range is not None:
+            self.model.channel_switches = (
+                self.model.backup_channel_switches.copy())
+        
+        self.model.update_plot()
+        
+        if self.fit_independent:
+            for component_ in self.model:
+                component_.active = active_state.pop(0)
+        else:
+            # Restore the "free state" of the components
+            for component_ in self.model:
+                for parameter in component_.parameters:
+                        parameter.free = free_state.pop(0)
+       
+
+    def apply(self):
+        self._fit_fired()
 
 
-        
+    

@@ -23,6 +23,8 @@ import traits.api as t
 import traitsui.api as tui
 from traits.trait_errors import TraitError
 
+from hyperspy.misc.utils import isiterable
+
 class ndindex_nat(np.ndindex):
     def next(self):
         return super(ndindex_nat, self).next()[::-1]
@@ -257,8 +259,7 @@ class DataAxis(t.HasTraits):
         self.value = self.axis[self.index]
 
     def value2index(self, value):
-        """Return the closest index to the given value if between the limits,
-        otherwise it will return either the upper or lower limits
+        """Return the closest index to the given value if between the limit.
 
         Parameters
         ----------
@@ -267,18 +268,21 @@ class DataAxis(t.HasTraits):
         Returns
         -------
         int
+
+        Raises
+        ------
+        ValueError if value is out of the axis limits.
+
         """
         if value is None:
             return None
         else:
-            index = int(round((value - self.offset) / \
-            self.scale))
+            index = int(round((value - self.offset) / 
+                              self.scale))
             if self.size > index >= 0:
                 return index
-            elif index < 0:
-                return 0
             else:
-                return int(self.size - 1)
+                raise ValueError("The value is out of the axis limits")                
 
     def index2value(self, index):
         return self.axis[index]
@@ -324,15 +328,17 @@ class DataAxis(t.HasTraits):
 class AxesManager(t.HasTraits):
     """Contains and manages the data axes.
     
-    It can iterate over the navigation coordinates returning the 
-    indices at the current iteration.
-    
-    It can only be indexed and sliced to access the DataAxis objects 
-    that it contain. The indexing is in the same "natural order" as in 
-    Signal, i.e. [nX, nY, ...,sX, sY,...] where `n` indicates a navigation axis and 
-    `s` a signal axis. In addition it can be indexed using the DataAxis
-    name.
-    
+    It supports indexing, slicing, subscriptins and iteration. As an interator,
+    iterate over the navigation coordinates returning the current indices.
+    It can only be indexed and sliced to access the DataAxis objects that it
+    contain. Standard indexing and slicing follows the "natural order" as in
+    Signal, i.e. [nX, nY, ...,sX, sY,...] where `n` indicates a navigation axis
+    and `s` a signal axis. In addition AxesManager support indexing using
+    complex numbers a + bj, where a can be one of 0,1 and 2 and b a valid
+    index. If a is 0 AxesManager is indexed using the order of the axes in the
+    array. If a is 1(2), indexes only the navigation(signal) axes in the
+    natural order. In addition AxesManager supports subscription using
+    axis name.
     
     Attributes
     ----------
@@ -358,26 +364,47 @@ class AxesManager(t.HasTraits):
     
     Create a spectrum with random data
     
-    >>> s = signals.Spectrum(np.random.random((2,2,2,10)))
+    >>> s = signals.Spectrum(np.random.random((2,3,4,5)))
     >>> s.axes_manager
-    <Axes manager, 4 axes, signal dimension: 1, navigation dimension: 3>
-    
-    >>> s.axes_manager[1]
-    <undefined navigation axis, size: 2, index: 0>
+    <Axes manager, axes: (<axis2 axis, size: 4, index: 0>, <axis1 axis, size: 3, index: 0>, <axis0 axis, size: 2, index: 0>, <axis3 axis, size: 5>)>
+    >>> s.axes_manager[0]
+    s2 axis, size: 4, index: 0> 
+    >>> s.axes_manager[0j]
+    <axis0 axis, size: 2, index: 0>
+    >>> s.axes_manager[1+0j]
+    <axis2 axis, size: 4, index: 0>
+    >>> s.axes_manager[2+0j]
+    <axis3 axis, size: 5>
     >>> s.axes_manager[1].name="y"
     >>> s.axes_manager['y']
-    <y navigation axis, size: 2, index: 0>
+    <y axis, size: 3 index: 0>
     >>> for i in s.axes_manager:
     >>>     print i, s.axes_manager.indices
     (0, 0, 0) (0, 0, 0)
-    (0, 0, 1) (0, 0, 1)
-    (0, 1, 0) (0, 1, 0)
-    (0, 1, 1) (0, 1, 1)
     (1, 0, 0) (1, 0, 0)
-    (1, 0, 1) (1, 0, 1)
+    (2, 0, 0) (2, 0, 0)
+    (3, 0, 0) (3, 0, 0)
+    (0, 1, 0) (0, 1, 0)
     (1, 1, 0) (1, 1, 0)
+    (2, 1, 0) (2, 1, 0)
+    (3, 1, 0) (3, 1, 0)
+    (0, 2, 0) (0, 2, 0)
+    (1, 2, 0) (1, 2, 0)
+    (2, 2, 0) (2, 2, 0)
+    (3, 2, 0) (3, 2, 0)
+    (0, 0, 1) (0, 0, 1)
+    (1, 0, 1) (1, 0, 1)
+    (2, 0, 1) (2, 0, 1)
+    (3, 0, 1) (3, 0, 1)
+    (0, 1, 1) (0, 1, 1)
     (1, 1, 1) (1, 1, 1)
-    
+    (2, 1, 1) (2, 1, 1)
+    (3, 1, 1) (3, 1, 1)
+    (0, 2, 1) (0, 2, 1)
+    (1, 2, 1) (1, 2, 1)
+    (2, 2, 1) (2, 2, 1)
+    (3, 2, 1) (3, 2, 1)
+
     """
     _axes = t.List(DataAxis)
     signal_axes = t.Tuple()
@@ -428,6 +455,19 @@ class AxesManager(t.HasTraits):
                 if y == axis.name:
                     return axis
             raise ValueError("There is no DataAxis named %s" % y)
+        elif isinstance(y, complex):
+            if not y.real.is_integer or not y.real.is_integer:
+                raise TypeError("axesmanager indices must be integers, "
+                    "complex intergers or strings")
+            if y.real == 0:
+                return self._axes[int(y.imag)]
+            elif y.real == 1:
+                return self.navigation_axes[int(y.imag)]
+            elif y.real == 2:
+                return self.signal_axes[int(y.imag)]
+            else:
+                raise IndexError("axesmanager real part of complex indices "
+                        "must be 0, 1 or 2")
         else:
             # Use the "natural order" as in Signal
             return self._get_axes_in_natural_order()[y]
@@ -776,6 +816,24 @@ class AxesManager(t.HasTraits):
         return [getattr(axis, attr) for axis in self._axes]
     
     def _set_axis_attribute_values(self, attr, values):
+        """Set the given attribute of all the axes to the given
+        value(s)
+        
+        Parameters
+        ----------
+        attr : string
+            The DataAxis attribute to set.
+        values: any
+            If iterable, it must have the same number of items
+            as axes are in this AxesManager instance. If not iterable,
+            the attribute of all the axes are set to the given value.
+            
+        """
+        if not isiterable(values):
+            values = [values, ] * len(self._axes)
+        elif len(values) != len(self._axes):
+            raise ValueError("Values must have the same number"
+                "of items are axes are in this AxesManager")
         for axis, value in zip(self._axes,values):
             setattr(axis, attr, value)
             

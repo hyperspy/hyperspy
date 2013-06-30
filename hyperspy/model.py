@@ -48,7 +48,7 @@ from hyperspy.misc.mpfit.mpfit import mpfit
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
-
+from hyperspy.gui.tools import ComponentFit
 
 class Model(list):
     """Build and fit a model
@@ -113,6 +113,7 @@ class Model(list):
         object._axes_manager = self.axes_manager
         object._create_arrays()
         list.append(self,object)
+        object.model = self
         self._touch()
     
    
@@ -122,10 +123,12 @@ class Model(list):
                 
     def __delitem__(self, object):
         list.__delitem__(self,object)
+        object.model = None
         self._touch()
     
     def remove(self, object, touch=True):
         list.remove(self,object)
+        object.model = None
         if touch is True:
             self._touch() 
 
@@ -167,21 +170,44 @@ class Model(list):
                 parameter.disconnect(self.update_plot)
     
 
-    def as_signal(self, out_of_range_to_nan=True):
+    def as_signal(self, component_list=None, out_of_range_to_nan=True):
         """Returns a recreation of the dataset using the model.
         the spectral range that is not fitted is filled with nans.
         
         Parameters
         ----------
+        component_list : list of hyperspy components, optional
+            If a list of components is given, only the components given in the
+            list is used in making the returned spectrum
         out_of_range_to_nan : bool
             If True the spectral range that is not fitted is filled with nans.
             
         Returns
         -------
         spectrum : An instance of the same class as `spectrum`.
+
+        Example
+        -------
+        >>>> s = signals.Spectrum(np.random.random((10,100)))
+        >>>> m = create_model(s)
+        >>>> l1 = components.Lorentzian()
+        >>>> l2 = components.Lorentzian()
+        >>>> m.append(l1)
+        >>>> m.append(l2)
+        >>>> s1 = m.as_signal()
+        >>>> s2 = m.as_signal(component_list=[l1])
     
         """
+
         # TODO: model cube should dissapear or at least be an option
+        if component_list:
+            active_state = []
+            for component_ in self:
+                active_state.append(component_.active)
+                if component_ in component_list:
+                    component_.active = True 
+                else:
+                    component_.active = False
         data = np.zeros(self.spectrum.data.shape,dtype='float')
         data[:] = np.nan
         if out_of_range_to_nan is True:
@@ -207,6 +233,9 @@ class Model(list):
             axes=self.spectrum.axes_manager._get_axes_dicts())
         spectrum.mapped_parameters.title = (
             self.spectrum.mapped_parameters.title + " from fitted model")
+        if component_list:
+            for component_ in self:
+                component_.active = active_state.pop(0)
         return spectrum
         
         
@@ -528,11 +557,11 @@ class Model(list):
             for component in self: # Cut the parameters list
                 if component.active is True:
                     if component.convolved is True:
-                        np.add(sum_convolved, component(param[\
+                        np.add(sum_convolved, component.__tempcall__(param[\
                         counter:counter+component._nfree_param],
                         self.convolution_axis), sum_convolved)
                     else:
-                        np.add(sum, component(param[counter:counter + \
+                        np.add(sum, component.__tempcall__(param[counter:counter + \
                         component._nfree_param], self.axis.axis), sum)
                     counter+=component._nfree_param
 
@@ -547,11 +576,11 @@ class Model(list):
             for component in self: # Cut the parameters list
                 if component.active is True:
                     if first is True:
-                        sum = component(param[counter:counter + \
+                        sum = component.__tempcall__(param[counter:counter + \
                         component._nfree_param],axis)
                         first = False
                     else:
-                        sum += component(param[counter:counter + \
+                        sum += component.__tempcall__(param[counter:counter + \
                         component._nfree_param], axis)
                     counter += component._nfree_param
             return sum
@@ -1001,9 +1030,14 @@ class Model(list):
                 
         self.fetch_stored_values()
            
-    def plot(self):
+    def plot(self, plot_components=False):
         """Plots the current spectrum to the screen and a map with a 
         cursor to explore the SI.
+        
+        Paramaters
+        ----------
+        plot_components : bool
+            If True, add a line per component to the signal figure.
         
         """
         
@@ -1012,12 +1046,11 @@ class Model(list):
         _plot = self.spectrum._plot
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()
-        l1.line_properties_helper(color, 'scatter')
-        l1.set_properties()
+        l1.set_line_properties(color=color, type='scatter')
         
         l2 = hyperspy.drawing.spectrum.SpectrumLine()
         l2.data_function = self._model2plot
-        l2.line_properties_helper('blue', 'line')        
+        l2.set_line_properties(color='blue', type='line')        
         # Add the line to the figure
         _plot.signal_plot.add_line(l2)
         l2.plot()
@@ -1025,6 +1058,30 @@ class Model(list):
                                 self._disconnect_parameters2update_plot)
         self._plot = self.spectrum._plot
         self._connect_parameters2update_plot()
+        if plot_components is True:
+            self.enable_plot_components()
+        
+    def enable_plot_components(self):
+        if self._plot is None:
+            return
+        for component in [component for component in self if
+                             component.active is True]:
+            line = hyperspy.drawing.spectrum.SpectrumLine()
+            line.data_function = component._component2plot       
+            # Add the line to the figure
+            self._plot.signal_plot.add_line(line)
+            line.plot()
+            component._model_plot_line = line
+        on_figure_window_close(self._plot.signal_plot.figure, 
+                                self.disable_plot_components)
+                
+    def disable_plot_components(self):
+        if self._plot is None:
+            return
+        for component in self:
+            if hasattr(component, "_model_plot_line"):
+                component._model_plot_line.close()
+                del component._model_plot_line        
         
     def set_current_values_to(self, components_list=None, mask=None):
         if components_list is None:
@@ -1116,8 +1173,9 @@ class Model(list):
         Parameters
         ----------
         only_free : bool
-            If True, only the value of the parameters that are free will be
-            printed.
+            If True, only the value of the parameters that are free will
+             be printed.
+             
         """
         print "Components\tParameter\tValue"
         for component in self:
@@ -1212,8 +1270,8 @@ class Model(list):
     def disable_adjust_position(self, components=None, fix_them=True):
         """Disables the interactive adjust position feature
         
-        See also:
-        ---------
+        See also
+        --------
         enable_adjust_position
         
         """
@@ -1224,6 +1282,51 @@ class Model(list):
                 del pw.component
             pw.close()
             del pw
+
+    def fit_component(self, component, signal_range="interactive",
+            estimate_parameters=True, fit_independent=False, **kwargs):
+        """Fit just the given component in the given signal range.
+
+        This method is useful to obtain starting parameters for the 
+        components. Any keyword arguments are passed to the fit method.
+
+        Parameters
+        ----------
+        component : component instance
+            The component must be in the model, otherwise an exception 
+            is raised.
+        signal_range : {'interactive', (left_value, right_value), None}
+            If 'interactive' the signal range is selected using the span
+             selector on the spectrum plot. The signal range can also 
+             be manually specified by passing a tuple of floats. If None
+             the current signal range is used.
+        estimate_parameters : bool, default True
+            If True will check if the component has an 
+            estimate_parameters function, and use it to estimate the
+            parameters in the component.
+        fit_independent : bool, default False
+            If True, all other components are disabled. If False, all other
+            component paramemeters are fixed.
+
+        Examples
+        --------
+        Signal range set interactivly
+
+        >>> g1 = components.Gaussian()
+        >>> m.append(g1)
+        >>> m.fit_component(g1)
+        
+        Signal range set through direct input
+
+        >>> m.fit_component(g1, signal_range=(50,100))
+        """
+        
+        cf = ComponentFit(self, component, signal_range,
+                estimate_parameters, fit_independent, **kwargs)
+        if signal_range == "interactive":
+            cf.edit_traits()
+        else:
+            cf.apply()
 
     def set_parameters_not_free(self, component_list=None,
             parameter_name_list=None):

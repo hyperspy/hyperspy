@@ -21,9 +21,9 @@ import os
 import numpy as np
 
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.utils import (incremental_filename,
-                                  append2pathname,
-                                  slugify)
+from hyperspy.misc.utils import slugify
+from hyperspy.misc.io.tools import (incremental_filename,
+                                    append2pathname,) 
 from hyperspy.exceptions import NavigationDimensionError
 
 
@@ -94,6 +94,7 @@ class Parameter(object):
         self.name = ''
         self.units = ''
         self.map = None
+        self.model = None
     
     def __repr__(self):
         text = ''
@@ -627,10 +628,39 @@ class Component(object):
                                                parameter.std,
                                                parameter.units)
 
-    def __call__(self, p, x, onlyfree=True) :
+    def __tempcall__(self, p, x, onlyfree=True) :
         self.fetch_values_from_array(p , onlyfree=onlyfree)
         return self.function(x)
+
+    def __call__(self) :
+        """Returns the corresponding model for the current coordinates
         
+        Returns
+        -------
+        numpy array
+        """
+            
+        axis = self.model.axis.axis[self.model.channel_switches]
+        component_array = self.function(axis)
+        return component_array
+
+    def _component2plot(self, axes_manager, out_of_range2nans=True):
+        old_axes_manager = None
+        if axes_manager is not self.model.axes_manager:
+            old_axes_manager = self.model.axes_manager
+            self.model.axes_manager = axes_manager
+            self.charge()
+        s = self.__call__()
+        if old_axes_manager is not None:
+            self.model.axes_manager = old_axes_manager
+            self.charge()
+        if out_of_range2nans is True:
+            ns = np.zeros((self.model.axis.axis.shape))
+            ns[:] = np.nan
+            ns[self.model.channel_switches] = s
+            s = ns
+        return s
+
     def set_parameters_free(self, parameter_name_list=None):
         """
         Sets parameters in a component to free.

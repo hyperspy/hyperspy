@@ -70,17 +70,23 @@ Altenatively (and more conviently), if you are using Gnome place `this <https://
 Getting help
 ------------
 
-The documentation can be accessed by adding a question mark to the name of a function. e.g.:
+The documentation (docstring in Python jargon) can be accessed by adding
+ a question mark to the name of a function. e.g.:
 
 .. code-block:: python
     
     >>> load?
 
-This syntax is one of the many features of `IPython <http://ipython.scipy.org/moin/>`_ , which is the interactive python shell that Hyperspy uses under the hood.
+This syntax is a shortcut to the standard way one of displaying the 
+help associated to a given functions (docstring in Python jargon) and it is one of the 
+many features of `IPython <http://ipython.scipy.org/moin/>`_ , which is 
+the interactive python shell that Hyperspy uses under the hood.
 
-Please note that the documentation of the code is a work in progress, so not all the objects are documented yet.
+Please note that the documentation of the code is a work in progress, so
+ not all the objects are documented yet.
 
-Up-to-date documentation is always available in `the Hyperspy website. <http://hyperspy.org/documentation.html>`_
+Up-to-date documentation is always available in `the Hyperspy website. 
+<http://hyperspy.org/documentation.html>`_
 
 
 Autocompletion

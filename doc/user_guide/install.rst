@@ -14,22 +14,15 @@ For installing in any other platform you can :ref:`install-with-python-installer
 Quick instructions to install Hyperspy in Windows
 -------------------------------------------------
 
-#. Download and install `EPD. <http://www.enthought.com/products/epd.php>`_ EPD is recommended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are included). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_ Since version 0.5 Hyperspy runs (with limited functionality) in `EPD free <https://www.enthought.com/repo/free/>`_ .
-#. **Restart the computer**
-#. Download and install Hyperspy from the `Download section <http://hyperspy.org/download.html>`_
+Since version 0.6 Hyperspy is distributed in Windows with all the required libraries and nothing else is required. 
 
-.. WARNING::
-    Read :ref:`known-issues` before installing
-    
-For more options and details read the rest of the documentation.
 
 .. _quick-mac-install:
-
 
 Quick instructions to install Hyperspy in MacOs
 -------------------------------------------------
 
-#. Download and install `EPD. <http://www.enthought.com/products/epd.php>`_ **Do not install the 64bits version even if your processor is 64bits because it does not include the Python WX libraries which are required by Hyperspy**. EPD is recommended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are included). The academic license is free and it can be obtained `here. <http://www.enthought.com/products/edudownload.php>`_  Since version 0.5 Hyperspy runs (with limited functionality) in `EPD free <https://www.enthought.com/repo/free/>`_ .
+#. Download and install `Canopy. <https://www.enthought.com/products/canopy/>`_ **Do not install the 64bits version even if your processor is 64bits because it does not include a stable version of the WX libraries which are required by Hyperspy**. EPD is recommended for the best performance (it is compiled using Intel MKL libraries) and the easiest intallation (all the required libraries are included). The academic license is free. Since version 0.5 Hyperspy runs (with limited functionality) in Canopy Free. 
 #. Open a new terminal and type: `easy_install hyperspy`
 
 For more options and details read the rest of the documentation.
@@ -64,7 +57,7 @@ In any case, you must be sure to have all the dependencies installed, see :ref:`
 Install from a binary
 ---------------------
 
-We provide  binary distributions for Ubuntu Linux and Windows (`see the Downloads section of the website <http://hyperspy.org/download.html>`_). In Ubuntu the dependencies are installed automatically. In Windows it is necessary to previously install the required libraries, see :ref:`install-dependencies`. To install easily in other platforms see :ref:`install-with-python-installers`
+We provide  binary distributions for Ubuntu Linux and Windows (`see the Downloads section of the website <http://hyperspy.org/download.html>`_). To install easily in other platforms see :ref:`install-with-python-installers`
     
 
 .. _install-source:
@@ -144,17 +137,12 @@ You can create binaries for Debian/Ubuntu from the source by running the `releas
 
 Installing the required libraries
 ---------------------------------
-
-.. Warning::
-
-    Read at least up to the second paragraph of this instruction before taking any action
     
     
-Before installing Hyperspy Python and the following libraries be installed in the system: numpy, scipy, matplotlib (>= 1.2), ipython, traits and traitsui. For full functionality it is recommended to also install h5py, mdp and scikit-learn. In Windows Hyperspy uses the Ipython's QtConsole nd therefore Qt and PyQt or PySide are also required.
+When installing Hyperspy using Python installers or from source the Python programming language and the following libraries must be installed in the system: numpy, scipy, matplotlib (>= 1.2), ipython, traits and traitsui. For full functionality it is recommended to also install h5py, mdp and scikit-learn. In Windows Hyperspy uses the Ipython's QtConsole nd therefore Qt and PyQt or PySide are also required.
 
-In Windows and Mac the easiest way to install these packages is by installing the `enthought python distribution. <http://www.enthought.com/products/epd.php>`_ (EPD) that from version 0.7.1 comes with all the required libraries included by default. Academics can get it free `here <http://www.enthought.com/products/edudownload.php>`_ .  Since version 0.5 Hyperspy runs (with limited functionality) in `EPD free <https://www.enthought.com/repo/free/>`_ .
 
-If you use an Ubuntu binary to install Hyperspy all the dependencies should install automatically. Installing the dependencies manually in Ubuntu 12.04 (and probably Debian and other Ubuntu versions) can be done using:
+In Debian/Ubuntu you can install the libraries as follows:
 
 .. code-block:: bash
 
@@ -168,9 +156,10 @@ Known issues
 Windows
 ^^^^^^^
 
-* Hyperspy does not work with an standard installation of the full version of EPD 7.3-2 due to a problem of compilation in the h5py. The easiest way to walkaround this issue is reinstalling the h5py libraries. You can download them `from here. <http://www.lfd.uci.edu/~gohlke/pythonlibs/#h5py>`_
+* Hyperspy does not work with an standard installation of the full version of EPD 7.3-2 due to a problem of compilation in the h5py. The solution is to uninstall Hyperspy and EPD and install a newer version of Hyperspy for Windows that, since version 0.6, does not require the installation of any other Python libraries.
+* If Hyperspy fails to start in Windows try installing the Microsoft Visual C++ 2008 redistributable packages (`64 bit <http://www.microsoft.com/download/en/details.aspx?id=15336>`_ or `32 bit <http://www.microsoft.com/download/en/details.aspx?id=29>`_) before reporting a bug.
 * In some Windows machines an error is printed at the end of the installation and the entries in the context menu and the Start Menu are not installed properly. In most cases the problem can be solved by restarting the computer and reinstalling Hyperspy.
-* Due to a `Python bug <http://bugs.python.org/issue13276>`_ uninstalling Hyperspy does not uninstall the "Hyperspy Here" entries in the context menu. Please run the following code in a Windows Terminal with administrator rights to remove the entries manually:
+* Due to a `Python bug <http://bugs.python.org/issue13276>`_ sometimes uninstalling Hyperspy does not uninstall the "Hyperspy Here" entries in the context menu. Please run the following code in a Windows Terminal with administrator rights to remove the entries manually:
   
   .. code-block:: bash
 

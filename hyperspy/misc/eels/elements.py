@@ -1,3 +1,5 @@
+from hyperspy.misc import utils
+
 elements = {
 'Ag': {'Z': 47,
   'subshells': {'M2': {'factor': 0.5,
@@ -1368,3 +1370,5 @@ elements = {
     'filename': 'Zr.M5',
     'onset_energy': 181.0,
     'relevance': 'Major'}}}}
+    
+elements_db = utils.DictionaryBrowser(elements)

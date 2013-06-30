@@ -25,10 +25,13 @@ import hyperspy.defaults_parser
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
     ripple, tiff)
 from hyperspy.gui.tools import Load
-from hyperspy.misc import utils
-from hyperspy.misc.utils import (ensure_directory,strlist2enumeration)
+import hyperspy.utils
+import hyperspy.misc.utils
+from hyperspy.misc.io.tools import ensure_directory
+from hyperspy.misc.utils import strlist2enumeration
+
 from hyperspy.misc.natsort import natsorted
-import hyperspy.misc.utils_varia
+import hyperspy.misc.io.tools
 
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff]
 
@@ -67,9 +70,16 @@ for plugin in io_plugins:
         default_write_ext.add(
             plugin.file_extensions[plugin.default_extension])
 
-def load(filenames=None, record_by=None, signal_type=None, 
-         stack=False, stack_axis=None, new_axis_name="stack_element",
-         mmap=False, mmap_dir=None, **kwds):
+def load(filenames=None,
+         record_by=None,
+         signal_type=None,
+         signal_origin=None,
+         stack=False,
+         stack_axis=None,
+         new_axis_name="stack_element",
+         mmap=False,
+         mmap_dir=None,
+         **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
     Supported formats: HDF5, msa, Gatan dm3, Ripple (rpl+raw)
@@ -90,16 +100,39 @@ def load(filenames=None, record_by=None, signal_type=None,
         files can be loaded by using simple shell-style wildcards, 
         e.g. 'my_file*.msa' loads all the files that starts
         by 'my_file' and has the '.msa' extension.
-    record_by : None | 'spectrum' | 'image' 
-        Manually set the way in which the data will be read. Possible
-        values are 'spectrum' or 'image'.
-    signal_type : str
-        Manually set the signal type of the data. Although only setting
-        signal type to 'EELS' will currently change the way the data is 
-        loaded, it is good practice to set this parameter so it can be 
-        stored when saving the file. Please note that, if the 
-        signal_type is already defined in the file the information 
-        will be overriden without warning.
+    record_by : {None, 'spectrum', 'image', ""}
+        The value provided may determine the Signal subclass assigned to the 
+        data.
+        If None, the value is read or guessed from the file. Any other value
+        overrides the value stored in the file if any.
+        If "spectrum" load the data in a Spectrum (sub)class.
+        If "image" load the data in an Image (sub)class.
+        If "" (empty string) load the data in a Signal class.
+        
+    signal_type : {None, "EELS", "EDS_TEM", "EDS_SEM", "", str}
+        The acronym that identifies the signal type.
+        The value provided may determine the Signal subclass assigned to the 
+        data.
+        If None the value is read/guessed from the file. Any other value
+        overrides the value stored in the file if any.
+        For electron energy-loss spectroscopy use "EELS".
+        For energy dispersive x-rays use "EDS_TEM" 
+        if acquired from an electron-transparent sample — as it is usually 
+        the case in a transmission electron  microscope (TEM) —,
+        "EDS_SEM" if acquired from a non electron-transparent sample 
+        — as it is usually the case in a scanning electron  microscope (SEM) —.
+        If "" (empty string) the value is not read from the file and is 
+        considered undefined. 
+    signal_origin : {None, "experiment", "simulation", ""}
+        Defines the origin of the signal.
+        The value provided may determine the Signal subclass assigned to the 
+        data.
+        If None the value is read/guessed from the file. Any other value
+        overrides the value stored in the file if any.
+        Use "experiment" if loading experimental data.
+        Use "simulation" if loading simulated data.
+        If "" (empty string) the value is not read from the file and is 
+        considered undefined. 
     stack : bool
         If True and multiple filenames are passed in, stacking all
         the data into a single object is attempted. All files must match
@@ -138,7 +171,7 @@ def load(filenames=None, record_by=None, signal_type=None,
     --------
     Loading a single file providing the signal type:
     
-    >>> d = load('file.dm3', signal_type='XPS')
+    >>> d = load('file.dm3', signal_type='EDS_TEM')
     
     Loading a single file and overriding its default record_by:
     
@@ -153,8 +186,9 @@ def load(filenames=None, record_by=None, signal_type=None,
     >>>d = load('file*.dm3')
 
     """
-    
     kwds['record_by'] = record_by
+    kwds['signal_type'] = signal_type    
+    kwds['signal_origin'] = signal_origin
     if filenames is None:
         if hyperspy.defaults_parser.preferences.General.interactive is True:
             load_ui = Load()
@@ -184,10 +218,11 @@ def load(filenames=None, record_by=None, signal_type=None,
         if stack is True:
             signal = []
             for i, filename in enumerate(filenames):
-                obj = load_single_file(filename, output_level=0,
-                    signal_type=signal_type, **kwds)
+                obj = load_single_file(filename,
+                                       output_level=0,
+                                       **kwds)
                 signal.append(obj)
-            signal = utils.stack(signal,
+            signal = hyperspy.utils.stack(signal,
                                  axis=stack_axis,
                                  new_axis_name=new_axis_name,
                                  mmap=mmap, mmap_dir=mmap_dir)
@@ -201,9 +236,10 @@ def load(filenames=None, record_by=None, signal_type=None,
             signal._print_summary()
             objects = [signal,] 
         else:
-            objects=[load_single_file(filename, output_level=0,
-                     signal_type=signal_type, **kwds) 
-                for filename in filenames]
+            objects=[load_single_file(filename,
+                                      output_level=0,
+                                      **kwds) 
+                     for filename in filenames]
             
         if hyperspy.defaults_parser.preferences.General.plot_on_load:
             for obj in objects:
@@ -213,8 +249,12 @@ def load(filenames=None, record_by=None, signal_type=None,
     return objects
 
 
-def load_single_file(filename, record_by=None, output_level=2, 
-    signal_type=None, **kwds):
+def load_single_file(filename,
+                     record_by=None,
+                     output_level=2, 
+                     signal_type=None,
+                     signal_origin=None,
+                     **kwds):
     """
     Load any supported file into an Hyperspy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
@@ -247,16 +287,26 @@ def load_single_file(filename, record_by=None, output_level=2,
             return load_with_reader(filename, reader, record_by, 
                 signal_type=signal_type, **kwds)
         except:
-            messages.warning_exit('File type not supported')
+            raise IOError('If the file format is supported'
+                          ' please report this error')
     else:
         reader = io_plugins[i]
-        return load_with_reader(filename, reader, record_by,
-                    signal_type=signal_type,
-                    output_level=output_level, **kwds)
+        return load_with_reader(filename=filename,
+                                reader=reader,
+                                record_by=record_by,
+                                signal_type=signal_type,
+                                signal_origin=signal_origin,
+                                output_level=output_level,
+                                **kwds)
 
 
-def load_with_reader(filename, reader, record_by=None,
-        signal_type=None, output_level=1, **kwds):
+def load_with_reader(filename,
+                     reader,
+                     record_by=None,
+                     signal_type=None,
+                     signal_origin=None,
+                     output_level=1,
+                     **kwds):
     if output_level>1:
         messages.information('Loading %s ...' % filename)
     
@@ -266,9 +316,13 @@ def load_with_reader(filename, reader, record_by=None,
                                         **kwds)
     objects = []
     for signal_dict in file_data_list:
-        objects.append(dict2signal(signal_dict,
-                                   record_by=record_by,
-                                   signal_type=signal_type))
+        if record_by is not None:
+            signal_dict['mapped_parameters']['record_by'] = record_by
+        if signal_type is not None:
+            signal_dict['mapped_parameters']['signal_type'] = signal_type
+        if signal_origin is not None:
+            signal_dict['mapped_parameters']['signal_origin'] = signal_origin            
+        objects.append(dict2signal(signal_dict))
         folder, filename = os.path.split(os.path.abspath(filename))
         filename, extension = os.path.splitext(filename)
         objects[-1].tmp_parameters.folder = folder
@@ -277,34 +331,82 @@ def load_with_reader(filename, reader, record_by=None,
 
     if len(objects) == 1:
         objects = objects[0]
-    if output_level>1:
+    if output_level > 1:
         messages.information('%s correctly loaded' % filename)
     return objects
     
-def dict2signal(signal_dict, record_by=None, signal_type=None):
-    from hyperspy.signals.image import Image
-    from hyperspy.signals.spectrum import Spectrum
-    from hyperspy.signals.eels import EELSSpectrum
-    if record_by is not None:
-        signal_dict['mapped_parameters']['record_by'] = record_by
-    # The record_by can still be None if it was not defined by the reader
-    if signal_dict['mapped_parameters']['record_by'] is None:
-        print "No data type provided.  Defaulting to image."
-        signal_dict['mapped_parameters']['record_by']= 'image'
+def assign_signal_subclass(record_by="",
+                           signal_type="",
+                           signal_origin="",):
+    """Given record_by and signal_type return the matching Signal subclass.
+    
+    Parameters
+    ----------
+    record_by: {"spectrum", "image", ""}
+    signal_type : {"EELS", "EDS", "EDS_TEM", "", str}
+    signal_origin : {"experiment", "simulation", ""}
+    
+    Returns
+    -------
+    Signal or subclass
+        
+    """
+    import hyperspy.signals
+    from hyperspy.signal import Signal
+    if record_by and record_by not in ["image", "spectrum"]:
+        raise ValueError("record_by must be one of: None, empty string, "
+                         "\"image\" or \"spectrum\"")
+    if signal_origin and signal_origin not in ["experiment", "simulation"]:
+        raise ValueError("signal_origin must be one of: None, empty string, "
+                         "\"experiment\" or \"simulation\"")
+        
+    signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, Signal)
+    signals['Signal'] = Signal
+    
+    if signal_origin == "experiment":
+        signal_origin = ""
+    
+    preselection = [s for s in
+                    [s for s in signals.itervalues()
+                     if record_by == s._record_by]
+                    if signal_origin == s._signal_origin]
+    perfect_match = [s for s in preselection
+                     if signal_type == s._signal_type]
+    selection = perfect_match[0] if perfect_match else \
+                [s for s in preselection if s._signal_type == ""][0]
+    return selection
+    
+    
+def dict2signal(signal_dict):
+    """Create a signal (or subclass) instance defined by a dictionary
+    
+    Parameters
+    ----------
+    signal_dict : dictionary
 
-    if signal_type is not None:
-        signal_dict['mapped_parameters']['signal_type'] = signal_type
-
-    if signal_dict['mapped_parameters']['record_by'] == 'image':
-        s = Image(**signal_dict)
-    else:
-        if ('signal_type' in signal_dict['mapped_parameters'] 
-            and signal_dict['mapped_parameters']['signal_type'] 
-            == 'EELS'):
-            s = EELSSpectrum(**signal_dict)
-        else:
-            s = Spectrum(**signal_dict)
-    return s
+    Returns
+    -------
+    s : Signal or subclass
+    
+    """
+    record_by = ""
+    signal_type = ""
+    signal_origin = ""
+    if "mapped_parameters" in signal_dict:
+        mp = signal_dict["mapped_parameters"]
+        if "record_by" in mp:
+            record_by = mp['record_by']
+        if "signal_type" in mp:
+            signal_type = mp['signal_type']
+        if "signal_origin" in mp:
+            signal_origin = mp['signal_origin']
+    if (not record_by and 'data' in signal_dict and 
+                                                signal_dict['data'].ndim < 2):
+        record_by = "spectrum"
+    
+    return assign_signal_subclass(record_by=record_by,
+                                  signal_type=signal_type,
+                                  signal_origin=signal_origin)(**signal_dict)
 
 def save(filename, signal, overwrite=None, **kwds):
     extension = os.path.splitext(filename)[1][1:]
@@ -341,7 +443,7 @@ def save(filename, signal, overwrite=None, **kwds):
             strlist2enumeration(yes_we_can))
         ensure_directory(filename)
         if overwrite is None:
-            overwrite = hyperspy.misc.utils_varia.overwrite(filename)
+            overwrite = hyperspy.misc.io.tools.overwrite(filename)
         if overwrite is True:
             writer.file_writer(filename, signal, **kwds)
             print('The %s file was created' % filename)

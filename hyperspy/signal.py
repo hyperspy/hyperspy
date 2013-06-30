@@ -28,13 +28,13 @@ from hyperspy import messages
 from hyperspy.axes import AxesManager
 from hyperspy import io
 from hyperspy.drawing import mpl_hie, mpl_hse
-from hyperspy.misc import utils
 from hyperspy.learn.mva import MVA, LearningResults
+import hyperspy.misc.utils
 from hyperspy.misc.utils import DictionaryBrowser
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.utils import ensure_directory
+from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.gui.tools import (
     SpectrumCalibration,
@@ -46,10 +46,12 @@ from hyperspy.gui.egerton_quantification import BackgroundRemoval
 from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
 from scipy.ndimage.filters import gaussian_filter1d
-from hyperspy.misc.utils import find_peaks_ohaver
-from hyperspy.misc.image_utils import (shift_image, estimate_image_shift)
-from hyperspy.misc.utils import symmetrize, antisymmetrize
-from hyperspy.exceptions import SignalDimensionError
+from hyperspy.misc.spectrum_tools import find_peaks_ohaver
+from hyperspy.misc.image_tools import (shift_image, estimate_image_shift)
+from hyperspy.misc.math_tools import symmetrize, antisymmetrize
+from hyperspy.exceptions import SignalDimensionError, DataDimensionError
+from hyperspy.misc import array_tools
+from hyperspy.misc import spectrum_tools
 
 
 class Signal2DTools(object):
@@ -491,7 +493,7 @@ class Signal1DTools(object):
         shift_array = np.zeros(self.axes_manager._navigation_shape_in_array)
         ref = self.navigation_indexer[reference_indices].data[i1:i2]
         if interpolate is True:
-            ref = utils.interpolate1D(ip, ref)
+            ref = spectrum_tools.interpolate1D(ip, ref)
         pbar = progressbar(
             maxval=self.axes_manager.navigation_size)
         for i, (dat, indices) in enumerate(zip(
@@ -499,7 +501,7 @@ class Signal1DTools(object):
                     self.axes_manager._array_indices_generator())):
             dat = dat[i1:i2]
             if interpolate is True:
-                dat = utils.interpolate1D(ip, dat)
+                dat = spectrum_tools.interpolate1D(ip, dat)
             shift_array[indices] = np.argmax(
                 np.correlate(ref, dat,'full')) - len(ref) + 1
             pbar.update(i + 1)
@@ -635,7 +637,7 @@ class Signal1DTools(object):
         if (polynomial_order is not None and 
             number_of_points is not None):
             for spectrum in self:
-                spectrum.data[:] = utils.sg(self(),
+                spectrum.data[:] = spectrum_tools.sg(self(),
                                             number_of_points, 
                                             polynomial_order,
                                             differential_order)
@@ -763,7 +765,6 @@ class Signal1DTools(object):
         
         SignalDimensionError if the signal dimension is not 1.
             
-        
         """
         self._check_signal_dimension_equals_one()
         if FWHM <= 0:
@@ -837,11 +838,13 @@ class Signal1DTools(object):
         values will
         neglect smaller features.
 
+
         peakgroup is the number of points around the top peak to search 
         around
 
         Parameters
         ---------
+        
 
         slope_thresh : float (optional)
                        1st derivative threshold to count the peak
@@ -1908,9 +1911,11 @@ class MVATools(object):
 class Signal(MVA,
              MVATools,
              Signal1DTools,
-             Signal2DTools):
+             Signal2DTools,):
     
-    _default_record_by = 'image'
+    _record_by = ""
+    _signal_type = ""
+    _signal_origin = ""
 
     def __init__(self, data, **kwds):
         """Create a Signal from a numpy array.
@@ -2047,10 +2052,10 @@ class Signal(MVA,
         if isinstance(other, Signal):
             if other.data.shape != self.data.shape:
                 # Are they aligned?
-                are_aligned = utils.are_aligned(self.data.shape,
+                are_aligned = array_tools.are_aligned(self.data.shape,
                                        other.data.shape)
                 if are_aligned is True:
-                    sdata, odata = utils.homogenize_ndim(self.data,
+                    sdata, odata = array_tools.homogenize_ndim(self.data,
                                                      other.data)
                 else:
                     # Let's align them if possible
@@ -2242,10 +2247,15 @@ class Signal(MVA,
             file_data_dict['original_parameters'])
         self.mapped_parameters._load_dictionary(
             file_data_dict['mapped_parameters'])
-        if not hasattr(self.mapped_parameters,'title'):
+        if not hasattr(self.mapped_parameters, 'title'):
             self.mapped_parameters.title = ''
-        if not hasattr(self.mapped_parameters,'record_by'):
-            self.mapped_parameters.record_by = self._default_record_by
+        if self._record_by:
+            self.mapped_parameters.record_by = self._record_by
+        if self._signal_origin:
+            self.mapped_parameters.signal_origin = self._signal_origin
+        if self._signal_type:
+            self.mapped_parameters.signal_type = self._signal_type
+            
                 
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array 
@@ -2260,17 +2270,33 @@ class Signal(MVA,
         self.data = self.data.squeeze()
         return self
 
-    def _get_signal_dict(self, add_learning_results=True):
+    def _to_dictionary(self, add_learning_results=True):
+        """Returns a dictionary that can be used to recreate the signal.
+        
+        All items but `data` are copies.
+        
+        Parameters
+        ----------
+        add_learning_results : bool
+        
+        Returns
+        -------
+        dic : dictionary
+        
+        """
         dic = {}
-        if hasattr(self.data, "copy"):
-            dic['data'] = self.data.copy()
-        else:
-            dic['data'] = self.data            
+#        if hasattr(self.data, "copy"):
+#            dic['data'] = self.data.copy()
+#        else:
+#            dic['data'] = self.data
+        dic['data'] = self.data
         dic['axes'] = self.axes_manager._get_axes_dicts()
         dic['mapped_parameters'] = \
         self.mapped_parameters.deepcopy().as_dictionary()
         dic['original_parameters'] = \
         self.original_parameters.deepcopy().as_dictionary()
+        dic['tmp_parameters'] = \
+                        self.tmp_parameters.deepcopy().as_dictionary()
         if add_learning_results and hasattr(self,'learning_results'):
             dic['learning_results'] = copy.deepcopy(
                                                 self.learning_results.__dict__)
@@ -2333,6 +2359,7 @@ class Signal(MVA,
         data = np.nan_to_num(self.data.__getitem__(slices)
                              ).sum(isignal[1]).sum(isignal[0]).squeeze()
         return data
+    
 
     def _get_explorer(self, *args, **kwargs):
         nav_dim = self.axes_manager.navigation_dimension
@@ -2349,23 +2376,68 @@ class Signal(MVA,
                 return None
         else:
             return None
+            
+    def plot(self, navigator="auto", axes_manager=None):
+        """Plot the signal at the current coordinates.
+            
+        For multidimensional datasets an optional figure,
+        the "navigator", with a cursor to navigate that data is
+        raised. In any case it is possible to navigate the data using
+        the sliders. Currently only signals with signal_dimension equal to
+        1 and 2 can be plotted.
+        
+        Parameters
+        ----------
+        navigator : {"auto", None, "spectrum", Signal}
+            If "auto", if navigation_dimension > 0, a navigator is
+            provided to explore the data.
+            If navigation_dimension is 1 and the signal is an image
+            the navigator is a spectrum obtained by integrating 
+            over the signal axes (the image).
+            If navigation_dimension is 1 and the signal is a spectrum
+            the navigator is an image obtained by stacking horizontally
+            all the spectra in the dataset.
+            If navigation_dimension is > 1, the navigator is an image
+            obtained by integrating the data over the signal axes.
+            Additionaly, if navigation_dimension > 2 a window                   
+            with one slider per axis is raised to navigate the data.
+            For example,
+            if the dataset consists of 3 navigation axes X, Y, Z and one
+            signal axis, E, the default navigator will be an image
+            obtained by integrating the data over E at the current Z
+            index and a window with sliders for the X, Y and Z axes 
+            will be raised. Notice that changing the Z-axis index
+            changes the navigator in this case.
+            If None and the navigation dimension > 0 a window
+            with one slider per axis is raised to navigate the data.
+            If "spectrum" and navigation_dimension > 0 the navigator
+            is always a spectrum obtained by integrating the data 
+            over all other axes.
+            Altenatively a Signal instance can be provided. The signal
+            dimension must be 1 (for a spectrum navigator) or 2 (for a
+            image navigator) and navigation_shape must be 0 (for a static 
+            navigator) or navigation_shape + signal_shape must be equal
+            to the navigator_shape of the current object (for a dynamic
+            navigator).
 
-    def plot(self, axes_manager=None):
+        axes_manager : {None, axes_manager}
+            If None `axes_manager` is used.
+
+        """
         if self._plot is not None:
-                try:
-                    self._plot.close()
-                except:
-                    # If it was already closed it will raise an exception,
-                    # but we want to carry on...
-                    pass
+            try:
+                self._plot.close()
+            except:
+                # If it was already closed it will raise an exception,
+                # but we want to carry on...
+                pass
 
         if axes_manager is None:
             axes_manager = self.axes_manager
-
+                    
         if axes_manager.signal_dimension == 1:
             # Hyperspectrum
-            self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
-            
+            self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()            
         elif axes_manager.signal_dimension == 2:
             self._plot = mpl_hie.MPL_HyperImage_Explorer()
         else:
@@ -2376,21 +2448,65 @@ class Signal(MVA,
         if self.mapped_parameters.title:
             self._plot.signal_title = self.mapped_parameters.title
         elif self.tmp_parameters.has_item('filename'):
-            self._plot.signal_title = self.tmp_parameters.filename
+            self._plot.signal_title = self.tmp_parameters.filename            
+    
+        def get_static_explorer_wrapper(*args, **kwargs):
+            return navigator()
             
+        def get_1D_sum_explorer_wrapper(*args, **kwargs):
+            navigator = self
+            # Sum over all but the first navigation axis.
+            while len(navigator.axes_manager.shape) > 1:
+                navigator = navigator.sum(-1)
+            return np.nan_to_num(navigator.data).squeeze()
+
+        def get_dynamic_explorer_wrapper(*args, **kwargs):
+            navigator.axes_manager.indices = self.axes_manager.indices[
+                    navigator.axes_manager.signal_dimension:]
+            return navigator()
 
         # Navigator properties
-        if self.axes_manager.navigation_axes:
-            self._plot.navigator_data_function = self._get_explorer
+        if axes_manager.navigation_axes:
+            if navigator is "auto":
+                self._plot.navigator_data_function = self._get_explorer
+            elif navigator is None:
+                self._plot.navigator_data_function = None        
+            elif navigator is "spectrum":
+                self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
+            elif isinstance(navigator, Signal):
+                # Dynamic navigator
+                if (axes_manager.navigation_shape == 
+                      navigator.axes_manager.signal_shape + 
+                      navigator.axes_manager.navigation_shape):
+                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
+ 
+                elif (  axes_manager.navigation_shape == 
+                        navigator.axes_manager.signal_shape or
+                        axes_manager.navigation_shape[:2] == 
+                        navigator.axes_manager.signal_shape or
+                        (axes_manager.navigation_shape[0],) == 
+                        navigator.axes_manager.signal_shape):
+                    self._plot.navigator_data_function = get_static_explorer_wrapper
+
+                else:
+                    raise ValueError(
+                            "The navigator dimensions are not compatible with those"
+                            "of self.")
+                    self._plot.navigator_data_function = self._get_explorer
+            else:
+                raise ValueError("navigator must be one of \"spectrum\",\"auto\","
+                        " None, a Signal instance")
+                
         self._plot.plot()
-            
+
+              
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
         """Saves the signal in the specified format.
 
-        The function gets the format from the extension. You can use:
+        The function gets the format from the extension.:
             - hdf5 for HDF5
-            - rpl for Ripple (usefult to export to Digital Micrograph)
+            - rpl for Ripple (useful to export to Digital Micrograph)
             - msa for EMSA/MSA single spectrum saving.
             - Many image formats such as png, tiff, jpeg...
 
@@ -2405,16 +2521,19 @@ class Signal(MVA,
         Parameters
         ----------
         filename : str or None
-            If None and tmp_parameters.filename and 
-            tmp_paramters.folder are defined, the
-            filename and extension will be taken from them.
+            If None (default) and tmp_parameters.filename and 
+            `tmp_paramters.folder` are defined, the
+            filename and path will be taken from there. A valid
+            extension can be provided e.g. "my_file.rpl", see `extension`.
         overwrite : None, bool
             If None, if the file exists it will query the user. If 
             True(False) it (does not) overwrites the file if it exists.
-        extension : str
-            The extension of the file that defines the file format, 
-            e.g. 'rpl'. It overwrite the extension given in filename
-            if any.
+        extension : {None, 'hdf5', 'rpl', 'msa',common image extensions e.g. 'tiff', 'png'}
+            The extension of the file that defines the file format. 
+            If None, the extesion is taken from the first not None in the follwoing list:
+            i) the filename 
+            ii)  `tmp_parameters.extension`
+            iii) `preferences.General.default_file_format` in this order. 
             
         """
         if filename is None:
@@ -2422,8 +2541,10 @@ class Signal(MVA,
                 self.tmp_parameters.has_item('folder')):
                 filename = os.path.join(
                     self.tmp_parameters.folder,
-                    self.tmp_parameters.filename + '.' +
-                    self.tmp_parameters.extension)
+                    self.tmp_parameters.filename)
+                extesion = (self.tmp_parameters.extension
+                            if not extension
+                            else extension)
             elif self.mapped_parameters.has_item('original_filename'):
                 filename = self.mapped_parameters.original_filename
             else:
@@ -2502,8 +2623,6 @@ class Signal(MVA,
         self.data = np.roll(self.data, n_x, 0)
         self.data[:n_x, ...] = np.roll(self.data[:n_x, ...], n_y, 1)
 
-    # TODO: After using this function the plotting does not work
-    @auto_replot
     def swap_axes(self, axis1, axis2):
         """Swaps the axes.
 
@@ -2514,15 +2633,69 @@ class Signal(MVA,
             The axis can be specified using the index of the 
             axis in `axes_manager` or the axis name.
         
+        Returns
+        -------
+        s : a copy of the object with the axes swapped.
+        
         """
         axis1 = self.axes_manager[axis1].index_in_array
         axis2 = self.axes_manager[axis2].index_in_array
-        self.data = self.data.swapaxes(axis1, axis2)
-        c1 = self.axes_manager._axes[axis1]
-        c2 = self.axes_manager._axes[axis2]
-        self.axes_manager._axes[axis1] = c2
-        self.axes_manager._axes[axis2] = c1
-        self.axes_manager._update_attributes()
+        s = self._deepcopy_with_new_data(self.data.swapaxes(axis1, axis2))
+        c1 = s.axes_manager._axes[axis1]
+        c2 = s.axes_manager._axes[axis2]
+        s.axes_manager._axes[axis1] = c2
+        s.axes_manager._axes[axis2] = c1
+        s.axes_manager._update_attributes()
+        s._make_sure_data_is_contiguous()
+        return s
+        
+    def rollaxis(self, axis, to_axis):
+        """Roll the specified axis backwards, until it lies in a given position.
+
+        Parameters
+        ----------
+        axis : {int, str}
+            The axis to roll backwards.  The positions of the other axes do not
+            change relative to one another.
+        to_axis : {int, str}
+            The axis is rolled until it lies before this other axis.
+        
+        Returns
+        -------
+        s : Signal or subclass
+            Output signal.
+        
+        See Also
+        --------
+        roll : swap_axes
+        
+        Examples
+        --------
+        >>> s = signals.Spectrum(np.ones((5,4,3,6)))
+        >>> s
+        <Spectrum, title: , dimensions: (3, 4, 5, 6)>
+        >>> s.rollaxis(3, 1)
+        <Spectrum, title: , dimensions: (3, 4, 5, 6)>
+        >>> s.rollaxis(2,0)
+        <Spectrum, title: , dimensions: (5, 3, 4, 6)>
+        
+        """
+        axis = self.axes_manager[axis].index_in_array
+        to_index = self.axes_manager[to_axis].index_in_array
+        new_axes_indices = hyperspy.misc.utils.rollelem(
+                [axis_.index_in_array for axis_ in self.axes_manager._axes],
+                index=axis,
+                to_index=to_index)
+
+        
+        s = self._deepcopy_with_new_data(self.data.transpose(new_axes_indices))
+        s.axes_manager._axes = hyperspy.misc.utils.rollelem(
+                                                    s.axes_manager._axes,
+                                                    index=axis,
+                                                    to_index=to_index)
+        s.axes_manager._update_attributes()
+        s._make_sure_data_is_contiguous()
+        return s
 
     def rebin(self, new_shape):
         """
@@ -2542,7 +2715,7 @@ class Signal(MVA,
                 new_shape[axis.index_in_axes_manager])
         factors = (np.array(self.data.shape) / 
                            np.array(new_shape_in_array))
-        self.data = utils.rebin(self.data, new_shape_in_array)
+        self.data = array_tools.rebin(self.data, new_shape_in_array)
         for axis in self.axes_manager._axes:
             axis.scale *= factors[axis.index_in_array]
         self.get_dimensions_from_data()
@@ -2580,7 +2753,7 @@ class Signal(MVA,
         """
         
         shape = self.data.shape
-        signal_dict = self._get_signal_dict(add_learning_results=False)
+        signal_dict = self._to_dictionary(add_learning_results=False)
         if axis is None:
             if self.mapped_parameters.has_item("splitting.axis"):
                 axis = self.mapped_parameters.splitting.axis
@@ -2906,7 +3079,8 @@ class Signal(MVA,
         (64,64)
         
         """
-        return self._apply_function_on_data_and_remove_axis(np.min, axis)
+        return self._apply_function_on_data_and_remove_axis(np.mean, 
+                                                            axis)
         
     def std(self, axis):
         """Returns a signal with the standard deviation of the signal along 
@@ -3046,7 +3220,9 @@ class Signal(MVA,
             self._plot = backup_plot
 
     def __deepcopy__(self, memo):
-        dc = type(self)(**self._get_signal_dict())
+        dc = type(self)(**self._to_dictionary())
+        if dc.data is not None:
+            dc.data = dc.data.copy()
         # The Signal subclasses might change the view on init
         # The following code just copies the original view
         for oaxis, caxis in zip(self.axes_manager._axes,
@@ -3165,21 +3341,55 @@ class Signal(MVA,
                 self.variance = np.clip(self.variance,
                                         gaussian_noise_var,
                                         np.Inf)
-                
-    def get_current_signal(self):
-        cs = self.__class__(
-                    self(),
-                    axes=self.axes_manager._get_signal_axes_dicts(),
-                    mapped_parameters=self.mapped_parameters.as_dictionary(),)
+                                        
+    def get_current_signal(self, auto_title=True, auto_filename=True):
+        """Returns the data at the current coordinates as a Signal subclass.
 
-        if cs.tmp_parameters.has_item('filename'):
-            basename = cs.tmp_parameters.filename
-            ext = cs.tmp_parameters.extension
-            cs.tmp_parameters.filename = (basename + '_' +
-                    str(self.axes_manager.indices) + '.' + ext)
-        cs.mapped_parameters.title = (cs.mapped_parameters.title +
-                    ' ' + str(self.axes_manager.indices))
+        The signal subclass is the same as that of the current object. All the 
+        axes navigation attribute are set to False.
+        
+        Parameters
+        ----------
+        auto_title : bool
+            If True an space followed by the current indices in parenthesis
+            are appended to the title.
+        auto_filename : bool
+            If True and `tmp_parameters.filename` is defined 
+            (what is always the case when the Signal has been read from a file),
+            the filename is modified by appending an underscore and a parenthesis
+            containing the current indices.
+
+        Returns
+        -------
+        cs : Signal subclass instance.
+
+        Examples
+        --------
+        >>> im = signals.Image(np.zeros((2,3, 32,32)))
+        >>> im
+        <Image, title: , dimensions: (3, 2, 32, 32)>
+        >>> im.axes_manager.indices = 2,1
+        >>> im.get_current_signal()
+        <Image, title:  (2, 1), dimensions: (32, 32)>
+
+        """
+        cs = self.__class__(                                                    
+                    self(),                                                     
+                    axes=self.axes_manager._get_signal_axes_dicts(),            
+                    mapped_parameters=self.mapped_parameters.as_dictionary(),)  
+                                                                                
+        if auto_filename is True and self.tmp_parameters.has_item('filename'):                            
+            cs.tmp_parameters.filename = (self.tmp_parameters.filename + 
+                                          '_' + 
+                                          str(self.axes_manager.indices))                             
+            cs.tmp_parameters.extension = self.tmp_parameters.extension
+            cs.tmp_parameters.folder = self.tmp_parameters.folder
+        if auto_title is True:
+            cs.mapped_parameters.title = (cs.mapped_parameters.title +              
+                    ' ' + str(self.axes_manager.indices))                       
+        cs.axes_manager._set_axis_attribute_values("navigate", False)        
         return cs
+                
         
     def _get_navigation_signal(self):
         if self.axes_manager.navigation_dimension == 0:
@@ -3207,10 +3417,126 @@ class Signal(MVA,
         
     def next(self):
         self.axes_manager.next()
-        return self.get_current_signal()
+        return self.get_current_signal()                                               
         
     def __len__(self):
         return self.axes_manager.signal_shape[-1]
+
+    def as_spectrum(self, spectral_axis):
+        """Return the Signal as a spectrum.
+        
+        The chosen spectral axis is moved to the last index in the 
+        array and the data is made contiguous for effecient 
+        iteration over spectra.
+
+
+        Parameters
+        ----------
+        spectral_axis : {int, complex, str}
+            Select the spectral axis to-be using its index or name.
+            
+        Examples
+        --------        
+        >>> img = signals.Image(np.ones((3,4,5,6)))
+        >>> img
+        <Image, title: , dimensions: (4, 3, 6, 5)>
+        >>> img.to_spectrum(1-1j)
+        <Spectrum, title: , dimensions: (6, 5, 4, 3)>
+        >>> img.to_spectrum(0)
+        <Spectrum, title: , dimensions: (6, 5, 3, 4)>
+
+        """
+        import hyperspy.io
+        # Roll the spectral axis to-be to the latex index in the array
+        sp = self.rollaxis(spectral_axis, -1j)
+        sp.mapped_parameters.record_by = "spectrum"
+        sp = hyperspy.io.dict2signal(sp._to_dictionary())
+        return sp
+        
+    def as_image(self, image_axes):
+        """Convert signal to image.
+        
+        The chosen image axes are moved to the last indices in the 
+        array and the data is made contiguous for effecient 
+        iteration over images.
+
+        Parameters
+        ----------
+        image_axes : tuple of {int, complex, str}
+            Select the image axes. Note that the order of the axes matters 
+            and it is given in the "natural" i.e. X, Y, Z... order.
+            
+        Examples
+        --------        
+        >>> s = signals.Spectrum(np.ones((2,3,4,5)))
+        >>> s
+        <Spectrum, title: , dimensions: (4, 3, 2, 5)>
+        >>> s.as_image((0,1))
+        <Image, title: , dimensions: (5, 2, 4, 3)>
+
+        >>> s.to_image((1,2))
+        <Image, title: , dimensions: (4, 5, 3, 2)>
+        
+        Raises
+        ------
+        DataDimensionError : when data.ndim < 2
+        
+        """
+        import hyperspy.io
+        if self.data.ndim < 2:
+            raise DataDimensionError(
+                "A Signal dimension must be >= 2 to be converted to an Image")
+        axes = (self.axes_manager[image_axes[0]],
+                self.axes_manager[image_axes[1]])
+        iaxes = [axis.index_in_array for axis in axes]
+        im = self.rollaxis(complex(0, iaxes[0]), -1j).rollaxis(
+                           complex(0, iaxes[1]-np.argmax(iaxes)), -2j)
+        im.mapped_parameters.record_by = "image"
+        return hyperspy.io.dict2signal(im._to_dictionary())
+        
+    def _assign_subclass(self):
+        mp = self.mapped_parameters
+        current_class = self.__class__
+        self.__class__ = hyperspy.io.assign_signal_subclass(
+            record_by = mp.record_by if "record_by" in mp
+                                     else self._record_by,
+            signal_type = mp.signal_type if "signal_type" in mp
+                                     else self._signal_type,
+            signal_origin = mp.signal_origin if "signal_origin" in mp
+                                             else self._signal_origin) 
+        if self.__class__ != current_class:
+            self.__init__(**self._to_dictionary())
+        
+        
+    def set_signal_type(self, signal_type):
+        """
+        
+        Parameters
+        ----------
+        signal_type : {"EELS" or any other string describing the signal}
+        
+        """        
+        self.mapped_parameters.signal_type = signal_type
+        self._assign_subclass()
+        
+        
+    def set_signal_origin(self, origin):
+        """
+        
+        Parameters
+        ----------
+        origin : {'experiment', 'simulation'}
+        
+        Raises
+        ------
+        ValueError if origin is not 'experiment' or 'simulation'
+        
+        """
+        if origin not in ['experiment', 'simulation']:
+            raise ValueError("`origin` must be one of: experiment, simulation" )
+        self.mapped_parameters.signal_origin = origin
+        self._assign_subclass()    
+
         
 # Implement binary operators
 for name in (

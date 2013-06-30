@@ -20,10 +20,10 @@ import os
 
 import numpy as np
 
-no_netcdf = False
 from hyperspy import Release
 from hyperspy import messages
 
+no_netcdf = False
 try:
     from netCDF4 import Dataset
     which_netcdf = 'netCDF4'
@@ -36,7 +36,7 @@ except:
             from Scientific.IO.NetCDF import NetCDFFile as Dataset
             which_netcdf = 'Scientific Python'
         except :
-            raise ImportError
+            no_netcdf = True
     
 # Plugin characteristics
 # ----------------------
@@ -94,7 +94,10 @@ treatments2netcdf = \
     
 def file_reader(filename, *args, **kwds):
     if no_netcdf is True:
-        messages.warning_exit(no_netcdf_message)
+        raise ImportError("No netCDF library installed. "
+            "To read EELSLab netcdf files install "
+            "one of the following packages:"
+            "netCDF4, netCDF3, netcdf, scientific")
     
     ncfile = Dataset(filename,'r')
     
