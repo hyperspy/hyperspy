@@ -189,9 +189,19 @@ class DataAxis(t.HasTraits):
         if isinstance(step, float):
             step = int(round(step / self.scale))
         if isinstance(start, float):
-            start = v2i(start)
+            try:
+                start = v2i(start)
+            except ValueError:
+                # The value is below the axis limits
+                # we slice from the start.
+                start = None
         if isinstance(stop, float):
-            stop = v2i(stop) 
+            try:
+                stop = v2i(stop) 
+            except ValueError:
+                # The value is above the axes limits
+                # we slice up to the end.
+                stop = None
             
         if step == 0:
             raise ValueError("slice step cannot be zero")
