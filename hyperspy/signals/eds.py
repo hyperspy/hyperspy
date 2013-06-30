@@ -277,11 +277,12 @@ class EDSSpectrum(Spectrum):
             extra_elements = (set(self.mapped_parameters.Sample.elements) - 
                               elements)
             if extra_elements:
-                self.add_lines(
-                    self._get_lines_from_elements(
+                new_lines = self._get_lines_from_elements(
                                             extra_elements,
                                             only_one=only_one,
-                                            only_subshells=only_subshells))
+                                            only_subshells=only_subshells)
+                if new_lines:
+                    self.add_lines(new_lines)
         self.add_elements(elements)
         if not hasattr(self.mapped_parameters, 'Sample'):
             self.mapped_parameters.add_node('Sample')
@@ -341,7 +342,7 @@ class EDSSpectrum(Spectrum):
                         end_energy):
                     
                     element_lines.append(element + "_" + subshell)
-            if only_one:           
+            if only_one and element_lines:           
             #Choose the best line
                 select_this = -1            
                 for i, line in enumerate(element_lines):
