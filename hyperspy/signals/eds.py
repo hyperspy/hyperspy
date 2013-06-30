@@ -237,11 +237,15 @@ class EDSSpectrum(Spectrum):
         set_lines, add_elements, set_elements.
         
         """
-        elements = set()
         if "Sample.Xray_lines" in self.mapped_parameters:
             Xray_lines = set(self.mapped_parameters.Sample.Xray_lines)
         else:
             Xray_lines = set()
+        # Define the elements which Xray lines has been customized
+        # So that we don't attempt to add new lines automatically
+        elements = set()
+        for line in Xray_lines:
+            elements.add(line.split("_")[0])
         end_energy = self.axes_manager.signal_axes[0].high_value            
         for line in lines:
             try:
@@ -256,9 +260,9 @@ class EDSSpectrum(Spectrum):
                     lines_len = len(Xray_lines)
                     Xray_lines.add(line)
                     if lines_len != len(Xray_lines):
-                        print("Adding %s line" % line)
+                        print("%s line added," % line)
                     else:
-                        print("%s line already in" % line)
+                        print("%s line already in." % line)
                     if (elements_db[element]['Xray_energy'][subshell] > 
                             end_energy):
                       print("Warning: %s %s is above the data energy range." 
@@ -272,16 +276,18 @@ class EDSSpectrum(Spectrum):
         if "Sample.elements" in self.mapped_parameters:
             extra_elements = (set(self.mapped_parameters.Sample.elements) - 
                               elements)
-            if elements:
+            if extra_elements:
                 self.add_lines(
                     self._get_lines_from_elements(
                                             extra_elements,
                                             only_one=only_one,
                                             only_subshells=only_subshells))
-        else:
-            self.add_elements(elements)
+        self.add_elements(elements)
         if not hasattr(self.mapped_parameters, 'Sample'):
             self.mapped_parameters.add_node('Sample')
+        if "Sample.Xray_lines" in self.mapped_parameters:
+            Xray_lines = Xray_lines.union(
+                    self.mapped_parameters.Sample.Xray_lines)
         self.mapped_parameters.Sample.Xray_lines = sorted(list(Xray_lines))
         
         
