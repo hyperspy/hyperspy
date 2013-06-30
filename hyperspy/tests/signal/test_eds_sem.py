@@ -26,6 +26,9 @@ class Test_mapped_parameters:
     def setUp(self):
         # Create an empty spectrum
         s = EDSSEMSpectrum(np.ones((4,2,1024)))
+        s.axes_manager.signal_axes[0].scale = 1e-3
+        s.axes_manager.signal_axes[0].units = "keV"
+        s.axes_manager.signal_axes[0].name = "Energy"
         s.mapped_parameters.SEM.EDS.live_time = 3.1
         s.mapped_parameters.SEM.beam_energy = 15.0          
         self.signal = s
@@ -52,8 +55,25 @@ class Test_mapped_parameters:
         s.set_elements(['Al','Ni'])
         assert_equal(s.mapped_parameters.Sample.elements, ['Al','Ni'])
     
-#    def test_add_lines(self):
-#    
+    def test_add_lines(self):
+        s = self.signal
+        s.add_lines(lines=())
+        assert_equal(s.mapped_parameters.Sample.Xray_lines, [])
+        s.add_lines(("Fe_Ln",))
+        assert_equal(s.mapped_parameters.Sample.Xray_lines, ["Fe_Ln"])
+        s.add_lines(("Fe_Ln",))
+        assert_equal(s.mapped_parameters.Sample.Xray_lines, ["Fe_Ln"])
+        s.add_elements(["Ti",])
+        s.add_lines(())
+        assert_equal(s.mapped_parameters.Sample.Xray_lines, ['Fe_Ln', 'Ti_La'])
+        s.set_lines((), only_one=False, only_subshells=False)
+        assert_equal(s.mapped_parameters.Sample.Xray_lines,
+                     ['Fe_La', 'Fe_Lb3', 'Fe_Ll', 'Fe_Ln', 'Ti_La', 
+                     'Ti_Lb3', 'Ti_Ll', 'Ti_Ln'])
+        s.mapped_parameters.SEM.beam_energy = 0.4
+        s.set_lines((), only_one=False, only_subshells=False)
+        assert_equal(s.mapped_parameters.Sample.Xray_lines, ['Ti_Ll'])
+#        s.add_lines()
 #        results.append(mp.Sample.Xray_lines[1])
 #        mp.SEM.beam_energy = 10.0
 #        s.set_elements(['Al','Ni'])
@@ -96,16 +116,17 @@ class Test_mapped_parameters:
 #class Test_get_intentisity_map:
 #    def setUp(self):
 #        # Create an empty spectrum
-#        s = EDSSEMSpectrum(np.ones((4,2,1024)))
+#        s = EDSSEMSpectrum(np.zeros((2,3,100)))
 #        energy_axis = s.axes_manager.signal_axes[0]
-#        energy_axis.scale = 0.01
-#        energy_axis.offset = -0.10
-#        energy_axis.units = 'keV'                
+#        energy_axis.scale = 0.2
+#        energy_axis.units = 'keV'
+#        energy_axis.name = "Energy"
+#        s.mapped_parameters.SEM.EDS.live_time = 3.1
+#        s.mapped_parameters.SEM.beam_energy = 15.0               
 #        self.signal = s
 #    
 #    def test(self):        
 #        s = self.signal
-#        s.set_elements(['Al','Ni'],['Ka','La'])
-#        sAl = s.get_intensity_map(plot_result=True)[0]
+#        sAl = s.get_lines_intensity(plot_result=False)[0]
 #        assert_true(np.allclose(s[...,0].data*15.0, sAl.data))
 

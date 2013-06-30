@@ -391,7 +391,7 @@ class EDSSpectrum(Spectrum):
         plot_result : bool
             If True, plot the calculated line intensities. If the current 
             object is a single spectrum it prints the result instead.
-        line_width_factor: Float
+        integration_window_factor: Float
             The integration window is centered at the center of the X-ray
             line and its width is defined by this factor (2 by default) 
             times the calculated FWHM of the line.
