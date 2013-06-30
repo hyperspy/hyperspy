@@ -21,6 +21,7 @@ from nose.tools import assert_true, assert_equal, assert_not_equal
 
 from hyperspy.signals import EDSSEMSpectrum
 from hyperspy.defaults_parser import preferences
+from hyperspy.components.gaussian import Gaussian
 
 class Test_mapped_parameters:
     def setUp(self):
@@ -113,20 +114,38 @@ class Test_mapped_parameters:
             energy_axis.scale)
         
         
-#class Test_get_intentisity_map:
-#    def setUp(self):
-#        # Create an empty spectrum
-#        s = EDSSEMSpectrum(np.zeros((2,3,100)))
-#        energy_axis = s.axes_manager.signal_axes[0]
-#        energy_axis.scale = 0.2
-#        energy_axis.units = 'keV'
-#        energy_axis.name = "Energy"
-#        s.mapped_parameters.SEM.EDS.live_time = 3.1
-#        s.mapped_parameters.SEM.beam_energy = 15.0               
-#        self.signal = s
-#    
-#    def test(self):        
-#        s = self.signal
-#        sAl = s.get_lines_intensity(plot_result=False)[0]
-#        assert_true(np.allclose(s[...,0].data*15.0, sAl.data))
+class Test_get_intentisity_map:
+    def setUp(self):
+        # Create an empty spectrum
+        s = EDSSEMSpectrum(np.zeros((2,2,3,100)))
+        energy_axis = s.axes_manager.signal_axes[0]
+        energy_axis.scale = 0.04
+        energy_axis.units = 'keV'
+        energy_axis.name = "Energy"
+        g = Gaussian()
+        g.sigma.value = 0.05
+        g.centre.value = 1.487
+        s.data[:] = g.function(energy_axis.axis)
+        s.mapped_parameters.SEM.EDS.live_time = 3.1
+        s.mapped_parameters.SEM.beam_energy = 15.0               
+        self.signal = s
+    
+    def test(self):        
+        s = self.signal
+        sAl = s.get_lines_intensity(["Al_Ka"],
+                                    plot_result=False,
+                                    integration_window_factor=5)[0]
+        assert_true(np.allclose(1, sAl.data[0,0,0], atol=1e-3))
+        sAl = s[0].get_lines_intensity(["Al_Ka"],
+                                    plot_result=False,
+                                    integration_window_factor=5)[0]
+        assert_true(np.allclose(1, sAl.data[0,0], atol=1e-3))
+        sAl = s[0,0].get_lines_intensity(["Al_Ka"],
+                                    plot_result=False,
+                                    integration_window_factor=5)[0]
+        assert_true(np.allclose(1, sAl.data[0], atol=1e-3))
+        sAl = s[0,0,0].get_lines_intensity(["Al_Ka"],
+                                    plot_result=False,
+                                    integration_window_factor=5)[0]
+        assert_true(np.allclose(1, sAl.data, atol=1e-3))
 
