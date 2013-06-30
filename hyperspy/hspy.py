@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import matplotlib.pyplot as plt
+plt.rcParams['image.cmap'] = 'gray'
 
 from hyperspy.Release import version as __version__
 from hyperspy import components
