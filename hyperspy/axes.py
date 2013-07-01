@@ -753,11 +753,35 @@ class AxesManager(t.HasTraits):
             context['axis%i' % n] = self._axes[n]
         ag = tuple(ag)
         self.edit_traits(view = tui.View(*ag), context = context)
+    def _get_axes_str(self):
+        string = "("
+        for axis in self.navigation_axes:
+            string += axis.__repr__() + ", "
+        string = string.rstrip(", ")
+        string += "|"
+        for axis in self.signal_axes:
+            string += axis.__repr__() + ", "
+        string = string.rstrip(", ")
+        string += ")"
+        return string
+        
+    def _get_dimension_str(self):
+        string = "("
+        for axis in self.navigation_axes:
+            string += str(axis.size) + ", "
+        string = string.rstrip(", ")
+        string += "|"
+        for axis in self.signal_axes:
+            string += str(axis.size) + ", "
+        string = string.rstrip(", ")
+        string += ")"
+        return string
+        
+        
         
     def __repr__(self):
         text = ('<Axes manager, axes: %s>' % 
-            self._get_axes_in_natural_order().__repr__())
-            
+                self._get_axes_str())
         return text
     
     @property        

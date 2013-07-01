@@ -1968,7 +1968,8 @@ class Signal(MVA,
         string = '<'
         string += self.__class__.__name__
         string+=", title: %s" % self.mapped_parameters.title
-        string += ", dimensions: %s" % (str(self.axes_manager.shape))
+        string += ", dimensions: %s" % (
+            self.axes_manager._get_dimension_str())
         string += '>'
 
         return string
