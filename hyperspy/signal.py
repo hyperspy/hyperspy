@@ -2249,13 +2249,16 @@ class Signal(MVA,
             file_data_dict['original_parameters'])
         self.mapped_parameters._load_dictionary(
             file_data_dict['mapped_parameters'])
-        if not hasattr(self.mapped_parameters, 'title'):
+        if "title" not in self.mapped_parameters:
             self.mapped_parameters.title = ''
-        if self._record_by:
+        if (self._record_by or 
+                "record_by" not in self.mapped_parameters):
             self.mapped_parameters.record_by = self._record_by
-        if self._signal_origin:
+        if (self._signal_origin or 
+                "signal_origin" not in self.mapped_parameters):
             self.mapped_parameters.signal_origin = self._signal_origin
-        if self._signal_type:
+        if (self._signal_type or
+                "signal_type" not in self.mapped_parameters):
             self.mapped_parameters.signal_type = self._signal_type
             
                 

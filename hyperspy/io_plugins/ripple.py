@@ -577,29 +577,30 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
             keys_dictionary['%s-name' % key] = eval(
                 '%s_axis.name' % key)
     
-    if 'SEM' in signal.mapped_parameters.signal_type:
-        mp = signal.mapped_parameters.SEM
-    else :
-        mp = signal.mapped_parameters.TEM
+    if "EDS" in signal.mapped_parameters.signal_type:
+        if signal.mapped_parameters == "EDS_SEM":
+            mp = signal.mapped_parameters.SEM
+        elif self.mapped_parameters == "EDS_TEM":
+            mp = signal.mapped_parameters.TEM
             
     
-    if mp.has_item('beam_energy'):
-        keys_dictionary['beam-energy'] = mp.beam_energy
-    if mp.has_item('convergence_angle'):
-        keys_dictionary['convergence-angle'] = mp.convergence_angle
-    if mp.has_item('EELS.collection_angle'):
-        keys_dictionary['collection-angle'] = mp.EELS.collection_angle
-            
-    if mp.has_item('EDS.elevation_angle'):
-        keys_dictionary['elevation-angle'] = mp.EDS.elevation_angle
-    if mp.has_item('tilt_stage'):
-        keys_dictionary['tilt-stage'] = mp.tilt_stage
-    if mp.has_item('EDS.azimuth_angle'):
-        keys_dictionary['azimuth-angle'] = mp.EDS.azimuth_angle
-    if mp.has_item('EDS.live_time'):
-        keys_dictionary['live-time'] = mp.EDS.live_time
-    if mp.has_item('EDS.energy_resolution_MnKa'):
-        keys_dictionary['energy-resolution'] = mp.EDS.energy_resolution_MnKa
+        if mp.has_item('beam_energy'):
+            keys_dictionary['beam-energy'] = mp.beam_energy
+        if mp.has_item('convergence_angle'):
+            keys_dictionary['convergence-angle'] = mp.convergence_angle
+        if mp.has_item('EELS.collection_angle'):
+            keys_dictionary['collection-angle'] = mp.EELS.collection_angle
+                
+        if mp.has_item('EDS.elevation_angle'):
+            keys_dictionary['elevation-angle'] = mp.EDS.elevation_angle
+        if mp.has_item('tilt_stage'):
+            keys_dictionary['tilt-stage'] = mp.tilt_stage
+        if mp.has_item('EDS.azimuth_angle'):
+            keys_dictionary['azimuth-angle'] = mp.EDS.azimuth_angle
+        if mp.has_item('EDS.live_time'):
+            keys_dictionary['live-time'] = mp.EDS.live_time
+        if mp.has_item('EDS.energy_resolution_MnKa'):
+            keys_dictionary['energy-resolution'] = mp.EDS.energy_resolution_MnKa
         
     write_rpl(filename, keys_dictionary, encoding)
     write_raw(filename, signal, record_by)
