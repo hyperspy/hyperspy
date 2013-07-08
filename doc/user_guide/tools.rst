@@ -28,6 +28,8 @@ Currently the following signal subclasses are available:
 * :py:class:`~.signals.spectrum.Spectrum`
 * :py:class:`~.signals.image.Image`
 * :py:class:`~.signals.eels.EELSSpectrum`
+* :py:class:`~.signals.eds_tem.EDSTEMSpectrum`
+* :py:class:`~.signals.eds_sem.EDSSEMSpectrum`
 * :py:class:`~.signals.spectrum_simulation.SpectrumSimulation`
 * :py:class:`~.signals.image_simulation.ImageSimulation`
 
@@ -705,3 +707,50 @@ end energy for the integration at each spectra or use the same energy value for
 all spectra. Also, if no threshold is specified, the routine will perform a
 rough estimation of the inflexion values at each spectrum.
 
+Splice zero loss peak
+^^^^^^^^^^^^^^^^^^^^^
+Once :py:meth:`~.signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold` has determined the elastic scattering threshold value(s), this tool can be used to separate the zero loss peak from the eels spectra. Use :py:meth:`~.signals.eels.EELSSpectrum.splice_zero_loss_peak` in order to obtain a ZLP suitable for Fourier-Log deconvolution from your EELS low-loss spectra by setting the "smooth" option, that will apply the hanning window to the righ end of the data.
+
+EDS tools
+----------
+
+These methods are only available for the following signals:
+
+* :py:class:`~.signals.eds_tem.EDSTEMSpectrum`
+* :py:class:`~.signals.eds_sem.EDSSEMSpectrum`
+
+
+Set elements
+^^^^^^^^^^^^
+
+The :py:meth:`~.signals.eds.EDSSpectrum.set_elements` method is used 
+to define a set of elements and corresponding X-ray lines
+that will be used in other process (e.g. X-ray intensity mapping).
+The information is stored in the :py:attr:`~.signal.Signal.mapped_parameters` attribute (see :ref:`mapped_parameters_structure`)
+
+
+Add elements
+^^^^^^^^^^^^
+
+When the set_elements method erases all previously defined elements, 
+the :py:meth:`~.signals.eds.EDSSpectrum.add_elements` method adds a new
+set of elements to the previous set.
+
+
+Get intensity map
+^^^^^^^^^^^^^^^^^
+
+With the :py:meth:`~.signals.eds.EDSSpectrum.get_intensity_map`, the 
+intensity of X-ray lines is used to generate a map. The number of counts
+under the selected peaks is used.
+
+Set microscope parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :py:meth:`~.signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` method provides an user 
+interface to calibrate the paramters if the microscope and the EDS detector.
+
+Get the calibration from another spectrum
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* :py:meth:`~.signals.eds_tem.EDSTEMSpectrum.get_calibration_from`

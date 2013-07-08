@@ -9,6 +9,30 @@ signals Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`eds` Module
+-----------------
+
+.. automodule:: hyperspy.signals.eds
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`eds_sem` Module
+---------------------
+
+.. automodule:: hyperspy.signals.eds_sem
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`eds_tem` Module
+---------------------
+
+.. automodule:: hyperspy.signals.eds_tem
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`eels` Module
 ------------------
 

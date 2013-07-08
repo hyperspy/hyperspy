@@ -134,6 +134,7 @@ Subpackages
 
 .. toctree::
 
+    hyperspy.misc.eds
     hyperspy.misc.eels
     hyperspy.misc.mpfit
 

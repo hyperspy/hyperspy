@@ -93,6 +93,12 @@ rpl_keys = {
     # TEM Hyperespy keys
     'convergence-angle' : float,
     'beam-energy' : float,
+    # EDS Hyperespy keys
+    'elevation-angle' : float,
+    'azimuth-angle' : float,
+    'live-time' : float,
+    'energy-resolution' : float,
+    'tilt-stage' :  float,   
     }
 
 def correct_INCA_format(fp):
@@ -298,6 +304,11 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
       convergence-angle float   # TEM convergence angle in mrad
       collection-angle  float   # EELS spectrometer collection angle in mrad
       beam-energy       float   # TEM beam energy in keV
+      elevation-angle   float   # Elevation angle of the EDS detector
+      azimuth-angle     float   # Elevation angle of the EDS detector
+      live-time         float   # Live time per spectrum
+      energy-resolution float   # Resolution of the EDS (FHWM of MnKa) 
+      tilt-stage       float   # The tilt of the stage
 
     NOTES
 
@@ -434,12 +445,29 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     if 'convergence-angle' in rpl_info:
         mp.set_item('TEM.convergence_angle', 
             rpl_info['convergence-angle'])
+    if 'tilt-stage' in rpl_info:
+        mp.set_item('TEM.tilt_stage', 
+            rpl_info['tilt-stage'])
     if 'collection-angle' in rpl_info:
         mp.set_item('TEM.EELS.collection_angle', 
             rpl_info['collection-angle'])
     if 'beam-energy' in rpl_info:
         mp.set_item('TEM.beam_energy', 
             rpl_info['beam-energy'])
+    if 'elevation-angle' in rpl_info:
+        mp.set_item('TEM.EDS.elevation_angle', 
+            rpl_info['elevation-angle'])
+    if 'azimuth-angle' in rpl_info:
+        mp.set_item('TEM.EDS.azimuth_angle', 
+            rpl_info['azimuth-angle'])
+    if 'energy-resolution' in rpl_info:
+        mp.set_item('TEM.EDS.energy_resolution_MnKa', 
+            rpl_info['energy-resolution'])
+    if 'live-time' in rpl_info:
+        mp.set_item('TEM.EDS.live_time', 
+            rpl_info['live-time'])
+                        
+
     axes = []
     index_in_array = 0
     for i in xrange(3):
@@ -548,15 +576,31 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
                 '%s_axis.units' % key)
             keys_dictionary['%s-name' % key] = eval(
                 '%s_axis.name' % key)
+    
+    if 'SEM' in signal.mapped_parameters.signal_type:
+        mp = signal.mapped_parameters.SEM
+    else :
+        mp = signal.mapped_parameters.TEM
             
-    mp = signal.mapped_parameters
-    if mp.has_item('TEM.beam_energy'):
-        keys_dictionary['beam-energy'] = mp.TEM.beam_energy
-    if mp.has_item('TEM.convergence_angle'):
-        keys_dictionary['convergence-angle'] = mp.TEM.convergence_angle
-    if mp.has_item('TEM.EELS.collection_angle'):
-        keys_dictionary['collection-angle'] = mp.TEM.EELS.collection_angle
-
+    
+    if mp.has_item('beam_energy'):
+        keys_dictionary['beam-energy'] = mp.beam_energy
+    if mp.has_item('convergence_angle'):
+        keys_dictionary['convergence-angle'] = mp.convergence_angle
+    if mp.has_item('EELS.collection_angle'):
+        keys_dictionary['collection-angle'] = mp.EELS.collection_angle
+            
+    if mp.has_item('EDS.elevation_angle'):
+        keys_dictionary['elevation-angle'] = mp.EDS.elevation_angle
+    if mp.has_item('tilt_stage'):
+        keys_dictionary['tilt-stage'] = mp.tilt_stage
+    if mp.has_item('EDS.azimuth_angle'):
+        keys_dictionary['azimuth-angle'] = mp.EDS.azimuth_angle
+    if mp.has_item('EDS.live_time'):
+        keys_dictionary['live-time'] = mp.EDS.live_time
+    if mp.has_item('EDS.energy_resolution_MnKa'):
+        keys_dictionary['energy-resolution'] = mp.EDS.energy_resolution_MnKa
+        
     write_rpl(filename, keys_dictionary, encoding)
     write_raw(filename, signal, record_by)
 

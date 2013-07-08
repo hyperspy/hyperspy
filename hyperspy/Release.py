@@ -80,3 +80,4 @@ info = u"""
     http://www.hyperspy.org
     
     """ % version.replace('_', ' ')
+

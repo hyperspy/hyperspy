@@ -134,6 +134,11 @@ class SpectrumFigure():
              a.get_animated() is True]
         canvas.blit()
         
+    def update(self):
+        for line in self.ax_lines + \
+                    self.right_ax_lines:
+            line.update()
+        
 class SpectrumLine(object):
     """Line that can be added to SpectrumFigure.
     

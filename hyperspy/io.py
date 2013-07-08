@@ -239,7 +239,7 @@ def load(filenames=None,
             objects=[load_single_file(filename,
                                       output_level=0,
                                       **kwds) 
-                     for filename in filenames]
+                for filename in filenames]
             
         if hyperspy.defaults_parser.preferences.General.plot_on_load:
             for obj in objects:
@@ -294,10 +294,11 @@ def load_single_file(filename,
         return load_with_reader(filename=filename,
                                 reader=reader,
                                 record_by=record_by,
-                                signal_type=signal_type,
+                    signal_type=signal_type,
                                 signal_origin=signal_origin,
                                 output_level=output_level,
                                 **kwds)
+
 
 
 def load_with_reader(filename,
@@ -315,6 +316,7 @@ def load_with_reader(filename,
                                         output_level=output_level,
                                         **kwds)
     objects = []
+
     for signal_dict in file_data_list:
         if record_by is not None:
             signal_dict['mapped_parameters']['record_by'] = record_by
@@ -334,7 +336,7 @@ def load_with_reader(filename,
     if output_level > 1:
         messages.information('%s correctly loaded' % filename)
     return objects
-    
+
 def assign_signal_subclass(record_by="",
                            signal_type="",
                            signal_origin="",):

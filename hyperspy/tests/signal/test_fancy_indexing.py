@@ -67,6 +67,9 @@ class Test1D:
                      np.sign(self.signal.axes_manager._axes[0].scale))
         assert_equal(s.axes_manager._axes[0].scale,
                      self.signal.axes_manager._axes[0].scale*2.)
+    def test_slice_out_of_axis(self):
+        assert_true((self.signal[-1.:].data == self.signal.data).all())
+        assert_true((self.signal[:11.].data == self.signal.data).all())
     
     @raises(ValueError)    
     def test_step0_slice(self):

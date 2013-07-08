@@ -189,9 +189,19 @@ class DataAxis(t.HasTraits):
         if isinstance(step, float):
             step = int(round(step / self.scale))
         if isinstance(start, float):
-            start = v2i(start)
+            try:
+                start = v2i(start)
+            except ValueError:
+                # The value is below the axis limits
+                # we slice from the start.
+                start = None
         if isinstance(stop, float):
-            stop = v2i(stop) 
+            try:
+                stop = v2i(stop) 
+            except ValueError:
+                # The value is above the axes limits
+                # we slice up to the end.
+                stop = None
             
         if step == 0:
             raise ValueError("slice step cannot be zero")
@@ -743,11 +753,35 @@ class AxesManager(t.HasTraits):
             context['axis%i' % n] = self._axes[n]
         ag = tuple(ag)
         self.edit_traits(view = tui.View(*ag), context = context)
+    def _get_axes_str(self):
+        string = "("
+        for axis in self.navigation_axes:
+            string += axis.__repr__() + ", "
+        string = string.rstrip(", ")
+        string += "|"
+        for axis in self.signal_axes:
+            string += axis.__repr__() + ", "
+        string = string.rstrip(", ")
+        string += ")"
+        return string
+        
+    def _get_dimension_str(self):
+        string = "("
+        for axis in self.navigation_axes:
+            string += str(axis.size) + ", "
+        string = string.rstrip(", ")
+        string += "|"
+        for axis in self.signal_axes:
+            string += str(axis.size) + ", "
+        string = string.rstrip(", ")
+        string += ")"
+        return string
+        
+        
         
     def __repr__(self):
         text = ('<Axes manager, axes: %s>' % 
-            self._get_axes_in_natural_order().__repr__())
-            
+                self._get_axes_str())
         return text
     
     @property        

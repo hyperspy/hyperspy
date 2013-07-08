@@ -25,16 +25,27 @@ import IPython
 try:
     ipy_version = StrictVersion(IPython.__version__)
 except:
-    # If it is a dev version StrictVersion may fail, so give an
-    # far in future version as a temporary workaround.
-    ipy_version = StrictVersion('100.2')
+    # Try removing the text from last period in case that it is a dev 
+    # version
+    try:
+        ipy_version = StrictVersion(
+            IPython.__version__[:-IPython.__version__[::-1].index(".")-1])
+    except:
+        # Last ugly resort
+        ipy_version = StrictVersion("100.1")
 ipy_011 = StrictVersion('0.11')
+ipy_1 = StrictVersion('1.0')
 
 if ipy_version < ipy_011:
     from IPython import ipapi
-else:
+    ip = ipapi.get()
+elif ipy_version < ipy_1:
     from IPython.core import ipapi
-ip = ipapi.get()
+    ip = ipapi.get()
+else:
+    import IPython.core.getipython
+    ip = IPython.core.getipython.get_ipython()
+
 if ip is None:
     # Ipython is not installed, using Python's namespace.
     # TODO: this does not work with IPython > 0.11
