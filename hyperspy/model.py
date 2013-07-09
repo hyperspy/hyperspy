@@ -73,6 +73,9 @@ class Model(list):
         self._position_widgets = []
         self._plot = None
         
+    def __repr__(self):
+        return "<Model %s>" % super(Model, self).__repr__()
+
     def insert(self):
         raise NotImplementedError
 
