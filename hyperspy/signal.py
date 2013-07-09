@@ -2047,7 +2047,7 @@ class Signal(MVA,
                 if isinstance(slice_, float):
                     slice_ = axis.value2index(slice_)
                 array_slices.append(slice_)
-                _signal.axes_manager.remove(axis)
+                _signal._remove_axis(axis.index_in_axes_manager)
         
         _signal.data = _signal.data[array_slices]
         _signal.get_dimensions_from_data()
@@ -2286,7 +2286,7 @@ class Signal(MVA,
         self = self._deepcopy_with_new_data(self.data)
         for axis in self.axes_manager._axes:
             if axis.size == 1:
-                self.axes_manager.remove(axis)
+                self._remove_axis(axis.index_in_axes_manager)
         self.data = self.data.squeeze()
         return self
 
@@ -2974,12 +2974,27 @@ class Signal(MVA,
                 getitem[axis] = slice(None)
             getitem[unfolded_axis] = i
             yield(data[getitem])
+
+    def _remove_axis(self, axis):
+        axis = self.axes_manager[axis]
+        self.axes_manager.remove(axis.index_in_axes_manager)
+        if axis.navigate is False: # The removed axis is a signal axis
+            if self.axes_manager.signal_dimension == 2:
+                self._record_by = "image"
+            elif self.axes_manager.signal_dimension == 1:
+                self._record_by = "spectrum"
+            elif self.axes_manager.signal_dimension == 0:
+                self._record_by = ""
+            else:
+                return
+            self.mapped_parameters.record_by = self._record_by
+            self._assign_subclass()
             
     def _apply_function_on_data_and_remove_axis(self, function, axis):
-        axis = self.axes_manager[axis].index_in_array
         s = self._deepcopy_with_new_data(
-            function(self.data, axis=axis))
-        s.axes_manager.remove(s.axes_manager._axes[axis])
+            function(self.data,
+                     axis=self.axes_manager[axis].index_in_array))
+        s._remove_axis(axis)
         return s
 
     def sum(self, axis):
@@ -3227,7 +3242,7 @@ class Signal(MVA,
             sp.integrate.simps(y=self.data,
                                x=axis.axis,
                                axis=axis.index_in_array))
-        s.axes_manager.remove(s.axes_manager._axes[axis.index_in_array])
+        s._remove_axis(axis.index_in_axes_manager)
         return s
         
         

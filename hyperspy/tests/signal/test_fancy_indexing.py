@@ -26,6 +26,7 @@ from nose.tools import (
     raises)
 
 from hyperspy.signal import Signal
+from hyperspy import signals
 
 class Test1D:
     def setUp(self):
@@ -232,6 +233,10 @@ class Test3D_Navigate_1:
         assert_equal(s.axes_manager.signal_axes[0].scale,
                      self.signal.axes_manager.signal_axes[0].scale)
                      
+    def test_subclass_assignment(self):
+        im = self.signal.as_image((-2,-1))
+        assert_true(isinstance(im.isig[0], signals.Spectrum))
+
 class TestFloatArguments:
     def setUp(self):
         self.signal = Signal(np.arange(10))
