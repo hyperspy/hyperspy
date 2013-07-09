@@ -18,6 +18,7 @@
 
 import copy
 import os.path
+import warnings
 
 import numpy as np
 import numpy.ma as ma
@@ -1950,9 +1951,23 @@ class Signal(MVA,
         self._plot = None
         self.auto_replot = True
         self.variance = None
-        self.navigation_indexer = SpecialSlicers(self, True)
-        self.signal_indexer = SpecialSlicers(self, False)
-        
+        self.inav = SpecialSlicers(self, True)
+        self.isig = SpecialSlicers(self, False)
+    
+    @property        
+    def navigation_indexer(self):
+        warnings.warn(
+            "`navigation_indexer` has been renamed to `inav` and"
+            " it will be removed in the next version. ",
+            DeprecationWarning)
+        return self.inav
+    @property
+    def signal_indexer(self):
+         warnings.warn(
+            "`navigation_indexer` has been renamed to `isig` and"
+            " it will be removed in the next version. ",
+            DeprecationWarning)
+         return self.isig
     def _create_mapped_parameters(self):
         self.mapped_parameters = DictionaryBrowser()
         mp = self.mapped_parameters
