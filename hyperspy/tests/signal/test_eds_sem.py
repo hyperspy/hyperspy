@@ -67,12 +67,12 @@ class Test_mapped_parameters:
         s.add_elements(["Ti",])
         s.add_lines(())
         assert_equal(s.mapped_parameters.Sample.Xray_lines, ['Fe_Ln', 'Ti_La'])
-        s.set_lines((), only_one=False, only_subshells=False)
+        s.set_lines((), only_one=False, only_lines=False)
         assert_equal(s.mapped_parameters.Sample.Xray_lines,
                      ['Fe_La', 'Fe_Lb3', 'Fe_Ll', 'Fe_Ln', 'Ti_La', 
                      'Ti_Lb3', 'Ti_Ll', 'Ti_Ln'])
         s.mapped_parameters.SEM.beam_energy = 0.4
-        s.set_lines((), only_one=False, only_subshells=False)
+        s.set_lines((), only_one=False, only_lines=False)
         assert_equal(s.mapped_parameters.Sample.Xray_lines, ['Ti_Ll'])
 #        s.add_lines()
 #        results.append(mp.Sample.Xray_lines[1])
