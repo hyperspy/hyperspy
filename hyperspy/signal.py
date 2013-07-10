@@ -2665,6 +2665,8 @@ class Signal(MVA,
         """
         axis = self.axes_manager[axis].index_in_array
         to_index = self.axes_manager[to_axis].index_in_array
+        if axis == to_index:
+            return self
         new_axes_indices = hyperspy.misc.utils.rollelem(
                 [axis_.index_in_array for axis_ in self.axes_manager._axes],
                 index=axis,
@@ -3444,11 +3446,10 @@ class Signal(MVA,
         <Spectrum, title: , dimensions: (6, 5, 3, 4)>
 
         """
-        import hyperspy.io
         # Roll the spectral axis to-be to the latex index in the array
         sp = self.rollaxis(spectral_axis, -1 + 3j)
         sp.mapped_parameters.record_by = "spectrum"
-        sp = hyperspy.io.dict2signal(sp._to_dictionary())
+        sp._assign_subclass()
         return sp
         
     def as_image(self, image_axes):
@@ -3480,7 +3481,6 @@ class Signal(MVA,
         DataDimensionError : when data.ndim < 2
         
         """
-        import hyperspy.io
         if self.data.ndim < 2:
             raise DataDimensionError(
                 "A Signal dimension must be >= 2 to be converted to an Image")
@@ -3490,7 +3490,8 @@ class Signal(MVA,
         im = self.rollaxis(iaxes[0] + 3j, -1+3j).rollaxis(
                            iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
         im.mapped_parameters.record_by = "image"
-        return hyperspy.io.dict2signal(im._to_dictionary())
+        im._assign_subclass()
+        return im
         
     def _assign_subclass(self):
         mp = self.mapped_parameters
