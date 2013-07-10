@@ -38,7 +38,7 @@ class Test_mapped_parameters:
     def test_rebin_live_time(self):
         s = self.signal
         dim = s.axes_manager.shape
-        s.rebin([dim[0]/2,dim[1]/2,dim[2]])
+        s = s.rebin([dim[0]/2,dim[1]/2,dim[2]])
         assert_equal(s.mapped_parameters.TEM.EDS.live_time, 3.1*2*2)
  
     def test_add_elements(self):

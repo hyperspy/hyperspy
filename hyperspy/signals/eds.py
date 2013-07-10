@@ -87,15 +87,15 @@ class EDSSpectrum(Spectrum):
                 new_shape[axis.index_in_axes_manager])
         factors = (np.array(self.data.shape) / 
                            np.array(new_shape_in_array))
+        s = super(EDSSpectrum, self).rebin(new_shape)
         #modify time per spectrum
-        if hasattr(self.mapped_parameters, 'SEM'):
-            mp = self.mapped_parameters.SEM
-        else:
-            mp = self.mapped_parameters.TEM
-        if hasattr(mp, 'EDS') and hasattr(mp.EDS, 'live_time'):
+        if "SEM.EDS.live_time" in s.mapped_parameters:
             for factor in factors:
-                mp.EDS.live_time = mp.EDS.live_time * factor
-        Spectrum.rebin(self, new_shape)
+                s.mapped_parameters.SEM.EDS.live_time *= factor
+        if "TEM.EDS.live_time" in s.mapped_parameters:
+            for factor in factors:
+                s.mapped_parameters.TEM.EDS.live_time *= factor
+        return s
     
     def set_elements(self, elements):
         """Erase all elements and set them.

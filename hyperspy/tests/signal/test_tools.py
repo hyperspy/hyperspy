@@ -75,9 +75,7 @@ class Test3D:
                                         'splitting.step_sizes',[2,2])
         self.data = self.signal.data.copy()
     def test_rebin(self):
-        s = self.signal
-        s.rebin((2,1,6))
-        assert_true(s.data.shape == (1,2,6))
+        assert_true(self.signal.rebin((2,1,6)).data.shape == (1,2,6))
         
     def test_swap_axes(self):
         s = self.signal

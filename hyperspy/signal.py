@@ -2683,13 +2683,16 @@ class Signal(MVA,
         return s
 
     def rebin(self, new_shape):
-        """
-        Rebins the data to the new shape
+        """Returns the object with the data rebinned.
 
         Parameters
         ----------
         new_shape: tuple of ints
             The new shape must be a divisor of the original shape
+            
+        Returns
+        -------
+        s : Signal subclass
             
         """
         if len(new_shape) != len(self.data.shape):
@@ -2700,10 +2703,12 @@ class Signal(MVA,
                 new_shape[axis.index_in_axes_manager])
         factors = (np.array(self.data.shape) / 
                            np.array(new_shape_in_array))
-        self.data = array_tools.rebin(self.data, new_shape_in_array)
-        for axis in self.axes_manager._axes:
+        s = self._deepcopy_with_new_data(
+            array_tools.rebin(self.data, new_shape_in_array))
+        for axis in s.axes_manager._axes:
             axis.scale *= factors[axis.index_in_array]
-        self.get_dimensions_from_data()
+        s.get_dimensions_from_data()
+        return s
 
     def split(self, axis=None, number_of_parts=None, step_sizes=None):
         """Splits the data into several signals.
