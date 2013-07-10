@@ -72,7 +72,10 @@ def overwrite(fname):
         except:
             # We are running in the IPython notebook that does not
             # support raw_input
-            return information(message)
+            information("Your terminal does not support raw input. "
+						"Not overwriting. "
+						"To overwrite the file use `overwrite=True`")
+            return False
     else:
         return True
         

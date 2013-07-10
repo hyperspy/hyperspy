@@ -86,3 +86,9 @@ class Test3d():
         assert_equal(
             self.s.as_spectrum(2).data.shape, (2, 3, 4))
                 
+    def test_remove_axis(self):
+        im = self.s.as_image((-2,-1))
+        im._remove_axis(-1)
+        assert_true(isinstance(im, signals.Spectrum))
+
+

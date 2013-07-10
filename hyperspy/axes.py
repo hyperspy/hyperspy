@@ -516,9 +516,7 @@ class AxesManager(t.HasTraits):
         ValueError if the Axis is not present.
         
         """
-        if axis not in self._axes:
-            raise ValueError(
-                "AxesManager.remove(x): x not in AxesManager")
+        axis = self[axis]
         axis.axes_manager = None
         self._axes.remove(axis)
             
