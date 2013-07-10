@@ -169,7 +169,7 @@ class EDSSpectrum(Spectrum):
     def set_lines(self,
                   lines,
                   only_one=True,
-                  only_subshells=("Ka", "La", "Ma")):
+                  only_lines=("Ka", "La", "Ma")):
         """Erase all Xrays lines and set them.
         
         See add_lines for details.
@@ -187,8 +187,8 @@ class EDSSpectrum(Spectrum):
             defined in lines. If True (default), 
             only add the line at the highest energy
             above an overvoltage of 2 (< beam energy / 2).
-        only_subshells : {None, list of strings}
-            If not None, only the given subshells will be added.
+        only_lines : {None, list of strings}
+            If not None, only the given lines will be added.
                
         See also
         --------
@@ -199,12 +199,12 @@ class EDSSpectrum(Spectrum):
             del self.mapped_parameters.Sample.Xray_lines
         self.add_lines(lines=lines,
                        only_one=only_one,
-                       only_subshells=only_subshells)
+                       only_lines=only_lines)
     
     def add_lines(self,
                   lines=(),
                   only_one=True,
-                  only_subshells=("Ka", "La", "Ma")):
+                  only_lines=("Ka", "La", "Ma")):
         """Add X-rays lines to the internal list.
         
         Although most functions do not require an internal list of 
@@ -229,8 +229,8 @@ class EDSSpectrum(Spectrum):
             defined in lines. If True (default), 
             only add the line at the highest energy
             above an overvoltage of 2 (< beam energy / 2).
-        only_subshells : {None, list of strings}
-            If not None, only the given subshells will be added.
+        only_lines : {None, list of strings}
+            If not None, only the given lines will be added.
                
         See also
         --------
@@ -280,7 +280,7 @@ class EDSSpectrum(Spectrum):
                 new_lines = self._get_lines_from_elements(
                                             extra_elements,
                                             only_one=only_one,
-                                            only_subshells=only_subshells)
+                                            only_lines=only_lines)
                 if new_lines:
                     self.add_lines(new_lines)
         self.add_elements(elements)
@@ -296,7 +296,7 @@ class EDSSpectrum(Spectrum):
     def _get_lines_from_elements(self,
                                  elements,
                                  only_one=False,
-                                 only_subshells=("Ka", "La", "Ma")):
+                                 only_lines=("Ka", "La", "Ma")):
         """Returns the X-ray lines of the given elements in spectral range
         of the data. 
         
@@ -308,8 +308,8 @@ class EDSSpectrum(Spectrum):
             If False, add all the lines of each element in the data spectral
             range. If True only add the line at the highest energy
             above an overvoltage of 2 (< beam energy / 2).
-        only_subshells : {None, list of strings}
-            If not None, only the given subshells will be returned.
+        only_lines : {None, list of strings}
+            If not None, only the given lines will be returned.
             
             
         Returns
@@ -336,7 +336,7 @@ class EDSSpectrum(Spectrum):
             #Possible line (existing and excited by electron)
             element_lines = []
             for subshell in elements_db[element]['Xray_energy'].keys():
-                if only_subshells and subshell not in only_subshells:
+                if only_lines and subshell not in only_lines:
                     continue
                 if (elements_db[element]['Xray_energy'][subshell] < 
                         end_energy):
@@ -364,7 +364,7 @@ class EDSSpectrum(Spectrum):
                             plot_result=False,
                             integration_window_factor=2.,
                             only_one=True,
-                            only_subshells=("Ka", "La", "Ma"),):
+                            only_lines=("Ka", "La", "Ma"),):
         """Return the intensity map of selected Xray lines.
         
         The intensity maps are computed by integrating the spectrum over the 
@@ -399,8 +399,8 @@ class EDSSpectrum(Spectrum):
             If False, use all the lines of each element in the data spectral
             range. If True use only the line at the highest energy
             above an overvoltage of 2 (< beam energy / 2).
-        only_subshells : {None, list of strings}
-            If not None, use only the given subshells.
+        only_lines : {None, list of strings}
+            If not None, use only the given lines.
             
         Returns
         -------
@@ -426,7 +426,7 @@ class EDSSpectrum(Spectrum):
                 Xray_lines = self._get_lines_from_elements(
                         self.mapped_parameters.Sample.elements,
                         only_one=only_one,
-                        only_subshells=only_subshells)
+                        only_lines=only_lines)
             else:
                 raise ValueError(
                     "Not X-ray line, set them with `add_elements`")
