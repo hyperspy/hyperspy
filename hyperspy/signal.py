@@ -28,7 +28,7 @@ from matplotlib import pyplot as plt
 from hyperspy import messages
 from hyperspy.axes import AxesManager
 from hyperspy import io
-from hyperspy.drawing import mpl_hie, mpl_hse
+from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
 from hyperspy.learn.mva import MVA, LearningResults
 import hyperspy.misc.utils
 from hyperspy.misc.utils import DictionaryBrowser
@@ -1442,6 +1442,7 @@ class MVATools(object):
         per_row : int, the number of plots in each row, when the 
         same_window
             parameter is True.
+
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
@@ -1493,6 +1494,7 @@ class MVATools(object):
         per_row : int, the number of plots in each row, when the 
         same_window
             parameter is True.
+
         """
 
         if same_window is None:
@@ -1556,6 +1558,7 @@ class MVATools(object):
         per_row : int 
             the number of plots in each row, when the same_window
             parameter is True.
+
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
@@ -1624,6 +1627,7 @@ class MVATools(object):
         per_row : int 
             the number of plots in each row, when the same_window
             parameter is True.
+
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
@@ -1939,7 +1943,6 @@ class Signal(MVA,
             that will to stores in the `original_parameters` attribute. It
             typically contains all the parameters that has been
             imported from the original data file.        
-           
 
         """
         
@@ -2338,64 +2341,6 @@ class Signal(MVA,
             axes_manager = self.axes_manager
         return np.atleast_1d(
             self.data.__getitem__(axes_manager._getitem_tuple))
-
-    def _get_hse_1D_explorer(self, *args, **kwargs):
-        islice = self.axes_manager.signal_axes[0].index_in_array
-        inslice = self.axes_manager.navigation_axes[0].index_in_array
-        if islice > inslice:
-            return self.data.squeeze()
-        else:
-            return self.data.squeeze().T
-
-    def _get_hse_2D_explorer(self, *args, **kwargs):
-        slices = [0,] * len(self.axes_manager._axes)
-        for i, axis in enumerate(
-                            self.axes_manager.navigation_axes):
-            if i < 2:
-                slices[axis.index_in_array] = slice(None, None, None)
-            else:
-                slices[axis.index_in_array] = slice(
-                                        axis.index, axis.index+1,None)
-        isignal = self.axes_manager.signal_axes[0].index_in_array
-        slices[isignal] = slice(None, None, None)
-        data = np.nan_to_num(self.data.__getitem__(slices)
-                             ).sum(isignal).squeeze()
-        return data
-
-    def _get_hie_explorer(self, *args, **kwargs):
-        slices = [0,] * len(self.axes_manager._axes)
-        for i, axis in enumerate(
-                            self.axes_manager.navigation_axes):
-            if i < 2:
-                slices[axis.index_in_array] = slice(None, None, None)
-            else:
-                slices[axis.index_in_array] = slice(
-                                        axis.index, axis.index+1,None)
-        isignal = [axis.index_in_array for axis in
-                   self.axes_manager.signal_axes]
-        isignal.sort()
-        slices[isignal[0]] = slice(None, None, None)
-        slices[isignal[1]] = slice(None, None, None)
-        data = np.nan_to_num(self.data.__getitem__(slices)
-                             ).sum(isignal[1]).sum(isignal[0]).squeeze()
-        return data
-    
-
-    def _get_explorer(self, *args, **kwargs):
-        nav_dim = self.axes_manager.navigation_dimension
-        if self.axes_manager.signal_dimension == 1:
-            if nav_dim == 1:
-                return self._get_hse_1D_explorer(*args, **kwargs)
-            elif nav_dim >= 2:
-                return self._get_hse_2D_explorer(*args, **kwargs)
-
-        if self.axes_manager.signal_dimension == 2:
-            if nav_dim >= 1:
-                return self._get_hie_explorer(*args, **kwargs)
-            else:
-                return None
-        else:
-            return None
             
     def plot(self, navigator="auto", axes_manager=None):
         """Plot the signal at the current coordinates.
@@ -2404,7 +2349,7 @@ class Signal(MVA,
         the "navigator", with a cursor to navigate that data is
         raised. In any case it is possible to navigate the data using
         the sliders. Currently only signals with signal_dimension equal to
-        1 and 2 can be plotted.
+        0, 1 and 2 can be plotted.
         
         Parameters
         ----------
@@ -2433,7 +2378,7 @@ class Signal(MVA,
             If "spectrum" and navigation_dimension > 0 the navigator
             is always a spectrum obtained by integrating the data 
             over all other axes.
-            Altenatively a Signal instance can be provided. The signal
+            Alternatively a Signal instance can be provided. The signal
             dimension must be 1 (for a spectrum navigator) or 2 (for a
             image navigator) and navigation_shape must be 0 (for a static 
             navigator) or navigation_shape + signal_shape must be equal
@@ -2454,8 +2399,9 @@ class Signal(MVA,
 
         if axes_manager is None:
             axes_manager = self.axes_manager
-                    
-        if axes_manager.signal_dimension == 1:
+        if axes_manager.signal_dimension == 0:            
+            self._plot = mpl_he.MPL_HyperExplorer()
+        elif axes_manager.signal_dimension == 1:
             # Hyperspectrum
             self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()            
         elif axes_manager.signal_dimension == 2:
@@ -2484,37 +2430,54 @@ class Signal(MVA,
             navigator.axes_manager.indices = self.axes_manager.indices[
                     navigator.axes_manager.signal_dimension:]
             return navigator()
+            
+        if navigator == "auto":
+            if (self.axes_manager.navigation_dimension == 1 and
+                self.axes_manager.signal_dimension == 1):
+                    navigator = "data"
+            elif self.axes_manager.navigation_dimension > 0:
+                navigator = self
+                while navigator.axes_manager.signal_dimension > 0:
+                    navigator = navigator.sum(-1)
+                if navigator.axes_manager.navigation_dimension == 1:
+                    navigator = navigator.as_spectrum(0)
+                else:
+                    navigator = navigator.as_image((0,1))
+            else:
+                navigator = None
 
         # Navigator properties
         if axes_manager.navigation_axes:
-            if navigator is "auto":
-                self._plot.navigator_data_function = self._get_explorer
-            elif navigator is None:
-                self._plot.navigator_data_function = None        
-            elif navigator is "spectrum":
-                self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
+            if navigator is None:
+                self._plot.navigator_data_function = None
             elif isinstance(navigator, Signal):
                 # Dynamic navigator
                 if (axes_manager.navigation_shape == 
                       navigator.axes_manager.signal_shape + 
                       navigator.axes_manager.navigation_shape):
-                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
+                    self._plot.navigator_data_function = \
+                        get_dynamic_explorer_wrapper
  
-                elif (  axes_manager.navigation_shape == 
+                elif (axes_manager.navigation_shape == 
                         navigator.axes_manager.signal_shape or
                         axes_manager.navigation_shape[:2] == 
                         navigator.axes_manager.signal_shape or
                         (axes_manager.navigation_shape[0],) == 
                         navigator.axes_manager.signal_shape):
-                    self._plot.navigator_data_function = get_static_explorer_wrapper
-
+                    self._plot.navigator_data_function = \
+                        get_static_explorer_wrapper
                 else:
                     raise ValueError(
-                            "The navigator dimensions are not compatible with those"
-                            "of self.")
-                    self._plot.navigator_data_function = self._get_explorer
+                            "The navigator dimensions are not compatible with "
+                            "those of self.")
+            elif navigator == "data":
+                self._plot.navigator_data_function = lambda : self.data
+            elif navigator == "spectrum":
+                self._plot.navigator_data_function = \
+                    get_1D_sum_explorer_wrapper
             else:
-                raise ValueError("navigator must be one of \"spectrum\",\"auto\","
+                raise ValueError(
+                    "navigator must be one of \"spectrum\",\"auto\","
                         " None, a Signal instance")
                 
         self._plot.plot()
