@@ -37,5 +37,5 @@ class Image(Signal):
         signals.Image.to_spectrum : performs the inverse operation on images.
 
         """
-        return self.as_spectrum(0j)
+        return self.as_spectrum(0+3j)
 

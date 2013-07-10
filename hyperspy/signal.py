@@ -3438,7 +3438,7 @@ class Signal(MVA,
         >>> img = signals.Image(np.ones((3,4,5,6)))
         >>> img
         <Image, title: , dimensions: (4, 3, 6, 5)>
-        >>> img.to_spectrum(1-1j)
+        >>> img.to_spectrum(-1+1j)
         <Spectrum, title: , dimensions: (6, 5, 4, 3)>
         >>> img.to_spectrum(0)
         <Spectrum, title: , dimensions: (6, 5, 3, 4)>
@@ -3446,7 +3446,7 @@ class Signal(MVA,
         """
         import hyperspy.io
         # Roll the spectral axis to-be to the latex index in the array
-        sp = self.rollaxis(spectral_axis, -1j)
+        sp = self.rollaxis(spectral_axis, -1 + 3j)
         sp.mapped_parameters.record_by = "spectrum"
         sp = hyperspy.io.dict2signal(sp._to_dictionary())
         return sp
@@ -3487,8 +3487,8 @@ class Signal(MVA,
         axes = (self.axes_manager[image_axes[0]],
                 self.axes_manager[image_axes[1]])
         iaxes = [axis.index_in_array for axis in axes]
-        im = self.rollaxis(complex(0, iaxes[0]), -1j).rollaxis(
-                           complex(0, iaxes[1]-np.argmax(iaxes)), -2j)
+        im = self.rollaxis(iaxes[0] + 3j, -1+3j).rollaxis(
+                           iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
         im.mapped_parameters.record_by = "image"
         return hyperspy.io.dict2signal(im._to_dictionary())
         

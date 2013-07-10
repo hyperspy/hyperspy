@@ -116,7 +116,7 @@ class Spectrum(Signal):
         if self.data.ndim < 2:
             raise DataDimensionError(
                 "A Signal dimension must be >= 2 to be converted to an Image")
-        im = self.rollaxis(-1j, 0j)
+        im = self.rollaxis(-1+3j, 0+3j)
         im.mapped_parameters.record_by = "image"
         im._assign_subclass()
         return im

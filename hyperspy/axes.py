@@ -341,12 +341,12 @@ class AxesManager(t.HasTraits):
     It supports indexing, slicing, subscriptins and iteration. As an interator,
     iterate over the navigation coordinates returning the current indices.
     It can only be indexed and sliced to access the DataAxis objects that it
-    contain. Standard indexing and slicing follows the "natural order" as in
+    contains. Standard indexing and slicing follows the "natural order" as in
     Signal, i.e. [nX, nY, ...,sX, sY,...] where `n` indicates a navigation axis
     and `s` a signal axis. In addition AxesManager support indexing using
-    complex numbers a + bj, where a can be one of 0,1 and 2 and b a valid
-    index. If a is 0 AxesManager is indexed using the order of the axes in the
-    array. If a is 1(2), indexes only the navigation(signal) axes in the
+    complex numbers a + bj, where b can be one of 0, 1, 2 and 3 and a a valid
+    index. If b is 3 AxesManager is indexed using the order of the axes in the
+    array. If b is 1(2), indexes only the navigation(signal) axes in the
     natural order. In addition AxesManager supports subscription using
     axis name.
     
@@ -378,12 +378,12 @@ class AxesManager(t.HasTraits):
     >>> s.axes_manager
     <Axes manager, axes: (<axis2 axis, size: 4, index: 0>, <axis1 axis, size: 3, index: 0>, <axis0 axis, size: 2, index: 0>, <axis3 axis, size: 5>)>
     >>> s.axes_manager[0]
-    s2 axis, size: 4, index: 0> 
-    >>> s.axes_manager[0j]
-    <axis0 axis, size: 2, index: 0>
-    >>> s.axes_manager[1+0j]
     <axis2 axis, size: 4, index: 0>
-    >>> s.axes_manager[2+0j]
+    >>> s.axes_manager[3j]
+    <axis0 axis, size: 2, index: 0>
+    >>> s.axes_manager[1j]
+    <axis2 axis, size: 4, index: 0>
+    >>> s.axes_manager[2j]
     <axis3 axis, size: 5>
     >>> s.axes_manager[1].name="y"
     >>> s.axes_manager['y']
@@ -465,23 +465,24 @@ class AxesManager(t.HasTraits):
                 if y == axis.name:
                     return axis
             raise ValueError("There is no DataAxis named %s" % y)
-        elif isinstance(y, complex):
-            if not y.real.is_integer or not y.real.is_integer:
-                raise TypeError("axesmanager indices must be integers, "
+        elif (isinstance(y.real, float) and not y.real.is_integer() or
+                isinstance(y.imag, float) and not y.imag.is_integer()):
+            raise TypeError("axesmanager indices must be integers, "
                     "complex intergers or strings")
-            if y.real == 0:
-                return self._axes[int(y.imag)]
-            elif y.real == 1:
-                return self.navigation_axes[int(y.imag)]
-            elif y.real == 2:
-                return self.signal_axes[int(y.imag)]
-            else:
-                raise IndexError("axesmanager real part of complex indices "
-                        "must be 0, 1 or 2")
-        else:
-            # Use the "natural order" as in Signal
+        if y.imag == 0: # Natural order
             return self._get_axes_in_natural_order()[y]
-        
+        elif y.imag == 3: # Array order
+            # Array order
+            return self._axes[int(y.real)]
+        elif y.imag == 1: # Navigation natural order
+            # 
+            return self.navigation_axes[int(y.real)]
+        elif y.imag == 2: # Signal natural order
+            return self.signal_axes[int(y.real)]
+        else:
+            raise IndexError("axesmanager imaginary part of complex indices "
+                    "must be 0, 1 or 2")
+                
     def __getslice__(self, i=None, j=None):
         """x.__getslice__(i, j) <==> x[i:j]
         
