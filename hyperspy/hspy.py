@@ -71,7 +71,7 @@ def create_model(signal, *args, **kwargs):
     
     """
     
-    from hyperspy.signals.eels import EELSSpectrum
+    from hyperspy._signals.eels import EELSSpectrum
     from hyperspy.models.eelsmodel import EELSModel
     from hyperspy.model import Model
     if isinstance(signal, EELSSpectrum):

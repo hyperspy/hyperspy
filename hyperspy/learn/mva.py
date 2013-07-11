@@ -391,7 +391,7 @@ class MVA():
                 self._unfolded4decomposition is False
     
     def get_factors_as_spectrum(self):
-        from hyperspy.signals.spectrum import Spectrum
+        from hyperspy._signals.spectrum import Spectrum
         return Spectrum(self.learning_results.factors.T.copy())
     
     def blind_source_separation(self,
@@ -461,7 +461,7 @@ class MVA():
             factors = factors[:,bool_index]
                     
             if pretreatment is not None:
-                from hyperspy.signals.spectrum import Spectrum
+                from hyperspy._signals.spectrum import Spectrum
                 sfactors = Spectrum(factors.T)
                 if pretreatment['algorithm'] == 'savitzky_golay':
                     sfactors.smooth_savitzky_golay(
@@ -667,7 +667,7 @@ class MVA():
 
         sc = self.deepcopy()
 
-        import hyperspy.signals.spectrum
+        import hyperspy._signals.spectrum
         #if self.mapped_parameters.record_by==spectrum:
         sc.data = a.T.squeeze()
         #else:

@@ -324,7 +324,7 @@ class EELSCLEdge(Component):
         the model was convolved with a low-loss spectrum
         
         """
-        from hyperspy.signals.eels import EELSSpectrum
+        from hyperspy._signals.eels import EELSSpectrum
         channels =  int(np.floor(
                         self.fine_structure_width / self.energy_scale))
         data = np.zeros(self.fine_structure_coeff.map.shape + 

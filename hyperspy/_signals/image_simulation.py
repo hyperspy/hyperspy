@@ -17,8 +17,8 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy.signals.image import Image
-from hyperspy.signals.simulation import Simulation
+from hyperspy._signals.image import Image
+from hyperspy._signals.simulation import Simulation
 
 class ImageSimulation(Simulation, Image):
     pass

@@ -72,8 +72,8 @@ class Spectrum(Signal):
             #overwritten.
             
         #"""
-        #from hyperspy.signals.eds_tem import EDSTEMSpectrum
-        #from hyperspy.signals.eds_sem import EDSSEMSpectrum
+        #from hyperspy._signals.eds_tem import EDSTEMSpectrum
+        #from hyperspy._signals.eds_sem import EDSSEMSpectrum
                 
         #if microscope == None:             
             #if self.mapped_parameters.signal_type == 'EDS_SEM':

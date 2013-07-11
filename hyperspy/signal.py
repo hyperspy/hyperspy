@@ -1130,8 +1130,8 @@ class MVATools(object):
                         vector_scale=1,
                         no_nans=True, per_row=3):
 
-        from hyperspy.signals.image import Image
-        from hyperspy.signals.spectrum import Spectrum
+        from hyperspy._signals.image import Image
+        from hyperspy._signals.spectrum import Spectrum
         
         if multiple_files is None:
             multiple_files = preferences.MachineLearning.multiple_files
@@ -1283,8 +1283,8 @@ class MVATools(object):
                          no_nans=True,
                          per_row=3):
 
-        from hyperspy.signals.image import Image
-        from hyperspy.signals.spectrum import Spectrum
+        from hyperspy._signals.image import Image
+        from hyperspy._signals.spectrum import Spectrum
 
         if multiple_files is None:
             multiple_files = preferences.MachineLearning.multiple_files
@@ -3244,8 +3244,7 @@ class Signal(MVA,
         Example
         -------
         >>> import numpy as np
-        >>> from hyperspy.signals.spectrum import Spectrum        ns = 
-        ns.data = self.data.copy()
+        >>> from hyperspy.signals import Spectrum
         >>> s = signals.Spectrum(np.array([1,2,3,4,5]))
         >>> s.data
         array([1, 2, 3, 4, 5])
@@ -3394,13 +3393,13 @@ class Signal(MVA,
         if self.axes_manager.navigation_dimension == 0:
             return self.__class__(np.array([0,]).astype(self.data.dtype))
         elif self.axes_manager.navigation_dimension == 1:
-            from hyperspy.signals.spectrum import Spectrum
+            from hyperspy._signals.spectrum import Spectrum
             s = Spectrum(
                     np.zeros(self.axes_manager._navigation_shape_in_array,
                              dtype=self.data.dtype),
                          axes=self.axes_manager._get_navigation_axes_dicts())
         elif self.axes_manager.navigation_dimension == 2:
-            from hyperspy.signals.image import Image
+            from hyperspy._signals.image import Image
             s = Image(np.zeros(self.axes_manager._navigation_shape_in_array,
                                dtype=self.data.dtype),
                       axes=self.axes_manager._get_navigation_axes_dicts())

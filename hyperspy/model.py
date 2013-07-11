@@ -39,7 +39,7 @@ from hyperspy import messages
 import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.misc import progressbar
-from hyperspy.signals.eels import EELSSpectrum, Spectrum
+from hyperspy._signals.eels import EELSSpectrum, Spectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError

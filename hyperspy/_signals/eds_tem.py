@@ -19,7 +19,7 @@ from __future__ import division
 
 import traits.api as t
 
-from hyperspy.signals.eds import EDSSpectrum
+from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.decorators import only_interactive
 from hyperspy.gui.eds import TEMParametersUI
 from hyperspy.defaults_parser import preferences

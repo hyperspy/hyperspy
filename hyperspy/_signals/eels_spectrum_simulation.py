@@ -17,8 +17,8 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy.signals.eels import EELSSpectrum
-from hyperspy.signals.spectrum_simulation import SpectrumSimulation
+from hyperspy._signals.eels import EELSSpectrum
+from hyperspy._signals.spectrum_simulation import SpectrumSimulation
 
 class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
     pass

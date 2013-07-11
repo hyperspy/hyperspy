@@ -165,17 +165,17 @@ class Voigt(Component):
         Example
         -------
         
-        import numpy as np
-        from hyperspy.hspy import *
-        from hyperspy.signals.spectrum import Spectrum  
-        g = components.Gaussian()
-        x = np.arange(-10,10, 0.01)
-        data = np.zeros((32,32,2000))
-        data[:] = g.function(x).reshape((1,1,2000))
-        s = Spectrum({'data' : data})
-        s.axes_manager.axes[-1].offset = -10
-        s.axes_manager.axes[-1].scale = 0.01
-        g.estimate_parameters(s, -10,10, False)
+        >>> import numpy as np
+        >>> from hyperspy.hspy import *
+        >>> from hyperspy.signals import Spectrum  
+        >>> g = components.Gaussian()
+        >>> x = np.arange(-10,10, 0.01)
+        >>> data = np.zeros((32,32,2000))
+        >>> data[:] = g.function(x).reshape((1,1,2000))
+        >>> s = Spectrum({'data' : data})
+        >>> s.axes_manager.axes[-1].offset = -10
+        >>> s.axes_manager.axes[-1].scale = 0.01
+        >>> g.estimate_parameters(s, -10,10, False)
             
         """
         axis = signal.axes_manager.signal_axes[0]

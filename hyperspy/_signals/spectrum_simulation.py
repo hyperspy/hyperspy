@@ -16,18 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.signals.spectrum import Spectrum
-from hyperspy.signals.image import Image
-from hyperspy.signals.eels import EELSSpectrum
-from hyperspy.signals.eds_sem import EDSSpectrum
-from hyperspy.signals.eds_sem import EDSSEMSpectrum
-from hyperspy.signals.eds_tem import EDSTEMSpectrum
-from hyperspy.signals.simulation import Simulation
-from hyperspy.signals.image_simulation import ImageSimulation
-from hyperspy.signals.spectrum_simulation import SpectrumSimulation
-from hyperspy.signals.eels_spectrum_simulation import (
-    EELSSpectrumSimulation)
-from hyperspy.signal import Signal
+
+from hyperspy._signals.spectrum import Spectrum
+from hyperspy._signals.simulation import Simulation
+
+class SpectrumSimulation(Simulation, Spectrum):
+    pass
+
 
 
 

@@ -1,7 +1,6 @@
 from nose.tools import assert_true
 
 from hyperspy.signals import *
-from hyperspy.signal import Signal
 from hyperspy.io import assign_signal_subclass
 
 

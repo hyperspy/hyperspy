@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import traits.api as t
 
 
-from hyperspy.signals.spectrum import Spectrum
+from hyperspy._signals.spectrum import Spectrum
 from hyperspy.misc.eels.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.gui.egerton_quantification import SpikesRemoval
@@ -32,7 +32,7 @@ from hyperspy.gui.eels import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.misc.progressbar import progressbar
-from hyperspy.components.power_law import PowerLaw
+from hyperspy.components import PowerLaw
 from hyperspy.misc.utils import isiterable
 
 
@@ -596,7 +596,7 @@ class EELSSpectrum(Spectrum):
             I0_shape.insert(axis.index_in_array,1)
             I0 = I0.reshape(I0_shape)
             
-        from hyperspy.components.gaussian import Gaussian
+        from hyperspy.components import Gaussian
         g = Gaussian()
         g.sigma.value = fwhm / 2.3548
         g.A.value = 1

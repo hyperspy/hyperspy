@@ -21,7 +21,7 @@ from nose.tools import assert_true, assert_equal, assert_not_equal
 
 from hyperspy.signals import EDSSEMSpectrum
 from hyperspy.defaults_parser import preferences
-from hyperspy.components.gaussian import Gaussian
+from hyperspy.components import Gaussian
 
 class Test_mapped_parameters:
     def setUp(self):
