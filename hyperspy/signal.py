@@ -2324,16 +2324,11 @@ class Signal(MVA,
             dic['learning_results'] = copy.deepcopy(
                                                 self.learning_results.__dict__)
         return dic
-
+        
     def _get_undefined_axes_list(self):
         axes = []
         for i in xrange(len(self.data.shape)):
-            axes.append({
-                        'name': 'axis%i' % i,
-                        'scale': 1.,
-                        'offset': 0.,
-                        'size': int(self.data.shape[i]),
-                        'units': 'undefined',})
+            axes.append({'size': int(self.data.shape[i]),})
         return axes
 
     def __call__(self, axes_manager=None):
@@ -2855,13 +2850,13 @@ class Signal(MVA,
         to_remove = []
         for axis, dim in zip(self.axes_manager._axes, new_shape):
             if dim == 1:
-                uname += ',' + axis.name
-                uunits = ',' + axis.units
+                uname += ',' + str(axis)
+                uunits = ',' + str(axis.units)
                 to_remove.append(axis)
-        self.axes_manager._axes[unfolded_axis].name += uname
-        self.axes_manager._axes[unfolded_axis].units += uunits
-        self.axes_manager._axes[unfolded_axis].size = \
-                                        self.data.shape[unfolded_axis]
+        ua = self.axes_manager._axes[unfolded_axis]
+        ua.name = str(ua) + uname
+        ua.units = str(ua.units) + uunits                                             
+        ua.size = self.data.shape[unfolded_axis]
         for axis in to_remove:
             self.axes_manager._axes.remove(axis)
 

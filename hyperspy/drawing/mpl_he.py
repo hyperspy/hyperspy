@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+from traits.api import Undefined
+
 from hyperspy.drawing import widgets, spectrum, image, utils
 from hyperspy.gui.axes import navigation_sliders
 
@@ -53,7 +55,9 @@ class MPL_HyperExplorer(object):
             # Create the figure
             sf = spectrum.SpectrumFigure()
             axis = self.axes_manager.navigation_axes[0]
-            sf.xlabel = '%s (%s)' % (axis.name, axis.units)
+            sf.xlabel = '%s' % str(axis)
+            if axis.units is not Undefined:
+                sf.xlabel += ' (%s)' % axis.units
             sf.ylabel = r'$\Sigma\mathrm{data\,over\,all\,other\,axes}$'
             sf.title = self.signal_title + ' Navigator'
             sf.axis = axis.axis

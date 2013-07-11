@@ -25,6 +25,7 @@ except ImportError:
     ordict = False
 
 import numpy as np
+import traits.api as t
 
 from hyperspy.misc.array_tools import sarray2dict
 from hyperspy.misc.io import xmlreader
@@ -293,7 +294,7 @@ def ser_reader(filename, objects = None, *args, **kwds):
             elif i_array[i] == ndim - 2:
                 name = 'y'
             else:
-                name = 'undefined_%i' % (i + 1)
+                name = t.Undefined
             axes.append({
             'name' : name,
             'offset' : header['Dim-%i_CalibrationOffset' % (i + 1)][0],
@@ -313,10 +314,8 @@ def ser_reader(filename, objects = None, *args, **kwds):
         
         # Spectral dimension    
         axes.append({
-            'name' : 'undefined',
             'offset' : data['CalibrationOffset'][0],
             'scale' : data['CalibrationDelta'][0],
-            'units' : 'undefined',
             'size' : data['ArrayLength'][0],
             'index_in_array' : header['NumberDimensions'][0]
             })
@@ -343,7 +342,6 @@ def ser_reader(filename, objects = None, *args, **kwds):
             'offset' : data['CalibrationOffsetX'][0] - \
             data['CalibrationElementX'][0] * data['CalibrationDeltaX'][0],
             'scale' : data['CalibrationDeltaX'][0],
-            'units' : 'undefined',
             'size' : data['ArraySizeX'][0],
             'index_in_array' : ndim
             })
@@ -352,7 +350,6 @@ def ser_reader(filename, objects = None, *args, **kwds):
         # Extra dimensions
         for i in xrange(ndim - 1):
             axes.append({
-            'name' : 'undefined%s' % i,
             'offset' : header['Dim-%i_CalibrationOffset' % i + 1][0],
             'scale' : header['Dim-%i_CalibrationDelta' % i + 1][0],
             'units' : header['Dim-%i_Units' % i + 1][0],

@@ -19,6 +19,7 @@
 import h5py
 
 import numpy as np
+from traits.api import Undefined
 
 from hyperspy.misc.utils import ensure_unicode
 from hyperspy.axes import AxesManager
@@ -177,7 +178,8 @@ def dict2hdfgroup(dictionary, group, compression=None):
                           group.create_group('_hspy_AxesManager_'
                                              + key), 
                           compression=compression)
-            
+        elif value is Undefined:
+            continue
         else:
             try:
                 group.attrs[key] = value

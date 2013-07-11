@@ -103,7 +103,7 @@ class EELSModel(Model):
         """Run model setup tasks
         
         This function must be called everytime that we add or remove components
-        <undefined>       from the model.
+        from the model.
         It creates the bookmarks self.edges and sef._background_components and 
         configures the edges by setting the energy_scale attribute and setting 
         the fine structure.

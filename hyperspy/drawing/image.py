@@ -19,8 +19,10 @@
 from __future__ import division
 
 import math
+
 import numpy as np
 import matplotlib.pyplot as plt
+from traits.api import Undefined
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
@@ -83,12 +85,13 @@ class ImagePlot:
         xaxis = self.xaxis
         yaxis = self.yaxis
         # Image labels
-        self._xlabel = '%s (%s)' % (
-            xaxis.name,
-            xaxis.units)
-        self._ylabel = '%s (%s)' % (
-            yaxis.name,
-            yaxis.units)
+        self._xlabel = '%s' % str(xaxis)
+        if xaxis.units is not Undefined:
+            self._xlabel += ' (%s)' % xaxis.units
+        
+        self._ylabel = '%s' % str(yaxis)
+        if yaxis.units is not Undefined:
+            self._ylabel += ' (%s)' % yaxis.units 
             
         if (xaxis.units == yaxis.units) and (
             xaxis.scale == yaxis.scale):

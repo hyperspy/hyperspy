@@ -23,7 +23,7 @@ import traits.api as t
 import traitsui.api as tui
 from traits.trait_errors import TraitError
 
-from hyperspy.misc.utils import isiterable
+from hyperspy.misc.utils import isiterable, ordinal
 
 class ndindex_nat(np.ndindex):
     def next(self):
@@ -97,12 +97,11 @@ class DataAxis(t.HasTraits):
     def __init__(self,
                  size,
                  index_in_array=None,
-                 name='',
+                 name=t.Undefined,
                  scale=1.,
                  offset=0.,
-                 units='undefined',
-                 navigate=t.Undefined):
-                     
+                 units=t.Undefined,
+                 navigate=t.Undefined):          
         super(DataAxis, self).__init__()
         self.name = name
         self.units = units
@@ -218,16 +217,23 @@ class DataAxis(t.HasTraits):
             self.scale *= step
             
         return my_slice
-
+        
+    def _get_name(self):
+        name = (self.name if self.name is not t.Undefined
+                          else ("Unnamed " +
+                                ordinal(self.index_in_axes_manager)))
+        return name
 
     def __repr__(self):
-        if self.name is not None:
-            text = '<%s axis, size: %i' % (self.name,
-                                              self.size,)
-            if self.navigate is True:
-                text += ", index: %i" % self.index
-            text += ">"
-            return text
+        text = '<%s axis, size: %i' % (self._get_name(),
+                                       self.size,)
+        if self.navigate is True:
+            text += ", index: %i" % self.index
+        text += ">"
+        return text
+            
+    def __str__(self):
+        return self._get_name() + " axis"
             
     def connect(self, f, trait='value'):
         self.on_trait_change(f, trait)
@@ -747,9 +753,9 @@ class AxesManager(t.HasTraits):
     def show(self):
         context = {}
         ag = []
-        for n in range(0,len(self._axes)):
-            ag.append(get_axis_group(n, self._axes[n].name))
-            context['axis%i' % n] = self._axes[n]
+        for n, axis in enumerate(self._get_axes_in_natural_order()):
+            ag.append(get_axis_group(n, str(axis)))
+            context['axis%i' % n] = axis
         ag = tuple(ag)
         self.edit_traits(view = tui.View(*ag), context = context)
     def _get_axes_str(self):

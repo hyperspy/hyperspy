@@ -20,6 +20,7 @@ from __future__ import division
 import copy
 
 import numpy as np
+from traits.api import Undefined
 
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
 from hyperspy.drawing import spectrum, utils
@@ -75,9 +76,9 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
             self.signal_plot.plot()
             return
         # Create the figure
-        self.xlabel = '%s (%s)' % (
-            self.axes_manager.signal_axes[0].name,
-            self.axes_manager.signal_axes[0].units)
+        self.xlabel = '%s' % str(self.axes_manager.signal_axes[0])
+        if self.axes_manager.signal_axes[0].units is not Undefined:
+            self.xlabel += ' (%s)' % self.axes_manager.signal_axes[0].units
         self.ylabel = 'Intensity'
         self.axis = self.axes_manager.signal_axes[0].axis
         sf = spectrum.SpectrumFigure()

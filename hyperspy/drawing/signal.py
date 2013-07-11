@@ -21,6 +21,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from traits.api import Undefined
 
 
 def _plot_quiver_scatter_overlay(image, axes_manager,
@@ -198,7 +199,7 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
             plt.title('%s %s'%(comp_label,idx))
         plt.ylabel('Score, Arb. Units')
         if calibrate:
-            if axes[0].units<>'undefined':
+            if axes[0].units is not Undefined:
                 plt.xlabel(axes[0].units)
             else:
                 plt.xlabel('depth')
