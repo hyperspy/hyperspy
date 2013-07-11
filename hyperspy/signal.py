@@ -2858,8 +2858,7 @@ class Signal(MVA,
         ua.units = str(ua.units) + uunits                                             
         ua.size = self.data.shape[unfolded_axis]
         for axis in to_remove:
-            self.axes_manager._axes.remove(axis)
-
+            self.axes_manager.remove(axis.index_in_axes_manager)
         self.data = self.data.squeeze()
 
     def unfold(self):
