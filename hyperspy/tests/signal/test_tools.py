@@ -82,7 +82,7 @@ class Test3D:
         assert_equal(s.swap_axes(0,1).data.shape, (4,2,6))
         assert_true(s.swap_axes(0,2).data.flags['C_CONTIGUOUS'])
         
-class TestRollAxis:
+class Test4D:
     def setUp(self):
         s = signals.Spectrum(np.ones((5,4,3,6)))
         for axis, name in zip(
@@ -90,10 +90,16 @@ class TestRollAxis:
             ['x', 'y', 'z', 'E']):
             axis.name = name
         self.s = s
-    def test_int(self):
+    def test_rollaxis_int(self):
         assert_equal(self.s.rollaxis(2,0).data.shape, (4, 3, 5, 6))
-    def test_str(self):
+    def test_rollaxis_str(self):
         assert_equal(self.s.rollaxis("z", "x").data.shape, (4, 3, 5, 6))        
-        
+    def test_unfold_spectrum(self):
+        self.s.unfold()
+        assert_equal(self.s.data.shape, (60, 6))
+    def test_unfold_image(self):
+        im = self.s.to_image()
+        im.unfold()
+        assert_equal(im.data.shape, (30, 12))
         
 
