@@ -203,7 +203,7 @@ class EELSSpectrum(Spectrum):
         self._check_signal_dimension_equals_one()
         
         if isinstance(threshold, float):
-            I0 = self.signal_indexer[:threshold].integrate_simpson(-1)
+            I0 = self.isig[:threshold].integrate_simpson(-1)
             I0.axes_manager.set_signal_dimension(
                                 min(2, self.axes_manager.navigation_dimension))
         

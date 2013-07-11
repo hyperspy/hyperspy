@@ -89,7 +89,7 @@ class Test1D:
         assert_equal(s.data.shape, (1,))
         
     def test_signal_indexer_slice(self):
-        s = self.signal.signal_indexer[1:-1]
+        s = self.signal.isig[1:-1]
         d = self.data[1:-1]
         assert_true((s.data==d).all())
         assert_equal(s.axes_manager._axes[0].offset, 1)
@@ -97,7 +97,7 @@ class Test1D:
                      self.signal.axes_manager._axes[0].scale)
 
     def test_signal_indexer_reverse_slice(self):
-        s = self.signal.signal_indexer[-1:1:-1]
+        s = self.signal.isig[-1:1:-1]
         d = self.data[-1:1:-1]
         assert_true((s.data==d).all())
         assert_equal(s.axes_manager._axes[0].offset, 9)
@@ -105,7 +105,7 @@ class Test1D:
                      self.signal.axes_manager._axes[0].scale * -1)
                      
     def test_signal_indexer_step2_slice(self):
-        s = self.signal.signal_indexer[1:-1:2]
+        s = self.signal.isig[1:-1:2]
         d = self.data[1:-1:2]
         assert_true((s.data==d).all())
         assert_equal(s.axes_manager._axes[0].offset, 1)
@@ -115,12 +115,12 @@ class Test1D:
                      self.signal.axes_manager._axes[0].scale*2.)
 
     def test_signal_indexer_index(self):
-        s = self.signal.signal_indexer[3]
+        s = self.signal.isig[3]
         assert_equal(s.data, 3)
      
     @raises(IndexError)    
     def test_navigation_indexer_navdim0(self):
-        s = self.signal.navigation_indexer[3]
+        s = self.signal.inav[3]
         
     def test_minus_one_index(self):
         s = self.signal[-1]
@@ -139,21 +139,21 @@ class Test3D_SignalDim0:
         
     def test_signal_indexer_signal_dim0(self):
         s = self.signal
-        assert((s.signal_indexer[:].data == s.data).all())
+        assert((s.isig[:].data == s.data).all())
     
     @raises(IndexError)  
     def test_signal_indexer_signal_dim0(self):
         s = self.signal
-        assert((s.signal_indexer[:,:].data == s.data).all())
+        assert((s.isig[:,:].data == s.data).all())
 
     @raises(IndexError)  
     def test_signal_indexer_signal_dim0(self):
         s = self.signal
-        s.signal_indexer[0]
+        s.isig[0]
     
     def test_navigation_indexer_signal_dim0(self):
         s = self.signal
-        assert((s.navigation_indexer[:].data == s.data).all())
+        assert((s.inav[:].data == s.data).all())
         
 class Test3D_Navigate_0_and_1:
     def setUp(self):
@@ -173,7 +173,7 @@ class Test3D_Navigate_0_and_1:
                      self.signal.axes_manager._axes[1].scale)
                      
     def test_1px_navigation_indexer_slice(self):
-        s = self.signal.navigation_indexer[1:2]
+        s = self.signal.inav[1:2]
         d = self.data[:,1:2]
         assert_true((s.data==d).all())
         assert_equal(s.axes_manager._axes[1].offset, 1)
@@ -182,7 +182,7 @@ class Test3D_Navigate_0_and_1:
                      self.signal.axes_manager._axes[1].scale)
                      
     def test_1px_signal_indexer_slice(self):
-        s = self.signal.signal_indexer[1:2]
+        s = self.signal.isig[1:2]
         d = self.data[:,:,1:2]
         assert_true((s.data==d).all())
         assert_equal(s.axes_manager.signal_axes[0].offset, 1)
@@ -216,7 +216,7 @@ class Test3D_Navigate_1:
                      self.signal.axes_manager._axes[1].scale)
                      
     def test_1px_navigation_indexer_slice(self):
-        s = self.signal.navigation_indexer[1:2]
+        s = self.signal.inav[1:2]
         d = self.data[:,1:2]
         assert_true((s.data==d).all())
         assert_equal(s.axes_manager._axes[1].offset, 1)
@@ -225,7 +225,7 @@ class Test3D_Navigate_1:
                      self.signal.axes_manager._axes[1].scale)
                      
     def test_1px_signal_indexer_slice(self):
-        s = self.signal.signal_indexer[1:2]
+        s = self.signal.isig[1:2]
         d = self.data[:,:,1:2]
         assert_true((s.data==d).all())
         assert_equal(s.axes_manager.signal_axes[0].offset, 1)
@@ -299,13 +299,13 @@ class TestEllipsis:
         assert_true((s.data == self.data[...,0,0]).all())
         
     def test_ellipsis_navigation(self):
-        s = self.signal.navigation_indexer[...,0]
+        s = self.signal.inav[...,0]
         assert_true((s.data == self.data[0, ...]).all())
         
     def test_ellipsis_navigation(self):
         self.signal.axes_manager._axes[-2].navigate = False
         self.signal.axes_manager._axes[-3].navigate = False
-        s = self.signal.signal_indexer[...,0]
+        s = self.signal.isig[...,0]
         assert_true((s.data == self.data[:,0, ...]).all())
                      
             

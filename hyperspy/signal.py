@@ -492,7 +492,7 @@ class Signal1DTools(object):
 
         i1, i2 = axis._get_index(start), axis._get_index(end) 
         shift_array = np.zeros(self.axes_manager._navigation_shape_in_array)
-        ref = self.navigation_indexer[reference_indices].data[i1:i2]
+        ref = self.inav[reference_indices].data[i1:i2]
         if interpolate is True:
             ref = spectrum_tools.interpolate1D(ip, ref)
         pbar = progressbar(
