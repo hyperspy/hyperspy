@@ -46,7 +46,8 @@ class MPL_HyperExplorer(object):
             return
         if self.navigator_data_function is None:            
             navigation_sliders(
-                self.axes_manager.navigation_axes)
+                self.axes_manager.navigation_axes,
+                title=self.signal_title + " navigation sliders")
             return
         if self.navigator_plot is not None:
             self.navigator_plot.plot()
@@ -75,7 +76,8 @@ class MPL_HyperExplorer(object):
             self.pointer.add_axes(sf.ax)
             if self.axes_manager.navigation_dimension > 1:
                 navigation_sliders(
-                    self.axes_manager.navigation_axes)
+                    self.axes_manager.navigation_axes,
+                    title=self.signal_title + " navigation sliders")
                 for axis in self.axes_manager.navigation_axes[:-2]:
                     axis.connect(sf.update)
             self.navigator_plot = sf
@@ -91,7 +93,8 @@ class MPL_HyperExplorer(object):
                 imf.xaxis = self.axes_manager.navigation_axes[0]
                 if self.axes_manager.navigation_dimension > 2:
                     navigation_sliders(
-                        self.axes_manager.navigation_axes)
+                        self.axes_manager.navigation_axes,
+                        title=self.signal_title + " navigation sliders")
                     for axis in self.axes_manager.navigation_axes[2:]:
                         axis.connect(imf.update)
                 

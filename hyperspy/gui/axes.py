@@ -2,7 +2,7 @@
 import traits.api as t
 import traitsui.api as tui
 
-def navigation_sliders(data_axes):
+def navigation_sliders(data_axes, title=None):
     """Raises a windows with sliders to control the index of DataAxis
     
     Parameters
@@ -41,6 +41,8 @@ def navigation_sliders(data_axes):
 
 
 
-    view = tui.View(tui.VSplit(view_tuple), title="Navigation sliders")
+    view = tui.View(tui.VSplit(view_tuple), title="Navigation sliders"
+                                            if title is None
+                                            else title)
 
     nav.edit_traits(view=view)
