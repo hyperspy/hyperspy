@@ -2425,8 +2425,7 @@ class Signal(MVA,
             navigator.axes_manager.indices = self.axes_manager.indices[
                     navigator.axes_manager.signal_dimension:]
             return navigator()
-            
-        if navigator == "auto":
+        if not isinstance(navigator, Signal) and navigator == "auto":
             if (self.axes_manager.navigation_dimension == 1 and
                 self.axes_manager.signal_dimension == 1):
                     navigator = "data"
@@ -2440,7 +2439,6 @@ class Signal(MVA,
                     navigator = navigator.as_image((0,1))
             else:
                 navigator = None
-
         # Navigator properties
         if axes_manager.navigation_axes:
             if navigator is None:
