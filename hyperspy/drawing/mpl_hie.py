@@ -28,7 +28,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf = image.ImagePlot()
         imf.axes_manager = self.axes_manager
         imf.data_function = self.signal_data_function
-        imf.title = self.signal_title
+        imf.title = self.signal_title + " Signal"
         imf.xaxis, imf.yaxis = self.axes_manager.signal_axes
         imf.plot_colorbar = True
         imf.plot()

@@ -43,7 +43,6 @@ class ImagePlot:
     plot_scalebar, plot_ticks, plot_colorbar, plot_indices : bool
     title : str
         The title is printed at the top of the image.
-    window_title : str
     vmin, vmax : float
         Limit the range of the color map scale to the given values.
     auto_contrast : bool
@@ -65,7 +64,6 @@ class ImagePlot:
         self.figure = None
         self.ax = None
         self.title = ''
-        self.window_title = ''
         self.vmin = None
         self.vmax = None
         self.auto_contrast = True
@@ -145,6 +143,9 @@ class ImagePlot:
         figsize = np.array((width * wfactor, height)) * max_size / max(
                            (width * wfactor, height))
         self.figure = utils.create_figure(
+                        window_title=("Figure " + self.title
+                                        if self.title
+                                        else None),
                         figsize=figsize.clip(min_size, max_size))
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
 

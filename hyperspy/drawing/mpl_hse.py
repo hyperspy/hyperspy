@@ -81,10 +81,10 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
             self.xlabel += ' (%s)' % self.axes_manager.signal_axes[0].units
         self.ylabel = 'Intensity'
         self.axis = self.axes_manager.signal_axes[0].axis
-        sf = spectrum.SpectrumFigure()
+        sf = spectrum.SpectrumFigure(title=self.signal_title +
+                                     " Signal")
         sf.xlabel = self.xlabel
         sf.ylabel = self.ylabel
-        sf.title = self.signal_title
         sf.axis = self.axis
         sf.create_axis()
         sf.axes_manager = self.axes_manager

@@ -28,7 +28,7 @@ import utils
 class SpectrumFigure():
     """
     """
-    def __init__(self):
+    def __init__(self, title=""):
         self.figure = None
         self.ax = None
         self.right_ax = None
@@ -41,7 +41,7 @@ class SpectrumFigure():
         # Labels
         self.xlabel = ''
         self.ylabel = ''
-        self.title = ''
+        self.title = title
         self.create_figure()
         self.create_axis()
         
@@ -52,7 +52,9 @@ class SpectrumFigure():
             'scatter' : utils.ColorCycle(),}
 
     def create_figure(self):
-        self.figure = utils.create_figure()
+        self.figure = utils.create_figure(
+                window_title="Figure " + self.title if self.title
+                                        else None)
         utils.on_figure_window_close(self.figure, self.close)
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
 

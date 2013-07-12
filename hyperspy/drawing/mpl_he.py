@@ -54,13 +54,14 @@ class MPL_HyperExplorer(object):
             return
         elif len(self.navigator_data_function().shape) == 1:
             # Create the figure
-            sf = spectrum.SpectrumFigure()
+            sf = spectrum.SpectrumFigure(title=self.signal_title + ' Navigator'
+                                         if self.signal_title
+                                         else "")
             axis = self.axes_manager.navigation_axes[0]
             sf.xlabel = '%s' % str(axis)
             if axis.units is not Undefined:
                 sf.xlabel += ' (%s)' % axis.units
             sf.ylabel = r'$\Sigma\mathrm{data\,over\,all\,other\,axes}$'
-            sf.title = self.signal_title + ' Navigator'
             sf.axis = axis.axis
             sf.axes_manager = self.axes_manager
             self.navigator_plot = sf
