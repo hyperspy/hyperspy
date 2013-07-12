@@ -50,7 +50,7 @@ gs2.A.map['is_set'][:] = True
 s_model = m.as_signal()
 
 # Add noise
-s_model = s_model.to_simulation()
+s_model.set_signal_origin("simulation")
 s_model.add_poissonian_noise()
 
 # Plot the result
