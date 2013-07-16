@@ -94,8 +94,9 @@ class Signal2DTools(object):
         chunk_size: {None, int}
             If int and `reference`=='stat' the number of images used
             as reference are limited to the given value.
-        roi : tuple of ints (top, bottom, left, right)
-             Define the region of interest
+        roi : tuple of ints or floats (left, right, top bottom)
+             Define the region of interest. If int(float) the position
+             is given axis index(value).
         sobel : bool
             apply a sobel filter for edge enhancement 
         medfilter :  bool
@@ -131,6 +132,13 @@ class Signal2DTools(object):
         
         """
         self._check_signal_dimension_equals_two()
+        if roi is not None:
+            # Get the indices of the roi
+            yaxis = self.axes_manager.signal_axes[1]
+            xaxis = self.axes_manager.signal_axes[0]
+            roi = tuple([xaxis._get_index(i) for i in roi[2:]] +
+                    [yaxis._get_index(i) for i in roi[:2]]) 
+
         ref = None if reference == 'cascade' else \
             self.__call__().copy()
         shifts = []
@@ -285,10 +293,14 @@ class Signal2DTools(object):
         self._check_signal_dimension_equals_two()
         if shifts is None:
             shifts = self.estimate_shift2D(
-                roi=roi,sobel=sobel, medfilter=medfilter,
-                hanning=hanning, plot=plot,reference=reference,
-                dtype=dtype, correlation_threshold=
-                correlation_threshold,
+                roi=roi,
+                sobel=sobel,
+                medfilter=medfilter,
+                hanning=hanning,
+                plot=plot,
+                reference=reference,
+                dtype=dtype,
+                correlation_threshold=correlation_threshold,
                 normalize_corr=normalize_corr,
                 chunk_size=chunk_size)
             return_shifts = True
