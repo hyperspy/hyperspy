@@ -3499,9 +3499,7 @@ class Signal(MVA,
                                      else self._signal_type,
             signal_origin = mp.signal_origin if "signal_origin" in mp
                                              else self._signal_origin) 
-        if self.__class__ != current_class:
-            self.__init__(**self._to_dictionary())
-        
+        self.__init__(**self._to_dictionary())
         
     def set_signal_type(self, signal_type):
         """
