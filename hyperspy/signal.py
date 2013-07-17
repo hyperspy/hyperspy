@@ -2425,6 +2425,7 @@ class Signal(MVA,
             navigator.axes_manager.indices = self.axes_manager.indices[
                     navigator.axes_manager.signal_dimension:]
             return navigator()
+
         if not isinstance(navigator, Signal) and navigator == "auto":
             if (self.axes_manager.navigation_dimension == 1 and
                 self.axes_manager.signal_dimension == 1):
@@ -2659,7 +2660,7 @@ class Signal(MVA,
         axis = self.axes_manager[axis].index_in_array
         to_index = self.axes_manager[to_axis].index_in_array
         if axis == to_index:
-            return self
+            return self.deepcopy()
         new_axes_indices = hyperspy.misc.utils.rollelem(
                 [axis_.index_in_array for axis_ in self.axes_manager._axes],
                 index=axis,
