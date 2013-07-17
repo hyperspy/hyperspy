@@ -3206,8 +3206,69 @@ class Signal(MVA,
                                axis=axis.index_in_array))
         s._remove_axis(axis.index_in_axes_manager)
         return s
+
+    def indexmax(self, axis):
+        """Returns a signal with the index of the maximum along an axis.
+
+        Parameters
+        ----------
+        axis : {int | string}
+           The axis can be specified using the index of the axis in 
+           `axes_manager` or the axis name.
+
+        Returns
+        -------
+        s : Signal
+            The data dtype is always int.
+
+        See also
+        --------
+        sum, mean, min
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.indexmax(-1).data.shape
+        (64,64)        
         
-        
+        """
+        return self._apply_function_on_data_and_remove_axis(np.argmax, axis)
+       
+    def valuemax(self, axis):                                                                         
+        """Returns a signal with the value of the maximum along an axis.
+                                                                                
+        Parameters                                                              
+        ----------                                                              
+        axis : {int | string}                                                   
+           The axis can be specified using the index of the axis in             
+           `axes_manager` or the axis name.                                     
+                                                                                
+        Returns                                                                 
+        -------                                                                 
+        s : Signal                                                              
+            The data dtype is always int.                                       
+                                                                                
+        See also                                                                
+        --------                                                                
+        sum, mean, min                                                          
+                                                                                
+        Usage                                                                   
+        -----                                                                   
+        >>> import numpy as np                                                  
+        >>> s = Signal(np.random.random((64,64,1024)))                          
+        >>> s.data.shape                                                        
+        (64,64,1024)                                                            
+        >>> s.valuemax(-1).data.shape                                             
+        (64,64)                                                                 
+                                                                                
+        """                                                                     
+        s = self.indexmax(axis)                                                 
+        s.data = self.axes_manager[axis].index2value(s.data)                 
+        return s
+
     def copy(self):
         try:
             backup_plot = self._plot
