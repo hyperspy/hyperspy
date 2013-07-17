@@ -19,6 +19,7 @@
 import copy
 import os.path
 import warnings
+import math
 
 import numpy as np
 import numpy.ma as ma
@@ -394,14 +395,20 @@ class Signal1DTools(object):
         axis.offset = offset
 
         if crop is True:
-            mini, maxi = shift_array.min(), shift_array.max()
-            if mini < 0:
+            minimum, maximum = shift_array.min(), shift_array.max()
+            if minimum < 0:
+                iminimum = 1 + axis.value2index(
+                        axis.high_value + minimum,
+                        rounding=math.floor)
+                print iminimum
                 self.crop(axis.index_in_axes_manager,
                           None,
-                          axis.axis[-1] + mini + axis.scale)
-            if maxi > 0:
+                          iminimum)
+            if maximum > 0:
+                imaximum = axis.value2index(offset + maximum,
+                                            rounding=math.ceil) 
                 self.crop(axis.index_in_axes_manager,
-                          float(offset + maxi))
+                          imaximum)
             
     def interpolate_in_between(self, start, end, delta=3, **kwargs):
         """Replace the data in a given range by interpolation.

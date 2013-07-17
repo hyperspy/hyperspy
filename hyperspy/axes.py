@@ -274,7 +274,7 @@ class DataAxis(t.HasTraits):
     def update_value(self):
         self.value = self.axis[self.index]
 
-    def value2index(self, value):
+    def value2index(self, value, rounding=round):
         """Return the closest index to the given value if between the limit.
 
         Parameters
@@ -293,7 +293,7 @@ class DataAxis(t.HasTraits):
         if value is None:
             return None
         else:
-            index = int(round((value - self.offset) / 
+            index = int(rounding((value - self.offset) / 
                               self.scale))
             if self.size > index >= 0:
                 return index
