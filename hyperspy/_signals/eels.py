@@ -132,43 +132,96 @@ class EELSSpectrum(Spectrum):
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
                     
-    def estimate_zero_loss_peak_centre(self,
-                                       calibrate=True,
-                                       also_apply_to=None):
-        """Returns the average position over all spectra of the maximum 
-        intensity feature that, in most low-loss EELS spectra, it corresponds
-        to the zero-loss peak centre.
+    def estimate_zero_loss_peak_centre(self):
+        """Estimate the posision of the zero-loss peak.
         
-        By default it also modifies the offset of the spectral axis so that
-        the average position of the zero-loss peak becomes zero.
-         
-         
+        This function provides just a coarse estimation of the position
+        of the zero-loss peak by computing the position of the maximum
+        of the spectra. For subpixel accuracy use `estimate_shift1D`.
+
+        Returns
+        -------
+        zlpc : Signal subclass
+            The average position over all spectra of the zero-loss peak.
         
+        Notes
+        -----
+        This function only works when the zero-loss peak is the most
+        intense feature in the spectrum. If it is not in most cases
+        the spectrum can be cropped to meet this criterium.
+        Alternatively use `estimate_shift1D`.    
+        
+        See Also
+        --------
+        estimate_shift1D, align_zero_loss_peak
+
+        """
+        self._check_signal_dimension_equals_one()
+        zlpc = self.valuemax(-1)
+        if self.axes_manager.navigation_dimension == 1:
+            zlpc = zlpc.as_spectrum(0)
+        elif self.axes_manager.navigation_dimension > 1:
+            zlpc = zlpc.as_image((0, 1))
+        return zlpc
+
+    def align_zero_loss_peak(
+            self,
+            calibrate=True,
+            also_align=None,
+            print_stats=True,
+            subpixel=True):
+        """Align the zero-loss peak.
+
+        This function first aligns the spectra using a coarse estimation
+        of the posision of the zero-loss peak. 
         Parameters
         ----------
         calibrate : bool
-            If True, modify the offset of the spectral axis so that
-            the zero-loss peak average position becomes zero.
-        also_apply_to : None or list of EELSSPectrum
-            If a list of signals is provided and `calibrate` is True,
-            the same offset transformation is applied to all the other signals.
-            
-        Returns
-        -------
-        vmax : float
-            The average position over all spectra of the zero-loss peak.
-            
+            If True, set the offset of the spectral axis so that the 
+            zero-loss peak is at position zero.
+        also_aling : list of signals
+            A list containing other spectra of identical dimensions to 
+            align using the shifts applied to the current spectrum.
+            If `calibrate` is True, the calibration is also applied to
+            the spectra in the list.
+        print_stats : bool
+            If True, print the mean, std, max and min of the ZLP before
+            the aligment, after the coarse alignment and after the 
+            fine alignment if `subpixel` is True.
+        subpixel : bool
+            If True, perform a finer alignment with subpixel accuracy 
+            using cross-correlation.
+
+        See Also
+        --------
+        estimate_zero_loss_peak_position, align1D, estimate_shift1D.
+
         """
-        self._check_signal_dimension_equals_one()
-        axis = self.axes_manager.signal_axes[0] 
-        imax = float(np.mean(np.argmax(self.data, axis.index_in_array)))
-        vmax = axis.offset + imax*axis.axes_manager[-1].scale
-        if calibrate is True:
-            axis.offset -= vmax
-        if also_apply_to:
-            for sync_signal in also_apply_to:
-                sync_signal.axes_manager.signal_axes[0].offset -=vmax
-        return vmax
+        zlpc = self.estimate_zero_loss_peak_centre()
+        if print_stats is True:
+            print
+            print(underline("Initial ZLP position statistics"))
+            zlpc.print_statistics()
+        if also_apply_to is None:
+            also_apply_to = list()
+        also_apply_to.append(self)
+        for signal in also_apply_to:
+            if calibrate is True:
+                signal.axes_manager[-1].offset -= mean_
+            signal.shift1D(-zlpc.data + mean_)
+        if print_stats is True:
+            print
+            print(underline("ZLP position after coarse alignment statistics"))
+            self.estimate_zero_loss_peak_centre().print_statistics()
+        
+        if subpixel is False: return
+        
+        self.align1D(-1.,1.)
+        if print_stats is True:
+            print
+            print(underline("ZLP position after fine alignment statistics"))
+            self.estimate_zero_loss_peak_centre().print_statistics()
+
     
     def estimate_elastic_scattering_intensity(self,
                                               threshold=None,):
