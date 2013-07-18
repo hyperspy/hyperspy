@@ -33,8 +33,7 @@ from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.components import PowerLaw
-from hyperspy.misc.utils import isiterable
-
+from hyperspy.misc.utils import isiterable, underline
 
 
 class EELSSpectrum(Spectrum):
@@ -198,14 +197,15 @@ class EELSSpectrum(Spectrum):
 
         """
         zlpc = self.estimate_zero_loss_peak_centre()
+        mean_ = zlpc.data.mean()
         if print_stats is True:
             print
             print(underline("Initial ZLP position statistics"))
             zlpc.print_statistics()
-        if also_apply_to is None:
-            also_apply_to = list()
-        also_apply_to.append(self)
-        for signal in also_apply_to:
+        if also_align is None:
+            also_align = list()
+        also_align.append(self)
+        for signal in also_align:
             if calibrate is True:
                 signal.axes_manager[-1].offset -= mean_
             signal.shift1D(-zlpc.data + mean_)
@@ -216,7 +216,7 @@ class EELSSpectrum(Spectrum):
         
         if subpixel is False: return
         
-        self.align1D(-1.,1.)
+        self.align1D(-3.,3.)
         if print_stats is True:
             print
             print(underline("ZLP position after fine alignment statistics"))
