@@ -3599,6 +3599,23 @@ class Signal(MVA,
         self.mapped_parameters.signal_origin = origin
         self._assign_subclass()    
 
+    def print_statistics(self, global=True, formatter="%.2f"):
+        """Prints the mean, std, max and min of the data.
+        
+        Parameters
+        ----------
+        global : bool
+            If True, compute the values using the full dataset.
+            If False, compute the values at the current position.
+        """
+        if global is True:
+            target = self.data
+        else:
+            target = self()
+        print("mean : " + formatter % target.mean())
+        print("std : " + formatter  % target.std())
+        print("max : " + formatter  % target.max())
+        print("min :" + formatter % % target.min())
         
 # Implement binary operators
 for name in (
