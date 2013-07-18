@@ -717,3 +717,11 @@ def ordinal(value):
         ordval = u"%d%s" % (value, "th")
 
     return ordval
+
+def underline(line, character="-"):
+    """Return the line underlined.
+
+    """
+
+    return line + "\n" + character*len(line)
+
