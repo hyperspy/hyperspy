@@ -17,7 +17,6 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import scipy.interpolate
 import matplotlib.pyplot as plt
 import traits.api as t
 
@@ -398,97 +397,6 @@ class EELSSpectrum(Spectrum):
                 self.tmp_parameters.extension
         return s
                 
-    def estimate_peak_width(self,
-            factor=0.5,
-            window=None,
-            return_interval=False):
-        """Estimate the width of the highest intensity of peak 
-        of the spectra at a given fraction of its maximum.
-
-        It can be used with asymmetric peaks. For accurate results any 
-        background must be previously substracted.
-        The estimation is performed by interpolation using cubic splines.
-        
-        Parameters:
-        -----------
-        factor : 0 < float < 1
-            The default, 0.5, estimates the FWHM.
-        window : None, float
-            The size of the window centred at the peak maximum
-            used to perform the estimation.
-            The window size must be chosen with care: if it is narrower
-            than the width of the peak at some positions or if it is
-            so wide that it includes other more intense peaks this
-            method cannot compute the width and a NaN is stored instead.
-        return_interval: bool
-            If True, returns 2 extra signals with the positions of the 
-            desired height fraction at the left and right of the 
-            peak.
-        
-        Returns:
-        --------
-        width or [width, left, right], depending on the value of 
-        `return_interval`.
-
-        """
-        self._check_signal_dimension_equals_one()
-        if not 0 < factor < 1:
-            raise ValueError("factor must be between 0 and 1.")
-
-        left, right = (self._get_navigation_signal(),
-                       self._get_navigation_signal())
-        # The signals must be of dtype float to contain np.nan
-        left.change_dtype('float')
-        right.change_dtype('float')
-        axis = self.axes_manager.signal_axes[0]
-        x = axis.axis
-        maxval = self.axes_manager.navigation_size
-        if maxval > 0:
-            pbar = progressbar(maxval=maxval)
-        for i, spectrum in enumerate(self):
-            if window is not None:
-                vmax = axis.index2value(spectrum.data.argmax())
-                spectrum = spectrum[vmax - window / 2.:vmax + window / 2.]
-                x = spectrum.axes_manager[0].axis
-            spline = scipy.interpolate.UnivariateSpline(
-                    x,
-                    spectrum.data - factor * spectrum.data.max(),
-                    s=0)
-            roots = spline.roots()
-            if len(roots) == 2:
-                left[self.axes_manager.indices] = roots[0]
-                right[self.axes_manager.indices] = roots[1]
-            else:
-                left[self.axes_manager.indices] = np.nan
-                right[self.axes_manager.indices] = np.nan
-            if maxval > 0:
-                pbar.update(i)
-        if maxval > 0:
-            pbar.finish()
-        width = right - left
-        if factor == 0.5:
-            width.mapped_parameters.title = (
-                    self.mapped_parameters.title + " FWHM")
-            left.mapped_parameters.title = (
-                    self.mapped_parameters.title + " FWHM left position")
-            
-            right.mapped_parameters.title = (
-                    self.mapped_parameters.title + " FWHM right position")
-        else:
-            width.mapped_parameters.title = (
-                    self.mapped_parameters.title +
-                    " full-width at %.1f maximum" % factor)
-            left.mapped_parameters.title = (
-                    self.mapped_parameters.title +
-                    " full-width at %.1f maximum left position" % factor)
-            right.mapped_parameters.title = (
-                    self.mapped_parameters.title +
-                    " full-width at %.1f maximum right position" % factor)
-        if return_interval is True:
-            return [width, left, right]
-        else:
-            return width
-
     def fourier_log_deconvolution(self,
                                   zlp,
                                   add_zlp=False,
@@ -620,7 +528,7 @@ class EELSSpectrum(Spectrum):
         
         axis = ll.axes_manager.signal_axes[0]
         if fwhm is None:
-            fwhm = ll.estimate_FWHM()['FWHM']
+            fwhm = float(ll.get_current_signal().estimate_peak_width()())
             print("FWHM = %1.2f" % fwhm) 
 
         I0 = ll.estimate_elastic_scattering_intensity(
