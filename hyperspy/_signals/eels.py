@@ -429,31 +429,21 @@ class EELSSpectrum(Spectrum):
                 derivative if der_roots is True (False by default)
                                 
         """
-        # TODO: make it work for ndimensions
         self._check_signal_dimension_equals_one()
-        axis = self.axes_manager.signal_axes[0]
-        i0, i1 = (axis.value2index(energy_range[0]), 
-                  axis.value2index(energy_range[1]))
-        data = self()[i0:i1]
-        x = axis.axis[i0:i1]
-        height = np.max(data)
-        spline_fwhm = scipy.interpolate.UnivariateSpline(
-                            x, data - factor * height)
-        pair_fwhm = spline_fwhm.roots()[0:2]
-        fwhm = pair_fwhm[1] - pair_fwhm[0]
-        
-        if der_roots:
-            der_x = np.arange(x[0], x[-1] + 1, (x[1] - x[0]) * 0.2)
-            derivative = spline_fwhm(der_x, 1)
-            spline_der = scipy.interpolate.UnivariateSpline(der_x,
-                derivative)
-            return {'FWHM' : fwhm,
-                     'pair' : pair_fwhm, 
-                     'der_roots': spline_der.roots()}
-        else:
-            return {'FWHM' : fwhm,
-                     'FWHM_E' : pair_fwhm}
-                     
+        fwhm = self._get_navigation_signal()
+        cs = self.isig[energy_range[0]:energy_range[1]]
+        axis = cs.axes_manager.signal_axes[0]
+        x = axis.axis
+        for spectrum in cs:
+            spline = scipy.interpolate.UnivariateSpline(
+                    x,
+                    spectrum.data-factor * spectrum.data.max(),
+                    s=0)
+            roots = spline.roots()[0:2]
+            fwhm[cs.axes_manager.indices] = roots[1] - roots[0]
+            # TODO Add progressbar and gaussian moments
+        return fwhm
+
     def fourier_log_deconvolution(self,
                                   zlp,
                                   add_zlp=False,
