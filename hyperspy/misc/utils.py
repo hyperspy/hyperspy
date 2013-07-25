@@ -163,7 +163,6 @@ class DictionaryBrowser(object):
     """
 
     def __init__(self, dictionary={}):
-        self._index = None
         for key, value in dictionary.iteritems():
             self.__setattr__(key, value)
             
@@ -265,6 +264,8 @@ class DictionaryBrowser(object):
         for key_, item_ in self.__dict__.iteritems():
             if type(item_) != types.MethodType:
                 key = item_['key']
+                if key == "_db_index":
+                    continue
                 if isinstance(item_['value'], DictionaryBrowser):
                     item = item_['value'].as_dictionary()
                 else:
@@ -390,14 +391,16 @@ class DictionaryBrowser(object):
             iteration.
 
         """
-        if self._index is None:
-            self._index = 0
-        elif self._index >= len(self) - 1:
-            self._index = None
+        if len(self) == 0:
+            raise StopIteration
+        if not hasattr(self, '_db_index'):
+            self._db_index = 0
+        elif self._db_index >= len(self) - 1:
+            del self._db_index
             raise StopIteration
         else:
-            self._index += 1
-        key = self.keys()[self._index]
+            self._db_index += 1
+        key = self.keys()[self._db_index]
         return key, getattr(self, key)
     
     def __iter__(self):
