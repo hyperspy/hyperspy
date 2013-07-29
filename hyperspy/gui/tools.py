@@ -37,7 +37,6 @@ from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import DraggableVerticalLine
 from hyperspy.misc import spectrum_tools
 
-
 import sys
 
 OurApplyButton = tu.Action(name = "Apply",
@@ -788,5 +787,40 @@ class ComponentFit(SpanSelectorInSpectrum):
     def apply(self):
         self._fit_fired()
 
-
+class IntegrateArea(SpanSelectorInSpectrum):
+    integrate = t.Button()
+    
+    view = tu.View(
+                tu.Item('integrate', show_label=False ),
+                buttons = [OKButton, CancelButton],
+                title = 'Integrate area',
+                handler = SpanSelectorInSpectrumHandler,
+                )
+    
+    def __init__(self, signal, signal_range=None):
+        if signal.axes_manager.signal_dimension != 1:
+             raise SignalOutputDimensionError(
+                      signal.axes.signal_dimension, 1)
+        
+        self.signal = signal
+        self.span_selector = None
+        if not hasattr(self.signal, '_plot'):
+            self.signal.plot()
+        elif self.signal._plot is None:
+            self.signal.plot()
+        elif self.signal._plot.is_active() is False:
+            self.signal.plot()
+        self.span_selector_switch(on=True)
+        
+    def _integrate_fired(self):
+        integrated_spectrum = self.signal._integrate_in_range_commandline(
+                signal_range=(
+                    self.ss_left_value,
+                    self.ss_right_value)
+                )
+#        self.signal = integrated_spectrum
+        print(integrated_spectrum.data)
+        
+    def apply(self):
+        self._integrate_fired()
     
