@@ -3489,6 +3489,20 @@ class Signal(MVA,
         im._assign_subclass()
         return im
         
+    def integrate_in_range(self, signal_range='interactive'):
+        if signal_range == 'interactive':
+            print(signal_range)
+        else:
+            _integrate_in_range_commandline(signal_range)
+
+    def _integrate_in_range_commandline(self, signal_range):
+        signal_axis_name = self.axes_manager.signal_axes[0].name 
+        e1 = float(signal_range[0])
+        e2 = float(signal_range[1])
+        integrated_spectrum = self[...,e1:e2].integrate_simpson(signal_axis_name)
+        return(integrated_spectrum)
+
+
     def _assign_subclass(self):
         mp = self.mapped_parameters
         current_class = self.__class__
