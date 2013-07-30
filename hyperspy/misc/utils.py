@@ -154,6 +154,8 @@ class DictionaryBrowser(object):
             print("%s is %s" % (label, leaf.color))     
     Leaf1 is green
     Leaf2 is brown
+    >>> tree.Branch.Leaf2.caterpillar
+    True
     >>> "Leaf1" in tree.Branch
     True
     >>> "Leaf3" in tree.Branch
@@ -163,6 +165,13 @@ class DictionaryBrowser(object):
     """
 
     def __init__(self, dictionary={}):
+        super(DictionaryBrowser, self).__init__()
+        self.add_dictionary(dictionary)
+
+    def add_dictionary(self, dictionary):
+        """Add new items from dictionary.
+
+        """
         for key, value in dictionary.iteritems():
             self.__setattr__(key, value)
             

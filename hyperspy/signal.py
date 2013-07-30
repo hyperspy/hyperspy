@@ -2356,9 +2356,9 @@ class Signal(MVA,
                             eval('self.%s.__setattr__(k,v)'%key)
                     else:
                         self.__setattr__(key, value)
-        self.original_parameters._load_dictionary(
+        self.original_parameters.add_dictionary(
             file_data_dict['original_parameters'])
-        self.mapped_parameters._load_dictionary(
+        self.mapped_parameters.add_dictionary(
             file_data_dict['mapped_parameters'])
         if "title" not in self.mapped_parameters:
             self.mapped_parameters.title = ''
