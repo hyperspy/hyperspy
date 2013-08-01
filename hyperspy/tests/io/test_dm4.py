@@ -20,7 +20,7 @@
 import os
 
 import numpy as np
-from generate_dm_testing_files import dm3_data_types
+from generate_dm_testing_files import dm4_data_types
 
 from nose.tools import assert_true
 from hyperspy.io import load
@@ -30,35 +30,35 @@ my_path = os.path.dirname(__file__)
 # When running the loading test the data of the files that passes it are 
 # stored in the following dict. 
 # TODO: fixtures should be used instead...
-data_dict = {   'dm3_1D_data' : {},
-                'dm3_2D_data' : {},
-                'dm3_3D_data' : {},}
+data_dict = {   'dm4_1D_data' : {},
+                'dm4_2D_data' : {},
+                'dm4_3D_data' : {},}
 
 def test_loading():
     dims = range(1,4)
     for dim in dims:
-        subfolder = 'dm3_%iD_data' % dim
-        for key in dm3_data_types.iterkeys():
-            fname = "test-%s.dm3" % key
+        subfolder = 'dm4_%iD_data' % dim
+        for key in dm4_data_types.iterkeys():
+            fname = "test-%s.dm4" % key
             filename = os.path.join(my_path, subfolder, fname)
             yield check_load, filename, subfolder, key
 
 def test_dtypes():
-    subfolder = 'dm3_1D_data'
+    subfolder = 'dm4_1D_data'
     for key,data in data_dict[subfolder].iteritems():
-        yield check_dtype, data.dtype, np.dtype(dm3_data_types[key]), key
+        yield check_dtype, data.dtype, np.dtype(dm4_data_types[key]), key
 
 ## TODO: the RGB data generated is not correct        
 def test_content():
     for subfolder in data_dict:
         for key, data in data_dict[subfolder].iteritems():
-            if subfolder == 'dm3_1D_data':
+            if subfolder == 'dm4_1D_data':
                 dat = np.arange(1, 3)
-            elif subfolder == 'dm3_2D_data':
+            elif subfolder == 'dm4_2D_data':
                 dat = np.arange(1, 5).reshape(2,2)
-            elif subfolder == 'dm3_3D_data':
+            elif subfolder == 'dm4_3D_data':
                 dat = np.arange(1, 9).reshape(2,2,2)
-            dat = dat.astype(dm3_data_types[key])
+            dat = dat.astype(dm4_data_types[key])
             if key in (8, 23): # RGBA
                 dat["A"][:] = 0 
             yield check_content, data, dat, subfolder, key
