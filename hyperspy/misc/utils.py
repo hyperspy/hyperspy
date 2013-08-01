@@ -110,19 +110,72 @@ def slugify(value, valid_variable_name=False):
     return value
     
 class DictionaryBrowser(object):
-    """A class to comfortably access some parameters as attributes
+    """A class to comfortably browse a dictionary using a CLI.
     
+    In addition to accessing the values using dictionary syntax
+    the class enables navigating  a dictionary that constains 
+    nested dictionaries as attribures of nested classes. 
+    Also it is an iterator over the (key, value) items. The
+    `__repr__` method provides pretty tree printing. Private 
+    keys, i.e. keys that starts with an underscore, are not 
+    printed, counted when calling len nor iterated.
+
+    Methods
+    -------
+    export : saves the dictionary in pretty tree printing format in a text file.
+    keys : returns a list of non-private keys.
+    as_dictionary : returns a dictionary representation of the object.
+    set_item : easily set items, creating any necessary node on the way.
+    add_node : adds a node.
+
+    Examples
+    --------
+    >>> tree = DictionaryBrowser()
+    >>> tree.set_item("Branch.Leaf1.color", "green")
+    >>> tree.set_item("Branch.Leaf2.color", "brown")
+    >>> tree.set_item("Branch.Leaf2.caterpillar", True)
+    >>> tree.set_item("Branch.Leaf1.caterpillar", False)
+    >>> tree
+    └── Branch
+        ├── Leaf1
+        │   ├── caterpillar = False
+        │   └── color = green
+        └── Leaf2
+            ├── caterpillar = True
+            └── color = brown
+    >>> tree.Branch
+    ├── Leaf1
+    │   ├── caterpillar = False
+    │   └── color = green
+    └── Leaf2
+        ├── caterpillar = True
+        └── color = brown
+    >>> for label, leaf in tree.Branch:
+            print("%s is %s" % (label, leaf.color))     
+    Leaf1 is green
+    Leaf2 is brown
+    >>> tree.Branch.Leaf2.caterpillar
+    True
+    >>> "Leaf1" in tree.Branch
+    True
+    >>> "Leaf3" in tree.Branch
+    False
+    >>> 
+
     """
 
     def __init__(self, dictionary={}):
         super(DictionaryBrowser, self).__init__()
-        self._load_dictionary(dictionary)
+        self.add_dictionary(dictionary)
 
-    def _load_dictionary(self, dictionary):
+    def add_dictionary(self, dictionary):
+        """Add new items from dictionary.
+
+        """
         for key, value in dictionary.iteritems():
             self.__setattr__(key, value)
             
-    def export(self, filename, encoding = 'utf8'):
+    def export(self, filename, encoding='utf8'):
         """Export the dictionary to a text file
         
         Parameters
@@ -133,20 +186,19 @@ class DictionaryBrowser(object):
         encoding : valid encoding str
         
         """
-        f = codecs.open(filename, 'w', encoding = encoding)
+        f = codecs.open(filename, 'w', encoding=encoding)
         f.write(self._get_print_items(max_len=None))
         f.close()
 
-    def _get_print_items(self, padding = '', max_len=20):
+    def _get_print_items(self, padding = '', max_len=78):
         """Prints only the attributes that are not methods
         
         """
         string = ''
-        eoi = len(self.__dict__)
+        eoi = len(self) 
         j = 0
         for key_, value in iter(sorted(self.__dict__.iteritems())):
-            if key_[:1] == "_":
-                eoi -= 1
+            if key_.startswith("_"):
                 continue
             if type(key_) != types.MethodType:
                 key = ensure_unicode(value['key'])
@@ -203,17 +255,26 @@ class DictionaryBrowser(object):
                          slugify(key, valid_variable_name=True),
                          {'key' : key, 'value' : value})
 
-    def len(self):
-        return len(self.__dict__.keys())
+    def __len__(self):
+        return len([key for key in self.__dict__.keys() if not key.startswith("_")])
 
     def keys(self):
-        return self.__dict__.keys()
+        """Returns a list of non-private keys.
+        
+        """
+        return sorted([key for key in self.__dict__.keys()
+                      if not key.startswith("_")])
 
     def as_dictionary(self):
+        """Returns its dictionary representation.
+        
+        """
         par_dict = {}
         for key_, item_ in self.__dict__.iteritems():
             if type(item_) != types.MethodType:
                 key = item_['key']
+                if key == "_db_index":
+                    continue
                 if isinstance(item_['value'], DictionaryBrowser):
                     item = item_['value'].as_dictionary()
                 else:
@@ -222,7 +283,9 @@ class DictionaryBrowser(object):
         return par_dict
         
     def has_item(self, item_path):
-        """Given a path, return True if it exists
+        """Given a path, return True if it exists.
+        
+        The nodes of the path are separated using periods.
         
         Parameters
         ----------
@@ -259,6 +322,48 @@ class DictionaryBrowser(object):
                     return False
         else:
             return False
+            
+    def get_item(self, item_path):
+        """Given a path, return True if it exists.
+        
+        The nodes of the path are separated using periods.
+        
+        Parameters
+        ----------
+        item_path : Str
+            A string describing the path with each item separated by 
+            full stops (periods)
+            
+        Examples
+        --------
+        
+        >>> dict = {'To' : {'be' : True}}
+        >>> dict_browser = DictionaryBrowser(dict)
+        >>> dict_browser.has_item('To')
+        True
+        >>> dict_browser.has_item('To.be')
+        True
+        >>> dict_browser.has_item('To.be.or')
+        False
+        
+        """
+        if type(item_path) is str:
+            item_path = item_path.split('.')
+        else:
+            item_path = copy.copy(item_path)
+        attrib = item_path.pop(0)
+        if hasattr(self, attrib):
+            if len(item_path) == 0:
+                return self[attrib]
+            else:
+                item = self[attrib]
+                if isinstance(item, type(self)): 
+                    return item.get_item(item_path)
+                else:
+                    raise AttributeError("Item not in dictionary browser")
+        else:
+            raise AttributeError("Item not in dictionary browser")
+
     def __contains__(self, item):
         return self.has_item(item_path=item)
         
@@ -299,8 +404,6 @@ class DictionaryBrowser(object):
         else:
             self.__setattr__(item_path.pop(), value)
 
-
-
     def add_node(self, node_path):
         """Adds all the nodes in the given path if they don't exist.
         
@@ -325,7 +428,33 @@ class DictionaryBrowser(object):
             if self.has_item(key) is False:
                 self[key] = DictionaryBrowser()
             self = self[key]
-            
+
+    def next(self):
+        """
+        Standard iterator method, updates the index and returns the 
+        current coordiantes
+
+        Returns
+        -------
+        val : tuple of ints
+            Returns a tuple containing the coordiantes of the current 
+            iteration.
+
+        """
+        if len(self) == 0:
+            raise StopIteration
+        if not hasattr(self, '_db_index'):
+            self._db_index = 0
+        elif self._db_index >= len(self) - 1:
+            del self._db_index
+            raise StopIteration
+        else:
+            self._db_index += 1
+        key = self.keys()[self._db_index]
+        return key, getattr(self, key)
+    
+    def __iter__(self):
+        return self
     
 def strlist2enumeration(lst):
     lst = tuple(lst)
