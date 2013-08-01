@@ -144,6 +144,7 @@ with update_version_when_dev() as version:
                     'hyperspy.tests',
                     'hyperspy.tests.component',
                     'hyperspy.tests.io',
+                    'hyperspy.tests.io.msa_files',
                     'hyperspy.tests.model',
                     'hyperspy.tests.signal',
                     'hyperspy.tests.drawing',
