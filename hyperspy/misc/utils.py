@@ -322,6 +322,47 @@ class DictionaryBrowser(object):
                     return False
         else:
             return False
+            
+    def get_item(self, item_path):
+        """Given a path, return True if it exists.
+        
+        The nodes of the path are separated using periods.
+        
+        Parameters
+        ----------
+        item_path : Str
+            A string describing the path with each item separated by 
+            full stops (periods)
+            
+        Examples
+        --------
+        
+        >>> dict = {'To' : {'be' : True}}
+        >>> dict_browser = DictionaryBrowser(dict)
+        >>> dict_browser.has_item('To')
+        True
+        >>> dict_browser.has_item('To.be')
+        True
+        >>> dict_browser.has_item('To.be.or')
+        False
+        
+        """
+        if type(item_path) is str:
+            item_path = item_path.split('.')
+        else:
+            item_path = copy.copy(item_path)
+        attrib = item_path.pop(0)
+        if hasattr(self, attrib):
+            if len(item_path) == 0:
+                return self[attrib]
+            else:
+                item = self[attrib]
+                if isinstance(item, type(self)): 
+                    return item.get_item(item_path)
+                else:
+                    raise AttributeError("Item not in dictionary browser")
+        else:
+            raise AttributeError("Item not in dictionary browser")
 
     def __contains__(self, item):
         return self.has_item(item_path=item)
