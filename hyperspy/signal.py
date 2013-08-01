@@ -53,7 +53,7 @@ from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
 from hyperspy.misc import spectrum_tools
-
+from hyperspy import components
 
 class Signal2DTools(object):
     def estimate_shift2D(self, reference='current',
@@ -709,19 +709,57 @@ class Signal1DTools(object):
             smoother.apply()
         else:
             smoother.edit_traits()
+    
+    def _estimate_component_parameters(self, signal_range, component):
+        """Estimates parameters of a component for the current spectrum."""
+        left_value = signal_range[0]
+        right_value = signal_range[1]
+        component.estimate_parameters(
+                self, 
+                left_value, 
+                right_value, 
+                only_current=True)
+
+    def _remove_background_cli(self, signal_range, background_estimator):
+        spectra = self.deepcopy()
+        for spectrum in spectra:
+            spectrum._estimate_component_parameters(
+                    signal_range, background_estimator)
+            spectrum.data -= background_estimator.function(
+                    spectrum.axes_manager.signal_axes[0].axis)
+        return(spectra)
+
+    def remove_background(self, signal_range='interactive', background_type='PowerLaw'):
+        """Remove the background, either in place using a gui or returned as a new
+        spectrum using the command line.
         
-    @only_interactive
-    def remove_background(self):
-        """Remove the background  in place using a gui.
-        
+        Parameters
+        ----------
+        signal_range : tuple, optional
+            If this argument is not specified, the signal range has to be selected
+            using a GUI. And the original spectrum will be replaced.
+            If tuple is given, the a spectrum will be returned.
+        background_type : string
+            The type of component which should be used to fit the background.
+            Possible components: PowerLaw, Gaussian
+            
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
         
         """
         self._check_signal_dimension_equals_one()
-        br = BackgroundRemoval(self)
-        br.edit_traits()
+        if signal_range == 'interactive': 
+            br = BackgroundRemoval(self)
+            br.edit_traits()
+        else:
+            if background_type == 'PowerLaw':
+                background_estimator = components.PowerLaw()
+            elif background_type == 'Gaussian':
+                background_estimator = components.Gaussian()
+            spectra = self._remove_background_cli(
+                    signal_range, background_estimator)
+            return(spectra)
 
     @interactive_range_selector    
     def crop_spectrum(self, left_value=None, right_value=None,):
