@@ -24,7 +24,9 @@ from __future__ import with_statement #for Python versions < 2.6
 from __future__ import division
 
 import os
+
 import numpy as np
+import traits.api as t
 
 from hyperspy.misc.io.utils_readfile import *
 from hyperspy.exceptions import *
@@ -523,6 +525,19 @@ class ImageObject(object):
                       if dimension[1].Units else ""
                       for dimension in dimensions])[::-1]
     @property
+    def names(self):
+        names = [t.Undefined] * len(self.shape)
+        indices = range(len(self.shape))
+        if self.signal_type == "EELS":
+            if "eV" in self.units:
+                names[indices.pop(self.units.index("eV"))] = "Energy loss"
+        elif self.signal_type in ("EDS", "EDX"):
+            if "keV" in self.units:
+                names[indices.pop(self.units.index("keV"))] = "Energy"
+        for index, name in zip(indices[::-1], ("x", "y", "z")):
+            names[index] = name
+        return names
+    @property
     def title(self):
         if "Name" in self.imdict:
             return self.imdict.Name
@@ -704,14 +719,15 @@ class ImageObject(object):
         return data
         
     def get_axes_dict(self):
-        return [{
+        return [{'name' : name,
                  'size' : size, 
                  'index_in_array' : i ,
                  'scale': scale,
                  'offset' : offset,
                  'units' : unicode(units),} \
-                 for i, (size, scale, offset, units) in enumerate(
-                     zip(self.shape, self.scales, self.offsets, self.units))]
+                 for i, (name, size, scale, offset, units) in enumerate(
+                     zip(self.names, self.shape, self.scales, self.offsets,
+                         self.units))]
     
     def get_mapped_parameters(self, mapped_parameters={}):             
         mapped_parameters['title'] = self.title
