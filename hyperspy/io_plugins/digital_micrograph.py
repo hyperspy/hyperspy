@@ -642,8 +642,13 @@ class ImageObject(object):
             return self.unpack_new_packed_complex(data)
         elif self.imdict.ImageData.DataType == 5: # Old packed compled
             return self.unpack_packed_complex(data)
-        else:
-            return data.reshape(self.shape, order=self.order)
+        elif self.imdict.ImageData.DataType in (8, 23): # ABGR
+            # Reorder the fields
+            data = np.hstack((data[["B", "G", "R"]].view(("u1", 3))[...,::-1],
+                data["A"].reshape(-1,1))).view(
+                        {"names" : ("R", "G", "B", "A"),
+                         "formats" : ("u1",)*4}).copy()
+        return data.reshape(self.shape, order=self.order)
 
     def unpack_new_packed_complex(self, data):
         packed_shape = (self.shape[0], int(self.shape[1] / 2 + 1))
