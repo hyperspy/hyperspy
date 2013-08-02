@@ -741,7 +741,7 @@ mapping = {
         "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector.exposure_s" : ("TEM.dwell_time", None),
         "ImageList.TagGroup0.ImageTags.Microscope_Info.Voltage" : ("TEM.beam_energy", lambda x: x/1e3)
         }
-def file_reader(filename, record_by=None, order=None):
+def file_reader(filename, record_by=None, order=None, verbose=False):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
@@ -756,7 +756,7 @@ def file_reader(filename, record_by=None, order=None):
     """
          
     with open(filename, "r") as f:
-        dm = DigitalMicrographReader(f)
+        dm = DigitalMicrographReader(f, verbose=verbose)
         dm.parse_file()
         images = [ImageObject(imdict, f, order=order, record_by=record_by)
                   for imdict in dm.get_image_dictionaries()]
