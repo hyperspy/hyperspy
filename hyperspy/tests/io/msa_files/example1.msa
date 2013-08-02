@@ -1,0 +1,52 @@
+#FORMAT      : EMSA/MAS Spectral Data File
+#VERSION     : 1.0
+#TITLE       : NIO EELS OK SHELL 
+#DATE        : 01-OCT-1991 
+#TIME        : 12:00
+#OWNER       : EMSA/MAS TASK FORCE
+#NPOINTS     : 20.
+#NCOLUMNS    : 1.
+#XUNITS      : eV
+#XLABEL      : Energy Loss
+#YUNITS      : Intensity
+#DATATYPE    : XY
+#XPERCHAN    : 3.1
+#OFFSET      : 520.13
+#CHOFFSET    : -168
+#SIGNALTYPE  : ELS
+#XLABEL      :  Energy
+#YLABEL      :  Counts
+#BEAMKV   -kV: 120.0
+#EMISSION -uA: 5.5
+#PROBECUR -nA: 12.345
+#BEAMDIAM -nm: 100.0
+#MAGCAM      : 100.
+#CONVANGLE-mR: 1.5
+#COLLANGLE-mR: 3.4 
+#OPERMODE    : IMAG
+#THICKNESS-nm: 50.    
+#DWELLTIME-ms: 100.
+#ELSDET      : SERIAL
+#SPECTRUM    : Spectral Data Starts Here                                  
+520.13, 4066.0
+523.22, 3996.0
+526.32, 3932.0
+529.42, 3923.0
+532.51, 5602.0
+535.61, 5288.0
+538.70, 7234.0
+541.80, 7809.0
+544.90, 4710.0
+547.99, 5015.0
+551.09, 4366.0
+554.18, 4524.0
+557.28, 4832.0
+560.38, 5474.0
+563.47, 5718.0
+565.79, 5034.0
+568.89, 4651.0
+571.99, 4613.0
+574.31, 4637.0
+577.40, 4429.0
+580.50, 4217.0
+#ENDOFDATA   :"""

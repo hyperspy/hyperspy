@@ -134,7 +134,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
     
     """
     
-    # Make a copy of the image so the don't get modified
+    # Make a copy of the images to avoid modifying them 
     ref = ref.copy().astype(dtype)
     image = image.copy().astype(dtype)
     if roi is not None:
@@ -143,8 +143,8 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         top, bottom, left, right = [None,] * 4
         
     # Select region of interest
-    ref = ref[left:right, top:bottom]
-    image = image[left:right, top:bottom]
+    ref = ref[top:bottom,left:right] 
+    image = image[top:bottom,left:right]
     
     # Apply filters
     for im in (ref,image):

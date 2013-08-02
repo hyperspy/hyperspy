@@ -19,6 +19,7 @@
 import copy
 import os.path
 import warnings
+import math
 
 import numpy as np
 import numpy.ma as ma
@@ -95,8 +96,9 @@ class Signal2DTools(object):
         chunk_size: {None, int}
             If int and `reference`=='stat' the number of images used
             as reference are limited to the given value.
-        roi : tuple of ints (top, bottom, left, right)
-             Define the region of interest
+        roi : tuple of ints or floats (left, right, top bottom)
+             Define the region of interest. If int(float) the position
+             is given axis index(value).
         sobel : bool
             apply a sobel filter for edge enhancement 
         medfilter :  bool
@@ -132,6 +134,13 @@ class Signal2DTools(object):
         
         """
         self._check_signal_dimension_equals_two()
+        if roi is not None:
+            # Get the indices of the roi
+            yaxis = self.axes_manager.signal_axes[1]
+            xaxis = self.axes_manager.signal_axes[0]
+            roi = tuple([xaxis._get_index(i) for i in roi[2:]] +
+                    [yaxis._get_index(i) for i in roi[:2]]) 
+
         ref = None if reference == 'cascade' else \
             self.__call__().copy()
         shifts = []
@@ -286,10 +295,14 @@ class Signal2DTools(object):
         self._check_signal_dimension_equals_two()
         if shifts is None:
             shifts = self.estimate_shift2D(
-                roi=roi,sobel=sobel, medfilter=medfilter,
-                hanning=hanning, plot=plot,reference=reference,
-                dtype=dtype, correlation_threshold=
-                correlation_threshold,
+                roi=roi,
+                sobel=sobel,
+                medfilter=medfilter,
+                hanning=hanning,
+                plot=plot,
+                reference=reference,
+                dtype=dtype,
+                correlation_threshold=correlation_threshold,
                 normalize_corr=normalize_corr,
                 chunk_size=chunk_size)
             return_shifts = True
@@ -395,14 +408,20 @@ class Signal1DTools(object):
         axis.offset = offset
 
         if crop is True:
-            mini, maxi = shift_array.min(), shift_array.max()
-            if mini < 0:
+            minimum, maximum = shift_array.min(), shift_array.max()
+            if minimum < 0:
+                iminimum = 1 + axis.value2index(
+                        axis.high_value + minimum,
+                        rounding=math.floor)
+                print iminimum
                 self.crop(axis.index_in_axes_manager,
                           None,
-                          axis.axis[-1] + mini + axis.scale)
-            if maxi > 0:
+                          iminimum)
+            if maximum > 0:
+                imaximum = axis.value2index(offset + maximum,
+                                            rounding=math.ceil) 
                 self.crop(axis.index_in_axes_manager,
-                          float(offset + maxi))
+                          imaximum)
             
     def interpolate_in_between(self, start, end, delta=3, **kwargs):
         """Replace the data in a given range by interpolation.
@@ -2518,6 +2537,7 @@ class Signal(MVA,
             navigator.axes_manager.indices = self.axes_manager.indices[
                     navigator.axes_manager.signal_dimension:]
             return navigator()
+
         if not isinstance(navigator, Signal) and navigator == "auto":
             if (self.axes_manager.navigation_dimension == 1 and
                 self.axes_manager.signal_dimension == 1):
@@ -2752,7 +2772,7 @@ class Signal(MVA,
         axis = self.axes_manager[axis].index_in_array
         to_index = self.axes_manager[to_axis].index_in_array
         if axis == to_index:
-            return self
+            return self.deepcopy()
         new_axes_indices = hyperspy.misc.utils.rollelem(
                 [axis_.index_in_array for axis_ in self.axes_manager._axes],
                 index=axis,
@@ -3592,9 +3612,7 @@ class Signal(MVA,
                                      else self._signal_type,
             signal_origin = mp.signal_origin if "signal_origin" in mp
                                              else self._signal_origin) 
-        if self.__class__ != current_class:
-            self.__init__(**self._to_dictionary())
-        
+        self.__init__(**self._to_dictionary())
         
     def set_signal_type(self, signal_type):
         """
