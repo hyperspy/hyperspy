@@ -166,7 +166,12 @@ Hyperspy.
 HDF5
 ----
 
-This is the default format and it is the only one that guarantees that no information will be lost in the writing process and that supports saving data of arbitrary dimensions. It is based on the `HDF5 open standard <http://www.hdfgroup.org/HDF5/>`_. The HDF5 file format is supported by `many applications <http://www.hdfgroup.org/products/hdf5_tools/SWSummarybyName.htm>`_.
+This is the default format and it is the only one that guarantees that no
+information will be lost in the writing process and that supports saving data
+of arbitrary dimensions. It is based on the `HDF5 open standard
+<http://www.hdfgroup.org/HDF5/>`_. The HDF5 file format is supported by `many
+applications
+<http://www.hdfgroup.org/products/hdf5_tools/SWSummarybyName.htm>`_.
 
 Note that only HDF5 files written by Hyperspy are supported.
 
@@ -182,11 +187,14 @@ compression: One of None, 'gzip', 'szip', 'lzf'.
 NetCDF
 ------
 
-This was the default format in Hyperspy's predecessor, EELSLab, but it has been superseeded by :ref:`HDF5` in Hyperspy. We provide only reading capabilities but we do not support writing to this format.
+This was the default format in Hyperspy's predecessor, EELSLab, but it has been
+superseeded by :ref:`HDF5` in Hyperspy. We provide only reading capabilities
+but we do not support writing to this format.
 
 Note that only NetCDF files written by EELSLab are supported.
 
-To use this format a python netcdf interface must be installed manually because it is not installed by default when using the automatic installers.
+To use this format a python netcdf interface must be installed manually because
+it is not installed by default when using the automatic installers.
 
 
 .. _mrc-format:
@@ -194,25 +202,41 @@ To use this format a python netcdf interface must be installed manually because 
 MRC
 ---
 
-This is a format widely used for tomographic data. Our implementation is based on 
-`this specification <http://ami.scripps.edu/software/mrctools/mrc_specification.php>`_. We also partly support FEI's custom header. We do not provide writing features for this format, but, as it is an an open format, we may implement this feature in the future on demand.
+This is a format widely used for tomographic data. Our implementation is based
+on `this specification
+<http://ami.scripps.edu/software/mrctools/mrc_specification.php>`_. We also
+partly support FEI's custom header. We do not provide writing features for this
+format, but, as it is an an open format, we may implement this feature in the
+future on demand.
 
 .. _msa-format:
 
 EMSA/MSA
 --------
 
-This `open standard format <http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/XEDS/EMMFF/EMMFF.IBM/Emmff.Total>`_ is widely used to exchange single spectrum data, but it does not support multidimensional data. It can be used to exchange single spectra with Gatan's Digital Micrograph.
+This `open standard format
+<http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/XEDS/EMMFF/EMMFF.IBM/Emmff.Total>`_
+is widely used to exchange single spectrum data, but it does not support
+multidimensional data. It can be used to exchange single spectra with Gatan's
+Digital Micrograph.
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-For the MSA format the msa_format argument is used to specify whether the energy axis should also be saved with the data.  The default, 'Y' omits the energy axis in the file.  The alternative, 'XY', saves a second column with the calibrated energy data. It  is possible to personalise the separator with the `separator` keyword. 
+
+For the MSA format the msa_format argument is used to specify whether the
+energy axis should also be saved with the data.  The default, 'Y' omits the
+energy axis in the file.  The alternative, 'XY', saves a second column with the
+calibrated energy data. It  is possible to personalise the separator with the
+`separator` keyword. 
 
 .. Warning::
 
-    However, if a different separator is chosen the resulting file will not comply with the MSA/EMSA standard and Hyperspy and other software may not be able to read it.
+    However, if a different separator is chosen the resulting file will not
+    comply with the MSA/EMSA standard and Hyperspy and other software may not
+    be able to read it.
     
-The default encoding is `latin-1`. It is possible to set a different encoding using the `encoding` argument, e.g.:
+The default encoding is `latin-1`. It is possible to set a different encoding
+using the `encoding` argument, e.g.:
 
 .. code-block:: python
 
@@ -225,9 +249,15 @@ The default encoding is `latin-1`. It is possible to set a different encoding us
 Ripple
 ------
 
-This `open standard format <http://www.nist.gov/lispix/doc/image-file-formats/raw-file-format.htm>`_ is widely used to exchange hyperspectral data. However, it only supports data of up to three dimensions. It can be used to exchange data with Bruker and `Lispix <http://www.nist.gov/lispix/>`_. Used in combination with the :ref:`import-rpl` it is very useful for exporting data to Gatan's Digital Micrograph.
+This `open standard format
+<http://www.nist.gov/lispix/doc/image-file-formats/raw-file-format.htm>`_ is
+widely used to exchange hyperspectral data. However, it only supports data of
+up to three dimensions. It can be used to exchange data with Bruker and `Lispix
+<http://www.nist.gov/lispix/>`_. Used in combination with the :ref:`import-rpl`
+it is very useful for exporting data to Gatan's Digital Micrograph.
 
-The default encoding is latin-1. It is possible to set a different encoding using the encoding argument, e.g.:
+The default encoding is latin-1. It is possible to set a different encoding
+using the encoding argument, e.g.:
 
 .. code-block:: python
 
@@ -281,16 +311,16 @@ us aware of the problem.
 FEI TIA ser and emi
 -------------------
 
-Hyperspy can read ``ser`` and ``emi`` files but again the reading features are
-not complete (and probably they will never be because it is not an open
-standard format). That said we know that this is an important feature and if
-loading a particular ser or emi file fails for you, please report it as an
-issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make us
-aware of the problem.
+Hyperspy can read ``ser`` and ``emi`` files but the reading features are not
+complete (and probably they will be unless FEI releases the specifications of
+the format). That said we know that this is an important feature and if loading
+a particular ser or emi file fails for you, please report it as an issue in the
+`issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make us aware of the
+problem.
 
 Hyperspy (unlike TIA) can read data directly from the ``.ser`` files. However,
-by doing so, the experiment information that is stored in the emi file is lost.
-Therefore it is reccommend to load using the ``.emi`` file.
+by doing so, the information that is stored in the emi file is lost.
+Therefore strongly reccommend to load using the ``.emi`` file instead.
 
 When reading an ``.emi`` file if there are several ``.ser`` files associated
 with it, all of them will be read and returned as a list.
