@@ -431,11 +431,25 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     del header_parameters['Array']
     original_parameters['ser_header_parameters'] = header_parameters
     dictionary = {
-    'data' : dc,
-    'mapped_parameters' : {
-                            'original_filename' : os.path.split(filename)[1],
-                            'record_by' : record_by,
-                            'signal_type' : "",},
-    'axes' : axes,
-    'original_parameters' : original_parameters}
+        'data' : dc,
+        'mapped_parameters' : {'original_filename' : os.path.split(filename)[1],
+                               'record_by' : record_by,
+                               'signal_type' : "",},
+        'axes' : axes,
+        'original_parameters' : original_parameters,
+        'mapping' : mapping}
     return dictionary
+
+def get_mode(mode):
+    if "STEM" in mode:
+        return "STEM"
+    else:
+        return "TEM"
+
+
+mapping = {                                                                    
+    "ObjectInfo.ExperimentalDescription.High_tension_kV" : ("TEM.beam_voltage", None),
+    "ObjectInfo.ExperimentalDescription.Emission_uA" : ("TEM.beam_intensity", None),                  
+    "ObjectInfo.ExperimentalDescription.Microscope" : ("TEM.microscope", None),                  
+    "ObjectInfo.ExperimentalDescription.Mode" : ("TEM.mode", get_mode),                  
+    }    
