@@ -2398,11 +2398,16 @@ class Signal(MVA,
             navigator) or navigation_shape + signal_shape must be equal
             to the navigator_shape of the current object (for a dynamic
             navigator).
+            If the signal dtype is RGB or RGBA this parameters has no
+            effect and is always None.
 
         axes_manager : {None, axes_manager}
             If None `axes_manager` is used.
 
         """
+        if self.is_rgbx is True:
+            navigator = None
+
         if self._plot is not None:
             try:
                 self._plot.close()
@@ -3549,6 +3554,27 @@ class Signal(MVA,
             raise ValueError("`origin` must be one of: experiment, simulation" )
         self.mapped_parameters.signal_origin = origin
         self._assign_subclass()    
+
+    @property
+    def is_rgba(self):
+        if self.data.dtype == np.dtype({'names' :   ['R',  'G',  'B',  'A' ],                                    
+                                        'formats' : ['u1', 'u1', 'u1', 'u1']}):
+            return True
+        else:
+            return False
+    @property
+    def is_rgb(self):
+        if self.data.dtype == np.dtype({'names' :   ['R',  'G',  'B'],                                    
+                                        'formats' : ['u1', 'u1', 'u1']}):
+            return True
+        else:
+            return False
+    @property
+    def is_rgbx(self):
+        if self.is_rgb or self.is_rgba:
+            return True
+        else:
+            return False
 
         
 # Implement binary operators

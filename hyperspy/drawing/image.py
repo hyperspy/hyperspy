@@ -120,7 +120,7 @@ class ImagePlot:
                 factor = 1
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
 
-    def optimize_contrast(self, data, perc = 0.01):
+    def optimize_contrast(self, data, perc=0.01):
         dc = data.copy().ravel()
         if 'complex' in dc.dtype.name:
             dc = np.log(np.abs(dc))
@@ -160,13 +160,25 @@ class ImagePlot:
             self.ax.set_yticks([])
         self.ax.hspy_fig = self
 
+    def _get_data(self):
+        data = self.data_function()
+        if data.dtype == np.dtype({'names' :   ['R',  'G',  'B',  'A'],                        
+                                   'formats' : ['u1', 'u1', 'u1', 'u1']}):
+            dt = data.dtype.fields['B'][0]
+            data = data.view((dt, 4))
+
+        elif data.dtype == np.dtype({'names' :   ['R',  'G',  'B'],                        
+                                     'formats' : ['u1', 'u1', 'u1']}):
+            dt = data.dtype.fields['B'][0]
+            data = data.view((dt, 3))
+        return data
         
     def plot(self):
         self.configure()
         if not utils.does_figure_object_exists(self.figure):
             self.create_figure()
             self.create_axis()   
-        data = self.data_function()
+        data = self._get_data()
         if self.auto_contrast is True:
             self.optimize_contrast(data)
         if (not self.axes_manager or 
@@ -197,17 +209,18 @@ class ImagePlot:
         ims = self.ax.images
         if ims:
             ims.remove(ims[0])
-        data = self.data_function()
-        numrows, numcols = data.shape
-        def format_coord(x, y):
-            col = self.xaxis.value2index(x)
-            row = self.yaxis.value2index(y)
-            if col>=0 and col<numcols and row>=0 and row<numrows:
-                z = data[row,col]
-                return 'x=%1.4f, y=%1.4f, intensity=%1.4f'%(x, y, z)
-            else:
-                return 'x=%1.4f, y=%1.4f'%(x, y)
-        self.ax.format_coord = format_coord
+        data = self._get_data()
+        numrows, numcols = data.shape[:2]
+        if len(data.shape) == 2:
+            def format_coord(x, y):
+                col = self.xaxis.value2index(x)
+                row = self.yaxis.value2index(y)
+                if col>=0 and col<numcols and row>=0 and row<numrows:
+                    z = data[row,col]
+                    return 'x=%1.4f, y=%1.4f, intensity=%1.4f'%(x, y, z)
+                else:
+                    return 'x=%1.4f, y=%1.4f'%(x, y)
+            self.ax.format_coord = format_coord
         if auto_contrast is True or auto_contrast is None and\
             self.auto_contrast is True:
             self.optimize_contrast(data)
