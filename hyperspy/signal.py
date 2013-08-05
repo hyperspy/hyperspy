@@ -722,11 +722,15 @@ class Signal1DTools(object):
 
     def _remove_background_cli(self, signal_range, background_estimator):
         spectra = self.deepcopy()
-        for spectrum in spectra:
+        maxval = self.axes_manager.navigation_size
+        pbar = progressbar(maxval=maxval)
+        for index, spectrum in enumerate(spectra):
             spectrum._estimate_component_parameters(
                     signal_range, background_estimator)
             spectrum.data -= background_estimator.function(
                     spectrum.axes_manager.signal_axes[0].axis)
+            pbar.update(index)
+        pbar.finish()
         return(spectra)
 
     def remove_background(self, signal_range='interactive', background_type='PowerLaw'):
