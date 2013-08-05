@@ -54,7 +54,7 @@ from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
 from hyperspy.misc import spectrum_tools
-
+from hyperspy.misc import rgb_tools 
 
 class Signal2DTools(object):
     def estimate_shift2D(self, reference='current',
@@ -3557,25 +3557,13 @@ class Signal(MVA,
 
     @property
     def is_rgba(self):
-        if self.data.dtype == np.dtype({'names' :   ['R',  'G',  'B',  'A' ],                                    
-                                        'formats' : ['u1', 'u1', 'u1', 'u1']}):
-            return True
-        else:
-            return False
+        return rgb_tools.is_rgba(self.data)
     @property
     def is_rgb(self):
-        if self.data.dtype == np.dtype({'names' :   ['R',  'G',  'B'],                                    
-                                        'formats' : ['u1', 'u1', 'u1']}):
-            return True
-        else:
-            return False
+        return rgb_tools.is_rgb(self.data)
     @property
     def is_rgbx(self):
-        if self.is_rgb or self.is_rgba:
-            return True
-        else:
-            return False
-
+        return rgb_tools.is_rgbx(self.data)
         
 # Implement binary operators
 for name in (

@@ -28,6 +28,7 @@ from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
 from hyperspy.gui.tools import ImageContrastEditor
 from hyperspy.misc import math_tools
+from hyperspy.misc import rgb_tools
 
 class ImagePlot:
     """Class to plot an image with the necessary machinery to update
@@ -78,6 +79,7 @@ class ImagePlot:
         self.xaxis = None
         self.yaxis = None
         self.min_aspect = 0.1
+        self.is_rgbx = False
         
     def configure(self):
         xaxis = self.xaxis
@@ -160,25 +162,12 @@ class ImagePlot:
             self.ax.set_yticks([])
         self.ax.hspy_fig = self
 
-    def _get_data(self):
-        data = self.data_function()
-        if data.dtype == np.dtype({'names' :   ['R',  'G',  'B',  'A'],                        
-                                   'formats' : ['u1', 'u1', 'u1', 'u1']}):
-            dt = data.dtype.fields['B'][0]
-            data = data.view((dt, 4))
-
-        elif data.dtype == np.dtype({'names' :   ['R',  'G',  'B'],                        
-                                     'formats' : ['u1', 'u1', 'u1']}):
-            dt = data.dtype.fields['B'][0]
-            data = data.view((dt, 3))
-        return data
-        
     def plot(self):
         self.configure()
         if not utils.does_figure_object_exists(self.figure):
             self.create_figure()
             self.create_axis()   
-        data = self._get_data()
+        data = rgb_tools.rgbx2regular_array(self.data_function())
         if self.auto_contrast is True:
             self.optimize_contrast(data)
         if (not self.axes_manager or 
@@ -209,7 +198,7 @@ class ImagePlot:
         ims = self.ax.images
         if ims:
             ims.remove(ims[0])
-        data = self._get_data()
+        data = rgb_tools.rgbx2regular_array(self.data_function())
         numrows, numcols = data.shape[:2]
         if len(data.shape) == 2:
             def format_coord(x, y):
