@@ -605,6 +605,47 @@ class Signal1DTools(object):
                            crop=crop,
                            fill_value=fill_value)
                             
+    def integrate_in_range(self, signal_range='interactive'):
+        """ Sums the spectrum over an energy range, giving the integrated
+        area.
+
+        The energy range can either be selected through a GUI or the command line. 
+        If the GUI is used the integrated spectrum is returned in place, meaning the 
+        original spectrum is replaced. If a signal range is specific in the command line
+        a spectrum object will be returned.
+
+        Parameters
+        ----------
+        signal_range : tuple, optional
+            Specifies the energy range. If not specified the range has to be
+            set by using GUI.
+
+        Return
+        ------
+        signal
+
+        Example
+        -------
+        >>>> s.integrate_area() #use the gui, s is replaced with integrated spectrum
+        >>>> s.integrate_area(signal_range=(560,580)) #use command line, returns a spectrum
+
+        See also
+        --------
+        integrate_simpson 
+        """
+        if signal_range == 'interactive':
+            ia = IntegrateArea(self, signal_range)
+            ia.edit_traits()
+        else:
+            integrated_spectrum = self._integrate_in_range_commandline(signal_range)
+            return(integrated_spectrum)
+
+    def _integrate_in_range_commandline(self, signal_range):
+        e1 = float(signal_range[0])
+        e2 = float(signal_range[1])
+        integrated_spectrum = self[...,e1:e2].integrate_simpson(-1)
+        return(integrated_spectrum)
+
     @only_interactive
     def calibrate(self):
         """Calibrate the spectral dimension using a gui.
@@ -3490,52 +3531,6 @@ class Signal(MVA,
         im._assign_subclass()
         return im
         
-    def integrate_in_range(self, signal_range='interactive'):
-        """ Sums the spectrum over an energy range, giving the integrated
-        area.
-
-        The energy range can either be selected through a GUI or the command line. 
-        If the GUI is used the integrated spectrum is returned in place, meaning the 
-        original spectrum is replaced. If a signal range is specific in the command line
-        a spectrum object will be returned.
-
-        Parameters
-        ----------
-        signal_range : tuple, optional
-            Specifies the energy range. If not specified the range has to be
-            set by using GUI.
-
-        Return
-        ------
-        signal
-
-        Example
-        -------
-        >>>> s.integrate_area() #use the gui, s is replaced with integrated spectrum
-        >>>> s.integrate_area(signal_range=(560,580)) #use command line, returns a spectrum
-
-        See also
-        --------
-        integrate_simpson 
-        """
-        if signal_range == 'interactive':
-            ia = IntegrateArea(self, signal_range)
-            ia.edit_traits()
-        else:
-            integrated_spectrum = self._integrate_in_range_commandline(signal_range)
-            return(integrated_spectrum)
-
-
-    def _integrate_in_range_commandline(self, signal_range):
-        signal_axis_name = self.axes_manager.signal_axes[0].name 
-        e1 = float(signal_range[0])
-        e2 = float(signal_range[1])
-        #Need to find some way to pass the right signal axis. Currently passing
-        #the name as shown here does not work. So the current version will (probably?)
-        #only work for line-scans.
-        #integrated_spectrum = self[...,e1:e2].integrate_simpson(signal_axis_name)
-        integrated_spectrum = self[...,e1:e2].integrate_simpson(1)
-        return(integrated_spectrum)
 
 
     def _assign_subclass(self):

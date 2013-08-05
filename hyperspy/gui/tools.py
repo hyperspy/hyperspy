@@ -818,8 +818,8 @@ class IntegrateArea(SpanSelectorInSpectrum):
                     self.ss_left_value,
                     self.ss_right_value)
                 )
-#        self.signal = integrated_spectrum
-        print(integrated_spectrum.data)
+        #Replaces the original signal inplace with the new integrated spectrum
+        self.signal.__init__(integrated_spectrum._to_dictionary())
         
     def apply(self):
         self._integrate_fired()
