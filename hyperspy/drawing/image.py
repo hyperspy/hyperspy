@@ -79,7 +79,6 @@ class ImagePlot:
         self.xaxis = None
         self.yaxis = None
         self.min_aspect = 0.1
-        self.is_rgbx = False
         
     def configure(self):
         xaxis = self.xaxis
@@ -167,7 +166,10 @@ class ImagePlot:
         if not utils.does_figure_object_exists(self.figure):
             self.create_figure()
             self.create_axis()   
-        data = rgb_tools.rgbx2regular_array(self.data_function())
+        data = self.data_function()
+        if rgb_tools.is_rgbx(data):
+            self.plot_colorbar = False
+            data = rgb_tools.rgbx2regular_array(data)
         if self.auto_contrast is True:
             self.optimize_contrast(data)
         if (not self.axes_manager or 
