@@ -2543,9 +2543,12 @@ class Signal(MVA,
                 self.axes_manager.signal_dimension == 1):
                     navigator = "data"
             elif self.axes_manager.navigation_dimension > 0:
-                navigator = self
-                while navigator.axes_manager.signal_dimension > 0:
-                    navigator = navigator.sum(-1)
+                if self.axes_manager.signal_dimension == 0:                                           
+                    navigator = self.deepcopy()                                 
+                else:                                                           
+                    navigator = self 
+                    while navigator.axes_manager.signal_dimension > 0:
+                        navigator = navigator.sum(-1)
                 if navigator.axes_manager.navigation_dimension == 1:
                     navigator = navigator.as_spectrum(0)
                 else:
