@@ -28,14 +28,14 @@ dm3_data_types = {
     5 :  '<c8', # 8 byte complex (packed)
     6 :  '<u1', # 1 byte integer unsigned ("byte")
     7 :  '<i4', # 4 byte integer signed ("long")
-    8 : np.dtype([('B', 'u1'), ('G', 'u1'), ('R', 'u1'), ('A', 'u1')]),
+    8 : np.dtype([('R', 'u1'), ('G', 'u1'), ('B', 'u1'), ('A', 'u1')]),
     9 :  '<i1', # byte integer signed
     10 : '<u2', # 2 byte integer unsigned
     11 : '<u4', # 4 byte integer unsigned
     12 : '<f8', # 8 byte real
     13 : '<c16', # byte complex
     14 : 'bool', # 1 byte binary (ie 0 or 1)
-    23 : np.dtype([('B', 'u1'), ('G', 'u1'), ('R', 'u1'), ('A', 'u1')]),
+    23 : np.dtype([('R', 'u1'), ('G', 'u1'), ('B', 'u1'), ('A', 'u1')]),
     }
 
 dm4_data_types = {
@@ -45,14 +45,14 @@ dm4_data_types = {
     5 :  '<c8', # 8 byte complex (packed)
     6 :  '<u1', # 1 byte integer unsigned ("byte")
     7 :  '<i4', # 4 byte integer signed ("long")
-    8 : np.dtype([('B', 'u1'), ('G', 'u1'), ('R', 'u1'), ('A', 'u1')]),
+    8 : np.dtype([('R', 'u1'), ('G', 'u1'), ('B', 'u1'), ('A', 'u1')]),
     9 :  '<i1', # byte integer signed
     10 : '<u2', # 2 byte integer unsigned
     11 : '<u4', # 4 byte integer unsigned
     12 : '<f8', # 8 byte real
     13 : '<c16', # byte complex
     14 : 'bool', # 1 byte binary (ie 0 or 1)
-    23 : np.dtype([('B', 'u1'), ('G', 'u1'), ('R', 'u1'), ('A', 'u1')]),
+    23 : np.dtype([('R', 'u1'), ('G', 'u1'), ('B', 'u1'), ('A', 'u1')]),
     27 : 'complex64', # not numpy: 8-Byte packed complex (FFT data)                           
     28 : 'complex128', # not numpy: 16-Byte packed complex (FFT data)
     }

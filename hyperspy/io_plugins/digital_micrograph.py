@@ -24,7 +24,9 @@ from __future__ import with_statement #for Python versions < 2.6
 from __future__ import division
 
 import os
+
 import numpy as np
+import traits.api as t
 
 from hyperspy.misc.io.utils_readfile import *
 from hyperspy.exceptions import *
@@ -523,6 +525,19 @@ class ImageObject(object):
                       if dimension[1].Units else ""
                       for dimension in dimensions])[::-1]
     @property
+    def names(self):
+        names = [t.Undefined] * len(self.shape)
+        indices = range(len(self.shape))
+        if self.signal_type == "EELS":
+            if "eV" in self.units:
+                names[indices.pop(self.units.index("eV"))] = "Energy loss"
+        elif self.signal_type in ("EDS", "EDX"):
+            if "keV" in self.units:
+                names[indices.pop(self.units.index("keV"))] = "Energy"
+        for index, name in zip(indices[::-1], ("x", "y", "z")):
+            names[index] = name
+        return names
+    @property
     def title(self):
         if "Name" in self.imdict:
             return self.imdict.Name
@@ -627,8 +642,13 @@ class ImageObject(object):
             return self.unpack_new_packed_complex(data)
         elif self.imdict.ImageData.DataType == 5: # Old packed compled
             return self.unpack_packed_complex(data)
-        else:
-            return data.reshape(self.shape, order=self.order)
+        elif self.imdict.ImageData.DataType in (8, 23): # ABGR
+            # Reorder the fields
+            data = np.hstack((data[["B", "G", "R"]].view(("u1", 3))[...,::-1],
+                data["A"].reshape(-1,1))).view(
+                        {"names" : ("R", "G", "B", "A"),
+                         "formats" : ("u1",)*4}).copy()
+        return data.reshape(self.shape, order=self.order)
 
     def unpack_new_packed_complex(self, data):
         packed_shape = (self.shape[0], int(self.shape[1] / 2 + 1))
@@ -704,14 +724,15 @@ class ImageObject(object):
         return data
         
     def get_axes_dict(self):
-        return [{
+        return [{'name' : name,
                  'size' : size, 
                  'index_in_array' : i ,
                  'scale': scale,
                  'offset' : offset,
                  'units' : unicode(units),} \
-                 for i, (size, scale, offset, units) in enumerate(
-                     zip(self.shape, self.scales, self.offsets, self.units))]
+                 for i, (name, size, scale, offset, units) in enumerate(
+                     zip(self.names, self.shape, self.scales, self.offsets,
+                         self.units))]
     
     def get_mapped_parameters(self, mapped_parameters={}):             
         mapped_parameters['title'] = self.title
@@ -725,7 +746,7 @@ mapping = {
         "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector.exposure_s" : ("TEM.dwell_time", None),
         "ImageList.TagGroup0.ImageTags.Microscope_Info.Voltage" : ("TEM.beam_energy", lambda x: x/1e3)
         }
-def file_reader(filename, record_by=None, order=None):
+def file_reader(filename, record_by=None, order=None, verbose=False):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
@@ -740,7 +761,7 @@ def file_reader(filename, record_by=None, order=None):
     """
          
     with open(filename, "r") as f:
-        dm = DigitalMicrographReader(f)
+        dm = DigitalMicrographReader(f, verbose=verbose)
         dm.parse_file()
         images = [ImageObject(imdict, f, order=order, record_by=record_by)
                   for imdict in dm.get_image_dictionaries()]
