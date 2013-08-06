@@ -17,7 +17,9 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import struct
+from glob import glob
 import os
+import xml.etree.ElementTree as ET
 try:
     from collections import OrderedDict
     ordict = True
@@ -28,7 +30,7 @@ import numpy as np
 import traits.api as t
 
 from hyperspy.misc.array_tools import sarray2dict
-from hyperspy.misc.io import xmlreader
+from hyperspy.misc.utils import DictionaryBrowser
 
 ser_extensions = ('ser', 'SER')
 emi_extensions = ('emi', 'EMI')
@@ -192,32 +194,65 @@ def guess_record_by(record_by_id):
         return 'spectrum'
     else:
         return 'image'
+
+def parse_ExperimentalDescription(et, dictree):
+    dictree.add_node(et.tag)
+    dictree = dictree[et.tag]
+    for data in et.find("Root").findall("Data"):
+        label = data.find("Label").text
+        value = data.find("Value").text
+        units = data.find("Unit").text
+        item = label if not units else label+"_%s" % units
+        value = float(value) if units else value
+        dictree[item] = value
         
-def emi_reader(filename, dump_xml = False, **kwds):
+def parse_TrueImageHeaderInfo(et, dictree):
+    dictree.add_node(et.tag)
+    dictree = dictree[et.tag]
+    et = ET.fromstring(et.text)
+    for data in et.findall("Data"):
+        dictree[data.find("Index").text] = float(data.find("Value").text)
+    
+
+def emixml2dtb(et, dictree):
+    if et.tag == "ExperimentalDescription":
+        parse_ExperimentalDescription(et, dictree)
+        return
+    elif et.tag == "TrueImageHeaderInfo":
+        parse_TrueImageHeaderInfo(et, dictree)
+        return
+    if et.text:
+        dictree[et.tag] = et.text
+        return
+    else:
+        dictree.add_node(et.tag)
+        for child in et:
+            emixml2dtb(child, dictree[et.tag])
+        
+def emi_reader(filename, dump_xml=False, verbose=False, **kwds):
     # TODO: recover the tags from the emi file. It is easy: just look for 
     # <ObjectInfo> and </ObjectInfo>. It is standard xml :)
     objects = get_xml_info_from_emi(filename)
     filename = os.path.splitext(filename)[0]
     if dump_xml is True:
-        i = 1
-        for obj in objects:
-            f = open(filename + '-object-%s.xml' % i, 'w')
-            f.write(obj)
-            f.close()
-            i += 1
-    from glob import glob
-    ser_files = glob(filename + '_*.ser')
+        for i, obj in enumerate(objects):
+            with open(filename + '-object-%s.xml' % i, 'w') as f:
+                f.write(obj)
     
+    ser_files = glob(filename + '_[0-9].ser')
     sers = []
     for f in ser_files:
-        print "Opening ", f
+        if verbose is True:
+            print "Opening ", f
         try:
             sers.append(ser_reader(f, objects))
-        except:
-            "The file could not be read. This version of Hyperspy cannot read "
-            "single spectra stored in FEI's format. If you think that this file"
-            " does not contain a single spectrum file please fill a bug report "
-            "to help us improve the IO functionalities of Hyperspy"
+        except IOError: # Probably a single spectrum that we don't support
+            continue
+
+        index = int(os.path.splitext(f)[0].split("_")[-1]) - 1    
+        op = DictionaryBrowser(sers[-1]['original_parameters'])
+        emixml2dtb(ET.fromstring(objects[index]), op)
+        sers[-1]['original_parameters'] = op.as_dictionary()
     return sers
     
 def file_reader(filename, *args, **kwds):
@@ -227,40 +262,50 @@ def file_reader(filename, *args, **kwds):
     elif ext in emi_extensions:
         return emi_reader(filename, *args, **kwds)
             
-def load_ser_file(filename, print_info = False):
-    print "Opening the file: ", filename
-    file = open(filename,'rb')
-    header = np.fromfile(file, dtype = np.dtype(get_header_dtype_list(file)), 
-    count = 1)
-    if print_info is True:
-        print "Extracting the information"
-        print "\n"
-        print "Header info:"
-        print "------------"
-        print_struct_array_values(header[0])
-    data_offsets = header['Data_Offsets'][0]
-    try:
-        data_offsets = data_offsets[0]
-    except:
-        pass
-    data_dtype_list = get_data_dtype_list(file, data_offsets, 
-    guess_record_by(header['DataTypeID']))
-    tag_dtype_list =  get_data_tag_dtype_list(header['TagTypeID'])
-    file.seek(data_offsets)
-    data = np.fromfile(file, dtype=np.dtype(data_dtype_list + tag_dtype_list), 
-    count = header["TotalNumberElements"])
-    if print_info is True:
-        print "\n"
-        print "Data info:"
-        print "----------"
-        print_struct_array_values(data[0])
-    file.close()
+def load_ser_file(filename, verbose=False):
+    if verbose:
+        print "Opening the file: ", filename
+    with open(filename,'rb') as f:
+        header = np.fromfile(f,
+                             dtype=np.dtype(get_header_dtype_list(f)), 
+                             count=1)
+        if verbose is True:
+            print "Extracting the information"
+            print "\n"
+            print "Header info:"
+            print "------------"
+            print_struct_array_values(header[0])
+        
+        if header['ValidNumberElements'] == 0:
+            raise IOError(
+                "The file does not contains valid data" 
+                "If it is a single spectrum, the data is contained in the  "
+                ".emi file but Hyperspy cannot currently extract this information.")
+                
+        data_offsets = header['Data_Offsets'][0]
+        try:
+            data_offsets = data_offsets[0]
+        except:
+            pass
+        data_dtype_list = get_data_dtype_list(
+                f,
+                data_offsets,
+                guess_record_by(header['DataTypeID']))
+        tag_dtype_list =  get_data_tag_dtype_list(header['TagTypeID'])
+        f.seek(data_offsets)
+        data = np.fromfile(f,
+                           dtype=np.dtype(data_dtype_list + tag_dtype_list), 
+                           count=header["TotalNumberElements"])
+        if verbose is True:
+            print "\n"
+            print "Data info:"
+            print "----------"
+            print_struct_array_values(data[0])
     return header, data
     
 def get_xml_info_from_emi(emi_file):
-    f = open(emi_file, 'rb')
-    tx = f.read()
-    f.close()
+    with open(emi_file, 'rb') as f:
+        tx = f.read()
     objects = []
     i_start = 0
     while i_start != -1:
@@ -270,12 +315,13 @@ def get_xml_info_from_emi(emi_file):
         objects.append(tx[i_start:i_end + 13]) 
     return objects[:-1]
     
-def ser_reader(filename, objects = None, *args, **kwds):
+def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     """Reads the information from the file and returns it in the Hyperspy 
-    required format"""
-    # Determine if it is an emi or a ser file.
+    required format.
     
-    header, data = load_ser_file(filename)
+    """
+    
+    header, data = load_ser_file(filename, verbose=verbose)
     record_by = guess_record_by(header['DataTypeID'])
     axes = []
     ndim = int(header['NumberDimensions'])
@@ -283,7 +329,7 @@ def ser_reader(filename, objects = None, *args, **kwds):
         array_shape = [None,] * int(ndim)
         i_array = range(ndim)
         if len(data['PositionY']) > 1 and \
-        (data['PositionY'][0] == data['PositionY'][1]):
+                (data['PositionY'][0] == data['PositionY'][1]):
             # The spatial dimensions are stored in the reversed order
             # We reverse the shape
             i_array.reverse()
@@ -323,7 +369,17 @@ def ser_reader(filename, objects = None, *args, **kwds):
         array_shape.append(data['ArrayLength'][0])
         
     elif record_by == 'image':
-        array_shape = [None,] * int(ndim - 1)
+        array_shape = []
+        # Extra dimensions
+        for i in xrange(ndim):
+            if header['Dim-%i_DimensionSize' % (i + 1)][0] != 1: 
+                axes.append({
+                'offset' : header['Dim-%i_CalibrationOffset' % (i + 1)][0],
+                'scale' : header['Dim-%i_CalibrationDelta' % (i + 1)][0],
+                'units' : header['Dim-%i_Units' % (i + 1)][0],
+                'size' : header['Dim-%i_DimensionSize' % (i + 1)][0],
+                })
+            array_shape.append(header['Dim-%i_DimensionSize' % (i + 1)][0])
         # Y axis
         axes.append({
             'name' : 'y',
@@ -332,7 +388,6 @@ def ser_reader(filename, objects = None, *args, **kwds):
             'scale' : data['CalibrationDeltaY'][0],
             'units' : 'Unknown',
             'size' : data['ArraySizeY'][0],
-            'index_in_array' : ndim - 1
             })
         array_shape.append(data['ArraySizeY'][0])
         
@@ -343,20 +398,10 @@ def ser_reader(filename, objects = None, *args, **kwds):
             data['CalibrationElementX'][0] * data['CalibrationDeltaX'][0],
             'scale' : data['CalibrationDeltaX'][0],
             'size' : data['ArraySizeX'][0],
-            'index_in_array' : ndim
             })
         array_shape.append(data['ArraySizeX'][0])
         
-        # Extra dimensions
-        for i in xrange(ndim - 1):
-            axes.append({
-            'offset' : header['Dim-%i_CalibrationOffset' % i + 1][0],
-            'scale' : header['Dim-%i_CalibrationDelta' % i + 1][0],
-            'units' : header['Dim-%i_Units' % i + 1][0],
-            'size' : header['Dim-%i_DimensionSize' % i + 1][0],
-            'index_in_array' : ndim - 1 -i
-            })
-            array_shape.append(header['Dim-%i_DimensionSize' % i + 1][0])
+
 
     # If the acquisition stops before finishing the job, the stored file will 
     # report the requested size even though no values are recorded. Therefore if
@@ -378,27 +423,33 @@ def ser_reader(filename, objects = None, *args, **kwds):
     if ordict:
         original_parameters = OrderedDict()
     else:
-        print("\nWARNING:")
-        print("FEI plugin")
-        print("OrderedDict is not available, using a standard dictionary.\n")
         original_parameters = {}
     header_parameters = sarray2dict(header)
     sarray2dict(data, header_parameters)
-    if objects is not None:
-        i = 0
-        for obj in objects:
-            original_parameters['emi_xml%i' % i] = xmlreader.readConfig(obj)
-            
     
     # We remove the Array key to save memory avoiding duplication
     del header_parameters['Array']
     original_parameters['ser_header_parameters'] = header_parameters
     dictionary = {
-    'data' : dc,
-    'mapped_parameters' : {
-                            'original_filename' : os.path.split(filename)[1],
-                            'record_by' : record_by,
-                            'signal_type' : "",},
-    'axes' : axes,
-    'original_parameters' : original_parameters}
+        'data' : dc,
+        'mapped_parameters' : {'original_filename' : os.path.split(filename)[1],
+                               'record_by' : record_by,
+                               'signal_type' : "",},
+        'axes' : axes,
+        'original_parameters' : original_parameters,
+        'mapping' : mapping}
     return dictionary
+
+def get_mode(mode):
+    if "STEM" in mode:
+        return "STEM"
+    else:
+        return "TEM"
+
+
+mapping = {                                                                    
+    "ObjectInfo.ExperimentalDescription.High_tension_kV" : ("TEM.beam_voltage", None),
+    "ObjectInfo.ExperimentalDescription.Emission_uA" : ("TEM.beam_intensity", None),                  
+    "ObjectInfo.ExperimentalDescription.Microscope" : ("TEM.microscope", None),                  
+    "ObjectInfo.ExperimentalDescription.Mode" : ("TEM.mode", get_mode),                  
+    }    
