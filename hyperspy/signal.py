@@ -748,7 +748,7 @@ class Signal1DTools(object):
             spectrum._estimate_component_parameters(
                     signal_range, background_estimator)
             spectrum.data -= background_estimator.function(
-                    spectrum.axes_manager.signal_axes[0].axis)
+                    spectrum.axes_manager.signal_axes[0].axis).astype(spectra.data.dtype)
             pbar.update(index)
         pbar.finish()
         return(spectra)
