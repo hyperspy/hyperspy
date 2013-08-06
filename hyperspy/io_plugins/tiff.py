@@ -69,11 +69,17 @@ def file_writer(filename, signal, **kwds):
     data = signal.data
     if signal.is_rgbx is True:
         data = rgb_tools.rgbx2regular_array(data)
+        photometric = "rgb"
+    else:
+        photometric = "minisblack"
     if description not in kwds:
         if signal.mapped_parameters.title:
             kwds['description'] = signal.mapped_parameters.title
 
-    imsave(filename, data, software="hyperspy", **kwds)
+    imsave(filename, data,
+            software="hyperspy",
+            photometric=photometric,
+            **kwds)
     
 def file_reader(filename, record_by='image',**kwds):
     '''Read data from tif files using Christoph Gohlke's tifffile
