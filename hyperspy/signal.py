@@ -730,23 +730,16 @@ class Signal1DTools(object):
         else:
             smoother.edit_traits()
     
-    def _estimate_component_parameters(self, signal_range, component):
-        """Estimates parameters of a component for the current spectrum."""
-        left_value = signal_range[0]
-        right_value = signal_range[1]
-        component.estimate_parameters(
-                self, 
-                left_value, 
-                right_value, 
-                only_current=True)
-
     def _remove_background_cli(self, signal_range, background_estimator):
         spectra = self.deepcopy()
         maxval = self.axes_manager.navigation_size
         pbar = progressbar(maxval=maxval)
         for index, spectrum in enumerate(spectra):
-            spectrum._estimate_component_parameters(
-                    signal_range, background_estimator)
+            background_estimator.estimate_parameters(
+                    self, 
+                    signal_range[0], 
+                    signal_range[1], 
+                    only_current=True)
             spectrum.data -= background_estimator.function(
                     spectrum.axes_manager.signal_axes[0].axis).astype(spectra.data.dtype)
             pbar.update(index)
