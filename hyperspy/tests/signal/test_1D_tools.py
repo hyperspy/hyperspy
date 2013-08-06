@@ -22,6 +22,7 @@ import numpy as np
 
 from nose.tools import assert_true, assert_equal, assert_not_equal
 from hyperspy._signals.spectrum import Spectrum
+from hyperspy.hspy import *
 
 class TestAlignTools:
     def setUp(self):
@@ -87,6 +88,22 @@ class TestAlignTools:
         # Check that the calibration is correct
         assert_equal(s.axes_manager._axes[1].offset, self.new_offset)
         assert_equal(s.axes_manager._axes[1].scale, self.scale)
+
+class TestShift1D():
+    def setUp(self):
+        self.s = Spectrum(np.arange(10))
+        self.s.axes_manager[0].scale = 0.2
+    def test_crop_left(self):
+        s = self.s
+        s.shift1D(np.array((0.01)), crop=True)
+        assert_equal(tuple(s.axes_manager[0].axis), tuple(np.arange(0.2,2.,0.2)))
+    def test_crop_right(self):
+        s = self.s
+        s.shift1D(np.array((-0.01)), crop=True)
+        assert_equal(tuple(s.axes_manager[0].axis), tuple(np.arange(0.,1.8,0.2)))
+
+
+
         
 class TestFindPeaks1D:
     def setUp(self):
@@ -132,6 +149,40 @@ class TestInterpolateInBetween:
         assert_true((s.data == np.arange(40).reshape(2,20)).all())
         
 
-        
-        
+class TestEstimatePeakWidth():
+    def setUp(self):
+        scale = 0.1
+        window = 2
+        x = np.arange(-window, window, scale)
+        g = components.Gaussian()
+        s = signals.Spectrum(g.function(x))
+        s.axes_manager[-1].scale = scale
+        self.s = s
+
+    def test_full_range(self):
+        width, left, right = self.s.estimate_peak_width(
+                window=None,
+                return_interval=True)
+        assert_equal(width, 2.35482074)
+        assert_equal(left, 0.82258963)
+        assert_equal(right, 3.17741037)
+
+    def test_too_narrow_range(self):
+        width, left, right = self.s.estimate_peak_width(
+                window=2.2,
+                return_interval=True)
+        assert_equal(width, np.nan)
+        assert_equal(left, np.nan)
+        assert_equal(right, np.nan)
+    
+    def test_two_peaks(self):
+        s = self.s.deepcopy()
+        s.shift1D(np.array([0.5]))
+        self.s += s
+        width, left, right = self.s.estimate_peak_width(
+                window=None,
+                return_interval=True)
+        assert_equal(width, np.nan)
+        assert_equal(left, np.nan)
+        assert_equal(right, np.nan)
 

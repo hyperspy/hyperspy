@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import numpy as np
-import scipy.interpolate
 import matplotlib.pyplot as plt
 import traits.api as t
 
@@ -399,61 +397,6 @@ class EELSSpectrum(Spectrum):
                 self.tmp_parameters.extension
         return s
                 
-                
-    def estimate_FWHM(self, factor=0.5, energy_range=(-10.,10.),
-                      der_roots=False):
-        """Use a third order spline interpolation to estimate the FWHM 
-        of a peak at the current position.
-        
-        Parameters:
-        -----------
-        factor : float < 1
-            By default is 0.5 to give FWHM. Choose any other float to 
-            give find the position of a different fraction of the peak.
-        energy_range : tuple of floats
-            energy interval containing the peak.
-        der_roots: bool
-            If True, compute the roots of the first derivative
-            (2 times slower).  
-        
-        Returns:
-        --------
-        dictionary. Keys:
-            'FWHM' : float
-                 width, at half maximum or other fraction as choosen by
-            `factor`. 
-            'FWHM_E' : tuple of floats
-                Coordinates in energy units of the FWHM points.
-            'der_roots' : tuple
-                Position in energy units of the roots of the first
-                derivative if der_roots is True (False by default)
-                                
-        """
-        # TODO: make it work for ndimensions
-        self._check_signal_dimension_equals_one()
-        axis = self.axes_manager.signal_axes[0]
-        i0, i1 = (axis.value2index(energy_range[0]), 
-                  axis.value2index(energy_range[1]))
-        data = self()[i0:i1]
-        x = axis.axis[i0:i1]
-        height = np.max(data)
-        spline_fwhm = scipy.interpolate.UnivariateSpline(
-                            x, data - factor * height)
-        pair_fwhm = spline_fwhm.roots()[0:2]
-        fwhm = pair_fwhm[1] - pair_fwhm[0]
-        
-        if der_roots:
-            der_x = np.arange(x[0], x[-1] + 1, (x[1] - x[0]) * 0.2)
-            derivative = spline_fwhm(der_x, 1)
-            spline_der = scipy.interpolate.UnivariateSpline(der_x,
-                derivative)
-            return {'FWHM' : fwhm,
-                     'pair' : pair_fwhm, 
-                     'der_roots': spline_der.roots()}
-        else:
-            return {'FWHM' : fwhm,
-                     'FWHM_E' : pair_fwhm}
-                     
     def fourier_log_deconvolution(self,
                                   zlp,
                                   add_zlp=False,
@@ -585,7 +528,7 @@ class EELSSpectrum(Spectrum):
         
         axis = ll.axes_manager.signal_axes[0]
         if fwhm is None:
-            fwhm = ll.estimate_FWHM()['FWHM']
+            fwhm = float(ll.get_current_signal().estimate_peak_width()())
             print("FWHM = %1.2f" % fwhm) 
 
         I0 = ll.estimate_elastic_scattering_intensity(
