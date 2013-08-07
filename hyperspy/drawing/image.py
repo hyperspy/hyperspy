@@ -28,8 +28,9 @@ from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
 from hyperspy.gui.tools import ImageContrastEditor
 from hyperspy.misc import math_tools
+from hyperspy.drawing.figure import BlittedFigure
 
-class ImagePlot:
+class ImagePlot(BlittedFigure):
     """Class to plot an image with the necessary machinery to update
     the image when the coordinates of an AxesManager change.
     
@@ -173,11 +174,13 @@ class ImagePlot:
             self.axes_manager.navigation_size==0):
             self.plot_indices = False
         if self.plot_indices is True:
-            self._text = self.ax.text(*self._text_position,
+            self._text = self.ax.text(
+                            *self._text_position,
                             s=str(self.axes_manager.indices),
                             transform = self.ax.transAxes,
                             fontsize=12,
-                            color='red')
+                            color='red',
+                            animated=True)
         self.update()
         if self.plot_scalebar is True:
             if self.pixel_units is not None:
@@ -187,6 +190,8 @@ class ImagePlot:
                  
         if self.plot_colorbar is True:
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
+            self._colorbar.ax.yaxis.set_animated(True)
+
         
         self.figure.canvas.draw()
         if hasattr(self.figure, 'tight_layout'):
@@ -212,21 +217,21 @@ class ImagePlot:
             self.optimize_contrast(data)
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
-        
-
+        if self.plot_indices is True:
+            self._text.set_text((self.axes_manager.indices))        
         if ims:
             ims[0].set_data(data)
             ims[0].autoscale()
+            self._draw_animated()
         else:
             self.ax.imshow(data,
                            interpolation='nearest',
                            vmin=self.vmin, 
                            vmax=self.vmax,
                            extent=self._extent,
-                           aspect=self._aspect)
-        if self.plot_indices is True:
-            self._text.set_text((self.axes_manager.indices))
-        self.figure.canvas.draw()
+                           aspect=self._aspect,
+                           animated=True)
+            self.figure.canvas.draw()
         
     def _update(self):
         # This "wrapper" because on_trait_change fiddles with the 
@@ -289,21 +294,3 @@ class ImagePlot:
         self.disconnect()
         if utils.does_figure_object_exists(self.figure) is True:
             plt.close(self.figure)
-            
-    def _on_draw(self, *args):
-        canvas = self.figure.canvas
-        self._background = canvas.copy_from_bbox(self.figure.bbox)
-        self._draw_animated()
-        
-    def _draw_animated(self):
-        canvas = self.ax.figure.canvas
-        canvas.restore_region(self._background)
-        ax = self.ax
-        artists = []
-        artists.extend(ax.collections)
-        artists.extend(ax.patches)
-        artists.extend(ax.lines)
-        artists.extend(ax.texts)
-        artists.extend(ax.artists)
-        [ax.draw_artist(a) for a in artists if a.get_animated()]
-        canvas.blit()
