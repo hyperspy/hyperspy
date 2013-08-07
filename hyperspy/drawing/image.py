@@ -195,8 +195,7 @@ class ImagePlot:
         
     def update(self, auto_contrast=None):
         ims = self.ax.images
-        if ims:
-            ims.remove(ims[0])
+
         data = self.data_function()
         numrows, numcols = data.shape
         def format_coord(x, y):
@@ -213,13 +212,18 @@ class ImagePlot:
             self.optimize_contrast(data)
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
-            
-        self.ax.imshow(data,
-                       interpolation='nearest',
-                       vmin=self.vmin, 
-                       vmax=self.vmax,
-                       extent=self._extent,
-                       aspect=self._aspect)
+        
+
+        if ims:
+            ims[0].set_data(data)
+            ims[0].autoscale()
+        else:
+            self.ax.imshow(data,
+                           interpolation='nearest',
+                           vmin=self.vmin, 
+                           vmax=self.vmax,
+                           extent=self._extent,
+                           aspect=self._aspect)
         if self.plot_indices is True:
             self._text.set_text((self.axes_manager.indices))
         self.figure.canvas.draw()
