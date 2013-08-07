@@ -218,8 +218,8 @@ class ImagePlot(BlittedFigure):
             else:
                 return 'x=%1.4f, y=%1.4f'%(x, y)
         self.ax.format_coord = format_coord
-        if auto_contrast is True or auto_contrast is None and\
-            self.auto_contrast is True:
+        if (auto_contrast is True or 
+            auto_contrast is None and self.auto_contrast is True):
             self.optimize_contrast(data)
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
@@ -227,7 +227,8 @@ class ImagePlot(BlittedFigure):
             self._text.set_text((self.axes_manager.indices))        
         if ims:
             ims[0].set_data(data)
-            ims[0].autoscale()
+            ims[0].norm.vmax, ims[0].norm.vmin = self.vmax, self.vmin
+            ims[0].changed()
             self._draw_animated()
         else:
             self.ax.imshow(data,
