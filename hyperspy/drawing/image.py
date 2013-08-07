@@ -204,9 +204,15 @@ class ImagePlot(BlittedFigure):
         data = self.data_function()
         numrows, numcols = data.shape
         def format_coord(x, y):
-            col = self.xaxis.value2index(x)
-            row = self.yaxis.value2index(y)
-            if col>=0 and col<numcols and row>=0 and row<numrows:
+            try:
+                col = self.xaxis.value2index(x)
+            except ValueError: # out of axes limits
+                col = -1
+            try:    
+                row = self.yaxis.value2index(y)
+            except ValueError:
+                row = -1
+            if col>=0 and row>=0:
                 z = data[row,col]
                 return 'x=%1.4f, y=%1.4f, intensity=%1.4f'%(x, y, z)
             else:
