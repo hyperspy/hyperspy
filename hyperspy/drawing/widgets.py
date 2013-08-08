@@ -208,11 +208,11 @@ class DraggableSquare(ResizebleDraggablePatch):
 
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'
-        xaxis = self.axes_manager.navigation_axes[0]
-        yaxis = self.axes_manager.navigation_axes[1]
-        wxindex = xaxis.value2index(event.xdata)
-        wyindex = yaxis.value2index(event.ydata)
         if self.picked is True and event.inaxes:
+            xaxis = self.axes_manager.navigation_axes[0]
+            yaxis = self.axes_manager.navigation_axes[1]
+            wxindex = xaxis.value2index(event.xdata)
+            wyindex = yaxis.value2index(event.ydata)
             wxindex = xaxis.value2index(event.xdata)
             wyindex = yaxis.value2index(event.ydata)
             if self.axes_manager.indices[1] != wyindex:
