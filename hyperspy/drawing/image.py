@@ -191,7 +191,6 @@ class ImagePlot(BlittedFigure):
         if self.plot_colorbar is True:
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
             self._colorbar.ax.yaxis.set_animated(True)
-
         
         self.figure.canvas.draw()
         if hasattr(self.figure, 'tight_layout'):
@@ -200,7 +199,7 @@ class ImagePlot(BlittedFigure):
         
     def update(self, auto_contrast=None):
         ims = self.ax.images
-
+        redraw_colorbar = False
         data = self.data_function()
         numrows, numcols = data.shape
         def format_coord(x, y):
@@ -220,7 +219,12 @@ class ImagePlot(BlittedFigure):
         self.ax.format_coord = format_coord
         if (auto_contrast is True or 
             auto_contrast is None and self.auto_contrast is True):
+            vmax, vmin = self.vmax, self.vmin
             self.optimize_contrast(data)
+            if vmax == vmin and self.vmax != self.vmin and ims:
+                redraw_colorbar = True
+                ims[0].autoscale()
+
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
         if self.plot_indices is True:
@@ -228,7 +232,12 @@ class ImagePlot(BlittedFigure):
         if ims:
             ims[0].set_data(data)
             ims[0].norm.vmax, ims[0].norm.vmin = self.vmax, self.vmin
-            ims[0].changed()
+            if redraw_colorbar is True:
+                ims[0].autoscale()
+                self._colorbar.draw_all()
+                self._colorbar.solids.set_animated(True)
+            else:
+                ims[0].changed()
             self._draw_animated()
         else:
             self.ax.imshow(data,
