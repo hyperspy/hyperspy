@@ -746,7 +746,11 @@ class Signal1DTools(object):
         pbar.finish()
         return(spectra)
 
-    def remove_background(self, signal_range='interactive', background_type='PowerLaw'):
+    def remove_background(
+            self, 
+            signal_range='interactive', 
+            background_type='PowerLaw',
+            polynomial_order = 2):
         """Remove the background, either in place using a gui or returned as a new
         spectrum using the command line.
         
@@ -758,8 +762,16 @@ class Signal1DTools(object):
             If tuple is given, the a spectrum will be returned.
         background_type : string
             The type of component which should be used to fit the background.
-            Possible components: PowerLaw, Gaussian
+            Possible components: PowerLaw, Gaussian, Offset, Polynomial
+            If Polynomial is used, the polynomial order can be specified
+        polynomial_order : int, default 2
+            Specify the polynomial order if a Polynomial background is used. 
             
+        Example
+        -------
+        >>>> s.remove_background() # Using gui, replaces spectrum s
+        >>>> s2 = s.remove_background(signal_range=(400,450), background_type='PowerLaw') #Using cli, returns a spectrum
+
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
@@ -774,6 +786,13 @@ class Signal1DTools(object):
                 background_estimator = components.PowerLaw()
             elif background_type == 'Gaussian':
                 background_estimator = components.Gaussian()
+            elif background_type == 'Offset':
+                background_estimator = components.Offset()
+            elif background_type == 'Polynomial':
+                background_estimator = components.Polynomial(polynomial_order)
+            else:
+                raise ValueError("Background type: " + background_type + " not recognized")
+
             spectra = self._remove_background_cli(
                     signal_range, background_estimator)
             return(spectra)
