@@ -9,6 +9,12 @@ rgba16 = np.dtype({'names' :   ['R',  'G',  'B',  'A' ],
                                         'formats' : ['u2', 'u2', 'u2', 'u2']})
 rgb16 =  np.dtype({'names' :   ['R',  'G',  'B'],          
                                         'formats' : ['u2', 'u2', 'u2']}) 
+rgb_dtypes = {
+        'rgb8' : rgb8,
+        'rgb16' : rgb16,
+        'rgba8' : rgba8,
+        'rgba16' : rgba16}
+
 def is_rgba(array):                                                          
     if array.dtype in (rgba8, rgba16):                    
         return True                                                         

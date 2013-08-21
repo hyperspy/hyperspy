@@ -3354,11 +3354,23 @@ class Signal(MVA,
     def change_dtype(self, dtype):
         """Change the data type
         
-        Parameters
-        ----------
-
-        dtype : str or dtype
-            Typecode or data-type to which the array is cast.
+        Parameters                                                              
+        ----------                                                              
+        dtype : str or dtype                                                    
+            Typecode or data-type to which the array is cast. In                
+            addition to all available numpy dtypes Hyperspy                     
+            supports four extra dtypes for RGB images:                          
+            rgb8, rgba8, rgb16 and rgba16. However, changing from               
+            and to any rgbx dtype is more constrained than most                 
+            other dtype conversions. To change to a rgbx dtype                  
+            the signal `record_by` must be "spectrum",                          
+            `signal_dimension` must be 3(4) for rgb(rgba) dtypes                
+            and the dtype must be uint8(uint16) for rgbx8(rgbx16).              
+            After conversion `record_by` becomes `image` and the                
+            spectra dimension is removed. The dtype of images of 
+            dtype rgbx8(rgbx16) can only be changed to uint8(uint16)
+            and the `record_by` becomes "spectrum".
+                 
             
         Example
         -------
@@ -3372,10 +3384,48 @@ class Signal(MVA,
         array([ 1.,  2.,  3.,  4.,  5.])
         
         """
-        
-        self.data = self.data.astype(dtype)
-        
-
+        if not isinstance(dtype, np.dtype):
+            if dtype in rgb_tools.rgb_dtypes:
+                if self.mapped_parameters.record_by != "spectrum":
+                    raise AttributeError("Only spectrum signals can be converted "
+                        "to RGB images.")
+                    if "rgba" in dtype:
+                        if self.axes_manager.signal_size != 4:
+                            raise AttributeError(
+                                "Only spectra with signal_size equal to 4 can be"
+                                "converted to RGBA images")
+                    else:
+                        if self.axes_manager.signal_size != 3:
+                            raise AttributeError(
+                                "Only spectra with signal_size equal to 3 can be"
+                                " converted to RGBA images")
+                if "8" in dtype and self.data.dtype.name != "uint8":
+                    raise AttributeError(
+                        "Only signals with dtype uint8 can be converted to rgb8 images")
+                elif "16" in dtype and self.data.dtype.name != "uint16":
+                    raise AttributeError(
+                        "Only signals with dtype uint16 can be converted to rgb16 images")
+                dtype = rgb_tools.rgb_dtypes[dtype]
+                self.data = rgb_tools.regular_array2rgbx(self.data)
+                self.axes_manager.remove(-1)
+                self.mapped_parameters.record_by = "image"
+                self._assign_subclass()
+                return
+            else:
+                dtype = np.dtype(dtype)
+        if rgb_tools.is_rgbx(self.data) is True:
+            ddtype = self.data.dtype.fields["B"][0]
+    
+            if ddtype != dtype:
+                raise ValueError("It is only possibile to change to %s." % ddtype)
+            self.data = rgb_tools.rgbx2regular_array(self.data)
+            self.get_dimensions_from_data()
+            self.mapped_parameters.record_by = "spectrum"
+            self.axes_manager[-1+2j].name = "RGB index"
+            self._assign_subclass()
+            return
+        else:
+            self.data = self.data.astype(dtype)
    
 #    def sum_in_mask(self, mask):
 #        """Returns the result of summing all the spectra in the mask.
