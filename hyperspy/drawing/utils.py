@@ -21,22 +21,6 @@ import copy
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-
-def does_figure_object_exists(fig_obj):
-    """Test if a figure really exist
-    """
-    if fig_obj is None:
-        return False
-    else:
-        # Test if the figure really exists. If not call the reset function 
-        # and start again. This is necessary because with some backends 
-        # Hyperspy fails to connect the close event to the function.
-        try:
-            fig_obj.show()
-            return True
-        except:
-            fig_obj = None
-            return False
                 
 def create_figure(window_title=None,
                   _on_figure_window_close=None,
@@ -91,6 +75,7 @@ def on_figure_window_close(figure, function):
         # so it is enabled only for Windows
         import wx
         def function_wrapper(event):
+            # When using WX window.connect does not supports multiple funtions
             for f in figure._on_window_close:
                 f()
             plt.close(figure)
@@ -98,14 +83,18 @@ def on_figure_window_close(figure, function):
         
     elif backend == 'TkAgg':
         def function_wrapper(*args):
-                function()
+            # When using TK window.connect does not supports multiple funtions
+            for f in figure._on_window_close:
+                f()
         figure.canvas.manager.window.bind("<Destroy>", function_wrapper)
 
     elif backend == 'Qt4Agg':
-        from PyQt4.QtCore import SIGNAL
-        window = figure.canvas.manager.window
-        window.connect(window, SIGNAL('destroyed()'), function)
-
+        # PyQt
+        # In PyQt window.connect supports multiple funtions
+        from IPython.external.qt_for_kernel import QtCore
+        window.connect(window,QtCore.SIGNAL('closing()'), function)
+    else:
+        raise AttributeError("The %s backend is not supported. " % backend)
 
 def plot_RGB_map(im_list, normalization = 'single', dont_plot = False):
     """Plots 2 or 3 maps in RGB

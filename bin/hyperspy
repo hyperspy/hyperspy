@@ -146,7 +146,7 @@ sys.argv = ipy_argv
 # Add the subcommand first
 if args.environment != 'terminal':
     sys.argv.insert(1, args.environment)
-# By default Hyperspy uses the wx backend, but if the user tries to 
+# By default Hyperspy uses the qt backend, but if the user tries to 
 # choose a different one using --pylab= , then we grant him the control        
 add_pylab = True
 if argp is True:
@@ -159,13 +159,13 @@ else:
 if ipy_version < ipy_011:
     if add_pylab is True:
         sys.argv.append('-pylab')
-    add_wx = True
+    add_qt = True
     for arg in sys.argv:
         if 'thread' in arg:
-            add_wx = False
+            add_qt = False
             break
-    if add_wx is True:
-        sys.argv.append('-wthread') 
+    if add_qt is True:
+        sys.argv.append('-qthread') 
     sys.argv.extend(('-p', 'hyperspy'))       
     from IPython.ipapi import launch_new_instance
     sys.exit(launch_new_instance())
@@ -176,5 +176,5 @@ else:
         if 'pylab' in arg:
             add_pylab = False
     if add_pylab is True:
-        sys.argv.append('--pylab=wx')
+        sys.argv.append('--pylab=qt')
     sys.exit(launch_new_instance())
