@@ -20,9 +20,7 @@ from __future__ import division
 import traits.api as t
 
 from hyperspy._signals.eds import EDSSpectrum
-from hyperspy.gui.eds import SEMParametersUI
 from hyperspy.defaults_parser import preferences
-import hyperspy.gui.messages as messagesui
 from hyperspy.decorators import only_interactive
 
 
@@ -163,8 +161,8 @@ class EDSSEMSpectrum(EDSSpectrum):
         self._set_microscope_parameters()
             
     @only_interactive            
-    def _set_microscope_parameters(self):    
-        
+    def _set_microscope_parameters(self):
+        from hyperspy.gui.eds import SEMParametersUI
         tem_par = SEMParametersUI()            
         mapping = {
         'SEM.beam_energy' : 'tem_par.beam_energy',        
@@ -199,7 +197,7 @@ class EDSSEMSpectrum(EDSSpectrum):
         raises an UI item to fill the values
         
         """       
-        
+        import hyperspy.gui.messages as messagesui
         must_exist = (
             'SEM.beam_energy',            
             'SEM.EDS.live_time', )

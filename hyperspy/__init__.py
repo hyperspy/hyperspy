@@ -20,8 +20,3 @@ import Release
 
 __version__ = Release.version
 
-import matplotlib.pyplot as plt                                                                      
-import traits.etsconfig.etsconfig                                               
-if plt.get_backend() not in ("wx", "qt"):                                       
-    traits.etsconfig.etsconfig.ETSConfig.toolkit = "null" 
-

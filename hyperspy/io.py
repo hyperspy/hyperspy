@@ -19,56 +19,16 @@
 import os
 import glob
 
-
 from hyperspy import messages
 import hyperspy.defaults_parser
-from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
-    ripple, tiff)
-from hyperspy.gui.tools import Load
+
 import hyperspy.utils
 import hyperspy.misc.utils
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import strlist2enumeration
-
 from hyperspy.misc.natsort import natsorted
 import hyperspy.misc.io.tools
-
-io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff]
-
-#try:
-#    from hyperspy.io_plugins import fits
-#    io_plugins.append(fits)
-#except ImportError:
-#    messages.information('The FITS IO features are not available')
-try:
-    from hyperspy.io_plugins import netcdf
-    io_plugins.append(netcdf)
-except ImportError:
-    pass
-    # NetCDF is obsolate and is only provided for users who have
-    # old EELSLab files. Therefore, we print no message if it is not
-    # available
-    #~ messages.information('The NetCDF IO features are not available')
-    
-try:
-    from hyperspy.io_plugins import hdf5
-    io_plugins.append(hdf5)
-except ImportError:
-    messages.warning('The HDF5 IO features are not available. '
-    'It is highly reccomended to install h5py')
-    
-try:
-    from hyperspy.io_plugins import image
-    io_plugins.append(image)
-except ImportError:
-    messages.information('The Image (PIL) IO features are not available')
-
-default_write_ext = set()
-for plugin in io_plugins:
-    if plugin.writes:
-        
-        default_write_ext.add(
-            plugin.file_extensions[plugin.default_extension])
+from hyperspy.io_plugins import io_plugins, default_write_ext
 
 def load(filenames=None,
          record_by=None,
@@ -191,6 +151,7 @@ def load(filenames=None,
     kwds['signal_origin'] = signal_origin
     if filenames is None:
         if hyperspy.defaults_parser.preferences.General.interactive is True:
+            from hyperspy.gui.tools import Load
             load_ui = Load()
             load_ui.edit_traits()
             if load_ui.filename:

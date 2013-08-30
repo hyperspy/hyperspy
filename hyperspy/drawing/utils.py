@@ -58,8 +58,11 @@ def on_figure_window_close(figure, function):
     figure : mpl figure instance
     function : function
     """
-    window = figure.canvas.manager.window
     backend = plt.get_backend()
+    if backend not in ("GTKAgg", "WXAgg", "TkAgg", "Qt4Agg"):
+        return
+
+    window = figure.canvas.manager.window
     if not hasattr(figure, '_on_window_close'):
         figure._on_window_close = list()
     if function not in figure._on_window_close:
