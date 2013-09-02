@@ -33,6 +33,14 @@ hyperspy Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`components` Module
+------------------------
+
+.. automodule:: hyperspy.components
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`decorators` Module
 ------------------------
 
@@ -97,18 +105,32 @@ hyperspy Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`signals` Module
+---------------------
+
+.. automodule:: hyperspy.signals
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`utils` Module
+-------------------
+
+.. automodule:: hyperspy.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
 .. toctree::
 
-    hyperspy.components
     hyperspy.drawing
     hyperspy.gui
     hyperspy.io_plugins
     hyperspy.learn
     hyperspy.misc
     hyperspy.models
-    hyperspy.signals
     hyperspy.tests
 
