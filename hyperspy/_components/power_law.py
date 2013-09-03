@@ -97,12 +97,11 @@ class PowerLaw(Component):
         """
         
         axis = signal.axes_manager.signal_axes[0]
-        energy2index = axis.value2index
-        i1 = energy2index(x1)
-        if (energy2index(x2) - i1) % 2 == 0:
-            i2 = energy2index(x2)
-        else :
-            i2 = energy2index(x2) - 1
+        energy2index = axis._get_index
+        i1 = energy2index(x1) if energy2index(x1) else 0 
+        i2 = energy2index(x2) if energy2index(x2) else len(axis.axis) - 1
+        if not (i2 - i1) % 2 == 0:
+            i2 -= 1
         x2 = axis.axis[i2]
         i3 = (i2+i1) / 2
         E3 = axis.axis[i3]
