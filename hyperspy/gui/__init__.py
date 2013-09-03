@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import traits.etsconfig.etsconfig
 
 from hyperspy.defaults_parser import current_toolkit
+from hyperspy.misc.interactive_ns import get_ipython
 
 def set_ets_toolkit(toolkit):
     try:
@@ -34,10 +35,10 @@ if ("WX" not in backend and
         if "inline" in backend:
             if current_toolkit in ("wx", "qt4"):
                 try:
-                    import IPython
-                    ip = IPython.get_ipython()
-                    ip.enable_gui(current_toolkit)
-                    set_ets_toolkit(current_toolkit)
+                    ip = get_ipython()
+                    if ip is not None:
+                        ip.enable_gui(current_toolkit)
+                        set_ets_toolkit(current_toolkit)
                 except:
                     set_ets_toolkit("null")
         else:

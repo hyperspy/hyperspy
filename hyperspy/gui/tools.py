@@ -26,7 +26,6 @@ from traitsui.menu import (OKButton, ApplyButton, CancelButton,
 
 from hyperspy.misc import utils
 from hyperspy import drawing
-from hyperspy.misc.interactive_ns import interactive_ns
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.gui import messages
 from hyperspy.misc.progressbar import progressbar

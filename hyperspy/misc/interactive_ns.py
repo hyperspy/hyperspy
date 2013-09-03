@@ -17,50 +17,54 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import __main__
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 import os
 from time import strftime
 
-import IPython
-try:
-    ipy_version = StrictVersion(IPython.__version__)
-except:
-    # Try removing the text from last period in case that it is a dev 
-    # version
-    try:
-        ipy_version = StrictVersion(
-            IPython.__version__[:-IPython.__version__[::-1].index(".")-1])
-    except:
-        # Last ugly resort
-        ipy_version = StrictVersion("100.1")
-ipy_011 = StrictVersion('0.11')
-ipy_1 = StrictVersion('1.0')
+def get_ipython():                                                                                    
+    """Get the global InteractiveShell instance.                                
+                                                                                
+    Returns None if no InteractiveShell instance is registered.                 
+    """                                                                         
+    if is_it_running_from_ipython is False:                                     
+        return None                                                             
+    import IPython                                                                                    
+    ipy_version = LooseVersion(IPython.__version__)                             
+    if ipy_version < LooseVersion("0.11"):                                                       
+        from IPython import ipapi                                                   
+        ip = ipapi.get()                                                            
+    elif ipy_version < LooseVersion("1.0"):                                                       
+        from IPython.core import ipapi                                              
+        ip = ipapi.get()                                                            
+    else:                                                                           
+        ip = IPython.get_ipython()                                              
+    return ip                                                                   
+                                                                                
+def is_it_running_from_ipython():                                               
+    try:                                                                        
+        __IPYTHON__                                                             
+        return True                                                             
+    except NameError:                                                           
+        return False
 
-if ipy_version < ipy_011:
-    from IPython import ipapi
-    ip = ipapi.get()
-elif ipy_version < ipy_1:
-    from IPython.core import ipapi
-    ip = ipapi.get()
-else:
-    import IPython.core.getipython
-    ip = IPython.core.getipython.get_ipython()
+def get_interactive_ns():
+    ip = get_ipython()
+    if ip is None:
+        return __main__.__dict__
+    else:
+        return ip.user_ns
 
-if ip is None:
-    # Ipython is not installed, using Python's namespace.
-    # TODO: this does not work with IPython > 0.11
-    interactive_ns = __main__.__dict__
-else:
-    interactive_ns = ip.user_ns
-
-
-def turn_logging_on(verbose = 1):
-    
-    if ipy_version < ipy_011:
+def turn_logging_on(verbose=1):
+    ip = get_ipython()
+    if ip is None:
+        return
+    import IPython                                                                                    
+    ipy_version = LooseVersion(IPython.__version__)                             
+    if ipy_version < LooseVersion("0.11"):
         if verbose == 1:
             print("Logging is not supported by this version of IPython")
         return
-    if ip.logger.log_active is True:
+    elif ip.logger.log_active is True:
         if verbose == 1:
             print "Already logging to " + ip.logger.logfname
         return
@@ -81,13 +85,17 @@ def turn_logging_on(verbose = 1):
               " in the current directory")
           
 def turn_logging_off():
-    if ipy_version < ipy_011:
+    ip = get_ipython()
+    if ip is None:
+        return
+    import IPython                                                                                    
+    ipy_version = LooseVersion(IPython.__version__)                             
+    if ipy_version < LooseVersion("0.11"):
         print("Logging is not supported by this version of IPython")
         return
-    if ip.logger.log_active is False:
+    elif ip.logger.log_active is False:
         return
         
     ip.logger.logstop()
     print("The logger is off")
 
-        

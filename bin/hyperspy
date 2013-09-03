@@ -23,6 +23,14 @@
 
 import sys
 import os, shutil
+from distutils.version import LooseVersion
+try:
+    import argparse             # new in Python 2.7
+    argp = True
+except ImportError:
+    argp = False
+    import optparse
+
 try:
     import PyQt4
     import sip 
@@ -31,14 +39,6 @@ try:
     os.environ['QT_API'] = "pyqt"
 except:
     pass
-from distutils.version import StrictVersion
-try:
-    import argparse             # new in Python 2.7
-    argp = True
-except ImportError:
-    argp = False
-    import optparse
-
 import IPython
 import traits.etsconfig.etsconfig
 
@@ -56,20 +56,9 @@ if '--ipython_args' in sys.argv:
     
 hyperspy_module_path=os.path.dirname(hyperspy.__file__)
 ipy_hspy = os.path.join(hyperspy_module_path, 'ipython_profile')
-try:
-    ipy_version = StrictVersion(IPython.__version__)
-except:
-    # Try removing the text from last period in case that it is a dev 
-    # version
-    try:
-        ipy_version = StrictVersion(
-            IPython.__version__[:-IPython.__version__[::-1].index(".")-1])
-    except:
-        # Last ugly resort
-        ipy_version = StrictVersion("100.1")
-ipy_011 = StrictVersion('0.11')
+ipy_version = LooseVersion(IPython.__version__)
 ipython_environments = ['terminal',]
-if ipy_version < ipy_011:
+if ipy_version < LooseVersion('0.11'):
     from IPython.genutils import get_home_dir, get_ipython_dir
     from IPython.iplib import user_setup
     ipy_dir = get_ipython_dir()
@@ -104,7 +93,7 @@ else:
         sys.argv.append('--overwrite_profile')
     ipython_environments.extend(['console', 'qtconsole',])
     
-if ipy_version > ipy_011:
+if ipy_version > LooseVersion('0.11'):
         ipython_environments.append('notebook')
         
 if argp is True:
@@ -191,7 +180,7 @@ if toolkit in ("qt4", "wx"):
     traits.etsconfig.etsconfig.ETSConfig.toolkit = toolkit
 else:
     traits.etsconfig.etsconfig.ETSConfig.toolkit = "null"
-if ipy_version < ipy_011:
+if ipy_version < LooseVersion('0.11'):
     if add_pylab is True:
         sys.argv.append('-pylab')
     add_toolkit = True
