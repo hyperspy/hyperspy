@@ -760,7 +760,7 @@ def file_reader(filename, record_by=None, order=None, verbose=False):
 
     """
          
-    with open(filename, "r") as f:
+    with open(filename, "rb") as f:
         dm = DigitalMicrographReader(f, verbose=verbose)
         dm.parse_file()
         images = [ImageObject(imdict, f, order=order, record_by=record_by)
