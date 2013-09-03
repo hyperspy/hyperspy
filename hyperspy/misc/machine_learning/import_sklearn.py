@@ -4,7 +4,7 @@ with support for multiple versions
 """
 
 import warnings
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 
 try:
     with warnings.catch_warnings(): 
@@ -13,11 +13,11 @@ try:
             import sklearn
         except:
             import scikits.learn as sklearn
-        sklearn_version = StrictVersion(sklearn.__version__)
-        if  sklearn_version < StrictVersion("0.9"):
+        sklearn_version = LooseVersion(sklearn.__version__)
+        if  sklearn_version < LooseVersion("0.9"):
             import scikits.learn.decomposition
             from scikits.learn.utils.extmath import fast_svd
-        elif sklearn_version == StrictVersion("0.9"):
+        elif sklearn_version == LooseVersion("0.9"):
             from sklearn.utils.extmath import fast_svd
             import sklearn.decomposition
         else:
