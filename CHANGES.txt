@@ -12,9 +12,7 @@ v0.7
 New features
 ------------
 * Hyperspy is now fully compatible with the Qt toolkit in addition to the WX
-  toolkit. The Qt toolkit is now the default. This is specially welcome for 
-  Mac users that until now could only use 32bits libraries to run Hyperspy
-  because the WX library is not fully 64bits compatible in MacOS.
+  toolkit. The Qt toolkit is now the default. 
 * Hyperspy can now use the GTK and TK toolkits, although without the GUI
   features.
 * The default toolkit can now be saved in the preferences.

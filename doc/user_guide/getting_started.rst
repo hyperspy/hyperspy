@@ -7,12 +7,17 @@ First steps with hyperspy
 Starting hyperspy
 -----------------
 
+Hyperspy is a Python library to analyze multidimensional. Hyperspy does not
+have a GUI. Instead, the most common way of running Hyperspy is interactively
+using the wonderful interactive computing package `IPython
+<http://ipython.org>`_. In this section we describe the easiest ways to start
+hyperspy in the different operating systems.
+
 
 Starting hyperspy from the terminal
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The standard way to use Hyperspy is interactively, typically using `IPython
-<http://ipython.org/>`_ . In all operating systems (OS) you can start Hyperspy
+In all operating systems (OS) you can start Hyperspy
 by opening a system terminal and typing hyperspy:
 
 .. code-block:: bash
@@ -20,7 +25,7 @@ by opening a system terminal and typing hyperspy:
     $ hyperspy
 
 
-If Hyperspy is correctly instaled it should welcome you with a message similar
+If Hyperspy is correctly installed it should welcome you with a message similar
 to:
 
 .. code-block:: ipython
@@ -43,7 +48,7 @@ executing `hyperspy qtconsole` in a terminal:
 If IPython 0.12 or newer is installed in your system it is also possible to run
 Hyperspy in `IPython's HTML notebook
 <http://ipython.org/ipython-doc/stable/interactive/htmlnotebook.html>`_ that
-runs inside your browser. The Notebook is probably **the best way** to work
+runs inside your browser. The Notebook is probably **the most agreeable way** to work
 with Hyperspy interactively. You can start it from a terminal as follows
 
 .. code-block:: bash
@@ -120,7 +125,7 @@ Altenatively (and more conviently), if you are using Gnome place `this
 and `this
 <https://github.com/downloads/hyperspy/hyperspy/Hyperspy%20Notebook%20here.sh>`_
 in the :file:`/.gnome2/nautilus-scripts` folder in your home directory (create
-it if it does not exists) and make the executable to get the
+it if it does not exists) and make them executable to get the
 :menuselection:`Scripts --> Hyperspy QtConsole Here` and
 :menuselection:`Scripts --> Hyperspy Notebook Here` entries in the context
 menu. 
@@ -136,10 +141,11 @@ Using Hyperspy as a library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When starting hyperspy by using the file browser context menu or by running the
-`hyperpsy` script in the terminal, the `hyperspy` script simply starts and
-configure IPython appropiately and import the contents of the :py:mod:`~.hspy`.
-It is of course possible to use Hyperspy as a library by simply importing its
-modules. The recommended way to do it is importing the hspy module as follows:
+`hyperspy` script in the terminal, the `hyperspy` script simply starts and
+configure IPython appropiately and import the contents of the :py:mod:`~.hspy`
+module in the user namespace. Of course, It is possible to use Hyperspy as a
+library by simply importing its modules. The recommended way to do it is
+importing the hspy module as follows:
 
 .. code-block:: python
 
