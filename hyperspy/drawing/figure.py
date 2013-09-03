@@ -18,5 +18,5 @@ class BlittedFigure(object):
             artists.append(ax.get_yaxis())
             [ax.draw_artist(a) for a in artists if 
              a.get_animated() is True]
-        canvas.blit()
+        canvas.blit(self.figure.bbox)
 

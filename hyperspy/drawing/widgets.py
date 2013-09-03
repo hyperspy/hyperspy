@@ -17,7 +17,6 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
-import copy
 
 import matplotlib.pyplot as plt
 import matplotlib.widgets
@@ -27,7 +26,6 @@ import traits
 
 from utils import on_figure_window_close
 from hyperspy.misc.math_tools import closest_nice_number
-from hyperspy.drawing.utils import does_figure_object_exists
 
 class DraggablePatch(object):
     """
@@ -67,8 +65,10 @@ class DraggablePatch(object):
                         container.remove(self.patch)
                 self.disconnect(self.ax)
             self.__is_on = value
-            if does_figure_object_exists(self.ax.figure):
+            try:
                 self.ax.figure.canvas.draw()
+            except: # figure does not exist
+                pass
             else:
                 self.ax = None
                 
@@ -79,7 +79,6 @@ class DraggablePatch(object):
     def add_patch_to(self, ax):
         self.set_patch()
         ax.add_artist(self.patch)
-        canvas = ax.figure.canvas
         self.patch.set_animated(hasattr(ax, 'hspy_fig'))
 
     def add_axes(self, ax):

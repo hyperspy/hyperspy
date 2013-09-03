@@ -23,7 +23,7 @@
 
 import sys
 import os, shutil
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 try:
     import argparse             # new in Python 2.7
     argp = True
@@ -31,10 +31,21 @@ except ImportError:
     argp = False
     import optparse
 
+try:
+    import PyQt4
+    import sip 
+    # Set the QT_API environmental variable so that matplotlib uses API v2
+    # instead of API v1 that is the default in Python 2.x
+    os.environ['QT_API'] = "pyqt"
+except:
+    pass
 import IPython
+import traits.etsconfig.etsconfig
 
 import hyperspy
 import hyperspy.Release
+import hyperspy.defaults_parser
+from hyperspy.defaults_parser import preferences
 
 # First we split the argv items in two: the firsts for hyperspy,
 # the rest for ipython
@@ -45,20 +56,9 @@ if '--ipython_args' in sys.argv:
     
 hyperspy_module_path=os.path.dirname(hyperspy.__file__)
 ipy_hspy = os.path.join(hyperspy_module_path, 'ipython_profile')
-try:
-    ipy_version = StrictVersion(IPython.__version__)
-except:
-    # Try removing the text from last period in case that it is a dev 
-    # version
-    try:
-        ipy_version = StrictVersion(
-            IPython.__version__[:-IPython.__version__[::-1].index(".")-1])
-    except:
-        # Last ugly resort
-        ipy_version = StrictVersion("100.1")
-ipy_011 = StrictVersion('0.11')
+ipy_version = LooseVersion(IPython.__version__)
 ipython_environments = ['terminal',]
-if ipy_version < ipy_011:
+if ipy_version < LooseVersion('0.11'):
     from IPython.genutils import get_home_dir, get_ipython_dir
     from IPython.iplib import user_setup
     ipy_dir = get_ipython_dir()
@@ -93,7 +93,7 @@ else:
         sys.argv.append('--overwrite_profile')
     ipython_environments.extend(['console', 'qtconsole',])
     
-if ipy_version > ipy_011:
+if ipy_version > LooseVersion('0.11'):
         ipython_environments.append('notebook')
         
 if argp is True:
@@ -108,24 +108,38 @@ else:
 parser.add_argument('environment',
                     nargs='?',
                     choices=ipython_environments,
-                    default = 'terminal',
-                    help = ('Selects the IPython environment in '
-                    'which to start Hyperspy. The default is terminal'))
-parser.add_argument('--no_pylab',
-                    action="store_true",
-                    default=False)
+                    default='terminal',
+                    help=(
+                        'Selects the IPython environment in '
+                        'which to start Hyperspy. The default is terminal'))
+parser.add_argument('--toolkit',
+                    choices=["qt4", "gtk", "wx", "tk", "None",],
+                    default=preferences.General.default_toolkit,
+                    help= (
+                        "Pre-load matplotlib and traitsui for interactive use,"
+                        "selecting a particular matplotlib backend and loop "
+                        "integration."
+                        "When using gtk and tk toolkits the "
+                        "user interface elements are not available. "
+                        "None is suitable to run headless."))
+parser.add_argument('--pylab_inline',
+                    action="store_true", 
+                    default=preferences.General.pylab_inline,
+                    help = ("If True the figure are displayed inline. "
+                            "This option only has effect when using the "
+                            "qtconsole or notebook"))
 parser.add_argument('--overwrite_profile',
                     action="store_true", 
                     default=False,
                     help = (
-            'Overwrite the Ipython profile with the default one'))
+                        'Overwrite the Ipython profile with the default one.'))
 parser.add_argument('--ipython_args',
                     nargs='*', 
                     help=(
-                    'Arguments to be passed to IPython. '
-                    'This option must be the last one.' 
-                    'Look at the IPython documentation '
-                    'for available options.'))
+                        'Arguments to be passed to IPython. '
+                        'This option must be the last one.' 
+                        'Look at the IPython documentation '
+                        'for available options.'))
                     
 if argp is True:
     args = parser.parse_args()
@@ -146,26 +160,43 @@ sys.argv = ipy_argv
 # Add the subcommand first
 if args.environment != 'terminal':
     sys.argv.insert(1, args.environment)
-# By default Hyperspy uses the wx backend, but if the user tries to 
+# By default Hyperspy uses the qt backend, but if the user tries to 
 # choose a different one using --pylab= , then we grant him the control        
 add_pylab = True
 if argp is True:
-    if args.no_pylab is True:
+    toolkit = args.toolkit
+    if args.toolkit == "None":
         add_pylab = False
 else:
-    if options.no_pylab is True:
+    toolkit = options.toolkit
+    if options.toolkit == "None":
         add_pylab = False
-
-if ipy_version < ipy_011:
+if argp is True:
+    pylab_inline = args.pylab_inline
+else:
+    pylab_inline = options.pylab_inline
+hyperspy.defaults_parser.current_toolkit = toolkit
+if toolkit in ("qt4", "wx"):
+    traits.etsconfig.etsconfig.ETSConfig.toolkit = toolkit
+else:
+    traits.etsconfig.etsconfig.ETSConfig.toolkit = "null"
+if ipy_version < LooseVersion('0.11'):
     if add_pylab is True:
         sys.argv.append('-pylab')
-    add_wx = True
+    add_toolkit = True
     for arg in sys.argv:
         if 'thread' in arg:
-            add_wx = False
+            add_toolkit = False
             break
-    if add_wx is True:
-        sys.argv.append('-wthread') 
+    if add_toolkit is True:
+        if toolkit == "qt":
+            sys.argv.append('-qthread') 
+        elif toolkit == "gtk":
+            sys.argv.append('-gthread') 
+        elif toolkit == "wx":
+            sys.argv.append('-wthread') 
+        elif toolkit == "tk":
+            sys.argv.append('-tkthread') 
     sys.argv.extend(('-p', 'hyperspy'))       
     from IPython.ipapi import launch_new_instance
     sys.exit(launch_new_instance())
@@ -175,6 +206,9 @@ else:
     for arg in sys.argv:
         if 'pylab' in arg:
             add_pylab = False
-    if add_pylab is True:
-        sys.argv.append('--pylab=wx')
+    if pylab_inline is True and args.environment in ("notebook",
+                                                     "qtconsole"):
+        sys.argv.append('--pylab=inline')
+    elif add_pylab is True:
+        sys.argv.append('--pylab=%s' % toolkit.replace("qt4", "qt"))
     sys.exit(launch_new_instance())

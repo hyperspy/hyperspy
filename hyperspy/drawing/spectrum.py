@@ -110,8 +110,11 @@ class SpectrumFigure(BlittedFigure):
     def close(self):
         for line in self.ax_lines + self.right_ax_lines:
             line.close()
-        if utils.does_figure_object_exists(self.figure):
+        try:
             plt.close(self.figure)
+        except:
+            pass
+        self.figure = None
                     
     def update(self):
         for line in self.ax_lines + \
