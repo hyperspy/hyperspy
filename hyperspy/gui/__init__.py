@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import traits.etsconfig.etsconfig
 
 from hyperspy.defaults_parser import current_toolkit
-from hyperspy.misc.interactive_ns import get_ipython
+from hyperspy.misc.ipython_tools import get_ipython
 
 def set_ets_toolkit(toolkit):
     try:

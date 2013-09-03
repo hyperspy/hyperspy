@@ -24,7 +24,7 @@ import traits.api as t
 from hyperspy.model import Model
 from hyperspy.components import EELSCLEdge
 from hyperspy.components import PowerLaw
-from hyperspy.misc.interactive_ns import get_interactive_ns
+from hyperspy.misc.ipython_tools import get_interactive_ns
 from hyperspy.defaults_parser import preferences
 import hyperspy.messages as messages
 from hyperspy import components
