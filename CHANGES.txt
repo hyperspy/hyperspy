@@ -4,6 +4,20 @@ What's new
 We only cover here the main highlights, for a detailed list of all the changes see `the github commits changelog <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
 
+.. _changes_0.7:
+
+v0.7
+====
+
+New features
+------------
+* Hyperspy is now fully compatible with the Qt toolkit in addition to the WX
+  toolkit. The Qt toolkit is now the default. 
+* Hyperspy can now use the GTK and TK toolkits, although without the GUI
+  features.
+* The default toolkit can now be saved in the preferences.
+* It is now possible to run hyperspy in :ref:`a headless system <headless-label>`.
+
 .. _changes_0.6:
 
 v0.6

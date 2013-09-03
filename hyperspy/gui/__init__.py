@@ -15,3 +15,48 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+
+import matplotlib.pyplot as plt                                                                      
+import traits.etsconfig.etsconfig
+
+from hyperspy.defaults_parser import current_toolkit
+from hyperspy.misc.ipython_tools import get_ipython
+
+def set_ets_toolkit(toolkit):
+    try:
+        traits.etsconfig.etsconfig.ETSConfig.toolkit = toolkit
+    except ValueError:
+        pass
+
+# Get the backend from matplotlib
+backend = plt.get_backend()
+if ("WX" not in backend and 
+    "Qt" not in backend):
+        if "inline" in backend:
+            if current_toolkit in ("wx", "qt4"):
+                try:
+                    ip = get_ipython()
+                    if ip is not None:
+                        ip.enable_gui(current_toolkit)
+                        set_ets_toolkit(current_toolkit)
+                except:
+                    set_ets_toolkit("null")
+        else:
+            set_ets_toolkit("null")
+elif "WX" in backend:
+    set_ets_toolkit("wx")
+elif "Qt" in backend:
+    set_ets_toolkit("qt4")
+else:
+    if current_toolkit in ("wx", "qt4"):
+        set_ets_toolkit(current_toolkit)
+    else:
+        set_ets_toolkit("null")
+        
+    
+    
+        
+                    
+                    
+            
+            

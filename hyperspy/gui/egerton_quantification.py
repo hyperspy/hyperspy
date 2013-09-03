@@ -29,7 +29,6 @@ from hyperspy import components
 from hyperspy.component import Component
 from hyperspy.misc import utils
 from hyperspy import drawing
-from hyperspy.misc.interactive_ns import interactive_ns
 from hyperspy.gui.tools import (SpanSelectorInSpectrum, 
     SpanSelectorInSpectrumHandler,OurFindButton, OurPreviousButton,
     OurApplyButton)

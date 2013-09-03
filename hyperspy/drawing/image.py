@@ -149,8 +149,8 @@ class ImagePlot(BlittedFigure):
                                         else None),
                         figsize=figsize.clip(min_size, max_size))
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
+        utils.on_figure_window_close(self.figure, self.close)
 
-        
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
         self.ax.set_title(self.title)
@@ -164,7 +164,7 @@ class ImagePlot(BlittedFigure):
         
     def plot(self):
         self.configure()
-        if not utils.does_figure_object_exists(self.figure):
+        if self.figure is None:
             self.create_figure()
             self.create_axis()   
         data = self.data_function()
@@ -308,5 +308,8 @@ class ImagePlot(BlittedFigure):
             
     def close(self):
         self.disconnect()
-        if utils.does_figure_object_exists(self.figure) is True:
+        try:
             plt.close(self.figure)
+        except:
+            pass
+        self.figure = None

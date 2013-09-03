@@ -26,13 +26,10 @@ from traitsui.menu import (OKButton, ApplyButton, CancelButton,
 
 from hyperspy.misc import utils
 from hyperspy import drawing
-from hyperspy.misc.interactive_ns import interactive_ns
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.gui import messages
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
-from hyperspy.drawing.utils import does_figure_object_exists
-from hyperspy.gui.mpl_traits_editor import MPLFigureEditor
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import DraggableVerticalLine
 from hyperspy.misc import spectrum_tools
@@ -337,7 +334,7 @@ class Smoothing(t.HasTraits):
                    
     def plot(self):
         if self.signal._plot is None or not \
-            does_figure_object_exists(self.signal._plot.signal_plot.figure):
+            self.signal._plot.is_active():
             self.signal.plot()
         hse = self.signal._plot
         l1 = hse.signal_plot.ax_lines[0]
