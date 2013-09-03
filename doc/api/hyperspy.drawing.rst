@@ -9,10 +9,26 @@ drawing Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`figure` Module
+--------------------
+
+.. automodule:: hyperspy.drawing.figure
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`image` Module
 -------------------
 
 .. automodule:: hyperspy.drawing.image
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`mpl_he` Module
+--------------------
+
+.. automodule:: hyperspy.drawing.mpl_he
     :members:
     :undoc-members:
     :show-inheritance:
