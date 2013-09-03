@@ -24,7 +24,7 @@ import traits.api as t
 from hyperspy.model import Model
 from hyperspy.components import EELSCLEdge
 from hyperspy.components import PowerLaw
-from hyperspy.misc.interactive_ns import interactive_ns
+from hyperspy.misc.ipython_tools import get_interactive_ns
 from hyperspy.defaults_parser import preferences
 import hyperspy.messages as messages
 from hyperspy import components
@@ -75,6 +75,7 @@ class EELSModel(Model):
         self.low_loss = ll
         self.GOS = GOS
         if auto_background is True:
+            interactive_ns = get_interactive_ns()
             background = PowerLaw()
             background.name = 'background'
             interactive_ns['background'] = background
@@ -156,6 +157,7 @@ class EELSModel(Model):
             If True, variables with the format Element_Shell will be 
             created in IPython's interactive shell
         """
+        interactive_ns = get_interactive_ns()
         if e_shells is None:
             e_shells = list(self.spectrum.subshells)
         e_shells.sort()

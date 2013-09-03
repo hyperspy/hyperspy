@@ -108,7 +108,7 @@ class MPL_HyperExplorer(object):
         self.navigator_plot.close()
     
     def is_active(self):
-        return utils.does_figure_object_exists(self.signal_plot.figure)
+        return True if self.signal_plot.figure else False
     
     def plot(self):
         if self.pointer is None:
