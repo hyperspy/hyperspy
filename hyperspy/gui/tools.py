@@ -788,9 +788,8 @@ class IntegrateArea(SpanSelectorInSpectrum):
     integrate = t.Button()
     
     view = tu.View(
-                tu.Item('integrate', show_label=False ),
                 buttons = [OKButton, CancelButton],
-                title = 'Integrate area',
+                title = 'Integrate in range',
                 handler = SpanSelectorInSpectrumHandler,
                 )
     
@@ -809,18 +808,20 @@ class IntegrateArea(SpanSelectorInSpectrum):
             self.signal.plot()
         self.span_selector_switch(on=True)
         
-    def _integrate_fired(self):
+    def apply(self):
         integrated_spectrum = self.signal._integrate_in_range_commandline(
                 signal_range=(
                     self.ss_left_value,
                     self.ss_right_value)
                 )
         #Replaces the original signal inplace with the new integrated spectrum
+        plot = False
+        if self.signal._plot:
+            self.signal._plot.close()
+            plot = True
         self.signal.__init__(**integrated_spectrum._to_dictionary())
         self.signal._assign_subclass()
         self.signal.axes_manager.set_signal_dimension(0)
-        self.signal.plot()
-        
-    def apply(self):
-        self._integrate_fired()
+        if plot is True:
+            self.signal.plot()
     
