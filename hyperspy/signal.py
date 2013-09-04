@@ -594,8 +594,8 @@ class Signal1DTools(object):
             as this one and that will be aligned using the shift map
             estimated using the this signal.
 
-        Return
-        ------
+        Returns
+        -------
         An array with the result of the estimation. The shift will be
         
         Raises
@@ -629,36 +629,47 @@ class Signal1DTools(object):
         """ Sums the spectrum over an energy range, giving the integrated
         area.
 
-        The energy range can either be selected through a GUI or the command line. 
-        If the GUI is used the integrated spectrum is returned in place, meaning the 
-        original spectrum is replaced. If a signal range is specific in the command line
-        a spectrum object will be returned.
+        The energy range can either be selected through a GUI or the command
+        line.  When `signal_range` is "interactive" the operation is performed
+        in-place, i.e. the original spectrum is replaced. Otherwise the
+        operation is performed not-in-place, i.e. a new object is returned with 
+        the result of the integration.
 
         Parameters
         ----------
-        signal_range : tuple, optional
-            Specifies the energy range. If not specified the range has to be
-            set by using GUI.
+        signal_range : {a tuple of this form (l, r), "interactive"}
+            l and r are the left and right limits of the range. They can be numbers or None,
+            where None indicates the extremes of the interval. When `signal_range` is 
+            "interactive" (default) the range is selected using a GUI.
 
-        Return
-        ------
-        signal
-
-        Example
+        Returns
         -------
-        >>>> s.integrate_area() #use the gui, s is replaced with integrated spectrum
-        >>>> s.integrate_area(signal_range=(560,580)) #use command line, returns a spectrum
+        integrated_spectrum : {Signal subclass, None}
 
-        See also
+        See Also
         --------
         integrate_simpson 
+
+        Examples
+        --------
+
+        Using the GUI (in-place operation).
+
+        >>> s.integrate_in_range()
+        
+        Using the CLI (not-in-place operation).
+
+        >>> s_int = s.integrate_in_range(signal_range=(560,None))
+
         """
+
         if signal_range == 'interactive':
             ia = IntegrateArea(self, signal_range)
             ia.edit_traits()
+            integrated_spectrum = None
         else:
             integrated_spectrum = self._integrate_in_range_commandline(signal_range)
-            return(integrated_spectrum)
+        return(integrated_spectrum)
 
     def _integrate_in_range_commandline(self, signal_range):
         e1 = signal_range[0]
