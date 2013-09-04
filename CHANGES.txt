@@ -17,6 +17,8 @@ New features
   features.
 * The default toolkit can now be saved in the preferences.
 * It is now possible to run hyperspy in :ref:`a headless system <headless-label>`.
+* New signal, EDSSpectrum especialized in EDS data analysis. See
+  :ref:`eds_tools-label`.
 
 .. _changes_0.6:
 
@@ -39,7 +41,7 @@ New features
   over the axis and a floating number specifies the position in the axis units
   e.g. ``s.crop("x", 1, 10.)`` crops over the axis `x` (in meters) from index 1 
   to value 10 meters. Note that this may make your old scripts behave in 
-  unexpected ways as just renaming the old *_in_units and *_in_values methods
+  unexpected ways as just renaming the old \*_in_units and \*_in_values methods
   won't work in most cases.
 * Most methods now use the natural order i.e. X,Y,Z.. to index the axes.
 * Add padding to fourier-log and fourier-ratio deconvolution to fix the 

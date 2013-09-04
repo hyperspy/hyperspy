@@ -712,6 +712,8 @@ Splice zero loss peak
 ^^^^^^^^^^^^^^^^^^^^^
 Once :py:meth:`~.signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold` has determined the elastic scattering threshold value(s), this tool can be used to separate the zero loss peak from the eels spectra. Use :py:meth:`~.signals.eels.EELSSpectrum.splice_zero_loss_peak` in order to obtain a ZLP suitable for Fourier-Log deconvolution from your EELS low-loss spectra by setting the "smooth" option, that will apply the hanning window to the righ end of the data.
 
+.. eds_tools-label:
+
 EDS tools
 ----------
 
