@@ -32,15 +32,17 @@ Quick instructions to install Hyperspy in MacOs
    Canopy/EPD is recommended for the best performance (it is compiled
    using Intel MKL libraries) and the easiest intallation (all the required
    libraries are included). The academic license is free. Since version 0.5
-   Hyperspy runs (with limited functionality) in Canopy Free.  #. Open a new
-   terminal and type: `easy_install hyperspy`
+   Hyperspy runs (with limited functionality) in Canopy Free.
+
+#. Open a new terminal and type: `easy_install hyperspy`
 
 For more options and details read the rest of the documentation.
 
 
 .. _install-with-python-installers:
 
-Install using Python installers -------------------------------
+Install using Python installers
+-------------------------------
 .. WARNING::
    Although it is possible to install hyperspy in Windows using the
    instructions of this section, installing using the Windows installer is
