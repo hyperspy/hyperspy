@@ -817,6 +817,8 @@ class IntegrateArea(SpanSelectorInSpectrum):
                 )
         #Replaces the original signal inplace with the new integrated spectrum
         self.signal.__init__(**integrated_spectrum._to_dictionary())
+        self.signal._assign_subclass()
+        self.signal.axes_manager.set_signal_dimension(0)
         self.signal.plot()
         
     def apply(self):

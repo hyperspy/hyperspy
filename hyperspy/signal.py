@@ -661,9 +661,9 @@ class Signal1DTools(object):
             return(integrated_spectrum)
 
     def _integrate_in_range_commandline(self, signal_range):
-        e1 = float(signal_range[0])
-        e2 = float(signal_range[1])
-        integrated_spectrum = self[...,e1:e2].integrate_simpson(-1)
+        e1 = signal_range[0]
+        e2 = signal_range[1]
+        integrated_spectrum = self[..., e1:e2].integrate_simpson(-1)
         return(integrated_spectrum)
 
     @only_interactive
