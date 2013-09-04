@@ -554,8 +554,9 @@ which to crop the spectrum.
 Background removal
 ^^^^^^^^^^^^^^^^^^
 
-The :py:meth:`~.signal.Signal1DTools.remove_background` method provides a user
-interface to remove some background functions.
+The :py:meth:`~.signal.Signal1DTools.remove_background` method provides
+background removal capabilities through both a CLI and a GUI. Current
+background type supported are power law, offset, polynomial and gaussian.
 
 Calibration
 ^^^^^^^^^^^
