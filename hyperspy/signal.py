@@ -59,16 +59,17 @@ from hyperspy.gui.tools import IntegrateArea
 from hyperspy import components
 
 class Signal2DTools(object):
-    def estimate_shift2D(self, reference='current',
-                                correlation_threshold=None,
-                                chunk_size=30,
-                                roi=None,
-                                normalize_corr=False,
-                                sobel=True,
-                                medfilter=True,
-                                hanning=True,
-                                plot=False,
-                                dtype='float',):
+    def estimate_shift2D(self,
+            reference='current',
+            correlation_threshold=None,
+            chunk_size=30,
+            roi=None,
+            normalize_corr=False,
+            sobel=True,
+            medfilter=True,
+            hanning=True,
+            plot=False,
+            dtype='float',):
         """Estimate the shifts in a image using phase correlation
 
         This method can only estimate the shift by comparing 
