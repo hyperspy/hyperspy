@@ -18,11 +18,14 @@ New features
   :ref:`eds_tools-label`.
 * New syntax to index the :py:class:`~.axes.AxesManager`.
 * New Signal methods: 
-  :py:meth:`~.signal.Signal.set_signal_type`,
-  :py:meth:`~.signal.Signal.set_signal_origin`,
-  :py:meth:`~.signal.Signal.as_image`,
-  :py:meth:`~.signal.Signal.as_spectrum`.
-  
+
+  + :py:meth:`~.signal.Signal.set_signal_type`
+  + :py:meth:`~.signal.Signal.set_signal_origin`
+  + :py:meth:`~.signal.Signal.as_image`
+  + :py:meth:`~.signal.Signal.as_spectrum`
+  + :py:meth:`~.signal.Signal1DTools.estimate_peak_width`
+  + :py:meth:`~.signal.Signal1DTools.integrate_in_range`
+
 * New database of EDS lines available in the user namespace, elements_EDS.
 * The string representaion of the signal class now print the shape of the 
   data and includes a separator between the navigation and the signal axes e.g
@@ -31,9 +34,6 @@ New features
 * Added several extra options to the Signal :py:meth:`~.signal.Signal.plot` 
   method. See :ref:`visualization-label`.
 * Add support for RGBA data.
-* The :py:class:`~.signals.eels.EELSSpectrum` method  
-  :py:meth:`~.signals.eels.EELSSpectrum.estimate_FWHM` now performs the
-  operation in the full dataset.
 * Improved support for FEI's emi and ser files.
 * Improved support for Gatan's dm3 files.
 * Add Gatan's dm4 reading capabilities.
@@ -47,7 +47,7 @@ New features
 * It is now possible to run hyperspy in 
   :ref:`a headless system <headless-label>`.
 * The Signal method 
-  :py:meth:`~.signal.Signal.remove_background`
+  :py:meth:`~.signal.Signal1DTools.remove_background`
   now can be used without the GUI.
 
 API changes
@@ -57,10 +57,12 @@ API changes
   been rellocated to specialized modules. misc.utils is no longer imported in
   hyperspy.hspy. A new hyperspy.utils module is imported instead.
 * Objects that have been renamed 
+  
   + elements -> elements_EELS
   + Signal.navigation_indexer -> inav  
   + Signal.signal_indexer -> isig 
 * The following signal methods now operate out-of-place:
+
   + :py:meth:`~.signal.Signal.swap_axes`
   + :py:meth:`~.signal.Signal.rebin`
 
@@ -76,9 +78,9 @@ New features
 * Most arithmetic and rich arithmetic operators work with signal.
   See :ref:`signal.operations`.
 * Much improved EELSSpectrum methods:
-  :py:meth:`~.signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre`,  
-  :py:meth:`~.signals.eels.EELSSpectrum.estimate_elastic_scattering_intensity` and  
-  :py:meth:`~.signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold`.
+  :py:meth:`~._signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre`,  
+  :py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_intensity` and  
+  :py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold`.
   
 * The axes can now be given using their name e.g. ``s.crop("x", 1,10)``
 * New syntax to specify position over axes: an integer specifies the indexes
