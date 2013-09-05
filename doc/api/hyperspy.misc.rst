@@ -33,10 +33,10 @@ misc Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`interactive_ns` Module
-----------------------------
+:mod:`ipython_tools` Module
+---------------------------
 
-.. automodule:: hyperspy.misc.interactive_ns
+.. automodule:: hyperspy.misc.ipython_tools
     :members:
     :undoc-members:
     :show-inheritance:
