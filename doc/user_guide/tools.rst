@@ -504,6 +504,7 @@ Simple operations over one axis
 * :py:meth:`~.signal.Signal.std`
 * :py:meth:`~.signal.Signal.var`
 * :py:meth:`~.signal.Signal.diff`
+* :py:meth:`~.signal.Signal.integrate_simpson`
 
 Changing the data type
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -542,7 +543,6 @@ equal to one.
 
 Cropping
 ^^^^^^^^
-
 In addition to cropping using the powerful and compact 
 :ref:`Signal indexing <signal.indexing>` syntax
 the following method is available to crop spectra using a GUI:
@@ -573,10 +573,17 @@ files.
 * :py:meth:`~.signal.Signal1DTools.align1D`
 * :py:meth:`~.signal.Signal1DTools.shift1D`
 
+.. _integrate_1D-label:
+
+Integration
+-----------
+The :py:meth:`~.signal.Signal1DTools.integrate_in_range` method provides a GUI
+and a CLI to integrate the 1D signal dimension in a given range using the
+Simpson's rule. The GUI operates in-place while the CLI opearation is
+not-in-place. 
 
 Data smoothing
 ^^^^^^^^^^^^^^
-
 The following methods (that include user interfaces when no arguments are
 passed) can perform data smoothing with different algorithms:
 
