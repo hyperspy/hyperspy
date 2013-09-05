@@ -55,6 +55,7 @@ from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
 from hyperspy.misc import spectrum_tools
+from hyperspy.gui.tools import IntegrateArea
 from hyperspy import components
 
 class Signal2DTools(object):
@@ -593,8 +594,8 @@ class Signal1DTools(object):
             as this one and that will be aligned using the shift map
             estimated using the this signal.
 
-        Return
-        ------
+        Returns
+        -------
         An array with the result of the estimation. The shift will be
         
         Raises
@@ -624,6 +625,58 @@ class Signal1DTools(object):
                            crop=crop,
                            fill_value=fill_value)
                             
+    def integrate_in_range(self, signal_range='interactive'):
+        """ Sums the spectrum over an energy range, giving the integrated
+        area.
+
+        The energy range can either be selected through a GUI or the command
+        line.  When `signal_range` is "interactive" the operation is performed
+        in-place, i.e. the original spectrum is replaced. Otherwise the
+        operation is performed not-in-place, i.e. a new object is returned with 
+        the result of the integration.
+
+        Parameters
+        ----------
+        signal_range : {a tuple of this form (l, r), "interactive"}
+            l and r are the left and right limits of the range. They can be numbers or None,
+            where None indicates the extremes of the interval. When `signal_range` is 
+            "interactive" (default) the range is selected using a GUI.
+
+        Returns
+        -------
+        integrated_spectrum : {Signal subclass, None}
+
+        See Also
+        --------
+        integrate_simpson 
+
+        Examples
+        --------
+
+        Using the GUI (in-place operation).
+
+        >>> s.integrate_in_range()
+        
+        Using the CLI (not-in-place operation).
+
+        >>> s_int = s.integrate_in_range(signal_range=(560,None))
+
+        """
+
+        if signal_range == 'interactive':
+            ia = IntegrateArea(self, signal_range)
+            ia.edit_traits()
+            integrated_spectrum = None
+        else:
+            integrated_spectrum = self._integrate_in_range_commandline(signal_range)
+        return(integrated_spectrum)
+
+    def _integrate_in_range_commandline(self, signal_range):
+        e1 = signal_range[0]
+        e2 = signal_range[1]
+        integrated_spectrum = self[..., e1:e2].integrate_simpson(-1)
+        return(integrated_spectrum)
+
     @only_interactive
     def calibrate(self):
         """Calibrate the spectral dimension using a gui.
@@ -3659,6 +3712,8 @@ class Signal(MVA,
         im._assign_subclass()
         return im
         
+
+
     def _assign_subclass(self):
         mp = self.mapped_parameters
         current_class = self.__class__
