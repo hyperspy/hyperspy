@@ -332,8 +332,9 @@ class EELSSpectrum(Spectrum):
         return threshold
         
     def estimate_thickness(self,
+                           threshold,
                            zlp=None,
-                           threshold=None,):
+                           ):
         """Estimates the thickness (relative to the mean free path) 
         of a sample using the log-ratio method.
         
