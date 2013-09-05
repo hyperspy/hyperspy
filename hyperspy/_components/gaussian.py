@@ -113,8 +113,8 @@ class Gaussian(Component):
         -----
         Adapted from http://www.scipy.org/Cookbook/FittingData
         
-        Example
-        -------
+        Examples
+        --------
         
         >>> import numpy as np
         >>> from hyperspy.hspy import *

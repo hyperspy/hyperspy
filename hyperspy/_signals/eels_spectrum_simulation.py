@@ -60,8 +60,8 @@ class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
 #        a set in self.elements. Otherwise it will create a random map for each 
 #        element defined.
 #        
-#        Parameters:
-#        -----------
+#        Parameters
+#        ----------
 #        maps : list/tuple of arrays
 #            A list with as many arrays as elements are defined.
 #        energy_instability : float
@@ -71,8 +71,8 @@ class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
 #        max_intensity : float
 #            maximum edge intensity
 #            
-#        Returns:
-#        --------
+#        Returns
+#        -------
 #        
 #        If energy_instability != 0 it returns the energy shift map
 #        """

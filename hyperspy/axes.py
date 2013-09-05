@@ -374,6 +374,7 @@ class AxesManager(t.HasTraits):
     (3, 2, 1) (3, 2, 1)
 
     """
+
     _axes = t.List(DataAxis)
     signal_axes = t.Tuple()
     navigation_axes = t.Tuple()

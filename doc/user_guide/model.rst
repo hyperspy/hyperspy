@@ -33,21 +33,21 @@ In Hyperspy a model consists of a linear combination of :py:mod:`~.components`.
 These are some of the components which are currently available:
 
 
-* :py:class:`~.components.eels_cl_edge.EELSCLEdge`
-* :py:class:`~.components.volume_plasmon_drude.VolumePlasmonDrude`
-* :py:class:`~.components.power_law.PowerLaw`
-* :py:class:`~.components.offset.Offset`
-* :py:class:`~.components.exponential.Exponential`
-* :py:class:`~.components.scalable_fixed_pattern.ScalableFixedPattern`
-* :py:class:`~.components.gaussian.Gaussian`
-* :py:class:`~.components.lorentzian.Lorentzian`
-* :py:class:`~.components.voigt.Voigt`
-* :py:class:`~.components.polynomial.Polynomial`
-* :py:class:`~.components.logistic.Logistic`
-* :py:class:`~.components.bleasdale.Bleasdale`
-* :py:class:`~.components.error_function.Erf`
-* :py:class:`~.components.pes_see.SEE`
-* :py:class:`~.components.arctan.Arctan`
+* :py:class:`~._components.eels_cl_edge.EELSCLEdge`
+* :py:class:`~._components.volume_plasmon_drude.VolumePlasmonDrude`
+* :py:class:`~._components.power_law.PowerLaw`
+* :py:class:`~._components.offset.Offset`
+* :py:class:`~._components.exponential.Exponential`
+* :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
+* :py:class:`~._components.gaussian.Gaussian`
+* :py:class:`~._components.lorentzian.Lorentzian`
+* :py:class:`~._components.voigt.Voigt`
+* :py:class:`~._components.polynomial.Polynomial`
+* :py:class:`~._components.logistic.Logistic`
+* :py:class:`~._components.bleasdale.Bleasdale`
+* :py:class:`~._components.error_function.Erf`
+* :py:class:`~._components.pes_see.SEE`
+* :py:class:`~._components.arctan.Arctan`
 
 
  
@@ -554,7 +554,7 @@ There are several methods that are only available in
   the current locations of all the EELS ionisation edges in the model.
 * :py:meth:`~.models.eelsmodel.EELSModel.remove_fine_structure_data` removes 
   the fine structure spectral data range (as defined by the 
-  :py:attr:`~.components.eels_cl_edge.EELSCLEdge.fine_structure_width)` 
+  :py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_width)` 
   ionisation edge components. It is specially useful when fitting without 
   convolving with a zero-loss peak.
 

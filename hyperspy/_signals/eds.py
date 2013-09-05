@@ -51,8 +51,8 @@ class EDSSpectrum(Spectrum):
         --------
         sum_in_mask, mean
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape

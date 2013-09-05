@@ -1,3 +1,6 @@
+
+.. _visualization-label:
+
 Visualisation of multi-dimensional data
 ****************************************
 

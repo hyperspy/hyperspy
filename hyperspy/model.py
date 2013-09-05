@@ -189,8 +189,8 @@ class Model(list):
         -------
         spectrum : An instance of the same class as `spectrum`.
 
-        Example
-        -------
+        Examples
+        --------
         >>>> s = signals.Spectrum(np.random.random((10,100)))
         >>>> m = create_model(s)
         >>>> l1 = components.Lorentzian()
@@ -1016,7 +1016,7 @@ class Model(list):
         """Loads the parameters array from  a binary file written with 
         the 'save_parameters2file' function
         
-        Paramters
+        Parameters
         ---------
         filename : str
         
@@ -1037,7 +1037,7 @@ class Model(list):
         """Plots the current spectrum to the screen and a map with a 
         cursor to explore the SI.
         
-        Paramaters
+        Parameters
         ----------
         plot_components : bool
             If True, add a line per component to the signal figure.

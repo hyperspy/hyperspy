@@ -495,8 +495,8 @@ class Signal1DTools(object):
             Number of interpolation points. Warning: making this number 
             too big can saturate the memory
 
-        Return
-        ------
+        Returns
+        -------
         An array with the result of the estimation in the axis units.
         
         Raises
@@ -593,8 +593,8 @@ class Signal1DTools(object):
             as this one and that will be aligned using the shift map
             estimated using the this signal.
 
-        Return
-        ------
+        Returns
+        -------
         An array with the result of the estimation. The shift will be
         
         Raises
@@ -767,8 +767,8 @@ class Signal1DTools(object):
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used. 
             
-        Example
-        -------
+        Examples
+        --------
         >>>> s.remove_background() # Using gui, replaces spectrum s
         >>>> s2 = s.remove_background(signal_range=(400,450), background_type='PowerLaw') #Using cli, returns a spectrum
 
@@ -991,8 +991,8 @@ class Signal1DTools(object):
         background must be previously substracted.
         The estimation is performed by interpolation using cubic splines.
         
-        Parameters:
-        -----------
+        Parameters
+        ----------
         factor : 0 < float < 1
             The default, 0.5, estimates the FWHM.
         window : None, float
@@ -1007,8 +1007,8 @@ class Signal1DTools(object):
             desired height fraction at the left and right of the 
             peak.
         
-        Returns:
-        --------
+        Returns
+        -------
         width or [width, left, right], depending on the value of 
         `return_interval`.
 
@@ -2091,8 +2091,8 @@ class Signal(MVA,
     def __init__(self, data, **kwds):
         """Create a Signal from a numpy array.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         data : numpy array
            The signal data. It can be an array of any dimensions.
         axes : dictionary (optional) 
@@ -2387,8 +2387,8 @@ class Signal(MVA,
     def _load_dictionary(self, file_data_dict):
         """Load data from dictionary.
         
-        Parameters:
-        -----------
+        Parameters
+        ----------
         file_data_dict : dictionary
             A dictionary containing at least a 'data' keyword with an array of
             arbitrary dimensions. Additionally the dictionary can contain the
@@ -2899,8 +2899,8 @@ class Signal(MVA,
             Size of the splitted parts.
 
 
-        Return
-        ------
+        Returns
+        -------
         tuple with the splitted signals
         
         """
@@ -3146,8 +3146,8 @@ class Signal(MVA,
         --------
         sum_in_mask, mean
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3177,8 +3177,8 @@ class Signal(MVA,
         --------
         sum, mean, min
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3206,8 +3206,8 @@ class Signal(MVA,
         --------
         sum, mean, max, std, var
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3236,8 +3236,8 @@ class Signal(MVA,
         --------
         sum_in_mask, mean
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3267,8 +3267,8 @@ class Signal(MVA,
         --------
         sum_in_mask, mean
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3296,8 +3296,8 @@ class Signal(MVA,
         --------
         sum_in_mask, mean
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3323,8 +3323,8 @@ class Signal(MVA,
         --------
         mean, sum
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3359,8 +3359,8 @@ class Signal(MVA,
         --------
         sum_in_mask, mean
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3409,8 +3409,8 @@ class Signal(MVA,
         dtype : str or dtype
             Typecode or data-type to which the array is cast.
             
-        Example
-        -------
+        Examples
+        --------
         >>> import numpy as np
         >>> from hyperspy.signals import Spectrum
         >>> s = signals.Spectrum(np.array([1,2,3,4,5]))
