@@ -1,6 +1,6 @@
 
-Tools
-*****
+Data operations
+***************
 
 The Signal class and its subclasses
 -----------------------------------
@@ -37,6 +37,7 @@ The :py:mod:`~.signals` module, which contains all available signal subclasses,
 is imported in the user namespace when loading hyperspy. In the following
 example we create an Image instance from a 2D numpy array:
 
+
 .. code-block:: python
     
     >>> im = signals.Image(np.random.random((64,64)))
@@ -49,6 +50,7 @@ examples, the hyperspectral data is stored in the
 in the :py:attr:`~.signal.Signal.mapped_parameters` attribute and the axes
 information (including calibration) can be accessed (and modified) in the
 :py:attr:`~.signal.Signal.axes_manager` attribute.
+
 
 .. _transforming.signal:
 
@@ -157,30 +159,30 @@ The following example shows how to transform between different subclasses.
 The navigation and signal dimensions
 ------------------------------------
 
-Hyperspy can deal with data of arbitrary dimensions. Each dimension is internally
-classified as either "navigation" or "signal" and the 
-way this classification is done determines the behaviour of the signal.
+Hyperspy can deal with data of arbitrary dimensions. Each dimension is
+internally classified as either "navigation" or "signal" and the way this
+classification is done determines the behaviour of the signal.
 
-The concept is probably best understood with 
-an example: let's imagine a three dimensional dataset. This dataset 
-could be an spectrum image acquired by scanning over a sample in two 
-dimensions. In Hyperspy's terminology the spectrum dimension would be 
-the signal dimension and the two other dimensions would be the navigation 
-dimensions. We could see the same dataset as an image stack instead. 
-Actually it could has been acquired by capturing two
-dimensional images at different wavelenghts. Then it would be natural 
-to identify the two spatial dimensions as the signal dimensions and 
-the wavelenght dimension as the navigation dimension. 
-However, for data analysis purposes, one may like to operate with an image stack 
-as if it was a set of spectra or viceversa. One can easily switch between these 
-two alternative ways of classifiying the dimensions of a three-dimensional 
-dataset by 
-:ref:`transforming between Spectrum and Image subclasses <transforming.signal>`.
+The concept is probably best understood with an example: let's imagine a three
+dimensional dataset. This dataset could be an spectrum image acquired by
+scanning over a sample in two dimensions. In Hyperspy's terminology the
+spectrum dimension would be the signal dimension and the two other dimensions
+would be the navigation dimensions. We could see the same dataset as an image
+stack instead.  Actually it could has been acquired by capturing two
+dimensional images at different wavelenghts. Then it would be natural to
+identify the two spatial dimensions as the signal dimensions and the wavelenght
+dimension as the navigation dimension.  However, for data analysis purposes,
+one may like to operate with an image stack as if it was a set of spectra or
+viceversa. One can easily switch between these two alternative ways of
+classifiying the dimensions of a three-dimensional dataset by
+:ref:`transforming between Spectrum and Image subclasses
+<transforming.signal>`.
 
 .. NOTE::
-    Although each dimension can be arbitrarily classified as "navigation dimension"
-    or "signal dimension", for most common tasks there is no need to modify 
-    Hyperspy's default choice.
+
+    Although each dimension can be arbitrarily classified as "navigation
+    dimension" or "signal dimension", for most common tasks there is no need to
+    modify Hyperspy's default choice.
 
 
 Generic tools
@@ -190,8 +192,9 @@ Below we briefly introduce some of the most commonly used tools (methods). For
 more details about a particular method click on its name. For a detailed list
 of all the methods available see the :py:class:`~.signal.Signal` documentation.
 
-The methods of this section are available to all the signals. In the subsections
-we describe methods that are only available in specialized subclasses.
+The methods of this section are available to all the signals. In the
+subsections we describe methods that are only available in specialized
+subclasses.
 
 .. _signal.indexing:
 
@@ -199,17 +202,15 @@ Indexing
 ^^^^^^^^
 .. versionadded:: 0.6
 
-Indexing the :py:class:`~.signal.Signal`  provides a
-powerful, convenient and Pythonic way to access and modify its data.
-It is a concept that might take some time to grasp but, once 
-mastered, it can greatly simplify many common
+Indexing the :py:class:`~.signal.Signal`  provides a powerful, convenient and
+Pythonic way to access and modify its data.  It is a concept that might take
+some time to grasp but, once mastered, it can greatly simplify many common
 signal processing tasks.
  
-Indexing refers to any use of the square brackets ([]) to index the
-data stored in a :py:class:`~.signal.Signal`. The result of indexing 
-a :py:class:`~.signal.Signal` is another :py:class:`~.signal.Signal` 
-that shares a subset of the data of the original :py:class:`~.signal.Signal`.
- 
+Indexing refers to any use of the square brackets ([]) to index the data stored
+in a :py:class:`~.signal.Signal`. The result of indexing a
+:py:class:`~.signal.Signal` is another :py:class:`~.signal.Signal` that shares
+a subset of the data of the original :py:class:`~.signal.Signal`.
  
 Hyperspy's Signal indexing is similar to numpy array indexing and, therefore,
 rather that explaining this feature in detail we will just give some examples
@@ -413,9 +414,9 @@ Signal operations
 
 :py:class:`~.signal.Signal` supports all the Python binary arithmetic
 opearations (+, -, \*, //, %, divmod(), pow(), \*\*, <<, >>, &, ^, \|),
-augmented binary assignments (+=, -=, \*=, /=, //=, %=, \*\*=, <<=, >>=, 
-&=, ^=, \|=), unary operations (-, +, abs() and ~) and rich comparisons 
-operations (<, <=, ==, x!=y, <>, >, >=).
+augmented binary assignments (+=, -=, \*=, /=, //=, %=, \*\*=, <<=, >>=, &=,
+^=, \|=), unary operations (-, +, abs() and ~) and rich comparisons operations
+(<, <=, ==, x!=y, <>, >, >=).
 
 These operations are performed element-wise. When the dimensions of the signals
 are not equal `numpy broadcasting rules apply
@@ -533,237 +534,3 @@ type in place, e.g.:
 
 
 
-Spectrum tools
---------------
-
-These methods are only available for Signal object with signal_dimension 
-equal to one.
-
-.. _spectrum.crop:
-
-Cropping
-^^^^^^^^
-In addition to cropping using the powerful and compact 
-:ref:`Signal indexing <signal.indexing>` syntax
-the following method is available to crop spectra using a GUI:
-
-The :py:meth:`~.signal.Signal1DTools.crop_spectrum`, method is used to crop the
-spectral energy range. If no parameter is passed, a user interface appears in
-which to crop the spectrum.
-
-Background removal
-^^^^^^^^^^^^^^^^^^
-
-The :py:meth:`~.signal.Signal1DTools.remove_background` method provides
-background removal capabilities through both a CLI and a GUI. Current
-background type supported are power law, offset, polynomial and gaussian.
-
-Calibration
-^^^^^^^^^^^
-The :py:meth:`~.signal.Signal1DTools.calibrate` method provides a user
-interface to calibrate the spectral axis.
-
-Aligning
-^^^^^^^^
-
-The following methods use sub-pixel cross-correlation or user-provided shifts
-to align spectra. They support applying the same transformation to multiple
-files.
-
-* :py:meth:`~.signal.Signal1DTools.align1D`
-* :py:meth:`~.signal.Signal1DTools.shift1D`
-
-.. _integrate_1D-label:
-
-Integration
------------
-The :py:meth:`~.signal.Signal1DTools.integrate_in_range` method provides a GUI
-and a CLI to integrate the 1D signal dimension in a given range using the
-Simpson's rule. The GUI operates in-place while the CLI opearation is
-not-in-place. 
-
-Data smoothing
-^^^^^^^^^^^^^^
-The following methods (that include user interfaces when no arguments are
-passed) can perform data smoothing with different algorithms:
-
-* :py:meth:`~.signal.Signal1DTools.smooth_lowess`
-* :py:meth:`~.signal.Signal1DTools.smooth_tv`
-* :py:meth:`~.signal.Signal1DTools.smooth_savitzky_golay`
-
-Other methods
-^^^^^^^^^^^^^^
-
-
-* Apply a hanning taper to the spectra 
-  :py:meth:`~.signal.Signal1DTools.hanning_taper`
-* Find peaks in spectra 
-  :py:meth:`~.signal.Signal1DTools.find_peaks1D_ohaver`
-* Interpolate the spectra in between two positions 
-  :py:meth:`~.signal.Signal1DTools.interpolate_in_between`
-* Convolve the spectra with a gaussian 
-  :py:meth:`~.signal.Signal1DTools.gaussian_filter`
-
-
-
-Image tools
------------
-
-These methods are only available for Signal object with signal_dimension 
-equal to two.
-
-Image registration (alignment)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. versionadded:: 0.5
-
-The :py:meth:`~.signal.Signal2DTools.align2D` method provides advanced image
-alignment functionality, including subpixel alignment.
-
-.. _image.crop:
-
-Cropping an image
-^^^^^^^^^^^^^^^^^
-In addition to cropping using the powerful and compact :ref:`signal.indexing`
-the following method is available to crop spectra the familiar 
-top, bottom, left, right syntax.
-
-* :py:meth:`~.signal.Signal2DTools.crop_image`
-
-
-EELS tools
-----------
-
-These methods are only available for the following signals:
-
-* :py:class:`~._signals.eels.EELSSpectrum`
-
-Spikes removal
-^^^^^^^^^^^^^^
-.. versionadded:: 0.5
-    The :py:meth:`~._signals.eels.EELSSpectrum.spikes_removal_tool` replaces the
-    old :py:meth:`~._signals.eels.EELSSpectrum.remove_spikes`.
-
-
-:py:meth:`~._signals.eels.EELSSpectrum.spikes_removal_tool` provides an user
-interface to remove spikes from spectra.
-
-
-.. figure::  images/spikes_removal_tool.png
-   :align:   center
-   :width:   500    
-
-   Spikes removal tool
-
-
-Define the elemental composition of the sample
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-It can be useful to define the composition of the sample for archiving purposes
-or for some other process (e.g. curve fitting) that may use this information.
-The elemental composition of the sample can be defined using
-:py:meth:`~._signals.eels.EELSSpectrum.add_elements`. The information is stored
-in the :py:attr:`~.signal.Signal.mapped_parameters` attribute (see
-:ref:`mapped_parameters_structure`)
-
-Estimate the FWHM of a peak
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* :py:meth:`~._signals.eels.EELSSpectrum.estimate_FWHM`
-
-Estimate the thickness
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The :py:meth:`~._signals.eels.EELSSpectrum.estimate_thickness` can estimate the
-thickness from a low-loss EELS spectrum.
-
-Estimate zero loss peak centre
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* :py:meth:`~._signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre`
-
-Deconvolutions
-^^^^^^^^^^^^^^
-
-* :py:meth:`~._signals.eels.EELSSpectrum.fourier_log_deconvolution`
-* :py:meth:`~._signals.eels.EELSSpectrum.fourier_ratio_deconvolution`
-* :py:meth:`~._signals.eels.EELSSpectrum.richardson_lucy_deconvolution`
-
-Estimate elastic scattering threshold
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Use
-:py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold` to
-calculate separation point between elastic and inelastic scattering on some
-EELS low-loss spectra. This algorithm calculates the derivative of the signal
-and assigns the inflexion point to the first point below a certain tolerance.
-This tolerance value can be set using the tol keyword.
-
-Currently, the method uses smoothing to reduce the impact of the noise in the
-measure. The number of points used for the smoothing window can be specified by
-the npoints keyword. 
-
-Estimate elastic scattering intensity
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Use :py:meth:`estimate_elastic_scattering_intensity` to calculate the integral
-below the zero loss peak (elastic intensity) from EELS low-loss spectra
-containing the zero loss peak. This integral can use the threshold image
-calculated by the
-:py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold` as
-end energy for the integration at each spectra or use the same energy value for
-all spectra. Also, if no threshold is specified, the routine will perform a
-rough estimation of the inflexion values at each spectrum.
-
-Splice zero loss peak
-^^^^^^^^^^^^^^^^^^^^^
-Once :py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold` has determined the elastic scattering threshold value(s), this tool can be used to separate the zero loss peak from the eels spectra. Use :py:meth:`~._signals.eels.EELSSpectrum.splice_zero_loss_peak` in order to obtain a ZLP suitable for Fourier-Log deconvolution from your EELS low-loss spectra by setting the "smooth" option, that will apply the hanning window to the righ end of the data.
-
-
-.. _eds_tools-label:
-
-EDS tools
----------
-
-.. versionadded:: 0.7
-
-These methods are only available for the following signals:
-
-* :py:class:`~._signals.eds_tem.EDSTEMSpectrum`
-* :py:class:`~._signals.eds_sem.EDSSEMSpectrum`
-
-
-Set elements
-^^^^^^^^^^^^
-
-The :py:meth:`~._signals.eds.EDSSpectrum.set_elements` method is used 
-to define a set of elements and corresponding X-ray lines
-that will be used in other process (e.g. X-ray intensity mapping).
-The information is stored in the :py:attr:`~.signal.Signal.mapped_parameters` attribute (see :ref:`mapped_parameters_structure`)
-
-
-Add elements
-^^^^^^^^^^^^
-
-When the set_elements method erases all previously defined elements, 
-the :py:meth:`~._signals.eds.EDSSpectrum.add_elements` method adds a new
-set of elements to the previous set.
-
-
-Get intensity map
-^^^^^^^^^^^^^^^^^
-
-With the :py:meth:`~._signals.eds.EDSSpectrum.get_intensity_map`, the 
-intensity of X-ray lines is used to generate a map. The number of counts
-under the selected peaks is used.
-
-Set microscope parameters
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` method provides an user 
-interface to calibrate the paramters if the microscope and the EDS detector.
-
-Get the calibration from another spectrum
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.get_calibration_from`

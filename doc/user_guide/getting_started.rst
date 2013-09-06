@@ -1,9 +1,6 @@
 Getting started
 ***************
 
-First steps with hyperspy
-=========================
-
 Starting hyperspy
 -----------------
 
@@ -307,116 +304,6 @@ This command should raise the Preferences user interface:
    Preferences user interface
 
 .. _getting-help-label:
-
-
-
-Data visualisation
-==================
-
-The object returned by :py:func:`~.io.load` is a :py:class:`~.signal.Signal`
-and has a :py:meth:`~.signal.Signal.plot` method which plots the data and
-allows navigation.
-
-.. code-block:: python
-    
-    >>> s = load('YourDataFilenameHere')
-    >>> s.plot()
-
-if the object is single spectrum or an image one window will appear when
-calling the plot method.
-
-If the object is a 1D or 2D spectrum-image (i.e. with 2 or 3 dimensions when
-including energy) two figures will appear, one containing a plot of the
-spectrum at the current coordinates and the other an image of the data summed
-over its spectral dimension if 2D or an image with the spectral dimension in
-the x-axis if 1D:
-
-.. _2d_SI:
-
-.. figure::  images/2D_SI.png
-   :align:   center
-   :width:   500
-
-   Visualisation of a 2D spectrum image
-   
-.. _1d_SI:
-
-.. figure::  images/1D_SI.png
-   :align:   center
-   :width:   500
-
-   Visualisation of a 1D spectrum image
-   
-Equivalently, if the object is a 1D or 2D image stack two figures will appear, 
-one containing a plot of the image at the current coordinates and the other
-a spectrum or an image obtained by summing over the image dimensions:
-   
-.. _1D_image_stack.png:
-
-.. figure::  images/1D_image_stack.png
-   :align:   center
-   :width:   500    
-
-   Visualisation of a 1D image stack
-   
-.. _2D_image_stack.png:
-
-.. figure::  images/2D_image_stack.png
-   :align:   center
-   :width:   500
-   
-   Visualisation of a 2D image stack
-
-To change the current coordinates, click on the pointer (which will be a line
-or a square depending on the dimensions of the data) and drag it around. It is
-also possible to move the pointer by using the numpad arrows **when numlock is
-on and the spectrum or navigator figure is selected**.When using the numpad
-arrows the PageUp and PageDown keys change the size of the step.
-
-An extra cursor can be added by pressing the ``e`` key. Pressing ``e`` once
-more will disable the extra cursor:
-
-.. _second_pointer.png:
-
-.. figure::  images/second_pointer.png
-   :align:   center
-   :width:   500
-
-   Visualisation of a 2D spectrum image using two pointers.
-
-When exploring a 2D hyperspectral object of high spatial resolution the default
-size of the rectangular cursors can be too small to be dragged or even seen. It
-is possible to change the size of the cursors by pressing the ``+`` and ``-``
-keys  **when the navigator window is selected**.
-
-The same keys can be used to explore an image stack.
-
-
-
-=========   =============================
-key         function    
-=========   =============================
-e           Switch second pointer on/off
-Arrows      Change coordinates  
-PageUp      Increase step size
-PageDown    Decrease step size
-``+``           Increase pointer size
-``-``           Decrease pointer size
-``h``       Launch the contrast adjustment tool (only for Image)
-=========   =============================
-
-To close all the figures run the following command:
-
-.. code-block:: python
-
-    close('all')
-
-.. NOTE::
-
-    This is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command.
-    Matplotlib is the library that hyperspy uses to produce the plots. You can
-    learn how to pan/zoom and more  `in the matplotlib documentation
-    <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
 
 
 
