@@ -548,7 +548,7 @@ class Signal1DTools(object):
                  interpolation_method='linear',
                  crop=True,
                  fill_value=np.nan,
-                 also_align=None):
+                 also_align=[]):
         """Estimate the shifts in the signal axis using 
         cross-correlation and use the estimation to align the data in place.
 
@@ -616,10 +616,7 @@ class Signal1DTools(object):
             interpolate=interpolate,
             number_of_interpolation_points=
                 number_of_interpolation_points)
-        if also_align is None:
-            also_align = list()
-        also_align.append(self)
-        for signal in also_align:
+        for signal in also_align + [self]:
             signal.shift1D(shift_array=shift_array,
                            interpolation_method=interpolation_method,
                            crop=crop,
