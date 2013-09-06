@@ -19,56 +19,16 @@
 import os
 import glob
 
-
 from hyperspy import messages
 import hyperspy.defaults_parser
-from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
-    ripple, tiff)
-from hyperspy.gui.tools import Load
+
 import hyperspy.utils
 import hyperspy.misc.utils
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import strlist2enumeration
-
 from hyperspy.misc.natsort import natsorted
 import hyperspy.misc.io.tools
-
-io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff]
-
-#try:
-#    from hyperspy.io_plugins import fits
-#    io_plugins.append(fits)
-#except ImportError:
-#    messages.information('The FITS IO features are not available')
-try:
-    from hyperspy.io_plugins import netcdf
-    io_plugins.append(netcdf)
-except ImportError:
-    pass
-    # NetCDF is obsolate and is only provided for users who have
-    # old EELSLab files. Therefore, we print no message if it is not
-    # available
-    #~ messages.information('The NetCDF IO features are not available')
-    
-try:
-    from hyperspy.io_plugins import hdf5
-    io_plugins.append(hdf5)
-except ImportError:
-    messages.warning('The HDF5 IO features are not available. '
-    'It is highly reccomended to install h5py')
-    
-try:
-    from hyperspy.io_plugins import image
-    io_plugins.append(image)
-except ImportError:
-    messages.information('The Image (PIL) IO features are not available')
-
-default_write_ext = set()
-for plugin in io_plugins:
-    if plugin.writes:
-        
-        default_write_ext.add(
-            plugin.file_extensions[plugin.default_extension])
+from hyperspy.io_plugins import io_plugins, default_write_ext
 
 def load(filenames=None,
          record_by=None,
@@ -191,6 +151,7 @@ def load(filenames=None,
     kwds['signal_origin'] = signal_origin
     if filenames is None:
         if hyperspy.defaults_parser.preferences.General.interactive is True:
+            from hyperspy.gui.tools import Load
             load_ui = Load()
             load_ui.edit_traits()
             if load_ui.filename:
@@ -219,7 +180,6 @@ def load(filenames=None,
             signal = []
             for i, filename in enumerate(filenames):
                 obj = load_single_file(filename,
-                                       output_level=0,
                                        **kwds)
                 signal.append(obj)
             signal = hyperspy.utils.stack(signal,
@@ -237,7 +197,6 @@ def load(filenames=None,
             objects = [signal,] 
         else:
             objects=[load_single_file(filename,
-                                      output_level=0,
                                       **kwds) 
                 for filename in filenames]
             
@@ -251,7 +210,6 @@ def load(filenames=None,
 
 def load_single_file(filename,
                      record_by=None,
-                     output_level=2, 
                      signal_type=None,
                      signal_origin=None,
                      **kwds):
@@ -269,10 +227,7 @@ def load_single_file(filename,
         If None (default) it will try to guess the data type from the file,
         if 'spectrum' the file will be loaded as an Spectrum object
         If 'image' the file will be loaded as an Image object
-    output_level : int
-        If 0, do not output file loading text.
-        If 1, output simple file summary (data type and shape)
-        If 2, output more diagnostic output (e.g. number of tags for DM3 files)
+
     """
     extension = os.path.splitext(filename)[1][1:]
 
@@ -296,7 +251,6 @@ def load_single_file(filename,
                                 record_by=record_by,
                     signal_type=signal_type,
                                 signal_origin=signal_origin,
-                                output_level=output_level,
                                 **kwds)
 
 
@@ -306,14 +260,9 @@ def load_with_reader(filename,
                      record_by=None,
                      signal_type=None,
                      signal_origin=None,
-                     output_level=1,
                      **kwds):
-    if output_level>1:
-        messages.information('Loading %s ...' % filename)
-    
     file_data_list = reader.file_reader(filename,
                                         record_by=record_by,
-                                        output_level=output_level,
                                         **kwds)
     objects = []
 
@@ -333,8 +282,6 @@ def load_with_reader(filename,
 
     if len(objects) == 1:
         objects = objects[0]
-    if output_level > 1:
-        messages.information('%s correctly loaded' % filename)
     return objects
 
 def assign_signal_subclass(record_by="",
@@ -406,9 +353,20 @@ def dict2signal(signal_dict):
                                                 signal_dict['data'].ndim < 2):
         record_by = "spectrum"
     
-    return assign_signal_subclass(record_by=record_by,
+    signal = assign_signal_subclass(record_by=record_by,
                                   signal_type=signal_type,
                                   signal_origin=signal_origin)(**signal_dict)
+    if "post_process" in signal_dict:
+        for f in signal_dict['post_process']:
+            signal = f(signal)
+    if "mapping" in signal_dict:
+        for opattr, (mpattr, function) in signal_dict["mapping"].iteritems():
+            if opattr in signal.original_parameters:
+                value = signal.original_parameters.get_item(opattr)
+                if function is not None:
+                    value = function(value)
+                signal.mapped_parameters.set_item(mpattr, value)
+    return signal
 
 def save(filename, signal, overwrite=None, **kwds):
     extension = os.path.splitext(filename)[1][1:]

@@ -18,17 +18,14 @@
 
 
 import os.path
-import tarfile
 import ConfigParser
 
 import traits.api as t
-import traitsui.api as tui
 
 from hyperspy.misc.config_dir import config_path, os_name, data_path
 from hyperspy import messages
-from hyperspy.misc.utils import DictionaryBrowser
-from hyperspy.misc.interactive_ns import turn_logging_on, turn_logging_off
-from hyperspy.io import default_write_ext
+from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
+from hyperspy.io_plugins import default_write_ext
 
 defaults_file = os.path.join(config_path, 'hyperspyrc')
 eels_gos_files = os.path.join(data_path, 'EELS_GOS.tar.gz')
@@ -75,7 +72,21 @@ class GeneralConfig(t.HasTraits):
     default_file_format = t.Enum('hdf5', 'rpl',
         desc = 'Using the hdf5 format is highly reccomended because is the '
                'only one fully supported. The Ripple (rpl) format it is useful '
+                'tk is provided for when none of the other toolkits are'                      
+                ' available. However, when using this toolkit the '     
+                'user interface elements are not available. '
                'to export data to other software that do not support hdf5')
+    default_toolkit = t.Enum("qt4", "gtk", "wx", "tk", "None",
+            desc="Default toolkit for matplotlib and the user interface "
+                 "elements. "
+                 "When using gtk and tk the user interface elements are not"
+                 " available."
+                 "user interface elements are not available. "
+                 "None is suitable to run headless. "
+                 "Hyperspy must be restarted for changes to take effect")
+    pylab_inline = t.CBool(False,
+        desc="If True the figure are displayed inline."
+             "Hyperspy must be restarted for changes to take effect")
     default_export_format = t.Enum(*default_write_ext,
         desc = 'Using the hdf5 format is highly reccomended because is the '
                'only one fully supported. The Ripple (rpl) format it is useful '
@@ -146,19 +157,6 @@ class EELSConfig(t.HasTraits):
                'disable if the next ionisation edge onset distance to the '
                'higher energy side of the fine structure region is lower that '
                'the value of this parameter')
-    view = tui.View(
-        tui.Group(
-        'synchronize_cl_with_ll',
-        label = 'General'),
-        tui.Group(
-            'eels_gos_files_path',
-            'preedge_safe_window_width',
-            tui.Group(
-                'fine_structure_width', 'fine_structure_active', 'fine_structure_smoothing', 
-                'min_distance_between_edges_for_fine_structure',
-                label = 'Fine structure'),
-            label = 'Model')
-            )            
             
 class EDSConfig(t.HasTraits):
     eds_mn_ka = t.CFloat(130.,
@@ -199,7 +197,6 @@ def template2config(template, config):
             config.set(section, key, str(item))
             
 def config2template(template, config):
-    defaults_dictionary = {}
     for section, traited_class in template.iteritems():
         config_dict = {}
         for name, value in config.items(section):
@@ -245,44 +242,24 @@ if not defaults_file_exists or rewrite is True:
 # Use the traited classes to cast the content of the ConfigParser
 config2template(template, config)
     
-#preferences = DictionaryBrowser(dictionary_from_template(template))
-
-class PreferencesHandler(tui.Handler):
-    def close(self, info, is_ok):
-        # Removes the span selector from the plot
-        info.object.save()
-        return True
-
 
 class Preferences(t.HasTraits):
+    global current_toolkit
     EELS = t.Instance(EELSConfig)
     EDS = t.Instance(EDSConfig)
     Model = t.Instance(ModelConfig)
     General = t.Instance(GeneralConfig)
     MachineLearning = t.Instance(MachineLearningConfig)
-    view = tui.View(
-        tui.Group(tui.Item('General', style='custom', show_label=False, ),
-            label = 'General'),
-        tui.Group(tui.Item('Model', style='custom', show_label=False, ),
-            label = 'Model'),
-        tui.Group(tui.Item('EELS', style='custom', show_label=False, ),
-            label = 'EELS'),
-        tui.Group(tui.Item('EDS', style='custom', show_label=False, ),
-            label = 'EDS'),
-        tui.Group(tui.Item('MachineLearning', style='custom',
-            show_label=False,),
-            label = 'Machine Learning'),
-        title = 'Preferences',
-        handler = PreferencesHandler,)
-    
     def gui(self):
-        self.edit_traits()
-        
+        import hyperspy.gui.preferences
+        self.EELS.trait_view("traits_view",
+                              hyperspy.gui.preferences.eels_view)
+        self.edit_traits(view=hyperspy.gui.preferences.preferences_view)
+
     def save(self):
         config = ConfigParser.SafeConfigParser(allow_no_value = True)
         template2config(template, config)
         config.write(open(defaults_file, 'w'))
-
     
 preferences = Preferences(
             EELS = template['EELS'],
@@ -293,3 +270,5 @@ preferences = Preferences(
             
 if preferences.General.logger_on:
     turn_logging_on(verbose = 0)
+
+current_toolkit = preferences.General.default_toolkit

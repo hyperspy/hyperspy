@@ -23,6 +23,7 @@ import math
 
 import numpy as np
 import numpy.ma as ma
+import scipy.interpolate
 import scipy as sp
 from matplotlib import pyplot as plt
 
@@ -54,7 +55,8 @@ from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
 from hyperspy.misc import spectrum_tools
-
+from hyperspy.gui.tools import IntegrateArea
+from hyperspy import components
 
 class Signal2DTools(object):
     def estimate_shift2D(self, reference='current',
@@ -95,8 +97,9 @@ class Signal2DTools(object):
         chunk_size: {None, int}
             If int and `reference`=='stat' the number of images used
             as reference are limited to the given value.
-        roi : tuple of ints (top, bottom, left, right)
-             Define the region of interest
+        roi : tuple of ints or floats (left, right, top bottom)
+             Define the region of interest. If int(float) the position
+             is given axis index(value).
         sobel : bool
             apply a sobel filter for edge enhancement 
         medfilter :  bool
@@ -132,6 +135,13 @@ class Signal2DTools(object):
         
         """
         self._check_signal_dimension_equals_two()
+        if roi is not None:
+            # Get the indices of the roi
+            yaxis = self.axes_manager.signal_axes[1]
+            xaxis = self.axes_manager.signal_axes[0]
+            roi = tuple([xaxis._get_index(i) for i in roi[2:]] +
+                    [yaxis._get_index(i) for i in roi[:2]]) 
+
         ref = None if reference == 'cascade' else \
             self.__call__().copy()
         shifts = []
@@ -286,10 +296,14 @@ class Signal2DTools(object):
         self._check_signal_dimension_equals_two()
         if shifts is None:
             shifts = self.estimate_shift2D(
-                roi=roi,sobel=sobel, medfilter=medfilter,
-                hanning=hanning, plot=plot,reference=reference,
-                dtype=dtype, correlation_threshold=
-                correlation_threshold,
+                roi=roi,
+                sobel=sobel,
+                medfilter=medfilter,
+                hanning=hanning,
+                plot=plot,
+                reference=reference,
+                dtype=dtype,
+                correlation_threshold=correlation_threshold,
                 normalize_corr=normalize_corr,
                 chunk_size=chunk_size)
             return_shifts = True
@@ -482,8 +496,8 @@ class Signal1DTools(object):
             Number of interpolation points. Warning: making this number 
             too big can saturate the memory
 
-        Return
-        ------
+        Returns
+        -------
         An array with the result of the estimation in the axis units.
         
         Raises
@@ -580,8 +594,8 @@ class Signal1DTools(object):
             as this one and that will be aligned using the shift map
             estimated using the this signal.
 
-        Return
-        ------
+        Returns
+        -------
         An array with the result of the estimation. The shift will be
         
         Raises
@@ -611,6 +625,58 @@ class Signal1DTools(object):
                            crop=crop,
                            fill_value=fill_value)
                             
+    def integrate_in_range(self, signal_range='interactive'):
+        """ Sums the spectrum over an energy range, giving the integrated
+        area.
+
+        The energy range can either be selected through a GUI or the command
+        line.  When `signal_range` is "interactive" the operation is performed
+        in-place, i.e. the original spectrum is replaced. Otherwise the
+        operation is performed not-in-place, i.e. a new object is returned with 
+        the result of the integration.
+
+        Parameters
+        ----------
+        signal_range : {a tuple of this form (l, r), "interactive"}
+            l and r are the left and right limits of the range. They can be numbers or None,
+            where None indicates the extremes of the interval. When `signal_range` is 
+            "interactive" (default) the range is selected using a GUI.
+
+        Returns
+        -------
+        integrated_spectrum : {Signal subclass, None}
+
+        See Also
+        --------
+        integrate_simpson 
+
+        Examples
+        --------
+
+        Using the GUI (in-place operation).
+
+        >>> s.integrate_in_range()
+        
+        Using the CLI (not-in-place operation).
+
+        >>> s_int = s.integrate_in_range(signal_range=(560,None))
+
+        """
+
+        if signal_range == 'interactive':
+            ia = IntegrateArea(self, signal_range)
+            ia.edit_traits()
+            integrated_spectrum = None
+        else:
+            integrated_spectrum = self._integrate_in_range_commandline(signal_range)
+        return(integrated_spectrum)
+
+    def _integrate_in_range_commandline(self, signal_range):
+        e1 = signal_range[0]
+        e2 = signal_range[1]
+        integrated_spectrum = self[..., e1:e2].integrate_simpson(-1)
+        return(integrated_spectrum)
+
     @only_interactive
     def calibrate(self):
         """Calibrate the spectral dimension using a gui.
@@ -716,19 +782,73 @@ class Signal1DTools(object):
             smoother.apply()
         else:
             smoother.edit_traits()
+    
+    def _remove_background_cli(self, signal_range, background_estimator):
+        spectra = self.deepcopy()
+        maxval = self.axes_manager.navigation_size
+        pbar = progressbar(maxval=maxval)
+        for index, spectrum in enumerate(spectra):
+            background_estimator.estimate_parameters(
+                    self, 
+                    signal_range[0], 
+                    signal_range[1], 
+                    only_current=True)
+            spectrum.data -= background_estimator.function(
+                    spectrum.axes_manager.signal_axes[0].axis).astype(spectra.data.dtype)
+            pbar.update(index)
+        pbar.finish()
+        return(spectra)
+
+    def remove_background(
+            self, 
+            signal_range='interactive', 
+            background_type='PowerLaw',
+            polynomial_order = 2):
+        """Remove the background, either in place using a gui or returned as a new
+        spectrum using the command line.
         
-    @only_interactive
-    def remove_background(self):
-        """Remove the background  in place using a gui.
-        
+        Parameters
+        ----------
+        signal_range : tuple, optional
+            If this argument is not specified, the signal range has to be selected
+            using a GUI. And the original spectrum will be replaced.
+            If tuple is given, the a spectrum will be returned.
+        background_type : string
+            The type of component which should be used to fit the background.
+            Possible components: PowerLaw, Gaussian, Offset, Polynomial
+            If Polynomial is used, the polynomial order can be specified
+        polynomial_order : int, default 2
+            Specify the polynomial order if a Polynomial background is used. 
+            
+        Examples
+        --------
+        >>>> s.remove_background() # Using gui, replaces spectrum s
+        >>>> s2 = s.remove_background(signal_range=(400,450), background_type='PowerLaw') #Using cli, returns a spectrum
+
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
         
         """
         self._check_signal_dimension_equals_one()
-        br = BackgroundRemoval(self)
-        br.edit_traits()
+        if signal_range == 'interactive': 
+            br = BackgroundRemoval(self)
+            br.edit_traits()
+        else:
+            if background_type == 'PowerLaw':
+                background_estimator = components.PowerLaw()
+            elif background_type == 'Gaussian':
+                background_estimator = components.Gaussian()
+            elif background_type == 'Offset':
+                background_estimator = components.Offset()
+            elif background_type == 'Polynomial':
+                background_estimator = components.Polynomial(polynomial_order)
+            else:
+                raise ValueError("Background type: " + background_type + " not recognized")
+
+            spectra = self._remove_background_cli(
+                    signal_range, background_estimator)
+            return(spectra)
 
     @interactive_range_selector    
     def crop_spectrum(self, left_value=None, right_value=None,):
@@ -912,6 +1032,98 @@ class Signal1DTools(object):
                                                 peakgroup=peakgroup,
                                                 subchannel=subchannel)
         return peaks
+    
+    def estimate_peak_width(self,
+            factor=0.5,
+            window=None,
+            return_interval=False):
+        """Estimate the width of the highest intensity of peak 
+        of the spectra at a given fraction of its maximum.
+
+        It can be used with asymmetric peaks. For accurate results any 
+        background must be previously substracted.
+        The estimation is performed by interpolation using cubic splines.
+        
+        Parameters
+        ----------
+        factor : 0 < float < 1
+            The default, 0.5, estimates the FWHM.
+        window : None, float
+            The size of the window centred at the peak maximum
+            used to perform the estimation.
+            The window size must be chosen with care: if it is narrower
+            than the width of the peak at some positions or if it is
+            so wide that it includes other more intense peaks this
+            method cannot compute the width and a NaN is stored instead.
+        return_interval: bool
+            If True, returns 2 extra signals with the positions of the 
+            desired height fraction at the left and right of the 
+            peak.
+        
+        Returns
+        -------
+        width or [width, left, right], depending on the value of 
+        `return_interval`.
+
+        """
+        self._check_signal_dimension_equals_one()
+        if not 0 < factor < 1:
+            raise ValueError("factor must be between 0 and 1.")
+
+        left, right = (self._get_navigation_signal(),
+                       self._get_navigation_signal())
+        # The signals must be of dtype float to contain np.nan
+        left.change_dtype('float')
+        right.change_dtype('float')
+        axis = self.axes_manager.signal_axes[0]
+        x = axis.axis
+        maxval = self.axes_manager.navigation_size
+        if maxval > 0:
+            pbar = progressbar(maxval=maxval)
+        for i, spectrum in enumerate(self):
+            if window is not None:
+                vmax = axis.index2value(spectrum.data.argmax())
+                spectrum = spectrum[vmax - window / 2.:vmax + window / 2.]
+                x = spectrum.axes_manager[0].axis
+            spline = scipy.interpolate.UnivariateSpline(
+                    x,
+                    spectrum.data - factor * spectrum.data.max(),
+                    s=0)
+            roots = spline.roots()
+            if len(roots) == 2:
+                left[self.axes_manager.indices] = roots[0]
+                right[self.axes_manager.indices] = roots[1]
+            else:
+                left[self.axes_manager.indices] = np.nan
+                right[self.axes_manager.indices] = np.nan
+            if maxval > 0:
+                pbar.update(i)
+        if maxval > 0:
+            pbar.finish()
+        width = right - left
+        if factor == 0.5:
+            width.mapped_parameters.title = (
+                    self.mapped_parameters.title + " FWHM")
+            left.mapped_parameters.title = (
+                    self.mapped_parameters.title + " FWHM left position")
+            
+            right.mapped_parameters.title = (
+                    self.mapped_parameters.title + " FWHM right position")
+        else:
+            width.mapped_parameters.title = (
+                    self.mapped_parameters.title +
+                    " full-width at %.1f maximum" % factor)
+            left.mapped_parameters.title = (
+                    self.mapped_parameters.title +
+                    " full-width at %.1f maximum left position" % factor)
+            right.mapped_parameters.title = (
+                    self.mapped_parameters.title +
+                    " full-width at %.1f maximum right position" % factor)
+        if return_interval is True:
+            return [width, left, right]
+        else:
+            return width
+
         
 class MVATools(object):
     # TODO: All of the plotting methods here should move to drawing
@@ -1932,8 +2144,8 @@ class Signal(MVA,
     def __init__(self, data, **kwds):
         """Create a Signal from a numpy array.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         data : numpy array
            The signal data. It can be an array of any dimensions.
         axes : dictionary (optional) 
@@ -2228,8 +2440,8 @@ class Signal(MVA,
     def _load_dictionary(self, file_data_dict):
         """Load data from dictionary.
         
-        Parameters:
-        -----------
+        Parameters
+        ----------
         file_data_dict : dictionary
             A dictionary containing at least a 'data' keyword with an array of
             arbitrary dimensions. Additionally the dictionary can contain the
@@ -2270,9 +2482,9 @@ class Signal(MVA,
                             eval('self.%s.__setattr__(k,v)'%key)
                     else:
                         self.__setattr__(key, value)
-        self.original_parameters._load_dictionary(
+        self.original_parameters.add_dictionary(
             file_data_dict['original_parameters'])
-        self.mapped_parameters._load_dictionary(
+        self.mapped_parameters.add_dictionary(
             file_data_dict['mapped_parameters'])
         if "title" not in self.mapped_parameters:
             self.mapped_parameters.title = ''
@@ -2438,9 +2650,12 @@ class Signal(MVA,
                 self.axes_manager.signal_dimension == 1):
                     navigator = "data"
             elif self.axes_manager.navigation_dimension > 0:
-                navigator = self
-                while navigator.axes_manager.signal_dimension > 0:
-                    navigator = navigator.sum(-1)
+                if self.axes_manager.signal_dimension == 0:                                           
+                    navigator = self.deepcopy()                                 
+                else:                                                           
+                    navigator = self 
+                    while navigator.axes_manager.signal_dimension > 0:
+                        navigator = navigator.sum(-1)
                 if navigator.axes_manager.navigation_dimension == 1:
                     navigator = navigator.as_spectrum(0)
                 else:
@@ -2737,8 +2952,8 @@ class Signal(MVA,
             Size of the splitted parts.
 
 
-        Return
-        ------
+        Returns
+        -------
         tuple with the splitted signals
         
         """
@@ -2984,8 +3199,8 @@ class Signal(MVA,
         --------
         sum_in_mask, mean
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3015,8 +3230,8 @@ class Signal(MVA,
         --------
         sum, mean, min
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3044,8 +3259,8 @@ class Signal(MVA,
         --------
         sum, mean, max, std, var
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3074,8 +3289,8 @@ class Signal(MVA,
         --------
         sum_in_mask, mean
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3105,8 +3320,8 @@ class Signal(MVA,
         --------
         sum_in_mask, mean
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3134,8 +3349,8 @@ class Signal(MVA,
         --------
         sum_in_mask, mean
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3161,8 +3376,8 @@ class Signal(MVA,
         --------
         mean, sum
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3197,8 +3412,8 @@ class Signal(MVA,
         --------
         sum_in_mask, mean
 
-        Usage
-        -----
+        Examples
+        --------
         >>> import numpy as np
         >>> s = Signal(np.random.random((64,64,1024)))
         >>> s.data.shape
@@ -3308,8 +3523,8 @@ class Signal(MVA,
         dtype : str or dtype
             Typecode or data-type to which the array is cast.
             
-        Example
-        -------
+        Examples
+        --------
         >>> import numpy as np
         >>> from hyperspy.signals import Spectrum
         >>> s = signals.Spectrum(np.array([1,2,3,4,5]))
@@ -3558,6 +3773,8 @@ class Signal(MVA,
         im._assign_subclass()
         return im
         
+
+
     def _assign_subclass(self):
         mp = self.mapped_parameters
         current_class = self.__class__

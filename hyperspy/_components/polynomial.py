@@ -87,9 +87,9 @@ class Polynomial(Component):
             
         """
         axis = signal.axes_manager.signal_axes[0]
-        energy2index = axis.value2index
-        i1 = energy2index(x1)
-        i2 = energy2index(x2)
+        energy2index = axis._get_index
+        i1 = energy2index(x1) if energy2index(x1) else 0 
+        i2 = energy2index(x2) if energy2index(x2) else len(axis.axis) - 1
         
         if only_current is True:
             self.coefficients.value = np.polyfit(axis.axis[i1:i2], 

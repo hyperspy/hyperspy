@@ -20,6 +20,7 @@ import locale
 import time
 import datetime
 import codecs
+import warnings
 
 import numpy as np
 
@@ -123,41 +124,42 @@ keywords = {
                 'EDSDET'  : {'dtype' : unicode, 'mapped_to': 
                     'TEM.EDS.EDS_det'},	
             }
-            
-    
-def file_reader(filename, encoding = 'latin-1', **kwds):
+
+def file_reader(filename, encoding='latin-1', **kwds):
     parameters = {}
     mapped = DictionaryBrowser({})
-    spectrum_file = codecs.open(filename, encoding = encoding,
-                                errors = 'replace')
-    y = []
-    # Read the keywords
-    data_section = False
-    for line in spectrum_file.readlines():
-        if data_section is False:
-            if line[0] == "#":
-                try:
-                    key,value = line.split(': ')
-                    value = value.strip()
-                except ValueError:
-                    key = line
-                    value = None
-                key = key.strip('#').strip()
-                
-                if key != 'SPECTRUM':
-                    parameters[key] = value
-                else:
-                    data_section = True
-        else:
-            # Read the data
-            if line[0] != "#" and line.strip(): 
-                if parameters['DATATYPE'] == 'XY':
-                    xy = line.replace(',', ' ').strip().split()
-                    y.append(float(xy[1]))
-                elif parameters['DATATYPE'] == 'Y':
-                    data = [
-                    float(i) for i in line.replace(',', ' ').strip().split()]
-                    y.extend(data)
+    with codecs.open(
+            filename,
+            encoding=encoding,
+            errors='replace') as spectrum_file:
+        y = []
+        # Read the keywords
+        data_section = False
+        for line in spectrum_file.readlines():
+            if data_section is False:
+                if line[0] == "#":
+                    try:
+                        key,value = line.split(': ')
+                        value = value.strip()
+                    except ValueError:
+                        key = line
+                        value = None
+                    key = key.strip('#').strip()
+                    
+                    if key != 'SPECTRUM':
+                        parameters[key] = value
+                    else:
+                        data_section = True
+            else:
+                # Read the data
+                if line[0] != "#" and line.strip(): 
+                    if parameters['DATATYPE'] == 'XY':
+                        xy = line.replace(',', ' ').strip().split()
+                        y.append(float(xy[1]))
+                    elif parameters['DATATYPE'] == 'Y':
+                        data = [
+                        float(i) for i in line.replace(',', ' ').strip().split()]
+                        y.extend(data)
     # We rewrite the format value to be sure that it complies with the 
     # standard, because it will be used by the writer routine
     parameters['FORMAT'] = "EMSA/MAS Spectral Data File"
@@ -197,24 +199,29 @@ def file_reader(filename, encoding = 'latin-1', **kwds):
     # It is necessary to change the locale to US english to read the date
     # keyword            
     loc = locale.getlocale(locale.LC_TIME)
-    
-    if os_name == 'posix':
-        locale.setlocale(locale.LC_TIME, ('en_US', 'utf8'))
-    elif os_name == 'windows':
-        locale.setlocale(locale.LC_TIME, 'english')
+    # Setting locale can raise an exception because 
+    # their name depends on library versions, platform etc.
     try:
-        H, M = time.strptime(parameters['TIME'], "%H:%M")[3:5]
-        mapped['time'] = datetime.time(H, M)
+        if os_name == 'posix':
+            locale.setlocale(locale.LC_TIME, ('en_US', 'utf8'))
+        elif os_name == 'windows':
+            locale.setlocale(locale.LC_TIME, 'english')
+        try:
+            H, M = time.strptime(parameters['TIME'], "%H:%M")[3:5]
+            mapped['time'] = datetime.time(H, M)
+        except:
+            if 'TIME' in parameters and parameters['TIME']:
+                print('The time information could not be retrieved')
+        try:    
+            Y, M, D = time.strptime(parameters['DATE'], "%d-%b-%Y")[0:3]
+            mapped['date'] = datetime.date(Y, M, D)
+        except:
+            if 'DATE' in parameters and parameters['DATE']:
+                print('The date information could not be retrieved')
     except:
-        if 'TIME' in parameters and parameters['TIME']:
-            print('The time information could not be retrieved')
-    try:    
-        Y, M, D = time.strptime(parameters['DATE'], "%d-%b-%Y")[0:3]
-        mapped['date'] = datetime.date(Y, M, D)
-    except:
-        if 'DATE' in parameters and parameters['DATE']:
-            print('The date information could not be retrieved')
-
+        warnings.warn("I couldn't write the date information due to"
+                "an unexpected error. Please report this error to "
+                "the developers") 
     locale.setlocale(locale.LC_TIME, loc) # restore saved locale
 
     axes = []
@@ -261,14 +268,20 @@ def file_writer(filename, signal, format = None, separator = ', ',
         if format is None:
             format = 'Y'
         if hasattr(signal.mapped_parameters, "date"):
-            loc = locale.getlocale(locale.LC_TIME)
-            if os_name == 'posix':
-                locale.setlocale(locale.LC_TIME, ('en_US', 'latin-1'))
-            elif os_name == 'windows':
-                locale.setlocale(locale.LC_TIME, 'english')
-            loc_kwds['DATE'] = signal.mapped_parameters.data.strftime("%d-%b-%Y")
-            locale.setlocale(locale.LC_TIME, loc) # restore saved locale
-            
+            # Setting locale can raise an exception because 
+            # their name depends on library versions, platform etc.
+            try:
+                loc = locale.getlocale(locale.LC_TIME)
+                if os_name == 'posix':
+                    locale.setlocale(locale.LC_TIME, ('en_US', 'latin-1'))
+                elif os_name == 'windows':
+                    locale.setlocale(locale.LC_TIME, 'english')
+                loc_kwds['DATE'] = signal.mapped_parameters.data.strftime("%d-%b-%Y")
+                locale.setlocale(locale.LC_TIME, loc) # restore saved locale
+            except:
+                warnings.warn("I couldn't write the date information due to"
+                        "an unexpected error. Please report this error to "
+                        "the developers") 
     keys_from_signal = {
         # Required parameters
         'FORMAT' : FORMAT,
@@ -328,30 +341,32 @@ def file_writer(filename, signal, format = None, separator = ', ',
                     dic['mapped_to'])
                
 
-    f = codecs.open(filename, 'w', encoding = encoding,
-                    errors = 'ignore')   
-    # Remove the following keys from loc_kwds if they are in 
-    # (although they shouldn't)
-    for key in ['SPECTRUM', 'ENDOFDATA']:
-        if key in loc_kwds: del(loc_kwds[key])
-    
-    f.write(u'#%-12s: %s\u000D\u000A' % ('FORMAT', loc_kwds.pop('FORMAT')))
-    f.write(u'#%-12s: %s\u000D\u000A' % ('VERSION', loc_kwds.pop('VERSION')))
-    for keyword, value in loc_kwds.items():
-        f.write(u'#%-12s: %s\u000D\u000A' % (keyword, value))
-    
-    f.write(u'#%-12s: Spectral Data Starts Here\u000D\u000A' % 'SPECTRUM')
+    with codecs.open(
+            filename,
+            'w',
+            encoding=encoding,
+            errors='ignore') as f:   
+        # Remove the following keys from loc_kwds if they are in 
+        # (although they shouldn't)
+        for key in ['SPECTRUM', 'ENDOFDATA']:
+            if key in loc_kwds: del(loc_kwds[key])
+        
+        f.write(u'#%-12s: %s\u000D\u000A' % ('FORMAT', loc_kwds.pop('FORMAT')))
+        f.write(u'#%-12s: %s\u000D\u000A' % ('VERSION', loc_kwds.pop('VERSION')))
+        for keyword, value in loc_kwds.items():
+            f.write(u'#%-12s: %s\u000D\u000A' % (keyword, value))
+        
+        f.write(u'#%-12s: Spectral Data Starts Here\u000D\u000A' % 'SPECTRUM')
 
-    if format == 'XY':        
-        for x,y in zip(signal.axes_manager._axes[0].axis, signal.data):
-            f.write("%g%s%g" % (x, separator, y))
-            f.write(u'\u000D\u000A')
-    elif format == 'Y':
-        for y in signal.data:
-            f.write('%f%s' % (y, separator))
-            f.write(u'\u000D\u000A')
-    else:
-        raise ValueError('format must be one of: None, \'XY\' or \'Y\'')
+        if format == 'XY':        
+            for x,y in zip(signal.axes_manager._axes[0].axis, signal.data):
+                f.write("%g%s%g" % (x, separator, y))
+                f.write(u'\u000D\u000A')
+        elif format == 'Y':
+            for y in signal.data:
+                f.write('%f%s' % (y, separator))
+                f.write(u'\u000D\u000A')
+        else:
+            raise ValueError('format must be one of: None, \'XY\' or \'Y\'')
 
-    f.write(u'#%-12s: End Of Data and File' % 'ENDOFDATA')
-    f.close()   
+        f.write(u'#%-12s: End Of Data and File' % 'ENDOFDATA')

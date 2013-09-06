@@ -26,17 +26,13 @@ from traitsui.menu import (OKButton, ApplyButton, CancelButton,
 
 from hyperspy.misc import utils
 from hyperspy import drawing
-from hyperspy.misc.interactive_ns import interactive_ns
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.gui import messages
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
-from hyperspy.drawing.utils import does_figure_object_exists
-from hyperspy.gui.mpl_traits_editor import MPLFigureEditor
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import DraggableVerticalLine
 from hyperspy.misc import spectrum_tools
-
 
 import sys
 
@@ -337,7 +333,7 @@ class Smoothing(t.HasTraits):
                    
     def plot(self):
         if self.signal._plot is None or not \
-            does_figure_object_exists(self.signal._plot.signal_plot.figure):
+            self.signal._plot.is_active():
             self.signal.plot()
         hse = self.signal._plot
         l1 = hse.signal_plot.ax_lines[0]
@@ -788,5 +784,44 @@ class ComponentFit(SpanSelectorInSpectrum):
     def apply(self):
         self._fit_fired()
 
-
+class IntegrateArea(SpanSelectorInSpectrum):
+    integrate = t.Button()
+    
+    view = tu.View(
+                buttons = [OKButton, CancelButton],
+                title = 'Integrate in range',
+                handler = SpanSelectorInSpectrumHandler,
+                )
+    
+    def __init__(self, signal, signal_range=None):
+        if signal.axes_manager.signal_dimension != 1:
+             raise SignalOutputDimensionError(
+                      signal.axes.signal_dimension, 1)
+        
+        self.signal = signal
+        self.span_selector = None
+        if not hasattr(self.signal, '_plot'):
+            self.signal.plot()
+        elif self.signal._plot is None:
+            self.signal.plot()
+        elif self.signal._plot.is_active() is False:
+            self.signal.plot()
+        self.span_selector_switch(on=True)
+        
+    def apply(self):
+        integrated_spectrum = self.signal._integrate_in_range_commandline(
+                signal_range=(
+                    self.ss_left_value,
+                    self.ss_right_value)
+                )
+        #Replaces the original signal inplace with the new integrated spectrum
+        plot = False
+        if self.signal._plot:
+            self.signal._plot.close()
+            plot = True
+        self.signal.__init__(**integrated_spectrum._to_dictionary())
+        self.signal._assign_subclass()
+        self.signal.axes_manager.set_signal_dimension(0)
+        if plot is True:
+            self.signal.plot()
     

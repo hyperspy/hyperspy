@@ -179,9 +179,10 @@ def savitzky_golay(data, kernel=11, order=4):
     -------
     returns smoothed data as a numpy array
 
-    Example
-    -------
+    Examples
+    --------
     smoothed = savitzky_golay(<rough>, [kernel = value], [order = value]
+    
     """
     try:
             kernel = abs(int(kernel))

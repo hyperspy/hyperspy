@@ -34,8 +34,8 @@ def effective_Z(Z_list, exponent=2.94):
         A list of tuples (f,Z) where f is the number of atoms of the element in
         the molecule and Z its atomic number
 
-    Return
-    ------
+    Returns
+    -------
     float
     
     """
