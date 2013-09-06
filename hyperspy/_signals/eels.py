@@ -195,9 +195,7 @@ class EELSSpectrum(Spectrum):
 
         """
         def substract_from_offset(value, signals):
-            print signals
             for signal in signals: 
-                print signal
                 signal.axes_manager[-1].offset -= value
         zlpc = self.estimate_zero_loss_peak_centre()
         mean_ = zlpc.data.mean()
@@ -205,10 +203,13 @@ class EELSSpectrum(Spectrum):
             print
             print(underline("Initial ZLP position statistics"))
             zlpc.print_statistics()
-        if calibrate is True:
-            substract_from_offset(mean_, also_align + [self])
+
         for signal in also_align + [self]:
             signal.shift1D(-zlpc.data + mean_)
+
+        if calibrate is True:
+            zlpc = self.estimate_zero_loss_peak_centre()
+            substract_from_offset(zlpc.data.mean(), also_align + [self])
 
         if print_stats is True:
             print
@@ -216,8 +217,17 @@ class EELSSpectrum(Spectrum):
             self.estimate_zero_loss_peak_centre().print_statistics()
         
         if subpixel is False: return
-        
-        self.align1D(-3., 3., also_align=also_align)
+        left, right = -3., 3.
+        if calibrate is False:
+            mean_ = self.estimate_zero_loss_peak_centre().data.mean()
+            left += mean_
+            right += mean_
+            
+        left = (left if left > self.axes_manager[-1].axis[0]
+                    else self.axes_manager[-1].axis[0]) 
+        right = (right if right > self.axes_manager[-1].axis[-1]
+                    else self.axes_manager[-1].axis[-1]) 
+        self.align1D(left, right, also_align=also_align)
         zlpc = self.estimate_zero_loss_peak_centre()
         if calibrate is True:
             substract_from_offset(zlpc.data.mean(), also_align + [self])
