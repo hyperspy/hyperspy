@@ -957,8 +957,8 @@ class Model(list):
         (mask.shape != tuple(self.axes_manager._navigation_shape_in_array)):
            messages.warning_exit(
            "The mask must be a numpy array of boolen type with "
-           " shape: %s" % 
-           self.axes_manager._navigation_shape_in_array)
+           " shape: %s" +
+           str(self.axes_manager._navigation_shape_in_array))
         masked_elements = 0 if mask is None else mask.sum()
         maxval=self.axes_manager.navigation_size - masked_elements
         if maxval > 0:
