@@ -978,7 +978,7 @@ class Model(list):
                 kwargs['bounded'] = False
         i = 0
         for index in self.axes_manager:
-            if mask is None or not mask[index]:
+            if mask is None or not mask[index[::-1]]:
                 self.fit(**kwargs)
                 i += 1
                 if maxval > 0:
