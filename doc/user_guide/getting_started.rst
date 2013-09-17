@@ -35,7 +35,7 @@ to:
 
 If IPython 0.11 or newer and the Qt libraries are installed in your system it
 is also possible to run Hyperspy in `IPython's QtConsole
-<http://ipython.org/ipython-doc/stable/interactive/qtconsole.html>` by
+<http://ipython.org/ipython-doc/stable/interactive/qtconsole.html>`_ by
 executing `hyperspy qtconsole` in a terminal:
 
 .. code-block:: bash
@@ -139,10 +139,10 @@ Using Hyperspy as a library
 
 When starting hyperspy by using the file browser context menu or by running the
 `hyperspy` script in the terminal, the `hyperspy` script simply starts and
-configure IPython appropiately and import the contents of the :py:mod:`~.hspy`
-module in the user namespace. Of course, It is possible to use Hyperspy as a
-library by simply importing its modules. The recommended way to do it is
-importing the hspy module as follows:
+configures IPython appropiately and imports the contents of the
+:py:mod:`~.hspy` module in the user namespace. Of course, It is possible to use
+Hyperspy as a library by simply importing its modules. The recommended way to
+do it is importing the hspy module as follows:
 
 .. code-block:: python
 
@@ -165,7 +165,12 @@ Inline plotting
 .. versionadded:: 0.7
 
 Hyperspy can be started using the IPython inline plotting mode by passing the
-`--pylab_inline` flag when starting hyperspy. This option only has effect when
+`--pylab_inline` flag when starting hyperspy. In inline-mode, calling any
+plotting function embeds the resulting plots in the Notebook or QtConsole
+instead of raising figure windows. The main drawback is that these plots are
+not (yet) interactive.
+
+This option only has effect when
 running in the *IPython QtConsole* or the *IPython Notebook*, e.g.
 
 .. code-block:: bash
