@@ -1,12 +1,16 @@
-Hyperspy provides a rich toolbox for hyperspectral data analysis: 
+Hyperspy is an open source library providing tools for interactive data
+analysis of multidimensional datasets. It is specially well-suited for
+spectroscopy data analysis.
 
-* Reads and writes multiple file formats common in electron microscopy and the open standard HDF5.
-* Performs curve fitting on multidimensional datasets.
+Main features:
+
+* Data structures to easily operate on multidimensional datasets with
+  integrated indexing and iterators.
+* Visualization of n-dimensional spectra and images. 
+* Curve fitting.
 * Machine learning e.g. PCA, ICA...
-* Easy to use and customise.
-* Specially well suited for electron energy loss spectroscopy (EELS) data analysis.
+* Reading and writing of multidimensional datasets in multiple file formats.
 
-Hyperspy is open source (released under the revised GPL v3 license).
+Hyperspy is released under the GPL v3 license.
 
-Currently it requires Python 2.7. Python 3 is not yet supported.
 
