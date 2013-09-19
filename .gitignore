@@ -1,5 +1,7 @@
 syntax: glob
 .spyderworkspace
+/MANIFEST
+/*.rst
 *.pyc
 *.swp
 *~
@@ -8,6 +10,7 @@ syntax: glob
 *.o
 dist
 *.deb
+*.swo
 build/*
 bin/*
 PortableInstall/*
