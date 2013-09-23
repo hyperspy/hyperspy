@@ -789,7 +789,7 @@ class Signal1DTools(object):
         pbar = progressbar(maxval=maxval)
         for index, spectrum in enumerate(spectra):
             background_estimator.estimate_parameters(
-                    self, 
+                    spectrum, 
                     signal_range[0], 
                     signal_range[1], 
                     only_current=True)
