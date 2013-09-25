@@ -14,7 +14,7 @@ operate on an individual signal to multidimensional arrays, as well as
 providing easy access to analytical tools that exploit the multidimensionality
 of the dataset.
 
-Its modular structure makes it easy to add features to analyze different kind
+Its modular structure makes it easy to add features to analyze different kinds
 of signals. Currently there are specialized tools to analyze electron
 energy-loss spectroscopy (EELS) and energy dispersive X-rays (EDX) data. 
 
