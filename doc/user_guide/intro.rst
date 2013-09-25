@@ -32,8 +32,8 @@ thanks to them that this project exists.
 Hyperspy's character
 --------------------
 
-Hyperspy has been written by the same people who use it, a particularity that
-sets its character:
+Hyperspy has been written by a subset of the people who use it, a particularity
+that sets its character:
   
 * The main way of interacting with the program is through the command line.
   This is because:
@@ -54,8 +54,8 @@ sets its character:
   doing so.
   For example, there are UIs to perform windows quantification, data smoothing,
   adjusting the preferences, loading data...
-* We see Hyperspy as a collaborative research project, and therefore we care
-  about making it easy for others to contribute to the project. In other words,
+* We see Hyperspy as a collaborative project, and therefore we care
+  about making it easy for others to contribute to it. In other words,
   we want to minimise the “user becomes developer” threshold. To achieve this
   goal we:
     
