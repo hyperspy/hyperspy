@@ -225,7 +225,7 @@ class EELSSpectrum(Spectrum):
             
         left = (left if left > self.axes_manager[-1].axis[0]
                     else self.axes_manager[-1].axis[0]) 
-        right = (right if right > self.axes_manager[-1].axis[-1]
+        right = (right if right < self.axes_manager[-1].axis[-1]
                     else self.axes_manager[-1].axis[-1]) 
         self.align1D(left, right, also_align=also_align)
         zlpc = self.estimate_zero_loss_peak_centre()
@@ -236,8 +236,6 @@ class EELSSpectrum(Spectrum):
             print(underline("ZLP position after fine alignment statistics"))
             self.estimate_zero_loss_peak_centre().print_statistics()
 
-
-    
     def estimate_elastic_scattering_intensity(self,
                                               threshold=None,):
         """Rough estimation of the elastic scattering intensity by 
@@ -696,7 +694,6 @@ class EELSSpectrum(Spectrum):
         
         return ds
 
-            
     def _spikes_diagnosis(self, signal_mask=None, 
                          navigation_mask=None):
         """Plots a histogram to help in choosing the threshold for 
@@ -728,7 +725,6 @@ class EELSSpectrum(Spectrum):
         plt.xlabel('Threshold')
         plt.ylabel('Counts')
         plt.draw()
-        
         
     def spikes_removal_tool(self,signal_mask=None, 
                             navigation_mask=None):
@@ -813,7 +809,6 @@ class EELSSpectrum(Spectrum):
         
         self._are_microscope_parameters_missing()
                 
-            
     @only_interactive            
     def _set_microscope_parameters(self):
         if self.mapped_parameters.has_item('TEM') is False:
@@ -838,7 +833,6 @@ class EELSSpectrum(Spectrum):
                 exec('self.mapped_parameters.%s = %s' % (key, value))
         self._are_microscope_parameters_missing()
         
-            
     def power_law_extrapolation(self, window_size=20,
                                 extrapolation_size=1024,
                                 add_noise=False,

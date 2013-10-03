@@ -294,8 +294,6 @@ class DataAxis(t.HasTraits):
         else:
             return offset, scale
 
- 
-
 class AxesManager(t.HasTraits):
     """Contains and manages the data axes.
     
