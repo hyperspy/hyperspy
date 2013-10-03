@@ -3071,12 +3071,12 @@ class Signal(MVA,
         to_remove = []
         for axis, dim in zip(self.axes_manager._axes, new_shape):
             if dim == 1:
-                uname += ',' + str(axis)
-                uunits = ',' + str(axis.units)
+                uname += ',' + unicode(axis)
+                uunits = ',' + unicode(axis.units)
                 to_remove.append(axis)
         ua = self.axes_manager._axes[unfolded_axis]
-        ua.name = str(ua) + uname
-        ua.units = str(ua.units) + uunits                                             
+        ua.name = unicode(ua) + uname
+        ua.units = unicode(ua.units) + uunits                                             
         ua.size = self.data.shape[unfolded_axis]
         for axis in to_remove:
             self.axes_manager.remove(axis.index_in_axes_manager)
