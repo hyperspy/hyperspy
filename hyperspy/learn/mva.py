@@ -504,7 +504,11 @@ class MVA():
                     **kwargs)
                 target.bss_node.whiten = False
                 target.bss_node.fit(factors)
-                unmixing_matrix = target.bss_node.unmixing_matrix_
+                try:
+                    unmixing_matrix = target.bss_node.unmixing_matrix_
+                except AttributeError:
+                    # unmixing_matrix was renamed to components
+                    unmixing_matrix = target.bss_node.components_
             else:
                 if mdp_installed is False:
                     raise ImportError(
