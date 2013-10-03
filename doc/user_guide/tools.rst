@@ -1,6 +1,6 @@
 
-Data operations
-***************
+Tools: the Signal class
+***********************
 
 The Signal class and its subclasses
 -----------------------------------
@@ -10,7 +10,7 @@ The Signal class and its subclasses
     Do not worry if you do not understand it all.
     
 
-Hyperspy stores hyperspectra in the :py:class:`~.signal.Signal` class, that is
+Hyperspy stores the data in the :py:class:`~.signal.Signal` class, that is
 the object that you get when e.g. you load a single file using
 :py:func:`~.io.load`. Most of the data analysis functions are also contained in
 this class or its specialized subclasses. The :py:class:`~.signal.Signal` class
@@ -37,14 +37,13 @@ The :py:mod:`~.signals` module, which contains all available signal subclasses,
 is imported in the user namespace when loading hyperspy. In the following
 example we create an Image instance from a 2D numpy array:
 
-
 .. code-block:: python
     
     >>> im = signals.Image(np.random.random((64,64)))
     
 
 The different signals store other objects in what are called attributes. For
-examples, the hyperspectral data is stored in the
+examples, the data is stored in a numpy array in the
 :py:attr:`~.signal.Signal.data` attribute, the original parameters in the
 :py:attr:`~.signal.Signal.original_parameters` attribute, the mapped parameters
 in the :py:attr:`~.signal.Signal.mapped_parameters` attribute and the axes
@@ -66,14 +65,14 @@ The different subclasses are characterized by three
     It is possible to transform any :py:class:`~.signal.Signal` subclass in a 
     :py:class:`~._signals.spectrum.Spectrum` or :py:class:`~._signals.image.Image` 
     subclass using the following :py:class:`~.signal.Signal` methods: 
-    :py:meth:`~.signal.Signal.as_image`, * :py:meth:`~.signal.Signal.as_spectrum`.
+    :py:meth:`~.signal.Signal.as_image` and :py:meth:`~.signal.Signal.as_spectrum`.
     In addition :py:class:`~._signals.spectrum.Spectrum` instances can be 
     transformed in images using :py:meth:`~._signals.spectrum.Spectrum.to_image` 
     and image instances in spectrum instances using 
     :py:meth:`~._signals.image.Image.to_spectrum`. When transforming between 
     spectrum and image classes the order in which the
-    data array is stored in memory is modified to improve performance and several
-    functions, e.g. plotting or decomposing, will behave differently.
+    data array is stored in memory is modified to improve performance. Also,  
+    some functions, e.g. plotting or decomposing, will behave differently.
     
 `signal_type`
     Describes the nature of the signal. It can be any string, normally the 
@@ -119,41 +118,34 @@ The different subclasses are characterized by three
 
 The following example shows how to transform between different subclasses.
 
-.. code-block:: python
-    
-    >>> s = signals.Spectrum(np.random.random((10,20,100)))
-    >>> s
-    <Spectrum, title: , dimensions: (20, 10, 100)>
-    >>> s.mapped_parameters
-    ├── record_by = spectrum
-    └── title = 
-    
-    >>> im = s.to_image()
-    >>> im
-    <Image, title: , dimensions: (20, 10, 100)>
-    >>> im.ma
-    im.mapped_parameters  im.max                
-    >>> im.mapped_parameters
-    ├── record_by = image
-    └── title = 
-    
-    >>> s.set_signal_type("EELS")
-    >>> s
-    <EELSSpectrum, title: , dimensions: (20, 10, 100)>
-    >>> s.mapped_parameters
-    ├── record_by = spectrum
-    ├── signal_type = EELS
-    └── title = 
-    
-    >>> s.set_signal_origin("simulation")
-    >>> s
-    <EELSSpectrumSimulation, title: , dimensions: (20, 10, 100)>
-    >>> s.mapped_parameters
-    ├── record_by = spectrum
-    ├── signal_origin = simulation
-    ├── signal_type = EELS
-    └── title = 
+   .. code-block:: python
 
+       >>> s = signals.Spectrum(np.random.random((10,20,100)))
+       >>> s
+       <Spectrum, title: , dimensions: (20, 10|100)>
+       >>> s.mapped_parameters 
+       ├── record_by = spectrum
+       ├── signal_origin = 
+       ├── signal_type = 
+       └── title = 
+       >>> im = s.to_image()
+       >>> im
+       <Image, title: , dimensions: (100|20, 10)>
+       >>> im.mapped_parameters 
+       ├── record_by = image
+       ├── signal_origin = 
+       ├── signal_type = 
+       └── title = 
+       >>> s.set_si
+       s.set_signal_origin  s.set_signal_type    
+       >>> s.set_signal_type("EELS")
+       >>> s
+       <EELSSpectrum, title: , dimensions: (20, 10|100)>
+       >>> s.set_si
+       s.set_signal_origin  s.set_signal_type    
+       >>> s.set_signal_origin("simulation")
+       >>> s
+       <EELSSpectrumSimulation, title: , dimensions: (20, 10|100)>
 
 
 The navigation and signal dimensions
@@ -192,8 +184,8 @@ Below we briefly introduce some of the most commonly used tools (methods). For
 more details about a particular method click on its name. For a detailed list
 of all the methods available see the :py:class:`~.signal.Signal` documentation.
 
-The methods of this section are available to all the signals. In the
-subsections we describe methods that are only available in specialized
+The methods of this section are available to all the signals. In other chapters 
+methods that are only available in specialized
 subclasses.
 
 .. _signal.indexing:
@@ -221,12 +213,14 @@ following main differences:
 
 * Hyperspy (unlike numpy) does not support:
 
-    * Indexing using arrays.  * Adding new axes using the newaxis object.
+  + Indexing using arrays.
+  + Adding new axes using the newaxis object.
     
 * Hyperspy (unlike numpy):
 
-    * Supports indexing with decimal numbers.  * Uses the natural order when
-      indexing i.e. [x, y, z,...] (hyperspy) vs [...,z,y,x] (numpy)
+  + Supports indexing with decimal numbers.
+  + Uses the image order for indexing i.e. [x, y, z,...] (hyperspy) vs 
+    [...,z,y,x] (numpy)
     
 Lets start by indexing a single spectrum:
 
@@ -235,11 +229,11 @@ Lets start by indexing a single spectrum:
     
     >>> s = signals.Spectrum(np.arange(10))
     >>> s
-    <Spectrum, title: , dimensions: (10,)>
+    <Spectrum, title: , dimensions: (|10)>
     >>> s.data
     array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     >>> s[0]
-    <Spectrum, title: , dimensions: (1,)>
+    <Spectrum, title: , dimensions: (|1)>
     >>> s[0].data
     array([0])
     >>> s[9].data
@@ -247,18 +241,18 @@ Lets start by indexing a single spectrum:
     >>> s[-1].data
     array([9])
     >>> s[:5]
-    <Spectrum, title: , dimensions: (5,)>
+    <Spectrum, title: , dimensions: (|5)>
     >>> s[:5].data
     array([0, 1, 2, 3, 4])
     >>> s[5::-1]
-    <Spectrum, title: , dimensions: (6,)>
+    <Spectrum, title: , dimensions: (|6)>
     >>> s[5::-1]
-    array([5, 4, 3, 2, 1, 0])
+    <Spectrum, title: , dimensions: (|6)>
     >>> s[5::2]
-    <Spectrum, title: , dimensions: (3,)>
+    <Spectrum, title: , dimensions: (|3)>
     >>> s[5::2].data
-    array([5, 7, 9])   
-    
+    array([5, 7, 9])
+
 
 Unlike numpy, Hyperspy supports indexing using decimal numbers, in which case
 Hyperspy indexes using the axis scales instead of the indices.
@@ -267,7 +261,7 @@ Hyperspy indexes using the axis scales instead of the indices.
 
     >>> s = signals.Spectrum(np.arange(10))
     >>> s
-    <Spectrum, title: , dimensions: (10,)>
+    <Spectrum, title: , dimensions: (|10)>
     >>> s.data
     array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     >>> s.axes_manager[0].scale = 0.5
@@ -303,7 +297,6 @@ modifies the same value in the other.
     >>> s.data[:] = 0
     >>> si.data
     array([0, 0, 0, 0, 0])
-    
 
 Of course it is also possible to use the same syntax to index multidimensional
 data.  The first indexes are always the navigation indices in "natural order"
@@ -467,12 +460,13 @@ addition Hyperspy extend numpy's broadcasting rules to the following cases:
 Cropping
 ^^^^^^^^
 
-Cropping can be performed in a very compact and powerful way using 
-:ref:`signal.indexing` . In addition it can be performed using the 
-following method or GUIs if cropping :ref:`spectra <>` or 
-:ref:`images <>`
+Cropping can be performed in a very compact and powerful way using
+:ref:`signal.indexing` . In addition it can be performed using the following
+methods:
 
-* :py:meth:`~.signal.Signal.crop`
+* :py:meth:`~.signal.Signal.crop`.
+* :py:meth:`~._signals.spectrum.Spectrum.crop_spectrum`.
+* :py:meth:`~._signals.image.Image.crop_image`.
 
 Rebinning
 ^^^^^^^^^

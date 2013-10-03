@@ -258,7 +258,7 @@ allows to select a single file through your OS file manager, e.g.:
 It is also possible to load multiple files at once or even stack multiple
 files. For more details read :ref:`loading_files`
 
-"Loading" data from a numpy array
+"Loading" zadata from a numpy array
 ---------------------------------
 
 Hyperspy can operate on any numpy array by assigning it to a Signal class.
@@ -278,6 +278,40 @@ to the constructor e.g.
    
 The numpy array is stored in the :py:attr:`~.signal.Signal.data` attribute 
 of the signal class.
+
+The navigation and signal dimensions
+------------------------------------
+
+In Hyperspy the data is interpreted as a signal array and, therefore, the data
+axes are not equivalent. Hyperspy distiguises between *signal* and *navigation*
+axes and most functions operate on the *signal* axes and iterate on the
+*navigation* axes. For example, an EELS spectrum image (i.e. a 2D array of
+spectra) has three dimensions X, Y and energy-loss. In Hyperspy, X and Y are
+the *navigation* dimensions an the energy-loss is the *signal* dimension. To
+make this distinction more explicit the representation of the object includes
+a separator ``|`` between the navigaton and signal dimensions e.g.
+
+In Hyperpsy a spectrum image has signal dimension 1 and navigation dimension 2.
+
+.. code-block:: python
+   
+    >>> s = signals.Spectrum(np.zeros((10, 20, 30)))
+    >>> s
+    <Spectrum, title: , dimensions: (20, 10|30)>
+
+
+An image stack has signal dimension 2 and navigation dimension 1. 
+
+.. code-block:: python
+
+    >>> im = signals.Image(np.zeros((30, 10, 20)))
+    >>> im
+    <Image, title: , dimensions: (30|20, 10)>
+
+Note the Hyperspy rearranges the axes position to match the following pattern:
+(navigatons axis 0,..., navigation axis n|signal axis 0,..., signal axis n).
+This is the order used for :ref:`indexing the Signal class <signal.indexing>`.
+
 
 Setting axis properties
 -----------------------
