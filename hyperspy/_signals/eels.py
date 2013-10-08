@@ -842,12 +842,15 @@ class EELSSpectrum(Spectrum):
         
         Parameters
         ----------
-        zlp: {None, float, EELSSpectrum}
-            Used for normalization, the EELSSpectrum instance must 
-            contain the zero loss peak corresponding to each input
-            SSD. If float, this single number will be used as zlp 
-            integral in every case. Finally, if None, zlp integral will 
-            not be used for normalization. 
+        zlp: {None, float, Image, EELSSpectrum}
+            If None, zlp integral will not be used for normalization. 
+            In the case of a float input, this single number will be 
+            used as zlp integral for each input spectrum. An Image 
+            instance input of the same dimension as the input SSD 
+            navigation will be used as ZLP integral for each point 
+            spectrum. Finally, an EELSSpectrum instance used as input 
+            will be used as if it contains the zero loss peak 
+            corresponding to each input SSD. 
         iterations: int
             Number of the iterations for the internal loop. By default, 
             set = 2.
@@ -896,21 +899,26 @@ class EELSSpectrum(Spectrum):
         if zlp is None:
             i0 = self._get_navigation_signal().data
             i0 += 1
-            i0 = i0.reshape(
-                    np.insert(i0.shape, axis.index_in_array, 1))
         elif isinstance(zlp, float):
             i0 = self._get_navigation_signal().data
             i0 = i0 + zlp
-            i0 = i0.reshape(
-                    np.insert(i0.shape, axis.index_in_array, 1))
         elif isinstance(zlp, hyperspy.signals.EELSSpectrum):
-            i0 = zlp.data.sum(axis.index_in_array)
-            i0 = i0.reshape(
-                    np.insert(i0.shape, axis.index_in_array, 1))
+            if zlp.data.ndim == s.data.ndim:
+                i0 = zlp.data.sum(axis.index_in_array)
+            else:
+                print 'ZLP-EELSSpectrum input bad dimension'
+                return
+        elif isinstance(zlp, hyperspy.signals.Image):
+            if zlp.data.ndim == s.data.ndim-1:
+                i0 = zlp.data
+            else:
+                print 'ZLP-Image input bad dimension'
+                return
         else: 
             print 'Zero loss peak input not recognized'
             return
-            
+        i0 = i0.reshape(
+                    np.insert(i0.shape, axis.index_in_array, 1))
         # Slicer to get the signal data from 0 to s_size
         slicer = s.axes_manager._get_data_slice(
                 [(axis.index_in_array,slice(None,s_size)),])
