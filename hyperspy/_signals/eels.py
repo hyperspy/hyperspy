@@ -826,7 +826,223 @@ class EELSSpectrum(Spectrum):
             -pl.r.map['values'][...,np.newaxis]))
         return s
         
+    def kramers_kronig_transform(self, zlp=None, iterations=1, n=2):
+        """ Kramers-Kronig Transform method for calculating the complex
+        dielectric function from a single scattering distribution(SSD). 
+        Uses a FFT method explained in the book by Egerton (see Notes).
+        The SSD is an EELSSpectrum instance containing low-loss EELS 
+        only from sigle inelastic scattering event. 
+        
+        That means that, if present, all the elastic scattering, plural 
+        scattering and other spurious effects, would have to be 
+        subtracted/deconvolved or treated in any way whatsoever. 
+        
+        The internal loop is devised to subtract surface to vaccumm 
+        energy loss effects.
+        
+        Parameters
+        ----------
+        zlp: {None, float, EELSSpectrum}
+            Used for normalization, the EELSSpectrum instance must 
+            contain the zero loss peak corresponding to each input
+            SSD. If float, this single number will be used as zlp 
+            integral in every case. Finally, if None, zlp integral will 
+            not be used for normalization. 
+        iterations: int
+            Number of the iterations for the internal loop. By default, 
+            set = 2.
+        n: float
+            The medium refractive index. Used for normalization of the 
+            SSD to obtain the energy loss function. 
+            
+        Returns
+        -------
+        eps: EELSSpectrum (complex)
+            The complex dielectric function results, 
+                $\epsilon = \epsilon_1 + i*\epsilon_2$,
+            contained in an EELSSpectrum made of complex numbers.
+        Notes
+        -----        
+        For details see: Egerton, R. Electron Energy-Loss 
+        Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
+        """
+        s = self.deepcopy()
+        
+        # TODO List
+         # n is fixed (must have possibility to be an image, line ...)
+         # Must have some way to assess loop, like returning the mfp?
+         # Add tail correction capabilities (check Egerton code).
+        
+        
+        # Constants and units
+        me 		= 511.06        # Electron rest mass in [eV/c2]
+        m0		= 9.11e-31  	# e- mass in pedestrian units [kg]
+        permi	= 8.854e-12     # Vaccum permittivity [F/m]
+        hbar	= 1.055e-34     # Reduced Plank constant [J·s]
+        c		= 3e8           # The fastest speed there is [m/s]
+        qe		= 1.602e-19     # Electron charge [C]
+        bohr	= 5.292e-2      # bohradius [nm]
+        pi      = 3.141592654   # PI
+        
+        # Mapped params
+        e0   = s.mapped_parameters.TEM.beam_energy 
+        beta = s.mapped_parameters.TEM.EELS.collection_angle
+        axis = s.axes_manager.signal_axes[0]
+        epc = axis.scale
+        s_size = axis.size
+        axisE = axis.axis
+        
+        # Zero Loss Intensity
+        if zlp is None:
+            i0 = self._get_navigation_signal().data
+            i0 += 1
+            i0 = i0.reshape(
+                    np.insert(i0.shape, axis.index_in_array, 1))
+        elif isinstance(zlp, float):
+            i0 = self._get_navigation_signal().data
+            i0 = i0 + zlp
+            i0 = i0.reshape(
+                    np.insert(i0.shape, axis.index_in_array, 1))
+        elif isinstance(zlp, hyperspy.signals.EELSSpectrum):
+            i0 = zlp.data.sum(axis.index_in_array)
+            i0 = i0.reshape(
+                    np.insert(i0.shape, axis.index_in_array, 1))
+        else: 
+            print 'Zero loss peak input not recognized'
+            return
+            
+        # Slicer to get the signal data from 0 to s_size
+        slicer = s.axes_manager._get_data_slice(
+                [(axis.index_in_array,slice(None,s_size)),])
+        
+        # Kinetic definitions
+        t   = e0*(1+e0/2/me)/(1+e0/me)**2
+        tgt = e0*(2*me+e0)/(me+e0)
+        rk0 = 2590*(1+e0/me)*np.sqrt(2*t/me)
+        
+        for io in range(iterations):
+            # Calculation of the ELF by normalization of the SSD
+            # Norm(SSD) = Imag(-1/epsilon) (Energy Loss Funtion, ELF)
+            I = s.data.sum(axis.index_in_array)
+            Im = s.data / (np.log(1+(beta*tgt/axisE)**2))
+            K = (Im[slicer]/(axisE+1e-3)).sum(axis.index_in_array)
+            K = (K/(pi/2)/(1-1/n**2)*epc).reshape(
+                    np.insert(K.shape, axis.index_in_array, 1))
+            Im = (Im/K).astype('float32')
+            # Thickness (and mean free path additionally)
+            te = 332.5*K*t/(i0*epc)
+            #mfp = te/(i/i0)
 
+            # Kramers Kronig Transform:
+            #  We calculate KKT(Im(-1/epsilon))=1+Re(1/epsilon) with FFT
+            #  Follows: D W Johnson 1975 J. Phys. A: Math. Gen. 8 490
+            q = np.fft.fft(Im, 2*s_size, axis.index_in_array).astype('complex64')
+            q = - q.imag / s_size
+            q[slicer] = -q[slicer]        
+            q = np.fft.fft(q, axis=axis.index_in_array).astype('complex64')
+            # Final touch, we have Re(1/eps)
+            Re=q[slicer].real.astype('float32')
+            Re += 1
+        
+            # Egerton does this, but we'll skip
+            #Re=real(q)
+            #Tail correction
+             #vm=Re[s_size-1]
+             #Re[:(s_size-1)]=Re[:(s_size-1)]+1-(0.5*vm*((s_size-1) / (s_size*2-arange(0,s_size-1)))**2)
+             #Re[s_size:]=1+(0.5*vm*((s_size-1) / (s_size+arange(0,s_size)))**2)
+            
+            # Epsilon appears:
+            #  We calculate the real and imaginary parts of the CDF
+            e1 = Re / (Re**2+Im**2)
+            e2 = Im / (Re**2+Im**2)
+            
+            # Surface losses correction:
+            #  Calculates the surface ELF from a vaccumm border effect
+            #  A simulated surface plasmon is subtracted from the ELF
+            
+            Srfelf = 4*e2 / ((e1+1)**2+e2**2) - Im
+            adep = tgt / (axisE+0.5) * np.arctan(beta * tgt / axisE) - \
+                    beta/1000 / (beta**2+axisE**2/tgt**2)
+            Srfint = np.zeros(s.data.shape)
+            Srfint=2000*K*adep*Srfelf/rk0/te
+            s.data=self.data-Srfint
+            print 'Iteration number: ', io+1, '/', iterations
+                
+        eps = self.deepcopy()
+        eps.data = (e1 + 1j*e2).astype('complex64')
+        
+        eps.mapped_parameters.title = (s.mapped_parameters.title + 
+                                         ' Complex Dielectric Fuction')
+        if eps.tmp_parameters.has_item('filename'):
+                eps.tmp_parameters.filename = (
+                    self.tmp_parameters.filename +
+                    '_CDF_after_Kramers_Kronig_transform')
+        
+        return eps
+        
+    def bethe_f_sum(self, nat=50e27):
+        """ Computes Bethe f-sum rule integrals related to the effective
+        valence electron number from the imaginary part of the complex 
+        dielectric function (CDF) or the energy loss function (ELF)
+        following Egerton 2011 (see "Notes").
+        
+        If the input EELSSpectrum has complex data the method will 
+        compute neff(CDF), for real data, neff(ELF) will be computed.
+        
+        Parameters
+        ----------
+        nat: float
+            Number of atoms (or molecules) per unit volume of the 
+            sample.
+            
+        Returns
+        -------
+        neff: float, EELSSpectrum
+            Signal instance containing the bethe f-sum rule integral for 
+            the CDF or the ELF. It will have the same dimension minus 
+            one of the input CDF EELSSpectra.
+        
+        Notes
+        -----        
+        The expected behavior for near optical transitions (q~0) is that 
+        neff(ELF) (see "Returns" section) remains less than neff(CDF) at
+        low values of energy loss, but the two numbers converge to the 
+        same value at higher energy loss.
+        
+        For details see: Egerton, R. Electron Energy-Loss 
+        Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
+        """
+        m0 = 9.11e-31   # e- mass in pedestrian units [kg]
+        permi = 8.854e-12     # Vaccum permittivity [F/m]
+        hbar = 1.055e-34     # Reduced Plank constant [J·s]
+        pi      = 3.141592654   # Pie!
+        erre=2*permi*m0/(pi*hbar*hbar*nat);
+        axis = self.axes_manager.signal_axes[0]    
+        dum = axis.scale * erre
+        if self.data.imag.any(): 
+            # nEff(CDF) 
+            data=np.trapz(self.data.imag*axis.axis, 
+                                axis=axis.index_in_array)*dum
+        else:
+            # nEff(ELF)
+            data=np.trapz(self.data*axis.axis, 
+                                axis=axis.index_in_array)*dum
+        neff = self._get_navigation_signal()
+        # Prepare return:
+        if neff is None:
+            return data
+        else:
+            neff.data = data
+            neff.mapped_parameters.title = (self.mapped_parameters.title + 
+                ' $n_{Eff}$')
+            if self.tmp_parameters.has_item('filename'):
+                neff.tmp_parameters.filename = (
+                    self.tmp_parameters.filename +
+                    '_Bethe_f-sum')
+                neff.tmp_parameters.folder = self.tmp_parameters.folder
+                neff.tmp_parameters.extension = \
+                    self.tmp_parameters.extension
+        return neff
         
  
         
