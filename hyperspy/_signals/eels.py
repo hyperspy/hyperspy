@@ -914,7 +914,7 @@ class EELSSpectrum(Spectrum):
             i0 = i0 + zlp
         elif isinstance(zlp, hyperspy.signals.EELSSpectrum):
             if zlp.data.ndim == s.data.ndim:
-                i0 = zlp.data.sum(axis.index_in_array)
+                i0 = zlp.data.sum(axis.index_in_array)*epc
             else:
                 print 'ZLP-EELSSpectrum input bad dimension'
                 return
