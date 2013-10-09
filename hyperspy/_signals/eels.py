@@ -828,7 +828,7 @@ class EELSSpectrum(Spectrum):
         
     def kramers_kronig_transform(self, zlp=None,
                                 iterations=1, n=2,
-                                thickness=False, mean_free_path=False):
+                                thickness=False):
         """ Kramers-Kronig Transform method for calculating the complex
         dielectric function from a single scattering distribution(SSD). 
         Uses a FFT method explained in the book by Egerton (see Notes).
@@ -852,7 +852,7 @@ class EELSSpectrum(Spectrum):
             navigation will be used as ZLP integral for each point 
             spectrum. Finally, an EELSSpectrum instance used as input 
             will be used as if it contains the zero loss peak 
-            corresponding to each input SSD. 
+            corresponding to each input SSD. See Notes for further info.
         iterations: int
             Number of the iterations for the internal loop. By default, 
             set = 2.
@@ -874,23 +874,25 @@ class EELSSpectrum(Spectrum):
             contained in an EELSSpectrum made of complex numbers.
         Notes
         -----        
-        For details see: Egerton, R. Electron Energy-Loss 
+        1. For details see: Egerton, R. Electron Energy-Loss 
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
+        2. Integral as in "ZLP integral" means not sum but real 
+        integral; taking into account energy per channel scale. I.e. the 
+        Signal method "integrate_simpson" gives a real integral.
         """
         s = self.deepcopy()
         
         # TODO List
          # n is fixed (must have possibility to be an image, line ...)
-         # Must have some way to assess loop, like returning the mfp?
          # Add tail correction capabilities (check Egerton code).
         
         
         # Constants and units
-        me      = 511.06        # Electron rest mass in [eV/c2]
+        me      = 511.06        # Electron rest mass in [keV/c2]
         m0      = 9.11e-31      # e- mass [kg]
         permi   = 8.854e-12     # Vaccum permittivity [F/m]
         hbar    = 1.055e-34     # Reduced Plank constant [J·s]
-        c       = 3e8           # The fastest speed there is [m/s]
+        c       = 2.998e8       # The fastest speed there is [m/s]
         qe      = 1.602e-19     # Electron charge [C]
         bohr    = 5.292e-2      # bohradius [nm]
         pi      = 3.141592654   # Pi
@@ -946,14 +948,13 @@ class EELSSpectrum(Spectrum):
                     np.insert(K.shape, axis.index_in_array, 1))
             Im = (Im/K).astype('float32')
             # Thickness (and mean free path additionally)
-            te = 332.5*K*t/(i0*epc)
-            mfp = (te*i0).squeeze() / I
+            te = 332.5*K*t/i0
             # Kramers Kronig Transform:
             #  We calculate KKT(Im(-1/epsilon))=1+Re(1/epsilon) with FFT
             #  Follows: D W Johnson 1975 J. Phys. A: Math. Gen. 8 490
             q = np.fft.fft(Im, 2*s_size, axis.index_in_array).astype('complex64')
             q = - q.imag / s_size
-            q[slicer] = -q[slicer]        
+            q[slicer] = -q[slicer]
             q = np.fft.fft(q, axis=axis.index_in_array).astype('complex64')
             # Final touch, we have Re(1/eps)
             Re=q[slicer].real.astype('float32')
@@ -982,7 +983,8 @@ class EELSSpectrum(Spectrum):
             Srfint=2000*K*adep*Srfelf/rk0/te
             s.data=self.data-Srfint
             print 'Iteration number: ', io+1, '/', iterations
-                
+            
+            
         eps = self.deepcopy()
         eps.data = (e1 + 1j*e2).astype('complex64')
         
@@ -997,20 +999,7 @@ class EELSSpectrum(Spectrum):
             thk_inst.mapped_parameters.title = (s.mapped_parameters.title + 
                                          '_KKT_Thk')
             thk_inst.data = te.squeeze()
-        if mean_free_path == True:
-            mfp_inst = eps._get_navigation_signal()
-            mfp_inst.mapped_parameters.title = (s.mapped_parameters.title + 
-                                         '_KKT_MFP')
-            mfp_inst.data = mfp
-        if (thickness==False) & (mean_free_path==False):
-            return eps
-        elif (thickness==True):
-            if (mean_free_path==False):
-                return eps, thk_inst
-            else:
-                return eps, thk_inst, mfp_inst
-        elif (mean_free_path==True):
-            return eps, mfp_inst
+        return eps, thk_inst if thickness==True else eps
         
     def bethe_f_sum(self, nat=50e27):
         """ Computes Bethe f-sum rule integrals related to the effective
