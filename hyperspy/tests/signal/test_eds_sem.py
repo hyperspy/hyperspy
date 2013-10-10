@@ -149,3 +149,24 @@ class Test_get_intentisity_map:
                                     integration_window_factor=5)[0]
         assert_true(np.allclose(1, sAl.data, atol=1e-3))
 
+class Test_tools_bulk:
+    def setUp(self):
+        s = EDSSEMSpectrum(np.ones(1024))
+        s.mapped_parameters.SEM.beam_energy = 5.0
+        s.set_elements(['Al','Zn'])
+        s.add_lines()
+        self.signal = s
+    def test_range(self):
+        s = self.signal
+        import hyperspy.misc.physics_tools as pht
+        mp = s.mapped_parameters
+        elec_range = pht.electron_range(mp.Sample.elements[0],
+            mp.SEM.beam_energy,rho='auto',tilt=mp.SEM.tilt_stage)
+        assert_equal(elec_range,0.41350651162374225)
+        density = pht.density_from_composition(mp.Sample.elements,[0.8,0.2])
+        xr_range = pht.xray_range(mp.Sample.Xray_lines[0],
+            mp.SEM.beam_energy,rho=density)
+        assert_equal(xr_range,0.19002078834049554)
+        
+    
+
