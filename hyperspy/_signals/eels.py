@@ -1003,12 +1003,13 @@ class EELSSpectrum(Spectrum):
         
     def bethe_f_sum(self, nat=50e27):
         """ Computes Bethe f-sum rule integrals related to the effective
-        valence electron number from the imaginary part of the complex 
-        dielectric function (CDF) or the energy loss function (ELF)
-        following Egerton 2011 (see "Notes").
+        valence electron number from the imaginary part of a complex 
+        signal (i.e. the complex dielectric function or its inverse, CDF
+        or -1/CDF). If a real function is used as input it will also 
+        compute the integral, as if this where the imaginary part of CDF 
+        or -1/CDF.
         
-        If the input EELSSpectrum has complex data the method will 
-        compute neff(CDF), for real data, neff(ELF) will be computed.
+        Following Egerton 2011 (see "Notes").
         
         Parameters
         ----------
