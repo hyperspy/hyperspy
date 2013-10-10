@@ -1,4 +1,4 @@
-
+﻿
 Tools
 *****
 
@@ -753,7 +753,7 @@ set of elements to the previous set.
 Get intensity map
 ^^^^^^^^^^^^^^^^^
 
-With the :py:meth:`~._signals.eds.EDSSpectrum.get_intensity_map`, the 
+With the :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`, the 
 intensity of X-ray lines is used to generate a map. The number of counts
 under the selected peaks is used.
 
@@ -761,9 +761,15 @@ Set microscope parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` method provides an user 
-interface to calibrate the paramters if the microscope and the EDS detector.
+interface to calibrate the parameters if the microscope and the EDS detector.
 
 Get the calibration from another spectrum
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.get_calibration_from`
+
+Electron and X-ray range
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The electron and X-ray range in a bulk material can be estimated with 
+:py:meth:`~.misc.physics_tools.electron_range` and :py:meth:`~.misc.physics_tools.xray_range`
