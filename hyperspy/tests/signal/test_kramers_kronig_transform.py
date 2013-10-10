@@ -131,3 +131,14 @@ class Test1D:
         neff1 = elf.bethe_f_sum()
         neff2 = cdf.bethe_f_sum()
         assert_true(np.alltrue((neff2.data-neff1.data) >= 0)) 
+        
+    def test_04(self): 
+        """ Kramers kronig analysis gives a rough estimation of sample
+        thickness. As we have predefined sample thickness for our 
+        scattering distribution, we can use it for testing putposes."""
+        items = self.signal
+        spc = items['SPC']
+        zlp = items['ZLP']
+        cdf,thk=spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.,thickness=True)
+        thk0 = 50. * np.ones(len(thk.data))
+        assert_true(np.allclose(thk0,thk.data,rtol = 1.)) 
