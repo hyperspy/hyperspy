@@ -21,14 +21,17 @@ import os
 import numpy as np
 
 from nose.tools import assert_true, assert_equal, assert_not_equal
-from hyperspy.signals.eels import EELSSpectrum
+from hyperspy.signals import EELSSpectrum
 from hyperspy.components import VolumePlasmonDrude, Lorentzian 
 
 class Test1D:
     def setUp(self):
-        """ To test the kramers_kronig_transform we need two 
-        EELSSpectrum instances. One will be the Drude bulk plasmon peak
-        the other a synthetic fake-ZLP.
+        """ To test the kramers_kronig_transform we will generate 3
+        EELSSpectrum instances. First a model energy loss function(ELF),
+        in our case following the Drude bulk plasmon peak. Second, we 
+        simulate the inelastic scattering to generate a model scattering
+        distribution (SPC). Finally, we use a lorentzian peak with 
+        integral equal to 1 to simulate a ZLP.
         """
         # Create an empty spectrum
         s = EELSSpectrum(np.zeros((32,2048)))
@@ -56,14 +59,33 @@ class Test1D:
         ij=s.axes_manager
         vpm.intensity.value = 1.0
         vpm.plasmon_linewidth.value = 2.0
+        
+        # angular correction (energy dependent integral)
+        me=511.06        # Electron rest mass in [keV/c2]
+        e0=s.mapped_parameters.TEM.beam_energy 
+        beta=s.mapped_parameters.TEM.EELS.collection_angle *1e-3
+        tgt=e0*(2*me+e0)/(me+e0)
+        thetaE=(ejeE.axis+1e-3) / (tgt * 1e3)
+        angular_correction = np.log(1+(beta/thetaE)**2)
 
+        # thickness and kinetic (constant correction)
+        thk=50 # the film is 50 nm thick!
+        t=e0*(1+e0/2/me)/(1+e0/me)**2
+        bohr=5.292e-2  # bohradius [nm]
+        pi= 3.141592654   # Pi
+        constant_correction = thk / (2*pi*bohr*t*1e3)
+
+        correction = angular_correction * constant_correction
+        
+        elf = s.deepcopy()
         for i in enumerate(s):
             vpm.plasmon_energy.value = 10 + (rnd() - 0.5) * 5
             # The ZLP
-            s.data[ij.coordinates] = vpm.function(ejeE.axis)
+            elf.data[ij.coordinates] = vpm.function(ejeE.axis)
+            s.data[ij.coordinates] = vpm.function(ejeE.axis) * correction
             z.data[ij.coordinates] = zlp.function(ejeE_z.axis)
         
-        self.signal = {'ELF': s, 'ZLP': z}
+        self.signal = {'ELF': elf, 'SPC': s, 'ZLP': z}
         
     def test_01(self):
         """ The kramers kronig transform method applied to the signal we
@@ -72,11 +94,13 @@ class Test1D:
         """
         items = self.signal
         elf = items['ELF']
+        spc = items['SPC']
         zlp = items['ZLP']
-        cdf=elf.kramers_kronig_transform(zlp)
-        assert_true(np.allclose(np.imag(-1/cdf.data),elf.data,rtol=1))
+        # i use n=1000 to simulate a metal (enormous n)
+        cdf=spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.)
+        assert_true(np.allclose(np.imag(-1/cdf.data),elf.data,rtol=0.1))
         
-    def test_02a(self):
+    def test_02(self):
         """ After obtaining the CDF from KKA of the input Drude model, 
         we can calculate the two Bethe f-sum rule integrals: one for 
         imag(CDF) and other for imag(-1/CDF).
@@ -86,18 +110,24 @@ class Test1D:
         """
         items = self.signal
         elf = items['ELF']
+        spc = items['SPC']
         zlp = items['ZLP']
-        cdf = elf.kramers_kronig_transform(zlp)
+        cdf=spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.)
         neff1 = elf.bethe_f_sum()
         neff2 = cdf.bethe_f_sum()
         assert_true(np.allclose(neff1.data,neff2.data,rtol = 0.2))
         
-    #def test_02b(self): TODO
-        #""" Second condition: neff1 should remain less than neff2.
-        #items = self.signal
-        #elf = items['ELF']
-        #zlp = items['ZLP']
-        #cdf = elf.kramers_kronig_transform(zlp)
-        #neff1 = elf.bethe_f_sum()
-        #neff2 = cdf.bethe_f_sum()
-        #assert_true(np.alltrue((neff2.data-neff1.data) >= 0)) 
+    def test_03(self): 
+        """ Second condition: neff1 should remain less than neff2.
+        items = self.signal"""
+        items = self.signal
+        elf = items['ELF']
+        spc = items['SPC']
+        zlp = items['ZLP']
+        cdf=spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.)
+        # the crop is because there is an overestimation of the plasmon tail
+        elf.crop_spectrum(None,10.)
+        cdf.crop_spectrum(None,10.)
+        neff1 = elf.bethe_f_sum()
+        neff2 = cdf.bethe_f_sum()
+        assert_true(np.alltrue((neff2.data-neff1.data) >= 0)) 
