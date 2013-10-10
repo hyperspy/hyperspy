@@ -999,7 +999,7 @@ class EELSSpectrum(Spectrum):
             thk_inst.mapped_parameters.title = (s.mapped_parameters.title + 
                                          '_KKT_Thk')
             thk_inst.data = te.squeeze()
-        return eps, thk_inst if thickness==True else eps
+        return (eps,thk_inst) if thickness==True else eps
         
     def bethe_f_sum(self, nat=50e27):
         """ Computes Bethe f-sum rule integrals related to the effective
