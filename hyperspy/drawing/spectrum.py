@@ -353,7 +353,7 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
         messages.warning_exit('View not supported')
         
 def compare_spectra(specs,
-    indexes,
+    indexes=None,
     legend_labels='auto',
     colors='auto',
     line_styles='auto'):
@@ -366,8 +366,9 @@ def compare_spectra(specs,
     specs: list of spectra | spectrum
         A list of spectra or a spectrum
         
-    indexes: list of list of float | list of float
-        The list of indexes to be compared. eg. [[1,1],[0,4],[7.1,3.1]]
+    indexes: list of list of float | list of float |
+        The list of indexes to be compared. eg. [[1,1],[0,4],[7.1,3.1]].
+        If None, specs is a list of 1D spectra that are ploted together.
         
     legend_labels: 'auto' | list of str | None
         If legend_labels is auto, then the indexes are used
@@ -379,30 +380,39 @@ def compare_spectra(specs,
         If 'auto', continuous lines, eg: ('-','--','steps','-.',':')
 
     """
-        
-    if isinstance(indexes[0],list) is False and isinstance(indexes[0],tuple) is False :
-        indexes = [indexes]*len(specs)
+    
+    if indexes == None:
+        nb_signals = len(specs)    
+    elif isinstance(indexes[0],list) is False and isinstance(indexes[0],tuple) is False :
+        nb_signals = len(specs) 
+        indexes = [indexes]*nb_signals
+    else :
+        nb_signals=len(indexes)
     
     if colors == 'auto':
         colors = ['red','blue','green','orange','violet','magenta',
         'orange','violet','black','yellow',' pink']
     elif isinstance(colors,str):
-        colors = [colors]* len(indexes)
+        colors = [colors]* nb_signals
     if line_styles == 'auto':
-        line_styles = ['-']* len(indexes)
+        line_styles = ['-']* nb_signals
     elif isinstance(line_styles,str):
-        line_styles = [line_styles]* len(indexes)
+        line_styles = [line_styles]* nb_signals
 
     fig = plt.figure()
     if legend_labels == 'auto':
         legend_labels = []
-        for index in indexes: legend_labels.append(str(index))
-    for i, index in enumerate(indexes):
+        if isinstance(specs,list) or isinstance(specs,tuple):
+            for spec in specs: legend_labels.append(spec.mapped_parameters.title)
+        else:
+            for index in indexes: legend_labels.append(str(index))
+    for i in range(nb_signals):
         if isinstance(specs,list) or isinstance(specs,tuple):
             tmp = specs[i]
         else :
             tmp = specs
-        for ind in index: tmp = tmp[ind]
+        if indexes != None:
+            for ind in indexes[i]: tmp = tmp[ind]
 
         maxx = (len(tmp.data)-1)*tmp.axes_manager[0].scale+tmp.axes_manager[0].offset
         xdata = mpl.mlab.frange(tmp.axes_manager[0].offset,maxx,
@@ -410,7 +420,8 @@ def compare_spectra(specs,
         plt.plot(xdata,tmp.data, color = colors[i],ls=line_styles[i])
     plt.ylabel('Intensity')
 
-    plt.xlabel(str(tmp.axes_manager[0].name + ' (' + tmp.axes_manager[0].units + ')'))
+    plt.xlabel(str(tmp.axes_manager[0].name) + ' (' + 
+        str(tmp.axes_manager[0].units) + ')')
     
     if legend_labels is not None:
         plt.legend(legend_labels)
