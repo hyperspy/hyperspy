@@ -846,11 +846,12 @@ class EELSSpectrum(Spectrum):
         ----------
         zlp: {None, float, Image, EELSSpectrum}
             If None, zlp integral will not be used for normalization. 
-            In the case of a float input, this single number will be 
-            used as zlp integral for each input spectrum. An Image 
-            instance input of the same dimension as the input SSD 
-            navigation will be used as ZLP integral for each point 
-            spectrum. Finally, an EELSSpectrum instance used as input 
+            In the case of a single float input, this number will be 
+            used as zlp integral for each input spectrum. 
+             An Image or numpy.ndarray class instance input of the same 
+            dimension as the input SSD navigation space will be used as 
+            ZLP integral for each point spectrum. 
+             Finally, an EELSSpectrum instance used as input 
             will be used as if it contains the zero loss peak 
             corresponding to each input SSD. See Notes for further info.
         iterations: int
@@ -877,7 +878,7 @@ class EELSSpectrum(Spectrum):
         1. For details see: Egerton, R. Electron Energy-Loss 
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
         2. Integral as in "ZLP integral" means not sum but real 
-        integral; taking into account energy per channel scale. I.e. the 
+        integral; taking into account energy per channel scale. E.g. the 
         Signal method "integrate_simpson" gives a real integral.
         """
         s = self.deepcopy()
@@ -912,6 +913,13 @@ class EELSSpectrum(Spectrum):
         elif isinstance(zlp, float):
             i0 = self._get_navigation_signal().data
             i0 = i0 + zlp
+        elif isinstance(zlp, np.ndarray):
+            i0 = self._get_navigation_signal().data
+            try:
+                i0 = i0 + zlp
+            except ValueError:
+                print 'ZLP-np.array input bad dimension'
+                return
         elif isinstance(zlp, hyperspy.signals.EELSSpectrum):
             if zlp.data.ndim == s.data.ndim:
                 i0 = zlp.data.sum(axis.index_in_array)*epc
