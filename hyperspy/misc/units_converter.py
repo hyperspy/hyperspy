@@ -1,6 +1,6 @@
 from hyperspy.misc.eds.elements import elements as elements_db
 
-def weigth_to_atomic(elements,compositions):
+def weigth_to_atomic(elements,compo_wt):
     """Convert weigth percent in atomic percent
     
     Parameters
@@ -8,23 +8,23 @@ def weigth_to_atomic(elements,compositions):
     elements: list of str
         A list of element abbreviations, e.g. ['Al','Zn']
         
-    Composition: list of float
-        The weight composition of the sample.
+    compo_wt: list of float
+        The weight fractions (composition) of the sample.
         
     Returns
     -------    
-    The atomic composition
+    The atomic fractions (composition)
     """
     tot = 0
     for i, element in enumerate(elements):
-        tot = tot + compositions[i]/elements_db[element]['A']
-    atomic_compositions = []
+        tot = tot + compo_wt[i]/elements_db[element]['A']
+    compo_at = []
     for i, element in enumerate(elements):
-        atomic_compositions.append(compositions[i]/elements_db[element]['A']/tot)
+        compo_at.append(compo_wt[i]/elements_db[element]['A']/tot)
         
-    return atomic_compositions 
+    return compo_at
     
-def atomic_to_weight(elements,compositions):
+def atomic_to_weight(elements,compo_at):
     """Convert atomic percent in weigth percent
     
     Parameters
@@ -32,18 +32,18 @@ def atomic_to_weight(elements,compositions):
     elements: list of str
         A list of element abbreviations, e.g. ['Al','Zn']
         
-    Composition: list of float
-        The atomic composition of the sample.
+    compo_at: list of float
+        The atomic fractions (composition) of the sample.
         
     Returns
     -------    
-    The weight composition
+    The weight fractions (composition)
     """
     tot = 0
     for i, element in enumerate(elements):
-        tot = tot + compositions[i]*elements_db[element]['A']
-    weight_compositions = []
+        tot = tot + compo_at[i]*elements_db[element]['A']
+    compo_wt = []
     for i, element in enumerate(elements):
-        weight_compositions.append(compositions[i]*elements_db[element]['A']/tot)
+        compo_wt.append(compo_at[i]*elements_db[element]['A']/tot)
         
-    return weight_compositions
+    return compo_wt
