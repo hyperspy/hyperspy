@@ -570,8 +570,8 @@ class EELSSpectrum(Spectrum):
         """1D Richardson-Lucy Poissonian deconvolution of 
         the spectrum by the given kernel.
     
-        Parameters:
-        -----------
+        Parameters
+        ----------
         iterations: int
             Number of iterations of the deconvolution. Note that 
             increasing the value will increase the noise amplification.

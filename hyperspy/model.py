@@ -189,8 +189,8 @@ class Model(list):
         -------
         spectrum : An instance of the same class as `spectrum`.
 
-        Example
-        -------
+        Examples
+        --------
         >>>> s = signals.Spectrum(np.random.random((10,100)))
         >>>> m = create_model(s)
         >>>> l1 = components.Lorentzian()
@@ -957,8 +957,8 @@ class Model(list):
         (mask.shape != tuple(self.axes_manager._navigation_shape_in_array)):
            messages.warning_exit(
            "The mask must be a numpy array of boolen type with "
-           " shape: %s" % 
-           self.axes_manager._navigation_shape_in_array)
+           " shape: %s" +
+           str(self.axes_manager._navigation_shape_in_array))
         masked_elements = 0 if mask is None else mask.sum()
         maxval=self.axes_manager.navigation_size - masked_elements
         if maxval > 0:
@@ -978,7 +978,7 @@ class Model(list):
                 kwargs['bounded'] = False
         i = 0
         for index in self.axes_manager:
-            if mask is None or not mask[index]:
+            if mask is None or not mask[index[::-1]]:
                 self.fit(**kwargs)
                 i += 1
                 if maxval > 0:
@@ -1016,7 +1016,7 @@ class Model(list):
         """Loads the parameters array from  a binary file written with 
         the 'save_parameters2file' function
         
-        Paramters
+        Parameters
         ---------
         filename : str
         
@@ -1037,7 +1037,7 @@ class Model(list):
         """Plots the current spectrum to the screen and a map with a 
         cursor to explore the SI.
         
-        Paramaters
+        Parameters
         ----------
         plot_components : bool
             If True, add a line per component to the signal figure.

@@ -57,10 +57,10 @@ gui Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`mpl_traits_editor` Module
--------------------------------
+:mod:`preferences` Module
+-------------------------
 
-.. automodule:: hyperspy.gui.mpl_traits_editor
+.. automodule:: hyperspy.gui.preferences
     :members:
     :undoc-members:
     :show-inheritance:

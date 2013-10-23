@@ -113,8 +113,8 @@ class Gaussian(Component):
         -----
         Adapted from http://www.scipy.org/Cookbook/FittingData
         
-        Example
-        -------
+        Examples
+        --------
         
         >>> import numpy as np
         >>> from hyperspy.hspy import *
@@ -131,9 +131,9 @@ class Gaussian(Component):
         """
         axis = signal.axes_manager.signal_axes[0]
         
-        energy2index = axis.value2index
-        i1 = energy2index(E1)
-        i2 = energy2index(E2)
+        energy2index = axis._get_index
+        i1 = energy2index(E1) if energy2index(E1) else 0 
+        i2 = energy2index(E2) if energy2index(E2) else len(axis.axis) - 1
         X = axis.axis[i1:i2]
         if only_current is True:
             data = signal()[i1:i2]

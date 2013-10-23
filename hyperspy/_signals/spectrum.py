@@ -103,8 +103,8 @@ class Spectrum(Signal):
     def to_image(self):
         """Returns the spectrum as an image.
         
-        See Also:
-        ---------
+        See Also
+        --------
         as_image : a method for the same purpose with more options.  
         signals.Spectrum.to_image : performs the inverse operation on images.
         

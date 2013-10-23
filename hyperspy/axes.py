@@ -20,41 +20,13 @@ import copy
 
 import numpy as np
 import traits.api as t
-import traitsui.api as tui
 from traits.trait_errors import TraitError
 
 from hyperspy.misc.utils import isiterable, ordinal
 
 class ndindex_nat(np.ndindex):
     def next(self):
-        return super(ndindex_nat, self).next()[::-1]
-
-
-def get_axis_group(n , label=''):
-    group = tui.Group(
-            tui.Group(
-                tui.Item('axis%i.name' % n),
-                tui.Item('axis%i.size' % n, style='readonly'),
-                tui.Item('axis%i.index_in_array' % n, style='readonly'),
-                tui.Item('axis%i.low_index' % n, style='readonly'),
-                tui.Item('axis%i.high_index' % n, style='readonly'),
-                # The style of the index is chosen to be readonly because of 
-                # a bug in Traits 4.0.0 when using context with a Range traits
-                # where the limits are defined by another traits_view
-                tui.Item('axis%i.index' % n, style='readonly'),
-                tui.Item('axis%i.value' % n, style='readonly'),
-                tui.Item('axis%i.units' % n),
-                tui.Item('axis%i.navigate' % n, label = 'slice'),
-            show_border = True,),
-            tui.Group(
-                tui.Item('axis%i.scale' % n),
-                tui.Item('axis%i.offset' % n),
-            label = 'Calibration',
-            show_border = True,),
-        label = label,
-        show_border = True,)
-    return group
-    
+        return super(ndindex_nat, self).next()[::-1]    
 def generate_axis(offset, scale, size, offset_index=0):
     """Creates an axis given the offset, scale and number of channels
 
@@ -319,27 +291,7 @@ class DataAxis(t.HasTraits):
         else:
             return offset, scale
 
-    traits_view = \
-    tui.View(
-        tui.Group(
-            tui.Group(
-                tui.Item(name='name'),
-                tui.Item(name='size', style='readonly'),
-                tui.Item(name='index_in_array', style='readonly'),
-                tui.Item(name='index'),
-                tui.Item(name='value', style='readonly'),
-                tui.Item(name='units'),
-                tui.Item(name='navigate', label = 'navigate'),
-            show_border = True,),
-            tui.Group(
-                tui.Item(name='scale'),
-                tui.Item(name='offset'),
-            label = 'Calibration',
-            show_border = True,),
-        label = "Data Axis properties",
-        show_border = True,),
-    title = 'Axis configuration',
-    )
+ 
 
 class AxesManager(t.HasTraits):
     """Contains and manages the data axes.
@@ -422,6 +374,7 @@ class AxesManager(t.HasTraits):
     (3, 2, 1) (3, 2, 1)
 
     """
+
     _axes = t.List(DataAxis)
     signal_axes = t.Tuple()
     navigation_axes = t.Tuple()
@@ -718,8 +671,9 @@ class AxesManager(t.HasTraits):
             pass
 
     def gui(self):
+        from hyperspy.gui.axes import data_axis_view
         for axis in self._axes:
-            axis.edit_traits()
+            axis.edit_traits(view=data_axis_view)
 
     def copy(self):
         return(copy.copy(self))
@@ -751,6 +705,8 @@ class AxesManager(t.HasTraits):
                 self.navigation_axes[::-1]]
         
     def show(self):
+        from hyperspy.gui.axes import get_axis_group
+        import traitsui.api  as tui
         context = {}
         ag = []
         for n, axis in enumerate(self._get_axes_in_natural_order()):

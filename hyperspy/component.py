@@ -71,7 +71,6 @@ class Parameter(object):
     connect, disconnect(function)
         Call the functions connected when the value attribute changes.
     
-    
     """
     __number_of_elements = 1
     __value = 0

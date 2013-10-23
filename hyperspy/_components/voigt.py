@@ -24,8 +24,7 @@ from hyperspy.component import Component
 sqrt2pi = math.sqrt(2*math.pi)
 
 def voigt(x, FWHM=1, gamma=1, center=0, scale=1): 
-    """ 
-    Voigt peak. 
+    """Voigt lineshape. 
  
     The voigt peak is the convolution of a Lorentz peak with a Gaussian peak. 
  
@@ -36,19 +35,23 @@ def voigt(x, FWHM=1, gamma=1, center=0, scale=1):
  
         V(x) = scale Re(w(z(x-center))) 
  
-   :Parameters: 
-     gamma : real 
-      The half-width half-maximum of the Lorentzian 
-     FWHM : real 
-      The FWHM of the Gaussian 
-     center : real 
-      Location of the center of the peak 
-     scale : real 
-      Value at the highest point of the peak 
+    Parameters
+    ----------
+    gamma : real 
+       The half-width half-maximum of the Lorentzian 
+    FWHM : real 
+       The FWHM of the Gaussian 
+    center : real 
+       Location of the center of the peak 
+    scale : real 
+       Value at the highest point of the peak 
  
+    Notes
+    -----
     Ref: W.I.F. David, J. Appl. Cryst. (1986). 19, 63-64 
 
-    Note: adjusted to use stddev and HWHM rather than FWHM parameters 
+    adjusted to use stddev and HWHM rather than FWHM parameters
+    
     """ 
     # wofz function = w(z) = Fad[d][e][y]eva function = exp(-z**2)erfc(-iz) 
     from scipy.special import wofz
@@ -162,8 +165,8 @@ class Voigt(Component):
         -----
         Adapted from http://www.scipy.org/Cookbook/FittingData
         
-        Example
-        -------
+        Examples
+        --------
         
         >>> import numpy as np
         >>> from hyperspy.hspy import *
@@ -180,9 +183,9 @@ class Voigt(Component):
         """
         axis = signal.axes_manager.signal_axes[0]
         
-        energy2index = axis.value2index
-        i1 = energy2index(E1)
-        i2 = energy2index(E2)
+        energy2index = axis._get_index
+        i1 = energy2index(E1) if energy2index(E1) else 0 
+        i2 = energy2index(E2) if energy2index(E2) else len(axis.axis) - 1
         X = axis.axis[i1:i2]
         if only_current is True:
             data = signal()[i1:i2]

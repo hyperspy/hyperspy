@@ -34,19 +34,28 @@ def mlpca(X,varX,p, convlim = 1E-10, maxiter = 50000, fast=False):
     This function performs MLPCA with missing
     data.
     
-    Arguments:
-    X       is the mxn matrix of observations.
-    stdX    is the mxn matrix of standard deviations
-            associated with X (zeros for missing
-            measurements).
-    p       is the model dimensionality.
+    Parameters
+    ----------
+    X: numpy array
+        is the mxn matrix of observations.
+    stdX: numpy array
+        is the mxn matrix of standard deviations
+        associated with X (zeros for missing
+        measurements).
+    p: int
+        The model dimensionality.
     
-    Returns:
-    U,S,V   are the pseudo-svd parameters.
-    Sobj    is the value of the objective function.
-    ErrFlag indicates exit conditions:
-            0 = nkmal termination
-            1 = max iterations exceeded.
+    Returns
+    -------
+    U,S,V: numpy array
+        are the pseudo-svd parameters.
+    Sobj: numpy array
+        is the value of the objective function.
+    ErrFlag: {0, 1}
+        indicates exit conditions:
+        0 = nkmal termination
+        1 = max iterations exceeded.
+        
     """
     if fast is True and sklearn_installed is True:
         def svd(X):

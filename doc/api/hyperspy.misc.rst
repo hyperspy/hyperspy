@@ -9,6 +9,14 @@ misc Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`array_tools` Module
+-------------------------
+
+.. automodule:: hyperspy.misc.array_tools
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`config_dir` Module
 ------------------------
 
@@ -17,42 +25,26 @@ misc Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`dm3reader` Module
------------------------
-
-.. automodule:: hyperspy.misc.dm3reader
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`fastica` Module
----------------------
-
-.. automodule:: hyperspy.misc.fastica
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`image_utils` Module
+:mod:`image_tools` Module
 -------------------------
 
-.. automodule:: hyperspy.misc.image_utils
+.. automodule:: hyperspy.misc.image_tools
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`import_sklearn` Module
-----------------------------
+:mod:`ipython_tools` Module
+---------------------------
 
-.. automodule:: hyperspy.misc.import_sklearn
+.. automodule:: hyperspy.misc.ipython_tools
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`interactive_ns` Module
-----------------------------
+:mod:`math_tools` Module
+------------------------
 
-.. automodule:: hyperspy.misc.interactive_ns
+.. automodule:: hyperspy.misc.math_tools
     :members:
     :undoc-members:
     :show-inheritance:
@@ -73,6 +65,14 @@ misc Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`physics_tools` Module
+---------------------------
+
+.. automodule:: hyperspy.misc.physics_tools
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`progressbar` Module
 -------------------------
 
@@ -81,10 +81,10 @@ misc Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`tifffile` Module
-----------------------
+:mod:`spectrum_tools` Module
+----------------------------
 
-.. automodule:: hyperspy.misc.tifffile
+.. automodule:: hyperspy.misc.spectrum_tools
     :members:
     :undoc-members:
     :show-inheritance:
@@ -105,30 +105,6 @@ misc Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`utils_readfile` Module
-----------------------------
-
-.. automodule:: hyperspy.misc.utils_readfile
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`utils_varia` Module
--------------------------
-
-.. automodule:: hyperspy.misc.utils_varia
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`xmlreader` Module
------------------------
-
-.. automodule:: hyperspy.misc.xmlreader
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Subpackages
 -----------
 
@@ -136,5 +112,7 @@ Subpackages
 
     hyperspy.misc.eds
     hyperspy.misc.eels
+    hyperspy.misc.io
+    hyperspy.misc.machine_learning
     hyperspy.misc.mpfit
 
