@@ -373,8 +373,9 @@ def compare_spectra(specs,
     legend_labels: 'auto' | list of str | None
         If legend_labels is auto, then the indexes are used
         
-    colors: list
-        If 'auto', automatically selected, eg: ('red','blue')
+    colors: list of str | str | 'auto'
+        A list of colors ('red','blue') or a single colors for all.
+        If 'auto', automatically selected. 
         
     line_styles: list
         If 'auto', continuous lines, eg: ('-','--','steps','-.',':')
@@ -389,10 +390,7 @@ def compare_spectra(specs,
     else :
         nb_signals=len(indexes)
     
-    if colors == 'auto':
-        colors = ['red','blue','green','orange','violet','magenta',
-        'orange','violet','black','yellow',' pink']
-    elif isinstance(colors,str):
+    if isinstance(colors,str):
         colors = [colors]* nb_signals
     if line_styles == 'auto':
         line_styles = ['-']* nb_signals
@@ -417,7 +415,10 @@ def compare_spectra(specs,
         maxx = (len(tmp.data)-1)*tmp.axes_manager[0].scale+tmp.axes_manager[0].offset
         xdata = mpl.mlab.frange(tmp.axes_manager[0].offset,maxx,
                             tmp.axes_manager[0].scale,npts=len(tmp.data))
-        plt.plot(xdata,tmp.data, color = colors[i],ls=line_styles[i])
+        if colors == 'auto':
+            plt.plot(xdata,tmp.data,ls=line_styles[i])
+        else:
+            plt.plot(xdata,tmp.data, color = colors[i],ls=line_styles[i])
     plt.ylabel('Intensity')
 
     plt.xlabel(str(tmp.axes_manager[0].name) + ' (' + 
