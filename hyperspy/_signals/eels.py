@@ -828,7 +828,7 @@ class EELSSpectrum(Spectrum):
         
     def kramers_kronig_transform(self, zlp=None,
                                 iterations=1, n=2,
-                                thickness=False):
+                                thickness=False, delta=0.2):
         """ Kramers-Kronig Transform method for calculating the complex
         dielectric function from a single scattering distribution(SSD). 
         Uses a FFT method explained in the book by Egerton (see Notes).
@@ -952,7 +952,7 @@ class EELSSpectrum(Spectrum):
             # Norm(SSD) = Imag(-1/epsilon) (Energy Loss Funtion, ELF)
             I = s.data.sum(axis.index_in_array)
             Im = s.data / (np.log(1+(beta*tgt/axisE)**2))
-            K = (Im[slicer]/(axisE+1e-3)).sum(axis.index_in_array)
+            K = (Im[slicer]/(axisE+delta)).sum(axis.index_in_array)
             K = (K/(pi/2)/(1-1/n**2)*epc).reshape(
                     np.insert(K.shape, axis.index_in_array, 1))
             Im = (Im/K).astype('float32')
@@ -986,7 +986,7 @@ class EELSSpectrum(Spectrum):
             #  A simulated surface plasmon is subtracted from the ELF
             
             Srfelf = 4*e2 / ((e1+1)**2+e2**2) - Im
-            adep = tgt / (axisE+0.5) * np.arctan(beta * tgt / axisE) - \
+            adep = tgt / (axisE+delta) * np.arctan(beta * tgt / axisE) - \
                     beta/1000 / (beta**2+axisE**2/tgt**2)
             Srfint = np.zeros(s.data.shape)
             Srfint=2000*K*adep*Srfelf/rk0/te
