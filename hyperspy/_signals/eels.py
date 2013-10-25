@@ -935,7 +935,8 @@ class EELSSpectrum(Spectrum):
         else: 
             print 'Zero loss peak input not recognized'
             return
-        i0 = i0.reshape(
+        if len(i0) > 1:
+            i0 = i0.reshape(
                     np.insert(i0.shape, axis.index_in_array, 1))
         # Slicer to get the signal data from 0 to s_size
         slicer = s.axes_manager._get_data_slice(
