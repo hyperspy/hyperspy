@@ -828,7 +828,7 @@ class EELSSpectrum(Spectrum):
         
     def kramers_kronig_transform(self, zlp=None,
                                 iterations=1, n=2,
-                                thickness=False, delta=0.2):
+                                thickness=False, delta=0.05):
         """ Kramers-Kronig Transform method for calculating the complex
         dielectric function from a single scattering distribution(SSD). 
         Uses a FFT method explained in the book by Egerton (see Notes).
