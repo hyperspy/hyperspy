@@ -863,10 +863,10 @@ class EELSSpectrum(Spectrum):
         thickness: Boolean
             If True, an instance containing the calculated thickness of
             the sample will be returned.
-        mean_free_path: Boolean
-            If True, an instance containing the calculated mean free 
-            path of the sample will be returned.
-            
+        delta : float
+            A small number (0.05-0.2 eV) added to the energy axis in 
+            specific steps of the calculation (normalization by sum-rule
+            and surface loss correction) to improve stability.
         Returns
         -------
         eps: EELSSpectrum (complex)
