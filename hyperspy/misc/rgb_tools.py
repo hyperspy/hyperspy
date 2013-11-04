@@ -31,7 +31,17 @@ def is_rgbx(array):
     else:                                                                   
         return False
 
-def rgbx2regular_array(data):
+def rgbx2regular_array(data, plot_friendly=False):
+    """Transforms a RGBx array into a standard one
+
+    Parameters
+    ----------
+    data : numpy array of RGBx dtype
+    plot_friendly : bool
+        If True change the dtype to float when dtype is not uint8 and 
+        normalize the array so that it is ready to be plotted by matplotlib.
+
+    """
     # Make sure that the data is contiguous
     if data.flags['C_CONTIGUOUS'] is False:
         data = np.ascontiguousarray(data)
@@ -43,6 +53,9 @@ def rgbx2regular_array(data):
         data = data.view((dt, 3)) 
     else:
         return data
+    if plot_friendly is True and data.dtype == np.dtype("uint16"):
+        data = data.astype("float")
+        data /= 2**16 - 1
     return data
 
 def regular_array2rgbx(data):

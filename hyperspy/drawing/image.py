@@ -171,7 +171,7 @@ class ImagePlot(BlittedFigure):
         data = self.data_function()
         if rgb_tools.is_rgbx(data):
             self.plot_colorbar = False
-            data = rgb_tools.rgbx2regular_array(data)
+            data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
         if self.auto_contrast is True:
             self.optimize_contrast(data)
         if (not self.axes_manager or 
@@ -204,7 +204,8 @@ class ImagePlot(BlittedFigure):
     def update(self, auto_contrast=None):
         ims = self.ax.images
         redraw_colorbar = False
-        data = rgb_tools.rgbx2regular_array(self.data_function())
+        data = rgb_tools.rgbx2regular_array(self.data_function(),
+                                            plot_friendly=True)
         numrows, numcols = data.shape[:2]
         if len(data.shape) == 2:
             def format_coord(x, y):
