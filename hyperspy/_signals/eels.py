@@ -826,9 +826,8 @@ class EELSSpectrum(Spectrum):
             -pl.r.map['values'][...,np.newaxis]))
         return s
         
-    def kramers_kronig_transform(self, zlp=None,
-                                iterations=1, n=2,
-                                thickness=False):
+    def kramers_kronig_transform(self, zlp=None, iterations=1, n=None, 
+                                t=None, delta=0.05):
         """ Kramers-Kronig Transform method for calculating the complex
         dielectric function from a single scattering distribution(SSD). 
         Uses a FFT method explained in the book by Egerton (see Notes).
@@ -857,22 +856,26 @@ class EELSSpectrum(Spectrum):
         iterations: int
             Number of the iterations for the internal loop. By default, 
             set = 2.
-        n: float
+        n: {None, float}
             The medium refractive index. Used for normalization of the 
-            SSD to obtain the energy loss function. 
-        thickness: Boolean
-            If True, an instance containing the calculated thickness of
-            the sample will be returned.
-        mean_free_path: Boolean
-            If True, an instance containing the calculated mean free 
-            path of the sample will be returned.
-            
+            SSD to obtain the energy loss function. "thk" is returned.
+        t: {None, float}
+            The sample thickness in nm. Used for normalization of the 
+            SSD to obtain the energy loss function. "thk" is not returned.
+        delta : float
+            A small number (0.05-0.2 eV) added to the energy axis in 
+            specific steps of the calculation (normalization by sum-rule
+            and surface loss correction) to improve stability.
         Returns
         -------
         eps: EELSSpectrum (complex)
             The complex dielectric function results, 
                 $\epsilon = \epsilon_1 + i*\epsilon_2$,
             contained in an EELSSpectrum made of complex numbers.
+        thk: Image (optional, see below)
+            Instance containing the sample thickness in nm calculated by 
+            normalization of the SSD (only returned) if the refractive 
+            index is included. 
         Notes
         -----        
         1. For details see: Egerton, R. Electron Energy-Loss 
@@ -880,6 +883,9 @@ class EELSSpectrum(Spectrum):
         2. Integral as in "ZLP integral" means not sum but real 
         integral; taking into account energy per channel scale. E.g. the 
         Signal method "integrate_simpson" gives a real integral.
+        3. Either refractive index or thickness have to be included for 
+        the normalization of the SSD. If none or both of the are 
+        included an error message is issued. 
         """
         s = self.deepcopy()
         
@@ -935,28 +941,47 @@ class EELSSpectrum(Spectrum):
         else: 
             print 'Zero loss peak input not recognized'
             return
-        i0 = i0.reshape(
+        if len(i0) > 1:
+            i0 = i0.reshape(
                     np.insert(i0.shape, axis.index_in_array, 1))
         # Slicer to get the signal data from 0 to s_size
         slicer = s.axes_manager._get_data_slice(
                 [(axis.index_in_array,slice(None,s_size)),])
         
         # Kinetic definitions
-        t   = e0*(1+e0/2/me)/(1+e0/me)**2
+        ke=e0*(1+e0/2/me)/(1+e0/me)**2
         tgt = e0*(2*me+e0)/(me+e0)
-        rk0 = 2590*(1+e0/me)*np.sqrt(2*t/me)
+        rk0 = 2590*(1+e0/me)*np.sqrt(2*ke/me)
         
         for io in range(iterations):
             # Calculation of the ELF by normalization of the SSD
             # Norm(SSD) = Imag(-1/epsilon) (Energy Loss Funtion, ELF)
             I = s.data.sum(axis.index_in_array)
             Im = s.data / (np.log(1+(beta*tgt/axisE)**2))
-            K = (Im[slicer]/(axisE+1e-3)).sum(axis.index_in_array)
-            K = (K/(pi/2)/(1-1/n**2)*epc).reshape(
+            if (n is None) and (t is None):
+                print "Please give optical or thickness information \
+                        for the normalization of the SSD"
+                return
+            elif (n is not None) and (t is not None):
+                print "Please give optical OR thickness information \
+                        for the normalization of the SSD, not BOTH"
+                return
+            elif (n is not None) and isinstance(n, float):
+                # normalize using the refractive index *uses delta*
+                K = (Im[slicer]/(axisE+delta)).sum(axis.index_in_array)
+                K = (K/(pi/2)/(1-1/n**2)*epc).reshape(
                     np.insert(K.shape, axis.index_in_array, 1))
+                te = 332.5*K*ke/i0
+            elif (t is not None) and isinstance(t, float):
+                # normalize using the thickness
+                K = t*i0 / (332.5*ke)
+                te = t
+            else:
+                print "Something is wrong with the normalization info \
+                       ¿is the n/t input parameter float type?"
+                return        
             Im = (Im/K).astype('float32')
-            # Thickness (and mean free path additionally)
-            te = 332.5*K*t/i0
+
             # Kramers Kronig Transform:
             #  We calculate KKT(Im(-1/epsilon))=1+Re(1/epsilon) with FFT
             #  Follows: D W Johnson 1975 J. Phys. A: Math. Gen. 8 490
@@ -968,7 +993,7 @@ class EELSSpectrum(Spectrum):
             Re=q[slicer].real.astype('float32')
             Re += 1
         
-            # Egerton does this, but maybe it is not so necessary
+            # Egerton does this, but it is not needed the way we're fft'ing
             #Re=real(q)
             #Tail correction
              #vm=Re[s_size-1]
@@ -983,9 +1008,8 @@ class EELSSpectrum(Spectrum):
             # Surface losses correction:
             #  Calculates the surface ELF from a vaccumm border effect
             #  A simulated surface plasmon is subtracted from the ELF
-            
             Srfelf = 4*e2 / ((e1+1)**2+e2**2) - Im
-            adep = tgt / (axisE+0.5) * np.arctan(beta * tgt / axisE) - \
+            adep = tgt / (axisE+delta) * np.arctan(beta * tgt / axisE) - \
                     beta/1000 / (beta**2+axisE**2/tgt**2)
             Srfint = np.zeros(s.data.shape)
             Srfint=2000*K*adep*Srfelf/rk0/te
@@ -1002,12 +1026,12 @@ class EELSSpectrum(Spectrum):
                 eps.tmp_parameters.filename = (
                     self.tmp_parameters.filename +
                     '_CDF_after_Kramers_Kronig_transform')
-        if thickness == True:
+        if (n is not None):
             thk_inst = eps._get_navigation_signal()
             thk_inst.mapped_parameters.title = (s.mapped_parameters.title + 
                                          '_KKT_Thk')
             thk_inst.data = te.squeeze()
-        return (eps,thk_inst) if thickness==True else eps
+        return (eps,thk_inst) if (n is not None) else eps
         
     def bethe_f_sum(self, nat=50e27):
         """ Computes Bethe f-sum rule integrals related to the effective
