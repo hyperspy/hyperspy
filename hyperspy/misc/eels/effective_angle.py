@@ -25,7 +25,7 @@ def EffectiveAngle(E0,E,alpha,beta):
     """	   
     E0 *= 1e3 # keV to eV
     if alpha == 0:
-        return beta * 10**-3
+        return beta
     E0=10.**-3*E0 # In KeV
     E=float(E)
     alpha=float(alpha)
