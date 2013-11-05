@@ -97,7 +97,7 @@ class Test1D:
         spc = items['SPC']
         zlp = items['ZLP']
         # i use n=1000 to simulate a metal (enormous n)
-        cdf=spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.)
+        cdf=spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.)[0]
         assert_true(np.allclose(np.imag(-1/cdf.data),elf.data,rtol=0.1))
         
     def test_02(self):
@@ -112,7 +112,7 @@ class Test1D:
         elf = items['ELF']
         spc = items['SPC']
         zlp = items['ZLP']
-        cdf=spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.)
+        cdf, thk = spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.)
         neff1 = elf.bethe_f_sum()
         neff2 = cdf.bethe_f_sum()
         assert_true(np.allclose(neff1.data,neff2.data,rtol = 0.2))
@@ -124,7 +124,7 @@ class Test1D:
         elf = items['ELF']
         spc = items['SPC']
         zlp = items['ZLP']
-        cdf=spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.)
+        cdf, thk =spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.)
         # the crop is because there is an overestimation of the plasmon tail
         elf.crop_spectrum(None,10.)
         cdf.crop_spectrum(None,10.)
@@ -139,6 +139,6 @@ class Test1D:
         items = self.signal
         spc = items['SPC']
         zlp = items['ZLP']
-        cdf,thk=spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.,thickness=True)
+        cdf,thk=spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.)
         thk0 = 50. * np.ones(len(thk.data))
-        assert_true(np.allclose(thk0,thk.data,rtol = 1.)) 
+        assert_true(np.allclose(thk0, thk.data, rtol=1.)) 
