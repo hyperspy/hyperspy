@@ -1,6 +1,6 @@
 import math
 
-def EffectiveAngle(E0,E,alpha,beta):
+def effective_angle(E0,E,alpha,beta):
     """Calculates the effective collection angle
     
     Parameters
