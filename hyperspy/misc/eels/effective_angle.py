@@ -1,6 +1,6 @@
 import math
 
-def EffectiveAngle(E0,E,alpha,beta):
+def effective_angle(E0,E,alpha,beta):
     """Calculates the effective collection angle
     
     Parameters
@@ -25,7 +25,7 @@ def EffectiveAngle(E0,E,alpha,beta):
     """	   
     E0 *= 1e3 # keV to eV
     if alpha == 0:
-        return beta * 10**-3
+        return beta
     E0=10.**-3*E0 # In KeV
     E=float(E)
     alpha=float(alpha)
