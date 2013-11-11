@@ -3821,16 +3821,20 @@ class Signal(MVA,
         global : bool
             If True, compute the values using the full dataset.
             If False, compute the values at the current position.
+            
         """
         if only_current is False:
             target = self.data
         else:
             target = self()
+        # To make it work with nans
+        target = target[~np.isnan(target)]
         print("mean:\t" + formatter % target.mean())
         print("std:\t" + formatter  % target.std())
         print("max:\t" + formatter  % target.max())
         print("min:\t" + formatter % target.min())
         
+
 # Implement binary operators
 for name in (
     # Arithmetic operators
