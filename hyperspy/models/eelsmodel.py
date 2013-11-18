@@ -74,6 +74,7 @@ class EELSModel(Model):
         self.convolved = False
         self.low_loss = ll
         self.GOS = GOS
+        self.edges = list()
         if auto_background is True:
             interactive_ns = get_interactive_ns()
             background = PowerLaw()
