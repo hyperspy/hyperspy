@@ -217,8 +217,7 @@ class Model(list):
             channel_switches_backup = copy.copy(self.channel_switches)
             self.channel_switches[:] = True
         maxval = self.axes_manager.navigation_size
-        if maxval > 0:
-            pbar = progressbar.progressbar(maxval=maxval)
+        pbar = progressbar.progressbar(maxval=maxval)
         i = 0
         for index in self.axes_manager:
             self.fetch_stored_values(only_fixed=False)
