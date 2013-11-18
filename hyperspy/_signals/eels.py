@@ -202,7 +202,7 @@ class EELSSpectrum(Spectrum):
         if print_stats is True:
             print
             print(underline("Initial ZLP position statistics"))
-            zlpc.print_statistics()
+            zlpc.print_summary_statistics()
 
         for signal in also_align + [self]:
             signal.shift1D(-zlpc.data + mean_)
@@ -214,7 +214,7 @@ class EELSSpectrum(Spectrum):
         if print_stats is True:
             print
             print(underline("ZLP position after coarse alignment statistics"))
-            self.estimate_zero_loss_peak_centre().print_statistics()
+            self.estimate_zero_loss_peak_centre().print_summary_statistics()
         
         if subpixel is False: return
         left, right = -3., 3.
@@ -234,7 +234,7 @@ class EELSSpectrum(Spectrum):
         if print_stats is True:
             print
             print(underline("ZLP position after fine alignment statistics"))
-            self.estimate_zero_loss_peak_centre().print_statistics()
+            self.estimate_zero_loss_peak_centre().print_summary_statistics()
 
     def estimate_elastic_scattering_intensity(self,
                                               threshold=None,):

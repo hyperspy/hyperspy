@@ -3814,7 +3814,7 @@ class Signal(MVA,
         self.mapped_parameters.signal_origin = origin
         self._assign_subclass()    
 
-    def print_statistics(self, only_current=False, formatter="%.3f"):
+    def print_summary_statistics(self, only_current=False, formatter="%.3f"):
         """Prints the five-number summary statistics of the data, the mean and
         the standard deviation.
         
