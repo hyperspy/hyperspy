@@ -57,6 +57,7 @@ from hyperspy.misc import array_tools
 from hyperspy.misc import spectrum_tools
 from hyperspy.gui.tools import IntegrateArea
 from hyperspy import components
+from hyperspy.misc.utils import underline
 
 class Signal2DTools(object):
     def estimate_shift2D(self, reference='current',
@@ -3814,7 +3815,12 @@ class Signal(MVA,
         self._assign_subclass()    
 
     def print_statistics(self, only_current=False, formatter="%.3f"):
-        """Prints the mean, std, max and min of the data.
+        """Prints the five-number summary statistics of the data, the mean and
+        the standard deviation.
+        
+        Prints the mean, standandard deviation (std), maximum (max), minimum 
+        (min), first quartile (Q1), median and third quartile. nans are 
+        removed from the calculations.
         
         Parameters
         ----------
@@ -3829,11 +3835,17 @@ class Signal(MVA,
             target = self()
         # To make it work with nans
         target = target[~np.isnan(target)]
+        print(underline("Summary statistics"))
         print("mean:\t" + formatter % target.mean())
         print("std:\t" + formatter  % target.std())
-        print("max:\t" + formatter  % target.max())
+        print
         print("min:\t" + formatter % target.min())
-        
+        print("Q1:\t" + formatter % np.percentile(target,
+                                                                    25))
+        print("median:\t" + formatter % np.median(target))
+        print("Q3:\t" + formatter % np.percentile(target,
+                                                                     75))
+        print("max:\t" + formatter  % target.max())
 
 # Implement binary operators
 for name in (
