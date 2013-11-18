@@ -156,8 +156,18 @@ class HydrogenicGOS(GOSBase):
         z = self.Z
         r = 13.606
         zs = z - 0.35 * (8 - 1) - 1.7
-        iz = np.fix(z) - 12
-        u = XU[np.int(iz)]
+        iz = z - 13
+        if iz < 0:
+            # Egerton does not tabulate the correction for Na and Mg.
+            # We take 1.
+            u = 1.
+        elif iz > 23:
+            # Egerton does not tabulate the correction for Z>36.
+            # We take the value for Kr until we find a better solution.
+            u = .1
+        else:
+            # Egerton's correction to the Hydrogenic XS
+            u = XU[np.int(iz)]
         #el3 = IE3[np.int(iz) - 1]
         #el1 = IE1[np.int(iz) - 1]
         el3 = self.onset_energy_L3 + self.energy_shift
@@ -191,6 +201,9 @@ class HydrogenicGOS(GOSBase):
                 + 65/48) * q + kh2**3 / 3 + 0.75 * kh2 * kh2 + 23/48 * kh2 + 5/64
             a =((q - kh2 + 0.25)**2 + kh2)**4
         rf =((E + 0.1 - el3) / 1.8 / z / z)**u
+        # The following commented lines are to give a more accurate GOS 
+        # for edges presenting white lines. However, this is not relevant
+        # for quantification by curve fitting.
         #if np.abs(iz - 11) <= 5 and E - el3 <= 20:
             #rf = 1
         return rf * 32 * g * c / a / d * E / r / r / zs**4
