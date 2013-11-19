@@ -8,8 +8,8 @@ import scipy.interpolate
 from hyperspy.misc.eels.base_gos import GOSBase
 from hyperspy.misc.physical_constants import R, e, m0, a0, c
 
-XU=[.52,.42,.30,.29,.22,.30,.22,.16,.12,.13,.13,.14,.16,.18,
-    .19,.22,.14,.11,.12,.12,.12,.10,.10,.10]
+XU=[.82, .52, .52, .42, .30, .29, .22, .30, .22, .16, .12, .13, .13, .14, .16,
+    .18, .19, .22, .14, .11, .12, .12, .12, .10, .10, .10]
 #IE3=[73,99,135,164,200,245,294,347,402,455,513,575,641,710,
 #779,855,931,1021,1115,1217,1323,1436,1550,1675]
 
@@ -156,14 +156,11 @@ class HydrogenicGOS(GOSBase):
         z = self.Z
         r = 13.606
         zs = z - 0.35 * (8 - 1) - 1.7
-        iz = z - 13
-        if iz < 0:
-            # Egerton does not tabulate the correction for Na and Mg.
-            # We take 1.
-            u = 1.
-        elif iz > 23:
+        iz = z - 11
+        if iz >= len(XU):
             # Egerton does not tabulate the correction for Z>36.
-            # We take the value for Kr until we find a better solution.
+            # This produces XSs that are within 10% of Hartree-Slater XSs
+            # for these elements.
             u = .1
         else:
             # Egerton's correction to the Hydrogenic XS
