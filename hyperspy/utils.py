@@ -77,7 +77,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                               signal.axes_manager._axes[1:]]
                 j = 1
                 while axis_name in axis_names:
-                    axis_name = new_axis_name + "-%i" % j
+                    axis_name = new_axis_name + "_%i" % j
                     j += 1             
                 eaxis = signal.axes_manager._axes[0] 
                 eaxis.name = axis_name           

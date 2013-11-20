@@ -217,8 +217,7 @@ class Model(list):
             channel_switches_backup = copy.copy(self.channel_switches)
             self.channel_switches[:] = True
         maxval = self.axes_manager.navigation_size
-        if maxval > 0:
-            pbar = progressbar.progressbar(maxval=maxval)
+        pbar = progressbar.progressbar(maxval=maxval)
         i = 0
         for index in self.axes_manager:
             self.fetch_stored_values(only_fixed=False)
@@ -957,8 +956,8 @@ class Model(list):
         (mask.shape != tuple(self.axes_manager._navigation_shape_in_array)):
            messages.warning_exit(
            "The mask must be a numpy array of boolen type with "
-           " shape: %s" % 
-           self.axes_manager._navigation_shape_in_array)
+           " shape: %s" +
+           str(self.axes_manager._navigation_shape_in_array))
         masked_elements = 0 if mask is None else mask.sum()
         maxval=self.axes_manager.navigation_size - masked_elements
         if maxval > 0:
@@ -978,7 +977,7 @@ class Model(list):
                 kwargs['bounded'] = False
         i = 0
         for index in self.axes_manager:
-            if mask is None or not mask[index]:
+            if mask is None or not mask[index[::-1]]:
                 self.fit(**kwargs)
                 i += 1
                 if maxval > 0:
