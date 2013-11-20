@@ -32,6 +32,7 @@ import hyperspy.gui.messages as messagesui
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.components import PowerLaw
 from hyperspy.misc.utils import isiterable, underline
+from hyperspy.misc.utils import without_nans
 
 
 class EELSSpectrum(Spectrum):
@@ -129,12 +130,19 @@ class EELSSpectrum(Spectrum):
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
                     
-    def estimate_zero_loss_peak_centre(self):
+    def estimate_zero_loss_peak_centre(self, mask=None):
         """Estimate the posision of the zero-loss peak.
         
         This function provides just a coarse estimation of the position
         of the zero-loss peak by computing the position of the maximum
         of the spectra. For subpixel accuracy use `estimate_shift1D`.
+        
+        Parameters
+        ----------
+        mask : Signal of bool data type.
+            It must have signal_dimension = 0 and navigation_shape equal to the
+            current signal. Where mask is True the shift is not computed 
+            and set to nan.
 
         Returns
         -------
@@ -154,11 +162,14 @@ class EELSSpectrum(Spectrum):
 
         """
         self._check_signal_dimension_equals_one()
+        self._check_navigation_mask(mask)
         zlpc = self.valuemax(-1)
         if self.axes_manager.navigation_dimension == 1:
             zlpc = zlpc.as_spectrum(0)
         elif self.axes_manager.navigation_dimension > 1:
             zlpc = zlpc.as_image((0, 1))
+        if mask is not None:
+            zlpc.data[mask.data] = np.nan
         return zlpc
 
     def align_zero_loss_peak(
@@ -166,7 +177,8 @@ class EELSSpectrum(Spectrum):
             calibrate=True,
             also_align=[],
             print_stats=True,
-            subpixel=True):
+            subpixel=True,
+            mask=None):
         """Align the zero-loss peak.
 
         This function first aligns the spectra using a coarse estimation
@@ -188,17 +200,26 @@ class EELSSpectrum(Spectrum):
         subpixel : bool
             If True, perform a finer alignment with subpixel accuracy 
             using cross-correlation.
+        mask : Signal of bool data type.
+            It must have signal_dimension = 0 and navigation_shape equal to the
+            current signal. Where mask is True the shift is not computed 
+            and set to nan.
 
         See Also
         --------
         estimate_zero_loss_peak_position, align1D, estimate_shift1D.
 
+        Notes
+        -----
+        Any extra keyargs are passed to `align1D`. For more info check its
+        docstring.
+
         """
         def substract_from_offset(value, signals):
             for signal in signals: 
                 signal.axes_manager[-1].offset -= value
-        zlpc = self.estimate_zero_loss_peak_centre()
-        mean_ = zlpc.data.mean()
+        zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+        mean_ = without_nans(zlpc.data).mean()
         if print_stats is True:
             print
             print(underline("Initial ZLP position statistics"))
@@ -208,18 +229,21 @@ class EELSSpectrum(Spectrum):
             signal.shift1D(-zlpc.data + mean_)
 
         if calibrate is True:
-            zlpc = self.estimate_zero_loss_peak_centre()
-            substract_from_offset(zlpc.data.mean(), also_align + [self])
+            zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+            substract_from_offset(without_nans(zlpc.data).mean(),
+                                  also_align + [self])
 
         if print_stats is True:
             print
             print(underline("ZLP position after coarse alignment statistics"))
-            self.estimate_zero_loss_peak_centre().print_summary_statistics()
+            self.estimate_zero_loss_peak_centre(
+                mask=mask).print_summary_statistics()
         
         if subpixel is False: return
         left, right = -3., 3.
         if calibrate is False:
-            mean_ = self.estimate_zero_loss_peak_centre().data.mean()
+            mean_ = without_nans(self.estimate_zero_loss_peak_centre(
+                mask=mask).data).mean()
             left += mean_
             right += mean_
             
@@ -228,13 +252,15 @@ class EELSSpectrum(Spectrum):
         right = (right if right < self.axes_manager[-1].axis[-1]
                     else self.axes_manager[-1].axis[-1]) 
         self.align1D(left, right, also_align=also_align)
-        zlpc = self.estimate_zero_loss_peak_centre()
+        zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
         if calibrate is True:
-            substract_from_offset(zlpc.data.mean(), also_align + [self])
+            substract_from_offset(without_nans(zlpc.data).mean(),
+                                  also_align + [self])
         if print_stats is True:
             print
             print(underline("ZLP position after fine alignment statistics"))
-            self.estimate_zero_loss_peak_centre().print_summary_statistics()
+            self.estimate_zero_loss_peak_centre(mask=mask
+                                                ).print_summary_statistics()
 
     def estimate_elastic_scattering_intensity(self,
                                               threshold=None,):

@@ -359,10 +359,10 @@ class Signal2DTools(object):
 
 class Signal1DTools(object):
     def shift1D(self,
-                 shift_array,
-                 interpolation_method='linear',
-                 crop=True,
-                 fill_value=np.nan):
+                shift_array,
+                interpolation_method='linear',
+                crop=True,
+                fill_value=np.nan):
         """Shift the data in place over the signal axis by the amount specified
         by an array.
 
@@ -398,6 +398,8 @@ class Signal1DTools(object):
         for i, (dat, shift) in enumerate(zip(
                 self._iterate_signal(),
                 shift_array.ravel(()))):
+            if np.isnan(shift):
+                continue
             si = sp.interpolate.interp1d(original_axis,
                                          dat,
                                          bounds_error=False,
@@ -410,7 +412,7 @@ class Signal1DTools(object):
         axis.offset = offset
 
         if crop is True:
-            minimum, maximum = shift_array.min(), shift_array.max()
+            minimum, maximum = np.nanmin(shift_array), np.nanmax(shift_array)
             if minimum < 0:
                 iminimum = 1 + axis.value2index(
                         axis.high_value + minimum,
@@ -460,14 +462,27 @@ class Signal1DTools(object):
                 **kwargs)
             dat[i1:i2] = dat_int(range(i1,i2))
             pbar.update(i + 1)
-            
+
+    def _check_navigation_mask(self, mask):            
+        if mask is not None:
+            if not isinstance(mask, Signal):
+                raise ValueError("mask must be a Signal instance.")
+            elif mask.axes_manager.signal_dimension not in (0, 1):
+                raise ValueError("mask must be a Signal with signal_dimension "
+                                 "equal to 1")
+            elif (mask.axes_manager.navigation_dimension !=
+                  self.axes_manager.navigation_dimension):
+                raise ValueError("mask must be a Signal with the same "
+                                 "navigation_dimension as the current signal.")
+
     def estimate_shift1D(self,
-                          start=None,
-                          end=None,
-                          reference_indices=None,
-                          max_shift=None,
-                          interpolate=True,
-                          number_of_interpolation_points=5):
+                         start=None,
+                         end=None,
+                         reference_indices=None,
+                         max_shift=None,
+                         interpolate=True,
+                         number_of_interpolation_points=5,
+                         mask=None):
         """Estimate the shifts in the current signal axis using
          cross-correlation.
 
@@ -496,6 +511,10 @@ class Signal1DTools(object):
         number_of_interpolation_points : int
             Number of interpolation points. Warning: making this number 
             too big can saturate the memory
+        mask : Signal of bool data type.
+            It must have signal_dimension = 0 and navigation_shape equal to the
+            current signal. Where mask is True the shift is not computed 
+            and set to nan.
 
         Returns
         -------
@@ -509,11 +528,13 @@ class Signal1DTools(object):
         self._check_signal_dimension_equals_one()
         ip = number_of_interpolation_points + 1
         axis = self.axes_manager.signal_axes[0]
+        self._check_navigation_mask(mask)
         if reference_indices is None:
             reference_indices = self.axes_manager.indices
 
         i1, i2 = axis._get_index(start), axis._get_index(end) 
-        shift_array = np.zeros(self.axes_manager._navigation_shape_in_array)
+        shift_array = np.zeros(self.axes_manager._navigation_shape_in_array,
+                               dtype=float)
         ref = self.inav[reference_indices].data[i1:i2]
         if interpolate is True:
             ref = spectrum_tools.interpolate1D(ip, ref)
@@ -522,11 +543,14 @@ class Signal1DTools(object):
         for i, (dat, indices) in enumerate(zip(
                     self._iterate_signal(),
                     self.axes_manager._array_indices_generator())):
-            dat = dat[i1:i2]
-            if interpolate is True:
-                dat = spectrum_tools.interpolate1D(ip, dat)
-            shift_array[indices] = np.argmax(
-                np.correlate(ref, dat,'full')) - len(ref) + 1
+            if mask is not None and bool(mask.data[indices]) is True:
+                shift_array[indices] = np.nan
+            else:
+                dat = dat[i1:i2]
+                if interpolate is True:
+                    dat = spectrum_tools.interpolate1D(ip, dat)
+                shift_array[indices] = np.argmax(
+                    np.correlate(ref, dat,'full')) - len(ref) + 1
             pbar.update(i + 1)
         pbar.finish()
 
@@ -540,16 +564,18 @@ class Signal1DTools(object):
         return shift_array
 
     def align1D(self,
-                 start=None,
-                 end=None,
-                 reference_indices=None,
-                 max_shift=None,
-                 interpolate=True,
-                 number_of_interpolation_points=5,
-                 interpolation_method='linear',
-                 crop=True,
-                 fill_value=np.nan,
-                 also_align=[]):
+                start=None,
+                end=None,
+                reference_indices=None,
+                max_shift=None,
+                interpolate=True,
+                number_of_interpolation_points=5,
+                interpolation_method='linear',
+                crop=True,
+                fill_value=np.nan,
+                also_align=[],
+                mask=None):
+
         """Estimate the shifts in the signal axis using 
         cross-correlation and use the estimation to align the data in place.
 
@@ -594,6 +620,10 @@ class Signal1DTools(object):
             dimensions
             as this one and that will be aligned using the shift map
             estimated using the this signal.
+        mask : Signal of bool data type.
+            It must have signal_dimension = 0 and navigation_shape equal to the
+            current signal. Where mask is True the shift is not computed 
+            and set to nan.
 
         Returns
         -------
@@ -616,7 +646,8 @@ class Signal1DTools(object):
             max_shift=max_shift,
             interpolate=interpolate,
             number_of_interpolation_points=
-                number_of_interpolation_points)
+                number_of_interpolation_points,
+            mask=mask)
         for signal in also_align + [self]:
             signal.shift1D(shift_array=shift_array,
                            interpolation_method=interpolation_method,
