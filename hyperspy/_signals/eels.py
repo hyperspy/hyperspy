@@ -178,7 +178,8 @@ class EELSSpectrum(Spectrum):
             also_align=[],
             print_stats=True,
             subpixel=True,
-            mask=None):
+            mask=None,
+            **kwargs):
         """Align the zero-loss peak.
 
         This function first aligns the spectra using a coarse estimation
@@ -211,8 +212,8 @@ class EELSSpectrum(Spectrum):
 
         Notes
         -----
-        Any extra keyargs are passed to `align1D`. For more info check its
-        docstring.
+        Any extra keyword arguments are passed to `align1D`. For
+        more info check its docstring.
 
         """
         def substract_from_offset(value, signals):
@@ -251,7 +252,7 @@ class EELSSpectrum(Spectrum):
                     else self.axes_manager[-1].axis[0]) 
         right = (right if right < self.axes_manager[-1].axis[-1]
                     else self.axes_manager[-1].axis[-1]) 
-        self.align1D(left, right, also_align=also_align)
+        self.align1D(left, right, also_align=also_align, **kwargs)
         zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
         if calibrate is True:
             substract_from_offset(without_nans(zlpc.data).mean(),
