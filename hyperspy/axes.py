@@ -235,7 +235,6 @@ class DataAxis(t.HasTraits):
             'offset' : self.offset,
             'size' : self.size,
             'units' : self.units,
-            'index_in_array' : self.index_in_array,
             'navigate' : self.navigate
         }
         return adict
