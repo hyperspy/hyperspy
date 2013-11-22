@@ -199,7 +199,7 @@ class ImagePlot(BlittedFigure):
             except:
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
-            pass
+                pass
                 
         self.connect()
         
