@@ -3727,11 +3727,29 @@ class Signal(MVA,
         self.__init__(**self._to_dictionary())
         
     def set_signal_type(self, signal_type):
-        """
+        """Set the signal type and change the current class 
+        accordingly if pertinent.
+
+        The signal_type attribute specifies the kind of data that the signal
+        containts e.g. "EELS" for electron energy-loss spectroscopy, 
+        "PES" for photoemission spectroscopy. There are some methods that are 
+        only available for certain kind of signals, so setting this 
+        parameter can enable/disable features.
         
         Parameters
         ----------
-        signal_type : {"EELS" or any other string describing the signal}
+        signal_type : {"EELS", "EDS_TEM", "EDS_SEM", str}
+            Currently there are special features for "EELS" (electron
+            energy-loss spectroscopy), "EDS_TEM" (energy dispersive X-rays of
+            thin samples, normally obtained in a transmission electron 
+            microscope) and "EDS_SEM" (energy dispersive X-rays of
+            thick samples, normally obtained in a scanning electron 
+            microscope) so setting the signal_type to the correct acronym
+            is highly advisable when analyzing any signal for which Hyperspy
+            provides extra features. Even if Hyperspy does not provide extra
+            features for the signal that you are analyzing, it is good practice
+            to set signal_type to a value that best describes the data signal
+            type.
         
         """        
         self.mapped_parameters.signal_type = signal_type
@@ -3739,19 +3757,29 @@ class Signal(MVA,
         
         
     def set_signal_origin(self, origin):
-        """
+        """Set the origin of the signal and change the current class 
+        accordingly if pertinent.
+
+        The signal_origin attribute specifies if the data was obtained 
+        through experiment or simulation. There are some methods that are 
+        only available for experimental or simulated data, so setting this 
+        parameter can enable/disable features.
+
         
         Parameters
         ----------
-        origin : {'experiment', 'simulation'}
+        origin : {'experiment', 'simulation', None, ""}
+            None an the empty string mean that the signal origin is uknown.
         
         Raises
         ------
         ValueError if origin is not 'experiment' or 'simulation'
         
         """
-        if origin not in ['experiment', 'simulation']:
+        if origin not in ['experiment', 'simulation', "", None]:
             raise ValueError("`origin` must be one of: experiment, simulation" )
+        if origin is None:
+            origin = ""
         self.mapped_parameters.signal_origin = origin
         self._assign_subclass()    
 
