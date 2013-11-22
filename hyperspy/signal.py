@@ -242,6 +242,7 @@ class Signal2DTools(object):
             del ref
         return shifts
         
+
     def align2D(self, crop=True, fill_value=np.nan, shifts=None,
                 roi=None,
                 sobel=True,
@@ -333,6 +334,7 @@ class Signal2DTools(object):
         if return_shifts:
             return shifts
         
+
     def crop_image(self,top=None, bottom=None,
                         left=None, right=None):
         """Crops an image in place.
@@ -354,6 +356,7 @@ class Signal2DTools(object):
         self.crop(self.axes_manager.signal_axes[0].index_in_axes_manager,
                   left,
                   right)
+
 
 
 class Signal1DTools(object):
@@ -424,6 +427,7 @@ class Signal1DTools(object):
                 self.crop(axis.index_in_axes_manager,
                           imaximum)
             
+
     def interpolate_in_between(self, start, end, delta=3, **kwargs):
         """Replace the data in a given range by interpolation.
         
@@ -459,7 +463,8 @@ class Signal1DTools(object):
                 **kwargs)
             dat[i1:i2] = dat_int(range(i1,i2))
             pbar.update(i + 1)
-            
+
+
     def estimate_shift1D(self,
                           start=None,
                           end=None,
@@ -537,6 +542,7 @@ class Signal1DTools(object):
             shift_array /= ip
         shift_array *= axis.scale
         return shift_array
+
 
     def align1D(self,
                  start=None,
@@ -624,7 +630,8 @@ class Signal1DTools(object):
                            interpolation_method=interpolation_method,
                            crop=crop,
                            fill_value=fill_value)
-                            
+
+
     def integrate_in_range(self, signal_range='interactive'):
         """ Sums the spectrum over an energy range, giving the integrated
         area.
@@ -671,11 +678,13 @@ class Signal1DTools(object):
             integrated_spectrum = self._integrate_in_range_commandline(signal_range)
         return(integrated_spectrum)
 
+
     def _integrate_in_range_commandline(self, signal_range):
         e1 = signal_range[0]
         e2 = signal_range[1]
         integrated_spectrum = self[..., e1:e2].integrate_simpson(-1)
         return(integrated_spectrum)
+
 
     @only_interactive
     def calibrate(self):
@@ -702,6 +711,7 @@ class Signal1DTools(object):
         calibration = SpectrumCalibration(self)
         calibration.edit_traits()
 
+
     def smooth_savitzky_golay(self, polynomial_order=None,
         number_of_points=None, differential_order=0):
         """Savitzky-Golay data smoothing in place.
@@ -725,6 +735,7 @@ class Signal1DTools(object):
 
             smoother.edit_traits()
             
+
     def smooth_lowess(self, smoothing_parameter=None,
         number_of_iterations=None, differential_order=0):
         """Lowess data smoothing in place.
@@ -746,6 +757,7 @@ class Signal1DTools(object):
         else:
             smoother.apply()
 
+
     def smooth_tv(self, smoothing_parameter=None, differential_order=0):
         """Total variation data smoothing in place.
         
@@ -764,6 +776,7 @@ class Signal1DTools(object):
         else:
             smoother.apply()
     
+
     def filter_butterworth(self,
                            cutoff_frequency_ratio=None,
                            type='low',
@@ -783,6 +796,7 @@ class Signal1DTools(object):
         else:
             smoother.edit_traits()
     
+
     def _remove_background_cli(self, signal_range, background_estimator):
         spectra = self.deepcopy()
         maxval = self.axes_manager.navigation_size
@@ -798,6 +812,7 @@ class Signal1DTools(object):
             pbar.update(index)
         pbar.finish()
         return(spectra)
+
 
     def remove_background(
             self, 
@@ -850,6 +865,7 @@ class Signal1DTools(object):
                     signal_range, background_estimator)
             return(spectra)
 
+
     @interactive_range_selector    
     def crop_spectrum(self, left_value=None, right_value=None,):
         """Crop in place the spectral dimension.
@@ -877,6 +893,7 @@ class Signal1DTools(object):
             axis=self.axes_manager.signal_axes[0].index_in_axes_manager,
             start=left_value, end=right_value)
         
+
     @auto_replot    
     def gaussian_filter(self, FWHM):
         """Applies a Gaussian filter in the spectral dimension in place. 
@@ -905,6 +922,7 @@ class Signal1DTools(object):
             axis=axis.index_in_array, 
             sigma=FWHM/2.35482)
     
+
     @auto_replot
     def hanning_taper(self, side='both', channels=None, offset=0):
         """Apply a hanning taper to the data in place.
@@ -948,6 +966,7 @@ class Signal1DTools(object):
                 dc[..., -offset:] *= 0.
         return channels
         
+
     def find_peaks1D_ohaver(self, xdim=None,slope_thresh=0, amp_thresh=None, 
                     subchannel=True, medfilt_radius=5, maxpeakn=30000, 
                     peakgroup=10):
@@ -1033,6 +1052,7 @@ class Signal1DTools(object):
                                                 subchannel=subchannel)
         return peaks
     
+
     def estimate_peak_width(self,
             factor=0.5,
             window=None,
@@ -1123,6 +1143,7 @@ class Signal1DTools(object):
             return [width, left, right]
         else:
             return width
+
 
         
 class MVATools(object):
@@ -1255,6 +1276,7 @@ class MVATools(object):
         else:
             return f
 
+
     def _plot_loadings(self, loadings, comp_ids=None, calibrate=True,
                      same_window=None, comp_label=None, 
                      with_factors=False, factors=None,
@@ -1328,6 +1350,7 @@ class MVATools(object):
                                             per_row=per_row)
             else:
                 return f
+
 
     def _export_factors(self,
                         factors,
@@ -1486,6 +1509,7 @@ class MVATools(object):
                         filename = os.path.join(folder, filename)
                     im.save(filename)
 
+
     def _export_loadings(self,
                          loadings,
                          folder=None,
@@ -1621,6 +1645,8 @@ class MVATools(object):
                         filename = os.path.join(folder, filename)
                     s.save(filename)
 
+
+
     def plot_decomposition_factors(self,
                         comp_ids=None,
                         calibrate=True,
@@ -1676,6 +1702,7 @@ class MVATools(object):
                                             comp_label=comp_label, 
                                             per_row=per_row)
 
+
     def plot_bss_factors(self,comp_ids=None, calibrate=True,
                         same_window=None, comp_label='BSS factor',
                         per_row=3):
@@ -1725,6 +1752,7 @@ class MVATools(object):
                                             same_window=same_window, 
                                             comp_label=comp_label, 
                                             per_row=per_row)
+
 
     def plot_decomposition_loadings(self,
                        comp_ids=None,
@@ -1800,6 +1828,7 @@ class MVATools(object):
                                  no_nans=no_nans,
                                  per_row=per_row)
 
+
     def plot_bss_loadings(self, comp_ids=None, calibrate=True,
                        same_window=None, comp_label='BSS loading', 
                        with_factors=False, cmap=plt.cm.gray, 
@@ -1864,6 +1893,7 @@ class MVATools(object):
                                     cmap=cmap,
                                     no_nans=no_nans,
                                     per_row=per_row)
+
 
     def export_decomposition_results(self, comp_ids=None,
                                      folder=None,
@@ -1987,6 +2017,7 @@ class MVATools(object):
                                 same_window=same_window,
                                 no_nans=no_nans,
                                 per_row=per_row)
+
 
     def export_bss_results(self,
                            comp_ids=None,
@@ -2176,6 +2207,7 @@ class Signal(MVA,
         self.inav = SpecialSlicers(self, True)
         self.isig = SpecialSlicers(self, False)
     
+
     @property        
     def navigation_indexer(self):
         warnings.warn(
@@ -2183,6 +2215,8 @@ class Signal(MVA,
             " it will be removed in the next version. ",
             DeprecationWarning)
         return self.inav
+
+
     @property
     def signal_indexer(self):
          warnings.warn(
@@ -2190,6 +2224,8 @@ class Signal(MVA,
             " it will be removed in the next version. ",
             DeprecationWarning)
          return self.isig
+
+
     def _create_mapped_parameters(self):
         self.mapped_parameters = DictionaryBrowser()
         mp = self.mapped_parameters
@@ -2202,6 +2238,7 @@ class Signal(MVA,
         self.original_parameters = DictionaryBrowser()
         self.tmp_parameters = DictionaryBrowser()
 
+
     def __repr__(self):
         string = '<'
         string += self.__class__.__name__
@@ -2211,6 +2248,7 @@ class Signal(MVA,
         string += '>'
 
         return string
+
 
     def __getitem__(self, slices, isNavigation=None):
         try:
@@ -2276,6 +2314,7 @@ class Signal(MVA,
 
         return _signal
         
+
     def __setitem__(self, i, j):
         """x.__setitem__(i, y) <==> x[i]=y
         
@@ -2382,18 +2421,22 @@ class Signal(MVA,
             exec("result = self.data.%s(other)" %  op_name)
             return self._deepcopy_with_new_data(result)
         
+
     def _unary_operator_ruler(self, op_name):
         exec("result = self.data.%s()" % op_name)
         return self._deepcopy_with_new_data(result)
         
+
     def _check_signal_dimension_equals_one(self):
         if self.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(self.axes_manager.signal_dimension, 1)
             
+
     def _check_signal_dimension_equals_two(self):
         if self.axes_manager.signal_dimension != 2:
             raise SignalDimensionError(self.axes_manager.signal_dimension, 2)
             
+
     def _deepcopy_with_new_data(self, data=None):
         """Returns a deepcopy of itself replacing the data.
         
@@ -2421,7 +2464,7 @@ class Signal(MVA,
             self.data = old_data
             self._plot = old_plot
             
-            
+
     def _print_summary(self):
         string = "\n\tTitle: "
         string += self.mapped_parameters.title.decode('utf8')
@@ -2436,6 +2479,7 @@ class Signal(MVA,
             string += "\n\tData type: "
             string += str(self.data.dtype)
         print string
+
 
     def _load_dictionary(self, file_data_dict):
         """Load data from dictionary.
@@ -2512,6 +2556,7 @@ class Signal(MVA,
         self.data = self.data.squeeze()
         return self
 
+
     def _to_dictionary(self, add_learning_results=True):
         """Returns a dictionary that can be used to recreate the signal.
         
@@ -2527,10 +2572,6 @@ class Signal(MVA,
         
         """
         dic = {}
-#        if hasattr(self.data, "copy"):
-#            dic['data'] = self.data.copy()
-#        else:
-#            dic['data'] = self.data
         dic['data'] = self.data
         dic['axes'] = self.axes_manager._get_axes_dicts()
         dic['mapped_parameters'] = \
@@ -2544,11 +2585,13 @@ class Signal(MVA,
                                                 self.learning_results.__dict__)
         return dic
         
+
     def _get_undefined_axes_list(self):
         axes = []
         for i in xrange(len(self.data.shape)):
             axes.append({'size': int(self.data.shape[i]),})
         return axes
+
 
     def __call__(self, axes_manager=None):
         if axes_manager is None:
@@ -2556,6 +2599,7 @@ class Signal(MVA,
         return np.atleast_1d(
             self.data.__getitem__(axes_manager._getitem_tuple))
             
+
     def plot(self, navigator="auto", axes_manager=None):
         """Plot the signal at the current coordinates.
             
@@ -2753,10 +2797,12 @@ class Signal(MVA,
             filename = basename + '.' + extension
         io.save(filename, self, overwrite=overwrite, **kwds)
 
+
     def _replot(self):
         if self._plot is not None:
             if self._plot.is_active() is True:
                 self.plot()
+
 
     @auto_replot
     def get_dimensions_from_data(self):
@@ -2768,6 +2814,7 @@ class Signal(MVA,
         dc = self.data
         for axis in self.axes_manager._axes:
             axis.size = int(dc.shape[axis.index_in_array])
+
 
     def crop(self, axis, start=None, end=None):
         """Crops the data in a given axis. The range is given in pixels
@@ -2799,6 +2846,7 @@ class Signal(MVA,
         self.get_dimensions_from_data()
         self.squeeze()
 
+
     @auto_replot
     def roll_xy(self, n_x, n_y = 1):
         """Roll over the x axis n_x positions and n_y positions the 
@@ -2821,6 +2869,7 @@ class Signal(MVA,
         """
         self.data = np.roll(self.data, n_x, 0)
         self.data[:n_x, ...] = np.roll(self.data[:n_x, ...], n_y, 1)
+
 
     def swap_axes(self, axis1, axis2):
         """Swaps the axes.
@@ -2848,6 +2897,7 @@ class Signal(MVA,
         s._make_sure_data_is_contiguous()
         return s
         
+
     def rollaxis(self, axis, to_axis):
         """Roll the specified axis backwards, until it lies in a given position.
 
@@ -2898,6 +2948,7 @@ class Signal(MVA,
         s._make_sure_data_is_contiguous()
         return s
 
+
     def rebin(self, new_shape):
         """Returns the object with the data rebinned.
 
@@ -2925,6 +2976,7 @@ class Signal(MVA,
             axis.scale *= factors[axis.index_in_array]
         s.get_dimensions_from_data()
         return s
+
 
     def split(self, axis=None, number_of_parts=None, step_sizes=None):
         """Splits the data into several signals.
@@ -3012,6 +3064,7 @@ class Signal(MVA,
             splitted += self.__class__(**signal_dict),
         return splitted
 
+
     def unfold_if_multidim(self):
         """Unfold the datacube if it is >2D
 
@@ -3026,6 +3079,7 @@ class Signal(MVA,
             return True
         else:
             return False
+
 
     @auto_replot
     def _unfold(self, steady_axes, unfolded_axis):
@@ -3082,6 +3136,7 @@ class Signal(MVA,
             self.axes_manager.remove(axis.index_in_axes_manager)
         self.data = self.data.squeeze()
 
+
     def unfold(self):
         """Modifies the shape of the data by unfolding the signal and
         navigation dimensions separaterly
@@ -3089,6 +3144,7 @@ class Signal(MVA,
         """
         self.unfold_navigation_space()
         self.unfold_signal_space()
+
 
     def unfold_navigation_space(self):
         """Modify the shape of the data to obtain a navigation space of
@@ -3104,6 +3160,7 @@ class Signal(MVA,
                     self.axes_manager.navigation_axes[0].index_in_array)
         self._unfold(steady_axes, unfolded_axis)
 
+
     def unfold_signal_space(self):
         """Modify the shape of the data to obtain a signal space of
         dimension 1
@@ -3115,6 +3172,7 @@ class Signal(MVA,
                         self.axes_manager.navigation_axes]
         unfolded_axis = self.axes_manager.signal_axes[0].index_in_array
         self._unfold(steady_axes, unfolded_axis)
+
 
     @auto_replot
     def fold(self):
@@ -3129,10 +3187,12 @@ class Signal(MVA,
             folding.original_axes_manager = None
             folding.unfolded = False
             
+
     def _make_sure_data_is_contiguous(self):
         if self.data.flags['C_CONTIGUOUS'] is False:
             self.data = np.ascontiguousarray(self.data)
             
+
     def _iterate_signal(self):
         """Iterates over the signal data.
         
@@ -3160,6 +3220,7 @@ class Signal(MVA,
             getitem[unfolded_axis] = i
             yield(data[getitem])
 
+
     def _remove_axis(self, axis):
         axis = self.axes_manager[axis]
         self.axes_manager.remove(axis.index_in_axes_manager)
@@ -3175,12 +3236,14 @@ class Signal(MVA,
             self.mapped_parameters.record_by = self._record_by
             self._assign_subclass()
             
+
     def _apply_function_on_data_and_remove_axis(self, function, axis):
         s = self._deepcopy_with_new_data(
             function(self.data,
                      axis=self.axes_manager[axis].index_in_array))
         s._remove_axis(axis)
         return s
+
 
     def sum(self, axis):
         """Sum the data over the given axis.
@@ -3213,6 +3276,7 @@ class Signal(MVA,
         """
         return self._apply_function_on_data_and_remove_axis(np.sum, axis)
                 
+
     def max(self, axis, return_signal=False):
         """Returns a signal with the maximum of the signal along an axis.
 
@@ -3242,6 +3306,7 @@ class Signal(MVA,
         """
         return self._apply_function_on_data_and_remove_axis(np.max, axis)
                 
+
     def min(self, axis):
         """Returns a signal with the minimum of the signal along an axis.
 
@@ -3272,6 +3337,7 @@ class Signal(MVA,
         
         return self._apply_function_on_data_and_remove_axis(np.min, axis)
     
+
     def mean(self, axis):
         """Returns a signal with the average of the signal along an axis.
 
@@ -3302,6 +3368,7 @@ class Signal(MVA,
         return self._apply_function_on_data_and_remove_axis(np.mean, 
                                                             axis)
         
+
     def std(self, axis):
         """Returns a signal with the standard deviation of the signal along 
         an axis.
@@ -3332,6 +3399,7 @@ class Signal(MVA,
         """
         return self._apply_function_on_data_and_remove_axis(np.std, axis)
         
+
     def var(self, axis):
         """Returns a signal with the variances of the signal along an axis.
 
@@ -3361,6 +3429,7 @@ class Signal(MVA,
         """
         return self._apply_function_on_data_and_remove_axis(np.var, axis)
             
+
     def diff(self, axis, order=1):
         """Returns a signal with the n-th order discrete difference along 
         given axis.
@@ -3394,6 +3463,7 @@ class Signal(MVA,
         s.get_dimensions_from_data()
         return s
         
+
     def integrate_simpson(self, axis):
         """Returns a signal with the result of calculating the integral 
         of the signal along an axis using Simpson's rule.
@@ -3439,6 +3509,7 @@ class Signal(MVA,
         finally:
             self._plot = backup_plot
 
+
     def __deepcopy__(self, memo):
         dc = type(self)(**self._to_dictionary())
         if dc.data is not None:
@@ -3450,9 +3521,11 @@ class Signal(MVA,
             caxis.navigate = oaxis.navigate
         return dc
             
+
     def deepcopy(self):
         return copy.deepcopy(self)
         
+
     def change_dtype(self, dtype):
         """Change the data type
         
@@ -3477,29 +3550,6 @@ class Signal(MVA,
         
         self.data = self.data.astype(dtype)
         
-
-   
-#    def sum_in_mask(self, mask):
-#        """Returns the result of summing all the spectra in the mask.
-#
-#        Parameters
-#        ----------
-#        mask : boolean numpy array
-#
-#        Returns
-#        -------
-#        Signal
-
-#        """
-#        dc = self.data_cube.copy()
-#        mask3D = mask.reshape([1,] + list(mask.shape)) * np.ones(dc.shape)
-#        dc = (mask3D*dc).sum(1).sum(1) / mask.sum()
-#        s = Spectrum()
-#        s.data_cube = dc.reshape((-1,1,1))
-#        s.get_dimensions_from_cube()
-#        utils.copy_energy_calibration(self,s)
-#        return s
-
 
     def estimate_poissonian_noise_variance(self,
             dc=None, gaussian_noise_var=None):
@@ -3561,6 +3611,7 @@ class Signal(MVA,
                                         gaussian_noise_var,
                                         np.Inf)
                                         
+
     def get_current_signal(self, auto_title=True, auto_filename=True):
         """Returns the data at the current coordinates as a Signal subclass.
 
@@ -3634,12 +3685,15 @@ class Signal(MVA,
     def __iter__(self):
         return self
         
+
     def next(self):
         self.axes_manager.next()
         return self.get_current_signal()                                               
         
+
     def __len__(self):
         return self.axes_manager.signal_shape[-1]
+
 
     def as_spectrum(self, spectral_axis):
         """Return the Signal as a spectrum.
@@ -3671,6 +3725,7 @@ class Signal(MVA,
         sp._assign_subclass()
         return sp
         
+
     def as_image(self, image_axes):
         """Convert signal to image.
         
@@ -3713,7 +3768,6 @@ class Signal(MVA,
         return im
         
 
-
     def _assign_subclass(self):
         mp = self.mapped_parameters
         current_class = self.__class__
@@ -3726,6 +3780,7 @@ class Signal(MVA,
                                              else self._signal_origin) 
         self.__init__(**self._to_dictionary())
         
+
     def set_signal_type(self, signal_type):
         """Set the signal type and change the current class 
         accordingly if pertinent.
@@ -3783,6 +3838,26 @@ class Signal(MVA,
         self.mapped_parameters.signal_origin = origin
         self._assign_subclass()    
 
+#    def sum_in_mask(self, mask):
+#        """Returns the result of summing all the spectra in the mask.
+#
+#        Parameters
+#        ----------
+#        mask : boolean numpy array
+#
+#        Returns
+#        -------
+#        Signal
+#
+#        """
+#        dc = self.data_cube.copy()
+#        mask3D = mask.reshape([1,] + list(mask.shape)) * np.ones(dc.shape)
+#        dc = (mask3D*dc).sum(1).sum(1) / mask.sum()
+#        s = Spectrum()
+#        s.data_cube = dc.reshape((-1,1,1))
+#        s.get_dimensions_from_cube()
+#        utils.copy_energy_calibration(self,s)
+#        return s
         
 # Implement binary operators
 for name in (
@@ -3839,6 +3914,7 @@ class SpecialSlicers:
         self.isNavigation = isNavigation
         self.signal = signal
         
+
     def __getitem__(self, slices):
         return self.signal.__getitem__(slices, self.isNavigation)
         
@@ -3850,6 +3926,7 @@ class SpecialSlicers:
             j = j.data
         self.signal.__getitem__(i, self.isNavigation).data[:] = j
         
+
     def __len__(self):
         return self.signal.__len__()
 
