@@ -782,7 +782,7 @@ class Signal1DTools(object):
             smoother.apply()
         else:
             smoother.edit_traits()
-    
+   
     def _remove_background_cli(self, signal_range, background_estimator):
         spectra = self.deepcopy()
         maxval = self.axes_manager.navigation_size
@@ -3526,7 +3526,6 @@ class Signal(MVA,
                 print "Clipping the variance to the gaussian_noise_var"
                 self.variance = np.clip(self.variance,
                                         gaussian_noise_var,
-                                        np.Inf)                     
 
     def get_current_signal(self, auto_title=True, auto_filename=True):
         """Returns the data at the current coordinates as a Signal subclass.
@@ -3834,4 +3833,3 @@ class SpecialSlicers:
 
     def __len__(self):
         return self.signal.__len__()
-
