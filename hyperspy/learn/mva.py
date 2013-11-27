@@ -174,8 +174,11 @@ class MVA():
                                         navigation_mask=navigation_mask,
                                         signal_mask=signal_mask,)
             messages.information('Performing decomposition analysis')
-
-            dc = self.data
+            # The rest of the code assumes that the first data axis
+            # is the navigation axis. We transpose the data if that is not the
+            # case.
+            dc = (self.data if self.axes_manager[0].index_in_array == 0
+                  else self.data.T)
             #set the output target (peak results or not?)
             target = self.learning_results
             
@@ -670,18 +673,12 @@ class MVA():
         self._unfolded4decomposition = self.unfold_if_multidim()
 
         sc = self.deepcopy()
-
-        import hyperspy._signals.spectrum
-        #if self.mapped_parameters.record_by==spectrum:
-        sc.data = a.T.squeeze()
-        #else:
-        #    sc.data = a.squeeze()
+        sc.data = a.T.reshape(self.data.shape)
         sc.mapped_parameters.title += signal_name
         if target.mean is not None:
             sc.data += target.mean
         if self._unfolded4decomposition is True:
             self.fold()
-            sc.history = ['unfolded']
             sc.fold()
         return sc
 
@@ -806,7 +803,11 @@ class MVA():
             "Scaling the data to normalize the (presumably)"
             " Poissonian noise")
         refold = self.unfold_if_multidim()
-        dc = self.data
+        # The rest of the code assumes that the first data axis
+        # is the navigation axis. We transpose the data if that is not the
+        # case.
+        dc = (self.data if self.axes_manager[0].index_in_array == 0
+                else self.data.T)
         if navigation_mask is None:
             navigation_mask = slice(None)
         else:
