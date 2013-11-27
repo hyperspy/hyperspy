@@ -152,7 +152,7 @@ class MVA():
                 "normalize_poissonian_noise is set to False")
                 normalize_poissonian_noise = False
             if output_dimension is None:
-                messages.warning_exit("With the mlpca algorithm the "
+                raise ValueError("With the mlpca algorithm the "
                 "output_dimension must be expecified")
 
 
@@ -259,7 +259,7 @@ class MVA():
             elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
                 print "Performing the MLPCA training"
                 if output_dimension is None:
-                    messages.warning_exit(
+                    raise ValueError(
                     "For MLPCA it is mandatory to define the "
                     "output_dimension")
                 if var_array is None and var_func is None:
@@ -268,7 +268,7 @@ class MVA():
                     var_array = dc[:,signal_mask][navigation_mask,:]
 
                 if var_array is not None and var_func is not None:
-                    messages.warning_exit(
+                    raise ValueError(
                     "You have defined both the var_func and var_array "
                     "keywords."
                     "Please, define just one of them")
@@ -281,7 +281,7 @@ class MVA():
                             var_array = np.polyval(polyfit,dc[signal_mask,
                             navigation_mask])
                         except:
-                            messages.warning_exit(
+                            raise ValueError(
                             'var_func must be either a function or an array'
                             'defining the coefficients of a polynom')
                 if algorithm == 'mlpca':
@@ -820,7 +820,7 @@ class MVA():
         bH = dc[:,signal_mask][navigation_mask,:].sum(0).squeeze()
         # Checks if any is negative
         if (aG < 0).any() or (bH < 0).any():
-            messages.warning_exit(
+            raise ValueError(
             "Data error: negative values\n"
             "Are you sure that the data follow a poissonian "
             "distribution?")
