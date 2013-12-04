@@ -3423,17 +3423,15 @@ class Signal(MVA,
         return s
         
     def fft(self, s=None, axes=None):
-        """Compute the N-dimensional discrete Fourier Transform.
+        """Compute the discrete Fourier Transform.
 
-        This function computes the *N*-dimensional discrete Fourier Transform over
+        This function computes the discrete Fourier Transform over
         any number of axes in an *M*-dimensional array by means of the Fast Fourier
         Transform (FFT).
 
         Parameters
         ----------
-        a : array_like
-            Input array, can be complex.
-        s : sequence of ints, optional
+        s : int or sequence of ints, optional
             Shape (length of each transformed axis) of the output
             (`s[0]` refers to axis 0, `s[1]` to axis 1, etc.).
             This corresponds to `n` for `fft(x, n)`.
@@ -3441,30 +3439,38 @@ class Signal(MVA,
             the input is cropped.  If it is larger, the input is padded with zeros.
             if `s` is not given, the shape of the input (along the axes specified
             by `axes`) is used.
-        axes : sequence of ints, optional
+        axes : int or sequence of ints, optional
             Axes over which to compute the FFT.  If not given, the last ``len(s)``
             axes are used, or all axes if `s` is also not specified.
             Repeated indices in `axes` means that the transform over that axis is
             performed multiple times.
             
         Return
-        ------
+        ------        
+        signals.FourierTransformSignal
         
-        signal
+        Notes
+        -----        
+        For further information see the documentation of numpy.fft.fft, 
+        numpy.fft.fft2 or numpy.fft.fft2
         """
         
         dim=len(self.axes_manager.shape)
         if dim==1:
-            im_fft=Signal(np.fft.fft(self.data,s,axes))
+            if axes==None:
+                axis=-1
+            im_fft=Signal(np.fft.fft(self.data,n=s,axis=axis))
         elif dim==2:
-            im_fft=Signal(np.fft.fft2(self.data,s,axes))
+            if axes==None:
+                axes=(-2,-1)
+            im_fft=Signal(np.fft.fft2(self.data,s=s,axes=axes))
         else:
-            im_fft=Signal(np.fft.fftn(self.data,s,axes))
+            im_fft=Signal(np.fft.fftn(self.data,s=s,axes=axes))
         im_fft.set_signal_origin('fourier_transform')    
         
         if self.axes_manager.signal_dimension==2:
             im_fft.axes_manager.set_signal_dimension(2)
-        #scale?
+        #scale, to be verified
         for i in range(dim):
             im_fft.axes_manager[i].scale=1/self.axes_manager[i].scale
             
