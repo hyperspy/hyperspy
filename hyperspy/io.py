@@ -293,7 +293,7 @@ def assign_signal_subclass(record_by="",
     ----------
     record_by: {"spectrum", "image", ""}
     signal_type : {"EELS", "EDS", "EDS_TEM", "", str}
-    signal_origin : {"experiment", "simulation", ""}
+    signal_origin : {"experiment", "simulation","fourier_transform", ""}
     
     Returns
     -------
@@ -305,7 +305,7 @@ def assign_signal_subclass(record_by="",
     if record_by and record_by not in ["image", "spectrum"]:
         raise ValueError("record_by must be one of: None, empty string, "
                          "\"image\" or \"spectrum\"")
-    if signal_origin and signal_origin not in ["experiment", "simulation"]:
+    if signal_origin and signal_origin not in ["experiment", "simulation","fourier_transform"]:
         raise ValueError("signal_origin must be one of: None, empty string, "
                          "\"experiment\" or \"simulation\"")
         
