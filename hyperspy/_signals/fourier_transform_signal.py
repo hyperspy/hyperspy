@@ -47,6 +47,7 @@ class FourierTransformSignal(Signal):
 
         Parameters
         ----------
+
         s : int or sequence of ints, optional
             Shape (length of each transformed axis) of the output
             (``s[0]`` refers to axis 0, ``s[1]`` to axis 1, etc.).
@@ -68,7 +69,7 @@ class FourierTransformSignal(Signal):
         Notes
         -----        
         For further information see the documentation of numpy.fft.ifft, 
-        numpy.fft.ifft2 or numpy.fft.ifft2
+        numpy.fft.ifft2 or numpy.fft.ifftn
         
         """
         dim=len(self.axes_manager.shape)
@@ -90,6 +91,4 @@ class FourierTransformSignal(Signal):
             im_ifft.axes_manager[i].scale=1/self.axes_manager[i].scale
 
         return im_ifft
-        
-
 

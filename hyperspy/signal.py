@@ -3452,7 +3452,7 @@ class Signal(MVA,
         Notes
         -----        
         For further information see the documentation of numpy.fft.fft, 
-        numpy.fft.fft2 or numpy.fft.fft2
+        numpy.fft.fft2 or numpy.fft.fftn
         """
         
         dim=len(self.axes_manager.shape)
