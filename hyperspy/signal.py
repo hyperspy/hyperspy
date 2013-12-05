@@ -3454,20 +3454,20 @@ class Signal(MVA,
         For further information see the documentation of numpy.fft.fft, 
         numpy.fft.fft2 or numpy.fft.fftn
         """
-        
+        from _signals.fourier_transform_signal import FourierTransformSignal
         dim=len(self.axes_manager.shape)
         if dim==1:
             if axes==None:
                 axis=-1
-            im_fft=Signal(np.fft.fft(self.data,n=s,axis=axis))
+            data=np.fft.fft(self.data,n=s,axis=axis)
         elif dim==2:
             if axes==None:
                 axes=(-2,-1)
-            im_fft=Signal(np.fft.fft2(self.data,s=s,axes=axes))
+            data=np.fft.fft2(self.data,s=s,axes=axes)
         else:
-            im_fft=Signal(np.fft.fftn(self.data,s=s,axes=axes))
-        im_fft.set_signal_origin('fourier_transform')    
-        
+            data=np.fft.fftn(self.data,s=s,axes=axes)
+   
+        im_fft=FourierTransformSignal(data)
         if self.axes_manager.signal_dimension==2:
             im_fft.axes_manager.set_signal_dimension(2)
         #scale, to be verified
@@ -3784,7 +3784,7 @@ class Signal(MVA,
         
         Parameters
         ----------
-        origin : {'experiment', 'simulation', 'fourier_transform', None, ""}
+        origin : {'experiment', 'simulation', None, ""}
             None an the empty string mean that the signal origin is uknown.
         
         Raises
@@ -3792,7 +3792,7 @@ class Signal(MVA,
         ValueError if origin is not 'experiment' or 'simulation'
         
         """
-        if origin not in ['experiment', 'simulation', 'fourier_transform', "", None]:
+        if origin not in ['experiment', 'simulation', "", None]:
             raise ValueError("`origin` must be one of: experiment, simulation" )
         if origin is None:
             origin = ""

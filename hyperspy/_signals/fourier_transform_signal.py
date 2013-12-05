@@ -21,11 +21,11 @@ import numpy as np
 from hyperspy.signal import Signal
 
 class FourierTransformSignal(Signal):
-    _signal_origin = "fourier_transform"
+    #_signal_origin = "fourier_transform"
     
     
-    def __init__(self, *args, **kw):
-        super(FourierTransformSignal,self).__init__(*args, **kw)
+    def __init__(self, *args, **kwargs):
+        Signal.__init__(self, *args, **kwargs)
 
         
     def ifft(self, s=None, axes=None):
