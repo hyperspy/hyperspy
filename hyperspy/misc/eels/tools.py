@@ -112,8 +112,16 @@ def estimate_variance_parameters(
     """
     fold_back_noisy =  unfold_if_multidim(noisy_signal)
     fold_back_clean =  unfold_if_multidim(clean_signal)
-    ns = noisy_signal.data.copy()
-    cs = clean_signal.data.copy()
+
+    # The rest of the code assumes that the first data axis
+    # is the navigation axis. We transpose the data if that is not the
+    # case.
+    ns = (noisy_signal.data.copy()
+          if noisy_signal.axes_manager[0].index_in_array == 0
+          else noisy_signal.data.T.copy())
+    cs = (clean_signal.data.copy()
+          if clean_signal.axes_manager[0].index_in_array == 0
+          else clean_signal.data.T.copy())
 
     if mask is not None:
         _slice = [slice(None),] * len(ns.shape)
