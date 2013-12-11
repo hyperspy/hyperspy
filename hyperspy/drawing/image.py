@@ -194,7 +194,13 @@ class ImagePlot(BlittedFigure):
         
         self.figure.canvas.draw()
         if hasattr(self.figure, 'tight_layout'):
-            self.figure.tight_layout()
+            try:
+                self.figure.tight_layout()
+            except:
+                # tight_layout is a bit brittle, we do this just in case it
+                # complains
+                pass
+                
         self.connect()
         
     def update(self, auto_contrast=None):
