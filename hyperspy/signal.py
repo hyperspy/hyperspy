@@ -2163,19 +2163,24 @@ class MVATools(object):
         data = loadings.T.reshape(
             (-1,) + self.axes_manager.navigation_shape[::-1])
         signal = signals.Signal(data,
-                     axes=([{"size" : data.shape[0],}] +
+                     axes=([{"size" : data.shape[0],
+                             "navigate" : True}] +
                            self.axes_manager._get_navigation_axes_dicts()))
         signal.set_signal_origin(self.mapped_parameters.signal_origin)
-        signal.axes_manager.set_signal_dimension(0)
+        for axis in signal.axes_manager._axes[1:]:
+            axis.navigate = False
         return signal
 
     def _get_factors_as_signal(self, factors):
         signal = self.__class__(factors.T.reshape((-1,) +
                                 self.axes_manager.signal_shape[::-1]),
-                                axes = [{"size" : factors.shape[-1]}] + 
+                                axes = [{"size" : factors.shape[-1],
+                                         "navigate": True}] + 
                                     self.axes_manager._get_signal_axes_dicts())
         signal.set_signal_origin(self.mapped_parameters.signal_origin)
         signal.set_signal_type(self.mapped_parameters.signal_type)
+        for axis in signal.axes_manager._axes[1:]:
+            axis.navigate = False
         return signal
 
     def get_decomposition_loadings_as_signal(self):
@@ -2187,7 +2192,7 @@ class MVATools(object):
 
         """
         signal = self._get_loadings_as_signal(self.learning_results.loadings)
-        signal.axes_manager._axes[-1].name = "Decomposition component index"
+        signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.mapped_parameters.title = "Decomposition loadings of " + \
                                        self.mapped_parameters.title
         return signal
@@ -2201,7 +2206,7 @@ class MVATools(object):
 
         """
         signal =  self._get_factors_as_signal(self.learning_results.factors)
-        signal.axes_manager[0].name = "Decomposition component index"
+        signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.mapped_parameters.title = ("Decomposition factors of " +
                                        self.mapped_parameters.title)
         return signal
@@ -2238,7 +2243,8 @@ class MVATools(object):
     def plot_bss_results(self,
                          factors_navigator="auto",
                          loadings_navigator="auto",
-                         factors_dim=2,):
+                         factors_dim=2,
+                         loadings_dim=2,):
         """Plot the blind source separation factors and loadings.
 
         Unlike `plot_bss_factors` and `plot_bss_loadings`, this method displays
@@ -2253,10 +2259,10 @@ class MVATools(object):
         factor_navigator, loadings_navigator : {"auto", None, "spectrum",
         Signal}
             See `plot` documentation for details.
-        factors_dim: int
+        factors_dim, loadings_dim: int
             Currently Hyperspy cannot plot signals of dimension higher than
             two. Therefore, to visualize the BSS results when the 
-            factors have signal dimension greater than 2
+            factors or the loadings have signal dimension greater than 2
             we can view the data as spectra(images) by setting this parameter
             to 1(2). (Default 2)
         
@@ -2268,6 +2274,8 @@ class MVATools(object):
         factors = self.get_bss_factors_as_signal()
         loadings = self.get_bss_loadings_as_signal()
         factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
+        if loadings.axes_manager.signal_dimension > 2:
+            loadings.axes_manager.set_signal_dimension(loadings_dim)
         if factors.axes_manager.signal_dimension > 2:
             factors.axes_manager.set_signal_dimension(factors_dim)
         loadings.plot(navigator=loadings_navigator)
@@ -2276,7 +2284,8 @@ class MVATools(object):
     def plot_decomposition_results(self,
                                    factors_navigator="auto",
                                    loadings_navigator="auto",
-                                   factors_dim=2):
+                                   factors_dim=2,
+                                   loadings_dim=2):
         """Plot the decompostion factors and loadings.
 
         Unlike `plot_factors` and `plot_loadings`, this method displays
@@ -2291,10 +2300,10 @@ class MVATools(object):
         factor_navigator, loadings_navigator : {"auto", None, "spectrum",
         Signal}
             See `plot` documentation for details.
-        factors_dim : int
+        factors_dim, loadings_dim : int
             Currently Hyperspy cannot plot signals of dimension higher than
             two. Therefore, to visualize the BSS results when the 
-            actors have signal dimension greater than 2
+            factors or the loadings have signal dimension greater than 2
             we can view the data as spectra(images) by setting this parameter
             to 1(2). (Default 2)
 
@@ -2306,6 +2315,8 @@ class MVATools(object):
         factors = self.get_decomposition_factors_as_signal()
         loadings = self.get_decomposition_loadings_as_signal()
         factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
+        if loadings.axes_manager.signal_dimension > 2:
+            loadings.axes_manager.set_signal_dimension(loadings_dim)
         if factors.axes_manager.signal_dimension > 2:
             factors.axes_manager.set_signal_dimension(factors_dim)
         loadings.plot(navigator=loadings_navigator)
