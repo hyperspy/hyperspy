@@ -32,8 +32,8 @@ class TestMVAExport:
 
     def test_get_bss_loadings(self):
         bss_loadings = self.s.get_bss_loadings_as_signal()
-        assert_equal(bss_loadings.axes_manager.signal_dimension, 0)
-        assert_equal(bss_loadings.axes_manager.navigation_shape[:-1],
+        assert_equal(bss_loadings.axes_manager.navigation_dimension, 1)
+        assert_equal(bss_loadings.axes_manager.signal_shape,
                      self.s.axes_manager.navigation_shape)
 
 
