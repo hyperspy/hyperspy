@@ -170,9 +170,12 @@ def dict2hdfgroup(dictionary, group, compression=None):
                                  compression = compression)
         elif value is None:
             group.attrs[key] = '_None_'
-        elif isinstance(value, basestring):
-            group.attrs[key] = value.encode('utf8',
-                                            errors='ignore')
+        elif isinstance(value, str):
+            try:
+                # Store strings as unicode using the default encoding
+                group.attrs[key] = unicode(value)
+            except UnicodeEncodeError:
+                pass
         elif isinstance(value, AxesManager):
             dict2hdfgroup(value.as_dictionary(),
                           group.create_group('_hspy_AxesManager_'
@@ -193,12 +196,6 @@ def hdfgroup2dict(group, dictionary = {}):
         if type(value) is np.string_:
             if value == '_None_':
                 value = None
-            else:
-                try:
-                    value = value.decode('utf8')
-                except UnicodeError:
-                    # For old files
-                    value = value.decode('latin-1')
         elif type(value) is np.bool_:
             value = bool(value)
                     
