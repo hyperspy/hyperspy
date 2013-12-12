@@ -332,7 +332,7 @@ class Signal2DTools(object):
             shifts = -shifts
         if return_shifts:
             return shifts
-        
+
     def crop_image(self,top=None, bottom=None,
                         left=None, right=None):
         """Crops an image in place.
@@ -459,7 +459,7 @@ class Signal1DTools(object):
                 **kwargs)
             dat[i1:i2] = dat_int(range(i1,i2))
             pbar.update(i + 1)
-            
+
     def estimate_shift1D(self,
                           start=None,
                           end=None,
@@ -624,7 +624,7 @@ class Signal1DTools(object):
                            interpolation_method=interpolation_method,
                            crop=crop,
                            fill_value=fill_value)
-                            
+
     def integrate_in_range(self, signal_range='interactive'):
         """ Sums the spectrum over an energy range, giving the integrated
         area.
@@ -763,7 +763,7 @@ class Signal1DTools(object):
             smoother.edit_traits()
         else:
             smoother.apply()
-    
+
     def filter_butterworth(self,
                            cutoff_frequency_ratio=None,
                            type='low',
@@ -782,7 +782,7 @@ class Signal1DTools(object):
             smoother.apply()
         else:
             smoother.edit_traits()
-    
+   
     def _remove_background_cli(self, signal_range, background_estimator):
         spectra = self.deepcopy()
         maxval = self.axes_manager.navigation_size
@@ -904,7 +904,7 @@ class Signal1DTools(object):
             self.data,
             axis=axis.index_in_array, 
             sigma=FWHM/2.35482)
-    
+
     @auto_replot
     def hanning_taper(self, side='both', channels=None, offset=0):
         """Apply a hanning taper to the data in place.
@@ -1124,7 +1124,7 @@ class Signal1DTools(object):
         else:
             return width
 
-        
+
 class MVATools(object):
     # TODO: All of the plotting methods here should move to drawing
     def _plot_factors_or_pchars(self, factors, comp_ids=None, 
@@ -2112,7 +2112,6 @@ class MVATools(object):
                               per_row=per_row,
                               save_figures_format=save_figures_format)
                               
-
     def plot_residual(self, axes_manager=None):
         """Plot the residual between original data and reconstructed 
         data
@@ -2130,7 +2129,6 @@ class MVATools(object):
                   "Is it a reconstruction created using either "
                   "get_decomposition_model or get_bss_model methods?")
 
-        
 
 class Signal(MVA,
              MVATools,
@@ -2183,6 +2181,7 @@ class Signal(MVA,
             " it will be removed in the next version. ",
             DeprecationWarning)
         return self.inav
+
     @property
     def signal_indexer(self):
          warnings.warn(
@@ -2190,6 +2189,7 @@ class Signal(MVA,
             " it will be removed in the next version. ",
             DeprecationWarning)
          return self.isig
+
     def _create_mapped_parameters(self):
         self.mapped_parameters = DictionaryBrowser()
         mp = self.mapped_parameters
@@ -2284,7 +2284,6 @@ class Signal(MVA,
             j = j.data
         self.__getitem__(i).data[:] = j
         
-    
     def _binary_operator_ruler(self, other, op_name):
         exception_message = (
             "Invalid dimensions for this operation")
@@ -2385,15 +2384,15 @@ class Signal(MVA,
     def _unary_operator_ruler(self, op_name):
         exec("result = self.data.%s()" % op_name)
         return self._deepcopy_with_new_data(result)
-        
+
     def _check_signal_dimension_equals_one(self):
         if self.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(self.axes_manager.signal_dimension, 1)
-            
+
     def _check_signal_dimension_equals_two(self):
         if self.axes_manager.signal_dimension != 2:
             raise SignalDimensionError(self.axes_manager.signal_dimension, 2)
-            
+
     def _deepcopy_with_new_data(self, data=None):
         """Returns a deepcopy of itself replacing the data.
         
@@ -2420,7 +2419,6 @@ class Signal(MVA,
         finally:
             self.data = old_data
             self._plot = old_plot
-            
             
     def _print_summary(self):
         string = "\n\tTitle: "
@@ -2498,7 +2496,6 @@ class Signal(MVA,
                 "signal_type" not in self.mapped_parameters):
             self.mapped_parameters.signal_type = self._signal_type
             
-                
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array 
         and the axes.
@@ -2527,10 +2524,6 @@ class Signal(MVA,
         
         """
         dic = {}
-#        if hasattr(self.data, "copy"):
-#            dic['data'] = self.data.copy()
-#        else:
-#            dic['data'] = self.data
         dic['data'] = self.data
         dic['axes'] = self.axes_manager._get_axes_dicts()
         dic['mapped_parameters'] = \
@@ -2697,7 +2690,6 @@ class Signal(MVA,
                         " None, a Signal instance")
                 
         self._plot.plot()
-
               
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
@@ -2847,7 +2839,7 @@ class Signal(MVA,
         s.axes_manager._update_attributes()
         s._make_sure_data_is_contiguous()
         return s
-        
+
     def rollaxis(self, axis, to_axis):
         """Roll the specified axis backwards, until it lies in a given position.
 
@@ -3132,7 +3124,7 @@ class Signal(MVA,
     def _make_sure_data_is_contiguous(self):
         if self.data.flags['C_CONTIGUOUS'] is False:
             self.data = np.ascontiguousarray(self.data)
-            
+
     def _iterate_signal(self):
         """Iterates over the signal data.
         
@@ -3212,7 +3204,7 @@ class Signal(MVA,
         
         """
         return self._apply_function_on_data_and_remove_axis(np.sum, axis)
-                
+
     def max(self, axis, return_signal=False):
         """Returns a signal with the maximum of the signal along an axis.
 
@@ -3241,7 +3233,7 @@ class Signal(MVA,
         
         """
         return self._apply_function_on_data_and_remove_axis(np.max, axis)
-                
+
     def min(self, axis):
         """Returns a signal with the minimum of the signal along an axis.
 
@@ -3301,7 +3293,7 @@ class Signal(MVA,
         """
         return self._apply_function_on_data_and_remove_axis(np.mean, 
                                                             axis)
-        
+
     def std(self, axis):
         """Returns a signal with the standard deviation of the signal along 
         an axis.
@@ -3360,7 +3352,7 @@ class Signal(MVA,
         
         """
         return self._apply_function_on_data_and_remove_axis(np.var, axis)
-            
+
     def diff(self, axis, order=1):
         """Returns a signal with the n-th order discrete difference along 
         given axis.
@@ -3393,7 +3385,7 @@ class Signal(MVA,
         axis.offset += (axis.scale / 2)
         s.get_dimensions_from_data()
         return s
-        
+
     def integrate_simpson(self, axis):
         """Returns a signal with the result of calculating the integral 
         of the signal along an axis using Simpson's rule.
@@ -3430,7 +3422,6 @@ class Signal(MVA,
         s._remove_axis(axis.index_in_axes_manager)
         return s
         
-        
     def copy(self):
         try:
             backup_plot = self._plot
@@ -3452,7 +3443,7 @@ class Signal(MVA,
             
     def deepcopy(self):
         return copy.deepcopy(self)
-        
+
     def change_dtype(self, dtype):
         """Change the data type
         
@@ -3477,30 +3468,6 @@ class Signal(MVA,
         
         self.data = self.data.astype(dtype)
         
-
-   
-#    def sum_in_mask(self, mask):
-#        """Returns the result of summing all the spectra in the mask.
-#
-#        Parameters
-#        ----------
-#        mask : boolean numpy array
-#
-#        Returns
-#        -------
-#        Signal
-
-#        """
-#        dc = self.data_cube.copy()
-#        mask3D = mask.reshape([1,] + list(mask.shape)) * np.ones(dc.shape)
-#        dc = (mask3D*dc).sum(1).sum(1) / mask.sum()
-#        s = Spectrum()
-#        s.data_cube = dc.reshape((-1,1,1))
-#        s.get_dimensions_from_cube()
-#        utils.copy_energy_calibration(self,s)
-#        return s
-
-
     def estimate_poissonian_noise_variance(self,
             dc=None, gaussian_noise_var=None):
         """Variance estimation supposing Poissonian noise.
@@ -3560,7 +3527,7 @@ class Signal(MVA,
                 self.variance = np.clip(self.variance,
                                         gaussian_noise_var,
                                         np.Inf)
-                                        
+
     def get_current_signal(self, auto_title=True, auto_filename=True):
         """Returns the data at the current coordinates as a Signal subclass.
 
@@ -3609,7 +3576,6 @@ class Signal(MVA,
         cs.axes_manager._set_axis_attribute_values("navigate", False)        
         return cs
                 
-        
     def _get_navigation_signal(self):
         if self.axes_manager.navigation_dimension == 0:
             return self.__class__(np.array([0,]).astype(self.data.dtype))
@@ -3630,14 +3596,13 @@ class Signal(MVA,
                        axes=self.axes_manager._get_navigation_axes_dicts())
         return s
                 
-        
     def __iter__(self):
         return self
         
     def next(self):
         self.axes_manager.next()
         return self.get_current_signal()                                               
-        
+
     def __len__(self):
         return self.axes_manager.signal_shape[-1]
 
@@ -3712,8 +3677,6 @@ class Signal(MVA,
         im._assign_subclass()
         return im
         
-
-
     def _assign_subclass(self):
         mp = self.mapped_parameters
         current_class = self.__class__
@@ -3725,36 +3688,83 @@ class Signal(MVA,
             signal_origin = mp.signal_origin if "signal_origin" in mp
                                              else self._signal_origin) 
         self.__init__(**self._to_dictionary())
-        
+
     def set_signal_type(self, signal_type):
-        """
+        """Set the signal type and change the current class 
+        accordingly if pertinent.
+
+        The signal_type attribute specifies the kind of data that the signal
+        containts e.g. "EELS" for electron energy-loss spectroscopy, 
+        "PES" for photoemission spectroscopy. There are some methods that are 
+        only available for certain kind of signals, so setting this 
+        parameter can enable/disable features.
         
         Parameters
         ----------
-        signal_type : {"EELS" or any other string describing the signal}
+        signal_type : {"EELS", "EDS_TEM", "EDS_SEM", str}
+            Currently there are special features for "EELS" (electron
+            energy-loss spectroscopy), "EDS_TEM" (energy dispersive X-rays of
+            thin samples, normally obtained in a transmission electron 
+            microscope) and "EDS_SEM" (energy dispersive X-rays of
+            thick samples, normally obtained in a scanning electron 
+            microscope) so setting the signal_type to the correct acronym
+            is highly advisable when analyzing any signal for which Hyperspy
+            provides extra features. Even if Hyperspy does not provide extra
+            features for the signal that you are analyzing, it is good practice
+            to set signal_type to a value that best describes the data signal
+            type.
         
         """        
         self.mapped_parameters.signal_type = signal_type
         self._assign_subclass()
         
-        
     def set_signal_origin(self, origin):
-        """
+        """Set the origin of the signal and change the current class 
+        accordingly if pertinent.
+
+        The signal_origin attribute specifies if the data was obtained 
+        through experiment or simulation. There are some methods that are 
+        only available for experimental or simulated data, so setting this 
+        parameter can enable/disable features.
+
         
         Parameters
         ----------
-        origin : {'experiment', 'simulation'}
+        origin : {'experiment', 'simulation', None, ""}
+            None an the empty string mean that the signal origin is uknown.
         
         Raises
         ------
         ValueError if origin is not 'experiment' or 'simulation'
         
         """
-        if origin not in ['experiment', 'simulation']:
+        if origin not in ['experiment', 'simulation', "", None]:
             raise ValueError("`origin` must be one of: experiment, simulation" )
+        if origin is None:
+            origin = ""
         self.mapped_parameters.signal_origin = origin
         self._assign_subclass()    
 
+#    def sum_in_mask(self, mask):
+#        """Returns the result of summing all the spectra in the mask.
+#
+#        Parameters
+#        ----------
+#        mask : boolean numpy array
+#
+#        Returns
+#        -------
+#        Signal
+#
+#        """
+#        dc = self.data_cube.copy()
+#        mask3D = mask.reshape([1,] + list(mask.shape)) * np.ones(dc.shape)
+#        dc = (mask3D*dc).sum(1).sum(1) / mask.sum()
+#        s = Spectrum()
+#        s.data_cube = dc.reshape((-1,1,1))
+#        s.get_dimensions_from_cube()
+#        utils.copy_energy_calibration(self,s)
+#        return s
         
 # Implement binary operators
 for name in (
@@ -3810,7 +3820,7 @@ class SpecialSlicers:
     def __init__(self, signal, isNavigation):
         self.isNavigation = isNavigation
         self.signal = signal
-        
+
     def __getitem__(self, slices):
         return self.signal.__getitem__(slices, self.isNavigation)
         
@@ -3821,7 +3831,6 @@ class SpecialSlicers:
         if isinstance(j, Signal):
             j = j.data
         self.signal.__getitem__(i, self.isNavigation).data[:] = j
-        
+
     def __len__(self):
         return self.signal.__len__()
-
