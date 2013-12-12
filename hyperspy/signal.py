@@ -3433,11 +3433,11 @@ class Signal(MVA,
         ----------
         
         bins : int or list or str (optional)
-            If bins is a string, then it must be one of:
-            'blocks' : use bayesian blocks for dynamic bin widths
+            If bins is a string, then it must be one of:            
             'knuth' : use Knuth's rule to determine bins
             'scotts' : use Scott's rule to determine bins
             'freedman' : use the Freedman-diaconis rule to determine bins
+            'blocks' : use bayesian blocks for dynamic bin widths
             
         range_bins : tuple or None (optional)
             the minimum and maximum range for the histogram. If not specified,
@@ -3449,8 +3449,8 @@ class Signal(MVA,
         
         See Also        
         --------
-        numpy.histogram
         astroML.density_estimation.histogram
+        numpy.histogram        
         """
         from hyperspy import signals
         from hyperspy.misc.borrowed.astroML.histtools import histogram
