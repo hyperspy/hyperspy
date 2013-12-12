@@ -22,6 +22,7 @@ from nose.tools import assert_true, assert_equal, assert_not_equal
 from hyperspy.signals import EDSSEMSpectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.components import Gaussian
+from hyperspy import utils
 
 class Test_mapped_parameters:
     def setUp(self):
@@ -31,7 +32,10 @@ class Test_mapped_parameters:
         s.axes_manager.signal_axes[0].units = "keV"
         s.axes_manager.signal_axes[0].name = "Energy"
         s.mapped_parameters.SEM.EDS.live_time = 3.1
-        s.mapped_parameters.SEM.beam_energy = 15.0          
+        s.mapped_parameters.SEM.beam_energy = 15.0 
+        s.mapped_parameters.SEM.tilt_stage = -38
+        s.mapped_parameters.SEM.EDS.azimuth_angle = 63
+        s.mapped_parameters.SEM.EDS.elevation_angle = 35      
         self.signal = s
         
     def test_sum_live_time(self):
@@ -112,6 +116,10 @@ class Test_mapped_parameters:
         s.get_calibration_from(scalib)
         assert_equal(s.axes_manager.signal_axes[0].scale,
             energy_axis.scale)
+            
+    def test_take_off_angle(self):
+        s = self.signal
+        assert_equal(s.get_take_off_angle(),12.886929785732487)
         
         
 class Test_get_intentisity_map:
@@ -158,13 +166,13 @@ class Test_tools_bulk:
         self.signal = s
     def test_range(self):
         s = self.signal
-        import hyperspy.misc.physics_tools as pht
         mp = s.mapped_parameters
-        elec_range = pht.electron_range(mp.Sample.elements[0],
+        elec_range = utils.eds.electron_range(mp.Sample.elements[0],
             mp.SEM.beam_energy,rho='auto',tilt=mp.SEM.tilt_stage)
         assert_equal(elec_range,0.41350651162374225)
-        density = pht.density_from_composition(mp.Sample.elements,[0.8,0.2])
-        xr_range = pht.xray_range(mp.Sample.Xray_lines[0],
+        
+        density = utils.eds.density_from_composition(mp.Sample.elements,[0.8,0.2])
+        xr_range = utils.eds.xray_range(mp.Sample.Xray_lines[0],
             mp.SEM.beam_energy,rho=density)
         assert_equal(xr_range,0.19002078834049554)
         
