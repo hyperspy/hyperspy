@@ -3455,7 +3455,7 @@ class Signal(MVA,
         For further information see the documentation of numpy.fft.fft, 
         numpy.fft.fft2 or numpy.fft.fftn
         """
-        from _signals.fourier_transform_signal import FourierTransformSignal
+        #from _signals.fourier_transform_signal import FourierTransformSignal
         dim=len(self.axes_manager.shape)
         if dim==1:
             if axes==None:
@@ -3469,16 +3469,15 @@ class Signal(MVA,
             data=np.fft.fftn(self.data,s=s,axes=axes)
             
         im_fft=Signal(data)        
-        #im_fft.mapped_parameters=copy.copy(self.mapped_parameters)        
-        
-        #im_fft._assign_subclass()
-   
-        #im_fft.axes_manager=copy.copy(self.axes_manager)
-        #im_fft.get_dimensions_from_data()
-        im_fft=FourierTransformSignal(data)
+        im_fft.mapped_parameters=copy.copy(self.mapped_parameters)        
         im_fft.mapped_parameters.is_ft = True
-        if self.axes_manager.signal_dimension==2:
-            im_fft.axes_manager.set_signal_dimension(2)
+        im_fft._assign_subclass()
+   
+        im_fft.axes_manager=copy.copy(self.axes_manager)
+        im_fft.get_dimensions_from_data()
+        #im_fft=FourierTransformSignal(data)
+        #if self.axes_manager.signal_dimension==2:
+        #    im_fft.axes_manager.set_signal_dimension(2)
         #scale, to be verified
         for i in range(dim):
             im_fft.axes_manager[i].scale=1/self.axes_manager[i].scale

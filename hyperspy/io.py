@@ -286,14 +286,16 @@ def load_with_reader(filename,
 
 def assign_signal_subclass(record_by="",
                            signal_type="",
-                           signal_origin="",):
+                           signal_origin="",
+                           is_ft=""):
     """Given record_by and signal_type return the matching Signal subclass.
     
     Parameters
     ----------
     record_by: {"spectrum", "image", ""}
     signal_type : {"EELS", "EDS", "EDS_TEM", "", str}
-    signal_origin : {"experiment", "simulation","fourier_transform", ""}
+    signal_origin : {"experiment", "simulation", ""}
+    is_ft : {True,False,""}
     
     Returns
     -------
@@ -314,6 +316,9 @@ def assign_signal_subclass(record_by="",
     
     if signal_origin == "experiment":
         signal_origin = ""
+        
+    if is_ft==False:
+        is_ft = ""
     
     preselection = [s for s in
                     [s for s in signals.itervalues()
@@ -323,6 +328,8 @@ def assign_signal_subclass(record_by="",
                      if signal_type == s._signal_type]
     selection = perfect_match[0] if perfect_match else \
                 [s for s in preselection if s._signal_type == ""][0]
+    #if is_ft:
+    #    selection = signals['FourierTransformSignal']
     return selection
     
     

@@ -22,6 +22,7 @@ from hyperspy.signal import Signal
 
 class FourierTransformSignal(Signal):
     #_signal_origin = "fourier_transform"
+    _is_ft = True
     
     
     def __init__(self, *args, **kwargs):
