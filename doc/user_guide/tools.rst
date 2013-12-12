@@ -109,6 +109,10 @@ The different subclasses are characterized by three
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |           :py:class:`~._signals.eels.EELSSpectrum`            | spectrum  |    EELS     |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
+    |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | spectrum  |   EDS_SEM   |       -       |
+    +---------------------------------------------------------------+-----------+-------------+---------------+
+    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | spectrum  |   EDS_TEM   |       -       |
+    +---------------------------------------------------------------+-----------+-------------+---------------+
     |              :py:class:`~._signals.image.Image`               |   image   |      -      |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |    :py:class:`~._signals.image_simulation.ImageSimulation`    |   image   |      -      |  simulation   |
@@ -772,4 +776,4 @@ Electron and X-ray range
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 The electron and X-ray range in a bulk material can be estimated with 
-:py:meth:`~.misc.physics_tools.electron_range` and :py:meth:`~.misc.physics_tools.xray_range`
+:py:meth:`~.utils.eds.electron_range` and :py:meth:`~.utils.eds.xray_range`
