@@ -1627,7 +1627,7 @@ class MVATools(object):
                         same_window=None,
                         comp_label='Decomposition factor', 
                         per_row=3):
-        """Plot factors from a decomposition
+        """Plot factors from a decomposition.
 
         Parameters
         ----------
@@ -1662,7 +1662,16 @@ class MVATools(object):
         same_window
             parameter is True.
 
+        See Also
+        --------
+        plot_decomposition_loadings, plot_decomposition_results.
+
         """
+        if self.axes_manager.signal_dimension > 2:
+            raise NotImplementedError("This method cannot plot factors of "
+                                      "signals of dimension higher than 2."
+                                      "You can use "
+                                      "`plot_decomposition_results` instead.")
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         factors=self.learning_results.factors
@@ -1714,7 +1723,16 @@ class MVATools(object):
         same_window
             parameter is True.
 
+        See Also
+        --------
+        plot_bss_loadings, plot_bss_results.
+
         """
+        if self.axes_manager.signal_dimension > 2:
+            raise NotImplementedError("This method cannot plot factors of "
+                                      "signals of dimension higher than 2."
+                                      "You can use "
+                                      "`plot_decomposition_results` instead.")
 
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
@@ -1735,7 +1753,7 @@ class MVATools(object):
                        cmap=plt.cm.gray, 
                        no_nans=False,
                        per_row=3):
-        """Plot loadings from PCA
+        """Plot loadings from PCA.
 
         Parameters
         ----------
@@ -1778,7 +1796,16 @@ class MVATools(object):
             the number of plots in each row, when the same_window
             parameter is True.
 
+        See Also
+        --------
+        plot_decomposition_factors, plot_decomposition_results.
+
         """
+        if self.axes_manager.navigation_dimension > 2:
+            raise NotImplementedError("This method cannot plot loadings of "
+                                      "dimension higher than 2."
+                                      "You can use "
+                                      "`plot_decomposition_results` instead.")
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         loadings=self.learning_results.loadings.T
@@ -1847,7 +1874,16 @@ class MVATools(object):
             the number of plots in each row, when the same_window
             parameter is True.
 
+        See Also
+        --------
+        plot_bss_factors, plot_bss_results.
+
         """
+        if self.axes_manager.navigation_dimension > 2:
+            raise NotImplementedError("This method cannot plot loadings of "
+                                      "dimension higher than 2."
+                                      "You can use "
+                                      "`plot_bss_results` instead.")
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         loadings=self.learning_results.bss_loadings.T
@@ -1865,7 +1901,7 @@ class MVATools(object):
                                     no_nans=no_nans,
                                     per_row=per_row)
 
-    def export_decomposition_results(self, comp_ids=None,
+    def export_decomposition_results(sezalf, comp_ids=None,
                                      folder=None,
                                      calibrate=True,
                                      factor_prefix='factor',
@@ -1954,6 +1990,11 @@ class MVATools(object):
             parameter is True.
         save_figures_format : str
             The image format extension.
+
+        See Also
+        --------
+        get_decomposition_factors_as_signal,
+        get_decomposition_loadings_as_signal.
             
         """
         
@@ -2077,6 +2118,11 @@ class MVATools(object):
             parameter is True.
         save_figures_format : str
             The image format extension.
+
+        See Also
+        --------
+        get_bss_factors_as_signal,
+        get_bss_loadings_as_signal.
             
         """
         
@@ -2112,23 +2158,170 @@ class MVATools(object):
                               per_row=per_row,
                               save_figures_format=save_figures_format)
                               
-    def plot_residual(self, axes_manager=None):
-        """Plot the residual between original data and reconstructed 
-        data
+    def _get_loadings_as_signal(self, loadings):
+        from hyperspy.hspy import signals 
+        data = loadings.T.reshape(
+            (-1,) + self.axes_manager.navigation_shape[::-1])
+        signal = signals.Signal(data,
+                     axes=([{"size" : data.shape[0],
+                             "navigate" : True}] +
+                           self.axes_manager._get_navigation_axes_dicts()))
+        signal.set_signal_origin(self.mapped_parameters.signal_origin)
+        for axis in signal.axes_manager._axes[1:]:
+            axis.navigate = False
+        return signal
 
-        Requires you to have already run PCA or ICA, and to reconstruct 
-        data using either the get_decomposition_model or 
-        get_bss_model methods.
-        
+    def _get_factors_as_signal(self, factors):
+        signal = self.__class__(factors.T.reshape((-1,) +
+                                self.axes_manager.signal_shape[::-1]),
+                                axes = [{"size" : factors.shape[-1],
+                                         "navigate": True}] + 
+                                    self.axes_manager._get_signal_axes_dicts())
+        signal.set_signal_origin(self.mapped_parameters.signal_origin)
+        signal.set_signal_type(self.mapped_parameters.signal_type)
+        for axis in signal.axes_manager._axes[1:]:
+            axis.navigate = False
+        return signal
+
+    def get_decomposition_loadings_as_signal(self):
+        """Return the decomposition loadings as a Signal.
+
+        See Also
+        -------
+        get_decomposition_factors_as_signal, export_decomposition_results.
+
         """
+        signal = self._get_loadings_as_signal(self.learning_results.loadings)
+        signal.axes_manager._axes[0].name = "Decomposition component index"
+        signal.mapped_parameters.title = "Decomposition loadings of " + \
+                                       self.mapped_parameters.title
+        return signal
 
-        if hasattr(self, 'residual'):
-            self.residual.plot(axes_manager)
-        else:
-            print("Object does not have any residual information."
-                  "Is it a reconstruction created using either "
-                  "get_decomposition_model or get_bss_model methods?")
+    def get_decomposition_factors_as_signal(self):
+        """Return the decomposition factors as a Signal.
 
+        See Also
+        -------
+        get_decompoisition_loadings_as_signal, export_decomposition_results.
+
+        """
+        signal =  self._get_factors_as_signal(self.learning_results.factors)
+        signal.axes_manager._axes[0].name = "Decomposition component index"
+        signal.mapped_parameters.title = ("Decomposition factors of " +
+                                       self.mapped_parameters.title)
+        return signal
+
+    def get_bss_loadings_as_signal(self):
+        """Return the blind source separtion loadings as a Signal.
+
+        See Also
+        -------
+        get_bss_factors_as_signal, export_bss_results.
+
+        """
+        signal = self._get_loadings_as_signal(
+            self.learning_results.bss_loadings)
+        signal.axes_manager[0].name = "BSS component index"
+        signal.mapped_parameters.title = ("BSS loadings of " +
+                                       self.mapped_parameters.title)
+        return signal
+
+    def get_bss_factors_as_signal(self):
+        """Return the blind source separtion factors as a Signal.
+
+        See Also
+        -------
+        get_bss_loadings_as_signal, export_bss_results.
+
+        """
+        signal = self._get_factors_as_signal(self.learning_results.bss_factors)
+        signal.axes_manager[0].name = "BSS component index"
+        signal.mapped_parameters.title = ("BSS factors of " +
+                                       self.mapped_parameters.title)
+        return signal
+
+    def plot_bss_results(self,
+                         factors_navigator="auto",
+                         loadings_navigator="auto",
+                         factors_dim=2,
+                         loadings_dim=2,):
+        """Plot the blind source separation factors and loadings.
+
+        Unlike `plot_bss_factors` and `plot_bss_loadings`, this method displays
+        one component at a time. Therefore it provides a more compact
+        visualization than then other two methods.  The loadings and factors
+        are displayed in different windows and each has its own
+        navigator/sliders to navigate them if they are multidimensional. The
+        component index axis is syncronize between the two.
+
+        Parameters
+        ----------
+        factor_navigator, loadings_navigator : {"auto", None, "spectrum",
+        Signal}
+            See `plot` documentation for details.
+        factors_dim, loadings_dim: int
+            Currently Hyperspy cannot plot signals of dimension higher than
+            two. Therefore, to visualize the BSS results when the 
+            factors or the loadings have signal dimension greater than 2
+            we can view the data as spectra(images) by setting this parameter
+            to 1(2). (Default 2)
+        
+        See Also
+        --------
+        plot_bss_factors, plot_bss_loadings, plot_decomposition_results.
+
+        """
+        factors = self.get_bss_factors_as_signal()
+        loadings = self.get_bss_loadings_as_signal()
+        factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
+        if loadings.axes_manager.signal_dimension > 2:
+            loadings.axes_manager.set_signal_dimension(loadings_dim)
+        if factors.axes_manager.signal_dimension > 2:
+            factors.axes_manager.set_signal_dimension(factors_dim)
+        loadings.plot(navigator=loadings_navigator)
+        factors.plot(navigator=factors_navigator)
+
+    def plot_decomposition_results(self,
+                                   factors_navigator="auto",
+                                   loadings_navigator="auto",
+                                   factors_dim=2,
+                                   loadings_dim=2):
+        """Plot the decompostion factors and loadings.
+
+        Unlike `plot_factors` and `plot_loadings`, this method displays
+        one component at a time. Therefore it provides a more compact
+        visualization than then other two methods.  The loadings and factors
+        are displayed in different windows and each has its own
+        navigator/sliders to navigate them if they are multidimensional. The
+        component index axis is syncronize between the two.
+        
+        Parameters
+        ----------
+        factor_navigator, loadings_navigator : {"auto", None, "spectrum",
+        Signal}
+            See `plot` documentation for details.
+        factors_dim, loadings_dim : int
+            Currently Hyperspy cannot plot signals of dimension higher than
+            two. Therefore, to visualize the BSS results when the 
+            factors or the loadings have signal dimension greater than 2
+            we can view the data as spectra(images) by setting this parameter
+            to 1(2). (Default 2)
+
+        See Also
+        --------
+        plot_factors, plot_loadings, plot_bss_results.
+
+        """
+        factors = self.get_decomposition_factors_as_signal()
+        loadings = self.get_decomposition_loadings_as_signal()
+        factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
+        if loadings.axes_manager.signal_dimension > 2:
+            loadings.axes_manager.set_signal_dimension(loadings_dim)
+        if factors.axes_manager.signal_dimension > 2:
+            factors.axes_manager.set_signal_dimension(factors_dim)
+        loadings.plot(navigator=loadings_navigator)
+        factors.plot(navigator=factors_navigator)
+    
 
 class Signal(MVA,
              MVATools,
