@@ -3614,6 +3614,28 @@ class Signal(MVA,
                                axis=axis.index_in_array))
         s._remove_axis(axis.index_in_axes_manager)
         return s
+    
+    def apply(self,function,*args, **kwargs):
+        """Apply a function on each point of a signal
+        
+        Parameters
+        ----------
+        
+        function: function
+            A function that can be applied on each point of the signal,
+            without changing the shape
+        
+        Examples
+        --------
+        >>> import scipy.ndimage
+        >>> s = signals.Signal(np.random.random((64,64,1024)))
+        >>> filtered_s = sapply(
+        >>> scipy.ndimage.gaussian_filter, sigma=2.5)        
+        """
+        
+        im = self.deepcopy()
+        im.data = function(im.data,*args, **kwargs)
+        return im        
         
     def copy(self):
         try:
