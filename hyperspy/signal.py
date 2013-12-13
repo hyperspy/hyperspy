@@ -3616,7 +3616,7 @@ class Signal(MVA,
         return s
     
     def apply(self,function,*args, **kwargs):
-        """Apply a function on each point of a signal
+        """Apply apply a function to all the coordinates.
         
         Parameters
         ----------
