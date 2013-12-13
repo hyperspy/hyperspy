@@ -134,7 +134,7 @@ class EELSSpectrum(Spectrum):
         """Estimate the posision of the zero-loss peak.
         
         This function provides just a coarse estimation of the position
-        of the zero-loss peak by computing the position of the maximum
+        of the zero-loss peak centre by computing the position of the maximum
         of the spectra. For subpixel accuracy use `estimate_shift1D`.
         
         Parameters
@@ -147,7 +147,7 @@ class EELSSpectrum(Spectrum):
         Returns
         -------
         zlpc : Signal subclass
-            The average position over all spectra of the zero-loss peak.
+            The estimated position of the maximum of the ZLP peak.
         
         Notes
         -----
@@ -182,24 +182,26 @@ class EELSSpectrum(Spectrum):
             **kwargs):
         """Align the zero-loss peak.
 
-        This function first aligns the spectra using a coarse estimation
-        of the posision of the zero-loss peak. 
+        This function first aligns the spectra using the result of
+        `estimate_zero_loss_peak_centre` and afterward, if subpixel is True,
+        proceeds to align with subpixel accuracy using `align1D`. The offset 
+        is automatically correct if `calibrate` is True.
+        
         Parameters
         ----------
         calibrate : bool
             If True, set the offset of the spectral axis so that the 
             zero-loss peak is at position zero.
-        also_aling : list of signals
+        also_align : list of signals
             A list containing other spectra of identical dimensions to 
             align using the shifts applied to the current spectrum.
             If `calibrate` is True, the calibration is also applied to
             the spectra in the list.
         print_stats : bool
             If True, print summary statistics the ZLP maximum before
-            the aligment, after the coarse alignment and after the 
-            fine alignment if `subpixel` is True.
+            the aligment.
         subpixel : bool
-            If True, perform a finer alignment with subpixel accuracy 
+            If True, perform the alignment with subpixel accuracy 
             using cross-correlation.
         mask : Signal of bool data type.
             It must have signal_dimension = 0 and navigation_shape equal to the
@@ -208,17 +210,18 @@ class EELSSpectrum(Spectrum):
 
         See Also
         --------
-        estimate_zero_loss_peak_position, align1D, estimate_shift1D.
+        estimate_zero_loss_peak_centre, align1D, estimate_shift1D.
 
         Notes
         -----
         Any extra keyword arguments are passed to `align1D`. For
-        more info check its docstring.
+        more information read its docstring.
 
         """
         def substract_from_offset(value, signals):
             for signal in signals: 
                 signal.axes_manager[-1].offset -= value
+
         zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
         mean_ = without_nans(zlpc.data).mean()
         if print_stats is True:
@@ -233,12 +236,6 @@ class EELSSpectrum(Spectrum):
             zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
             substract_from_offset(without_nans(zlpc.data).mean(),
                                   also_align + [self])
-
-        if print_stats is True:
-            print
-            print(underline("ZLP position after coarse alignment statistics"))
-            self.estimate_zero_loss_peak_centre(
-                mask=mask).print_summary_statistics()
         
         if subpixel is False: return
         left, right = -3., 3.
@@ -257,11 +254,6 @@ class EELSSpectrum(Spectrum):
         if calibrate is True:
             substract_from_offset(without_nans(zlpc.data).mean(),
                                   also_align + [self])
-        if print_stats is True:
-            print
-            print(underline("ZLP position after fine alignment statistics"))
-            self.estimate_zero_loss_peak_centre(mask=mask
-                                                ).print_summary_statistics()
 
     def estimate_elastic_scattering_intensity(self,
                                               threshold=None,):
@@ -917,64 +909,4 @@ class EELSSpectrum(Spectrum):
             -pl.r.map['values'][...,np.newaxis]))
         return s
         
-
-        
- 
-        
-                        
-                      
-#    def build_SI_from_substracted_zl(self,ch, taper_nch = 20):
-#        """Modify the SI to have fit with a smoothly decaying ZL
-#        
-#        Parameters
-#        ----------
-#        ch : int
-#            channel index to start the ZL decay to 0
-#        taper_nch : int
-#            number of channels in which the ZL will decay to 0 from `ch`
-#        """
-#        sp = copy.deepcopy(self)
-#        dc = self.zl_substracted.data_cube.copy()
-#        dc[0:ch,:,:] *= 0
-#        for i in xrange(dc.shape[1]):
-#            for j in xrange(dc.shape[2]):
-#                dc[ch:ch+taper_nch,i,j] *= np.hanning(2 * taper_nch)[:taper_nch]
-#        sp.zl_substracted.data_cube = dc.copy()
-#        dc += self.zero_loss.data_cube
-#        sp.data_cube = dc.copy()
-#        return sp
-#        
-
-#        
-#    def correct_dual_camera_step(self, show_lev = False, mean_interval = 3, 
-#                                 pca_interval = 20, pcs = 2, 
-#                                 normalize_poissonian_noise = False):
-#        """Correct the gain difference in a dual camera using PCA.
-#        
-#        Parameters
-#        ----------
-#        show_lev : boolen
-#            Plot PCA lev
-#        mean_interval : int
-#        pca_interval : int
-#        pcs : int
-#            number of principal components
-#        normalize_poissonian_noise : bool
-#        """ 
-#        # The step is between pixels 1023 and 1024
-#        pw = pca_interval
-#        mw = mean_interval
-#        s = copy.deepcopy(self)
-#        s.energy_crop(1023-pw, 1023 + pw)
-#        s.decomposition(normalize_poissonian_noise)
-#        if show_lev:
-#            s.plot_lev()
-#            pcs = int(raw_input('Number of principal components? '))
-#        sc = s.get_decomposition_model(pcs)
-#        step = sc.data_cube[(pw-mw):(pw+1),:,:].mean(0) - \
-#        sc.data_cube[(pw+1):(pw+1+mw),:,:].mean(0)
-#        self.data_cube[1024:,:,:] += step.reshape((1, step.shape[0], 
-#        step.shape[1]))
-#        self._replot()
-#        return step
 
