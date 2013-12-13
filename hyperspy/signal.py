@@ -3457,8 +3457,16 @@ class Signal(MVA,
         
         hist, bin_edges = histogram(img.data.flatten(),bins=bins,range=range_bins)
         hist_spec = signals.Spectrum(hist)
-        hist_spec.axes_manager[0].scale=bin_edges[1]-bin_edges[0]
-        hist_spec.axes_manager[0].offset=bin_edges[0]
+        if bins == 'blocks':
+            hist_spec.axes_manager.signal_axes[0].axis=bin_edges[:-1]
+            warnings.warn(
+            "The options `bins = 'blocks'` is not fully supported in this " 
+            "versions of hyperspy. It should be used for plotting purpose"
+            "only.")
+        else:            
+            hist_spec.axes_manager[0].scale=bin_edges[1]-bin_edges[0]
+            hist_spec.axes_manager[0].offset=bin_edges[0]
+        
         hist_spec.axes_manager[0].name= 'value'
         hist_spec.mapped_parameters.title=img.mapped_parameters.title
         return hist_spec            
