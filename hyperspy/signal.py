@@ -3422,7 +3422,7 @@ class Signal(MVA,
         s._remove_axis(axis.index_in_axes_manager)
         return s
         
-    def get_histogram(img,bins=10,range_bins=None):
+    def get_histogram(img,bins='freedman',range_bins=None):
         """Return an histogram of a signal
         
         More sophisticated algorithms for determining bins can be used.
