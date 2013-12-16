@@ -3736,7 +3736,7 @@ class Signal(MVA,
         --------
         print_summary_statistics
         astroML.density_estimation.histogram, numpy.histogram : these are the 
-            functions that hyperspy uses to compute the histagram.
+            functions that hyperspy uses to compute the histogram.
         
         Notes
         -----
