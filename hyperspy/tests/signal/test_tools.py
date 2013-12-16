@@ -62,6 +62,11 @@ class Test2D:
         assert_true(len(result) == 2)
         assert_true((result[0].data == self.data[:2,:]).all())
         assert_true((result[1].data == self.data[2:4,:]).all())
+    
+    def test_histogram(self):
+        result = self.signal.get_histogram(3)
+        assert_true(isinstance(result,signals.Spectrum))
+        assert_true((result.data==np.array([17, 16, 17])).all())
         
 class Test3D:
     def setUp(self):

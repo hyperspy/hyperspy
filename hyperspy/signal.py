@@ -58,6 +58,7 @@ from hyperspy.misc import spectrum_tools
 from hyperspy.gui.tools import IntegrateArea
 from hyperspy import components
 from hyperspy.misc.utils import underline
+from hyperspy.misc.borrowed.astroML.histtools import histogram
 
 class Signal2DTools(object):
     def estimate_shift2D(self, reference='current',
@@ -3706,6 +3707,72 @@ class Signal(MVA,
         s.data = self.axes_manager[axis].index2value(s.data)                 
         return s
 
+    def get_histogram(img, bins='freedman', range_bins=None):
+        """Return a histogram of the signal data.
+        
+        More sophisticated algorithms for determining bins can be used.
+        Aside from the `bins` argument allowing a string specified how bins
+        are computed, the parameters are the same as numpy.histogram().
+        
+        Parameters
+        ----------
+        
+        bins : int or list or str (optional)
+            If bins is a string, then it must be one of:            
+            'knuth' : use Knuth's rule to determine bins
+            'scotts' : use Scott's rule to determine bins
+            'freedman' : use the Freedman-diaconis rule to determine bins
+            'blocks' : use bayesian blocks for dynamic bin widths
+            
+        range_bins : tuple or None (optional)
+            the minimum and maximum range for the histogram. If not specified,
+            it will be (x.min(), x.max())
+            
+        Returns
+        -------
+        hist_spec : An 1D spectrum instance containing the histogram.
+        
+        See Also        
+        --------
+        print_summary_statistics
+        astroML.density_estimation.histogram, numpy.histogram : these are the 
+            functions that hyperspy uses to compute the histogram.
+        
+        Notes
+        -----
+        The number of bins estimators are taken from AstroML. Read 
+        their documentation for more info.
+        
+        Examples
+        --------
+        >>> s = signals.Spectrum(np.random.normal(size=(10, 100)))
+        Plot the data histogram
+        >>> s.get_histogram().plot()
+        Plot the histogram of the signal at the current coordinates
+        >>> s.get_current_signal().get_histogram().plot()
+
+        """
+        from hyperspy import signals
+        
+        hist, bin_edges = histogram(img.data.flatten(),
+                                    bins=bins,
+                                    range=range_bins)
+        hist_spec = signals.Spectrum(hist)
+        if bins == 'blocks':
+            hist_spec.axes_manager.signal_axes[0].axis=bin_edges[:-1]
+            warnings.warn(
+            "The options `bins = 'blocks'` is not fully supported in this " 
+            "versions of hyperspy. It should be used for plotting purpose"
+            "only.")
+        else:            
+            hist_spec.axes_manager[0].scale = bin_edges[1] - bin_edges[0]
+            hist_spec.axes_manager[0].offset = bin_edges[0]
+        
+        hist_spec.axes_manager[0].name = 'value'
+        hist_spec.mapped_parameters.title = (img.mapped_parameters.title +
+                                             " histogram")
+        return hist_spec            
+    
     def copy(self):
         try:
             backup_plot = self._plot
