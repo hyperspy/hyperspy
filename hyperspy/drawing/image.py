@@ -245,6 +245,11 @@ class ImagePlot(BlittedFigure):
             else:
                 ims[0].changed()
             self._draw_animated()
+            # It seems that nans they're simply not drawn, so simply replacing
+            # the data does not update the value of the nan pixels to the
+            # background color. We redraw everything as a workaround.
+            if np.isnan(data).any():
+                self.figure.canvas.draw()
         else:
             self.ax.imshow(data,
                            interpolation='nearest',
