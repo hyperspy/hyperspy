@@ -532,6 +532,43 @@ type in place, e.g.:
         Data type: float64
 
 
+Basic statistical analysis
+--------------------------
+.. versionadded:: 0.7
+
+:py:meth:`~.signal.Signal.get_histogram` computes the histogram and
+conveniently returns it as signal instance. It provides methods to
+calculate the bins. :py:meth:`~.signal.Signal.print_summary_statistics` prints
+the five-number summary statistics of the data. 
+
+These two methods can be combined with
+:py:meth:`~.signal.Signal.get_current_signal` to compute the histogram or
+print the summary stastics of the signal at the current coordinates, e.g:
+.. code-block:: python
+
+    >>> s = signals.EELSSpectrum(np.random.normal(size=(10,100)))
+    >>> s.print_summary_statistics()
+    Summary statistics
+    ------------------
+    mean:	0.021
+    std:	0.957
+    min:	-3.991
+    Q1:	-0.608
+    median:	0.013
+    Q3:	0.652
+    max:	2.751
+     
+    >>> s.get_current_signal().print_summary_statistics()
+    Summary statistics
+    ------------------
+    mean:   -0.019
+    std:    0.855
+    min:    -2.803
+    Q1: -0.451
+    median: -0.038
+    Q3: 0.484
+    max:    1.992
+
 
 Spectrum tools
 --------------
