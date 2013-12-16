@@ -4029,7 +4029,7 @@ class Signal(MVA,
         self.mapped_parameters.signal_origin = origin
         self._assign_subclass()    
 
-    def print_summary_statistics(self, only_current=False, formatter="%.3f"):
+    def print_summary_statistics(self, formatter="%.3f"):
         """Prints the five-number summary statistics of the data, the mean and
         the standard deviation.
         
@@ -4039,28 +4039,24 @@ class Signal(MVA,
         
         Parameters
         ----------
-        global : bool
-            If True, compute the values using the full dataset.
-            If False, compute the values at the current position.
-            
+        formatter : bool
+           Number formatter. 
+
         """
-        if only_current is False:
-            target = self.data
-        else:
-            target = self()
+        data = self.data
         # To make it work with nans
-        target = target[~np.isnan(target)]
+        data = data[~np.isnan(data)]
         print(underline("Summary statistics"))
-        print("mean:\t" + formatter % target.mean())
-        print("std:\t" + formatter  % target.std())
+        print("mean:\t" + formatter % data.mean())
+        print("std:\t" + formatter  % data.std())
         print
-        print("min:\t" + formatter % target.min())
-        print("Q1:\t" + formatter % np.percentile(target,
+        print("min:\t" + formatter % data.min())
+        print("Q1:\t" + formatter % np.percentile(data,
                                                                     25))
-        print("median:\t" + formatter % np.median(target))
-        print("Q3:\t" + formatter % np.percentile(target,
+        print("median:\t" + formatter % np.median(data))
+        print("Q3:\t" + formatter % np.percentile(data,
                                                                      75))
-        print("max:\t" + formatter  % target.max())
+        print("max:\t" + formatter  % data.max())
 
 # Implement binary operators
 for name in (
