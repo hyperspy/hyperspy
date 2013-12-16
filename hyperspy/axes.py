@@ -272,7 +272,10 @@ class DataAxis(t.HasTraits):
                 raise ValueError("The value is out of the axis limits")                
 
     def index2value(self, index):
-        return self.axis[index]
+        if isinstance(index, np.ndarray):
+            return self.axis[index.ravel()].reshape(index.shape)
+        else:
+            return self.axis[index]
 
     def set_index_from_value(self, value):
         self.index = self.value2index(value)
@@ -289,8 +292,6 @@ class DataAxis(t.HasTraits):
             self.scale = scale
         else:
             return offset, scale
-
- 
 
 class AxesManager(t.HasTraits):
     """Contains and manages the data axes.

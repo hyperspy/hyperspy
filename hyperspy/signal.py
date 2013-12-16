@@ -57,6 +57,8 @@ from hyperspy.misc import array_tools
 from hyperspy.misc import spectrum_tools
 from hyperspy.gui.tools import IntegrateArea
 from hyperspy import components
+from hyperspy.misc.utils import underline
+from hyperspy.misc.borrowed.astroML.histtools import histogram
 
 class Signal2DTools(object):
     def estimate_shift2D(self, reference='current',
@@ -358,10 +360,10 @@ class Signal2DTools(object):
 
 class Signal1DTools(object):
     def shift1D(self,
-                 shift_array,
-                 interpolation_method='linear',
-                 crop=True,
-                 fill_value=np.nan):
+                shift_array,
+                interpolation_method='linear',
+                crop=True,
+                fill_value=np.nan):
         """Shift the data in place over the signal axis by the amount specified
         by an array.
 
@@ -397,6 +399,8 @@ class Signal1DTools(object):
         for i, (dat, shift) in enumerate(zip(
                 self._iterate_signal(),
                 shift_array.ravel(()))):
+            if np.isnan(shift):
+                continue
             si = sp.interpolate.interp1d(original_axis,
                                          dat,
                                          bounds_error=False,
@@ -409,7 +413,7 @@ class Signal1DTools(object):
         axis.offset = offset
 
         if crop is True:
-            minimum, maximum = shift_array.min(), shift_array.max()
+            minimum, maximum = np.nanmin(shift_array), np.nanmax(shift_array)
             if minimum < 0:
                 iminimum = 1 + axis.value2index(
                         axis.high_value + minimum,
@@ -460,13 +464,26 @@ class Signal1DTools(object):
             dat[i1:i2] = dat_int(range(i1,i2))
             pbar.update(i + 1)
 
+    def _check_navigation_mask(self, mask):            
+        if mask is not None:
+            if not isinstance(mask, Signal):
+                raise ValueError("mask must be a Signal instance.")
+            elif mask.axes_manager.signal_dimension not in (0, 1):
+                raise ValueError("mask must be a Signal with signal_dimension "
+                                 "equal to 1")
+            elif (mask.axes_manager.navigation_dimension !=
+                  self.axes_manager.navigation_dimension):
+                raise ValueError("mask must be a Signal with the same "
+                                 "navigation_dimension as the current signal.")
+
     def estimate_shift1D(self,
-                          start=None,
-                          end=None,
-                          reference_indices=None,
-                          max_shift=None,
-                          interpolate=True,
-                          number_of_interpolation_points=5):
+                         start=None,
+                         end=None,
+                         reference_indices=None,
+                         max_shift=None,
+                         interpolate=True,
+                         number_of_interpolation_points=5,
+                         mask=None):
         """Estimate the shifts in the current signal axis using
          cross-correlation.
 
@@ -495,6 +512,10 @@ class Signal1DTools(object):
         number_of_interpolation_points : int
             Number of interpolation points. Warning: making this number 
             too big can saturate the memory
+        mask : Signal of bool data type.
+            It must have signal_dimension = 0 and navigation_shape equal to the
+            current signal. Where mask is True the shift is not computed 
+            and set to nan.
 
         Returns
         -------
@@ -508,11 +529,13 @@ class Signal1DTools(object):
         self._check_signal_dimension_equals_one()
         ip = number_of_interpolation_points + 1
         axis = self.axes_manager.signal_axes[0]
+        self._check_navigation_mask(mask)
         if reference_indices is None:
             reference_indices = self.axes_manager.indices
 
         i1, i2 = axis._get_index(start), axis._get_index(end) 
-        shift_array = np.zeros(self.axes_manager._navigation_shape_in_array)
+        shift_array = np.zeros(self.axes_manager._navigation_shape_in_array,
+                               dtype=float)
         ref = self.inav[reference_indices].data[i1:i2]
         if interpolate is True:
             ref = spectrum_tools.interpolate1D(ip, ref)
@@ -521,11 +544,14 @@ class Signal1DTools(object):
         for i, (dat, indices) in enumerate(zip(
                     self._iterate_signal(),
                     self.axes_manager._array_indices_generator())):
-            dat = dat[i1:i2]
-            if interpolate is True:
-                dat = spectrum_tools.interpolate1D(ip, dat)
-            shift_array[indices] = np.argmax(
-                np.correlate(ref, dat,'full')) - len(ref) + 1
+            if mask is not None and bool(mask.data[indices]) is True:
+                shift_array[indices] = np.nan
+            else:
+                dat = dat[i1:i2]
+                if interpolate is True:
+                    dat = spectrum_tools.interpolate1D(ip, dat)
+                shift_array[indices] = np.argmax(
+                    np.correlate(ref, dat,'full')) - len(ref) + 1
             pbar.update(i + 1)
         pbar.finish()
 
@@ -539,16 +565,18 @@ class Signal1DTools(object):
         return shift_array
 
     def align1D(self,
-                 start=None,
-                 end=None,
-                 reference_indices=None,
-                 max_shift=None,
-                 interpolate=True,
-                 number_of_interpolation_points=5,
-                 interpolation_method='linear',
-                 crop=True,
-                 fill_value=np.nan,
-                 also_align=None):
+                start=None,
+                end=None,
+                reference_indices=None,
+                max_shift=None,
+                interpolate=True,
+                number_of_interpolation_points=5,
+                interpolation_method='linear',
+                crop=True,
+                fill_value=np.nan,
+                also_align=[],
+                mask=None):
+
         """Estimate the shifts in the signal axis using 
         cross-correlation and use the estimation to align the data in place.
 
@@ -593,6 +621,10 @@ class Signal1DTools(object):
             dimensions
             as this one and that will be aligned using the shift map
             estimated using the this signal.
+        mask : Signal of bool data type.
+            It must have signal_dimension = 0 and navigation_shape equal to the
+            current signal. Where mask is True the shift is not computed 
+            and set to nan.
 
         Returns
         -------
@@ -615,11 +647,9 @@ class Signal1DTools(object):
             max_shift=max_shift,
             interpolate=interpolate,
             number_of_interpolation_points=
-                number_of_interpolation_points)
-        if also_align is None:
-            also_align = list()
-        also_align.append(self)
-        for signal in also_align:
+                number_of_interpolation_points,
+            mask=mask)
+        for signal in also_align + [self]:
             signal.shift1D(shift_array=shift_array,
                            interpolation_method=interpolation_method,
                            crop=crop,
@@ -3614,6 +3644,135 @@ class Signal(MVA,
                                axis=axis.index_in_array))
         s._remove_axis(axis.index_in_axes_manager)
         return s
+
+    def indexmax(self, axis):
+        """Returns a signal with the index of the maximum along an axis.
+
+        Parameters
+        ----------
+        axis : {int | string}
+           The axis can be specified using the index of the axis in 
+           `axes_manager` or the axis name.
+
+        Returns
+        -------
+        s : Signal
+            The data dtype is always int.
+
+        See also
+        --------
+        sum, mean, min
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.indexmax(-1).data.shape
+        (64,64)        
+        
+        """
+        return self._apply_function_on_data_and_remove_axis(np.argmax, axis)
+       
+    def valuemax(self, axis):                                                                         
+        """Returns a signal with the value of the maximum along an axis.
+                                                                                
+        Parameters                                                              
+        ----------                                                              
+        axis : {int | string}                                                   
+           The axis can be specified using the index of the axis in             
+           `axes_manager` or the axis name.                                     
+                                                                                
+        Returns                                                                 
+        -------                                                                 
+        s : Signal                                                              
+            The data dtype is always int.                                       
+                                                                                
+        See also                                                                
+        --------                                                                
+        sum, mean, min                                                          
+                                                                                
+        Usage                                                                   
+        -----                                                                   
+        >>> import numpy as np                                                  
+        >>> s = Signal(np.random.random((64,64,1024)))                          
+        >>> s.data.shape                                                        
+        (64,64,1024)                                                            
+        >>> s.valuemax(-1).data.shape                                             
+        (64,64)                                                                 
+                                                                                
+        """                                                                     
+        s = self.indexmax(axis)                                                 
+        s.data = self.axes_manager[axis].index2value(s.data)                 
+        return s
+
+    def get_histogram(img, bins='freedman', range_bins=None):
+        """Return a histogram of the signal data.
+        
+        More sophisticated algorithms for determining bins can be used.
+        Aside from the `bins` argument allowing a string specified how bins
+        are computed, the parameters are the same as numpy.histogram().
+
+        
+        Parameters
+        ----------
+        
+        bins : int or list or str (optional)
+            If bins is a string, then it must be one of:            
+            'knuth' : use Knuth's rule to determine bins
+            'scotts' : use Scott's rule to determine bins
+            'freedman' : use the Freedman-diaconis rule to determine bins
+            'blocks' : use bayesian blocks for dynamic bin widths
+            
+        range_bins : tuple or None (optional)
+            the minimum and maximum range for the histogram. If not specified,
+            it will be (x.min(), x.max())
+            
+        Returns
+        -------
+        hist_spec : An 1D spectrum instance containing the histogram.
+        
+        See Also        
+        --------
+        print_summary_statistics
+        astroML.density_estimation.histogram, numpy.histogram : these are the 
+            functions that hyperspy uses to compute the histogram.
+        
+        Notes
+        -----
+        The number of bins estimators are taken from AstroML. Read 
+        their documentation for more info.
+        
+        Examples
+        --------
+        >>> s = signals.Spectrum(np.random.normal(size=(10, 100)))
+        Plot the data histogram
+        >>> s.get_histogram().plot()
+        Plot the histogram of the signal at the current coordinates
+        >>> s.get_current_signal().get_histogram().plot()
+
+        """
+        from hyperspy import signals
+        
+        hist, bin_edges = histogram(img.data.flatten(),
+                                    bins=bins,
+                                    range=range_bins)
+        hist_spec = signals.Spectrum(hist)
+        if bins == 'blocks':
+            hist_spec.axes_manager.signal_axes[0].axis=bin_edges[:-1]
+            warnings.warn(
+            "The options `bins = 'blocks'` is not fully supported in this " 
+            "versions of hyperspy. It should be used for plotting purpose"
+            "only.")
+        else:            
+            hist_spec.axes_manager[0].scale = bin_edges[1] - bin_edges[0]
+            hist_spec.axes_manager[0].offset = bin_edges[0]
+        
+        hist_spec.axes_manager[0].name = 'value'
+        hist_spec.mapped_parameters.title = (img.mapped_parameters.title +
+                                             " histogram")
+        return hist_spec            
     
     def apply(self,function,*args, **kwargs):
         """Apply apply a function to all the coordinates.
@@ -3635,8 +3794,8 @@ class Signal(MVA,
         
         im = self.deepcopy()
         im.data = function(im.data,*args, **kwargs)
-        return im        
-        
+        return im       
+
     def copy(self):
         try:
             backup_plot = self._plot
@@ -3960,27 +4119,39 @@ class Signal(MVA,
         self.mapped_parameters.signal_origin = origin
         self._assign_subclass()    
 
-#    def sum_in_mask(self, mask):
-#        """Returns the result of summing all the spectra in the mask.
-#
-#        Parameters
-#        ----------
-#        mask : boolean numpy array
-#
-#        Returns
-#        -------
-#        Signal
-#
-#        """
-#        dc = self.data_cube.copy()
-#        mask3D = mask.reshape([1,] + list(mask.shape)) * np.ones(dc.shape)
-#        dc = (mask3D*dc).sum(1).sum(1) / mask.sum()
-#        s = Spectrum()
-#        s.data_cube = dc.reshape((-1,1,1))
-#        s.get_dimensions_from_cube()
-#        utils.copy_energy_calibration(self,s)
-#        return s
+    def print_summary_statistics(self, formatter="%.3f"):
+        """Prints the five-number summary statistics of the data, the mean and
+        the standard deviation.
         
+        Prints the mean, standandard deviation (std), maximum (max), minimum 
+        (min), first quartile (Q1), median and third quartile. nans are 
+        removed from the calculations.
+        
+        Parameters
+        ----------
+        formatter : bool
+           Number formatter. 
+
+        See Also
+        --------
+        get_histogram
+
+        """
+        data = self.data
+        # To make it work with nans
+        data = data[~np.isnan(data)]
+        print(underline("Summary statistics"))
+        print("mean:\t" + formatter % data.mean())
+        print("std:\t" + formatter  % data.std())
+        print
+        print("min:\t" + formatter % data.min())
+        print("Q1:\t" + formatter % np.percentile(data,
+                                                                    25))
+        print("median:\t" + formatter % np.median(data))
+        print("Q3:\t" + formatter % np.percentile(data,
+                                                                     75))
+        print("max:\t" + formatter  % data.max())
+
 # Implement binary operators
 for name in (
     # Arithmetic operators
