@@ -3629,9 +3629,21 @@ class Signal(MVA,
         --------
         >>> import scipy.ndimage
         >>> s = signals.Signal(np.random.random((64,64,1024)))
-        >>> filtered_s = sapply(
+        >>> filtered_s = s.apply(
         >>> scipy.ndimage.gaussian_filter, sigma=2.5)        
         """
+        
+        scale=[]
+        units=[]
+        for i in range(len(self.axes_manager.shape)):
+            scale.append(self.axes_manager[i].scale)
+            units.append(self.axes_manager[i].units)
+        
+        if len(set(units)) != 1 or len(set(scale)) != 1:
+            warnings.warn("The function you applied does not take into "
+            "account the difference of units and of scales in-between"
+            " axes.")
+        
         
         im = self.deepcopy()
         im.data = function(im.data,*args, **kwargs)
