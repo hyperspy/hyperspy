@@ -4042,6 +4042,10 @@ class Signal(MVA,
         formatter : bool
            Number formatter. 
 
+        See Also
+        --------
+        get_histogram
+
         """
         data = self.data
         # To make it work with nans
