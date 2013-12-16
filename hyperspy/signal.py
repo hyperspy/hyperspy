@@ -57,6 +57,7 @@ from hyperspy.misc import array_tools
 from hyperspy.misc import spectrum_tools
 from hyperspy.gui.tools import IntegrateArea
 from hyperspy import components
+from hyperspy.misc.utils import underline
 
 class Signal2DTools(object):
     def estimate_shift2D(self, reference='current',
@@ -358,10 +359,10 @@ class Signal2DTools(object):
 
 class Signal1DTools(object):
     def shift1D(self,
-                 shift_array,
-                 interpolation_method='linear',
-                 crop=True,
-                 fill_value=np.nan):
+                shift_array,
+                interpolation_method='linear',
+                crop=True,
+                fill_value=np.nan):
         """Shift the data in place over the signal axis by the amount specified
         by an array.
 
@@ -397,6 +398,8 @@ class Signal1DTools(object):
         for i, (dat, shift) in enumerate(zip(
                 self._iterate_signal(),
                 shift_array.ravel(()))):
+            if np.isnan(shift):
+                continue
             si = sp.interpolate.interp1d(original_axis,
                                          dat,
                                          bounds_error=False,
@@ -409,7 +412,7 @@ class Signal1DTools(object):
         axis.offset = offset
 
         if crop is True:
-            minimum, maximum = shift_array.min(), shift_array.max()
+            minimum, maximum = np.nanmin(shift_array), np.nanmax(shift_array)
             if minimum < 0:
                 iminimum = 1 + axis.value2index(
                         axis.high_value + minimum,
@@ -460,13 +463,26 @@ class Signal1DTools(object):
             dat[i1:i2] = dat_int(range(i1,i2))
             pbar.update(i + 1)
 
+    def _check_navigation_mask(self, mask):            
+        if mask is not None:
+            if not isinstance(mask, Signal):
+                raise ValueError("mask must be a Signal instance.")
+            elif mask.axes_manager.signal_dimension not in (0, 1):
+                raise ValueError("mask must be a Signal with signal_dimension "
+                                 "equal to 1")
+            elif (mask.axes_manager.navigation_dimension !=
+                  self.axes_manager.navigation_dimension):
+                raise ValueError("mask must be a Signal with the same "
+                                 "navigation_dimension as the current signal.")
+
     def estimate_shift1D(self,
-                          start=None,
-                          end=None,
-                          reference_indices=None,
-                          max_shift=None,
-                          interpolate=True,
-                          number_of_interpolation_points=5):
+                         start=None,
+                         end=None,
+                         reference_indices=None,
+                         max_shift=None,
+                         interpolate=True,
+                         number_of_interpolation_points=5,
+                         mask=None):
         """Estimate the shifts in the current signal axis using
          cross-correlation.
 
@@ -495,6 +511,10 @@ class Signal1DTools(object):
         number_of_interpolation_points : int
             Number of interpolation points. Warning: making this number 
             too big can saturate the memory
+        mask : Signal of bool data type.
+            It must have signal_dimension = 0 and navigation_shape equal to the
+            current signal. Where mask is True the shift is not computed 
+            and set to nan.
 
         Returns
         -------
@@ -508,11 +528,13 @@ class Signal1DTools(object):
         self._check_signal_dimension_equals_one()
         ip = number_of_interpolation_points + 1
         axis = self.axes_manager.signal_axes[0]
+        self._check_navigation_mask(mask)
         if reference_indices is None:
             reference_indices = self.axes_manager.indices
 
         i1, i2 = axis._get_index(start), axis._get_index(end) 
-        shift_array = np.zeros(self.axes_manager._navigation_shape_in_array)
+        shift_array = np.zeros(self.axes_manager._navigation_shape_in_array,
+                               dtype=float)
         ref = self.inav[reference_indices].data[i1:i2]
         if interpolate is True:
             ref = spectrum_tools.interpolate1D(ip, ref)
@@ -521,11 +543,14 @@ class Signal1DTools(object):
         for i, (dat, indices) in enumerate(zip(
                     self._iterate_signal(),
                     self.axes_manager._array_indices_generator())):
-            dat = dat[i1:i2]
-            if interpolate is True:
-                dat = spectrum_tools.interpolate1D(ip, dat)
-            shift_array[indices] = np.argmax(
-                np.correlate(ref, dat,'full')) - len(ref) + 1
+            if mask is not None and bool(mask.data[indices]) is True:
+                shift_array[indices] = np.nan
+            else:
+                dat = dat[i1:i2]
+                if interpolate is True:
+                    dat = spectrum_tools.interpolate1D(ip, dat)
+                shift_array[indices] = np.argmax(
+                    np.correlate(ref, dat,'full')) - len(ref) + 1
             pbar.update(i + 1)
         pbar.finish()
 
@@ -539,16 +564,18 @@ class Signal1DTools(object):
         return shift_array
 
     def align1D(self,
-                 start=None,
-                 end=None,
-                 reference_indices=None,
-                 max_shift=None,
-                 interpolate=True,
-                 number_of_interpolation_points=5,
-                 interpolation_method='linear',
-                 crop=True,
-                 fill_value=np.nan,
-                 also_align=None):
+                start=None,
+                end=None,
+                reference_indices=None,
+                max_shift=None,
+                interpolate=True,
+                number_of_interpolation_points=5,
+                interpolation_method='linear',
+                crop=True,
+                fill_value=np.nan,
+                also_align=[],
+                mask=None):
+
         """Estimate the shifts in the signal axis using 
         cross-correlation and use the estimation to align the data in place.
 
@@ -593,6 +620,10 @@ class Signal1DTools(object):
             dimensions
             as this one and that will be aligned using the shift map
             estimated using the this signal.
+        mask : Signal of bool data type.
+            It must have signal_dimension = 0 and navigation_shape equal to the
+            current signal. Where mask is True the shift is not computed 
+            and set to nan.
 
         Returns
         -------
@@ -615,11 +646,9 @@ class Signal1DTools(object):
             max_shift=max_shift,
             interpolate=interpolate,
             number_of_interpolation_points=
-                number_of_interpolation_points)
-        if also_align is None:
-            also_align = list()
-        also_align.append(self)
-        for signal in also_align:
+                number_of_interpolation_points,
+            mask=mask)
+        for signal in also_align + [self]:
             signal.shift1D(shift_array=shift_array,
                            interpolation_method=interpolation_method,
                            crop=crop,
@@ -1627,7 +1656,7 @@ class MVATools(object):
                         same_window=None,
                         comp_label='Decomposition factor', 
                         per_row=3):
-        """Plot factors from a decomposition
+        """Plot factors from a decomposition.
 
         Parameters
         ----------
@@ -1662,7 +1691,16 @@ class MVATools(object):
         same_window
             parameter is True.
 
+        See Also
+        --------
+        plot_decomposition_loadings, plot_decomposition_results.
+
         """
+        if self.axes_manager.signal_dimension > 2:
+            raise NotImplementedError("This method cannot plot factors of "
+                                      "signals of dimension higher than 2."
+                                      "You can use "
+                                      "`plot_decomposition_results` instead.")
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         factors=self.learning_results.factors
@@ -1714,7 +1752,16 @@ class MVATools(object):
         same_window
             parameter is True.
 
+        See Also
+        --------
+        plot_bss_loadings, plot_bss_results.
+
         """
+        if self.axes_manager.signal_dimension > 2:
+            raise NotImplementedError("This method cannot plot factors of "
+                                      "signals of dimension higher than 2."
+                                      "You can use "
+                                      "`plot_decomposition_results` instead.")
 
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
@@ -1735,7 +1782,7 @@ class MVATools(object):
                        cmap=plt.cm.gray, 
                        no_nans=False,
                        per_row=3):
-        """Plot loadings from PCA
+        """Plot loadings from PCA.
 
         Parameters
         ----------
@@ -1778,7 +1825,16 @@ class MVATools(object):
             the number of plots in each row, when the same_window
             parameter is True.
 
+        See Also
+        --------
+        plot_decomposition_factors, plot_decomposition_results.
+
         """
+        if self.axes_manager.navigation_dimension > 2:
+            raise NotImplementedError("This method cannot plot loadings of "
+                                      "dimension higher than 2."
+                                      "You can use "
+                                      "`plot_decomposition_results` instead.")
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         loadings=self.learning_results.loadings.T
@@ -1847,7 +1903,16 @@ class MVATools(object):
             the number of plots in each row, when the same_window
             parameter is True.
 
+        See Also
+        --------
+        plot_bss_factors, plot_bss_results.
+
         """
+        if self.axes_manager.navigation_dimension > 2:
+            raise NotImplementedError("This method cannot plot loadings of "
+                                      "dimension higher than 2."
+                                      "You can use "
+                                      "`plot_bss_results` instead.")
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         loadings=self.learning_results.bss_loadings.T
@@ -1865,7 +1930,7 @@ class MVATools(object):
                                     no_nans=no_nans,
                                     per_row=per_row)
 
-    def export_decomposition_results(self, comp_ids=None,
+    def export_decomposition_results(sezalf, comp_ids=None,
                                      folder=None,
                                      calibrate=True,
                                      factor_prefix='factor',
@@ -1954,6 +2019,11 @@ class MVATools(object):
             parameter is True.
         save_figures_format : str
             The image format extension.
+
+        See Also
+        --------
+        get_decomposition_factors_as_signal,
+        get_decomposition_loadings_as_signal.
             
         """
         
@@ -2077,6 +2147,11 @@ class MVATools(object):
             parameter is True.
         save_figures_format : str
             The image format extension.
+
+        See Also
+        --------
+        get_bss_factors_as_signal,
+        get_bss_loadings_as_signal.
             
         """
         
@@ -2112,23 +2187,170 @@ class MVATools(object):
                               per_row=per_row,
                               save_figures_format=save_figures_format)
                               
-    def plot_residual(self, axes_manager=None):
-        """Plot the residual between original data and reconstructed 
-        data
+    def _get_loadings_as_signal(self, loadings):
+        from hyperspy.hspy import signals 
+        data = loadings.T.reshape(
+            (-1,) + self.axes_manager.navigation_shape[::-1])
+        signal = signals.Signal(data,
+                     axes=([{"size" : data.shape[0],
+                             "navigate" : True}] +
+                           self.axes_manager._get_navigation_axes_dicts()))
+        signal.set_signal_origin(self.mapped_parameters.signal_origin)
+        for axis in signal.axes_manager._axes[1:]:
+            axis.navigate = False
+        return signal
 
-        Requires you to have already run PCA or ICA, and to reconstruct 
-        data using either the get_decomposition_model or 
-        get_bss_model methods.
-        
+    def _get_factors_as_signal(self, factors):
+        signal = self.__class__(factors.T.reshape((-1,) +
+                                self.axes_manager.signal_shape[::-1]),
+                                axes = [{"size" : factors.shape[-1],
+                                         "navigate": True}] + 
+                                    self.axes_manager._get_signal_axes_dicts())
+        signal.set_signal_origin(self.mapped_parameters.signal_origin)
+        signal.set_signal_type(self.mapped_parameters.signal_type)
+        for axis in signal.axes_manager._axes[1:]:
+            axis.navigate = False
+        return signal
+
+    def get_decomposition_loadings_as_signal(self):
+        """Return the decomposition loadings as a Signal.
+
+        See Also
+        -------
+        get_decomposition_factors_as_signal, export_decomposition_results.
+
         """
+        signal = self._get_loadings_as_signal(self.learning_results.loadings)
+        signal.axes_manager._axes[0].name = "Decomposition component index"
+        signal.mapped_parameters.title = "Decomposition loadings of " + \
+                                       self.mapped_parameters.title
+        return signal
 
-        if hasattr(self, 'residual'):
-            self.residual.plot(axes_manager)
-        else:
-            print("Object does not have any residual information."
-                  "Is it a reconstruction created using either "
-                  "get_decomposition_model or get_bss_model methods?")
+    def get_decomposition_factors_as_signal(self):
+        """Return the decomposition factors as a Signal.
 
+        See Also
+        -------
+        get_decompoisition_loadings_as_signal, export_decomposition_results.
+
+        """
+        signal =  self._get_factors_as_signal(self.learning_results.factors)
+        signal.axes_manager._axes[0].name = "Decomposition component index"
+        signal.mapped_parameters.title = ("Decomposition factors of " +
+                                       self.mapped_parameters.title)
+        return signal
+
+    def get_bss_loadings_as_signal(self):
+        """Return the blind source separtion loadings as a Signal.
+
+        See Also
+        -------
+        get_bss_factors_as_signal, export_bss_results.
+
+        """
+        signal = self._get_loadings_as_signal(
+            self.learning_results.bss_loadings)
+        signal.axes_manager[0].name = "BSS component index"
+        signal.mapped_parameters.title = ("BSS loadings of " +
+                                       self.mapped_parameters.title)
+        return signal
+
+    def get_bss_factors_as_signal(self):
+        """Return the blind source separtion factors as a Signal.
+
+        See Also
+        -------
+        get_bss_loadings_as_signal, export_bss_results.
+
+        """
+        signal = self._get_factors_as_signal(self.learning_results.bss_factors)
+        signal.axes_manager[0].name = "BSS component index"
+        signal.mapped_parameters.title = ("BSS factors of " +
+                                       self.mapped_parameters.title)
+        return signal
+
+    def plot_bss_results(self,
+                         factors_navigator="auto",
+                         loadings_navigator="auto",
+                         factors_dim=2,
+                         loadings_dim=2,):
+        """Plot the blind source separation factors and loadings.
+
+        Unlike `plot_bss_factors` and `plot_bss_loadings`, this method displays
+        one component at a time. Therefore it provides a more compact
+        visualization than then other two methods.  The loadings and factors
+        are displayed in different windows and each has its own
+        navigator/sliders to navigate them if they are multidimensional. The
+        component index axis is syncronize between the two.
+
+        Parameters
+        ----------
+        factor_navigator, loadings_navigator : {"auto", None, "spectrum",
+        Signal}
+            See `plot` documentation for details.
+        factors_dim, loadings_dim: int
+            Currently Hyperspy cannot plot signals of dimension higher than
+            two. Therefore, to visualize the BSS results when the 
+            factors or the loadings have signal dimension greater than 2
+            we can view the data as spectra(images) by setting this parameter
+            to 1(2). (Default 2)
+        
+        See Also
+        --------
+        plot_bss_factors, plot_bss_loadings, plot_decomposition_results.
+
+        """
+        factors = self.get_bss_factors_as_signal()
+        loadings = self.get_bss_loadings_as_signal()
+        factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
+        if loadings.axes_manager.signal_dimension > 2:
+            loadings.axes_manager.set_signal_dimension(loadings_dim)
+        if factors.axes_manager.signal_dimension > 2:
+            factors.axes_manager.set_signal_dimension(factors_dim)
+        loadings.plot(navigator=loadings_navigator)
+        factors.plot(navigator=factors_navigator)
+
+    def plot_decomposition_results(self,
+                                   factors_navigator="auto",
+                                   loadings_navigator="auto",
+                                   factors_dim=2,
+                                   loadings_dim=2):
+        """Plot the decompostion factors and loadings.
+
+        Unlike `plot_factors` and `plot_loadings`, this method displays
+        one component at a time. Therefore it provides a more compact
+        visualization than then other two methods.  The loadings and factors
+        are displayed in different windows and each has its own
+        navigator/sliders to navigate them if they are multidimensional. The
+        component index axis is syncronize between the two.
+        
+        Parameters
+        ----------
+        factor_navigator, loadings_navigator : {"auto", None, "spectrum",
+        Signal}
+            See `plot` documentation for details.
+        factors_dim, loadings_dim : int
+            Currently Hyperspy cannot plot signals of dimension higher than
+            two. Therefore, to visualize the BSS results when the 
+            factors or the loadings have signal dimension greater than 2
+            we can view the data as spectra(images) by setting this parameter
+            to 1(2). (Default 2)
+
+        See Also
+        --------
+        plot_factors, plot_loadings, plot_bss_results.
+
+        """
+        factors = self.get_decomposition_factors_as_signal()
+        loadings = self.get_decomposition_loadings_as_signal()
+        factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
+        if loadings.axes_manager.signal_dimension > 2:
+            loadings.axes_manager.set_signal_dimension(loadings_dim)
+        if factors.axes_manager.signal_dimension > 2:
+            factors.axes_manager.set_signal_dimension(factors_dim)
+        loadings.plot(navigator=loadings_navigator)
+        factors.plot(navigator=factors_navigator)
+    
 
 class Signal(MVA,
              MVATools,
@@ -3421,7 +3643,69 @@ class Signal(MVA,
                                axis=axis.index_in_array))
         s._remove_axis(axis.index_in_axes_manager)
         return s
+
+    def indexmax(self, axis):
+        """Returns a signal with the index of the maximum along an axis.
+
+        Parameters
+        ----------
+        axis : {int | string}
+           The axis can be specified using the index of the axis in 
+           `axes_manager` or the axis name.
+
+        Returns
+        -------
+        s : Signal
+            The data dtype is always int.
+
+        See also
+        --------
+        sum, mean, min
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.indexmax(-1).data.shape
+        (64,64)        
         
+        """
+        return self._apply_function_on_data_and_remove_axis(np.argmax, axis)
+       
+    def valuemax(self, axis):                                                                         
+        """Returns a signal with the value of the maximum along an axis.
+                                                                                
+        Parameters                                                              
+        ----------                                                              
+        axis : {int | string}                                                   
+           The axis can be specified using the index of the axis in             
+           `axes_manager` or the axis name.                                     
+                                                                                
+        Returns                                                                 
+        -------                                                                 
+        s : Signal                                                              
+            The data dtype is always int.                                       
+                                                                                
+        See also                                                                
+        --------                                                                
+        sum, mean, min                                                          
+                                                                                
+        Usage                                                                   
+        -----                                                                   
+        >>> import numpy as np                                                  
+        >>> s = Signal(np.random.random((64,64,1024)))                          
+        >>> s.data.shape                                                        
+        (64,64,1024)                                                            
+        >>> s.valuemax(-1).data.shape                                             
+        (64,64)                                                                 
+                                                                                
+        """                                                                     
+        s = self.indexmax(axis)                                                 
+        s.data = self.axes_manager[axis].index2value(s.data)                 
+        return s
+
     def get_histogram(img,bins='freedman',range_bins=None):
         """Return an histogram of a signal
         
@@ -3470,7 +3754,7 @@ class Signal(MVA,
         hist_spec.axes_manager[0].name= 'value'
         hist_spec.mapped_parameters.title=img.mapped_parameters.title
         return hist_spec            
-        
+    
     def copy(self):
         try:
             backup_plot = self._plot
@@ -3794,27 +4078,39 @@ class Signal(MVA,
         self.mapped_parameters.signal_origin = origin
         self._assign_subclass()    
 
-#    def sum_in_mask(self, mask):
-#        """Returns the result of summing all the spectra in the mask.
-#
-#        Parameters
-#        ----------
-#        mask : boolean numpy array
-#
-#        Returns
-#        -------
-#        Signal
-#
-#        """
-#        dc = self.data_cube.copy()
-#        mask3D = mask.reshape([1,] + list(mask.shape)) * np.ones(dc.shape)
-#        dc = (mask3D*dc).sum(1).sum(1) / mask.sum()
-#        s = Spectrum()
-#        s.data_cube = dc.reshape((-1,1,1))
-#        s.get_dimensions_from_cube()
-#        utils.copy_energy_calibration(self,s)
-#        return s
+    def print_summary_statistics(self, only_current=False, formatter="%.3f"):
+        """Prints the five-number summary statistics of the data, the mean and
+        the standard deviation.
         
+        Prints the mean, standandard deviation (std), maximum (max), minimum 
+        (min), first quartile (Q1), median and third quartile. nans are 
+        removed from the calculations.
+        
+        Parameters
+        ----------
+        global : bool
+            If True, compute the values using the full dataset.
+            If False, compute the values at the current position.
+            
+        """
+        if only_current is False:
+            target = self.data
+        else:
+            target = self()
+        # To make it work with nans
+        target = target[~np.isnan(target)]
+        print(underline("Summary statistics"))
+        print("mean:\t" + formatter % target.mean())
+        print("std:\t" + formatter  % target.std())
+        print
+        print("min:\t" + formatter % target.min())
+        print("Q1:\t" + formatter % np.percentile(target,
+                                                                    25))
+        print("median:\t" + formatter % np.median(target))
+        print("Q3:\t" + formatter % np.percentile(target,
+                                                                     75))
+        print("max:\t" + formatter  % target.max())
+
 # Implement binary operators
 for name in (
     # Arithmetic operators
