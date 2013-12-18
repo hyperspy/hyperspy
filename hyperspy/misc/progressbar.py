@@ -84,11 +84,11 @@ try:
     from IPython.core.interactiveshell import InteractiveShell
     InteractiveShell.instance().display_pub.clear_output
     from IPython.core.display import clear_output
-    have_clear_output = True 
+    have_clear_output = True
 except Exception:
     have_clear_output = False
-    
-    
+
+
 
 
 class ProgressBarWidget(object):
@@ -265,7 +265,7 @@ class ProgressBar(object):
         else:
             self.update = self.update_noipython
             self.fd = sys.stderr
-            
+
 
     def handle_resize(self, signum, frame):
         h,w=array('h', ioctl(self.fd,termios.TIOCGWINSZ,'\0'*8))[:2]
@@ -318,7 +318,7 @@ class ProgressBar(object):
         sys.stdout.flush()
         if value == self.maxval:
             self.finished = True
-    
+
     def update_noipython(self, value):
         "Updates the progress bar to a new value."
         assert 0 <= value <= self.maxval
@@ -334,6 +334,9 @@ class ProgressBar(object):
         else:
             self.finished = True
             self.fd.write(self._format_line() + '\n')
+
+    def next(self):
+        self.update(self.currval + 1)
 
     def start(self):
         """Start measuring time, and prints the bar at 0%.
@@ -354,7 +357,7 @@ class ProgressBar(object):
         self.update(self.maxval)
         if self.signal_set:
             signal.signal(signal.SIGWINCH, signal.SIG_DFL)
-        
+
 
 
 class MyBar:
