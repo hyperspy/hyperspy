@@ -196,6 +196,7 @@ we describe methods that are only available in specialized subclasses.
 .. _signal.indexing:
 
 Indexing
+
 ^^^^^^^^
 .. versionadded:: 0.6
 
@@ -422,8 +423,6 @@ are not equal `numpy broadcasting rules apply
 <http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_ *first*. In
 addition Hyperspy extend numpy's broadcasting rules to the following cases:
 
-
-
 +------------+----------------------+------------------+
 | **Signal** | **NavigationShape**  | **SignalShape**  |
 +============+======================+==================+
@@ -462,16 +461,110 @@ addition Hyperspy extend numpy's broadcasting rules to the following cases:
 |   s2 + s1  |       a              |      b           |
 +------------+----------------------+------------------+
 
+Iterating over the navigation axes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Signal instances are iterables over the navigation axes. For example, the 
+following code creates a stack of 10 images and saves them in separate "png"
+files by iterating over the signal instance:
+
+.. code-block:: python
+
+    >>> image_stack = signals.Image(np.random.random((2, 5, 64,64)))
+    >>> for single_image in image_stack:
+    ...    single_image.save("image %s.png" % str(image_stack.axes_manager.indices))
+    The "image (0, 0).png" file was created.
+    The "image (1, 0).png" file was created.
+    The "image (2, 0).png" file was created.
+    The "image (3, 0).png" file was created.
+    The "image (4, 0).png" file was created.
+    The "image (0, 1).png" file was created.
+    The "image (1, 1).png" file was created.
+    The "image (2, 1).png" file was created.
+    The "image (3, 1).png" file was created.
+    The "image (4, 1).png" file was created.
+
+The data of the signal instance that is returned at each iteration is a view of
+the original data, a property that we can use to perform operations on the
+data.  For example, the following code rotates the image at each coordinate  by
+a given angle and uses the :py:func:`~.utils.stack` function in combination
+with `list comprehensions
+<http://docs.python.org/2/tutorial/datastructures.html#list-comprehensions>`_
+to make a horizontal "collage" of the image stack:
+
+.. code-block:: python
+
+    >>> import scipy.ndimage
+    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]
+    >>> image_stack.axes_manager[1].name = "x"
+    >>> image_stack.axes_manager[2].name = "y"))
+    >>> for image, angle in zip(image_stack, (0, 45, 90, 135, 180)):
+    ...    image.data[:] = scipy.ndimage.rotate(image.data, angle=angle,
+    ...    reshape=False)
+    >>> collage = utils.stack([image for image in image_stack], axis=0)
+    >>> collage.plot()
+
+.. figure::  images/rotate_lena.png
+  :align:   center
+  :width:   500    
+
+
+
+
+.. versionadded:: 0.7
+
+
+Transforming the data at each coordinate as in the previous example using an
+external function can be more easily accomplished using the
+:py:meth:`~.signal.Signal.apply_function` method:
+
+.. code-block:: python
+
+    >>> import scipy.ndimage
+    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]*4))
+    >>> image_stack.axes_manager[1].name = "x"
+    >>> image_stack.axes_manager[2].name = "y"
+    >>> image_stack.apply_function(scipy.ndimage.rotate,
+    ...                            angle=45,
+    ...                            reshape=False)
+    >>> collage = utils.stack([image for image in image_stack], axis=0)
+    >>> collage.plot()
+
+.. figure::  images/rotate_lena_apply_simple.png
+  :align:   center
+  :width:   500    
+
+The :py:meth:`~.signal.Signal.apply_function` method can also take variable 
+arguments as in the following example.
+
+.. code-block:: python
+
+    >>> import scipy.ndimage
+    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]*4))
+    >>> image_stack.axes_manager[1].name = "x"
+    >>> image_stack.axes_manager[2].name = "y"
+    >>> angles = signals.Signal(np.array([0, 45, 90, 135]))
+    >>> angles.axes_manager.set_signal_dimension(0)
+    >>> modes = signals.Signal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
+    >>> modes.axes_manager.set_signal_dimension(0)
+    >>> image_stack.apply_function(scipy.ndimage.rotate,
+    ...                            angle=angles,
+    ...                            reshape=False,
+    ...                            mode=modes)
+    calculating 100% |#############################################| ETA:  00:00:00Cropping
+
+.. figure::  images/rotate_lena_apply_ndkwargs.png
+  :align:   center
+  :width:   500    
 
 Cropping
 ^^^^^^^^
 
-Cropping can be performed in a very compact and powerful way using 
-:ref:`signal.indexing` . In addition it can be performed using the 
-following method or GUIs if cropping :ref:`spectra <>` or 
-:ref:`images <>`
-
-* :py:meth:`~.signal.Signal.crop`
+Cropping can be performed in a very compact and powerful way using
+:ref:`signal.indexing` . In addition it can be performed using the following
+method or GUIs if cropping :ref:`spectra <spectrum.crop>` or :ref:`images
+<image.crop>`. There is also a general :py:meth:`~.signal.Signal.crop`
+method that operates *in place*.
 
 Rebinning
 ^^^^^^^^^
