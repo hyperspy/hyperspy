@@ -1,75 +1,78 @@
-gui Package
-===========
+hyperspy.gui package
+====================
 
-:mod:`gui` Package
-------------------
+Submodules
+----------
 
-.. automodule:: hyperspy.gui
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`axes` Module
-------------------
+hyperspy.gui.axes module
+------------------------
 
 .. automodule:: hyperspy.gui.axes
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`eds` Module
------------------
+hyperspy.gui.eds module
+-----------------------
 
 .. automodule:: hyperspy.gui.eds
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`eels` Module
-------------------
+hyperspy.gui.eels module
+------------------------
 
 .. automodule:: hyperspy.gui.eels
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`egerton_quantification` Module
-------------------------------------
+hyperspy.gui.egerton_quantification module
+------------------------------------------
 
 .. automodule:: hyperspy.gui.egerton_quantification
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`main_window` Module
--------------------------
+hyperspy.gui.main_window module
+-------------------------------
 
 .. automodule:: hyperspy.gui.main_window
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`messages` Module
-----------------------
+hyperspy.gui.messages module
+----------------------------
 
 .. automodule:: hyperspy.gui.messages
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`preferences` Module
--------------------------
+hyperspy.gui.preferences module
+-------------------------------
 
 .. automodule:: hyperspy.gui.preferences
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`tools` Module
--------------------
+hyperspy.gui.tools module
+-------------------------
 
 .. automodule:: hyperspy.gui.tools
     :members:
     :undoc-members:
     :show-inheritance:
 
+
+Module contents
+---------------
+
+.. automodule:: hyperspy.gui
+    :members:
+    :undoc-members:
+    :show-inheritance:

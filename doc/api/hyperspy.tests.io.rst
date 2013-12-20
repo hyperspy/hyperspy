@@ -1,43 +1,46 @@
-io Package
-==========
+hyperspy.tests.io package
+=========================
 
-:mod:`io` Package
------------------
+Submodules
+----------
 
-.. automodule:: hyperspy.tests.io
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`generate_dm_testing_files` Module
----------------------------------------
+hyperspy.tests.io.generate_dm_testing_files module
+--------------------------------------------------
 
 .. automodule:: hyperspy.tests.io.generate_dm_testing_files
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`test_dm3` Module
-----------------------
+hyperspy.tests.io.test_dm3 module
+---------------------------------
 
 .. automodule:: hyperspy.tests.io.test_dm3
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`test_dm4` Module
-----------------------
+hyperspy.tests.io.test_dm4 module
+---------------------------------
 
 .. automodule:: hyperspy.tests.io.test_dm4
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`test_msa` Module
-----------------------
+hyperspy.tests.io.test_msa module
+---------------------------------
 
 .. automodule:: hyperspy.tests.io.test_msa
     :members:
     :undoc-members:
     :show-inheritance:
 
+
+Module contents
+---------------
+
+.. automodule:: hyperspy.tests.io
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -22,123 +22,117 @@ import numpy as np
 
 from nose.tools import assert_true, assert_equal, assert_not_equal
 from hyperspy.signals import EELSSpectrum
-from hyperspy.components import VolumePlasmonDrude, Lorentzian 
+from hyperspy.components import VolumePlasmonDrude, Lorentzian
+from hyperspy.misc.eels.tools import eels_constant
+from hyperspy.hspy import *
 
 class Test1D:
     def setUp(self):
-        """ To test the kramers_kronig_transform we will generate 3
+        """To test the kramers_kronig_analysis we will generate 3
         EELSSpectrum instances. First a model energy loss function(ELF),
-        in our case following the Drude bulk plasmon peak. Second, we 
+        in our case following the Drude bulk plasmon peak. Second, we
         simulate the inelastic scattering to generate a model scattering
-        distribution (SPC). Finally, we use a lorentzian peak with 
+        distribution (SPC). Finally, we use a lorentzian peak with
         integral equal to 1 to simulate a ZLP.
-        """
-        # Create an empty spectrum
-        s = EELSSpectrum(np.zeros((32,2048)))
-        s.set_microscope_parameters(
-                    beam_energy=300.0,
-                    convergence_angle=14.0,
-                    collection_angle=10.0)
-        # Duplicate it
-        z = s.deepcopy()
-        ejeE = s.axes_manager.signal_axes[0]
-        ejeE.scale = 0.02
 
-        ejeE_z = z.axes_manager.signal_axes[0]
-        ejeE_z.scale = ejeE.scale
-        ejeE_z.offset = -10
+        """
+
+        # Parameters
+        i0 = 1.
+        t = signals.Signal(np.arange(10, 70, 10).reshape((2, 3))) # thickness
+        t.axes_manager.set_signal_dimension(0)
+        scale = 0.02
+
+        # Create an 3x2x2048 spectrum with Drude plasmon
+        s = EELSSpectrum(np.zeros((2, 3, 2*2048)))
+        s.set_microscope_parameters(
+            beam_energy=300.0,
+            convergence_angle=5,
+            collection_angle=10.0)
+        s.axes_manager.signal_axes[0].scale = scale
+        k = eels_constant(s, i0, t)
 
         vpm = VolumePlasmonDrude()
-        zlp = Lorentzian()
+        m = create_model(s, auto_background=False)
+        m.append(vpm)
+        vpm.intensity.map['values'][:] = 1
+        vpm.plasmon_energy.map['values'] = np.array([[8., 18.4, 15.8],
+                                                     [16.6, 4.3, 3.7]])
+        vpm.plasmon_linewidth.map['values'] = np.array([[2.3, 4.8, 0.53],
+                                                        [3.7, 0.3, 0.3]])
+        vpm.intensity.map['is_set'][:] = True
+        vpm.plasmon_energy.map['is_set'][:] = True
+        vpm.plasmon_linewidth.map['is_set'][:] = True
+        s.data = (m.as_signal() * k).data * scale
 
-        zlp.A.value = 1.0
+        # Create ZLP
+        z = s.deepcopy()
+        z.axes_manager.signal_axes[0].scale = scale
+        z.axes_manager.signal_axes[0].offset = -10
+        zlp = Lorentzian()
+        zlp.A.value = i0
         zlp.gamma.value = 0.2
         zlp.centre.value = 0.0
+        z.data[:] = zlp.function(z.axes_manager[-1].axis).reshape((1, 1, -1))
+        z.data *= scale
+        self.s = s
+        self.thickness = t
+        self.k = k
+        self.zlp = z
 
-        rnd=np.random.random
-        ij=s.axes_manager
-        vpm.intensity.value = 1.0
-        vpm.plasmon_linewidth.value = 2.0
-        
-        # angular correction (energy dependent integral)
-        me=511.06        # Electron rest mass in [keV/c2]
-        e0=s.mapped_parameters.TEM.beam_energy 
-        beta=s.mapped_parameters.TEM.EELS.collection_angle *1e-3
-        tgt=e0*(2*me+e0)/(me+e0)
-        thetaE=(ejeE.axis+1e-3) / (tgt * 1e3)
-        angular_correction = np.log(1+(beta/thetaE)**2)
-
-        # thickness and kinetic (constant correction)
-        thk=50 # the film is 50 nm thick!
-        t=e0*(1+e0/2/me)/(1+e0/me)**2
-        bohr=5.292e-2  # bohradius [nm]
-        pi= 3.141592654   # Pi
-        constant_correction = thk / (2*pi*bohr*t*1e3)
-
-        correction = angular_correction * constant_correction
-        
-        elf = s.deepcopy()
-        for i in enumerate(s):
-            vpm.plasmon_energy.value = 10 + (rnd() - 0.5) * 5
-            # The ZLP
-            elf.data[ij.coordinates] = vpm.function(ejeE.axis)
-            s.data[ij.coordinates] = vpm.function(ejeE.axis) * correction
-            z.data[ij.coordinates] = zlp.function(ejeE_z.axis)
-        
-        self.signal = {'ELF': elf, 'SPC': s, 'ZLP': z}
-        
-    def test_01(self):
-        """ The kramers kronig transform method applied to the signal we
+    def test_df_given_n(self):
+        """The kramers kronig analysis method applied to the signal we
         have just designed above will return the CDF for the Drude bulk
         plasmon. Hopefully, we recover the signal by inverting the CDF.
+
         """
-        items = self.signal
-        elf = items['ELF']
-        spc = items['SPC']
-        zlp = items['ZLP']
         # i use n=1000 to simulate a metal (enormous n)
-        cdf=spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.)[0]
-        assert_true(np.allclose(np.imag(-1/cdf.data),elf.data,rtol=0.1))
-        
-    def test_02(self):
-        """ After obtaining the CDF from KKA of the input Drude model, 
-        we can calculate the two Bethe f-sum rule integrals: one for 
-        imag(CDF) and other for imag(-1/CDF).
-        
-        First condition: neff(imag(-1/CDF)) and neff(imag(CDF)) should 
-        have close values (nearly equal at higher energies).
+        cdf = self.s.kramers_kronig_analysis(zlp=self.zlp,
+                                             iterations=1,
+                                             n=1000.)
+        assert_true(np.allclose(np.imag(-1 / cdf.data),
+                                (self.s / self.k).data,
+                                rtol=0.01))
+
+    def test_df_given_thickness(self):
+        """The kramers kronig analysis method applied to the signal we
+        have just designed above will return the CDF for the Drude bulk
+        plasmon. Hopefully, we recover the signal by inverting the CDF.
+
         """
-        items = self.signal
-        elf = items['ELF']
-        spc = items['SPC']
-        zlp = items['ZLP']
-        cdf, thk = spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.)
-        neff1 = elf.bethe_f_sum()
-        neff2 = cdf.bethe_f_sum()
-        assert_true(np.allclose(neff1.data,neff2.data,rtol = 0.2))
-        
-    def test_03(self): 
-        """ Second condition: neff1 should remain less than neff2.
-        items = self.signal"""
-        items = self.signal
-        elf = items['ELF']
-        spc = items['SPC']
-        zlp = items['ZLP']
-        cdf, thk =spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.)
-        # the crop is because there is an overestimation of the plasmon tail
-        elf.crop_spectrum(None,10.)
-        cdf.crop_spectrum(None,10.)
-        neff1 = elf.bethe_f_sum()
-        neff2 = cdf.bethe_f_sum()
-        assert_true(np.alltrue((neff2.data-neff1.data) >= 0)) 
-        
-    def test_04(self): 
-        """ Kramers kronig analysis gives a rough estimation of sample
-        thickness. As we have predefined sample thickness for our 
-        scattering distribution, we can use it for testing putposes."""
-        items = self.signal
-        spc = items['SPC']
-        zlp = items['ZLP']
-        cdf,thk=spc.kramers_kronig_transform(zlp=zlp,iterations=1,n=1000.)
-        thk0 = 50. * np.ones(len(thk.data))
-        assert_true(np.allclose(thk0, thk.data, rtol=1.)) 
+        cdf = self.s.kramers_kronig_analysis(zlp=self.zlp,
+                                             iterations=1,
+                                             t=self.thickness)
+        assert_true(np.allclose(np.imag(-1/cdf.data),
+                                (self.s / self.k).data,
+                                rtol=0.01))
+
+    def test_bethe_sum_convergence_given_n(self):
+        """After obtaining the CDF from KKA of the input Drude model,
+        we can calculate the two
+
+        First condition: neff(imag(-1/CDF)) and neff(imag(CDF)) should
+        have close values (nearly equal at higher energies).
+
+        """
+
+        df = self.s.kramers_kronig_analysis(zlp=self.zlp,
+                                            iterations=1,
+                                            n=1000.)
+        neff1, neff2 = df.get_number_of_effective_electrons(nat=50e27,
+                                                            cumulative=False)
+        assert_true(np.all(neff1.data > neff2.data))
+
+    def test_thickness_estimation(self):
+        """Kramers kronig analysis gives a rough estimation of sample
+        thickness. As we have predefined sample thickness for our
+        scattering distribution, we can use it for testing putposes.
+
+        """
+        cdf, output = self.s.kramers_kronig_analysis(zlp=self.zlp,
+                                                     iterations=1,
+                                                     n=1000.,
+                                                     full_output=True)
+        assert_true(np.allclose(self.thickness.data,
+                                output['thickness'].data, rtol=0.01))
+
