@@ -628,3 +628,5 @@ def underline(line, character="-"):
 
     return line + "\n" + character*len(line)
 
+def without_nans(data):
+    return data[~np.isnan(data)] 
