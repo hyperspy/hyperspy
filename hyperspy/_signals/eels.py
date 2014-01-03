@@ -933,6 +933,12 @@ class EELSSpectrum(Spectrum):
         else:
             s = self.isig[0.:].deepcopy()
 
+        sorig = self.isig[0.:]
+        # Avoid singularity at 0
+        if s.axes_manager.signal_axes[0].axis[0] == 0:
+            s = s.isig[1:]
+            sorig = self.isig[1:]
+
         # Constants and units
         me = constants.value(
             'electron mass energy equivalent in MeV') * 1e3 # keV
@@ -953,9 +959,6 @@ class EELSSpectrum(Spectrum):
 
         axis = s.axes_manager.signal_axes[0]
         eaxis = axis.axis.copy()
-        if eaxis[0] == 0:
-            # Avoid singularity at E=0
-            eaxis[0] = 1e-10
 
         if isinstance(zlp, hyperspy.signal.Signal):
             if (zlp.axes_manager.navigation_dimension ==
@@ -988,7 +991,7 @@ class EELSSpectrum(Spectrum):
                                  'low-loss signal')
         # Slicer to get the signal data from 0 to axis.size
         slicer = s.axes_manager._get_data_slice(
-                [(axis.index_in_array, slice(None,axis.size)),])
+                [(axis.index_in_array, slice(None, axis.size)),])
 
         # Kinetic definitions
         ke = e0 * (1 + e0 / 2. / me) / (1 + e0 / me) ** 2
@@ -1020,7 +1023,6 @@ class EELSSpectrum(Spectrum):
                         axis.index_in_array, 0)])]
                     if full_output is True:
                         output['thickness'] = te
-                print K
             elif t is not None:
                 if zlp is None:
                     raise ValueError("The ZLP must be provided when the  "
@@ -1028,7 +1030,6 @@ class EELSSpectrum(Spectrum):
                 # normalize using the thickness
                 K = t * i0 / (332.5 * ke)
                 te = t
-                print K
 
             Im = Im / K
 
@@ -1073,19 +1074,18 @@ class EELSSpectrum(Spectrum):
                         beta / 1000. /
                         (beta ** 2 + axis.axis ** 2. / tgt ** 2))
                 Srfint = 2000 * K * adep * Srfelf / rk0 / te * axis.scale
-                s.data = self.isig[0.:].data - Srfint
+                s.data = sorig.data - Srfint
                 print 'Iteration number: ', io + 1, '/', iterations
                 if iterations == i0 + 1 and full_output is True:
-                    sp = self._deepcopy_with_new_data(Srfint)
+                    sp = sorig._deepcopy_with_new_data(Srfint)
                     sp.mapped_parameters.title += (
                         " estimated surface plasmon excitation.")
                     output['surface plasmon estimation'] = sp
                     del sp
                 del Srfint
 
+        eps = s._deepcopy_with_new_data(e1 + e2 * 1j)
         del s
-        eps = self.isig[0.:]._deepcopy_with_new_data()
-        eps.data = (e1 + e2 * 1j)
         eps.set_signal_type("DielectricFunction")
         eps.mapped_parameters.title = (self.mapped_parameters.title +
                                        'dielectric function '

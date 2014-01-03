@@ -90,8 +90,9 @@ class Test1D:
         cdf = self.s.kramers_kronig_analysis(zlp=self.zlp,
                                              iterations=1,
                                              n=1000.)
-        assert_true(np.allclose(np.imag(-1 / cdf.data),
-                                (self.s / self.k).data,
+        s = cdf.get_electron_energy_loss_spectrum(self.zlp, self.thickness)
+        assert_true(np.allclose(s.data,
+                                self.s.data[...,1:],
                                 rtol=0.01))
 
     def test_df_given_thickness(self):
@@ -103,25 +104,24 @@ class Test1D:
         cdf = self.s.kramers_kronig_analysis(zlp=self.zlp,
                                              iterations=1,
                                              t=self.thickness)
-        assert_true(np.allclose(np.imag(-1/cdf.data),
-                                (self.s / self.k).data,
+        s = cdf.get_electron_energy_loss_spectrum(self.zlp, self.thickness)
+        assert_true(np.allclose(s.data,
+                                self.s.data[...,1:],
                                 rtol=0.01))
 
-    def test_bethe_sum_convergence_given_n(self):
-        """After obtaining the CDF from KKA of the input Drude model,
-        we can calculate the two
-
-        First condition: neff(imag(-1/CDF)) and neff(imag(CDF)) should
-        have close values (nearly equal at higher energies).
-
-        """
-
+    def test_bethe_sum_rule(self):
         df = self.s.kramers_kronig_analysis(zlp=self.zlp,
                                             iterations=1,
                                             n=1000.)
         neff1, neff2 = df.get_number_of_effective_electrons(nat=50e27,
                                                             cumulative=False)
-        assert_true(np.all(neff1.data > neff2.data))
+        assert_true(np.allclose(neff1.data,
+                        np.array([[ 0.91187657,  4.72490711,  3.60594653],
+                                  [ 3.88077047,  0.26759741,  0.19813647]])))
+        assert_true(np.allclose(neff2.data,
+                        np.array([[ 0.91299039,  4.37469112,  3.41580094],
+                                  [ 3.64866394,  0.15693674,  0.11146413]])))
+
 
     def test_thickness_estimation(self):
         """Kramers kronig analysis gives a rough estimation of sample
