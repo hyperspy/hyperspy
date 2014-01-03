@@ -2687,7 +2687,7 @@ class Signal(MVA,
 
         """
 
-        self.data = file_data_dict['data']
+        self.data = np.asanyarray(file_data_dict['data'])
         if 'axes' not in file_data_dict:
             file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(
@@ -3715,7 +3715,10 @@ class Signal(MVA,
         Aside from the `bins` argument allowing a string specified how bins
         are computed, the parameters are the same as numpy.histogram().
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
         Parameters
         ----------
 
@@ -3775,6 +3778,7 @@ class Signal(MVA,
                                              " histogram")
         return hist_spec
 
+<<<<<<< HEAD
     def apply_function(self, function, **kwargs):
         """Apply a function to the signal data at all the coordinates.
 
@@ -3862,6 +3866,8 @@ class Signal(MVA,
                 pbar.next()
             pbar.finish()
 
+=======
+>>>>>>> master
     def copy(self):
         try:
             backup_plot = self._plot
