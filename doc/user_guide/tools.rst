@@ -724,10 +724,11 @@ Kramers-Kronig Analysis
 
 The single-scattering EEL spectrum is approximately related to the complex
 permittivity of the sample and can be estimated by Kramers-Kronig analysis.
-The :py:meth:`~._signals.eels.EELSSpectrum.kramers_kronig_analysis` inplements
-the Kramers-Kronig FFT method as in [Egerton2011]_. It can estimate the
-thickness if the refractive index is known and approximately correct for
-surface plasmon excitations in layers.
+The :py:meth:`~._signals.eels.EELSSpectrum.kramers_kronig_analysis` method
+inplements the Kramers-Kronig FFT method as in [Egerton2011]_ to estimate the
+complex dielectric funtion from a low-loss EELS spectrum. In addition, it can
+estimate the thickness if the refractive index is known and approximately
+correct for surface plasmon excitations in layers.
 
 .. _eds_tools-label:
 
@@ -796,6 +797,10 @@ The Bethe f-sum rule gives rise to two definitions of the effective number (see
 
    n_{\mathrm{eff2}}\left(\epsilon_{2}\right)=\frac{2\epsilon_{0}m_{0}}{\pi\hbar^{2}e^{2}n_{a}}\int_{0}^{E}E'\epsilon_{2}\left(E'\right)dE'
  
+where :math:`n_a` is the number of atoms (or molecules) per unit volume of the
+sample, :math:`\epsilon_0` is the vacuum permittivity, :math:`m_0` is the
+elecron mass and :math:`e` is the electron charge.
+
 The
 :py:meth:`~._signals.dielectric_function.DielectricFunction.get_number_of_effective_electrons`
 method computes both.
@@ -807,11 +812,15 @@ Compute the electron energy-loss signal
 
 The
 :py:meth:`~._signals.dielectric_function.DielectricFunction.get_electron_energy_loss_spectrum`
-"naively" computes the electron-energy loss spectrum from the dielectric
-function given the zero-loss peak (or its area) and the sample thickness using:
+"naively" computes the single-scattering electron-energy loss spectrum from the
+dielectric function given the zero-loss peak (or its integral) and the sample
+thickness using:
+
 .. math::
 
-   n_{\mathrm{eff1}}\left(-\Im\left(\epsilon^{-1}\right)\right)=\frac{2\epsilon_{0}m_{0}}{\pi\hbar^{2}e^{2}n_{a}}\int_{0}^{E}E'\Im\left(\frac{-1}{\epsilon}\right)dE'
-
-   n_{\mathrm{eff2}}\left(\epsilon_{2}\right)=\frac{2\epsilon_{0}m_{0}}{\pi\hbar^{2}e^{2}n_{a}}\int_{0}^{E}E'\epsilon_{2}\left(E'\right)dE'
- 
+    S\left(E\right)=\frac{2I_{0}t}{\pi
+    a_{0}m_{0}v^{2}}\ln\left[1+\left(\frac{\beta}{\theta(E)}\right)^{2}\right]\Im\left[\frac{-1}{\epsilon\left(E\right)}\right]
+     
+where :math:`I_0` is the zero-loss peak integral, :math:`t` the sample
+thickness, :math:`\beta` the collection angle and :math:`\theta(E)` the
+characteristic scattering angle.
