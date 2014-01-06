@@ -20,8 +20,8 @@ doc/_build/*
 doc/.build/*
 doc/user_guide/_build/*
 doc/user_guide/.build/*
+doc/api/*.rst
 setup/windows/requires/*
 setup/windows/reccomends/*
 doc/examples
 doc/gh-pages
-doc/api
