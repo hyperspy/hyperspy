@@ -101,15 +101,15 @@ def electron_range(element, beam_energy, rho='auto', tilt=0):
             np.power(beam_energy, 1.67) * math.cos(math.radians(tilt)))
 
 
-def density_from_composition(elements, compositions, compo_unit='at'):
-    """Return the density from the sample composition.
+def density_of_solution(elements, compositions, compo_unit='at'):
+    """Calculate the density a solution from its components.
 
     Parameters
     ----------
     elements: list of str
-        A list of element abbreviations, e.g. ['Al','Zn']
+        A list of element abbreviations, e.g. ['Al', 'Zn']
     compositions: list of float
-        The atomic composition of the sample e.g. [0.2,0.8]. The composition
+        The atomic composition of the sample e.g. [0.2, 0.8]. The composition
         is normalized.
 
     Returns
