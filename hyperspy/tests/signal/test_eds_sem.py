@@ -168,12 +168,12 @@ class Test_tools_bulk:
         s = self.signal
         mp = s.mapped_parameters
         elec_range = utils.eds.electron_range(mp.Sample.elements[0],
-            mp.SEM.beam_energy,rho='auto',tilt=mp.SEM.tilt_stage)
+            mp.SEM.beam_energy,density='auto',tilt=mp.SEM.tilt_stage)
         assert_equal(elec_range,0.41350651162374225)
 
         density = utils.eds.density_of_solution(mp.Sample.elements,[0.8,0.2])
         xr_range = utils.eds.xray_range(mp.Sample.Xray_lines[0],
-            mp.SEM.beam_energy,rho=density)
+            mp.SEM.beam_energy,density=density)
         assert_equal(xr_range,0.19002078834049554)
 
 

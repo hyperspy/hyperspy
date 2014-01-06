@@ -24,7 +24,7 @@ from hyperspy.misc.eds.elements import elements as elements_db
 import hyperspy.misc.units_converter as units_converter
 
 
-def xray_range(xray_line, beam_energy, rho='auto'):
+def xray_range(xray_line, beam_energy, density='auto'):
     '''Return the Anderson-Hasler X-ray range.
 
     Return the maximum range of X-ray generation in a pure bulk material.
@@ -35,7 +35,7 @@ def xray_range(xray_line, beam_energy, rho='auto'):
         The X-ray line, e.g. 'Al_Ka'
     beam_energy: float
         The energy of the beam in kV.
-    rho: {float, 'auto'}
+    density: {float, 'auto'}
         The density of the material in g/cm3. If 'auto', the density
         of the pure element is used.
 
@@ -54,15 +54,15 @@ def xray_range(xray_line, beam_energy, rho='auto'):
     '''
 
     element, line = utils_eds._get_element_and_line(xray_line)
-    if rho == 'auto':
-        rho = elements_db[element]['density']
+    if density == 'auto':
+        density = elements_db[element]['density']
     Xray_energy = elements_db[element]['Xray_energy'][line]
 
-    return 0.064 / rho * (np.power(beam_energy, 1.68) -
+    return 0.064 / density * (np.power(beam_energy, 1.68) -
                           np.power(Xray_energy, 1.68))
 
 
-def electron_range(element, beam_energy, rho='auto', tilt=0):
+def electron_range(element, beam_energy, density='auto', tilt=0):
     '''Return the Kanaya-Okayama electron range.
 
     Return the maximum electron range in a pure bulk material.
@@ -73,7 +73,7 @@ def electron_range(element, beam_energy, rho='auto', tilt=0):
         The element symbol, e.g. 'Al'.
     beam_energy: float
         The energy of the beam in keV.
-    rho: {float, 'auto'}
+    density: {float, 'auto'}
         The density of the material in g/cm3. If 'auto', the density of
         the pure element is used.
     tilt: float.
@@ -92,12 +92,12 @@ def electron_range(element, beam_energy, rho='auto', tilt=0):
 
     '''
 
-    if rho == 'auto':
-        rho = elements_db[element]['density']
+    if density == 'auto':
+        density = elements_db[element]['density']
     Z = elements_db[element]['Z']
     A = elements_db[element]['A']
 
-    return (0.0276 * A / np.power(Z, 0.89) / rho *
+    return (0.0276 * A / np.power(Z, 0.89) / density *
             np.power(beam_energy, 1.67) * math.cos(math.radians(tilt)))
 
 
