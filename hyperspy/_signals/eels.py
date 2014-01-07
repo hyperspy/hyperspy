@@ -853,7 +853,7 @@ class EELSSpectrum(Spectrum):
             is not None and the thickness estimation is not required. If `t`
             is not None, the ZLP is required to perform the normalization and
             if `t` is not None, the ZLP is required to calculate the thickness.
-            If the ZLP is the same for all spectra, the intengral of the ZLP
+            If the ZLP is the same for all spectra, the integral of the ZLP
             can be provided as a number. Otherwise, if the ZLP intensity is not
             the same for all spectra, it can be provided as i) a Signal
             of the same dimensions as the current signal containing the ZLP
@@ -923,8 +923,7 @@ class EELSSpectrum(Spectrum):
         .. [Egerton2011] Ray Egerton, "Electron Energy-Loss
            Spectroscopy in the Electron Microscope", Springer-Verlag, 2011.
 
-        """
-
+        """        
         output = {}
         if iterations == 1:
             # In this case s.data is not modified so there is no need to make
@@ -964,7 +963,7 @@ class EELSSpectrum(Spectrum):
             if (zlp.axes_manager.navigation_dimension ==
                 self.axes_manager.navigation_dimension):
                 if zlp.axes_manager.signal_dimension == 0:
-                    i0 = i0.data
+                    i0 = zlp.data
                 else:
                     i0 = zlp.data.sum(axis.index_in_array)
             else:
@@ -1030,7 +1029,7 @@ class EELSSpectrum(Spectrum):
                 # normalize using the thickness
                 K = t * i0 / (332.5 * ke)
                 te = t
-
+            te = te.reshape(np.insert(te.shape, axis.index_in_array, 1))
             Im = Im / K
 
             # Kramers Kronig Transform:
@@ -1070,13 +1069,13 @@ class EELSSpectrum(Spectrum):
                 #  A simulated surface plasmon is subtracted from the ELF
                 Srfelf = 4 * e2 / ((e1 + 1) ** 2 + e2 ** 2) - Im
                 adep = (tgt / (eaxis + delta) *
-                        np.arctan(beta * tgt / axis.axis) -
+                        np.arctan(beta * tgt / axis.axis) - \
                         beta / 1000. /
                         (beta ** 2 + axis.axis ** 2. / tgt ** 2))
-                Srfint = 2000 * K * adep * Srfelf / rk0 / te * axis.scale
+                Srfint = 2000 * K * adep * Srfelf / rk0 / te * axis.scale                
                 s.data = sorig.data - Srfint
                 print 'Iteration number: ', io + 1, '/', iterations
-                if iterations == i0 + 1 and full_output is True:
+                if iterations == io + 1 and full_output is True:
                     sp = sorig._deepcopy_with_new_data(Srfint)
                     sp.mapped_parameters.title += (
                         " estimated surface plasmon excitation.")
@@ -1099,7 +1098,7 @@ class EELSSpectrum(Spectrum):
             thickness.mapped_parameters.title = (
                 self.mapped_parameters.title + ' thickness '
                 '(calculated using Kramers-Kronig analysis)')
-            thickness.data = te
+            thickness.data = te.squeeze()
             output['thickness'] = thickness
         if full_output is False:
             return eps
