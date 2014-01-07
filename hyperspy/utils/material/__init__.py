@@ -1,7 +1,7 @@
 from hyperspy.misc.eds.elements import elements as elements_db
 
 
-def weight_to_atomic(elements, compo_wt):
+def weight_to_atomic(elements, weight_percent):
     """Convert weight percent (wt%) to atomic percent (at.%).
 
     Parameters
@@ -9,27 +9,27 @@ def weight_to_atomic(elements, compo_wt):
     elements: list of str
         A list of element abbreviations, e.g. ['Al','Zn']
 
-    compo_wt: list of float
+    weight_percent: list of float
         The weight fractions (composition) of the sample.
 
     Returns
     -------
-    compo_at : list
+    atomic_percent : list
         Composition in atomic percent.
 
     """
 
     tot = 0
     for i, element in enumerate(elements):
-        tot = tot + compo_wt[i] / elements_db[element]['A']
-    compo_at = []
+        tot = tot + weight_percent[i] / elements_db[element]['A']
+    atomic_percent = []
     for i, element in enumerate(elements):
-        compo_at.append( 100 * compo_wt[i] / elements_db[element]['A'] / tot)
+        atomic_percent.append( 100 * weight_percent[i] / elements_db[element]['A'] / tot)
 
-    return compo_at
+    return atomic_percent
 
 
-def atomic_to_weight(elements, compo_at):
+def atomic_to_weight(elements, atomic_percent):
     """Convert atomic percent to weight percent.
 
     Parameters
@@ -37,23 +37,23 @@ def atomic_to_weight(elements, compo_at):
     elements: list of str
         A list of element abbreviations, e.g. ['Al','Zn']
 
-    compo_at: list of float
+    atomic_percent: list of float
         The atomic fractions (composition) of the sample.
 
     Returns
     -------
-    compo_wt : composition in weight percent.
+    weight_percent : composition in weight percent.
 
     """
 
     tot = 0
     for i, element in enumerate(elements):
-        tot = tot + compo_at[i] * elements_db[element]['A']
-    compo_wt = []
+        tot = tot + atomic_percent[i] * elements_db[element]['A']
+    weight_percent = []
     for i, element in enumerate(elements):
-        compo_wt.append(100 * compo_at[i] * elements_db[element]['A'] / tot)
+        weight_percent.append(100 * atomic_percent[i] * elements_db[element]['A'] / tot)
 
-    return compo_wt
+    return weight_percent
 
 
 def density_of_mixture(elements, compositions, compo_unit='at'):
