@@ -623,3 +623,5 @@ def underline(line, character="-"):
 
     return line + "\n" + character*len(line)
 
+def closest_power_of_two(n):
+    return int(2 ** np.ceil(np.log2(n)))

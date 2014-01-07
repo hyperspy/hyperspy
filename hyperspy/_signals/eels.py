@@ -16,10 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import numbers
+
 import numpy as np
 import matplotlib.pyplot as plt
 import traits.api as t
-
+from scipy import constants
 
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.misc.eels.elements import elements as elements_db
@@ -31,13 +33,13 @@ from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.components import PowerLaw
-from hyperspy.misc.utils import isiterable
+from hyperspy.misc.utils import isiterable, closest_power_of_two
 
 
 
 class EELSSpectrum(Spectrum):
     _signal_type = "EELS"
-    
+
     def __init__(self, *args, **kwards):
         Spectrum.__init__(self, *args, **kwards)
         # Attributes defaults
@@ -51,10 +53,10 @@ class EELSSpectrum(Spectrum):
 
     def add_elements(self, elements, include_pre_edges=False):
         """Declare the elemental composition of the sample.
-        
-        The ionisation edges of the elements present in the current 
+
+        The ionisation edges of the elements present in the current
         energy range will be added automatically.
-        
+
         Parameters
         ----------
         elements : tuple of strings
@@ -62,21 +64,21 @@ class EELSSpectrum(Spectrum):
             in the form of a tuple. Meaning: add_elements(('C',)) will
             work, while add_elements(('C')) will NOT work.
         include_pre_edges : bool
-            If True, the ionization edges with an onset below the lower 
+            If True, the ionization edges with an onset below the lower
             energy limit of the SI will be incluided
-            
+
         Examples
         --------
-        
+
         >>> s = signals.EELSSpectrum(np.arange(1024))
         >>> s.add_elements(('C', 'O'))
         Adding C_K subshell
         Adding O_K subshell
-        
+
         Raises
         ------
         ValueError
-        
+
         """
         if not isiterable(elements) or isinstance(elements, basestring):
             raise ValueError(
@@ -90,24 +92,24 @@ class EELSSpectrum(Spectrum):
                 self.elements.add(element)
             else:
                 raise ValueError(
-                    "%s is not a valid symbol of a chemical element" 
+                    "%s is not a valid symbol of a chemical element"
                     % element)
         if not hasattr(self.mapped_parameters, 'Sample'):
             self.mapped_parameters.add_node('Sample')
         self.mapped_parameters.Sample.elements = list(self.elements)
         if self.elements:
             self.generate_subshells(include_pre_edges)
-        
+
     def generate_subshells(self, include_pre_edges=False):
-        """Calculate the subshells for the current energy range for the 
+        """Calculate the subshells for the current energy range for the
         elements present in self.elements
-         
+
         Parameters
         ----------
         include_pre_edges : bool
-            If True, the ionization edges with an onset below the lower 
+            If True, the ionization edges with an onset below the lower
             energy limit of the SI will be incluided
-            
+
         """
         Eaxis = self.axes_manager.signal_axes[0].axis
         if not include_pre_edges:
@@ -129,19 +131,19 @@ class EELSSpectrum(Spectrum):
                             self.subshells.add(
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
-                    
+
     def estimate_zero_loss_peak_centre(self,
                                        calibrate=True,
                                        also_apply_to=None):
-        """Returns the average position over all spectra of the maximum 
+        """Returns the average position over all spectra of the maximum
         intensity feature that, in most low-loss EELS spectra, it corresponds
         to the zero-loss peak centre.
-        
+
         By default it also modifies the offset of the spectral axis so that
         the average position of the zero-loss peak becomes zero.
-         
-         
-        
+
+
+
         Parameters
         ----------
         calibrate : bool
@@ -150,15 +152,15 @@ class EELSSpectrum(Spectrum):
         also_apply_to : None or list of EELSSPectrum
             If a list of signals is provided and `calibrate` is True,
             the same offset transformation is applied to all the other signals.
-            
+
         Returns
         -------
         vmax : float
             The average position over all spectra of the zero-loss peak.
-            
+
         """
         self._check_signal_dimension_equals_one()
-        axis = self.axes_manager.signal_axes[0] 
+        axis = self.axes_manager.signal_axes[0]
         imax = float(np.mean(np.argmax(self.data, axis.index_in_array)))
         vmax = axis.offset + imax*axis.axes_manager[-1].scale
         if calibrate is True:
@@ -167,44 +169,44 @@ class EELSSpectrum(Spectrum):
             for sync_signal in also_apply_to:
                 sync_signal.axes_manager.signal_axes[0].offset -=vmax
         return vmax
-    
+
     def estimate_elastic_scattering_intensity(self,
                                               threshold=None,):
-        """Rough estimation of the elastic scattering intensity by 
+        """Rough estimation of the elastic scattering intensity by
         truncation of a EELS low-loss spectrum.
-        
+
         Parameters
         ----------
         threshold : {Signal, float, int}
-            Truncation energy to estimate the intensity of the 
+            Truncation energy to estimate the intensity of the
             elastic scattering. The
-            threshold can be provided as a signal of the same dimension 
-            as the input spectrum navigation space containing the 
-            threshold value in the energy units. Alternatively a constant 
-            threshold can be specified in energy/index units by passing 
+            threshold can be provided as a signal of the same dimension
+            as the input spectrum navigation space containing the
+            threshold value in the energy units. Alternatively a constant
+            threshold can be specified in energy/index units by passing
             float/int.
-            
+
         Returns
         -------
         I0: Signal
-            The elastic scattering intensity. If the navigation size is 0 
-            returns a float. Otherwise it returns a Spectrum, Image or a 
-            Signal, depending on the currenct spectrum navigation 
+            The elastic scattering intensity. If the navigation size is 0
+            returns a float. Otherwise it returns a Spectrum, Image or a
+            Signal, depending on the currenct spectrum navigation
             dimensions.
-            
+
         See Also
         --------
         estimate_elastic_scattering_threshold
-            
+
         """
         # TODO: Write units tests
         self._check_signal_dimension_equals_one()
-        
+
         if isinstance(threshold, float):
             I0 = self.isig[:threshold].integrate_simpson(-1)
             I0.axes_manager.set_signal_dimension(
                                 min(2, self.axes_manager.navigation_dimension))
-        
+
         else:
             bk_threshold_navigate = (
                 threshold.axes_manager._get_axis_attribute_values('navigate'))
@@ -240,37 +242,37 @@ class EELSSpectrum(Spectrum):
             I0.tmp_parameters.extension = \
                 self.tmp_parameters.extension
         return I0
-    
+
     def estimate_elastic_scattering_threshold(self,
                                               window=10.,
                                               tol=None,
                                               number_of_points=5,
                                               polynomial_order=3,
                                               start=1.):
-        """Calculates the first inflexion point of the spectrum derivative 
+        """Calculates the first inflexion point of the spectrum derivative
         within a window using a specified tolerance.
-        
-        It previously smoothes the data using a Savitzky-Golay algorithm 
-        (can be turned off). This method assumes that the zero-loss peak is 
+
+        It previously smoothes the data using a Savitzky-Golay algorithm
+        (can be turned off). This method assumes that the zero-loss peak is
         located at position zero in all the spectra.
-        
+
         Parameters
         ----------
-           
+
         window : {None, float}
-            If None, the search for the local minimum is performed 
+            If None, the search for the local minimum is performed
             using the full energy range. A positive float will restrict
             the search to the (0,window] energy window, where window is given
             in the axis units. If no inflexion point is found in this
             spectral range the window value is returned instead.
         tol : {None, float}
-            The threshold tolerance for the derivative. If "auto" it is 
-            automatically calculated as the minimum value that guarantees 
+            The threshold tolerance for the derivative. If "auto" it is
+            automatically calculated as the minimum value that guarantees
             finding an inflexion point in all the spectra in given energy
             range.
         number_of_points : int
-            If non zero performs order three Savitzky-Golay smoothing 
-            to the data to avoid falling in local minima caused by 
+            If non zero performs order three Savitzky-Golay smoothing
+            to the data to avoid falling in local minima caused by
             the noise.
         polynomial_order : int
             Savitzky-Golay filter polynomial order.
@@ -278,17 +280,17 @@ class EELSSpectrum(Spectrum):
             Position from the zero-loss peak centre from where to start
             looking for the inflexion point.
 
-            
+
         Returns
         -------
         threshold : Signal
-            A Signal of the same dimension as the input spectrum 
+            A Signal of the same dimension as the input spectrum
             navigation space containing the estimated threshold.
-            
+
         See Also
         --------
         align1D
-            
+
         """
         self._check_signal_dimension_equals_one()
         # Create threshold with the same shape as the navigation dims.
@@ -314,11 +316,11 @@ class EELSSpectrum(Spectrum):
         inflexion = (np.abs(s.data) <= tol).argmax(saxis.index_in_array)
         threshold.data[:] = saxis.offset + saxis.scale * inflexion
         threshold.data[inflexion==0] = np.nan
-        del s 
- 
+        del s
+
         # Create spectrum image, stop and return value
         threshold.mapped_parameters.title = (
-            self.mapped_parameters.title + 
+            self.mapped_parameters.title +
             ' ZLP threshold')
         if self.tmp_parameters.has_item('filename'):
             threshold.tmp_parameters.filename = (
@@ -330,55 +332,55 @@ class EELSSpectrum(Spectrum):
         threshold.axes_manager.set_signal_dimension(
                                 min(2, self.axes_manager.navigation_dimension))
         return threshold
-        
+
     def estimate_thickness(self,
                            zlp=None,
                            threshold=None,):
-        """Estimates the thickness (relative to the mean free path) 
+        """Estimates the thickness (relative to the mean free path)
         of a sample using the log-ratio method.
-        
+
         The current EELS spectrum must be a low-loss spectrum containing
-        the zero-loss peak. The hyperspectrum must be well calibrated 
-        and aligned. 
-        
+        the zero-loss peak. The hyperspectrum must be well calibrated
+        and aligned.
+
         Parameters
         ----------
         zlp : {None, EELSSpectrum}
             If not None the zero-loss
             peak intensity is calculated from the ZLP spectrum
-            supplied by integration using Simpson's rule. If None estimates 
-            the zero-loss peak intensity using 
+            supplied by integration using Simpson's rule. If None estimates
+            the zero-loss peak intensity using
             `estimate_elastic_scattering_intensity` by truncation.
-            
+
         threshold : {Signal, float, int}
-            Truncation energy to estimate the intensity of the 
+            Truncation energy to estimate the intensity of the
             elastic scattering. The
-            threshold can be provided as a signal of the same dimension 
-            as the input spectrum navigation space containing the 
-            threshold value in the energy units. Alternatively a constant 
-            threshold can be specified in energy/index units by passing 
+            threshold can be provided as a signal of the same dimension
+            as the input spectrum navigation space containing the
+            threshold value in the energy units. Alternatively a constant
+            threshold can be specified in energy/index units by passing
             float/int.
-            
-            
+
+
         Returns
         -------
         s : Signal
-            The thickness relative to the MFP. It returns a Spectrum, 
-            Image or a Signal, depending on the currenct spectrum navigation 
+            The thickness relative to the MFP. It returns a Spectrum,
+            Image or a Signal, depending on the currenct spectrum navigation
             dimensions.
-            
+
         Notes
-        -----        
-        For details see: Egerton, R. Electron Energy-Loss 
+        -----
+        For details see: Egerton, R. Electron Energy-Loss
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
-        
+
         """
         # TODO: Write units tests
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         total_intensity = self.integrate_simpson(axis.index_in_array).data
         if zlp is not None:
-            I0 = zlp.integrate_simpson(axis.index_in_array).data 
+            I0 = zlp.integrate_simpson(axis.index_in_array).data
         else:
             I0 = self.estimate_elastic_scattering_intensity(
                                     threshold=threshold,).data
@@ -386,7 +388,7 @@ class EELSSpectrum(Spectrum):
         t_over_lambda = np.log(total_intensity / I0)
         s = self._get_navigation_signal()
         s.data = t_over_lambda
-        s.mapped_parameters.title = (self.mapped_parameters.title + 
+        s.mapped_parameters.title = (self.mapped_parameters.title +
             ' $\\frac{t}{\\lambda}$')
         if self.tmp_parameters.has_item('filename'):
             s.tmp_parameters.filename = (
@@ -396,13 +398,13 @@ class EELSSpectrum(Spectrum):
             s.tmp_parameters.extension = \
                 self.tmp_parameters.extension
         return s
-                
+
     def fourier_log_deconvolution(self,
                                   zlp,
                                   add_zlp=False,
                                   crop=False):
         """Performs fourier-log deconvolution.
-        
+
         Parameters
         ----------
         zlp : EELSSpectrum
@@ -412,29 +414,29 @@ class EELSSpectrum(Spectrum):
             If True, adds the ZLP to the deconvolved spectrum
         crop : bool
             If True crop the spectrum to leave out the channels that
-            have been modified to decay smoothly to zero at the sides 
+            have been modified to decay smoothly to zero at the sides
             of the spectrum.
-        
+
         Returns
         -------
         An EELSSpectrum containing the current data deconvolved.
-        
+
         Notes
-        -----        
-        For details see: Egerton, R. Electron Energy-Loss 
+        -----
+        For details see: Egerton, R. Electron Energy-Loss
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
-        
+
         """
         self._check_signal_dimension_equals_one()
-        s = self.deepcopy()        
-        zlp_size = zlp.axes_manager.signal_axes[0].size 
+        s = self.deepcopy()
+        zlp_size = zlp.axes_manager.signal_axes[0].size
         self_size = self.axes_manager.signal_axes[0].size
         tapped_channels = s.hanning_taper()
-        # Conservative new size to solve the wrap-around problem 
+        # Conservative new size to solve the wrap-around problem
         size = zlp_size + self_size -1
-        # Increase to the closest multiple of two to enhance the FFT 
+        # Increase to the closest power of two to enhance the FFT
         # performance
-        size = int(2 ** np.ceil(np.log2(size)))
+        size = closest_power_of_two(size)
 
         axis = self.axes_manager.signal_axes[0]
         z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
@@ -452,8 +454,8 @@ class EELSSpectrum(Spectrum):
             else:
                 s.data += zlp.data[s.axes_manager._get_data_slice(
                     [(axis.index_in_array, slice(None,self_size)),])]
-                    
-        s.mapped_parameters.title = (s.mapped_parameters.title + 
+
+        s.mapped_parameters.title = (s.mapped_parameters.title +
                                      ' after Fourier-log deconvolution')
         if s.tmp_parameters.has_item('filename'):
                 s.tmp_parameters.filename = (
@@ -470,34 +472,34 @@ class EELSSpectrum(Spectrum):
                                     extrapolate_lowloss=True,
                                     extrapolate_coreloss=True):
         """Performs Fourier-ratio deconvolution.
-        
+
         The core-loss should have the background removed. To reduce
          the noise amplication the result is convolved with a
-        Gaussian function.        
-        
+        Gaussian function.
+
         Parameters
         ----------
         ll: EELSSpectrum
             The corresponding low-loss (ll) EELSSpectrum.
-            
+
         fwhm : float or None
-            Full-width half-maximum of the Gaussian function by which 
-            the result of the deconvolution is convolved. It can be 
-            used to select the final SNR and spectral resolution. If 
+            Full-width half-maximum of the Gaussian function by which
+            the result of the deconvolution is convolved. It can be
+            used to select the final SNR and spectral resolution. If
             None, the FWHM of the zero-loss peak of the low-loss is
             estimated and used.
         threshold : {None, float}
-            Truncation energy to estimate the intensity of the 
+            Truncation energy to estimate the intensity of the
             elastic scattering. If None the threshold is taken as the
              first minimum after the ZLP centre.
         extrapolate_lowloss, extrapolate_coreloss : bool
             If True the signals are extrapolated using a power law,
-            
+
         Notes
-        -----        
-        For details see: Egerton, R. Electron Energy-Loss 
+        -----
+        For details see: Egerton, R. Electron Energy-Loss
         Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
-        
+
         """
         self._check_signal_dimension_equals_one()
         orig_cl_size = self.axes_manager.signal_axes[0].size
@@ -507,29 +509,29 @@ class EELSSpectrum(Spectrum):
                 extrapolation_size=100)
         else:
             cl = self.deepcopy()
-            
+
         if extrapolate_lowloss is True:
             ll = ll.power_law_extrapolation(
                 window_size=100,
                 extrapolation_size=100)
         else:
             ll = ll.deepcopy()
-        
+
         ll.hanning_taper()
         cl.hanning_taper()
 
-        ll_size = ll.axes_manager.signal_axes[0].size 
+        ll_size = ll.axes_manager.signal_axes[0].size
         cl_size = self.axes_manager.signal_axes[0].size
-        # Conservative new size to solve the wrap-around problem 
+        # Conservative new size to solve the wrap-around problem
         size = ll_size + cl_size -1
-        # Increase to the closest multiple of two to enhance the FFT 
+        # Increase to the closest multiple of two to enhance the FFT
         # performance
         size = int(2 ** np.ceil(np.log2(size)))
-        
+
         axis = ll.axes_manager.signal_axes[0]
         if fwhm is None:
             fwhm = float(ll.get_current_signal().estimate_peak_width()())
-            print("FWHM = %1.2f" % fwhm) 
+            print("FWHM = %1.2f" % fwhm)
 
         I0 = ll.estimate_elastic_scattering_intensity(
                                                 threshold=threshold)
@@ -538,7 +540,7 @@ class EELSSpectrum(Spectrum):
             I0_shape = list(I0.shape)
             I0_shape.insert(axis.index_in_array,1)
             I0 = I0.reshape(I0_shape)
-            
+
         from hyperspy.components import Gaussian
         g = Gaussian()
         g.sigma.value = fwhm / 2.3548
@@ -557,42 +559,42 @@ class EELSSpectrum(Spectrum):
                              axis=axis.index_in_array)
         cl.data *= I0
         cl.crop(-1,None,int(orig_cl_size))
-        cl.mapped_parameters.title = (self.mapped_parameters.title + 
+        cl.mapped_parameters.title = (self.mapped_parameters.title +
             ' after Fourier-ratio deconvolution')
         if cl.tmp_parameters.has_item('filename'):
                 cl.tmp_parameters.filename = (
                     self.tmp_parameters.filename +
                     'after_fourier_ratio_deconvolution')
         return cl
-            
-    def richardson_lucy_deconvolution(self,  psf, iterations=15, 
+
+    def richardson_lucy_deconvolution(self,  psf, iterations=15,
                                       mask=None):
-        """1D Richardson-Lucy Poissonian deconvolution of 
+        """1D Richardson-Lucy Poissonian deconvolution of
         the spectrum by the given kernel.
-    
+
         Parameters
         ----------
         iterations: int
-            Number of iterations of the deconvolution. Note that 
+            Number of iterations of the deconvolution. Note that
             increasing the value will increase the noise amplification.
         psf: EELSSpectrum
-            It must have the same signal dimension as the current 
-            spectrum and a spatial dimension of 0 or the same as the 
+            It must have the same signal dimension as the current
+            spectrum and a spatial dimension of 0 or the same as the
             current spectrum.
-            
+
         Notes:
         -----
-        For details on the algorithm see Gloter, A., A. Douiri, 
-        M. Tence, and C. Colliex. “Improving Energy Resolution of 
-        EELS Spectra: An Alternative to the Monochromator Solution.” 
+        For details on the algorithm see Gloter, A., A. Douiri,
+        M. Tence, and C. Colliex. “Improving Energy Resolution of
+        EELS Spectra: An Alternative to the Monochromator Solution.”
         Ultramicroscopy 96, no. 3–4 (September 2003): 385–400.
-        
+
         """
         self._check_signal_dimension_equals_one()
         ds = self.deepcopy()
         ds.data = ds.data.copy()
         ds.mapped_parameters.title += (
-            ' after Richardson-Lucy deconvolution %i iterations' % 
+            ' after Richardson-Lucy deconvolution %i iterations' %
                 iterations)
         if ds.tmp_parameters.has_item('filename'):
                 ds.tmp_parameters.filename += (
@@ -615,7 +617,7 @@ class EELSSpectrum(Spectrum):
             O = D.copy()
             for i in xrange(iterations):
                 first = np.convolve(kernel, O)[imax: imax + psf_size]
-                O = O * (np.convolve(kernel[::-1], 
+                O = O * (np.convolve(kernel[::-1],
                          D / first)[mimax: mimax + psf_size])
             s[:] = O
             j += 1
@@ -623,28 +625,27 @@ class EELSSpectrum(Spectrum):
                 pbar.update(j)
         if maxval > 0:
             pbar.finish()
-        
+
         return ds
 
-            
-    def _spikes_diagnosis(self, signal_mask=None, 
+    def _spikes_diagnosis(self, signal_mask=None,
                          navigation_mask=None):
-        """Plots a histogram to help in choosing the threshold for 
+        """Plots a histogram to help in choosing the threshold for
         spikes removal.
-        
+
         Parameters
         ----------
         signal_mask: boolean array
-            Restricts the operation to the signal locations not marked 
+            Restricts the operation to the signal locations not marked
             as True (masked)
         navigation_mask: boolean array
-            Restricts the operation to the navigation locations not 
+            Restricts the operation to the navigation locations not
             marked as True (masked).
-        
+
         See also
         --------
         spikes_removal_tool
-        
+
         """
         self._check_signal_dimension_equals_one()
         dc = self.data
@@ -658,24 +659,23 @@ class EELSSpectrum(Spectrum):
         plt.xlabel('Threshold')
         plt.ylabel('Counts')
         plt.draw()
-        
-        
-    def spikes_removal_tool(self,signal_mask=None, 
+
+    def spikes_removal_tool(self,signal_mask=None,
                             navigation_mask=None):
         """Graphical interface to remove spikes from EELS spectra.
 
         Parameters
         ----------
         signal_mask: boolean array
-            Restricts the operation to the signal locations not marked 
+            Restricts the operation to the signal locations not marked
             as True (masked)
         navigation_mask: boolean array
-            Restricts the operation to the navigation locations not 
+            Restricts the operation to the navigation locations not
             marked as True (masked)
 
         See also
         --------
-        _spikes_diagnosis, 
+        _spikes_diagnosis,
 
         """
         self._check_signal_dimension_equals_one()
@@ -684,13 +684,13 @@ class EELSSpectrum(Spectrum):
                            signal_mask=signal_mask)
         sr.edit_traits()
         return sr
-        
+
     def _are_microscope_parameters_missing(self):
         """Check if the EELS parameters necessary to calculate the GOS
-        are defined in mapped_parameters. If not, in interactive mode 
+        are defined in mapped_parameters. If not, in interactive mode
         raises an UI item to fill the values"""
         must_exist = (
-            'TEM.convergence_angle', 
+            'TEM.convergence_angle',
             'TEM.beam_energy',
             'TEM.EELS.collection_angle',)
         missing_parameters = []
@@ -713,15 +713,15 @@ class EELSSpectrum(Spectrum):
                 return True
         else:
             return False
-                
-    def set_microscope_parameters(self, beam_energy=None, 
+
+    def set_microscope_parameters(self, beam_energy=None,
             convergence_angle=None, collection_angle=None):
         """Set the microscope parameters that are necessary to calculate
         the GOS.
-        
-        If not all of them are defined, raises in interactive mode 
+
+        If not all of them are defined, raises in interactive mode
         raises an UI item to fill the values
-        
+
         beam_energy: float
             The energy of the electron beam in keV
         convengence_angle : float
@@ -740,11 +740,10 @@ class EELSSpectrum(Spectrum):
             mp.TEM.convergence_angle = convergence_angle
         if collection_angle is not None:
             mp.TEM.EELS.collection_angle = collection_angle
-        
+
         self._are_microscope_parameters_missing()
-                
-            
-    @only_interactive            
+
+    @only_interactive
     def _set_microscope_parameters(self):
         if self.mapped_parameters.has_item('TEM') is False:
             self.mapped_parameters.add_node('TEM')
@@ -767,46 +766,45 @@ class EELSSpectrum(Spectrum):
             if value != t.Undefined:
                 exec('self.mapped_parameters.%s = %s' % (key, value))
         self._are_microscope_parameters_missing()
-        
-            
+
     def power_law_extrapolation(self, window_size=20,
                                 extrapolation_size=1024,
                                 add_noise=False,
                                 fix_neg_r=False):
         """Extrapolate the spectrum to the right using a powerlaw
-        
-        
+
+
         Parameters
         ----------
         window_size : int
-            The number of channels from the right side of the 
-            spectrum that are used to estimate the power law 
-            parameters.        
+            The number of channels from the right side of the
+            spectrum that are used to estimate the power law
+            parameters.
         extrapolation_size : int
             Size of the extrapolation in number of channels
         add_noise : bool
             If True, add poissonian noise to the extrapolated spectrum.
         fix_neg_r : bool
-            If True, the negative values for the "components.PowerLaw" 
-            parameter r will be flagged and the extrapolation will be 
+            If True, the negative values for the "components.PowerLaw"
+            parameter r will be flagged and the extrapolation will be
             done with a constant zero-value.
-        
+
         Returns
         -------
         A new spectrum, with the extrapolation.
-            
+
         """
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         s = self.deepcopy()
         s.mapped_parameters.title += (
-            ' %i channels extrapolated' % 
+            ' %i channels extrapolated' %
                 extrapolation_size)
         if s.tmp_parameters.has_item('filename'):
                 s.tmp_parameters.filename += (
                     '_%i_channels_extrapolated' % extrapolation_size)
         new_shape = list(self.data.shape)
-        new_shape[axis.index_in_array] += extrapolation_size 
+        new_shape[axis.index_in_array] += extrapolation_size
         s.data = np.zeros((new_shape))
         s.get_dimensions_from_data()
         s.data[...,:axis.size] = self.data
@@ -825,331 +823,287 @@ class EELSSpectrum(Spectrum):
             s.axes_manager.signal_axes[0].axis[np.newaxis,axis.size:]**(
             -pl.r.map['values'][...,np.newaxis]))
         return s
-        
-    def kramers_kronig_transform(self, zlp=None, iterations=1, n=None, 
-                                t=None, delta=0.05):
-        """ Kramers-Kronig Transform method for calculating the complex
-        dielectric function from a single scattering distribution(SSD). 
-        Uses a FFT method explained in the book by Egerton (see Notes).
-        The SSD is an EELSSpectrum instance containing low-loss EELS 
-        only from sigle inelastic scattering event. 
-        
-        That means that, if present, all the elastic scattering, plural 
-        scattering and other spurious effects, would have to be 
-        subtracted/deconvolved or treated in any way whatsoever. 
-        
-        The internal loop is devised to subtract surface to vaccumm 
-        energy loss effects.
-        
+
+    def kramers_kronig_analysis(self,
+                                zlp=None,
+                                iterations=1,
+                                n=None,
+                                t=None,
+                                delta=0.5,
+                                full_output=False):
+        """Calculate the complex
+        dielectric function from a single scattering distribution (SSD) using
+        the Kramers-Kronig relations.
+
+        It uses the FFT method as in [Egerton2011]_.  The SSD is an
+        EELSSpectrum instance containing SSD low-loss EELS with no zero-loss
+        peak. The internal loop is devised to approximately subtract the
+        surface plasmon contribution supposing an unoxidized planar surface and
+        neglecting coupling between the surfaces. This method does not account
+        for retardation effects, instrumental broading and surface plasmon
+        excitation in particles.
+
+        Note that either refractive index or thickness are required.
+        If both are None or if both are provided an exception is raised.
+
         Parameters
         ----------
-        zlp: {None, float, Image, EELSSpectrum}
-            If None, zlp integral will not be used for normalization. 
-            In the case of a single float input, this number will be 
-            used as zlp integral for each input spectrum. 
-             An Image or numpy.ndarray class instance input of the same 
-            dimension as the input SSD navigation space will be used as 
-            ZLP integral for each point spectrum. 
-             Finally, an EELSSpectrum instance used as input 
-            will be used as if it contains the zero loss peak 
-            corresponding to each input SSD. See Notes for further info.
+        zlp: {None, number, Signal}
+            ZLP intensity. It is optional (can be None) if `t` is None and `n`
+            is not None and the thickness estimation is not required. If `t`
+            is not None, the ZLP is required to perform the normalization and
+            if `t` is not None, the ZLP is required to calculate the thickness.
+            If the ZLP is the same for all spectra, the intengral of the ZLP
+            can be provided as a number. Otherwise, if the ZLP intensity is not
+            the same for all spectra, it can be provided as i) a Signal
+            of the same dimensions as the current signal containing the ZLP
+            spectra for each location ii) a Signal of signal dimension 0
+            and navigation_dimension equal to the current signal containing the
+            integrated ZLP intensity.
         iterations: int
-            Number of the iterations for the internal loop. By default, 
-            set = 2.
+            Number of the iterations for the internal loop to remove the
+            surface plasmon contribution. If 1 the surface plasmon contribution
+            is not estimated and subtracted (the default is 1).
         n: {None, float}
-            The medium refractive index. Used for normalization of the 
-            SSD to obtain the energy loss function. "thk" is returned.
-        t: {None, float}
-            The sample thickness in nm. Used for normalization of the 
-            SSD to obtain the energy loss function. "thk" is not returned.
+            The medium refractive index. Used for normalization of the
+            SSD to obtain the energy loss function. If given the thickness
+            is estimated and returned. It is only required when `t` is None.
+        t: {None, number, Signal}
+            The sample thickness in nm. Used for normalization of the
+            SSD to obtain the energy loss function. It is only required when
+            `n` is None. If the thickness is the same for all spectra it can be
+            given by a number. Otherwise, it can be provided as a Signal with
+            signal dimension 0 and navigation_dimension equal to the current
+            signal.
         delta : float
-            A small number (0.05-0.2 eV) added to the energy axis in 
-            specific steps of the calculation (normalization by sum-rule
-            and surface loss correction) to improve stability.
+            A small number (0.1-0.5 eV) added to the energy axis in
+            specific steps of the calculation the surface loss correction to
+            improve stability.
+        full_output : bool
+            If True, return a dictionary that contains the estimated
+            thickness if `t` is None and the estimated surface plasmon
+            excitation and the spectrum corrected from surface plasmon
+            excitations if `iterations` > 1.
+
         Returns
         -------
-        eps: EELSSpectrum (complex)
-            The complex dielectric function results, 
+        eps: DielectricFunction instance
+            The complex dielectric function results,
                 $\epsilon = \epsilon_1 + i*\epsilon_2$,
-            contained in an EELSSpectrum made of complex numbers.
-        thk: Image (optional, see below)
-            Instance containing the sample thickness in nm calculated by 
-            normalization of the SSD (only returned) if the refractive 
-            index is included. 
+            contained in an DielectricFunction instance.
+        output: Dictionary (optional)
+            A dictionary of optional outputs with the following keys:
+
+            ``thickness``
+                The estimated  thickness in nm calculated by normalization of
+                the SSD (only when `t` is None)
+
+            ``surface plasmon estimation``
+               The estimated surface plasmon excitation (only if
+               `iterations` > 1.)
+
+        Raises
+        ------
+        ValuerError
+            If both `n` and `t` are undefined (None).
+        AttribureError
+            If the beam_energy or the collection angle are not defined in
+            mapped_parameters.
+
         Notes
-        -----        
-        1. For details see: Egerton, R. Electron Energy-Loss 
-        Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
-        2. Integral as in "ZLP integral" means not sum but real 
-        integral; taking into account energy per channel scale. E.g. the 
-        Signal method "integrate_simpson" gives a real integral.
-        3. Either refractive index or thickness have to be included for 
-        the normalization of the SSD. If none or both of the are 
-        included an error message is issued. 
+        -----
+        This method is based in Egerton's Matlab code [Egerton2011]_ with some
+        minor differences:
+
+        * The integrals are performed using the simpsom rule instead of using
+          a summation.
+        * The wrap-around problem when computing the ffts is workarounded by
+          padding the signal instead of substracting the reflected tail.
+
+        .. [Egerton2011] Ray Egerton, "Electron Energy-Loss
+           Spectroscopy in the Electron Microscope", Springer-Verlag, 2011.
+
         """
-        s = self.deepcopy()
-        
-        # TODO List
-         # n is fixed (must have possibility to be an image, line ...)
-         # Add tail correction capabilities (check Egerton code).
-        
-        
+
+        output = {}
+        if iterations == 1:
+            # In this case s.data is not modified so there is no need to make
+            # a deep copy.
+            s = self.isig[0.:]
+        else:
+            s = self.isig[0.:].deepcopy()
+
+        sorig = self.isig[0.:]
+        # Avoid singularity at 0
+        if s.axes_manager.signal_axes[0].axis[0] == 0:
+            s = s.isig[1:]
+            sorig = self.isig[1:]
+
         # Constants and units
-        me      = 511.06        # Electron rest mass in [keV/c2]
-        m0      = 9.11e-31      # e- mass [kg]
-        permi   = 8.854e-12     # Vaccum permittivity [F/m]
-        hbar    = 1.055e-34     # Reduced Plank constant [J·s]
-        c       = 2.998e8       # The fastest speed there is [m/s]
-        qe      = 1.602e-19     # Electron charge [C]
-        bohr    = 5.292e-2      # bohradius [nm]
-        pi      = 3.141592654   # Pi
-        
-        # Mapped params
-        e0   = s.mapped_parameters.TEM.beam_energy 
-        beta = s.mapped_parameters.TEM.EELS.collection_angle
+        me = constants.value(
+            'electron mass energy equivalent in MeV') * 1e3 # keV
+
+        # Mapped parameters
+        try:
+            e0 = s.mapped_parameters.TEM.beam_energy
+        except:
+            raise AttributeError("Please define the beam energy."
+                                 "You can do this e.g. by using the "
+                                 "set_microscope_parameters method")
+        try:
+            beta = s.mapped_parameters.TEM.EELS.collection_angle
+        except:
+            raise AttributeError("Please define the collection angle."
+                                 "You can do this e.g. by using the "
+                                 "set_microscope_parameters method")
+
         axis = s.axes_manager.signal_axes[0]
-        epc = axis.scale
-        s_size = axis.size
-        axisE = axis.axis
-        
-        # Zero Loss Intensity
-        if zlp is None:
-            i0 = self._get_navigation_signal().data
-            i0 += 1
-        elif isinstance(zlp, float):
-            i0 = self._get_navigation_signal().data
-            i0 = i0 + zlp
-        elif isinstance(zlp, np.ndarray):
-            i0 = self._get_navigation_signal().data
-            try:
-                i0 = i0 + zlp
-            except ValueError:
-                print 'ZLP-np.array input bad dimension'
-                return
-        elif isinstance(zlp, hyperspy.signals.EELSSpectrum):
-            if zlp.data.ndim == s.data.ndim:
-                i0 = zlp.data.sum(axis.index_in_array)*epc
+        eaxis = axis.axis.copy()
+
+        if isinstance(zlp, hyperspy.signal.Signal):
+            if (zlp.axes_manager.navigation_dimension ==
+                self.axes_manager.navigation_dimension):
+                if zlp.axes_manager.signal_dimension == 0:
+                    i0 = i0.data
+                else:
+                    i0 = zlp.data.sum(axis.index_in_array)
             else:
-                print 'ZLP-EELSSpectrum input bad dimension'
-                return
-        elif isinstance(zlp, hyperspy.signals.Image):
-            if zlp.data.ndim == s.data.ndim-1:
-                i0 = zlp.data
-            else:
-                print 'ZLP-Image input bad dimension'
-                return
-        else: 
-            print 'Zero loss peak input not recognized'
-            return
-        if len(i0) > 1:
+                raise ValueError('The ZLP signal dimensions are not '
+                                 'compatible with the dimensions of the '
+                                 'low-loss signal')
             i0 = i0.reshape(
                     np.insert(i0.shape, axis.index_in_array, 1))
-        # Slicer to get the signal data from 0 to s_size
+        elif isinstance(zlp, numbers.Number):
+            i0 = zlp
+        else:
+            raise ValueError('The zero-loss peak input is not valid.')
+
+        if isinstance(t, hyperspy.signal.Signal):
+            if (t.axes_manager.navigation_dimension ==
+                self.axes_manager.navigation_dimension) and (
+                t.axes_manager.signal_dimension == 0):
+                    t = t.data
+                    t = t.reshape(
+                            np.insert(t.shape, axis.index_in_array, 1))
+            else:
+                raise ValueError('The thickness signal dimensions are not '
+                                 'compatible with the dimensions of the '
+                                 'low-loss signal')
+        # Slicer to get the signal data from 0 to axis.size
         slicer = s.axes_manager._get_data_slice(
-                [(axis.index_in_array,slice(None,s_size)),])
-        
+                [(axis.index_in_array, slice(None, axis.size)),])
+
         # Kinetic definitions
-        ke=e0*(1+e0/2/me)/(1+e0/me)**2
-        tgt = e0*(2*me+e0)/(me+e0)
-        rk0 = 2590*(1+e0/me)*np.sqrt(2*ke/me)
-        
+        ke = e0 * (1 + e0 / 2. / me) / (1 + e0 / me) ** 2
+        tgt = e0 * (2 * me + e0) / (me + e0)
+        rk0 = 2590 * (1 + e0 / me) * np.sqrt(2 * ke / me)
+
         for io in range(iterations):
             # Calculation of the ELF by normalization of the SSD
             # Norm(SSD) = Imag(-1/epsilon) (Energy Loss Funtion, ELF)
-            I = s.data.sum(axis.index_in_array)
-            Im = s.data / (np.log(1+(beta*tgt/axisE)**2))
-            if (n is None) and (t is None):
-                print "Please give optical or thickness information \
-                        for the normalization of the SSD"
-                return
-            elif (n is not None) and (t is not None):
-                print "Please give optical OR thickness information \
-                        for the normalization of the SSD, not BOTH"
-                return
-            elif (n is not None) and isinstance(n, float):
-                # normalize using the refractive index *uses delta*
-                K = (Im[slicer]/(axisE+delta)).sum(axis.index_in_array)
-                K = (K/(pi/2)/(1-1/n**2)*epc).reshape(
+
+            # We start by the "angular corrections"
+            Im = s.data / (np.log(1 + (beta * tgt / eaxis) ** 2)) / axis.scale
+            if n is None and t is None:
+                raise ValueError("The thickness and the refractive index are "
+                                 "not defined. Please provide one of them.")
+            elif n is not None and t is not None:
+                raise ValueError("Please provide the refractive index OR the "
+                                 "thickness information, not both")
+            elif n is not None:
+                # normalize using the refractive index.
+                K = (Im / eaxis).sum(axis=axis.index_in_array) * axis.scale
+                K = (K / (np.pi / 2)/(1 - 1. / n ** 2)).reshape(
                     np.insert(K.shape, axis.index_in_array, 1))
-                te = 332.5*K*ke/i0
-            elif (t is not None) and isinstance(t, float):
+                # Calculate the thickness only if possible and required
+                if zlp is not None and (full_output is True or
+                                        iterations > 1):
+                    te = (332.5 * K * ke / i0)[
+                        self.axes_manager._get_data_slice([(
+                        axis.index_in_array, 0)])]
+                    if full_output is True:
+                        output['thickness'] = te
+            elif t is not None:
+                if zlp is None:
+                    raise ValueError("The ZLP must be provided when the  "
+                                     "thickness is used for normalization.")
                 # normalize using the thickness
-                K = t*i0 / (332.5*ke)
+                K = t * i0 / (332.5 * ke)
                 te = t
-            else:
-                print "Something is wrong with the normalization info \
-                       ¿is the n/t input parameter float type?"
-                return        
-            Im = (Im/K).astype('float32')
+
+            Im = Im / K
 
             # Kramers Kronig Transform:
-            #  We calculate KKT(Im(-1/epsilon))=1+Re(1/epsilon) with FFT
-            #  Follows: D W Johnson 1975 J. Phys. A: Math. Gen. 8 490
-            q = np.fft.fft(Im, 2*s_size, axis.index_in_array).astype('complex64')
-            q = - q.imag / s_size
-            q[slicer] = -q[slicer]
-            q = np.fft.fft(q, axis=axis.index_in_array).astype('complex64')
+            # We calculate KKT(Im(-1/epsilon))=1+Re(1/epsilon) with FFT
+            # Follows: D W Johnson 1975 J. Phys. A: Math. Gen. 8 490
+            # Use a size that is a power of two to speed up the fft and
+            # make it double the closest upper value to workaround the
+            # wrap-around problem.
+            esize = 2 * closest_power_of_two(axis.size)
+            q = -2 * np.fft.fft(Im, esize,
+                            axis.index_in_array).imag / esize
+
+            q[slicer] *= -1
+            q = np.fft.fft(q, axis=axis.index_in_array)
             # Final touch, we have Re(1/eps)
-            Re=q[slicer].real.astype('float32')
-            Re += 1
-        
-            # Egerton does this, but it is not needed the way we're fft'ing
-            #Re=real(q)
-            #Tail correction
-             #vm=Re[s_size-1]
-             #Re[:(s_size-1)]=Re[:(s_size-1)]+1-(0.5*vm*((s_size-1) / (s_size*2-arange(0,s_size-1)))**2)
-             #Re[s_size:]=1+(0.5*vm*((s_size-1) / (s_size+arange(0,s_size)))**2)
-            
+            Re = q[slicer].real + 1
+
+            # Egerton does this to correct the wrap-around problem, but in our
+            # case this is not necessary because we compute the fft on an
+            # extended and padded spectrum to avoid this problem.
+            # Re=real(q)
+            # Tail correction
+            # vm=Re[axis.size-1]
+            # Re[:(axis.size-1)]=Re[:(axis.size-1)]+1-(0.5*vm*((axis.size-1) /
+            #  (axis.size*2-arange(0,axis.size-1)))**2)
+            # Re[axis.size:]=1+(0.5*vm*((axis.size-1) /
+            #  (axis.size+arange(0,axis.size)))**2)
+
             # Epsilon appears:
             #  We calculate the real and imaginary parts of the CDF
-            e1 = Re / (Re**2+Im**2)
-            e2 = Im / (Re**2+Im**2)
-            
-            # Surface losses correction:
-            #  Calculates the surface ELF from a vaccumm border effect
-            #  A simulated surface plasmon is subtracted from the ELF
-            Srfelf = 4*e2 / ((e1+1)**2+e2**2) - Im
-            adep = tgt / (axisE+delta) * np.arctan(beta * tgt / axisE) - \
-                    beta/1000 / (beta**2+axisE**2/tgt**2)
-            Srfint = np.zeros(s.data.shape)
-            Srfint=2000*K*adep*Srfelf/rk0/te
-            s.data=self.data-Srfint
-            print 'Iteration number: ', io+1, '/', iterations
-            
-            
-        eps = self.deepcopy()
-        eps.data = (e1 + 1j*e2).astype('complex64')
-        
-        eps.mapped_parameters.title = (s.mapped_parameters.title + 
-                                         '_KKT_CDF')
+            e1 = Re / (Re ** 2 + Im ** 2)
+            e2 = Im / (Re ** 2 + Im ** 2)
+
+            if iterations > 1 and zlp is not None:
+                # Surface losses correction:
+                #  Calculates the surface ELF from a vaccumm border effect
+                #  A simulated surface plasmon is subtracted from the ELF
+                Srfelf = 4 * e2 / ((e1 + 1) ** 2 + e2 ** 2) - Im
+                adep = (tgt / (eaxis + delta) *
+                        np.arctan(beta * tgt / axis.axis) -
+                        beta / 1000. /
+                        (beta ** 2 + axis.axis ** 2. / tgt ** 2))
+                Srfint = 2000 * K * adep * Srfelf / rk0 / te * axis.scale
+                s.data = sorig.data - Srfint
+                print 'Iteration number: ', io + 1, '/', iterations
+                if iterations == i0 + 1 and full_output is True:
+                    sp = sorig._deepcopy_with_new_data(Srfint)
+                    sp.mapped_parameters.title += (
+                        " estimated surface plasmon excitation.")
+                    output['surface plasmon estimation'] = sp
+                    del sp
+                del Srfint
+
+        eps = s._deepcopy_with_new_data(e1 + e2 * 1j)
+        del s
+        eps.set_signal_type("DielectricFunction")
+        eps.mapped_parameters.title = (self.mapped_parameters.title +
+                                       'dielectric function '
+                                       '(from Kramers-Kronig analysis)')
         if eps.tmp_parameters.has_item('filename'):
                 eps.tmp_parameters.filename = (
                     self.tmp_parameters.filename +
                     '_CDF_after_Kramers_Kronig_transform')
-        if (n is not None):
-            thk_inst = eps._get_navigation_signal()
-            thk_inst.mapped_parameters.title = (s.mapped_parameters.title + 
-                                         '_KKT_Thk')
-            thk_inst.data = te.squeeze()
-        return (eps,thk_inst) if (n is not None) else eps
-        
-    def bethe_f_sum(self, nat=50e27):
-        """ Computes Bethe f-sum rule integrals related to the effective
-        valence electron number from the imaginary part of a complex 
-        signal (i.e. the complex dielectric function or its inverse, CDF
-        or -1/CDF). If a real function is used as input it will also 
-        compute the integral, as if this where the imaginary part of CDF 
-        or -1/CDF.
-        
-        Following Egerton 2011 (see "Notes").
-        
-        Parameters
-        ----------
-        nat: float
-            Number of atoms (or molecules) per unit volume of the 
-            sample.
-            
-        Returns
-        -------
-        neff: float, EELSSpectrum
-            Signal instance containing the bethe f-sum rule integral for 
-            the CDF or the ELF. It will have the same dimension minus 
-            one of the input CDF EELSSpectra.
-        
-        Notes
-        -----        
-        The expected behavior for near optical transitions (q~0) is that 
-        neff(ELF) (see "Returns" section) remains less than neff(CDF) at
-        low values of energy loss, but the two numbers converge to the 
-        same value at higher energy loss.
-        
-        For details see: Egerton, R. Electron Energy-Loss 
-        Spectroscopy in the Electron Microscope. Springer-Verlag, 2011.
-        """
-        m0 = 9.11e-31           # e- mass [kg]
-        permi = 8.854e-12       # Vaccum permittivity [F/m]
-        hbar = 1.055e-34        # Reduced Plank constant [J·s]
-        pi      = 3.141592654   # Pi
-        erre=2*permi*m0/(pi*hbar*hbar*nat);
-        axis = self.axes_manager.signal_axes[0]    
-        dum = axis.scale * erre
-        if self.data.imag.any(): 
-            # nEff(CDF) 
-            data=np.trapz(self.data.imag*axis.axis, 
-                                axis=axis.index_in_array)*dum
+        if 'thickness' in output:
+            thickness = eps._get_navigation_signal()
+            thickness.mapped_parameters.title = (
+                self.mapped_parameters.title + ' thickness '
+                '(calculated using Kramers-Kronig analysis)')
+            thickness.data = te
+            output['thickness'] = thickness
+        if full_output is False:
+            return eps
         else:
-            # nEff(ELF)
-            data=np.trapz(self.data*axis.axis, 
-                                axis=axis.index_in_array)*dum
-        neff = self._get_navigation_signal()
-        # Prepare return:
-        if neff is None:
-            return data
-        else:
-            neff.data = data
-            neff.mapped_parameters.title = (self.mapped_parameters.title + 
-                ' $n_{Eff}$')
-            if self.tmp_parameters.has_item('filename'):
-                neff.tmp_parameters.filename = (
-                    self.tmp_parameters.filename +
-                    '_Bethe_f-sum')
-                neff.tmp_parameters.folder = self.tmp_parameters.folder
-                neff.tmp_parameters.extension = \
-                    self.tmp_parameters.extension
-        return neff
+            return eps, output
 
-#    def build_SI_from_substracted_zl(self,ch, taper_nch = 20):
-#        """Modify the SI to have fit with a smoothly decaying ZL
-#        
-#        Parameters
-#        ----------
-#        ch : int
-#            channel index to start the ZL decay to 0
-#        taper_nch : int
-#            number of channels in which the ZL will decay to 0 from `ch`
-#        """
-#        sp = copy.deepcopy(self)
-#        dc = self.zl_substracted.data_cube.copy()
-#        dc[0:ch,:,:] *= 0
-#        for i in xrange(dc.shape[1]):
-#            for j in xrange(dc.shape[2]):
-#                dc[ch:ch+taper_nch,i,j] *= np.hanning(2 * taper_nch)[:taper_nch]
-#        sp.zl_substracted.data_cube = dc.copy()
-#        dc += self.zero_loss.data_cube
-#        sp.data_cube = dc.copy()
-#        return sp
-#        
-
-#        
-#    def correct_dual_camera_step(self, show_lev = False, mean_interval = 3, 
-#                                 pca_interval = 20, pcs = 2, 
-#                                 normalize_poissonian_noise = False):
-#        """Correct the gain difference in a dual camera using PCA.
-#        
-#        Parameters
-#        ----------
-#        show_lev : boolen
-#            Plot PCA lev
-#        mean_interval : int
-#        pca_interval : int
-#        pcs : int
-#            number of principal components
-#        normalize_poissonian_noise : bool
-#        """ 
-#        # The step is between pixels 1023 and 1024
-#        pw = pca_interval
-#        mw = mean_interval
-#        s = copy.deepcopy(self)
-#        s.energy_crop(1023-pw, 1023 + pw)
-#        s.decomposition(normalize_poissonian_noise)
-#        if show_lev:
-#            s.plot_lev()
-#            pcs = int(raw_input('Number of principal components? '))
-#        sc = s.get_decomposition_model(pcs)
-#        step = sc.data_cube[(pw-mw):(pw+1),:,:].mean(0) - \
-#        sc.data_cube[(pw+1):(pw+1+mw),:,:].mean(0)
-#        self.data_cube[1024:,:,:] += step.reshape((1, step.shape[0], 
-#        step.shape[1]))
-#        self._replot()
-#        return step
 
