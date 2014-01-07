@@ -1,5 +1,6 @@
-from hyperspy.misc.eds.elements import elements as elements_db
+import numpy as np
 
+from hyperspy.misc.eds.elements import elements as elements_db
 
 def weight_to_atomic(elements, weight_percent):
     """Convert weight percent (wt%) to atomic percent (at.%).
@@ -57,27 +58,36 @@ def atomic_to_weight(elements, atomic_percent):
     return weight_percent
 
 
-def density_of_mixture_of_pure_elements(elements, atomic_percent):
+def density_of_mixture_of_pure_elements(elements, weight_percent):
     """Calculate the density a mixture of elements.
 
-    The density of the elements is retrieved from an internal database.
+    The density of the elements is retrieved from an internal database. The
+    calculation is only valid if there is no interaction between the
+    components.
 
     Parameters
     ----------
     elements: list of str
         A list of element symbols, e.g. ['Al', 'Zn']
-    atomic_percent: list of float
+    weight_percent: list of float
 
     Returns
     -------
     density: The density in g/cm3.
 
-    """
+    Examples
+    --------
 
+    Calculate the density of modern bronze given its weight percent:
+    >>> density_of_mixture_of_pure_elements(("Cu", "Sn"), (88, 12))
+    8.6903187973131466i
+
+    """
+    weights = np.asarray(atomic_percent) / 100.
     density = 0
     for i, element in enumerate(elements):
-        density = density + elements_db[element]['density'] * weights[i]
-
+        density = density + weights[i] / elements_db[element]['density']
+    density = density ** -1
     return density
 
 
