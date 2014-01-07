@@ -3,8 +3,8 @@ import tempfile
 import numpy as np
 
 from hyperspy.misc.utils import DictionaryBrowser
-from hyperspy.utils import eds
 import hyperspy.utils.material
+import hyperspy.utils.eds
 
 def stack(signal_list, axis=None, new_axis_name='stack_element',
           mmap=False, mmap_dir=None,):
