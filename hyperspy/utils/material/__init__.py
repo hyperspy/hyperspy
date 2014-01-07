@@ -19,15 +19,11 @@ def weight_to_atomic(elements, weight_percent):
         Composition in atomic percent.
 
     """
-
-    tot = 0
-    for i, element in enumerate(elements):
-        tot = tot + weight_percent[i] / elements_db[element]['A']
-    atomic_percent = []
-    for i, element in enumerate(elements):
-        atomic_percent.append( 100 * weight_percent[i] / elements_db[element]['A'] / tot)
-
-    return atomic_percent
+    atomic_weights = np.array(
+        [elements_db[element]['A'] for element in elements])
+    atomic_percent = weight_percent / atomic_weights / (
+        weight_percent / atomic_weights).sum() * 100
+    return atomic_percent.tolist()
 
 
 def atomic_to_weight(elements, atomic_percent):
@@ -47,15 +43,12 @@ def atomic_to_weight(elements, atomic_percent):
 
     """
 
-    tot = 0
-    for i, element in enumerate(elements):
-        tot = tot + atomic_percent[i] * elements_db[element]['A']
-    weight_percent = []
-    for i, element in enumerate(elements):
-        weight_percent.append(
-            100 * atomic_percent[i] * elements_db[element]['A'] / tot)
+    atomic_weights = np.array(
+        [elements_db[element]['A'] for element in elements])
 
-    return weight_percent
+    weight_percent = atomic_percent * atomic_weights / (
+        atomic_percent * atomic_weights).sum() * 100
+    return weight_percent.tolist()
 
 
 def density_of_mixture_of_pure_elements(elements, weight_percent):
@@ -83,11 +76,9 @@ def density_of_mixture_of_pure_elements(elements, weight_percent):
     8.6903187973131466i
 
     """
-    weights = np.asarray(atomic_percent) / 100.
-    density = 0
-    for i, element in enumerate(elements):
-        density = density + weights[i] / elements_db[element]['density']
-    density = density ** -1
+    densities = np.array(
+        [elements_db[element]['density'] for element in elements])
+    density = (weight_percent / densities / 100).sum() ** -1
     return density
 
 
