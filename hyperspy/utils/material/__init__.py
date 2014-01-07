@@ -51,21 +51,22 @@ def atomic_to_weight(elements, atomic_percent):
         tot = tot + atomic_percent[i] * elements_db[element]['A']
     weight_percent = []
     for i, element in enumerate(elements):
-        weight_percent.append(100 * atomic_percent[i] * elements_db[element]['A'] / tot)
+        weight_percent.append(
+            100 * atomic_percent[i] * elements_db[element]['A'] / tot)
 
     return weight_percent
 
 
-def density_of_mixture(elements, compositions, compo_unit='at'):
-    """Calculate the density a solution from its components.
+def density_of_mixture_of_pure_elements(elements, atomic_percent):
+    """Calculate the density a mixture of elements.
+
+    The density of the elements is retrieved from an internal database.
 
     Parameters
     ----------
     elements: list of str
-        A list of element abbreviations, e.g. ['Al', 'Zn']
-    compositions: list of float
-        The atomic composition of the sample e.g. [0.2, 0.8]. The composition
-        is normalized.
+        A list of element symbols, e.g. ['Al', 'Zn']
+    atomic_percent: list of float
 
     Returns
     -------
@@ -73,10 +74,6 @@ def density_of_mixture(elements, compositions, compo_unit='at'):
 
     """
 
-    if compo_unit == 'at':
-        weights = atomic_to_weight(elements, compositions)
-    elif compo_unit == 'wt':
-        weights = np.array(compositions) / float(sum(compositions))
     density = 0
     for i, element in enumerate(elements):
         density = density + elements_db[element]['density'] * weights[i]
