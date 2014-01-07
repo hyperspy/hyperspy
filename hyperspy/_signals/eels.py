@@ -965,7 +965,7 @@ class EELSSpectrum(Spectrum):
                 if zlp.axes_manager.signal_dimension == 0:
                     i0 = zlp.data
                 else:
-                    i0 = zlp.data.sum(axis.index_in_array)
+                    i0 = zlp.data.sum(axis.index_in_array) * axis.scale
             else:
                 raise ValueError('The ZLP signal dimensions are not '
                                  'compatible with the dimensions of the '
@@ -1002,7 +1002,7 @@ class EELSSpectrum(Spectrum):
             # Norm(SSD) = Imag(-1/epsilon) (Energy Loss Funtion, ELF)
 
             # We start by the "angular corrections"
-            Im = s.data / (np.log(1 + (beta * tgt / eaxis) ** 2)) / axis.scale
+            Im = s.data / (np.log(1 + (beta * tgt / eaxis) ** 2)) 
             if n is None and t is None:
                 raise ValueError("The thickness and the refractive index are "
                                  "not defined. Please provide one of them.")
@@ -1022,6 +1022,7 @@ class EELSSpectrum(Spectrum):
                         axis.index_in_array, 0)])]
                     if full_output is True:
                         output['thickness'] = te
+                    te = te.reshape(np.insert(te.shape, axis.index_in_array, 1))
             elif t is not None:
                 if zlp is None:
                     raise ValueError("The ZLP must be provided when the  "
@@ -1029,7 +1030,7 @@ class EELSSpectrum(Spectrum):
                 # normalize using the thickness
                 K = t * i0 / (332.5 * ke)
                 te = t
-            te = te.reshape(np.insert(te.shape, axis.index_in_array, 1))
+                te = te.reshape(np.insert(te.shape, axis.index_in_array, 1))
             Im = Im / K
 
             # Kramers Kronig Transform:
