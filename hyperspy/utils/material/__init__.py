@@ -54,3 +54,33 @@ def atomic_to_weight(elements, compo_at):
         compo_wt.append(compo_at[i] * elements_db[element]['A'] / tot)
 
     return compo_wt
+
+
+def density_of_mixture(elements, compositions, compo_unit='at'):
+    """Calculate the density a solution from its components.
+
+    Parameters
+    ----------
+    elements: list of str
+        A list of element abbreviations, e.g. ['Al', 'Zn']
+    compositions: list of float
+        The atomic composition of the sample e.g. [0.2, 0.8]. The composition
+        is normalized.
+
+    Returns
+    -------
+    density: The density in g/cm3.
+
+    """
+
+    if compo_unit == 'at':
+        weights = atomic_to_weight(elements, compositions)
+    elif compo_unit == 'wt':
+        weights = np.array(compositions) / float(sum(compositions))
+    density = 0
+    for i, element in enumerate(elements):
+        density = density + elements_db[element]['density'] * weights[i]
+
+    return density
+
+

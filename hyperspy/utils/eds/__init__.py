@@ -101,34 +101,6 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
             np.power(beam_energy, 1.67) * math.cos(math.radians(tilt)))
 
 
-def density_of_solution(elements, compositions, compo_unit='at'):
-    """Calculate the density a solution from its components.
-
-    Parameters
-    ----------
-    elements: list of str
-        A list of element abbreviations, e.g. ['Al', 'Zn']
-    compositions: list of float
-        The atomic composition of the sample e.g. [0.2, 0.8]. The composition
-        is normalized.
-
-    Returns
-    -------
-    density: The density in g/cm3.
-
-    """
-
-    if compo_unit == 'at':
-        weights = units_converter.atomic_to_weight(elements, compositions)
-    elif compo_unit == 'wt':
-        weights = np.array(compositions) / float(sum(compositions))
-    density = 0
-    for i, element in enumerate(elements):
-        density = density + elements_db[element]['density'] * weights[i]
-
-    return density
-
-
 def take_off_angle(tilt_stage,
                    azimuth_angle,
                    elevation_angle):
