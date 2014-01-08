@@ -1021,9 +1021,7 @@ class EELSSpectrum(Spectrum):
                 # Calculate the thickness only if possible and required
                 if zlp is not None and (full_output is True or
                                         iterations > 1):
-                    te = (332.5 * K * ke / i0)[
-                        self.axes_manager._get_data_slice([(
-                        axis.index_in_array, 0)])]
+                    te = (332.5 * K * ke / i0)
                     if full_output is True:
                         output['thickness'] = te
             elif t is not None:
@@ -1101,7 +1099,9 @@ class EELSSpectrum(Spectrum):
             thickness.mapped_parameters.title = (
                 self.mapped_parameters.title + ' thickness '
                 '(calculated using Kramers-Kronig analysis)')
-            thickness.data = te
+            thickness.data = te[
+                        self.axes_manager._get_data_slice([(
+                        axis.index_in_array, 0)])]
             output['thickness'] = thickness
         if full_output is False:
             return eps
