@@ -19,9 +19,9 @@ from __future__ import division
 
 import numpy as np
 
+from hyperspy import utils
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.misc.eds.elements import elements as elements_db
-from hyperspy.misc.eds.FWHM import FWHM_eds
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 
@@ -447,7 +447,7 @@ class EDSSpectrum(Spectrum):
         for Xray_line in Xray_lines:
             element, line = utils_eds._get_element_and_line(Xray_line)           
             line_energy = elements_db[element]['Xray_energy'][line]
-            line_FWHM = FWHM_eds(FWHM_MnKa,line_energy)
+            line_FWHM = utils_eds.get_FWHM_at_Energy(FWHM_MnKa,line_energy)
             det = integration_window_factor * line_FWHM / 2.
             img = self[...,line_energy - det:line_energy + det
                     ].integrate_simpson(-1)
@@ -472,3 +472,38 @@ class EDSSpectrum(Spectrum):
                        img.data))
             intensities.append(img)
         return intensities
+        
+    def get_take_off_angle(self):
+        """Calculate the take-off-angle (TOA).
+    
+        TOA is the angle with which the X-rays leave the surface towards 
+        the detector. Parameters are read in 'SEM.tilt_stage',
+        'SEM.EDS.azimuth_angle' and 'SEM.EDS.elevation_angle'
+         in 'mapped_parameters'.
+         
+        Returns
+        -------
+        take_off_angle: float (Degree)
+        
+        See also
+        --------        
+        utils.eds.take_off_angle
+        
+        Notes
+        -----
+        Defined by M. Schaffer et al., Ultramicroscopy 107(8), pp 587-597 (2007)
+        """   
+        if self.mapped_parameters.signal_type == 'EDS_SEM':
+            mp = self.mapped_parameters.SEM
+        elif self.mapped_parameters.signal_type == 'EDS_TEM':
+            mp = self.mapped_parameters.TEM 
+            
+        tilt_stage=mp.tilt_stage
+        azimuth_angle=mp.EDS.azimuth_angle
+        elevation_angle=mp.EDS.elevation_angle
+        
+        TOA = utils.eds.take_off_angle(tilt_stage,azimuth_angle,
+            elevation_angle)
+        
+        return TOA
+
