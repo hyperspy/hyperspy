@@ -47,7 +47,8 @@ class DielectricFunction(Spectrum):
             If False calculate the number of effective electrons up to the
             higher energy-loss of the spectrum. If True, calculate the
             number of effective electrons as a function of the energy-loss up
-            to the higher energy-loss of the spectrum.
+            to the higher energy-loss of the spectrum. *True is only supported
+            by SciPy newer than 0.13.2*.
 
         Returns
         -------

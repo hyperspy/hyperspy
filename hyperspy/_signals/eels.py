@@ -923,7 +923,7 @@ class EELSSpectrum(Spectrum):
         .. [Egerton2011] Ray Egerton, "Electron Energy-Loss
            Spectroscopy in the Electron Microscope", Springer-Verlag, 2011.
 
-        """        
+        """
         output = {}
         if iterations == 1:
             # In this case s.data is not modified so there is no need to make
@@ -965,7 +965,7 @@ class EELSSpectrum(Spectrum):
                 if zlp.axes_manager.signal_dimension == 0:
                     i0 = zlp.data
                 else:
-                    i0 = zlp.data.sum(axis.index_in_array) * axis.scale
+                    i0 = zlp.data.sum(axis.index_in_array)
             else:
                 raise ValueError('The ZLP signal dimensions are not '
                                  'compatible with the dimensions of the '
@@ -988,6 +988,10 @@ class EELSSpectrum(Spectrum):
                 raise ValueError('The thickness signal dimensions are not '
                                  'compatible with the dimensions of the '
                                  'low-loss signal')
+        elif isinstance(t, np.ndarray) and t.shape and t.shape != (1,):
+            raise ValueError("thickness must be a HyperSpy signal or a number,"
+                             " not a numpy array.")
+
         # Slicer to get the signal data from 0 to axis.size
         slicer = s.axes_manager._get_data_slice(
                 [(axis.index_in_array, slice(None, axis.size)),])
@@ -1002,7 +1006,7 @@ class EELSSpectrum(Spectrum):
             # Norm(SSD) = Imag(-1/epsilon) (Energy Loss Funtion, ELF)
 
             # We start by the "angular corrections"
-            Im = s.data / (np.log(1 + (beta * tgt / eaxis) ** 2)) 
+            Im = s.data / (np.log(1 + (beta * tgt / eaxis) ** 2)) / axis.scale
             if n is None and t is None:
                 raise ValueError("The thickness and the refractive index are "
                                  "not defined. Please provide one of them.")
@@ -1022,7 +1026,6 @@ class EELSSpectrum(Spectrum):
                         axis.index_in_array, 0)])]
                     if full_output is True:
                         output['thickness'] = te
-                    te = te.reshape(np.insert(te.shape, axis.index_in_array, 1))
             elif t is not None:
                 if zlp is None:
                     raise ValueError("The ZLP must be provided when the  "
@@ -1030,7 +1033,6 @@ class EELSSpectrum(Spectrum):
                 # normalize using the thickness
                 K = t * i0 / (332.5 * ke)
                 te = t
-                te = te.reshape(np.insert(te.shape, axis.index_in_array, 1))
             Im = Im / K
 
             # Kramers Kronig Transform:
@@ -1070,10 +1072,10 @@ class EELSSpectrum(Spectrum):
                 #  A simulated surface plasmon is subtracted from the ELF
                 Srfelf = 4 * e2 / ((e1 + 1) ** 2 + e2 ** 2) - Im
                 adep = (tgt / (eaxis + delta) *
-                        np.arctan(beta * tgt / axis.axis) - \
+                        np.arctan(beta * tgt / axis.axis) -
                         beta / 1000. /
                         (beta ** 2 + axis.axis ** 2. / tgt ** 2))
-                Srfint = 2000 * K * adep * Srfelf / rk0 / te * axis.scale                
+                Srfint = 2000 * K * adep * Srfelf / rk0 / te * axis.scale
                 s.data = sorig.data - Srfint
                 print 'Iteration number: ', io + 1, '/', iterations
                 if iterations == io + 1 and full_output is True:
@@ -1099,7 +1101,7 @@ class EELSSpectrum(Spectrum):
             thickness.mapped_parameters.title = (
                 self.mapped_parameters.title + ' thickness '
                 '(calculated using Kramers-Kronig analysis)')
-            thickness.data = te.squeeze()
+            thickness.data = te
             output['thickness'] = thickness
         if full_output is False:
             return eps

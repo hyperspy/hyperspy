@@ -20,13 +20,13 @@ import os
 
 import numpy as np
 
-from nose.tools import assert_true, assert_equal, assert_not_equal
+from nose.tools import assert_true, assert_equal, assert_not_equal, raises
 from hyperspy.signals import EELSSpectrum
 from hyperspy.components import VolumePlasmonDrude, Lorentzian
 from hyperspy.misc.eels.tools import eels_constant
 from hyperspy.hspy import *
 
-class Test1D:
+class Test2D:
     def setUp(self):
         """To test the kramers_kronig_analysis we will generate 3
         EELSSpectrum instances. First a model energy loss function(ELF),
@@ -122,7 +122,6 @@ class Test1D:
                         np.array([[ 0.91299039,  4.37469112,  3.41580094],
                                   [ 3.64866394,  0.15693674,  0.11146413]])))
 
-
     def test_thickness_estimation(self):
         """Kramers kronig analysis gives a rough estimation of sample
         thickness. As we have predefined sample thickness for our
@@ -136,3 +135,8 @@ class Test1D:
         assert_true(np.allclose(self.thickness.data,
                                 output['thickness'].data, rtol=0.01))
 
+    @raises(ValueError)
+    def test_thicness_input_array(self):
+        cdf = self.s.kramers_kronig_analysis(zlp=self.zlp,
+                                             iterations=1,
+                                             t=self.thickness.data)
