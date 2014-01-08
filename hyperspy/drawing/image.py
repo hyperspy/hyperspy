@@ -19,17 +19,18 @@
 from __future__ import division
 
 import math
+
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.widgets
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+from traits.api import Undefined
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
 from hyperspy.gui.tools import ImageContrastEditor
 from hyperspy.misc import math_tools
+from hyperspy.drawing.figure import BlittedFigure
 
-class ImagePlot:
+class ImagePlot(BlittedFigure):
     """Class to plot an image with the necessary machinery to update
     the image when the coordinates of an AxesManager change.
     
@@ -43,7 +44,6 @@ class ImagePlot:
     plot_scalebar, plot_ticks, plot_colorbar, plot_indices : bool
     title : str
         The title is printed at the top of the image.
-    window_title : str
     vmin, vmax : float
         Limit the range of the color map scale to the given values.
     auto_contrast : bool
@@ -65,7 +65,6 @@ class ImagePlot:
         self.figure = None
         self.ax = None
         self.title = ''
-        self.window_title = ''
         self.vmin = None
         self.vmax = None
         self.auto_contrast = True
@@ -85,12 +84,13 @@ class ImagePlot:
         xaxis = self.xaxis
         yaxis = self.yaxis
         # Image labels
-        self._xlabel = '%s (%s)' % (
-            xaxis.name,
-            xaxis.units)
-        self._ylabel = '%s (%s)' % (
-            yaxis.name,
-            yaxis.units)
+        self._xlabel = '%s' % str(xaxis)
+        if xaxis.units is not Undefined:
+            self._xlabel += ' (%s)' % xaxis.units
+        
+        self._ylabel = '%s' % str(yaxis)
+        if yaxis.units is not Undefined:
+            self._ylabel += ' (%s)' % yaxis.units 
             
         if (xaxis.units == yaxis.units) and (
             xaxis.scale == yaxis.scale):
@@ -144,10 +144,13 @@ class ImagePlot:
         figsize = np.array((width * wfactor, height)) * max_size / max(
                            (width * wfactor, height))
         self.figure = utils.create_figure(
+                        window_title=("Figure " + self.title
+                                        if self.title
+                                        else None),
                         figsize=figsize.clip(min_size, max_size))
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
+        utils.on_figure_window_close(self.figure, self.close)
 
-        
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
         self.ax.set_title(self.title)
@@ -161,7 +164,7 @@ class ImagePlot:
         
     def plot(self):
         self.configure()
-        if not utils.does_figure_object_exists(self.figure):
+        if self.figure is None:
             self.create_figure()
             self.create_axis()   
         data = self.data_function()
@@ -171,12 +174,14 @@ class ImagePlot:
             self.axes_manager.navigation_size==0):
             self.plot_indices = False
         if self.plot_indices is True:
-            self._text = self.ax.text(*self._text_position,
+            self._text = self.ax.text(
+                            *self._text_position,
                             s=str(self.axes_manager.indices),
                             transform = self.ax.transAxes,
                             fontsize=12,
-                            color='red')
-        self.update_image()
+                            color='red',
+                            animated=True)
+        self.update()
         if self.plot_scalebar is True:
             if self.pixel_units is not None:
                 self.ax.scalebar = widgets.Scale_Bar(
@@ -184,49 +189,81 @@ class ImagePlot:
                     units=self.pixel_units,)
                  
         if self.plot_colorbar is True:
-            fig = self.ax.figure
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
+            self._colorbar.ax.yaxis.set_animated(True)
         
         self.figure.canvas.draw()
         if hasattr(self.figure, 'tight_layout'):
-            self.figure.tight_layout()
+            try:
+                self.figure.tight_layout()
+            except:
+                # tight_layout is a bit brittle, we do this just in case it
+                # complains
+                pass
+                
         self.connect()
         
-    def update_image(self, auto_contrast=None):
+    def update(self, auto_contrast=None):
         ims = self.ax.images
-        if ims:
-            ims.remove(ims[0])
+        redraw_colorbar = False
         data = self.data_function()
         numrows, numcols = data.shape
         def format_coord(x, y):
-            col = self.xaxis.value2index(x)
-            row = self.yaxis.value2index(y)
-            if col>=0 and col<numcols and row>=0 and row<numrows:
+            try:
+                col = self.xaxis.value2index(x)
+            except ValueError: # out of axes limits
+                col = -1
+            try:    
+                row = self.yaxis.value2index(y)
+            except ValueError:
+                row = -1
+            if col>=0 and row>=0:
                 z = data[row,col]
                 return 'x=%1.4f, y=%1.4f, intensity=%1.4f'%(x, y, z)
             else:
                 return 'x=%1.4f, y=%1.4f'%(x, y)
         self.ax.format_coord = format_coord
-        if auto_contrast is True or auto_contrast is None and\
-            self.auto_contrast is True:
+        if (auto_contrast is True or 
+            auto_contrast is None and self.auto_contrast is True):
+            vmax, vmin = self.vmax, self.vmin
             self.optimize_contrast(data)
+            if vmax == vmin and self.vmax != self.vmin and ims:
+                redraw_colorbar = True
+                ims[0].autoscale()
+
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
-            
-        self.ax.imshow(data,
-                       interpolation='nearest',
-                       vmin=self.vmin, 
-                       vmax=self.vmax,
-                       extent=self._extent,
-                       aspect=self._aspect)
         if self.plot_indices is True:
-            self._text.set_text((self.axes_manager.indices))
-        self.figure.canvas.draw()
+            self._text.set_text((self.axes_manager.indices))        
+        if ims:
+            ims[0].set_data(data)
+            ims[0].norm.vmax, ims[0].norm.vmin = self.vmax, self.vmin
+            if redraw_colorbar is True:
+                ims[0].autoscale()
+                self._colorbar.draw_all()
+                self._colorbar.solids.set_animated(True)
+            else:
+                ims[0].changed()
+            self._draw_animated()
+            # It seems that nans they're simply not drawn, so simply replacing
+            # the data does not update the value of the nan pixels to the
+            # background color. We redraw everything as a workaround.
+            if np.isnan(data).any():
+                self.figure.canvas.draw()
+        else:
+            self.ax.imshow(data,
+                           interpolation='nearest',
+                           vmin=self.vmin, 
+                           vmax=self.vmax,
+                           extent=self._extent,
+                           aspect=self._aspect,
+                           animated=True)
+            self.figure.canvas.draw()
         
-    def _update_image(self):
+    def _update(self):
         # This "wrapper" because on_trait_change fiddles with the 
         # method arguments and auto_contrast does not work then
-        self.update_image()
+        self.update()
     def adjust_contrast(self):
         ceditor = ImageContrastEditor(self)
         ceditor.edit_traits()
@@ -236,6 +273,8 @@ class ImagePlot:
         self.figure.canvas.mpl_connect('key_press_event',
                                         self.on_key_press)
         self.figure.canvas.draw()
+        if self.axes_manager:
+            self.axes_manager.connect(self._update)
 
     def on_key_press(self, event):
         if event.key == 'h':
@@ -243,10 +282,8 @@ class ImagePlot:
                     
     def set_contrast(self, vmin, vmax):
         self.vmin, self.vmax =  vmin, vmax
-        self.update_image()
+        self.update()
             
-    # TODO The next function must be improved
-    
     def optimize_colorbar(self,
                           number_of_ticks=5,
                           tolerance=5,
@@ -276,24 +313,14 @@ class ImagePlot:
             optimize_for_oom(step_oom - i)
             i += 1
             
-    def close(self):
-        if utils.does_figure_object_exists(self.figure) is True:
-            plt.close(self.figure)
+    def disconnect(self):
+        if self.axes_manager:
+            self.axes_manager.disconnect(self._update)
             
-    def _on_draw(self, *args):
-        canvas = self.figure.canvas
-        self._background = canvas.copy_from_bbox(self.figure.bbox)
-        self._draw_animated()
-        
-    def _draw_animated(self):
-        canvas = self.ax.figure.canvas
-        canvas.restore_region(self._background)
-        ax = self.ax
-        artists = []
-        artists.extend(ax.collections)
-        artists.extend(ax.patches)
-        artists.extend(ax.lines)
-        artists.extend(ax.texts)
-        artists.extend(ax.artists)
-        [ax.draw_artist(a) for a in artists if a.get_animated()]
-        canvas.blit()
+    def close(self):
+        self.disconnect()
+        try:
+            plt.close(self.figure)
+        except:
+            pass
+        self.figure = None

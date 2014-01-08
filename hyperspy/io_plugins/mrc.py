@@ -23,6 +23,7 @@
 import os
 
 import numpy as np
+from traits.api import Undefined
 
 from hyperspy.misc.array_tools import sarray2dict
 
@@ -170,7 +171,7 @@ def file_reader(filename, endianess = '<', **kwds):
         scales = [1, ] + [fei_header['pixel_size'][0] * 10**9,] * 2 
         offsets = [0,] * 3
     
-    units = ['undefined', 'nm', 'nm']
+    units = [Undefined, 'nm', 'nm']
     names = ['z', 'y', 'x']
     mapped_parameters = {   'original_filename' : os.path.split(filename)[1],
                             'record_by' : 'image',

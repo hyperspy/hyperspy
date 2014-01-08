@@ -48,15 +48,13 @@ def file_writer(filename, signal, _rescale = True,  **kwds):
     
     imsave(filename, signal.data.squeeze(), **kwds)
     
-def file_reader(filename, output_level=0, record_by='image',**kwds):
+def file_reader(filename, record_by='image',**kwds):
     '''Read data from tif files using Christoph Gohlke's tifffile
     library
     
     Parameters
     ----------
     filename: str
-    output_level : int
-        Has no effect
     record_by: {'image'}
         Has no effect because this format only supports recording by
         image.

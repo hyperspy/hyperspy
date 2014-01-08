@@ -37,7 +37,11 @@ extensions = [
                 'sphinx.ext.pngmath',
                 'sphinx.ext.autosummary',
                 'ipython_console_highlighting'] #, 'rst2pdf.pdfbuilder']
-
+try:
+    import sphinxcontrib.spelling
+    extensions.append('sphinxcontrib.spelling')
+except:
+    pass
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

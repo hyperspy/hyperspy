@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import matplotlib.pyplot as plt
+plt.rcParams['image.cmap'] = 'gray'
 
 from hyperspy.Release import version as __version__
 from hyperspy import components
@@ -23,7 +25,8 @@ from hyperspy import signals
 from hyperspy.io import load
 from hyperspy.defaults_parser import preferences
 from hyperspy import utils
-from hyperspy.misc.eels.elements import elements_db as elements
+from hyperspy.misc.eels.elements import elements_db as elements_EELS
+from hyperspy.misc.eds.elements import elements_db as elements_EDS
 
 def get_configuration_directory_path():
     import hyperspy.misc.config_dir
@@ -68,7 +71,7 @@ def create_model(signal, *args, **kwargs):
     
     """
     
-    from hyperspy.signals.eels import EELSSpectrum
+    from hyperspy._signals.eels import EELSSpectrum
     from hyperspy.models.eelsmodel import EELSModel
     from hyperspy.model import Model
     if isinstance(signal, EELSSpectrum):

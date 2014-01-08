@@ -12,7 +12,7 @@ components Package
 :mod:`_template` Module
 -----------------------
 
-.. automodule:: hyperspy.components._template
+.. automodule:: hyperspy._components._template
     :members:
     :undoc-members:
     :show-inheritance:
@@ -20,7 +20,7 @@ components Package
 :mod:`arctan` Module
 --------------------
 
-.. automodule:: hyperspy.components.arctan
+.. automodule:: hyperspy._components.arctan
     :members:
     :undoc-members:
     :show-inheritance:
@@ -28,7 +28,7 @@ components Package
 :mod:`bleasdale` Module
 -----------------------
 
-.. automodule:: hyperspy.components.bleasdale
+.. automodule:: hyperspy._components.bleasdale
     :members:
     :undoc-members:
     :show-inheritance:
@@ -36,7 +36,7 @@ components Package
 :mod:`eels_cl_edge` Module
 --------------------------
 
-.. automodule:: hyperspy.components.eels_cl_edge
+.. automodule:: hyperspy._components.eels_cl_edge
     :members:
     :undoc-members:
     :show-inheritance:
@@ -44,7 +44,7 @@ components Package
 :mod:`eels_double_offset` Module
 --------------------------------
 
-.. automodule:: hyperspy.components.eels_double_offset
+.. automodule:: hyperspy._components.eels_double_offset
     :members:
     :undoc-members:
     :show-inheritance:
@@ -52,7 +52,7 @@ components Package
 :mod:`eels_double_power_law` Module
 -----------------------------------
 
-.. automodule:: hyperspy.components.eels_double_power_law
+.. automodule:: hyperspy._components.eels_double_power_law
     :members:
     :undoc-members:
     :show-inheritance:
@@ -60,7 +60,7 @@ components Package
 :mod:`eels_vignetting` Module
 -----------------------------
 
-.. automodule:: hyperspy.components.eels_vignetting
+.. automodule:: hyperspy._components.eels_vignetting
     :members:
     :undoc-members:
     :show-inheritance:
@@ -68,7 +68,7 @@ components Package
 :mod:`error_function` Module
 ----------------------------
 
-.. automodule:: hyperspy.components.error_function
+.. automodule:: hyperspy._components.error_function
     :members:
     :undoc-members:
     :show-inheritance:
@@ -76,7 +76,7 @@ components Package
 :mod:`exponential` Module
 -------------------------
 
-.. automodule:: hyperspy.components.exponential
+.. automodule:: hyperspy._components.exponential
     :members:
     :undoc-members:
     :show-inheritance:
@@ -84,7 +84,7 @@ components Package
 :mod:`gaussian` Module
 ----------------------
 
-.. automodule:: hyperspy.components.gaussian
+.. automodule:: hyperspy._components.gaussian
     :members:
     :undoc-members:
     :show-inheritance:
@@ -92,7 +92,7 @@ components Package
 :mod:`logistic` Module
 ----------------------
 
-.. automodule:: hyperspy.components.logistic
+.. automodule:: hyperspy._components.logistic
     :members:
     :undoc-members:
     :show-inheritance:
@@ -100,7 +100,7 @@ components Package
 :mod:`lorentzian` Module
 ------------------------
 
-.. automodule:: hyperspy.components.lorentzian
+.. automodule:: hyperspy._components.lorentzian
     :members:
     :undoc-members:
     :show-inheritance:
@@ -108,7 +108,7 @@ components Package
 :mod:`offset` Module
 --------------------
 
-.. automodule:: hyperspy.components.offset
+.. automodule:: hyperspy._components.offset
     :members:
     :undoc-members:
     :show-inheritance:
@@ -116,7 +116,7 @@ components Package
 :mod:`pes_core_line_shape` Module
 ---------------------------------
 
-.. automodule:: hyperspy.components.pes_core_line_shape
+.. automodule:: hyperspy._components.pes_core_line_shape
     :members:
     :undoc-members:
     :show-inheritance:
@@ -124,7 +124,7 @@ components Package
 :mod:`pes_see` Module
 ---------------------
 
-.. automodule:: hyperspy.components.pes_see
+.. automodule:: hyperspy._components.pes_see
     :members:
     :undoc-members:
     :show-inheritance:
@@ -132,7 +132,7 @@ components Package
 :mod:`polynomial` Module
 ------------------------
 
-.. automodule:: hyperspy.components.polynomial
+.. automodule:: hyperspy._components.polynomial
     :members:
     :undoc-members:
     :show-inheritance:
@@ -140,7 +140,7 @@ components Package
 :mod:`power_law` Module
 -----------------------
 
-.. automodule:: hyperspy.components.power_law
+.. automodule:: hyperspy._components.power_law
     :members:
     :undoc-members:
     :show-inheritance:
@@ -148,7 +148,7 @@ components Package
 :mod:`rc` Module
 ----------------
 
-.. automodule:: hyperspy.components.rc
+.. automodule:: hyperspy._components.rc
     :members:
     :undoc-members:
     :show-inheritance:
@@ -156,7 +156,7 @@ components Package
 :mod:`scalable_fixed_pattern` Module
 ------------------------------------
 
-.. automodule:: hyperspy.components.scalable_fixed_pattern
+.. automodule:: hyperspy._components.scalable_fixed_pattern
     :members:
     :undoc-members:
     :show-inheritance:
@@ -164,7 +164,7 @@ components Package
 :mod:`spline` Module
 --------------------
 
-.. automodule:: hyperspy.components.spline
+.. automodule:: hyperspy._components.spline
     :members:
     :undoc-members:
     :show-inheritance:
@@ -172,7 +172,7 @@ components Package
 :mod:`voigt` Module
 -------------------
 
-.. automodule:: hyperspy.components.voigt
+.. automodule:: hyperspy._components.voigt
     :members:
     :undoc-members:
     :show-inheritance:
@@ -180,7 +180,7 @@ components Package
 :mod:`volume_plasmon_drude` Module
 ----------------------------------
 
-.. automodule:: hyperspy.components.volume_plasmon_drude
+.. automodule:: hyperspy._components.volume_plasmon_drude
     :members:
     :undoc-members:
     :show-inheritance:

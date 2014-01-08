@@ -22,19 +22,18 @@ import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from hyperspy import messages
+from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.drawing import utils
 
-import utils
-
-class SpectrumFigure():
+class SpectrumFigure(BlittedFigure):
     """
     """
-    def __init__(self):
+    def __init__(self, title=""):
         self.figure = None
         self.ax = None
         self.right_ax = None
         self.ax_lines = list()
         self.right_ax_lines = list()
-        self.blit = False
         self.lines = list()
         self.axes_manager = None
         self.right_axes_manager = None
@@ -42,7 +41,7 @@ class SpectrumFigure():
         # Labels
         self.xlabel = ''
         self.ylabel = ''
-        self.title = ''
+        self.title = title
         self.create_figure()
         self.create_axis()
         
@@ -53,7 +52,9 @@ class SpectrumFigure():
             'scatter' : utils.ColorCycle(),}
 
     def create_figure(self):
-        self.figure = utils.create_figure()
+        self.figure = utils.create_figure(
+                window_title="Figure " + self.title if self.title
+                                        else None)
         utils.on_figure_window_close(self.figure, self.close)
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
 
@@ -82,7 +83,6 @@ class SpectrumFigure():
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
         line.axis = self.axis
-        line.blit = self.blit
         # Automatically asign the color if not defined
         if line.color is None:
             line.color = self._color_cycles[line.type]()
@@ -110,29 +110,16 @@ class SpectrumFigure():
     def close(self):
         for line in self.ax_lines + self.right_ax_lines:
             line.close()
-        if utils.does_figure_object_exists(self.figure):
+        try:
             plt.close(self.figure)
-            
-    def _on_draw(self, *args):
-        canvas = self.figure.canvas
-        self._background = canvas.copy_from_bbox(self.figure.bbox)
-        self._draw_animated()
-        
-    def _draw_animated(self):
-        canvas = self.ax.figure.canvas
-        canvas.restore_region(self._background)
-        for ax in [ax for ax in [self.ax, self.right_ax]
-                if ax is not None]:
-            artists = []
-            artists.extend(ax.collections)
-            artists.extend(ax.patches)
-            artists.extend(ax.lines)
-            artists.extend(ax.texts)
-            artists.extend(ax.artists)
-            artists.append(ax.get_yaxis())
-            [ax.draw_artist(a) for a in artists if 
-             a.get_animated() is True]
-        canvas.blit()
+        except:
+            pass
+        self.figure = None
+                    
+    def update(self):
+        for line in self.ax_lines + \
+                    self.right_ax_lines:
+            line.update()
         
 class SpectrumLine(object):
     """Line that can be added to SpectrumFigure.

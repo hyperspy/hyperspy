@@ -19,22 +19,21 @@
 import numpy as np
 from nose.tools import assert_true, assert_equal, assert_not_equal
 
-from hyperspy.signals import EELSSpectrumSimulation
-from hyperspy.components import Gaussian
+import hyperspy.hspy as hp
 
 class Test_Estimate_Elastic_Scattering_Threshold:
     def setUp(self):
         # Create an empty spectrum
-        s = EELSSpectrumSimulation(np.zeros((3,2,1024)))
+        s = hp.signals.EELSSpectrumSimulation(np.zeros((3,2,1024)))
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 0.02
         energy_axis.offset = -5
 
-        gauss = Gaussian()
+        gauss = hp.components.Gaussian()
         gauss.centre.value = 0
         gauss.A.value = 5000
         gauss.sigma.value = 0.5
-        gauss2 = Gaussian() 
+        gauss2 = hp.components.Gaussian() 
         gauss2.sigma.value = 0.5
         # Inflexion point 1.5
         gauss2.A.value = 5000
@@ -70,24 +69,52 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         
 class TestEstimateZLPCentre():
     def setUp(self):
-        s = EELSSpectrumSimulation(np.diag(np.arange(1.5,3.5,0.2)))
+        s = hp.signals.EELSSpectrumSimulation(np.diag(np.arange(1,11)))
         s.axes_manager[-1].scale = 0.1
         s.axes_manager[-1].offset = 100
         self.spectrum = s
-    def test_calibrate_false(self):
+    def test_estimate_zero_loss_peak_centre(self):
         s = self.spectrum
-        assert_equal(s.estimate_zero_loss_peak_centre(calibrate=False), 100.45)
-        
-    def test_calibrate_true(self):
+        assert_true(np.allclose(s.estimate_zero_loss_peak_centre().data,
+                                np.arange(100, 101, 0.1)))
+
+class TestAlignZLP():
+    def setUp(self):
+        s = hp.signals.EELSSpectrumSimulation(np.zeros((10,100)))
+        self.scale = 0.1
+        self.offset = -2
+        eaxis = s.axes_manager.signal_axes[0]
+        eaxis.scale = self.scale
+        eaxis.offset = self.offset
+        self.izlp = eaxis.value2index(0)
+        self.bg = 2
+        self.ishifts = np.array([0,  4,  2, -2,  5, -2, -5, -9, -9, -8])
+        self.new_offset = self.offset - self.ishifts.min() * self.scale
+        s.data[np.arange(10), self.ishifts + self.izlp] = 10
+        s.data += self.bg
+        s.axes_manager[-1].offset += 100
+        self.spectrum = s
+
+    def test_align_zero_loss_peak_calibrate_true(self):
         s = self.spectrum
-        s.estimate_zero_loss_peak_centre()
-        assert_true(np.allclose(s.estimate_zero_loss_peak_centre(), 0))
-        
-    def test_also_align(self):
+        s.align_zero_loss_peak(calibrate=True, print_stats=False)
+        zlpc = s.estimate_zero_loss_peak_centre()
+        assert_true(np.allclose(zlpc.data.mean(), 0))
+        assert_true(np.allclose(zlpc.data.std(), 0))
+
+    def test_align_zero_loss_peak_calibrate_false(self):
         s = self.spectrum
-        sc = s.deepcopy()
-        s.estimate_zero_loss_peak_centre(calibrate=True, also_apply_to=[sc,])
-        assert_true(np.allclose(sc.estimate_zero_loss_peak_centre(), 0))
-                
-    
+        s.align_zero_loss_peak(calibrate=False, print_stats=False)
+        zlpc = s.estimate_zero_loss_peak_centre()
+        assert_true(np.allclose(zlpc.data.std(), 0))
+
+    def test_also_aligns(self):
+        s = self.spectrum
+        s2 = s.deepcopy()
+        s.align_zero_loss_peak(calibrate=True,
+                               print_stats=False,
+                               also_align=[s2])
+        zlpc = s2.estimate_zero_loss_peak_centre()
+        assert_equal(zlpc.data.mean(), 0)
+        assert_equal(zlpc.data.std(), 0)
         

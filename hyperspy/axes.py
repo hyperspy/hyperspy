@@ -20,39 +20,13 @@ import copy
 
 import numpy as np
 import traits.api as t
-import traitsui.api as tui
 from traits.trait_errors import TraitError
+
+from hyperspy.misc.utils import isiterable, ordinal
 
 class ndindex_nat(np.ndindex):
     def next(self):
-        return super(ndindex_nat, self).next()[::-1]
-
-
-def get_axis_group(n , label=''):
-    group = tui.Group(
-            tui.Group(
-                tui.Item('axis%i.name' % n),
-                tui.Item('axis%i.size' % n, style='readonly'),
-                tui.Item('axis%i.index_in_array' % n, style='readonly'),
-                tui.Item('axis%i.low_index' % n, style='readonly'),
-                tui.Item('axis%i.high_index' % n, style='readonly'),
-                # The style of the index is chosen to be readonly because of 
-                # a bug in Traits 4.0.0 when using context with a Range traits
-                # where the limits are defined by another traits_view
-                tui.Item('axis%i.index' % n, style='readonly'),
-                tui.Item('axis%i.value' % n, style='readonly'),
-                tui.Item('axis%i.units' % n),
-                tui.Item('axis%i.navigate' % n, label = 'slice'),
-            show_border = True,),
-            tui.Group(
-                tui.Item('axis%i.scale' % n),
-                tui.Item('axis%i.offset' % n),
-            label = 'Calibration',
-            show_border = True,),
-        label = label,
-        show_border = True,)
-    return group
-    
+        return super(ndindex_nat, self).next()[::-1]    
 def generate_axis(offset, scale, size, offset_index=0):
     """Creates an axis given the offset, scale and number of channels
 
@@ -95,12 +69,11 @@ class DataAxis(t.HasTraits):
     def __init__(self,
                  size,
                  index_in_array=None,
-                 name='',
+                 name=t.Undefined,
                  scale=1.,
                  offset=0.,
-                 units='undefined',
-                 navigate=t.Undefined):
-                     
+                 units=t.Undefined,
+                 navigate=t.Undefined):          
         super(DataAxis, self).__init__()
         self.name = name
         self.units = units
@@ -187,9 +160,19 @@ class DataAxis(t.HasTraits):
         if isinstance(step, float):
             step = int(round(step / self.scale))
         if isinstance(start, float):
-            start = v2i(start)
+            try:
+                start = v2i(start)
+            except ValueError:
+                # The value is below the axis limits
+                # we slice from the start.
+                start = None
         if isinstance(stop, float):
-            stop = v2i(stop) 
+            try:
+                stop = v2i(stop) 
+            except ValueError:
+                # The value is above the axes limits
+                # we slice up to the end.
+                stop = None
             
         if step == 0:
             raise ValueError("slice step cannot be zero")
@@ -206,16 +189,23 @@ class DataAxis(t.HasTraits):
             self.scale *= step
             
         return my_slice
-
+        
+    def _get_name(self):
+        name = (self.name if self.name is not t.Undefined
+                          else ("Unnamed " +
+                                ordinal(self.index_in_axes_manager)))
+        return name
 
     def __repr__(self):
-        if self.name is not None:
-            text = '<%s axis, size: %i' % (self.name,
-                                              self.size,)
-            if self.navigate is True:
-                text += ", index: %i" % self.index
-            text += ">"
-            return text
+        text = '<%s axis, size: %i' % (self._get_name(),
+                                       self.size,)
+        if self.navigate is True:
+            text += ", index: %i" % self.index
+        text += ">"
+        return text
+            
+    def __str__(self):
+        return self._get_name() + " axis"
             
     def connect(self, f, trait='value'):
         self.on_trait_change(f, trait)
@@ -245,7 +235,6 @@ class DataAxis(t.HasTraits):
             'offset' : self.offset,
             'size' : self.size,
             'units' : self.units,
-            'index_in_array' : self.index_in_array,
             'navigate' : self.navigate
         }
         return adict
@@ -256,9 +245,8 @@ class DataAxis(t.HasTraits):
     def update_value(self):
         self.value = self.axis[self.index]
 
-    def value2index(self, value):
-        """Return the closest index to the given value if between the limits,
-        otherwise it will return either the upper or lower limits
+    def value2index(self, value, rounding=round):
+        """Return the closest index to the given value if between the limit.
 
         Parameters
         ----------
@@ -267,21 +255,27 @@ class DataAxis(t.HasTraits):
         Returns
         -------
         int
+
+        Raises
+        ------
+        ValueError if value is out of the axis limits.
+
         """
         if value is None:
             return None
         else:
-            index = int(round((value - self.offset) / \
-            self.scale))
+            index = int(rounding((value - self.offset) / 
+                              self.scale))
             if self.size > index >= 0:
                 return index
-            elif index < 0:
-                return 0
             else:
-                return int(self.size - 1)
+                raise ValueError("The value is out of the axis limits")                
 
     def index2value(self, index):
-        return self.axis[index]
+        if isinstance(index, np.ndarray):
+            return self.axis[index.ravel()].reshape(index.shape)
+        else:
+            return self.axis[index]
 
     def set_index_from_value(self, value):
         self.index = self.value2index(value)
@@ -299,40 +293,18 @@ class DataAxis(t.HasTraits):
         else:
             return offset, scale
 
-    traits_view = \
-    tui.View(
-        tui.Group(
-            tui.Group(
-                tui.Item(name='name'),
-                tui.Item(name='size', style='readonly'),
-                tui.Item(name='index_in_array', style='readonly'),
-                tui.Item(name='index'),
-                tui.Item(name='value', style='readonly'),
-                tui.Item(name='units'),
-                tui.Item(name='navigate', label = 'navigate'),
-            show_border = True,),
-            tui.Group(
-                tui.Item(name='scale'),
-                tui.Item(name='offset'),
-            label = 'Calibration',
-            show_border = True,),
-        label = "Data Axis properties",
-        show_border = True,),
-    title = 'Axis configuration',
-    )
-
 class AxesManager(t.HasTraits):
     """Contains and manages the data axes.
     
     It supports indexing, slicing, subscriptins and iteration. As an interator,
     iterate over the navigation coordinates returning the current indices.
     It can only be indexed and sliced to access the DataAxis objects that it
-    contain. Standard indexing and slicing follows the "natural order" as in
+    contains. Standard indexing and slicing follows the "natural order" as in
     Signal, i.e. [nX, nY, ...,sX, sY,...] where `n` indicates a navigation axis
     and `s` a signal axis. In addition AxesManager support indexing using
-    complex numbers a + bj, where a can be one of 0,1 and 2 and b a valid
-    index. If a is 0 AxesManager is indexed using the order of the axes in the
-    array. If a is 1(2), indexes only the navigation(signal) axes in the
+    complex numbers a + bj, where b can be one of 0, 1, 2 and 3 and a a valid
+    index. If b is 3 AxesManager is indexed using the order of the axes in the
+    array. If b is 1(2), indexes only the navigation(signal) axes in the
     natural order. In addition AxesManager supports subscription using
     axis name.
     
@@ -364,12 +336,12 @@ class AxesManager(t.HasTraits):
     >>> s.axes_manager
     <Axes manager, axes: (<axis2 axis, size: 4, index: 0>, <axis1 axis, size: 3, index: 0>, <axis0 axis, size: 2, index: 0>, <axis3 axis, size: 5>)>
     >>> s.axes_manager[0]
-    s2 axis, size: 4, index: 0> 
-    >>> s.axes_manager[0j]
-    <axis0 axis, size: 2, index: 0>
-    >>> s.axes_manager[1+0j]
     <axis2 axis, size: 4, index: 0>
-    >>> s.axes_manager[2+0j]
+    >>> s.axes_manager[3j]
+    <axis0 axis, size: 2, index: 0>
+    >>> s.axes_manager[1j]
+    <axis2 axis, size: 4, index: 0>
+    >>> s.axes_manager[2j]
     <axis3 axis, size: 5>
     >>> s.axes_manager[1].name="y"
     >>> s.axes_manager['y']
@@ -402,6 +374,7 @@ class AxesManager(t.HasTraits):
     (3, 2, 1) (3, 2, 1)
 
     """
+
     _axes = t.List(DataAxis)
     signal_axes = t.Tuple()
     navigation_axes = t.Tuple()
@@ -451,23 +424,24 @@ class AxesManager(t.HasTraits):
                 if y == axis.name:
                     return axis
             raise ValueError("There is no DataAxis named %s" % y)
-        elif isinstance(y, complex):
-            if not y.real.is_integer or not y.real.is_integer:
-                raise TypeError("axesmanager indices must be integers, "
+        elif (isinstance(y.real, float) and not y.real.is_integer() or
+                isinstance(y.imag, float) and not y.imag.is_integer()):
+            raise TypeError("axesmanager indices must be integers, "
                     "complex intergers or strings")
-            if y.real == 0:
-                return self._axes[int(y.imag)]
-            elif y.real == 1:
-                return self.navigation_axes[int(y.imag)]
-            elif y.real == 2:
-                return self.signal_axes[int(y.imag)]
-            else:
-                raise IndexError("axesmanager real part of complex indices "
-                        "must be 0, 1 or 2")
-        else:
-            # Use the "natural order" as in Signal
+        if y.imag == 0: # Natural order
             return self._get_axes_in_natural_order()[y]
-        
+        elif y.imag == 3: # Array order
+            # Array order
+            return self._axes[int(y.real)]
+        elif y.imag == 1: # Navigation natural order
+            # 
+            return self.navigation_axes[int(y.real)]
+        elif y.imag == 2: # Signal natural order
+            return self.signal_axes[int(y.real)]
+        else:
+            raise IndexError("axesmanager imaginary part of complex indices "
+                    "must be 0, 1 or 2")
+                
     def __getslice__(self, i=None, j=None):
         """x.__getslice__(i, j) <==> x[i:j]
         
@@ -502,9 +476,7 @@ class AxesManager(t.HasTraits):
         ValueError if the Axis is not present.
         
         """
-        if axis not in self._axes:
-            raise ValueError(
-                "AxesManager.remove(x): x not in AxesManager")
+        axis = self[axis]
         axis.axes_manager = None
         self._axes.remove(axis)
             
@@ -699,8 +671,9 @@ class AxesManager(t.HasTraits):
             pass
 
     def gui(self):
+        from hyperspy.gui.axes import data_axis_view
         for axis in self._axes:
-            axis.edit_traits()
+            axis.edit_traits(view=data_axis_view)
 
     def copy(self):
         return(copy.copy(self))
@@ -732,18 +705,44 @@ class AxesManager(t.HasTraits):
                 self.navigation_axes[::-1]]
         
     def show(self):
+        from hyperspy.gui.axes import get_axis_group
+        import traitsui.api  as tui
         context = {}
         ag = []
-        for n in range(0,len(self._axes)):
-            ag.append(get_axis_group(n, self._axes[n].name))
-            context['axis%i' % n] = self._axes[n]
+        for n, axis in enumerate(self._get_axes_in_natural_order()):
+            ag.append(get_axis_group(n, str(axis)))
+            context['axis%i' % n] = axis
         ag = tuple(ag)
         self.edit_traits(view = tui.View(*ag), context = context)
+    def _get_axes_str(self):
+        string = "("
+        for axis in self.navigation_axes:
+            string += axis.__repr__() + ", "
+        string = string.rstrip(", ")
+        string += "|"
+        for axis in self.signal_axes:
+            string += axis.__repr__() + ", "
+        string = string.rstrip(", ")
+        string += ")"
+        return string
+        
+    def _get_dimension_str(self):
+        string = "("
+        for axis in self.navigation_axes:
+            string += str(axis.size) + ", "
+        string = string.rstrip(", ")
+        string += "|"
+        for axis in self.signal_axes:
+            string += str(axis.size) + ", "
+        string = string.rstrip(", ")
+        string += ")"
+        return string
+        
+        
         
     def __repr__(self):
         text = ('<Axes manager, axes: %s>' % 
-            self._get_axes_in_natural_order().__repr__())
-            
+                self._get_axes_str())
         return text
     
     @property        
@@ -812,6 +811,24 @@ class AxesManager(t.HasTraits):
         return [getattr(axis, attr) for axis in self._axes]
     
     def _set_axis_attribute_values(self, attr, values):
+        """Set the given attribute of all the axes to the given
+        value(s)
+        
+        Parameters
+        ----------
+        attr : string
+            The DataAxis attribute to set.
+        values: any
+            If iterable, it must have the same number of items
+            as axes are in this AxesManager instance. If not iterable,
+            the attribute of all the axes are set to the given value.
+            
+        """
+        if not isiterable(values):
+            values = [values, ] * len(self._axes)
+        elif len(values) != len(self._axes):
+            raise ValueError("Values must have the same number"
+                "of items are axes are in this AxesManager")
         for axis, value in zip(self._axes,values):
             setattr(axis, attr, value)
             

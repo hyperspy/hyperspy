@@ -19,6 +19,7 @@
 import h5py
 
 import numpy as np
+from traits.api import Undefined
 
 from hyperspy.misc.utils import ensure_unicode
 from hyperspy.axes import AxesManager
@@ -169,15 +170,19 @@ def dict2hdfgroup(dictionary, group, compression=None):
                                  compression = compression)
         elif value is None:
             group.attrs[key] = '_None_'
-        elif isinstance(value, basestring):
-            group.attrs[key] = value.encode('utf8',
-                                            errors='ignore')
+        elif isinstance(value, str):
+            try:
+                # Store strings as unicode using the default encoding
+                group.attrs[key] = unicode(value)
+            except UnicodeEncodeError:
+                pass
         elif isinstance(value, AxesManager):
             dict2hdfgroup(value.as_dictionary(),
                           group.create_group('_hspy_AxesManager_'
                                              + key), 
                           compression=compression)
-            
+        elif value is Undefined:
+            continue
         else:
             try:
                 group.attrs[key] = value
@@ -191,12 +196,6 @@ def hdfgroup2dict(group, dictionary = {}):
         if type(value) is np.string_:
             if value == '_None_':
                 value = None
-            else:
-                try:
-                    value = value.decode('utf8')
-                except UnicodeError:
-                    # For old files
-                    value = value.decode('latin-1')
         elif type(value) is np.bool_:
             value = bool(value)
                     
@@ -254,6 +253,8 @@ def write_signal(signal, group, compression='gzip'):
                                                                         
 def file_writer(filename, signal, compression = 'gzip', *args, **kwds):
     with h5py.File(filename, mode = 'w') as f:
+        f.attrs['file_format'] = "Hyperspy"
+        f.attrs['file_format_version'] = version
         exps = f.create_group('Experiments')
         group_name = signal.mapped_parameters.title if \
                      signal.mapped_parameters.title else '__unnamed__'

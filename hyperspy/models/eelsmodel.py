@@ -22,15 +22,15 @@ import numpy as np
 import traits.api as t
 
 from hyperspy.model import Model
-from hyperspy.components.eels_cl_edge import EELSCLEdge
+from hyperspy.components import EELSCLEdge
 from hyperspy.components import PowerLaw
-from hyperspy.misc.interactive_ns import interactive_ns
+from hyperspy.misc.ipython_tools import get_interactive_ns
 from hyperspy.defaults_parser import preferences
 import hyperspy.messages as messages
 from hyperspy import components
 from hyperspy.decorators import only_interactive
 from hyperspy.exceptions import MissingParametersError
-from hyperspy.signals.eels import EELSSpectrum
+from hyperspy._signals.eels import EELSSpectrum
 import hyperspy.gui.messages as messagesui
 
 def _give_me_delta(master, slave):
@@ -74,7 +74,9 @@ class EELSModel(Model):
         self.convolved = False
         self.low_loss = ll
         self.GOS = GOS
+        self.edges = list()
         if auto_background is True:
+            interactive_ns = get_interactive_ns()
             background = PowerLaw()
             background.name = 'background'
             interactive_ns['background'] = background
@@ -103,7 +105,7 @@ class EELSModel(Model):
         """Run model setup tasks
         
         This function must be called everytime that we add or remove components
-        <undefined>       from the model.
+        from the model.
         It creates the bookmarks self.edges and sef._background_components and 
         configures the edges by setting the energy_scale attribute and setting 
         the fine structure.
@@ -156,6 +158,7 @@ class EELSModel(Model):
             If True, variables with the format Element_Shell will be 
             created in IPython's interactive shell
         """
+        interactive_ns = get_interactive_ns()
         if e_shells is None:
             e_shells = list(self.spectrum.subshells)
         e_shells.sort()
@@ -210,7 +213,8 @@ class EELSModel(Model):
             minimum distance between the fine structure of an ionization edge 
             and that of the following one.
         """
-
+        if not self.edges:
+            return
         while (self.edges[i1].fine_structure_active is False or  
         self.edges[i1].active is False) and i1 < len(self.edges)-1 :
             i1+=1
@@ -240,6 +244,7 @@ class EELSModel(Model):
                         print "Automatically changing the fine structure \
                         width of edge",i1+1,"from", \
                         self.edges[i1].fine_structure_width, "eV to", new_fine_structure_width, \
+                               new_fine_structure_width, \
                         "eV to avoid conflicts with edge number", i2+1
                         self.edges[i1].fine_structure_width = new_fine_structure_width
                         self.resolve_fine_structure(i1 = i2)

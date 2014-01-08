@@ -17,6 +17,14 @@ gui Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`eds` Module
+-----------------
+
+.. automodule:: hyperspy.gui.eds
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`eels` Module
 ------------------
 
@@ -49,10 +57,10 @@ gui Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`mpl_traits_editor` Module
--------------------------------
+:mod:`preferences` Module
+-------------------------
 
-.. automodule:: hyperspy.gui.mpl_traits_editor
+.. automodule:: hyperspy.gui.preferences
     :members:
     :undoc-members:
     :show-inheritance:

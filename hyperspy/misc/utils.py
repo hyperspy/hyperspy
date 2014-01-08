@@ -23,6 +23,7 @@ import types
 import re
 from StringIO import StringIO
 import codecs
+import collections
 
 import numpy as np
 
@@ -97,7 +98,12 @@ def slugify(value, valid_variable_name=False):
     """
     import unicodedata
     if not isinstance(value, unicode):
-        value = value.decode('utf8')
+        try:
+            # Convert to unicode using the default encoding
+            value = unicode(value)
+        except:
+            # Try latin1. If this does not work an exception is raised. 
+            value = unicode(value, "latin1")
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
     value = unicode(_slugify_strip_re.sub('', value).strip())
     value = _slugify_hyphenate_re.sub('_', value)
@@ -107,19 +113,72 @@ def slugify(value, valid_variable_name=False):
     return value
     
 class DictionaryBrowser(object):
-    """A class to comfortably access some parameters as attributes
+    """A class to comfortably browse a dictionary using a CLI.
     
+    In addition to accessing the values using dictionary syntax
+    the class enables navigating  a dictionary that constains 
+    nested dictionaries as attribures of nested classes. 
+    Also it is an iterator over the (key, value) items. The
+    `__repr__` method provides pretty tree printing. Private 
+    keys, i.e. keys that starts with an underscore, are not 
+    printed, counted when calling len nor iterated.
+
+    Methods
+    -------
+    export : saves the dictionary in pretty tree printing format in a text file.
+    keys : returns a list of non-private keys.
+    as_dictionary : returns a dictionary representation of the object.
+    set_item : easily set items, creating any necessary node on the way.
+    add_node : adds a node.
+
+    Examples
+    --------
+    >>> tree = DictionaryBrowser()
+    >>> tree.set_item("Branch.Leaf1.color", "green")
+    >>> tree.set_item("Branch.Leaf2.color", "brown")
+    >>> tree.set_item("Branch.Leaf2.caterpillar", True)
+    >>> tree.set_item("Branch.Leaf1.caterpillar", False)
+    >>> tree
+    └── Branch
+        ├── Leaf1
+        │   ├── caterpillar = False
+        │   └── color = green
+        └── Leaf2
+            ├── caterpillar = True
+            └── color = brown
+    >>> tree.Branch
+    ├── Leaf1
+    │   ├── caterpillar = False
+    │   └── color = green
+    └── Leaf2
+        ├── caterpillar = True
+        └── color = brown
+    >>> for label, leaf in tree.Branch:
+            print("%s is %s" % (label, leaf.color))     
+    Leaf1 is green
+    Leaf2 is brown
+    >>> tree.Branch.Leaf2.caterpillar
+    True
+    >>> "Leaf1" in tree.Branch
+    True
+    >>> "Leaf3" in tree.Branch
+    False
+    >>> 
+
     """
 
     def __init__(self, dictionary={}):
         super(DictionaryBrowser, self).__init__()
-        self._load_dictionary(dictionary)
+        self.add_dictionary(dictionary)
 
-    def _load_dictionary(self, dictionary):
+    def add_dictionary(self, dictionary):
+        """Add new items from dictionary.
+
+        """
         for key, value in dictionary.iteritems():
             self.__setattr__(key, value)
             
-    def export(self, filename, encoding = 'utf8'):
+    def export(self, filename, encoding='utf8'):
         """Export the dictionary to a text file
         
         Parameters
@@ -130,20 +189,19 @@ class DictionaryBrowser(object):
         encoding : valid encoding str
         
         """
-        f = codecs.open(filename, 'w', encoding = encoding)
+        f = codecs.open(filename, 'w', encoding=encoding)
         f.write(self._get_print_items(max_len=None))
         f.close()
 
-    def _get_print_items(self, padding = '', max_len=20):
+    def _get_print_items(self, padding = '', max_len=78):
         """Prints only the attributes that are not methods
         
         """
         string = ''
-        eoi = len(self.__dict__)
+        eoi = len(self) 
         j = 0
         for key_, value in iter(sorted(self.__dict__.iteritems())):
-            if key_[:1] == "_":
-                eoi -= 1
+            if key_.startswith("_"):
                 continue
             if type(key_) != types.MethodType:
                 key = ensure_unicode(value['key'])
@@ -200,17 +258,26 @@ class DictionaryBrowser(object):
                          slugify(key, valid_variable_name=True),
                          {'key' : key, 'value' : value})
 
-    def len(self):
-        return len(self.__dict__.keys())
+    def __len__(self):
+        return len([key for key in self.__dict__.keys() if not key.startswith("_")])
 
     def keys(self):
-        return self.__dict__.keys()
+        """Returns a list of non-private keys.
+        
+        """
+        return sorted([key for key in self.__dict__.keys()
+                      if not key.startswith("_")])
 
     def as_dictionary(self):
+        """Returns its dictionary representation.
+        
+        """
         par_dict = {}
         for key_, item_ in self.__dict__.iteritems():
             if type(item_) != types.MethodType:
                 key = item_['key']
+                if key == "_db_index":
+                    continue
                 if isinstance(item_['value'], DictionaryBrowser):
                     item = item_['value'].as_dictionary()
                 else:
@@ -219,7 +286,9 @@ class DictionaryBrowser(object):
         return par_dict
         
     def has_item(self, item_path):
-        """Given a path, return True if it exists
+        """Given a path, return True if it exists.
+        
+        The nodes of the path are separated using periods.
         
         Parameters
         ----------
@@ -256,6 +325,48 @@ class DictionaryBrowser(object):
                     return False
         else:
             return False
+            
+    def get_item(self, item_path):
+        """Given a path, return True if it exists.
+        
+        The nodes of the path are separated using periods.
+        
+        Parameters
+        ----------
+        item_path : Str
+            A string describing the path with each item separated by 
+            full stops (periods)
+            
+        Examples
+        --------
+        
+        >>> dict = {'To' : {'be' : True}}
+        >>> dict_browser = DictionaryBrowser(dict)
+        >>> dict_browser.has_item('To')
+        True
+        >>> dict_browser.has_item('To.be')
+        True
+        >>> dict_browser.has_item('To.be.or')
+        False
+        
+        """
+        if type(item_path) is str:
+            item_path = item_path.split('.')
+        else:
+            item_path = copy.copy(item_path)
+        attrib = item_path.pop(0)
+        if hasattr(self, attrib):
+            if len(item_path) == 0:
+                return self[attrib]
+            else:
+                item = self[attrib]
+                if isinstance(item, type(self)): 
+                    return item.get_item(item_path)
+                else:
+                    raise AttributeError("Item not in dictionary browser")
+        else:
+            raise AttributeError("Item not in dictionary browser")
+
     def __contains__(self, item):
         return self.has_item(item_path=item)
         
@@ -296,8 +407,6 @@ class DictionaryBrowser(object):
         else:
             self.__setattr__(item_path.pop(), value)
 
-
-
     def add_node(self, node_path):
         """Adds all the nodes in the given path if they don't exist.
         
@@ -322,7 +431,33 @@ class DictionaryBrowser(object):
             if self.has_item(key) is False:
                 self[key] = DictionaryBrowser()
             self = self[key]
-            
+
+    def next(self):
+        """
+        Standard iterator method, updates the index and returns the 
+        current coordiantes
+
+        Returns
+        -------
+        val : tuple of ints
+            Returns a tuple containing the coordiantes of the current 
+            iteration.
+
+        """
+        if len(self) == 0:
+            raise StopIteration
+        if not hasattr(self, '_db_index'):
+            self._db_index = 0
+        elif self._db_index >= len(self) - 1:
+            del self._db_index
+            raise StopIteration
+        else:
+            self._db_index += 1
+        key = self.keys()[self._db_index]
+        return key, getattr(self, key)
+    
+    def __iter__(self):
+        return self
     
 def strlist2enumeration(lst):
     lst = tuple(lst)
@@ -407,237 +542,6 @@ def fsdict(nodes, value, dictionary):
     else:
         dictionary[node] = value
 
-        
-class DictBrowser(object):
-    """Dictionary Browser.
-
-    This class adds browsing capabilities to dictionaries. That is very useful
-    when dealing with big dictionaries of dictionaries.
-
-    Declare an instance with e.g.:
-    >>> db = DictBrowser(my_dictionary)
-
-    Now you will be able to browse the contents of my_dictionary in a *nix
-    fashion by:
-    >>> db.ls(some.path)
-    and
-    >>> db.cd(some.path)
-
-    note that the separator '.' (default) can be changed using the keyword sep
-    when declaring the DictBrowser instance.
-
-    See help(DictBrowser.ls) and help(DictBrowser.cd) for more information.
-    
-    """
-    
-    def __init__(self, dic={}, pwd=[], sep='.'):
-        self.sep = sep
-        self.home = dic
-        self.dic = dic
-        self.pwd = []
-        self.cd(pwd) # update self.dic and self.pwd
-        self.oldpwd = self.pwd[:]
-
-    def __repr__(self):
-        return self.dic.__repr__()
-    
-    def __str__(self):
-        return self.dic.__str__()
-
-    def __setitem__(self, indx, val):
-        return self.dic.__setitem__(indx, val)
-
-    def __getitem__(self, indx):
-        return self.dic.__getitem__(indx)
-
-    def ls(self, pwd=[], dbg=False):
-        """List the contents of the instance's dictionary
-        attribute 'dic' given the path in pwd in a *nix-like
-        fashion.
-    
-        'pwd' can be either a list or a string of keys
-        separated by the separator attribute 'sep' (defaults to '.')
-
-        the special keyword pwd='..' lists the contents
-        relative to the previous key (directory).
-
-        if 'dbg' is True, useful information is printed on screen
-        
-        E.g.
-        obj.ls('root.dir1.dir2.dir3')
-        obj.ls(['root', 'dir1', 'dir2', 'dir3'])
-        
-        """
-        pwd = pwd[:] # don't modify the input object, work with a copy
-
-        if pwd == '..':
-            dic = DictBrowser(dic=self.home, pwd=self.pwd[:-1])
-            return dic.ls()
-        
-        if type(pwd) is str:
-            pwd = pwd.split(self.sep) # turn pwd into a list
-        try:
-            cdir = pwd.pop(0)   # current directory
-        except:
-            cdir = ''
-        if cdir:
-            if pwd:
-                try:
-                    dic = DictBrowser(dic=self.dic[cdir])
-                    return dic.ls(pwd)
-                except KeyError, key:
-                    if dbg:
-                        print('Key %s does not exist. Nothing to do.'
-                              % str(key))
-                    return None
-            else:
-                try:
-                    if type(self.dic[cdir]) is dict:
-                        # 'sub-directory' (return content)
-                        out = self.dic[cdir].keys()
-                        out.sort()
-                        return out
-                    else:
-                        # 'file' (return name (key) and value)
-                        return cdir, self.dic[cdir]
-                except KeyError, key:
-                    if dbg:
-                        print('Key %s does not exist. Nothing to do.'
-                              % str(key))
-                    return None
-        else:
-            try:
-                out = self.dic.keys()
-                out.sort()
-                return out
-            except:
-                if dbg:
-                    msg = 'An error occurred processing '
-                    msg += 'the ls() method of '
-                    msg += self.__class__.__name__
-                    print(msg)
-                return None
-
-    def cd(self, pwd=[], dbg=False):
-        """Updates the instance's 'dic' attribute to the
-        sub-dictionary given by the path in 'pwd' in a
-        *nix-like fashion.
-        
-        'dic' should be a dictionary of dictionaries
-        
-        'pwd' can be either a list or a string of keys
-        separated by the separator attribute 'sep' (defaults to '.')
-
-        'pwd' defaults to [], that is
-        cd() brings you to the 'root' dictionary
-
-        the special keyword pwd='..' updates 'dic' to
-        the previous key (directory).
-
-        the special keyword pwd='-' updates 'dic' to
-        the old key (directory).
-
-        if 'dbg' is True, useful information is printed on screen
-        
-        E.g.
-        obj.cd('root.dir1.dir2.dir3')
-        obj.cd(['root', 'dir1', 'dir2', 'dir3'])
-        
-        """
-
-        pwd = pwd[:] # don't modify the input object, work with a copy
-
-        if pwd == '..': # going to previous directory (in *nix: cd ..)
-            self.oldpwd = self.pwd[:]
-            self.pwd.pop()
-            self.dic = self.home.copy()
-            pwd = self.pwd[:]
-            newdic = DictBrowser(dic=self.dic, pwd=pwd, sep=self.sep)
-            self.dic = newdic.dic.copy() # update the 'dic' attribute
-            self.pwd =  newdic.pwd[:]
-        elif pwd == '-': # going to old directory (in *nix: cd -)
-            self.dic = self.home.copy()
-            pwd = self.oldpwd[:]
-            self.oldpwd = self.pwd[:]
-            newdic = DictBrowser(dic=self.dic, pwd=pwd, sep=self.sep)
-            self.dic = newdic.dic.copy() # update the 'dic' attribute
-            self.pwd =  newdic.pwd[:]
-        else:
-            if type(pwd) is str:
-                pwd = pwd.split(self.sep) # turn pwd into a list
-            try:
-                cdir = pwd.pop(0) # current directory
-            except:
-                cdir = ''
-            if cdir:
-                try:
-                    if type(self.dic[cdir]) is dict:
-                        # 'sub-directory' (return content)
-                        # print('entering', cdir) # DEBUG
-                        self.dic = self.dic[cdir]
-                        self.pwd.append(cdir)
-                    else:
-                        if dbg:
-                            msg = 'Key "%s" ' % str(cdir)
-                            msg += 'is not a (sub)dictionary.'
-                            msg += ' Nothing to do.'
-                            print(msg)                                  
-                        return None
-                    if pwd:
-                        newdic = DictBrowser(dic=self.dic, pwd=pwd,
-                                             sep=self.sep)
-                        self.dic = newdic.dic.copy()
-                        self.pwd += newdic.pwd
-                except KeyError, key: # non existing key (directory)
-                    if dbg:
-                        msg = 'Key %s does not exist' % str(key)
-                        msg += ' in current (sub)dictionary. Nothing to do.' 
-                        print(msg)
-                    return None
-            else:
-                self.dic = self.home.copy()
-                self.oldpwd = self.pwd[:]
-                self.pwd = []
-                
-    def interactive_browsing(self, path=''):
-        """Interactively browse the contents of a path.
-
-        The operation can be interrupted by typing Ctl-D (Unix) or
-        Ctl-Z+Return (Windows)
-
-        Parameters
-        ----------
-        path : string or list (optional)
-               if not given, the current path (pwd) is explored
-
-        """
-        if type(path) is str:
-            path = path.split(self.sep) # turn path into a list
-        for i in xrange(len(path)):
-            if path[i] == '':
-                path.pop(i)
-                
-        contents = self.ls(path)
-        
-        if type(contents) is tuple:
-            print(contents)
-            print('done')
-            return
-        else:
-            contents =  iter(contents)
-            
-        print("Starting interactive browsing, hit 'Return' to continue.")
-        try:
-            while not raw_input():
-                try:
-                    browse =  path + [contents.next(),]
-                    print(browse)
-                    print(self.ls(browse))
-                except StopIteration:
-                    raise KeyboardInterrupt
-        except KeyboardInterrupt:
-            pass
-
 def find_subclasses(mod, cls):
     """Find all the subclasses in a module.
     
@@ -653,3 +557,74 @@ def find_subclasses(mod, cls):
     """
     return dict([(name, obj) for name, obj in inspect.getmembers(mod)
                 if inspect.isclass(obj) and issubclass(obj, cls)])
+    
+def isiterable(obj):
+    if isinstance(obj, collections.Iterable):
+        return True
+    else:
+        return False
+        
+
+def ordinal(value):
+    """
+    Converts zero or a *postive* integer (or their string 
+    representations) to an ordinal value.
+
+    >>> for i in range(1,13):
+    ...     ordinal(i)
+    ...     
+    u'1st'
+    u'2nd'
+    u'3rd'
+    u'4th'
+    u'5th'
+    u'6th'
+    u'7th'
+    u'8th'
+    u'9th'
+    u'10th'
+    u'11th'
+    u'12th'
+
+    >>> for i in (100, '111', '112',1011):
+    ...     ordinal(i)
+    ...     
+    u'100th'
+    u'111th'
+    u'112th'
+    u'1011th'
+    
+    Notes
+    -----
+    Author:  Serdar Tumgoren
+    http://code.activestate.com/recipes/576888-format-a-number-as-an-ordinal/
+    MIT license
+    """
+    try:
+        value = int(value)
+    except ValueError:
+        return value
+
+    if value % 100//10 != 1:
+        if value % 10 == 1:
+            ordval = u"%d%s" % (value, "st")
+        elif value % 10 == 2:
+            ordval = u"%d%s" % (value, "nd")
+        elif value % 10 == 3:
+            ordval = u"%d%s" % (value, "rd")
+        else:
+            ordval = u"%d%s" % (value, "th")
+    else:
+        ordval = u"%d%s" % (value, "th")
+
+    return ordval
+
+def underline(line, character="-"):
+    """Return the line underlined.
+
+    """
+
+    return line + "\n" + character*len(line)
+
+def without_nans(data):
+    return data[~np.isnan(data)] 

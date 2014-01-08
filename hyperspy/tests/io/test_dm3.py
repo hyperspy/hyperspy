@@ -20,7 +20,7 @@
 import os
 
 import numpy as np
-from generate_dm_testing_files import data_types
+from generate_dm_testing_files import dm3_data_types
 
 from nose.tools import assert_true
 from hyperspy.io import load
@@ -38,7 +38,7 @@ def test_loading():
     dims = range(1,4)
     for dim in dims:
         subfolder = 'dm3_%iD_data' % dim
-        for key in data_types.iterkeys():
+        for key in dm3_data_types.iterkeys():
             fname = "test-%s.dm3" % key
             filename = os.path.join(my_path, subfolder, fname)
             yield check_load, filename, subfolder, key
@@ -46,19 +46,21 @@ def test_loading():
 def test_dtypes():
     subfolder = 'dm3_1D_data'
     for key,data in data_dict[subfolder].iteritems():
-        yield check_dtype, data.dtype, np.dtype(data_types[key]), key
+        yield check_dtype, data.dtype, np.dtype(dm3_data_types[key]), key
 
 ## TODO: the RGB data generated is not correct        
 def test_content():
     for subfolder in data_dict:
-        if subfolder == 'dm3_1D_data':
-            dat = np.arange(1,3)
-        elif subfolder == 'dm3_2D_data':
-            dat = np.arange(1,5).reshape(2,2)
-        elif subfolder == 'dm3_3D_data':
-            dat = np.arange(1,9).reshape(2,2,2)
-        for key,data in data_dict[subfolder].iteritems():
-            dat = dat.astype(data_types[key])
+        for key, data in data_dict[subfolder].iteritems():
+            if subfolder == 'dm3_1D_data':
+                dat = np.arange(1, 3)
+            elif subfolder == 'dm3_2D_data':
+                dat = np.arange(1, 5).reshape(2,2)
+            elif subfolder == 'dm3_3D_data':
+                dat = np.arange(1, 9).reshape(2,2,2)
+            dat = dat.astype(dm3_data_types[key])
+            if key in (8, 23): # RGBA
+                dat["A"][:] = 0 
             yield check_content, data, dat, subfolder, key
 
 def check_load(filename, subfolder, key):
@@ -69,11 +71,11 @@ def check_load(filename, subfolder, key):
         data_dict[subfolder][key] = s.data
     except:
         ok = False
-    assert_true(ok == True, msg = 'loading %s\\test-%i' % (subfolder, key))
+    assert_true(ok == True, msg='loading %s\\test-%i' % (subfolder, key))
     
 def check_dtype(d1, d2, i):
     assert_true(d1 == d2, msg = 'test_dtype-%i' % i)
 
 def check_content(dat1, dat2, subfolder, key):   
-    assert_true(np.all(dat1 == dat2) == True, msg = 'content %s type % i' % 
-    (subfolder, key))
+    assert_true((dat1==dat2).all(), msg='content %s type % i: '
+        '\n%s not equal to \n%s' % (subfolder, key, str(dat1), str(dat2)))

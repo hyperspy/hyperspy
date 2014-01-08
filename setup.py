@@ -27,7 +27,7 @@ import sys
 import fileinput
 
 import hyperspy.Release as Release
-# clean the build directory so we aren't mixing Windows and Linux 
+# clean the build directory so we aren't mixing Windows and Linux
 # installations carelessly.
 if os.path.exists('build'):
     distutils.dir_util.remove_tree('build')
@@ -47,7 +47,7 @@ def are_we_building4windows():
 scripts = ['bin/hyperspy',]
 
 if are_we_building4windows() or os.name in ['nt','dos']:
-    # In the Windows command prompt we can't execute Python scripts 
+    # In the Windows command prompt we can't execute Python scripts
     # without a .py extension. A solution is to create batch files
     # that runs the different scripts.
     # (code adapted from scitools)
@@ -72,10 +72,10 @@ if are_we_building4windows() or os.name in ['nt','dos']:
                     f.write('start pythonw "%%~dp0\%s " %s \n' % (
                         os.path.split(script)[1], env))
                 else:
-                    f.write('python "%%~dp0\%s" %s \n' % 
+                    f.write('python "%%~dp0\%s" %s \n' %
                         (os.path.split(script)[1], env))
-                    
-                batch_files.append(batch_file)        
+
+                batch_files.append(batch_file)
     scripts.extend(batch_files)
 
 class update_version_when_dev:
@@ -127,19 +127,19 @@ class update_version_when_dev:
                     print "version = \"%s\"" % self.release_version
                 else:
                     print line,
-        
-    
+
+
 with update_version_when_dev() as version:
     setup(
         name = "hyperspy",
         package_dir = {'hyperspy': 'hyperspy'},
         version = version,
         packages = ['hyperspy',
-                    'hyperspy.components',
-                    'hyperspy.io_plugins', 
+                    'hyperspy._components',
+                    'hyperspy.io_plugins',
                     'hyperspy.drawing',
                     'hyperspy.learn',
-                    'hyperspy.signals', 
+                    'hyperspy._signals',
                     'hyperspy.gui',
                     'hyperspy.tests',
                     'hyperspy.tests.component',
@@ -149,22 +149,30 @@ with update_version_when_dev() as version:
                     'hyperspy.models',
                     'hyperspy.misc',
                     'hyperspy.misc.eels',
+                    'hyperspy.misc.eds',
                     'hyperspy.misc.io',
                     'hyperspy.misc.machine_learning',
-                    'hyperspy.misc.mpfit', 
+                    'hyperspy.misc.mpfit',
                     'hyperspy.misc.mpfit.tests',
+                    'hyperspy.misc.borrowed',
+                    'hyperspy.misc.borrowed.astroML',
                     ],
         requires = install_req,
         scripts = scripts,
-        package_data = 
+        package_data =
         {
-            'hyperspy': 
+            'hyperspy':
                 [   'bin/*.py',
                     'ipython_profile/*',
                     'data/*.ico',
             'tests/io/dm3_1D_data/*.dm3',
             'tests/io/dm3_2D_data/*.dm3',
             'tests/io/dm3_3D_data/*.dm3',
+            'tests/io/dm4_1D_data/*.dm4',
+            'tests/io/dm4_2D_data/*.dm4',
+            'tests/io/dm4_3D_data/*.dm4',
+            'tests/io/msa_files/*.msa',
+            'tests/drawing/*.ipynb',
                 ],
         },
         author = Release.authors['all'][0],

@@ -29,7 +29,6 @@ from hyperspy import components
 from hyperspy.component import Component
 from hyperspy.misc import utils
 from hyperspy import drawing
-from hyperspy.misc.interactive_ns import interactive_ns
 from hyperspy.gui.tools import (SpanSelectorInSpectrum, 
     SpanSelectorInSpectrumHandler,OurFindButton, OurPreviousButton,
     OurApplyButton)
@@ -147,27 +146,14 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             
     def apply(self):
         self.signal._plot.auto_update_plot = False
-        maxval = self.signal.axes_manager.navigation_size
-        if maxval > 0:
-            pbar = progressbar(maxval=maxval)
-        i = 0
-        self.bg_line_range = 'full'
-        for s in self.signal:
-            s.data[:] -= \
-            np.nan_to_num(self.bg_to_plot(self.signal.axes_manager,
-                                          0))
-            if self.background_type == 'Power Law':
-                s.data[:self.axis.value2index(self.ss_right_value)] = 0
-                
-            i+=1
-            if maxval > 0:
-                pbar.update(i)
-        if maxval > 0:
-            pbar.finish()
-            
+        new_spectra = self.signal._remove_background_cli(
+                (self.ss_left_value, self.ss_right_value),
+                self.background_estimator)
+        self.signal.data = new_spectra.data
         self.signal._replot()
         self.signal._plot.auto_update_plot = True
         
+
 class SpikesRemovalHandler(tu.Handler):
     def close(self, info, is_ok):
         # Removes the span selector from the plot
@@ -205,7 +191,6 @@ class SpikesRemovalHandler(tu.Handler):
             obj.find(back=True)
         return
 
-        
 class SpikesRemoval(SpanSelectorInSpectrum):
     interpolator_kind = t.Enum(
         'Linear',
@@ -246,7 +231,6 @@ class SpikesRemoval(SpanSelectorInSpectrum):
                             if (navigation_mask is None or not 
                                 navigation_mask[coordinate[::-1]])]
         self.signal = signal
-        sys.setrecursionlimit(np.cumprod(self.signal.data.shape)[-1])
         self.line = signal._plot.signal_plot.ax_lines[0]
         self.ax = signal._plot.signal_plot.ax
         signal._plot.auto_update_plot = False
@@ -281,22 +265,30 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         else:
             return False
 
-    def find(self, back=False):
-        if ((self.index == len(self.coordinates) - 1 and back is False)
-        or (back is True and self.index == 0)):
-            messages.information('End of dataset reached')
-            return
+    def _reset_line(self):
         if self.interpolated_line is not None:
             self.interpolated_line.close()
             self.interpolated_line = None
             self.reset_span_selector()
-        
-        if self.detect_spike() is False:
+
+    def find(self, back=False):
+        self._reset_line()
+        ncoordinates = len(self.coordinates)
+        spike = self.detect_spike()
+        while not spike and (
+                (self.index < ncoordinates -1 and back is False) or 
+                (self.index > 0 and back is True)):
             if back is False:
                 self.index += 1
             else:
                 self.index -= 1
-            self.find(back=back)
+            spike = self.detect_spike()
+
+        if spike is False:
+            messages.information('End of dataset reached')
+            self.index = 0
+            self._reset_line()
+            return
         else:
             minimum = max(0,self.argmax - 50)
             maximum = min(len(self.signal()) - 1, self.argmax + 50)

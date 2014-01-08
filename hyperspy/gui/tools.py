@@ -26,17 +26,13 @@ from traitsui.menu import (OKButton, ApplyButton, CancelButton,
 
 from hyperspy.misc import utils
 from hyperspy import drawing
-from hyperspy.misc.interactive_ns import interactive_ns
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.gui import messages
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
-from hyperspy.drawing.utils import does_figure_object_exists
-from hyperspy.gui.mpl_traits_editor import MPLFigureEditor
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import DraggableVerticalLine
 from hyperspy.misc import spectrum_tools
-
 
 import sys
 
@@ -93,6 +89,7 @@ class SpanSelectorInSpectrumHandler(tu.Handler):
             obj.next()
         return
 
+
 class SpectrumRangeSelectorHandler(tu.Handler):
     def close(self, info, is_ok):
         # Removes the span selector from the plot
@@ -133,6 +130,7 @@ class CalibrationHandler(SpanSelectorInSpectrumHandler):
         info.object.last_calibration_stored = True
         return
         
+
 class SpanSelectorInSpectrum(t.HasTraits):
     ss_left_value = t.Float()
     ss_right_value = t.Float()
@@ -179,6 +177,7 @@ class SpanSelectorInSpectrum(t.HasTraits):
         self.ss_right_value = 0
         self.span_selector_switch(True)
         
+
 class LineInSpectrum(t.HasTraits):
     """Adds a vertical draggable line to a spectrum that reports its
     position to the position attribute of the class.
@@ -249,7 +248,6 @@ class LineInSpectrum(t.HasTraits):
         self.draw()
         
             
-
 class SpectrumCalibration(SpanSelectorInSpectrum):
     left_value = t.Float(label='New left value')
     right_value = t.Float(label='New right value')
@@ -312,6 +310,7 @@ class SpectrumCalibration(SpanSelectorInSpectrum):
             (self.left_value, self.right_value), (lc,rc),
             modify_calibration = False)
             
+
 class SpectrumRangeSelector(SpanSelectorInSpectrum):
     on_close = t.List()
         
@@ -337,7 +336,7 @@ class Smoothing(t.HasTraits):
                    
     def plot(self):
         if self.signal._plot is None or not \
-            does_figure_object_exists(self.signal._plot.signal_plot.figure):
+            self.signal._plot.is_active():
             self.signal.plot()
         hse = self.signal._plot
         l1 = hse.signal_plot.ax_lines[0]
@@ -441,6 +440,7 @@ class Smoothing(t.HasTraits):
                 color=self.original_color,
                 type='line')        
 
+
 class SmoothingSavitzkyGolay(Smoothing):
     polynomial_order = t.Int(3)
     number_of_points = t.Int(5)
@@ -474,6 +474,7 @@ class SmoothingSavitzkyGolay(Smoothing):
                             self.polynomial_order, 0)
         return smoothed
             
+
 class SmoothingLowess(Smoothing):
     smoothing_parameter = t.Float(2/3.)
     number_of_iterations = t.Int(3)
@@ -502,6 +503,7 @@ class SmoothingLowess(Smoothing):
                             
         return smoothed
 
+
 class SmoothingTV(Smoothing):
     smoothing_parameter = t.Float(200)
 
@@ -526,6 +528,7 @@ class SmoothingTV(Smoothing):
                                 weight = self.smoothing_parameter,)
         return smoothed
         
+
 class ButterworthFilter(Smoothing):
     cutoff_frequency_ratio = t.Range(0.,1.,0.05)
     type = t.Enum('low', 'high')
@@ -565,6 +568,7 @@ class Load(t.HasTraits):
         buttons = [OKButton, CancelButton],
         title = 'Load file')
         
+
 class ImageContrastHandler(tu.Handler):
     def close(self, info, is_ok):
 #        # Removes the span selector from the plot
@@ -572,7 +576,7 @@ class ImageContrastHandler(tu.Handler):
 #        if is_ok is True:
 #            self.apply(info)
         if is_ok is False:
-            info.object.image.update_image(auto_contrast=True)
+            info.object.image.update(auto_contrast=True)
         info.object.close()
         return True
 
@@ -612,8 +616,6 @@ class ImageContrastEditor(t.HasTraits):
                             label = 'vmax',
                             show_label=True,
                             style = 'readonly'),
-
-#                    resizable=True,
                     handler = ImageContrastHandler,
                     buttons = [OKButton,
                                OurApplyButton,
@@ -669,7 +671,7 @@ class ImageContrastEditor(t.HasTraits):
     def reset(self):
         data = self.image.data_function().ravel()
         self.image.vmin, self.image.vmax = np.nanmin(data),np.nanmax(data)
-        self.image.update_image(auto_contrast=False)
+        self.image.update(auto_contrast=False)
         self.update_histogram()
         
     def update_histogram(self):
@@ -682,11 +684,12 @@ class ImageContrastEditor(t.HasTraits):
             return
         self.image.vmin = self.ss_left_value
         self.image.vmax = self.ss_right_value
-        self.image.update_image(auto_contrast=False)
+        self.image.update(auto_contrast=False)
         self.update_histogram()
         
     def close(self):
         plt.close(self.ax.figure)
+
 
 class ComponentFit(SpanSelectorInSpectrum):
     fit = t.Button()
@@ -789,4 +792,44 @@ class ComponentFit(SpanSelectorInSpectrum):
         self._fit_fired()
 
 
+class IntegrateArea(SpanSelectorInSpectrum):
+    integrate = t.Button()
+    
+    view = tu.View(
+                buttons = [OKButton, CancelButton],
+                title = 'Integrate in range',
+                handler = SpanSelectorInSpectrumHandler,
+                )
+    
+    def __init__(self, signal, signal_range=None):
+        if signal.axes_manager.signal_dimension != 1:
+             raise SignalOutputDimensionError(
+                      signal.axes.signal_dimension, 1)
+        
+        self.signal = signal
+        self.span_selector = None
+        if not hasattr(self.signal, '_plot'):
+            self.signal.plot()
+        elif self.signal._plot is None:
+            self.signal.plot()
+        elif self.signal._plot.is_active() is False:
+            self.signal.plot()
+        self.span_selector_switch(on=True)
+        
+    def apply(self):
+        integrated_spectrum = self.signal._integrate_in_range_commandline(
+                signal_range=(
+                    self.ss_left_value,
+                    self.ss_right_value)
+                )
+        #Replaces the original signal inplace with the new integrated spectrum
+        plot = False
+        if self.signal._plot:
+            self.signal._plot.close()
+            plot = True
+        self.signal.__init__(**integrated_spectrum._to_dictionary())
+        self.signal._assign_subclass()
+        self.signal.axes_manager.set_signal_dimension(0)
+        if plot is True:
+            self.signal.plot()
     

@@ -39,7 +39,7 @@ from hyperspy import messages
 import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.misc import progressbar
-from hyperspy.signals.eels import EELSSpectrum, Spectrum
+from hyperspy._signals.eels import EELSSpectrum, Spectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
@@ -73,6 +73,9 @@ class Model(list):
         self._position_widgets = []
         self._plot = None
         
+    def __repr__(self):
+        return "<Model %s>" % super(Model, self).__repr__()
+
     def insert(self):
         raise NotImplementedError
 
@@ -170,29 +173,51 @@ class Model(list):
                 parameter.disconnect(self.update_plot)
     
 
-    def as_signal(self, out_of_range_to_nan=True):
+    def as_signal(self, component_list=None, out_of_range_to_nan=True):
         """Returns a recreation of the dataset using the model.
         the spectral range that is not fitted is filled with nans.
         
         Parameters
         ----------
+        component_list : list of hyperspy components, optional
+            If a list of components is given, only the components given in the
+            list is used in making the returned spectrum
         out_of_range_to_nan : bool
             If True the spectral range that is not fitted is filled with nans.
             
         Returns
         -------
         spectrum : An instance of the same class as `spectrum`.
+
+        Examples
+        --------
+        >>>> s = signals.Spectrum(np.random.random((10,100)))
+        >>>> m = create_model(s)
+        >>>> l1 = components.Lorentzian()
+        >>>> l2 = components.Lorentzian()
+        >>>> m.append(l1)
+        >>>> m.append(l2)
+        >>>> s1 = m.as_signal()
+        >>>> s2 = m.as_signal(component_list=[l1])
     
         """
+
         # TODO: model cube should dissapear or at least be an option
+        if component_list:
+            active_state = []
+            for component_ in self:
+                active_state.append(component_.active)
+                if component_ in component_list:
+                    component_.active = True 
+                else:
+                    component_.active = False
         data = np.zeros(self.spectrum.data.shape,dtype='float')
         data[:] = np.nan
         if out_of_range_to_nan is True:
             channel_switches_backup = copy.copy(self.channel_switches)
             self.channel_switches[:] = True
         maxval = self.axes_manager.navigation_size
-        if maxval > 0:
-            pbar = progressbar.progressbar(maxval=maxval)
+        pbar = progressbar.progressbar(maxval=maxval)
         i = 0
         for index in self.axes_manager:
             self.fetch_stored_values(only_fixed=False)
@@ -210,6 +235,9 @@ class Model(list):
             axes=self.spectrum.axes_manager._get_axes_dicts())
         spectrum.mapped_parameters.title = (
             self.spectrum.mapped_parameters.title + " from fitted model")
+        if component_list:
+            for component_ in self:
+                component_.active = active_state.pop(0)
         return spectrum
         
         
@@ -928,8 +956,8 @@ class Model(list):
         (mask.shape != tuple(self.axes_manager._navigation_shape_in_array)):
            messages.warning_exit(
            "The mask must be a numpy array of boolen type with "
-           " shape: %s" % 
-           self.axes_manager._navigation_shape_in_array)
+           " shape: %s" +
+           str(self.axes_manager._navigation_shape_in_array))
         masked_elements = 0 if mask is None else mask.sum()
         maxval=self.axes_manager.navigation_size - masked_elements
         if maxval > 0:
@@ -949,7 +977,7 @@ class Model(list):
                 kwargs['bounded'] = False
         i = 0
         for index in self.axes_manager:
-            if mask is None or not mask[index]:
+            if mask is None or not mask[index[::-1]]:
                 self.fit(**kwargs)
                 i += 1
                 if maxval > 0:
@@ -987,7 +1015,7 @@ class Model(list):
         """Loads the parameters array from  a binary file written with 
         the 'save_parameters2file' function
         
-        Paramters
+        Parameters
         ---------
         filename : str
         
@@ -1008,7 +1036,7 @@ class Model(list):
         """Plots the current spectrum to the screen and a map with a 
         cursor to explore the SI.
         
-        Paramaters
+        Parameters
         ----------
         plot_components : bool
             If True, add a line per component to the signal figure.
