@@ -133,33 +133,33 @@ class EELSSpectrum(Spectrum):
                             self.subshells.add(
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
-                    
+
     def estimate_zero_loss_peak_centre(self, mask=None):
         """Estimate the posision of the zero-loss peak.
-        
+
         This function provides just a coarse estimation of the position
         of the zero-loss peak centre by computing the position of the maximum
         of the spectra. For subpixel accuracy use `estimate_shift1D`.
-        
+
         Parameters
         ----------
         mask : Signal of bool data type.
             It must have signal_dimension = 0 and navigation_shape equal to the
-            current signal. Where mask is True the shift is not computed 
+            current signal. Where mask is True the shift is not computed
             and set to nan.
 
         Returns
         -------
         zlpc : Signal subclass
             The estimated position of the maximum of the ZLP peak.
-        
+
         Notes
         -----
         This function only works when the zero-loss peak is the most
         intense feature in the spectrum. If it is not in most cases
         the spectrum can be cropped to meet this criterium.
-        Alternatively use `estimate_shift1D`.    
-        
+        Alternatively use `estimate_shift1D`.
+
         See Also
         --------
         estimate_shift1D, align_zero_loss_peak
@@ -188,16 +188,16 @@ class EELSSpectrum(Spectrum):
 
         This function first aligns the spectra using the result of
         `estimate_zero_loss_peak_centre` and afterward, if subpixel is True,
-        proceeds to align with subpixel accuracy using `align1D`. The offset 
+        proceeds to align with subpixel accuracy using `align1D`. The offset
         is automatically correct if `calibrate` is True.
-        
+
         Parameters
         ----------
         calibrate : bool
-            If True, set the offset of the spectral axis so that the 
+            If True, set the offset of the spectral axis so that the
             zero-loss peak is at position zero.
         also_align : list of signals
-            A list containing other spectra of identical dimensions to 
+            A list containing other spectra of identical dimensions to
             align using the shifts applied to the current spectrum.
             If `calibrate` is True, the calibration is also applied to
             the spectra in the list.
@@ -205,11 +205,11 @@ class EELSSpectrum(Spectrum):
             If True, print summary statistics the ZLP maximum before
             the aligment.
         subpixel : bool
-            If True, perform the alignment with subpixel accuracy 
+            If True, perform the alignment with subpixel accuracy
             using cross-correlation.
         mask : Signal of bool data type.
             It must have signal_dimension = 0 and navigation_shape equal to the
-            current signal. Where mask is True the shift is not computed 
+            current signal. Where mask is True the shift is not computed
             and set to nan.
 
         See Also
@@ -223,7 +223,7 @@ class EELSSpectrum(Spectrum):
 
         """
         def substract_from_offset(value, signals):
-            for signal in signals: 
+            for signal in signals:
                 signal.axes_manager[-1].offset -= value
 
         zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
@@ -240,7 +240,7 @@ class EELSSpectrum(Spectrum):
             zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
             substract_from_offset(without_nans(zlpc.data).mean(),
                                   also_align + [self])
-        
+
         if subpixel is False: return
         left, right = -3., 3.
         if calibrate is False:
@@ -248,11 +248,11 @@ class EELSSpectrum(Spectrum):
                 mask=mask).data).mean()
             left += mean_
             right += mean_
-            
+
         left = (left if left > self.axes_manager[-1].axis[0]
-                    else self.axes_manager[-1].axis[0]) 
+                    else self.axes_manager[-1].axis[0])
         right = (right if right < self.axes_manager[-1].axis[-1]
-                    else self.axes_manager[-1].axis[-1]) 
+                    else self.axes_manager[-1].axis[-1])
         self.align1D(left, right, also_align=also_align, **kwargs)
         zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
         if calibrate is True:
@@ -261,7 +261,7 @@ class EELSSpectrum(Spectrum):
 
     def estimate_elastic_scattering_intensity(self,
                                               threshold):
-        """Rough estimation of the elastic scattering intensity by 
+        """Rough estimation of the elastic scattering intensity by
         truncation of a EELS low-loss spectrum.
 
         Parameters
@@ -290,7 +290,7 @@ class EELSSpectrum(Spectrum):
         """
         # TODO: Write units tests
         self._check_signal_dimension_equals_one()
-        
+
         if isinstance(threshold, numbers.Number):
             I0 = self.isig[:threshold].integrate_simpson(-1)
             I0.axes_manager.set_signal_dimension(
@@ -424,8 +424,7 @@ class EELSSpectrum(Spectrum):
 
     def estimate_thickness(self,
                            threshold,
-                           zlp=None,
-                           threshold=None,):
+                           zlp=None,):
         """Estimates the thickness (relative to the mean free path)
         of a sample using the log-ratio method.
 
@@ -435,13 +434,6 @@ class EELSSpectrum(Spectrum):
 
         Parameters
         ----------
-        zlp : {None, EELSSpectrum}
-            If not None the zero-loss
-            peak intensity is calculated from the ZLP spectrum
-            supplied by integration using Simpson's rule. If None estimates
-            the zero-loss peak intensity using
-            `estimate_elastic_scattering_intensity` by truncation.
-
         threshold : {Signal, float, int}
             Truncation energy to estimate the intensity of the
             elastic scattering. The
@@ -450,7 +442,12 @@ class EELSSpectrum(Spectrum):
             threshold value in the energy units. Alternatively a constant
             threshold can be specified in energy/index units by passing
             float/int.
-
+        zlp : {None, EELSSpectrum}
+            If not None the zero-loss
+            peak intensity is calculated from the ZLP spectrum
+            supplied by integration using Simpson's rule. If None estimates
+            the zero-loss peak intensity using
+            `estimate_elastic_scattering_intensity` by truncation.
 
         Returns
         -------
@@ -718,7 +715,7 @@ class EELSSpectrum(Spectrum):
 
         return ds
 
-    def _spikes_diagnosis(self, signal_mask=None, 
+    def _spikes_diagnosis(self, signal_mask=None,
                          navigation_mask=None):
         """Plots a histogram to help in choosing the threshold for
         spikes removal.
@@ -749,8 +746,8 @@ class EELSSpectrum(Spectrum):
         plt.xlabel('Threshold')
         plt.ylabel('Counts')
         plt.draw()
-        
-    def spikes_removal_tool(self,signal_mask=None, 
+
+    def spikes_removal_tool(self,signal_mask=None,
                             navigation_mask=None):
         """Graphical interface to remove spikes from EELS spectra.
 
@@ -832,8 +829,8 @@ class EELSSpectrum(Spectrum):
             mp.TEM.EELS.collection_angle = collection_angle
 
         self._are_microscope_parameters_missing()
-                
-    @only_interactive            
+
+    @only_interactive
     def _set_microscope_parameters(self):
         if self.mapped_parameters.has_item('TEM') is False:
             self.mapped_parameters.add_node('TEM')
@@ -856,7 +853,7 @@ class EELSSpectrum(Spectrum):
             if value != t.Undefined:
                 exec('self.mapped_parameters.%s = %s' % (key, value))
         self._are_microscope_parameters_missing()
-        
+
     def power_law_extrapolation(self, window_size=20,
                                 extrapolation_size=1024,
                                 add_noise=False,
