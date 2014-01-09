@@ -260,8 +260,8 @@ class EELSSpectrum(Spectrum):
                                   also_align + [self])
 
     def estimate_elastic_scattering_intensity(self,
-                                              threshold=None,):
-        """Rough estimation of the elastic scattering intensity by
+                                              threshold):
+        """Rough estimation of the elastic scattering intensity by 
         truncation of a EELS low-loss spectrum.
 
         Parameters
@@ -290,8 +290,8 @@ class EELSSpectrum(Spectrum):
         """
         # TODO: Write units tests
         self._check_signal_dimension_equals_one()
-
-        if isinstance(threshold, float):
+        
+        if isinstance(threshold, numbers.Number):
             I0 = self.isig[:threshold].integrate_simpson(-1)
             I0.axes_manager.set_signal_dimension(
                                 min(2, self.axes_manager.navigation_dimension))
@@ -423,6 +423,7 @@ class EELSSpectrum(Spectrum):
         return threshold
 
     def estimate_thickness(self,
+                           threshold,
                            zlp=None,
                            threshold=None,):
         """Estimates the thickness (relative to the mean free path)
