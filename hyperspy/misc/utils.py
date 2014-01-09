@@ -100,7 +100,12 @@ def slugify(value, valid_variable_name=False):
     """
     import unicodedata
     if not isinstance(value, unicode):
-        value = value.decode('utf8')
+        try:
+            # Convert to unicode using the default encoding
+            value = unicode(value)
+        except:
+            # Try latin1. If this does not work an exception is raised. 
+            value = unicode(value, "latin1")
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
     value = unicode(_slugify_strip_re.sub('', value).strip())
     value = _slugify_hyphenate_re.sub('_', value)
@@ -623,3 +628,8 @@ def underline(line, character="-"):
 
     return line + "\n" + character*len(line)
 
+def closest_power_of_two(n):
+    return int(2 ** np.ceil(np.log2(n)))
+
+def without_nans(data):
+    return data[~np.isnan(data)]

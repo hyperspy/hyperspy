@@ -1,83 +1,86 @@
-drawing Package
-===============
+hyperspy.drawing package
+========================
 
-:mod:`drawing` Package
-----------------------
+Submodules
+----------
 
-.. automodule:: hyperspy.drawing
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`figure` Module
---------------------
+hyperspy.drawing.figure module
+------------------------------
 
 .. automodule:: hyperspy.drawing.figure
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`image` Module
--------------------
+hyperspy.drawing.image module
+-----------------------------
 
 .. automodule:: hyperspy.drawing.image
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`mpl_he` Module
---------------------
+hyperspy.drawing.mpl_he module
+------------------------------
 
 .. automodule:: hyperspy.drawing.mpl_he
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`mpl_hie` Module
----------------------
+hyperspy.drawing.mpl_hie module
+-------------------------------
 
 .. automodule:: hyperspy.drawing.mpl_hie
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`mpl_hse` Module
----------------------
+hyperspy.drawing.mpl_hse module
+-------------------------------
 
 .. automodule:: hyperspy.drawing.mpl_hse
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`signal` Module
---------------------
+hyperspy.drawing.signal module
+------------------------------
 
 .. automodule:: hyperspy.drawing.signal
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`spectrum` Module
-----------------------
+hyperspy.drawing.spectrum module
+--------------------------------
 
 .. automodule:: hyperspy.drawing.spectrum
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`utils` Module
--------------------
+hyperspy.drawing.utils module
+-----------------------------
 
 .. automodule:: hyperspy.drawing.utils
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`widgets` Module
----------------------
+hyperspy.drawing.widgets module
+-------------------------------
 
 .. automodule:: hyperspy.drawing.widgets
     :members:
     :undoc-members:
     :show-inheritance:
 
+
+Module contents
+---------------
+
+.. automodule:: hyperspy.drawing
+    :members:
+    :undoc-members:
+    :show-inheritance:

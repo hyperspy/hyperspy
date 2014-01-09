@@ -194,7 +194,13 @@ class ImagePlot(BlittedFigure):
         
         self.figure.canvas.draw()
         if hasattr(self.figure, 'tight_layout'):
-            self.figure.tight_layout()
+            try:
+                self.figure.tight_layout()
+            except:
+                # tight_layout is a bit brittle, we do this just in case it
+                # complains
+                pass
+                
         self.connect()
         
     def update(self, auto_contrast=None):
@@ -239,6 +245,11 @@ class ImagePlot(BlittedFigure):
             else:
                 ims[0].changed()
             self._draw_animated()
+            # It seems that nans they're simply not drawn, so simply replacing
+            # the data does not update the value of the nan pixels to the
+            # background color. We redraw everything as a workaround.
+            if np.isnan(data).any():
+                self.figure.canvas.draw()
         else:
             self.ax.imshow(data,
                            interpolation='nearest',
