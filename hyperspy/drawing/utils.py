@@ -186,11 +186,6 @@ def _make_heatmap_subplot(spectra):
     return im._plot.signal_plot.ax
 
 def _make_cascade_subplot(spectra, ax, color="blue", padding=1):
-    import hyperspy.signal
-    if isinstance(spectra, hyperspy.signal.Signal):
-        navigation_length = spectra.axes_manager.navigation_size
-    else:
-        navigation_length = len(spectra)
     max_value = 0
     for spectrum in spectra:
         spectrum_yrange = (np.nanmax(spectrum.data) -
@@ -252,10 +247,6 @@ def plot_spectra(
 
     """
     import hyperspy.signal
-    if isinstance(spectra, hyperspy.signal.Signal):
-        navigation_length = spectra.axes_manager.navigation_size
-    else:
-        navigation_length = len(spectra)
 
     if color is not None:
         if hasattr(color, "__iter__"):
@@ -280,8 +271,8 @@ def plot_spectra(
 
     elif style == 'mosaic':
         default_fsize = plt.rcParams["figure.figsize"]
-        figsize = (default_fsize[0], default_fsize[1] * navigation_length)
-        fig, subplots = plt.subplots(navigation_length, 1, figsize=figsize)
+        figsize = (default_fsize[0], default_fsize[1] * len(spectra))
+        fig, subplots = plt.subplots(len(spectra), 1, figsize=figsize)
         for ax, spectrum, color in zip(subplots, spectra, color):
             _plot_spectrum(spectrum, ax, color=color)
             ax.set_yticks([])
