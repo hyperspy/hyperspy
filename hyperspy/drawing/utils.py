@@ -17,10 +17,13 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import itertools
 
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+
+from hyperspy.misc.utils import unfold_if_multidim
 
 
 def create_figure(window_title=None,
@@ -175,130 +178,127 @@ class ColorCycle():
         return self.color_cycle.pop(0)
 
 
-def _make_heatmap_subplot(spectra, ax):
-    x_axis = spectra.axes_manager.signal_axes[0]
-    data = spectra.data
-    if spectra.axes_manager.navigation_size == 0:
-        ax.imshow(
-            [data],
-            cmap=plt.cm.jet,
-            aspect='auto')
+def _make_heatmap_subplot(spectra):
+    from hyperspy._signals.image import Image
+    im = Image(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
+    im.mapped_parameters.title = spectra.mapped_parameters.title
+    im.plot()
+    return im._plot.signal_plot.ax
+
+def _make_cascade_subplot(spectra, ax, color="blue", padding=1):
+    import hyperspy.signal
+    if isinstance(spectra, hyperspy.signal.Signal):
+        navigation_length = spectra.axes_manager.navigation_size
     else:
-        y_axis = spectra.axes_manager.navigation_axes[0]
-        ax.imshow(
-            data,
-            extent=[
-                x_axis.low_value,
-                x_axis.high_value,
-                y_axis.low_value,
-                y_axis.high_value],
-            aspect='auto',
-            interpolation="none")
-        ax.set_ylabel(y_axis.units)
-    ax.set_xlabel(x_axis.units)
-    return(ax)
+        navigation_length = len(spectra)
+    max_value = 0
+    for spectrum in spectra:
+        spectrum_yrange = (np.nanmax(spectrum.data) -
+                           np.nanmin(spectrum.data))
+        if spectrum_yrange > max_value:
+            max_value = spectrum_yrange
+    for spectrum_index, (spectrum, color) in enumerate(zip(spectra, color)):
+        x_axis = spectrum.axes_manager.signal_axes[0]
+        data_to_plot = ((spectrum.data - spectrum.data.min()) /
+                            float(max_value) + spectrum_index * padding)
+        ax.plot(x_axis.axis, data_to_plot, color=color)
+    _set_spectrum_xlabel(spectrum, ax)
+    ax.set_yticks([])
+    ax.autoscale(tight=True)
 
-
-def _make_cascade_subplot(spectra, ax, color='red', reverse_yaxis=False):
-    navigation_length = spectra.axes_manager.navigation_size
-    if isinstance(color, str):
-        if navigation_length == 0:
-            color_array = [color]
-        else:
-            color_array = [color] * navigation_length
-    else:
-        color_array = color
-    if spectra.axes_manager.navigation_size == 0:
-        x_axis = spectra.axes_manager.signal_axes[0]
-        data = spectra.data
-        ax.plot(x_axis.axis, data, color=color_array[0])
-    else:
-        max_value = 0
-        for spectrum in spectra:
-            spectrum_max_value = spectrum.data.max()
-            if spectrum_max_value > max_value:
-                max_value = spectrum_max_value
-        y_axis = spectra.axes_manager.navigation_axes[0]
-        if reverse_yaxis:
-            spectra_data = spectra.data[::-1]
-        else:
-            spectra_data = spectra.data
-        for spectrum_index, spectrum_data in enumerate(spectra_data):
-            x_axis = spectrum.axes_manager.signal_axes[0]
-            data_to_plot = (spectrum_data / float(max_value) +
-                            y_axis.axis[spectrum_index])
-            ax.plot(x_axis.axis, data_to_plot,
-                    color=color_array[spectrum_index])
-        ax.set_ylabel(y_axis.units)
-
-    ax.set_xlim(x_axis.low_value, x_axis.high_value)
-    ax.set_xlabel(x_axis.units)
-    return(ax)
-
-
-def _make_mosaic_subplot(spectrum, ax, color='red'):
+def _plot_spectrum(spectrum, ax, color="blue"):
     x_axis = spectrum.axes_manager.signal_axes[0]
-    data = spectrum.data
-    ax.plot(x_axis.axis, data, color=color)
-    ax.set_xlim(x_axis.low_value, x_axis.high_value)
-    ax.set_xlabel(x_axis.units)
-    return(ax)
+    ax.plot(x_axis.axis, spectrum.data, color=color)
 
+def _set_spectrum_xlabel(spectrum, ax):
+    x_axis = spectrum.axes_manager.signal_axes[0]
+    ax.set_xlabel("%s (%s)" % (x_axis.name, x_axis.units))
 
 def plot_spectra(
         spectra,
         style='cascade',
-        color='red',
-        reverse_yaxis=False):
+        color=None,
+        padding=0.1,
+        fig=None,):
     """Plot several spectral in the same figure.
+
+    Extra keyword arguments are passed to `matplotlib.figure`.
 
     Parameters
     ----------
     spectra : iterable
-        Ordered spectra list to plot. If style is cascade it is
-        possible to supply several lists of spectra of the same
-        lenght to plot multiple spectra in the same axes.
-    style : {'cascade', 'mosaic', 'multiple_files', 'heatmap'}
-        The style of the plot. multiple_files will plot every spectra
-        in its own file.
-    color : string or list of strings, optional
-        Sets the color of the plots. If string sets all plots to color.
-        If list of strings: the list must be the same length as the
-        navigation length of the spectra to be plotted. Default is red
-    reverse_yaxis : bool, optional
-        Reverse the plotting direction of the navigational axis for
-        cascade style plotting.
+        Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
+        the spectra can have diffent size and axes.
+    style : {'cascade', 'mosaic', 'heatmap'}
+        The style of the plot.
+    color : valid matplotlib color or a list of them or `None`
+        Sets the color of the lines of the plots when `style` is "cascade"
+        or "mosaic". If a list, if its length is
+        less than the number of spectra to plot, the colors will be cycled. If
+        If `None`, use default matplotlib color cycle.
+    padding : float
+        The default (1) guarantees that there is not overlapping. However,
+        in many cases a value between 0 and 1 can produce a tigther plot
+        without overlapping. Negative values have the same effect but
+        reverse the order of the spectra without reversing the order of the
+        colors.
+    fig : {matplotlib figure, None}
+        If None, a default figure will be created.
 
     Returns
     -------
-    fig: Matplotlib figure
+    ax: {matplotlib axes | array of matplotlib axes}
+        An array is returned when `style` is "mosaic".
 
     """
-    navigation_length = spectra.axes_manager.navigation_size
-    if isinstance(color, str):
-        if navigation_length == 0:
-            color_array = [color]
-        else:
-            color_array = [color] * navigation_length
+    import hyperspy.signal
+    if isinstance(spectra, hyperspy.signal.Signal):
+        navigation_length = spectra.axes_manager.navigation_size
     else:
-        color_array = color
+        navigation_length = len(spectra)
+
+    if color is not None:
+        if hasattr(color, "__iter__"):
+            color  = itertools.cycle(color)
+        elif isinstance(color, basestring):
+            color  = itertools.cycle([color])
+        else:
+            raise ValueError("Color must be None, a valid matplotlib color "
+                            "string or a list of valid matplotlib colors.")
+    else:
+        color  = itertools.cycle(plt.rcParams['axes.color_cycle'])
+
 
     if style == 'cascade':
-        fig = plt.figure()
+        if fig is None:
+            fig = plt.figure()
         ax = fig.add_subplot(111)
-        _make_cascade_subplot(spectra, ax,
-                              color=color_array,
-                              reverse_yaxis=reverse_yaxis)
+        _make_cascade_subplot(spectra,
+                              ax,
+                              color=color,
+                              padding=padding)
 
     elif style == 'mosaic':
-        # Need to find a way to automatically scale the figure size
-        fig, subplots = plt.subplots(1, len(spectra))
-        for ax, spectrum, color in zip(subplots, spectra, color_array):
-            _make_mosaic_subplot(spectrum, ax, color=color)
+        default_fsize = plt.rcParams["figure.figsize"]
+        figsize = (default_fsize[0], default_fsize[1] * navigation_length)
+        fig, subplots = plt.subplots(navigation_length, 1, figsize=figsize)
+        for ax, spectrum, color in zip(subplots, spectra, color):
+            _plot_spectrum(spectrum, ax, color=color)
+            ax.set_yticks([])
+            if not isinstance(spectra, hyperspy.signal.Signal):
+                _set_spectrum_xlabel(spectrum, ax)
+        if isinstance(spectra, hyperspy.signal.Signal):
+            _set_spectrum_xlabel(spectrum, ax)
+        fig.tight_layout()
 
     elif style == 'heatmap':
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        _make_heatmap_subplot(spectra, ax)
+        if not isinstance(spectra, hyperspy.signal.Signal):
+            import hyperspy.utils
+            spectra = hyperspy.utils.stack(spectra)
+        refold = unfold_if_multidim(spectra)
+        ax = _make_heatmap_subplot(spectra)
+        if refold is True:
+            spectra.fold()
+    ax = ax if style != "mosaic" else subplots
 
-    return fig
+    return ax
