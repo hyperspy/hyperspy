@@ -62,16 +62,17 @@ from hyperspy.misc.utils import underline
 from hyperspy.misc.borrowed.astroML.histtools import histogram
 
 class Signal2DTools(object):
-    def estimate_shift2D(self, reference='current',
-                                correlation_threshold=None,
-                                chunk_size=30,
-                                roi=None,
-                                normalize_corr=False,
-                                sobel=True,
-                                medfilter=True,
-                                hanning=True,
-                                plot=False,
-                                dtype='float',):
+    def estimate_shift2D(self,
+            reference='current',
+            correlation_threshold=None,
+            chunk_size=30,
+            roi=None,
+            normalize_corr=False,
+            sobel=True,
+            medfilter=True,
+            hanning=True,
+            plot=False,
+            dtype='float',):
         """Estimate the shifts in a image using phase correlation
 
         This method can only estimate the shift by comparing
@@ -4043,7 +4044,9 @@ class Signal(MVA,
         return self.get_current_signal()
 
     def __len__(self):
-        return self.axes_manager.signal_shape[-1]
+        nitem = int(self.axes_manager.navigation_size)
+        nitem = nitem if nitem > 0 else 1
+        return nitem
 
     def as_spectrum(self, spectral_axis):
         """Return the Signal as a spectrum.
@@ -4284,4 +4287,4 @@ class SpecialSlicers:
         self.signal.__getitem__(i, self.isNavigation).data[:] = j
 
     def __len__(self):
-        return self.signal.__len__()
+        return self.signal.axes_manager.signal_shape[0]
