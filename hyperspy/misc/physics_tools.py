@@ -1,4 +1,6 @@
 import numpy as np
+import math
+
 
 def bragg_scattering_angle(d, E0=100):
     """Calculate the first order bragg diffraction semiangle.
@@ -45,4 +47,7 @@ def effective_Z(Z_list, exponent=2.94):
     for Z in Z_list:
         temp += Z[1]*Z[1]**exponent
         total_e += Z[0]*Z[1]
-    return (temp/total_e)**(1/exponent)
+    return (temp/total_e)**(1/exponent)    
+
+        
+

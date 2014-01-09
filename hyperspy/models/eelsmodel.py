@@ -74,6 +74,7 @@ class EELSModel(Model):
         self.convolved = False
         self.low_loss = ll
         self.GOS = GOS
+        self.edges = list()
         if auto_background is True:
             interactive_ns = get_interactive_ns()
             background = PowerLaw()
@@ -212,7 +213,8 @@ class EELSModel(Model):
             minimum distance between the fine structure of an ionization edge 
             and that of the following one.
         """
-
+        if not self.edges:
+            return
         while (self.edges[i1].fine_structure_active is False or  
         self.edges[i1].active is False) and i1 < len(self.edges)-1 :
             i1+=1
@@ -242,6 +244,7 @@ class EELSModel(Model):
                         print "Automatically changing the fine structure \
                         width of edge",i1+1,"from", \
                         self.edges[i1].fine_structure_width, "eV to", new_fine_structure_width, \
+                               new_fine_structure_width, \
                         "eV to avoid conflicts with edge number", i2+1
                         self.edges[i1].fine_structure_width = new_fine_structure_width
                         self.resolve_fine_structure(i1 = i2)

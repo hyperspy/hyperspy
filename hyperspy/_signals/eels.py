@@ -34,6 +34,8 @@ import hyperspy.gui.messages as messagesui
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.components import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two
+from hyperspy.misc.utils import isiterable, underline
+from hyperspy.misc.utils import without_nans
 
 
 
@@ -131,44 +133,131 @@ class EELSSpectrum(Spectrum):
                             self.subshells.add(
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
-
-    def estimate_zero_loss_peak_centre(self,
-                                       calibrate=True,
-                                       also_apply_to=None):
-        """Returns the average position over all spectra of the maximum
-        intensity feature that, in most low-loss EELS spectra, it corresponds
-        to the zero-loss peak centre.
-
-        By default it also modifies the offset of the spectral axis so that
-        the average position of the zero-loss peak becomes zero.
-
-
-
+                    
+    def estimate_zero_loss_peak_centre(self, mask=None):
+        """Estimate the posision of the zero-loss peak.
+        
+        This function provides just a coarse estimation of the position
+        of the zero-loss peak centre by computing the position of the maximum
+        of the spectra. For subpixel accuracy use `estimate_shift1D`.
+        
         Parameters
         ----------
-        calibrate : bool
-            If True, modify the offset of the spectral axis so that
-            the zero-loss peak average position becomes zero.
-        also_apply_to : None or list of EELSSPectrum
-            If a list of signals is provided and `calibrate` is True,
-            the same offset transformation is applied to all the other signals.
+        mask : Signal of bool data type.
+            It must have signal_dimension = 0 and navigation_shape equal to the
+            current signal. Where mask is True the shift is not computed 
+            and set to nan.
 
         Returns
         -------
-        vmax : float
-            The average position over all spectra of the zero-loss peak.
+        zlpc : Signal subclass
+            The estimated position of the maximum of the ZLP peak.
+        
+        Notes
+        -----
+        This function only works when the zero-loss peak is the most
+        intense feature in the spectrum. If it is not in most cases
+        the spectrum can be cropped to meet this criterium.
+        Alternatively use `estimate_shift1D`.    
+        
+        See Also
+        --------
+        estimate_shift1D, align_zero_loss_peak
 
         """
         self._check_signal_dimension_equals_one()
-        axis = self.axes_manager.signal_axes[0]
-        imax = float(np.mean(np.argmax(self.data, axis.index_in_array)))
-        vmax = axis.offset + imax*axis.axes_manager[-1].scale
+        self._check_navigation_mask(mask)
+        zlpc = self.valuemax(-1)
+        if self.axes_manager.navigation_dimension == 1:
+            zlpc = zlpc.as_spectrum(0)
+        elif self.axes_manager.navigation_dimension > 1:
+            zlpc = zlpc.as_image((0, 1))
+        if mask is not None:
+            zlpc.data[mask.data] = np.nan
+        return zlpc
+
+    def align_zero_loss_peak(
+            self,
+            calibrate=True,
+            also_align=[],
+            print_stats=True,
+            subpixel=True,
+            mask=None,
+            **kwargs):
+        """Align the zero-loss peak.
+
+        This function first aligns the spectra using the result of
+        `estimate_zero_loss_peak_centre` and afterward, if subpixel is True,
+        proceeds to align with subpixel accuracy using `align1D`. The offset 
+        is automatically correct if `calibrate` is True.
+        
+        Parameters
+        ----------
+        calibrate : bool
+            If True, set the offset of the spectral axis so that the 
+            zero-loss peak is at position zero.
+        also_align : list of signals
+            A list containing other spectra of identical dimensions to 
+            align using the shifts applied to the current spectrum.
+            If `calibrate` is True, the calibration is also applied to
+            the spectra in the list.
+        print_stats : bool
+            If True, print summary statistics the ZLP maximum before
+            the aligment.
+        subpixel : bool
+            If True, perform the alignment with subpixel accuracy 
+            using cross-correlation.
+        mask : Signal of bool data type.
+            It must have signal_dimension = 0 and navigation_shape equal to the
+            current signal. Where mask is True the shift is not computed 
+            and set to nan.
+
+        See Also
+        --------
+        estimate_zero_loss_peak_centre, align1D, estimate_shift1D.
+
+        Notes
+        -----
+        Any extra keyword arguments are passed to `align1D`. For
+        more information read its docstring.
+
+        """
+        def substract_from_offset(value, signals):
+            for signal in signals: 
+                signal.axes_manager[-1].offset -= value
+
+        zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+        mean_ = without_nans(zlpc.data).mean()
+        if print_stats is True:
+            print
+            print(underline("Initial ZLP position statistics"))
+            zlpc.print_summary_statistics()
+
+        for signal in also_align + [self]:
+            signal.shift1D(-zlpc.data + mean_)
+
         if calibrate is True:
-            axis.offset -= vmax
-        if also_apply_to:
-            for sync_signal in also_apply_to:
-                sync_signal.axes_manager.signal_axes[0].offset -=vmax
-        return vmax
+            zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+            substract_from_offset(without_nans(zlpc.data).mean(),
+                                  also_align + [self])
+        
+        if subpixel is False: return
+        left, right = -3., 3.
+        if calibrate is False:
+            mean_ = without_nans(self.estimate_zero_loss_peak_centre(
+                mask=mask).data).mean()
+            left += mean_
+            right += mean_
+            
+        left = (left if left > self.axes_manager[-1].axis[0]
+                    else self.axes_manager[-1].axis[0]) 
+        right = (right if right < self.axes_manager[-1].axis[-1]
+                    else self.axes_manager[-1].axis[-1]) 
+        self.align1D(left, right, also_align=also_align, **kwargs)
+        zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+        if calibrate is True:
+            substract_from_offset(without_nans(zlpc.data).mean(),
+                                  also_align + [self])
 
     def estimate_elastic_scattering_intensity(self,
                                               threshold=None,):
@@ -628,7 +717,7 @@ class EELSSpectrum(Spectrum):
 
         return ds
 
-    def _spikes_diagnosis(self, signal_mask=None,
+    def _spikes_diagnosis(self, signal_mask=None, 
                          navigation_mask=None):
         """Plots a histogram to help in choosing the threshold for
         spikes removal.
@@ -659,8 +748,8 @@ class EELSSpectrum(Spectrum):
         plt.xlabel('Threshold')
         plt.ylabel('Counts')
         plt.draw()
-
-    def spikes_removal_tool(self,signal_mask=None,
+        
+    def spikes_removal_tool(self,signal_mask=None, 
                             navigation_mask=None):
         """Graphical interface to remove spikes from EELS spectra.
 
@@ -742,8 +831,8 @@ class EELSSpectrum(Spectrum):
             mp.TEM.EELS.collection_angle = collection_angle
 
         self._are_microscope_parameters_missing()
-
-    @only_interactive
+                
+    @only_interactive            
     def _set_microscope_parameters(self):
         if self.mapped_parameters.has_item('TEM') is False:
             self.mapped_parameters.add_node('TEM')
@@ -766,7 +855,7 @@ class EELSSpectrum(Spectrum):
             if value != t.Undefined:
                 exec('self.mapped_parameters.%s = %s' % (key, value))
         self._are_microscope_parameters_missing()
-
+        
     def power_law_extrapolation(self, window_size=20,
                                 extrapolation_size=1024,
                                 add_noise=False,

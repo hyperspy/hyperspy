@@ -30,7 +30,7 @@ from hyperspy.component import Component
 from hyperspy import messages
 from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
 from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
-from hyperspy.misc.eels.effective_angle import EffectiveAngle
+from hyperspy.misc.eels.effective_angle import effective_angle
 
 class EELSCLEdge(Component):
     """EELS core loss ionisation edge from hydrogenic or tabulated 
@@ -185,7 +185,7 @@ class EELSCLEdge(Component):
     
     def _calculate_effective_angle(self):
         try:
-            self.effective_angle.value = EffectiveAngle(
+            self.effective_angle.value = effective_angle(
                                                 self.E0,
                                                 self.GOS.onset_energy, 
                                                 self.convergence_angle,
