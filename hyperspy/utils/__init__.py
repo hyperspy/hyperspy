@@ -5,6 +5,7 @@ import numpy as np
 from hyperspy.misc.utils import DictionaryBrowser
 import hyperspy.utils.material
 import hyperspy.utils.eds
+import hyperspy.utils.plot
 
 def stack(signal_list, axis=None, new_axis_name='stack_element',
           mmap=False, mmap_dir=None,):
