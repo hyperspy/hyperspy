@@ -840,19 +840,29 @@ the npoints keyword.
 Estimate elastic scattering intensity
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use :py:meth:`estimate_elastic_scattering_intensity` to calculate the integral
-below the zero loss peak (elastic intensity) from EELS low-loss spectra
-containing the zero loss peak. This integral can use the threshold image
-calculated by the
-:py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold` as
-end energy for the integration at each spectra or use the same energy value for
-all spectra. Also, if no threshold is specified, the routine will perform a
+Use
+:py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_intensity`
+to calculate the integral below the zero loss peak (elastic intensity) from
+EELS low-loss spectra containing the zero loss peak. This integral can use the
+threshold image calculated by the
+:py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold`
+as end energy for the integration at each spectra or use the same energy value
+for all spectra. Also, if no threshold is specified, the routine will perform a
 rough estimation of the inflexion values at each spectrum.
 
-Splice zero loss peak
-^^^^^^^^^^^^^^^^^^^^^
-Once :py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold` has determined the elastic scattering threshold value(s), this tool can be used to separate the zero loss peak from the eels spectra. Use :py:meth:`~._signals.eels.EELSSpectrum.splice_zero_loss_peak` in order to obtain a ZLP suitable for Fourier-Log deconvolution from your EELS low-loss spectra by setting the "smooth" option, that will apply the hanning window to the righ end of the data.
 
+Kramers-Kronig Analysis
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.7
+
+The single-scattering EEL spectrum is approximately related to the complex
+permittivity of the sample and can be estimated by Kramers-Kronig analysis.
+The :py:meth:`~._signals.eels.EELSSpectrum.kramers_kronig_analysis` method
+inplements the Kramers-Kronig FFT method as in [Egerton2011]_ to estimate the
+complex dielectric funtion from a low-loss EELS spectrum. In addition, it can
+estimate the thickness if the refractive index is known and approximately
+correct for surface plasmon excitations in layers.
 
 .. _eds_tools-label:
 
@@ -901,6 +911,53 @@ Get the calibration from another spectrum
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.get_calibration_from`
+
+Dielectric function tools
+-------------------------
+
+.. versionadded:: 0.7
+
+Number of effective electrons
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.7
+
+The Bethe f-sum rule gives rise to two definitions of the effective number (see
+[Egerton2011]_):
+
+.. math::
+
+   n_{\mathrm{eff1}}\left(-\Im\left(\epsilon^{-1}\right)\right)=\frac{2\epsilon_{0}m_{0}}{\pi\hbar^{2}e^{2}n_{a}}\int_{0}^{E}E'\Im\left(\frac{-1}{\epsilon}\right)dE'
+
+   n_{\mathrm{eff2}}\left(\epsilon_{2}\right)=\frac{2\epsilon_{0}m_{0}}{\pi\hbar^{2}e^{2}n_{a}}\int_{0}^{E}E'\epsilon_{2}\left(E'\right)dE'
+ 
+where :math:`n_a` is the number of atoms (or molecules) per unit volume of the
+sample, :math:`\epsilon_0` is the vacuum permittivity, :math:`m_0` is the
+elecron mass and :math:`e` is the electron charge.
+
+The
+:py:meth:`~._signals.dielectric_function.DielectricFunction.get_number_of_effective_electrons`
+method computes both.
+
+Compute the electron energy-loss signal
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.7
+
+The
+:py:meth:`~._signals.dielectric_function.DielectricFunction.get_electron_energy_loss_spectrum`
+"naively" computes the single-scattering electron-energy loss spectrum from the
+dielectric function given the zero-loss peak (or its integral) and the sample
+thickness using:
+
+.. math::
+
+    S\left(E\right)=\frac{2I_{0}t}{\pi
+    a_{0}m_{0}v^{2}}\ln\left[1+\left(\frac{\beta}{\theta(E)}\right)^{2}\right]\Im\left[\frac{-1}{\epsilon\left(E\right)}\right]
+     
+where :math:`I_0` is the zero-loss peak integral, :math:`t` the sample
+thickness, :math:`\beta` the collection angle and :math:`\theta(E)` the
+characteristic scattering angle.
 
 Electron and X-ray range
 ^^^^^^^^^^^^^^^^^^^^^^^^

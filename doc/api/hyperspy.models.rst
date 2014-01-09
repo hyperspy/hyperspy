@@ -1,19 +1,22 @@
-models Package
-==============
+hyperspy.models package
+=======================
 
-:mod:`models` Package
----------------------
+Submodules
+----------
 
-.. automodule:: hyperspy.models
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`eelsmodel` Module
------------------------
+hyperspy.models.eelsmodel module
+--------------------------------
 
 .. automodule:: hyperspy.models.eelsmodel
     :members:
     :undoc-members:
     :show-inheritance:
 
+
+Module contents
+---------------
+
+.. automodule:: hyperspy.models
+    :members:
+    :undoc-members:
+    :show-inheritance:
