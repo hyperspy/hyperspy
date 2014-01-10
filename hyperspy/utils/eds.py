@@ -21,7 +21,6 @@ import math
 
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.eds.elements import elements as elements_db
-import hyperspy.misc.units_converter as units_converter
 
 
 def xray_range(xray_line, beam_energy, density='auto'):
