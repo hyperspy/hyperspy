@@ -123,8 +123,8 @@ def plot_same_navigation(signal_list):
     signal_list : list of Signal instances
     """
     axes_manager_list = []
-    for spectrum in spectrum_list:
-        axes_manager_list.append(spectrum.axes_manager)
+    for signal in signal_list:
+        axes_manager_list.append(signal.axes_manager)
 
     #Check to see if the spectra have the same navigational shapes
     temp_shape_first = axes_manager_list[0].navigation_shape
@@ -133,5 +133,5 @@ def plot_same_navigation(signal_list):
         if not (temp_shape_first == temp_shape):
             print("The spectra does not have the same navigation size")
             return
-    for spectrum in spectrum_list:
-        spectrum.plot(axes_manager=axes_manager_list[0])
+    for signal in signal_list:
+        signal.plot(axes_manager=axes_manager_list[0])
