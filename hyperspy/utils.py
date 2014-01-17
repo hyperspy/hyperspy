@@ -116,11 +116,21 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     return signal
                     
 def plot_same_navigation(signal_list):
-    """Have several plots sharing the same axes manager.
+    """Plot several spectra sharing the same navigation.
+    The spectra must have the same dimensions.
     
     Parameters
     ----------
     signal_list : list of Signal instances
+        The signals must have the same dimensions
+
+    Example
+    -------
+    
+    >>> s_cl = load("coreloss.dm3")
+    >>> s_ll = load("lowloss.dm3")
+    >>> utils.plot_same_navigation([s_cl, s_ll])
+
     """
     axes_manager_list = []
     for signal in signal_list:
