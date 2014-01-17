@@ -215,7 +215,7 @@ def plot_spectra(
         color=None,
         padding=0.1,
         fig=None,):
-    """Plot several spectral in the same figure.
+    """Plot several spectra in the same figure.
 
     Extra keyword arguments are passed to `matplotlib.figure`.
 
@@ -233,7 +233,7 @@ def plot_spectra(
         If `None`, use default matplotlib color cycle.
     padding : float, optional, default 0.1
         1 guarantees that there is not overlapping. However,
-        in many cases a value between 0 and 1 can produce a tigther plot
+        in many cases a value between 0 and 1 can produce a tighter plot
         without overlapping. Negative values have the same effect but
         reverse the order of the spectra without reversing the order of the
         colors.
