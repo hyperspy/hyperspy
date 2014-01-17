@@ -231,14 +231,24 @@ def plot_spectra(
         or "mosaic". If a list, if its length is
         less than the number of spectra to plot, the colors will be cycled. If
         If `None`, use default matplotlib color cycle.
-    padding : float
-        The default (1) guarantees that there is not overlapping. However,
+    padding : float, optional, default 0.1
+        1 guarantees that there is not overlapping. However,
         in many cases a value between 0 and 1 can produce a tigther plot
         without overlapping. Negative values have the same effect but
         reverse the order of the spectra without reversing the order of the
         colors.
     fig : {matplotlib figure, None}
         If None, a default figure will be created.
+
+    Example
+    -------
+    >>> s = load("some_spectra")
+    >>> utils.plot.plot_spectra(s, style='cascade', color='red', padding=0.5)
+
+    To save the plot as a png-file
+
+    >>> utils.plot.plot_spectra(s).figure.savefig("test.png")
+
 
     Returns
     -------
