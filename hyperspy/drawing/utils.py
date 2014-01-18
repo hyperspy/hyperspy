@@ -213,7 +213,7 @@ def plot_spectra(
         spectra,
         style='cascade',
         color=None,
-        padding=0.1,
+        padding=1.,
         fig=None,):
     """Plot several spectra in the same figure.
 
