@@ -115,7 +115,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         signal.get_dimensions_from_data()
     return signal
                     
-def plot_same_navigation(signal_list):
+def plot_sync_navigation(signal_list, navigator="auto"):
     """Plot several spectra sharing the same navigation.
     The spectra must have the same dimensions.
     
@@ -123,13 +123,15 @@ def plot_same_navigation(signal_list):
     ----------
     signal_list : list of Signal instances
         The signals must have the same dimensions
+    navigator : {"auto", None, "spectrum", Signal}, default "auto"
+        See signal.plot docstring for full description
 
     Example
     -------
     
     >>> s_cl = load("coreloss.dm3")
     >>> s_ll = load("lowloss.dm3")
-    >>> utils.plot_same_navigation([s_cl, s_ll])
+    >>> utils.plot_sync_navigation([s_cl, s_ll])
 
     """
     axes_manager_list = []
@@ -144,4 +146,4 @@ def plot_same_navigation(signal_list):
             print("The spectra does not have the same navigation size")
             return
     for signal in signal_list:
-        signal.plot(axes_manager=axes_manager_list[0])
+        signal.plot(axes_manager=axes_manager_list[0], navigator=navigator)
