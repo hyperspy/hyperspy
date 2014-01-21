@@ -63,6 +63,9 @@ def density_of_mixture_of_pure_elements(elements, weight_percent):
     elements: list of str
         A list of element symbols, e.g. ['Al', 'Zn']
     weight_percent: list of float
+        A list of weight percent for the different elements. If the total
+        is not equal to 100, each weight percent is divided by the sum 
+        of the list (normalization).
 
     Returns
     -------
@@ -72,13 +75,13 @@ def density_of_mixture_of_pure_elements(elements, weight_percent):
     --------
 
     Calculate the density of modern bronze given its weight percent:
-    >>> density_of_mixture_of_pure_elements(("Cu", "Sn"), (88, 12))
-    8.6903187973131466i
+    >>> utils.material.density_of_mixture_of_pure_elements(("Cu", "Sn"), (88, 12))
+    8.6903187973131466
 
     """
     densities = np.array(
         [elements_db[element]['density'] for element in elements])
-    density = (weight_percent / densities / 100).sum() ** -1
+    density = (weight_percent / densities / sum(weight_percent)).sum() ** -1
     return density
 
 
