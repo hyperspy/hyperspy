@@ -185,25 +185,25 @@ def _make_heatmap_subplot(spectra):
     im.plot()
     return im._plot.signal_plot.ax
 
-def _make_cascade_subplot(spectra, ax, color="blue", padding=1):
+def _make_cascade_subplot(spectra, ax, color="blue",line_style='-', padding=1):
     max_value = 0
     for spectrum in spectra:
         spectrum_yrange = (np.nanmax(spectrum.data) -
                            np.nanmin(spectrum.data))
         if spectrum_yrange > max_value:
             max_value = spectrum_yrange
-    for spectrum_index, (spectrum, color) in enumerate(zip(spectra, color)):
+    for spectrum_index, (spectrum, color,line_style) in enumerate(zip(spectra, color,line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
         data_to_plot = ((spectrum.data - spectrum.data.min()) /
                             float(max_value) + spectrum_index * padding)
-        ax.plot(x_axis.axis, data_to_plot, color=color)
+        ax.plot(x_axis.axis, data_to_plot, color=color,ls=line_style)
     _set_spectrum_xlabel(spectrum, ax)
     ax.set_yticks([])
     ax.autoscale(tight=True)
 
-def _plot_spectrum(spectrum, ax, color="blue"):
+def _plot_spectrum(spectrum, ax, color="blue",line_style='-'):
     x_axis = spectrum.axes_manager.signal_axes[0]
-    ax.plot(x_axis.axis, spectrum.data, color=color)
+    ax.plot(x_axis.axis, spectrum.data, color=color,ls=line_style)
 
 def _set_spectrum_xlabel(spectrum, ax):
     x_axis = spectrum.axes_manager.signal_axes[0]
@@ -213,6 +213,7 @@ def plot_spectra(
         spectra,
         style='cascade',
         color=None,
+        line_style=None,
         padding=1.,
         fig=None,):
     """Plot several spectra in the same figure.
@@ -231,6 +232,8 @@ def plot_spectra(
         or "mosaic". If a list, if its length is
         less than the number of spectra to plot, the colors will be cycled. If
         If `None`, use default matplotlib color cycle.
+    line_style: valid matplotlib line style or a list of them or `None`
+        If None, continuous lines, eg: ('-','--','steps','-.',':')
     padding : float, optional, default 0.1
         1 guarantees that there is not overlapping. However,
         in many cases a value between 0 and 1 can produce a tighter plot
@@ -268,6 +271,18 @@ def plot_spectra(
                             "string or a list of valid matplotlib colors.")
     else:
         color  = itertools.cycle(plt.rcParams['axes.color_cycle'])
+        
+    if line_style is not None:
+        if hasattr(line_style , "__iter__"):
+            line_style   = itertools.cycle(line_style)
+        elif isinstance(line_style, basestring):
+            line_style   = itertools.cycle([line_style])
+        else:
+            raise ValueError("line_style must be None, a valid matplotlib"
+                            " line_style string or a list of valid matplotlib"
+                            " line_style.")
+    else:
+        line_style = ['-'] * len(spectra)
 
 
     if style == 'cascade':
@@ -277,14 +292,15 @@ def plot_spectra(
         _make_cascade_subplot(spectra,
                               ax,
                               color=color,
+                              line_style=line_style,
                               padding=padding)
 
     elif style == 'mosaic':
         default_fsize = plt.rcParams["figure.figsize"]
         figsize = (default_fsize[0], default_fsize[1] * len(spectra))
         fig, subplots = plt.subplots(len(spectra), 1, figsize=figsize)
-        for ax, spectrum, color in zip(subplots, spectra, color):
-            _plot_spectrum(spectrum, ax, color=color)
+        for ax, spectrum, color, line_style in zip(subplots, spectra, color, line_style):
+            _plot_spectrum(spectrum, ax, color=color,line_style=line_style)
             ax.set_yticks([])
             if not isinstance(spectra, hyperspy.signal.Signal):
                 _set_spectrum_xlabel(spectrum, ax)
