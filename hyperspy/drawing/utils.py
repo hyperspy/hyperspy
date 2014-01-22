@@ -192,7 +192,8 @@ def _make_cascade_subplot(spectra, ax, color="blue",line_style='-', padding=1):
                            np.nanmin(spectrum.data))
         if spectrum_yrange > max_value:
             max_value = spectrum_yrange
-    for spectrum_index, (spectrum, color,line_style) in enumerate(zip(spectra, color,line_style)):
+    for spectrum_index, (spectrum, color,line_style) in enumerate(
+            zip(spectra, color,line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
         data_to_plot = ((spectrum.data - spectrum.data.min()) /
                             float(max_value) + spectrum_index * padding)
@@ -215,6 +216,7 @@ def plot_spectra(
         color=None,
         line_style=None,
         padding=1.,
+        legend=None,
         fig=None,):
     """Plot several spectra in the same figure.
 
@@ -240,6 +242,8 @@ def plot_spectra(
         without overlapping. Negative values have the same effect but
         reverse the order of the spectra without reversing the order of the
         colors.
+    legend: None | list of str | 'auto'
+       If 'auto', the mapped_parameters.title is used.
     fig : {matplotlib figure, None}
         If None, a default figure will be created.
 
@@ -282,8 +286,15 @@ def plot_spectra(
                             " line_style string or a list of valid matplotlib"
                             " line_style.")
     else:
-        line_style = ['-'] * len(spectra)
-
+        line_style = ['-'] * len(spectra)    
+        
+    if legend is not None:
+        if legend == 'auto':
+            legend = [spec.mapped_parameters.title for spec in spectra]  
+        elif hasattr(legend , "__iter__"):
+            legend   = itertools.cycle(legend)    
+        else:
+            raise ValueError("legend must be None, 'auto' or a list of string")  
 
     if style == 'cascade':
         if fig is None:
@@ -294,14 +305,22 @@ def plot_spectra(
                               color=color,
                               line_style=line_style,
                               padding=padding)
+        if legend is not None:
+            plt.legend(legend)            
 
     elif style == 'mosaic':
         default_fsize = plt.rcParams["figure.figsize"]
         figsize = (default_fsize[0], default_fsize[1] * len(spectra))
         fig, subplots = plt.subplots(len(spectra), 1, figsize=figsize)
-        for ax, spectrum, color, line_style in zip(subplots, spectra, color, line_style):
+        if legend is None:
+            legend  = [legend] * len(spectra)  
+        for ax, spectrum, color, line_style, legend in zip(
+                subplots, spectra, color, line_style, legend):
             _plot_spectrum(spectrum, ax, color=color,line_style=line_style)
             ax.set_yticks([])
+            if legend is not None:
+                #plt.title(legend)
+                ax.set_title(legend)
             if not isinstance(spectra, hyperspy.signal.Signal):
                 _set_spectrum_xlabel(spectrum, ax)
         if isinstance(spectra, hyperspy.signal.Signal):
