@@ -199,7 +199,10 @@ def _make_cascade_subplot(spectra, ax, color="blue",line_style='-', padding=1):
                             float(max_value) + spectrum_index * padding)
         ax.plot(x_axis.axis, data_to_plot, color=color,ls=line_style)
     _set_spectrum_xlabel(spectrum, ax)
-    ax.set_yticks([])
+    if padding !=0:
+        ax.set_yticks([])
+    else:
+        ax.set_ylabel('Intensity')
     ax.autoscale(tight=True)
 
 def _plot_spectrum(spectrum, ax, color="blue",line_style='-'):
@@ -317,7 +320,7 @@ def plot_spectra(
         for ax, spectrum, color, line_style, legend in zip(
                 subplots, spectra, color, line_style, legend):
             _plot_spectrum(spectrum, ax, color=color,line_style=line_style)
-            ax.set_yticks([])
+            ax.set_ylabel('Intensity')
             if legend is not None:
                 ax.set_title(legend)
             if not isinstance(spectra, hyperspy.signal.Signal):
@@ -332,6 +335,7 @@ def plot_spectra(
             spectra = hyperspy.utils.stack(spectra)
         refold = unfold_if_multidim(spectra)
         ax = _make_heatmap_subplot(spectra)
+        ax.set_ylabel('Spectra')
         if refold is True:
             spectra.fold()
     ax = ax if style != "mosaic" else subplots
