@@ -235,7 +235,11 @@ def plot_spectra(
         less than the number of spectra to plot, the colors will be cycled. If
         If `None`, use default matplotlib color cycle.
     line_style: valid matplotlib line style or a list of them or `None`
-        If None, continuous lines, eg: ('-','--','steps','-.',':')
+        Sets the line style of the plots for "cascade"
+        or "mosaic". The main line style are '-','--','steps','-.',':'.
+        If a list, if its length is less than the number of
+        spectra to plot, line_style will be cycled. If
+        If `None`, use continuous lines, eg: ('-','--','steps','-.',':')
     padding : float, optional, default 0.1
         1 guarantees that there is not overlapping. However,
         in many cases a value between 0 and 1 can produce a tighter plot
@@ -243,7 +247,9 @@ def plot_spectra(
         reverse the order of the spectra without reversing the order of the
         colors.
     legend: None | list of str | 'auto'
-       If 'auto', the mapped_parameters.title is used.
+       If list of string, legend for "cascade" or title for "mosaic" is 
+       displayed. If 'auto', the title of each spectra (mapped_parameters.title)
+       is used.
     fig : {matplotlib figure, None}
         If None, a default figure will be created.
 
