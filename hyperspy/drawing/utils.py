@@ -319,7 +319,6 @@ def plot_spectra(
             _plot_spectrum(spectrum, ax, color=color,line_style=line_style)
             ax.set_yticks([])
             if legend is not None:
-                #plt.title(legend)
                 ax.set_title(legend)
             if not isinstance(spectra, hyperspy.signal.Signal):
                 _set_spectrum_xlabel(spectrum, ax)
