@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 from hyperspy.misc.utils import unfold_if_multidim
+from hyperspy.defaults_parser import preferences
 
 
 def create_figure(window_title=None,
@@ -215,7 +216,7 @@ def _set_spectrum_xlabel(spectrum, ax):
 
 def plot_spectra(
         spectra,
-        style='cascade',
+        style='default',
         color=None,
         line_style=None,
         padding=1.,
@@ -230,8 +231,9 @@ def plot_spectra(
     spectra : iterable
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
         the spectra can have diffent size and axes.
-    style : {'cascade', 'mosaic', 'heatmap'}
-        The style of the plot.
+    style : {'default', 'overlap','cascade', 'mosaic', 'heatmap'}
+        The style of the plot. The current default is %s (this can be
+        customized in `preferences`). 
     color : valid matplotlib color or a list of them or `None`
         Sets the color of the lines of the plots when `style` is "cascade"
         or "mosaic". If a list, if its length is
@@ -244,7 +246,7 @@ def plot_spectra(
         spectra to plot, line_style will be cycled. If
         If `None`, use continuous lines, eg: ('-','--','steps','-.',':')
     padding : float, optional, default 0.1
-        1 guarantees that there is not overlapping. However,
+        Option for "cascade". 1 guarantees that there is not overlapping. However,
         in many cases a value between 0 and 1 can produce a tighter plot
         without overlapping. Negative values have the same effect but
         reverse the order of the spectra without reversing the order of the
@@ -271,8 +273,15 @@ def plot_spectra(
     ax: {matplotlib axes | array of matplotlib axes}
         An array is returned when `style` is "mosaic".
 
-    """
+    """ % preferences.Plot.default_style_to_compare_spectra
     import hyperspy.signal
+    
+    if style == "default":
+        style = preferences.Plot.default_style_to_compare_spectra  
+         
+    if style=='overlap':
+        style='cascade'
+        padding=0
 
     if color is not None:
         if hasattr(color, "__iter__"):
