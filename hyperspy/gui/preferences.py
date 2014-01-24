@@ -17,6 +17,8 @@ preferences_view = tui.View(
     tui.Group(tui.Item('MachineLearning', style='custom',
         show_label=False,),
         label = 'Machine Learning'),
+    tui.Group(tui.Item('Plot', style='custom', show_label=False, ),
+        label = 'Plot'),
     title = 'Preferences',
     handler = PreferencesHandler,) 
 
