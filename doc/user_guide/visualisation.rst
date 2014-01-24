@@ -135,7 +135,7 @@ In the following example we also use `scikit-image <http://scikit-image.org/>`_ 
     `abstract <http://infoscience.epfl.ch/record/185861/>`_).
 
 Comparing spectra
-^^^^^^^^^^^^^^^^^
+-----------------
 
 .. versionadded:: 0.7
 
@@ -158,12 +158,16 @@ A padding value of 1 keeps the individual plots from overlapping. However in mos
 a lower padding value can be used, to get tighter plots.
 
 Using the color argument one can assign a color to all the spectrums, or specific colors
-for each spectrum:
+for each spectrum. In the same way, one can also assign the line style. 
+On can also give a legend:
 
 .. code-block:: python
 
     >>> color_list = ['red', 'red', 'blue', 'blue', 'red', 'red']
-    >>> utils.plot.plot_spectra(s, padding=1, color=color_list)
+    >>> line_style_list = ['-','--','steps','-.',':','-']
+    >>> legend_list = ['a', 'b', 'c', 'd', 'e', 'f']
+    >>> utils.plot.plot_spectra(s, padding=1, color=color_list,
+    >>> line_style=line_style_list,legend=legend_list)
 
 .. figure::  images/plot_spectra_color.png
   :align:   center
