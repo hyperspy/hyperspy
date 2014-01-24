@@ -135,7 +135,7 @@ In the following example we also use `scikit-image <http://scikit-image.org/>`_ 
     `abstract <http://infoscience.epfl.ch/record/185861/>`_).
 
 Comparing spectra
-^^^^^^^^^^^^^^^^^
+-----------------
 
 .. versionadded:: 0.7
 
