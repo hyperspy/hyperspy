@@ -332,8 +332,8 @@ def plot_spectra(
         fig, subplots = plt.subplots(len(spectra), 1, figsize=figsize)
         if legend is None:
             legend  = [legend] * len(spectra)  
-        for ax, spectrum, color, line_style, legend in zip(
-                subplots, spectra, color, line_style, legend):
+        for spectrum, ax, color, line_style, legend in zip(spectra,
+                subplots, color, line_style, legend):
             _plot_spectrum(spectrum, ax, color=color,line_style=line_style)
             ax.set_ylabel('Intensity')
             if legend is not None:
