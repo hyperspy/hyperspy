@@ -146,7 +146,7 @@ To plot a cascade style figure from a spectrum, and saving it in a file:
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum([np.random.random(1000)]*6, stack=True)
+    >>> s = signals.Spectrum(np.random.random((6,1000)), stack=True)
     >>> cascade_plot = utils.plot.plot_spectra(s, padding=1)
     >>> cascade_plot.figure.savefig("cascade_plot.png")
 
@@ -185,7 +185,7 @@ There are also two other styles, heatmap and mosaic:
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum([np.random.random(1000)]*2, stack=True)
+    >>> s = signals.Spectrum(np.random.random((2,1000)), stack=True)
     >>> utils.plot.plot_spectra(s, style='mosaic')
     
 .. figure::  images/plot_spectra_mosaic.png
@@ -196,11 +196,12 @@ The function returns a matplotlib ax object, which can be used to customize the 
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum([np.random.random(1000)]*6, stack=True)
-    >>> cascade_plot = utils.plot.plot_spectra(s, style='mosaic')
+    >>> s = signals.Spectrum(np.random.random((6,1000)), stack=True)
+    >>> cascade_plot = utils.plot.plot_spectra(s)
     >>> cascade_plot.set_xlabel("An axis")
     >>> cascade_plot.set_ylabel("Another axis")
     >>> cascade_plot.set_title("A title!")
+    >>> plt.draw()
 
 .. figure::  images/plot_spectra_customize.png
   :align:   center
