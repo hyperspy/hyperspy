@@ -4037,6 +4037,8 @@ class Signal(MVA,
         return s
 
     def __iter__(self):
+        # Reset AxesManager iteration index
+        self.axes_manager.__iter__()
         return self
 
     def next(self):
