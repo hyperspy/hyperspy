@@ -232,8 +232,8 @@ def plot_spectra(
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
         the spectra can have diffent size and axes.
     style : {'default', 'overlap','cascade', 'mosaic', 'heatmap'}
-        The style of the plot. The current default is %s (this can be
-        customized in `preferences`). 
+        The style of the plot. The default is "overlap" and can be
+        customized in `preferences`. 
     color : valid matplotlib color or a list of them or `None`
         Sets the color of the lines of the plots when `style` is "cascade"
         or "mosaic". If a list, if its length is
@@ -273,7 +273,7 @@ def plot_spectra(
     ax: {matplotlib axes | array of matplotlib axes}
         An array is returned when `style` is "mosaic".
 
-    """ % preferences.Plot.default_style_to_compare_spectra
+    """
     import hyperspy.signal
     
     if style == "default":
@@ -356,3 +356,4 @@ def plot_spectra(
     ax = ax if style != "mosaic" else subplots
 
     return ax
+
