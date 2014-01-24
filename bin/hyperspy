@@ -124,7 +124,7 @@ parser.add_argument('--toolkit',
                         "None is suitable to run headless."))
 parser.add_argument('--pylab_inline',
                     action="store_true", 
-                    default=preferences.General.pylab_inline,
+                    default=preferences.Plot.pylab_inline,
                     help = ("If True the figure are displayed inline. "
                             "This option only has effect when using the "
                             "qtconsole or notebook"))
