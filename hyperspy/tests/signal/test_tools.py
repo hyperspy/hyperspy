@@ -107,4 +107,11 @@ class Test4D:
         im.unfold()
         assert_equal(im.data.shape, (30, 12))
 
+def test_signal_iterator():
+    s = Signal(np.arange(3).reshape((3, 1)))
+    assert_equal(s.next().data[0], 0)
+    # If the following fails it can be because the iteration index was not
+    # restarted
+    for i, signal in enumerate(s):
+        assert_equal(i, signal.data[0])
 
