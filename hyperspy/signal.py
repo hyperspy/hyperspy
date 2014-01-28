@@ -3143,7 +3143,10 @@ class Signal(MVA,
         s.get_dimensions_from_data()
         return s
 
-    def split(self, axis=None, number_of_parts=None, step_sizes=None):
+    def split(self,
+        axis='auto', 
+        number_of_parts=None, 
+        step_sizes=None):
         """Splits the data into several signals.
 
         The split can be defined either by giving either
@@ -3155,12 +3158,13 @@ class Signal(MVA,
         Parameters
         ----------
 
-        axis : {int, string, None}
+        axis : {'auto' | int | string | None}
             Specify the data axis in which to perform the splitting
-            operation. The axis can be specified using the index of the
+            operation. If' auto', the last navigation axis will be used.
+             The axis can be specified using the index of the
             axis in `axes_manager` or the axis name. It can only be None
             when the value is defined in mapped_parameters.splitting
-        number_of_parts : {int | None}
+        number_of_parts : { int | None}
             Number of parts in which the SI will be splitted. The
             splitting is homegenous. When the axis size is not divisible
             by the number_of_parts the reminder data is lost without
@@ -3177,13 +3181,14 @@ class Signal(MVA,
 
         shape = self.data.shape
         signal_dict = self._to_dictionary(add_learning_results=False)
-        if axis is None:
-            if self.mapped_parameters.has_item("splitting.axis"):
-                axis = self.mapped_parameters.splitting.axis
-            else:
-                raise ValueError(
-                    "Please specify the axis over which I should "
-                    "perform the operation")
+        if self.mapped_parameters.has_item("splitting.axis"):
+            axis = self.mapped_parameters.splitting.axis
+        elif axis == 'auto':
+            axis = self.axes_manager.navigation_axes[-1].index_in_array
+        elif axis is None: 
+            raise ValueError(
+                "Please specify the axis over which I should "
+                "perform the operation")
         else:
             axis = self.axes_manager[axis].index_in_array
 
