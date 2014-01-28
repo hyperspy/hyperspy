@@ -2882,7 +2882,9 @@ class Signal(MVA,
                 navigator = None
         # Navigator properties
         if axes_manager.navigation_axes:
-            if navigator is None:
+            if navigator is "slider":
+                self._plot.navigator_data_function = "slider"
+            elif navigator is None:
                 self._plot.navigator_data_function = None
             elif isinstance(navigator, Signal):
                 # Dynamic navigator
