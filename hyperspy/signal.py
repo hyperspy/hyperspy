@@ -3145,8 +3145,8 @@ class Signal(MVA,
 
     def split(self,
         axis='auto', 
-        number_of_parts=None, 
-        step_sizes=None):
+        number_of_parts='auto', 
+        step_sizes='auto'):
         """Splits the data into several signals.
 
         The split can be defined either by giving either
@@ -3164,14 +3164,25 @@ class Signal(MVA,
              The axis can be specified using the index of the
             axis in `axes_manager` or the axis name. It can only be None
             when the value is defined in mapped_parameters.splitting
-        number_of_parts : { int | None}
+        number_of_parts : {'auto' | int | None}
             Number of parts in which the SI will be splitted. The
             splitting is homegenous. When the axis size is not divisible
             by the number_of_parts the reminder data is lost without
-            warning.
-        step_sizes : {list of ints | None}
+            warning. If 'auto', number_of_parts equal the lenght of the
+            axis (step_sizes=1) and the axis is supress from each sub_spectra. 
+        step_sizes : {'auto' | list of ints | None}
             Size of the splitted parts.
-
+            
+            
+        Examples
+        --------
+        
+        >>> s=signals.Spectrum(random.random([2,3,4]))
+        >>> s
+        <Spectrum, title: , dimensions: (3, 2|4)>
+        >>> s.split()
+        (<Spectrum, title: , dimensions: (3 |4)>,
+        <Spectrum, title: , dimensions: (3 |4)>)
 
         Returns
         -------
@@ -3181,16 +3192,21 @@ class Signal(MVA,
 
         shape = self.data.shape
         signal_dict = self._to_dictionary(add_learning_results=False)
-        if self.mapped_parameters.has_item("splitting.axis"):
-            axis = self.mapped_parameters.splitting.axis
-        elif axis == 'auto':
-            axis = self.axes_manager.navigation_axes[-1].index_in_array
+        
+        if axis == 'auto':
+            axis = self.axes_manager.navigation_axes[-1].index_in_array        
         elif axis is None: 
+            if self.mapped_parameters.has_item("splitting.axis"):
+                axis = self.mapped_parameters.splitting.axis
             raise ValueError(
                 "Please specify the axis over which I should "
                 "perform the operation")
         else:
             axis = self.axes_manager[axis].index_in_array
+            
+        if number_of_parts is 'auto' and step_sizes is 'auto':
+            step_sizes = None
+            number_of_parts = self.data.shape[axis]
 
         if number_of_parts is None and step_sizes is None:
             if not self.mapped_parameters.has_item(
