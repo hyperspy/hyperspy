@@ -23,6 +23,7 @@ import numpy as np
 from hyperspy.component import Component
 
 sqrt2pi = math.sqrt(2*math.pi)
+sigma2fwhm = 2*math.sqrt(2*math.log(2))
 
 class Gaussian(Component):
     """Normalized gaussian function component
@@ -42,7 +43,9 @@ class Gaussian(Component):
     |     c      |   sigma   |
     +------------+-----------+
                   
-    
+    For convenience the `fwhm` attribute can be used to get and set
+    the full-with-half-maximum.
+
     """
 
     def __init__(self, A=1., sigma=1.,centre = 0.):
@@ -173,3 +176,11 @@ class Gaussian(Component):
             self.centre.map['values'][:] = center
             self.centre.map['is_set'][:] = True
             return True
+
+    @property
+    def fwhm(self):
+        return self.sigma.value * sigma2fwhm 
+
+    @fwhm.setter
+    def fwhm(self, value):
+        self.sigma.value = value / sigma2fwhm 
