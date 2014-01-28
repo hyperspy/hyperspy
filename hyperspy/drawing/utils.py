@@ -164,3 +164,36 @@ class ColorCycle():
         if not self.color_cycle:
             self.color_cycle = copy.copy(self._color_cycle)
         return self.color_cycle.pop(0)
+
+def plot_sync_navigation(signal_list, navigator="auto"):
+    """Plot several spectra sharing the same navigation.
+    The spectra must have the same dimensions.
+    
+    Parameters
+    ----------
+    signal_list : list of Signal instances
+        The signals must have the same dimensions
+    navigator : {"auto", None, "spectrum", Signal}, default "auto"
+        See signal.plot docstring for full description
+
+    Example
+    -------
+    
+    >>> s_cl = load("coreloss.dm3")
+    >>> s_ll = load("lowloss.dm3")
+    >>> utils.plot_sync_navigation([s_cl, s_ll])
+
+    """
+    axes_manager_list = []
+    for signal in signal_list:
+        axes_manager_list.append(signal.axes_manager)
+
+    #Check to see if the spectra have the same navigational shapes
+    temp_shape_first = axes_manager_list[0].navigation_shape
+    for axes_manager in axes_manager_list:
+        temp_shape = axes_manager.navigation_shape
+        if not (temp_shape_first == temp_shape):
+            print("The spectra does not have the same navigation size")
+            return
+    for signal in signal_list:
+        signal.plot(axes_manager=axes_manager_list[0], navigator=navigator)
