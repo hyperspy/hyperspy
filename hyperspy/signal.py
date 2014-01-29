@@ -3155,7 +3155,6 @@ class Signal(MVA,
 
         Parameters
         ----------
-
         axis : {'auto' | int | string}
             Specify the data axis in which to perform the splitting
             operation. If' auto', the last navigation axis will be used.
@@ -3170,12 +3169,10 @@ class Signal(MVA,
             step_sizes equals one  and the axis is supress from each sub_spectra. 
         step_sizes : {'auto' | list of ints | int}
             Size of the splitted parts. If 'auto', the step_sizes equals one.
-            If int, the splitting is homogenous.
-            
+            If int, the splitting is homogenous.            
             
         Examples
-        --------
-        
+        --------        
         >>> s=signals.Spectrum(random.random([4,3,2]))
         >>> s
             <Spectrum, title: , dimensions: (3, 4|2)>
@@ -3189,31 +3186,31 @@ class Signal(MVA,
             <Spectrum, title: , dimensions: (3, 2|2)>]
         >>> s.split(step_sizes=[1,2])
             [<Spectrum, title: , dimensions: (3, 1|2)>,
-            <Spectrum, title: , dimensions: (3, 2|2)>]
-        
+            <Spectrum, title: , dimensions: (3, 2|2)>]        
 
         Returns
         -------
         list of the splitted signals
-
         """
 
         shape = self.data.shape
         signal_dict = self._to_dictionary(add_learning_results=False)
         
         if axis == 'auto':
-            axis = self.axes_manager.navigation_axes[-1].index_in_array        
+            axis_in_manager = self.axes_manager[-1+1j].index_in_axes_manager
+            axis = self.axes_manager[-1+1j].index_in_array        
         else:
+            axis_in_manager = self.axes_manager[axis].index_in_axes_manager
             axis = self.axes_manager[axis].index_in_array
             
-        len_axis = self.data.shape[axis]
+        len_axis = self.axes_manager[axis_in_manager].size
             
         if number_of_parts is 'auto' and step_sizes is 'auto':
             step_sizes = 1
             number_of_parts = len_axis
         elif number_of_parts is not 'auto' and step_sizes is not 'auto':
             raise ValueError(
-                "Print define step_sizes or number_of_part "
+                "You can define step_sizes or number_of_parts "
                 "but not both.")
         elif step_sizes is 'auto':
             if number_of_parts > shape[axis]:
@@ -3241,10 +3238,12 @@ class Signal(MVA,
             signal_dict['data'] = data
             splitted += self.__class__(**signal_dict),
             
+            
         if number_of_parts == len_axis \
             or step_sizes == [1]*len_axis :
             for i, spectrum in enumerate(splitted):
-                splitted[i] = spectrum.squeeze()
+                spectrum.data = spectrum.data[spectrum.axes_manager._get_data_slice([(axis,0)])]               
+                spectrum._remove_axis(axis_in_manager)
             
         return splitted
 
