@@ -3211,6 +3211,7 @@ class Signal(MVA,
             number_of_parts = None
         elif step_sizes is 'auto':
             step_sizes = None
+            
         if isinstance(step_sizes,int):
             step_sizes = [step_sizes]*int(
                 self.data.shape[axis]/step_sizes)
@@ -3242,7 +3243,7 @@ class Signal(MVA,
             else:
                 step_sizes = ([shape[axis] // number_of_parts,] *
                               number_of_parts)
-        splitted = ()
+        splitted = []
         cut_index = np.array([0] + step_sizes).cumsum()
 
         axes_dict = signal_dict['axes']
@@ -3255,6 +3256,11 @@ class Signal(MVA,
                 (slice(cut_index[i], cut_index[i + 1]), Ellipsis)]
             signal_dict['data'] = data
             splitted += self.__class__(**signal_dict),
+            
+        if number_of_parts == self.data.shape[axis]:
+            for i, spectrum in enumerate(splitted):
+                splitted[i] = spectrum.squeeze()
+            
         return splitted
 
     def unfold_if_multidim(self):
