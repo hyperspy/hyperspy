@@ -3207,6 +3207,13 @@ class Signal(MVA,
         if number_of_parts is 'auto' and step_sizes is 'auto':
             step_sizes = None
             number_of_parts = self.data.shape[axis]
+        elif number_of_parts is 'auto':
+            number_of_parts = None
+        elif step_sizes is 'auto':
+            step_sizes = None
+        if isinstance(step_sizes,int):
+            step_sizes = [step_sizes]*int(
+                self.data.shape[axis]/step_sizes)
 
         if number_of_parts is None and step_sizes is None:
             if not self.mapped_parameters.has_item(
