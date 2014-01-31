@@ -24,7 +24,7 @@ Stack of 2D images can be imported as an 3D image and plotted with a slider.
 .. code-block:: python
 
     >>> img = load('image*.tif', stack=True)
-    >>> img.plot(navigator=None)
+    >>> img.plot(navigator="slider")
     
     
 .. figure::  images/3D_image.png
@@ -206,3 +206,75 @@ The function returns a matplotlib ax object, which can be used to customize the 
 .. figure::  images/plot_spectra_customize.png
   :align:   center
   :width:   500    
+
+Plotting signals with different navigators 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Using :py:meth:`~.plot()` one can a plot signal using different navigators.
+To plot a signal with 2 navigation dimensions and 1 signal dimension (a spectral image):
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum(np.random.random(10000).reshape(10,10,100))
+    >>> s.plot(navigator="auto")
+
+Where each point in the image is a sum over spectrum at that point. This option
+is the default one, so:
+
+    >>> s.plot()
+
+Is equivalent. 
+
+.. figure::  images/plot_navigator_auto.png
+  :align:   center
+  :width:   500    
+
+If the signal has more than 2 navigation dimensions sliders will be provided, in
+addition to the image shown earlier.
+
+.. figure::  images/plot_navigator_auto_4d.png
+  :align:   center
+  :width:   500    
+
+The signal can also be plotted with only sliders as navigators:
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum(np.random.random(100000).reshape(10,10,10,100))
+    >>> s.plot(navigator="slider")
+
+.. figure::  images/plot_navigator_slider.png
+  :align:   center
+  :width:   500    
+
+An image can also be used as navigator, if the image has the same navigation
+dimensions as the signal:
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum(np.random.random(10000).reshape(10,10,100))
+    >>> s1 = signals.Image(np.arange(100).reshape(10,10))
+    >>> s.plot(navigator=s1)
+
+.. figure::  images/plot_navigator_image.png
+  :align:   center
+  :width:   500    
+
+The navigator can also be a spectrum, which if the signal has more than
+1 navigation dimension will also provide a slider (as for navigator="auto"):
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum(np.random.random(10000).reshape(10,10,100))
+    >>> s.plot(navigator="spectrum")
+
+.. figure::  images/plot_navigator_spectrum.png
+  :align:   center
+  :width:   500    
+
+Lastly, if no navigator is needed use navigator=None:
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum(np.random.random(10000).reshape(10,10,100))
+    >>> s.plot(navigator=None)

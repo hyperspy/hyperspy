@@ -2785,7 +2785,7 @@ class Signal(MVA,
 
         Parameters
         ----------
-        navigator : {"auto", None, "spectrum", Signal}
+        navigator : {"auto", None, "slider", "spectrum", Signal}
             If "auto", if navigation_dimension > 0, a navigator is
             provided to explore the data.
             If navigation_dimension is 1 and the signal is an image
@@ -2805,11 +2805,12 @@ class Signal(MVA,
             index and a window with sliders for the X, Y and Z axes
             will be raised. Notice that changing the Z-axis index
             changes the navigator in this case.
-            If None and the navigation dimension > 0 a window
+            If "slider" and the navigation dimension > 0 a window
             with one slider per axis is raised to navigate the data.
             If "spectrum" and navigation_dimension > 0 the navigator
             is always a spectrum obtained by integrating the data
             over all other axes.
+            If None, no navigator will be provided.
             Alternatively a Signal instance can be provided. The signal
             dimension must be 1 (for a spectrum navigator) or 2 (for a
             image navigator) and navigation_shape must be 0 (for a static
@@ -2882,7 +2883,9 @@ class Signal(MVA,
                 navigator = None
         # Navigator properties
         if axes_manager.navigation_axes:
-            if navigator is None:
+            if navigator is "slider":
+                self._plot.navigator_data_function = "slider"
+            elif navigator is None:
                 self._plot.navigator_data_function = None
             elif isinstance(navigator, Signal):
                 # Dynamic navigator
