@@ -24,7 +24,7 @@ Stack of 2D images can be imported as an 3D image and plotted with a slider.
 .. code-block:: python
 
     >>> img = load('image*.tif', stack=True)
-    >>> img.plot(navigator=None)
+    >>> img.plot(navigator="slider")
     
     
 .. figure::  images/3D_image.png
