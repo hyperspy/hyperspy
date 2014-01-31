@@ -177,14 +177,17 @@ class ColorCycle():
             self.color_cycle = copy.copy(self._color_cycle)
         return self.color_cycle.pop(0)
 
-def plot_sync_navigation(signal_list, navigator="auto"):
-    """Plot several spectra sharing the same navigation.
-    The spectra must have the same dimensions.
+def plot_signals(signal_list, sync=True, navigator="auto"):
+    """Plot several signals at the same time.
     
     Parameters
     ----------
     signal_list : list of Signal instances
-        The signals must have the same dimensions
+        If sync is set to True, the signals must have the 
+        same dimensions.
+    sync : True or False, default "True"
+        If True: the signals will share navigation, all the signals
+        must have the same dimensions for this to work.
     navigator : {"auto", None, "spectrum", Signal}, default "auto"
         See signal.plot docstring for full description
 
@@ -193,22 +196,26 @@ def plot_sync_navigation(signal_list, navigator="auto"):
     
     >>> s_cl = load("coreloss.dm3")
     >>> s_ll = load("lowloss.dm3")
-    >>> utils.plot_sync_navigation([s_cl, s_ll])
+    >>> utils.plot_signals([s_cl, s_ll])
 
     """
-    axes_manager_list = []
-    for signal in signal_list:
-        axes_manager_list.append(signal.axes_manager)
+    if sync:
+        axes_manager_list = []
+        for signal in signal_list:
+            axes_manager_list.append(signal.axes_manager)
 
-    #Check to see if the spectra have the same navigational shapes
-    temp_shape_first = axes_manager_list[0].navigation_shape
-    for axes_manager in axes_manager_list:
-        temp_shape = axes_manager.navigation_shape
-        if not (temp_shape_first == temp_shape):
-            print("The spectra does not have the same navigation size")
-            return
-    for signal in signal_list:
-        signal.plot(axes_manager=axes_manager_list[0], navigator=navigator)
+        #Check to see if the spectra have the same navigational shapes
+        temp_shape_first = axes_manager_list[0].navigation_shape
+        for axes_manager in axes_manager_list:
+            temp_shape = axes_manager.navigation_shape
+            if not (temp_shape_first == temp_shape):
+                print("The spectra does not have the same navigation size")
+                return
+        for signal in signal_list:
+            signal.plot(axes_manager=axes_manager_list[0], navigator=navigator)
+    else:
+        for signal in signal_list:
+            signal.plot(navigator=navigator)
 
 def _make_heatmap_subplot(spectra):
     from hyperspy._signals.image import Image
