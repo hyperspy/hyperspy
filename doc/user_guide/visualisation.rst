@@ -207,7 +207,7 @@ Plotting several signals
 
 .. versionadded:: 0.7
 
-:py:meth:`~.utils.plot.plot_sync_navigation()` is used to plot several signals at the
+:py:meth:`~.utils.plot.plot_signals()` is used to plot several signals at the
 same time. By default the navigation position of the signals will be synced, and the 
 signals must have the same dimensions. To plot two spectra at the same time: 
 
