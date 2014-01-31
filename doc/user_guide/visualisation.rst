@@ -202,22 +202,21 @@ The function returns a matplotlib ax object, which can be used to customize the 
   :align:   center
   :width:   500    
 
-Plotting with the same navigiation
+Plotting several signals
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.7
 
-:py:meth:`~.utils.plot.plot_sync_navigation()` is used to plot several spectra which share
-the same navigation. All the spectra must have the same dimensions. For example to plot 
-low loss EELS, core loss EELS and EDX acquired at the same time using STEM. To plot two 
-spectra at the same time: 
+:py:meth:`~.utils.plot.plot_sync_navigation()` is used to plot several signals at the
+same time. By default the navigation position of the signals will be synced, and the 
+signals must have the same dimensions. To plot two spectra at the same time: 
 
 .. code-block:: python
 
     >>> s1 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
     >>> s2 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
-    >>> utils.plot.plot_sync_navigation([s1, s2])
+    >>> utils.plot.plot_signals([s1, s2])
 
-.. figure::  images/plot_sync_navigation.png
+.. figure::  images/plot_signals.png
   :align:   center
   :width:   500    
