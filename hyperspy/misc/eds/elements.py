@@ -1,3 +1,19 @@
+# Database
+#
+# The X-ray lines energies are taken from J.A. Bearden (1967) Rev. Mod. 
+# Phys, 39 78 as tabulated in Goldstein et al., Plenum publisher 
+# third edition accompanying CD
+#
+# The mass Absorption coefficient are taken from K F J Heinrich (1966) 
+# in The Electron Probe Wiley, New York  and from K F J Heinrich (1986) 
+# in proceedings of the 11th international conference on X-ray optics 
+# and microanalysis as tabulated in Goldstein et al., Plenum publisher 
+# third edition accompanying CD
+#
+# The line factor, more precisely the approximate line weight from K,L M
+# shells are taken from Goldstein et al., Plenum publisher third edition 
+# p 286
+ 
 from hyperspy.misc import utils
 
 elements = {
