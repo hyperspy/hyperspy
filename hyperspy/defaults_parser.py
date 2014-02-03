@@ -84,15 +84,10 @@ class GeneralConfig(t.HasTraits):
                  "user interface elements are not available. "
                  "None is suitable to run headless. "
                  "Hyperspy must be restarted for changes to take effect")
-    pylab_inline = t.CBool(False,
-        desc="If True the figure are displayed inline."
-             "Hyperspy must be restarted for changes to take effect")
     default_export_format = t.Enum(*default_write_ext,
         desc = 'Using the hdf5 format is highly reccomended because is the '
                'only one fully supported. The Ripple (rpl) format it is useful '
                'to export data to other software that do not support hdf5')
-    plot_on_load = t.CBool(False,
-        desc = 'If enabled, the object will be plot automatically on loading')
     interactive = t.CBool(True,
         desc = 'If enabled, Hyperspy will prompt the user when optios are '
                'available, otherwise it will use the default values if possible')
@@ -105,7 +100,7 @@ class GeneralConfig(t.HasTraits):
         if new is True:
             turn_logging_on()
         else:
-            turn_logging_off()
+            turn_logging_off()           
 
     
 class ModelConfig(t.HasTraits):
@@ -174,14 +169,24 @@ class EDSConfig(t.HasTraits):
     eds_detector_elevation = t.CFloat(35.,
         label = 'Elevation angle',
         desc = 'default value for the elevation angle in degree.')  
-   
+        
+class PlotConfig(t.HasTraits):
+    default_style_to_compare_spectra = t.Enum('overlap','cascade', 'mosaic', 'heatmap',
+        desc = ' the default style use to compare spectra with the'
+                ' function utils.plot.plot_spectra')  
+    plot_on_load = t.CBool(False,
+        desc = 'If enabled, the object will be plot automatically on loading')
+    pylab_inline = t.CBool(False,
+        desc="If True the figure are displayed inline."
+             "Hyperspy must be restarted for changes to take effect")
     
 template = {
     'General' : GeneralConfig(),
     'Model' : ModelConfig(),
     'EELS' : EELSConfig(),
     'EDS' : EDSConfig(),
-    'MachineLearning' : MachineLearningConfig(),}
+    'MachineLearning' : MachineLearningConfig(),
+    'Plot' : PlotConfig(),}
 
 # Set the enums defaults
 template['MachineLearning'].export_factors_default_file_format = 'rpl'
@@ -250,6 +255,7 @@ class Preferences(t.HasTraits):
     Model = t.Instance(ModelConfig)
     General = t.Instance(GeneralConfig)
     MachineLearning = t.Instance(MachineLearningConfig)
+    Plot = t.Instance(PlotConfig)
     def gui(self):
         import hyperspy.gui.preferences
         self.EELS.trait_view("traits_view",
@@ -266,7 +272,8 @@ preferences = Preferences(
             EDS = template['EDS'],
             General = template['General'],
             Model = template['Model'],
-            MachineLearning = template['MachineLearning'])
+            MachineLearning = template['MachineLearning'],
+            Plot = template['Plot'])
             
 if preferences.General.logger_on:
     turn_logging_on(verbose = 0)

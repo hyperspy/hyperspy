@@ -1,6 +1,10 @@
 Bibliography
 ============
 
+
+.. [Egerton2011] Ray Egerton, "Electron Energy-Loss Spectroscopy in the
+   Electron Microscope", Springer-Verlag, 2011.
+
 .. _articles-about-hyperspy:
 
 Peer-review articles about Hyperspy

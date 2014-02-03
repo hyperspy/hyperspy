@@ -1,4 +1,4 @@
-
+﻿
 Tools
 *****
 
@@ -109,6 +109,10 @@ The different subclasses are characterized by three
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |           :py:class:`~._signals.eels.EELSSpectrum`            | spectrum  |    EELS     |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
+    |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | spectrum  |   EDS_SEM   |       -       |
+    +---------------------------------------------------------------+-----------+-------------+---------------+
+    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | spectrum  |   EDS_TEM   |       -       |
+    +---------------------------------------------------------------+-----------+-------------+---------------+
     |              :py:class:`~._signals.image.Image`               |   image   |      -      |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |    :py:class:`~._signals.image_simulation.ImageSimulation`    |   image   |      -      |  simulation   |
@@ -196,6 +200,7 @@ we describe methods that are only available in specialized subclasses.
 .. _signal.indexing:
 
 Indexing
+
 ^^^^^^^^
 .. versionadded:: 0.6
 
@@ -422,8 +427,6 @@ are not equal `numpy broadcasting rules apply
 <http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_ *first*. In
 addition Hyperspy extend numpy's broadcasting rules to the following cases:
 
-
-
 +------------+----------------------+------------------+
 | **Signal** | **NavigationShape**  | **SignalShape**  |
 +============+======================+==================+
@@ -462,16 +465,110 @@ addition Hyperspy extend numpy's broadcasting rules to the following cases:
 |   s2 + s1  |       a              |      b           |
 +------------+----------------------+------------------+
 
+Iterating over the navigation axes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Signal instances are iterables over the navigation axes. For example, the 
+following code creates a stack of 10 images and saves them in separate "png"
+files by iterating over the signal instance:
+
+.. code-block:: python
+
+    >>> image_stack = signals.Image(np.random.random((2, 5, 64,64)))
+    >>> for single_image in image_stack:
+    ...    single_image.save("image %s.png" % str(image_stack.axes_manager.indices))
+    The "image (0, 0).png" file was created.
+    The "image (1, 0).png" file was created.
+    The "image (2, 0).png" file was created.
+    The "image (3, 0).png" file was created.
+    The "image (4, 0).png" file was created.
+    The "image (0, 1).png" file was created.
+    The "image (1, 1).png" file was created.
+    The "image (2, 1).png" file was created.
+    The "image (3, 1).png" file was created.
+    The "image (4, 1).png" file was created.
+
+The data of the signal instance that is returned at each iteration is a view of
+the original data, a property that we can use to perform operations on the
+data.  For example, the following code rotates the image at each coordinate  by
+a given angle and uses the :py:func:`~.utils.stack` function in combination
+with `list comprehensions
+<http://docs.python.org/2/tutorial/datastructures.html#list-comprehensions>`_
+to make a horizontal "collage" of the image stack:
+
+.. code-block:: python
+
+    >>> import scipy.ndimage
+    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]
+    >>> image_stack.axes_manager[1].name = "x"
+    >>> image_stack.axes_manager[2].name = "y"))
+    >>> for image, angle in zip(image_stack, (0, 45, 90, 135, 180)):
+    ...    image.data[:] = scipy.ndimage.rotate(image.data, angle=angle,
+    ...    reshape=False)
+    >>> collage = utils.stack([image for image in image_stack], axis=0)
+    >>> collage.plot()
+
+.. figure::  images/rotate_lena.png
+  :align:   center
+  :width:   500    
+
+
+
+
+.. versionadded:: 0.7
+
+
+Transforming the data at each coordinate as in the previous example using an
+external function can be more easily accomplished using the
+:py:meth:`~.signal.Signal.apply_function` method:
+
+.. code-block:: python
+
+    >>> import scipy.ndimage
+    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]*4))
+    >>> image_stack.axes_manager[1].name = "x"
+    >>> image_stack.axes_manager[2].name = "y"
+    >>> image_stack.apply_function(scipy.ndimage.rotate,
+    ...                            angle=45,
+    ...                            reshape=False)
+    >>> collage = utils.stack([image for image in image_stack], axis=0)
+    >>> collage.plot()
+
+.. figure::  images/rotate_lena_apply_simple.png
+  :align:   center
+  :width:   500    
+
+The :py:meth:`~.signal.Signal.apply_function` method can also take variable 
+arguments as in the following example.
+
+.. code-block:: python
+
+    >>> import scipy.ndimage
+    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]*4))
+    >>> image_stack.axes_manager[1].name = "x"
+    >>> image_stack.axes_manager[2].name = "y"
+    >>> angles = signals.Signal(np.array([0, 45, 90, 135]))
+    >>> angles.axes_manager.set_signal_dimension(0)
+    >>> modes = signals.Signal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
+    >>> modes.axes_manager.set_signal_dimension(0)
+    >>> image_stack.apply_function(scipy.ndimage.rotate,
+    ...                            angle=angles,
+    ...                            reshape=False,
+    ...                            mode=modes)
+    calculating 100% |#############################################| ETA:  00:00:00Cropping
+
+.. figure::  images/rotate_lena_apply_ndkwargs.png
+  :align:   center
+  :width:   500    
 
 Cropping
 ^^^^^^^^
 
-Cropping can be performed in a very compact and powerful way using 
-:ref:`signal.indexing` . In addition it can be performed using the 
-following method or GUIs if cropping :ref:`spectra <>` or 
-:ref:`images <>`
-
-* :py:meth:`~.signal.Signal.crop`
+Cropping can be performed in a very compact and powerful way using
+:ref:`signal.indexing` . In addition it can be performed using the following
+method or GUIs if cropping :ref:`spectra <spectrum.crop>` or :ref:`images
+<image.crop>`. There is also a general :py:meth:`~.signal.Signal.crop`
+method that operates *in place*.
 
 Rebinning
 ^^^^^^^^^
@@ -531,6 +628,43 @@ type in place, e.g.:
         Data representation: spectrum
         Data type: float64
 
+
+Basic statistical analysis
+--------------------------
+.. versionadded:: 0.7
+
+:py:meth:`~.signal.Signal.get_histogram` computes the histogram and
+conveniently returns it as signal instance. It provides methods to
+calculate the bins. :py:meth:`~.signal.Signal.print_summary_statistics` prints
+the five-number summary statistics of the data. 
+
+These two methods can be combined with
+:py:meth:`~.signal.Signal.get_current_signal` to compute the histogram or
+print the summary stastics of the signal at the current coordinates, e.g:
+.. code-block:: python
+
+    >>> s = signals.EELSSpectrum(np.random.normal(size=(10,100)))
+    >>> s.print_summary_statistics()
+    Summary statistics
+    ------------------
+    mean:	0.021
+    std:	0.957
+    min:	-3.991
+    Q1:	-0.608
+    median:	0.013
+    Q3:	0.652
+    max:	2.751
+     
+    >>> s.get_current_signal().print_summary_statistics()
+    Summary statistics
+    ------------------
+    mean:   -0.019
+    std:    0.855
+    min:    -2.803
+    Q1: -0.451
+    median: -0.038
+    Q3: 0.484
+    max:    1.992
 
 
 Spectrum tools
@@ -706,19 +840,29 @@ the npoints keyword.
 Estimate elastic scattering intensity
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use :py:meth:`estimate_elastic_scattering_intensity` to calculate the integral
-below the zero loss peak (elastic intensity) from EELS low-loss spectra
-containing the zero loss peak. This integral can use the threshold image
-calculated by the
-:py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold` as
-end energy for the integration at each spectra or use the same energy value for
-all spectra. Also, if no threshold is specified, the routine will perform a
+Use
+:py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_intensity`
+to calculate the integral below the zero loss peak (elastic intensity) from
+EELS low-loss spectra containing the zero loss peak. This integral can use the
+threshold image calculated by the
+:py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold`
+as end energy for the integration at each spectra or use the same energy value
+for all spectra. Also, if no threshold is specified, the routine will perform a
 rough estimation of the inflexion values at each spectrum.
 
-Splice zero loss peak
-^^^^^^^^^^^^^^^^^^^^^
-Once :py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold` has determined the elastic scattering threshold value(s), this tool can be used to separate the zero loss peak from the eels spectra. Use :py:meth:`~._signals.eels.EELSSpectrum.splice_zero_loss_peak` in order to obtain a ZLP suitable for Fourier-Log deconvolution from your EELS low-loss spectra by setting the "smooth" option, that will apply the hanning window to the righ end of the data.
 
+Kramers-Kronig Analysis
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.7
+
+The single-scattering EEL spectrum is approximately related to the complex
+permittivity of the sample and can be estimated by Kramers-Kronig analysis.
+The :py:meth:`~._signals.eels.EELSSpectrum.kramers_kronig_analysis` method
+inplements the Kramers-Kronig FFT method as in [Egerton2011]_ to estimate the
+complex dielectric funtion from a low-loss EELS spectrum. In addition, it can
+estimate the thickness if the refractive index is known and approximately
+correct for surface plasmon excitations in layers.
 
 .. _eds_tools-label:
 
@@ -753,7 +897,7 @@ set of elements to the previous set.
 Get intensity map
 ^^^^^^^^^^^^^^^^^
 
-With the :py:meth:`~._signals.eds.EDSSpectrum.get_intensity_map`, the 
+With the :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`, the 
 intensity of X-ray lines is used to generate a map. The number of counts
 under the selected peaks is used.
 
@@ -761,9 +905,62 @@ Set microscope parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` method provides an user 
-interface to calibrate the paramters if the microscope and the EDS detector.
+interface to calibrate the parameters if the microscope and the EDS detector.
 
 Get the calibration from another spectrum
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.get_calibration_from`
+
+Dielectric function tools
+-------------------------
+
+.. versionadded:: 0.7
+
+Number of effective electrons
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.7
+
+The Bethe f-sum rule gives rise to two definitions of the effective number (see
+[Egerton2011]_):
+
+.. math::
+
+   n_{\mathrm{eff1}}\left(-\Im\left(\epsilon^{-1}\right)\right)=\frac{2\epsilon_{0}m_{0}}{\pi\hbar^{2}e^{2}n_{a}}\int_{0}^{E}E'\Im\left(\frac{-1}{\epsilon}\right)dE'
+
+   n_{\mathrm{eff2}}\left(\epsilon_{2}\right)=\frac{2\epsilon_{0}m_{0}}{\pi\hbar^{2}e^{2}n_{a}}\int_{0}^{E}E'\epsilon_{2}\left(E'\right)dE'
+ 
+where :math:`n_a` is the number of atoms (or molecules) per unit volume of the
+sample, :math:`\epsilon_0` is the vacuum permittivity, :math:`m_0` is the
+elecron mass and :math:`e` is the electron charge.
+
+The
+:py:meth:`~._signals.dielectric_function.DielectricFunction.get_number_of_effective_electrons`
+method computes both.
+
+Compute the electron energy-loss signal
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.7
+
+The
+:py:meth:`~._signals.dielectric_function.DielectricFunction.get_electron_energy_loss_spectrum`
+"naively" computes the single-scattering electron-energy loss spectrum from the
+dielectric function given the zero-loss peak (or its integral) and the sample
+thickness using:
+
+.. math::
+
+    S\left(E\right)=\frac{2I_{0}t}{\pi
+    a_{0}m_{0}v^{2}}\ln\left[1+\left(\frac{\beta}{\theta(E)}\right)^{2}\right]\Im\left[\frac{-1}{\epsilon\left(E\right)}\right]
+     
+where :math:`I_0` is the zero-loss peak integral, :math:`t` the sample
+thickness, :math:`\beta` the collection angle and :math:`\theta(E)` the
+characteristic scattering angle.
+
+Electron and X-ray range
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The electron and X-ray range in a bulk material can be estimated with 
+:py:meth:`~.utils.eds.electron_range` and :py:meth:`~.utils.eds.xray_range`

@@ -1,16 +1,19 @@
 import math
+import numbers
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import constants
 
 from hyperspy.misc.array_tools import rebin
 from hyperspy.misc.utils import unfold_if_multidim
 from hyperspy.gui import messages as messagesui
 import hyperspy.defaults_parser
 
+
 def _estimate_gain(ns, cs,
                    weighted=False,
-                   higher_than=None, 
+                   higher_than=None,
                    plot_results=False,
                    binning=0,
                    pol_order=1):
@@ -39,7 +42,7 @@ def _estimate_gain(ns, cs,
     else:
         variance2fit = variance
         average2fit = average
-        
+
     fit = np.polyfit(average2fit, variance2fit, pol_order)
     if weighted is True:
         from hyperspy._signals.spectrum import Spectrum
@@ -55,7 +58,7 @@ def _estimate_gain(ns, cs,
         m.fit(weights=True)
         fit[0] = l.b.value
         fit[1] = l.a.value
-        
+
     if plot_results is True:
         plt.figure()
         plt.scatter(average.squeeze(), variance.squeeze())
@@ -64,14 +67,14 @@ def _estimate_gain(ns, cs,
         plt.plot(average2fit, np.polyval(fit,average2fit), color = 'red')
     results = {'fit' : fit, 'variance' : variance.squeeze(),
     'counts' : average.squeeze()}
-    
+
     return results
 
 def _estimate_correlation_factor(g0, gk,k):
     a = math.sqrt(g0/gk)
     e = k*(a-1)/(a-k)
     c = (1 - e)**2
-    return c    
+    return c
 
 def estimate_variance_parameters(
     noisy_signal,
@@ -84,9 +87,9 @@ def estimate_variance_parameters(
     weighted=False):
     """Find the scale and offset of the Poissonian noise
 
-    By comparing an SI with its denoised version (i.e. by PCA), 
+    By comparing an SI with its denoised version (i.e. by PCA),
     this plots an
-    estimation of the variance as a function of the number of counts 
+    estimation of the variance as a function of the number of counts
     and fits a
     polynomy to the result.
 
@@ -99,16 +102,16 @@ def estimate_variance_parameters(
         The order of the polynomy.
     higher_than: float
         To restrict the fit to counts over the given value.
-        
+
     return_results : Bool
-    
+
     plot_results : Bool
 
     Returns
     -------
-    Dictionary with the result of a linear fit to estimate the offset 
+    Dictionary with the result of a linear fit to estimate the offset
     and scale factor
-    
+
     """
     fold_back_noisy =  unfold_if_multidim(noisy_signal)
     fold_back_clean =  unfold_if_multidim(clean_signal)
@@ -130,17 +133,17 @@ def estimate_variance_parameters(
         ns = ns[_slice]
         cs = cs[_slice]
 
-    results0 = _estimate_gain(ns, cs, weighted=weighted, 
+    results0 = _estimate_gain(ns, cs, weighted=weighted,
         higher_than=higher_than, plot_results=plot_results, binning=0,
         pol_order=pol_order)
-        
-    results2 = _estimate_gain(ns, cs, weighted=weighted, 
+
+    results2 = _estimate_gain(ns, cs, weighted=weighted,
         higher_than=higher_than, plot_results=False, binning=2,
         pol_order=pol_order)
-        
+
     c = _estimate_correlation_factor(results0['fit'][0],
                                      results2['fit'][0], 4)
-    
+
     message = ("Gain factor: %.2f\n" % results0['fit'][0] +
                "Gain offset: %.2f\n" % results0['fit'][1] +
                "Correlation factor: %.2f\n" % c )
@@ -167,10 +170,10 @@ def estimate_variance_parameters(
         noisy_signal.fold()
     if fold_back_clean is True:
         clean_signal.fold()
-        
+
     if return_results is True:
         return results0
-        
+
 def power_law_perc_area(E1,E2, r):
     a = E1
     b = E2
@@ -196,139 +199,100 @@ def ratio(edge_A, edge_B):
         1.96*ratio_std)
     return ratio, ratio_std
 
-#def analyze_readout(spectrum):
-#    """Readout diagnostic tool
-#
-#    Parameters
-#    ----------
-#    spectrum : Spectrum instance
-#
-#    Returns
-#    -------
-#    tuple of float : (variance, mean, normalized mean as a function of time)
-#    """
-#    s = spectrum
-#    # If it is 2D, sum the first axis.
-#    if s.data_cube.shape[2] > 1:
-#        dc = s.data_cube.sum(1)
-#    else:
-#        dc = s.data_cube.squeeze()
-#    time_mean = dc.mean(0).squeeze()
-#    norm_time_mean = time_mean / time_mean.mean()
-#    corrected_dc = dc * (1/norm_time_mean.reshape((1,-1)))
-#    channel_mean = corrected_dc.mean(1)
-#    variance = (corrected_dc - channel_mean.reshape((-1,1))).var(0)
-#    return variance, channel_mean, norm_time_mean
-#
-#def multi_readout_analyze(folder, ccd_height = 100., plot = True, freq = None):
-#    """Analyze several readout measurements in different files for readout
-#    diagnosys
-#
-#    The readout files in dm3 format must be contained in a folder, preferentely
-#    numered in the order of acquisition.
-#
-#    Parameters
-#    ----------
-#    folder : string
-#        Folder where the dm3 readout files are stored
-#    ccd_heigh : float
-#    plot : bool
-#    freq : float
-#        Frequency of the camera
-#
-#    Returns
-#    -------
-#    Dictionary
-#    """
-#    from spectrum import Spectrum
-#    files = glob.glob1(folder, '*.nc')
-#    if not files:
-#        files = glob.glob1(folder, '*.dm3')
-#    spectra = []
-#    variances = []
-#    binnings = []
-#    for f in files:
-#        print os.path.join(folder,f)
-#        s = Spectrum(os.path.join(folder,f))
-#        variance, channel_mean, norm_time_mean = analyze_readout(s)
-#        s.readout_analysis = {}
-#        s.readout_analysis['variance'] = variance.mean()
-#        s.readout_analysis['pattern'] = channel_mean
-#        s.readout_analysis['time'] = norm_time_mean
-#        if not hasattr(s,'binning'):
-#            s.binning = float(os.path.splitext(f)[0][1:])
-#            if freq:
-#                s.readout_frequency = freq
-#                s.ccd_height = ccd_height
-#            s.save(f)
-#        spectra.append(s)
-#        binnings.append(s.binning)
-#        variances.append(variance.mean())
-#    pixels = ccd_height / np.array(binnings)
-#    plt.scatter(pixels, variances, label = 'data')
-#    fit = np.polyfit(pixels, variances,1, full = True)
-#    if plot:
-#        x = np.linspace(0,pixels.max(),100)
-#        y = x*fit[0][0] + fit[0][1]
-#        plt.plot(x,y, label = 'linear fit')
-#        plt.xlabel('number of pixels')
-#        plt.ylabel('variance')
-#        plt.legend(loc = 'upper left')
-#
-#    print "Variance = %s * pixels + %s" % (fit[0][0], fit[0][1])
-#    dictio = {'pixels': pixels, 'variances': variances, 'fit' : fit,
-#    'spectra' : spectra}
-#    return dictio
+def eels_constant(s, zlp, t):
+    """Calculate the constant of proportionality (k) in the relationship
+    between the EELS signal and the dielectric function.
+    dielectric function from a single scattering distribution (SSD) using
+    the Kramers-Kronig relations.
 
-# 
-# def chrono_align_and_sum(spectrum, energy_range = (None, None),
-                         # spatial_shape = None):
-    # """Alignment and sum of a chrono-spim SI
-# 
-    # Parameters
-    # ----------
-    # spectrum : Spectrum instance
-        # Chrono-spim
-    # energy_range : tuple of floats
-        # energy interval in which to perform the alignment in energy units
-    # axis : int
-    # """
-    # from spectrum import Spectrum
-    # dc = spectrum.data_cube
-    # min_energy_size = dc.shape[0]
-# #    i = 0
-    # new_dc = None
-# 
-    # # For the progress bar to work properly we must capture the output of the
-    # # functions that are called during the alignment process
-    # import cStringIO
-    # import sys
-    # capture_output = cStringIO.StringIO()
-# 
-    # from hyperspy.misc.progressbar import progressbar
-    # pbar = progressbar(maxval = dc.shape[2] - 1)
-    # for i in xrange(dc.shape[2]):
-        # pbar.update(i)
-        # sys.stdout = capture_output
-        # s = Spectrum({'calibration': {'data_cube' : dc[:,:,i]}})
-        # s.get_calibration_from(spectrum)
-        # s.find_low_loss_origin()
-        # s.align(energy_range, progress_bar = False)
-        # min_energy_size = min(s.data_cube.shape[0], min_energy_size)
-        # if new_dc is None:
-            # new_dc = s.data_cube.sum(1)
-        # else:
-            # new_dc = np.concatenate([new_dc[:min_energy_size],
-                                     # s.data_cube.sum(1)[:min_energy_size]], 1)
-        # sys.stdout = sys.__stdout__
-    # pbar.finish()
-    # spectrum.data_cube = new_dc
-    # spectrum.get_dimensions_from_cube()
-    # spectrum.find_low_loss_origin()
-    # spectrum.align(energy_range)
-    # spectrum.find_low_loss_origin()
-    # if spatial_shape is not None:
-        # spectrum.data_cube = spectrum.data_cube.reshape(
-        # [spectrum.data_cube.shape[0]] + list(spatial_shape))
-        # spectrum.data_cube = spectrum.data_cube.swapaxes(1,2)
-        # spectrum.get_dimensions_from_cube()
+    $S(E)=\frac{I_{0}t}{\pi a_{0}m_{0}v^{2}}\ln\left[1+\left(\frac{\beta}
+    {\theta_{E}}\right)^{2}\right]\Im(\frac{-1}{\epsilon(E)})=
+    k\Im(\frac{-1}{\epsilon(E)})$
+
+
+    Parameters
+    ----------
+    zlp: {number, Signal}
+        If the ZLP is the same for all spectra, the intengral of the ZLP
+        can be provided as a number. Otherwise, if the ZLP intensity is not
+        the same for all spectra, it can be provided as i) a Signal
+        of the same dimensions as the current signal containing the ZLP
+        spectra for each location ii) a Signal of signal dimension 0
+        and navigation_dimension equal to the current signal containing the
+        integrated ZLP intensity.
+    t: {None, number, Signal}
+        The sample thickness in nm. If the thickness is the same for all
+        spectra it can be given by a number. Otherwise, it can be provided
+        as a Signal with signal dimension 0 and navigation_dimension equal
+        to the current signal.
+
+    Returns
+    -------
+    k: Signal instance
+
+    """
+
+    # Constants and units
+    me = constants.value(
+        'electron mass energy equivalent in MeV') * 1e3 # keV
+
+    # Mapped parameters
+    try:
+        e0 = s.mapped_parameters.TEM.beam_energy
+    except:
+        raise AttributeError("Please define the beam energy."
+                                "You can do this e.g. by using the "
+                                "set_microscope_parameters method")
+    try:
+        beta = s.mapped_parameters.TEM.EELS.collection_angle
+    except:
+        raise AttributeError("Please define the collection angle."
+                                "You can do this e.g. by using the "
+                                "set_microscope_parameters method")
+
+    axis = s.axes_manager.signal_axes[0]
+    eaxis = axis.axis.copy()
+    if eaxis[0] == 0:
+        # Avoid singularity at E=0
+        eaxis[0] = 1e-10
+
+    if isinstance(zlp, hyperspy.signal.Signal):
+        if (zlp.axes_manager.navigation_dimension ==
+            s.axes_manager.navigation_dimension):
+            if zlp.axes_manager.signal_dimension == 0:
+                i0 = i0.data
+            else:
+                i0 = zlp.data.sum(axis.index_in_array)
+        else:
+            raise ValueError('The ZLP signal dimensions are not '
+                                'compatible with the dimensions of the '
+                                'low-loss signal')
+        i0 = i0.reshape(
+                np.insert(i0.shape, axis.index_in_array, 1))
+    elif isinstance(zlp, numbers.Number):
+        i0 = zlp
+    else:
+        raise ValueError('The zero-loss peak input is not valid.')
+
+    if isinstance(t, hyperspy.signal.Signal):
+        if (t.axes_manager.navigation_dimension ==
+            s.axes_manager.navigation_dimension) and (
+            t.axes_manager.signal_dimension == 0):
+                t = t.data
+                t = t.reshape(
+                        np.insert(t.shape, axis.index_in_array, 1))
+        else:
+            raise ValueError('The thickness signal dimensions are not '
+                                'compatible with the dimensions of the '
+                                'low-loss signal')
+    # Slicer to get the signal data from 0 to axis.size
+    slicer = s.axes_manager._get_data_slice(
+            [(axis.index_in_array, slice(None,axis.size)),])
+
+    # Kinetic definitions
+    ke = e0 * (1 + e0 / 2. / me) / (1 + e0 / me) ** 2
+    tgt = e0 * (2 * me + e0) / (me + e0)
+    k = s._get_navigation_signal()
+    k.data = (t * i0 / (332.5 * ke)) * np.log(1 + (beta * tgt / eaxis) ** 2)
+    k.mapped_parameters.title = "EELS proportionality constant K"
+    return k

@@ -89,6 +89,7 @@ class SpanSelectorInSpectrumHandler(tu.Handler):
             obj.next()
         return
 
+
 class SpectrumRangeSelectorHandler(tu.Handler):
     def close(self, info, is_ok):
         # Removes the span selector from the plot
@@ -129,6 +130,7 @@ class CalibrationHandler(SpanSelectorInSpectrumHandler):
         info.object.last_calibration_stored = True
         return
         
+
 class SpanSelectorInSpectrum(t.HasTraits):
     ss_left_value = t.Float()
     ss_right_value = t.Float()
@@ -175,6 +177,7 @@ class SpanSelectorInSpectrum(t.HasTraits):
         self.ss_right_value = 0
         self.span_selector_switch(True)
         
+
 class LineInSpectrum(t.HasTraits):
     """Adds a vertical draggable line to a spectrum that reports its
     position to the position attribute of the class.
@@ -245,7 +248,6 @@ class LineInSpectrum(t.HasTraits):
         self.draw()
         
             
-
 class SpectrumCalibration(SpanSelectorInSpectrum):
     left_value = t.Float(label='New left value')
     right_value = t.Float(label='New right value')
@@ -308,6 +310,7 @@ class SpectrumCalibration(SpanSelectorInSpectrum):
             (self.left_value, self.right_value), (lc,rc),
             modify_calibration = False)
             
+
 class SpectrumRangeSelector(SpanSelectorInSpectrum):
     on_close = t.List()
         
@@ -437,6 +440,7 @@ class Smoothing(t.HasTraits):
                 color=self.original_color,
                 type='line')        
 
+
 class SmoothingSavitzkyGolay(Smoothing):
     polynomial_order = t.Int(3)
     number_of_points = t.Int(5)
@@ -470,6 +474,7 @@ class SmoothingSavitzkyGolay(Smoothing):
                             self.polynomial_order, 0)
         return smoothed
             
+
 class SmoothingLowess(Smoothing):
     smoothing_parameter = t.Float(2/3.)
     number_of_iterations = t.Int(3)
@@ -498,6 +503,7 @@ class SmoothingLowess(Smoothing):
                             
         return smoothed
 
+
 class SmoothingTV(Smoothing):
     smoothing_parameter = t.Float(200)
 
@@ -522,6 +528,7 @@ class SmoothingTV(Smoothing):
                                 weight = self.smoothing_parameter,)
         return smoothed
         
+
 class ButterworthFilter(Smoothing):
     cutoff_frequency_ratio = t.Range(0.,1.,0.05)
     type = t.Enum('low', 'high')
@@ -561,6 +568,7 @@ class Load(t.HasTraits):
         buttons = [OKButton, CancelButton],
         title = 'Load file')
         
+
 class ImageContrastHandler(tu.Handler):
     def close(self, info, is_ok):
 #        # Removes the span selector from the plot
@@ -608,8 +616,6 @@ class ImageContrastEditor(t.HasTraits):
                             label = 'vmax',
                             show_label=True,
                             style = 'readonly'),
-
-#                    resizable=True,
                     handler = ImageContrastHandler,
                     buttons = [OKButton,
                                OurApplyButton,
@@ -683,6 +689,7 @@ class ImageContrastEditor(t.HasTraits):
         
     def close(self):
         plt.close(self.ax.figure)
+
 
 class ComponentFit(SpanSelectorInSpectrum):
     fit = t.Button()
@@ -783,6 +790,7 @@ class ComponentFit(SpanSelectorInSpectrum):
 
     def apply(self):
         self._fit_fired()
+
 
 class IntegrateArea(SpanSelectorInSpectrum):
     integrate = t.Button()

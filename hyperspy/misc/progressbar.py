@@ -75,21 +75,19 @@ try:
 except ImportError:
     pass
 
-try:
-    # Check if it is running inside IPython
-    __IPYTHON__
-    # Check that it is available (i.e. that we are not in the
-    # standard terminal vs the Notebook, QtConsole...
-    #clear_output()
-    from IPython.core.interactiveshell import InteractiveShell
-    InteractiveShell.instance().display_pub.clear_output
-    from IPython.core.display import clear_output
-    have_clear_output = True 
-except Exception:
-    have_clear_output = False
-    
-    
-
+def running_from_terminal():
+    try:
+        # Check if it is running inside IPython
+        __IPYTHON__
+        # Check that it is available (i.e. that we are not in the
+        # standard terminal vs the Notebook, QtConsole...
+        #clear_output()
+        from IPython.core.interactiveshell import InteractiveShell
+        InteractiveShell.instance().display_pub.clear_output
+        from IPython.core.display import clear_output
+        return False
+    except:
+        return True
 
 class ProgressBarWidget(object):
     """This is an element of ProgressBar formatting.
@@ -127,7 +125,6 @@ class ProgressBarWidgetHFill(object):
 
         At least this function must be overriden."""
         pass
-
 
 class ETA(ProgressBarWidget):
     "Widget for the Estimated Time of Arrival"
@@ -258,17 +255,15 @@ class ProgressBar(object):
         self.prev_percentage = -1
         self.start_time = None
         self.seconds_elapsed = 0
-        if have_clear_output is True:
-            self.update = self.update_ipython
+        if running_from_terminal() is False:
+            self.print_line = self._print_ipython
             self.fd = sys.stdout
-            self.clear_output = True
         else:
-            self.update = self.update_noipython
+            self.print_line = self._print_terminal
             self.fd = sys.stderr
-            
 
     def handle_resize(self, signum, frame):
-        h,w=array('h', ioctl(self.fd,termios.TIOCGWINSZ,'\0'*8))[:2]
+        h, w = array('h', ioctl(self.fd,termios.TIOCGWINSZ,'\0'*8))[:2]
         self.term_width = w
 
     def percentage(self):
@@ -302,7 +297,7 @@ class ProgressBar(object):
     def _need_update(self):
         return int(self.percentage()) != int(self.prev_percentage)
 
-    def update_ipython(self, value):
+    def update(self, value):
         "Updates the progress bar to a new value."
         assert 0 <= value <= self.maxval
         self.currval = value
@@ -312,28 +307,26 @@ class ProgressBar(object):
             self.start_time = time.time()
         self.seconds_elapsed = time.time() - self.start_time
         self.prev_percentage = self.percentage()
-        if self.clear_output is True:
-            clear_output()
+        self.print_line()
+
+    def _print_ipython(self):
+        value = self.currval
         print '\r', self._format_line(),
         sys.stdout.flush()
         if value == self.maxval:
             self.finished = True
-    
-    def update_noipython(self, value):
-        "Updates the progress bar to a new value."
-        assert 0 <= value <= self.maxval
-        self.currval = value
-        if not self._need_update() or self.finished:
-            return
-        if not self.start_time:
-            self.start_time = time.time()
-        self.seconds_elapsed = time.time() - self.start_time
-        self.prev_percentage = self.percentage()
+            print("\n")
+
+    def _print_terminal(self):
+        value = self.currval
         if value != self.maxval:
             self.fd.write(self._format_line() + '\r')
         else:
             self.finished = True
             self.fd.write(self._format_line() + '\n')
+
+    def next(self):
+        self.update(self.currval + 1)
 
     def start(self):
         """Start measuring time, and prints the bar at 0%.
@@ -354,7 +347,7 @@ class ProgressBar(object):
         self.update(self.maxval)
         if self.signal_set:
             signal.signal(signal.SIGWINCH, signal.SIG_DFL)
-        
+
 
 
 class MyBar:
