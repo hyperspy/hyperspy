@@ -265,13 +265,13 @@ class Model(list):
         self.chisq = self.spectrum.__class__(np.sum(differences**2 / variance, -1),
                 axes=self.spectrum.axes_manager._get_navigation_axes_dicts())
         if degrees_of_freedom == 'auto':
-            self.red_chisq = self.spectrum.__class__(self.chisq / (self.spectrum.axes_manager.signal_shape[0] \
+            self.red_chisq = self.spectrum.__class__(self.chisq.data / (self.spectrum.axes_manager.signal_shape[0] \
                - np.sum([len(g.parameters) for g in self]) -1),
                axes=self.spectrum.axes_manager._get_navigation_axes_dicts())
             print "Degrees of freedom set to auto"
             print "DoF = ", np.sum([len(g.parameters) for g in self])
         elif type(degrees_of_freedom) is int :
-            self.red_chisq =self.spectrum.__class__( self.chisq / (self.spectrum.axes_manager.signal_shape[0] \
+            self.red_chisq =self.spectrum.__class__( self.chisq.data / (self.spectrum.axes_manager.signal_shape[0] \
                - degrees_of_freedom -1),
                axes=self.spectrum.axes_manager._get_navigation_axes_dicts())
         else:
