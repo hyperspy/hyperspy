@@ -211,8 +211,8 @@ class Model(list):
                     component_.active = True 
                 else:
                     component_.active = False
-        data = np.zeros(self.spectrum.data.shape,dtype='float')
-        data[:] = np.nan
+        data = np.empty(self.spectrum.data.shape, dtype = 'float')
+        data.fill(np.nan)
         if out_of_range_to_nan is True:
             channel_switches_backup = copy.copy(self.channel_switches)
             self.channel_switches[:] = True
@@ -382,8 +382,8 @@ class Model(list):
             self.axes_manager = old_axes_manager
             self.fetch_stored_values()
         if out_of_range2nans is True:
-            ns = np.zeros((self.axis.axis.shape))
-            ns[:] = np.nan
+            ns = np.empty((self.axis.axis.shape))
+            ns.fill(np.nan)
             ns[self.channel_switches] = s
             s = ns
         return s

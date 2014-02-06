@@ -353,7 +353,7 @@ class Parameter(object):
         if (self.map is None  or self.map.shape != shape or 
                     self.map.dtype != dtype_):
             self.map = np.zeros(shape, dtype_)       
-            self.map['std'][:] = np.nan
+            self.map['std'].fill(np.nan)
             # TODO: in the future this class should have access to 
             # axes manager and should be able to fetch its own
             # values. Until then, the next line is necessary to avoid
@@ -654,8 +654,8 @@ class Component(object):
             self.model.axes_manager = old_axes_manager
             self.charge()
         if out_of_range2nans is True:
-            ns = np.zeros((self.model.axis.axis.shape))
-            ns[:] = np.nan
+            ns = np.empty((self.model.axis.axis.shape))
+            ns.fill(np.nan)
             ns[self.model.channel_switches] = s
             s = ns
         return s
