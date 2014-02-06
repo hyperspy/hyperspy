@@ -2915,7 +2915,7 @@ class Signal(MVA,
             else:
                 raise ValueError(
                     "navigator must be one of \"spectrum\",\"auto\","
-                        " None, a Signal instance")
+                        " \"slider\", None, a Signal instance")
 
         self._plot.plot()
 
