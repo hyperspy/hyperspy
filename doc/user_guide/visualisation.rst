@@ -207,7 +207,6 @@ The function returns a matplotlib ax object, which can be used to customize the 
   :align:   center
   :width:   500    
 
-
 Plotting several signals
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -298,4 +297,3 @@ Lastly, if no navigator is needed use navigator=None:
 
     >>> s = signals.Spectrum(np.random.random(10000).reshape(10,10,100))
     >>> s.plot(navigator=None)
->>>>>>> master
