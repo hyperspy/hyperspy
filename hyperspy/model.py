@@ -175,7 +175,7 @@ class Model(list):
                 parameter.disconnect(self.update_plot)
     
 
-    def as_signal(self, component_list=None, out_of_range_to_nan=True, show_progess=True):
+    def as_signal(self, component_list=None, out_of_range_to_nan=True):
         """Returns a recreation of the dataset using the model.
         the spectral range that is not fitted is filled with nans.
         
@@ -186,8 +186,6 @@ class Model(list):
             list is used in making the returned spectrum
         out_of_range_to_nan : bool
             If True the spectral range that is not fitted is filled with nans.
-        show_progress : bool
-            If True, shows progress bar of calculations
             
         Returns
         -------
@@ -224,8 +222,7 @@ class Model(list):
             channel_switches_backup = copy.copy(self.channel_switches)
             self.channel_switches[:] = True
         maxval = self.axes_manager.navigation_size
-        if show_progess:
-            pbar = progressbar.progressbar(maxval=maxval)
+        pbar = progressbar.progressbar(maxval=maxval)
         i = 0
         for index in self.axes_manager:
             self.fetch_stored_values(only_fixed=False)
@@ -233,10 +230,9 @@ class Model(list):
             self.channel_switches] = self.__call__(
                 non_convolved=not self.convolved, onlyactive=True)
             i += 1
-            if maxval > 0 and show_progess:
+            if maxval > 0 :
                 pbar.update(i)
-        if show_progess:
-            pbar.finish()
+        pbar.finish()
         if out_of_range_to_nan is True:
             self.channel_switches[:] = channel_switches_backup
         spectrum = self.spectrum.__class__(
@@ -257,26 +253,30 @@ class Model(list):
             return False
             
 # TODO: change outputs and/or make them optional!
-    def generate_chisq(self, degrees_of_freedom = 'auto') :
-        if self.spectrum.variance is None:
-            self.spectrum.estimate_poissonian_noise_variance()
-        variance = self.spectrum.variance
-        differences = self.as_signal(None, True, False).data - self.spectrum.data
-        self.chisq = self.spectrum.__class__(np.sum(differences**2 / variance, -1),
-                axes=self.spectrum.axes_manager._get_navigation_axes_dicts())
-        if degrees_of_freedom == 'auto':
-            self.red_chisq = self.spectrum.__class__(self.chisq.data / (self.spectrum.axes_manager.signal_shape[0] \
-               - np.sum([len(g.parameters) for g in self]) -1),
-               axes=self.spectrum.axes_manager._get_navigation_axes_dicts())
-            print "Degrees of freedom set to auto"
-            print "DoF = ", np.sum([len(g.parameters) for g in self])
-        elif type(degrees_of_freedom) is int :
-            self.red_chisq =self.spectrum.__class__( self.chisq.data / (self.spectrum.axes_manager.signal_shape[0] \
-               - degrees_of_freedom -1),
-               axes=self.spectrum.axes_manager._get_navigation_axes_dicts())
-        else:
-            print "degrees_of_freedom must be on interger type."
-            print "The red_chisq could not been calculated"
+#    def generate_chisq(self, degrees_of_freedom = 'auto') :
+#        """Calculates chi-squared and reduced chi-squared for the model
+#
+#
+#        """
+#        if self.spectrum.variance is None:
+#            self.spectrum.estimate_poissonian_noise_variance()
+#        variance = self.spectrum.variance
+#        differences = self.as_signal().data - self.spectrum.data
+#        self.chisq = self.spectrum.__class__(np.sum(differences**2 / variance, -1),
+#                axes=self.spectrum.axes_manager._get_navigation_axes_dicts())
+#        if degrees_of_freedom == 'auto':
+#            self.red_chisq = self.spectrum.__class__(self.chisq.data / (self.spectrum.axes_manager.signal_shape[0] \
+#               - np.sum([len(g.parameters) for g in self]) -1),
+#               axes=self.spectrum.axes_manager._get_navigation_axes_dicts())
+#            print "Degrees of freedom set to auto"
+#            print "DoF = ", np.sum([len(g.parameters) for g in self])
+#        elif type(degrees_of_freedom) is int :
+#            self.red_chisq =self.spectrum.__class__( self.chisq.data / (self.spectrum.axes_manager.signal_shape[0] \
+#               - degrees_of_freedom -1),
+#               axes=self.spectrum.axes_manager._get_navigation_axes_dicts())
+#        else:
+#            print "degrees_of_freedom must be on interger type."
+#            print "The red_chisq could not been calculated"
 
     def _set_p0(self):
         self.p0 = ()
