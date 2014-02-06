@@ -178,7 +178,8 @@ class ColorCycle():
             self.color_cycle = copy.copy(self._color_cycle)
         return self.color_cycle.pop(0)
 
-def plot_signals(signal_list, sync=True, navigator="auto"):
+def plot_signals(signal_list, sync=True, navigator="auto",
+        navigator_list=None):
     """Plot several signals at the same time.
     
     Parameters
@@ -189,8 +190,13 @@ def plot_signals(signal_list, sync=True, navigator="auto"):
     sync : True or False, default "True"
         If True: the signals will share navigation, all the signals
         must have the same dimensions for this to work.
-    navigator : {"auto", None, "spectrum", Signal}, default "auto"
+    navigator : {"auto", None, "spectrum", "slider", Signal}, default "auto"
         See signal.plot docstring for full description
+    navigator_list : {List of navigator arguments, None}, default None
+        Set different navigator options for the signals. Must use valid
+        navigator arguments: "auto", None, "spectrum", "slider", or a 
+        hyperspy Signal. The list must have the same size as signal_list. 
+        If None, the argument specified in navigator will be used. 
 
     Example
     -------
@@ -199,11 +205,49 @@ def plot_signals(signal_list, sync=True, navigator="auto"):
     >>> s_ll = load("lowloss.dm3")
     >>> utils.plot_signals([s_cl, s_ll])
 
+    Specifying the navigator:
+
+    >>> s_cl = load("coreloss.dm3")
+    >>> s_ll = load("lowloss.dm3")
+    >>> utils.plot_signals([s_cl, s_ll], navigator="slider")
+
+    Specifying the navigator for each signal:
+
+    >>> s_cl = load("coreloss.dm3")
+    >>> s_ll = load("lowloss.dm3")
+    >>> s_edx = load("edx.dm3")
+    >>> s_adf = load("adf.dm3")
+    >>> utils.plot_signals(
+            [s_cl, s_ll, s_edx], navigator_list=["slider",None,s_adf])
+
     """
+
+    import hyperspy.signal
+
     if sync:
         axes_manager_list = []
         for signal in signal_list:
             axes_manager_list.append(signal.axes_manager)
+
+        
+        if not navigator_list:
+            navigator_list = []
+        if navigator is None:
+            navigator_list.extend([None]*len(signal_list))
+        elif navigator is "slider":
+            navigator_list.append("slider")
+            navigator_list.extend([None]*(len(signal_list)-1)) 
+        elif isinstance(navigator, hyperspy.signal.Signal):
+            navigator_list.append(navigator)
+            navigator_list.extend([None]*(len(signal_list)-1)) 
+        elif navigator is "spectrum":
+            navigator_list.extend(["spectrum"]*len(signal_list))
+        elif navigator is "auto":
+            navigator_list.extend(["auto"]*len(signal_list))
+        else:
+            raise ValueError(
+                    "navigator must be one of \"spectrum\",\"auto\","
+                    " \"slider\", None, a Signal instance")
 
         #Check to see if the spectra have the same navigational shapes
         temp_shape_first = axes_manager_list[0].navigation_shape
@@ -212,8 +256,9 @@ def plot_signals(signal_list, sync=True, navigator="auto"):
             if not (temp_shape_first == temp_shape):
                 print("The spectra does not have the same navigation size")
                 return
-        for signal in signal_list:
+        for signal, navigator in zip(signal_list, navigator_list):
             signal.plot(axes_manager=axes_manager_list[0], navigator=navigator)
+
     else:
         for signal in signal_list:
             signal.plot(navigator=navigator)
