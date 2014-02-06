@@ -3,4 +3,5 @@
 *.py diff=python
 *.bat        eol=crlf
 *.msa        eol=crlf
+*.nsi        eol=crlf		
 

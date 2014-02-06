@@ -200,7 +200,7 @@ def load(filenames=None,
                                       **kwds) 
                 for filename in filenames]
             
-        if hyperspy.defaults_parser.preferences.General.plot_on_load:
+        if hyperspy.defaults_parser.preferences.Plot.plot_on_load:
             for obj in objects:
                 obj.plot()
         if len(objects) == 1:
