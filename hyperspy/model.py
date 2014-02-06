@@ -173,7 +173,7 @@ class Model(list):
                 parameter.disconnect(self.update_plot)
     
 
-    def as_signal(self, component_list=None, out_of_range_to_nan=True):
+    def as_signal(self, component_list=None, out_of_range_to_nan=True, print_progress = True):
         """Returns a recreation of the dataset using the model.
         the spectral range that is not fitted is filled with nans.
         
@@ -184,6 +184,8 @@ class Model(list):
             list is used in making the returned spectrum
         out_of_range_to_nan : bool
             If True the spectral range that is not fitted is filled with nans.
+        print_progress : bool
+            If True (default), displays progress bar when performing calculations
             
         Returns
         -------
@@ -217,7 +219,8 @@ class Model(list):
             channel_switches_backup = copy.copy(self.channel_switches)
             self.channel_switches[:] = True
         maxval = self.axes_manager.navigation_size
-        pbar = progressbar.progressbar(maxval=maxval)
+        if print_progress:
+            pbar = progressbar.progressbar(maxval=maxval)
         i = 0
         for index in self.axes_manager:
             self.fetch_stored_values(only_fixed=False)
@@ -225,9 +228,10 @@ class Model(list):
             self.channel_switches] = self.__call__(
                 non_convolved=not self.convolved, onlyactive=True)
             i += 1
-            if maxval > 0:
+            if maxval > 0 and print_progress:
                 pbar.update(i)
-        pbar.finish()
+        if print_progress:
+            pbar.finish()
         if out_of_range_to_nan is True:
             self.channel_switches[:] = channel_switches_backup
         spectrum = self.spectrum.__class__(
