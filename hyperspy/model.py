@@ -72,8 +72,10 @@ class Model(list):
         self._low_loss = None
         self._position_widgets = []
         self._plot = None
-        self.chisq = None
-        self.red_chisq = None
+
+        self.chisq = spectrum._get_navigation_signal()
+        self.chisq.data.fill(np.nan)
+        self.dof = self.chisq._deepcopy_with_new_data(np.zeros_like(self.chisq.data, dtype = 'int'))
         
     def __repr__(self):
         return "<Model %s>" % super(Model, self).__repr__()
@@ -213,11 +215,8 @@ class Model(list):
                     component_.active = True 
                 else:
                     component_.active = False
-        # data = np.zeros(self.spectrum.data.shape,dtype='float')
-        # data[:] = np.nan
-        # Is around 2 times quicker than above:
-        data = np.empty(self.spectrum.data.shape, dtype='float')
-        data.fill(np.nan)
+        data = np.zeros(self.spectrum.data.shape,dtype='float')
+        data[:] = np.nan
         if out_of_range_to_nan is True:
             channel_switches_backup = copy.copy(self.channel_switches)
             self.channel_switches[:] = True
@@ -230,7 +229,7 @@ class Model(list):
             self.channel_switches] = self.__call__(
                 non_convolved=not self.convolved, onlyactive=True)
             i += 1
-            if maxval > 0 :
+            if maxval > 0:
                 pbar.update(i)
         pbar.finish()
         if out_of_range_to_nan is True:
@@ -254,10 +253,6 @@ class Model(list):
             
 # TODO: change outputs and/or make them optional!
 #    def generate_chisq(self, degrees_of_freedom = 'auto') :
-#        """Calculates chi-squared and reduced chi-squared for the model
-#
-#
-#        """
 #        if self.spectrum.variance is None:
 #            self.spectrum.estimate_poissonian_noise_variance()
 #        variance = self.spectrum.variance
@@ -709,6 +704,18 @@ class Model(list):
             return [status, errfunc]
         else:
             return [0, self._jacobian(p,y).T]
+
+    def _calculate_chisq(self):
+        if self.spectrum.variance is None:
+            self.spectrum.estimate_poissonian_noise_variance()
+        d= self() - self.spectrum()
+        d *= d/self.spectrum.variance[self.spectrum.axes_manager.indices[::-1]] # d = difference^2 / variance
+        self.chisq[self.spectrum.axes_manager.indices]= sum(d)
+
+    def _get_degrees_of_freedom(self):
+        self.dof[self.spectrum.axes_manager.indices] = self.p0.size
+
+        # self.dof[self.spectrum.axes_manager.indices] = 
         
     def fit(self, fitter=None, method='ls', grad=False, weights=None,
             bounded=False, ext_bounding=False, update_plot=False, 
@@ -908,7 +915,10 @@ class Model(list):
                 tnc and l_bfgs_b
                 """ % fitter
                 
-        self.generate_chisq()
+        self._calculate_chisq()
+        self._get_degrees_of_freedom()
+        # self.dof[self.spectrum.axes_manager.indices] = self.p0.size
+
         if np.iterable(self.p0) == 0:
             self.p0 = (self.p0,)
         self._fetch_values_from_p0(p_std=self.p_std)
@@ -918,6 +928,8 @@ class Model(list):
         if switch_aap is True and update_plot is False:
             self._connect_parameters2update_plot()
             self.update_plot()            
+
+
                 
     def multifit(self, mask=None, fetch_only_fixed=False,
                  autosave=False, autosave_every=10, **kwargs):
