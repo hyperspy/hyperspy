@@ -225,6 +225,11 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 
     import hyperspy.signal
 
+    if not (len(signal_list) == len(navigator_list)):
+        raise ValueError(
+                "signal_list and navigator_list must"
+                " have the same size")
+
     if sync:
         axes_manager_list = []
         for signal in signal_list:
@@ -255,8 +260,8 @@ def plot_signals(signal_list, sync=True, navigator="auto",
         for i, axes_manager in enumerate(axes_manager_list):
             temp_shape = axes_manager.navigation_shape
             if not (temp_shape_first == temp_shape):
-                print("The spectra does not have the same navigation size")
-                return
+                raise ValueError(
+                        "The spectra does not have the same navigation shape")
             axes_manager_list[i] = axes_manager.deepcopy()
             if i > 0:
                 for axis0, axisn in zip(axes_manager_list[0].navigation_axes,
@@ -268,9 +273,13 @@ def plot_signals(signal_list, sync=True, navigator="auto",
                                                    navigator_list,
                                                    axes_manager_list):
             signal.plot(axes_manager=axes_manager, navigator=navigator)
-
+    
+    #If sync is False
     else:
-        for signal in signal_list:
+        if not navigator_list:
+            navigator_list = []
+            navigator_list.extend([navigator]*len(signal_list))
+        for signal, navigator in zip(signal_list, navigator_list):
             signal.plot(navigator=navigator)
 
 def _make_heatmap_subplot(spectra):
