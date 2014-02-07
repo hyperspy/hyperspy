@@ -181,26 +181,27 @@ class ColorCycle():
 def plot_signals(signal_list, sync=True, navigator="auto",
         navigator_list=None):
     """Plot several signals at the same time.
-    
+
     Parameters
     ----------
     signal_list : list of Signal instances
-        If sync is set to True, the signals must have the 
-        same dimensions.
+        If sync is set to True, the signals must have the
+        same navigation shape, but not necessarily the same signal shape.
     sync : True or False, default "True"
         If True: the signals will share navigation, all the signals
-        must have the same dimensions for this to work.
+        must have the same navigation shape for this to work, but not
+        necessarily the same signal shape.
     navigator : {"auto", None, "spectrum", "slider", Signal}, default "auto"
         See signal.plot docstring for full description
     navigator_list : {List of navigator arguments, None}, default None
         Set different navigator options for the signals. Must use valid
-        navigator arguments: "auto", None, "spectrum", "slider", or a 
-        hyperspy Signal. The list must have the same size as signal_list. 
-        If None, the argument specified in navigator will be used. 
+        navigator arguments: "auto", None, "spectrum", "slider", or a
+        hyperspy Signal. The list must have the same size as signal_list.
+        If None, the argument specified in navigator will be used.
 
     Example
     -------
-    
+
     >>> s_cl = load("coreloss.dm3")
     >>> s_ll = load("lowloss.dm3")
     >>> utils.plot_signals([s_cl, s_ll])
@@ -229,17 +230,17 @@ def plot_signals(signal_list, sync=True, navigator="auto",
         for signal in signal_list:
             axes_manager_list.append(signal.axes_manager)
 
-        
+
         if not navigator_list:
             navigator_list = []
         if navigator is None:
             navigator_list.extend([None]*len(signal_list))
         elif navigator is "slider":
             navigator_list.append("slider")
-            navigator_list.extend([None]*(len(signal_list)-1)) 
+            navigator_list.extend([None]*(len(signal_list)-1))
         elif isinstance(navigator, hyperspy.signal.Signal):
             navigator_list.append(navigator)
-            navigator_list.extend([None]*(len(signal_list)-1)) 
+            navigator_list.extend([None]*(len(signal_list)-1))
         elif navigator is "spectrum":
             navigator_list.extend(["spectrum"]*len(signal_list))
         elif navigator is "auto":
@@ -251,13 +252,22 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 
         #Check to see if the spectra have the same navigational shapes
         temp_shape_first = axes_manager_list[0].navigation_shape
-        for axes_manager in axes_manager_list:
+        for i, axes_manager in enumerate(axes_manager_list):
             temp_shape = axes_manager.navigation_shape
             if not (temp_shape_first == temp_shape):
                 print("The spectra does not have the same navigation size")
                 return
-        for signal, navigator in zip(signal_list, navigator_list):
-            signal.plot(axes_manager=axes_manager_list[0], navigator=navigator)
+            axes_manager_list[i] = axes_manager.deepcopy()
+            if i > 0:
+                for axis0, axisn in zip(axes_manager_list[0].navigation_axes,
+                                        axes_manager_list[i].navigation_axes):
+                    axes_manager_list[i]._axes[axisn.index_in_array] = axis0
+            del axes_manager
+
+        for signal, navigator, axes_manager in zip(signal_list,
+                                                   navigator_list,
+                                                   axes_manager_list):
+            signal.plot(axes_manager=axes_manager, navigator=navigator)
 
     else:
         for signal in signal_list:
@@ -317,7 +327,7 @@ def plot_spectra(
         the spectra can have diffent size and axes.
     style : {'default', 'overlap','cascade', 'mosaic', 'heatmap'}
         The style of the plot. The default is "overlap" and can be
-        customized in `preferences`. 
+        customized in `preferences`.
     color : valid matplotlib color or a list of them or `None`
         Sets the color of the lines of the plots when `style` is "cascade"
         or "mosaic". If a list, if its length is
@@ -336,7 +346,7 @@ def plot_spectra(
         reverse the order of the spectra without reversing the order of the
         colors.
     legend: None | list of str | 'auto'
-       If list of string, legend for "cascade" or title for "mosaic" is 
+       If list of string, legend for "cascade" or title for "mosaic" is
        displayed. If 'auto', the title of each spectra (mapped_parameters.title)
        is used.
     fig : {matplotlib figure, None}
@@ -359,10 +369,10 @@ def plot_spectra(
 
     """
     import hyperspy.signal
-    
+
     if style == "default":
-        style = preferences.Plot.default_style_to_compare_spectra  
-         
+        style = preferences.Plot.default_style_to_compare_spectra
+
     if style=='overlap':
         style='cascade'
         padding=0
@@ -377,7 +387,7 @@ def plot_spectra(
                             "string or a list of valid matplotlib colors.")
     else:
         color  = itertools.cycle(plt.rcParams['axes.color_cycle'])
-        
+
     if line_style is not None:
         if hasattr(line_style , "__iter__"):
             line_style   = itertools.cycle(line_style)
@@ -388,15 +398,15 @@ def plot_spectra(
                             " line_style string or a list of valid matplotlib"
                             " line_style.")
     else:
-        line_style = ['-'] * len(spectra)    
-        
+        line_style = ['-'] * len(spectra)
+
     if legend is not None:
         if legend == 'auto':
-            legend = [spec.mapped_parameters.title for spec in spectra]  
+            legend = [spec.mapped_parameters.title for spec in spectra]
         elif hasattr(legend , "__iter__"):
-            legend   = itertools.cycle(legend)    
+            legend   = itertools.cycle(legend)
         else:
-            raise ValueError("legend must be None, 'auto' or a list of string")  
+            raise ValueError("legend must be None, 'auto' or a list of string")
 
     if style == 'cascade':
         if fig is None:
@@ -408,14 +418,14 @@ def plot_spectra(
                               line_style=line_style,
                               padding=padding)
         if legend is not None:
-            plt.legend(legend)            
+            plt.legend(legend)
 
     elif style == 'mosaic':
         default_fsize = plt.rcParams["figure.figsize"]
         figsize = (default_fsize[0], default_fsize[1] * len(spectra))
         fig, subplots = plt.subplots(len(spectra), 1, figsize=figsize)
         if legend is None:
-            legend  = [legend] * len(spectra)  
+            legend  = [legend] * len(spectra)
         for spectrum, ax, color, line_style, legend in zip(spectra,
                 subplots, color, line_style, legend):
             _plot_spectrum(spectrum, ax, color=color,line_style=line_style)
