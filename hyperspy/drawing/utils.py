@@ -225,10 +225,11 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 
     import hyperspy.signal
 
-    if not (len(signal_list) == len(navigator_list)):
-        raise ValueError(
-                "signal_list and navigator_list must"
-                " have the same size")
+    if navigator_list:
+        if not (len(signal_list) == len(navigator_list)):
+            raise ValueError(
+                    "signal_list and navigator_list must"
+                    " have the same size")
 
     if sync:
         axes_manager_list = []
