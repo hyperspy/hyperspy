@@ -896,11 +896,8 @@ class Model(list):
                 ------------
                 tnc and l_bfgs_b
                 """ % fitter
-                
         self._calculate_chisq()
         self._get_degrees_of_freedom()
-        # self.dof[self.spectrum.axes_manager.indices] = self.p0.size
-
         if np.iterable(self.p0) == 0:
             self.p0 = (self.p0,)
         self._fetch_values_from_p0(p_std=self.p_std)
@@ -910,8 +907,6 @@ class Model(list):
         if switch_aap is True and update_plot is False:
             self._connect_parameters2update_plot()
             self.update_plot()            
-
-
                 
     def multifit(self, mask=None, fetch_only_fixed=False,
                  autosave=False, autosave_every=10, **kwargs):
