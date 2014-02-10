@@ -69,8 +69,6 @@ class Model(list):
     _firstimetouch = True
 
     def __init__(self, spectrum):
-        '''
-        '''
         self.convolved = False
         self.spectrum = spectrum
         self.axes_manager = self.spectrum.axes_manager
@@ -702,7 +700,7 @@ class Model(list):
             variance = 1.0
         else:
             variance = self.spectrum.variance[self.spectrum.axes_manager.indices[::-1]]
-        d= self() - self.spectrum()
+        d= self() - self.spectrum()[self.channel_switches]
         d *= d/variance # d = difference^2 / variance
         self.chisq[self.spectrum.axes_manager.indices]= sum(d)
 
@@ -713,7 +711,7 @@ class Model(list):
     def red_chisq(self):
         """Reduced chi-squared. Calculated from self.chisq and self.dof
         """
-        tmp = self.chisq / ( - self.dof + self.spectrum.axes_manager.signal_size - 1)
+        tmp = self.chisq / ( - self.dof + sum(self.channel_switches) - 1)
         tmp.mapped_parameters.title = self.spectrum.mapped_parameters.title + ' reduced chi-squared'
         return tmp
 
