@@ -251,28 +251,6 @@ class Model(list):
         else:
             return False
             
-# TODO: change outputs and/or make them optional!
-#    def generate_chisq(self, degrees_of_freedom = 'auto') :
-#        if self.spectrum.variance is None:
-#            self.spectrum.estimate_poissonian_noise_variance()
-#        variance = self.spectrum.variance
-#        differences = self.as_signal().data - self.spectrum.data
-#        self.chisq = self.spectrum.__class__(np.sum(differences**2 / variance, -1),
-#                axes=self.spectrum.axes_manager._get_navigation_axes_dicts())
-#        if degrees_of_freedom == 'auto':
-#            self.red_chisq = self.spectrum.__class__(self.chisq.data / (self.spectrum.axes_manager.signal_shape[0] \
-#               - np.sum([len(g.parameters) for g in self]) -1),
-#               axes=self.spectrum.axes_manager._get_navigation_axes_dicts())
-#            print "Degrees of freedom set to auto"
-#            print "DoF = ", np.sum([len(g.parameters) for g in self])
-#        elif type(degrees_of_freedom) is int :
-#            self.red_chisq =self.spectrum.__class__( self.chisq.data / (self.spectrum.axes_manager.signal_shape[0] \
-#               - degrees_of_freedom -1),
-#               axes=self.spectrum.axes_manager._get_navigation_axes_dicts())
-#        else:
-#            print "degrees_of_freedom must be on interger type."
-#            print "The red_chisq could not been calculated"
-
     def _set_p0(self):
         self.p0 = ()
         for component in self:
@@ -715,7 +693,11 @@ class Model(list):
     def _get_degrees_of_freedom(self):
         self.dof[self.spectrum.axes_manager.indices] = self.p0.size
 
-        # self.dof[self.spectrum.axes_manager.indices] = 
+    @property
+    def red_chisq(self):
+        self._red_chisq = self.chisq / ( - self.dof + self.spectrum.axes_manager.signal_size - 1)
+        return self._red_chisq
+
         
     def fit(self, fitter=None, method='ls', grad=False, weights=None,
             bounded=False, ext_bounding=False, update_plot=False, 
