@@ -56,11 +56,21 @@ class Model(list):
     Parameters
     ----------
     spectrum : an Spectrum (or any Spectrum subclass) instance
+
+    Attributes
+    ----------
+    chisq : A Signal of floats
+        Chi-squared of the signal (or np.nan if not yet fit)
+    dof : A Signal of integers
+        Degrees of freedom of the signal (0 if not yet fit)
+    red_chisq
     """
     
     _firstimetouch = True
 
     def __init__(self, spectrum):
+        '''
+        '''
         self.convolved = False
         self.spectrum = spectrum
         self.axes_manager = self.spectrum.axes_manager
@@ -687,19 +697,25 @@ class Model(list):
 
     def _calculate_chisq(self):
         if self.spectrum.variance is None:
-            self.spectrum.estimate_poissonian_noise_variance()
+            print ("Variance is not set, so using default value of 1.0")
+            print ("The results are meaningless unless you set the variance yourself!")
+            variance = 1.0
+        else:
+            variance = self.spectrum.variance[self.spectrum.axes_manager.indices[::-1]]
         d= self() - self.spectrum()
-        d *= d/self.spectrum.variance[self.spectrum.axes_manager.indices[::-1]] # d = difference^2 / variance
+        d *= d/variance # d = difference^2 / variance
         self.chisq[self.spectrum.axes_manager.indices]= sum(d)
 
-    def _get_degrees_of_freedom(self):
+    def _set_current_degrees_of_freedom(self):
         self.dof[self.spectrum.axes_manager.indices] = self.p0.size
 
     @property
     def red_chisq(self):
-        self._red_chisq = self.chisq / ( - self.dof + self.spectrum.axes_manager.signal_size - 1)
-        self._red_chisq.mapped_parameters.title = self.spectrum.mapped_parameters.title + ' reduced chi-squared'
-        return self._red_chisq
+        """Reduced chi-squared. Calculated from self.chisq and self.dof
+        """
+        tmp = self.chisq / ( - self.dof + self.spectrum.axes_manager.signal_size - 1)
+        tmp.mapped_parameters.title = self.spectrum.mapped_parameters.title + ' reduced chi-squared'
+        return tmp
 
         
     def fit(self, fitter=None, method='ls', grad=False, weights=None,
@@ -900,7 +916,7 @@ class Model(list):
                 tnc and l_bfgs_b
                 """ % fitter
         self._calculate_chisq()
-        self._get_degrees_of_freedom()
+        self._set_current_degrees_of_freedom()
         if np.iterable(self.p0) == 0:
             self.p0 = (self.p0,)
         self._fetch_values_from_p0(p_std=self.p_std)
