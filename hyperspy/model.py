@@ -75,7 +75,9 @@ class Model(list):
 
         self.chisq = spectrum._get_navigation_signal()
         self.chisq.data.fill(np.nan)
+        self.chisq.mapped_parameters.title = self.spectrum.mapped_parameters.title + ' chi-squared'
         self.dof = self.chisq._deepcopy_with_new_data(np.zeros_like(self.chisq.data, dtype = 'int'))
+        self.dof.mapped_parameters.title = self.spectrum.mapped_parameters.title + ' degrees of freedom'
         
     def __repr__(self):
         return "<Model %s>" % super(Model, self).__repr__()
@@ -696,6 +698,7 @@ class Model(list):
     @property
     def red_chisq(self):
         self._red_chisq = self.chisq / ( - self.dof + self.spectrum.axes_manager.signal_size - 1)
+        self._red_chisq.mapped_parameters.title = self.spectrum.mapped_parameters.title + ' reduced chi-squared'
         return self._red_chisq
 
         
