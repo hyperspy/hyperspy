@@ -207,6 +207,72 @@ The function returns a matplotlib ax object, which can be used to customize the 
   :align:   center
   :width:   500    
 
+Plotting several signals
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.7
+:py:meth:`~.utils.plot.plot_signals()` is used to plot several signals at the
+same time. By default the navigation position of the signals will be synced, and the 
+signals must have the same dimensions. To plot two spectra at the same time: 
+
+.. code-block:: python
+
+    >>> s1 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
+    >>> utils.plot.plot_signals([s1, s2])
+
+.. figure::  images/plot_signals.png
+  :align:   center
+  :width:   500    
+
+The navigator can be specified by using the navigator argument, where the 
+different options are "auto", None, "spectrum", "slider" or Signal.  
+For more details about the different navigators, 
+see :ref:`plotting_different_navigators`.
+To specify the navigator:
+
+.. code-block:: python
+
+    >>> s1 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
+    >>> utils.plot.plot_signals([s1, s2], navigator="slider")
+
+.. figure::  images/plot_signals_slider.png
+  :align:   center
+  :width:   500    
+
+Navigators can also be set differently for different plots using the 
+navigator_list argument. Where the navigator_list be the same length
+as the number of signals plotted, and only contain valid navigator options.
+For example:
+
+.. code-block:: python
+
+    >>> s1 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
+    >>> s3 = signals.Spectrum(np.random.random(100).reshape(10,10)) 
+    >>> utils.plot.plot_signals([s1, s2], navigator_list=["slider", s3])
+
+.. figure::  images/plot_signals_navigator_list.png
+  :align:   center
+  :width:   500    
+
+Several signals can also be plotted without syncing the navigation by using
+sync=False. The navigator_list can still be used to specify a navigator for 
+each plot:
+
+.. code-block:: python
+
+    >>> s1 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
+    >>> utils.plot.plot_signals([s1, s2], sync=False, navigator_list=["slider", "slider"])
+
+.. figure::  images/plot_signals_sync.png
+  :align:   center
+  :width:   500    
+
+.. _plotting_different_navigators:
+
 Plotting signals with different navigators 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
