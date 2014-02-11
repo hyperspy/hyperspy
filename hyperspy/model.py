@@ -705,7 +705,7 @@ class Model(list):
         self.chisq.data[self.spectrum.axes_manager.indices[::-1]]= sum(d)
 
     def _set_current_degrees_of_freedom(self):
-        self.dof.data[self.spectrum.axes_manager.indices[::-1]] = self.p0.size
+        self.dof.data[self.spectrum.axes_manager.indices[::-1]] = len(self.p0)
 
     @property
     def red_chisq(self):

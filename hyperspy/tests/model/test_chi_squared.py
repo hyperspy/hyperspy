@@ -28,17 +28,18 @@ class TestChiSquared:
         s = Spectrum(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
         m = create_model(s)
         self.model = m
-        self.red_chisq = 1.55793245
-        self.chisq = 7.78966223
+        self.A = 38.022476979172588
+        self.sigma = 1.4764966133859543
+        self.centre = 4.0000000002462945
 
-    def test_chisq(self):
+    def test_chisq_with_fit(self):
         m = self.model
         g = Gaussian()
         m.append(g)
         m.fit()
-        assert_true(np.allclose(m.chisq(), self.chisq))
+        assert_true(np.allclose(m.chisq(), 7.78966223))
 
-    def test_dof(self):
+    def test_dof_with_fit(self):
         m = self.model
         g = Gaussian()
         g1 = Gaussian()
@@ -47,9 +48,41 @@ class TestChiSquared:
         m.fit()
         assert_true(np.equal(m.dof(), 5))
 
-    def test_red_chisq(self):
+    def test_red_chisq_with_fit(self):
         m = self.model
         g = Gaussian()
         m.append(g)
         m.fit()
-        assert_true(np.allclose(m.red_chisq(), self.red_chisq))
+        assert_true(np.allclose(m.red_chisq(), 1.55793245))
+
+    def test_chisq(self):
+        m = self.model
+        g = Gaussian()
+        g.A.value = self.A
+        g.sigma.value = self.sigma
+        g.centre.value = self.centre
+        m.append(g)
+        m._calculate_chisq()
+        assert_true(np.allclose(m.chisq(), 7.78966223))
+
+    def test_dof_with_p0(self):
+        m = self.model
+        g = Gaussian()
+        g1 = Gaussian()
+        m.extend((g, g1))
+        g1.set_parameters_not_free('A')
+        m._set_p0()
+        m._set_current_degrees_of_freedom()
+        assert_true(np.equal(m.dof(), 5))
+
+    def test_red_chisq(self):
+        m = self.model
+        g = Gaussian()
+        g.A.value = self.A
+        g.sigma.value = self.sigma
+        g.centre.value = self.centre
+        m.append(g)
+        m._set_p0()
+        m._set_current_degrees_of_freedom()
+        m._calculate_chisq()
+        assert_true(np.allclose(m.red_chisq(), 1.55793245))
