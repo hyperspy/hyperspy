@@ -1450,3 +1450,29 @@ class Model(list):
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
 
+    def get_component(self, component_name):
+        """
+        Find a component with a specific name in the model.
+        Useful when calling Hyperspy as a library, since the
+        components will not be directly callable.
+
+        Parameters
+        ----------
+        component_name : string
+            Name of the component
+
+        Returns
+        -------
+        hyperspy component
+
+        Examples
+        --------
+        >>> Mn_L3 = model.get_component("Mn_L3")
+
+        """
+
+        for component in self:
+            if component.name == component_name:
+                return(component)
+        raise ValueError(
+                "Component " + str(component_name) + " not found in model")
