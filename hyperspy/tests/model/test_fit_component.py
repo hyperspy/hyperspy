@@ -33,9 +33,6 @@ class TestFitOneComponent:
         axis = np.arange(10000)
         s = Spectrum(g.function(axis))
         m = create_model(s)
-        self.A = g.A.value
-        self.centre = g.centre.value
-        self.sigma = g.sigma.value
         self.model = m
         self.g = g
         self.axis = axis
