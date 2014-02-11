@@ -671,8 +671,10 @@ class Signal1DTools(object):
         ----------
         signal_range : {a tuple of this form (l, r), "interactive"}
             l and r are the left and right limits of the range. They can be numbers or None,
-            where None indicates the extremes of the interval. When `signal_range` is
-            "interactive" (default) the range is selected using a GUI.
+            where None indicates the extremes of the interval. If l and r are floats the 
+            `signal_range` will be in axis units (for example eV). If l and r are integers
+            the `signal_range` will be in index units.
+            When `signal_range` is "interactive" (default) the range is selected using a GUI.
 
         Returns
         -------
@@ -692,6 +694,16 @@ class Signal1DTools(object):
         Using the CLI (not-in-place operation).
 
         >>> s_int = s.integrate_in_range(signal_range=(560,None))
+
+        Selecting a range in the axis units, by specifying the 
+        signal range with floats.
+
+        >>> s_int = s.integrate_in_range(signal_range=(560.,590.))
+
+        Selecting a range using the index, by specifying the 
+        signal range with integers.
+
+        >>> s_int = s.integrate_in_range(signal_range=(100,120))
 
         """
 
