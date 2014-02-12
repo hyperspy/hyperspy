@@ -60,7 +60,8 @@ class Model(list):
     
     _firstimetouch = True
 
-    def __init__(self, spectrum):
+    def __init__(self, spectrum, **kwds):
+
         self.convolved = False
         self.spectrum = spectrum
         self.axes_manager = self.spectrum.axes_manager
@@ -72,7 +73,11 @@ class Model(list):
         self._low_loss = None
         self._position_widgets = []
         self._plot = None
+ 
+    def _load_dictionary(self, dict):
+        self.spectrum = Spectrum(**dict['spectrum'])
         
+
     def __repr__(self):
         return "<Model %s>" % super(Model, self).__repr__()
 
@@ -1450,6 +1455,7 @@ class Model(list):
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
     def as_dictionary(self):
+        # model:
         dic = {}
         dic['spectrum'] = self.spectrum._to_dictionary()
         dic['components'] = [c.as_dictionary() for c in self]
@@ -1458,3 +1464,11 @@ class Model(list):
         dic['_low_loss'] = copy.deepcopy(self._low_loss)
         dic['convolved'] = self.convolved
         return dic
+
+    def _load_dictionary(self, dic):
+        # the default values.....
+        id_dict = {}
+        for c in dic['components']:
+            self.append(c['type']())
+            id_dict.update(self[-1]._load_dictionary(c))
+        # deal with twins

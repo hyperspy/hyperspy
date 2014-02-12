@@ -94,7 +94,24 @@ class Parameter(object):
         self.units = ''
         self.map = None
         self.model = None
+        self._id_name = ''
     
+    def _load_dictionary(self, dict):
+# called only on with the correct _id_name field in the dict
+        if dict['_id_name'] is self._id_name:
+            self.map = copy.deepcopy(dict['map'])
+            self.value = dict['value']
+            self.name = dict['name']
+            self.std = copy.deepcopy(dict['std'])
+            self.free = copy.deepcopy(dict['free'])
+            self.units = copy.deepcopy(dict['units'])
+            self._bounds = copy.deepcopy(dict['_bounds'])
+            self.twin_function = dict['twin_function']
+            self.twin_inverse_function = dict['twin_inverse_function']
+            return dict['id']
+        else:
+            raise ValueError('_id_name of parameter and dictionary do not match')
+
     def __repr__(self):
         text = ''
         text += 'Parameter %s' % self.name
@@ -429,9 +446,10 @@ class Parameter(object):
                 filename,'_std'))
 
     def as_dictionary(self):
-
+        # parameter:
         dic = {}
         dic['name'] = self.name
+        dic['_id_name'] = self._id_name
         dic['map'] = copy.deepcopy(self.map)
         dic['value'] = copy.deepcopy(self.value)
         dic['std'] = copy.deepcopy(self.std)
@@ -492,6 +510,7 @@ class Component(object):
             parameter = Parameter()
             self.parameters.append(parameter)
             parameter.name = name
+            parameter._id_name = name
             setattr(self, name, parameter)
             if hasattr(self, 'grad_' + name):
                 parameter.grad = getattr(self, 'grad_' + name)
@@ -746,9 +765,23 @@ class Component(object):
         for _parameter in parameter_list:
             _parameter.free = False
     def as_dictionary(self):
+        # component:
         dic = {}
         dic['axes'] = self.__axes_manager._get_axes_dicts()
         dic['name'] = self.name
         dic['type'] = type(self)
         dic['parameters'] = [p.as_dictionary() for p in self.parameters]
         return dic
+
+    def _load_dictionary(self, dic):
+        # return dictionary of id's and parameters of all of the components for later "twinning"
+        self.axes = copy.deepcopy(dic['axes'])
+        self.name = copy.deepcopy(dic['name'])
+        id_dict = {}
+        for p in dic['parameters']:
+            idname = p['_id_name']
+            par = getattr(self, idname)
+            t_id = par._load_dictionary(p)
+            id_dict[t_id] = par
+        return id_dict
+
