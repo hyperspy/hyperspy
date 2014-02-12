@@ -37,6 +37,7 @@ import traits.api as t
 
 from hyperspy import messages
 import hyperspy.drawing.spectrum
+from hyperspy.axes import AxesManager
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.misc import progressbar
 from hyperspy._signals.eels import EELSSpectrum, Spectrum
@@ -74,9 +75,6 @@ class Model(list):
         self._position_widgets = []
         self._plot = None
  
-    def _load_dictionary(self, dict):
-        self.spectrum = Spectrum(**dict['spectrum'])
-        
 
     def __repr__(self):
         return "<Model %s>" % super(Model, self).__repr__()
@@ -1466,7 +1464,17 @@ class Model(list):
         return dic
 
     def _load_dictionary(self, dic):
-        # the default values.....
+
+        self.spectrum = Spectrum(**dic['spectrum'])
+        self.axes_manager = AxesManager(dic['axes_manager'])
+        self.axis = self.axes_manager.signal_axes[0]
+        self.axes_manager.connect(self.fetch_stored_values)
+        self.channel_switches=np.array([True] * len(self.axis.axis))
+        self.free_parameters_boundaries = copy.deepcopy(dic['free_parameters_boundaries'])
+        self._low_loss = copy.deepcopy(dic['_low_loss'])
+        self.convolved = dic['convolved']
+        for c in self:
+            self.remove(c)
         id_dict = {}
         for c in dic['components']:
             self.append(c['type']())
