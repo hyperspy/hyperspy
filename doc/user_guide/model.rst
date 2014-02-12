@@ -330,7 +330,7 @@ accessed directly:
     
     >>> m.dof # Signal of degrees of freedom
         
-.. versionadded:: 0.8
+.. versionadded:: 0.7
 
 and 
 
@@ -338,7 +338,7 @@ and
     
     >>> m.chisq # Signal of chi-squared for fitted model
         
-.. versionadded:: 0.8
+.. versionadded:: 0.7
 
 The reduced chi-squared is calculated from the two previous quantities on call:
 
@@ -346,7 +346,7 @@ The reduced chi-squared is calculated from the two previous quantities on call:
     
     >>> m.red_chisq # Signal of reduced chi-squared for fitted model
         
-.. versionadded:: 0.8
+.. versionadded:: 0.7
 
 Visualizing the model
 ^^^^^^^^^^^^^^^^^^^^^
