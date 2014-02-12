@@ -1453,4 +1453,8 @@ class Model(list):
         dic = {}
         dic['spectrum'] = self.spectrum._to_dictionary()
         dic['components'] = [c.as_dictionary() for c in self]
+        dic['axes_manager'] = self.axes_manager._get_axes_dicts()
+        dic['free_parameters_boundaries'] = copy.deepcopy(self.free_parameters_boundaries)
+        dic['_low_loss'] = copy.deepcopy(self._low_loss)
+        dic['convolved'] = self.convolved
         return dic

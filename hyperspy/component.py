@@ -432,12 +432,14 @@ class Parameter(object):
 
         dic = {}
         dic['name'] = self.name
-        dic['value'] = copy.deepcopy(self.map['values'])
-        dic['std'] = copy.deepcopy(self.map['std'])
-        dic['is_set'] = copy.deepcopy(self.map['is_set'])
+        dic['map'] = copy.deepcopy(self.map)
+        dic['value'] = copy.deepcopy(self.value)
+        dic['std'] = copy.deepcopy(self.std)
         dic['free'] = self.free
         dic['units'] = self.units
-        dic['has_twin'] = (self.twin is not None)
+        dic['id'] = id(self)
+        dic['_twins'] = [id(t) for t in self._twins]
+        dic['_bounds'] = self._bounds
         return dic
                     
 class Component(object):
