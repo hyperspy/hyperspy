@@ -1449,4 +1449,8 @@ class Model(list):
                     else:
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
-
+    def as_dictionary(self):
+        dic = {}
+        dic['spectrum'] = self.spectrum._to_dictionary()
+        dic['components'] = [c.as_dictionary() for c in self]
+        return dic

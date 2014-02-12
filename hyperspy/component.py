@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import os, copy
 
 import numpy as np
 
@@ -427,6 +427,18 @@ class Parameter(object):
         if save_std is True:
             self.as_signal(field = 'std').save(append2pathname(
                 filename,'_std'))
+
+    def as_dictionary(self):
+
+        dic = {}
+        dic['name'] = self.name
+        dic['value'] = copy.deepcopy(self.map['values'])
+        dic['std'] = copy.deepcopy(self.map['std'])
+        dic['is_set'] = copy.deepcopy(self.map['is_set'])
+        dic['free'] = self.free
+        dic['units'] = self.units
+        dic['has_twin'] = (self.twin is not None)
+        return dic
                     
 class Component(object):
     __axes_manager = None
@@ -729,3 +741,9 @@ class Component(object):
                 
         for _parameter in parameter_list:
             _parameter.free = False
+    def as_dictionary(self):
+        dic = {}
+        dic['axes'] = self.__axes_manager._get_axes_dicts()
+        dic['name'] = self.name
+        dic['parameters'] = [p.as_dictionary() for p in self.parameters]
+        return dic
