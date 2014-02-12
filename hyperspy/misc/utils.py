@@ -682,7 +682,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
 
     """
     
-    axis_input=axis
+    axis_input = copy.deepcopy(axis)
 
     for i, obj in enumerate(signal_list):
         if i == 0:
@@ -746,7 +746,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         signal.get_dimensions_from_data()
         
     if axis_input is None:
-        axis_input = signal.axes_manager[-1+1j].index_in_axes_manager.deepcopy()
+        axis_input = signal.axes_manager[-1+1j].index_in_axes_manager
         step_sizes = 1
     else:        
         step_sizes = [obj.axes_manager.shape[axis_input] for obj in signal_list]

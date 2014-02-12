@@ -3151,18 +3151,18 @@ class Signal(MVA,
 
         The split can be defined by giving the number_of_parts, a homogeneous
         step size or a list of customized step sizes. By default ('auto'),
-        the function is the reverse of utils.stack(axis=None)
+        the function is the reverse of utils.stack(). 
 
         Parameters
         ----------
-        axis : {'auto' | 'reverse_stack' | int | string}
+        axis : {'auto' | int | string}
             Specify the data axis in which to perform the splitting
             operation.  The axis can be specified using the index of the
             axis in `axes_manager` or the axis name.
-            - If' auto', the last navigation axis will be used.             
-            - If the object has been created with utils.stack, 'reverse_stacking' 
-            can be used to retrieve the former list of signals (options 
-            stored in 'mapped_parameters.stacking_history') 
+            - If 'auto' and if the object has been created with utils.stack,
+            split will return the former list of signals
+            (options stored in 'mapped_parameters.stacking_history'              
+             else the last navigation axis will be used. 
         number_of_parts : {'auto' | int}
             Number of parts in which the SI will be splitted. The
             splitting is homegenous. When the axis size is not divisible
@@ -3200,15 +3200,11 @@ class Signal(MVA,
         signal_dict = self._to_dictionary(add_learning_results=False)
         
         if axis == 'auto':
-            axis_in_manager = self.axes_manager[-1+1j].index_in_axes_manager
-        elif axis ==  'reverse_stacking':
             if hasattr(self.mapped_parameters, 'stacking_history'):
                 axis_in_manager = self.mapped_parameters.stacking_history.axis
-                step_sizes = self.mapped_parameters.stacking_history.step_sizes 
+                step_sizes = self.mapped_parameters.stacking_history.step_sizes
             else:
-                raise ValueError(
-                "You cannot use axis='reverse_stacking', if the objected "
-                "has not been generated with utils.stack")
+                axis_in_manager = self.axes_manager[-1+1j].index_in_axes_manager
         else:
             axis_in_manager = self.axes_manager[axis].index_in_axes_manager
         
