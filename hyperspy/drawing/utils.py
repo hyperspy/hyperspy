@@ -289,7 +289,16 @@ def _make_heatmap_subplot(spectra):
     im.mapped_parameters.title = spectra.mapped_parameters.title
     im.plot()
     return im._plot.signal_plot.ax
-
+    
+def _make_overlap_plot(spectra, ax, color="blue",line_style='-'):
+    for spectrum_index, (spectrum, color,line_style) in enumerate(
+            zip(spectra, color,line_style)):
+        x_axis = spectrum.axes_manager.signal_axes[0]
+        ax.plot(x_axis.axis, spectrum.data, color=color,ls=line_style)
+    _set_spectrum_xlabel(spectrum, ax)
+    ax.set_ylabel('Intensity')
+    ax.autoscale(tight=True)
+    
 def _make_cascade_subplot(spectra, ax, color="blue",line_style='-', padding=1):
     max_value = 0
     for spectrum in spectra:
@@ -304,10 +313,7 @@ def _make_cascade_subplot(spectra, ax, color="blue",line_style='-', padding=1):
                             float(max_value) + spectrum_index * padding)
         ax.plot(x_axis.axis, data_to_plot, color=color,ls=line_style)
     _set_spectrum_xlabel(spectrum, ax)
-    if padding !=0:
-        ax.set_yticks([])
-    else:
-        ax.set_ylabel('Intensity')
+    ax.set_yticks([])
     ax.autoscale(tight=True)
 
 def _plot_spectrum(spectrum, ax, color="blue",line_style='-'):
@@ -383,10 +389,6 @@ def plot_spectra(
     if style == "default":
         style = preferences.Plot.default_style_to_compare_spectra
 
-    if style=='overlap':
-        style='cascade'
-        padding=0
-
     if color is not None:
         if hasattr(color, "__iter__"):
             color  = itertools.cycle(color)
@@ -418,7 +420,15 @@ def plot_spectra(
         else:
             raise ValueError("legend must be None, 'auto' or a list of string")
 
-    if style == 'cascade':
+    if style == 'overlap':
+        if fig is None:
+            fig = plt.figure()
+        ax = fig.add_subplot(111)
+        _make_overlap_plot(spectra,
+                          ax,
+                          color=color,
+                          line_style=line_style,)
+    elif style == 'cascade':
         if fig is None:
             fig = plt.figure()
         ax = fig.add_subplot(111)
