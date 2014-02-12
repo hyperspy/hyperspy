@@ -1463,28 +1463,45 @@ class Model(list):
         dic['convolved'] = self.convolved
         return dic
 
-    def _load_dictionary(self, dic):
+    def _load_dictionary(self, dict):
 
-        self.spectrum = Spectrum(**dic['spectrum'])
-        self.axes_manager = AxesManager(dic['axes_manager'])
+        self.spectrum = Spectrum(**dict['spectrum'])
+
+        if 'axes_manager' in dict:
+            self.axes_manager = AxesManager(dict['axes_manager'])
+        else:
+            self.axes_manager = self.spectrum.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
         self.channel_switches=np.array([True] * len(self.axis.axis))
-        self.free_parameters_boundaries = copy.deepcopy(dic['free_parameters_boundaries'])
-        self._low_loss = copy.deepcopy(dic['_low_loss'])
-        self.convolved = dic['convolved']
 
-        while len(self) != 0:
-            self.remove(self[0])
-        id_dict = {}
-        for c in dic['components']:
-            self.append(c['type']())
-            id_dict.update(self[-1]._load_dictionary(c))
-        # deal with twins:
-        for c in dic['components']:
-            for p in c['parameters']:
-                for t in p['_twins']:
-                    id_dict[t].twin = id_dict[p['id']]
+        if 'free_parameters_boundaries' in dict:
+            self.free_parameters_boundaries = copy.deepcopy(dict['free_parameters_boundaries'])
+        else:
+            self.free_parameters_boundaries = None
 
-        return id_dict
+        if '_low_loss' in dict:
+            self._low_loss = copy.deepcopy(dict['_low_loss'])
+        else:
+            self._low_loss = None
+
+        if 'convolved' in dict:
+            self.convolved = dict['convolved']
+        else:
+            self.convolved = False
+
+        if 'components' in dict:
+            while len(self) != 0:
+                self.remove(self[0])
+            id_dict = {}
+
+            for c in dict['components']:
+                self.append(c['type']())
+                id_dict.update(self[-1]._load_dictionary(c))
+            # deal with twins:
+            for c in dict['components']:
+                for p in c['parameters']:
+                    for t in p['_twins']:
+                        id_dict[t].twin = id_dict[p['id']]
+
 
