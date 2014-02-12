@@ -3744,9 +3744,10 @@ class Signal(MVA,
         range_bins : tuple or None (optional)
             the minimum and maximum range for the histogram. If not specified,
             it will be (x.min(), x.max())
-            
-        other keyword arguments (weight and density) are described in 
-        np.histogram().
+        
+        **kwargs
+            other keyword arguments (weight and density) are described in 
+            np.histogram().
 
         Returns
         -------
