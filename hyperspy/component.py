@@ -440,6 +440,8 @@ class Parameter(object):
         dic['id'] = id(self)
         dic['_twins'] = [id(t) for t in self._twins]
         dic['_bounds'] = self._bounds
+        dic['twin_function'] = self.twin_function
+        dic['twin_inverse_function'] = self.twin_inverse_function
         return dic
                     
 class Component(object):
@@ -747,5 +749,6 @@ class Component(object):
         dic = {}
         dic['axes'] = self.__axes_manager._get_axes_dicts()
         dic['name'] = self.name
+        dic['type'] = type(self)
         dic['parameters'] = [p.as_dictionary() for p in self.parameters]
         return dic
