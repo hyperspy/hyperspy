@@ -3151,15 +3151,18 @@ class Signal(MVA,
 
         The split can be defined by giving the number_of_parts, a homogeneous
         step size or a list of customized step sizes. By default ('auto'),
-        the function is the reverse of utils.stack
+        the function is the reverse of utils.stack(axis=None)
 
         Parameters
         ----------
-        axis : {'auto' | int | string}
+        axis : {'auto' | 'reverse_stack' | int | string}
             Specify the data axis in which to perform the splitting
-            operation. If' auto', the last navigation axis will be used.
-             The axis can be specified using the index of the
+            operation.  The axis can be specified using the index of the
             axis in `axes_manager` or the axis name.
+            - If' auto', the last navigation axis will be used.             
+            - If the object has been created with utils.stack, 'reverse_stacking' 
+            can be used to retrieve the former list of signals (options 
+            stored in 'mapped_parameters.stacking_history') 
         number_of_parts : {'auto' | int}
             Number of parts in which the SI will be splitted. The
             splitting is homegenous. When the axis size is not divisible
@@ -3198,11 +3201,18 @@ class Signal(MVA,
         
         if axis == 'auto':
             axis_in_manager = self.axes_manager[-1+1j].index_in_axes_manager
-            axis = self.axes_manager[-1+1j].index_in_array        
+        elif axis ==  'reverse_stacking':
+            if hasattr(self.mapped_parameters, 'stacking_history'):
+                axis_in_manager = self.mapped_parameters.stacking_history.axis
+                step_sizes = self.mapped_parameters.stacking_history.step_sizes 
+            else:
+                raise ValueError(
+                "You cannot use axis='reverse_stacking', if the objected "
+                "has not been generated with utils.stack")
         else:
             axis_in_manager = self.axes_manager[axis].index_in_axes_manager
-            axis = self.axes_manager[axis].index_in_array
-            
+        
+        axis = self.axes_manager[axis_in_manager].index_in_array            
         len_axis = self.axes_manager[axis_in_manager].size
             
         if number_of_parts is 'auto' and step_sizes is 'auto':
