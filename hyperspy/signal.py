@@ -3745,7 +3745,8 @@ class Signal(MVA,
             the minimum and maximum range for the histogram. If not specified,
             it will be (x.min(), x.max())
             
-        other keyword arguments are described in numpy.hist().
+        other keyword arguments (weight and density) are described in 
+        np.histogram().
 
         Returns
         -------
