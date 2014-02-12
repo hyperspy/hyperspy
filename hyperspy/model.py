@@ -1479,4 +1479,11 @@ class Model(list):
         for c in dic['components']:
             self.append(c['type']())
             id_dict.update(self[-1]._load_dictionary(c))
-        # deal with twins
+        # deal with twins:
+        for c in dic['components']:
+            for p in c['parameters']:
+                for t in p['_twins']:
+                    id_dict[t].twin = id_dict[p['id']]
+
+        return id_dict
+

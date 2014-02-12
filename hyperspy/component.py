@@ -20,6 +20,7 @@ import os, copy
 
 import numpy as np
 
+from hyperspy.axes import AxesManager
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
@@ -767,7 +768,7 @@ class Component(object):
     def as_dictionary(self):
         # component:
         dic = {}
-        dic['axes'] = self.__axes_manager._get_axes_dicts()
+        dic['axes_manager'] = self.__axes_manager._get_axes_dicts()
         dic['name'] = self.name
         dic['type'] = type(self)
         dic['parameters'] = [p.as_dictionary() for p in self.parameters]
@@ -775,7 +776,7 @@ class Component(object):
 
     def _load_dictionary(self, dic):
         # return dictionary of id's and parameters of all of the components for later "twinning"
-        self.axes = copy.deepcopy(dic['axes'])
+        self.axes_manager = AxesManager(dic['axes_manager'])
         self.name = copy.deepcopy(dic['name'])
         id_dict = {}
         for p in dic['parameters']:
