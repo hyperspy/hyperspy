@@ -1473,8 +1473,9 @@ class Model(list):
         self.free_parameters_boundaries = copy.deepcopy(dic['free_parameters_boundaries'])
         self._low_loss = copy.deepcopy(dic['_low_loss'])
         self.convolved = dic['convolved']
-        for c in self:
-            self.remove(c)
+
+        while len(self) != 0:
+            self.remove(self[0])
         id_dict = {}
         for c in dic['components']:
             self.append(c['type']())
