@@ -33,8 +33,10 @@ from scipy.optimize import (leastsq,
                             fmin_powell)
 from traits.trait_errors import TraitError
 
+from hyperspy import components
 from hyperspy import messages
 import hyperspy.drawing.spectrum
+from hyperspy.axes import AxesManager
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.external import progressbar
 from hyperspy._signals.eels import Spectrum
@@ -50,6 +52,7 @@ from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
 from hyperspy.signal import Signal
 from hyperspy.misc.utils import slugify, shorten_name
+from hyperspy.misc.export_dictionary import export_to_dictionary, load_from_dictionary
 
 
 class ModelComponents(object):
@@ -97,7 +100,7 @@ class Model(list):
     A model is constructed as a linear combination of :mod:`components` that
     are added to the model using :meth:`append` or :meth:`extend`. There
     are many predifined components available in the in the :mod:`components`
-    module. If needed, new components can easyly created using the code of
+    module. If needed, new components can easily created using the code of
     existing components as a template.
 
     Once defined, the model can be fitted to the data using :meth:`fit` or
@@ -111,7 +114,7 @@ class Model(list):
     Attributes
     ----------
 
-    spectrum : Spectrum instance
+    spectrum : Spectrum instance or a dictionary of model
         It contains the data to fit.
     chisq : A Signal of floats
         Chi-squared of the signal (or np.nan if not yet fit)
@@ -216,40 +219,91 @@ class Model(list):
 
     _firstimetouch = True
 
+    def __init__(self, spectrum, **kwds):
+
+        self._plot = None
+        self._position_widgets = []
+        self._adjust_position_all = None
+        self._plot_components = False
+        self._whitelist = {'_whitelist': None, 'chisq.data': None, 'dof.data': None, '_low_loss': None,
+                           'free_parameters_boundaries': None, 'convolved': None}
+        self.components = ModelComponents(self)
+        self._suspend_update = False
+        self._adjust_position_all = None
+        self._plot_components = False
+        self._model_line = None
+        if isinstance(spectrum, dict):
+            self._load_dictionary(spectrum)
+        else:
+            kwds['spectrum'] = spectrum
+            self._load_dictionary(kwds)
+
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
         # raise an exception when using windows.connect
         return id(self)
 
-    def __init__(self, spectrum):
-        self.convolved = False
-        self.spectrum = spectrum
+    def _load_dictionary(self, dic):
+        """Load data from dictionary.
+
+        Parameters
+        ----------
+        dic : dictionary
+            A dictionary containing at least a 'spectrum' keyword with either
+            a spectrum itself, or a dictionary created with spectrum._to_dictionary()
+            Additionally the dictionary can contain the following items:
+            _whitelist : dictionary
+                a dictionary with keys used as references of  save attributes, for more information, see
+                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
+            components : dictionary (optional)
+                Dictionary, with information about components of the model
+                (see the documentation of component.to_dictionary() method)
+            * any field from _whitelist.keys() *
+        """
+
+        if isinstance(dic['spectrum'], dict):
+            self.spectrum = Spectrum(**dic['spectrum'])
+        else:
+            self.spectrum = dic['spectrum']
+
         self.axes_manager = self.spectrum.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
-
-        self.free_parameters_boundaries = None
         self.channel_switches = np.array([True] * len(self.axis.axis))
-        self._low_loss = None
-        self._position_widgets = []
-        self._plot = None
-        self._model_line = None
 
-        self.chisq = spectrum._get_navigation_signal()
+        self.chisq = self.spectrum._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
-        self.chisq.metadata.General.title = \
-            self.spectrum.metadata.General.title + ' chi-squared'
+        self.chisq.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' chi-squared'
         self.dof = self.chisq._deepcopy_with_new_data(
-            np.zeros_like(
-                self.chisq.data,
-                dtype='int'))
-        self.dof.metadata.General.title = \
-            self.spectrum.metadata.General.title + ' degrees of freedom'
-        self._suspend_update = False
-        self._adjust_position_all = None
-        self._plot_components = False
-        self.components = ModelComponents(self)
+            np.zeros_like(self.chisq.data, dtype='int'))
+        self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' degrees of freedom'
+        self.free_parameters_boundaries = None
+        self._low_loss = None
+        self.convolved = False
+
+        if 'components' in dic:
+            while len(self) != 0:
+                self.remove(self[0])
+            id_dict = {}
+
+            for c in dic['components']:
+                args = {}
+                for k, v in c['_whitelist'].iteritems():
+                    if k.startswith('_init_'):
+                        args[k[6:]] = v
+                self.append(getattr(components, c['_id_name'])(**args))
+                id_dict.update(self[-1]._load_dictionary(c))
+            # deal with twins:
+            for c in dic['components']:
+                for p in c['parameters']:
+                    for t in p['_twins']:
+                        id_dict[t].twin = id_dict[p['_id_']]
+
+        if '_whitelist' in dic:
+            load_from_dictionary(self, dic)
 
     def __repr__(self):
         title = self.spectrum.metadata.General.title
@@ -305,6 +359,7 @@ class Model(list):
             self.convolution_axis = None
             self.convolved = False
 
+        
     # Extend the list methods to call the _touch when the model is modified
 
     def append(self, thing):
@@ -542,6 +597,27 @@ class Model(list):
             return True
         else:
             return False
+            
+# TODO: port it                    
+#    def generate_chisq(self, degrees_of_freedom = 'auto') :
+#        if self.spectrum.variance is None:
+#            self.spectrum.estimate_poissonian_noise_variance()
+#        variance = self.spectrum.variance[self.channel_switches]
+#        differences = (self.model_cube - self.spectrum.data)[self.channel_switches]
+#        self.chisq = np.sum(differences**2 / variance, 0)
+#        if degrees_of_freedom == 'auto':
+#            self.red_chisq = self.chisq / \
+#            (np.sum(np.ones(self.spectrum.energydimension)[self.channel_switches]) \
+#            - len(self.p0) -1)
+#            print "Degrees of freedom set to auto"
+#            print "DoF = ", len(self.p0)
+#        elif type(degrees_of_freedom) is int :
+#            self.red_chisq = self.chisq / \
+#            (np.sum(np.ones(self.spectrum.energydimension)[self.channel_switches]) \
+#            - degrees_of_freedom -1)
+#        else:
+#            print "degrees_of_freedom must be on interger type."
+#            print "The red_chisq could not been calculated"
 
     def _set_p0(self):
         self.p0 = ()
@@ -583,6 +659,14 @@ class Model(list):
                         limited[1] = True
                         limits[1] = param.bmax
                     if param._number_of_elements == 1:
+                        limited = [False,False]
+                        limits = [0,0]
+                        if param.bmin is not None:
+                            limited[0] = True
+                            limits[0] = param.bmin
+                        if param.bmax is not None:
+                            limited[1] = True
+                            limits[1] = param.bmax
                         self.mpfit_parinfo.append(
                             {'limited': limited,
                              'limits': limits})
@@ -1018,6 +1102,15 @@ class Model(list):
 
     def _jacobian4odr(self, param, x):
         return self._jacobian(param, x)
+        
+    def calculate_p_std(self, p0, method, *args):
+        print "Estimating the standard deviation"
+        f = self._poisson_likelihood_function if method == 'ml' \
+        else self._errfunc2
+        hess = approx_hessian(p0,f,*args)
+        ihess = np.linalg.inv(hess)
+        p_std = np.sqrt(1./np.diag(ihess))
+        return p_std
 
     def _poisson_likelihood_function(self, param, y, weights=None):
         """Returns the likelihood function of the model for the given
@@ -1335,6 +1428,8 @@ class Model(list):
                 ------------
                 tnc and l_bfgs_b
                 """ % fitter
+                
+        
         if np.iterable(self.p0) == 0:
             self.p0 = (self.p0,)
         self._fetch_values_from_p0(p_std=self.p_std)
@@ -1442,6 +1537,7 @@ class Model(list):
                     autosave_fn + 'npz'))
             os.remove(autosave_fn + '.npz')
 
+            
     def save_parameters2file(self, filename):
         """Save the parameters array in binary format.
 
@@ -2035,6 +2131,64 @@ class Model(list):
                     else:
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
+
+    def as_dictionary(self, picklable=False):
+        """Returns a dictionary of the model, including full Signal,
+        all components, degrees of freedom (dof) and chi-squared (chisq) with values.
+
+        All values (except functions) are references
+
+        Parameters
+        ----------
+        picklable : Bool (optional, False)
+            If any found functions will be pickled
+
+        Returns
+        -------
+        dictionary : a complete dictionary of the model, which includes at least the following fields:
+            components : list
+                a list of dictionaries of components, one per
+            spectrum : Signal
+                a Signal of the original model
+            _whitelist : dictionary
+                a dictionary with keys used as references for saved attributes, for more information, see
+                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys() *
+        Examples
+        --------
+        >>> s = hs.signals.Spectrum(np.random.random((10,100)))
+        >>> m = hs.create_model(s)
+        >>> l1 = hs.model.components.Lorentzian()
+        >>> l2 = hs.model.components.Lorentzian()
+        >>> m.append(l1)
+        >>> m.append(l2)
+        >>> dict = m.as_dictionary()
+        >>> m2 = hs.create_model(dict)
+
+        """
+        dic = {
+            'components': [
+                c.as_dictionary(picklable) for c in self],
+            'spectrum': self.spectrum}
+        export_to_dictionary(self, self._whitelist, dic, picklable)
+
+        def remove_empty_numpy_strings(dic):
+            import numpy
+            for k, v in dic.iteritems():
+                if isinstance(v, dict):
+                    remove_empty_numpy_strings(v)
+                elif isinstance(v, list):
+                    for vv in v:
+                        if isinstance(vv, dict):
+                            remove_empty_numpy_strings(vv)
+                        elif isinstance(vv, numpy.string_) and len(vv) == 0:
+                            vv = ''
+                elif isinstance(v, numpy.string_) and len(v) == 0:
+                    del dic[k]
+                    dic[k] = ''
+        remove_empty_numpy_strings(dic)
+
+        return dic
 
     def set_component_active_value(
             self, value, component_list=None, only_current=False):
