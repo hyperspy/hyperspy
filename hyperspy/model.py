@@ -67,7 +67,7 @@ class Model(list):
         if type(spectrum) is dict:
             self._load_dictionary(spectrum)
         else:
-            kwds['spectrum'] = spectrum._to_dictionary()
+            kwds['spectrum'] = spectrum
             self._load_dictionary(kwds)
 
         # self.convolved = False
@@ -81,6 +81,51 @@ class Model(list):
         # self._low_loss = None
         # self._position_widgets = []
  
+
+
+    def _load_dictionary(self, dict):
+        
+        if type(dict['spectrum']) is dict:
+            self.spectrum = Spectrum(**dict['spectrum'])
+        else:
+            self.spectrum = dict['spectrum']
+
+        if 'axes_manager' in dict:
+            self.axes_manager = AxesManager(dict['axes_manager'])
+        else:
+            self.axes_manager = self.spectrum.axes_manager
+        self.axis = self.axes_manager.signal_axes[0]
+        self.axes_manager.connect(self.fetch_stored_values)
+        self.channel_switches=np.array([True] * len(self.axis.axis))
+
+        if 'free_parameters_boundaries' in dict:
+            self.free_parameters_boundaries = copy.deepcopy(dict['free_parameters_boundaries'])
+        else:
+            self.free_parameters_boundaries = None
+
+        if '_low_loss' in dict:
+            self._low_loss = copy.deepcopy(dict['_low_loss'])
+        else:
+            self._low_loss = None
+
+        if 'convolved' in dict:
+            self.convolved = dict['convolved']
+        else:
+            self.convolved = False
+
+        if 'components' in dict:
+            while len(self) != 0:
+                self.remove(self[0])
+            id_dict = {}
+
+            for c in dict['components']:
+                self.append(c['type']())
+                id_dict.update(self[-1]._load_dictionary(c))
+            # deal with twins:
+            for c in dict['components']:
+                for p in c['parameters']:
+                    for t in p['_twins']:
+                        id_dict[t].twin = id_dict[p['id']]
 
     def __repr__(self):
         return "<Model %s>" % super(Model, self).__repr__()
@@ -1468,46 +1513,4 @@ class Model(list):
         dic['_low_loss'] = copy.deepcopy(self._low_loss)
         dic['convolved'] = self.convolved
         return dic
-
-    def _load_dictionary(self, dict):
-
-        self.spectrum = Spectrum(**dict['spectrum'])
-
-        if 'axes_manager' in dict:
-            self.axes_manager = AxesManager(dict['axes_manager'])
-        else:
-            self.axes_manager = self.spectrum.axes_manager
-        self.axis = self.axes_manager.signal_axes[0]
-        self.axes_manager.connect(self.fetch_stored_values)
-        self.channel_switches=np.array([True] * len(self.axis.axis))
-
-        if 'free_parameters_boundaries' in dict:
-            self.free_parameters_boundaries = copy.deepcopy(dict['free_parameters_boundaries'])
-        else:
-            self.free_parameters_boundaries = None
-
-        if '_low_loss' in dict:
-            self._low_loss = copy.deepcopy(dict['_low_loss'])
-        else:
-            self._low_loss = None
-
-        if 'convolved' in dict:
-            self.convolved = dict['convolved']
-        else:
-            self.convolved = False
-
-        if 'components' in dict:
-            while len(self) != 0:
-                self.remove(self[0])
-            id_dict = {}
-
-            for c in dict['components']:
-                self.append(c['type']())
-                id_dict.update(self[-1]._load_dictionary(c))
-            # deal with twins:
-            for c in dict['components']:
-                for p in c['parameters']:
-                    for t in p['_twins']:
-                        id_dict[t].twin = id_dict[p['id']]
-
 
