@@ -56,6 +56,14 @@ class Model(list):
     Parameters
     ----------
     spectrum : an Spectrum (or any Spectrum subclass) instance
+
+    Attributes
+    ----------
+    chisq : A Signal of floats
+        Chi-squared of the signal (or np.nan if not yet fit)
+    dof : A Signal of integers
+        Degrees of freedom of the signal (0 if not yet fit)
+    red_chisq
     """
     
     _firstimetouch = True
@@ -72,6 +80,12 @@ class Model(list):
         self._low_loss = None
         self._position_widgets = []
         self._plot = None
+
+        self.chisq = spectrum._get_navigation_signal()
+        self.chisq.data.fill(np.nan)
+        self.chisq.mapped_parameters.title = self.spectrum.mapped_parameters.title + ' chi-squared'
+        self.dof = self.chisq._deepcopy_with_new_data(np.zeros_like(self.chisq.data, dtype = 'int'))
+        self.dof.mapped_parameters.title = self.spectrum.mapped_parameters.title + ' degrees of freedom'
         
     def __repr__(self):
         return "<Model %s>" % super(Model, self).__repr__()
@@ -247,27 +261,6 @@ class Model(list):
         else:
             return False
             
-# TODO: port it                    
-#    def generate_chisq(self, degrees_of_freedom = 'auto') :
-#        if self.spectrum.variance is None:
-#            self.spectrum.estimate_poissonian_noise_variance()
-#        variance = self.spectrum.variance[self.channel_switches]
-#        differences = (self.model_cube - self.spectrum.data)[self.channel_switches]
-#        self.chisq = np.sum(differences**2 / variance, 0)
-#        if degrees_of_freedom == 'auto':
-#            self.red_chisq = self.chisq / \
-#            (np.sum(np.ones(self.spectrum.energydimension)[self.channel_switches]) \
-#            - len(self.p0) -1)
-#            print "Degrees of freedom set to auto"
-#            print "DoF = ", len(self.p0)
-#        elif type(degrees_of_freedom) is int :
-#            self.red_chisq = self.chisq / \
-#            (np.sum(np.ones(self.spectrum.energydimension)[self.channel_switches]) \
-#            - degrees_of_freedom -1)
-#        else:
-#            print "degrees_of_freedom must be on interger type."
-#            print "The red_chisq could not been calculated"
-
     def _set_p0(self):
         self.p0 = ()
         for component in self:
@@ -699,6 +692,29 @@ class Model(list):
             return [status, errfunc]
         else:
             return [0, self._jacobian(p,y).T]
+
+    def _calculate_chisq(self):
+        if self.spectrum.variance is None:
+            print ("Variance is not set, so using default value of 1.0")
+            print ("The results are meaningless unless you set the variance yourself!")
+            variance = 1.0
+        else:
+            variance = self.spectrum.variance[self.spectrum.axes_manager.indices[::-1]]
+        d= self() - self.spectrum()[self.channel_switches]
+        d *= d/variance # d = difference^2 / variance
+        self.chisq.data[self.spectrum.axes_manager.indices[::-1]]= sum(d)
+
+    def _set_current_degrees_of_freedom(self):
+        self.dof.data[self.spectrum.axes_manager.indices[::-1]] = len(self.p0)
+
+    @property
+    def red_chisq(self):
+        """Reduced chi-squared. Calculated from self.chisq and self.dof
+        """
+        tmp = self.chisq / ( - self.dof + sum(self.channel_switches) - 1)
+        tmp.mapped_parameters.title = self.spectrum.mapped_parameters.title + ' reduced chi-squared'
+        return tmp
+
         
     def fit(self, fitter=None, method='ls', grad=False, weights=None,
             bounded=False, ext_bounding=False, update_plot=False, 
@@ -897,8 +913,8 @@ class Model(list):
                 ------------
                 tnc and l_bfgs_b
                 """ % fitter
-                
-        
+        self._calculate_chisq()
+        self._set_current_degrees_of_freedom()
         if np.iterable(self.p0) == 0:
             self.p0 = (self.p0,)
         self._fetch_values_from_p0(p_std=self.p_std)
@@ -1449,4 +1465,3 @@ class Model(list):
                     else:
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
-

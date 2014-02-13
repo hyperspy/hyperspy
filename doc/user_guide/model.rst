@@ -319,6 +319,35 @@ In addition, it is possible to fit a given component  independently using the
 :py:meth:`~.model.Model.fit_component` method, that is specially useful to ease
 setting starting parameters.
 
+Checking goodness of fit
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+To check now well the model fit to your data, chi-squared and degrees of freedom 
+are computed automatically when fitting. Both are stored as signals, and can be 
+accessed directly:
+
+.. code-block:: python
+    
+    >>> m.dof # Signal of degrees of freedom
+        
+.. versionadded:: 0.7
+
+and 
+
+.. code-block:: python
+    
+    >>> m.chisq # Signal of chi-squared for fitted model
+        
+.. versionadded:: 0.7
+
+The reduced chi-squared is calculated from the two previous quantities on call:
+
+.. code-block:: python
+    
+    >>> m.red_chisq # Signal of reduced chi-squared for fitted model
+        
+.. versionadded:: 0.7
+
 Visualizing the model
 ^^^^^^^^^^^^^^^^^^^^^
 
