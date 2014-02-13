@@ -84,7 +84,7 @@ class Model(list):
 
         Parameters
         ----------
-        dict : dictionary
+        dic : dictionary
             A dictionary containing at least a 'spectrum' keyword with either
             a spectrum itself, or a dictionary created with spectrum._to_dictionary()
             Additionally the dictionary can containt the following items:
@@ -133,12 +133,12 @@ class Model(list):
             self.dof.mapped_parameters.title = self.spectrum.mapped_parameters.title + ' degrees of freedom'
         
         if 'free_parameters_boundaries' in dic:
-            self.free_parameters_boundaries = dic['free_parameters_boundaries']
+            self.free_parameters_boundaries = copy.deepcopy(dic['free_parameters_boundaries'])
         else:
             self.free_parameters_boundaries = None
 
         if 'low_loss' in dic:
-            self._low_loss = dic['low_loss']
+            self._low_loss = copy.deepcopy(dic['low_loss'])
         else:
             self._low_loss = None
 
