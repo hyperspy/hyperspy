@@ -145,7 +145,7 @@ Comparing objects
 
 Hyperspy provides two functions to compare different objects (spectra, images or
 other signals) whatever their dimension. The two functions, 
-:py:meth:`~.utils.plot.plot_spectra()` and :py:meth:`~.utils.plot.plot_signals()`
+:py:func:`~.drawing.utils.plot_spectra` and :py:func:`~.drawing.utils.plot_signals`
 , are explained and exemplified in this chapter. 
 
 Plotting several spectra
@@ -153,14 +153,14 @@ Plotting several spectra
 
 .. versionadded:: 0.7
 
-:py:meth:`~.utils.plot.plot_spectra()` is used to plot several spectra in the same figure, which
+The function :py:func:`~.drawing.utils.plot_spectra` is used to plot several spectra in the same figure, which
 can make it easier to compare them. For example to see changes in EELS fine structure over 
 a line scan. 
 To plot a cascade style figure from a spectrum, and saving it in a file:
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.random.random((6,1000)), stack=True)
+    >>> s = signals.Spectrum(np.random.random((6,1000)))
     >>> cascade_plot = utils.plot.plot_spectra(s, padding=1)
     >>> cascade_plot.figure.savefig("cascade_plot.png")
 
@@ -199,7 +199,7 @@ There are also two other styles, heatmap and mosaic:
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.random.random((2,1000)), stack=True)
+    >>> s = signals.Spectrum(np.random.random((2,1000)))
     >>> utils.plot.plot_spectra(s, style='mosaic')
     
 .. figure::  images/plot_spectra_mosaic.png
@@ -210,7 +210,7 @@ The function returns a matplotlib ax object, which can be used to customize the 
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.random.random((6,1000)), stack=True)
+    >>> s = signals.Spectrum(np.random.random((6,1000)))
     >>> cascade_plot = utils.plot.plot_spectra(s)
     >>> cascade_plot.set_xlabel("An axis")
     >>> cascade_plot.set_ylabel("Another axis")
@@ -225,14 +225,14 @@ Plotting several signals
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.7
-:py:meth:`~.utils.plot.plot_signals()` is used to plot several signals at the
+:py:func:`~.drawing.utils.plot_signals` is used to plot several signals at the
 same time. By default the navigation position of the signals will be synced, and the 
 signals must have the same dimensions. To plot two spectra at the same time: 
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
     >>> utils.plot.plot_signals([s1, s2])
 
 .. figure::  images/plot_signals.png
@@ -247,8 +247,8 @@ To specify the navigator:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
     >>> utils.plot.plot_signals([s1, s2], navigator="slider")
 
 .. figure::  images/plot_signals_slider.png
@@ -262,9 +262,9 @@ For example:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
-    >>> s3 = signals.Spectrum(np.random.random(100).reshape(10,10)) 
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s3 = signals.Spectrum(np.random.random(10,10)) 
     >>> utils.plot.plot_signals([s1, s2], navigator_list=["slider", s3])
 
 .. figure::  images/plot_signals_navigator_list.png
@@ -277,8 +277,8 @@ each plot:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
     >>> utils.plot.plot_signals([s1, s2], sync=False, navigator_list=["slider", "slider"])
 
 .. figure::  images/plot_signals_sync.png
