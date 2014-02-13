@@ -139,23 +139,46 @@ Comparing spectra
 
 .. versionadded:: 0.7
 
-:py:meth:`~.utils.plot.plot_spectra()` is used to plot several spectra in the same figure, which
-can make it easier to compare them. For example to see changes in EELS fine structure over 
-a line scan. 
-To plot a cascade style figure from a spectrum, and saving it in a file:
+:py:meth:`~.utils.plot.plot_spectra` is used to plot several spectra in
+the same figure for a better comparison. By default the spectra will overlap.
+The default style can be change in the 
+:py:class:`~.defaults_parser.Preferences` class (for example calling the
+:meth:`gui` method).
+
+ .. code-block:: python
+ 
+    >>> s = signals.Spectrum(np.zeros((2,200)))
+    >>> g = components.Gaussian(sigma=30,centre=100)
+    >>> g2 = components.Gaussian(sigma=33,centre=98)
+    >>> s.data[0,::] = g.function(s.axes_manager[-1].axis)
+    >>> s.data[1,::] = g2.function(s.axes_manager[-1].axis)
+    >>> utils.plot.plot_spectra(s, legend=['Gaussian1','Gaussian2'])
+
+.. figure::  images/plot_spectra_overlap.png
+  :align:   center
+  :width:   500 
+  
+"s" can also be a list of spectra. In this case, the option "legend='auto'"
+shows the title of the different spectra (from s.mapped_parameters.title).
+
+To compare more spectra, the cascade style can be used. For example to see 
+changes in EELS fine structure over a line scan. The following example 
+shows how to plot a cascade style figure from a spectrum, and save it in 
+a file:
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.random.random((6,1000)), stack=True)
-    >>> cascade_plot = utils.plot.plot_spectra(s, padding=1)
+    >>> s = signals.Spectrum(np.random.random((6,1000)))
+    >>> cascade_plot = utils.plot.plot_spectra(s, style='cascade')
     >>> cascade_plot.figure.savefig("cascade_plot.png")
 
 .. figure::  images/plot_spectra_cascade.png
   :align:   center
   :width:   500    
 
-A padding value of 1 keeps the individual plots from overlapping. However in most cases
-a lower padding value can be used, to get tighter plots.
+Cascade style has a padding option. The default value, 1, keeps the 
+individual plots from overlapping. However in most cases a lower 
+padding value can be used, to get tighter plots.
 
 Using the color argument one can assign a color to all the spectrums, or specific colors
 for each spectrum. In the same way, one can also assign the line style. 
@@ -165,9 +188,8 @@ On can also give a legend:
 
     >>> color_list = ['red', 'red', 'blue', 'blue', 'red', 'red']
     >>> line_style_list = ['-','--','steps','-.',':','-']
-    >>> legend_list = ['a', 'b', 'c', 'd', 'e', 'f']
-    >>> utils.plot.plot_spectra(s, padding=1, color=color_list,
-    >>> line_style=line_style_list,legend=legend_list)
+    >>> utils.plot.plot_spectra(s, style='cascade', color=color_list,
+    >>> line_style=line_style_list,legend='auto')
 
 .. figure::  images/plot_spectra_color.png
   :align:   center
@@ -208,7 +230,7 @@ The function returns a matplotlib ax object, which can be used to customize the 
   :width:   500    
 
 Plotting several signals
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.7
 :py:meth:`~.utils.plot.plot_signals()` is used to plot several signals at the
