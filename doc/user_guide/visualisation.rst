@@ -137,6 +137,8 @@ In the following example we also use `scikit-image <http://scikit-image.org/>`_ 
 Comparing spectra
 -----------------
 
+.. _plot_spectra:
+
 .. versionadded:: 0.7
 
 :py:meth:`~.utils.plot.plot_spectra()` is used to plot several spectra in the same figure, which
