@@ -523,5 +523,61 @@ def animate_legend(figure='last'):
     
     figure.canvas.mpl_connect('pick_event', onpick)
     
-    plt.show()
+    plt.show()  
+    
+    
+def plot_histograms(signal_list,
+    bins='freedman',
+    range_bins=None,
+    color=None,
+    line_style=None,
+    legend='auto',
+    fig=None,    
+    **kwargs):
+    """Plot an histogram for each signal of a list.
+    
+    This function uses 
+    
+    Parameters
+    ----------
+    
+    bins : int or list or str (optional)
+        If bins is a string, then it must be one of:
+        'knuth' : use Knuth's rule to determine bins
+        'scotts' : use Scott's rule to determine bins
+        'freedman' : use the Freedman-diaconis rule to determine bins
+        'blocks' : use bayesian blocks for dynamic bin widths
+        
+    color : valid matplotlib color or a list of them or `None`
+        Sets the color of the lines of the plots when `style` is "cascade"
+        or "mosaic". If a list, if its length is
+        less than the number of spectra to plot, the colors will be cycled. If
+        If `None`, use default matplotlib color cycle.
+        
+    line_style: valid matplotlib line style or a list of them or `None`
+        The main line style are '-','--','steps','-.',':'.
+        If a list, if its length is less than the number of
+        spectra to plot, line_style will be cycled. If
+        If `None`, use 'steps'.
+        
+    legend: None | list of str | 'auto'
+       If list of string, legend for "cascade" or title for "mosaic" is 
+       displayed. If 'auto', the title of each spectra (mapped_parameters.title)
+       is used.
+       
+    fig : {matplotlib figure, None}
+        If None, a default figure will be created.
+        
+    """
+    
+    hists=[]
+    for obj in signal_list:
+        hists.append(obj.get_histogram(bins=bins,
+            range_bins=range_bins, **kwargs))
+            
+    if line_style==None:
+        line_style='steps'
+        
+    return plot_spectra(hists, style='overlap', color=color,
+        line_style=line_style,legend=legend,fig=fig)
 
