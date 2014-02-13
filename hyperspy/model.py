@@ -70,19 +70,6 @@ class Model(list):
             kwds['spectrum'] = spectrum
             self._load_dictionary(kwds)
 
-        # self.convolved = False
-        # self.spectrum = spectrum
-        # self.axes_manager = self.spectrum.axes_manager
-        # self.axis = self.axes_manager.signal_axes[0]
-        # self.axes_manager.connect(self.fetch_stored_values)
-        #  
-        # self.free_parameters_boundaries = None
-        # self.channel_switches=np.array([True] * len(self.axis.axis))
-        # self._low_loss = None
-        # self._position_widgets = []
- 
-
-
     def _load_dictionary(self, dict):
         
         if type(dict['spectrum']) is dict:
