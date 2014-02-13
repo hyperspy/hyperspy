@@ -499,9 +499,9 @@ to make a horizontal "collage" of the image stack:
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]
+    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]))
     >>> image_stack.axes_manager[1].name = "x"
-    >>> image_stack.axes_manager[2].name = "y"))
+    >>> image_stack.axes_manager[2].name = "y"
     >>> for image, angle in zip(image_stack, (0, 45, 90, 135, 180)):
     ...    image.data[:] = scipy.ndimage.rotate(image.data, angle=angle,
     ...    reshape=False)
@@ -510,10 +510,19 @@ to make a horizontal "collage" of the image stack:
 
 .. figure::  images/rotate_lena.png
   :align:   center
-  :width:   500    
+  :width:   500  
 
+Note that the list of images can be retrieved from image_stack with 
+:py:meth:`~.signal.Signal.split`:
 
+.. code-block:: python
 
+    >>> image_stack.split()
+    [<Image, title: , dimensions: (|512, 512)>,
+     <Image, title: , dimensions: (|512, 512)>,
+     <Image, title: , dimensions: (|512, 512)>,
+     <Image, title: , dimensions: (|512, 512)>,
+     <Image, title: , dimensions: (|512, 512)>]
 
 .. versionadded:: 0.7
 
