@@ -512,12 +512,12 @@ to make a horizontal "collage" of the image stack:
   :align:   center
   :width:   500  
 
-Note that the list of images can be retrieved from image_stack with 
+Note that the list of images can be retrieved from collage with 
 :py:meth:`~.signal.Signal.split`:
 
 .. code-block:: python
 
-    >>> image_stack.split()
+    >>> collage.split()
     [<Image, title: , dimensions: (|512, 512)>,
      <Image, title: , dimensions: (|512, 512)>,
      <Image, title: , dimensions: (|512, 512)>,
