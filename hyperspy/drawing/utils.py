@@ -555,20 +555,17 @@ def plot_histograms(signal_list,
         the minimum and maximum range for the histogram. If not specified,
         it will be (x.min(), x.max())        
     color : valid matplotlib color or a list of them or `None`
-        Sets the color of the lines of the plots when `style` is "cascade"
-        or "mosaic". If a list, if its length is
+        Sets the color of the lines of the plots. If a list, if its length is
         less than the number of spectra to plot, the colors will be cycled. If
         If `None`, use default matplotlib color cycle.
     line_style: valid matplotlib line style or a list of them or `None`
-        Sets the line style of the plots for "cascade"
-        or "mosaic". The main line style are '-','--','steps','-.',':'.
+        The main line style are '-','--','steps','-.',':'.
         If a list, if its length is less than the number of
         spectra to plot, line_style will be cycled. If
         If `None`, use continuous lines, eg: ('-','--','steps','-.',':')
     legend: None | list of str | 'auto'
-       If list of string, legend for "cascade" or title for "mosaic" is
-       displayed. If 'auto', the title of each spectra (mapped_parameters.title)
-       is used.
+       Display a legend. If 'auto', the title of each spectra 
+       (mapped_parameters.title) is used.
     legend_picking: bool
         If true, a spectrum can be toggle on and off by clicking on
         the legended line.
