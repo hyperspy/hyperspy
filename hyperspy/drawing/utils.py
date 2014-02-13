@@ -430,6 +430,7 @@ def plot_spectra(
                           line_style=line_style,)
         if legend is not None:
             plt.legend(legend)
+            animate_legend(figure=fig)
     elif style == 'cascade':
         if fig is None:
             fig = plt.figure()
@@ -482,10 +483,10 @@ def animate_legend(figure='last'):
         If 'last' pick the last figure
     """
     if figure=='last':
-        fig = plt.gcf()
+        figure = plt.gcf()
         ax= plt.gca()
     else:
-        ax = fig.axes[0]
+        ax = figure.axes[0]
     lines = ax.lines
     lined = dict()
     leg=ax.get_legend()
@@ -505,9 +506,9 @@ def animate_legend(figure='last'):
             legline.set_alpha(1.0)
         else:
             legline.set_alpha(0.2)
-        fig.canvas.draw()
+        figure.canvas.draw()
     
-    fig.canvas.mpl_connect('pick_event', onpick)
+    figure.canvas.mpl_connect('pick_event', onpick)
     
     plt.show()
 
