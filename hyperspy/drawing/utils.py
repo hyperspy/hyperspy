@@ -331,6 +331,7 @@ def plot_spectra(
         line_style=None,
         padding=1.,
         legend=None,
+        legend_picking=True,
         fig=None,):
     """Plot several spectra in the same figure.
 
@@ -365,6 +366,9 @@ def plot_spectra(
        If list of string, legend for "cascade" or title for "mosaic" is
        displayed. If 'auto', the title of each spectra (mapped_parameters.title)
        is used.
+    legend_picking: bool
+        If true, a spectrum can be toggle on and off by clicking on
+        the legended line.
     fig : {matplotlib figure, None}
         If None, a default figure will be created.
 
@@ -428,6 +432,10 @@ def plot_spectra(
                           ax,
                           color=color,
                           line_style=line_style,)
+        if legend is not None:
+            plt.legend(legend)
+            if legend_picking is True:
+                animate_legend(figure=fig)
     elif style == 'cascade':
         if fig is None:
             fig = plt.figure()
@@ -439,7 +447,6 @@ def plot_spectra(
                               padding=padding)
         if legend is not None:
             plt.legend(legend)
-
     elif style == 'mosaic':
         default_fsize = plt.rcParams["figure.figsize"]
         figsize = (default_fsize[0], default_fsize[1] * len(spectra))
@@ -470,4 +477,51 @@ def plot_spectra(
     ax = ax if style != "mosaic" else subplots
 
     return ax
+    
+def animate_legend(figure='last'):
+    """Animate the legend of a figure   
+    
+    A spectrum can be toggle on and off by clicking on the legended line.
+    
+    Parameters
+    ---------
+    
+    figure: 'last' | matplolib.figure
+        If 'last' pick the last figure
+        
+    Note
+    ----
+    
+    Code inspired from legend_picking.py in the matplotlib gallery
+    
+    """
+    if figure=='last':
+        figure = plt.gcf()
+        ax= plt.gca()
+    else:
+        ax = figure.axes[0]
+    lines = ax.lines
+    lined = dict()
+    leg=ax.get_legend()
+    for legline, origline in zip(leg.get_lines(), lines):
+        legline.set_picker(5)  # 5 pts tolerance
+        lined[legline] = origline
+    def onpick(event):
+        # on the pick event, find the orig line corresponding to the
+        # legend proxy line, and toggle the visibility
+        legline = event.artist
+        origline = lined[legline]
+        vis = not origline.get_visible()
+        origline.set_visible(vis)
+        # Change the alpha on the line in the legend so we can see what lines
+        # have been toggled
+        if vis:
+            legline.set_alpha(1.0)
+        else:
+            legline.set_alpha(0.2)
+        figure.canvas.draw()
+    
+    figure.canvas.mpl_connect('pick_event', onpick)
+    
+    plt.show()
 
