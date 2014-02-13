@@ -695,9 +695,8 @@ class Model(list):
 
     def _calculate_chisq(self):
         if self.spectrum.variance is None:
-            print ("Variance is not set, so using default value of 1.0")
-            print ("The results are meaningless unless you set the variance yourself!")
-            variance = 1.0
+            print ("Variance is not set, so using signal itself")
+            variance = self.spectrum()[self.channel_switches]
         else:
             variance = self.spectrum.variance[self.spectrum.axes_manager.indices[::-1]]
         d= self() - self.spectrum()[self.channel_switches]
