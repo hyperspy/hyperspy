@@ -174,10 +174,9 @@ labels are taken from the indivual spectrum titles.
   :align:   center
   :width:   500 
   
-"s" can also be a list of spectra. In this case, the option "legend='auto'"
-shows the title of the different spectra (from s.mapped_parameters.title).
 
-To compare more spectra, the cascade style can be used. For example to see 
+Another style, "cascade", can be useful when "overlap" results in a plot that
+is too cluttered e.g. to visualize 
 changes in EELS fine structure over a line scan. The following example 
 shows how to plot a cascade style figure from a spectrum, and save it in 
 a file:
@@ -192,13 +191,13 @@ a file:
   :align:   center
   :width:   500    
 
-Cascade style has a padding option. The default value, 1, keeps the 
+The "cascade" `style` has a `padding` option. The default value, 1, keeps the 
 individual plots from overlapping. However in most cases a lower 
 padding value can be used, to get tighter plots.
 
-Using the color argument one can assign a color to all the spectrums, or specific colors
-for each spectrum. In the same way, one can also assign the line style. 
-On can also give a legend:
+Using the color argument one can assign a color to all the spectra, or specific
+colors for each spectrum. In the same way, one can also assign the line style
+and provide the legend labels:
 
 .. code-block:: python
 
@@ -211,7 +210,7 @@ On can also give a legend:
   :align:   center
   :width:   500    
 
-There are also two other styles, heatmap and mosaic:
+There are also two other styles, "heatmap" and "mosaic":
 
 .. code-block:: python
 
