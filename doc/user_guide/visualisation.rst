@@ -139,20 +139,36 @@ Comparing spectra
 
 .. versionadded:: 0.7
 
-:py:meth:`~.utils.plot.plot_spectra` is used to plot several spectra in
-the same figure for a better comparison. By default the spectra will overlap.
-The default style can be change in the 
-:py:class:`~.defaults_parser.Preferences` class (for example calling the
-:meth:`gui` method).
+:py:func:`~.drawing.utils.plot_spectra` is used to plot several spectra in the
+same figure. It supports different styles, the default
+being "overlap". The default style is configurable in :ref:`preferences
+<configuring-hyperspy-label>`.
+
+In the following example we create a list of 9 single spectra (gaussian
+functions with different sigma values) and plot them in the same figure using
+:py:func:`~.drawing.utils.plot_spectra`. Note that, in this case, the legend
+labels are taken from the indivual spectrum titles.
 
  .. code-block:: python
- 
-    >>> s = signals.Spectrum(np.zeros((2,200)))
-    >>> g = components.Gaussian(sigma=30,centre=100)
-    >>> g2 = components.Gaussian(sigma=33,centre=98)
-    >>> s.data[0,::] = g.function(s.axes_manager[-1].axis)
-    >>> s.data[1,::] = g2.function(s.axes_manager[-1].axis)
-    >>> utils.plot.plot_spectra(s, legend=['Gaussian1','Gaussian2'])
+
+     >>> s = signals.Spectrum(np.zeros((200)))
+     >>> s.axes_manager[0].offset = -10
+     >>> s.axes_manager[0].scale = 0.1
+     >>> m = create_model(s)
+     >>> g = components.Gaussian()
+     >>> m.append(g)
+     >>> gaussians = []
+     >>> labels = []
+     >>> 
+     >>> for sigma in range(1, 10):
+     ...         g.sigma.value = sigma
+     ...         gs = m.as_signal()
+     ...         gs.mapped_parameters.title = "sigma=%i" % sigma
+     ...         gaussians.append(gs)
+     ...         
+     >>> utils.plot.plot_spectra(gaussians)
+     <matplotlib.axes.AxesSubplot object at 0x4c28c90>
+
 
 .. figure::  images/plot_spectra_overlap.png
   :align:   center
