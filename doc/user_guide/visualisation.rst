@@ -4,17 +4,21 @@
 Visualisation of multi-dimensional data
 ****************************************
 
+.. navigator_options:
+
+Navigator options of the plot() function
+----------------------------------------
+
 With the aim to ease the data analysis of multidimensionnal data, Hyperspy provides
 a powerful and flexible :py:meth:`~.signal.Signal.plot` method to visualize 
-n-dimensional data. In this chapter, the visualisation of data of 3 or more dimensions is exemplified with a image stack and a 4D hyperspectrum obtained by recording two signals in
-parallele in a FIB/SEM: the intensity of the secondary electron emission (SE image) and the X-ray spectrum (EDS map).
-
-The plot() function
--------------------
+n-dimensional data. In this chapter, the visualisation of data of 3 or 
+more dimensions is exemplified with a image stack and a 4D hyperspectrum
+obtained by recording two signals in parallele in a FIB/SEM: the intensity
+of the secondary electron emission (SE image) and the X-ray spectrum (EDS map).
 
 The visualisation with :py:meth:`~.signal.Signal.plot` of 1D and 2D signal
-is given in :ref:`getting started <getting-help-label>`. Further options
-are shown here.
+is given in :ref:`getting started <getting-help-label>`. The options of
+the navigator are shown here.
 
 Stack of images
 ^^^^^^^^^^^^^^^
@@ -73,7 +77,7 @@ an alternative display.
 
 .. code-block:: python
 
-    >>> imgSpec = spec.to_image((0, 1))
+    >>> imgSpec = spec.as_image((0, 1))
     >>> imgSpec.plot(navigator='spectrum')
     
     
@@ -98,6 +102,8 @@ the "maximum spectrum" for which each channel is the maximum of all pixels.
 
    Visualisation of a stack of 2D spectral images. 
    The navigator is the "maximum spectrum".
+   
+Lastly, if no navigator is needed, "navigator=None" can be used.
 
 Using Mayavi to visualize 3D data
 ---------------------------------
@@ -116,7 +122,7 @@ In the following example we also use `scikit-image <http://scikit-image.org/>`_ 
     >>> #Generate the X-ray intensity map of Nickel L alpha
     >>> NiMap = specImg3Dc.get_intensity_map(['Ni_La'])[0]
     >>> #Reduce the noise
-    >>> NiMapDenoise = filter.tv_denoise(NiMap.data)
+    >>> NiMapDenoise = filter.denoise_tv_chambolle(NiMap.data)
     >>> #Plot isosurfaces
     >>> mlab.contour3d(NiMapDenoise)
     >>> mlab.outline()
@@ -134,8 +140,16 @@ In the following example we also use `scikit-image <http://scikit-image.org/>`_ 
     P. Burdet, `et al.`, Acta Materialia, 61, p. 3090-3098 (2013) (see
     `abstract <http://infoscience.epfl.ch/record/185861/>`_).
 
-Comparing spectra
+Comparing objects
 -----------------
+
+Hyperspy provides two functions to compare different objects (spectra, images or
+other signals) whatever their dimension. The two functions, 
+:py:meth:`~.utils.plot.plot_spectra()` and :py:meth:`~.utils.plot.plot_signals()`
+, are explained and exemplified in this chapter. 
+
+Plotting several spectra
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.7
 
@@ -208,7 +222,7 @@ The function returns a matplotlib ax object, which can be used to customize the 
   :width:   500    
 
 Plotting several signals
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.7
 :py:meth:`~.utils.plot.plot_signals()` is used to plot several signals at the
@@ -228,7 +242,7 @@ signals must have the same dimensions. To plot two spectra at the same time:
 The navigator can be specified by using the navigator argument, where the 
 different options are "auto", None, "spectrum", "slider" or Signal.  
 For more details about the different navigators, 
-see :ref:`plotting_different_navigators`.
+see :ref:`navigator_options`.
 To specify the navigator:
 
 .. code-block:: python
@@ -270,7 +284,7 @@ each plot:
 .. figure::  images/plot_signals_sync.png
   :align:   center
   :width:   500    
-
+  
 .. _plotting_different_navigators:
 
 Plotting signals with different navigators 
@@ -344,3 +358,4 @@ Lastly, if no navigator is needed use navigator=None:
 
     >>> s = signals.Spectrum(np.random.random(10000).reshape(10,10,100))
     >>> s.plot(navigator=None)
+
