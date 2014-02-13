@@ -428,6 +428,8 @@ def plot_spectra(
                           ax,
                           color=color,
                           line_style=line_style,)
+        if legend is not None:
+            plt.legend(legend)
     elif style == 'cascade':
         if fig is None:
             fig = plt.figure()
@@ -439,7 +441,6 @@ def plot_spectra(
                               padding=padding)
         if legend is not None:
             plt.legend(legend)
-
     elif style == 'mosaic':
         default_fsize = plt.rcParams["figure.figsize"]
         figsize = (default_fsize[0], default_fsize[1] * len(spectra))
@@ -470,4 +471,43 @@ def plot_spectra(
     ax = ax if style != "mosaic" else subplots
 
     return ax
+    
+def animate_legend(figure='last'):
+    """Animate the legend of a figure
+    
+    Parameters
+    ---------
+    
+    figure: 'last' | matplolib.figure
+        If 'last' pick the last figure
+    """
+    if figure=='last':
+        fig = plt.gcf()
+        ax= plt.gca()
+    else:
+        ax = fig.axes[0]
+    lines = ax.lines
+    lined = dict()
+    leg=ax.get_legend()
+    for legline, origline in zip(leg.get_lines(), lines):
+        legline.set_picker(5)  # 5 pts tolerance
+        lined[legline] = origline
+    def onpick(event):
+        # on the pick event, find the orig line corresponding to the
+        # legend proxy line, and toggle the visibility
+        legline = event.artist
+        origline = lined[legline]
+        vis = not origline.get_visible()
+        origline.set_visible(vis)
+        # Change the alpha on the line in the legend so we can see what lines
+        # have been toggled
+        if vis:
+            legline.set_alpha(1.0)
+        else:
+            legline.set_alpha(0.2)
+        fig.canvas.draw()
+    
+    fig.canvas.mpl_connect('pick_event', onpick)
+    
+    plt.show()
 
