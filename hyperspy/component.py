@@ -476,7 +476,7 @@ class Parameter(object):
             self.as_signal(field = 'std').save(append2pathname(
                 filename,'_std'))
 
-    def as_dictionary(self):
+    def as_dictionary(self, indices = None):
         """Returns parameter as a dictionary
 
         Returns
@@ -487,9 +487,13 @@ class Parameter(object):
         dic = {}
         dic['name'] = self.name
         dic['_id_name'] = self._id_name
-        dic['map'] = copy.deepcopy(self.map)
-        dic['value'] = copy.deepcopy(self.value)
-        dic['std'] = copy.deepcopy(self.std)
+        dic['map'] = copy.deepcopy(self.map[indices])
+        if indices is not None:
+            dic['value'] = dic['map']['values'][0]
+            dic['std'] = dic['map']['std'][0]
+        else:
+            dic['value'] = self.value
+            dic['std'] = self.std
         dic['free'] = self.free
         dic['units'] = self.units
         dic['id'] = id(self)
@@ -801,7 +805,7 @@ class Component(object):
                 
         for _parameter in parameter_list:
             _parameter.free = False
-    def as_dictionary(self):
+    def as_dictionary(self, indices = None):
         """Returns component as a dictionary
         
         All items are copies.
@@ -812,10 +816,9 @@ class Component(object):
 
         """
         dic = {}
-        dic['axes_manager'] = self.__axes_manager._get_axes_dicts()
         dic['name'] = self.name
         dic['type'] = type(self)
-        dic['parameters'] = [p.as_dictionary() for p in self.parameters]
+        dic['parameters'] = [p.as_dictionary(indices) for p in self.parameters]
         return dic
 
     def _load_dictionary(self, dic):
@@ -828,9 +831,6 @@ class Component(object):
             type : type
                 A type object that has been colled to initialise the component before loading the dictionary and running
                 this function
-            axes_manager : dictionary
-                Dictionary to define the axes (see the
-                documentation of the AxesManager class for more details).
             name : string
                 Name of the component
             parameters : list
@@ -844,7 +844,6 @@ class Component(object):
             setting up correct twins.
 
         """
-        self.axes_manager = AxesManager(dic['axes_manager'])
         self.name = copy.deepcopy(dic['name'])
         id_dict = {}
         for p in dic['parameters']:

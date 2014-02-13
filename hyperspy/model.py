@@ -1511,32 +1511,35 @@ class Model(list):
                     else:
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
-    def as_dictionary(self):
+    def as_dictionary(self, indices = None):
         """Returns a dictionary of the model, including full Signal dictionary,
         all components and all values of their components, and twin functions.
 
+        Parameters
+        ----------
+        indices : tuple
+            A tuple of indices to return a particular point of a model
         Returns
         -------
         dictionary : a complete dictionary of the model
 
         Examples
         --------
-        >>>> s = signals.Spectrum(np.random.random((10,100)))
-        >>>> m = create_model(s)
-        >>>> l1 = components.Lorentzian()
-        >>>> l2 = components.Lorentzian()
-        >>>> m.append(l1)
-        >>>> m.append(l2)
-        >>>> dict = m.as_dictionary()
-        >>>> m2 = create_model(dict)
+        >>> s = signals.Spectrum(np.random.random((10,100)))
+        >>> m = create_model(s)
+        >>> l1 = components.Lorentzian()
+        >>> l2 = components.Lorentzian()
+        >>> m.append(l1)
+        >>> m.append(l2)
+        >>> dict = m.as_dictionary()
+        >>> m2 = create_model(dict)
     
         """
         dic = {}
-        dic['spectrum'] = self.spectrum._to_dictionary()
-        dic['components'] = [c.as_dictionary() for c in self]
-        dic['axes_manager'] = self.axes_manager._get_axes_dicts()
+        dic['spectrum'] = self.spectrum.inav[indices]._to_dictionary()
+        dic['components'] = [c.as_dictionary(indices) for c in self]
         dic['free_parameters_boundaries'] = copy.deepcopy(self.free_parameters_boundaries)
-        dic['low_loss'] = copy.deepcopy(self._low_loss)
+        dic['low_loss'] = self._low_loss.inav[indices]._to_dictionary()
         dic['convolved'] = self.convolved
         return dic
 
