@@ -56,7 +56,7 @@ class Model(list):
     
     Parameters
     ----------
-    spectrum : an Spectrum (or any Spectrum subclass) instance
+    spectrum : an Spectrum (or any Spectrum subclass) instance or a dictionary of a model
     """
     
     _firstimetouch = True
@@ -71,6 +71,27 @@ class Model(list):
             self._load_dictionary(kwds)
 
     def _load_dictionary(self, dict):
+        """Load data from dictionary.
+
+        Parameters
+        ----------
+        dict : dictionary
+            A dictionary containing at least a 'spectrum' keyword with either
+            a spectrum itself, or a dictionary created with spectrum._to_dictionary()
+            Additionally the dictionary can containt the following items:
+            spectrum : Signal type or dictionary
+                Either a signal itself, or a dictionary created from one
+            axes_manager : dictionary (optional)
+                Dictionary to define the axes (see the
+                documentation of the AxesManager class for more details).
+            free_parameters_boundaries : list (optional)
+                A list of free parameters boundaries
+            low_loss : (optional)
+            convolved : boolean (optional)
+            components : dictionary (optional)
+                Dictionary, with information about components of the model 
+                (see the documentation of component.to_dictionary() method)
+        """
         
         if type(dict['spectrum']) is dict:
             self.spectrum = Spectrum(**dict['spectrum'])
@@ -90,8 +111,8 @@ class Model(list):
         else:
             self.free_parameters_boundaries = None
 
-        if '_low_loss' in dict:
-            self._low_loss = copy.deepcopy(dict['_low_loss'])
+        if 'low_loss' in dict:
+            self._low_loss = copy.deepcopy(dict['low_loss'])
         else:
             self._low_loss = None
 
@@ -1491,13 +1512,31 @@ class Model(list):
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
     def as_dictionary(self):
-        # model:
+        """Returns a dictionary of the model, including full Signal dictionary,
+        all components and all values of their components, and twin functions.
+
+        Returns
+        -------
+        dictionary : a complete dictionary of the model
+
+        Examples
+        --------
+        >>>> s = signals.Spectrum(np.random.random((10,100)))
+        >>>> m = create_model(s)
+        >>>> l1 = components.Lorentzian()
+        >>>> l2 = components.Lorentzian()
+        >>>> m.append(l1)
+        >>>> m.append(l2)
+        >>>> dict = m.as_dictionary()
+        >>>> m2 = create_model(dict)
+    
+        """
         dic = {}
         dic['spectrum'] = self.spectrum._to_dictionary()
         dic['components'] = [c.as_dictionary() for c in self]
         dic['axes_manager'] = self.axes_manager._get_axes_dicts()
         dic['free_parameters_boundaries'] = copy.deepcopy(self.free_parameters_boundaries)
-        dic['_low_loss'] = copy.deepcopy(self._low_loss)
+        dic['low_loss'] = copy.deepcopy(self._low_loss)
         dic['convolved'] = self.convolved
         return dic
 

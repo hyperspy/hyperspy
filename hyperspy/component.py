@@ -98,7 +98,37 @@ class Parameter(object):
         self._id_name = ''
     
     def _load_dictionary(self, dict):
-# called only on with the correct _id_name field in the dict
+        """Load data from dictionary
+
+        Parameters
+        ----------
+        dict : dictionary
+            A dictionary containing following items:
+            _id_name : string
+                _id_name of the original parameter, used to create the dictionary. Has to match with the
+                self._id_name
+            map : map
+                a map of saved values, standard deviations and booleans 'is_set' for every point of the model
+            value : float
+                current value of the parameter
+            std : float
+                current standard deviation fo the parameter
+            units : string
+                Units of the parameter
+            twin_function : function
+                Twin function for the parameter
+            twin_inverse_function : function
+                Inverse twin function for the parameter
+            _bounds : tuple
+                Tuple of (bmin, bmax), lower and upper bounds of the parameter values
+            free : boolean
+                Boolean of the parameter is free
+        Returns
+        -------
+        id_value : int
+            the ID value of the original parameter, to be later used for setting up the correct twins
+        
+        """
         if dict['_id_name'] is self._id_name:
             self.map = copy.deepcopy(dict['map'])
             self.value = dict['value']
@@ -447,7 +477,13 @@ class Parameter(object):
                 filename,'_std'))
 
     def as_dictionary(self):
-        # parameter:
+        """Returns parameter as a dictionary
+
+        Returns
+        -------
+        dic : dictionary
+
+        """
         dic = {}
         dic['name'] = self.name
         dic['_id_name'] = self._id_name
@@ -766,7 +802,15 @@ class Component(object):
         for _parameter in parameter_list:
             _parameter.free = False
     def as_dictionary(self):
-        # component:
+        """Returns component as a dictionary
+        
+        All items are copies.
+
+        Returns
+        -------
+        dic : dictionary
+
+        """
         dic = {}
         dic['axes_manager'] = self.__axes_manager._get_axes_dicts()
         dic['name'] = self.name
@@ -775,7 +819,31 @@ class Component(object):
         return dic
 
     def _load_dictionary(self, dic):
-        # return dictionary of id's and parameters of all of the components for later "twinning"
+        """Load data from dictionary.
+
+        Parameters
+        ----------
+        dict : dictionary
+            A dictionary containing following items:
+            type : type
+                A type object that has been colled to initialise the component before loading the dictionary and running
+                this function
+            axes_manager : dictionary
+                Dictionary to define the axes (see the
+                documentation of the AxesManager class for more details).
+            name : string
+                Name of the component
+            parameters : list
+                A list of dictionaries, one for a parameter of the component each (see parameter.as_dictionary()
+                documentation for more info)
+
+        Returns
+        -------
+        twin_dict : dictionary
+            Dictionary of 'id' values from input dictionary as keys with all of the parameters of the component, to be later used for
+            setting up correct twins.
+
+        """
         self.axes_manager = AxesManager(dic['axes_manager'])
         self.name = copy.deepcopy(dic['name'])
         id_dict = {}
