@@ -158,10 +158,13 @@ The default style can be change in the
   :align:   center
   :width:   500 
   
-"s" can also be a list of spectra. To compare more spectra, cascade style
-can be used. For example to see changes in EELS fine structure 
-over a line scan. The following example show how to plot a cascade style
-figure from a spectrum, and save it in a file:
+"s" can also be a list of spectra. In this case, the option "legend='auto'"
+shows the title of the different spectra (from s.mapped_parameters.title).
+
+To compare more spectra, the cascade style can be used. For example to see 
+changes in EELS fine structure over a line scan. The following example 
+shows how to plot a cascade style figure from a spectrum, and save it in 
+a file:
 
 .. code-block:: python
 
@@ -185,9 +188,8 @@ On can also give a legend:
 
     >>> color_list = ['red', 'red', 'blue', 'blue', 'red', 'red']
     >>> line_style_list = ['-','--','steps','-.',':','-']
-    >>> legend_list = ['a', 'b', 'c', 'd', 'e', 'f']
     >>> utils.plot.plot_spectra(s, style='cascade', color=color_list,
-    >>> line_style=line_style_list,legend=legend_list)
+    >>> line_style=line_style_list,legend='auto')
 
 .. figure::  images/plot_spectra_color.png
   :align:   center
