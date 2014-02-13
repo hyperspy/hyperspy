@@ -428,6 +428,8 @@ def plot_spectra(
                           ax,
                           color=color,
                           line_style=line_style,)
+        if legend is not None:
+            plt.legend(legend)
     elif style == 'cascade':
         if fig is None:
             fig = plt.figure()
