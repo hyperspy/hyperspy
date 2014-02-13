@@ -36,6 +36,7 @@ from traits.trait_errors import TraitError
 import traits.api as t
 
 from hyperspy import messages
+from hyperspy.signal import Signal
 import hyperspy.drawing.spectrum
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.utils import on_figure_window_close
@@ -120,14 +121,14 @@ class Model(list):
         self.channel_switches=np.array([True] * len(self.axis.axis))
 
         if 'chisq' in dic:
-            self.chisq = Spectrum(**dic['chisq'])
+            self.chisq = Signal(**dic['chisq'])
         else:
             self.chisq = self.spectrum._get_navigation_signal()
             self.chisq.data.fill(np.nan)
             self.chisq.mapped_parameters.title = self.spectrum.mapped_parameters.title + ' chi-squared'
 
         if 'dof' in dic:
-            self.dof = Spectrum(**dic['dof'])
+            self.dof = Signal(**dic['dof'])
         else:
             self.dof = self.chisq._deepcopy_with_new_data(np.zeros_like(self.chisq.data, dtype = 'int'))
             self.dof.mapped_parameters.title = self.spectrum.mapped_parameters.title + ' degrees of freedom'
