@@ -70,12 +70,12 @@ class Model(list):
             kwds['spectrum'] = spectrum
             self._load_dictionary(kwds)
 
-    def _load_dictionary(self, dict):
+    def _load_dictionary(self, dic):
         """Load data from dictionary.
 
         Parameters
         ----------
-        dict : dictionary
+        dic : dictionary
             A dictionary containing at least a 'spectrum' keyword with either
             a spectrum itself, or a dictionary created with spectrum._to_dictionary()
             Additionally the dictionary can containt the following items:
@@ -93,44 +93,44 @@ class Model(list):
                 (see the documentation of component.to_dictionary() method)
         """
         
-        if type(dict['spectrum']) is dict:
-            self.spectrum = Spectrum(**dict['spectrum'])
+        if type(dic['spectrum']) is dict:
+            self.spectrum = Spectrum(**dic['spectrum'])
         else:
-            self.spectrum = dict['spectrum']
+            self.spectrum = dic['spectrum']
 
-        if 'axes_manager' in dict:
-            self.axes_manager = AxesManager(dict['axes_manager'])
+        if 'axes_manager' in dic:
+            self.axes_manager = AxesManager(dic['axes_manager'])
         else:
             self.axes_manager = self.spectrum.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
         self.channel_switches=np.array([True] * len(self.axis.axis))
 
-        if 'free_parameters_boundaries' in dict:
-            self.free_parameters_boundaries = copy.deepcopy(dict['free_parameters_boundaries'])
+        if 'free_parameters_boundaries' in dic:
+            self.free_parameters_boundaries = copy.deepcopy(dic['free_parameters_boundaries'])
         else:
             self.free_parameters_boundaries = None
 
-        if 'low_loss' in dict:
-            self._low_loss = copy.deepcopy(dict['low_loss'])
+        if 'low_loss' in dic:
+            self._low_loss = copy.deepcopy(dic['low_loss'])
         else:
             self._low_loss = None
 
-        if 'convolved' in dict:
-            self.convolved = dict['convolved']
+        if 'convolved' in dic:
+            self.convolved = dic['convolved']
         else:
             self.convolved = False
 
-        if 'components' in dict:
+        if 'components' in dic:
             while len(self) != 0:
                 self.remove(self[0])
             id_dict = {}
 
-            for c in dict['components']:
+            for c in dic['components']:
                 self.append(c['type']())
                 id_dict.update(self[-1]._load_dictionary(c))
             # deal with twins:
-            for c in dict['components']:
+            for c in dic['components']:
                 for p in c['parameters']:
                     for t in p['_twins']:
                         id_dict[t].twin = id_dict[p['id']]
