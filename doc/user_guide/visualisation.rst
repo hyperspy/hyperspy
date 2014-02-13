@@ -139,11 +139,11 @@ Comparing spectra
 
 .. versionadded:: 0.7
 
-:py:meth:`~.utils.plot.plot_spectra` is used to plot several spectra in
+:py:func:`~.drawing.utils.plot_spectra` is used to plot several spectra in
 the same figure for a better comparison. By default the spectra will overlap.
 The default style can be change in the 
 :py:class:`~.defaults_parser.Preferences` class (for example calling the
-:meth:`gui` method).
+:meth:`~.defaults_parser.Preferences.gui` method).
 
  .. code-block:: python
  
