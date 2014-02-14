@@ -667,7 +667,7 @@ print the summary stastics of the signal at the current coordinates, e.g:
     max:    1.992
     
 Histogram of different objects can be compared with the functions 
-:py:meth:`~.utils.utils.plot_histograms` (see 
+:py:func:`~.utils.drawing.plot_histograms` (see 
 :ref:`visualisation <plot_spectra>` for the plotting options). For example,
 with histograms of several random chi-square distributions:
 

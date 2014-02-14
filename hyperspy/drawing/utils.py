@@ -339,17 +339,17 @@ def plot_spectra(
 
     Parameters
     ----------
-    spectra : iterable
+    spectra : iterable object
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
         the spectra can have diffent size and axes.
     style : {'default', 'overlap','cascade', 'mosaic', 'heatmap'}
         The style of the plot. The default is "overlap" and can be
         customized in `preferences`.
-    color : valid matplotlib color or a list of them or `None`
+    color : matplotlib color or a list of them or `None`
         Sets the color of the lines of the plots (no action on 'heatmap').
         If a list, if its length is less than the number of spectra to plot,
         the colors will be cycled. If `None`, use default matplotlib color cycle.
-    line_style: valid matplotlib line style or a list of them or `None`
+    line_style: matplotlib line style or a list of them or `None`
         Sets the line style of the plots (no action on 'heatmap'). 
         The main line style are '-','--','steps','-.',':'.
         If a list, if its length is less than the number of
@@ -361,14 +361,14 @@ def plot_spectra(
         without overlapping. Negative values have the same effect but
         reverse the order of the spectra without reversing the order of the
         colors.
-    legend: None | list of str | 'auto'
+    legend: None or list of str or 'auto'
        If list of string, legend for "cascade" or title for "mosaic" is
        displayed. If 'auto', the title of each spectra (mapped_parameters.title)
        is used.
     legend_picking: bool
         If true, a spectrum can be toggle on and off by clicking on
         the legended line.
-    fig : {matplotlib figure, None}
+    fig : matplotlib figure or None
         If None, a default figure will be created.
 
     Example
@@ -380,10 +380,9 @@ def plot_spectra(
 
     >>> utils.plot.plot_spectra(s).figure.savefig("test.png")
 
-
     Returns
     -------
-    ax: {matplotlib axes | array of matplotlib axes}
+    ax: matplotlib axes or list of matplotlib axes
         An array is returned when `style` is "mosaic".
 
     """
@@ -533,14 +532,13 @@ def plot_histograms(signal_list,
     legend='auto',
     fig=None,    
     **kwargs):
-    """Plot an histogram for each signal of a list.
+    """Plot the histogram of every signals in the list in the same figure.
     
     This function creates an histogram for each signal and plot the list 
     with utils.plot.plot_spectra()
     
     Parameters
-    ----------
-        
+    ----------        
    signal_list : iterable
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
         the spectra can have diffent size and axes.
@@ -562,13 +560,13 @@ def plot_histograms(signal_list,
         If a list, if its length is less than the number of
         spectra to plot, line_style will be cycled. If
         If `None`, use continuous lines, eg: ('-','--','steps','-.',':')
-    legend: None | list of str | 'auto'
+    legend: None or list of str or 'auto'
        Display a legend. If 'auto', the title of each spectra 
        (mapped_parameters.title) is used.
     legend_picking: bool
         If true, a spectrum can be toggle on and off by clicking on
         the legended line.
-    fig : {matplotlib figure, None}
+    fig : matplotlib figure or None
         If None, a default figure will be created.        
     **kwargs
         other keyword arguments (weight and density) are described in 
@@ -576,13 +574,16 @@ def plot_histograms(signal_list,
         
         
     Example
-    -------
-    
-    Histograms of two random chi-square distributions
-    
+    -------    
+    Histograms of two random chi-square distributions    
     >>> img = signals.Image(np.random.chisquare(1,[10,10,100]))
     >>> img2 = signals.Image(np.random.chisquare(2,[10,10,100]))
     >>> utils.plot.plot_histograms([img,img2],legend=['hist1','hist2'])
+    
+    Returns
+    -------    
+    ax: matplotlib axes or list of matplotlib axes
+        An array is returned when `style` is "mosaic".
         
     """
     
