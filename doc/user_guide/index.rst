@@ -22,6 +22,7 @@ Hyperspy User Guide (DRAFT)
     model.rst
     eels.rst
     eds.rst
+    dielectric_function.rst
     io.rst
     mapped_parameters_structure.rst
     credits.rst
