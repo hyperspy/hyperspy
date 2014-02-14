@@ -4,17 +4,21 @@
 Visualisation of multi-dimensional data
 ****************************************
 
+.. navigator_options:
+
+Navigator options of the plot() function
+----------------------------------------
+
 With the aim to ease the data analysis of multidimensionnal data, Hyperspy provides
 a powerful and flexible :py:meth:`~.signal.Signal.plot` method to visualize 
-n-dimensional data. In this chapter, the visualisation of data of 3 or more dimensions is exemplified with a image stack and a 4D hyperspectrum obtained by recording two signals in
-parallele in a FIB/SEM: the intensity of the secondary electron emission (SE image) and the X-ray spectrum (EDS map).
-
-The plot() function
--------------------
+n-dimensional data. In this chapter, the visualisation of data of 3 or 
+more dimensions is exemplified with a image stack and a 4D hyperspectrum
+obtained by recording two signals in parallele in a FIB/SEM: the intensity
+of the secondary electron emission (SE image) and the X-ray spectrum (EDS map).
 
 The visualisation with :py:meth:`~.signal.Signal.plot` of 1D and 2D signal
-is given in :ref:`getting started <getting-help-label>`. Further options
-are shown here.
+is given in :ref:`getting started <getting-help-label>`. The options of
+the navigator are shown here.
 
 Stack of images
 ^^^^^^^^^^^^^^^
@@ -73,7 +77,7 @@ an alternative display.
 
 .. code-block:: python
 
-    >>> imgSpec = spec.to_image((0, 1))
+    >>> imgSpec = spec.as_image((0, 1))
     >>> imgSpec.plot(navigator='spectrum')
     
     
@@ -98,6 +102,8 @@ the "maximum spectrum" for which each channel is the maximum of all pixels.
 
    Visualisation of a stack of 2D spectral images. 
    The navigator is the "maximum spectrum".
+   
+Lastly, if no navigator is needed, "navigator=None" can be used.
 
 Using Mayavi to visualize 3D data
 ---------------------------------
@@ -116,7 +122,7 @@ In the following example we also use `scikit-image <http://scikit-image.org/>`_ 
     >>> #Generate the X-ray intensity map of Nickel L alpha
     >>> NiMap = specImg3Dc.get_intensity_map(['Ni_La'])[0]
     >>> #Reduce the noise
-    >>> NiMapDenoise = filter.tv_denoise(NiMap.data)
+    >>> NiMapDenoise = filter.denoise_tv_chambolle(NiMap.data)
     >>> #Plot isosurfaces
     >>> mlab.contour3d(NiMapDenoise)
     >>> mlab.outline()
@@ -134,8 +140,16 @@ In the following example we also use `scikit-image <http://scikit-image.org/>`_ 
     P. Burdet, `et al.`, Acta Materialia, 61, p. 3090-3098 (2013) (see
     `abstract <http://infoscience.epfl.ch/record/185861/>`_).
 
-Comparing spectra
+Comparing objects
 -----------------
+
+Hyperspy provides two functions to compare different objects (spectra, images or
+other signals) whatever their dimension. The two functions, 
+:py:func:`~.drawing.utils.plot_spectra` and :py:func:`~.drawing.utils.plot_signals`
+, are explained and exemplified in this chapter. 
+
+Plotting several spectra
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.7
 
@@ -223,7 +237,7 @@ There are also two other styles, "heatmap" and "mosaic":
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.random.random((2,1000)), stack=True)
+    >>> s = signals.Spectrum(np.random.random((2,1000)))
     >>> utils.plot.plot_spectra(s, style='mosaic')
     
 .. figure::  images/plot_spectra_mosaic.png
@@ -234,7 +248,7 @@ The function returns a matplotlib ax object, which can be used to customize the 
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.random.random((6,1000)), stack=True)
+    >>> s = signals.Spectrum(np.random.random((6,1000)))
     >>> cascade_plot = utils.plot.plot_spectra(s)
     >>> cascade_plot.set_xlabel("An axis")
     >>> cascade_plot.set_ylabel("Another axis")
@@ -249,14 +263,14 @@ Plotting several signals
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.7
-:py:meth:`~.utils.plot.plot_signals()` is used to plot several signals at the
+:py:func:`~.drawing.utils.plot_signals` is used to plot several signals at the
 same time. By default the navigation position of the signals will be synced, and the 
 signals must have the same dimensions. To plot two spectra at the same time: 
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
     >>> utils.plot.plot_signals([s1, s2])
 
 .. figure::  images/plot_signals.png
@@ -266,13 +280,13 @@ signals must have the same dimensions. To plot two spectra at the same time:
 The navigator can be specified by using the navigator argument, where the 
 different options are "auto", None, "spectrum", "slider" or Signal.  
 For more details about the different navigators, 
-see :ref:`plotting_different_navigators`.
+see :ref:`navigator_options`.
 To specify the navigator:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
     >>> utils.plot.plot_signals([s1, s2], navigator="slider")
 
 .. figure::  images/plot_signals_slider.png
@@ -286,9 +300,9 @@ For example:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
-    >>> s3 = signals.Spectrum(np.random.random(100).reshape(10,10)) 
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s3 = signals.Spectrum(np.random.random(10,10)) 
     >>> utils.plot.plot_signals([s1, s2], navigator_list=["slider", s3])
 
 .. figure::  images/plot_signals_navigator_list.png
@@ -301,84 +315,12 @@ each plot:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10000).reshape(10,10,100)) 
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
     >>> utils.plot.plot_signals([s1, s2], sync=False, navigator_list=["slider", "slider"])
 
 .. figure::  images/plot_signals_sync.png
   :align:   center
   :width:   500    
 
-.. _plotting_different_navigators:
 
-Plotting signals with different navigators 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Using :py:meth:`~.plot()` one can a plot signal using different navigators.
-To plot a signal with 2 navigation dimensions and 1 signal dimension (a spectral image):
-
-.. code-block:: python
-
-    >>> s = signals.Spectrum(np.random.random(10000).reshape(10,10,100))
-    >>> s.plot(navigator="auto")
-
-Where each point in the image is a sum over spectrum at that point. This option
-is the default one, so:
-
-    >>> s.plot()
-
-Is equivalent. 
-
-.. figure::  images/plot_navigator_auto.png
-  :align:   center
-  :width:   500    
-
-If the signal has more than 2 navigation dimensions sliders will be provided, in
-addition to the image shown earlier.
-
-.. figure::  images/plot_navigator_auto_4d.png
-  :align:   center
-  :width:   500    
-
-The signal can also be plotted with only sliders as navigators:
-
-.. code-block:: python
-
-    >>> s = signals.Spectrum(np.random.random(100000).reshape(10,10,10,100))
-    >>> s.plot(navigator="slider")
-
-.. figure::  images/plot_navigator_slider.png
-  :align:   center
-  :width:   500    
-
-An image can also be used as navigator, if the image has the same navigation
-dimensions as the signal:
-
-.. code-block:: python
-
-    >>> s = signals.Spectrum(np.random.random(10000).reshape(10,10,100))
-    >>> s1 = signals.Image(np.arange(100).reshape(10,10))
-    >>> s.plot(navigator=s1)
-
-.. figure::  images/plot_navigator_image.png
-  :align:   center
-  :width:   500    
-
-The navigator can also be a spectrum, which if the signal has more than
-1 navigation dimension will also provide a slider (as for navigator="auto"):
-
-.. code-block:: python
-
-    >>> s = signals.Spectrum(np.random.random(10000).reshape(10,10,100))
-    >>> s.plot(navigator="spectrum")
-
-.. figure::  images/plot_navigator_spectrum.png
-  :align:   center
-  :width:   500    
-
-Lastly, if no navigator is needed use navigator=None:
-
-.. code-block:: python
-
-    >>> s = signals.Spectrum(np.random.random(10000).reshape(10,10,100))
-    >>> s.plot(navigator=None)
