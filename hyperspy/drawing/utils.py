@@ -543,41 +543,41 @@ def plot_histograms(signal_list,
                     legend='auto',
                     fig=None,
                     **kwargs):
-    """Plot the histogram of every signals in the list in the same figure. This
-    function creates an histogram for each signal and plot the list with
-    utils.plot.plot_spectra()
+    """Plot the histogram of every signal in the list in the same figure.
+
+    This function creates a histogram for each signal and plot the list with
+    the `utils.plot.plot_spectra` function.
 
     Parameters
     ----------
-
     signal_list : iterable
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
         the spectra can have diffent size and axes.
-    bins : int or list or str (optional)
+    bins : int or list or str, optional.
         If bins is a string, then it must be one of:
         'knuth' : use Knuth's rule to determine bins
         'scotts' : use Scott's rule to determine bins
         'freedman' : use the Freedman-diaconis rule to determine bins
         'blocks' : use bayesian blocks for dynamic bin widths
-    range_bins : tuple or None (optional)
+    range_bins : tuple or None, optional.
         the minimum and maximum range for the histogram. If not specified,
         it will be (x.min(), x.max())
-    color : valid matplotlib color or a list of them or `None`
+    color : valid matplotlib color or a list of them or `None`, otional.
         Sets the color of the lines of the plots. If a list, if its length is
         less than the number of spectra to plot, the colors will be cycled. If
         If `None`, use default matplotlib color cycle.
-    line_style: valid matplotlib line style or a list of them or `None`
+    line_style: valid matplotlib line style or a list of them or `None`, otional.
         The main line style are '-','--','steps','-.',':'.
         If a list, if its length is less than the number of
         spectra to plot, line_style will be cycled. If
         If `None`, use continuous lines, eg: ('-','--','steps','-.',':')
-    legend: None or list of str or 'auto'
+    legend: None or list of str or 'auto', otional.
        Display a legend. If 'auto', the title of each spectra
        (mapped_parameters.title) is used.
-    legend_picking: bool
+    legend_picking: bool, otional.
         If true, a spectrum can be toggle on and off by clicking on
         the legended line.
-    fig : matplotlib figure or None
+    fig : matplotlib figure or None, otional.
         If None, a default figure will be created.
     **kwargs
         other keyword arguments (weight and density) are described in
@@ -588,6 +588,7 @@ def plot_histograms(signal_list,
     >>> img = signals.Image(np.random.chisquare(1,[10,10,100]))
     >>> img2 = signals.Image(np.random.chisquare(2,[10,10,100]))
     >>> utils.plot.plot_histograms([img,img2],legend=['hist1','hist2'])
+
     Returns
     -------
     ax: matplotlib axes or list of matplotlib axes
