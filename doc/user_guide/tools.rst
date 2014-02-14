@@ -665,7 +665,23 @@ print the summary stastics of the signal at the current coordinates, e.g:
     median: -0.038
     Q3: 0.484
     max:    1.992
+    
+Histogram of different objects can be compared with the functions 
+:py:func:`~.drawing.utils.plot_histograms` (see 
+:ref:`visualisation <plot_spectra>` for the plotting options). For example,
+with histograms of several random chi-square distributions:
 
+
+.. code-block:: python
+
+    >>> img = signals.Image([np.random.chisquare(i+1,[100,100]) for i in range(5)])
+    >>> utils.plot.plot_histograms(img,legend='auto')
+
+.. figure::  images/plot_histograms_chisquare.png
+   :align:   center
+   :width:   500    
+
+   Comparing histograms
 
 Spectrum tools
 --------------
