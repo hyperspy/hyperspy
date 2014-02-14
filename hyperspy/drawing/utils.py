@@ -542,13 +542,13 @@ def plot_histograms(signal_list,
    signal_list : iterable
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
         the spectra can have diffent size and axes.
-    bins : int or list or str (optional)
+    bins : int or list or str, optional
         If bins is a string, then it must be one of:
         'knuth' : use Knuth's rule to determine bins
         'scotts' : use Scott's rule to determine bins
         'freedman' : use the Freedman-diaconis rule to determine bins
         'blocks' : use bayesian blocks for dynamic bin widths
-    range_bins : tuple or None (optional)
+    range_bins : tuple or None, optional
         the minimum and maximum range for the histogram. If not specified,
         it will be (x.min(), x.max())        
     color : valid matplotlib color or a list of them or `None`
