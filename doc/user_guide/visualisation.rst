@@ -135,7 +135,7 @@ Stack of 2D images can be imported as an 3D image and plotted with a slider.
 .. code-block:: python
 
     >>> img = load('image*.tif', stack=True)
-    >>> img.plot(navigator=None)
+    >>> img.plot(navigator="slider")
     
     
 .. figure::  images/3D_image.png
@@ -184,7 +184,7 @@ alternative display.
 
 .. code-block:: python
 
-    >>> imgSpec = spec.to_image((0, 1))
+    >>> imgSpec = spec.as_image((0, 1))
     >>> imgSpec.plot(navigator='spectrum')
     
     
@@ -209,6 +209,8 @@ the "maximum spectrum" for which each channel is the maximum of all pixels.
 
    Visualisation of a stack of 2D spectral images. 
    The navigator is the "maximum spectrum".
+   
+Lastly, if no navigator is needed, "navigator=None" can be used.
 
 Using Mayavi to visualize 3D data
 ---------------------------------
@@ -228,7 +230,7 @@ for noise reduction:
     >>> #Generate the X-ray intensity map of Nickel L alpha
     >>> NiMap = specImg3Dc.get_intensity_map(['Ni_La'])[0]
     >>> #Reduce the noise
-    >>> NiMapDenoise = filter.tv_denoise(NiMap.data)
+    >>> NiMapDenoise = filter.denoise_tv_chambolle(NiMap.data)
     >>> #Plot isosurfaces
     >>> mlab.contour3d(NiMapDenoise)
     >>> mlab.outline()
@@ -245,3 +247,150 @@ for noise reduction:
     The sample and the data used in this chapter are described in 
     P. Burdet, `et al.`, Acta Materialia, 61, p. 3090-3098 (2013) (see
     `abstract <http://infoscience.epfl.ch/record/185861/>`_).
+
+Comparing objects
+-----------------
+
+Hyperspy provides two functions to compare different objects (spectra, images or
+other signals) whatever their dimension. The two functions, 
+:py:func:`~.drawing.utils.plot_spectra` and :py:func:`~.drawing.utils.plot_signals`
+, are explained and exemplified in this chapter. 
+
+Plotting several spectra
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.7
+
+The function :py:func:`~.drawing.utils.plot_spectra` is used to plot several spectra in the same figure, which
+can make it easier to compare them. For example to see changes in EELS fine structure over 
+a line scan. 
+To plot a cascade style figure from a spectrum, and saving it in a file:
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum(np.random.random((6,1000)))
+    >>> cascade_plot = utils.plot.plot_spectra(s, padding=1)
+    >>> cascade_plot.figure.savefig("cascade_plot.png")
+
+.. figure::  images/plot_spectra_cascade.png
+  :align:   center
+  :width:   500    
+
+A padding value of 1 keeps the individual plots from overlapping. However in most cases
+a lower padding value can be used, to get tighter plots.
+
+Using the color argument one can assign a color to all the spectrums, or specific colors
+for each spectrum. In the same way, one can also assign the line style. 
+On can also give a legend:
+
+.. code-block:: python
+
+    >>> color_list = ['red', 'red', 'blue', 'blue', 'red', 'red']
+    >>> line_style_list = ['-','--','steps','-.',':','-']
+    >>> legend_list = ['a', 'b', 'c', 'd', 'e', 'f']
+    >>> utils.plot.plot_spectra(s, padding=1, color=color_list,
+    >>> line_style=line_style_list,legend=legend_list)
+
+.. figure::  images/plot_spectra_color.png
+  :align:   center
+  :width:   500    
+
+There are also two other styles, heatmap and mosaic:
+
+.. code-block:: python
+
+    >>> utils.plot.plot_spectra(s, style='heatmap')
+
+.. figure::  images/plot_spectra_heatmap.png
+  :align:   center
+  :width:   500    
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum(np.random.random((2,1000)))
+    >>> utils.plot.plot_spectra(s, style='mosaic')
+    
+.. figure::  images/plot_spectra_mosaic.png
+  :align:   center
+  :width:   500    
+
+The function returns a matplotlib ax object, which can be used to customize the figure:
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum(np.random.random((6,1000)))
+    >>> cascade_plot = utils.plot.plot_spectra(s)
+    >>> cascade_plot.set_xlabel("An axis")
+    >>> cascade_plot.set_ylabel("Another axis")
+    >>> cascade_plot.set_title("A title!")
+    >>> plt.draw()
+
+.. figure::  images/plot_spectra_customize.png
+  :align:   center
+  :width:   500    
+
+Plotting several signals
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.7
+:py:func:`~.drawing.utils.plot_signals` is used to plot several signals at the
+same time. By default the navigation position of the signals will be synced, and the 
+signals must have the same dimensions. To plot two spectra at the same time: 
+
+.. code-block:: python
+
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> utils.plot.plot_signals([s1, s2])
+
+.. figure::  images/plot_signals.png
+  :align:   center
+  :width:   500    
+
+The navigator can be specified by using the navigator argument, where the 
+different options are "auto", None, "spectrum", "slider" or Signal.  
+For more details about the different navigators, 
+see :ref:`navigator_options`.
+To specify the navigator:
+
+.. code-block:: python
+
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> utils.plot.plot_signals([s1, s2], navigator="slider")
+
+.. figure::  images/plot_signals_slider.png
+  :align:   center
+  :width:   500    
+
+Navigators can also be set differently for different plots using the 
+navigator_list argument. Where the navigator_list be the same length
+as the number of signals plotted, and only contain valid navigator options.
+For example:
+
+.. code-block:: python
+
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s3 = signals.Spectrum(np.random.random(10,10)) 
+    >>> utils.plot.plot_signals([s1, s2], navigator_list=["slider", s3])
+
+.. figure::  images/plot_signals_navigator_list.png
+  :align:   center
+  :width:   500    
+
+Several signals can also be plotted without syncing the navigation by using
+sync=False. The navigator_list can still be used to specify a navigator for 
+each plot:
+
+.. code-block:: python
+
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> utils.plot.plot_signals([s1, s2], sync=False, navigator_list=["slider", "slider"])
+
+.. figure::  images/plot_signals_sync.png
+  :align:   center
+  :width:   500    
+
+

@@ -19,9 +19,9 @@ from __future__ import division
 
 import numpy as np
 
+from hyperspy import utils
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.misc.eds.elements import elements as elements_db
-from hyperspy.misc.eds.FWHM import FWHM_eds
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 
@@ -364,7 +364,8 @@ class EDSSpectrum(Spectrum):
                             plot_result=False,
                             integration_window_factor=2.,
                             only_one=True,
-                            only_lines=("Ka", "La", "Ma"),):
+                            only_lines=("Ka", "La", "Ma"),
+                            **kwargs):
         """Return the intensity map of selected Xray lines.
         
         The intensity maps are computed by integrating the spectrum over the 
@@ -401,6 +402,9 @@ class EDSSpectrum(Spectrum):
             above an overvoltage of 2 (< beam energy / 2).
         only_lines : {None, list of strings}
             If not None, use only the given lines.
+        kwargs
+            The extra keyword arguments for plotting. See 
+            `utils.plot.plot_signals`
             
         Returns
         -------
@@ -447,7 +451,7 @@ class EDSSpectrum(Spectrum):
         for Xray_line in Xray_lines:
             element, line = utils_eds._get_element_and_line(Xray_line)           
             line_energy = elements_db[element]['Xray_energy'][line]
-            line_FWHM = FWHM_eds(FWHM_MnKa,line_energy)
+            line_FWHM = utils_eds.get_FWHM_at_Energy(FWHM_MnKa,line_energy)
             det = integration_window_factor * line_FWHM / 2.
             img = self[...,line_energy - det:line_energy + det
                     ].integrate_simpson(-1)
@@ -461,14 +465,48 @@ class EDSSpectrum(Spectrum):
                 img = img.as_image([0,1])
             elif img.axes_manager.navigation_dimension == 1:
                 img.axes_manager.set_signal_dimension(1)
-            if plot_result:
-                if img.axes_manager.signal_dimension != 0:
-                    img.plot()
-                else:
-                    print("%s at %s %s : Intensity = %.2f" 
-                    % (Xray_line,
-                       line_energy,
-                       self.axes_manager.signal_axes[0].units,
-                       img.data))
+            if plot_result and img.axes_manager.signal_dimension == 0:
+                print("%s at %s %s : Intensity = %.2f" 
+                % (Xray_line,
+                   line_energy,
+                   self.axes_manager.signal_axes[0].units,
+                   img.data))
             intensities.append(img)
+        if plot_result and img.axes_manager.signal_dimension != 0:
+                utils.plot.plot_signals(intensities,**kwargs)            
         return intensities
+        
+    def get_take_off_angle(self):
+        """Calculate the take-off-angle (TOA).
+    
+        TOA is the angle with which the X-rays leave the surface towards 
+        the detector. Parameters are read in 'SEM.tilt_stage',
+        'SEM.EDS.azimuth_angle' and 'SEM.EDS.elevation_angle'
+         in 'mapped_parameters'.
+         
+        Returns
+        -------
+        take_off_angle: float (Degree)
+        
+        See also
+        --------        
+        utils.eds.take_off_angle
+        
+        Notes
+        -----
+        Defined by M. Schaffer et al., Ultramicroscopy 107(8), pp 587-597 (2007)
+        """   
+        if self.mapped_parameters.signal_type == 'EDS_SEM':
+            mp = self.mapped_parameters.SEM
+        elif self.mapped_parameters.signal_type == 'EDS_TEM':
+            mp = self.mapped_parameters.TEM 
+            
+        tilt_stage=mp.tilt_stage
+        azimuth_angle=mp.EDS.azimuth_angle
+        elevation_angle=mp.EDS.elevation_angle
+        
+        TOA = utils.eds.take_off_angle(tilt_stage,azimuth_angle,
+            elevation_angle)
+        
+        return TOA
+

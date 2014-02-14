@@ -45,6 +45,8 @@ class MPL_HyperExplorer(object):
         if self.axes_manager.navigation_dimension == 0:
             return
         if self.navigator_data_function is None:            
+            return
+        if self.navigator_data_function is "slider":            
             navigation_sliders(
                 self.axes_manager.navigation_axes,
                 title=self.signal_title + " navigation sliders")
@@ -120,9 +122,12 @@ class MPL_HyperExplorer(object):
         self.plot_signal()
            
     def assign_pointer(self):
-        nav_dim = (len(self.navigator_data_function().shape) if
-                   self.navigator_data_function is not None
-                   else 0)
+        if self.navigator_data_function is None:
+            nav_dim = 0
+        elif self.navigator_data_function is "slider":
+            nav_dim = 0
+        else:
+            nav_dim = len(self.navigator_data_function().shape)
 
         if nav_dim == 2: # It is an image
             if self.axes_manager.navigation_dimension > 1:
