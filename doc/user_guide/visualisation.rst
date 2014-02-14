@@ -140,6 +140,8 @@ In the following example we also use `scikit-image <http://scikit-image.org/>`_ 
     P. Burdet, `et al.`, Acta Materialia, 61, p. 3090-3098 (2013) (see
     `abstract <http://infoscience.epfl.ch/record/185861/>`_).
 
+.. _plot_spectra:
+
 Comparing objects
 -----------------
 
