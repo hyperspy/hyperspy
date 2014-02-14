@@ -147,7 +147,8 @@ being "overlap". The default style is configurable in :ref:`preferences
 In the following example we create a list of 9 single spectra (gaussian
 functions with different sigma values) and plot them in the same figure using
 :py:func:`~.drawing.utils.plot_spectra`. Note that, in this case, the legend
-labels are taken from the indivual spectrum titles.
+labels are taken from the indivual spectrum titles. By clicking on the 
+legended line, a spectrum can be toggled on and off.
 
  .. code-block:: python
 
@@ -166,7 +167,7 @@ labels are taken from the indivual spectrum titles.
      ...         gs.mapped_parameters.title = "sigma=%i" % sigma
      ...         gaussians.append(gs)
      ...         
-     >>> utils.plot.plot_spectra(gaussians)
+     >>> utils.plot.plot_spectra(gaussians,legend='auto')
      <matplotlib.axes.AxesSubplot object at 0x4c28c90>
 
 
