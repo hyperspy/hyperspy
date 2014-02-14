@@ -83,7 +83,7 @@ class Test_mapped_parameters:
             energy_axis.scale)
         
         
-#class Test_get_intentisity_map:
+#class Test_get_lines_intentisity:
 #    def setUp(self):
 #        # Create an empty spectrum
 #        s = EDSTEMSpectrum(np.ones((4,2,1024)))
@@ -96,6 +96,6 @@ class Test_mapped_parameters:
 #    def test(self):        
 #        s = self.signal
 #        s.set_elements(['Al','Ni'],['Ka','La'])
-#        sAl = s.get_intensity_map(plot_result=True)[0]
+#        sAl = s.get_lines_intensity(plot_result=True)[0]
 #        assert_true(np.allclose(s[...,0].data*15.0, sAl.data))
 

@@ -29,10 +29,10 @@ the :py:meth:`~._signals.eds.EDSSpectrum.add_elements` method adds a new
 set of elements to the previous set.
 
 
-Get intensity map
-^^^^^^^^^^^^^^^^^
+Getlines intensity
+^^^^^^^^^^^^^^^^^^
 
-With the :py:meth:`~._signals.eds.EDSSpectrum.get_intensity_map`, the 
+With the :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`, the 
 intensity of X-ray lines is used to generate a map. The number of counts
 under the selected peaks is used.
 

@@ -228,7 +228,7 @@ for noise reduction:
     >>> from skimage import filter
     >>> from mayavi import mlab
     >>> #Generate the X-ray intensity map of Nickel L alpha
-    >>> NiMap = specImg3Dc.get_intensity_map(['Ni_La'])[0]
+    >>> NiMap = specImg3Dc.get_lines_intensity(['Ni_La'])[0]
     >>> #Reduce the noise
     >>> NiMapDenoise = filter.denoise_tv_chambolle(NiMap.data)
     >>> #Plot isosurfaces
