@@ -479,6 +479,12 @@ class Parameter(object):
     def as_dictionary(self, indices = None):
         """Returns parameter as a dictionary
 
+        Parameters
+        ----------
+        indices : tuple
+            a tuple of indices in navigational space of the signal, to return only specific point of the model as a
+            dictionary
+
         Returns
         -------
         dic : dictionary
@@ -487,10 +493,10 @@ class Parameter(object):
         dic = {}
         dic['name'] = self.name
         dic['_id_name'] = self._id_name
-        dic['map'] = copy.deepcopy(self.map[indices])
+        dic['map'] = copy.deepcopy(self.map[indices[::-1]])
         if indices is not None:
-            dic['value'] = dic['map']['values'][0]
-            dic['std'] = dic['map']['std'][0]
+            dic['value'] = dic['map']['values']
+            dic['std'] = dic['map']['std']
         else:
             dic['value'] = self.value
             dic['std'] = self.std

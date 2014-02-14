@@ -40,6 +40,7 @@ import hyperspy.drawing.spectrum
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.misc import progressbar
+from hyperspy.signal import Signal
 from hyperspy._signals.eels import EELSSpectrum, Spectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
@@ -98,10 +99,7 @@ class Model(list):
         else:
             self.spectrum = dic['spectrum']
 
-        if 'axes_manager' in dic:
-            self.axes_manager = AxesManager(dic['axes_manager'])
-        else:
-            self.axes_manager = self.spectrum.axes_manager
+        self.axes_manager = self.spectrum.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
         self.channel_switches=np.array([True] * len(self.axis.axis))
@@ -112,7 +110,10 @@ class Model(list):
             self.free_parameters_boundaries = None
 
         if 'low_loss' in dic:
-            self._low_loss = copy.deepcopy(dic['low_loss'])
+            if dic['low_loss'] is not None:
+                self._low_loss = Signal(**dic['low_loss'])
+            else:
+                self._low_loss = None
         else:
             self._low_loss = None
 
@@ -1536,10 +1537,20 @@ class Model(list):
     
         """
         dic = {}
-        dic['spectrum'] = self.spectrum.inav[indices]._to_dictionary()
+        if indices is not None:
+            dic['spectrum'] = self.spectrum.inav[indices]._to_dictionary()
+            if self._low_loss is not None:
+                dic['low_loss'] = self._low_loss.inav[indices]._to_dictionary()
+            else:
+                dic['low_loss'] = self._low_loss
+        else:
+            dic['spectrum'] = self.spectrum._to_dictionary()
+            if self._low_loss is not None:
+                dic['low_loss'] = self._low_loss._to_dictionary()
+            else:
+                dic['low_loss'] = self._low_loss
         dic['components'] = [c.as_dictionary(indices) for c in self]
         dic['free_parameters_boundaries'] = copy.deepcopy(self.free_parameters_boundaries)
-        dic['low_loss'] = self._low_loss.inav[indices]._to_dictionary()
         dic['convolved'] = self.convolved
         return dic
 
