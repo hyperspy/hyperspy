@@ -41,6 +41,7 @@ import hyperspy.drawing.spectrum
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.misc import progressbar
+from hyperspy.signal import Signal
 from hyperspy._signals.eels import EELSSpectrum, Spectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
@@ -112,10 +113,7 @@ class Model(list):
         else:
             self.spectrum = dic['spectrum']
 
-        if 'axes_manager' in dic:
-            self.axes_manager = AxesManager(dic['axes_manager'])
-        else:
-            self.axes_manager = self.spectrum.axes_manager
+        self.axes_manager = self.spectrum.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
         self.channel_switches=np.array([True] * len(self.axis.axis))
@@ -139,7 +137,10 @@ class Model(list):
             self.free_parameters_boundaries = None
 
         if 'low_loss' in dic:
-            self._low_loss = copy.deepcopy(dic['low_loss'])
+            if dic['low_loss'] is not None:
+                self._low_loss = Signal(**dic['low_loss'])
+            else:
+                self._low_loss = None
         else:
             self._low_loss = None
 
@@ -1539,34 +1540,49 @@ class Model(list):
                     else:
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
-    def as_dictionary(self):
+    def as_dictionary(self, indices = None):
         """Returns a dictionary of the model, including full Signal dictionary,
         all components and all values of their components, and twin functions.
 
+        Parameters
+        ----------
+        indices : tuple
+            A tuple of indices to return a particular point of a model
         Returns
         -------
         dictionary : a complete dictionary of the model
 
         Examples
         --------
-        >>>> s = signals.Spectrum(np.random.random((10,100)))
-        >>>> m = create_model(s)
-        >>>> l1 = components.Lorentzian()
-        >>>> l2 = components.Lorentzian()
-        >>>> m.append(l1)
-        >>>> m.append(l2)
-        >>>> dict = m.as_dictionary()
-        >>>> m2 = create_model(dict)
+        >>> s = signals.Spectrum(np.random.random((10,100)))
+        >>> m = create_model(s)
+        >>> l1 = components.Lorentzian()
+        >>> l2 = components.Lorentzian()
+        >>> m.append(l1)
+        >>> m.append(l2)
+        >>> dict = m.as_dictionary()
+        >>> m2 = create_model(dict)
     
         """
         dic = {}
-        dic['spectrum'] = self.spectrum._to_dictionary()
-        dic['components'] = [c.as_dictionary() for c in self]
-        dic['axes_manager'] = self.axes_manager._get_axes_dicts()
-        dic['free_parameters_boundaries'] = self.free_parameters_boundaries
-        dic['low_loss'] = copy.deepcopy(self._low_loss)
+        if indices is not None:
+            dic['spectrum'] = self.spectrum.inav[indices]._to_dictionary()
+            dic['chisq'] = self.chisq[indices]._to_dictionary()
+            dic['dof'] = self.dof[indices]._to_dictionary()
+            if self._low_loss is not None:
+                dic['low_loss'] = self._low_loss.inav[indices]._to_dictionary()
+            else:
+                dic['low_loss'] = self._low_loss
+        else:
+            dic['chisq'] = self.chisq._to_dictionary()
+            dic['dof'] = self.dof._to_dictionary()
+            dic['spectrum'] = self.spectrum._to_dictionary()
+            if self._low_loss is not None:
+                dic['low_loss'] = self._low_loss._to_dictionary()
+            else:
+                dic['low_loss'] = self._low_loss
+        dic['components'] = [c.as_dictionary(indices) for c in self]
+        dic['free_parameters_boundaries'] = copy.deepcopy(self.free_parameters_boundaries)
         dic['convolved'] = self.convolved
-        dic['chisq'] = self.chisq._to_dictionary()
-        dic['dof'] = self.dof._to_dictionary()
         return dic
 
