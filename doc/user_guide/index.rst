@@ -14,11 +14,16 @@ Hyperspy User Guide (DRAFT)
     what_is_new.rst
     install.rst
     getting_started.rst
-    io.rst
     tools.rst
+    spectrum.rst
+    image.rst
     visualisation.rst
     mva.rst
     model.rst
+    eels.rst
+    eds.rst
+    dielectric_function.rst
+    io.rst
     mapped_parameters_structure.rst
     credits.rst
     bibliography.rst
