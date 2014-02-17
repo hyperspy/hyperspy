@@ -44,40 +44,39 @@ class Image(Signal):
         
     def plot_3D_iso_surface(self,threshold,
             color = 'auto',
-            figure='new',
-            scale='auto'):
+            figure='new'):
         """
-        Generate an iso-surface with Mayavi.
+        Generate an iso-surface with Mayavi of a stack of images.
         
         Parameters
-        ----------
-            
+        ----------            
         threshold: float
-            Between 0 (min intensity) and 1 (max intensity).
-            If result == quant, 1 == 100%.
-        
-        color: list
-            The color of the surface, (R,G,B). If 'auto', automatically 
-            selected.
-            
-        figure: mayavi.core.scene.Scene 
+            The value used to Between 0 (min intensity) and 1 (max intensity).        
+        color: 'auto' or list
+            The color of the surface (R,G,B) (eg. (0.5,0.3,0.2)). 
+            If 'auto', default colors of mayavi.            
+        figure: 'new' or mayavi.core.scene.Scene 
             If 'new', generate a new scene/figure.
+            
+        Example
+        --------
         
-        scale: str || list
-            If 'auto', scale with axes_manager.scale. Else, scale with 
-            the given list (x,y,z).            
+        >>> # Plot two iso-surfaces from one stack of images
+        >>> [fig,src,iso] = img.plot_3D_iso_surface(0.8)
+        >>> [fig,src2,iso2] = img.plot_3D_iso_surface(0.2,figure=fig)
+        >>> # Change the threshold of the second iso-surface
+        >>> iso2.contour.contours=[0.3, ]
           
         Return
-        ------
-        
-        figure: mayavi.core.scene.Scene
-        
-        src: mayavi.sources.array_source.ArraySource
-        
+        ------        
+        figure: mayavi.core.scene.Scene        
+        src: mayavi.sources.array_source.ArraySource        
         iso: mayavi.modules.iso_surface.IsoSurface        
             
         """
-        from mayavi import mlab        
+        from mayavi import mlab  
+        
+        #if self      
         
         if figure=='new':
             figure = mlab.figure()     
@@ -88,26 +87,22 @@ class Image(Signal):
         img_data = np.rollaxis(img_data,0,3)
         img_data = np.rollaxis(img_data,0,2)
         src = mlab.pipeline.scalar_field(img_data)
-        src.name = img_res.mapped_parameters.title        
-
+        src.name = img_res.mapped_parameters.title  
         
         threshold = img_data.max()-threshold*img_data.ptp()
         
-        if scale=='auto':
-            scale = [1/img_res.axes_manager[i].scale for i in [1,2,0]]
-            src.spacing= scale
-        else:
-            src.spacing = scale           
+
+        scale = [1/img_res.axes_manager[i].scale for i in [1,2,0]]
+        src.spacing= scale
+
+         
         if color != 'auto':
             iso = mlab.pipeline.iso_surface(src,
                 contours=[threshold, ],color =color)
         else:
            iso = mlab.pipeline.iso_surface(src,
-                contours=[threshold, ])
-            
+                contours=[threshold, ])            
         iso.compute_normals = False
-        #if color != 'auto':
-         #   iso.actor.property.color = color
-        #iso.actor.property.opacity = 0.5        
+      
         return figure, src, iso
 
