@@ -48,6 +48,7 @@ class Image(Signal):
         """
         Generate an iso-surface with Mayavi of a stack of images.
         
+        
         Parameters
         ----------            
         threshold: float
@@ -71,7 +72,12 @@ class Image(Signal):
         ------        
         figure: mayavi.core.scene.Scene        
         src: mayavi.sources.array_source.ArraySource        
-        iso: mayavi.modules.iso_surface.IsoSurface        
+        iso: mayavi.modules.iso_surface.IsoSurface    
+        
+        Note
+        ----
+        
+        The method uses the mlab.pipeline.contour3d from mayavi.
             
         """
         from mayavi import mlab  
@@ -97,12 +103,14 @@ class Image(Signal):
         src.spacing= scale
          
         if color != 'auto':
-            iso = mlab.pipeline.iso_surface(src,
+            iso = mlab.pipeline.contour3d(src,
                 contours=[threshold, ],color =color)
         else:
-           iso = mlab.pipeline.iso_surface(src,
+           iso = mlab.pipeline.contour3d(src,
                 contours=[threshold, ])            
         iso.compute_normals = False
+        
+        mlab.outline()
       
         return figure, src, iso
 
