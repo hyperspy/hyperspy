@@ -206,7 +206,7 @@ class MVA():
 
             if algorithm == 'svd':
                 factors, loadings, explained_variance, mean = svd_pca(
-                    dc[:, signal_mask][navigation_mask, :], centre = centre,
+                    dc[:, signal_mask][navigation_mask, :], centre=centre,
                     auto_transpose=auto_transpose)
 
             elif algorithm == 'fast_svd':
@@ -661,13 +661,13 @@ class MVA():
             tloadings = np.zeros((len(components), loadings.shape[1]))
             for i in xrange(len(components)):
                 tfactors[:, i] = factors[:, components[i]]
-                tloadings[i, :] = loadings[components[i],:]
+                tloadings[i, :] = loadings[components[i], :]
             a = np.dot(tfactors, tloadings)
             signal_name = 'model from %s with components %s' % (
                 mva_type, components)
         else:
             a = np.dot(factors[:, :components],
-                                     loadings[:components, :])
+                       loadings[:components, :])
             signal_name = 'model from %s with %i components' % (
                 mva_type, components)
 
@@ -724,46 +724,72 @@ class MVA():
         rec.residual.data = self.data - rec.data
         return rec
 
-    def plot_explained_variance_ratio(self, n=50, log=True,
-                                      ax=None, label=None):
-        """Plot the decomposition explained variance ratio vs index number
+    def get_explained_variance_ratio(self):
+        """Return the explained variation ratio of the PCA components as a
+        Spectrum.
+
+        Returns
+        -------
+        s : Spectrum
+            Explained variation ratio.
+
+        See Also:
+        ---------
+
+        `plot_explained_variance_ration`, `decomposition`,
+        `get_decomposition_loadings_as_signal`,
+        `get_decomposition_factors_as_signal`.
+
+        """
+        from hyperspy._signals.spectrum import Spectrum
+        target = self.learning_results
+        if target.explained_variance_ratio is None:
+            raise AttributeError("The explained_variance_ratio attribute is "
+                                 "`None`, did you forget to perform a PCA "
+                                 "decomposition?")
+        s = Spectrum(target.explained_variance_ratio)
+        s.mapped_parameters.title = self.mapped_parameters.title + \
+            "\nPCA Scree Plot"
+        s.axes_manager[-1].name = 'Principal component index'
+        s.axes_manager[-1].units = ''
+        return s
+
+    def plot_explained_variance_ratio(self, n=50, log=True):
+        """Plot the decomposition explained variance ratio vs index number.
 
         Parameters
         ----------
         n : int
-            Number of components
+            Number of components.
         log : bool
-            If True, the y axis uses a log scale
-        ax : matplotlib.axes instance
-            The axes where to plot the figures. If None, a new figure will be
-            created
-        label: str
-            An optional label for the legend
+            If True, the y axis uses a log scale.
 
         Returns
         -------
-        The axe of the plot, that can be passed to the method again in
-        a future call using the ax attribute
+        ax : matplotlib.axes
+
+        See Also:
+        ---------
+
+        `get_explained_variance_ration`, `decomposition`,
+        `get_decomposition_loadings_as_signal`,
+        `get_decomposition_factors_as_signal`.
 
         """
-        target = self.learning_results
-        if target.explained_variance_ratio is None:
-            messages.information(
-                'No explained variance ratio information available')
-            return 0
-        if n > target.explained_variance_ratio.shape[0]:
-            n = target.explained_variance_ratio.shape[0]
-        if ax is None:
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-        ax.plot(range(n), target.explained_variance_ratio[:n], 'o',
-                label=label)
+        s = self.get_explained_variance_ratio()
+        if n < s.axes_manager[-1].size:
+            s = s.isig[:n]
+        s.plot()
+        ax = s._plot.signal_plot.ax
+        # ax.plot(range(n), target.explained_variance_ratio[:n], 'o',
+        #         label=label)
+        ax.set_ylabel("Explained variance ratio")
+        ax.margins(0.05)
+        ax.autoscale()
+        ax.lines[0].set_marker("o")
+        ax.lines[0].set_linestyle("None")
         if log is True:
             ax.semilogy()
-        ax.set_ylabel('Explained variance ratio')
-        ax.set_xlabel('Principal component index')
-        plt.legend()
-        plt.show()
         return ax
 
     def plot_cumulative_explained_variance_ratio(self, n=50):
@@ -832,7 +858,7 @@ class MVA():
         # operation produces nans
         np.seterr(invalid='ignore')
         dc[:, signal_mask][navigation_mask, :] /= (self._root_aG *
-                                                  self._root_bH)
+                                                   self._root_bH)
         # Enable numpy warning
         np.seterr(invalid=None)
         # Set the nans resulting from 0/0 to zero
@@ -872,17 +898,14 @@ class LearningResults(object):
     # Masks
     navigation_mask = None
     signal_mask = None
-
     def save(self, filename, overwrite=None):
         """Save the result of the decomposition and demixing analysis
-
         Parameters
         ----------
         filename : string
         overwrite : {True, False, None}
             If True(False) overwrite(don't overwrite) the file if it exists.
             If None (default) ask what to do if file exists.
-
         """
         kwargs = {}
         for attribute in [
@@ -894,11 +917,9 @@ class LearningResults(object):
         # Save, if all went well!
         if overwrite is True:
             np.savez(filename, **kwargs)
-
     def load(self, filename):
         """Load the results of a previous decomposition and
          demixing analysis from a file.
-
         Parameters
         ----------
         filename : string
@@ -907,12 +928,9 @@ class LearningResults(object):
         for key, value in decomposition.iteritems():
             if value.dtype == np.dtype('object'):
                 value = None
-
             setattr(self, key, value)
         print "\n%s loaded correctly" % filename
-
         # For compatibility with old version ##################
-
         if hasattr(self, 'algorithm'):
             self.decomposition_algorithm = self.algorithm
             del self.algorithm
@@ -926,43 +944,33 @@ class LearningResults(object):
             del self.variance2one
         if hasattr(self, 'centered'):
             del self.centered
-
         if hasattr(self, 'pca_algorithm'):
             self.decomposition_algorithm = self.pca_algorithm
             del self.pca_algorithm
-
         if hasattr(self, 'ica_algorithm'):
             self.bss_algorithm = self.ica_algorithm
             del self.ica_algorithm
-
         if hasattr(self, 'v'):
             self.loadings = self.v
             del self.v
-
         if hasattr(self, 'scores'):
             self.loadings = self.scores
             del self.scores
-
         if hasattr(self, 'pc'):
             self.loadings = self.pc
             del self.pc
-
         if hasattr(self, 'ica_scores'):
             self.bss_loadings = self.ica_scores
             del self.ica_scores
-
         if hasattr(self, 'ica_factors'):
             self.bss_factors = self.ica_factors
             del self.ica_factors
-
         #######################################################
-
         # Output_dimension is an array after loading, convert it to int
         if hasattr(self, 'output_dimension') and self.output_dimension \
                 is not None:
             self.output_dimension = int(self.output_dimension)
         self.summary()
-
     def summary(self):
         """Prints a summary of the decomposition and demixing parameters
          to the stdout
