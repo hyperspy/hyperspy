@@ -76,7 +76,9 @@ class Image(Signal):
         """
         from mayavi import mlab  
         
-        #if self      
+        if len(self.axes_manager.shape) != 3:
+            raise ValueError("This functions works only for 3D stack of " 
+            "images.")
         
         if figure=='new':
             figure = mlab.figure()     
@@ -89,12 +91,10 @@ class Image(Signal):
         src = mlab.pipeline.scalar_field(img_data)
         src.name = img_res.mapped_parameters.title  
         
-        threshold = img_data.max()-threshold*img_data.ptp()
-        
+        threshold = img_data.max()-threshold*img_data.ptp()        
 
         scale = [1/img_res.axes_manager[i].scale for i in [1,2,0]]
         src.spacing= scale
-
          
         if color != 'auto':
             iso = mlab.pipeline.iso_surface(src,
