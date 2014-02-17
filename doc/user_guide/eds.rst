@@ -189,7 +189,7 @@ Elements
 The elements present in the sample can be defined with the
 :py:meth:`~._signals.eds.EDSSpectrum.set_elements`  and  
 :py:meth:`~._signals.eds.EDSSpectrum.add_elements` methods.  Only element
-abbreviations are accepted. 
+abbreviations are accepted:
 
 .. code-block:: python
 
@@ -265,12 +265,51 @@ An elemental database is available with the energy of the X-ray lines.
 Plotting
 --------
 
+As decribed in :ref:`visualisation<visualization-label>`, the 
+:py:meth:`~.signal.Signal.plot` method can be used:
+
+.. code-block:: python
+
+    >>> spec.plot()
+
+.. figure::  images/EDS_plot_spectrum.png
+   :align:   center
+   :width:   500   
+   
+An example of plotting EDS data of higher dimension (3D SEM-EDS) is given in
+:ref:`visualisation multi-dimension<visualization_multi_dim>`
+
+.. _get_lines_intensity:
+
 
 Get lines intensity
 ^^^^^^^^^^^^^^^^^^^
 
-With the :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`, the 
-intensity of X-ray lines is used to generate a map. The number of counts
-under the selected peaks is used.
+The :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` 
+method generates intensity maps by peak integration.
+The width of integration is defined by extending the energy resolution of
+Mn Ka to the peak energy ("energy_resolution_MnKa" in mapped_parameters). 
+
+.. code-block:: python
+
+    >>> spec_img.get_lines_intensity(['Ni_Ka'],plot_result=True)
+    
+.. figure::  images/EDS_get_lines_intensity.png
+   :align:   center
+   :width:   500 
+   
+The X-ray lines defined in "mapped_parameters.Sample.Xray_lines" (see above)
+are used by default.
+   
+.. code-block:: python
+
+    >>> spec.set_lines(["Ni_La","Ti_Ka","Al_Ka"])
+    >>> spec_img.get_lines_intensity()
+    [<Image, title: Intensity of Al_Ka at 1.49 keV from Spectrum image,
+     dimensions: (|128, 95)>,
+    <Image, title: Intensity of Ni_La at 0.85 keV from Spectrum image,
+     dimensions: (|128, 95)>,
+    <Image, title: Intensity of Ti_Ka at 4.51 keV from Spectrum image,
+     dimensions: (|128, 95)>]
 
 
