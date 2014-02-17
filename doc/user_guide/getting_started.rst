@@ -312,6 +312,7 @@ Note the Hyperspy rearranges the axes position to match the following pattern:
 (navigatons axis 0,..., navigation axis n|signal axis 0,..., signal axis n).
 This is the order used for :ref:`indexing the Signal class <signal.indexing>`.
 
+.. _Setting_axis_properties: 
 
 Setting axis properties
 -----------------------
