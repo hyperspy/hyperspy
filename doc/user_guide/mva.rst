@@ -103,7 +103,26 @@ To obtain a scree plot, run the
 
 .. code-block:: python
 
-    >>> s.plot_explained_variance_ratio()
+    >>> ax = s.plot_explained_variance_ratio()
+
+.. figure::  images/screeplot.png
+   :align:   center
+   :width:   500
+
+   PCA scree plot.
+
+
+Note that in the figure, the first component has index 0. This is because
+Python uses zero based indexing i.e. the initial element of a sequence is found
+using index 0.
+ 
+.. versionadded:: 0.7
+
+Sometimes it can be useful to get the explained variance ratio as a spectrum,
+e.g. to store it separetely or to plot several scree plots obtained using 
+different data pre-treatment in the same figure using
+:py:func:`~.drawing.utils.plot_spectra`. For that you can use
+:py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`
 
 Data denoising (dimensionality reductions)
 ------------------------------------------

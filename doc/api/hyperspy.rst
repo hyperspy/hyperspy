@@ -6,6 +6,8 @@ Subpackages
 
 .. toctree::
 
+    hyperspy._components
+    hyperspy._signals
     hyperspy.drawing
     hyperspy.gui
     hyperspy.io_plugins
