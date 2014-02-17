@@ -493,11 +493,12 @@ class Parameter(object):
         dic = {}
         dic['name'] = self.name
         dic['_id_name'] = self._id_name
-        dic['map'] = copy.deepcopy(self.map[indices[::-1]])
         if indices is not None:
+            dic['map'] = copy.deepcopy(self.map[indices[::-1]])
             dic['value'] = dic['map']['values']
             dic['std'] = dic['map']['std']
         else:
+            dic['map'] = copy.deepcopy(self.map)
             dic['value'] = self.value
             dic['std'] = self.std
         dic['free'] = self.free
