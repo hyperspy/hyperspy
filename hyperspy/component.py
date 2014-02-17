@@ -494,7 +494,7 @@ class Parameter(object):
         dic['name'] = self.name
         dic['_id_name'] = self._id_name
         if indices is not None:
-            dic['map'] = copy.deepcopy(self.map[indices[::-1]])
+            dic['map'] = copy.deepcopy(self.map[tuple([slice(i,i+1,1) for i in indices[::-1]])])
             dic['value'] = dic['map']['values']
             dic['std'] = dic['map']['std']
         else:
