@@ -277,7 +277,7 @@ As decribed in :ref:`visualisation<visualization-label>`, the
    :width:   500   
    
 An example of plotting EDS data of higher dimension (3D SEM-EDS) is given in
-:ref:`visualisation multi-dimension<visualization_multi_dim>`
+:ref:`visualisation multi-dimension<visualization_multi_dim>`.
 
 .. _get_lines_intensity:
 
