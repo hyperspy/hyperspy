@@ -17,7 +17,7 @@ Spectrum loading and parameters
 Loading
 ^^^^^^^^
 
-All data loadings are done with the :py:func:`~.io.load` function as decribed in details in 
+All data are loaded with the :py:func:`~.io.load` function, as decribed in details in 
 :ref:`Loading files<loading_files>`. Hyperspy is able to import different formats,
 among them ".msa" and ".rpl" (the raw format of Oxford Instrument and Brucker). 
 
@@ -81,7 +81,7 @@ as follow:
     └── tilt_stage = 36.0
 
 
-They can be set directly:
+These parameters can be set directly:
 
 .. code-block:: python
 
@@ -104,8 +104,8 @@ or raising the gui:
    :align:   center
    :width:   350  
    
-If the microcsope parameters are not written in the original file, some 
-of them are set by default. The default value can be changed in the 
+If the microcsope and detector parameters are not written in the original file, some 
+of them are set by default. The default values can be changed in the 
 :py:class:`~.defaults_parser.Preferences` class (see :ref:`preferences
 <configuring-hyperspy-label>`).
 
@@ -149,39 +149,121 @@ or with the :py:meth:`~.axes.AxesManager.gui` method:
 Related method
 ^^^^^^^^^^^^^^
 
-All the above parameters can be copy from one spectrum to the one other
-with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.get_calibration_from`.
+All the above parameters can be copy from one spectrum to another one
+with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.get_calibration_from`
+method.
 
 .. code-block:: python
 
     >>> # Load spectrum.msa which contains the parameters
     >>> spec = load("spectrum.msa",signal_type="EDS_TEM")
-    >>> # load spectrum_image.rpl which contains no parameters
+    >>> # Load spectrum_image.rpl which contains no parameters
     >>> spec_img = load("spectrum_image.rpl",record_by="spectrum",signal_type="EDS_TEM")
     >>> # Set all the properties of spec to spec_img
-    >>> spec_img.get_calibration_from(s)
+    >>> spec_img.get_calibration_from(spec)
     
     
 Describing the sample
 ---------------------
 
+The description of the sample is storred in mapped_parameters.Sample (in the 
+:py:attr:`~.signal.Signal.mapped_parameters` attribute). It can be displayed as
+follow:
 
-Set  and add elements
-^^^^^^^^^^^^^^^^^^^^
+.. code-block:: python
 
-The :py:meth:`~._signals.eds.EDSSpectrum.set_elements` method is used 
-to define a set of elements and corresponding X-ray lines
-that will be used in other process (e.g. X-ray intensity mapping).
-The information is stored in the :py:attr:`~.signal.Signal.mapped_parameters` 
-attribute (see :ref:`mapped_parameters_structure`)
+    >>> spec.mapped_parameters.Sample
+    ├── Xray_lines = ['Al_Ka', 'Ni_La', 'Ti_Ka']
+    ├── description = Sample 1.3
+    ├── elements = ['Al', 'Ni', 'Ti']
+    └── thickness = 100
 
 
-When the set_elements method erases all previously defined elements, 
-the :py:meth:`~._signals.eds.EDSSpectrum.add_elements` method adds a new
-set of elements to the previous set.
+The following methods are either called "set" or "add". When "set" 
+methods erases all previously defined values, the "add" methods add the
+values to the previously defined values.
 
-Plotting the spectrum
---------------------
+Elements
+^^^^^^^^
+
+The elements present in the sample can be defined with the
+:py:meth:`~._signals.eds.EDSSpectrum.set_elements`  and  
+:py:meth:`~._signals.eds.EDSSpectrum.add_elements` methods.  Only element
+abbreviations are accepted. 
+
+.. code-block:: python
+
+    >>> spec.set_elements(["Ni","Ti","Al"])
+    >>> spec.add_elements(["Ta"])
+    >>> spec.mapped_parameters.Sample
+    └── elements = ['Al', 'Ni', 'Ta', 'Ti']
+
+X-ray lines
+^^^^^^^^^^^
+
+Similarly, the X-ray lines can be defined with the 
+:py:meth:`~._signals.eds.EDSSpectrum.set_lines` and 
+:py:meth:`~._signals.eds.EDSSpectrum.add_lines` methods. The corresponding 
+elements will be added automatically. Several lines per elements can be defined. 
+
+.. code-block:: python
+
+    >>> spec.set_lines(["Ni_La","Ti_Ka","Al_Ka"])
+    >>> spec.add_lines(["Ti_La"])
+    >>> spec.mapped_parameters.Sample
+    ├── Xray_lines = ['Al_Ka', 'Ni_La', 'Ti_Ka', 'Ti_La']
+    └── elements = ['Al', 'Ni', 'Ti']    
+    
+These methods can be used automatically, if the beam energy is set. 
+The most excited X-ray line is selected per element (highest energy above an 
+overvoltage of 2 (< beam energy / 2)).
+
+.. code-block:: python
+
+    >>> spec.set_elements(["Ni","Ti","Al"])
+    >>> spec.mapped_parameters.SEM.beam_energy = 30
+    >>> spec.add_lines()
+    >>> spec.mapped_parameters.Sample
+    ├── Xray_lines = ['Al_Ka', 'Ni_Ka', 'Ti_Ka']
+    └── elements = ['Al', 'Ni', 'Ti']
+    >>> spec.mapped_parameters.SEM.beam_energy = 5
+    >>> spec.set_lines([])
+    >>> spec.mapped_parameters.Sample
+    ├── Xray_lines = ['Al_Ka', 'Ni_La', 'Ti_La']
+    └── elements = ['Al', 'Ni', 'Ti']
+    
+A warning is raised, if setting a X-ray lines higher than the beam energy.
+
+.. code-block:: python
+
+    >>> spec.mapped_parameters.SEM.beam_energy = 5
+    >>> spec.add_lines(["Ta_Ka"])
+    Warning: Ta Ka is above the data energy range.
+
+            
+Element database
+^^^^^^^^^^^^^^^^
+
+An elemental database is available with the energy of the X-ray lines. 
+
+.. code-block:: python
+
+    >>>  elements_EDS["Fe"]
+    ├── A = 55.845
+    ├── Xray_energy
+    │   ├── Ka = 6.404
+    │   ├── Kb = 7.0568
+    │   ├── La = 0.705
+    │   ├── Lb3 = 0.792
+    │   ├── Ll = 0.615
+    │   └── Ln = 0.62799
+    ├── Z = 26
+    ├── density = 7.874
+    └── name = iron
+
+
+Plotting
+--------
 
 
 Get lines intensity
