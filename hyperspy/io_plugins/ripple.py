@@ -118,20 +118,20 @@ def correct_INCA_format(fp):
         fp = StringIO()
         fp.writelines(fp_list)
     fp.seek(0)
-    return fp
-            
+    return fp  
 
 def parse_ripple(fp):
     """Parse information from ripple (.rpl) file.
     Accepts file object 'fp. Returns dictionary rpl_info.
-    """
-    
+    """    
 
     fp = correct_INCA_format(fp)
                             
     rpl_info = {}
     for line in fp.readlines():
         line = line.replace(' ', '')
+        #correct_brucker_format
+        line = line.replace('data-Length','data-length')        
         if line[:2] not in newline and line[0] != comment:
             line = line.strip('\r\n')
             #line = line.lower()
