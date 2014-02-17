@@ -671,7 +671,7 @@ class Signal1DTools(object):
         ----------
         signal_range : {a tuple of this form (l, r), "interactive"}
             l and r are the left and right limits of the range. They can be numbers or None,
-            where None indicates the extremes of the interval. If l and r are floats the 
+            where None indicates the extremes of the interval. If l and r are floats the
             `signal_range` will be in axis units (for example eV). If l and r are integers
             the `signal_range` will be in index units.
             When `signal_range` is "interactive" (default) the range is selected using a GUI.
@@ -695,12 +695,12 @@ class Signal1DTools(object):
 
         >>> s_int = s.integrate_in_range(signal_range=(560,None))
 
-        Selecting a range in the axis units, by specifying the 
+        Selecting a range in the axis units, by specifying the
         signal range with floats.
 
         >>> s_int = s.integrate_in_range(signal_range=(560.,590.))
 
-        Selecting a range using the index, by specifying the 
+        Selecting a range using the index, by specifying the
         signal range with integers.
 
         >>> s_int = s.integrate_in_range(signal_range=(100,120))
@@ -2920,7 +2920,8 @@ class Signal(MVA,
                             "The navigator dimensions are not compatible with "
                             "those of self.")
             elif navigator == "data":
-                self._plot.navigator_data_function = lambda : self.data
+                self._plot.navigator_data_function = \
+                    lambda axes_manager=None: self.data
             elif navigator == "spectrum":
                 self._plot.navigator_data_function = \
                     get_1D_sum_explorer_wrapper
@@ -3741,9 +3742,9 @@ class Signal(MVA,
             'blocks' : use bayesian blocks for dynamic bin widths
         range_bins : tuple or None, optional
             the minimum and maximum range for the histogram. If not specified,
-            it will be (x.min(), x.max())        
+            it will be (x.min(), x.max())
         **kwargs
-            other keyword arguments (weight and density) are described in 
+            other keyword arguments (weight and density) are described in
             np.histogram().
 
         Returns
