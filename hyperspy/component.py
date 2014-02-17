@@ -29,7 +29,6 @@ from hyperspy.exceptions import NavigationDimensionError
 
 
 class Parameter(object):
-            dic['map'] = copy.deepcopy(self.map[indices[::-1]])
     """Model parameter
     
     Attributes
