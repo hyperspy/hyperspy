@@ -113,8 +113,8 @@ class Model(list):
             self.convolved = False
 
     # Extend the list methods to call the _touch when the model is modified
-    def append(self, object):
 
+    def append(self, object):
         #Check if any of the other components in the model has the same name
         component_name_list = []
         for component in self:
