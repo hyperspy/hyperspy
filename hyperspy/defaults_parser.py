@@ -30,26 +30,27 @@ from hyperspy.io_plugins import default_write_ext
 defaults_file = os.path.join(config_path, 'hyperspyrc')
 eels_gos_files = os.path.join(data_path, 'EELS_GOS.tar.gz')
 
+
 def guess_gos_path():
     if os_name == 'windows':
-        # If DM is installed, use the GOS tables from the default 
+        # If DM is installed, use the GOS tables from the default
         # installation
         # location in windows
         program_files = os.environ['PROGRAMFILES']
         gos = 'Gatan\DigitalMicrograph\EELS Reference Data\H-S GOS Tables'
         gos_path = os.path.join(program_files, gos)
-        
+
         # Else, use the default location in the .hyperspy forlder
         if os.path.isdir(gos_path) is False and \
-            'PROGRAMFILES(X86)' in os.environ:
+                'PROGRAMFILES(X86)' in os.environ:
             program_files = os.environ['PROGRAMFILES(X86)']
             gos_path = os.path.join(program_files, gos)
             if os.path.isdir(gos_path) is False:
-                    gos_path = os.path.join(config_path, 'EELS_GOS')
+                gos_path = os.path.join(config_path, 'EELS_GOS')
     else:
         gos_path = os.path.join(config_path, 'EELS_GOS')
     return gos_path
-    
+
 
 if os.path.isfile(defaults_file):
     # Remove config file if obsolated
@@ -61,146 +62,154 @@ if os.path.isfile(defaults_file):
         os.remove(defaults_file)
         defaults_file_exists = False
     else:
-       defaults_file_exists = True 
+        defaults_file_exists = True
 else:
     defaults_file_exists = False
 
-# Defaults template definition starts###########################################
+# Defaults template definition starts#####################################
 # This "section" is all that has to be modified to add or remove sections and
-# options from the defaults   
+# options from the defaults
+
+
 class GeneralConfig(t.HasTraits):
     default_file_format = t.Enum('hdf5', 'rpl',
-        desc = 'Using the hdf5 format is highly reccomended because is the '
-               'only one fully supported. The Ripple (rpl) format it is useful '
-                'tk is provided for when none of the other toolkits are'                      
-                ' available. However, when using this toolkit the '     
-                'user interface elements are not available. '
-               'to export data to other software that do not support hdf5')
+                                 desc='Using the hdf5 format is highly reccomended because is the '
+                                 'only one fully supported. The Ripple (rpl) format it is useful '
+                                 'tk is provided for when none of the other toolkits are'
+                                 ' available. However, when using this toolkit the '
+                                 'user interface elements are not available. '
+                                 'to export data to other software that do not support hdf5')
     default_toolkit = t.Enum("qt4", "gtk", "wx", "tk", "None",
-            desc="Default toolkit for matplotlib and the user interface "
-                 "elements. "
-                 "When using gtk and tk the user interface elements are not"
-                 " available."
-                 "user interface elements are not available. "
-                 "None is suitable to run headless. "
-                 "Hyperspy must be restarted for changes to take effect")
+                             desc="Default toolkit for matplotlib and the user interface "
+                             "elements. "
+                             "When using gtk and tk the user interface elements are not"
+                             " available."
+                             "user interface elements are not available. "
+                             "None is suitable to run headless. "
+                             "Hyperspy must be restarted for changes to take effect")
     default_export_format = t.Enum(*default_write_ext,
-        desc = 'Using the hdf5 format is highly reccomended because is the '
-               'only one fully supported. The Ripple (rpl) format it is useful '
-               'to export data to other software that do not support hdf5')
+                                   desc='Using the hdf5 format is highly reccomended because is the '
+                                   'only one fully supported. The Ripple (rpl) format it is useful '
+                                   'to export data to other software that do not support hdf5')
     interactive = t.CBool(True,
-        desc = 'If enabled, Hyperspy will prompt the user when optios are '
-               'available, otherwise it will use the default values if possible')
+                          desc='If enabled, Hyperspy will prompt the user when optios are '
+                          'available, otherwise it will use the default values if possible')
     logger_on = t.CBool(False,
-        label = 'Automatic logging',
-        desc = 'If enabled, Hyperspy will store a log in the current directory '
-               'of all the commands typed')
-    
+                        label='Automatic logging',
+                        desc='If enabled, Hyperspy will store a log in the current directory '
+                        'of all the commands typed')
+
     def _logger_on_changed(self, old, new):
         if new is True:
             turn_logging_on()
         else:
-            turn_logging_off()           
+            turn_logging_off()
 
-    
+
 class ModelConfig(t.HasTraits):
     default_fitter = t.Enum('leastsq', 'mpfit',
-        desc = 'Choose leastsq if no bounding is required. '
-               'Otherwise choose mpfit')
+                            desc='Choose leastsq if no bounding is required. '
+                            'Otherwise choose mpfit')
+
 
 class MachineLearningConfig(t.HasTraits):
     export_factors_default_file_format = t.Enum(*default_write_ext)
     export_loadings_default_file_format = t.Enum(*default_write_ext)
     multiple_files = t.Bool(True,
-        label = 'Export to multiple files',
-        desc = 'If enabled, on exporting the PCA or ICA results one file'
-               'per factor and loading will be created. Otherwise only two files'
-               'will contain the factors and loadings')
+                            label='Export to multiple files',
+                            desc='If enabled, on exporting the PCA or ICA results one file'
+                            'per factor and loading will be created. Otherwise only two files'
+                            'will contain the factors and loadings')
     same_window = t.Bool(True,
-        label = 'Plot components in the same window',
-        desc = 'If enabled the principal and independent components will all'
-               ' be plotted in the same window')
-    
+                         label='Plot components in the same window',
+                         desc='If enabled the principal and independent components will all'
+                         ' be plotted in the same window')
+
+
 class EELSConfig(t.HasTraits):
     eels_gos_files_path = t.Directory(guess_gos_path(),
-        label = 'GOS directory',
-        desc = 'The GOS files are required to create the EELS edge components')
+                                      label='GOS directory',
+                                      desc='The GOS files are required to create the EELS edge components')
     fine_structure_width = t.CFloat(30,
-        label = 'Fine structure lenght',
-        desc = 'The default lenght of the fine structure from the edge onset')
+                                    label='Fine structure lenght',
+                                    desc='The default lenght of the fine structure from the edge onset')
     fine_structure_active = t.CBool(False,
-        label = 'Enable fine structure',
-        desc = "If enabled, the regions of the EELS spectrum defined as fine "
-               "structure will be fitted with a spline. Please note that it "
-               "enabling this feature only makes sense when the model is "
-               "convolved to account for multiple scattering")
-    fine_structure_smoothing = t.Range(0., 1., value = 0.3,
-        label = 'Fine structure smoothing factor',
-        desc = 'The lower the value the smoother the fine structure spline fit')
+                                    label='Enable fine structure',
+                                    desc="If enabled, the regions of the EELS spectrum defined as fine "
+                                    "structure will be fitted with a spline. Please note that it "
+                                    "enabling this feature only makes sense when the model is "
+                                    "convolved to account for multiple scattering")
+    fine_structure_smoothing = t.Range(0., 1., value=0.3,
+                                       label='Fine structure smoothing factor',
+                                       desc='The lower the value the smoother the fine structure spline fit')
     synchronize_cl_with_ll = t.CBool(False)
     preedge_safe_window_width = t.CFloat(2,
-        label = 'Pre-onset region (in eV)',
-        desc = 'Some functions needs to define the regions between two '
-               'ionisation edges. Due to limited energy resolution or chemical '
-               'shift, the region is limited on its higher energy side by '
-               'the next ionisation edge onset minus an offset defined by this '
-               'parameters')
+                                         label='Pre-onset region (in eV)',
+                                         desc='Some functions needs to define the regions between two '
+                                         'ionisation edges. Due to limited energy resolution or chemical '
+                                         'shift, the region is limited on its higher energy side by '
+                                         'the next ionisation edge onset minus an offset defined by this '
+                                         'parameters')
     min_distance_between_edges_for_fine_structure = t.CFloat(0,
-        label = 'Minimum distance between edges',
-        desc = 'When automatically setting the fine structure energy regions, '
-               'the fine structure of an EELS edge component is automatically '
-               'disable if the next ionisation edge onset distance to the '
-               'higher energy side of the fine structure region is lower that '
-               'the value of this parameter')
-            
+                                                             label='Minimum distance between edges',
+                                                             desc='When automatically setting the fine structure energy regions, '
+                                                             'the fine structure of an EELS edge component is automatically '
+                                                             'disable if the next ionisation edge onset distance to the '
+                                                             'higher energy side of the fine structure region is lower that '
+                                                             'the value of this parameter')
+
+
 class EDSConfig(t.HasTraits):
     eds_mn_ka = t.CFloat(130.,
-        label = 'Energy resolution at Mn Ka (eV)',
-        desc = 'default value for FWHM of the Mn Ka peak in eV,'
-                'This value is used as a first approximation'
-                'of the energy resolution of the detector.')
+                         label='Energy resolution at Mn Ka (eV)',
+                         desc='default value for FWHM of the Mn Ka peak in eV,'
+                         'This value is used as a first approximation'
+                         'of the energy resolution of the detector.')
     eds_tilt_stage = t.CFloat(0.,
-        label = 'Stage tilt',
-        desc = 'default value for the stage tilt in degree.')
+                              label='Stage tilt',
+                              desc='default value for the stage tilt in degree.')
     eds_detector_azimuth = t.CFloat(0.,
-        label = 'Azimuth angle',
-        desc = 'default value for the azimuth angle in degree. If the azimuth'
-                ' is zero, the detector is perpendicular to the tilt axis.')
+                                    label='Azimuth angle',
+                                    desc='default value for the azimuth angle in degree. If the azimuth'
+                                    ' is zero, the detector is perpendicular to the tilt axis.')
     eds_detector_elevation = t.CFloat(35.,
-        label = 'Elevation angle',
-        desc = 'default value for the elevation angle in degree.')  
-        
+                                      label='Elevation angle',
+                                      desc='default value for the elevation angle in degree.')
+
+
 class PlotConfig(t.HasTraits):
-    default_style_to_compare_spectra = t.Enum('overlap','cascade', 'mosaic', 'heatmap',
-        desc = ' the default style use to compare spectra with the'
-                ' function utils.plot.plot_spectra')  
+    default_style_to_compare_spectra = t.Enum('overlap', 'cascade', 'mosaic', 'heatmap',
+                                              desc=' the default style use to compare spectra with the'
+                                              ' function utils.plot.plot_spectra')
     plot_on_load = t.CBool(False,
-        desc = 'If enabled, the object will be plot automatically on loading')
+                           desc='If enabled, the object will be plot automatically on loading')
     pylab_inline = t.CBool(False,
-        desc="If True the figure are displayed inline."
-             "Hyperspy must be restarted for changes to take effect")
-    
+                           desc="If True the figure are displayed inline."
+                           "Hyperspy must be restarted for changes to take effect")
+
 template = {
-    'General' : GeneralConfig(),
-    'Model' : ModelConfig(),
-    'EELS' : EELSConfig(),
-    'EDS' : EDSConfig(),
-    'MachineLearning' : MachineLearningConfig(),
-    'Plot' : PlotConfig(),}
+    'General': GeneralConfig(),
+    'Model': ModelConfig(),
+    'EELS': EELSConfig(),
+    'EDS': EDSConfig(),
+    'MachineLearning': MachineLearningConfig(),
+    'Plot': PlotConfig(), }
 
 # Set the enums defaults
 template['MachineLearning'].export_factors_default_file_format = 'rpl'
 template['MachineLearning'].export_loadings_default_file_format = 'rpl'
 template['General'].default_export_format = 'rpl'
 
-# Defaults template definition ends ############################################       
+# Defaults template definition ends ######################################
+
 
 def template2config(template, config):
     for section, traited_class in template.iteritems():
         config.add_section(section)
         for key, item in traited_class.get().iteritems():
             config.set(section, key, str(item))
-            
+
+
 def config2template(template, config):
     for section, traited_class in template.iteritems():
         config_dict = {}
@@ -213,22 +222,23 @@ def config2template(template, config):
                 value = float(value)
             config_dict[name] = value
         traited_class.set(True, **config_dict)
-        
+
+
 def dictionary_from_template(template):
     dictionary = {}
     for section, traited_class in template.iteritems():
         dictionary[section] = traited_class.get()
     return dictionary
 
-config = ConfigParser.SafeConfigParser(allow_no_value = True)
+config = ConfigParser.SafeConfigParser(allow_no_value=True)
 template2config(template, config)
 rewrite = False
 if defaults_file_exists:
-    # Parse the config file. It only copy to config the options that are 
-    # already defined. If the file contains any option that was not already 
+    # Parse the config file. It only copy to config the options that are
+    # already defined. If the file contains any option that was not already
     # define the config file is rewritten because it is obsolate
-    
-    config2 = ConfigParser.SafeConfigParser(allow_no_value = True)
+
+    config2 = ConfigParser.SafeConfigParser(allow_no_value=True)
     config2.read(defaults_file)
     for section in config2.sections():
         if config.has_section(section):
@@ -239,14 +249,14 @@ if defaults_file_exists:
                     rewrite = True
         else:
             rewrite = True
-                
+
 if not defaults_file_exists or rewrite is True:
     messages.information('Writing the config file')
     config.write(open(defaults_file, 'w'))
-        
+
 # Use the traited classes to cast the content of the ConfigParser
 config2template(template, config)
-    
+
 
 class Preferences(t.HasTraits):
     global current_toolkit
@@ -256,26 +266,27 @@ class Preferences(t.HasTraits):
     General = t.Instance(GeneralConfig)
     MachineLearning = t.Instance(MachineLearningConfig)
     Plot = t.Instance(PlotConfig)
+
     def gui(self):
         import hyperspy.gui.preferences
         self.EELS.trait_view("traits_view",
-                              hyperspy.gui.preferences.eels_view)
+                             hyperspy.gui.preferences.eels_view)
         self.edit_traits(view=hyperspy.gui.preferences.preferences_view)
 
     def save(self):
-        config = ConfigParser.SafeConfigParser(allow_no_value = True)
+        config = ConfigParser.SafeConfigParser(allow_no_value=True)
         template2config(template, config)
         config.write(open(defaults_file, 'w'))
-    
+
 preferences = Preferences(
-            EELS = template['EELS'],
-            EDS = template['EDS'],
-            General = template['General'],
-            Model = template['Model'],
-            MachineLearning = template['MachineLearning'],
-            Plot = template['Plot'])
-            
+    EELS=template['EELS'],
+    EDS=template['EDS'],
+    General=template['General'],
+    Model=template['Model'],
+    MachineLearning=template['MachineLearning'],
+    Plot=template['Plot'])
+
 if preferences.General.logger_on:
-    turn_logging_on(verbose = 0)
+    turn_logging_on(verbose=0)
 
 current_toolkit = preferences.General.default_toolkit

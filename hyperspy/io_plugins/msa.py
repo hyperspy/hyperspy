@@ -39,91 +39,92 @@ full_suport = False
 file_extensions = ('msa', 'ems', 'mas', 'emsa', 'EMS', 'MAS', 'EMSA', 'MSA')
 default_extension = 0
 
-writes = [(1,0),]
+writes = [(1, 0), ]
 # ----------------------
 
-# For a description of the EMSA/MSA format, incluiding the meaning of the 
-# following keywords: 
+# For a description of the EMSA/MSA format, incluiding the meaning of the
+# following keywords:
 # http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/XEDS/EMMFF/EMMFF.IBM/Emmff.Total
-keywords = {    
-                # Required parameters
-                'FORMAT' : {'dtype' : unicode, 'mapped_to': None},
-                'VERSION' : {'dtype' : unicode, 'mapped_to': None},
-                'TITLE' : {'dtype' : unicode, 'mapped_to': 'title'},
-                'DATE' : {'dtype' : unicode, 'mapped_to': None},     
-                'TIME' : {'dtype' : unicode, 'mapped_to': None},
-                'OWNER' : {'dtype' : unicode, 'mapped_to': None},
-                'NPOINTS' : {'dtype' : float, 'mapped_to': None},
-                'NCOLUMNS' : {'dtype' : float, 'mapped_to': None},
-                'DATATYPE' : {'dtype' : unicode, 'mapped_to': None},
-                'XPERCHAN' : {'dtype' : float, 'mapped_to': None},
-                'OFFSET' : {'dtype' : float, 'mapped_to': None},
-                # Optional parameters
-                ## Spectrum characteristics
-                'SIGNALTYPE' : {'dtype' : unicode, 'mapped_to' : 
-                    'signal_type'},
-                'XLABEL' : {'dtype' : unicode, 'mapped_to': None},
-                'YLABEL' : {'dtype' : unicode, 'mapped_to': None},
-                'XUNITS' : {'dtype' : unicode, 'mapped_to': None},
-                'YUNITS' : {'dtype' : unicode, 'mapped_to': None},
-                'CHOFFSET' : {'dtype' : float, 'mapped_to': None},
-                'COMMENT' : {'dtype' : unicode, 'mapped_to': None},
-                ## Microscope
-                'BEAMKV' : {'dtype' : float, 'mapped_to': 
-                    'TEM.beam_energy'},
-                'EMISSION' : {'dtype' : float, 'mapped_to': None},
-                'PROBECUR' : {'dtype' : float, 'mapped_to': 
-                    'TEM.beam_current'},
-                'BEAMDIAM' : {'dtype' : float, 'mapped_to': None},
-                'MAGCAM' : {'dtype' : float, 'mapped_to': None},
-                'OPERMODE' : {'dtype' : unicode, 'mapped_to': None},
-                'CONVANGLE' : {'dtype' : float, 'mapped_to': 
-                    'TEM.convergence_angle'},
-                
-                ## Specimen
-                'THICKNESS' : {'dtype' : float, 'mapped_to': 
-                    'Sample.thickness'},
-                'XTILTSTGE' : {'dtype' : float, 'mapped_to':
-                    'TEM.tilt_stage'},
-                'YTILTSTGE' : {'dtype' : float, 'mapped_to': None},
-                'XPOSITION' : {'dtype' : float, 'mapped_to': None},
-                'YPOSITION' : {'dtype' : float, 'mapped_to': None},
-                'ZPOSITION' : {'dtype' : float, 'mapped_to': None},
-                
-                ## EELS
-                'INTEGTIME' : {'dtype' : float, 'mapped_to': 
-                    'TEM.exposure'}, # in ms
-                'DWELLTIME' : {'dtype' : float, 'mapped_to': 
-                    'TEM.dwell_time'}, # in ms
-                'COLLANGLE' : {'dtype' : float, 'mapped_to' : 
-                    'TEM.EELS.collection_angle'},
-                'ELSDET' :  {'dtype' : unicode, 'mapped_to': None},
+keywords = {
+    # Required parameters
+    'FORMAT': {'dtype': unicode, 'mapped_to': None},
+    'VERSION': {'dtype': unicode, 'mapped_to': None},
+    'TITLE': {'dtype': unicode, 'mapped_to': 'title'},
+    'DATE': {'dtype': unicode, 'mapped_to': None},
+    'TIME': {'dtype': unicode, 'mapped_to': None},
+    'OWNER': {'dtype': unicode, 'mapped_to': None},
+    'NPOINTS': {'dtype': float, 'mapped_to': None},
+    'NCOLUMNS': {'dtype': float, 'mapped_to': None},
+    'DATATYPE': {'dtype': unicode, 'mapped_to': None},
+    'XPERCHAN': {'dtype': float, 'mapped_to': None},
+    'OFFSET': {'dtype': float, 'mapped_to': None},
+    # Optional parameters
+    # Spectrum characteristics
+    'SIGNALTYPE': {'dtype': unicode, 'mapped_to':
+                   'signal_type'},
+    'XLABEL': {'dtype': unicode, 'mapped_to': None},
+    'YLABEL': {'dtype': unicode, 'mapped_to': None},
+    'XUNITS': {'dtype': unicode, 'mapped_to': None},
+    'YUNITS': {'dtype': unicode, 'mapped_to': None},
+    'CHOFFSET': {'dtype': float, 'mapped_to': None},
+    'COMMENT': {'dtype': unicode, 'mapped_to': None},
+    # Microscope
+    'BEAMKV': {'dtype': float, 'mapped_to':
+               'TEM.beam_energy'},
+    'EMISSION': {'dtype': float, 'mapped_to': None},
+    'PROBECUR': {'dtype': float, 'mapped_to':
+                 'TEM.beam_current'},
+    'BEAMDIAM': {'dtype': float, 'mapped_to': None},
+    'MAGCAM': {'dtype': float, 'mapped_to': None},
+    'OPERMODE': {'dtype': unicode, 'mapped_to': None},
+    'CONVANGLE': {'dtype': float, 'mapped_to':
+                  'TEM.convergence_angle'},
 
-                ## EDS
-                'ELEVANGLE' : {'dtype' : float, 'mapped_to':
-                    'TEM.EDS.elevation_angle'},
-                'AZIMANGLE' : {'dtype' : float, 'mapped_to':
-                    'TEM.EDS.azimuth_angle'},
-                'SOLIDANGLE' : {'dtype' : float, 'mapped_to': 
-                    'TEM.EDS.solid_angle'},
-                'LIVETIME' : {'dtype' : float, 'mapped_to': 
-                    'TEM.EDS.live_time'},
-                'REALTIME' : {'dtype' : float, 'mapped_to': 
-                    'TEM.EDS.real_time'},
-                'FWHMMNKA' : {'dtype' : float, 'mapped_to': 
-                    'TEM.EDS.energy_resolution_MnKa'},
-                'TBEWIND' : {'dtype' : float, 'mapped_to': None},
-                'TAUWIND' : {'dtype' : float, 'mapped_to': None},
-                'TDEADLYR' : {'dtype' : float, 'mapped_to': None},
-                'TACTLYR' : {'dtype' : float, 'mapped_to': None},
-                'TALWIND' : {'dtype' : float, 'mapped_to': None},
-                'TPYWIND' : {'dtype' : float, 'mapped_to': None},
-                'TBNWIND' : {'dtype' : float, 'mapped_to': None},
-                'TDIWIND' : {'dtype' : float, 'mapped_to': None},
-                'THCWIND' : {'dtype' : float, 'mapped_to': None},
-                'EDSDET'  : {'dtype' : unicode, 'mapped_to': 
-                    'TEM.EDS.EDS_det'},	
-            }
+    # Specimen
+    'THICKNESS': {'dtype': float, 'mapped_to':
+                  'Sample.thickness'},
+    'XTILTSTGE': {'dtype': float, 'mapped_to':
+                  'TEM.tilt_stage'},
+    'YTILTSTGE': {'dtype': float, 'mapped_to': None},
+    'XPOSITION': {'dtype': float, 'mapped_to': None},
+    'YPOSITION': {'dtype': float, 'mapped_to': None},
+    'ZPOSITION': {'dtype': float, 'mapped_to': None},
+
+    # EELS
+    'INTEGTIME': {'dtype': float, 'mapped_to':
+                  'TEM.exposure'},  # in ms
+    'DWELLTIME': {'dtype': float, 'mapped_to':
+                  'TEM.dwell_time'},  # in ms
+    'COLLANGLE': {'dtype': float, 'mapped_to':
+                  'TEM.EELS.collection_angle'},
+    'ELSDET': {'dtype': unicode, 'mapped_to': None},
+
+    # EDS
+    'ELEVANGLE': {'dtype': float, 'mapped_to':
+                  'TEM.EDS.elevation_angle'},
+    'AZIMANGLE': {'dtype': float, 'mapped_to':
+                  'TEM.EDS.azimuth_angle'},
+    'SOLIDANGLE': {'dtype': float, 'mapped_to':
+                   'TEM.EDS.solid_angle'},
+    'LIVETIME': {'dtype': float, 'mapped_to':
+                 'TEM.EDS.live_time'},
+    'REALTIME': {'dtype': float, 'mapped_to':
+                 'TEM.EDS.real_time'},
+    'FWHMMNKA': {'dtype': float, 'mapped_to':
+                 'TEM.EDS.energy_resolution_MnKa'},
+    'TBEWIND': {'dtype': float, 'mapped_to': None},
+    'TAUWIND': {'dtype': float, 'mapped_to': None},
+    'TDEADLYR': {'dtype': float, 'mapped_to': None},
+    'TACTLYR': {'dtype': float, 'mapped_to': None},
+    'TALWIND': {'dtype': float, 'mapped_to': None},
+    'TPYWIND': {'dtype': float, 'mapped_to': None},
+    'TBNWIND': {'dtype': float, 'mapped_to': None},
+    'TDIWIND': {'dtype': float, 'mapped_to': None},
+    'THCWIND': {'dtype': float, 'mapped_to': None},
+    'EDSDET': {'dtype': unicode, 'mapped_to':
+               'TEM.EDS.EDS_det'},
+}
+
 
 def file_reader(filename, encoding='latin-1', **kwds):
     parameters = {}
@@ -139,33 +140,33 @@ def file_reader(filename, encoding='latin-1', **kwds):
             if data_section is False:
                 if line[0] == "#":
                     try:
-                        key,value = line.split(': ')
+                        key, value = line.split(': ')
                         value = value.strip()
                     except ValueError:
                         key = line
                         value = None
                     key = key.strip('#').strip()
-                    
+
                     if key != 'SPECTRUM':
                         parameters[key] = value
                     else:
                         data_section = True
             else:
                 # Read the data
-                if line[0] != "#" and line.strip(): 
+                if line[0] != "#" and line.strip():
                     if parameters['DATATYPE'] == 'XY':
                         xy = line.replace(',', ' ').strip().split()
                         y.append(float(xy[1]))
                     elif parameters['DATATYPE'] == 'Y':
                         data = [
-                        float(i) for i in line.replace(',', ' ').strip().split()]
+                            float(i) for i in line.replace(',', ' ').strip().split()]
                         y.extend(data)
-    # We rewrite the format value to be sure that it complies with the 
+    # We rewrite the format value to be sure that it complies with the
     # standard, because it will be used by the writer routine
     parameters['FORMAT'] = "EMSA/MAS Spectral Data File"
-    
+
     # Convert the parameters to the right type and map some
-    # TODO: the msa format seems to support specifying the units of some 
+    # TODO: the msa format seems to support specifying the units of some
     # parametes. We should add this feature here
     for parameter, value in parameters.iteritems():
         # Some parameters names can contain the units information
@@ -183,23 +184,23 @@ def file_reader(filename, encoding='latin-1', **kwds):
                 # notation, e.g. 2.0 E-06, so we try to correct for it
                 try:
                     parameters[parameter] = keywords[clean_par]['dtype'](
-                    value.replace(' ', ''))
+                        value.replace(' ', ''))
                 except:
                     print("The %s keyword value, %s " % (parameter, value) +
-                    "could not be converted to the right type" )
-                
+                          "could not be converted to the right type")
+
             if keywords[clean_par]['mapped_to'] is not None:
                 mapped.set_item(keywords[clean_par]['mapped_to'],
-                    parameters[parameter])
+                                parameters[parameter])
                 if units is not None:
-                    mapped.set_item(keywords[clean_par]['mapped_to'] + 
-                        '_units',units)
-                
+                    mapped.set_item(keywords[clean_par]['mapped_to'] +
+                                    '_units', units)
+
     # The data parameter needs some extra care
     # It is necessary to change the locale to US english to read the date
-    # keyword            
+    # keyword
     loc = locale.getlocale(locale.LC_TIME)
-    # Setting locale can raise an exception because 
+    # Setting locale can raise an exception because
     # their name depends on library versions, platform etc.
     try:
         if os_name == 'posix':
@@ -212,7 +213,7 @@ def file_reader(filename, encoding='latin-1', **kwds):
         except:
             if 'TIME' in parameters and parameters['TIME']:
                 print('The time information could not be retrieved')
-        try:    
+        try:
             Y, M, D = time.strptime(parameters['DATE'], "%d-%b-%Y")[0:3]
             mapped['date'] = datetime.date(Y, M, D)
         except:
@@ -220,44 +221,45 @@ def file_reader(filename, encoding='latin-1', **kwds):
                 print('The date information could not be retrieved')
     except:
         warnings.warn("I couldn't write the date information due to"
-                "an unexpected error. Please report this error to "
-                "the developers") 
-    locale.setlocale(locale.LC_TIME, loc) # restore saved locale
+                      "an unexpected error. Please report this error to "
+                      "the developers")
+    locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
 
     axes = []
 
     axes.append({
-    'size' : len(y), 
-    'index_in_array' : 0,
-    'name' : parameters['XLABEL'] if 'XLABEL' in parameters else '', 
-    'scale': parameters['XPERCHAN'] if 'XPERCHAN' in parameters else 1,
-    'offset' : parameters['OFFSET'] if 'OFFSET' in parameters else 0,
-    'units' : parameters['XUNITS'] if 'XUNITS' in parameters else '',
-                })
+        'size': len(y),
+        'index_in_array': 0,
+        'name': parameters['XLABEL'] if 'XLABEL' in parameters else '',
+        'scale': parameters['XPERCHAN'] if 'XPERCHAN' in parameters else 1,
+        'offset': parameters['OFFSET'] if 'OFFSET' in parameters else 0,
+        'units': parameters['XUNITS'] if 'XUNITS' in parameters else '',
+    })
 
     mapped['original_filename'] = filename
     mapped['record_by'] = 'spectrum'
     if mapped.has_item('signal_type'):
-        if mapped.signal_type == 'ELS':            
-           mapped.signal_type = 'EELS'        
+        if mapped.signal_type == 'ELS':
+            mapped.signal_type = 'EELS'
     else:
         # Defaulting to EELS looks reasonable
         mapped.signal_type = 'EELS'
 
     dictionary = {
-                    'data' : np.array(y),
-                    'axes' : axes,
-                    'mapped_parameters': mapped.as_dictionary(),
-                    'original_parameters' : parameters
-                }
-    return [dictionary,]
+        'data': np.array(y),
+        'axes': axes,
+        'mapped_parameters': mapped.as_dictionary(),
+        'original_parameters': parameters
+    }
+    return [dictionary, ]
 
-def file_writer(filename, signal, format = None, separator = ', ',
-                encoding = 'latin-1'):
+
+def file_writer(filename, signal, format=None, separator=', ',
+                encoding='latin-1'):
     loc_kwds = {}
     FORMAT = "EMSA/MAS Spectral Data File"
     if hasattr(signal.original_parameters, 'FORMAT') and \
-    signal.original_parameters.FORMAT == FORMAT:
+            signal.original_parameters.FORMAT == FORMAT:
         loc_kwds = signal.original_parameters.as_dictionary()
         if format is not None:
             loc_kwds['DATATYPE'] = format
@@ -268,7 +270,7 @@ def file_writer(filename, signal, format = None, separator = ', ',
         if format is None:
             format = 'Y'
         if hasattr(signal.mapped_parameters, "date"):
-            # Setting locale can raise an exception because 
+            # Setting locale can raise an exception because
             # their name depends on library versions, platform etc.
             try:
                 loc = locale.getlocale(locale.LC_TIME)
@@ -276,90 +278,93 @@ def file_writer(filename, signal, format = None, separator = ', ',
                     locale.setlocale(locale.LC_TIME, ('en_US', 'latin-1'))
                 elif os_name == 'windows':
                     locale.setlocale(locale.LC_TIME, 'english')
-                loc_kwds['DATE'] = signal.mapped_parameters.data.strftime("%d-%b-%Y")
-                locale.setlocale(locale.LC_TIME, loc) # restore saved locale
+                loc_kwds['DATE'] = signal.mapped_parameters.data.strftime(
+                    "%d-%b-%Y")
+                locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
             except:
                 warnings.warn("I couldn't write the date information due to"
-                        "an unexpected error. Please report this error to "
-                        "the developers") 
+                              "an unexpected error. Please report this error to "
+                              "the developers")
     keys_from_signal = {
         # Required parameters
-        'FORMAT' : FORMAT,
-        'VERSION' : '1.0',
+        'FORMAT': FORMAT,
+        'VERSION': '1.0',
         #'TITLE' : signal.title[:64] if hasattr(signal, "title") else '',
-        'DATE' : '',
-        'TIME' : '',
-        'OWNER' : '',
-        'NPOINTS' : signal.axes_manager._axes[0].size,
-        'NCOLUMNS' : 1,
-        'DATATYPE' : format,
-        'SIGNALTYPE' : signal.mapped_parameters.signal_type,
-        'XPERCHAN' : signal.axes_manager._axes[0].scale,
-        'OFFSET' : signal.axes_manager._axes[0].offset,
-        ## Spectrum characteristics
+        'DATE': '',
+        'TIME': '',
+        'OWNER': '',
+        'NPOINTS': signal.axes_manager._axes[0].size,
+        'NCOLUMNS': 1,
+        'DATATYPE': format,
+        'SIGNALTYPE': signal.mapped_parameters.signal_type,
+        'XPERCHAN': signal.axes_manager._axes[0].scale,
+        'OFFSET': signal.axes_manager._axes[0].offset,
+        # Spectrum characteristics
 
-        'XLABEL' : signal.axes_manager._axes[0].name,
-#        'YLABEL' : '',
-        'XUNITS' : signal.axes_manager._axes[0].units,
-#        'YUNITS' : '',
-        'COMMENT' : 'File created by Hyperspy version %s' % Release.version,
-#        ## Microscope
-#        'BEAMKV' : ,
-#        'EMISSION' : ,
-#        'PROBECUR' : ,
-#        'BEAMDIAM' : ,
-#        'MAGCAM' : ,
-#        'OPERMODE' : ,
-#        'CONVANGLE' : ,
-#        ## Specimen
-#        'THICKNESS' : ,
-#        'XTILTSTGE' : ,
-#        'YTILTSTGE' : ,
-#        'XPOSITION' : ,
-#        'YPOSITION' : ,
-#        'ZPOSITION' : ,
-#        
-#        ## EELS
-#        'INTEGTIME' : , # in ms
-#        'DWELLTIME' : , # in ms
-#        'COLLANGLE' : ,
-#        'ELSDET' :  ,                     
+        'XLABEL': signal.axes_manager._axes[0].name,
+        #        'YLABEL' : '',
+        'XUNITS': signal.axes_manager._axes[0].units,
+        #        'YUNITS' : '',
+        'COMMENT': 'File created by Hyperspy version %s' % Release.version,
+        # Microscope
+        #        'BEAMKV' : ,
+        #        'EMISSION' : ,
+        #        'PROBECUR' : ,
+        #        'BEAMDIAM' : ,
+        #        'MAGCAM' : ,
+        #        'OPERMODE' : ,
+        #        'CONVANGLE' : ,
+        # Specimen
+        #        'THICKNESS' : ,
+        #        'XTILTSTGE' : ,
+        #        'YTILTSTGE' : ,
+        #        'XPOSITION' : ,
+        #        'YPOSITION' : ,
+        #        'ZPOSITION' : ,
+        #
+        # EELS
+        # 'INTEGTIME' : , # in ms
+        # 'DWELLTIME' : , # in ms
+        #        'COLLANGLE' : ,
+        #        'ELSDET' :  ,
     }
-    
+
     # Update the loc_kwds with the information retrieved from the signal class
     for key, value in keys_from_signal.iteritems():
         if key not in loc_kwds or value != '':
             loc_kwds[key] = value
-            
+
     for key, dic in keywords.iteritems():
-        
+
         if dic['mapped_to'] is not None:
             if 'SEM' in signal.mapped_parameters.signal_type:
-                dic['mapped_to'] = dic['mapped_to'].replace('TEM','SEM')
+                dic['mapped_to'] = dic['mapped_to'].replace('TEM', 'SEM')
             if signal.mapped_parameters.has_item(dic['mapped_to']):
                 loc_kwds[key] = eval('signal.mapped_parameters.%s' %
-                    dic['mapped_to'])
-               
+                                     dic['mapped_to'])
 
     with codecs.open(
             filename,
             'w',
             encoding=encoding,
-            errors='ignore') as f:   
-        # Remove the following keys from loc_kwds if they are in 
+            errors='ignore') as f:
+        # Remove the following keys from loc_kwds if they are in
         # (although they shouldn't)
         for key in ['SPECTRUM', 'ENDOFDATA']:
-            if key in loc_kwds: del(loc_kwds[key])
-        
+            if key in loc_kwds:
+                del(loc_kwds[key])
+
         f.write(u'#%-12s: %s\u000D\u000A' % ('FORMAT', loc_kwds.pop('FORMAT')))
-        f.write(u'#%-12s: %s\u000D\u000A' % ('VERSION', loc_kwds.pop('VERSION')))
+        f.write(
+            u'#%-12s: %s\u000D\u000A' %
+            ('VERSION', loc_kwds.pop('VERSION')))
         for keyword, value in loc_kwds.items():
             f.write(u'#%-12s: %s\u000D\u000A' % (keyword, value))
-        
+
         f.write(u'#%-12s: Spectral Data Starts Here\u000D\u000A' % 'SPECTRUM')
 
-        if format == 'XY':        
-            for x,y in zip(signal.axes_manager._axes[0].axis, signal.data):
+        if format == 'XY':
+            for x, y in zip(signal.axes_manager._axes[0].axis, signal.data):
                 f.write("%g%s%g" % (x, separator, y))
                 f.write(u'\u000D\u000A')
         elif format == 'Y':

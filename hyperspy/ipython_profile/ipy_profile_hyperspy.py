@@ -20,13 +20,14 @@
 from IPython import ipapi
 from hyperspy import Release
 
+
 def main():
     import ipy_user_conf
-    ip=ipapi.get()
-    o=ip.options
+    ip = ipapi.get()
+    o = ip.options
     o.pylab_import_all = 0
     ip.ex("from hyperspy.hspy import *")
     ip.ex("__version__ = Release.version")
-    o.banner=Release.info
+    o.banner = Release.info
 
 main()

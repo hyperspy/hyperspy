@@ -6,6 +6,7 @@ Subpackages
 
 .. toctree::
 
+    hyperspy.misc.borrowed
     hyperspy.misc.eds
     hyperspy.misc.eels
     hyperspy.misc.io
@@ -43,6 +44,14 @@ hyperspy.misc.ipython_tools module
 ----------------------------------
 
 .. automodule:: hyperspy.misc.ipython_tools
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.misc.material module
+-----------------------------
+
+.. automodule:: hyperspy.misc.material
     :members:
     :undoc-members:
     :show-inheritance:

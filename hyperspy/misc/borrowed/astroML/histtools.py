@@ -115,6 +115,7 @@ def freedman_bin_width(data, return_bins=False):
 
 
 class KnuthF(object):
+
     r"""Class which implements the function minimized by knuth_bin_width
 
     Parameters
@@ -140,6 +141,7 @@ class KnuthF(object):
     knuth_bin_width
     astroML.plotting.hist
     """
+
     def __init__(self, data):
         self.data = np.array(data, copy=True)
         if self.data.ndim != 1:

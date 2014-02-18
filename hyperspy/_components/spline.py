@@ -17,16 +17,17 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from  scipy.interpolate import splev
+from scipy.interpolate import splev
 
 from hyperspy.component import Component
+
 
 class Spline(Component):
 
     def __init__(self, tck):
         Component.__init__(self, ('c', 'dump'))
-        self.t,self.c.value,self.k = tck
+        self.t, self.c.value, self.k = tck
         self.dump.free = False
-        
+
     def function(self, x):
         return splev(x, (self.t, self.c.value, 3))

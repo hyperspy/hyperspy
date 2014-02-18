@@ -74,11 +74,11 @@ class DielectricFunction(Spectrum):
         axis = self.axes_manager.signal_axes[0]
         if cumulative is False:
             dneff1 = k * simps((-1. / self.data).imag * axis.axis,
-                                x=axis.axis,
-                                axis=axis.index_in_array)
-            dneff2  = k * simps(self.data.imag * axis.axis,
-                                x=axis.axis,
-                                axis=axis.index_in_array)
+                               x=axis.axis,
+                               axis=axis.index_in_array)
+            dneff2 = k * simps(self.data.imag * axis.axis,
+                               x=axis.axis,
+                               axis=axis.index_in_array)
             neff1 = self._get_navigation_signal()
             neff2 = self._get_navigation_signal()
             neff1.data = dneff1
@@ -89,7 +89,7 @@ class DielectricFunction(Spectrum):
                              x=axis.axis,
                              axis=axis.index_in_array,
                              initial=0))
-            neff2  = self._deepcopy_with_new_data(
+            neff2 = self._deepcopy_with_new_data(
                 k * cumtrapz(self.data.imag * axis.axis,
                              x=axis.axis,
                              axis=axis.index_in_array,
