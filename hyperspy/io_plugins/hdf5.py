@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-import h5py
+from distutils.version import StrictVersion
 
+import h5py
 import numpy as np
 from traits.api import Undefined
 
@@ -37,7 +38,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
-version = 1.1
+version = "1.2"
 
 # -----------------------
 # File format description
@@ -69,11 +70,26 @@ version = 1.1
 not_valid_format = 'The file is not a valid Hyperspy hdf5 file'
 
 
+def get_hspy_format_version(f):
+    if "file_format_version" in f.attrs:
+        version = f.attrs["file_format_version"]
+        if isinstance(version, float):
+            version = str(round(version, 2))
+    elif "Experiments" in f:
+        # Chances are that this is a HSpy hdf5 file version 1.0
+        version = "1.0"
+    else:
+        raise IOError(not_valid_format)
+    return StrictVersion(version)
+
+
 def file_reader(filename, record_by, mode='r', driver='core',
                 backing_store=False, **kwds):
     with h5py.File(filename, mode=mode, driver=driver) as f:
-        # If the file has been created with Hyperspy it should cointain a
-        # folder Experiments.
+        # Getting the format version here also checks if it is a valid HSpy
+        # hdf5 file, so the following line must not be deleted or moved
+        # elsewhere.
+        version = get_hspy_format_version(f)
         experiments = []
         exp_dict_list = []
         if 'Experiments' in f:
@@ -89,9 +105,10 @@ def file_reader(filename, record_by, mode='r', driver='core',
                 exp = hdfgroup2signaldict(exg)
                 exp_dict_list.append(exp)
         else:
-            # Eventually there will be the possibility of loading the
-            # datasets of any hdf5 file
-            raise IOError('This is not a Hyperspy HDF5')
+            raise IOError('This is not a valid HyperSpy HDF5 file. '
+                          'You can still load the data using a hdf5 reader, '
+                          'e.g. h5py, and manually create a Signal. '
+                          'Please, refer to the User Guide for details')
         return exp_dict_list
 
 
@@ -259,7 +276,7 @@ def write_signal(signal, group, compression='gzip'):
 
 def file_writer(filename, signal, compression='gzip', *args, **kwds):
     with h5py.File(filename, mode='w') as f:
-        f.attrs['file_format'] = "Hyperspy"
+        f.attrs['file_format'] = "HyperSpy"
         f.attrs['file_format_version'] = version
         exps = f.create_group('Experiments')
         group_name = signal.metadata.title if \
