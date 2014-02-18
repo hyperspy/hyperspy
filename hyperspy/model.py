@@ -1470,14 +1470,14 @@ class Model(list):
 
     def __getitem__(self, value):
         """
-        Find a component with a specific name in the model.
-        Useful when calling Hyperspy as a library, since the
-        components will not be directly callable.
+        Find a component with a specific name or indexin the 
+        model. Useful when calling Hyperspy as a library, 
+        since the components will not be directly callable.
 
         Parameters
         ----------
-        component_name : string
-            Name of the component
+        component_name : string, int
+            Name or index of the component
 
         Returns
         -------
@@ -1485,7 +1485,8 @@ class Model(list):
 
         Examples
         --------
-        >>> Mn_L3 = model.get_component("Mn_L3")
+        >>> Mn_L3 = model["Mn_L3"]
+        >>> component1 = model[0]
 
         """
         if isinstance(value, str):
