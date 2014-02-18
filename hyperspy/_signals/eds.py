@@ -510,10 +510,10 @@ class EDSSpectrum(Spectrum):
         return TOA
 
     def plot_Xray_lines(self,
-                       Xray_lines=None,
-                       only_one=False,
-                       only_lines=("a", "b"),
-                       **kwargs):
+                        Xray_lines=None,
+                        only_one=False,
+                        only_lines=("a", "b"),
+                        **kwargs):
         """
         Annotate a spec.plot() with the name of the selected X-ray
         lines
@@ -565,7 +565,7 @@ class EDSSpectrum(Spectrum):
 
         if self.axes_manager.navigation_dimension > 0:
             raise ValueError("Works only for single spectrum")
- 
+
         line_energy = []
         intensity = []
         for Xray_line in Xray_lines:
