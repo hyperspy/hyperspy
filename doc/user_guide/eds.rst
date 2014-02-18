@@ -304,7 +304,7 @@ Selecting certain type of lines:
    
 .. code-block:: python
 
-    >>> spec.plot_Xray_lines(onyl_lines=['a','Kb'])
+    >>> spec.plot_Xray_lines(only_lines=['Ka','b'])
 
 .. figure::  images/EDS_plot_Xray_a.png
    :align:   center
