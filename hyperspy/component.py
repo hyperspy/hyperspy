@@ -23,13 +23,14 @@ import numpy as np
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
-                                    append2pathname,) 
+                                    append2pathname,)
 from hyperspy.exceptions import NavigationDimensionError
 
 
 class Parameter(object):
+
     """Model parameter
-    
+
     Attributes
     ----------
     value : float or array
@@ -38,28 +39,28 @@ class Parameter(object):
     bmin, bmax: float
         Lower and upper bounds of the parameter value.
     twin : {None, Parameter}
-        If it is not None, the value of the current parameter is 
+        If it is not None, the value of the current parameter is
         a function of the given Parameter. The function is by default
         the identity function, but it can be defined by twin_function
     twin_function : function
-        Function that, if selt.twin is not None, takes self.twin.value 
-        as its only argument and returns a float or array that is 
+        Function that, if selt.twin is not None, takes self.twin.value
+        as its only argument and returns a float or array that is
         returned when getting Parameter.value
     twin_inverse_function : function
-        The inverse of twin_function. If it is None then it is not 
-        possible to set the value of the parameter twin by setting 
+        The inverse of twin_function. If it is None then it is not
+        possible to set the value of the parameter twin by setting
         the value of the current parameter.
     ext_force_positive : bool
-        If True, the parameter value is set to be the absolute value 
-        of the input value i.e. if we set Parameter.value = -3, the 
-        value stored is 3 instead. This is useful to bound a value 
-        to be positive in an optimization without actually using an 
+        If True, the parameter value is set to be the absolute value
+        of the input value i.e. if we set Parameter.value = -3, the
+        value stored is 3 instead. This is useful to bound a value
+        to be positive in an optimization without actually using an
         optimizer that supports bounding.
     ext_bounded : bool
         Similar to ext_force_positive, but in this case the bounds are
         defined by bmin and bmax. It is a better idea to use
         an optimizer that supports bounding though.
-        
+
     Methods
     -------
     as_signal(field = 'values')
@@ -70,7 +71,7 @@ class Parameter(object):
         Saves the value of the parameter map to the specified format
     connect, disconnect(function)
         Call the functions connected when the value attribute changes.
-    
+
     """
     __number_of_elements = 1
     __value = 0
@@ -85,7 +86,7 @@ class Parameter(object):
         self.connected_functions = list()
         self.twin_function = lambda x: x
         self.twin_inverse_function = lambda x: x
-        self.value = 0      
+        self.value = 0
         self.std = None
         self.component = None
         self.free = True
@@ -94,7 +95,7 @@ class Parameter(object):
         self.units = ''
         self.map = None
         self.model = None
-    
+
     def __repr__(self):
         text = ''
         text += 'Parameter %s' % self.name
@@ -102,50 +103,51 @@ class Parameter(object):
             text += ' of %s' % self.component._get_short_description()
         text = '<' + text + '>'
         return text
-        
+
     def __len__(self):
         return self._number_of_elements
-    
+
     def connect(self, f):
         if f not in self.connected_functions:
             self.connected_functions.append(f)
             if self.twin:
                 self.twin.connect(f)
-                
+
     def disconnect(self, f):
         if f in self.connected_functions:
             self.connected_functions.remove(f)
             if self.twin:
                 self.twin.disconnect(f)
-            
+
     def _getvalue(self):
         if self.twin is None:
             return self.__value
         else:
             return self.twin_function(self.twin.value)
+
     def _setvalue(self, arg):
         if hasattr(arg, "__len__"):
             if len(arg) != self._number_of_elements:
                 raise ValueError(
-                    "The lenght of the parameter must be ", 
+                    "The lenght of the parameter must be ",
                     self._number_of_elements)
             else:
                 if not isinstance(arg, tuple):
                     arg = tuple(arg)
-            
+
         elif self._number_of_elements != 1:
             raise ValueError(
-                    "The lenght of the parameter must be ", 
-                    self._number_of_elements)
+                "The lenght of the parameter must be ",
+                self._number_of_elements)
         old_value = self.__value
-                        
+
         if self.twin is not None:
             if self.twin_inverse_function is not None:
                 self.twin.value = self.twin_inverse_function(arg)
             return
 
         if self.ext_bounded is False:
-                self.__value = arg
+            self.__value = arg
         else:
             if self.ext_force_positive is True:
                 arg = np.abs(arg)
@@ -157,15 +159,15 @@ class Parameter(object):
                 else:
                     self.__value = arg
             else:
-                bmin = (self.bmin if self.bmin is not None 
-                                  else -np.inf)
+                bmin = (self.bmin if self.bmin is not None
+                        else -np.inf)
                 bmax = (self.bmax if self.bmin is not None
-                                  else np.inf)
+                        else np.inf)
                 self.__value = np.clip(arg, bmin, bmax)
 
-        if (self._number_of_elements != 1 and 
-            not isinstance(self.__value, tuple)):
-                self.__value = tuple(self.__value)
+        if (self._number_of_elements != 1 and
+                not isinstance(self.__value, tuple)):
+            self.__value = tuple(self.__value)
         if old_value != self.__value:
             for f in self.connected_functions:
                 try:
@@ -173,23 +175,24 @@ class Parameter(object):
                 except:
                     self.disconnect(f)
     value = property(_getvalue, _setvalue)
-    
+
     # Fix the parameter when coupled
     def _getfree(self):
         if self.twin is None:
             return self.__free
         else:
             return False
-    def _setfree(self,arg):
+
+    def _setfree(self, arg):
         self.__free = arg
         if self.component is not None:
             self.component._update_free_parameters()
-    free = property(_getfree,_setfree)
+    free = property(_getfree, _setfree)
 
-    def _set_twin(self,arg):
+    def _set_twin(self, arg):
         if arg is None:
             if self.twin is not None:
-                # Store the value of the twin in order to set the 
+                # Store the value of the twin in order to set the
                 # value of the parameter when it is uncoupled
                 twin_value = self.value
                 if self in self.twin._twins:
@@ -200,12 +203,12 @@ class Parameter(object):
                 self.__twin = arg
                 self.value = twin_value
         else:
-            if self not in arg._twins :
+            if self not in arg._twins:
                 arg._twins.add(self)
                 for f in self.connected_functions:
-                    arg.connect(f)                
+                    arg.connect(f)
             self.__twin = arg
-            
+
         if self.component is not None:
             self.component._update_free_parameters()
 
@@ -218,33 +221,35 @@ class Parameter(object):
             return self._bounds[0]
         else:
             return self._bounds[0][0]
-    def _set_bmin(self,arg):
-        if self._number_of_elements == 1 :
-            self._bounds = (arg,self.bmax)
+
+    def _set_bmin(self, arg):
+        if self._number_of_elements == 1:
+            self._bounds = (arg, self.bmax)
         else:
-            self._bounds = ((arg, self.bmax),)*self._number_of_elements
+            self._bounds = ((arg, self.bmax),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-    bmin = property(_get_bmin,_set_bmin)
+    bmin = property(_get_bmin, _set_bmin)
 
     def _get_bmax(self):
         if self._number_of_elements == 1:
             return self._bounds[1]
         else:
             return self._bounds[0][1]
-    def _set_bmax(self,arg):
-        if self._number_of_elements == 1 :
+
+    def _set_bmax(self, arg):
+        if self._number_of_elements == 1:
             self._bounds = (self.bmin, arg)
         else:
-            self._bounds = ((self.bmin, arg),)*self._number_of_elements
+            self._bounds = ((self.bmin, arg),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-    bmax = property(_get_bmax,_set_bmax)
-    
+    bmax = property(_get_bmax, _set_bmax)
+
     @property
     def _number_of_elements(self):
         return self.__number_of_elements
-        
+
     @_number_of_elements.setter
     def _number_of_elements(self, arg):
         # Do nothing if the number of arguments stays the same
@@ -262,22 +267,22 @@ class Parameter(object):
             self._Parameter__value = (0,) * arg
         if self.component is not None:
             self.component.update_number_parameters()
-            
+
     @property
     def ext_bounded(self):
         return self.__ext_bounded
-        
+
     @ext_bounded.setter
     def ext_bounded(self, arg):
         if arg is not self.__ext_bounded:
             self.__ext_bounded = arg
             # Update the value to take into account the new bounds
             self.value = self.value
-            
+
     @property
     def ext_force_positive(self):
         return self.__ext_force_positive
-        
+
     @ext_force_positive.setter
     def ext_force_positive(self, arg):
         if arg is not self.__ext_force_positive:
@@ -287,11 +292,11 @@ class Parameter(object):
 
     def store_current_value_in_array(self):
         """Store the value and std attributes.
-        
+
         See also
         --------
         fetch, assign_current_value_to_all
-        
+
         """
         indices = self._axes_manager.indices[::-1]
         # If it is a single spectrum indices is ()
@@ -301,15 +306,15 @@ class Parameter(object):
         self.map['is_set'][indices] = True
         if self.std is not None:
             self.map['std'][indices] = self.std
-            
+
     def fetch(self):
         """Fetch the stored value and std attributes.
-        
-        
+
+
         See Also
         --------
         store_current_value_in_array, assign_current_value_to_all
-        
+
         """
         indices = self._axes_manager.indices[::-1]
         # If it is a single spectrum indices is ()
@@ -321,66 +326,66 @@ class Parameter(object):
 
     def assign_current_value_to_all(self, mask=None):
         '''Assign the current value attribute to all the  indices
-        
+
         Parameters
         ----------
         mask: {None, boolean numpy array}
-            Set only the indices that are not masked i.e. where 
+            Set only the indices that are not masked i.e. where
             mask is False.
-            
+
         See Also
         --------
         store_current_value_in_array, fetch
-        
+
         '''
         if mask is None:
-            mask = np.zeros(self.map.shape, dtype = 'bool')
+            mask = np.zeros(self.map.shape, dtype='bool')
         self.map['values'][mask == False] = self.value
         self.map['is_set'][mask == False] = True
-        
+
     def _create_array(self):
         """Create the map array to store the information in
         multidimensional datasets.
-        
+
         """
         shape = self._axes_manager._navigation_shape_in_array
         if len(shape) == 1 and shape[0] == 0:
-            shape = [1,]
+            shape = [1, ]
         dtype_ = np.dtype([
-            ('values','float', self._number_of_elements), 
-            ('std', 'float', self._number_of_elements), 
+            ('values', 'float', self._number_of_elements),
+            ('std', 'float', self._number_of_elements),
             ('is_set', 'bool', 1)])
-        if (self.map is None  or self.map.shape != shape or 
-                    self.map.dtype != dtype_):
-            self.map = np.zeros(shape, dtype_)       
+        if (self.map is None or self.map.shape != shape or
+                self.map.dtype != dtype_):
+            self.map = np.zeros(shape, dtype_)
             self.map['std'].fill(np.nan)
-            # TODO: in the future this class should have access to 
+            # TODO: in the future this class should have access to
             # axes manager and should be able to fetch its own
             # values. Until then, the next line is necessary to avoid
             # erros when self.std is defined and the shape is different
             # from the newly defined arrays
             self.std = None
-            
+
     def as_signal(self, field='values'):
         """Get a parameter map as a signal object.
-        
-        Please note that this method only works when the navigation 
+
+        Please note that this method only works when the navigation
         dimension is greater than 0.
-        
+
         Parameters
         ----------
         field : {'values', 'std', 'is_set'}
-        
+
         Raises
         ------
-        
+
         NavigationDimensionError : if the navigation dimension is 0
-        
+
         """
         from hyperspy.signal import Signal
         if self._axes_manager.navigation_dimension == 0:
             raise NavigationDimensionError(0, '>0')
-            
+
         s = Signal(data=self.map[field],
                    axes=self._axes_manager._get_navigation_axes_dicts())
         s.mapped_parameters.title = self.name
@@ -392,16 +397,16 @@ class Parameter(object):
                 name=self.name,
                 navigate=True)
         return s
-        
+
     def plot(self):
         self.as_signal().plot()
-        
+
     def export(self, folder=None, name=None, format=None,
                save_std=False):
         '''Save the data to a file.
-        
+
         All the arguments are optional.
-        
+
         Parameters
         ----------
         folder : str or None
@@ -410,11 +415,11 @@ class Parameter(object):
         name : str or None
             The name of the file. If `None` the Components name followed
              by the Parameter `name` attributes will be used by default.
-              If a file with the same name exists the name will be 
+              If a file with the same name exists the name will be
               modified by appending a number to the file path.
         save_std : bool
             If True, also the standard deviation will be saved
-        
+
         '''
         if format is None:
             format = preferences.General.default_export_format
@@ -425,11 +430,13 @@ class Parameter(object):
             filename = os.path.join(folder, filename)
         self.as_signal().save(filename)
         if save_std is True:
-            self.as_signal(field = 'std').save(append2pathname(
-                filename,'_std'))
-                    
+            self.as_signal(field='std').save(append2pathname(
+                filename, '_std'))
+
+
 class Component(object):
     __axes_manager = None
+
     def __init__(self, parameter_name_list):
         self.connected_functions = list()
         self.parameters = []
@@ -443,25 +450,28 @@ class Component(object):
         self._id_name = self.__class__.__name__
         self._id_version = '1.0'
         self._position = None
-    
+
     @property
     def _axes_manager(self):
         return self.__axes_manager
+
     @_axes_manager.setter
     def _axes_manager(self, value):
         for parameter in self.parameters:
             parameter._axes_manager = value
         self.__axes_manager = value
-        
+
     def connect(self, f):
         if f not in self.connected_functions:
             self.connected_functions.append(f)
+
     def disconnect(self, f):
         if f in self.connected_functions:
             self.connected_functions.remove(f)
-            
+
     def _get_active(self):
         return self.__active
+
     def _set_active(self, arg):
         self.__active = arg
         for f in self.connected_functions:
@@ -480,14 +490,14 @@ class Component(object):
             if hasattr(self, 'grad_' + name):
                 parameter.grad = getattr(self, 'grad_' + name)
             parameter.component = self
-            
+
     def _get_long_description(self):
         if self.name:
             text = '%s (%s component)' % (self.name, self._id_name)
         else:
             text = '%s component' % self._id_name
         return text
-        
+
     def _get_short_description(self):
         text = ''
         if self.name:
@@ -496,7 +506,7 @@ class Component(object):
             text += self._id_name
         text += ' component'
         return text
-    
+
     def __repr__(self):
         text = '<%s>' % self._get_long_description()
         return text
@@ -507,10 +517,10 @@ class Component(object):
             if parameter.free:
                 self.free_parameters.add(parameter)
         # update_number_free_parameters(self):
-        i=0
+        i = 0
         for parameter in self.free_parameters:
             i += parameter._number_of_elements
-        self._nfree_param=i
+        self._nfree_param = i
 
     def update_number_parameters(self):
         i = 0
@@ -524,27 +534,27 @@ class Component(object):
             parameters = self.free_parameters
         else:
             parameters = self.parameters
-        i=0
+        i = 0
         for parameter in parameters:
             lenght = parameter._number_of_elements
             parameter.value = (p[i] if lenght == 1 else p[i:i + lenght])
             if p_std is not None:
-                parameter.std = (p_std[i] if lenght == 1 else 
-                tuple(p_std[i:i+lenght]))
-            
-            i += lenght           
-                
+                parameter.std = (p_std[i] if lenght == 1 else
+                                 tuple(p_std[i:i + lenght]))
+
+            i += lenght
+
     def _create_arrays(self):
         for parameter in self.parameters:
             parameter._create_array()
-    
+
     def store_current_parameters_in_map(self):
         for parameter in self.parameters:
             parameter.store_current_value_in_array()
-        
+
     def fetch_stored_values(self, only_fixed=False):
         if only_fixed is True:
-            parameters = (set(self.parameters) - 
+            parameters = (set(self.parameters) -
                           set(self.free_parameters))
         else:
             parameters = self.parameters
@@ -554,39 +564,39 @@ class Component(object):
         for parameter in parameters:
             parameter.fetch()
 
-    def plot(self, only_free = True):
+    def plot(self, only_free=True):
         """Plot the value of the parameters of the model
-        
+
         Parameters
         ----------
         only_free : bool
             If True, only the value of the parameters that are free will
              be plotted
-              
+
         """
         if only_free:
             parameters = self.free_parameters
         else:
             parameters = self.parameters
-            
+
         parameters = [k for k in parameters if k.twin is None]
         for parameter in parameters:
             parameter.plot()
-            
+
     def export(self, folder=None, format=None, save_std=False,
                only_free=True):
         """Plot the value of the parameters of the model
-        
+
         Parameters
         ----------
         folder : str or None
-            The path to the folder where the file will be saved. If 
+            The path to the folder where the file will be saved. If
             `None` the
             current folder is used by default.
         format : str
-            The format to which the data will be exported. It must be 
+            The format to which the data will be exported. It must be
             the
-            extension of any format supported by Hyperspy. If None, the 
+            extension of any format supported by Hyperspy. If None, the
             default
             format for exporting as defined in the `Preferences` will be
              used.
@@ -596,49 +606,49 @@ class Component(object):
             If True, only the value of the parameters that are free will
              be
             exported.
-            
+
         Notes
         -----
-        The name of the files will be determined by each the Component 
+        The name of the files will be determined by each the Component
         and
-        each Parameter name attributes. Therefore, it is possible to 
+        each Parameter name attributes. Therefore, it is possible to
         customise
         the file names modify the name attributes.
-              
+
         """
         if only_free:
             parameters = self.free_parameters
         else:
             parameters = self.parameters
-            
+
         parameters = [k for k in parameters if k.twin is None]
         for parameter in parameters:
             parameter.export(folder=folder, format=format,
                              save_std=save_std,)
-            
+
     def summary(self):
         for parameter in self.parameters:
             dim = len(parameter.map.squeeze().shape) if parameter.map \
-                        is not None else 0
+                is not None else 0
             if parameter.twin is None:
                 if dim <= 1:
                     print '%s = %s ± %s %s' % (parameter.name,
-                                               parameter.value, 
+                                               parameter.value,
                                                parameter.std,
                                                parameter.units)
 
-    def __tempcall__(self, p, x, onlyfree=True) :
-        self.fetch_values_from_array(p , onlyfree=onlyfree)
+    def __tempcall__(self, p, x, onlyfree=True):
+        self.fetch_values_from_array(p, onlyfree=onlyfree)
         return self.function(x)
 
-    def __call__(self) :
+    def __call__(self):
         """Returns the corresponding model for the current coordinates
-        
+
         Returns
         -------
         numpy array
         """
-            
+
         axis = self.model.axis.axis[self.model.channel_switches]
         component_array = self.function(axis)
         return component_array
@@ -717,7 +727,7 @@ class Component(object):
         set_parameters_free
         hyperspy.model.Model.set_parameters_free
         hyperspy.model.Model.set_parameters_not_free
-        """        
+        """
 
         parameter_list = []
         if not parameter_name_list:
@@ -725,7 +735,7 @@ class Component(object):
         else:
             for _parameter in self.parameters:
                 if _parameter.name in parameter_name_list:
-                    parameter_list.append(_parameter)        
-                
+                    parameter_list.append(_parameter)
+
         for _parameter in parameter_list:
             _parameter.free = False

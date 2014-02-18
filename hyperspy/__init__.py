@@ -19,4 +19,3 @@
 import Release
 
 __version__ = Release.version
-

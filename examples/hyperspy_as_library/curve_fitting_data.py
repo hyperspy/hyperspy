@@ -7,8 +7,11 @@ coreLossSpectrumFileName = "coreloss_spectrum.msa"
 lowlossSpectrumFileName = "lowloss_spectrum.msa"
 
 s = hspy.load(coreLossSpectrumFileName).to_EELS()
-s.add_elements(("Mn","O"))
-s.set_microscope_parameters(beam_energy=300, convergence_angle=24.6, collection_angle=13.6)
+s.add_elements(("Mn", "O"))
+s.set_microscope_parameters(
+    beam_energy=300,
+    convergence_angle=24.6,
+    collection_angle=13.6)
 
 ll = hspy.load(lowlossSpectrumFileName).to_EELS()
 

@@ -21,9 +21,10 @@ import numpy as np
 from hyperspy.decorators import auto_replot
 from hyperspy.signal import Signal
 
+
 class Simulation(Signal):
     _signal_origin = "simulation"
-    
+
     def __init__(self, *args, **kwargs):
         super(Simulation, self).__init__(*args, **kwargs)
 
@@ -32,7 +33,7 @@ class Simulation(Signal):
         """Add Poissonian noise to the data"""
         original_type = self.data.dtype
         self.data = np.random.poisson(self.data, **kwargs).astype(
-                                      original_type)
+            original_type)
 
     @auto_replot
     def add_gaussian_noise(self, std, **kwargs):
@@ -44,9 +45,3 @@ class Simulation(Signal):
         """
         noise = np.random.normal(0, std, self.data.shape, **kwargs)
         self.data += noise
-
-
-
-
-
-

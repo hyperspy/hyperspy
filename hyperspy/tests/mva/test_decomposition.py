@@ -70,13 +70,16 @@ class TestNdAxes:
 
 
 class TestGetExplainedVarinaceRation():
+
     def setUp(self):
         s = signals.Signal(np.empty(1))
         s.learning_results.explained_variance_ratio = np.empty(10)
         self.s = s
+
     def test_data(self):
         assert_true((self.s.get_explained_variance_ratio().data ==
                      self.s.learning_results.explained_variance_ratio).all())
+
     @raises(AttributeError)
     def test_no_evr(self):
         self.s.get_explained_variance_ration()

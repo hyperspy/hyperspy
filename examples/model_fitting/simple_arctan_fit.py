@@ -2,28 +2,28 @@
 
 import numpy as np
 
-#Generate the data and make the spectrum
+# Generate the data and make the spectrum
 s = signals.SpectrumSimulation(
-        np.arctan(np.arange(-500,500)))
+    np.arctan(np.arange(-500, 500)))
 s.axes_manager[0].offset = -500
 s.axes_manager[0].units = ""
 s.axes_manager[0].name = "x"
 s.mapped_parameters.title = "Simple arctan fit"
-			
+
 s.add_gaussian_noise(0.1)
 
-#Make the arctan component for use in the model
+# Make the arctan component for use in the model
 arctan_component = components.Arctan()
 
-#Create the model and add the arctan component
+# Create the model and add the arctan component
 m = create_model(s)
 m.append(arctan_component)
 
-#Fit the arctan component to the spectrum
+# Fit the arctan component to the spectrum
 m.fit()
 
 # Print the result of the fit
 m.print_current_values()
 
-#Plot the spectrum and the model fitting
+# Plot the spectrum and the model fitting
 m.plot()

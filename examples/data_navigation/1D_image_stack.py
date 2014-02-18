@@ -2,7 +2,7 @@
 """
 
 # Create an image stack with random data
-im = signals.Image(np.random.random((16,32,32)))
+im = signals.Image(np.random.random((16, 32, 32)))
 
 # Define the axis properties
 im.axes_manager.signal_axes[0].name = 'X'
@@ -26,5 +26,4 @@ im.mapped_parameters.title = 'Random image stack'
 # Plot it
 im.plot()
 
-show() # No necessary when running in the HyperSpy's IPython profile
-
+show()  # No necessary when running in the HyperSpy's IPython profile

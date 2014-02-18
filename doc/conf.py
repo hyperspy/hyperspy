@@ -11,7 +11,8 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import sys
+import os
 sys.path.append('../')
 from hyperspy import Release
 sys.path.append(os.path.abspath('sphinxext'))
@@ -21,7 +22,7 @@ sys.path.append(os.path.abspath('sphinxext'))
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 
-# -- General configuration -----------------------------------------------------
+# -- General configuration -----------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
@@ -29,14 +30,14 @@ sys.path.append(os.path.abspath('sphinxext'))
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
-                'sphinx.ext.autodoc',
-                'gen_rst',
-                'numpydoc',
-                'matplotlib.sphinxext.only_directives',
-                'sphinx.ext.intersphinx',
-                'sphinx.ext.pngmath',
-                'sphinx.ext.autosummary',
-                'ipython_console_highlighting'] #, 'rst2pdf.pdfbuilder']
+    'sphinx.ext.autodoc',
+    'gen_rst',
+    'numpydoc',
+    'matplotlib.sphinxext.only_directives',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.pngmath',
+    'sphinx.ext.autosummary',
+    'ipython_console_highlighting']  # , 'rst2pdf.pdfbuilder']
 try:
     import sphinxcontrib.spelling
     extensions.append('sphinxcontrib.spelling')
@@ -102,7 +103,7 @@ pygments_style = 'sphinx'
 #modindex_common_prefix = []
 
 
-# -- Options for HTML output ---------------------------------------------------
+# -- Options for HTML output ---------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
@@ -111,7 +112,7 @@ html_theme = 'default'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {'collapsiblesidebar' : True}
+html_theme_options = {'collapsiblesidebar': True}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -182,7 +183,7 @@ html_static_path = ['_static']
 htmlhelp_basename = 'Hyperspydoc'
 
 
-# -- Options for LaTeX output --------------------------------------------------
+# -- Options for LaTeX output --------------------------------------------
 
 # The paper size ('letter' or 'a4').
 #latex_paper_size = 'letter'
@@ -193,8 +194,8 @@ htmlhelp_basename = 'Hyperspydoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Hyperspy.tex', u'Hyperspy Documentation',
-   u'The Hyperspy Developers', 'manual'),
+    ('index', 'Hyperspy.tex', u'Hyperspy Documentation',
+     u'The Hyperspy Developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -221,7 +222,7 @@ latex_documents = [
 #latex_domain_indices = True
 
 
-# -- Options for manual page output --------------------------------------------
+# -- Options for manual page output --------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
@@ -232,5 +233,3 @@ man_pages = [
 
 # Add the hyperspy website to the intersphinx domains
 intersphinx_mapping = {'hyperspyweb': ('http://hyperspy.org/', None)}
-
-

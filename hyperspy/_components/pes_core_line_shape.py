@@ -21,13 +21,15 @@ import math
 
 from hyperspy.component import Component
 
-sqrt2pi = np.sqrt(2*np.pi)
+sqrt2pi = np.sqrt(2 * np.pi)
+
 
 class PESCoreLineShape(Component):
+
     """
     """
 
-    def __init__(self, A=1., FWHM=1.,origin = 0.):
+    def __init__(self, A=1., FWHM=1., origin=0.):
         Component.__init__(self, ['A', 'FWHM', 'origin', 'ab', 'shirley'])
         self.shirley.free = False
         self.ab.value = 0
@@ -42,20 +44,19 @@ class PESCoreLineShape(Component):
         self.A.bmax = None
         self.FWHM.bmin = None
         self.FWHM.bmax = None
-        
+
         self.isbackground = False
         self.convolved = True
-        
+
         # Gradients
         self.A.grad = self.grad_A
         self.FWHM.grad = self.grad_FWHM
         self.origin.grad = self.grad_origin
         self.ab.grad = self.grad_ab
-        
+
         # Options
         self.factor = 1.
         self.Shirley = False
-
 
     def function(self, x):
         """
@@ -68,33 +69,34 @@ class PESCoreLineShape(Component):
         a2 = self.FWHM.value
         a3 = self.ab.value
         k = self.shirley.value
-        f = self.factor * a0 * np.exp(-1*math.log(2)*(((x-(a1-a3))/a2))**2)
+        f = self.factor * a0 * \
+            np.exp(-1 * math.log(2) * (((x - (a1 - a3)) / a2)) ** 2)
         if self.Shirley:
             cf = np.cumsum(f)
             cf = cf[-1] - cf
             self.cf = cf
-            return cf*k + f
+            return cf * k + f
         else:
             return f
-    
+
     def grad_A(self, x):
         return self.function(x) / self.A.value
-    
-    def grad_FWHM(self,x):
+
+    def grad_FWHM(self, x):
         a0 = self.A.value
         a1 = self.origin.value
         a2 = self.FWHM.value
         a3 = self.ab.value
-        return self.factor * (2*math.log(2)*a0*(x+a3-a1)**2*np.exp(
-    -(math.log(2)*(x+a3-a1)**2)/a2**2))/a2**3
-    
-    def grad_origin(self,x):
+        return self.factor * (2 * math.log(2) * a0 * (x + a3 - a1) ** 2 * np.exp(
+            -(math.log(2) * (x + a3 - a1) ** 2) / a2 ** 2)) / a2 ** 3
+
+    def grad_origin(self, x):
         a0 = self.A.value
         a1 = self.origin.value
         a2 = self.FWHM.value
         a3 = self.ab.value
-        return self.factor * (2*math.log(2)*a0*(x+a3-a1)*np.exp(-(math.log(2) *
-            (x+a3-a1)**2)/a2**2))/a2**2
-    
-    def grad_ab(self,x):
+        return self.factor * (2 * math.log(2) * a0 * (x + a3 - a1) * np.exp(-(math.log(2) *
+                                                                            (x + a3 - a1) ** 2) / a2 ** 2)) / a2 ** 2
+
+    def grad_ab(self, x):
         return -self.grad_origin(x)
