@@ -17,7 +17,7 @@ Spectrum loading and parameters
 Loading
 ^^^^^^^^
 
-All data are loaded with the :py:func:`~.io.load` function, as decribed in details in 
+All data are loaded with the :py:func:`~.io.load` function, as described in details in 
 :ref:`Loading files<loading_files>`. Hyperspy is able to import different formats,
 among them ".msa" and ".rpl" (the raw format of Oxford Instrument and Brucker). 
 
@@ -104,7 +104,7 @@ or raising the gui:
    :align:   center
    :width:   350  
    
-If the microcsope and detector parameters are not written in the original file, some 
+If the microscope and detector parameters are not written in the original file, some 
 of them are set by default. The default values can be changed in the 
 :py:class:`~.defaults_parser.Preferences` class (see :ref:`preferences
 <configuring-hyperspy-label>`).
@@ -166,7 +166,7 @@ method.
 Describing the sample
 ---------------------
 
-The description of the sample is storred in mapped_parameters.Sample (in the 
+The description of the sample is stored in mapped_parameters.Sample (in the 
 :py:attr:`~.signal.Signal.mapped_parameters` attribute). It can be displayed as
 follow:
 
