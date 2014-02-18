@@ -69,6 +69,8 @@ version = "1.2"
 
 not_valid_format = 'The file is not a valid Hyperspy hdf5 file'
 
+current_file_version = None
+latest_file_version = StrictVersion(version)
 
 def get_hspy_format_version(f):
     if "file_format_version" in f.attrs:
@@ -89,7 +91,8 @@ def file_reader(filename, record_by, mode='r', driver='core',
         # Getting the format version here also checks if it is a valid HSpy
         # hdf5 file, so the following line must not be deleted or moved
         # elsewhere.
-        version = get_hspy_format_version(f)
+        global current_file_version
+        current_file_version = get_hspy_format_version(f)
         experiments = []
         exp_dict_list = []
         if 'Experiments' in f:
@@ -113,6 +116,15 @@ def file_reader(filename, record_by, mode='r', driver='core',
 
 
 def hdfgroup2signaldict(group):
+    global current_file_version
+    global latest_file_version
+    if current_file_version < StrictVersion("1.2"):
+        metadata = "mapped_parameters"
+        original_metadata = "original_parameters"
+    else:
+        metadata = "metadata"
+        original_metadata = "original_metadata"
+
     exp = {}
     exp['data'] = group['data'][:]
     axes = []
@@ -125,9 +137,9 @@ def hdfgroup2signaldict(group):
         for key, item in axis.iteritems():
             axis[key] = ensure_unicode(item)
     exp['metadata'] = hdfgroup2dict(
-        group['metadata'], {})
+        group[metadata], {})
     exp['original_metadata'] = hdfgroup2dict(
-        group['original_metadata'], {})
+        group[original_metadata], {})
     exp['axes'] = axes
     exp['attributes'] = {}
     if 'learning_results' in group.keys():
@@ -137,30 +149,32 @@ def hdfgroup2signaldict(group):
         exp['attributes']['peak_learning_results'] = \
             hdfgroup2dict(group['peak_learning_results'], {})
 
-    # Load the decomposition results written with the old name,
-    # mva_results
-    if 'mva_results' in group.keys():
-        exp['attributes']['learning_results'] = hdfgroup2dict(
-            group['mva_results'], {})
-    if 'peak_mva_results' in group.keys():
-        exp['attributes']['peak_learning_results'] = hdfgroup2dict(
-            group['peak_mva_results'], {})
-    # Replace the old signal and name keys with their current names
-    if 'signal' in exp['metadata']:
-        exp['metadata']['signal_type'] = \
-            exp['metadata']['signal']
-        del exp['metadata']['signal']
-
-    if 'name' in exp['metadata']:
-        exp['metadata']['title'] = \
-            exp['metadata']['name']
-        del exp['metadata']['name']
-
     # If the title was not defined on writing the Experiment is
     # then called __unnamed__. The next "if" simply sets the title
     # back to the empty string
     if '__unnamed__' == exp['metadata']['title']:
         exp['metadata']['title'] = ''
+
+    if current_file_version < StrictVersion("1.1"):
+        # Load the decomposition results written with the old name,
+        # mva_results
+        if 'mva_results' in group.keys():
+            exp['attributes']['learning_results'] = hdfgroup2dict(
+                group['mva_results'], {})
+        if 'peak_mva_results' in group.keys():
+            exp['attributes']['peak_learning_results'] = hdfgroup2dict(
+                group['peak_mva_results'], {})
+        # Replace the old signal and name keys with their current names
+        if 'signal' in exp['metadata']:
+            exp['metadata']['signal_type'] = \
+                exp['metadata']['signal']
+            del exp['metadata']['signal']
+
+        if 'name' in exp['metadata']:
+            exp['metadata']['title'] = \
+                exp['metadata']['name']
+            del exp['metadata']['name']
+
 
     return exp
 
