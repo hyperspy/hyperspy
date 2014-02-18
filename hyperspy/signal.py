@@ -2444,6 +2444,7 @@ class Signal(MVA,
             return self.original_metadata
         else:
             return None
+
     @property
     def navigation_indexer(self):
         warnings.warn(
@@ -4321,16 +4322,20 @@ for name in (
 
 
 class SpecialSlicers:
+
     def __init__(self, signal, isNavigation):
         self.isNavigation = isNavigation
         self.signal = signal
+
     def __getitem__(self, slices):
         return self.signal.__getitem__(slices, self.isNavigation)
+
     def __setitem__(self, i, j):
         """x.__setitem__(i, y) <==> x[i]=y
         """
         if isinstance(j, Signal):
             j = j.data
         self.signal.__getitem__(i, self.isNavigation).data[:] = j
+
     def __len__(self):
         return self.signal.axes_manager.signal_shape[0]
