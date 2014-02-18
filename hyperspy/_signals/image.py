@@ -42,25 +42,28 @@ class Image(Signal):
         return self.as_spectrum(0+3j)
         
         
-    def plot_3D_iso_surface(self,threshold,
-            color='auto',
+    def plot_3D_iso_surface(self,
+            threshold,
             outline=True,
-            figure='new'):
+            figure=None,
+            **kwargs):
         """
         Generate an iso-surface with Mayavi of a stack of images.
         
+        The method uses the mlab.pipeline.iso_surface from mayavi.        
         
         Parameters
         ----------            
         threshold: float
-            The value used to Between 0 (min intensity) and 1 (max intensity).        
-        color: 'auto' or list
-            The color of the surface (R,G,B) (eg. (0.5,0.3,0.2)). 
-            If 'auto', default colors of mayavi.            
-        figure: 'new' or mayavi.core.scene.Scene 
-            If 'new', generate a new scene/figure.
+            The threshold value used to generate the contour. 
+            Between 0 (min intensity) and 1 (max intensity).
+        figure: None or mayavi.core.scene.Scene 
+            If None, generate a new scene/figure.
         outline: bool
-            If True draw an outline.
+            If True, draw an outline.
+        kwargs:
+            other keyword arguments of mlab.pipeline.iso_surface (eg. 
+            'color=(R,G,B)','name=','opacity=',...)
             
         Example
         --------
@@ -75,13 +78,8 @@ class Image(Signal):
         ------        
         figure: mayavi.core.scene.Scene        
         src: mayavi.sources.array_source.ArraySource        
-        iso: mayavi.modules.iso_surface.IsoSurface    
-        
-        Note
-        ----
-        
-        The method uses the mlab.pipeline.iso_surface from mayavi.
-            
+        iso: mayavi.modules.iso_surface.IsoSurface          
+
         """
         from mayavi import mlab  
         
@@ -107,10 +105,10 @@ class Image(Signal):
          
         if color != 'auto':
             iso = mlab.pipeline.iso_surface(src,
-                contours=[threshold, ],color =color)
+                contours=[threshold, ],color = color)
         else:
            iso = mlab.pipeline.iso_surface(src,
-                contours=[threshold, ])            
+                contours=[threshold, ],**kwargs)            
         iso.compute_normals = False
         
         if outline:
