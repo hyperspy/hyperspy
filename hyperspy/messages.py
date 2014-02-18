@@ -17,20 +17,22 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+
+
 def warning_exit(text):
     sys.exit("\nWarning!\n" + text)
-    
+
+
 def warning(text):
     print
-    print "Warning! " + text 
-    
+    print "Warning! " + text
+
+
 def information(text):
     print
     print text
-    
+
+
 def alert(text):
     print
     print "** %s **" % text
-    
-
-

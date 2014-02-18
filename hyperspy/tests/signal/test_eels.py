@@ -21,10 +21,12 @@ from nose.tools import assert_true, assert_equal, assert_not_equal
 
 import hyperspy.hspy as hp
 
+
 class Test_Estimate_Elastic_Scattering_Threshold:
+
     def setUp(self):
         # Create an empty spectrum
-        s = hp.signals.EELSSpectrumSimulation(np.zeros((3,2,1024)))
+        s = hp.signals.EELSSpectrumSimulation(np.zeros((3, 2, 1024)))
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 0.02
         energy_axis.offset = -5
@@ -33,32 +35,32 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         gauss.centre.value = 0
         gauss.A.value = 5000
         gauss.sigma.value = 0.5
-        gauss2 = hp.components.Gaussian() 
+        gauss2 = hp.components.Gaussian()
         gauss2.sigma.value = 0.5
         # Inflexion point 1.5
         gauss2.A.value = 5000
         gauss2.centre.value = 5
-        s.data[:] = (gauss.function(energy_axis.axis) + 
+        s.data[:] = (gauss.function(energy_axis.axis) +
                      gauss2.function(energy_axis.axis))
 #        s.add_poissonian_noise()
         self.signal = s
-        
+
     def test_min_in_window_with_smoothing(self):
         s = self.signal
         thr = s.estimate_elastic_scattering_threshold(
-                        window = 5,
-                        number_of_points=5,
-                        tol=0.00001)
+            window=5,
+            number_of_points=5,
+            tol=0.00001)
         assert_true(np.allclose(thr.data, 2.5))
-        
+
     def test_min_in_window_without_smoothing(self):
         s = self.signal
         thr = s.estimate_elastic_scattering_threshold(
-                        window = 5,
-                        number_of_points=0,
-                        tol=0.001)
+            window=5,
+            number_of_points=0,
+            tol=0.001)
         assert_true(np.allclose(thr.data, 2.49))
-            
+
     def test_min_not_in_window(self):
         # If I use a much lower window, this is the value that has to be
         # returned as threshold.
@@ -66,21 +68,26 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         data = s.estimate_elastic_scattering_threshold(window=1.5,
                                                        tol=0.001).data
         assert_true(np.all(np.isnan(data)))
-        
+
+
 class TestEstimateZLPCentre():
+
     def setUp(self):
-        s = hp.signals.EELSSpectrumSimulation(np.diag(np.arange(1,11)))
+        s = hp.signals.EELSSpectrumSimulation(np.diag(np.arange(1, 11)))
         s.axes_manager[-1].scale = 0.1
         s.axes_manager[-1].offset = 100
         self.spectrum = s
+
     def test_estimate_zero_loss_peak_centre(self):
         s = self.spectrum
         assert_true(np.allclose(s.estimate_zero_loss_peak_centre().data,
                                 np.arange(100, 101, 0.1)))
 
+
 class TestAlignZLP():
+
     def setUp(self):
-        s = hp.signals.EELSSpectrumSimulation(np.zeros((10,100)))
+        s = hp.signals.EELSSpectrumSimulation(np.zeros((10, 100)))
         self.scale = 0.1
         self.offset = -2
         eaxis = s.axes_manager.signal_axes[0]
@@ -88,7 +95,7 @@ class TestAlignZLP():
         eaxis.offset = self.offset
         self.izlp = eaxis.value2index(0)
         self.bg = 2
-        self.ishifts = np.array([0,  4,  2, -2,  5, -2, -5, -9, -9, -8])
+        self.ishifts = np.array([0, 4, 2, -2, 5, -2, -5, -9, -9, -8])
         self.new_offset = self.offset - self.ishifts.min() * self.scale
         s.data[np.arange(10), self.ishifts + self.izlp] = 10
         s.data += self.bg
@@ -117,4 +124,3 @@ class TestAlignZLP():
         zlpc = s2.estimate_zero_loss_peak_centre()
         assert_equal(zlpc.data.mean(), 0)
         assert_equal(zlpc.data.std(), 0)
-        

@@ -23,11 +23,13 @@ from scipy.special import erf
 
 from hyperspy.component import Component
 
-sqrt2pi = np.sqrt(2*np.pi)
+sqrt2pi = np.sqrt(2 * np.pi)
+
 
 class Erf(Component):
+
     """Error function component
-    
+
     Attributes
     ----------
     A : float
@@ -36,19 +38,18 @@ class Erf(Component):
     """
 
     def __init__(self):
-        Component.__init__(self, ['A','sigma','origin'])        
-                
+        Component.__init__(self, ['A', 'sigma', 'origin'])
+
         # Boundaries
         self.A.bmin = 0.
         self.A.bmax = None
-        
+
         self.sigma.bmin = None
         self.sigma.bmax = None
 
-
         self.isbackground = False
         self.convolved = True
-        
+
         # Gradients
         self.A.grad = self.grad_A
         self.sigma.grad = self.grad_sigma
@@ -59,20 +60,24 @@ class Erf(Component):
         A = self.A.value
         sigma = self.sigma.value
         origin = self.origin.value
-        return A*erf((x-origin)/math.sqrt(2)/sigma)/2
+        return A * erf((x - origin) / math.sqrt(2) / sigma) / 2
 
     def grad_A(self, x):
         A = self.A.value
         sigma = self.sigma.value
         origin = self.origin.value
-        return erf((x-origin)/math.sqrt(2)/sigma)/2
-    def grad_sigma(self,x):
+        return erf((x - origin) / math.sqrt(2) / sigma) / 2
+
+    def grad_sigma(self, x):
         A = self.A.value
         sigma = self.sigma.value
         origin = self.origin.value
-        return ((origin/(math.sqrt(2)*sigma**2)-x/(math.sqrt(2)*sigma**2))*np.exp(-(x/(math.sqrt(2)*sigma)-origin/(math.sqrt(2)*sigma))**2)*A)/math.sqrt(math.pi)
-    def grad_origin(self,x):
+        return ((origin / (math.sqrt(2) * sigma ** 2) - x / (math.sqrt(2) * sigma ** 2)) *
+                np.exp(-(x / (math.sqrt(2) * sigma) - origin / (math.sqrt(2) * sigma)) ** 2) * A) / math.sqrt(math.pi)
+
+    def grad_origin(self, x):
         A = self.A.value
         sigma = self.sigma.value
         origin = self.origin.value
-        return -(np.exp(-(x/(math.sqrt(2)*sigma)-origin/(math.sqrt(2)*sigma))**2)*A)/(math.sqrt(2)*math.sqrt(math.pi)*sigma)
+        return -(np.exp(-(x / (math.sqrt(2) * sigma) - origin / (math.sqrt(2) * sigma)) ** 2)
+                 * A) / (math.sqrt(2) * math.sqrt(math.pi) * sigma)

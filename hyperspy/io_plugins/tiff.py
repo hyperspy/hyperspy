@@ -29,42 +29,42 @@ format_name = 'TIFF'
 description = 'Import/Export standard image formats Christoph Gohlke\'s tifffile library'
 full_suport = False
 file_extensions = ['tif', 'tiff']
-default_extension = 0 # tif
+default_extension = 0  # tif
 
 
 # Writing features
-writes = [(2,0), (2,1)]
+writes = [(2, 0), (2, 1)]
 # ----------------------
 
 
-def file_writer(filename, signal, _rescale = True,  **kwds):
+def file_writer(filename, signal, _rescale=True, **kwds):
     '''Writes data to tif using Christoph Gohlke's tifffile library
-        
+
         Parameters
         ----------
         filename: str
         signal: a Signal instance
     '''
-    
+
     imsave(filename, signal.data.squeeze(), **kwds)
-    
-def file_reader(filename, record_by='image',**kwds):
+
+
+def file_reader(filename, record_by='image', **kwds):
     '''Read data from tif files using Christoph Gohlke's tifffile
     library
-    
+
     Parameters
     ----------
     filename: str
     record_by: {'image'}
         Has no effect because this format only supports recording by
         image.
-    
+
     '''
     dc = imread(filename, **kwds)
-    dt = 'image'    
-    return [{'data':dc, 
-             'mapped_parameters': { 'original_filename' : filename,
-                                    'record_by': dt,
-                                    'signal_type' : "",}
+    dt = 'image'
+    return [{'data': dc,
+             'mapped_parameters': {'original_filename': filename,
+                                   'record_by': dt,
+                                   'signal_type': "", }
              }]
-

@@ -22,10 +22,11 @@ from hyperspy.component import Component
 
 
 class Exponential(Component):
+
     """Exponentian function components
-    
+
     f(x) = A*e^{-x/k}
-    
+
     +------------+-----------+
     | Parameter  | Attribute |
     +------------+-----------+
@@ -43,22 +44,17 @@ class Exponential(Component):
         self.A.grad = self.grad_A
         self.tau.grad = self.grad_tau
 
-    def function( self, x ) :
+    def function(self, x):
         """
         """
         A = self.A.value
         tau = self.tau.value
-        return A*np.exp(-x/tau)
-    
-    def grad_A(self,x):
+        return A * np.exp(-x / tau)
+
+    def grad_A(self, x):
         return self.function(x) / self.A.value
-    
-    def grad_tau(self,x):
+
+    def grad_tau(self, x):
         A = self.A.value
         tau = self.tau.value
-        return x*(np.exp(-x/tau))*A/tau**2
-        
-    
-
-
-
+        return x * (np.exp(-x / tau)) * A / tau ** 2

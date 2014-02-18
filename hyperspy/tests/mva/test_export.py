@@ -8,15 +8,17 @@ from nose.tools import (
 from hyperspy.signal import Signal
 from hyperspy import signals
 
+
 class TestMVAExport:
+
     def setUp(self):
-        s = signals.Spectrum(np.random.random((2, 3, 4, 5)))                                        
-        sa = s.axes_manager[-1]                                                    
-        na = s.axes_manager[0]                                                    
+        s = signals.Spectrum(np.random.random((2, 3, 4, 5)))
+        sa = s.axes_manager[-1]
+        na = s.axes_manager[0]
         sa.offset = 100
         sa.scale = 0.1
         s.learning_results.factors = np.arange(5 * 5).reshape((5, 5))
-        s.learning_results.loadings = np.arange(24 * 5).reshape((24,5))
+        s.learning_results.loadings = np.arange(24 * 5).reshape((24, 5))
         s.learning_results.bss_factors = np.arange(5 * 2).reshape((5, 2))
         s.learning_results.bss_loadings = np.arange(24 * 2).reshape((24, 2))
         self.s = s
@@ -35,6 +37,3 @@ class TestMVAExport:
         assert_equal(bss_loadings.axes_manager.navigation_dimension, 1)
         assert_equal(bss_loadings.axes_manager.signal_shape,
                      self.s.axes_manager.navigation_shape)
-
-
-
