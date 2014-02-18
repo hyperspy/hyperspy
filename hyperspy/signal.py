@@ -3724,7 +3724,7 @@ class Signal(MVA,
         s.data = self.axes_manager[axis].index2value(s.data)
         return s
 
-    def get_histogram(img, bins='freedman', range_bins=None):
+    def get_histogram(img, bins='freedman', range_bins=None, **kwargs):
         """Return a histogram of the signal data.
 
         More sophisticated algorithms for determining bins can be used.
@@ -3733,17 +3733,18 @@ class Signal(MVA,
 
         Parameters
         ----------
-
-        bins : int or list or str (optional)
+        bins : int or list or str, optional
             If bins is a string, then it must be one of:
             'knuth' : use Knuth's rule to determine bins
             'scotts' : use Scott's rule to determine bins
             'freedman' : use the Freedman-diaconis rule to determine bins
             'blocks' : use bayesian blocks for dynamic bin widths
-
-        range_bins : tuple or None (optional)
+        range_bins : tuple or None, optional
             the minimum and maximum range for the histogram. If not specified,
-            it will be (x.min(), x.max())
+            it will be (x.min(), x.max())        
+        **kwargs
+            other keyword arguments (weight and density) are described in 
+            np.histogram().
 
         Returns
         -------
@@ -3773,7 +3774,8 @@ class Signal(MVA,
 
         hist, bin_edges = histogram(img.data.flatten(),
                                     bins=bins,
-                                    range=range_bins)
+                                    range=range_bins,
+                                    **kwargs)
         hist_spec = signals.Spectrum(hist)
         if bins == 'blocks':
             hist_spec.axes_manager.signal_axes[0].axis=bin_edges[:-1]

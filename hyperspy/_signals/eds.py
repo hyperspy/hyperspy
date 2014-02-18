@@ -364,7 +364,8 @@ class EDSSpectrum(Spectrum):
                             plot_result=False,
                             integration_window_factor=2.,
                             only_one=True,
-                            only_lines=("Ka", "La", "Ma"),):
+                            only_lines=("Ka", "La", "Ma"),
+                            **kwargs):
         """Return the intensity map of selected Xray lines.
         
         The intensity maps are computed by integrating the spectrum over the 
@@ -401,6 +402,9 @@ class EDSSpectrum(Spectrum):
             above an overvoltage of 2 (< beam energy / 2).
         only_lines : {None, list of strings}
             If not None, use only the given lines.
+        kwargs
+            The extra keyword arguments for plotting. See 
+            `utils.plot.plot_signals`
             
         Returns
         -------
@@ -461,16 +465,15 @@ class EDSSpectrum(Spectrum):
                 img = img.as_image([0,1])
             elif img.axes_manager.navigation_dimension == 1:
                 img.axes_manager.set_signal_dimension(1)
-            if plot_result:
-                if img.axes_manager.signal_dimension != 0:
-                    img.plot()
-                else:
-                    print("%s at %s %s : Intensity = %.2f" 
-                    % (Xray_line,
-                       line_energy,
-                       self.axes_manager.signal_axes[0].units,
-                       img.data))
+            if plot_result and img.axes_manager.signal_dimension == 0:
+                print("%s at %s %s : Intensity = %.2f" 
+                % (Xray_line,
+                   line_energy,
+                   self.axes_manager.signal_axes[0].units,
+                   img.data))
             intensities.append(img)
+        if plot_result and img.axes_manager.signal_dimension != 0:
+                utils.plot.plot_signals(intensities,**kwargs)            
         return intensities
         
     def get_take_off_angle(self):
