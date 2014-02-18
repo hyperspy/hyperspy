@@ -17,6 +17,7 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 from distutils.version import StrictVersion
+import warnings
 
 import h5py
 import numpy as np
@@ -93,6 +94,12 @@ def file_reader(filename, record_by, mode='r', driver='core',
         # hdf5 file, so the following line must not be deleted or moved
         # elsewhere.
         global current_file_version
+        if current_file_version > latest_file_version:
+            warnings.warn("This file was written using a newer version of "
+                          "HyperSpy. I will attempt to load it, but, if I fail, "
+                          "it is likely that I will be more successful at this "
+                          "and other tasks if you upgrade me.")
+
         current_file_version = get_hspy_format_version(f)
         experiments = []
         exp_dict_list = []
