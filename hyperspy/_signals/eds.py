@@ -564,10 +564,6 @@ class EDSSpectrum(Spectrum):
                 raise ValueError(
                     "Not X-ray line, set them with `add_elements`")
 
-        if self.axes_manager.navigation_dimension > 0:
-            raise ValueError(
-                "Not yet implemented for dimension higher than 1.")
-
         line_energy = []
         intensity = []
         for Xray_line in Xray_lines:
@@ -575,11 +571,20 @@ class EDSSpectrum(Spectrum):
             line_energy.append(elements_db[element]['Xray_energy'][line])
             relative_factor = elements_db['lines']['ratio_line'][line]
             a_eng = elements_db[element]['Xray_energy'][line[0] + 'a']
-            # to improve
-            intensity.append(self[a_eng].data[0] * relative_factor)
+            # to improve            
+            #intensity.append(self[...,a_eng])
+            intensity.append(self[...,a_eng].data.flatten().mean()
+                * relative_factor)
+
 
         self.plot()
+        line=self._plot.signal_plot.ax_lines[0]
         for i in range(len(line_energy)):
-            plt.text(line_energy[i], intensity[i] * 1.1, Xray_lines[i],
-                     rotation=90)
-            plt.vlines(line_energy[i], 0, intensity[i] * 0.8, color='black')
+            #f=intensity[i][self._plot.axes_manager.indices].data[0]
+            #line.marker = line.ax.vlines(line_energy[i], 0, f * 0.8, color='black')
+            #line.marker = line.ax.text(line_energy[i], f * 1.1,
+            #    Xray_lines[i], rotation=90)
+            line.marker = line.ax.vlines(line_energy[i], 0, intensity[i] * 0.8, color='black')
+            line.marker = line.ax.text(line_energy[i], intensity[i] * 1.1,
+                Xray_lines[i], rotation=90)
+        line.update()

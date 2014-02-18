@@ -284,10 +284,10 @@ Plot X-ray lines
 ^^^^^^^^^^^^^^^^
 
 X-ray lines can be labbeled on a plot with 
-:py:meth:`~._signals.eds.EDSSpectrum.plot_Xray_lines`. This function is only
-implemented for 1D spectrum. The lines are either given, either retrieved 
-from "mapped_parameters.Sample.Xray_lines", or selected with the same
-method as :py:meth:`~._signals.eds.EDSSpectrum.add_lines` using the 
+:py:meth:`~._signals.eds.EDSSpectrum.plot_Xray_lines`. The lines are 
+either given, either retrieved from "mapped_parameters.Sample.Xray_lines",
+or selected with the same method as 
+:py:meth:`~._signals.eds.EDSSpectrum.add_lines` using the 
 elements in "mapped_parameters.Sample.elements". 
 
 
