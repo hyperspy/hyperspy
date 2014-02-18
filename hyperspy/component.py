@@ -129,7 +129,7 @@ class Parameter(object):
             the ID value of the original parameter, to be later used for setting up the correct twins
         
         """
-        if dict['_id_name'] is self._id_name:
+        if dict['_id_name'] == self._id_name:
             self.map = copy.deepcopy(dict['map'])
             self.value = dict['value']
             self.name = dict['name']
@@ -141,7 +141,7 @@ class Parameter(object):
             self.twin_inverse_function = dict['twin_inverse_function']
             return dict['id']
         else:
-            raise ValueError('_id_name of parameter and dictionary do not match')
+            raise ValueError("_id_name of parameter and dictionary do not match, \nparameter._id_name = %s \ndictionary['_id_name'] = %s" % (self._id_name, dict['_id_name']))
 
     def __repr__(self):
         text = ''
