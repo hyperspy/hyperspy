@@ -15,6 +15,7 @@ import numpy as np
 
 
 class FitnessFunc(object):
+
     """Base class for fitness functions
 
     Each fitness function class has the following:
@@ -22,6 +23,7 @@ class FitnessFunc(object):
        Arguments accepted by fitness must be among [T_k, N_k, a_k, b_k, c_k]
     - prior(N, Ntot) : compute prior on N given a total number of points Ntot
     """
+
     def __init__(self, p0=0.05, gamma=None):
         self.p0 = p0
         self.gamma = gamma
@@ -60,6 +62,7 @@ class FitnessFunc(object):
 
 
 class Events(FitnessFunc):
+
     """Fitness for binned or unbinned events
 
     Parameters
@@ -71,6 +74,7 @@ class Events(FitnessFunc):
         If specified, then use this gamma to compute the general prior form,
         p ~ gamma^N.  If gamma is specified, p0 is ignored.
     """
+
     def fitness(self, N_k, T_k):
         # eq. 19 from Scargle 2012
         return N_k * (np.log(N_k) - np.log(T_k))
@@ -84,6 +88,7 @@ class Events(FitnessFunc):
 
 
 class RegularEvents(FitnessFunc):
+
     """Fitness for regular events
 
     This is for data which has a fundamental "tick" length, so that all
@@ -97,6 +102,7 @@ class RegularEvents(FitnessFunc):
     gamma : float
         specifies the prior on the number of bins: p ~ gamma^N
     """
+
     def __init__(self, dt, p0=0.05, gamma=None):
         self.dt = dt
         self.p0 = p0
@@ -126,6 +132,7 @@ class RegularEvents(FitnessFunc):
 
 
 class PointMeasures(FitnessFunc):
+
     """Fitness for point measures
 
     Parameters
@@ -135,6 +142,7 @@ class PointMeasures(FitnessFunc):
         if gamma is not specified, then a prior based on simulations
         will be used (see sec 3.3 of Scargle 2012)
     """
+
     def __init__(self, p0=None, gamma=None):
         self.p0 = p0
         self.gamma = gamma

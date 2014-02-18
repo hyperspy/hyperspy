@@ -20,11 +20,11 @@
 #from hyperspy import Signal
 #
 #
-#class PESSignal(Signal):
+# class PESSignal(Signal):
 #    def remove_Shirley_background(self, max_iter = 10, eps = 1e-6):
-#        """Remove the inelastic background of photoemission SI by the shirley 
+#        """Remove the inelastic background of photoemission SI by the shirley
 #        iterative method.
-#        
+#
 #        Parameters
 #        ----------
 #        max_iter : int

@@ -23,10 +23,12 @@ from nose.tools import (assert_true,
                         raises)
 from hyperspy.components import Gaussian
 
+
 class TestSetParameters:
+
     def setUp(self):
         self.gaussian = Gaussian()
-        
+
     def test_set_parameters_not_free1(self):
         g = self.gaussian
         g.set_parameters_not_free()

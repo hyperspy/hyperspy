@@ -22,56 +22,58 @@ from nose.tools import assert_true, assert_equal
 from hyperspy.signals import EDSTEMSpectrum
 from hyperspy.defaults_parser import preferences
 
+
 class Test_mapped_parameters:
+
     def setUp(self):
         # Create an empty spectrum
-        s = EDSTEMSpectrum(np.ones((4,2,1024)))
-        s.mapped_parameters.TEM.EDS.live_time = 3.1 
-        s.mapped_parameters.TEM.beam_energy = 15.0          
+        s = EDSTEMSpectrum(np.ones((4, 2, 1024)))
+        s.mapped_parameters.TEM.EDS.live_time = 3.1
+        s.mapped_parameters.TEM.beam_energy = 15.0
         self.signal = s
-        
+
     def test_sum_live_time(self):
         s = self.signal
         sSum = s.sum(0)
-        assert_equal(sSum.mapped_parameters.TEM.EDS.live_time, 3.1*2)
-    
+        assert_equal(sSum.mapped_parameters.TEM.EDS.live_time, 3.1 * 2)
+
     def test_rebin_live_time(self):
         s = self.signal
         dim = s.axes_manager.shape
-        s = s.rebin([dim[0]/2,dim[1]/2,dim[2]])
-        assert_equal(s.mapped_parameters.TEM.EDS.live_time, 3.1*2*2)
- 
+        s = s.rebin([dim[0] / 2, dim[1] / 2, dim[2]])
+        assert_equal(s.mapped_parameters.TEM.EDS.live_time, 3.1 * 2 * 2)
+
     def test_add_elements(self):
         s = self.signal
-        s.add_elements(['Al','Ni'])
-        assert_equal(s.mapped_parameters.Sample.elements, ['Al','Ni'])
-        s.add_elements(['Al','Ni'])
-        assert_equal(s.mapped_parameters.Sample.elements, ['Al','Ni'])
-        s.add_elements(["Fe",])
-        assert_equal(s.mapped_parameters.Sample.elements, ['Al',"Fe", 'Ni'])
-        s.set_elements(['Al','Ni'])
-        assert_equal(s.mapped_parameters.Sample.elements, ['Al','Ni'])
-        
+        s.add_elements(['Al', 'Ni'])
+        assert_equal(s.mapped_parameters.Sample.elements, ['Al', 'Ni'])
+        s.add_elements(['Al', 'Ni'])
+        assert_equal(s.mapped_parameters.Sample.elements, ['Al', 'Ni'])
+        s.add_elements(["Fe", ])
+        assert_equal(s.mapped_parameters.Sample.elements, ['Al', "Fe", 'Ni'])
+        s.set_elements(['Al', 'Ni'])
+        assert_equal(s.mapped_parameters.Sample.elements, ['Al', 'Ni'])
+
     def test_default_param(self):
         s = self.signal
         mp = s.mapped_parameters
         assert_equal(mp.TEM.EDS.energy_resolution_MnKa,
-            preferences.EDS.eds_mn_ka)
-            
+                     preferences.EDS.eds_mn_ka)
+
     def test_SEM_to_TEM(self):
-        s = self.signal[0,0]
+        s = self.signal[0, 0]
         signal_type = 'EDS_SEM'
         mp = s.mapped_parameters
         mp.TEM.EDS.energy_resolution_MnKa = 125.3
         sSEM = s.deepcopy()
-        sSEM.set_signal_type(signal_type)        
-        mpSEM = sSEM.mapped_parameters            
+        sSEM.set_signal_type(signal_type)
+        mpSEM = sSEM.mapped_parameters
         results = [mp.TEM.EDS.energy_resolution_MnKa]
-        results.append(signal_type)        
+        results.append(signal_type)
         resultsSEM = [mpSEM.SEM.EDS.energy_resolution_MnKa]
-        resultsSEM.append(mpSEM.signal_type)        
-        assert_equal(results,resultsSEM )
-        
+        resultsSEM.append(mpSEM.signal_type)
+        assert_equal(results, resultsSEM)
+
     def test_get_calibration_from(self):
         s = self.signal
         scalib = EDSTEMSpectrum(np.ones((1024)))
@@ -80,22 +82,21 @@ class Test_mapped_parameters:
         energy_axis.offset = -0.10
         s.get_calibration_from(scalib)
         assert_equal(s.axes_manager.signal_axes[0].scale,
-            energy_axis.scale)
-        
-        
-#class Test_get_intentisity_map:
+                     energy_axis.scale)
+
+
+# class Test_get_intentisity_map:
 #    def setUp(self):
-#        # Create an empty spectrum
+# Create an empty spectrum
 #        s = EDSTEMSpectrum(np.ones((4,2,1024)))
 #        energy_axis = s.axes_manager.signal_axes[0]
 #        energy_axis.scale = 0.01
 #        energy_axis.offset = -0.10
-#        energy_axis.units = 'keV'                
+#        energy_axis.units = 'keV'
 #        self.signal = s
-#    
-#    def test(self):        
+#
+#    def test(self):
 #        s = self.signal
 #        s.set_elements(['Al','Ni'],['Ka','La'])
 #        sAl = s.get_intensity_map(plot_result=True)[0]
 #        assert_true(np.allclose(s[...,0].data*15.0, sAl.data))
-
