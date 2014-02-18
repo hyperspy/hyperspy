@@ -412,9 +412,9 @@ class EDSSpectrum(Spectrum):
 
         Examples
         --------
-        
+
         >>> specImg.get_lines_intensity(["C_Ka", "Ta_Ma"])
-        
+
         See also
         --------
 
@@ -536,14 +536,13 @@ class EDSSpectrum(Spectrum):
             above an overvoltage of 2 (< beam energy / 2).
         only_lines : None or list of strings
             If not None, use only the given lines (eg. ('a','Kb')).
-            If None, use all lines. 
+            If None, use all lines.
 
         See also
         --------
         set_elements, add_elements
 
         """
-        
 
         if only_lines is not None:
             only_lines = list(only_lines)
