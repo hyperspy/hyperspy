@@ -2422,6 +2422,29 @@ class Signal(MVA,
         self.isig = SpecialSlicers(self, False)
 
     @property
+    def mapped_parameters(self):
+        # Deprecated added for HSpy 0.7
+        warnings.warn('This attribute has been renamed to `metadata` '
+                      'and will be removed in the next HyperSpy version. '
+                      'Please use `metadata` instead',
+                      DeprecationWarning)
+        if hasattr(self, "metadata"):
+            return self.metadata
+        else:
+            return None
+
+    @property
+    def original_parameters(self):
+        # Deprecated added for HSpy 0.7
+        warnings.warn('This attribute has been renamed to `original_metadata` '
+                      'and will be removed in the next HyperSpy version. '
+                      'Please use `original_metadata` instead',
+                      DeprecationWarning)
+        if hasattr(self, "original_metadata"):
+            return self.original_metadata
+        else:
+            return None
+    @property
     def navigation_indexer(self):
         warnings.warn(
             "`navigation_indexer` has been renamed to `inav` and"
@@ -4298,20 +4321,16 @@ for name in (
 
 
 class SpecialSlicers:
-
     def __init__(self, signal, isNavigation):
         self.isNavigation = isNavigation
         self.signal = signal
-
     def __getitem__(self, slices):
         return self.signal.__getitem__(slices, self.isNavigation)
-
     def __setitem__(self, i, j):
         """x.__setitem__(i, y) <==> x[i]=y
         """
         if isinstance(j, Signal):
             j = j.data
         self.signal.__getitem__(i, self.isNavigation).data[:] = j
-
     def __len__(self):
         return self.signal.axes_manager.signal_shape[0]
