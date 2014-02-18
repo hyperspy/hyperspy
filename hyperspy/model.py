@@ -113,6 +113,26 @@ class Model(list):
 
     # Extend the list methods to call the _touch when the model is modified
     def append(self, object):
+
+        #Check if any of the other components in the model has the same name
+        component_name_list = []
+        for component in self:
+            component_name_list.append(component.name)
+        name_string = ""
+        if object.name:
+            name_string = object.name
+        else:
+            name_string = object._id_name
+
+        if name_string in component_name_list:
+            temp_name_string = name_string
+            index = 0
+            while temp_name_string in component_name_list:
+                temp_name_string = name_string + "_" + str(index)
+                index += 1
+            name_string = temp_name_string
+        object.name = name_string
+
         object._axes_manager = self.axes_manager
         object._create_arrays()
         list.append(self,object)
