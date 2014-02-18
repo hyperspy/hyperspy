@@ -7,7 +7,7 @@ from glob import glob
 
 parser = argparse.ArgumentParser(description='Creates a debian package')
 
-parser.add_argument('-i', '--install', action = 'store_true', 
+parser.add_argument('-i', '--install', action='store_true',
                     help='Installs the program after packing it')
 
 args = parser.parse_args()
@@ -15,7 +15,7 @@ args = parser.parse_args()
 import os
 from subprocess import call
 import hyperspy.Release as Release
-release_name = 'hyperspy-' + Release.version.replace('.dev','~dev')
+release_name = 'hyperspy-' + Release.version.replace('.dev', '~dev')
 # Delete the deb_dist folder to avoid an error if it contains
 # directories from a previous packaging
 os.system("rm -rf deb_dist")
@@ -25,4 +25,3 @@ if args.install is True:
     os.system('sudo gdebi %s' % glob('deb_dist/*.deb')[0])
     # Install the dependencies
    # os.system('sudo apt-get install -f')
-    

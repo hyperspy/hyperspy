@@ -20,11 +20,12 @@ import numpy as np
 
 from nose.tools import assert_true, assert_equal, assert_not_equal
 from hyperspy._signals.spectrum import Spectrum
-from hyperspy.hspy import create_model 
+from hyperspy.hspy import create_model
 from hyperspy.components import Gaussian
 
 
 class TestFitOneComponent:
+
     def setUp(self):
         g = Gaussian()
         g.A.value = 10000.0
@@ -39,19 +40,21 @@ class TestFitOneComponent:
         self.rtol = 0.00
 
     def test_fit_component(self):
-        m = self.model 
+        m = self.model
         axis = self.axis
 
         g1 = Gaussian()
         m.append(g1)
-        m.fit_component(g1, signal_range=(4000,6000))
+        m.fit_component(g1, signal_range=(4000, 6000))
         assert_true(
-                np.allclose(
-                    self.g.function(axis), 
-                    g1.function(axis),
-                    rtol=self.rtol))
+            np.allclose(
+                self.g.function(axis),
+                g1.function(axis),
+                rtol=self.rtol))
+
 
 class TestFitSeveralComponent:
+
     def setUp(self):
         gs1 = Gaussian()
         gs1.A.value = 10000.0
@@ -69,10 +72,10 @@ class TestFitSeveralComponent:
         gs3.sigma.value = 100.0
 
         axis = np.arange(10000)
-        total_signal = (gs1.function(axis) + 
-                        gs2.function(axis) + 
+        total_signal = (gs1.function(axis) +
+                        gs2.function(axis) +
                         gs3.function(axis))
-        
+
         s = Spectrum(total_signal)
         m = create_model(s)
 
@@ -94,37 +97,37 @@ class TestFitSeveralComponent:
         self.rtol = 0.01
 
     def test_fit_component_active_state(self):
-        m = self.model 
+        m = self.model
         axis = self.axis
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
         g2.active = True
         g3.active = False
-        m.fit_component(g1, signal_range=(4500,5200), fit_independent=True)
+        m.fit_component(g1, signal_range=(4500, 5200), fit_independent=True)
         assert_true(
-                np.allclose(
-                    self.gs1.function(axis), 
-                    g1.function(axis),
-                    rtol=self.rtol))
+            np.allclose(
+                self.gs1.function(axis),
+                g1.function(axis),
+                rtol=self.rtol))
         assert_true(g1.active)
         assert_true(g2.active)
         assert_true(not g3.active)
 
     def test_fit_component_free_state(self):
-        m = self.model 
+        m = self.model
         axis = self.axis
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
         g2.A.free = False
         g2.sigma.free = False
-        m.fit_component(g1, signal_range=(4500,5200))
+        m.fit_component(g1, signal_range=(4500, 5200))
         assert_true(
-                np.allclose(
-                    self.gs1.function(axis), 
-                    g1.function(axis),
-                    rtol=self.rtol))
+            np.allclose(
+                self.gs1.function(axis),
+                g1.function(axis),
+                rtol=self.rtol))
 
         assert_true(g1.A.free)
         assert_true(g1.sigma.free)
@@ -139,15 +142,15 @@ class TestFitSeveralComponent:
         assert_true(g3.centre.free)
 
     def test_fit_multiple_component(self):
-        m = self.model 
+        m = self.model
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        m.fit_component(g1, signal_range=(4500,5200))
-        m.fit_component(g2, signal_range=(1500,2200))
-        m.fit_component(g3, signal_range=(5800,6150))
+        m.fit_component(g1, signal_range=(4500, 5200))
+        m.fit_component(g2, signal_range=(1500, 2200))
+        m.fit_component(g3, signal_range=(5800, 6150))
         assert_true(
-                np.allclose(
-                    self.model.spectrum.data, 
-                    m(),
-                    rtol=self.rtol))
+            np.allclose(
+                self.model.spectrum.data,
+                m(),
+                rtol=self.rtol))

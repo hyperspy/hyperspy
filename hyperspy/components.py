@@ -22,7 +22,7 @@
 There are some components that are only useful for one particular kind of signal
 and therefore their name are preceded by the signal name: eg. eels_cl_edge.
 
-Writing a new template is really easy, just edit _template.py and maybe take a 
+Writing a new template is really easy, just edit _template.py and maybe take a
 look to the other components.
 '''
 
@@ -47,7 +47,3 @@ from hyperspy._components.scalable_fixed_pattern import ScalableFixedPattern
 from hyperspy._components.polynomial import Polynomial
 from hyperspy._components.pes_core_line_shape import PESCoreLineShape
 from hyperspy._components.volume_plasmon_drude import VolumePlasmonDrude
-
-
-
-

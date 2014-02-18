@@ -898,6 +898,7 @@ class LearningResults(object):
     # Masks
     navigation_mask = None
     signal_mask = None
+
     def save(self, filename, overwrite=None):
         """Save the result of the decomposition and demixing analysis
         Parameters
@@ -917,6 +918,7 @@ class LearningResults(object):
         # Save, if all went well!
         if overwrite is True:
             np.savez(filename, **kwargs)
+
     def load(self, filename):
         """Load the results of a previous decomposition and
          demixing analysis from a file.
@@ -971,6 +973,7 @@ class LearningResults(object):
                 is not None:
             self.output_dimension = int(self.output_dimension)
         self.summary()
+
     def summary(self):
         """Prints a summary of the decomposition and demixing parameters
          to the stdout
@@ -989,6 +992,7 @@ class LearningResults(object):
             print "---------------------"
             print "BSS algorithm : %s" % self.bss_algorithm
             print "Number of components : %i" % len(self.unmixing_matrix)
+
     def crop_decomposition_dimension(self, n):
         """
         Crop the score matrix up to the given number.
@@ -999,6 +1003,7 @@ class LearningResults(object):
         if self.explained_variance is not None:
             self.explained_variance = self.explained_variance[:n]
         self.factors = self.factors[:, :n]
+
     def _transpose_results(self):
         (self.factors, self.loadings, self.bss_factors,
             self.bss_loadings) = (self.loadings, self.factors,

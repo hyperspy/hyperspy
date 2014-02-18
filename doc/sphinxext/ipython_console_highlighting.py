@@ -13,7 +13,7 @@ import re
 
 # Third party
 from pygments.lexer import Lexer, do_insertions
-from pygments.lexers.agile import (PythonConsoleLexer, PythonLexer, 
+from pygments.lexers.agile import (PythonConsoleLexer, PythonLexer,
                                    PythonTracebackLexer)
 from pygments.token import Comment, Generic
 
@@ -26,7 +26,9 @@ line_re = re.compile('.*?\n')
 #-----------------------------------------------------------------------------
 # Code begins - classes and functions
 
+
 class IPythonConsoleLexer(Lexer):
+
     """
     For IPython console output or doctests, such as:
 
@@ -48,7 +50,7 @@ class IPythonConsoleLexer(Lexer):
 
       - It assumes the default IPython prompts, not customized ones.
     """
-    
+
     name = 'IPython console session'
     aliases = ['ipython']
     mimetypes = ['text/x-ipython-console']
