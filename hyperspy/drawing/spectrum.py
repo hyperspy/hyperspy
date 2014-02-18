@@ -284,8 +284,8 @@ class SpectrumLine(object):
             ydata = self.data_function(axes_manager=self.axes_manager).real
         else:
             ydata = self.data_function(axes_manager=self.axes_manager).imag
-        self.line.set_ydata(ydata)
-
+        self.line.set_ydata(ydata)       
+                
         if self.autoscale is True:
             self.ax.relim()
             y1, y2 = np.searchsorted(self.axis,
