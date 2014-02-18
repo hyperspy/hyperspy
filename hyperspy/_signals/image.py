@@ -54,8 +54,8 @@ class Image(Signal):
         
         Parameters
         ----------            
-        threshold: float
-            The threshold value used to generate the contour. 
+        threshold: float or list
+            The threshold value(s) used to generate the contour(s). 
             Between 0 (min intensity) and 1 (max intensity).
         figure: None or mayavi.core.scene.Scene 
             If None, generate a new scene/figure.
@@ -69,8 +69,9 @@ class Image(Signal):
         --------
         
         >>> # Plot two iso-surfaces from one stack of images
-        >>> [fig,src,iso] = img.plot_3D_iso_surface(0.8)
-        >>> [fig,src2,iso2] = img.plot_3D_iso_surface(0.2,figure=fig)
+        >>> [fig,src,iso] = img.plot_3D_iso_surface([0.2,0.8])
+        >>> # Plot an iso-surface from another stack of images
+        >>> [fig,src2,iso2] = img2.plot_3D_iso_surface(0.2,figure=fig)
         >>> # Change the threshold of the second iso-surface
         >>> iso2.contour.contours=[0.3, ]
           
@@ -87,7 +88,7 @@ class Image(Signal):
             raise ValueError("This functions works only for 3D stack of " 
             "images.")
         
-        if figure=='new':
+        if figure==None:
             figure = mlab.figure()     
             
         img_res = self.deepcopy()
@@ -98,20 +99,20 @@ class Image(Signal):
         src = mlab.pipeline.scalar_field(img_data)
         src.name = img_res.mapped_parameters.title  
         
-        threshold = img_data.max()-threshold*img_data.ptp()        
+        if hasattr(threshold, "__iter__") is False:
+            threshold = [threshold]    
+        
+        threshold = [img_data.max()-thr*img_data.ptp() for thr in threshold]     
 
         scale = [1/img_res.axes_manager[i].scale for i in [1,2,0]]
-        src.spacing= scale
-         
-        if color != 'auto':
-            iso = mlab.pipeline.iso_surface(src,
-                contours=[threshold, ],color = color)
-        else:
-           iso = mlab.pipeline.iso_surface(src,
-                contours=[threshold, ],**kwargs)            
+        src.spacing = scale      
+
+        iso = mlab.pipeline.iso_surface(src,        
+            contours = threshold, **kwargs)            
         iso.compute_normals = False
         
         if outline:
+            #mlab.outline(color=(0.5,0.5,0.5))
             mlab.outline()
       
         return figure, src, iso

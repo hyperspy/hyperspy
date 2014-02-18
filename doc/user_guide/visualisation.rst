@@ -233,9 +233,7 @@ not supported yet.
     >>> #Generate the X-ray intensity map of Nickel L alpha
     >>> NiMap = specImg3Dc.get_intensity_map(['Ni_La'])[0]
     >>> #Plot the isosurfaces    
-    >>> [fig,src1,iso1] = NiMap.plot_3D_iso_surface(0.8)
-    >>> [fig,src2,iso2] = NiMap.plot_3D_iso_surface(0.5,figure=fig)
-    >>> [fig,src3,iso3] = NiMap.plot_3D_iso_surface(0.2,figure=fig)        
+    >>> NiMap.plot_3D_iso_surface([0.2,0.5,0.8])      
     
 .. figure::  images/mayavi.png
    :align:   center
