@@ -21,9 +21,9 @@ def _estimate_gain(ns, cs,
         factor = 2 ** binning
         remainder = np.mod(ns.shape[1], factor)
         if remainder != 0:
-            ns = ns[:,remainder:]
-            cs = cs[:,remainder:]
-        new_shape = (ns.shape[0], ns.shape[1]/factor)
+            ns = ns[:, remainder:]
+            cs = cs[:, remainder:]
+        new_shape = (ns.shape[0], ns.shape[1] / factor)
         ns = rebin(ns, new_shape)
         cs = rebin(cs, new_shape)
 
@@ -64,27 +64,29 @@ def _estimate_gain(ns, cs,
         plt.scatter(average.squeeze(), variance.squeeze())
         plt.xlabel('Counts')
         plt.ylabel('Variance')
-        plt.plot(average2fit, np.polyval(fit,average2fit), color = 'red')
-    results = {'fit' : fit, 'variance' : variance.squeeze(),
-    'counts' : average.squeeze()}
+        plt.plot(average2fit, np.polyval(fit, average2fit), color='red')
+    results = {'fit': fit, 'variance': variance.squeeze(),
+               'counts': average.squeeze()}
 
     return results
 
-def _estimate_correlation_factor(g0, gk,k):
-    a = math.sqrt(g0/gk)
-    e = k*(a-1)/(a-k)
-    c = (1 - e)**2
+
+def _estimate_correlation_factor(g0, gk, k):
+    a = math.sqrt(g0 / gk)
+    e = k * (a - 1) / (a - k)
+    c = (1 - e) ** 2
     return c
 
+
 def estimate_variance_parameters(
-    noisy_signal,
-    clean_signal,
-    mask=None,
-    pol_order=1,
-    higher_than=None,
-    return_results=False,
-    plot_results=True,
-    weighted=False):
+        noisy_signal,
+        clean_signal,
+        mask=None,
+        pol_order=1,
+        higher_than=None,
+        return_results=False,
+        plot_results=True,
+        weighted=False):
     """Find the scale and offset of the Poissonian noise
 
     By comparing an SI with its denoised version (i.e. by PCA),
@@ -113,8 +115,8 @@ def estimate_variance_parameters(
     and scale factor
 
     """
-    fold_back_noisy =  unfold_if_multidim(noisy_signal)
-    fold_back_clean =  unfold_if_multidim(clean_signal)
+    fold_back_noisy = unfold_if_multidim(noisy_signal)
+    fold_back_clean = unfold_if_multidim(clean_signal)
 
     # The rest of the code assumes that the first data axis
     # is the navigation axis. We transpose the data if that is not the
@@ -127,26 +129,26 @@ def estimate_variance_parameters(
           else clean_signal.data.T.copy())
 
     if mask is not None:
-        _slice = [slice(None),] * len(ns.shape)
+        _slice = [slice(None), ] * len(ns.shape)
         _slice[noisy_signal.axes_manager.signal_axes[0].index_in_array]\
-         = ~mask
+            = ~mask
         ns = ns[_slice]
         cs = cs[_slice]
 
     results0 = _estimate_gain(ns, cs, weighted=weighted,
-        higher_than=higher_than, plot_results=plot_results, binning=0,
-        pol_order=pol_order)
+                              higher_than=higher_than, plot_results=plot_results, binning=0,
+                              pol_order=pol_order)
 
     results2 = _estimate_gain(ns, cs, weighted=weighted,
-        higher_than=higher_than, plot_results=False, binning=2,
-        pol_order=pol_order)
+                              higher_than=higher_than, plot_results=False, binning=2,
+                              pol_order=pol_order)
 
     c = _estimate_correlation_factor(results0['fit'][0],
                                      results2['fit'][0], 4)
 
     message = ("Gain factor: %.2f\n" % results0['fit'][0] +
                "Gain offset: %.2f\n" % results0['fit'][1] +
-               "Correlation factor: %.2f\n" % c )
+               "Correlation factor: %.2f\n" % c)
     is_ok = True
     if hyperspy.defaults_parser.preferences.General.interactive is True:
         is_ok = messagesui.information(
@@ -155,7 +157,7 @@ def estimate_variance_parameters(
         print message
     if is_ok:
         if not noisy_signal.mapped_parameters.has_item(
-            'Variance_estimation'):
+                'Variance_estimation'):
             noisy_signal.mapped_parameters.add_node(
                 'Variance_estimation')
         noisy_signal.mapped_parameters.Variance_estimation.gain_factor = \
@@ -164,7 +166,7 @@ def estimate_variance_parameters(
             results0['fit'][1]
         noisy_signal.mapped_parameters.Variance_estimation.correlation_factor = c
         noisy_signal.mapped_parameters.Variance_estimation.\
-        parameters_estimation_method = 'Hyperspy'
+            parameters_estimation_method = 'Hyperspy'
 
     if fold_back_noisy is True:
         noisy_signal.fold()
@@ -174,30 +176,35 @@ def estimate_variance_parameters(
     if return_results is True:
         return results0
 
-def power_law_perc_area(E1,E2, r):
+
+def power_law_perc_area(E1, E2, r):
     a = E1
     b = E2
-    return 100*((a**r*r-a**r)*(a/(a**r*r-a**r)-(b+a)/((b+a)**r*r-(b+a)**r)))/a
+    return 100 * ((a ** r * r - a ** r) * (a / (a ** r * r - a ** r) -
+                  (b + a) / ((b + a) ** r * r - (b + a) ** r))) / a
+
 
 def rel_std_of_fraction(a, std_a, b, std_b, corr_factor=1):
-    rel_a = std_a/a
-    rel_b = std_b/b
-    return np.sqrt(rel_a**2 + rel_b**2 -
+    rel_a = std_a / a
+    rel_b = std_b / b
+    return np.sqrt(rel_a ** 2 + rel_b ** 2 -
                    2 * rel_a * rel_b * corr_factor)
+
 
 def ratio(edge_A, edge_B):
     a = edge_A.intensity.value
     std_a = edge_A.intensity.std
     b = edge_B.intensity.value
     std_b = edge_B.intensity.std
-    ratio = a/b
-    ratio_std = ratio * rel_std_of_fraction(a, std_a,b, std_b)
+    ratio = a / b
+    ratio_std = ratio * rel_std_of_fraction(a, std_a, b, std_b)
     print "Ratio %s/%s %1.3f +- %1.3f " % (
         edge_A.name,
         edge_B.name,
-        a/b,
-        1.96*ratio_std)
+        a / b,
+        1.96 * ratio_std)
     return ratio, ratio_std
+
 
 def eels_constant(s, zlp, t):
     """Calculate the constant of proportionality (k) in the relationship
@@ -234,21 +241,21 @@ def eels_constant(s, zlp, t):
 
     # Constants and units
     me = constants.value(
-        'electron mass energy equivalent in MeV') * 1e3 # keV
+        'electron mass energy equivalent in MeV') * 1e3  # keV
 
     # Mapped parameters
     try:
         e0 = s.mapped_parameters.TEM.beam_energy
     except:
         raise AttributeError("Please define the beam energy."
-                                "You can do this e.g. by using the "
-                                "set_microscope_parameters method")
+                             "You can do this e.g. by using the "
+                             "set_microscope_parameters method")
     try:
         beta = s.mapped_parameters.TEM.EELS.collection_angle
     except:
         raise AttributeError("Please define the collection angle."
-                                "You can do this e.g. by using the "
-                                "set_microscope_parameters method")
+                             "You can do this e.g. by using the "
+                             "set_microscope_parameters method")
 
     axis = s.axes_manager.signal_axes[0]
     eaxis = axis.axis.copy()
@@ -258,17 +265,17 @@ def eels_constant(s, zlp, t):
 
     if isinstance(zlp, hyperspy.signal.Signal):
         if (zlp.axes_manager.navigation_dimension ==
-            s.axes_manager.navigation_dimension):
+                s.axes_manager.navigation_dimension):
             if zlp.axes_manager.signal_dimension == 0:
                 i0 = i0.data
             else:
                 i0 = zlp.data.sum(axis.index_in_array)
         else:
             raise ValueError('The ZLP signal dimensions are not '
-                                'compatible with the dimensions of the '
-                                'low-loss signal')
+                             'compatible with the dimensions of the '
+                             'low-loss signal')
         i0 = i0.reshape(
-                np.insert(i0.shape, axis.index_in_array, 1))
+            np.insert(i0.shape, axis.index_in_array, 1))
     elif isinstance(zlp, numbers.Number):
         i0 = zlp
     else:
@@ -276,18 +283,18 @@ def eels_constant(s, zlp, t):
 
     if isinstance(t, hyperspy.signal.Signal):
         if (t.axes_manager.navigation_dimension ==
-            s.axes_manager.navigation_dimension) and (
-            t.axes_manager.signal_dimension == 0):
-                t = t.data
-                t = t.reshape(
-                        np.insert(t.shape, axis.index_in_array, 1))
+                s.axes_manager.navigation_dimension) and (
+                t.axes_manager.signal_dimension == 0):
+            t = t.data
+            t = t.reshape(
+                np.insert(t.shape, axis.index_in_array, 1))
         else:
             raise ValueError('The thickness signal dimensions are not '
-                                'compatible with the dimensions of the '
-                                'low-loss signal')
+                             'compatible with the dimensions of the '
+                             'low-loss signal')
     # Slicer to get the signal data from 0 to axis.size
     slicer = s.axes_manager._get_data_slice(
-            [(axis.index_in_array, slice(None,axis.size)),])
+        [(axis.index_in_array, slice(None, axis.size)), ])
 
     # Kinetic definitions
     ke = e0 * (1 + e0 / 2. / me) / (1 + e0 / me) ** 2

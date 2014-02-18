@@ -17,7 +17,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Hyperspy; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301
 # USA
 
 # general functions for reading data from files
@@ -61,6 +61,7 @@ L_byte = struct.Struct('<b')
 B_char = struct.Struct('>c')
 L_char = struct.Struct('<c')
 
+
 def read_short(f, endian):
     """Read a 2-Byte integer from file f
     with a given endianness (byte order).
@@ -72,10 +73,11 @@ def read_short(f, endian):
     else:
         data = f.read(2)      # hexadecimal representation
         if endian == 'big':
-           s = B_short
+            s = B_short
         elif endian == 'little':
             s = L_short
-        return s.unpack(data)[0] # struct.unpack returns a tuple
+        return s.unpack(data)[0]  # struct.unpack returns a tuple
+
 
 def read_ushort(f, endian):
     """Read a 2-Byte integer from file f
@@ -93,6 +95,7 @@ def read_ushort(f, endian):
             s = L_ushort
         return s.unpack(data)[0]
 
+
 def read_long(f, endian):
     """Read a 4-Byte integer from file f
     with a given endianness (byte order).
@@ -109,6 +112,7 @@ def read_long(f, endian):
             s = L_long
         return s.unpack(data)[0]
 
+
 def read_ulong(f, endian):
     """Read a 4-Byte integer from file f
     with a given endianness (byte order).
@@ -124,7 +128,8 @@ def read_ulong(f, endian):
         elif endian == 'little':
             s = L_ulong
         return s.unpack(data)[0]
-    
+
+
 def read_float(f, endian):
     """Read a 4-Byte floating point from file f
     with a given endianness (byte order).
@@ -139,7 +144,8 @@ def read_float(f, endian):
             s = B_float
         elif endian == 'little':
             s = L_float
-        return s.unpack(data)[0]    
+        return s.unpack(data)[0]
+
 
 def read_double(f, endian):
     """Read a 8-Byte floating point from file f
@@ -155,7 +161,8 @@ def read_double(f, endian):
             s = B_double
         elif endian == 'little':
             s = L_double
-        return s.unpack(data)[0]            
+        return s.unpack(data)[0]
+
 
 def read_boolean(f, endian):
     """Read a 1-Byte charater from file f
@@ -171,7 +178,8 @@ def read_boolean(f, endian):
             s = B_bool
         elif endian == 'little':
             s = L_bool
-        return s.unpack(data)[0]    
+        return s.unpack(data)[0]
+
 
 def read_byte(f, endian):
     """Read a 1-Byte charater from file f
@@ -189,6 +197,7 @@ def read_byte(f, endian):
             s = L_byte
         return s.unpack(data)[0]
 
+
 def read_char(f, endian):
     """Read a 1-Byte charater from file f
     with a given endianness (byte order).
@@ -204,4 +213,3 @@ def read_char(f, endian):
         elif endian == 'little':
             s = L_char
         return s.unpack(data)[0]
-

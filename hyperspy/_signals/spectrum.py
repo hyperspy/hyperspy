@@ -20,11 +20,14 @@ import warnings
 
 from hyperspy.exceptions import DataDimensionError
 from hyperspy.signal import Signal
-            
+
+
 class Spectrum(Signal):
+
     """
     """
     _record_by = 'spectrum'
+
     def __init__(self, *args, **kwargs):
         Signal.__init__(self, *args, **kwargs)
         self.axes_manager.set_signal_dimension(1)
@@ -34,20 +37,19 @@ class Spectrum(Signal):
             'This method is deprecated and and will be removed '
             'in the next version. '
             'Please use `set_signal_type("EELS")` instead',
-              DeprecationWarning)
+            DeprecationWarning)
         s = self.deepcopy()
         s.set_signal_type("EELS")
         return s
 
-    
     def to_EDS(self, microscope=None):
         warnings.warn(
             'This method is deprecated and and will be removed '
             'in the next version. '
             'Please use `set_signal_type("EDS_TEM")` or '
             '`set_signal_type("EDS_SEM")` instead',
-              DeprecationWarning)
-        if microscope == None:             
+            DeprecationWarning)
+        if microscope is None:
             if self.mapped_parameters.signal_type == 'EDS_SEM':
                 microscope = 'SEM'
             elif self.mapped_parameters.signal_type == 'EDS_TEM':
@@ -55,68 +57,60 @@ class Spectrum(Signal):
             else:
                 microscope = 'TEM'
         s = self.deepcopy()
-        s.set_signal_type("EDS_"+microscope)
+        s.set_signal_type("EDS_" + microscope)
         return s
-        
-        
+
         #"""Return a EDSSpectrum from a Spectrum
-        
-        #The microscope, which defines the quantification methods, needs 
-        #to be set.
-        
-        #Parameters
+        # The microscope, which defines the quantification methods, needs
+        # to be set.
+        # Parameters
         #----------------
-        #microscope : {None | 'TEM' | 'SEM'}
-            #If None the microscope defined in signal_type is used 
-            #(EDS_TEM or EDS_SEM). If 'TEM' or 'SEM', the signal_type is 
-            #overwritten.
-            
+        # microscope : {None | 'TEM' | 'SEM'}
+            # If None the microscope defined in signal_type is used
+            #(EDS_TEM or EDS_SEM). If 'TEM' or 'SEM', the signal_type is
+            # overwritten.
         #"""
         #from hyperspy._signals.eds_tem import EDSTEMSpectrum
         #from hyperspy._signals.eds_sem import EDSSEMSpectrum
-                
-        #if microscope == None:             
-            #if self.mapped_parameters.signal_type == 'EDS_SEM':
+        # if microscope == None:
+            # if self.mapped_parameters.signal_type == 'EDS_SEM':
                 #microscope = 'SEM'
-            #elif self.mapped_parameters.signal_type == 'EDS_TEM':
+            # elif self.mapped_parameters.signal_type == 'EDS_TEM':
                 #microscope = 'TEM'
-            #else:
-                #raise ValueError("Set a microscope. Valid microscopes " 
+            # else:
+                # raise ValueError("Set a microscope. Valid microscopes "
                 #"are: 'SEM' or 'TEM'")
-            
         #dic = self._get_signal_dict()
-        #if microscope == 'SEM':
+        # if microscope == 'SEM':
             #dic['mapped_parameters']['signal_type'] = 'EDS_SEM'
             #eds = EDSSEMSpectrum(**dic)
-        #elif microscope == 'TEM':
+        # elif microscope == 'TEM':
             #dic['mapped_parameters']['signal_type'] = 'EDS_TEM'
             #eds = EDSTEMSpectrum(**dic)
-        #else:
-            #raise ValueError("Unkown microscope. Valid microscopes " 
+        # else:
+            # raise ValueError("Unkown microscope. Valid microscopes "
                 #"are: 'SEM' or 'TEM'")
-        
-        #if hasattr(self, 'learning_results'):
+        # if hasattr(self, 'learning_results'):
             #eds.learning_results = copy.deepcopy(self.learning_results)
         #eds.tmp_parameters = self.tmp_parameters.deepcopy()
-        #return eds
-    
+        # return eds
     def to_image(self):
         """Returns the spectrum as an image.
-        
+
         See Also
         --------
-        as_image : a method for the same purpose with more options.  
+        as_image : a method for the same purpose with more options.
         signals.Spectrum.to_image : performs the inverse operation on images.
-        
+
         Raises
         ------
         DataDimensionError: when data.ndim < 2
-    
+
         """
         if self.data.ndim < 2:
             raise DataDimensionError(
                 "A Signal dimension must be >= 2 to be converted to an Image")
-        im = self.rollaxis(-1+3j, 0+3j)
+        im = self.rollaxis(-1 + 3j, 0 + 3j)
         im.mapped_parameters.record_by = "image"
         im._assign_subclass()
         return im

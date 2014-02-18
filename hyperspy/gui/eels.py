@@ -20,25 +20,27 @@ import traits.api as t
 import traitsui.api as tu
 from traitsui.menu import OKButton, ApplyButton, CancelButton, ModalButtons
 
+
 class General(t.HasTraits):
     title = t.Str(t.Undefined)
     original_filename = t.File(t.Undefined)
     signal_kind = t.Str(t.Undefined)
-    record_by = t.Enum('spectrum', 'image', default = t.Undefined)
+    record_by = t.Enum('spectrum', 'image', default=t.Undefined)
+
 
 class TEMParametersUI(t.HasTraits):
     convergence_angle = t.Float(t.Undefined,
-        label = 'Convergence angle (mrad)')
+                                label='Convergence angle (mrad)')
     beam_energy = t.Float(t.Undefined,
-        label = 'Beam energy (keV)')
+                          label='Beam energy (keV)')
     collection_angle = t.Float(t.Undefined,
-        label = 'Collection angle (mrad)')
-        
+                               label='Collection angle (mrad)')
+
     traits_view = tu.View(
         tu.Group('beam_energy',
-        'convergence_angle',
-            label = 'TEM',show_border = True),
+                 'convergence_angle',
+                 label='TEM', show_border=True),
         tu.Group('collection_angle',
-            label = 'EELS',show_border = True),
-        kind = 'modal', buttons = [OKButton, CancelButton],
-        title = 'TEM parameters definition wizard')
+                 label='EELS', show_border=True),
+        kind='modal', buttons=[OKButton, CancelButton],
+        title='TEM parameters definition wizard')

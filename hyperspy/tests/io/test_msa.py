@@ -85,6 +85,7 @@ example2_parameters = {
 
 
 class TestExample1():
+
     def setUp(self):
         self.s = load(os.path.join(
             my_path,
@@ -114,11 +115,15 @@ class TestExample1():
              4637.0,
              4429.0,
              4217.0], self.s.data.tolist())
+
     def test_parameters(self):
         assert_equal(
-                example1_parameters,
-                self.s.original_parameters.as_dictionary())
+            example1_parameters,
+            self.s.original_parameters.as_dictionary())
+
+
 class TestExample2():
+
     def setUp(self):
         self.s = load(os.path.join(
             my_path,
@@ -207,8 +212,8 @@ class TestExample2():
              80.107,
              58.657,
              49.442], self.s.data.tolist())
+
     def test_parameters(self):
         assert_equal(
-                example2_parameters,
-                self.s.original_parameters.as_dictionary())
-
+            example2_parameters,
+            self.s.original_parameters.as_dictionary())

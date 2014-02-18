@@ -21,23 +21,25 @@ import numpy as np
 
 from hyperspy.component import Component
 
+
 class Logistic(Component):
+
     """Logistic function component
-    
+
     f(x) = a/(1+b*exp(-c*(x-origin)))
-    
+
     Attributes
     ----------
     a : Float
     b : Float
     c : Float
     origin : Float
-    
+
     """
 
     def __init__(self):
         # Define the parameters
-        Component.__init__(self, ('a', 'b', 'c', 'origin'))        
+        Component.__init__(self, ('a', 'b', 'c', 'origin'))
         # Define the name of the component
         self.a.grad = self.grad_a
         self.b.grad = self.grad_b
@@ -52,8 +54,8 @@ class Logistic(Component):
         b = self.b.value
         c = self.c.value
         origin = self.origin.value
-        return a/(1+b*np.exp(-c*(x-origin)))
-    
+        return a / (1 + b * np.exp(-c * (x - origin)))
+
     def grad_a(self, x):
         """
         Returns d(function)/d(parameter_1)
@@ -62,9 +64,9 @@ class Logistic(Component):
         b = self.b.value
         c = self.c.value
         origin = self.origin.value
-        
-        return 1/(1+b*np.exp(-c*(x-origin)))
-    
+
+        return 1 / (1 + b * np.exp(-c * (x - origin)))
+
     def grad_b(self, x):
         """
         Returns d(function)/d(parameter_1)
@@ -73,9 +75,10 @@ class Logistic(Component):
         b = self.b.value
         c = self.c.value
         origin = self.origin.value
-        
-        return -(a*np.exp(-c*(x-origin)))/(b*np.exp(-c*(x-origin))+1)**2
-    
+
+        return -(a * np.exp(-c * (x - origin))) / \
+            (b * np.exp(-c * (x - origin)) + 1) ** 2
+
     def grad_c(self, x):
         """
         Returns d(function)/d(parameter_1)
@@ -84,10 +87,10 @@ class Logistic(Component):
         b = self.b.value
         c = self.c.value
         origin = self.origin.value
-        
-        return -(a*b*(origin-x)*np.exp(-c*(x-origin))) / \
-    (b*np.exp(-c*(x-origin))+1)**2
-    
+
+        return -(a * b * (origin - x) * np.exp(-c * (x - origin))) / \
+            (b * np.exp(-c * (x - origin)) + 1) ** 2
+
     def grad_origin(self, x):
         """
         Returns d(function)/d(parameter_1)
@@ -96,8 +99,6 @@ class Logistic(Component):
         b = self.b.value
         c = self.c.value
         origin = self.origin.value
-        
-        return -(a*b*c*np.exp(-c*(x-origin)))/(b*np.exp(-c*(x-origin))+1)**2
 
-
-
+        return -(a * b * c * np.exp(-c * (x - origin))) / \
+            (b * np.exp(-c * (x - origin)) + 1) ** 2

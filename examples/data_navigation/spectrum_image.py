@@ -26,5 +26,4 @@ s.mapped_parameters.title = 'Random spectrum image'
 # Plot it
 s.plot()
 
-show() # No necessary when running in the HyperSpy's IPython profile
-
+show()  # No necessary when running in the HyperSpy's IPython profile
