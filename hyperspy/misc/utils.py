@@ -728,26 +728,26 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                 eaxis = signal.axes_manager._axes[0]
                 eaxis.name = axis_name
                 eaxis.navigate = True  # This triggers _update_parameters
-                signal.mapped_parameters = obj.mapped_parameters
+                signal.metadata = obj.metadata
                 # Get the title from 1st object
-                signal.mapped_parameters.title = (
-                    "Stack of " + obj.mapped_parameters.title)
-                signal.original_parameters = DictionaryBrowser({})
+                signal.metadata.title = (
+                    "Stack of " + obj.metadata.title)
+                signal.original_metadata = DictionaryBrowser({})
             else:
                 axis = obj.axes_manager[axis]
                 signal = obj.deepcopy()
 
-            signal.original_parameters.add_node('stack_elements')
+            signal.original_metadata.add_node('stack_elements')
 
         # Store parameters
-        signal.original_parameters.stack_elements.add_node(
+        signal.original_metadata.stack_elements.add_node(
             'element%i' % i)
-        node = signal.original_parameters.stack_elements[
+        node = signal.original_metadata.stack_elements[
             'element%i' % i]
-        node.original_parameters = \
-            obj.original_parameters.as_dictionary()
-        node.mapped_parameters = \
-            obj.mapped_parameters.as_dictionary()
+        node.original_metadata = \
+            obj.original_metadata.as_dictionary()
+        node.metadata = \
+            obj.metadata.as_dictionary()
 
         if axis is None:
             if obj.data.shape != original_shape:

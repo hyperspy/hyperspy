@@ -759,11 +759,11 @@ class ImageObject(object):
                     zip(self.names, self.shape, self.scales, self.offsets,
                         self.units))]
 
-    def get_mapped_parameters(self, mapped_parameters={}):
-        mapped_parameters['title'] = self.title
-        mapped_parameters['record_by'] = self.record_by
-        mapped_parameters['signal_type'] = self.signal_type
-        return mapped_parameters
+    def get_metadata(self, metadata={}):
+        metadata['title'] = self.title
+        metadata['record_by'] = self.record_by
+        metadata['signal_type'] = self.signal_type
+        return metadata
 
 mapping = {
     "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions.Collection_semi_angle_mrad": ("TEM.EELS.collection_angle", None),
@@ -800,7 +800,7 @@ def file_reader(filename, record_by=None, order=None, verbose=False):
             dm.tags_dict['ImageList'][
                 'TagGroup0'] = image.imdict.as_dictionary()
             axes = image.get_axes_dict()
-            mp = image.get_mapped_parameters()
+            mp = image.get_metadata()
             mp['original_filename'] = os.path.split(filename)[1]
             post_process = []
             if image.to_spectrum is True:
@@ -809,8 +809,8 @@ def file_reader(filename, record_by=None, order=None, verbose=False):
             imd.append(
                 {'data': image.get_data(),
                  'axes': axes,
-                 'mapped_parameters': mp,
-                 'original_parameters': dm.tags_dict,
+                 'metadata': mp,
+                 'original_metadata': dm.tags_dict,
                  'post_process': post_process,
                  'mapping': mapping,
                  })

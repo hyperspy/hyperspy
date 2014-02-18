@@ -58,8 +58,8 @@ version = 1.1
 #    'index_in_array'
 # The experiment group contains a number of attributes that will be
 # directly assigned as class attributes of the Signal instance. In
-# addition the experiment groups may contain 'original_parameters' and
-# 'mapped_parameters'subgroup that will be
+# addition the experiment groups may contain 'original_metadata' and
+# 'metadata'subgroup that will be
 # assigned to the same name attributes of the Signal instance as a
 # Dictionary Browsers
 # The Experiments group can contain attributes that may be common to all
@@ -107,10 +107,10 @@ def hdfgroup2signaldict(group):
     for axis in axes:
         for key, item in axis.iteritems():
             axis[key] = ensure_unicode(item)
-    exp['mapped_parameters'] = hdfgroup2dict(
-        group['mapped_parameters'], {})
-    exp['original_parameters'] = hdfgroup2dict(
-        group['original_parameters'], {})
+    exp['metadata'] = hdfgroup2dict(
+        group['metadata'], {})
+    exp['original_metadata'] = hdfgroup2dict(
+        group['original_metadata'], {})
     exp['axes'] = axes
     exp['attributes'] = {}
     if 'learning_results' in group.keys():
@@ -129,21 +129,21 @@ def hdfgroup2signaldict(group):
         exp['attributes']['peak_learning_results'] = hdfgroup2dict(
             group['peak_mva_results'], {})
     # Replace the old signal and name keys with their current names
-    if 'signal' in exp['mapped_parameters']:
-        exp['mapped_parameters']['signal_type'] = \
-            exp['mapped_parameters']['signal']
-        del exp['mapped_parameters']['signal']
+    if 'signal' in exp['metadata']:
+        exp['metadata']['signal_type'] = \
+            exp['metadata']['signal']
+        del exp['metadata']['signal']
 
-    if 'name' in exp['mapped_parameters']:
-        exp['mapped_parameters']['title'] = \
-            exp['mapped_parameters']['name']
-        del exp['mapped_parameters']['name']
+    if 'name' in exp['metadata']:
+        exp['metadata']['title'] = \
+            exp['metadata']['name']
+        del exp['metadata']['name']
 
     # If the title was not defined on writing the Experiment is
     # then called __unnamed__. The next "if" simply sets the title
     # back to the empty string
-    if '__unnamed__' == exp['mapped_parameters']['title']:
-        exp['mapped_parameters']['title'] = ''
+    if '__unnamed__' == exp['metadata']['title']:
+        exp['metadata']['title'] = ''
 
     return exp
 
@@ -241,11 +241,11 @@ def write_signal(signal, group, compression='gzip'):
         coord_group = group.create_group(
             'axis-%s' % axis.index_in_array)
         dict2hdfgroup(axis_dict, coord_group, compression=compression)
-    mapped_par = group.create_group('mapped_parameters')
-    dict2hdfgroup(signal.mapped_parameters.as_dictionary(),
+    mapped_par = group.create_group('metadata')
+    dict2hdfgroup(signal.metadata.as_dictionary(),
                   mapped_par, compression=compression)
-    original_par = group.create_group('original_parameters')
-    dict2hdfgroup(signal.original_parameters.as_dictionary(),
+    original_par = group.create_group('original_metadata')
+    dict2hdfgroup(signal.original_metadata.as_dictionary(),
                   original_par, compression=compression)
     learning_results = group.create_group('learning_results')
     dict2hdfgroup(signal.learning_results.__dict__,
@@ -262,7 +262,7 @@ def file_writer(filename, signal, compression='gzip', *args, **kwds):
         f.attrs['file_format'] = "Hyperspy"
         f.attrs['file_format_version'] = version
         exps = f.create_group('Experiments')
-        group_name = signal.mapped_parameters.title if \
-            signal.mapped_parameters.title else '__unnamed__'
+        group_name = signal.metadata.title if \
+            signal.metadata.title else '__unnamed__'
         expg = exps.create_group(group_name)
         write_signal(signal, expg, compression=compression)
