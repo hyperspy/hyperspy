@@ -564,7 +564,8 @@ class EDSSpectrum(Spectrum):
                     "Not X-ray line, set them with `add_elements`")
 
         if self.axes_manager.navigation_dimension > 0:
-            raise ValueError("Not yet implemented for dimension higher than 1.")
+            raise ValueError(
+                "Not yet implemented for dimension higher than 1.")
 
         line_energy = []
         intensity = []
@@ -579,5 +580,5 @@ class EDSSpectrum(Spectrum):
         self.plot()
         for i in range(len(line_energy)):
             plt.text(line_energy[i], intensity[i] * 1.1, Xray_lines[i],
-                    rotation=90)
+                     rotation=90)
             plt.vlines(line_energy[i], 0, intensity[i] * 0.8, color='black')
