@@ -507,8 +507,7 @@ class EDSSpectrum(Spectrum):
                                        elevation_angle)
 
         return TOA
-        
-        
+
     def plot_Xray_line(self, line_to_plot='selected'):
         """
         Annotate a spec.plot() with the name of the selected X-ray
