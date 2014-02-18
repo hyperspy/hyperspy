@@ -476,7 +476,7 @@ class EELSSpectrum(Spectrum):
         s = self._get_navigation_signal()
         s.data = t_over_lambda
         s.metadata.title = (self.metadata.title +
-                                     ' $\\frac{t}{\\lambda}$')
+                            ' $\\frac{t}{\\lambda}$')
         if self.tmp_parameters.has_item('filename'):
             s.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
@@ -543,7 +543,7 @@ class EELSSpectrum(Spectrum):
                     [(axis.index_in_array, slice(None, self_size)), ])]
 
         s.metadata.title = (s.metadata.title +
-                                     ' after Fourier-log deconvolution')
+                            ' after Fourier-log deconvolution')
         if s.tmp_parameters.has_item('filename'):
             s.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
@@ -647,7 +647,7 @@ class EELSSpectrum(Spectrum):
         cl.data *= I0
         cl.crop(-1, None, int(orig_cl_size))
         cl.metadata.title = (self.metadata.title +
-                                      ' after Fourier-ratio deconvolution')
+                             ' after Fourier-ratio deconvolution')
         if cl.tmp_parameters.has_item('filename'):
             cl.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
@@ -1175,8 +1175,8 @@ class EELSSpectrum(Spectrum):
         del s
         eps.set_signal_type("DielectricFunction")
         eps.metadata.title = (self.metadata.title +
-                                       'dielectric function '
-                                       '(from Kramers-Kronig analysis)')
+                              'dielectric function '
+                              '(from Kramers-Kronig analysis)')
         if eps.tmp_parameters.has_item('filename'):
             eps.tmp_parameters.filename = (
                 self.tmp_parameters.filename +

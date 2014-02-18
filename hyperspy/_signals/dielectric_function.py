@@ -115,5 +115,5 @@ class DielectricFunction(Spectrum):
         s = self._deepcopy_with_new_data(data)
         s.set_signal_type("EELS")
         s.metadata.title = ("EELS calculated from " +
-                                     self.metadata.title)
+                            self.metadata.title)
         return s

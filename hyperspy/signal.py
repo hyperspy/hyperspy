@@ -2262,7 +2262,7 @@ class MVATools(object):
         signal = self._get_factors_as_signal(self.learning_results.factors)
         signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.metadata.title = ("Decomposition factors of " +
-                                          self.metadata.title)
+                                 self.metadata.title)
         return signal
 
     def get_bss_loadings_as_signal(self):
@@ -2277,7 +2277,7 @@ class MVATools(object):
             self.learning_results.bss_loadings)
         signal.axes_manager[0].name = "BSS component index"
         signal.metadata.title = ("BSS loadings of " +
-                                          self.metadata.title)
+                                 self.metadata.title)
         return signal
 
     def get_bss_factors_as_signal(self):
@@ -2291,7 +2291,7 @@ class MVATools(object):
         signal = self._get_factors_as_signal(self.learning_results.bss_factors)
         signal.axes_manager[0].name = "BSS component index"
         signal.metadata.title = ("BSS factors of " +
-                                          self.metadata.title)
+                                 self.metadata.title)
         return signal
 
     def plot_bss_results(self,
@@ -3797,7 +3797,7 @@ class Signal(MVA,
 
         hist_spec.axes_manager[0].name = 'value'
         hist_spec.metadata.title = (img.metadata.title +
-                                             " histogram")
+                                    " histogram")
         return hist_spec
 
     def apply_function(self, function, **kwargs):
@@ -4037,7 +4037,7 @@ class Signal(MVA,
             cs.tmp_parameters.folder = self.tmp_parameters.folder
         if auto_title is True:
             cs.metadata.title = (cs.metadata.title +
-                                          ' ' + str(self.axes_manager.indices))
+                                 ' ' + str(self.axes_manager.indices))
         cs.axes_manager._set_axis_attribute_values("navigate", False)
         return cs
 

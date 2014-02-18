@@ -450,8 +450,8 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     dictionary = {
         'data': dc,
         'metadata': {'original_filename': os.path.split(filename)[1],
-                              'record_by': record_by,
-                              'signal_type': "", },
+                     'record_by': record_by,
+                     'signal_type': "", },
         'axes': axes,
         'original_metadata': original_metadata,
         'mapping': mapping}
