@@ -72,6 +72,7 @@ not_valid_format = 'The file is not a valid Hyperspy hdf5 file'
 current_file_version = None
 latest_file_version = StrictVersion(version)
 
+
 def get_hspy_format_version(f):
     if "file_format_version" in f.attrs:
         version = f.attrs["file_format_version"]
@@ -174,7 +175,6 @@ def hdfgroup2signaldict(group):
             exp['metadata']['title'] = \
                 exp['metadata']['name']
             del exp['metadata']['name']
-
 
     return exp
 
