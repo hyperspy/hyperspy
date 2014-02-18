@@ -507,3 +507,79 @@ class EDSSpectrum(Spectrum):
                                        elevation_angle)
 
         return TOA
+        
+        
+    def plot_Xray_line(self, line_to_plot='selected'):
+        """
+        Annotate a spec.plot() with the name of the selected X-ray
+        lines
+
+        Parameters
+        ----------
+
+        line_to_plot: string 'selected'|'a'|'ab|'all'
+            Defined which lines to annotate. 'selected': the selected one,
+            'a': all alpha lines of the selected elements, 'ab': all alpha and
+            beta lines, 'all': all lines of the selected elements
+
+        See also
+        --------
+
+        set_elements, add_elements
+
+        """
+        if self.axes_manager.navigation_dimension > 0:
+            raise ValueError("Works only for single spectrum")
+
+        mp = self.mapped_parameters
+        if hasattr(self.mapped_parameters, 'SEM') and\
+                hasattr(self.mapped_parameters.SEM, 'beam_energy'):
+            beam_energy = mp.SEM.beam_energy
+        elif hasattr(self.mapped_parameters, 'TEM') and\
+                hasattr(self.mapped_parameters.TEM, 'beam_energy'):
+            beam_energy = mp.TEM.beam_energy
+        else:
+            beam_energy = 300
+
+        elements = []
+        lines = []
+        if line_to_plot == 'selected':
+            Xray_lines = mp.Sample.Xray_lines
+            for Xray_line in Xray_lines:
+                element, line = utils_eds._get_element_and_line(Xray_line)
+                elements.append(element)
+                lines.append(line)
+
+        else:
+            for element in mp.Sample.elements:
+                for line, en in elements_db[element]['Xray_energy'].items():
+                    if en < beam_energy:
+                        if line_to_plot == 'a' and line[1] == 'a':
+                            elements.append(element)
+                            lines.append(line)
+                        elif line_to_plot == 'ab':
+                            if line[1] == 'a' or line[1] == 'b':
+                                elements.append(element)
+                                lines.append(line)
+                        elif line_to_plot == 'all':
+                            elements.append(element)
+                            lines.append(line)
+
+        Xray_lines = []
+        line_energy = []
+        intensity = []
+        for i, element in enumerate(elements):
+            line_energy.append(elements_db[element]['Xray_energy'][lines[i]])
+            if lines[i] == 'a':
+                intensity.append(self[line_energy[-1]].data[0])
+            else:
+                relative_factor = elements_db['lines']['ratio_line'][lines[i]]
+                a_eng = elements_db[element]['Xray_energy'][lines[i][0] + 'a']
+                intensity.append(self[a_eng].data[0] * relative_factor)
+            Xray_lines.append(element + '_' + lines[i])
+
+        self.plot()
+        for i in range(len(line_energy)):
+            plt.text(line_energy[i], intensity[i] * 1.1, Xray_lines[i],
+                     rotation=90)
+            plt.vlines(line_energy[i], 0, intensity[i] * 0.8, color='black')
