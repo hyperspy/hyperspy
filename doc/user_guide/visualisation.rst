@@ -223,9 +223,9 @@ Rendering of 3D stack of images
 To plot in 3D a stack of images, hyperspy provides 
 the :py:meth:`~._signals.image.Image.plot_3D_iso_surface` method that render
 iso-surface. This method uses the 
-`contour3D <http://docs.enthought.com/mayavi/mayavi/auto/mlab_helper_functions.html#mayavi.mlab.contour3d>`_). 
+`iso_surface <http://docs.enthought.com/mayavi/mayavi/auto/mlab_pipeline_other_functions.html?highlight=iso_surface#mayavi.tools.pipeline.iso_surface>`_
 function of `Mayavi <http://docs.enthought.com/mayavi/mayavi/>`_.
-This library provides other way to visualise stack of images thant are
+This library provides other ways to visualise stack of images thant are
 not supported yet.
 
 .. code-block:: python
@@ -241,7 +241,7 @@ not supported yet.
    :align:   center
    :width:   450    
 
-   Visualisation of iso-surfaces of Nickel intensity with Mayavi.
+   Visualisation of iso-surfaces of Nickel X-ray intensity with Mayavi.
    
 .. NOTE::
 

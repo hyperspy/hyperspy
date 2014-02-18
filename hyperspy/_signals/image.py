@@ -43,7 +43,8 @@ class Image(Signal):
         
         
     def plot_3D_iso_surface(self,threshold,
-            color = 'auto',
+            color='auto',
+            outline=True,
             figure='new'):
         """
         Generate an iso-surface with Mayavi of a stack of images.
@@ -58,6 +59,8 @@ class Image(Signal):
             If 'auto', default colors of mayavi.            
         figure: 'new' or mayavi.core.scene.Scene 
             If 'new', generate a new scene/figure.
+        outline: bool
+            If True draw an outline.
             
         Example
         --------
@@ -77,7 +80,7 @@ class Image(Signal):
         Note
         ----
         
-        The method uses the mlab.pipeline.contour3d from mayavi.
+        The method uses the mlab.pipeline.iso_surface from mayavi.
             
         """
         from mayavi import mlab  
@@ -103,14 +106,15 @@ class Image(Signal):
         src.spacing= scale
          
         if color != 'auto':
-            iso = mlab.pipeline.contour3d(src,
+            iso = mlab.pipeline.iso_surface(src,
                 contours=[threshold, ],color =color)
         else:
-           iso = mlab.pipeline.contour3d(src,
+           iso = mlab.pipeline.iso_surface(src,
                 contours=[threshold, ])            
         iso.compute_normals = False
         
-        mlab.outline()
+        if outline:
+            mlab.outline()
       
         return figure, src, iso
 
