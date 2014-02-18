@@ -1491,13 +1491,23 @@ class Model(list):
 
         """
         if isinstance(value, str):
+            component_list = []
             for component in self:
                 if component.name:
                     if component.name == value:
-                        return component
+                        component_list.append(component)
                 elif component._id_name == value:
-                    return component
-            raise ValueError(
-                    "Component " + str(component_name) + " not found in model")
+                    component_list.append(component)
+            if component_list:
+                if len(component_list) == 1:
+                    return(component_list[0])
+                else:
+                    raise ValueError(
+                            "There are several components with "
+                            "the name \"" + str(value) + "\"")
+            else:
+                raise ValueError(
+                        "Component name \"" + str(value) + 
+                        "\" not found in model")
         else:
             return list.__getitem__(self, value)
