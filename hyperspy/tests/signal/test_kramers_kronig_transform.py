@@ -26,7 +26,9 @@ from hyperspy.components import VolumePlasmonDrude, Lorentzian
 from hyperspy.misc.eels.tools import eels_constant
 from hyperspy.hspy import *
 
+
 class Test2D:
+
     def setUp(self):
         """To test the kramers_kronig_analysis we will generate 3
         EELSSpectrum instances. First a model energy loss function(ELF),
@@ -39,12 +41,12 @@ class Test2D:
 
         # Parameters
         i0 = 1.
-        t = signals.Signal(np.arange(10, 70, 10).reshape((2, 3))) # thickness
+        t = signals.Signal(np.arange(10, 70, 10).reshape((2, 3)))  # thickness
         t.axes_manager.set_signal_dimension(0)
         scale = 0.02
 
         # Create an 3x2x2048 spectrum with Drude plasmon
-        s = EELSSpectrum(np.zeros((2, 3, 2*2048)))
+        s = EELSSpectrum(np.zeros((2, 3, 2 * 2048)))
         s.set_microscope_parameters(
             beam_energy=300.0,
             convergence_angle=5,
@@ -92,7 +94,7 @@ class Test2D:
                                              n=1000.)
         s = cdf.get_electron_energy_loss_spectrum(self.zlp, self.thickness)
         assert_true(np.allclose(s.data,
-                                self.s.data[...,1:],
+                                self.s.data[..., 1:],
                                 rtol=0.01))
 
     def test_df_given_thickness(self):
@@ -106,7 +108,7 @@ class Test2D:
                                              t=self.thickness)
         s = cdf.get_electron_energy_loss_spectrum(self.zlp, self.thickness)
         assert_true(np.allclose(s.data,
-                                self.s.data[...,1:],
+                                self.s.data[..., 1:],
                                 rtol=0.01))
 
     def test_bethe_sum_rule(self):
@@ -116,11 +118,11 @@ class Test2D:
         neff1, neff2 = df.get_number_of_effective_electrons(nat=50e27,
                                                             cumulative=False)
         assert_true(np.allclose(neff1.data,
-                        np.array([[ 0.91187657,  4.72490711,  3.60594653],
-                                  [ 3.88077047,  0.26759741,  0.19813647]])))
+                                np.array([[0.91187657, 4.72490711, 3.60594653],
+                                          [3.88077047, 0.26759741, 0.19813647]])))
         assert_true(np.allclose(neff2.data,
-                        np.array([[ 0.91299039,  4.37469112,  3.41580094],
-                                  [ 3.64866394,  0.15693674,  0.11146413]])))
+                                np.array([[0.91299039, 4.37469112, 3.41580094],
+                                          [3.64866394, 0.15693674, 0.11146413]])))
 
     def test_thickness_estimation(self):
         """Kramers kronig analysis gives a rough estimation of sample

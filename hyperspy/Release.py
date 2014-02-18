@@ -24,22 +24,22 @@ name = 'hyperspy'
 # if the version of the last release is 0.4.1 the version of the
 # next development version afterwards must be 0.4.1+dev.
 # When running setup.py the "+dev" string will be replaced (if possible)
-# by the output of "git describe" if git is available or the git 
+# by the output of "git describe" if git is available or the git
 # hash if .git is present.
 version = "0.6+dev"
 description = "Hyperspectral data analysis toolbox"
 license = 'GPL v3'
 
 authors = {
-    'all'    : ('The Hyperspy developers',
-                'hyperspy-devel@googlegroups.com'),}
+    'all': ('The Hyperspy developers',
+            'hyperspy-devel@googlegroups.com'), }
 
 url = 'http://hyperspy.org'
 
 download_url = 'http://www.hyperspy.org'
 documentation_url = 'http://hyperspy.org/hyperspy-doc/current/index.html'
 
-platforms = ['Linux','Mac OSX','Windows XP/2000/NT','Windows 95/98/ME']
+platforms = ['Linux', 'Mac OSX', 'Windows XP/2000/NT', 'Windows 95/98/ME']
 
 keywords = ['EDX',
             'EELS',
@@ -80,4 +80,3 @@ info = u"""
     http://www.hyperspy.org
     
     """ % version.replace('_', ' ')
-

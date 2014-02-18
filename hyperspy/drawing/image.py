@@ -30,7 +30,9 @@ from hyperspy.gui.tools import ImageContrastEditor
 from hyperspy.misc import math_tools
 from hyperspy.drawing.figure import BlittedFigure
 
+
 class ImagePlot(BlittedFigure):
+
     """Class to plot an image with the necessary machinery to update
     the image when the coordinates of an AxesManager change.
 
@@ -93,7 +95,7 @@ class ImagePlot(BlittedFigure):
             self._ylabel += ' (%s)' % yaxis.units
 
         if (xaxis.units == yaxis.units) and (
-            xaxis.scale == yaxis.scale):
+                xaxis.scale == yaxis.scale):
             self.plot_scalebar = True
             self.plot_ticks = False
             self.pixel_units = xaxis.units
@@ -102,10 +104,10 @@ class ImagePlot(BlittedFigure):
             self.plot_ticks = True
 
         # Calibrate the axes of the navigator image
-        self._extent = (xaxis.axis[0] -  xaxis.scale / 2.,
-                       xaxis.axis[-1] + xaxis.scale / 2.,
-                       yaxis.axis[-1] + yaxis.scale / 2.,
-                       yaxis.axis[0]  - yaxis.scale / 2.)
+        self._extent = (xaxis.axis[0] - xaxis.scale / 2.,
+                        xaxis.axis[-1] + xaxis.scale / 2.,
+                        yaxis.axis[-1] + yaxis.scale / 2.,
+                        yaxis.axis[0] - yaxis.scale / 2.)
         # Apply aspect ratio constraint
         if self.min_aspect:
             min_asp = self.min_aspect
@@ -113,20 +115,20 @@ class ImagePlot(BlittedFigure):
                 factor = min_asp * xaxis.size / yaxis.size
                 self.plot_scalebar = False
                 self.plot_ticks = True
-            elif yaxis.size / xaxis.size > min_asp**-1:
-                factor = min_asp**-1 * xaxis.size / yaxis.size
+            elif yaxis.size / xaxis.size > min_asp ** -1:
+                factor = min_asp ** -1 * xaxis.size / yaxis.size
                 self.plot_scalebar = False
                 self.plot_ticks = True
             else:
                 factor = 1
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
 
-    def optimize_contrast(self, data, perc = 0.01):
+    def optimize_contrast(self, data, perc=0.01):
         dc = data.copy().ravel()
         if 'complex' in dc.dtype.name:
             dc = np.log(np.abs(dc))
         dc.sort()
-        i = int(round(len(dc)*perc))
+        i = int(round(len(dc) * perc))
         i = i if i > 0 else 1
         vmin = np.nanmin(dc[i:])
         vmax = np.nanmax(dc[:-i])
@@ -142,12 +144,12 @@ class ImagePlot(BlittedFigure):
         height = abs(self._extent[3] - self._extent[2]) * self._aspect
         width = abs(self._extent[1] - self._extent[0])
         figsize = np.array((width * wfactor, height)) * max_size / max(
-                           (width * wfactor, height))
+            (width * wfactor, height))
         self.figure = utils.create_figure(
-                        window_title=("Figure " + self.title
-                                        if self.title
-                                        else None),
-                        figsize=figsize.clip(min_size, max_size))
+            window_title=("Figure " + self.title
+                          if self.title
+                          else None),
+            figsize=figsize.clip(min_size, max_size))
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
         utils.on_figure_window_close(self.figure, self.close)
 
@@ -161,7 +163,6 @@ class ImagePlot(BlittedFigure):
             self.ax.set_yticks([])
         self.ax.hspy_fig = self
 
-
     def plot(self):
         self.configure()
         if self.figure is None:
@@ -171,16 +172,16 @@ class ImagePlot(BlittedFigure):
         if self.auto_contrast is True:
             self.optimize_contrast(data)
         if (not self.axes_manager or
-            self.axes_manager.navigation_size==0):
+                self.axes_manager.navigation_size == 0):
             self.plot_indices = False
         if self.plot_indices is True:
             self._text = self.ax.text(
-                            *self._text_position,
-                            s=str(self.axes_manager.indices),
-                            transform = self.ax.transAxes,
-                            fontsize=12,
-                            color='red',
-                            animated=True)
+                *self._text_position,
+                s=str(self.axes_manager.indices),
+                transform=self.ax.transAxes,
+                fontsize=12,
+                color='red',
+                animated=True)
         self.update()
         if self.plot_scalebar is True:
             if self.pixel_units is not None:
@@ -208,23 +209,24 @@ class ImagePlot(BlittedFigure):
         redraw_colorbar = False
         data = self.data_function(axes_manager=self.axes_manager)
         numrows, numcols = data.shape
+
         def format_coord(x, y):
             try:
                 col = self.xaxis.value2index(x)
-            except ValueError: # out of axes limits
+            except ValueError:  # out of axes limits
                 col = -1
             try:
                 row = self.yaxis.value2index(y)
             except ValueError:
                 row = -1
-            if col>=0 and row>=0:
-                z = data[row,col]
-                return 'x=%1.4f, y=%1.4f, intensity=%1.4f'%(x, y, z)
+            if col >= 0 and row >= 0:
+                z = data[row, col]
+                return 'x=%1.4f, y=%1.4f, intensity=%1.4f' % (x, y, z)
             else:
-                return 'x=%1.4f, y=%1.4f'%(x, y)
+                return 'x=%1.4f, y=%1.4f' % (x, y)
         self.ax.format_coord = format_coord
         if (auto_contrast is True or
-            auto_contrast is None and self.auto_contrast is True):
+                auto_contrast is None and self.auto_contrast is True):
             vmax, vmin = self.vmax, self.vmin
             self.optimize_contrast(data)
             if vmax == vmin and self.vmax != self.vmin and ims:
@@ -264,6 +266,7 @@ class ImagePlot(BlittedFigure):
         # This "wrapper" because on_trait_change fiddles with the
         # method arguments and auto_contrast does not work then
         self.update()
+
     def adjust_contrast(self):
         ceditor = ImageContrastEditor(self)
         ceditor.edit_traits()
@@ -271,7 +274,7 @@ class ImagePlot(BlittedFigure):
 
     def connect(self):
         self.figure.canvas.mpl_connect('key_press_event',
-                                        self.on_key_press)
+                                       self.on_key_press)
         self.figure.canvas.draw()
         if self.axes_manager:
             self.axes_manager.connect(self._update)
@@ -281,7 +284,7 @@ class ImagePlot(BlittedFigure):
             self.adjust_contrast()
 
     def set_contrast(self, vmin, vmax):
-        self.vmin, self.vmax =  vmin, vmax
+        self.vmin, self.vmax = vmin, vmax
         self.update()
 
     def optimize_colorbar(self,
@@ -292,17 +295,19 @@ class ImagePlot(BlittedFigure):
         _range = vmax - vmin
         step = _range / (number_of_ticks - 1)
         step_oom = math_tools.order_of_magnitude(step)
+
         def optimize_for_oom(oom):
-            self.colorbar_step = math.floor(step / 10**oom)*10**oom
-            self.colorbar_vmin = math.floor(vmin / 10**oom)*10**oom
+            self.colorbar_step = math.floor(step / 10 ** oom) * 10 ** oom
+            self.colorbar_vmin = math.floor(vmin / 10 ** oom) * 10 ** oom
             self.colorbar_vmax = self.colorbar_vmin + \
-            self.colorbar_step * (number_of_ticks - 1)
+                self.colorbar_step * (number_of_ticks - 1)
             self.colorbar_locs = np.arange(0, number_of_ticks
-                        )* self.colorbar_step + self.colorbar_vmin
+                                           ) * self.colorbar_step + self.colorbar_vmin
+
         def check_tolerance():
             if abs(self.colorbar_vmax - vmax) / vmax > (
                 tolerance / 100.) or abs(self.colorbar_vmin - vmin
-                ) >  (tolerance / 100.):
+                                         ) > (tolerance / 100.):
                 return True
             else:
                 return False

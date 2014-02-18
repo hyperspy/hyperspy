@@ -19,26 +19,26 @@
 #~ import traits.api as t
 #~ import traitsui.api as tui
 #~ from traitsui.menu import OKButton, CancelButton, Action, MenuBar, Menu
-#~ 
+#~
 #~ from hyperspy import io
 #~ from egerton_quantification import EgertonPanel
-#~ 
+#~
 #~ import messages
 #~ import tools
 #~ from hyperspy.misc.interactive_ns import interactive_ns
 #~ from hyperspy import Release
-#~ 
+#~
 #~ # File ###################################################
-  #~ 
-#~ 
- #~ 
+  #~
+#~
+ #~
 #~ class LoadSpectrum(t.HasTraits):
     #~ sp_file = t.File()
     #~ traits_view = tui.View(
                             #~ tui.Item('sp_file', label = 'File'),
                             #~ buttons = [OKButton, CancelButton],
                             #~ kind = 'modal')
-        #~ 
+        #~
 #~ file_view = tui.View(
             #~ tui.Group(
                 #~ tui.Group(
@@ -54,59 +54,59 @@
                    #~ tui. Item('micro.name', ),
                    #~ tui. Item('micro.alpha'),
                    #~ tui. Item('micro.beta'),
-                   #~ tui. Item('micro.E0'),)) 
+                   #~ tui. Item('micro.E0'),))
                 #~ )
-  #~ 
-  #~ 
-#~ # Actions
-#~ 
+  #~
+  #~
+# ~ # Actions
+#~
 #~ menu_file_open = Action(name = "Open...",
                 #~ action = "open_file",
                 #~ toolip = "Open an SI file",)
-                #~ 
+                #~
 #~ menu_file_save = Action(name = "Save...",
                 #~ action = "save_file",
                 #~ toolip = "Save an SI file",)
-                #~ 
+                #~
 #~ menu_help_about = Action(name = "About",
                 #~ action = "notification_about",
                 #~ toolip = "",)
-                #~ 
+                #~
 #~ menu_tools_calibrate = Action(name = "Calibrate",
                 #~ action = "calibrate",
                 #~ toolip = "",)
-#~ 
+#~
 #~ menu_tools_egerton_quantification = Action(name = "Egerton Quantification",
                 #~ action = "egerton_quantification",
                 #~ toolip = "",)
-                #~ 
+                #~
 #~ menu_tools_savitzky_golay = Action(name = "Savitzky-Golay Smoothing",
                 #~ action = "savitzky_golay",
                 #~ toolip = "",)
-                #~ 
+                #~
 #~ menu_tools_lowess = Action(name = "Lowess Smoothing",
                 #~ action = "lowess",
                 #~ toolip = "",)
-                #~ 
+                #~
 #~ menu_edit_acquisition_parameters = Action(name = "Acquisition parameters",
                 #~ action = "edit_acquisition_parameters",
                 #~ toolip = "",)
-                #~ 
-#~ # Menu
+                #~
+# ~ # Menu
 #~ menubar = MenuBar()
-#~ 
-#~ # File
+#~
+# ~ # File
 #~ Menu(menu_file_open, menu_file_save, name = 'File')
-#~ 
-#~ # Edit
-#~ 
-#~ # Open
-#~ 
+#~
+# ~ # Edit
+#~
+# ~ # Open
+#~
 #~ # Main Window ##################################################
-#~ 
-    #~ 
+#~
+    #~
 #~ class MainWindowHandler(tui.Handler):
-        #~ 
+        #~
     #~ def open_file(self, *args, **kw):
         #~ S = LoadSpectrum()
         #~ S.edit_traits()
@@ -114,48 +114,48 @@
             #~ s = io.load(S.sp_file)
             #~ s.plot()
             #~ interactive_ns['s'] = s
-    #~ 
+    #~
     #~ def save_file(self, *args, **kw):
         #~ pass
-   #~ 
-        #~ 
+   #~
+        #~
     #~ def egerton_quantification(self, *args, **kw):
         #~ if interactive_ns.has_key('s'):
             #~ ep = EgertonPanel(interactive_ns['s'])
             #~ ep.edit_traits()
-            #~ 
+            #~
     #~ def savitzky_golay(self, *args, **kw):
         #~ sg = tools.SavitzkyGolay()
         #~ sg.edit_traits()
-        #~ 
+        #~
     #~ def lowess(self, *args, **kw):
         #~ lw = tools.Lowess()
         #~ lw.edit_traits()
-        #~ 
+        #~
     #~ def notification_about(self,*args, **kw):
         #~ messages.information(Release.info)
-                #~ 
+                #~
     #~ def calibrate(self,*args, **kw):
         #~ w = tools.Calibration()
         #~ w.edit_traits()
-                #~ 
+                #~
 #~ class MainWindow(t.HasTraits):
-    #~ 
-    #~ traits_view = tui.View( #view contents,
-                            #~ # ...,
+    #~
+    # ~ traits_view = tui.View( #view contents,
+                            # ~ # ...,
                             #~ handler = MainWindowHandler(),
                             #~ title = 'Hyperspy',
                             #~ width = 500,
                             #~ menubar = MenuBar(
                             #~ Menu(
-                            #~ menu_file_open, 
+                            #~ menu_file_open,
                             #~ menu_file_save,
                             #~ name = 'File'),
                             #~ Menu(
                             #~ menu_edit_acquisition_parameters,
                             #~ name = 'Edit'),
                             #~ Menu(
-                            #~ menu_tools_calibrate, 
+                            #~ menu_tools_calibrate,
                             #~ menu_tools_egerton_quantification,
                             #~ menu_tools_savitzky_golay,
                             #~ menu_tools_lowess,
@@ -164,8 +164,8 @@
                             #~ menu_help_about,
                             #~ name = 'Help'),
                             #~ ))
-#~ 
-#~ 
+#~
+#~
 #~ if __name__ == '__main__':
     #~ window = MainWindow()
     #~ window.configure_traits()

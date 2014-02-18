@@ -11,7 +11,8 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import sys
+import os
 sys.path.append('../../')
 sys.path.append(os.path.abspath('../sphinxext'))
 
@@ -21,7 +22,7 @@ from hyperspy import Release
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 
-# -- General configuration -----------------------------------------------------
+# -- General configuration -----------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
@@ -29,14 +30,14 @@ from hyperspy import Release
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
-                'sphinx.ext.autodoc',
-                'gen_rst',
-                'numpydoc',
-                'matplotlib.sphinxext.only_directives',
-                'sphinx.ext.intersphinx',
-                'sphinx.ext.pngmath',
-                'sphinx.ext.autosummary',
-                'ipython_console_highlighting'] #, 'rst2pdf.pdfbuilder']
+    'sphinx.ext.autodoc',
+    'gen_rst',
+    'numpydoc',
+    'matplotlib.sphinxext.only_directives',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.pngmath',
+    'sphinx.ext.autosummary',
+    'ipython_console_highlighting']  # , 'rst2pdf.pdfbuilder']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -98,7 +99,7 @@ pygments_style = 'sphinx'
 #modindex_common_prefix = []
 
 
-# -- Options for HTML output ---------------------------------------------------
+# -- Options for HTML output ---------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
@@ -178,24 +179,24 @@ html_static_path = ['_static']
 htmlhelp_basename = 'HyperspyUserGuidedoc'
 
 
-# -- Options for LaTeX output --------------------------------------------------
+# -- Options for LaTeX output --------------------------------------------
 
 latex_elements = {
-# The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+    # The paper size ('letterpaper' or 'a4paper').
+    #'papersize': 'letterpaper',
 
-# The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
+    # The font size ('10pt', '11pt' or '12pt').
+    #'pointsize': '10pt',
 
-# Additional stuff for the LaTeX preamble.
-#'preamble': '',
+    # Additional stuff for the LaTeX preamble.
+    #'preamble': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'HyperspyUserGuide.tex', u'Hyperspy User Guide',
-   u'The Hyperspy Developers', 'manual'),
+    ('index', 'HyperspyUserGuide.tex', u'Hyperspy User Guide',
+     u'The Hyperspy Developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -219,7 +220,7 @@ latex_logo = '_static/hyperspy_logo.png'
 #latex_domain_indices = True
 
 
-# -- Options for manual page output --------------------------------------------
+# -- Options for manual page output --------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
@@ -233,15 +234,15 @@ man_pages = [
 #man_show_urls = False
 
 
-# -- Options for Texinfo output ------------------------------------------------
+# -- Options for Texinfo output ------------------------------------------
 
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'HyperspyUserGuide', u'Hyperspy User Guide Documentation',
-   u'The Hyperspy Developers', 'HyperspyUserGuide', 'One line description of project.',
-   'Miscellaneous'),
+    ('index', 'HyperspyUserGuide', u'Hyperspy User Guide Documentation',
+     u'The Hyperspy Developers', 'HyperspyUserGuide', 'One line description of project.',
+     'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.
@@ -254,7 +255,7 @@ texinfo_documents = [
 #texinfo_show_urls = 'footnote'
 
 
-# -- Options for Epub output ---------------------------------------------------
+# -- Options for Epub output ---------------------------------------------
 
 # Bibliographic Dublin Core info.
 epub_title = u'Hyperspy User Guide'
