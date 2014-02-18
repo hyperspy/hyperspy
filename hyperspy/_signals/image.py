@@ -63,7 +63,7 @@ class Image(Signal):
             If True, draw an outline.
         kwargs:
             other keyword arguments of mlab.pipeline.iso_surface (eg. 
-            'color=(R,G,B)','name=','opacity=',...)
+            'color=(R,G,B)','name=','opacity=','transparent=',...)
             
         Example
         --------
