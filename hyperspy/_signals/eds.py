@@ -535,16 +535,18 @@ class EDSSpectrum(Spectrum):
             range. If True use only the line at the highest energy
             above an overvoltage of 2 (< beam energy / 2).
         only_lines : None or list of strings
-            If not None, use only the given lines. (eg. ('a','Kb'))
+            If not None, use only the given lines (eg. ('a','Kb')).
+            If None, use all lines. 
 
         See also
         --------
         set_elements, add_elements
 
         """
-        only_lines = list(only_lines)
+        
 
         if only_lines is not None:
+            only_lines = list(only_lines)
             for only_line in only_lines:
                 if only_line == 'a':
                     only_lines.extend(['Ka', 'La', 'Ma'])
