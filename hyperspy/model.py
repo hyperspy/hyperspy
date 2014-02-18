@@ -99,11 +99,25 @@ class Model(list):
     @low_loss.setter
     def low_loss(self, value):
         if value is not None:
+<<<<<<< HEAD
+            if (value.axes_manager.navigation_shape !=
+                self.spectrum.axes_manager.navigation_shape):
+                    raise ValueError('The low-loss does not have '
+                        'the same navigation dimension as the '
+                        'core-loss')
+||||||| merged common ancestors
+            if (value.axes_manager.navigation_shape != 
+                self.spectrum.axes_manager.navigation_shape):
+                    raise ValueError('The low-loss does not have '
+                        'the same navigation dimension as the '
+                        'core-loss')
+=======
             if (value.axes_manager.navigation_shape !=
                     self.spectrum.axes_manager.navigation_shape):
                 raise ValueError('The low-loss does not have '
                                  'the same navigation dimension as the '
                                  'core-loss')
+>>>>>>> master
             self._low_loss = value
             self.set_convolution_axis()
             self.convolved = True
@@ -112,14 +126,48 @@ class Model(list):
             self.convolution_axis = None
             self.convolved = False
 
+<<<<<<< HEAD
+
+||||||| merged common ancestors
+        
+=======
+>>>>>>> master
     # Extend the list methods to call the _touch when the model is modified
     def append(self, object):
+
+        #Check if any of the other components in the model has the same name
+        component_name_list = []
+        for component in self:
+            component_name_list.append(component.name)
+        name_string = ""
+        if object.name:
+            name_string = object.name
+        else:
+            name_string = object._id_name
+
+        if name_string in component_name_list:
+            temp_name_string = name_string
+            index = 0
+            while temp_name_string in component_name_list:
+                temp_name_string = name_string + "_" + str(index)
+                index += 1
+            name_string = temp_name_string
+        object.name = name_string
+
         object._axes_manager = self.axes_manager
         object._create_arrays()
         list.append(self, object)
         object.model = self
         self._touch()
+<<<<<<< HEAD
 
+
+||||||| merged common ancestors
+    
+   
+=======
+
+>>>>>>> master
     def extend(self, iterable):
         for object in iterable:
             self.append(object)
@@ -156,10 +204,22 @@ class Model(list):
         dimension = self.axis.size + ll_axis.size - 1
         step = self.axis.scale
         knot_position = ll_axis.size - ll_axis.value2index(0) - 1
+<<<<<<< HEAD
+        self.convolution_axis = generate_axis(self.axis.offset, step,
+        dimension, knot_position)
+
+    def _connect_parameters2update_plot(self):
+||||||| merged common ancestors
+        self.convolution_axis = generate_axis(self.axis.offset, step, 
+        dimension, knot_position)
+                
+    def _connect_parameters2update_plot(self):   
+=======
         self.convolution_axis = generate_axis(self.axis.offset, step,
                                               dimension, knot_position)
 
     def _connect_parameters2update_plot(self):
+>>>>>>> master
         for component in self:
             component.connect(self.update_plot)
             for parameter in component.parameters:
@@ -171,6 +231,12 @@ class Model(list):
             component.disconnect(self.update_plot)
             for parameter in component.parameters:
                 parameter.disconnect(self.update_plot)
+<<<<<<< HEAD
+
+||||||| merged common ancestors
+    
+=======
+>>>>>>> master
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True):
         """Returns a recreation of the dataset using the model.
@@ -238,7 +304,15 @@ class Model(list):
             for component_ in self:
                 component_.active = active_state.pop(0)
         return spectrum
+<<<<<<< HEAD
 
+
+||||||| merged common ancestors
+        
+        
+=======
+
+>>>>>>> master
     def _get_auto_update_plot(self):
         if self._plot is not None and self._plot.is_active() is True:
             return True
@@ -271,10 +345,22 @@ class Model(list):
         for component in self:
             if component.active:
                 for parameter in component.free_parameters:
+<<<<<<< HEAD
+                    self.p0 = (self.p0 + (parameter.value,)
+                    if parameter._number_of_elements == 1
+                    else self.p0 + parameter.value)
+
+||||||| merged common ancestors
+                    self.p0 = (self.p0 + (parameter.value,) 
+                    if parameter._number_of_elements == 1
+                    else self.p0 + parameter.value)
+    
+=======
                     self.p0 = (self.p0 + (parameter.value,)
                                if parameter._number_of_elements == 1
                                else self.p0 + parameter.value)
 
+>>>>>>> master
     def set_boundaries(self):
         """Generate the boundary list.
 
@@ -289,8 +375,16 @@ class Model(list):
                             param._bounds))
                     else:
                         self.free_parameters_boundaries.extend((
+<<<<<<< HEAD
+                        param._bounds))
+
+||||||| merged common ancestors
+                        param._bounds))
+                        
+=======
                             param._bounds))
 
+>>>>>>> master
     def set_mpfit_parameters_info(self):
         self.mpfit_parinfo = []
         for component in self:
@@ -366,8 +460,16 @@ class Model(list):
                         counter: counter +
                         component._nfree_param]
                 component.fetch_values_from_array(
+<<<<<<< HEAD
+                self.p0[counter: counter + component._nfree_param],
+                comp_p_std, onlyfree=True)
+||||||| merged common ancestors
+                self.p0[counter: counter + component._nfree_param], 
+                comp_p_std, onlyfree=True)
+=======
                     self.p0[counter: counter + component._nfree_param],
                     comp_p_std, onlyfree=True)
+>>>>>>> master
                 counter += component._nfree_param
 
     # Defines the functions for the fitting process -------------------------
@@ -387,8 +489,16 @@ class Model(list):
             ns[self.channel_switches] = s
             s = ns
         return s
+<<<<<<< HEAD
+
+    def __call__(self, non_convolved=False, onlyactive=False) :
+||||||| merged common ancestors
+    
+    def __call__(self, non_convolved=False, onlyactive=False) :
+=======
 
     def __call__(self, non_convolved=False, onlyactive=False):
+>>>>>>> master
         """Returns the corresponding model for the current coordinates
 
         Parameters
@@ -567,9 +677,19 @@ class Model(list):
                                                                  component._nfree_param], self.axis.axis), sum)
                     counter += component._nfree_param
 
+<<<<<<< HEAD
+            return (sum + np.convolve(self.low_loss(self.axes_manager),
+                                      sum_convolved,mode="valid"))[
+                                      self.channel_switches]
+||||||| merged common ancestors
+            return (sum + np.convolve(self.low_loss(self.axes_manager), 
+                                      sum_convolved,mode="valid"))[
+                                      self.channel_switches]
+=======
             return (sum + np.convolve(self.low_loss(self.axes_manager),
                                       sum_convolved, mode="valid"))[
                 self.channel_switches]
+>>>>>>> master
 
         else:
             axis = self.axis.axis[self.channel_switches]
@@ -598,16 +718,38 @@ class Model(list):
                     if component.convolved:
                         for parameter in component.free_parameters:
                             par_grad = np.convolve(
+<<<<<<< HEAD
+                            parameter.grad(self.convolution_axis),
+                            self.low_loss(self.axes_manager),
+                            mode="valid")
+||||||| merged common ancestors
+                            parameter.grad(self.convolution_axis), 
+                            self.low_loss(self.axes_manager), 
+                            mode="valid")
+=======
                                 parameter.grad(self.convolution_axis),
                                 self.low_loss(self.axes_manager),
                                 mode="valid")
+>>>>>>> master
                             if parameter._twins:
                                 for parameter in parameter._twins:
                                     np.add(par_grad, np.convolve(
+<<<<<<< HEAD
+                                    parameter.grad(
+                                    self.convolution_axis),
+                                    self.low_loss(self.axes_manager),
+                                    mode="valid"), par_grad)
+||||||| merged common ancestors
+                                    parameter.grad(
+                                    self.convolution_axis), 
+                                    self.low_loss(self.axes_manager), 
+                                    mode="valid"), par_grad)
+=======
                                         parameter.grad(
                                             self.convolution_axis),
                                         self.low_loss(self.axes_manager),
                                         mode="valid"), par_grad)
+>>>>>>> master
                             grad = np.vstack((grad, par_grad))
                         counter += component._nfree_param
                     else:
@@ -642,12 +784,30 @@ class Model(list):
             if weights is None:
                 return grad[1:, :]
             else:
+<<<<<<< HEAD
+                return grad[1:,:] * weights
+
+    def _function4odr(self,param,x):
+||||||| merged common ancestors
+                return grad[1:,:] * weights
+        
+    def _function4odr(self,param,x):
+=======
                 return grad[1:, :] * weights
 
     def _function4odr(self, param, x):
+>>>>>>> master
         return self._model_function(param)
+<<<<<<< HEAD
+
+    def _jacobian4odr(self,param,x):
+||||||| merged common ancestors
+    
+    def _jacobian4odr(self,param,x):
+=======
 
     def _jacobian4odr(self, param, x):
+>>>>>>> master
         return self._jacobian(param, x)
 
     def calculate_p_std(self, p0, method, *args):
@@ -683,9 +843,19 @@ class Model(list):
         else:
             return ((weights * self._errfunc(param, y)) ** 2).sum()
 
+<<<<<<< HEAD
+    def _gradient_ls(self,param, y, weights=None):
+        gls =(2*self._errfunc(param, y, weights) *
+        self._jacobian(param, y)).sum(1)
+||||||| merged common ancestors
+    def _gradient_ls(self,param, y, weights=None):
+        gls =(2*self._errfunc(param, y, weights) * 
+        self._jacobian(param, y)).sum(1)
+=======
     def _gradient_ls(self, param, y, weights=None):
         gls = (2 * self._errfunc(param, y, weights) *
                self._jacobian(param, y)).sum(1)
+>>>>>>> master
         return gls
 
     def _errfunc4mpfit(self, p, fjac=None, x=None, y=None,
@@ -698,8 +868,16 @@ class Model(list):
             status = 0
             return [status, errfunc]
         else:
+<<<<<<< HEAD
+            return [0, self._jacobian(p,y).T]
+
+||||||| merged common ancestors
+            return [0, self._jacobian(p,y).T]
+        
+=======
             return [0, self._jacobian(p, y).T]
 
+>>>>>>> master
     def fit(self, fitter=None, method='ls', grad=False, weights=None,
             bounded=False, ext_bounding=False, update_plot=False,
             **kwargs):
@@ -780,16 +958,38 @@ class Model(list):
         elif weights is not None:
             weights = weights.__getitem__(
                 self.axes_manager._getitem_tuple)[
+<<<<<<< HEAD
+                    self.channel_switches]
+        args = (self.spectrum()[self.channel_switches],
+        weights)
+
+||||||| merged common ancestors
+                    self.channel_switches]
+        args = (self.spectrum()[self.channel_switches], 
+        weights)
+        
+=======
                 self.channel_switches]
         args = (self.spectrum()[self.channel_switches],
                 weights)
 
+>>>>>>> master
         # Least squares "dedicated" fitters
         if fitter == "leastsq":
             output = \
+<<<<<<< HEAD
+            leastsq(self._errfunc, self.p0[:], Dfun = jacobian,
+            col_deriv=1, args = args, full_output = True, **kwargs)
+
+||||||| merged common ancestors
+            leastsq(self._errfunc, self.p0[:], Dfun = jacobian,
+            col_deriv=1, args = args, full_output = True, **kwargs)
+            
+=======
                 leastsq(self._errfunc, self.p0[:], Dfun=jacobian,
                         col_deriv=1, args=args, full_output=True, **kwargs)
 
+>>>>>>> master
             self.p0 = output[0]
             var_matrix = output[1]
             # In Scipy 0.7 sometimes the variance matrix is None (maybe a
@@ -799,8 +999,16 @@ class Model(list):
             self.fit_output = output
 
         elif fitter == "odr":
+<<<<<<< HEAD
+            modelo = odr.Model(fcn = self._function4odr,
+            fjacb = odr_jacobian)
+||||||| merged common ancestors
+            modelo = odr.Model(fcn = self._function4odr, 
+            fjacb = odr_jacobian)
+=======
             modelo = odr.Model(fcn=self._function4odr,
                                fjacb=odr_jacobian)
+>>>>>>> master
             mydata = odr.RealData(self.axis.axis[self.channel_switches],
                                   self.spectrum()[self.channel_switches],
                                   sx=None,
@@ -821,11 +1029,25 @@ class Model(list):
                 self.set_mpfit_parameters_info()
             elif bounded is False:
                 self.mpfit_parinfo = None
+<<<<<<< HEAD
+            m = mpfit(self._errfunc4mpfit, self.p0[:],
+                parinfo=self.mpfit_parinfo, functkw= {
+                'y': self.spectrum()[self.channel_switches],
+                'weights' :weights}, autoderivative = autoderivative,
+                quiet = 1)
+||||||| merged common ancestors
+            m = mpfit(self._errfunc4mpfit, self.p0[:], 
+                parinfo=self.mpfit_parinfo, functkw= {
+                'y': self.spectrum()[self.channel_switches], 
+                'weights' :weights}, autoderivative = autoderivative,
+                quiet = 1)
+=======
             m = mpfit(self._errfunc4mpfit, self.p0[:],
                       parinfo=self.mpfit_parinfo, functkw={
                           'y': self.spectrum()[self.channel_switches],
                           'weights': weights}, autoderivative=autoderivative,
                       quiet=1)
+>>>>>>> master
             self.p0 = m.params
             self.p_std = m.perror
             self.fit_output = m
@@ -845,11 +1067,25 @@ class Model(list):
             # Simple (don't use gradient)
             if fitter == "fmin":
                 self.p0 = fmin(
+<<<<<<< HEAD
+                    tominimize, self.p0, args = args, **kwargs)
+            elif fitter == "powell" :
+                self.p0 = fmin_powell(tominimize, self.p0, args = args,
+                **kwargs)
+
+||||||| merged common ancestors
+                    tominimize, self.p0, args = args, **kwargs)
+            elif fitter == "powell" :
+                self.p0 = fmin_powell(tominimize, self.p0, args = args, 
+                **kwargs)
+            
+=======
                     tominimize, self.p0, args=args, **kwargs)
             elif fitter == "powell":
                 self.p0 = fmin_powell(tominimize, self.p0, args=args,
                                       **kwargs)
 
+>>>>>>> master
             # Make use of the gradient
             elif fitter == "cg":
                 self.p0 = fmin_cg(tominimize, self.p0, fprime=fprime,
@@ -859,9 +1095,19 @@ class Model(list):
                                    args=args, **kwargs)
             elif fitter == "bfgs":
                 self.p0 = fmin_bfgs(
+<<<<<<< HEAD
+                    tominimize, self.p0, fprime = fprime,
+                    args = args, **kwargs)
+
+||||||| merged common ancestors
+                    tominimize, self.p0, fprime = fprime,
+                    args = args, **kwargs)
+            
+=======
                     tominimize, self.p0, fprime=fprime,
                     args=args, **kwargs)
 
+>>>>>>> master
             # Constrainded optimizers
 
             # Use gradient
@@ -870,18 +1116,38 @@ class Model(list):
                     self.set_boundaries()
                 elif bounded is False:
                     self.self.free_parameters_boundaries = None
+<<<<<<< HEAD
+                self.p0 = fmin_tnc(tominimize, self.p0, fprime = fprime,
+                args = args, bounds = self.free_parameters_boundaries,
+                approx_grad = approx_grad, **kwargs)[0]
+||||||| merged common ancestors
+                self.p0 = fmin_tnc(tominimize, self.p0, fprime = fprime,
+                args = args, bounds = self.free_parameters_boundaries, 
+                approx_grad = approx_grad, **kwargs)[0]
+=======
                 self.p0 = fmin_tnc(tominimize, self.p0, fprime=fprime,
                                    args=args, bounds=self.free_parameters_boundaries,
                                    approx_grad=approx_grad, **kwargs)[0]
+>>>>>>> master
             elif fitter == "l_bfgs_b":
                 if bounded is True:
                     self.set_boundaries()
                 elif bounded is False:
                     self.self.free_parameters_boundaries = None
                 self.p0 = fmin_l_bfgs_b(tominimize, self.p0,
+<<<<<<< HEAD
+                    fprime=fprime, args=args,
+                    bounds=self.free_parameters_boundaries,
+                    approx_grad = approx_grad, **kwargs)[0]
+||||||| merged common ancestors
+                    fprime=fprime, args=args, 
+                    bounds=self.free_parameters_boundaries, 
+                    approx_grad = approx_grad, **kwargs)[0]
+=======
                                         fprime=fprime, args=args,
                                         bounds=self.free_parameters_boundaries,
                                         approx_grad=approx_grad, **kwargs)[0]
+>>>>>>> master
             else:
                 print \
                     """
@@ -897,7 +1163,15 @@ class Model(list):
                 ------------
                 tnc and l_bfgs_b
                 """ % fitter
+<<<<<<< HEAD
 
+
+||||||| merged common ancestors
+                
+        
+=======
+
+>>>>>>> master
         if np.iterable(self.p0) == 0:
             self.p0 = (self.p0,)
         self._fetch_values_from_p0(p_std=self.p_std)
@@ -942,13 +1216,29 @@ class Model(list):
 
         if autosave is not False:
             fd, autosave_fn = tempfile.mkstemp(
+<<<<<<< HEAD
+                prefix = 'hyperspy_autosave-',
+                dir = '.', suffix = '.npz')
+||||||| merged common ancestors
+                prefix = 'hyperspy_autosave-', 
+                dir = '.', suffix = '.npz')
+=======
                 prefix='hyperspy_autosave-',
                 dir='.', suffix='.npz')
+>>>>>>> master
             os.close(fd)
             autosave_fn = autosave_fn[:-4]
             messages.information(
+<<<<<<< HEAD
+            "Autosaving each %s pixels to %s.npz" % (autosave_every,
+                                                     autosave_fn))
+||||||| merged common ancestors
+            "Autosaving each %s pixels to %s.npz" % (autosave_every, 
+                                                     autosave_fn))
+=======
                 "Autosaving each %s pixels to %s.npz" % (autosave_every,
                                                          autosave_fn))
+>>>>>>> master
             messages.information(
                 "When multifit finishes its job the file will be deleted")
         if mask is not None and \
@@ -991,6 +1281,12 @@ class Model(list):
                     autosave_fn + 'npz'))
             os.remove(autosave_fn + '.npz')
 
+<<<<<<< HEAD
+
+||||||| merged common ancestors
+            
+=======
+>>>>>>> master
     def save_parameters2file(self, filename):
         """Save the parameters array in binary format
 
@@ -1009,8 +1305,16 @@ class Model(list):
             i += 1
         np.savez(filename, **kwds)
 
+<<<<<<< HEAD
+    def load_parameters_from_file(self,filename):
+        """Loads the parameters array from  a binary file written with
+||||||| merged common ancestors
+    def load_parameters_from_file(self,filename):
+        """Loads the parameters array from  a binary file written with 
+=======
     def load_parameters_from_file(self, filename):
         """Loads the parameters array from  a binary file written with
+>>>>>>> master
         the 'save_parameters2file' function
 
         Parameters
@@ -1054,8 +1358,16 @@ class Model(list):
         # Add the line to the figure
         _plot.signal_plot.add_line(l2)
         l2.plot()
+<<<<<<< HEAD
+        on_figure_window_close(_plot.signal_plot.figure,
+                                self._disconnect_parameters2update_plot)
+||||||| merged common ancestors
+        on_figure_window_close(_plot.signal_plot.figure, 
+                                self._disconnect_parameters2update_plot)
+=======
         on_figure_window_close(_plot.signal_plot.figure,
                                self._disconnect_parameters2update_plot)
+>>>>>>> master
         self._plot = self.spectrum._plot
         self._connect_parameters2update_plot()
         if plot_components is True:
@@ -1072,9 +1384,19 @@ class Model(list):
             self._plot.signal_plot.add_line(line)
             line.plot()
             component._model_plot_line = line
+<<<<<<< HEAD
+        on_figure_window_close(self._plot.signal_plot.figure,
+                                self.disable_plot_components)
+
+||||||| merged common ancestors
+        on_figure_window_close(self._plot.signal_plot.figure, 
+                                self.disable_plot_components)
+                
+=======
         on_figure_window_close(self._plot.signal_plot.figure,
                                self.disable_plot_components)
 
+>>>>>>> master
     def disable_plot_components(self):
         if self._plot is None:
             return
@@ -1091,9 +1413,19 @@ class Model(list):
                     components_list.append(comp)
         for comp in components_list:
             for parameter in comp.parameters:
+<<<<<<< HEAD
+                parameter.set_current_value_to(mask = mask)
+
+    def _enable_ext_bounding(self,components = None):
+||||||| merged common ancestors
+                parameter.set_current_value_to(mask = mask)
+                
+    def _enable_ext_bounding(self,components = None):
+=======
                 parameter.set_current_value_to(mask=mask)
 
     def _enable_ext_bounding(self, components=None):
+>>>>>>> master
         """
         """
         if components is None:
@@ -1144,8 +1476,16 @@ class Model(list):
             if only_active is False or component.active is True:
                 component.export(folder=folder, format=format,
                                  save_std=save_std, only_free=only_free)
+<<<<<<< HEAD
+
+    def plot_results(self, only_free=True, only_active = True):
+||||||| merged common ancestors
+                                 
+    def plot_results(self, only_free=True, only_active = True):
+=======
 
     def plot_results(self, only_free=True, only_active=True):
+>>>>>>> master
         """Plot the value of the parameters of the model
 
         Parameters
@@ -1215,8 +1555,16 @@ class Model(list):
         disable_adjust_position
 
         """
+<<<<<<< HEAD
+        if (self._plot is None or
+            self._plot.is_active() is False):
+||||||| merged common ancestors
+        if (self._plot is None or 
+            self._plot.is_active() is False):
+=======
         if (self._plot is None or
                 self._plot.is_active() is False):
+>>>>>>> master
             self.plot()
         if self._position_widgets:
             self.disable_adjust_position()
@@ -1267,6 +1615,12 @@ class Model(list):
             am._axes[0]._twins = set()
             component._position.twin = am._axes[0]
 
+<<<<<<< HEAD
+
+||||||| merged common ancestors
+            
+=======
+>>>>>>> master
     def disable_adjust_position(self, components=None, fix_them=True):
         """Disables the interactive adjust position feature
 
@@ -1430,6 +1784,14 @@ class Model(list):
         >>> m.set_parameters_value('area', 5)
         >>> m.set_parameters_value('area', 5, component_list=[v1])
         >>> m.set_parameters_value('area', 5, component_list=[v1], only_current=True)
+<<<<<<< HEAD
+
+        """
+||||||| merged common ancestors
+        
+        """
+=======
+>>>>>>> master
 
         """
 
@@ -1447,3 +1809,50 @@ class Model(list):
                     else:
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
+<<<<<<< HEAD
+
+    def __getitem__(self, value):
+        """
+        Find a component with a specific name in the model.
+        Useful when calling Hyperspy as a library, since the
+        components will not be directly callable.
+
+        Parameters
+        ----------
+        component_name : string
+            Name of the component
+
+        Returns
+        -------
+        hyperspy component
+
+        Examples
+        --------
+        >>> Mn_L3 = model.get_component("Mn_L3")
+
+        """
+        if isinstance(value, str):
+            component_list = []
+            for component in self:
+                if component.name:
+                    if component.name == value:
+                        component_list.append(component)
+                elif component._id_name == value:
+                    component_list.append(component)
+            if component_list:
+                if len(component_list) == 1:
+                    return(component_list[0])
+                else:
+                    raise ValueError(
+                            "There are several components with "
+                            "the name \"" + str(value) + "\"")
+            else:
+                raise ValueError(
+                        "Component name \"" + str(value) + 
+                        "\" not found in model")
+        else:
+            return list.__getitem__(self, value)
+||||||| merged common ancestors
+
+=======
+>>>>>>> master

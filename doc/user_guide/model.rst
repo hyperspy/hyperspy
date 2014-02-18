@@ -107,7 +107,18 @@ We can customise the name of the components
      <Hydrogen (Gaussian component)>,
      <Nitrogen (Gaussian component)>]
     
+The components in a model can be called by its index or name:
     
+.. code-block:: python
+
+    >>> m
+    [<Carbon (Gaussian component)>,
+     <Hydrogen (Gaussian component)>,
+     <Nitrogen (Gaussian component)>]
+    >>> m[0]
+    <Carbon (Gaussian component)>
+    >>> m["Carbon"]
+    <Carbon (Gaussian component)>
 
 
 Getting and setting parameter values and attributes
