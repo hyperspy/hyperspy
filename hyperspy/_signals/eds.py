@@ -599,22 +599,22 @@ class EDSSpectrum(Spectrum):
             line.marker = line.ax.text(line_energy[i], intensity[i] * 1.1,
                                        Xray_lines[i], rotation=90)
         line.update()
-        
-        
-        ### To go in spectrum update line. 
+
+
+        # To go in spectrum update line.
         #g = self.marker_data
-        #if g is not None:
-            #if self.marker_style is 'vline_EDS':
-                ##self.marker.set_ydata(g[self.axes_manager.indices])
-                #segments=self.marker.get_segments()
+        # if g is not None:
+            # if self.marker_style is 'vline_EDS':
+                # self.marker.set_ydata(g[self.axes_manager.indices])
+                # segments=self.marker.get_segments()
                 #segments[0][-1,-1]=g[self.marker_no][self.axes_manager.indices[::-1]] * 0.8
-                #segments[0][0,-1]=0
-                ##print self.marker_no
-                #self.marker.set_segments(segments)
-                ##print self.marker.get_segments()
-            #if self.marker_style is 'text_EDS':
-                #position=list(self.marker.get_position())
+                # segments[0][0,-1]=0
+                # print self.marker_no
+                # self.marker.set_segments(segments)
+                # print self.marker.get_segments()
+            # if self.marker_style is 'text_EDS':
+                # position=list(self.marker.get_position())
                 #position[-1]=g[self.marker_no][self.axes_manager.indices[::-1]] * 1.1
-                #self.marker.set_position(position)
-                ##print 'a'
+                # self.marker.set_position(position)
+                # print 'a'
         #self.marker_data = None
