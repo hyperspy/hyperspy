@@ -38,6 +38,7 @@ class SpectrumFigure(BlittedFigure):
         self.ax_lines = list()
         self.right_ax_lines = list()
         self.lines = list()
+        self.ax_markers = list()
         self.axes_manager = None
         self.right_axes_manager = None
 
@@ -95,7 +96,11 @@ class SpectrumFigure(BlittedFigure):
             rgba_color = mpl.colors.colorConverter.to_rgba(line.color)
             if rgba_color in self._color_cycles[line.type].color_cycle:
                 self._color_cycles[line.type].color_cycle.remove(
-                    rgba_color)
+                    rgba_color)                    
+                    
+    def add_marker(self, marker):
+        marker.ax = self.ax
+        self.ax_markers.append(marker)
 
     def plot(self):
         self.ax.set_xlabel(self.xlabel)
@@ -107,11 +112,15 @@ class SpectrumFigure(BlittedFigure):
             line.plot()
             x_axis_lower_lims.append(line.axis[0])
             x_axis_upper_lims.append(line.axis[-1])
+        for marker in self.ax_markers:
+            marker.plot()
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
 
     def close(self):
         for line in self.ax_lines + self.right_ax_lines:
             line.close()
+        for marker in self.ax_marker:
+            marker.close()
         try:
             plt.close(self.figure)
         except:
@@ -122,6 +131,102 @@ class SpectrumFigure(BlittedFigure):
         for line in self.ax_lines + \
                 self.right_ax_lines:
             line.update()
+            
+class MarkerLine(object):
+    
+    """Marker thant can be added to SpectrumFigure
+    
+    Attributes
+    ----------
+    
+    type : {'axvlines'}
+        Select the type of markers
+    marker_properties : dictionary
+        Accepts a dictionary of valid (i.e. recognized by mpl.plot)
+        containing valid line properties. In addition it understands
+        the keyword `type` that can take the following values:
+        {'scatter', 'step', 'line'}
+
+    
+    """
+    
+    def __init__(self):
+        # Data attributes
+        self.data_function = None
+        self.axis = None
+        self.axes_manager = None
+        self.auto_update = True
+        
+        # Properties
+        self.marker = None
+        self._marker_properties = {}
+        self.type = "axvline"
+        
+        
+    @property
+    def type(self):
+        return self._type
+
+    @type.setter
+    def type(self, value):
+        lp = {}
+        if value == 'axvline':
+            lp['markersize'] = 1
+        else:
+            raise ValueError(
+                "`type` must be one of "
+                "{\'axvline\'}"
+                "but %s was given" % value)
+        self._type = value
+        self.marker_properties = lp
+        #if self.color is not None:
+            #self.color = self.color
+            
+    @property
+    def marker_properties(self):
+        return self._marker_properties
+
+    @marker_properties.setter
+    def marker_properties(self, kwargs):
+        if 'type' in kwargs:
+            self.type = kwargs['type']
+            del kwargs['type']
+
+        #if 'color' in kwargs:
+            #color = kwargs['color']
+            #del kwargs['color']
+            #self.color = color
+
+        for key, item in kwargs.iteritems():
+            if item is None and key in self._marker_properties:
+                del self._marker_properties[key]
+            else:
+                self._marker_properties[key] = item
+        if self.marker is not None:
+            plt.setp(self.marker, **self.marker_properties)
+            self.ax.figure.canvas.draw()
+
+    def set_marker_properties(self, **kwargs):
+        self.marker_properties = kwargs
+        
+    def plot(self):
+        f = self.data_function        
+        if self.type == 'axvline':
+            self.marker = self.ax.axvline(f)
+        self.marker.set_animated(True)
+        #self.axes_manager.connect(self.update)
+        self.ax.figure.canvas.draw()
+    
+    def close(self):
+        print 1
+        
+        
+    def update(self):
+        """Update the current spectrum figure"""
+        if self.auto_update is False:
+            return
+        if self.type == 'axvlines':
+            self.set_xdata(g[self.axes_manager.indices[::-1]])
 
 
 class SpectrumLine(object):
