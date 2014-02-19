@@ -38,6 +38,7 @@ class SpectrumFigure(BlittedFigure):
         self.ax_lines = list()
         self.right_ax_lines = list()
         self.lines = list()
+        self.ax_markers = list()
         self.axes_manager = None
         self.right_axes_manager = None
 
@@ -97,6 +98,12 @@ class SpectrumFigure(BlittedFigure):
                 self._color_cycles[line.type].color_cycle.remove(
                     rgba_color)
 
+    def add_marker(self, marker):
+        marker.ax = self.ax
+        if marker.axes_manager is None:
+            marker.axes_manager = self.axes_manager
+        self.ax_markers.append(marker)
+
     def plot(self):
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
@@ -107,11 +114,15 @@ class SpectrumFigure(BlittedFigure):
             line.plot()
             x_axis_lower_lims.append(line.axis[0])
             x_axis_upper_lims.append(line.axis[-1])
+        for marker in self.ax_markers:
+            marker.plot()
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
 
     def close(self):
         for line in self.ax_lines + self.right_ax_lines:
             line.close()
+        for marker in self.ax_markers:
+            marker.close()
         try:
             plt.close(self.figure)
         except:
@@ -122,6 +133,8 @@ class SpectrumFigure(BlittedFigure):
         for line in self.ax_lines + \
                 self.right_ax_lines:
             line.update()
+        for marker in self.ax_markers:
+            marker.update()
 
 
 class SpectrumLine(object):
