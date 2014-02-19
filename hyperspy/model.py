@@ -116,6 +116,8 @@ class Model(list):
 
     def append(self, object):
         #Check if any of the other components in the model has the same name
+        if object in self:
+            raise ValueError("Component already in model")
         component_name_list = []
         for component in self:
             component_name_list.append(component.name)
@@ -1470,8 +1472,8 @@ class Model(list):
 
     def __getitem__(self, value):
         """
-        Find a component with a specific name or index in the 
-        model. Useful when calling Hyperspy as a library, 
+        Find a component with a specific name or index in the
+        model. Useful when calling Hyperspy as a library,
         since the components will not be directly callable.
 
         Parameters
@@ -1506,7 +1508,7 @@ class Model(list):
                             "the name \"" + str(value) + "\"")
             else:
                 raise ValueError(
-                        "Component name \"" + str(value) + 
+                        "Component name \"" + str(value) +
                         "\" not found in model")
         else:
             return list.__getitem__(self, value)
