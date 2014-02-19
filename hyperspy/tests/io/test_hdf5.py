@@ -97,6 +97,7 @@ class TestExample1_11(Example1):
 
 
 class TestExample1_12(Example1):
+
     def setUp(self):
         self.s = load(os.path.join(
             my_path,
