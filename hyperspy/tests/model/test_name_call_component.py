@@ -20,59 +20,60 @@ import os
 
 import numpy as np
 
-from nose.tools import assert_true, assert_equal, assert_not_equal, raises
+import nose.tools
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.hspy import create_model
 from hyperspy.components import Gaussian
 
 
-class TestSetParameterInModel:
+class TestModel:
 
     def setUp(self):
-        g1 = Gaussian()
-        g2 = Gaussian()
-        g3 = Gaussian()
-        s = Spectrum(np.arange(1000).reshape(10, 10, 10))
+        s = Spectrum(np.empty(1))
         m = create_model(s)
-        m.append(g1)
-        m.append(g2)
-        m.append(g3)
-        self.g1 = g1
-        self.g2 = g2
-        self.g3 = g3
         self.model = m
 
-    def test_call_component(self):
+    def test_access_component_by_name(self):
         m = self.model
-        g1 = self.g1
-        g3 = self.g3
-        g3.name = "gaussian3"
+        g1 = Gaussian()
+        g2 = Gaussian()
+        g2.name = "test"
+        m.extend((g1, g2))
+        nose.tools.assert_is(m["test"], g2)
 
-        temp_gaussian_1 = m[0]
-        temp_gaussian_2 = m["gaussian3"]
-
-        assert_true(temp_gaussian_1 is g1)
-        assert_true(temp_gaussian_2 is g3)
+    def test_access_component_by_index(self):
+        m = self.model
+        g1 = Gaussian()
+        g2 = Gaussian()
+        g2.name = "test"
+        m.extend((g1, g2))
+        nose.tools.assert_is(m[1], g2)
 
     def test_component_name_when_append(self):
         m = self.model
-        g1 = self.g1
-        g2 = self.g2
-        g3 = self.g3
-        assert_true(m['Gaussian'] is g1)
-        assert_true(m['Gaussian_0'] is g2)
-        assert_true(m['Gaussian_1'] is g3)
+        gs = [Gaussian(), Gaussian() , Gaussian()]
+        m.extend(gs)
+        nose.tools.assert_is(m['Gaussian'], gs[0])
+        nose.tools.assert_is(m['Gaussian_0'], gs[1])
+        nose.tools.assert_is(m['Gaussian_1'], gs[2])
 
-    @raises(ValueError)
+    @nose.tools.raises(ValueError)
     def test_several_component_with_same_name(self):
         m = self.model
+        gs = [Gaussian(), Gaussian() , Gaussian()]
+        m.extend(gs)
         m[0]._name = "Gaussian"
         m[1]._name = "Gaussian"
         m[2]._name = "Gaussian"
         m['Gaussian']
 
-    @raises(ValueError)
+    @nose.tools.raises(ValueError)
     def test_no_component_with_that_name(self):
         m = self.model
         m['Voigt']
 
+    @nose.tools.raises(ValueError)
+    def test_no_component_with_that_name(self):
+        m = self.model
+        g1 = Gaussian()
+        m.extend((g1, g1))
