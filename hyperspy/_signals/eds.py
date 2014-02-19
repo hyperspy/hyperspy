@@ -572,28 +572,25 @@ class EDSSpectrum(Spectrum):
             line_energy.append(elements_db[element]['Xray_energy'][line])
             relative_factor = elements_db['lines']['ratio_line'][line]
             a_eng = elements_db[element]['Xray_energy'][line[0] + 'a']
-            
-            #if fixed_height:
-                #intensity.append(self[..., a_eng].data.flatten().mean()
+
+            # if fixed_height:
+                # intensity.append(self[..., a_eng].data.flatten().mean()
                              #* relative_factor)
-            #else:
-            intensity.append(self[...,a_eng].data* relative_factor)
+            # else:
+            intensity.append(self[..., a_eng].data * relative_factor)
 
         self.plot()
         for i in range(len(line_energy)):
-            line=marker.Marker()
-            line.type='line'
-            line.orientation='v'
-            line.set_data(x1=line_energy[i],y2=intensity[i]*0.8)
+            line = marker.Marker()
+            line.type = 'line'
+            line.orientation = 'v'
+            line.set_data(x1=line_energy[i], y2=intensity[i] * 0.8)
             self._plot.signal_plot.add_marker(line)
             line.plot()
-            text=marker.Marker()
-            text.type='text'
+            text = marker.Marker()
+            text.type = 'text'
             text.set_marker_properties(rotation=90)
             text.set_data(x1=line_energy[i],
-                        y1=intensity[i]*1.1,text=Xray_lines[i])
+                          y1=intensity[i] * 1.1, text=Xray_lines[i])
             self._plot.signal_plot.add_marker(text)
             text.plot()
-
-
-
