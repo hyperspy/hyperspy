@@ -214,20 +214,19 @@ class MarkerLine(object):
     def plot(self):
         data = self.data
         if self.type == 'axvline':
-            if self.axes_manager.navigation_shape==(0,):
+            if self.axes_manager.navigation_shape == (0,):
                 self.marker = self.ax.axvline(data['x1'].item())
             else:
                 self.marker = self.ax.axvline(data['x1'].item()
-                    [self.axes_manager.indices[::-1]])
+                                              [self.axes_manager.indices[::-1]])
         self.marker.set_animated(True)
         # self.axes_manager.connect(self.update)
         self.ax.figure.canvas.draw()
 
-    def set_data(self,x1=None,y1=None,x2=None,y2=None):
-        self.data=np.array((x1,y1,x2,y2),
-            dtype=[('x1',object),('y1',object),
-                ('x2',object),('y2',object)])
-        
+    def set_data(self, x1=None, y1=None, x2=None, y2=None):
+        self.data = np.array((x1, y1, x2, y2),
+                             dtype=[('x1', object), ('y1', object),
+                                    ('x2', object), ('y2', object)])
 
     def close(self):
         self.marker.remove()
@@ -242,11 +241,11 @@ class MarkerLine(object):
         if self.auto_update is False:
             return
         if self.type == 'axvlines':
-            if self.axes_manager.navigation_shape==(0,):
+            if self.axes_manager.navigation_shape == (0,):
                 self.set_xdata(data['x1'].item())
             else:
                 self.set_xdata(data['x1'].item()
-                    [self.axes_manager.indices[::-1]])
+                               [self.axes_manager.indices[::-1]])
 
 
 class SpectrumLine(object):
