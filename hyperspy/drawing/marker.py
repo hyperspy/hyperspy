@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 
 class Marker(object):
 
-    """Marker thant can be added to SpectrumFigure
+    """Marker that can be added to a figure
 
     Attributes
     ----------
@@ -35,7 +35,7 @@ class Marker(object):
         Accepts a dictionary of valid (i.e. recognized by mpl.plot)
         containing valid line properties. In addition it understands
         the keyword `type` that can take the following values:
-        {'scatter', 'step', 'line'}
+        {'line','text'}
 
     Methods
     -------
@@ -44,7 +44,7 @@ class Marker(object):
         arguments.
 
     set_data
-        Set the data.
+        Set the data in a structured array
 
 
     """
