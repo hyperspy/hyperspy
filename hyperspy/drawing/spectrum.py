@@ -216,9 +216,9 @@ class MarkerLine(object):
     def plot(self):
         data = self.data
         if self.type == 'axvline':
-            #if self.axes_manager.navigation_shape == (0,):
+            # if self.axes_manager.navigation_shape == (0,):
                 #self.marker, = self.ax.axvline(data['x1'].item())
-            #else:
+            # else:
             self.marker = self.ax.axvline(data['x1'].item()
                                           [self.axes_manager.indices[::-1]],
                                           **self.line_properties)
@@ -227,10 +227,11 @@ class MarkerLine(object):
         self.ax.figure.canvas.draw()
 
     def set_data(self, x1=None, y1=None, x2=None, y2=None):
-        self.data = np.array((np.array(x1), np.array(y1), 
-                    np.array(x2), np.array(y2)),
-                     dtype=[('x1', object), ('y1', object),
-                            ('x2', object), ('y2', object)])
+        self.data = np.array((np.array(x1), np.array(y1),
+                              np.array(x2), np.array(y2)),
+                             dtype=[('x1', object), ('y1', object),
+                                    ('x2', object), ('y2', object)])
+
     def close(self):
         self.marker.remove()
         try:
@@ -245,8 +246,8 @@ class MarkerLine(object):
             return
         if self.type == 'axvline':
             self.marker.set_xdata(data['x1'].item()
-                            [self.axes_manager.indices[::-1]])
-        #self.ax.hspy_fig._draw_animated()
+                                  [self.axes_manager.indices[::-1]])
+        # self.ax.hspy_fig._draw_animated()
         try:
             self.ax.figure.canvas.draw()
         except:
