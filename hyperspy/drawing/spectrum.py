@@ -154,13 +154,13 @@ class MarkerLine(object):
         containing valid line properties. In addition it understands
         the keyword `type` that can take the following values:
         {'scatter', 'step', 'line'}
-        
+
     Methods
     -------
     set_marker_properties
         Enables setting the line_properties attribute using keyword
         arguments.
-        
+
     set_data
         Set the data.
 
@@ -230,11 +230,10 @@ class MarkerLine(object):
                                           [self.axes_manager.indices[::-1]],
                                           **self.marker_properties)
         elif self.type == 'line':
-            self.marker = self.ax.vlines(0,0,1,
-                              **self.marker_properties)
+            self.marker = self.ax.vlines(0, 0, 1,
+                                         **self.marker_properties)
             self.set_line_segment()
 
-                                
         self.marker.set_animated(True)
         self.axes_manager.connect(self.update)
         self.ax.figure.canvas.draw()
@@ -244,39 +243,54 @@ class MarkerLine(object):
                               np.array(x2), np.array(y2)),
                              dtype=[('x1', object), ('y1', object),
                                     ('x2', object), ('y2', object)])
-    
+
     def set_line_segment(self):
         data = self.data
-        segments=self.marker.get_segments()
-        if self.orientation == None:
-            coord=[data[x].item()[self.axes_manager.indices[::-1]] for x in ['x1','y1','x2','y2']]
-            segments[0][0]=coord[:2]
-            segments[0][1]=coord[2:]
+        segments = self.marker.get_segments()
+        if self.orientation is None:
+            coord = [data[x].item()[self.axes_manager.indices[::-1]]
+                     for x in ['x1', 'y1', 'x2', 'y2']]
+            segments[0][0] = coord[:2]
+            segments[0][1] = coord[2:]
         elif 'v' in self.orientation:
-            segments[0][0,0]=data['x1'].item()[self.axes_manager.indices[::-1]]
-            segments[0][1,0]=segments[0][0,0]
+            segments[0][0, 0] = data[
+                'x1'].item()[self.axes_manager.indices[::-1]]
+            segments[0][1, 0] = segments[0][0, 0]
             if 'ax' in self.orientation:
-                segments[0][0,1]=plt.getp(self.marker.axes,'ylim')[0]
-                segments[0][1,1]=plt.getp(self.marker.axes,'ylim')[1]
+                segments[0][0, 1] = plt.getp(self.marker.axes, 'ylim')[0]
+                segments[0][1, 1] = plt.getp(self.marker.axes, 'ylim')[1]
             elif 'min' in self.orientation:
-                segments[0][0,1]=plt.getp(self.marker.axes,'ylim')[0]
-                segments[0][1,1]=data['y2'].item()[self.axes_manager.indices[::-1]]
-            else : 
-                segments[0][0,1]=data['y1'].item()[self.axes_manager.indices[::-1]]
-                segments[0][1,1]=data['y2'].item()[self.axes_manager.indices[::-1]]
+                segments[0][0, 1] = plt.getp(self.marker.axes, 'ylim')[0]
+                segments[0][1,
+                            1] = data['y2'].item(
+                )[self.axes_manager.indices[::-1]]
+            else:
+                segments[0][0,
+                            1] = data['y1'].item(
+                )[self.axes_manager.indices[::-1]]
+                segments[0][1,
+                            1] = data['y2'].item(
+                )[self.axes_manager.indices[::-1]]
         elif 'h' in self.orientation:
-            segments[0][0,1]=data['y1'].item()[self.axes_manager.indices[::-1]]
-            segments[0][1,1]=segments[0][0,1]
+            segments[0][0, 1] = data[
+                'y1'].item()[self.axes_manager.indices[::-1]]
+            segments[0][1, 1] = segments[0][0, 1]
             if 'ax' in self.orientation:
-                segments[0][0,0]=plt.getp(self.marker.axes,'xlim')[0]
-                segments[0][1,0]=plt.getp(self.marker.axes,'xlim')[1]
+                segments[0][0, 0] = plt.getp(self.marker.axes, 'xlim')[0]
+                segments[0][1, 0] = plt.getp(self.marker.axes, 'xlim')[1]
             elif 'min' in self.orientation:
-                segments[0][0,0]=plt.getp(self.marker.axes,'xlim')[0]
-                segments[0][1,0]=data['x2'].item()[self.axes_manager.indices[::-1]]
-            else : 
-                segments[0][0,0]=data['x1'].item()[self.axes_manager.indices[::-1]]
-                segments[0][1,0]=data['x2'].item()[self.axes_manager.indices[::-1]]      
-        self.marker.set_segments(segments)       
+                segments[0][0, 0] = plt.getp(self.marker.axes, 'xlim')[0]
+                segments[0][1,
+                            0] = data['x2'].item(
+                )[self.axes_manager.indices[::-1]]
+            else:
+                segments[0][0,
+                            0] = data['x1'].item(
+                )[self.axes_manager.indices[::-1]]
+                segments[0][1,
+                            0] = data['x2'].item(
+                )[self.axes_manager.indices[::-1]]
+        self.marker.set_segments(segments)
 
     def close(self):
         self.marker.remove()
