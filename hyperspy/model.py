@@ -76,7 +76,7 @@ class Model(list):
 
         self._plot = None
         self._position_widgets = []
-        if type(spectrum) is dict:
+        if isinstance(spectrum, dict):
             self._load_dictionary(spectrum)
         else:
             kwds['spectrum'] = spectrum
@@ -101,15 +101,15 @@ class Model(list):
             low_loss : (optional)
             convolved : boolean (optional)
             components : dictionary (optional)
-                Dictionary, with information about components of the model 
+                Dictionary, with information about components of the model
                 (see the documentation of component.to_dictionary() method)
             chisq : dictionary
                 A dictionary of signal of chi-squared
             dof : dictionary
                 A dictionary of signal of degrees-of-freedom
         """
-        
-        if type(dic['spectrum']) is dict:
+
+        if isinstance(dic['spectrum'], dict):
             self.spectrum = Spectrum(**dic['spectrum'])
         else:
             self.spectrum = dic['spectrum']
@@ -117,23 +117,27 @@ class Model(list):
         self.axes_manager = self.spectrum.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
-        self.channel_switches=np.array([True] * len(self.axis.axis))
+        self.channel_switches = np.array([True] * len(self.axis.axis))
 
         if 'chisq' in dic:
             self.chisq = Signal(**dic['chisq'])
         else:
             self.chisq = self.spectrum._get_navigation_signal()
             self.chisq.data.fill(np.nan)
-            self.chisq.mapped_parameters.title = self.spectrum.mapped_parameters.title + ' chi-squared'
+            self.chisq.mapped_parameters.title = self.spectrum.mapped_parameters.title + \
+                ' chi-squared'
 
         if 'dof' in dic:
             self.dof = Signal(**dic['dof'])
         else:
-            self.dof = self.chisq._deepcopy_with_new_data(np.zeros_like(self.chisq.data, dtype = 'int'))
-            self.dof.mapped_parameters.title = self.spectrum.mapped_parameters.title + ' degrees of freedom'
-        
+            self.dof = self.chisq._deepcopy_with_new_data(
+                np.zeros_like(self.chisq.data, dtype='int'))
+            self.dof.mapped_parameters.title = self.spectrum.mapped_parameters.title + \
+                ' degrees of freedom'
+
         if 'free_parameters_boundaries' in dic:
-            self.free_parameters_boundaries = copy.deepcopy(dic['free_parameters_boundaries'])
+            self.free_parameters_boundaries = copy.deepcopy(
+                dic['free_parameters_boundaries'])
         else:
             self.free_parameters_boundaries = None
 
@@ -333,6 +337,7 @@ class Model(list):
             return True
         else:
             return False
+
     def _set_p0(self):
         self.p0 = ()
         for component in self:
@@ -774,10 +779,11 @@ class Model(list):
             # variance[variance == 0.0] = 1.0
             variance = 1.0
         else:
-            variance = self.spectrum.variance[self.spectrum.axes_manager.indices]
-        d= self() - self.spectrum()[self.channel_switches]
-        d *= d/variance # d = difference^2 / variance
-        self.chisq.data[self.spectrum.axes_manager.indices[::-1]]= sum(d)
+            variance = self.spectrum.variance[
+                self.spectrum.axes_manager.indices]
+        d = self() - self.spectrum()[self.channel_switches]
+        d *= d / variance  # d = difference^2 / variance
+        self.chisq.data[self.spectrum.axes_manager.indices[::-1]] = sum(d)
 
     def _set_current_degrees_of_freedom(self):
         self.dof.data[self.spectrum.axes_manager.indices[::-1]] = len(self.p0)
@@ -786,11 +792,11 @@ class Model(list):
     def red_chisq(self):
         """Reduced chi-squared. Calculated from self.chisq and self.dof
         """
-        tmp = self.chisq / ( - self.dof + sum(self.channel_switches) - 1)
-        tmp.mapped_parameters.title = self.spectrum.mapped_parameters.title + ' reduced chi-squared'
+        tmp = self.chisq / (- self.dof + sum(self.channel_switches) - 1)
+        tmp.mapped_parameters.title = self.spectrum.mapped_parameters.title + \
+            ' reduced chi-squared'
         return tmp
 
-        
     def fit(self, fitter=None, method='ls', grad=False, weights=None,
             bounded=False, ext_bounding=False, update_plot=False,
             **kwargs):
@@ -1541,7 +1547,7 @@ class Model(list):
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
 
-    def as_dictionary(self, indices = None):
+    def as_dictionary(self, indices=None):
         """Returns a dictionary of the model, including full Signal dictionary,
         all components and all values of their components, and twin functions.
 
@@ -1563,7 +1569,7 @@ class Model(list):
         >>> m.append(l2)
         >>> dict = m.as_dictionary()
         >>> m2 = create_model(dict)
-    
+
         """
         dic = {}
         if indices is not None:
@@ -1583,6 +1589,7 @@ class Model(list):
             else:
                 dic['low_loss'] = self._low_loss
         dic['components'] = [c.as_dictionary(indices) for c in self]
-        dic['free_parameters_boundaries'] = copy.deepcopy(self.free_parameters_boundaries)
+        dic['free_parameters_boundaries'] = copy.deepcopy(
+            self.free_parameters_boundaries)
         dic['convolved'] = self.convolved
         return dic

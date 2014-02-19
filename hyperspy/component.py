@@ -16,7 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os, copy
+import os
+import copy
 
 import numpy as np
 
@@ -97,7 +98,7 @@ class Parameter(object):
         self.map = None
         self.model = None
         self._id_name = ''
-    
+
     def _load_dictionary(self, dict):
         """Load data from dictionary
 
@@ -128,7 +129,7 @@ class Parameter(object):
         -------
         id_value : int
             the ID value of the original parameter, to be later used for setting up the correct twins
-        
+
         """
         if dict['_id_name'] == self._id_name:
             self.map = copy.deepcopy(dict['map'])
@@ -142,7 +143,9 @@ class Parameter(object):
             self.twin_inverse_function = dict['twin_inverse_function']
             return dict['id']
         else:
-            raise ValueError("_id_name of parameter and dictionary do not match, \nparameter._id_name = %s \ndictionary['_id_name'] = %s" % (self._id_name, dict['_id_name']))
+            raise ValueError(
+                "_id_name of parameter and dictionary do not match, \nparameter._id_name = %s \ndictionary['_id_name'] = %s" %
+                (self._id_name, dict['_id_name']))
 
     def __repr__(self):
         text = ''
@@ -481,7 +484,7 @@ class Parameter(object):
             self.as_signal(field='std').save(append2pathname(
                 filename, '_std'))
 
-    def as_dictionary(self, indices = None):
+    def as_dictionary(self, indices=None):
         """Returns parameter as a dictionary
 
         Parameters
@@ -499,7 +502,8 @@ class Parameter(object):
         dic['name'] = self.name
         dic['_id_name'] = self._id_name
         if indices is not None:
-            dic['map'] = copy.deepcopy(self.map[tuple([slice(i,i+1,1) for i in indices[::-1]])])
+            dic['map'] = copy.deepcopy(
+                self.map[tuple([slice(i, i + 1, 1) for i in indices[::-1]])])
             dic['value'] = dic['map']['values'][tuple([0 for i in indices])]
             dic['std'] = dic['map']['std'][tuple([0 for i in indices])]
         else:
@@ -514,7 +518,8 @@ class Parameter(object):
         dic['twin_function'] = self.twin_function
         dic['twin_inverse_function'] = self.twin_inverse_function
         return dic
-                    
+
+
 class Component(object):
     __axes_manager = None
 
@@ -821,9 +826,10 @@ class Component(object):
 
         for _parameter in parameter_list:
             _parameter.free = False
-    def as_dictionary(self, indices = None):
+
+    def as_dictionary(self, indices=None):
         """Returns component as a dictionary
-        
+
         All items are copies.
 
         Returns
@@ -868,4 +874,3 @@ class Component(object):
             t_id = par._load_dictionary(p)
             id_dict[t_id] = par
         return id_dict
-
