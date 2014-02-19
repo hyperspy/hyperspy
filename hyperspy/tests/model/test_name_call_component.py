@@ -73,7 +73,7 @@ class TestModel:
         m['Voigt']
 
     @nose.tools.raises(ValueError)
-    def test_no_component_with_that_name(self):
+    def test_component_already_in_model(self):
         m = self.model
         g1 = Gaussian()
         m.extend((g1, g1))
