@@ -136,6 +136,7 @@ class SpectrumFigure(BlittedFigure):
         for marker in self.ax_markers:
             marker.update()
 
+
 class SpectrumLine(object):
 
     """Line that can be added to SpectrumFigure.

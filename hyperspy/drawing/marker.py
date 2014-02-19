@@ -19,6 +19,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 class Marker(object):
 
     """Marker thant can be added to SpectrumFigure
