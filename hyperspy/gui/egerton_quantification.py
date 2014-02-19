@@ -29,9 +29,9 @@ from hyperspy import components
 from hyperspy.component import Component
 from hyperspy.misc import utils
 from hyperspy import drawing
-from hyperspy.gui.tools import (SpanSelectorInSpectrum, 
-    SpanSelectorInSpectrumHandler,OurFindButton, OurPreviousButton,
-    OurApplyButton)
+from hyperspy.gui.tools import (SpanSelectorInSpectrum,
+                                SpanSelectorInSpectrumHandler, OurFindButton, OurPreviousButton,
+                                OurApplyButton)
 from hyperspy.misc.progressbar import progressbar
 import hyperspy.gui.messages as messages
 
@@ -42,24 +42,24 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         'Gaussian',
         'Offset',
         'Polynomial',
-        default = 'Power Law')
-    polynomial_order = t.Range(1,10)
+        default='Power Law')
+    polynomial_order = t.Range(1, 10)
     background_estimator = t.Instance(Component)
     bg_line_range = t.Enum('from_left_range',
                            'full',
                            'ss_range',
-                           default = 'full')
+                           default='full')
     hi = t.Int(0)
     view = tu.View(
         tu.Group(
             'background_type',
             tu.Group(
-                'polynomial_order', 
-                visible_when = 'background_type == \'Polynomial\''),),
-            buttons= [OKButton, CancelButton],
-            handler = SpanSelectorInSpectrumHandler,
-            title = 'Background removal tool')
-                 
+                'polynomial_order',
+                visible_when='background_type == \'Polynomial\''),),
+            buttons=[OKButton, CancelButton],
+            handler=SpanSelectorInSpectrumHandler,
+            title='Background removal tool')
+
     def __init__(self, signal):
         super(BackgroundRemoval, self).__init__(signal)
         self.set_background_estimator()
@@ -71,7 +71,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             self.bg_line = None
 
     def set_background_estimator(self):
-    
+
         if self.background_type == 'Power Law':
             self.background_estimator = components.PowerLaw()
             self.bg_line_range = 'from_left_range'
@@ -85,20 +85,21 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             self.background_estimator = \
                 components.Polynomial(self.polynomial_order)
             self.bg_line_range = 'full'
+
     def _polynomial_order_changed(self, old, new):
         self.background_estimator = components.Polynomial(new)
         self.span_selector_changed()
-            
+
     def _background_type_changed(self, old, new):
         self.set_background_estimator()
         self.span_selector_changed()
-            
+
     def _ss_left_value_changed(self, old, new):
         self.span_selector_changed()
-        
+
     def _ss_right_value_changed(self, old, new):
         self.span_selector_changed()
-        
+
     def create_background_line(self):
         self.bg_line = drawing.spectrum.SpectrumLine()
         self.bg_line.data_function = self.bg_to_plot
@@ -108,13 +109,13 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         self.signal._plot.signal_plot.add_line(self.bg_line)
         self.bg_line.autoscale = False
         self.bg_line.plot()
-        
+
     def bg_to_plot(self, axes_manager=None, fill_with=np.nan):
         # First try to update the estimation
         self.background_estimator.estimate_parameters(
-            self.signal, self.ss_left_value, self.ss_right_value, 
-            only_current = True) 
-            
+            self.signal, self.ss_left_value, self.ss_right_value,
+            only_current=True)
+
         if self.bg_line_range == 'from_left_range':
             bg_array = np.zeros(self.axis.axis.shape)
             bg_array[:] = fill_with
@@ -131,30 +132,31 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             to_index = self.axis.value2index(self.ss_right_value)
             bg_array[from_index:] = self.background_estimator.function(
                 self.axis.axis[from_index:to_index])
-                      
+
     def span_selector_changed(self):
         if self.background_estimator is None:
             print("No bg estimator")
             return
         if self.bg_line is None and \
             self.background_estimator.estimate_parameters(
-                self.signal, self.ss_left_value, self.ss_right_value, 
-                only_current = True) is True:
+                self.signal, self.ss_left_value, self.ss_right_value,
+                only_current=True) is True:
             self.create_background_line()
         else:
             self.bg_line.update()
-            
+
     def apply(self):
         self.signal._plot.auto_update_plot = False
         new_spectra = self.signal._remove_background_cli(
-                (self.ss_left_value, self.ss_right_value),
-                self.background_estimator)
+            (self.ss_left_value, self.ss_right_value),
+            self.background_estimator)
         self.signal.data = new_spectra.data
         self.signal._replot()
         self.signal._plot.auto_update_plot = True
-        
+
 
 class SpikesRemovalHandler(tu.Handler):
+
     def close(self, info, is_ok):
         # Removes the span selector from the plot
         info.object.span_selector_switch(False)
@@ -168,9 +170,9 @@ class SpikesRemovalHandler(tu.Handler):
         obj.is_ok = True
         if hasattr(obj, 'apply'):
             obj.apply()
-        
+
         return
-        
+
     def find(self, info, *args, **kwargs):
         """Handles the **Next** button being clicked.
 
@@ -180,7 +182,7 @@ class SpikesRemovalHandler(tu.Handler):
         if hasattr(obj, 'find'):
             obj.find()
         return
-        
+
     def back(self, info, *args, **kwargs):
         """Handles the **Next** button being clicked.
 
@@ -191,44 +193,45 @@ class SpikesRemovalHandler(tu.Handler):
             obj.find(back=True)
         return
 
+
 class SpikesRemoval(SpanSelectorInSpectrum):
     interpolator_kind = t.Enum(
         'Linear',
         'Spline',
-        default = 'Linear')
+        default='Linear')
     threshold = t.Float()
     show_derivative_histogram = t.Button()
-    spline_order = t.Range(1,10, 3)
+    spline_order = t.Range(1, 10, 3)
     interpolator = None
     default_spike_width = t.Int(5)
     index = t.Int(0)
     view = tu.View(tu.Group(
         tu.Group(
-                 tu.Item('show_derivative_histogram', show_label=False),
-                 'threshold',
-                 show_border=True,),
+            tu.Item('show_derivative_histogram', show_label=False),
+            'threshold',
+            show_border=True,),
         tu.Group(
             'interpolator_kind',
             'default_spike_width',
             tu.Group(
-                'spline_order', 
-                visible_when = 'interpolator_kind == \'Spline\''),
+                'spline_order',
+                visible_when='interpolator_kind == \'Spline\''),
             show_border=True,
             label='Advanced settings'),
-            ),
-            buttons= [OKButton,
-                      OurPreviousButton,
-                      OurFindButton,
-                      OurApplyButton,],
-            handler = SpikesRemovalHandler,
-            title = 'Spikes removal tool')
-                 
-    def __init__(self, signal,navigation_mask=None, signal_mask=None):
+    ),
+        buttons=[OKButton,
+                 OurPreviousButton,
+                 OurFindButton,
+                 OurApplyButton, ],
+        handler=SpikesRemovalHandler,
+        title='Spikes removal tool')
+
+    def __init__(self, signal, navigation_mask=None, signal_mask=None):
         super(SpikesRemoval, self).__init__(signal)
         self.interpolated_line = None
-        self.coordinates = [coordinate for coordinate in 
+        self.coordinates = [coordinate for coordinate in
                             signal.axes_manager._am_indices_generator()
-                            if (navigation_mask is None or not 
+                            if (navigation_mask is None or not
                                 navigation_mask[coordinate[::-1]])]
         self.signal = signal
         self.line = signal._plot.signal_plot.ax_lines[0]
@@ -242,15 +245,15 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self._temp_mask = np.zeros(self.signal().shape, dtype='bool')
         self.signal_mask = signal_mask
         self.navigation_mask = navigation_mask
-        
+
     def _threshold_changed(self, old, new):
         self.index = 0
         self.update_plot()
-        
+
     def _show_derivative_histogram_fired(self):
         self.signal._spikes_diagnosis(signal_mask=self.signal_mask,
-                                navigation_mask=self.navigation_mask)
-        
+                                      navigation_mask=self.navigation_mask)
+
     def detect_spike(self):
         derivative = np.diff(self.signal())
         if self.signal_mask is not None:
@@ -276,7 +279,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         ncoordinates = len(self.coordinates)
         spike = self.detect_spike()
         while not spike and (
-                (self.index < ncoordinates -1 and back is False) or 
+                (self.index < ncoordinates - 1 and back is False) or
                 (self.index > 0 and back is True)):
             if back is False:
                 self.index += 1
@@ -290,7 +293,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             self._reset_line()
             return
         else:
-            minimum = max(0,self.argmax - 50)
+            minimum = max(0, self.argmax - 50)
             maximum = min(len(self.signal()) - 1, self.argmax + 50)
             self.ax.set_xlim(
                 self.signal.axes_manager.signal_axes[0].index2value(
@@ -307,39 +310,39 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.reset_span_selector()
         self.update_spectrum_line()
         self.signal._plot.pointer.update_patch_position()
-        
+
     def update_spectrum_line(self):
         self.line.auto_update = True
         self.line.update()
         self.line.auto_update = False
-        
+
     def _index_changed(self, old, new):
         self.signal.axes_manager.indices = self.coordinates[new]
         self.argmax = None
         self._temp_mask[:] = False
-        
+
     def on_disabling_span_selector(self):
         if self.interpolated_line is not None:
             self.interpolated_line.close()
             self.interpolated_line = None
-           
+
     def _spline_order_changed(self, old, new):
         self.kind = self.spline_order
         self.span_selector_changed()
-            
+
     def _interpolator_kind_changed(self, old, new):
         if new == 'linear':
             self.kind = new
         else:
             self.kind = self.spline_order
         self.span_selector_changed()
-        
+
     def _ss_left_value_changed(self, old, new):
         self.span_selector_changed()
-        
+
     def _ss_right_value_changed(self, old, new):
         self.span_selector_changed()
-        
+
     def create_interpolation_line(self):
         self.interpolated_line = drawing.spectrum.SpectrumLine()
         self.interpolated_line.data_function = \
@@ -350,7 +353,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.signal._plot.signal_plot.add_line(self.interpolated_line)
         self.interpolated_line.autoscale = False
         self.interpolated_line.plot()
-        
+
     def get_interpolation_range(self):
         axis = self.signal.axes_manager.signal_axes[0]
         if self.ss_left_value == self.ss_right_value:
@@ -359,15 +362,14 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         else:
             left = axis.value2index(self.ss_left_value)
             right = axis.value2index(self.ss_right_value)
-        
+
         # Clip to the axis dimensions
         nchannels = self.signal.axes_manager.signal_shape[0]
         left = left if left >= 0 else 0
         right = right if right < nchannels else nchannels - 1
-            
-        return left,right
-        
-        
+
+        return left, right
+
     def get_interpolated_spectrum(self, axes_manager=None):
         data = self.signal().copy()
         axis = self.signal.axes_manager.signal_axes[0]
@@ -387,27 +389,26 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         if ileft == 0:
             # Extrapolate to the left
             data[left:right] = data[right + 1]
-            
+
         elif iright == (len(data) - 1):
             # Extrapolate to the right
             data[left:right] = data[left - 1]
-            
+
         else:
             # Interpolate
             intp = sp.interpolate.interp1d(x, y, kind=self.kind)
             data[left:right] = intp(axis.axis[left:right])
-        
+
         # Add noise
         data = np.random.poisson(np.clip(data, 0, np.inf))
         return data
 
-                      
     def span_selector_changed(self):
         if self.interpolated_line is None:
             return
         else:
             self.interpolated_line.update()
-            
+
     def apply(self):
         self.signal()[:] = self.get_interpolated_spectrum()
         self.update_spectrum_line()
@@ -415,46 +416,46 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.interpolated_line = None
         self.reset_span_selector()
         self.find()
-        
-    
-#class EgertonPanel(t.HasTraits):
+
+
+# class EgertonPanel(t.HasTraits):
 #    define_background_window = t.Bool(False)
 #    bg_window_size_variation = t.Button()
 #    background_substracted_spectrum_name = t.Str('signal')
-#    extract_background = t.Button()    
+#    extract_background = t.Button()
 #    define_signal_window = t.Bool(False)
 #    signal_window_size_variation = t.Button()
 #    signal_name = t.Str('signal')
 #    extract_signal = t.Button()
 #    view = tu.View(tu.Group(
 #        tu.Group('define_background_window',
-#                 tu.Item('bg_window_size_variation', 
+#                 tu.Item('bg_window_size_variation',
 #                         label = 'window size effect', show_label=False),
 #                 tu.Item('background_substracted_spectrum_name'),
 #                 tu.Item('extract_background', show_label=False),
 #                 ),
 #        tu.Group('define_signal_window',
-#                 tu.Item('signal_window_size_variation', 
+#                 tu.Item('signal_window_size_variation',
 #                         label = 'window size effect', show_label=False),
 #                 tu.Item('signal_name', show_label=True),
 #                 tu.Item('extract_signal', show_label=False)),))
-#                 
+#
 #    def __init__(self, signal):
-#        
+#
 #        self.signal = signal
-#        
-#        # Background
+#
+# Background
 #        self.span_selector = None
 #        self.background_estimator = components.PowerLaw()
 #        self.bg_line = None
 #        self.bg_cube = None
-#                
-#        # Signal
+#
+# Signal
 #        self.signal_span_selector = None
 #        self.signal_line = None
 #        self.signal_map = None
 #        self.map_ax = None
-#    
+#
 #    def store_current_spectrum_bg_parameters(self, *args, **kwards):
 #        if self.define_background_window is False or \
 #        self.span_selector.range is None: return
@@ -462,11 +463,11 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 #        self.signal, *self.span_selector.range,only_current_spectrum = True)
 #        self.background_estimator.r.value = pars['r']
 #        self.background_estimator.A.value = pars['A']
-#                     
+#
 #        if self.define_signal_window is True and \
 #        self.signal_span_selector.range is not None:
 #            self.background_estimatorot_signal_map()
-#                     
+#
 #    def _define_background_window_changed(self, old, new):
 #        if new is True:
 #            self.span_selector = \
@@ -483,13 +484,13 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 #                self.signal_line = None
 #            self.span_selector.turn_off()
 #            self.span_selector = None
-#                      
+#
 #    def _bg_window_size_variation_fired(self):
 #        if self.define_background_window is False: return
 #        left = self.span_selector.rect.get_x()
 #        right = left + self.span_selector.rect.get_width()
 #        energy_window_dependency(self.signal, left, right, min_width = 10)
-#        
+#
 #    def _extract_background_fired(self):
 #        if self.background_estimator is None: return
 #        signal = self.signal() - self.background_estimator.function(self.signal.energy_axis)
@@ -497,20 +498,20 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 #        signal[:i] = 0.
 #        s = Spectrum({'calibration' : {'data_cube' : signal}})
 #        s.get_calibration_from(self.signal)
-#        interactive_ns[self.background_substracted_spectrum_name] = s       
-#        
+#        interactive_ns[self.background_substracted_spectrum_name] = s
+#
 #    def _define_signal_window_changed(self, old, new):
 #        if new is True:
 #            self.signal_span_selector = \
 #            drawing.widgets.ModifiableSpanSelector(
-#            self.signal.hse.signal_plot.ax, 
+#            self.signal.hse.signal_plot.ax,
 #            onselect = self.store_current_spectrum_bg_parameters,
 #            onmove_callback = self.background_estimatorot_signal_map)
 #            self.signal_span_selector.rect.set_color('blue')
 #        elif self.signal_span_selector is not None:
 #            self.signal_span_selector.turn_off()
 #            self.signal_span_selector = None
-#            
+#
 #    def plot_bg_removed_spectrum(self, *args, **kwards):
 #        if self.span_selector.range is None: return
 #        self.store_current_spectrum_bg_parameters()
@@ -523,11 +524,11 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 #        self.bg_line, = self.signal.hse.signal_plot.ax.plot(
 #        ea, self.background_estimator.function(ea), color = 'black')
 #        self.signal_line, = self.signal.hse.signal_plot.ax.plot(
-#        self.signal.energy_axis[iright:], self.signal()[iright:] - 
+#        self.signal.energy_axis[iright:], self.signal()[iright:] -
 #        self.background_estimator.function(self.signal.energy_axis[iright:]), color = 'black')
 #        self.signal.hse.signal_plot.ax.figure.canvas.draw()
 
-#        
+#
 #    def plot_signal_map(self, *args, **kwargs):
 #        if self.define_signal_window is True and \
 #        self.signal_span_selector.range is not None:
@@ -547,18 +548,18 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 #                f = plt.figure()
 #                self.map_ax = f.add_subplot(111)
 #                if len(self.signal_map.squeeze().shape) == 2:
-#                    self.map = self.map_ax.imshow(self.signal_map.T, 
+#                    self.map = self.map_ax.imshow(self.signal_map.T,
 #                                                  interpolation = 'nearest')
 #                else:
 #                    self.map, = self.map_ax.plot(self.signal_map.squeeze())
 #            if len(self.signal_map.squeeze().shape) == 2:
 #                    self.map.set_data(self.signal_map.T)
 #                    self.map.autoscale()
-#                    
+#
 #            else:
 #                self.map.set_ydata(self.signal_map.squeeze())
 #            self.map_ax.figure.canvas.draw()
-#            
+#
 #    def _extract_signal_fired(self):
 #        if self.signal_map is None: return
 #        if len(self.signal_map.squeeze().shape) == 2:
@@ -575,9 +576,9 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 #            s.energyscale = self.signal.xscale
 #            s.energyunits = self.signal.xunits
 #            interactive_ns[self.signal_name] = s
-#    
+#
 
-#def energy_window_dependency(s, left, right, min_width = 10):
+# def energy_window_dependency(s, left, right, min_width = 10):
 #    ins = s.energy2index(left)
 #    ine = s.energy2index(right)
 #    energies = s.energy_axis[ins:ine - min_width]
