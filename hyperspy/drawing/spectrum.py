@@ -226,7 +226,6 @@ class MarkerLine(object):
             m.ax.figure.canvas.draw()
         except:
             pass
-        
 
     def update(self):
         """Update the current spectrum figure"""
