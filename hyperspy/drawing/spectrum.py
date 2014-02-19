@@ -146,9 +146,8 @@ class MarkerLine(object):
 
     type : {'line'}
         Select the type of markers
-    orientation : {None,'v','vax','vmin','h','hax','hmin'}
+    orientation : {None,'v','h'}
         Orientation for lines. 'v' is vertical, 'h' is horizontal.
-        'ax' over the range of the axes, 'min' the minimum is automatically set.
     marker_properties : dictionary
         Accepts a dictionary of valid (i.e. recognized by mpl.plot)
         containing valid line properties. In addition it understands
@@ -178,7 +177,7 @@ class MarkerLine(object):
         self.marker = None
         self.orientation = None
         self._marker_properties = {}
-        self.type = "axvline"
+        self.type = "line"
 
     @property
     def type(self):
@@ -187,16 +186,15 @@ class MarkerLine(object):
     @type.setter
     def type(self, value):
         lp = {}
-        if value == 'axvline':
-            lp['linewidth'] = 1
+        if value == 'text':
             lp['color'] = 'black'
-        elif value == 'line':
+        if value == 'line':
             lp['linewidth'] = 1
             lp['color'] = 'black'
         else:
             raise ValueError(
                 "`type` must be one of "
-                "{\'axvline\'}"
+                "{\'line\'}"
                 "but %s was given" % value)
         self._type = value
         self.marker_properties = lp
@@ -225,10 +223,11 @@ class MarkerLine(object):
 
     def plot(self):
         data = self.data
-        if self.type == 'axvline':
-            self.marker = self.ax.axvline(data['x1'].item()
-                                          [self.axes_manager.indices[::-1]],
-                                          **self.marker_properties)
+        if self.type == 'text':
+            indices=self.axes_manager.indices[::-1]
+            self.marker = self.ax.text(data['x1'].item()[indices],
+                    data['y1'].item()[indices],data['text'].item(),
+                    **self.marker_properties)
         elif self.type == 'line':
             self.marker = self.ax.vlines(0, 0, 1,
                                          **self.marker_properties)
@@ -243,53 +242,39 @@ class MarkerLine(object):
                               np.array(x2), np.array(y2)),
                              dtype=[('x1', object), ('y1', object),
                                     ('x2', object), ('y2', object)])
+                                    
+    #def set_text
 
     def set_line_segment(self):
         data = self.data
         segments = self.marker.get_segments()
+        indices = self.axes_manager.indices[::-1] 
         if self.orientation is None:
-            coord = [data[x].item()[self.axes_manager.indices[::-1]]
-                     for x in ['x1', 'y1', 'x2', 'y2']]
+            coord = [data[x].item()[indices] for x in ['x1', 'y1', 'x2', 'y2']]
             segments[0][0] = coord[:2]
             segments[0][1] = coord[2:]
         elif 'v' in self.orientation:
-            segments[0][0, 0] = data[
-                'x1'].item()[self.axes_manager.indices[::-1]]
+            segments[0][0, 0] = data['x1'].item()[indices]
             segments[0][1, 0] = segments[0][0, 0]
-            if 'ax' in self.orientation:
+            if data['y1'].item()[()] is None:
                 segments[0][0, 1] = plt.getp(self.marker.axes, 'ylim')[0]
+            else:
+                segments[0][0,1] = data['y1'].item()[indices]
+            if data['y2'].item()[()] is None:
                 segments[0][1, 1] = plt.getp(self.marker.axes, 'ylim')[1]
-            elif 'min' in self.orientation:
-                segments[0][0, 1] = plt.getp(self.marker.axes, 'ylim')[0]
-                segments[0][1,
-                            1] = data['y2'].item(
-                )[self.axes_manager.indices[::-1]]
             else:
-                segments[0][0,
-                            1] = data['y1'].item(
-                )[self.axes_manager.indices[::-1]]
-                segments[0][1,
-                            1] = data['y2'].item(
-                )[self.axes_manager.indices[::-1]]
+                segments[0][1,1] = data['y2'].item()[indices]
         elif 'h' in self.orientation:
-            segments[0][0, 1] = data[
-                'y1'].item()[self.axes_manager.indices[::-1]]
+            segments[0][0, 1] = data['y1'].item()[indices]
             segments[0][1, 1] = segments[0][0, 1]
-            if 'ax' in self.orientation:
+            if data['x1'].item()[()] is None:
                 segments[0][0, 0] = plt.getp(self.marker.axes, 'xlim')[0]
-                segments[0][1, 0] = plt.getp(self.marker.axes, 'xlim')[1]
-            elif 'min' in self.orientation:
-                segments[0][0, 0] = plt.getp(self.marker.axes, 'xlim')[0]
-                segments[0][1,
-                            0] = data['x2'].item(
-                )[self.axes_manager.indices[::-1]]
             else:
-                segments[0][0,
-                            0] = data['x1'].item(
-                )[self.axes_manager.indices[::-1]]
-                segments[0][1,
-                            0] = data['x2'].item(
-                )[self.axes_manager.indices[::-1]]
+                segments[0][0,0] = data['x1'].item()[indices]
+            if data['x2'].item()[()] is None:
+                segments[0][1, 0] = plt.getp(self.marker.axes, 'xlim')[1]
+            else:
+                segments[0][1,0] = data['x2'].item()[indices]
         self.marker.set_segments(segments)
 
     def close(self):
@@ -304,7 +289,7 @@ class MarkerLine(object):
         data = self.data
         if self.auto_update is False:
             return
-        if self.type == 'axvline':
+        if self.type == 'text':
             self.marker.set_xdata(data['x1'].item()
                                   [self.axes_manager.indices[::-1]])
         elif self.type == 'line':
