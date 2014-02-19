@@ -771,10 +771,12 @@ class Model(list):
 
     def _calculate_chisq(self):
         if self.spectrum.variance is None:
-            print ("Variance is not set, so using signal itself")
-            variance = self.spectrum()[self.channel_switches]
+            # print ("Variance is not set, so using signal itself")
+            # variance = self.spectrum()[self.channel_switches]
+            # variance[variance == 0.0] = 1.0
+            variance = 1.0
         else:
-            variance = self.spectrum.variance[self.spectrum.axes_manager.indices[::-1]]
+            variance = self.spectrum.variance[self.spectrum.axes_manager.indices]
         d= self() - self.spectrum()[self.channel_switches]
         d *= d/variance # d = difference^2 / variance
         self.chisq.data[self.spectrum.axes_manager.indices[::-1]]= sum(d)
@@ -988,12 +990,12 @@ class Model(list):
                 ------------
                 tnc and l_bfgs_b
                 """ % fitter
-        self._calculate_chisq()
-        self._set_current_degrees_of_freedom()
         if np.iterable(self.p0) == 0:
             self.p0 = (self.p0,)
         self._fetch_values_from_p0(p_std=self.p_std)
         self.store_current_values()
+        self._calculate_chisq()
+        self._set_current_degrees_of_freedom()
         if ext_bounding is True:
             self._disable_ext_bounding()
         if switch_aap is True and update_plot is False:
