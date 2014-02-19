@@ -224,10 +224,11 @@ class MarkerLine(object):
     def plot(self):
         data = self.data
         if self.type == 'text':
-            indices=self.axes_manager.indices[::-1]
+            indices = self.axes_manager.indices[::-1]
             self.marker = self.ax.text(data['x1'].item()[indices],
-                    data['y1'].item()[indices],data['text'].item(),
-                    **self.marker_properties)
+                                       data['y1'].item(
+                                       )[indices], data['text'].item(),
+                                       **self.marker_properties)
         elif self.type == 'line':
             self.marker = self.ax.vlines(0, 0, 1,
                                          **self.marker_properties)
@@ -242,13 +243,13 @@ class MarkerLine(object):
                               np.array(x2), np.array(y2)),
                              dtype=[('x1', object), ('y1', object),
                                     ('x2', object), ('y2', object)])
-                                    
-    #def set_text
+
+    # def set_text
 
     def set_line_segment(self):
         data = self.data
         segments = self.marker.get_segments()
-        indices = self.axes_manager.indices[::-1] 
+        indices = self.axes_manager.indices[::-1]
         if self.orientation is None:
             coord = [data[x].item()[indices] for x in ['x1', 'y1', 'x2', 'y2']]
             segments[0][0] = coord[:2]
@@ -259,22 +260,22 @@ class MarkerLine(object):
             if data['y1'].item()[()] is None:
                 segments[0][0, 1] = plt.getp(self.marker.axes, 'ylim')[0]
             else:
-                segments[0][0,1] = data['y1'].item()[indices]
+                segments[0][0, 1] = data['y1'].item()[indices]
             if data['y2'].item()[()] is None:
                 segments[0][1, 1] = plt.getp(self.marker.axes, 'ylim')[1]
             else:
-                segments[0][1,1] = data['y2'].item()[indices]
+                segments[0][1, 1] = data['y2'].item()[indices]
         elif 'h' in self.orientation:
             segments[0][0, 1] = data['y1'].item()[indices]
             segments[0][1, 1] = segments[0][0, 1]
             if data['x1'].item()[()] is None:
                 segments[0][0, 0] = plt.getp(self.marker.axes, 'xlim')[0]
             else:
-                segments[0][0,0] = data['x1'].item()[indices]
+                segments[0][0, 0] = data['x1'].item()[indices]
             if data['x2'].item()[()] is None:
                 segments[0][1, 0] = plt.getp(self.marker.axes, 'xlim')[1]
             else:
-                segments[0][1,0] = data['x2'].item()[indices]
+                segments[0][1, 0] = data['x2'].item()[indices]
         self.marker.set_segments(segments)
 
     def close(self):
