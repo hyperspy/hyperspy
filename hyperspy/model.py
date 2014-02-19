@@ -115,7 +115,7 @@ class Model(list):
     # Extend the list methods to call the _touch when the model is modified
 
     def append(self, object):
-        #Check if any of the other components in the model has the same name
+        # Check if any of the other components in the model has the same name
         if object in self:
             raise ValueError("Component already in model")
         component_name_list = []
@@ -1504,11 +1504,11 @@ class Model(list):
                     return(component_list[0])
                 else:
                     raise ValueError(
-                            "There are several components with "
-                            "the name \"" + str(value) + "\"")
+                        "There are several components with "
+                        "the name \"" + str(value) + "\"")
             else:
                 raise ValueError(
-                        "Component name \"" + str(value) +
-                        "\" not found in model")
+                    "Component name \"" + str(value) +
+                    "\" not found in model")
         else:
             return list.__getitem__(self, value)
