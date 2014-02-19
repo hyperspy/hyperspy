@@ -39,7 +39,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
-version = "1.2"
+version = "1.1"
 
 # -----------------------
 # File format description
@@ -98,7 +98,8 @@ def file_reader(filename, record_by, mode='r', driver='core',
         global latest_file_version
         if current_file_version > latest_file_version:
             warnings.warn("This file was written using a newer version of "
-                          "HyperSpy. I will attempt to load it, but, if I fail, "
+                          "HyperSpy. I will attempt to load it, but, "
+                          "if I fail, "
                           "it is likely that I will be more successful at this "
                           "and other tasks if you upgrade me.")
 
@@ -280,10 +281,10 @@ def write_signal(signal, group, compression='gzip'):
         coord_group = group.create_group(
             'axis-%s' % axis.index_in_array)
         dict2hdfgroup(axis_dict, coord_group, compression=compression)
-    mapped_par = group.create_group('metadata')
+    mapped_par = group.create_group('mapped_parameters')
     dict2hdfgroup(signal.metadata.as_dictionary(),
                   mapped_par, compression=compression)
-    original_par = group.create_group('original_metadata')
+    original_par = group.create_group('original_parameters')
     dict2hdfgroup(signal.original_metadata.as_dictionary(),
                   original_par, compression=compression)
     learning_results = group.create_group('learning_results')
