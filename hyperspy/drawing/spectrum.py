@@ -221,7 +221,7 @@ class MarkerLine(object):
                 m.ax.figure.canvas.draw()
             except:
                 pass
-            #self.ax.hspy_fig._draw_animated()
+            # self.ax.hspy_fig._draw_animated()
 
     def set_marker_properties(self, **kwargs):
         self.marker_properties = kwargs
@@ -229,9 +229,10 @@ class MarkerLine(object):
     def plot(self):
         data = self.data
         if self.type == 'text':
-            indices = self.axes_manager.indices[::-1]            
+            indices = self.axes_manager.indices[::-1]
             self.marker = self.ax.text(self.get_data_position('x1'),
-                self.get_data_position('y1'),self.get_data_position('text'),
+                                       self.get_data_position(
+                                           'y1'), self.get_data_position('text'),
                                        **self.marker_properties)
         elif self.type == 'line':
             self.marker = self.ax.vlines(0, 0, 1,
@@ -245,40 +246,37 @@ class MarkerLine(object):
         except:
             pass
 
-
     def set_data(self, x1=None, y1=None, x2=None, y2=None, text=None):
         self.data = np.array((np.array(x1), np.array(y1),
-                              np.array(x2), np.array(y2),np.array(text)),
+                              np.array(x2), np.array(y2), np.array(text)),
                              dtype=[('x1', object), ('y1', object),
                                     ('x2', object), ('y2', object),
-                                     ('text', object)])
+                                    ('text', object)])
 
-    
-    def get_data_position(self,ind):
+    def get_data_position(self, ind):
         data = self.data
         indices = self.axes_manager.indices[::-1]
         if data[ind].item()[()] is None:
             return None
-        elif hasattr(data[ind].item()[()],"__iter__"):
+        elif hasattr(data[ind].item()[()], "__iter__"):
             return data[ind].item()[indices]
         else:
             return data[ind].item()[()]
-            
 
     def set_line_segment(self):
         segments = self.marker.get_segments()
         if self.orientation is None:
-            segments[0][0,0] = self.get_data_position('x1')
-            segments[0][0,1] = self.get_data_position('y1')
-            segments[0][1,0] = self.get_data_position('x2')
-            segments[0][1,1] = self.get_data_position('y2')
+            segments[0][0, 0] = self.get_data_position('x1')
+            segments[0][0, 1] = self.get_data_position('y1')
+            segments[0][1, 0] = self.get_data_position('x2')
+            segments[0][1, 1] = self.get_data_position('y2')
         elif 'v' in self.orientation:
             segments[0][0, 0] = self.get_data_position('x1')
             segments[0][1, 0] = segments[0][0, 0]
             if self.get_data_position('y1') is None:
                 segments[0][0, 1] = plt.getp(self.marker.axes, 'ylim')[0]
             else:
-                segments[0][0, 1] = self.get_data_position('y1') 
+                segments[0][0, 1] = self.get_data_position('y1')
             if self.get_data_position('y2') is None:
                 segments[0][1, 1] = plt.getp(self.marker.axes, 'ylim')[1]
             else:
@@ -310,11 +308,11 @@ class MarkerLine(object):
             return
         if self.type == 'text':
             self.marker.set_position([self.get_data_position('x1'),
-                self.get_data_position('y1')])
+                                      self.get_data_position('y1')])
             self.marker.set_text(self.get_data_position('text'))
         elif self.type == 'line':
             self.set_line_segment()
-        #self.ax.hspy_fig._draw_animated()
+        # self.ax.hspy_fig._draw_animated()
         try:
             self.ax.figure.canvas.draw()
         except:
