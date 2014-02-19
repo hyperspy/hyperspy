@@ -51,7 +51,7 @@ class TestModel:
 
     def test_component_name_when_append(self):
         m = self.model
-        gs = [Gaussian(), Gaussian() , Gaussian()]
+        gs = [Gaussian(), Gaussian(), Gaussian()]
         m.extend(gs)
         nose.tools.assert_is(m['Gaussian'], gs[0])
         nose.tools.assert_is(m['Gaussian_0'], gs[1])
@@ -60,7 +60,7 @@ class TestModel:
     @nose.tools.raises(ValueError)
     def test_several_component_with_same_name(self):
         m = self.model
-        gs = [Gaussian(), Gaussian() , Gaussian()]
+        gs = [Gaussian(), Gaussian(), Gaussian()]
         m.extend(gs)
         m[0]._name = "Gaussian"
         m[1]._name = "Gaussian"
