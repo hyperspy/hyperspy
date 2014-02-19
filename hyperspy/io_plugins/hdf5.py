@@ -91,16 +91,17 @@ def file_reader(filename, record_by, mode='r', driver='core',
                 backing_store=False, **kwds):
     with h5py.File(filename, mode=mode, driver=driver) as f:
         # Getting the format version here also checks if it is a valid HSpy
-        # hdf5 file, so the following line must not be deleted or moved
+        # hdf5 file, so the following two lines must not be deleted or moved
         # elsewhere.
         global current_file_version
+        current_file_version = get_hspy_format_version(f)
+        global latest_file_version
         if current_file_version > latest_file_version:
             warnings.warn("This file was written using a newer version of "
                           "HyperSpy. I will attempt to load it, but, if I fail, "
                           "it is likely that I will be more successful at this "
                           "and other tasks if you upgrade me.")
 
-        current_file_version = get_hspy_format_version(f)
         experiments = []
         exp_dict_list = []
         if 'Experiments' in f:
