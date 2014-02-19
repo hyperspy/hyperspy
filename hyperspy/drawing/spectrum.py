@@ -121,7 +121,7 @@ class SpectrumFigure(BlittedFigure):
     def close(self):
         for line in self.ax_lines + self.right_ax_lines:
             line.close()
-        for marker in self.ax_marker:
+        for marker in self.ax_markers:
             marker.close()
         try:
             plt.close(self.figure)
@@ -144,7 +144,7 @@ class MarkerLine(object):
     Attributes
     ----------
 
-    type : {'axvlines'}
+    type : {'axvline','vline'}
         Select the type of markers
     marker_properties : dictionary
         Accepts a dictionary of valid (i.e. recognized by mpl.plot)
@@ -175,7 +175,8 @@ class MarkerLine(object):
     def type(self, value):
         lp = {}
         if value == 'axvline':
-            lp['markersize'] = 1
+            lp['linewidth'] = 1
+            lp['color'] = 'black'
         else:
             raise ValueError(
                 "`type` must be one of "
@@ -183,8 +184,6 @@ class MarkerLine(object):
                 "but %s was given" % value)
         self._type = value
         self.marker_properties = lp
-        # if self.color is not None:
-            #self.color = self.color
 
     @property
     def marker_properties(self):
@@ -195,11 +194,6 @@ class MarkerLine(object):
         if 'type' in kwargs:
             self.type = kwargs['type']
             del kwargs['type']
-
-        # if 'color' in kwargs:
-            #color = kwargs['color']
-            #del kwargs['color']
-            #self.color = color
 
         for key, item in kwargs.iteritems():
             if item is None and key in self._marker_properties:
@@ -216,12 +210,9 @@ class MarkerLine(object):
     def plot(self):
         data = self.data
         if self.type == 'axvline':
-            # if self.axes_manager.navigation_shape == (0,):
-                #self.marker, = self.ax.axvline(data['x1'].item())
-            # else:
             self.marker = self.ax.axvline(data['x1'].item()
                                           [self.axes_manager.indices[::-1]],
-                                          **self.line_properties)
+                                          **self.marker_properties)
         self.marker.set_animated(True)
         self.axes_manager.connect(self.update)
         self.ax.figure.canvas.draw()
