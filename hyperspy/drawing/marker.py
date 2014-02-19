@@ -175,9 +175,9 @@ class Marker(object):
                 segments[0][1, 0] = self.get_data_position('x2')
         self.marker.set_segments(segments)
 
-    def close(self):
-        self.marker.remove()
+    def close(self):        
         try:
+            self.marker.remove()
             m.ax.figure.canvas.draw()
         except:
             pass

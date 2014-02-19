@@ -25,6 +25,7 @@ from hyperspy._signals.spectrum import Spectrum
 from hyperspy.misc.eds.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
+from hyperspy.drawing import marker
 
 
 class EDSSpectrum(Spectrum):
@@ -571,50 +572,28 @@ class EDSSpectrum(Spectrum):
             line_energy.append(elements_db[element]['Xray_energy'][line])
             relative_factor = elements_db['lines']['ratio_line'][line]
             a_eng = elements_db[element]['Xray_energy'][line[0] + 'a']
-            # to improve
-            # intensity.append(self[...,a_eng])
-            intensity.append(self[..., a_eng].data.flatten().mean()
-                             * relative_factor)
+            
+            #if fixed_height:
+                #intensity.append(self[..., a_eng].data.flatten().mean()
+                             #* relative_factor)
+            #else:
+            intensity.append(self[...,a_eng].data* relative_factor)
 
         self.plot()
-        line = self._plot.signal_plot.ax_lines[0]
-        #line.marker_data = [intens.data for intens in intensity]
-        #line.marker_data = intensity
         for i in range(len(line_energy)):
-            # f=intensity[i][self._plot.axes_manager.indices].data[0]
-            #line.marker = line.ax.vlines(line_energy[i], 0, f * 0.8, color='black')
-            # line.marker.set_animated(True)
-            #line.marker_style = 'vline_EDS'
-            #line.marker_no = i
-            # line.marker = line.ax.text(line_energy[i], f * 1.1,
-                # Xray_lines[i], rotation=90)
-            #line.marker_style = 'text_EDS'
-            #line.marker_no = i
-            # line.marker.set_animated(True)
-            line.marker = line.ax.vlines(
-                line_energy[i],
-                0,
-                intensity[i] * 0.8,
-                color='black')
-            line.marker = line.ax.text(line_energy[i], intensity[i] * 1.1,
-                                       Xray_lines[i], rotation=90)
-        line.update()
+            line=marker.Marker()
+            line.type='line'
+            line.orientation='v'
+            line.set_data(x1=line_energy[i],y2=intensity[i]*0.8)
+            self._plot.signal_plot.add_marker(line)
+            line.plot()
+            text=marker.Marker()
+            text.type='text'
+            text.set_marker_properties(rotation=90)
+            text.set_data(x1=line_energy[i],
+                        y1=intensity[i]*1.1,text=Xray_lines[i])
+            self._plot.signal_plot.add_marker(text)
+            text.plot()
 
 
-        # To go in spectrum update line.
-        #g = self.marker_data
-        # if g is not None:
-            # if self.marker_style is 'vline_EDS':
-                # self.marker.set_ydata(g[self.axes_manager.indices])
-                # segments=self.marker.get_segments()
-                #segments[0][-1,-1]=g[self.marker_no][self.axes_manager.indices[::-1]] * 0.8
-                # segments[0][0,-1]=0
-                # print self.marker_no
-                # self.marker.set_segments(segments)
-                # print self.marker.get_segments()
-            # if self.marker_style is 'text_EDS':
-                # position=list(self.marker.get_position())
-                #position[-1]=g[self.marker_no][self.axes_manager.indices[::-1]] * 1.1
-                # self.marker.set_position(position)
-                # print 'a'
-        #self.marker_data = None
+
