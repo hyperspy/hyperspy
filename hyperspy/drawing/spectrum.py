@@ -96,10 +96,12 @@ class SpectrumFigure(BlittedFigure):
             rgba_color = mpl.colors.colorConverter.to_rgba(line.color)
             if rgba_color in self._color_cycles[line.type].color_cycle:
                 self._color_cycles[line.type].color_cycle.remove(
-                    rgba_color)                    
-                    
+                    rgba_color)
+
     def add_marker(self, marker):
         marker.ax = self.ax
+        if marker.axes_manager is None:
+            marker.axes_manager = self.axes_manager
         self.ax_markers.append(marker)
 
     def plot(self):
@@ -131,14 +133,15 @@ class SpectrumFigure(BlittedFigure):
         for line in self.ax_lines + \
                 self.right_ax_lines:
             line.update()
-            
+
+
 class MarkerLine(object):
-    
+
     """Marker thant can be added to SpectrumFigure
-    
+
     Attributes
     ----------
-    
+
     type : {'axvlines'}
         Select the type of markers
     marker_properties : dictionary
@@ -147,22 +150,21 @@ class MarkerLine(object):
         the keyword `type` that can take the following values:
         {'scatter', 'step', 'line'}
 
-    
+
     """
-    
+
     def __init__(self):
         # Data attributes
-        self.data_function = None
+        self.data = None
         self.axis = None
         self.axes_manager = None
         self.auto_update = True
-        
+
         # Properties
         self.marker = None
         self._marker_properties = {}
         self.type = "axvline"
-        
-        
+
     @property
     def type(self):
         return self._type
@@ -179,9 +181,9 @@ class MarkerLine(object):
                 "but %s was given" % value)
         self._type = value
         self.marker_properties = lp
-        #if self.color is not None:
+        # if self.color is not None:
             #self.color = self.color
-            
+
     @property
     def marker_properties(self):
         return self._marker_properties
@@ -192,7 +194,7 @@ class MarkerLine(object):
             self.type = kwargs['type']
             del kwargs['type']
 
-        #if 'color' in kwargs:
+        # if 'color' in kwargs:
             #color = kwargs['color']
             #del kwargs['color']
             #self.color = color
@@ -208,25 +210,30 @@ class MarkerLine(object):
 
     def set_marker_properties(self, **kwargs):
         self.marker_properties = kwargs
-        
+
     def plot(self):
-        f = self.data_function        
+        data = self.data
         if self.type == 'axvline':
-            self.marker = self.ax.axvline(f)
+            self.marker = self.ax.axvline(
+                data[list(self.axes_manager.indices[::-1])])
         self.marker.set_animated(True)
-        #self.axes_manager.connect(self.update)
+        # self.axes_manager.connect(self.update)
         self.ax.figure.canvas.draw()
-    
+
     def close(self):
-        print 1
+        self.marker.remove()
+        try:
+            m.ax.figure.canvas.draw()
+        except:
+            pass
         
-        
+
     def update(self):
         """Update the current spectrum figure"""
         if self.auto_update is False:
             return
         if self.type == 'axvlines':
-            self.set_xdata(g[self.axes_manager.indices[::-1]])
+            self.set_xdata(list(g[self.axes_manager.indices[::-1]]))
 
 
 class SpectrumLine(object):
