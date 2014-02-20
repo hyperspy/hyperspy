@@ -737,8 +737,8 @@ class MVA():
         ---------
 
         `plot_explained_variance_ration`, `decomposition`,
-        `get_decomposition_loadings_as_signal`,
-        `get_decomposition_factors_as_signal`.
+        `get_decomposition_loadings`,
+        `get_decomposition_factors`.
 
         """
         from hyperspy._signals.spectrum import Spectrum
@@ -772,8 +772,8 @@ class MVA():
         ---------
 
         `get_explained_variance_ration`, `decomposition`,
-        `get_decomposition_loadings_as_signal`,
-        `get_decomposition_factors_as_signal`.
+        `get_decomposition_loadings`,
+        `get_decomposition_factors`.
 
         """
         s = self.get_explained_variance_ratio()
