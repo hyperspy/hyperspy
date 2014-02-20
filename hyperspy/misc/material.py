@@ -1,6 +1,6 @@
 import numpy as np
 
-from hyperspy.misc.eds.elements import elements as elements_db
+from hyperspy.misc.elements import elements_db
 
 
 def weight_to_atomic(elements, weight_percent):
@@ -21,7 +21,7 @@ def weight_to_atomic(elements, weight_percent):
 
     """
     atomic_weights = np.array(
-        [elements_db[element]['A'] for element in elements])
+        [elements_db[element].general.atomic_weight for element in elements])
     atomic_percent = weight_percent / atomic_weights / (
         weight_percent / atomic_weights).sum() * 100
     return atomic_percent.tolist()
@@ -45,7 +45,7 @@ def atomic_to_weight(elements, atomic_percent):
     """
 
     atomic_weights = np.array(
-        [elements_db[element]['A'] for element in elements])
+        [elements_db[element].general.atomic_weight for element in elements])
 
     weight_percent = atomic_percent * atomic_weights / (
         atomic_percent * atomic_weights).sum() * 100
@@ -81,6 +81,6 @@ def density_of_mixture_of_pure_elements(elements, weight_percent):
 
     """
     densities = np.array(
-        [elements_db[element]['density'] for element in elements])
+        [elements_db[element].physical.density for element in elements])
     density = (weight_percent / densities / sum(weight_percent)).sum() ** -1
     return density

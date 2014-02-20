@@ -3,7 +3,7 @@ from __future__ import division
 import numpy as np
 
 from hyperspy.misc.math_tools import get_linear_interpolation
-from hyperspy.misc.eels.elements import elements
+from hyperspy.misc.elements import elements
 
 
 class GOSBase(object):
@@ -15,18 +15,18 @@ class GOSBase(object):
         if (element in elements) is not True:
             raise ValueError("The given element " + element +
                              " is not in the database.")
-        elif subshell not in elements[element]['subshells']:
+        elif subshell not in elements[element]['atomic']['subshells']:
             raise ValueError(
                 "The given subshell " + subshell +
                 " is not in the database.\n" +
                 "The available subshells are:\n" +
-                str(elements[element]['subshells'].keys()))
+                str(elements[element]['atomic']['subshells'].keys()))
 
         self.onset_energy = \
-            elements[element]['subshells'][subshell]['onset_energy']
+            elements[element]['atomic']['subshells'][subshell]['onset_energy']
         self.subshell_factor = \
-            elements[element]['subshells'][subshell]['factor']
-        self.Z = elements[element]['Z']
+            elements[element]['atomic']['subshells'][subshell]['factor']
+        self.Z = elements[element]['general']['Z']
         self.element_dict = elements[element]
 
     def get_parametrized_qaxis(self, k1, k2, n):
