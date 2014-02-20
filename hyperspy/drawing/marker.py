@@ -136,7 +136,7 @@ class Marker(object):
                                          **self.marker_properties)
             self.set_line_segment()
         elif self.type == 'axvline':
-            self.marker = self.ax.axvline(self.get_data_position('x1'),                                          
+            self.marker = self.ax.axvline(self.get_data_position('x1'),
                                           **self.marker_properties)
         elif self.type == 'axhline':
             self.marker = self.ax.axhline(self.get_data_position('y1'),
@@ -152,7 +152,7 @@ class Marker(object):
             self.marker._sizes = [self.get_data_position('size')]
 
         self.marker.set_animated(True)
-        #To be discussed, done in Spectrum figure once.
+        # To be discussed, done in Spectrum figure once.
         # self.axes_manager.connect(self.update)
         try:
             self.ax.hspy_fig._draw_animated()
@@ -238,7 +238,7 @@ class Marker(object):
             self.marker.set_offsets([self.get_data_position('x1'),
                                      self.get_data_position('y1')])
             self.marker._sizes = [self.get_data_position('size')]
-        #To be discussed, done in SpectrumLine once.
+        # To be discussed, done in SpectrumLine once.
         # try:
             # self.ax.figure.canvas.draw()
             # self.ax.hspy_fig._draw_animated()
