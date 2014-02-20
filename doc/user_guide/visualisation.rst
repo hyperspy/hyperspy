@@ -110,6 +110,9 @@ To close all the figures run the following command:
     learn how to pan/zoom and more  `in the matplotlib documentation
     <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
 
+
+.. _visualization_multi_dim:
+
 Visualisation of multi-dimensional data
 ****************************************
 
@@ -152,7 +155,7 @@ plotted with sliders.
 
 .. code-block:: python
 
-    >>> spec = load('spectrum_image*.tif', stack=True)
+    >>> spec = load('spectrum_image*.rpl', stack=True)
     >>> spec.plot()
     
     
@@ -220,7 +223,9 @@ greater than 2, `Mayavi <http://docs.enthought.com/mayavi/mayavi/>`_ can be
 used for this purpose.
 
 In the following example we also use `scikit-image <http://scikit-image.org/>`_
-for noise reduction: 
+for noise reduction. More details about 
+:py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` method can be 
+found in :ref:`EDS lines intensity<get_lines_intensity>`.
 
 .. code-block:: python
 
@@ -228,7 +233,7 @@ for noise reduction:
     >>> from skimage import filter
     >>> from mayavi import mlab
     >>> #Generate the X-ray intensity map of Nickel L alpha
-    >>> NiMap = specImg3Dc.get_intensity_map(['Ni_La'])[0]
+    >>> NiMap = specImg3Dc.get_lines_intensity(['Ni_La'])[0]
     >>> #Reduce the noise
     >>> NiMapDenoise = filter.denoise_tv_chambolle(NiMap.data)
     >>> #Plot isosurfaces
