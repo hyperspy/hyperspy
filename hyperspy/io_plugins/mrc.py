@@ -135,7 +135,7 @@ def get_data_type(index, endianess='<'):
 
 
 def file_reader(filename, endianess='<', **kwds):
-    mapped_parameters = {}
+    metadata = {}
     dtype_list = get_std_dtype_list(endianess) + get_fei_dtype_list(endianess)
     f = open(filename, 'rb')
     std_header = np.fromfile(f, dtype=get_std_dtype_list(endianess),
@@ -156,11 +156,11 @@ def file_reader(filename, endianess='<', **kwds):
                      dtype=get_data_type(std_header['MODE'], endianess)
                      ).squeeze().reshape((NX, NY, NZ), order='F').T
 
-    original_parameters = {'std_header': sarray2dict(std_header)}
+    original_metadata = {'std_header': sarray2dict(std_header)}
     if fei_header is not None:
         fei_dict = sarray2dict(fei_header,)
         del fei_dict['empty']
-        original_parameters['fei_header'] = fei_dict
+        original_metadata['fei_header'] = fei_dict
 
     dim = len(data.shape)
     if fei_header is None:
@@ -184,9 +184,9 @@ def file_reader(filename, endianess='<', **kwds):
 
     units = [Undefined, 'nm', 'nm']
     names = ['z', 'y', 'x']
-    mapped_parameters = {'original_filename': os.path.split(filename)[1],
-                         'record_by': 'image',
-                         'signal_type': "", }
+    metadata = {'original_filename': os.path.split(filename)[1],
+                'record_by': 'image',
+                'signal_type': "", }
     # create the axis objects for each axis
     axes = [
         {
@@ -200,7 +200,7 @@ def file_reader(filename, endianess='<', **kwds):
 
     dictionary = {'data': data,
                   'axes': axes,
-                  'mapped_parameters': mapped_parameters,
-                  'original_parameters': original_parameters, }
+                  'metadata': metadata,
+                  'original_metadata': original_metadata, }
 
     return [dictionary, ]

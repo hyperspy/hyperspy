@@ -187,7 +187,7 @@ def load(filenames=None,
                                           axis=stack_axis,
                                           new_axis_name=new_axis_name,
                                           mmap=mmap, mmap_dir=mmap_dir)
-            signal.mapped_parameters.title = \
+            signal.metadata.title = \
                 os.path.split(
                     os.path.split(
                         os.path.abspath(filenames[0])
@@ -268,11 +268,11 @@ def load_with_reader(filename,
 
     for signal_dict in file_data_list:
         if record_by is not None:
-            signal_dict['mapped_parameters']['record_by'] = record_by
+            signal_dict['metadata']['record_by'] = record_by
         if signal_type is not None:
-            signal_dict['mapped_parameters']['signal_type'] = signal_type
+            signal_dict['metadata']['signal_type'] = signal_type
         if signal_origin is not None:
-            signal_dict['mapped_parameters']['signal_origin'] = signal_origin
+            signal_dict['metadata']['signal_origin'] = signal_origin
         objects.append(dict2signal(signal_dict))
         folder, filename = os.path.split(os.path.abspath(filename))
         filename, extension = os.path.splitext(filename)
@@ -342,8 +342,8 @@ def dict2signal(signal_dict):
     record_by = ""
     signal_type = ""
     signal_origin = ""
-    if "mapped_parameters" in signal_dict:
-        mp = signal_dict["mapped_parameters"]
+    if "metadata" in signal_dict:
+        mp = signal_dict["metadata"]
         if "record_by" in mp:
             record_by = mp['record_by']
         if "signal_type" in mp:
@@ -362,11 +362,11 @@ def dict2signal(signal_dict):
             signal = f(signal)
     if "mapping" in signal_dict:
         for opattr, (mpattr, function) in signal_dict["mapping"].iteritems():
-            if opattr in signal.original_parameters:
-                value = signal.original_parameters.get_item(opattr)
+            if opattr in signal.original_metadata:
+                value = signal.original_metadata.get_item(opattr)
                 if function is not None:
                     value = function(value)
-                signal.mapped_parameters.set_item(mpattr, value)
+                signal.metadata.set_item(mpattr, value)
     return signal
 
 

@@ -23,51 +23,51 @@ from hyperspy.signals import EDSTEMSpectrum
 from hyperspy.defaults_parser import preferences
 
 
-class Test_mapped_parameters:
+class Test_metadata:
 
     def setUp(self):
         # Create an empty spectrum
         s = EDSTEMSpectrum(np.ones((4, 2, 1024)))
-        s.mapped_parameters.TEM.EDS.live_time = 3.1
-        s.mapped_parameters.TEM.beam_energy = 15.0
+        s.metadata.TEM.EDS.live_time = 3.1
+        s.metadata.TEM.beam_energy = 15.0
         self.signal = s
 
     def test_sum_live_time(self):
         s = self.signal
         sSum = s.sum(0)
-        assert_equal(sSum.mapped_parameters.TEM.EDS.live_time, 3.1 * 2)
+        assert_equal(sSum.metadata.TEM.EDS.live_time, 3.1 * 2)
 
     def test_rebin_live_time(self):
         s = self.signal
         dim = s.axes_manager.shape
         s = s.rebin([dim[0] / 2, dim[1] / 2, dim[2]])
-        assert_equal(s.mapped_parameters.TEM.EDS.live_time, 3.1 * 2 * 2)
+        assert_equal(s.metadata.TEM.EDS.live_time, 3.1 * 2 * 2)
 
     def test_add_elements(self):
         s = self.signal
         s.add_elements(['Al', 'Ni'])
-        assert_equal(s.mapped_parameters.Sample.elements, ['Al', 'Ni'])
+        assert_equal(s.metadata.Sample.elements, ['Al', 'Ni'])
         s.add_elements(['Al', 'Ni'])
-        assert_equal(s.mapped_parameters.Sample.elements, ['Al', 'Ni'])
+        assert_equal(s.metadata.Sample.elements, ['Al', 'Ni'])
         s.add_elements(["Fe", ])
-        assert_equal(s.mapped_parameters.Sample.elements, ['Al', "Fe", 'Ni'])
+        assert_equal(s.metadata.Sample.elements, ['Al', "Fe", 'Ni'])
         s.set_elements(['Al', 'Ni'])
-        assert_equal(s.mapped_parameters.Sample.elements, ['Al', 'Ni'])
+        assert_equal(s.metadata.Sample.elements, ['Al', 'Ni'])
 
     def test_default_param(self):
         s = self.signal
-        mp = s.mapped_parameters
+        mp = s.metadata
         assert_equal(mp.TEM.EDS.energy_resolution_MnKa,
                      preferences.EDS.eds_mn_ka)
 
     def test_SEM_to_TEM(self):
         s = self.signal[0, 0]
         signal_type = 'EDS_SEM'
-        mp = s.mapped_parameters
+        mp = s.metadata
         mp.TEM.EDS.energy_resolution_MnKa = 125.3
         sSEM = s.deepcopy()
         sSEM.set_signal_type(signal_type)
-        mpSEM = sSEM.mapped_parameters
+        mpSEM = sSEM.metadata
         results = [mp.TEM.EDS.energy_resolution_MnKa]
         results.append(signal_type)
         resultsSEM = [mpSEM.SEM.EDS.energy_resolution_MnKa]
