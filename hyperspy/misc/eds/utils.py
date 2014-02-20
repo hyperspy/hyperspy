@@ -31,11 +31,10 @@ def get_FWHM_at_Energy(energy_resolution_MnKa, E):
     """
     FWHM_ref = energy_resolution_MnKa
     E_ref = elements_db.Mn.atomic.Xray_lines.Ka.energy
-    
-    
-    FWHM_e = 2.5*(E-E_ref)*1000 + FWHM_ref*FWHM_ref
-   
-    return math.sqrt(FWHM_e)/1000 # In mrad
+
+    FWHM_e = 2.5 * (E - E_ref) * 1000 + FWHM_ref * FWHM_ref
+
+    return math.sqrt(FWHM_e) / 1000  # In mrad
 
 
 def xray_range(xray_line, beam_energy, density='auto'):
