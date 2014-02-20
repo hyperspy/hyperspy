@@ -22,12 +22,12 @@ import matplotlib.pyplot as plt
 
 class Marker(object):
 
-    """Marker that can be added to a figure
+    """Marker that can be added to the signal figure
 
     Attributes
     ----------
 
-    type : {'line','text','pointer'}
+    type : {'line','axvline','axhline','text','pointer'}
         Select the type of markers
     orientation : {None,'v','h'}
         Orientation for lines. 'v' is vertical, 'h' is horizontal.
@@ -44,11 +44,36 @@ class Marker(object):
         arguments.
 
     set_data
-        Set the data in a structured array.
-        For type='line', 'x1','y1','x2','y2' can be defined
-        For type='text', 'x1','y1','text' can be defined
-        For type='pointer', 'x1','y1','size' can be defined
+        Set the data in a structured array. Each field of data should have
+        the same dimensions than the nagivation axes. Some fields need to be defined
+        depending on the type.
+        For 'line': 'x1','y1','x2','y2' (All of them if orientation
+            is None)
+        For 'axvline': 'x1'
+        For 'axhline': 'y1'
+        For 'text': 'x1','y1','text'
+        For 'pointer': 'x1','y1','size'. 'size' is optional
 
+    Example
+    -------
+
+    >>> s = signals.Spectrum(random.random([10,100]))
+    >>> m = utils.plot.marker()
+    >>> m.type = 'axvline'
+    >>> m.set_marker_properties(color='green')
+    >>> m.set_data(x1=range(10))
+    >>> s.plot()
+    >>> s._plot.signal_plot.add_marker(m)
+    >>> m.plot()
+
+    >>> im = signals.Image(random.random([10,50,50]))
+    >>> m = utils.plot.marker()
+    >>> m.type = 'text'
+    >>> m.set_marker_properties(fontsize = 30,color='red')
+    >>> m.set_data(x1=range(10),y1=range(10)[::-1],text='hello')
+    >>> im.plot()
+    >>> im._plot.signal_plot.add_marker(m)
+    >>> m.plot()
 
 
     """
@@ -78,14 +103,19 @@ class Marker(object):
         elif value == 'line':
             lp['linewidth'] = 1
             lp['color'] = 'black'
+        elif value == 'axvline':
+            lp['linewidth'] = 1
+            lp['color'] = 'black'
+        elif value == 'axhline':
+            lp['linewidth'] = 1
+            lp['color'] = 'black'
         elif value == 'pointer':
             lp['color'] = 'black'
             lp['linewidth'] = None
-            #lp['pickradius'] = 5.0
         else:
             raise ValueError(
                 "`type` must be one of "
-                "{\'line\',\'text\',\'pointer\'}"
+                "{\'line\',\'axvline\',\'axhline\',\'text\',\'pointer\'}"
                 "but %s was given" % value)
         self._type = value
         self.marker_properties = lp
@@ -128,6 +158,12 @@ class Marker(object):
             self.marker = self.ax.vlines(0, 0, 1,
                                          **self.marker_properties)
             self.set_line_segment()
+        elif self.type == 'axvline':
+            self.marker = self.ax.axvline(self.get_data_position('x1'),
+                                          **self.marker_properties)
+        elif self.type == 'axhline':
+            self.marker = self.ax.axhline(self.get_data_position('y1'),
+                                          **self.marker_properties)
         elif self.type == 'pointer':
             self.marker = self.ax.scatter(self.get_data_position('x1'),
                                           self.get_data_position(
@@ -139,6 +175,7 @@ class Marker(object):
             self.marker._sizes = [self.get_data_position('size')]
 
         self.marker.set_animated(True)
+        # To be discussed, done in Spectrum figure once.
         # self.axes_manager.connect(self.update)
         try:
             self.ax.hspy_fig._draw_animated()
@@ -207,7 +244,7 @@ class Marker(object):
     def update(self):
         """Update the current spectrum figure"""
         data = self.data
-        # print self.auto_update
+
         if self.auto_update is False:
             return
         if self.type == 'text':
@@ -216,11 +253,15 @@ class Marker(object):
             self.marker.set_text(self.get_data_position('text'))
         elif self.type == 'line':
             self.set_line_segment()
+        elif self.type == 'axvline':
+            self.marker.set_xdata(self.get_data_position('x1'))
+        elif self.type == 'axhline':
+            self.marker.set_ydata(self.get_data_position('y1'))
         elif self.type == 'pointer':
             self.marker.set_offsets([self.get_data_position('x1'),
                                      self.get_data_position('y1')])
             self.marker._sizes = [self.get_data_position('size')]
-        # print self.axes_manager.indices[::-1]
+        # To be discussed, done in SpectrumLine once.
         # try:
             # self.ax.figure.canvas.draw()
             # self.ax.hspy_fig._draw_animated()
