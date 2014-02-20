@@ -46,23 +46,22 @@ class Marker(object):
     set_data
         Set the data in a structured array. Each field of data should have
         the same dimension than the nagivation. Some fields need to be defined
-        depending on the type. 
-        For 'line': 'x1','y1','x2','y2' (All of them if orientation 
+        depending on the type.
+        For 'line': 'x1','y1','x2','y2' (All of them if orientation
             is None)
         For 'axvline': 'x1'
         For 'axhline': 'y1'
         For 'text': 'x1','y1','text'
         For 'pointer': 'x1','y1','size'. 'size' is optional
-        
+
     Example
     -------
-    
-    >>> s
-    <Spectrum, title: , dimensions: (5|1024)>
+
+    >>> s = signals.Spectrum(random.random([10,100]))
     >>> m = utils.plot.marker()
     >>> m.type = 'axvline'
     >>> m.set_marker_properties(color='green')
-    >>> m.set_data(x1=range(5))
+    >>> m.set_data(x1=range(10))
     >>> s.plot()
     >>> s._plot.signal_plot.add_marker(m)
     >>> m.plot()
