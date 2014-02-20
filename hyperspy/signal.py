@@ -2047,8 +2047,8 @@ class MVATools(object):
 
         See Also
         --------
-        get_decomposition_factors_as_signal,
-        get_decomposition_loadings_as_signal.
+        get_decomposition_factors,
+        get_decomposition_loadings.
 
         """
 
@@ -2175,8 +2175,8 @@ class MVATools(object):
 
         See Also
         --------
-        get_bss_factors_as_signal,
-        get_bss_loadings_as_signal.
+        get_bss_factors,
+        get_bss_loadings.
 
         """
 
@@ -2212,7 +2212,7 @@ class MVATools(object):
                               per_row=per_row,
                               save_figures_format=save_figures_format)
 
-    def _get_loadings_as_signal(self, loadings):
+    def _get_loadings(self, loadings):
         from hyperspy.hspy import signals
         data = loadings.T.reshape(
             (-1,) + self.axes_manager.navigation_shape[::-1])
@@ -2225,7 +2225,7 @@ class MVATools(object):
             axis.navigate = False
         return signal
 
-    def _get_factors_as_signal(self, factors):
+    def _get_factors(self, factors):
         signal = self.__class__(factors.T.reshape((-1,) +
                                 self.axes_manager.signal_shape[::-1]),
                                 axes=[{"size": factors.shape[-1],
@@ -2237,58 +2237,58 @@ class MVATools(object):
             axis.navigate = False
         return signal
 
-    def get_decomposition_loadings_as_signal(self):
+    def get_decomposition_loadings(self):
         """Return the decomposition loadings as a Signal.
 
         See Also
         -------
-        get_decomposition_factors_as_signal, export_decomposition_results.
+        get_decomposition_factors, export_decomposition_results.
 
         """
-        signal = self._get_loadings_as_signal(self.learning_results.loadings)
+        signal = self._get_loadings(self.learning_results.loadings)
         signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.metadata.title = "Decomposition loadings of " + \
             self.metadata.title
         return signal
 
-    def get_decomposition_factors_as_signal(self):
+    def get_decomposition_factors(self):
         """Return the decomposition factors as a Signal.
 
         See Also
         -------
-        get_decompoisition_loadings_as_signal, export_decomposition_results.
+        get_decomposition_loadings, export_decomposition_results.
 
         """
-        signal = self._get_factors_as_signal(self.learning_results.factors)
+        signal = self._get_factors(self.learning_results.factors)
         signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.metadata.title = ("Decomposition factors of " +
                                  self.metadata.title)
         return signal
 
-    def get_bss_loadings_as_signal(self):
+    def get_bss_loadings(self):
         """Return the blind source separtion loadings as a Signal.
 
         See Also
         -------
-        get_bss_factors_as_signal, export_bss_results.
+        get_bss_factors, export_bss_results.
 
         """
-        signal = self._get_loadings_as_signal(
+        signal = self._get_loadings(
             self.learning_results.bss_loadings)
         signal.axes_manager[0].name = "BSS component index"
         signal.metadata.title = ("BSS loadings of " +
                                  self.metadata.title)
         return signal
 
-    def get_bss_factors_as_signal(self):
+    def get_bss_factors(self):
         """Return the blind source separtion factors as a Signal.
 
         See Also
         -------
-        get_bss_loadings_as_signal, export_bss_results.
+        get_bss_loadings, export_bss_results.
 
         """
-        signal = self._get_factors_as_signal(self.learning_results.bss_factors)
+        signal = self._get_factors(self.learning_results.bss_factors)
         signal.axes_manager[0].name = "BSS component index"
         signal.metadata.title = ("BSS factors of " +
                                  self.metadata.title)
@@ -2325,8 +2325,8 @@ class MVATools(object):
         plot_bss_factors, plot_bss_loadings, plot_decomposition_results.
 
         """
-        factors = self.get_bss_factors_as_signal()
-        loadings = self.get_bss_loadings_as_signal()
+        factors = self.get_bss_factors()
+        loadings = self.get_bss_loadings()
         factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
         if loadings.axes_manager.signal_dimension > 2:
             loadings.axes_manager.set_signal_dimension(loadings_dim)
@@ -2366,8 +2366,8 @@ class MVATools(object):
         plot_factors, plot_loadings, plot_bss_results.
 
         """
-        factors = self.get_decomposition_factors_as_signal()
-        loadings = self.get_decomposition_loadings_as_signal()
+        factors = self.get_decomposition_factors()
+        loadings = self.get_decomposition_loadings()
         factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
         if loadings.axes_manager.signal_dimension > 2:
             loadings.axes_manager.set_signal_dimension(loadings_dim)
