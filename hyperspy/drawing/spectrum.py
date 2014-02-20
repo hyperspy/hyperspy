@@ -119,10 +119,10 @@ class SpectrumFigure(BlittedFigure):
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
 
     def close(self):
-        for line in self.ax_lines + self.right_ax_lines:
-            line.close()
         for marker in self.ax_markers:
             marker.close()
+        for line in self.ax_lines + self.right_ax_lines:
+            line.close()
         try:
             plt.close(self.figure)
         except:
@@ -130,11 +130,11 @@ class SpectrumFigure(BlittedFigure):
         self.figure = None
 
     def update(self):
+        for marker in self.ax_markers:
+            marker.update()
         for line in self.ax_lines + \
                 self.right_ax_lines:
             line.update()
-        for marker in self.ax_markers:
-            marker.update()
 
 
 class SpectrumLine(object):

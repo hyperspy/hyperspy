@@ -100,7 +100,8 @@ class Marker(object):
         if self.marker is not None:
             plt.setp(self.marker, **self.marker_properties)
             try:
-                m.ax.figure.canvas.draw()
+                #self.ax.figure.canvas.draw()
+                self.ax.hspy_fig._draw_animated()
             except:
                 pass
 
@@ -123,7 +124,8 @@ class Marker(object):
         self.marker.set_animated(True)
         self.axes_manager.connect(self.update)
         try:
-            m.ax.figure.canvas.draw()
+            self.ax.hspy_fig._draw_animated()
+            #self.ax.figure.canvas.draw()
         except:
             pass
 
@@ -176,9 +178,10 @@ class Marker(object):
         self.marker.set_segments(segments)
 
     def close(self):
-        self.marker.remove()
         try:
-            m.ax.figure.canvas.draw()
+            self.marker.remove()
+            #m.ax.figure.canvas.draw()
+            self.ax.hspy_fig._draw_animated()
         except:
             pass
 
@@ -193,7 +196,7 @@ class Marker(object):
             self.marker.set_text(self.get_data_position('text'))
         elif self.type == 'line':
             self.set_line_segment()
-        try:
-            self.ax.figure.canvas.draw()
-        except:
-            pass
+        #try:
+            #self.ax.figure.canvas.draw()
+        #except:
+            #pass
