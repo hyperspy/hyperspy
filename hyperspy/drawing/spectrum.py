@@ -135,8 +135,9 @@ class SpectrumFigure(BlittedFigure):
             marker.update()
         for line in self.ax_lines + \
                 self.right_ax_lines:
-            line.update()            
+            line.update()
         self.ax.hspy_fig._draw_animated()
+
 
 class SpectrumLine(object):
 
@@ -275,7 +276,7 @@ class SpectrumLine(object):
         self.line, = self.ax.plot(self.axis, data,
                                   **self.line_properties)
         self.line.set_animated(True)
-        #self.axes_manager.connect(self.update)
+        # self.axes_manager.connect(self.update)
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
@@ -312,7 +313,7 @@ class SpectrumLine(object):
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
             self.text.set_text((self.axes_manager.indices))
-        #self.ax.hspy_fig._draw_animated()
+        # self.ax.hspy_fig._draw_animated()
         # self.ax.figure.canvas.draw_idle()
 
     def close(self):
