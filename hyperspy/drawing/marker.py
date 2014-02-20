@@ -81,7 +81,6 @@ class Marker(object):
         elif value == 'pointer':
             lp['color'] = 'black'
             lp['linewidth'] = None
-            #lp['pickradius'] = 5.0
         else:
             raise ValueError(
                 "`type` must be one of "
@@ -139,6 +138,7 @@ class Marker(object):
             self.marker._sizes = [self.get_data_position('size')]
 
         self.marker.set_animated(True)
+        #To be discussed, done in Spectrum figure once.
         # self.axes_manager.connect(self.update)
         try:
             self.ax.hspy_fig._draw_animated()
@@ -207,7 +207,7 @@ class Marker(object):
     def update(self):
         """Update the current spectrum figure"""
         data = self.data
-        # print self.auto_update
+
         if self.auto_update is False:
             return
         if self.type == 'text':
@@ -220,7 +220,7 @@ class Marker(object):
             self.marker.set_offsets([self.get_data_position('x1'),
                                      self.get_data_position('y1')])
             self.marker._sizes = [self.get_data_position('size')]
-        # print self.axes_manager.indices[::-1]
+        #To be discussed, done in SpectrumLine once.
         # try:
             # self.ax.figure.canvas.draw()
             # self.ax.hspy_fig._draw_animated()
