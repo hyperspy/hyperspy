@@ -68,7 +68,7 @@ def file_reader(filename, **kwds):
                             (dc[:, :, 1] == dc[:,:, 2]).all():
             dc = dc[:, :, 0]
     return [{'data': dc,
-             'mapped_parameters':
+             'metadata':
              {'original_filename': os.path.split(filename)[1],
               'record_by': 'image',
               'signal_type': "", }}]

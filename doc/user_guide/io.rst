@@ -40,25 +40,25 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 
 Some file formats store some extra information about the data, which can be
 stored in "attributes". If Hyperspy manages to read some extra information
-about the data it stores it in :py:attr:`~.signal.Signal.original_parameters`
+about the data it stores it in :py:attr:`~.signal.Signal.original_metadata`
 attribute. Also, it is possible that other information will be mapped by
 Hyperspy to a standard location where it can be used by some standard routines,
-the :py:attr:`~.signal.Signal.mapped_parameters` attribute.
+the :py:attr:`~.signal.Signal.metadata` attribute.
 
 To print the content of the parameters simply:
 
 .. code-block:: python
 
-    >>> s.mapped_parameters
+    >>> s.metadata
 
 
-The :py:attr:`~.signal.Signal.original_parameters` and
-:py:attr:`~.signal.Signal.mapped_parameters` can be exported to  text files
+The :py:attr:`~.signal.Signal.original_metadata` and
+:py:attr:`~.signal.Signal.metadata` can be exported to  text files
 using the :py:meth:`~.misc.utils.DictionaryBrowser.export` method, e.g.:
 
 .. code-block:: python
     
-    >>> s.original_parameters.export('parameters')
+    >>> s.original_metadata.export('parameters')
 
 Loading multiple files
 ----------------------

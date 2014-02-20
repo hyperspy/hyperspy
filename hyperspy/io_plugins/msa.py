@@ -248,8 +248,8 @@ def file_reader(filename, encoding='latin-1', **kwds):
     dictionary = {
         'data': np.array(y),
         'axes': axes,
-        'mapped_parameters': mapped.as_dictionary(),
-        'original_parameters': parameters
+        'metadata': mapped.as_dictionary(),
+        'original_metadata': parameters
     }
     return [dictionary, ]
 
@@ -258,9 +258,9 @@ def file_writer(filename, signal, format=None, separator=', ',
                 encoding='latin-1'):
     loc_kwds = {}
     FORMAT = "EMSA/MAS Spectral Data File"
-    if hasattr(signal.original_parameters, 'FORMAT') and \
-            signal.original_parameters.FORMAT == FORMAT:
-        loc_kwds = signal.original_parameters.as_dictionary()
+    if hasattr(signal.original_metadata, 'FORMAT') and \
+            signal.original_metadata.FORMAT == FORMAT:
+        loc_kwds = signal.original_metadata.as_dictionary()
         if format is not None:
             loc_kwds['DATATYPE'] = format
         else:
@@ -269,7 +269,7 @@ def file_writer(filename, signal, format=None, separator=', ',
     else:
         if format is None:
             format = 'Y'
-        if hasattr(signal.mapped_parameters, "date"):
+        if hasattr(signal.metadata, "date"):
             # Setting locale can raise an exception because
             # their name depends on library versions, platform etc.
             try:
@@ -278,7 +278,7 @@ def file_writer(filename, signal, format=None, separator=', ',
                     locale.setlocale(locale.LC_TIME, ('en_US', 'latin-1'))
                 elif os_name == 'windows':
                     locale.setlocale(locale.LC_TIME, 'english')
-                loc_kwds['DATE'] = signal.mapped_parameters.data.strftime(
+                loc_kwds['DATE'] = signal.metadata.data.strftime(
                     "%d-%b-%Y")
                 locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
             except:
@@ -296,7 +296,7 @@ def file_writer(filename, signal, format=None, separator=', ',
         'NPOINTS': signal.axes_manager._axes[0].size,
         'NCOLUMNS': 1,
         'DATATYPE': format,
-        'SIGNALTYPE': signal.mapped_parameters.signal_type,
+        'SIGNALTYPE': signal.metadata.signal_type,
         'XPERCHAN': signal.axes_manager._axes[0].scale,
         'OFFSET': signal.axes_manager._axes[0].offset,
         # Spectrum characteristics
@@ -337,10 +337,10 @@ def file_writer(filename, signal, format=None, separator=', ',
     for key, dic in keywords.iteritems():
 
         if dic['mapped_to'] is not None:
-            if 'SEM' in signal.mapped_parameters.signal_type:
+            if 'SEM' in signal.metadata.signal_type:
                 dic['mapped_to'] = dic['mapped_to'].replace('TEM', 'SEM')
-            if signal.mapped_parameters.has_item(dic['mapped_to']):
-                loc_kwds[key] = eval('signal.mapped_parameters.%s' %
+            if signal.metadata.has_item(dic['mapped_to']):
+                loc_kwds[key] = eval('signal.metadata.%s' %
                                      dic['mapped_to'])
 
     with codecs.open(
