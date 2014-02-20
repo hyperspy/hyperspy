@@ -22,6 +22,7 @@ from hyperspy.exceptions import NoInteractiveError
 from hyperspy.defaults_parser import preferences
 from hyperspy.gui.tools import SpectrumRangeSelector
 
+
 def simple_decorator(decorator):
     """This decorator can be used to turn simple functions
     into well-behaved decorators, so long as the decorators
@@ -32,7 +33,7 @@ def simple_decorator(decorator):
     your decorator and it will automatically preserve the
     docstring and function attributes of functions to which
     it is applied.
-    
+
     This decorator was taken from:
     http://wiki.python.org/moin/PythonDecoratorLibrary"""
     def new_decorator(f):
@@ -48,7 +49,8 @@ def simple_decorator(decorator):
     new_decorator.__dict__.update(decorator.__dict__)
     return new_decorator
 
-@simple_decorator    
+
+@simple_decorator
 def only_interactive(cm):
     def wrapper(*args, **kwargs):
         if preferences.General.interactive is True:
@@ -57,7 +59,8 @@ def only_interactive(cm):
             raise NoInteractiveError
     return wrapper
 
-@simple_decorator    
+
+@simple_decorator
 def interactive_range_selector(cm):
     def wrapper(self, *args, **kwargs):
         if preferences.General.interactive is True and not args and not kwargs:
@@ -68,7 +71,8 @@ def interactive_range_selector(cm):
             cm(self, *args, **kwargs)
     return wrapper
 
-@simple_decorator    
+
+@simple_decorator
 def auto_replot(cm):
     def wrapper(self, *args, **kwargs):
         if self.auto_replot is True:
@@ -78,6 +82,7 @@ def auto_replot(cm):
         else:
             return cm(self, *args, **kwargs)
     return wrapper
+
 
 @simple_decorator
 def do_not_replot(cm):
@@ -90,5 +95,3 @@ def do_not_replot(cm):
         else:
             return cm(self, *args, **kwargs)
     return wrapper
-    
-

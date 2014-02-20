@@ -35,6 +35,7 @@ def check_random_state(seed):
     raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
                      ' instance' % seed)
 
+
 def as_float_array(X, copy=True):
     """Converts an array-like to an array of floats
 
@@ -71,8 +72,8 @@ def as_float_array(X, copy=True):
 def array2d(X, dtype=None, order=None):
     """Returns at least 2-d array with data from X"""
     return np.asarray(np.atleast_2d(X), dtype=dtype, order=order)
-    
-    
+
+
 ###############################################################################
 def _pprint(params, offset=0, printer=repr):
     """Pretty print the dictionary 'params'
@@ -97,7 +98,7 @@ def _pprint(params, offset=0, printer=repr):
     this_line_length = offset
     line_sep = ',\n' + (1 + offset // 2) * ' '
     for i, (k, v) in enumerate(sorted(params.iteritems())):
-        if type(v) is float:
+        if isinstance(v, float):
             # use str for representing floating point numbers
             # this way we get consistent representation across
             # architectures and versions.
@@ -109,7 +110,7 @@ def _pprint(params, offset=0, printer=repr):
             this_repr = this_repr[:300] + '...' + this_repr[-100:]
         if i > 0:
             if (this_line_length + len(this_repr) >= 75
-                                        or '\n' in this_repr):
+                    or '\n' in this_repr):
                 params_list.append(line_sep)
                 this_line_length = len(line_sep)
             else:
@@ -127,6 +128,7 @@ def _pprint(params, offset=0, printer=repr):
 
 ###############################################################################
 class BaseEstimator(object):
+
     """Base class for all estimators in scikit-learn
 
     Notes
@@ -149,8 +151,8 @@ class BaseEstimator(object):
             args, varargs, kw, default = inspect.getargspec(init)
             if not varargs is None:
                 raise RuntimeError('scikit learn estimators should always '
-                        'specify their parameters in the signature of '
-                        'their init (no varargs).')
+                                   'specify their parameters in the signature of '
+                                   'their init (no varargs).')
             # Remove 'self'
             # XXX: This is going to fail if the init is a staticmethod, but
             # who would do this?
@@ -205,12 +207,12 @@ class BaseEstimator(object):
                 name, sub_name = split
                 if not name in valid_params:
                     raise ValueError('Invalid parameter %s for estimator %s'
-                            % (name, self))
+                                     % (name, self))
                 sub_object = valid_params[name]
                 if not hasattr(sub_object, 'get_params'):
                     raise TypeError(
-                    'Parameter %s of %s is not an estimator, cannot set '
-                    'sub parameter %s' %
+                        'Parameter %s of %s is not an estimator, cannot set '
+                        'sub parameter %s' %
                         (sub_name, self.__class__.__name__, sub_name)
                     )
                 sub_object.set_params(**{sub_name: value})
@@ -218,7 +220,7 @@ class BaseEstimator(object):
                 # simple objects case
                 if not key in valid_params:
                     raise ValueError('Invalid parameter %s ' 'for estimator %s'
-                            % (key, self.__class__.__name__))
+                                     % (key, self.__class__.__name__))
                 setattr(self, key, value)
         return self
 
@@ -232,21 +234,22 @@ class BaseEstimator(object):
     def __repr__(self):
         class_name = self.__class__.__name__
         return '%s(%s)' % (
-                class_name,
-                _pprint(self.get_params(deep=False),
-                        offset=len(class_name),
-                ),
-            )
+            class_name,
+            _pprint(self.get_params(deep=False),
+                    offset=len(class_name),
+                    ),
+        )
 
     def __str__(self):
         class_name = self.__class__.__name__
         return '%s(%s)' % (
-                class_name,
-                _pprint(self.get_params(deep=True),
-                        offset=len(class_name),
-                        printer=str,
-                ),
-            )
+            class_name,
+            _pprint(self.get_params(deep=True),
+                    offset=len(class_name),
+                    printer=str,
+                    ),
+        )
+
 
 def _gs_decorrelation(w, W, j):
     """
@@ -333,7 +336,7 @@ def _ica_par(X, tol, g, gprime, fun_args, max_iter, w_init):
         gwtx = g(wtx, fun_args)
         g_wtx = gprime(wtx, fun_args)
         W1 = np.dot(gwtx, X.T) / float(p) \
-             - np.dot(np.diag(g_wtx.mean(axis=1)), W)
+            - np.dot(np.diag(g_wtx.mean(axis=1)), W)
 
         W1 = _sym_decorrelation(W1)
 
@@ -465,7 +468,7 @@ def fastica(X, n_components=None, algorithm="parallel", whiten=True,
                 return 3 * x ** 2
         else:
             raise ValueError(
-                        'fun argument should be one of logcosh, exp or cube')
+                'fun argument should be one of logcosh, exp or cube')
     elif callable(fun):
         def g(x, fun_args):
             return fun(x, **fun_args)
@@ -536,6 +539,7 @@ def fastica(X, n_components=None, algorithm="parallel", whiten=True,
 
 
 class FastICA(BaseEstimator):
+
     """FastICA; a fast algorithm for Independent Component Analysis
 
     Parameters
@@ -594,10 +598,10 @@ class FastICA(BaseEstimator):
 
     def fit(self, X):
         whitening_, unmixing_, sources_ = fastica(X, self.n_components,
-                        self.algorithm, self.whiten,
-                        self.fun, self.fun_prime, self.fun_args, self.max_iter,
-                        self.tol, self.w_init,
-                        random_state=self.random_state)
+                                                  self.algorithm, self.whiten,
+                                                  self.fun, self.fun_prime, self.fun_args, self.max_iter,
+                                                  self.tol, self.w_init,
+                                                  random_state=self.random_state)
         if self.whiten == True:
             self.unmixing_matrix_ = np.dot(unmixing_, whitening_)
         else:

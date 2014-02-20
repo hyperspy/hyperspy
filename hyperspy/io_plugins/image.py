@@ -27,35 +27,34 @@ from scipy.misc import imread, imsave
 format_name = 'Image'
 description = 'Import/Export standard image formats using PIL or freeimage'
 full_suport = False
-file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg', 
-                   'msp', 'pcx', 'ppm', "pbm", "pgm", 'xbm', 'spi',]
-default_extension = 0 # png
+file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg',
+                   'msp', 'pcx', 'ppm', "pbm", "pgm", 'xbm', 'spi', ]
+default_extension = 0  # png
 
 
 # Writing features
-writes = [(2,0),]
+writes = [(2, 0), ]
 # ----------------------
 
 
-
-        
 # TODO Extend it to support SI
 def file_writer(filename, signal, file_format='png', **kwds):
     '''Writes data to any format supported by PIL
-        
+
         Parameters
         ----------
         filename: str
         signal: a Signal instance
         file_format : str
-            The fileformat defined by its extension that is any one supported by 
-            PIL.  
+            The fileformat defined by its extension that is any one supported by
+            PIL.
     '''
     imsave(filename, signal.data)
-    
+
+
 def file_reader(filename, **kwds):
     '''Read data from any format supported by PIL.
-    
+
     Parameters
     ----------
     filename: str
@@ -65,12 +64,11 @@ def file_reader(filename, **kwds):
     if len(dc.shape) > 2:
         # It may be a grayscale image that was saved in the RGB or RGBA
         # format
-        if (dc[:,:,1] == dc[:,:,2]).all() and \
-                            (dc[:,:,1] == dc[:,:,2]).all():
-            dc = dc[:,:,0]
-    return [{'data': dc, 
-             'mapped_parameters': 
-                 {'original_filename' : os.path.split(filename)[1],
-                  'record_by': 'image',
-                  'signal_type' : "",}}]
-
+        if (dc[:, :, 1] == dc[:,:, 2]).all() and \
+                            (dc[:, :, 1] == dc[:,:, 2]).all():
+            dc = dc[:, :, 0]
+    return [{'data': dc,
+             'mapped_parameters':
+             {'original_filename': os.path.split(filename)[1],
+              'record_by': 'image',
+              'signal_type': "", }}]

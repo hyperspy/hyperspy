@@ -2197,5 +2197,4 @@ elements = {
         'Lg1': {'energy': 2.623,
             'factor': 0.08}},
             'Z': 42}}
-
 elements_db = utils.DictionaryBrowser(elements)

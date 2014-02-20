@@ -21,34 +21,36 @@ import numpy as np
 from hyperspy.component import Component
 from hyperspy.misc.utils import ordinal
 
+
 class Polynomial(Component):
+
     """n-order polynomial component.
-    
-    Polynomial component defined by the coefficients parameters which is an 
+
+    Polynomial component defined by the coefficients parameters which is an
     array of len the order of the polynomial.
-    
-    For example, the [1,2,3] coefficients define the following 3rd order 
+
+    For example, the [1,2,3] coefficients define the following 3rd order
     polynomial: f(x) = 1x² + 2x + 3
-    
+
     Attributes
     ----------
-    
+
     coeffcients : array
-    
+
     """
 
     def __init__(self, order=2):
-        Component.__init__(self, ['coefficients',])
+        Component.__init__(self, ['coefficients', ])
         self.coefficients._number_of_elements = order + 1
         self.coefficients.value = np.zeros((order + 1,))
         self.coefficients.grad = self.grad_coefficients
-        
+
     def get_polynomial_order(self):
         return len(self.coefficients.value) - 1
-        
+
     def function(self, x):
         return np.polyval(self.coefficients.value, x)
-        
+
     def compute_grad_coefficients(self):
         to_mult = np.arange(self.get_polynomial_order(), -1, -1)
         coeff = self.coefficients.value * to_mult
@@ -64,36 +66,36 @@ class Polynomial(Component):
     def __repr__(self):
         return 'Component <%s order polynomial>' % (
             ordinal(self.get_polynomial_order()))
-            
-    def estimate_parameters(self, signal, x1, x2, only_current = False):
+
+    def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the parameters by the two area method
 
         Parameters
         ----------
         signal : Signal instance
         x1 : float
-            Defines the left limit of the spectral range to use for the 
+            Defines the left limit of the spectral range to use for the
             estimation.
         x2 : float
-            Defines the right limit of the spectral range to use for the 
+            Defines the right limit of the spectral range to use for the
             estimation.
-            
+
         only_current : bool
             If False estimates the parameters for the full dataset.
-            
+
         Returns
         -------
         bool
-            
+
         """
         axis = signal.axes_manager.signal_axes[0]
         energy2index = axis._get_index
-        i1 = energy2index(x1) if energy2index(x1) else 0 
+        i1 = energy2index(x1) if energy2index(x1) else 0
         i2 = energy2index(x2) if energy2index(x2) else len(axis.axis) - 1
-        
+
         if only_current is True:
-            self.coefficients.value = np.polyfit(axis.axis[i1:i2], 
-            signal()[i1:i2], self.get_polynomial_order())
+            self.coefficients.value = np.polyfit(axis.axis[i1:i2],
+                                                 signal()[i1:i2], self.get_polynomial_order())
             return True
         else:
             if self.coefficients.map is None:
@@ -105,10 +107,10 @@ class Polynomial(Component):
             if axis.index_in_array > 0:
                 dc = np.rollaxis(dc, axis.index_in_array, 0)
             cmaps = np.polyfit(axis.axis[i1:i2],
-                dc[i1:i2,:], self.get_polynomial_order()).reshape([
-                self.get_polynomial_order() + 1,] + nav_shape)
-            self.coefficients.map['values'][:] = np.rollaxis(cmaps, 0, 
-                axis.index_in_array)
+                               dc[i1:i2, :], self.get_polynomial_order()).reshape([
+                self.get_polynomial_order() + 1, ] + nav_shape)
+            self.coefficients.map['values'][:] = np.rollaxis(cmaps, 0,
+                                                             axis.index_in_array)
             self.coefficients.map['is_set'][:] = True
             signal.fold()
             return True

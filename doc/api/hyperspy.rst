@@ -15,6 +15,7 @@ Subpackages
     hyperspy.misc
     hyperspy.models
     hyperspy.tests
+    hyperspy.utils
 
 Submodules
 ----------
@@ -119,14 +120,6 @@ hyperspy.signals module
 -----------------------
 
 .. automodule:: hyperspy.signals
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hyperspy.utils module
----------------------
-
-.. automodule:: hyperspy.utils
     :members:
     :undoc-members:
     :show-inheritance:
