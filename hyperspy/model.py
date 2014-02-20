@@ -53,6 +53,7 @@ from hyperspy.component import Component
 
 
 class Model(list):
+
     """One-dimensional model and data fitting.
 
     A model is constructed as a linear combination of :mod:`components` that
@@ -142,16 +143,16 @@ class Model(list):
     >>> m.print_current_values()
     Components	Parameter	Value
     Gaussian
-    		sigma	1.000000
-    		A	1.000000
-    		centre	0.000000
+                sigma	1.000000
+                A	1.000000
+                centre	0.000000
     >>> g.centre.value = 3
     >>> m.print_current_values()
     Components	Parameter	Value
     Gaussian
-    		sigma	1.000000
-    		A	1.000000
-    		centre	3.000000
+                sigma	1.000000
+                A	1.000000
+                centre	3.000000
     >>> g.sigma.value
     1.0
     >>> m.fit()
@@ -402,7 +403,6 @@ class Model(list):
             return True
         else:
             return False
-
 
     def _set_p0(self):
         self.p0 = ()
