@@ -18,7 +18,7 @@ Set elements
 The :py:meth:`~._signals.eds.EDSSpectrum.set_elements` method is used 
 to define a set of elements and corresponding X-ray lines
 that will be used in other process (e.g. X-ray intensity mapping).
-The information is stored in the :py:attr:`~.signal.Signal.mapped_parameters` attribute (see :ref:`mapped_parameters_structure`)
+The information is stored in the :py:attr:`~.signal.Signal.metadata` attribute (see :ref:`metadata_structure`)
 
 
 Add elements
