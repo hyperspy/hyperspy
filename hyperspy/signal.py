@@ -3064,29 +3064,6 @@ class Signal(MVA,
         self.get_dimensions_from_data()
         self.squeeze()
 
-    @auto_replot
-    def roll_xy(self, n_x, n_y=1):
-        """Roll over the x axis n_x positions and n_y positions the
-        former rows.
-
-        This method has the purpose of "fixing" a bug in the acquisition
-         of the Orsay's microscopes and probably it does not have
-         general interest.
-
-        Parameters
-        ----------
-        n_x : int
-        n_y : int
-
-        Notes
-        -----
-        Useful to correct the SI column storing bug in Marcel's
-        acquisition routines.
-
-        """
-        self.data = np.roll(self.data, n_x, 0)
-        self.data[:n_x, ...] = np.roll(self.data[:n_x, ...], n_y, 1)
-
     def swap_axes(self, axis1, axis2):
         """Swaps the axes.
 
