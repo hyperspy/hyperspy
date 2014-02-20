@@ -394,10 +394,6 @@ class MVA():
                 self.fold()
                 self._unfolded4decomposition is False
 
-    def get_factors_as_spectrum(self):
-        from hyperspy._signals.spectrum import Spectrum
-        return Spectrum(self.learning_results.factors.T.copy())
-
     def blind_source_separation(self,
                                 number_of_components=None,
                                 algorithm='sklearn_fastica',
