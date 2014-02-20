@@ -824,7 +824,7 @@ class Component(object):
         """
         dic = {}
         dic['name'] = self.name
-        dic['type'] = type(self)
+        dic['_id_name'] = self._id_name
         dic['parameters'] = [p.as_dictionary(indices) for p in self.parameters]
         return dic
 

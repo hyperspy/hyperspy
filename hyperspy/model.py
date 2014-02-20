@@ -35,6 +35,7 @@ from scipy.optimize import (leastsq,
 from traits.trait_errors import TraitError
 import traits.api as t
 
+from hyperspy import components
 from hyperspy import messages
 import hyperspy.drawing.spectrum
 from hyperspy.axes import AxesManager
@@ -128,7 +129,7 @@ class Model(list):
             id_dict = {}
 
             for c in dic['components']:
-                self.append(c['type']())
+                self.append(getattr(components, c['_id_name'])())
                 id_dict.update(self[-1]._load_dictionary(c))
             # deal with twins:
             for c in dic['components']:
