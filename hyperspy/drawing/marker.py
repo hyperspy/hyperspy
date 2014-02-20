@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 
 class Marker(object):
 
-    """Marker that can be added to a figure
+    """Marker that can be added to the signal figure
 
     Attributes
     ----------
@@ -45,7 +45,7 @@ class Marker(object):
 
     set_data
         Set the data in a structured array. Each field of data should have
-        the same dimension than the nagivation. Some fields need to be defined
+        the same dimensions than the nagivation axes. Some fields need to be defined
         depending on the type.
         For 'line': 'x1','y1','x2','y2' (All of them if orientation
             is None)
@@ -64,6 +64,15 @@ class Marker(object):
     >>> m.set_data(x1=range(10))
     >>> s.plot()
     >>> s._plot.signal_plot.add_marker(m)
+    >>> m.plot()
+    
+    >>> im = signals.Image(random.random([10,50,50]))
+    >>> m = utils.plot.marker()
+    >>> m.type = 'text'
+    >>> m.set_marker_properties(fontsize = 30,color='red')
+    >>> m.set_data(x1=range(10),y1=range(10)[::-1],text='hello')
+    >>> im.plot()
+    >>> im._plot.signal_plot.add_marker(m)
     >>> m.plot()
 
 
