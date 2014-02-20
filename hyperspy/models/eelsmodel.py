@@ -564,11 +564,9 @@ class EELSModel(Model):
 
         Parameters
         ----------
-        edges_list : {None, list of  component.EELSCLEdge}
-            If None, the operation is performed on all the
-            components.EELSCLEdge components defined in the model.
-            Otherwise, it will be performed only
-            on the listed components.EELSCLEdge components.
+        edges_list : None or  list of EELSCLEdge or list of edge names
+            If None, the operation is performed on all the edges in the model.
+            Otherwise, it will be performed only on the listed components.
 
         See Also
         --------
@@ -582,6 +580,8 @@ class EELSModel(Model):
         """
         if edges_list is None:
             edges_list = self.edges
+        else:
+            edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False and edge.fine_structure_active is True:
                 start = edge.onset_energy.value
@@ -595,11 +595,9 @@ class EELSModel(Model):
 
         Parameters
         ----------
-        edges_list : {None, list of  component.EELSCLEdge}
-            If None, the operation is performed on all the
-            components.EELSCLEdge components defined in the model.
-            Otherwise, it will be performed only
-            on the listed components.EELSCLEdge components.
+        edges_list : None or  list of EELSCLEdge or list of edge names
+            If None, the operation is performed on all the edges in the model.
+            Otherwise, it will be performed only on the listed components.
 
         See Also
         --------
@@ -614,6 +612,8 @@ class EELSModel(Model):
 
         if edges_list is None:
             edges_list = self.edges
+        else:
+            edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.active = True
@@ -626,11 +626,9 @@ class EELSModel(Model):
 
         Parameters
         ----------
-        edges_list : {None, list of  component.EELSCLEdge}
-            If None, the operation is performed on all the
-            components.EELSCLEdge components defined in the model.
-            Otherwise, it will be performed only
-            on the listed components.EELSCLEdge components.
+        edges_list : None or  list of EELSCLEdge or list of edge names
+            If None, the operation is performed on all the edges in the model.
+            Otherwise, it will be performed only on the listed components.
 
         See Also
         --------
@@ -644,6 +642,8 @@ class EELSModel(Model):
         """
         if edges_list is None:
             edges_list = self.edges
+        else:
+            edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.active = False
@@ -670,11 +670,9 @@ class EELSModel(Model):
 
         Parameters
         ----------
-        edges_list : {None, list of  component.EELSCLEdge}
-            If None, the operation is performed on all the
-            components.EELSCLEdge components defined in the model.
-            Otherwise, it will be performed only
-            on the listed components.EELSCLEdge components.
+        edges_list : None or  list of EELSCLEdge or list of edge names
+            If None, the operation is performed on all the edges in the model.
+            Otherwise, it will be performed only on the listed components.
 
         See Also
         --------
@@ -688,6 +686,8 @@ class EELSModel(Model):
         """
         if edges_list is None:
             edges_list = self.edges
+        else:
+            edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.fine_structure_active = True
@@ -701,11 +701,9 @@ class EELSModel(Model):
 
         Parameters
         ----------
-        edges_list : {None, list of  component.EELSCLEdge}
-            If None, the operation is performed on all the
-            components.EELSCLEdge components defined in the model.
-            Otherwise, it will be performed only
-            on the listed components.EELSCLEdge components.
+        edges_list : None or  list of EELSCLEdge or list of edge names
+            If None, the operation is performed on all the edges in the model.
+            Otherwise, it will be performed only on the listed components.
 
         See Also
         --------
@@ -719,6 +717,8 @@ class EELSModel(Model):
         """
         if edges_list is None:
             edges_list = self.edges
+        else:
+            edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.fine_structure_active = False
@@ -743,11 +743,9 @@ class EELSModel(Model):
 
         Parameters
         ----------
-        edges_list : {None, list of  component.EELSCLEdge}
-            If None, the operation is performed on all the
-            components.EELSCLEdge components defined in the model.
-            Otherwise, it will be performed only
-            on the listed components.EELSCLEdge components.
+        edges_list : None or  list of EELSCLEdge or list of edge names
+            If None, the operation is performed on all the edges in the model.
+            Otherwise, it will be performed only on the listed components.
 
         See Also
         --------
@@ -761,6 +759,8 @@ class EELSModel(Model):
         """
         if edges_list is None:
             edges_list = self.edges
+        else:
+            edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.free_onset_energy = True
@@ -775,11 +775,9 @@ class EELSModel(Model):
 
         Parameters
         ----------
-        edges_list : {None, list of  component.EELSCLEdge}
-            If None, the operation is performed on all the
-            components.EELSCLEdge components defined in the model.
-            Otherwise, it will be performed only
-            on the listed components.EELSCLEdge components.
+        edges_list : None or  list of EELSCLEdge or list of edge names
+            If None, the operation is performed on all the edges in the model.
+            Otherwise, it will be performed only on the listed components.
 
         See Also
         --------
@@ -794,6 +792,8 @@ class EELSModel(Model):
 
         if edges_list is None:
             edges_list = self.edges
+        else:
+            edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.free_onset_energy = True
@@ -804,11 +804,9 @@ class EELSModel(Model):
 
         Parameters
         ----------
-        edges_list : {None, list of  component.EELSCLEdge}
-            If None, the operation is performed on all the
-            components.EELSCLEdge components defined in the model.
-            Otherwise, it will be performed only
-            on the listed components.EELSCLEdge components.
+        edges_list : None or  list of EELSCLEdge or list of edge names
+            If None, the operation is performed on all the edges in the model.
+            Otherwise, it will be performed only on the listed components.
 
         See Also
         --------
@@ -822,6 +820,8 @@ class EELSModel(Model):
         """
         if edges_list is None:
             edges_list = self.edges
+        else:
+            edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.intensity.free = False
@@ -834,11 +834,9 @@ class EELSModel(Model):
 
         Parameters
         ----------
-        edges_list : {None, list of  component.EELSCLEdge}
-            If None, the operation is performed on all the
-            components.EELSCLEdge components defined in the model.
-            Otherwise, it will be performed only
-            on the listed components.EELSCLEdge components.
+        edges_list : None or  list of EELSCLEdge or list of edge names
+            If None, the operation is performed on all the edges in the model.
+            Otherwise, it will be performed only on the listed components.
 
         See Also
         --------
@@ -853,6 +851,8 @@ class EELSModel(Model):
 
         if edges_list is None:
             edges_list = self.edges
+        else:
+            edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.intensity.free = True
@@ -865,11 +865,9 @@ class EELSModel(Model):
 
         Parameters
         ----------
-        edges_list : {None, list of  component.EELSCLEdge}
-            If None, the operation is performed on all the
-            components.EELSCLEdge components defined in the model.
-            Otherwise, it will be performed only
-            on the listed components.EELSCLEdge components.
+        edges_list : None or  list of EELSCLEdge or list of edge names
+            If None, the operation is performed on all the edges in the model.
+            Otherwise, it will be performed only on the listed components.
 
         See Also
         --------
@@ -883,6 +881,8 @@ class EELSModel(Model):
         """
         if edges_list is None:
             edges_list = self.edges
+        else:
+            edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.fine_structure_coeff.free = False
@@ -893,11 +893,9 @@ class EELSModel(Model):
 
         Parameters
         ----------
-        edges_list : {None, list of  component.EELSCLEdge}
-            If None, the operation is performed on all the
-            components.EELSCLEdge components defined in the model.
-            Otherwise, it will be performed only
-            on the listed components.EELSCLEdge components.
+        edges_list : None or  list of EELSCLEdge or list of edge names
+            If None, the operation is performed on all the edges in the model.
+            Otherwise, it will be performed only on the listed components.
 
         See Also
         --------
@@ -911,6 +909,8 @@ class EELSModel(Model):
         """
         if edges_list is None:
             edges_list = self.edges
+        else:
+            edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.fine_structure_coeff.free = True
