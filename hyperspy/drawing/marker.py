@@ -27,7 +27,7 @@ class Marker(object):
     Attributes
     ----------
 
-    type : {'line','text','pointer'}
+    type : {'line','axvline','axhline','text','pointer'}
         Select the type of markers
     orientation : {None,'v','h'}
         Orientation for lines. 'v' is vertical, 'h' is horizontal.
@@ -46,7 +46,9 @@ class Marker(object):
     set_data
         Set the data in a structured array.
         For type='line', 'x1','y1','x2','y2' can be defined
-        For type='text', 'x1','y1','text' can be defined
+        For type='axvline', 'x1' needs to be defined
+        For type='axhline', 'y1' needs to be defined
+        For type='text', 'x1','y1','text' needs to be defined
         For type='pointer', 'x1','y1','size' can be defined
 
 
@@ -78,13 +80,19 @@ class Marker(object):
         elif value == 'line':
             lp['linewidth'] = 1
             lp['color'] = 'black'
+        elif value == 'axvline':
+            lp['linewidth'] = 1
+            lp['color'] = 'black'
+        elif value == 'axhline':
+            lp['linewidth'] = 1
+            lp['color'] = 'black'
         elif value == 'pointer':
             lp['color'] = 'black'
             lp['linewidth'] = None
         else:
             raise ValueError(
                 "`type` must be one of "
-                "{\'line\',\'text\',\'pointer\'}"
+                "{\'line\',\'axvline\',\'axhline\',\'text\',\'pointer\'}"
                 "but %s was given" % value)
         self._type = value
         self.marker_properties = lp
@@ -127,6 +135,12 @@ class Marker(object):
             self.marker = self.ax.vlines(0, 0, 1,
                                          **self.marker_properties)
             self.set_line_segment()
+        elif self.type == 'axvline':
+            self.marker = self.ax.axvline(self.get_data_position('x1'),                                          
+                                          **self.marker_properties)
+        elif self.type == 'axhline':
+            self.marker = self.ax.axhline(self.get_data_position('y1'),
+                                          **self.marker_properties)
         elif self.type == 'pointer':
             self.marker = self.ax.scatter(self.get_data_position('x1'),
                                           self.get_data_position(
@@ -216,6 +230,10 @@ class Marker(object):
             self.marker.set_text(self.get_data_position('text'))
         elif self.type == 'line':
             self.set_line_segment()
+        elif self.type == 'axvline':
+            self.marker.set_xdata(self.get_data_position('x1'))
+        elif self.type == 'axhline':
+            self.marker.set_ydata(self.get_data_position('y1'))
         elif self.type == 'pointer':
             self.marker.set_offsets([self.get_data_position('x1'),
                                      self.get_data_position('y1')])
