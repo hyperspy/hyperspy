@@ -232,8 +232,8 @@ class Model(list):
         spectrum = self.spectrum.__class__(
             data,
             axes=self.spectrum.axes_manager._get_axes_dicts())
-        spectrum.mapped_parameters.title = (
-            self.spectrum.mapped_parameters.title + " from fitted model")
+        spectrum.metadata.title = (
+            self.spectrum.metadata.title + " from fitted model")
         if component_list:
             for component_ in self:
                 component_.active = active_state.pop(0)

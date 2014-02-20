@@ -119,7 +119,7 @@ class TestExample1():
     def test_parameters(self):
         assert_equal(
             example1_parameters,
-            self.s.original_parameters.as_dictionary())
+            self.s.original_metadata.as_dictionary())
 
 
 class TestExample2():
@@ -216,4 +216,4 @@ class TestExample2():
     def test_parameters(self):
         assert_equal(
             example2_parameters,
-            self.s.original_parameters.as_dictionary())
+            self.s.original_metadata.as_dictionary())

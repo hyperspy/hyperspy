@@ -265,9 +265,9 @@ def emi_reader(filename, dump_xml=False, verbose=False, **kwds):
             continue
 
         index = int(os.path.splitext(f)[0].split("_")[-1]) - 1
-        op = DictionaryBrowser(sers[-1]['original_parameters'])
+        op = DictionaryBrowser(sers[-1]['original_metadata'])
         emixml2dtb(ET.fromstring(objects[index]), op)
-        sers[-1]['original_parameters'] = op.as_dictionary()
+        sers[-1]['original_metadata'] = op.as_dictionary()
     return sers
 
 
@@ -438,22 +438,22 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     if record_by == 'image':
         dc = dc[::-1]
     if ordict:
-        original_parameters = OrderedDict()
+        original_metadata = OrderedDict()
     else:
-        original_parameters = {}
+        original_metadata = {}
     header_parameters = sarray2dict(header)
     sarray2dict(data, header_parameters)
 
     # We remove the Array key to save memory avoiding duplication
     del header_parameters['Array']
-    original_parameters['ser_header_parameters'] = header_parameters
+    original_metadata['ser_header_parameters'] = header_parameters
     dictionary = {
         'data': dc,
-        'mapped_parameters': {'original_filename': os.path.split(filename)[1],
-                              'record_by': record_by,
-                              'signal_type': "", },
+        'metadata': {'original_filename': os.path.split(filename)[1],
+                     'record_by': record_by,
+                     'signal_type': "", },
         'axes': axes,
-        'original_parameters': original_parameters,
+        'original_metadata': original_metadata,
         'mapping': mapping}
     return dictionary
 
