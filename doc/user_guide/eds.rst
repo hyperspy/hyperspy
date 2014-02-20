@@ -17,7 +17,7 @@ Spectrum loading and parameters
 Loading
 ^^^^^^^^
 
-All data are loaded with the :py:func:`~.io.load` function, as decribed in details in 
+All data are loaded with the :py:func:`~.io.load` function, as described in details in 
 :ref:`Loading files<loading_files>`. Hyperspy is able to import different formats,
 among them ".msa" and ".rpl" (the raw format of Oxford Instrument and Brucker). 
 
@@ -63,13 +63,13 @@ or as an argument of the :py:func:`~.io.load` function:
 The main values for the energy axis and the microscope parameters are 
 automatically imported from the file, if existing. The microscope and 
 detector parameters are stored in stored in the 
-:py:attr:`~.signal.Signal.mapped_parameters` 
-attribute (see :ref:`mapped_parameters_structure`). These parameters can be displayed
+:py:attr:`~.signal.Signal.metadata` 
+attribute (see :ref:`metadata_structure`). These parameters can be displayed
 as follow:
     
 .. code-block:: python
 
-    >>> spec.mapped_parameters.TEM
+    >>> spec.metadata.TEM
     ├── EDS
     │   ├── azimuth_angle = 0.0
     │   ├── elevation_angle = 37.0
@@ -85,7 +85,7 @@ These parameters can be set directly:
 
 .. code-block:: python
 
-    >>> spec.mapped_parameters.TEM.beam_energy = 300
+    >>> spec.metadata.TEM.beam_energy = 300
 
 or with the  
 :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` method:
@@ -104,7 +104,7 @@ or raising the gui:
    :align:   center
    :width:   350  
    
-If the microcsope and detector parameters are not written in the original file, some 
+If the microscope and detector parameters are not written in the original file, some 
 of them are set by default. The default values can be changed in the 
 :py:class:`~.defaults_parser.Preferences` class (see :ref:`preferences
 <configuring-hyperspy-label>`).
@@ -166,13 +166,13 @@ method.
 Describing the sample
 ---------------------
 
-The description of the sample is storred in mapped_parameters.Sample (in the 
-:py:attr:`~.signal.Signal.mapped_parameters` attribute). It can be displayed as
+The description of the sample is stored in metadata.Sample (in the 
+:py:attr:`~.signal.Signal.metadata` attribute). It can be displayed as
 follow:
 
 .. code-block:: python
 
-    >>> spec.mapped_parameters.Sample
+    >>> spec.metadata.Sample
     ├── Xray_lines = ['Al_Ka', 'Ni_La', 'Ti_Ka']
     ├── description = Sample 1.3
     ├── elements = ['Al', 'Ni', 'Ti']
@@ -195,7 +195,7 @@ abbreviations are accepted:
 
     >>> spec.set_elements(["Ni","Ti","Al"])
     >>> spec.add_elements(["Ta"])
-    >>> spec.mapped_parameters.Sample
+    >>> spec.metadata.Sample
     └── elements = ['Al', 'Ni', 'Ta', 'Ti']
 
 X-ray lines
@@ -210,7 +210,7 @@ elements will be added automatically. Several lines per elements can be defined.
 
     >>> spec.set_lines(["Ni_La","Ti_Ka","Al_Ka"])
     >>> spec.add_lines(["Ti_La"])
-    >>> spec.mapped_parameters.Sample
+    >>> spec.metadata.Sample
     ├── Xray_lines = ['Al_Ka', 'Ni_La', 'Ti_Ka', 'Ti_La']
     └── elements = ['Al', 'Ni', 'Ti']    
     
@@ -221,14 +221,14 @@ overvoltage of 2 (< beam energy / 2)).
 .. code-block:: python
 
     >>> spec.set_elements(["Ni","Ti","Al"])
-    >>> spec.mapped_parameters.SEM.beam_energy = 30
+    >>> spec.metadata.SEM.beam_energy = 30
     >>> spec.add_lines()
-    >>> spec.mapped_parameters.Sample
+    >>> spec.metadata.Sample
     ├── Xray_lines = ['Al_Ka', 'Ni_Ka', 'Ti_Ka']
     └── elements = ['Al', 'Ni', 'Ti']
-    >>> spec.mapped_parameters.SEM.beam_energy = 5
+    >>> spec.metadata.SEM.beam_energy = 5
     >>> spec.set_lines([])
-    >>> spec.mapped_parameters.Sample
+    >>> spec.metadata.Sample
     ├── Xray_lines = ['Al_Ka', 'Ni_La', 'Ti_La']
     └── elements = ['Al', 'Ni', 'Ti']
     
@@ -236,7 +236,7 @@ A warning is raised, if setting a X-ray lines higher than the beam energy.
 
 .. code-block:: python
 
-    >>> spec.mapped_parameters.SEM.beam_energy = 5
+    >>> spec.metadata.SEM.beam_energy = 5
     >>> spec.add_lines(["Ta_Ka"])
     Warning: Ta Ka is above the data energy range.
 
@@ -285,10 +285,10 @@ Plot X-ray lines
 
 X-ray lines can be labbeled on a plot with 
 :py:meth:`~._signals.eds.EDSSpectrum.plot_Xray_lines`. The lines are 
-either given, either retrieved from "mapped_parameters.Sample.Xray_lines",
+either given, either retrieved from "metadata.Sample.Xray_lines",
 or selected with the same method as 
 :py:meth:`~._signals.eds.EDSSpectrum.add_lines` using the 
-elements in "mapped_parameters.Sample.elements". 
+elements in "metadata.Sample.elements". 
 
 
 .. code-block:: python
@@ -320,7 +320,7 @@ Get lines intensity
 The :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` 
 method generates intensity maps by peak integration.
 The width of integration is defined by extending the energy resolution of
-Mn Ka to the peak energy ("energy_resolution_MnKa" in mapped_parameters). 
+Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata). 
 
 .. code-block:: python
 
@@ -330,7 +330,7 @@ Mn Ka to the peak energy ("energy_resolution_MnKa" in mapped_parameters).
    :align:   center
    :width:   500 
    
-The X-ray lines defined in "mapped_parameters.Sample.Xray_lines" (see above)
+The X-ray lines defined in "metadata.Sample.Xray_lines" (see above)
 are used by default.
    
 .. code-block:: python
