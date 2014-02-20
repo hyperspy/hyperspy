@@ -25,8 +25,8 @@ from hyperspy import signals
 from hyperspy.io import load
 from hyperspy.defaults_parser import preferences
 from hyperspy import utils
-from hyperspy.misc.eels.elements import elements_db as elements_EELS
-from hyperspy.misc.eds.elements import elements_db as elements_EDS
+#from hyperspy.misc.eels.elements import elements_db as elements_EELS
+#from hyperspy.misc.eds.elements import elements_db as elements_EDS
 
 
 def get_configuration_directory_path():
