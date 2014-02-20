@@ -122,7 +122,7 @@ class SpectrumFigure(BlittedFigure):
         for marker in self.ax_markers:
             marker.close()
         for line in self.ax_lines + self.right_ax_lines:
-            line.close() 
+            line.close()
         try:
             plt.close(self.figure)
         except:
@@ -135,6 +135,7 @@ class SpectrumFigure(BlittedFigure):
         for line in self.ax_lines + \
                 self.right_ax_lines:
             line.update()
+
 
 class SpectrumLine(object):
 
