@@ -29,7 +29,7 @@ import numpy as np
 
 from hyperspy.misc.io.utils_readfile import *
 from hyperspy import Release
-from hyperspy.misc.utils import DictionaryBrowser
+from hyperspy.misc.utils import DictionaryTreeBrowser
 
 # Plugin characteristics
 # ----------------------
@@ -449,7 +449,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     if 'height-name' in rpl_info:
         names[iheight] = rpl_info['height-name']
 
-    mp = DictionaryBrowser({
+    mp = DictionaryTreeBrowser({
         'record_by': record_by,
         'original_filename': os.path.split(filename)[1],
         'signal_type': rpl_info['signal'],

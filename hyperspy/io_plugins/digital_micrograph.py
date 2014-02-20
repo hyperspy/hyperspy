@@ -31,7 +31,7 @@ import traits.api as t
 from hyperspy.misc.io.utils_readfile import *
 from hyperspy.exceptions import *
 import hyperspy.misc.io.tools
-from hyperspy.misc.utils import DictionaryBrowser
+from hyperspy.misc.utils import DictionaryTreeBrowser
 
 
 # Plugin characteristics
@@ -505,7 +505,7 @@ class DigitalMicrographReader(object):
 class ImageObject(object):
 
     def __init__(self, imdict, file, order="C", record_by=None):
-        self.imdict = DictionaryBrowser(imdict)
+        self.imdict = DictionaryTreeBrowser(imdict)
         self.file = file
         self._order = order if order else "C"
         self._record_by = record_by

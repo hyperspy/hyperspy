@@ -34,7 +34,7 @@ from hyperspy import io
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
 from hyperspy.learn.mva import MVA, LearningResults
 import hyperspy.misc.utils
-from hyperspy.misc.utils import DictionaryBrowser
+from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
@@ -2462,7 +2462,7 @@ class Signal(MVA,
         return self.isig
 
     def _create_metadata(self):
-        self.metadata = DictionaryBrowser()
+        self.metadata = DictionaryTreeBrowser()
         mp = self.metadata
         mp.add_node("_internal_parameters")
         mp._internal_parameters.add_node("folding")
@@ -2470,8 +2470,8 @@ class Signal(MVA,
         folding.unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
-        self.original_metadata = DictionaryBrowser()
-        self.tmp_parameters = DictionaryBrowser()
+        self.original_metadata = DictionaryTreeBrowser()
+        self.tmp_parameters = DictionaryTreeBrowser()
 
     def __repr__(self):
         string = '<'
