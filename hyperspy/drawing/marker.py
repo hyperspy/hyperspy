@@ -65,7 +65,7 @@ class Marker(object):
     >>> s.plot()
     >>> s._plot.signal_plot.add_marker(m)
     >>> m.plot()
-    
+
     >>> im = signals.Image(random.random([10,50,50]))
     >>> m = utils.plot.marker()
     >>> m.type = 'text'

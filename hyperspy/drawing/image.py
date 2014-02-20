@@ -206,7 +206,7 @@ class ImagePlot(BlittedFigure):
                 pass
 
         self.connect()
-        
+
     def add_marker(self, marker):
         marker.ax = self.ax
         if marker.axes_manager is None:
@@ -220,6 +220,7 @@ class ImagePlot(BlittedFigure):
         numrows, numcols = data.shape
         for marker in self.ax_markers:
             marker.update()
+
         def format_coord(x, y):
             try:
                 col = self.xaxis.value2index(x)
