@@ -572,7 +572,6 @@ class EDSSpectrum(Spectrum):
             line_energy.append(elements_db[element]['Xray_energy'][line])
             relative_factor = elements_db['lines']['ratio_line'][line]
             a_eng = elements_db[element]['Xray_energy'][line[0] + 'a']
-
             # if fixed_height:
                 # intensity.append(self[..., a_eng].data.flatten().mean()
                              #* relative_factor)

@@ -175,10 +175,9 @@ class Marker(object):
                 segments[0][1, 0] = self.get_data_position('x2')
         self.marker.set_segments(segments)
 
-    def close(self):
-        try:
-            self.marker.remove()
-            m.ax.figure.canvas.draw()
+    def close(self):        
+        try:  
+            self.marker.remove()  
         except:
             pass
 
@@ -193,7 +192,3 @@ class Marker(object):
             self.marker.set_text(self.get_data_position('text'))
         elif self.type == 'line':
             self.set_line_segment()
-        try:
-            self.ax.figure.canvas.draw()
-        except:
-            pass
