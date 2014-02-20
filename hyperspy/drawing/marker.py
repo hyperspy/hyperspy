@@ -22,12 +22,12 @@ import matplotlib.pyplot as plt
 
 class Marker(object):
 
-    """Marker thant can be added to SpectrumFigure
+    """Marker that can be added to a figure
 
     Attributes
     ----------
 
-    type : {'line','text'}
+    type : {'line','text','pointer'}
         Select the type of markers
     orientation : {None,'v','h'}
         Orientation for lines. 'v' is vertical, 'h' is horizontal.
@@ -35,7 +35,7 @@ class Marker(object):
         Accepts a dictionary of valid (i.e. recognized by mpl.plot)
         containing valid line properties. In addition it understands
         the keyword `type` that can take the following values:
-        {'scatter', 'step', 'line'}
+        {'line','text'}
 
     Methods
     -------
@@ -44,7 +44,11 @@ class Marker(object):
         arguments.
 
     set_data
-        Set the data.
+        Set the data in a structured array.
+        For type='line', 'x1','y1','x2','y2' can be defined
+        For type='text', 'x1','y1','text' can be defined
+        For type='pointer', 'x1','y1','size' can be defined
+
 
 
     """
@@ -74,10 +78,14 @@ class Marker(object):
         elif value == 'line':
             lp['linewidth'] = 1
             lp['color'] = 'black'
+        elif value == 'pointer':
+            lp['color'] = 'black'
+            lp['linewidth'] = None
+            #lp['pickradius'] = 5.0
         else:
             raise ValueError(
                 "`type` must be one of "
-                "{\'line\'}"
+                "{\'line\',\'text\',\'pointer\'}"
                 "but %s was given" % value)
         self._type = value
         self.marker_properties = lp
@@ -100,7 +108,8 @@ class Marker(object):
         if self.marker is not None:
             plt.setp(self.marker, **self.marker_properties)
             try:
-                m.ax.figure.canvas.draw()
+                # self.ax.figure.canvas.draw()
+                self.ax.hspy_fig._draw_animated()
             except:
                 pass
 
@@ -119,20 +128,32 @@ class Marker(object):
             self.marker = self.ax.vlines(0, 0, 1,
                                          **self.marker_properties)
             self.set_line_segment()
+        elif self.type == 'pointer':
+            self.marker = self.ax.scatter(self.get_data_position('x1'),
+                                          self.get_data_position(
+                                              'y1'),
+                                          **self.marker_properties)
+            if self.get_data_position('size') is None:
+                self.set_data(size=20)
+                data = self.data
+            self.marker._sizes = [self.get_data_position('size')]
 
         self.marker.set_animated(True)
         self.axes_manager.connect(self.update)
         try:
-            m.ax.figure.canvas.draw()
+            self.ax.hspy_fig._draw_animated()
+            # self.ax.figure.canvas.draw()
         except:
             pass
 
-    def set_data(self, x1=None, y1=None, x2=None, y2=None, text=None):
+    def set_data(self, x1=None, y1=None,
+                 x2=None, y2=None, text=None, size=None):
         self.data = np.array((np.array(x1), np.array(y1),
-                              np.array(x2), np.array(y2), np.array(text)),
+                              np.array(x2), np.array(y2),
+                              np.array(text), np.array(size)),
                              dtype=[('x1', object), ('y1', object),
                                     ('x2', object), ('y2', object),
-                                    ('text', object)])
+                                    ('text', object), ('size', object)])
 
     def get_data_position(self, ind):
         data = self.data
@@ -178,6 +199,8 @@ class Marker(object):
     def close(self):
         try:
             self.marker.remove()
+            # m.ax.figure.canvas.draw()
+            self.ax.hspy_fig._draw_animated()
         except:
             pass
 
@@ -192,3 +215,13 @@ class Marker(object):
             self.marker.set_text(self.get_data_position('text'))
         elif self.type == 'line':
             self.set_line_segment()
+        elif self.type == 'pointer':
+            self.marker.set_offsets([self.get_data_position('x1'),
+                                     self.get_data_position('y1')])
+            self.marker._sizes = [self.get_data_position('size')]
+        try:
+            # self.ax.figure.canvas.draw()
+            self.ax.hspy_fig._draw_animated()
+        except:
+            pass
+
