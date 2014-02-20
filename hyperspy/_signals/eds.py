@@ -31,7 +31,7 @@ class EDSSpectrum(Spectrum):
 
     def __init__(self, *args, **kwards):
         Spectrum.__init__(self, *args, **kwards)
-        if self.mapped_parameters.signal_type == 'EDS':
+        if self.metadata.signal_type == 'EDS':
             print('The microscope type is not set. Use '
                   'set_signal_type(\'EDS_TEM\') or set_signal_type(\'EDS_SEM\')')
 
@@ -65,10 +65,10 @@ class EDSSpectrum(Spectrum):
 
         """
         # modify time spend per spectrum
-        if hasattr(self.mapped_parameters, 'SEM'):
-            mp = self.mapped_parameters.SEM
+        if hasattr(self.metadata, 'SEM'):
+            mp = self.metadata.SEM
         else:
-            mp = self.mapped_parameters.TEM
+            mp = self.metadata.TEM
         if hasattr(mp, 'EDS') and hasattr(mp.EDS, 'live_time'):
             mp.EDS.live_time = mp.EDS.live_time * self.axes_manager.shape[axis]
         return super(EDSSpectrum, self).sum(axis)
@@ -90,12 +90,12 @@ class EDSSpectrum(Spectrum):
                    np.array(new_shape_in_array))
         s = super(EDSSpectrum, self).rebin(new_shape)
         # modify time per spectrum
-        if "SEM.EDS.live_time" in s.mapped_parameters:
+        if "SEM.EDS.live_time" in s.metadata:
             for factor in factors:
-                s.mapped_parameters.SEM.EDS.live_time *= factor
-        if "TEM.EDS.live_time" in s.mapped_parameters:
+                s.metadata.SEM.EDS.live_time *= factor
+        if "TEM.EDS.live_time" in s.metadata:
             for factor in factors:
-                s.mapped_parameters.TEM.EDS.live_time *= factor
+                s.metadata.TEM.EDS.live_time *= factor
         return s
 
     def set_elements(self, elements):
@@ -124,14 +124,14 @@ class EDSSpectrum(Spectrum):
 
         """
         # Erase previous elements and X-ray lines
-        if "Sample.elements" in self.mapped_parameters:
-            del self.mapped_parameters.Sample.elements
+        if "Sample.elements" in self.metadata:
+            del self.metadata.Sample.elements
         self.add_elements(elements)
 
     def add_elements(self, elements):
         """Add elements and the corresponding X-ray lines.
 
-        The list of elements is stored in `mapped_parameters.Sample.elements`
+        The list of elements is stored in `metadata.Sample.elements`
 
         Parameters
         ----------
@@ -150,8 +150,8 @@ class EDSSpectrum(Spectrum):
                 "if `s` is the variable containing this EELS spectrum:\n "
                 ">>> s.add_elements(('C',))\n"
                 "See the docstring for more information.")
-        if "Sample.elements" in self.mapped_parameters:
-            elements_ = set(self.mapped_parameters.Sample.elements)
+        if "Sample.elements" in self.metadata:
+            elements_ = set(self.metadata.Sample.elements)
         else:
             elements_ = set()
         for element in elements:
@@ -161,10 +161,10 @@ class EDSSpectrum(Spectrum):
                 raise ValueError(
                     "%s is not a valid chemical element symbol." % element)
 
-        if not hasattr(self.mapped_parameters, 'Sample'):
-            self.mapped_parameters.add_node('Sample')
+        if not hasattr(self.metadata, 'Sample'):
+            self.metadata.add_node('Sample')
 
-        self.mapped_parameters.Sample.elements = sorted(list(elements_))
+        self.metadata.Sample.elements = sorted(list(elements_))
 
     def set_lines(self,
                   lines,
@@ -178,12 +178,12 @@ class EDSSpectrum(Spectrum):
         ----------
         lines : list of strings
             A list of valid element X-ray lines to add e.g. Fe_Kb.
-            Additionally, if `mapped_parameters.Sample.elements` is
+            Additionally, if `metadata.Sample.elements` is
             defined, add the lines of those elements that where not
             given in this list.
         only_one: bool
             If False, add all the lines of each element in
-            `mapped_parameters.Sample.elements` that has not line
+            `metadata.Sample.elements` that has not line
             defined in lines. If True (default),
             only add the line at the highest energy
             above an overvoltage of 2 (< beam energy / 2).
@@ -195,8 +195,8 @@ class EDSSpectrum(Spectrum):
         add_lines, add_elements, set_elements..
 
         """
-        if "Sample.Xray_lines" in self.mapped_parameters:
-            del self.mapped_parameters.Sample.Xray_lines
+        if "Sample.Xray_lines" in self.metadata:
+            del self.metadata.Sample.Xray_lines
         self.add_lines(lines=lines,
                        only_one=only_one,
                        only_lines=only_lines)
@@ -212,20 +212,20 @@ class EDSSpectrum(Spectrum):
         list of elements, ocassionally it might be useful to customize the
         X-ray lines to be use by all functions by default using this method.
         The list of X-ray lines is stored in
-        `mapped_parameters.Sample.Xray_lines`
+        `metadata.Sample.Xray_lines`
 
         Parameters
         ----------
         lines : list of strings
             A list of valid element X-ray lines to add e.g. Fe_Kb.
-            Additionally, if `mapped_parameters.Sample.elements` is
+            Additionally, if `metadata.Sample.elements` is
             defined, add the lines of those elements that where not
             given in this list. If the list is empty (default), and
-            `mapped_parameters.Sample.elements` is
+            `metadata.Sample.elements` is
             defined, add the lines of all those elements.
         only_one: bool
             If False, add all the lines of each element in
-            `mapped_parameters.Sample.elements` that has not line
+            `metadata.Sample.elements` that has not line
             defined in lines. If True (default),
             only add the line at the highest energy
             above an overvoltage of 2 (< beam energy / 2).
@@ -237,8 +237,8 @@ class EDSSpectrum(Spectrum):
         set_lines, add_elements, set_elements.
 
         """
-        if "Sample.Xray_lines" in self.mapped_parameters:
-            Xray_lines = set(self.mapped_parameters.Sample.Xray_lines)
+        if "Sample.Xray_lines" in self.metadata:
+            Xray_lines = set(self.metadata.Sample.Xray_lines)
         else:
             Xray_lines = set()
         # Define the elements which Xray lines has been customized
@@ -273,8 +273,8 @@ class EDSSpectrum(Spectrum):
             else:
                 raise ValueError(
                     "%s is not a valid symbol of an element." % element)
-        if "Sample.elements" in self.mapped_parameters:
-            extra_elements = (set(self.mapped_parameters.Sample.elements) -
+        if "Sample.elements" in self.metadata:
+            extra_elements = (set(self.metadata.Sample.elements) -
                               elements)
             if extra_elements:
                 new_lines = self._get_lines_from_elements(
@@ -284,12 +284,12 @@ class EDSSpectrum(Spectrum):
                 if new_lines:
                     self.add_lines(new_lines)
         self.add_elements(elements)
-        if not hasattr(self.mapped_parameters, 'Sample'):
-            self.mapped_parameters.add_node('Sample')
-        if "Sample.Xray_lines" in self.mapped_parameters:
+        if not hasattr(self.metadata, 'Sample'):
+            self.metadata.add_node('Sample')
+        if "Sample.Xray_lines" in self.metadata:
             Xray_lines = Xray_lines.union(
-                self.mapped_parameters.Sample.Xray_lines)
-        self.mapped_parameters.Sample.Xray_lines = sorted(list(Xray_lines))
+                self.metadata.Sample.Xray_lines)
+        self.metadata.Sample.Xray_lines = sorted(list(Xray_lines))
 
     def _get_lines_from_elements(self,
                                  elements,
@@ -314,17 +314,17 @@ class EDSSpectrum(Spectrum):
         -------
 
         """
-        if hasattr(self.mapped_parameters, 'SEM') and \
-                hasattr(self.mapped_parameters.SEM, 'beam_energy'):
-            beam_energy = self.mapped_parameters.SEM.beam_energy
-        elif hasattr(self.mapped_parameters, 'TEM') and \
-                hasattr(self.mapped_parameters.TEM, 'beam_energy'):
-            beam_energy = self.mapped_parameters.TEM.beam_energy
+        if hasattr(self.metadata, 'SEM') and \
+                hasattr(self.metadata.SEM, 'beam_energy'):
+            beam_energy = self.metadata.SEM.beam_energy
+        elif hasattr(self.metadata, 'TEM') and \
+                hasattr(self.metadata.TEM, 'beam_energy'):
+            beam_energy = self.metadata.TEM.beam_energy
         else:
             raise AttributeError(
                 "To use this method the beam energy `TEM.beam_energy` "
                 "or `SEM.beam_energy` must be defined in "
-                "`mapped_parameters`.")
+                "`metadata`.")
 
         end_energy = self.axes_manager.signal_axes[0].high_value
         if beam_energy < end_energy:
@@ -370,8 +370,8 @@ class EDSSpectrum(Spectrum):
         different X-ray lines. The integration window width
         is calculated from the energy resolution of the detector
         defined as defined in
-        `self.mapped_parameters.SEM.EDS.energy_resolution_MnKa` or
-        `self.mapped_parameters.SEM.EDS.energy_resolution_MnKa`.
+        `self.metadata.SEM.EDS.energy_resolution_MnKa` or
+        `self.metadata.SEM.EDS.energy_resolution_MnKa`.
 
 
         Parameters
@@ -422,21 +422,21 @@ class EDSSpectrum(Spectrum):
         """
 
         if Xray_lines is None:
-            if 'Sample.Xray_lines' in self.mapped_parameters:
-                Xray_lines = self.mapped_parameters.Sample.Xray_lines
-            elif 'Sample.elements' in self.mapped_parameters:
+            if 'Sample.Xray_lines' in self.metadata:
+                Xray_lines = self.metadata.Sample.Xray_lines
+            elif 'Sample.elements' in self.metadata:
                 Xray_lines = self._get_lines_from_elements(
-                    self.mapped_parameters.Sample.elements,
+                    self.metadata.Sample.elements,
                     only_one=only_one,
                     only_lines=only_lines)
             else:
                 raise ValueError(
                     "Not X-ray line, set them with `add_elements`")
 
-        if self.mapped_parameters.signal_type == 'EDS_SEM':
-            FWHM_MnKa = self.mapped_parameters.SEM.EDS.energy_resolution_MnKa
-        elif self.mapped_parameters.signal_type == 'EDS_TEM':
-            FWHM_MnKa = self.mapped_parameters.TEM.EDS.energy_resolution_MnKa
+        if self.metadata.signal_type == 'EDS_SEM':
+            FWHM_MnKa = self.metadata.SEM.EDS.energy_resolution_MnKa
+        elif self.metadata.signal_type == 'EDS_TEM':
+            FWHM_MnKa = self.metadata.TEM.EDS.energy_resolution_MnKa
         else:
             raise NotImplementedError(
                 "This method only works for EDS_TEM or EDS_SEM signals. "
@@ -453,12 +453,12 @@ class EDSSpectrum(Spectrum):
             det = integration_window_factor * line_FWHM / 2.
             img = self[..., line_energy - det:line_energy + det
                        ].integrate_simpson(-1)
-            img.mapped_parameters.title = (
+            img.metadata.title = (
                 'Intensity of %s at %.2f %s from %s' %
                 (Xray_line,
                  line_energy,
                  self.axes_manager.signal_axes[0].units,
-                 self.mapped_parameters.title))
+                 self.metadata.title))
             if img.axes_manager.navigation_dimension >= 2:
                 img = img.as_image([0, 1])
             elif img.axes_manager.navigation_dimension == 1:
@@ -480,7 +480,7 @@ class EDSSpectrum(Spectrum):
         TOA is the angle with which the X-rays leave the surface towards
         the detector. Parameters are read in 'SEM.tilt_stage',
         'SEM.EDS.azimuth_angle' and 'SEM.EDS.elevation_angle'
-         in 'mapped_parameters'.
+         in 'metadata'.
 
         Returns
         -------
@@ -494,10 +494,10 @@ class EDSSpectrum(Spectrum):
         -----
         Defined by M. Schaffer et al., Ultramicroscopy 107(8), pp 587-597 (2007)
         """
-        if self.mapped_parameters.signal_type == 'EDS_SEM':
-            mp = self.mapped_parameters.SEM
-        elif self.mapped_parameters.signal_type == 'EDS_TEM':
-            mp = self.mapped_parameters.TEM
+        if self.metadata.signal_type == 'EDS_SEM':
+            mp = self.metadata.SEM
+        elif self.metadata.signal_type == 'EDS_TEM':
+            mp = self.metadata.TEM
 
         tilt_stage = mp.tilt_stage
         azimuth_angle = mp.EDS.azimuth_angle

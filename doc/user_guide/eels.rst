@@ -34,8 +34,8 @@ It can be useful to define the composition of the sample for archiving purposes
 or for some other process (e.g. curve fitting) that may use this information.
 The elemental composition of the sample can be defined using
 :py:meth:`~._signals.eels.EELSSpectrum.add_elements`. The information is stored
-in the :py:attr:`~.signal.Signal.mapped_parameters` attribute (see
-:ref:`mapped_parameters_structure`)
+in the :py:attr:`~.signal.Signal.metadata` attribute (see
+:ref:`metadata_structure`)
 
 Estimate the FWHM of a peak
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

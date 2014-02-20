@@ -16,8 +16,8 @@ class Test2D:
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "E"
         self.signal.axes_manager[0].scale = 0.5
-        self.signal.mapped_parameters.set_item('splitting.axis', 0)
-        self.signal.mapped_parameters.set_item(
+        self.signal.metadata.set_item('splitting.axis', 0)
+        self.signal.metadata.set_item(
             'splitting.step_sizes', [2, 2])
         self.data = self.signal.data.copy()
 
@@ -78,8 +78,8 @@ class Test3D:
         self.signal.axes_manager[1].name = "y"
         self.signal.axes_manager[2].name = "E"
         self.signal.axes_manager[0].scale = 0.5
-        self.signal.mapped_parameters.set_item('splitting.axis', 0)
-        self.signal.mapped_parameters.set_item(
+        self.signal.metadata.set_item('splitting.axis', 0)
+        self.signal.metadata.set_item(
             'splitting.step_sizes', [2, 2])
         self.data = self.signal.data.copy()
 

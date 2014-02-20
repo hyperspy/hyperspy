@@ -1,4 +1,4 @@
-
+﻿
 Tools: the Signal class
 ***********************
 
@@ -45,8 +45,8 @@ example we create an Image instance from a 2D numpy array:
 The different signals store other objects in what are called attributes. For
 examples, the data is stored in a numpy array in the
 :py:attr:`~.signal.Signal.data` attribute, the original parameters in the
-:py:attr:`~.signal.Signal.original_parameters` attribute, the mapped parameters
-in the :py:attr:`~.signal.Signal.mapped_parameters` attribute and the axes
+:py:attr:`~.signal.Signal.original_metadata` attribute, the mapped parameters
+in the :py:attr:`~.signal.Signal.metadata` attribute and the axes
 information (including calibration) can be accessed (and modified) in the
 :py:attr:`~.signal.Signal.axes_manager` attribute.
 
@@ -57,7 +57,7 @@ Transforming between signal subclasses
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The different subclasses are characterized by three
-:py:attr:`~.signal.Signal.mapped_parameters` attributes (see the table below):
+:py:attr:`~.signal.Signal.metadata` attributes (see the table below):
 
 `record_by`
     Can be "spectrum", "image" or "", the latter meaning undefined.
@@ -97,7 +97,7 @@ The different subclasses are characterized by three
     :py:class:`~.signal.Signal`
     subclass transformation.
     
-.. table:: Signal subclass :py:attr:`~.signal.Signal.mapped_parameters` attributes.
+.. table:: Signal subclass :py:attr:`~.signal.Signal.metadata` attributes.
 
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |                       Signal subclass                         | record_by | signal_type | signal_origin |
@@ -127,7 +127,7 @@ The following example shows how to transform between different subclasses.
        >>> s = signals.Spectrum(np.random.random((10,20,100)))
        >>> s
        <Spectrum, title: , dimensions: (20, 10|100)>
-       >>> s.mapped_parameters 
+       >>> s.metadata 
        ├── record_by = spectrum
        ├── signal_origin = 
        ├── signal_type = 
@@ -135,7 +135,7 @@ The following example shows how to transform between different subclasses.
        >>> im = s.to_image()
        >>> im
        <Image, title: , dimensions: (100|20, 10)>
-       >>> im.mapped_parameters 
+       >>> im.metadata 
        ├── record_by = image
        ├── signal_origin = 
        ├── signal_type = 
