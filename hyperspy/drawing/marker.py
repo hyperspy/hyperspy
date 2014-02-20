@@ -130,13 +130,13 @@ class Marker(object):
             self.set_line_segment()
         elif self.type == 'pointer':
             self.marker = self.ax.scatter(self.get_data_position('x1'),
-                                       self.get_data_position(
-                                           'y1'),
-                                         **self.marker_properties)
+                                          self.get_data_position(
+                                              'y1'),
+                                          **self.marker_properties)
             if self.get_data_position('size') is None:
                 self.set_data(size=20)
                 data = self.data
-            self.marker._sizes=[self.get_data_position('size')]
+            self.marker._sizes = [self.get_data_position('size')]
 
         self.marker.set_animated(True)
         self.axes_manager.connect(self.update)
@@ -146,14 +146,14 @@ class Marker(object):
         except:
             pass
 
-    def set_data(self, x1=None, y1=None, 
-        x2=None, y2=None, text=None, size=None):
+    def set_data(self, x1=None, y1=None,
+                 x2=None, y2=None, text=None, size=None):
         self.data = np.array((np.array(x1), np.array(y1),
-                              np.array(x2), np.array(y2), 
+                              np.array(x2), np.array(y2),
                               np.array(text), np.array(size)),
                              dtype=[('x1', object), ('y1', object),
                                     ('x2', object), ('y2', object),
-                                    ('text', object),('size', object)])
+                                    ('text', object), ('size', object)])
 
     def get_data_position(self, ind):
         data = self.data
@@ -217,10 +217,10 @@ class Marker(object):
             self.set_line_segment()
         elif self.type == 'pointer':
             self.marker.set_offsets([self.get_data_position('x1'),
-                                      self.get_data_position('y1')])
-            self.marker._sizes = [self.get_data_position('size')]        
+                                     self.get_data_position('y1')])
+            self.marker._sizes = [self.get_data_position('size')]
         try:
-            #self.ax.figure.canvas.draw()
+            # self.ax.figure.canvas.draw()
             self.ax.hspy_fig._draw_animated()
         except:
             pass
