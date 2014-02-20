@@ -224,4 +224,3 @@ class Marker(object):
             self.ax.hspy_fig._draw_animated()
         except:
             pass
-
