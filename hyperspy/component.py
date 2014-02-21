@@ -446,10 +446,29 @@ class Component(object):
         self.isbackground = False
         self.convolved = True
         self.parameters = tuple(self.parameters)
-        self.name = ''
+        self._name = ''
         self._id_name = self.__class__.__name__
         self._id_version = '1.0'
         self._position = None
+        self.model = None
+
+    @property
+    def name(self):
+        return(self._name)
+
+    @name.setter
+    def name(self, value):
+        if self.model:
+            for component in self.model:
+                if value == component.name:
+                    if not (component is self):
+                        raise ValueError(
+                            "Another component already has "
+                            "the name " + str(value))
+                else:
+                    self._name = value
+        else:
+            self._name = value
 
     @property
     def _axes_manager(self):
