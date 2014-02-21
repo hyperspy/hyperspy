@@ -506,18 +506,6 @@ to make a horizontal "collage" of the image stack:
   :align:   center
   :width:   500  
 
-Note that the list of images can be retrieved from collage with 
-:py:meth:`~.signal.Signal.split`:
-
-.. code-block:: python
-
-    >>> collage.split()
-    [<Image, title: , dimensions: (|512, 512)>,
-     <Image, title: , dimensions: (|512, 512)>,
-     <Image, title: , dimensions: (|512, 512)>,
-     <Image, title: , dimensions: (|512, 512)>,
-     <Image, title: , dimensions: (|512, 512)>]
-
 .. versionadded:: 0.7
 
 
@@ -593,6 +581,38 @@ It is also possible to unfold only the navigation or only the signal space:
 
 * :py:meth:`~.signal.Signal.unfold_navigation_space`
 * :py:meth:`~.signal.Signal.unfold_signal_space`
+
+Splitting and stacking
+^^^^^^^^^^^^^^^^^^^^^^
+
+Several objects can be stacked together over an existing axis or over a 
+new axis using the :py:func:`~.utils.stack` function, if they share axis
+with same dimension. 
+
+.. code-block:: python
+
+    >>> import scipy.ndimage
+    >>> image = signals.Image(scipy.misc.lena())
+    >>> image = utils.stack([utils.stack([image]*3,axis=0)]*3,axis=1)
+    >>> image.plot()
+    
+.. figure::  images/stack_lena_3_3.png
+  :align:   center
+  :width:   500    
+ 
+An object can be splitted into several objects
+with the :py:meth:`~.signal.Signal.split` method. This function can be used 
+to reverse the :py:func:`~.utils.stack` function:
+
+.. code-block:: python
+
+    >>> image = image.split()[0].split()[0]
+    >>> image.plot()
+    
+.. figure::  images/split_lena_3_3.png
+  :align:   center
+  :width:   400    
+
 
 Simple operations over one axis
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
