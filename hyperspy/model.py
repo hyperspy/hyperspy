@@ -49,15 +49,120 @@ from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
 from hyperspy.gui.tools import ComponentFit
+from hyperspy.component import Component
 
 
 class Model(list):
 
-    """Build and fit a model
+    """One-dimensional model and data fitting.
 
-    Parameters
+    A model is constructed as a linear combination of :mod:`components` that
+    are added to the model using :meth:`append` or :meth:`extend`. There
+    are many predifined components available in the in the :mod:`components`
+    module. If needed, new components can easyly created using the code of
+    existing components as a template.
+
+    Once defined, the model can be fitted to the data using :meth:`fit` or
+    :meth:`multifit`. Once the optimizer reaches the convergence criteria or
+    the maximum number of iterations the new value of the component parameters
+    are stored in the components.
+
+    It is possible to access the components in the model by their name or by
+    the index in the model. An example is given at the end of this docstring.
+
+    Attributes
     ----------
-    spectrum : an Spectrum (or any Spectrum subclass) instance
+
+    spectrum : Spectrum instance
+        It contains the data to fit.
+
+    Methods
+    -------
+
+    append
+        Append one component to the model.
+    extend
+        Append multiple components to the model.
+    remove
+        Remove component from model.
+    as_signal
+        Generate a Spectrum instance (possible multidimensional)
+        from the model.
+    store_current_values
+        Store the value of the parameters at the current position.
+    fetch_stored_values
+        Fetch stored values of the parameters.
+    update_plot
+        Force a plot update. (In most cases the plot should update
+        automatically.)
+    set_signal_range, remove_signal range, reset_signal_range,
+    add signal_range.
+        Customize the signal range to fit.
+    fit, multifit
+        Fit the model to the data at the current position or the
+        full dataset.
+    save_parameters2file, load_parameters_from_file
+        Save/load the parameter values to/from a file.
+    plot
+        Plot the model and the data.
+    enable_plot_components, disable_plot_components
+        Plot each component separately. (Use after `plot`.)
+    set_current_values_to
+        Set the current value of all the parameters of the given component as
+        the value for all the dataset.
+    export_results
+        Save the value of the parameters in separate files.
+    plot_results
+        Plot the value of all parameters at all positions.
+    print_current_values
+        Print the value of the parameters at the current position.
+    enable_adjust_position, disable_adjust_position
+        Enable/disable interactive adjustment of the position of the components
+        that have a well defined position. (Use after `plot`).
+    fit_component
+        Fit just the given component in the given signal range, that can be
+        set interactively.
+    set_parameters_not_free, set_parameters_free
+        Fit the `free` status of several components and parameters at once.
+    set_parameters_value
+        Set the value of a parameter in components in a model to a specified
+        value.
+
+    Examples
+    --------
+    In the following example we create a histogram from a normal distribution
+    and fit it with a gaussian component. It demonstrates how to create
+    a model from a :class:`~._signals.spectrum.Spectrum` instance, add
+    components to it, adjust the value of the parameters of the components,
+    fit the model to the data and access the components in the model.
+
+    >>> s = signals.Spectrum(np.random.normal(scale=2, size=10000)).get_histogram()
+    >>> g = components.Gaussian()
+    >>> m = create_model(s)
+    >>> m.append(g)
+    >>> m.print_current_values()
+    Components	Parameter	Value
+    Gaussian
+                sigma	1.000000
+                A	1.000000
+                centre	0.000000
+    >>> g.centre.value = 3
+    >>> m.print_current_values()
+    Components	Parameter	Value
+    Gaussian
+                sigma	1.000000
+                A	1.000000
+                centre	3.000000
+    >>> g.sigma.value
+    1.0
+    >>> m.fit()
+    >>> g.sigma.value
+    1.9779042300856682
+    >>> m[0].sigma.value
+    1.9779042300856682
+    >>> m["Gaussian"].centre.value
+    -0.072121936813224569
+
     """
 
     _firstimetouch = True
@@ -77,6 +182,13 @@ class Model(list):
 
     def __repr__(self):
         return "<Model %s>" % super(Model, self).__repr__()
+
+    def _get_component(self, object):
+        if isinstance(object, int) or isinstance(object, str):
+            object = self[object]
+        elif not isinstance(object, Component):
+            raise ValueError("Not a component or component id.")
+        return object
 
     def insert(self):
         raise NotImplementedError
@@ -113,7 +225,29 @@ class Model(list):
             self.convolved = False
 
     # Extend the list methods to call the _touch when the model is modified
+
     def append(self, object):
+        # Check if any of the other components in the model has the same name
+        if object in self:
+            raise ValueError("Component already in model")
+        component_name_list = []
+        for component in self:
+            component_name_list.append(component.name)
+        name_string = ""
+        if object.name:
+            name_string = object.name
+        else:
+            name_string = object._id_name
+
+        if name_string in component_name_list:
+            temp_name_string = name_string
+            index = 0
+            while temp_name_string in component_name_list:
+                temp_name_string = name_string + "_" + str(index)
+                index += 1
+            name_string = temp_name_string
+        object.name = name_string
+
         object._axes_manager = self.axes_manager
         object._create_arrays()
         list.append(self, object)
@@ -130,6 +264,30 @@ class Model(list):
         self._touch()
 
     def remove(self, object, touch=True):
+        """Remove component from model.
+
+        Examples
+        --------
+
+        >>> s = signals.Spectrum(np.empty(1))
+        >>> m = create_model(s)
+        >>> g = components.Gaussian()
+        >>> m.append(g)
+
+        You could remove `g` like this
+
+        >>> m.remove(g)
+
+        Like this:
+
+        >>> m.remove("Gaussian")
+
+        Or like this:
+
+        >>> m.remove(0)
+
+        """
+        object = self._get_component(object)
         list.remove(self, object)
         object.model = None
         if touch is True:
@@ -180,7 +338,8 @@ class Model(list):
         ----------
         component_list : list of hyperspy components, optional
             If a list of components is given, only the components given in the
-            list is used in making the returned spectrum
+            list is used in making the returned spectrum. The components can
+            be specified by name, index or themselves.
         out_of_range_to_nan : bool
             If True the spectral range that is not fitted is filled with nans.
 
@@ -201,8 +360,8 @@ class Model(list):
 
         """
 
-        # TODO: model cube should dissapear or at least be an option
         if component_list:
+            component_list = [self._get_component(x) for x in component_list]
             active_state = []
             for component_ in self:
                 active_state.append(component_.active)
@@ -245,27 +404,6 @@ class Model(list):
         else:
             return False
 
-# TODO: port it
-#    def generate_chisq(self, degrees_of_freedom = 'auto') :
-#        if self.spectrum.variance is None:
-#            self.spectrum.estimate_poissonian_noise_variance()
-#        variance = self.spectrum.variance[self.channel_switches]
-#        differences = (self.model_cube - self.spectrum.data)[self.channel_switches]
-#        self.chisq = np.sum(differences**2 / variance, 0)
-#        if degrees_of_freedom == 'auto':
-#            self.red_chisq = self.chisq / \
-#            (np.sum(np.ones(self.spectrum.energydimension)[self.channel_switches]) \
-#            - len(self.p0) -1)
-#            print "Degrees of freedom set to auto"
-#            print "DoF = ", len(self.p0)
-#        elif type(degrees_of_freedom) is int :
-#            self.red_chisq = self.chisq / \
-#            (np.sum(np.ones(self.spectrum.energydimension)[self.channel_switches]) \
-#            - degrees_of_freedom -1)
-#        else:
-#            print "degrees_of_freedom must be on interger type."
-#            print "The red_chisq could not been calculated"
-
     def _set_p0(self):
         self.p0 = ()
         for component in self:
@@ -278,7 +416,8 @@ class Model(list):
     def set_boundaries(self):
         """Generate the boundary list.
 
-        Necessary before fitting with a boundary awared optimizer
+        Necessary before fitting with a boundary aware optimizer.
+
         """
         self.free_parameters_boundaries = []
         for component in self:
@@ -1084,11 +1223,26 @@ class Model(list):
                 del component._model_plot_line
 
     def set_current_values_to(self, components_list=None, mask=None):
+        """Set parameter values for all positions to the current ones.
+
+        Parameters
+        ----------
+        component_list : list of components, optional
+            If a list of components is given, the operation will be performed
+            only in the value of the parameters of the given components.
+            The components can be specified by name, index or themselves.
+        mask : boolean numpy array or None, optional
+            The operation won't be performed where mask is True.
+
+        """
         if components_list is None:
             components_list = []
             for comp in self:
                 if comp.active:
                     components_list.append(comp)
+        else:
+            component_list = [self._get_component(x) for x in component_list]
+
         for comp in components_list:
             for parameter in comp.parameters:
                 parameter.set_current_value_to(mask=mask)
@@ -1203,6 +1357,7 @@ class Model(list):
             model that has a well defined *x* position with a value
             in the axis range will get a position adjustment line.
             Otherwise the feature is added only to the given components.
+            The components can be specified by name, index or themselves.
         fix_them : bool
             If True the position parameter of the components will be
             temporarily fixed until adjust position is disable.
@@ -1222,6 +1377,9 @@ class Model(list):
             self.disable_adjust_position()
         on_figure_window_close(self._plot.signal_plot.figure,
                                self.disable_adjust_position)
+        if components:
+            components = [self._get_component(x) for x in components]
+
         components = components if components else self
         if not components:
             # The model does not have components so we do nothing
@@ -1294,7 +1452,7 @@ class Model(list):
         ----------
         component : component instance
             The component must be in the model, otherwise an exception
-            is raised.
+            is raised. The component can be specified by name, index or itself.
         signal_range : {'interactive', (left_value, right_value), None}
             If 'interactive' the signal range is selected using the span
              selector on the spectrum plot. The signal range can also
@@ -1320,7 +1478,7 @@ class Model(list):
 
         >>> m.fit_component(g1, signal_range=(50,100))
         """
-
+        component = self._get_component(component)
         cf = ComponentFit(self, component, signal_range,
                           estimate_parameters, fit_independent, **kwargs)
         if signal_range == "interactive":
@@ -1338,7 +1496,8 @@ class Model(list):
         component_list : None, or list of hyperspy components, optional
             If None, will apply the function to all components in the model.
             If list of components, will apply the functions to the components
-            in the list.
+            in the list.  The components can be specified by name, index or
+            themselves.
         parameter_name_list : None or list of strings, optional
             If None, will set all the parameters to not free.
             If list of strings, will set all the parameters with the same name
@@ -1363,6 +1522,8 @@ class Model(list):
             component_list = []
             for _component in self:
                 component_list.append(_component)
+        else:
+            component_list = [self._get_component(x) for x in component_list]
 
         for _component in component_list:
             _component.set_parameters_not_free(parameter_name_list)
@@ -1377,7 +1538,9 @@ class Model(list):
         component_list : None, or list of hyperspy components, optional
             If None, will apply the function to all components in the model.
             If list of components, will apply the functions to the components
-            in the list.
+            in the list. The components can be specified by name, index or
+            themselves.
+
         parameter_name_list : None or list of strings, optional
             If None, will set all the parameters to not free.
             If list of strings, will set all the parameters with the same name
@@ -1401,6 +1564,8 @@ class Model(list):
             component_list = []
             for _component in self:
                 component_list.append(_component)
+        else:
+            component_list = [self._get_component(x) for x in component_list]
 
         for _component in component_list:
             _component.set_parameters_free(parameter_name_list)
@@ -1417,7 +1582,9 @@ class Model(list):
         value : number
             The new value of the parameter
         component_list : list of hyperspy components, optional
-            A list of components whos parameters will changed
+            A list of components whos parameters will changed. The components
+            can be specified by name, index or themselves.
+
         only_current : bool, default False
             If True, will only change the parameter value at the current position in the model
             If False, will change the parameter value for all the positions.
@@ -1437,6 +1604,8 @@ class Model(list):
             component_list = []
             for _component in self:
                 component_list.append(_component)
+        else:
+            component_list = [self._get_component(x) for x in component_list]
 
         for _component in component_list:
             for _parameter in _component.parameters:
@@ -1447,3 +1616,27 @@ class Model(list):
                     else:
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
+
+    def __getitem__(self, value):
+        """x.__getitem__(y) <==> x[y]"""
+        if isinstance(value, str):
+            component_list = []
+            for component in self:
+                if component.name:
+                    if component.name == value:
+                        component_list.append(component)
+                elif component._id_name == value:
+                    component_list.append(component)
+            if component_list:
+                if len(component_list) == 1:
+                    return(component_list[0])
+                else:
+                    raise ValueError(
+                        "There are several components with "
+                        "the name \"" + str(value) + "\"")
+            else:
+                raise ValueError(
+                    "Component name \"" + str(value) +
+                    "\" not found in model")
+        else:
+            return list.__getitem__(self, value)

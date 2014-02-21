@@ -1371,4 +1371,4 @@ elements = {
                                 'onset_energy': 181.0,
                                 'relevance': 'Major'}}}}
 
-elements_db = utils.DictionaryBrowser(elements)
+elements_db = utils.DictionaryTreeBrowser(elements)
