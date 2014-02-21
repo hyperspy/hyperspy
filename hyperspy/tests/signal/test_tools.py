@@ -60,7 +60,6 @@ class Test2D:
         assert_true(len(result) == 5)
         assert_true((result[0].data == self.data[0]).all())
 
-
     def test_histogram(self):
         result = self.signal.get_histogram(3)
         assert_true(isinstance(result, signals.Spectrum))
