@@ -3278,12 +3278,13 @@ class Signal(MVA,
                 spectrum.data = spectrum.data[spectrum.axes_manager._get_data_slice([(axis,0)])]               
                 spectrum._remove_axis(axis_in_manager)
                 
+                
         if mode == 'auto' and hasattr(self.original_metadata,'stack_elements'):
             for i, spectrum in enumerate(splitted):
                 stack_keys=self.original_metadata.stack_elements.keys()
                 spectrum.metadata= self.original_metadata.stack_elements[stack_keys[i]]['metadata']
                 spectrum.original_metadata= self.original_metadata.stack_elements[stack_keys[i]]['original_metadata']
-            
+                spectrum.metadata.title = spectrum.metadata.title[9:]        
         return splitted
 
     def unfold_if_multidim(self):
