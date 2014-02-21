@@ -347,7 +347,6 @@ class Smoothing(t.HasTraits):
             except:
                 raise
 
-
     def __init__(self, signal):
         self.ax = None
         self.data_line = None
