@@ -73,8 +73,8 @@ def file_writer(filename, signal, **kwds):
     else:
         photometric = "minisblack"
     if description not in kwds:
-        if signal.mapped_parameters.title:
-            kwds['description'] = signal.mapped_parameters.title
+        if signal.metadata.title:
+            kwds['description'] = signal.metadata.title
 
     imsave(filename, data,
             software="hyperspy",
@@ -116,7 +116,7 @@ def file_reader(filename, record_by='image',**kwds):
                 'signal_type' : "",}
         return [{'data' : dc, 
                  'axes' : axes,
-                 'original_parameters' : op,
-                 'mapped_parameters' : mp,
+                 'original_metadata' : op,
+                 'metadata' : mp,
                  }]
 

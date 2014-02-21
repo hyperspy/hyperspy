@@ -27,7 +27,9 @@ import traits
 from utils import on_figure_window_close
 from hyperspy.misc.math_tools import closest_nice_number
 
+
 class DraggablePatch(object):
+
     """
     """
 
@@ -67,11 +69,11 @@ class DraggablePatch(object):
             self.__is_on = value
             try:
                 self.ax.figure.canvas.draw()
-            except: # figure does not exist
+            except:  # figure does not exist
                 pass
             else:
                 self.ax = None
-                
+
     def set_patch(self):
         pass
         # Must be provided by the subclass
@@ -88,7 +90,7 @@ class DraggablePatch(object):
             self.add_patch_to(ax)
             self.connect(ax)
             canvas.draw()
-            
+
     def connect(self, ax):
         canvas = ax.figure.canvas
         self.cids.append(
@@ -124,7 +126,8 @@ class DraggablePatch(object):
 
     def button_release(self, event):
         'whenever a mouse button is released'
-        if event.button != 1: return
+        if event.button != 1:
+            return
         if self.picked is True:
             self.picked = False
 
@@ -133,6 +136,7 @@ class DraggablePatch(object):
             self.ax.hspy_fig._draw_animated()
         else:
             self.ax.figure.canvas.draw_idle()
+
 
 class ResizebleDraggablePatch(DraggablePatch):
 
@@ -167,6 +171,7 @@ class ResizebleDraggablePatch(DraggablePatch):
         self.cids.append(canvas.mpl_connect('key_press_event',
                                             self.on_key_press))
 
+
 class DraggableSquare(ResizebleDraggablePatch):
 
     def __init__(self, axes_manager):
@@ -176,23 +181,23 @@ class DraggableSquare(ResizebleDraggablePatch):
         self.calculate_size()
         self.calculate_position()
         self.patch = plt.Rectangle(
-                        self._position, self._xsize, self._ysize,
-                        animated=self.blit,
-                        fill=False,
-                        lw=2,
-                        ec=self.color,
-                        picker=True,)
-        
+            self._position, self._xsize, self._ysize,
+            animated=self.blit,
+            fill=False,
+            lw=2,
+            ec=self.color,
+            picker=True,)
+
     def calculate_size(self):
         xaxis = self.axes_manager.navigation_axes[0]
         yaxis = self.axes_manager.navigation_axes[1]
         self._xsize = xaxis.scale * self.size
         self._ysize = yaxis.scale * self.size
-        
+
     def calculate_position(self):
         coordinates = np.array(self.axes_manager.coordinates[:2])
         self._position = coordinates - (
-                            self._xsize / 2., self._ysize / 2.)
+            self._xsize / 2., self._ysize / 2.)
 
     def update_patch_size(self):
         self.calculate_size()
@@ -220,15 +225,17 @@ class DraggableSquare(ResizebleDraggablePatch):
                 except traits.api.TraitError:
                     # Index out of range, we do nothing
                     pass
-                    
-            if  self.axes_manager.indices[0] != wxindex:
+
+            if self.axes_manager.indices[0] != wxindex:
                 try:
                     xaxis.index = wxindex
                 except traits.api.TraitError:
                     # Index out of range, we do nothing
                     pass
 
+
 class DraggableHorizontalLine(DraggablePatch):
+
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
         self._2D = False
@@ -256,7 +263,9 @@ class DraggableHorizontalLine(DraggablePatch):
                 # Index out of range, we do nothing
                 pass
 
+
 class DraggableVerticalLine(DraggablePatch):
+
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
         self._2D = False
@@ -280,8 +289,10 @@ class DraggableVerticalLine(DraggablePatch):
             except traits.api.TraitError:
                 # Index out of range, we do nothing
                 pass
-                
+
+
 class DraggableLabel(DraggablePatch):
+
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
         self._2D = False
@@ -289,7 +300,7 @@ class DraggableLabel(DraggablePatch):
         self.y = 0.9
         self.text_color = 'black'
         self.bbox = None
-        
+
     def update_patch_position(self):
         if self.patch is not None:
             self.patch.set_x(self.axes_manager.coordinates[0])
@@ -298,10 +309,10 @@ class DraggableLabel(DraggablePatch):
     def set_patch(self):
         ax = self.ax
         trans = transforms.blended_transform_factory(
-                ax.transData, ax.transAxes)
+            ax.transData, ax.transAxes)
         self.patch = ax.text(
             self.axes_manager.coordinates[0],
-            self.y, # Y value in axes coordinates
+            self.y,  # Y value in axes coordinates
             self.string,
             color=self.text_color,
             picker=5,
@@ -309,14 +320,14 @@ class DraggableLabel(DraggablePatch):
             horizontalalignment='right',
             bbox=self.bbox,
             animated=self.blit)
-        
-                
+
 
 class Scale_Bar():
+
     def __init__(self, ax, units, pixel_size=None, color='white',
-        position=None, max_size_ratio=0.25, lw=2, lenght=None):
+                 position=None, max_size_ratio=0.25, lw=2, lenght=None):
         """Add a scale bar to an image.
-        
+
         Parameteres
         -----------
         ax : matplotlib axes
@@ -329,16 +340,16 @@ class Scale_Bar():
         position {None, (float, float)}
             If None the position is automatically determined.
         max_size_ratio : float
-            The maximum size of the scale bar in respect to the 
+            The maximum size of the scale bar in respect to the
             lenght of the x axis
         lw : int
             The line width
         lenght : {None, float}
-            If None the lenght is automatically calculated using the 
+            If None the lenght is automatically calculated using the
             max_size_ratio.
-        
+
         """
-                     
+
         self.ax = ax
         self.units = units
         self.pixel_size = pixel_size
@@ -363,68 +374,68 @@ class Scale_Bar():
         if self.tex_bold is True:
             if (self.units[0] and self.units[-1]) == '$':
                 return r'$\mathbf{%g\,%s}$' % \
-            (self.lenght, self.units[1:-1])
+                    (self.lenght, self.units[1:-1])
             else:
                 return r'$\mathbf{%g\,}$\textbf{%s}' % \
-            (self.lenght, self.units)
+                    (self.lenght, self.units)
         else:
             return r'$%g\,$%s' % (self.lenght, self.units)
-    
+
     def calculate_line_position(self, pad=0.05):
         return ((1 - pad) * self.xmin + pad * self.xmax,
                 (1 - pad) * self.ymin + pad * self.ymax)
-    
-    def calculate_text_position(self, pad=1/100.):
+
+    def calculate_text_position(self, pad=1 / 100.):
         ps = self.pixel_size if self.pixel_size is not None else 1
         x1, y1 = self.position
         x2, y2 = x1 + self.lenght / ps, y1
-        
+
         self.text_position = ((x1 + x2) / 2.,
-                               y2 + (self.ymax - self.ymin) /ps * pad)
-    
+                              y2 + (self.ymax - self.ymin) / ps * pad)
+
     def calculate_size(self, max_size_ratio=0.25):
         ps = self.pixel_size if self.pixel_size is not None else 1
-        size = closest_nice_number(ps * (self.xmax - self.xmin) * 
-                                       max_size_ratio)
+        size = closest_nice_number(ps * (self.xmax - self.xmin) *
+                                   max_size_ratio)
         self.lenght = size
-    
+
     def remove(self):
         if self.line is not None:
             self.ax.lines.remove(self.line)
         if self.text is not None:
             self.ax.texts.remove(self.text)
-    
-    def plot_scale(self, line_width = 1):
+
+    def plot_scale(self, line_width=1):
         self.remove()
         ps = self.pixel_size if self.pixel_size is not None else 1
         x1, y1 = self.position
         x2, y2 = x1 + self.lenght / ps, y1
-        self.line, = self.ax.plot([x1,x2],[y1,y2],
-                                  linestyle='-', lw = line_width)
+        self.line, = self.ax.plot([x1, x2], [y1, y2],
+                                  linestyle='-', lw=line_width)
         self.text = self.ax.text(*self.text_position,
-            s=self.get_units_string(),ha='center', size='medium')
+                                 s=self.get_units_string(), ha='center', size='medium')
         self.ax.set_xlim(self.xmin, self.xmax)
         self.ax.set_ylim(self.ymin, self.ymax)
         self.ax.figure.canvas.draw()
-    
-    def set_position(self,x,y):
+
+    def set_position(self, x, y):
         self.position = x, y
         self.calculate_text_position()
-        self.plot_scale(line_width = self.line.get_linewidth())
+        self.plot_scale(line_width=self.line.get_linewidth())
 
     def set_color(self, c):
         self.line.set_color(c)
         self.text.set_color(c)
         self.ax.figure.canvas.draw_idle()
-    
+
     def set_lenght(self, lenght):
         color = self.line.get_color()
         self.lenght = lenght
         self.calculate_scale_size()
         self.calculate_text_position()
-        self.plot_scale(line_width = self.line.get_linewidth())
+        self.plot_scale(line_width=self.line.get_linewidth())
         self.set_color(color)
-    
+
     def set_tex_bold(self):
         self.tex_bold = True
         self.text.set_text(self.get_units_string())
@@ -432,17 +443,19 @@ class Scale_Bar():
 
 
 def in_interval(number, interval):
-        if number >= interval[0] and number <= interval[1]:
-            return True
-        else:
-            return False
+    if number >= interval[0] and number <= interval[1]:
+        return True
+    else:
+        return False
+
 
 class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
     def __init__(self, ax, **kwargs):
         matplotlib.widgets.SpanSelector.__init__(
-        self, ax, direction = 'horizontal', useblit = False, **kwargs)
-        self.tolerance = 1 # The tolerance in points to pick the rectangle sizes
+            self, ax, direction='horizontal', useblit=False, **kwargs)
+        # The tolerance in points to pick the rectangle sizes
+        self.tolerance = 1
         self.on_move_cid = None
         self.range = None
 
@@ -460,20 +473,21 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
         # And connect to the new ones
         self.cids.append(
-        self.canvas.mpl_connect('button_press_event', self.mm_on_press))
+            self.canvas.mpl_connect('button_press_event', self.mm_on_press))
         self.cids.append(
-        self.canvas.mpl_connect('button_release_event', self.mm_on_release))
+            self.canvas.mpl_connect('button_release_event', self.mm_on_release))
         self.cids.append(
-        self.canvas.mpl_connect('draw_event', self.update_background))
+            self.canvas.mpl_connect('draw_event', self.update_background))
 
     def mm_on_press(self, event):
-        if (self.ignore(event) and not self.buttonDown): return
+        if (self.ignore(event) and not self.buttonDown):
+            return
         self.buttonDown = True
 
         # Calculate the point size in data units
         invtrans = self.ax.transData.inverted()
-        x_pt = abs((invtrans.transform((1,0)) -
-        invtrans.transform((0,0)))[0])
+        x_pt = abs((invtrans.transform((1, 0)) -
+                    invtrans.transform((0, 0)))[0])
 
         # Determine the size of the regions for moving and stretching
         rect = self.rect
@@ -484,24 +498,27 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
         if in_interval(event.xdata, left_region) is True:
             self.on_move_cid = \
-            self.canvas.mpl_connect('motion_notify_event',
-                                    self.move_left)
+                self.canvas.mpl_connect('motion_notify_event',
+                                        self.move_left)
         elif in_interval(event.xdata, right_region):
             self.on_move_cid = \
-            self.canvas.mpl_connect('motion_notify_event',
-                                    self.move_right)
+                self.canvas.mpl_connect('motion_notify_event',
+                                        self.move_right)
         elif in_interval(event.xdata, middle_region):
             self.pressv = event.xdata
             self.on_move_cid = \
-            self.canvas.mpl_connect('motion_notify_event',
-                                    self.move_rect)
+                self.canvas.mpl_connect('motion_notify_event',
+                                        self.move_rect)
         else:
             return
+
     def update_range(self):
         self.range = (self.rect.get_x(),
-            self.rect.get_x() + self.rect.get_width())
+                      self.rect.get_x() + self.rect.get_width())
+
     def move_left(self, event):
-        if self.buttonDown is False or self.ignore(event): return
+        if self.buttonDown is False or self.ignore(event):
+            return
         width_increment = self.range[0] - event.xdata
         self.rect.set_x(event.xdata)
         self.rect.set_width(self.rect.get_width() + width_increment)
@@ -511,9 +528,10 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self.update()
 
     def move_right(self, event):
-        if self.buttonDown is False or self.ignore(event): return
+        if self.buttonDown is False or self.ignore(event):
+            return
         width_increment = \
-        event.xdata - self.range[1]
+            event.xdata - self.range[1]
         self.rect.set_width(self.rect.get_width() + width_increment)
         self.update_range()
         if self.onmove_callback is not None:
@@ -521,7 +539,8 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self.update()
 
     def move_rect(self, event):
-        if self.buttonDown is False or self.ignore(event): return
+        if self.buttonDown is False or self.ignore(event):
+            return
         x_increment = event.xdata - self.pressv
         self.rect.set_x(self.rect.get_x() + x_increment)
         self.update_range()
@@ -531,7 +550,8 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self.update()
 
     def mm_on_release(self, event):
-        if self.buttonDown is False or self.ignore(event): return
+        if self.buttonDown is False or self.ignore(event):
+            return
         self.buttonDown = False
         self.canvas.mpl_disconnect(self.on_move_cid)
         self.on_move_cid = None

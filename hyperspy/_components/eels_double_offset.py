@@ -21,28 +21,32 @@ import numpy as np
 
 from hyperspy.component import Component
 
+
 class DoubleOffset(Component):
+
     """
     Given an array of the same shape as Spectrum energy_axis, returns it as
     a component that can be added to a model.
     """
 
     def __init__(self):
-        Component.__init__(self, ('offset','step'))
+        Component.__init__(self, ('offset', 'step'))
         self.isbackground = True
         self.convolved = False
-        
+
         # Options
         self.interfase = 0
         # Gradients
         self.offset.grad = self.grad_offset
         self.step.grad = self.grad_step
-        
+
     def function(self, x):
-        
-        return np.where(x < self.interfase, self.offset.value + x*0, 
-    self.offset.value + self.step.value + x*0)
+
+        return np.where(x < self.interfase, self.offset.value + x * 0,
+                        self.offset.value + self.step.value + x * 0)
+
     def grad_offset(self, x):
         return np.ones((len(x)))
-    def grad_step(self,x):
-        np.where(x < self.interfase,x*0,1+x*0)
+
+    def grad_step(self, x):
+        np.where(x < self.interfase, x * 0, 1 + x * 0)

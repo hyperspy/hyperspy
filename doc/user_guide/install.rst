@@ -217,6 +217,7 @@ Windows
 
     $ uninstall_hyperspy_here
 * If Hyperspy raise a MemoryError exceptions:
+
   * Install the 64bit if you're using the 32bit one and you are running
     Hyperspy in a 64bit system.
   * Increase the available RAM but closing other applications or physically
