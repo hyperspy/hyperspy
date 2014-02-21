@@ -1289,4 +1289,4 @@ elements = {
            'Z': 42,
            'name': 'molybdenum',
            'density': 10.28}}
-elements_db = utils.DictionaryBrowser(elements)
+elements_db = utils.DictionaryTreeBrowser(elements)

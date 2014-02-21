@@ -124,7 +124,7 @@ class Test_metadata:
         assert_equal(s.get_take_off_angle(), 12.886929785732487)
 
 
-class Test_get_intentisity_map:
+class Test_get_lines_intentisity:
 
     def setUp(self):
         # Create an empty spectrum

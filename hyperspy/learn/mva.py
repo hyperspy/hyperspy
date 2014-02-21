@@ -394,10 +394,6 @@ class MVA():
                 self.fold()
                 self._unfolded4decomposition is False
 
-    def get_factors_as_spectrum(self):
-        from hyperspy._signals.spectrum import Spectrum
-        return Spectrum(self.learning_results.factors.T.copy())
-
     def blind_source_separation(self,
                                 number_of_components=None,
                                 algorithm='sklearn_fastica',
@@ -737,8 +733,8 @@ class MVA():
         ---------
 
         `plot_explained_variance_ration`, `decomposition`,
-        `get_decomposition_loadings_as_signal`,
-        `get_decomposition_factors_as_signal`.
+        `get_decomposition_loadings`,
+        `get_decomposition_factors`.
 
         """
         from hyperspy._signals.spectrum import Spectrum
@@ -772,8 +768,8 @@ class MVA():
         ---------
 
         `get_explained_variance_ration`, `decomposition`,
-        `get_decomposition_loadings_as_signal`,
-        `get_decomposition_factors_as_signal`.
+        `get_decomposition_loadings`,
+        `get_decomposition_factors`.
 
         """
         s = self.get_explained_variance_ratio()

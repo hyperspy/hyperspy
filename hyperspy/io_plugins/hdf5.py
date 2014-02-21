@@ -189,13 +189,13 @@ def hdfgroup2signaldict(group):
 
 
 def dict2hdfgroup(dictionary, group, compression=None):
-    from hyperspy.misc.utils import DictionaryBrowser
+    from hyperspy.misc.utils import DictionaryTreeBrowser
     from hyperspy.signal import Signal
     for key, value in dictionary.iteritems():
         if isinstance(value, dict):
             dict2hdfgroup(value, group.create_group(key),
                           compression=compression)
-        elif isinstance(value, DictionaryBrowser):
+        elif isinstance(value, DictionaryTreeBrowser):
             dict2hdfgroup(value.as_dictionary(),
                           group.create_group(key),
                           compression=compression)

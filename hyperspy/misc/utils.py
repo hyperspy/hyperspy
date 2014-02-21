@@ -117,7 +117,7 @@ def slugify(value, valid_variable_name=False):
     return value
 
 
-class DictionaryBrowser(object):
+class DictionaryTreeBrowser(object):
 
     """A class to comfortably browse a dictionary using a CLI.
 
@@ -139,7 +139,7 @@ class DictionaryBrowser(object):
 
     Examples
     --------
-    >>> tree = DictionaryBrowser()
+    >>> tree = DictionaryTreeBrowser()
     >>> tree.set_item("Branch.Leaf1.color", "green")
     >>> tree.set_item("Branch.Leaf2.color", "brown")
     >>> tree.set_item("Branch.Leaf2.caterpillar", True)
@@ -174,7 +174,7 @@ class DictionaryBrowser(object):
     """
 
     def __init__(self, dictionary={}):
-        super(DictionaryBrowser, self).__init__()
+        super(DictionaryTreeBrowser, self).__init__()
         self.add_dictionary(dictionary)
 
     def add_dictionary(self, dictionary):
@@ -212,7 +212,7 @@ class DictionaryBrowser(object):
             if not isinstance(key_, types.MethodType):
                 key = ensure_unicode(value['key'])
                 value = ensure_unicode(value['value'])
-                if isinstance(value, DictionaryBrowser):
+                if isinstance(value, DictionaryTreeBrowser):
                     if j == eoi - 1:
                         symbol = u'└── '
                     else:
@@ -251,7 +251,7 @@ class DictionaryBrowser(object):
         self.__setattr__(key, value)
 
     def __getattribute__(self, name):
-        item = super(DictionaryBrowser, self).__getattribute__(name)
+        item = super(DictionaryTreeBrowser, self).__getattribute__(name)
         if isinstance(item, dict) and 'value' in item:
             return item['value']
         else:
@@ -259,8 +259,8 @@ class DictionaryBrowser(object):
 
     def __setattr__(self, key, value):
         if isinstance(value, dict):
-            value = DictionaryBrowser(value)
-        super(DictionaryBrowser, self).__setattr__(
+            value = DictionaryTreeBrowser(value)
+        super(DictionaryTreeBrowser, self).__setattr__(
             slugify(key, valid_variable_name=True),
             {'key': key, 'value': value})
 
@@ -285,7 +285,7 @@ class DictionaryBrowser(object):
                 key = item_['key']
                 if key == "_db_index":
                     continue
-                if isinstance(item_['value'], DictionaryBrowser):
+                if isinstance(item_['value'], DictionaryTreeBrowser):
                     item = item_['value'].as_dictionary()
                 else:
                     item = item_['value']
@@ -307,7 +307,7 @@ class DictionaryBrowser(object):
         --------
 
         >>> dict = {'To' : {'be' : True}}
-        >>> dict_browser = DictionaryBrowser(dict)
+        >>> dict_browser = DictionaryTreeBrowser(dict)
         >>> dict_browser.has_item('To')
         True
         >>> dict_browser.has_item('To.be')
@@ -348,7 +348,7 @@ class DictionaryBrowser(object):
         --------
 
         >>> dict = {'To' : {'be' : True}}
-        >>> dict_browser = DictionaryBrowser(dict)
+        >>> dict_browser = DictionaryTreeBrowser(dict)
         >>> dict_browser.has_item('To')
         True
         >>> dict_browser.has_item('To.be')
@@ -396,7 +396,7 @@ class DictionaryBrowser(object):
         Examples
         --------
 
-        >>> dict_browser = DictionaryBrowser({})
+        >>> dict_browser = DictionaryTreeBrowser({})
         >>> dict_browser.set_item('First.Second.Third', 3)
         >>> dict_browser
         └── First
@@ -425,7 +425,7 @@ class DictionaryBrowser(object):
         Examples
         --------
 
-        >>> dict_browser = DictionaryBrowser({})
+        >>> dict_browser = DictionaryTreeBrowser({})
         >>> dict_browser.add_node('First.Second')
         >>> dict_browser.First.Second = 3
         >>> dict_browser
@@ -436,7 +436,7 @@ class DictionaryBrowser(object):
         keys = node_path.split('.')
         for key in keys:
             if self.has_item(key) is False:
-                self[key] = DictionaryBrowser()
+                self[key] = DictionaryTreeBrowser()
             self = self[key]
 
     def next(self):
@@ -734,7 +734,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                 # Get the title from 1st object
                 signal.metadata.title = (
                     "Stack of " + obj.metadata.title)
-                signal.original_metadata = DictionaryBrowser({})
+                signal.original_metadata = DictionaryTreeBrowser({})
             else:
                 axis = obj.axes_manager[axis]
                 signal = obj.deepcopy()

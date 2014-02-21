@@ -30,7 +30,7 @@ import numpy as np
 import traits.api as t
 
 from hyperspy.misc.array_tools import sarray2dict
-from hyperspy.misc.utils import DictionaryBrowser
+from hyperspy.misc.utils import DictionaryTreeBrowser
 
 ser_extensions = ('ser', 'SER')
 emi_extensions = ('emi', 'EMI')
@@ -265,7 +265,7 @@ def emi_reader(filename, dump_xml=False, verbose=False, **kwds):
             continue
 
         index = int(os.path.splitext(f)[0].split("_")[-1]) - 1
-        op = DictionaryBrowser(sers[-1]['original_metadata'])
+        op = DictionaryTreeBrowser(sers[-1]['original_metadata'])
         emixml2dtb(ET.fromstring(objects[index]), op)
         sers[-1]['original_metadata'] = op.as_dictionary()
     return sers

@@ -29,7 +29,7 @@ from hyperspy.misc.utils import generate_axis
 from hyperspy import messages
 from hyperspy.misc.io.tools import overwrite
 from hyperspy import Release
-from hyperspy.misc.utils import DictionaryBrowser
+from hyperspy.misc.utils import DictionaryTreeBrowser
 
 # Plugin characteristics
 # ----------------------
@@ -128,7 +128,7 @@ keywords = {
 
 def file_reader(filename, encoding='latin-1', **kwds):
     parameters = {}
-    mapped = DictionaryBrowser({})
+    mapped = DictionaryTreeBrowser({})
     with codecs.open(
             filename,
             encoding=encoding,
