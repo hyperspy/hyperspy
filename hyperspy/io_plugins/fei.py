@@ -443,7 +443,10 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
         original_metadata = {}
     header_parameters = sarray2dict(header)
     sarray2dict(data, header_parameters)
-
+    if len(axes) != len(dc.shape):
+        dc = dc.squeeze()
+    if len(axes) != len(dc.shape):
+        raise IOError("Please report this issue to the HyperSpy developers.")
     # We remove the Array key to save memory avoiding duplication
     del header_parameters['Array']
     original_metadata['ser_header_parameters'] = header_parameters
