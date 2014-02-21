@@ -466,8 +466,10 @@ def get_mode(mode):
 
 
 mapping = {
-    "ObjectInfo.ExperimentalDescription.High_tension_kV": ("TEM.beam_voltage", None),
-    "ObjectInfo.ExperimentalDescription.Emission_uA": ("TEM.beam_intensity", None),
+    "ObjectInfo.ExperimentalDescription.High_tension_kV":
+    ("TEM.beam_voltage", None),
+    "ObjectInfo.ExperimentalDescription.Emission_uA":
+    ("TEM.beam_intensity", None),
     "ObjectInfo.ExperimentalDescription.Microscope": ("TEM.microscope", None),
     "ObjectInfo.ExperimentalDescription.Mode": ("TEM.mode", get_mode),
 }

@@ -126,6 +126,8 @@ the secondary electron emission (SE image) and the X-ray spectrum (EDS map).
 The plot() function
 -------------------
 
+.. versionadded:: 0.7
+
 The visualisation with :py:meth:`~.signal.Signal.plot` of 1D and 2D signal is
 given in :ref:`getting started <getting-help-label>`. Further options are shown
 here.
@@ -163,7 +165,8 @@ plotted with sliders.
    :align:   center
    :width:   650    
 
-   Visualisation of a 3D spectrum image with sliders.
+   Visualisation of a 3D spectrum image with sliders.  
+   
    
 If the 3D images has the same spatial dimension as the 3D spectrum image, it
 can be used as an external signal for the navigator.
@@ -215,37 +218,31 @@ the "maximum spectrum" for which each channel is the maximum of all pixels.
    
 Lastly, if no navigator is needed, "navigator=None" can be used.
 
-Using Mayavi to visualize 3D data
----------------------------------
+Rendering of 3D stack of images
+-------------------------------
 
-Although Hyperspy does not currently support plotting when signal_dimension is
-greater than 2, `Mayavi <http://docs.enthought.com/mayavi/mayavi/>`_ can be
-used for this purpose.
+.. versionadded:: 0.7
 
-In the following example we also use `scikit-image <http://scikit-image.org/>`_
-for noise reduction. More details about 
-:py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` method can be 
-found in :ref:`EDS lines intensity<get_lines_intensity>`.
+To plot in 3D a stack of images, hyperspy provides 
+the :py:meth:`~._signals.image.Image.plot_3D_iso_surface` method that render
+iso-surface. This method uses the 
+`iso_surface <http://docs.enthought.com/mayavi/mayavi/auto/mlab_pipeline_other_functions.html?highlight=iso_surface#mayavi.tools.pipeline.iso_surface>`_
+function of `Mayavi <http://docs.enthought.com/mayavi/mayavi/>`_.
+This library provides other ways to visualise stack of images thant are
+not supported yet.
 
 .. code-block:: python
 
-    >>> #Import packages
-    >>> from skimage import filter
-    >>> from mayavi import mlab
     >>> #Generate the X-ray intensity map of Nickel L alpha
-    >>> NiMap = specImg3Dc.get_lines_intensity(['Ni_La'])[0]
-    >>> #Reduce the noise
-    >>> NiMapDenoise = filter.denoise_tv_chambolle(NiMap.data)
-    >>> #Plot isosurfaces
-    >>> mlab.contour3d(NiMapDenoise)
-    >>> mlab.outline()
-        
+    >>> NiMap = specImg3Dc.get_intensity_map(['Ni_La'])[0]
+    >>> #Plot the isosurfaces    
+    >>> NiMap.plot_3D_iso_surface([0.2,0.5,0.8])      
     
 .. figure::  images/mayavi.png
    :align:   center
    :width:   450    
 
-   Visualisation of isosurfaces with mayavi.
+   Visualisation of iso-surfaces of Nickel X-ray intensity with Mayavi.
    
 .. NOTE::
 
