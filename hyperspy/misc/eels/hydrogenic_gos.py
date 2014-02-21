@@ -8,14 +8,15 @@ import scipy.interpolate
 from hyperspy.misc.eels.base_gos import GOSBase
 from hyperspy.misc.physical_constants import R, e, m0, a0, c
 
-XU=[.82, .52, .52, .42, .30, .29, .22, .30, .22, .16, .12, .13, .13, .14, .16,
-    .18, .19, .22, .14, .11, .12, .12, .12, .10, .10, .10]
-#IE3=[73,99,135,164,200,245,294,347,402,455,513,575,641,710,
-#779,855,931,1021,1115,1217,1323,1436,1550,1675]
+XU = [.82, .52, .52, .42, .30, .29, .22, .30, .22, .16, .12, .13, .13, .14, .16,
+      .18, .19, .22, .14, .11, .12, .12, .12, .10, .10, .10]
+# IE3=[73,99,135,164,200,245,294,347,402,455,513,575,641,710,
+# 779,855,931,1021,1115,1217,1323,1436,1550,1675]
 
-#IE1=[118,149,189,229,270,320,377,438,500,564,628,695,769,846,
-    #926,1008,1096,1194,1142,1248,1359,1476,1596,1727]
-    
+# IE1=[118,149,189,229,270,320,377,438,500,564,628,695,769,846,
+    # 926,1008,1096,1194,1142,1248,1359,1476,1596,1727]
+
+
 class HydrogenicGOS(GOSBase):
 
     """Computes the K and L GOS using R. Egerton's  routines.
@@ -195,13 +196,13 @@ class HydrogenicGOS(GOSBase):
 
             a = ((q - kh2 + 0.25) ** 2 + kh2) ** 5
         else:
-            g = q**3 - (5 / 3 * kh2 + 11/12) * q**2 + (kh2 * kh2 / 3 + 1.5 * kh2
-                + 65/48) * q + kh2**3 / 3 + 0.75 * kh2 * kh2 + 23/48 * kh2 + 5/64
-            a =((q - kh2 + 0.25)**2 + kh2)**4
-        rf =((E + 0.1 - el3) / 1.8 / z / z)**u
-        # The following commented lines are to give a more accurate GOS 
+            g = q ** 3 - (5 / 3 * kh2 + 11 / 12) * q ** 2 + (kh2 * kh2 / 3 + 1.5 * kh2
+                                                             + 65 / 48) * q + kh2 ** 3 / 3 + 0.75 * kh2 * kh2 + 23 / 48 * kh2 + 5 / 64
+            a = ((q - kh2 + 0.25) ** 2 + kh2) ** 4
+        rf = ((E + 0.1 - el3) / 1.8 / z / z) ** u
+        # The following commented lines are to give a more accurate GOS
         # for edges presenting white lines. However, this is not relevant
         # for quantification by curve fitting.
-        #if np.abs(iz - 11) <= 5 and E - el3 <= 20:
+        # if np.abs(iz - 11) <= 5 and E - el3 <= 20:
             #rf = 1
         return rf * 32 * g * c / a / d * E / r / r / zs ** 4
