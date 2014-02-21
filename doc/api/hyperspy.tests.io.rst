@@ -28,6 +28,14 @@ hyperspy.tests.io.test_dm4 module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.io.test_hdf5 module
+----------------------------------
+
+.. automodule:: hyperspy.tests.io.test_hdf5
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.io.test_msa module
 ---------------------------------
 

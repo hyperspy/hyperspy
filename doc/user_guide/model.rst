@@ -85,7 +85,7 @@ data that can be modelled using gaussians we might proceed as follows:
 
 We could use the append method two times to add the two gaussians, but when
 adding multiple components it is handier to use the extend method that enables
-adding a list of components at once
+adding a list of components at once.
 
 
 .. code-block:: python
@@ -95,7 +95,7 @@ adding a list of components at once
     [<Gaussian component>, <Gaussian component>, <Gaussian component>]
     
     
-We can customise the name of the components
+We can customise the name of the components.
 
 .. code-block:: python
 
@@ -106,8 +106,34 @@ We can customise the name of the components
     [<Carbon (Gaussian component)>,
      <Hydrogen (Gaussian component)>,
      <Nitrogen (Gaussian component)>]
+
+
+Two components cannot have the same name.
+
+.. code-block:: python
+
+    >>> gaussian2.name = 'Carbon'
+    Traceback (most recent call last):
+      File "<ipython-input-5-2b5669fae54a>", line 1, in <module>
+        g2.name = "Carbon"
+      File "/home/fjd29/Python/hyperspy/hyperspy/component.py", line 466, in name
+        "the name " + str(value))
+    ValueError: Another component already has the name Carbon
+
+
+It is possible to access the components in the model by their name or by the
+index in the model.
     
-    
+.. code-block:: python
+
+    >>> m
+    [<Carbon (Gaussian component)>,
+     <Hydrogen (Gaussian component)>,
+     <Nitrogen (Gaussian component)>]
+    >>> m[0]
+    <Carbon (Gaussian component)>
+    >>> m["Carbon"]
+    <Carbon (Gaussian component)>
 
 
 Getting and setting parameter values and attributes

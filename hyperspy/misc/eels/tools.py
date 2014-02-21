@@ -156,16 +156,16 @@ def estimate_variance_parameters(
     else:
         print message
     if is_ok:
-        if not noisy_signal.mapped_parameters.has_item(
+        if not noisy_signal.metadata.has_item(
                 'Variance_estimation'):
-            noisy_signal.mapped_parameters.add_node(
+            noisy_signal.metadata.add_node(
                 'Variance_estimation')
-        noisy_signal.mapped_parameters.Variance_estimation.gain_factor = \
+        noisy_signal.metadata.Variance_estimation.gain_factor = \
             results0['fit'][0]
-        noisy_signal.mapped_parameters.Variance_estimation.gain_offset = \
+        noisy_signal.metadata.Variance_estimation.gain_offset = \
             results0['fit'][1]
-        noisy_signal.mapped_parameters.Variance_estimation.correlation_factor = c
-        noisy_signal.mapped_parameters.Variance_estimation.\
+        noisy_signal.metadata.Variance_estimation.correlation_factor = c
+        noisy_signal.metadata.Variance_estimation.\
             parameters_estimation_method = 'Hyperspy'
 
     if fold_back_noisy is True:
@@ -245,13 +245,13 @@ def eels_constant(s, zlp, t):
 
     # Mapped parameters
     try:
-        e0 = s.mapped_parameters.TEM.beam_energy
+        e0 = s.metadata.TEM.beam_energy
     except:
         raise AttributeError("Please define the beam energy."
                              "You can do this e.g. by using the "
                              "set_microscope_parameters method")
     try:
-        beta = s.mapped_parameters.TEM.EELS.collection_angle
+        beta = s.metadata.TEM.EELS.collection_angle
     except:
         raise AttributeError("Please define the collection angle."
                              "You can do this e.g. by using the "
@@ -301,5 +301,5 @@ def eels_constant(s, zlp, t):
     tgt = e0 * (2 * me + e0) / (me + e0)
     k = s._get_navigation_signal()
     k.data = (t * i0 / (332.5 * ke)) * np.log(1 + (beta * tgt / eaxis) ** 2)
-    k.mapped_parameters.title = "EELS proportionality constant K"
+    k.metadata.title = "EELS proportionality constant K"
     return k

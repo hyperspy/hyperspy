@@ -151,11 +151,11 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             print \
                 "Warning: the \'%s\' attribute is not defined in the file\
             " % attrib[0]
-    original_parameters = {'record_by': ncfile.type, 'calibration': calibration_dict,
-                           'acquisition': acquisition_dict, 'treatments': treatments_dict}
+    original_metadata = {'record_by': ncfile.type, 'calibration': calibration_dict,
+                         'acquisition': acquisition_dict, 'treatments': treatments_dict}
     ncfile.close()
     # Now we'll map some parameters
-    record_by = 'image' if original_parameters[
+    record_by = 'image' if original_metadata[
         'record_by'] == 'Image' else 'spectrum'
     if record_by == 'image':
         dim = len(data.shape)
@@ -194,15 +194,15 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             'offset': origins[i],
             'units': units[i], }
         for i in xrange(dim)]
-    mapped_parameters = {}
-    mapped_parameters['original_filename'] = os.path.split(filename)[1]
-    mapped_parameters['record_by'] = record_by
-    mapped_parameters['signal_type'] = ""
+    metadata = {}
+    metadata['original_filename'] = os.path.split(filename)[1]
+    metadata['record_by'] = record_by
+    metadata['signal_type'] = ""
     dictionary = {
         'data': data,
         'axes': axes,
-        'mapped_parameters': mapped_parameters,
-        'original_parameters': original_parameters,
+        'metadata': metadata,
+        'original_metadata': original_metadata,
     }
 
     return dictionary

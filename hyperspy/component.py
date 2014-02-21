@@ -439,7 +439,7 @@ class Parameter(object):
 
         s = Signal(data=self.map[field],
                    axes=self._axes_manager._get_navigation_axes_dicts())
-        s.mapped_parameters.title = self.name
+        s.metadata.title = self.name
         for axis in s.axes_manager._axes:
             axis.navigate = False
         if self._number_of_elements > 1:
@@ -532,10 +532,29 @@ class Component(object):
         self.isbackground = False
         self.convolved = True
         self.parameters = tuple(self.parameters)
-        self.name = ''
+        self._name = ''
         self._id_name = self.__class__.__name__
         self._id_version = '1.0'
         self._position = None
+        self.model = None
+
+    @property
+    def name(self):
+        return(self._name)
+
+    @name.setter
+    def name(self, value):
+        if self.model:
+            for component in self.model:
+                if value == component.name:
+                    if not (component is self):
+                        raise ValueError(
+                            "Another component already has "
+                            "the name " + str(value))
+                else:
+                    self._name = value
+        else:
+            self._name = value
 
     @property
     def _axes_manager(self):
