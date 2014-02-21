@@ -440,23 +440,22 @@ class Model(list):
         for component in self:
             if component.active:
                 for param in component.free_parameters:
-                        limited = [False, False]
-                        limits = [0, 0]
-                        if param.bmin is not None:
-                            limited[0] = True
-                            limits[0] = param.bmin
-                        if param.bmax is not None:
-                            limited[1] = True
-                            limits[1] = param.bmax
-                        if param._number_of_elements == 1:
-                            self.mpfit_parinfo.append(
-                                {'limited': limited,
-                                'limits': limits})
-                        else:
-                            self.mpfit_parinfo.extend((
-                                {'limited': limited,
-                                'limits': limits},) * param._number_of_elements)
-
+                    limited = [False, False]
+                    limits = [0, 0]
+                    if param.bmin is not None:
+                        limited[0] = True
+                        limits[0] = param.bmin
+                    if param.bmax is not None:
+                        limited[1] = True
+                        limits[1] = param.bmax
+                    if param._number_of_elements == 1:
+                        self.mpfit_parinfo.append(
+                            {'limited': limited,
+                             'limits': limits})
+                    else:
+                        self.mpfit_parinfo.extend((
+                            {'limited': limited,
+                             'limits': limits},) * param._number_of_elements)
 
     def store_current_values(self):
         """ Store the parameters of the current coordinates into the
