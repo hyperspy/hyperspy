@@ -3225,12 +3225,14 @@ class Signal(MVA,
         signal_dict = self._to_dictionary(add_learning_results=False)
         
         if axis == 'auto':
+            mode='auto'
             if hasattr(self.metadata, 'stacking_history'):
                 axis_in_manager = self.metadata.stacking_history.axis
                 step_sizes = self.metadata.stacking_history.step_sizes
             else:
                 axis_in_manager = self.axes_manager[-1+1j].index_in_axes_manager
         else:
+            mode='manual'
             axis_in_manager = self.axes_manager[axis].index_in_axes_manager
         
         axis = self.axes_manager[axis_in_manager].index_in_array            
@@ -3275,6 +3277,12 @@ class Signal(MVA,
             for i, spectrum in enumerate(splitted):
                 spectrum.data = spectrum.data[spectrum.axes_manager._get_data_slice([(axis,0)])]               
                 spectrum._remove_axis(axis_in_manager)
+                
+        if mode == 'auto' and hasattr(self.original_metadata,'stack_elements'):
+            for i, spectrum in enumerate(splitted):
+                stack_keys=self.original_metadata.stack_elements.keys()
+                spectrum.metadata= self.original_metadata.stack_elements[stack_keys[i]]['metadata']
+                spectrum.original_metadata= self.original_metadata.stack_elements[stack_keys[i]]['original_metadata']
             
         return splitted
 
