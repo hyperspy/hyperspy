@@ -167,6 +167,10 @@ class Model(list):
 
     _firstimetouch = True
 
+    def __hash__(self):
+        # This is needed to simulate a hashable object so that PySide does not
+        # raise an exception when using windows.connect
+        return id(self)
     def __init__(self, spectrum):
         self.convolved = False
         self.spectrum = spectrum
