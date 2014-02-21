@@ -39,14 +39,7 @@ class Test_Utils_Stack():
         assert_true((s4.data == s.data).all())
         assert_true((hasattr(s4.original_metadata, 'stack_elements')is False))
         assert_true((s4.metadata.title == 'test'))
-        
-        if mode == 'auto' and hasattr(self.original_metadata,'stack_elements'):
-            for i, spectrum in enumerate(splitted):
-                stack_keys=self.original_metadata.stack_elements.keys()
-                spectrum.metadata= self.original_metadata.stack_elements[stack_keys[i]]['metadata']
-                spectrum.original_metadata= self.original_metadata.stack_elements[stack_keys[i]]['original_metadata']
-                spectrum.metadata.title = spectrum.metadata.title[9:]        
-        return splitted
+
 
     def test_stack_not_default(self):
         s = self.signal
