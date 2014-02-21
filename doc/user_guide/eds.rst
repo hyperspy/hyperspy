@@ -248,19 +248,31 @@ An elemental database is available with the energy of the X-ray lines.
 
 .. code-block:: python
 
-    >>>  elements_EDS["Fe"]
-    ├── A = 55.845
-    ├── Xray_energy
-    │   ├── Ka = 6.404
-    │   ├── Kb = 7.0568
-    │   ├── La = 0.705
-    │   ├── Lb3 = 0.792
-    │   ├── Ll = 0.615
-    │   └── Ln = 0.62799
+    >>>  utils.material.elements.Fe.General_properties
     ├── Z = 26
-    ├── density = 7.874
+    ├── atomic_weight = 55.845
     └── name = iron
-
+    >>>  utils.material.elements.Fe.Physical_properties
+    └── density (g/cm^3) = 7.874
+    >>>  utils.material.elements.Fe.Atomic_properties.Xray_lines
+    ├── Ka
+    │   ├── energy (keV) = 6.404
+    │   └── factor = 1
+    ├── Kb
+    │   ├── energy (keV) = 7.0568
+    │   └── factor = 0.1
+    ├── La
+    │   ├── energy (keV) = 0.705
+    │   └── factor = 1
+    ├── Lb3
+    │   ├── energy (keV) = 0.792
+    │   └── factor = 0.08
+    ├── Ll
+    │   ├── energy (keV) = 0.615
+    │   └── factor = 0.04
+    └── Ln
+        ├── energy (keV) = 0.62799
+        └── factor = 0.01
 
 Plotting
 --------
