@@ -30,7 +30,7 @@ class EDSSEMSpectrum(EDSSpectrum):
     def __init__(self, *args, **kwards):
         EDSSpectrum.__init__(self, *args, **kwards)
         # Attributes defaults
-        if hasattr(self.mapped_parameters, 'SEM.EDS') == False:
+        if hasattr(self.metadata, 'SEM.EDS') == False:
             self._load_from_TEM_param()
         self._set_default_param()
 
@@ -44,14 +44,14 @@ class EDSSEMSpectrum(EDSSpectrum):
         ----------
         ref : signal
             The reference contains the calibration in its
-            mapped_parameters
+            metadata
         nb_pix : int
             The live time (real time corrected from the "dead time")
             is divided by the number of pixel (spectrums), giving an
             average live time.
         """
 
-        self.original_parameters = ref.original_parameters.deepcopy()
+        self.original_metadata = ref.original_metadata.deepcopy()
         # Setup the axes_manager
         ax_m = self.axes_manager.signal_axes[0]
         ax_ref = ref.axes_manager.signal_axes[0]
@@ -59,16 +59,16 @@ class EDSSEMSpectrum(EDSSpectrum):
         ax_m.units = ax_ref.units
         ax_m.offset = ax_ref.offset
 
-        # Setup mapped_parameters
-        if hasattr(ref.mapped_parameters, 'SEM'):
-            mp_ref = ref.mapped_parameters.SEM
-        elif hasattr(ref.mapped_parameters, 'TEM'):
-            mp_ref = ref.mapped_parameters.TEM
+        # Setup metadata
+        if hasattr(ref.metadata, 'SEM'):
+            mp_ref = ref.metadata.SEM
+        elif hasattr(ref.metadata, 'TEM'):
+            mp_ref = ref.metadata.TEM
         else:
-            raise ValueError("The reference has no mapped_parameters.TEM"
-                             "\n nor mapped_parameters.SEM ")
+            raise ValueError("The reference has no metadata.TEM"
+                             "\n nor metadata.SEM ")
 
-        mp = self.mapped_parameters
+        mp = self.metadata
 
         mp.SEM = mp_ref.deepcopy()
 
@@ -76,11 +76,11 @@ class EDSSEMSpectrum(EDSSpectrum):
             mp.SEM.EDS.live_time = mp_ref.EDS.live_time / nb_pix
 
     def _load_from_TEM_param(self):
-        """Transfer mapped_parameters.TEM to mapped_parameters.SEM
+        """Transfer metadata.TEM to metadata.SEM
 
         """
 
-        mp = self.mapped_parameters
+        mp = self.metadata
         if mp.has_item('SEM') is False:
             mp.add_node('SEM')
         if mp.has_item('SEM.EDS') is False:
@@ -96,7 +96,7 @@ class EDSSEMSpectrum(EDSSpectrum):
         """Set to value to default (defined in preferences)
 
         """
-        mp = self.mapped_parameters
+        mp = self.metadata
         if hasattr(mp.SEM, 'tilt_stage') is False:
             mp.SEM.tilt_stage = preferences.EDS.eds_tilt_stage
         if hasattr(mp.SEM.EDS, 'elevation_angle') is False:
@@ -136,7 +136,7 @@ class EDSSEMSpectrum(EDSSpectrum):
             In eV
 
         """
-        mp_mic = self.mapped_parameters.SEM
+        mp_mic = self.metadata.SEM
 
         if beam_energy is not None:
             mp_mic.beam_energy = beam_energy
@@ -166,8 +166,8 @@ class EDSSEMSpectrum(EDSSpectrum):
             'SEM.EDS.energy_resolution_MnKa': 'tem_par.energy_resolution_MnKa', }
 
         for key, value in mapping.iteritems():
-            if self.mapped_parameters.has_item(key):
-                exec('%s = self.mapped_parameters.%s' % (value, key))
+            if self.metadata.has_item(key):
+                exec('%s = self.metadata.%s' % (value, key))
         tem_par.edit_traits()
 
         mapping = {
@@ -180,12 +180,12 @@ class EDSSEMSpectrum(EDSSpectrum):
 
         for key, value in mapping.iteritems():
             if value != t.Undefined:
-                exec('self.mapped_parameters.%s = %s' % (key, value))
+                exec('self.metadata.%s = %s' % (key, value))
         self._are_microscope_parameters_missing()
 
     def _are_microscope_parameters_missing(self):
         """Check if the EDS parameters necessary for quantification
-        are defined in mapped_parameters. If not, in interactive mode
+        are defined in metadata. If not, in interactive mode
         raises an UI item to fill the values
 
         """
@@ -196,7 +196,7 @@ class EDSSEMSpectrum(EDSSpectrum):
 
         missing_parameters = []
         for item in must_exist:
-            exists = self.mapped_parameters.has_item(item)
+            exists = self.metadata.has_item(item)
             if exists is False:
                 missing_parameters.append(item)
         if missing_parameters:

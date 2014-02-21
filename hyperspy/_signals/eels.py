@@ -47,10 +47,10 @@ class EELSSpectrum(Spectrum):
         self.subshells = set()
         self.elements = set()
         self.edges = list()
-        if hasattr(self.mapped_parameters, 'Sample') and \
-                hasattr(self.mapped_parameters.Sample, 'elements'):
+        if hasattr(self.metadata, 'Sample') and \
+                hasattr(self.metadata.Sample, 'elements'):
             print('Elemental composition read from file')
-            self.add_elements(self.mapped_parameters.Sample.elements)
+            self.add_elements(self.metadata.Sample.elements)
 
     def add_elements(self, elements, include_pre_edges=False):
         """Declare the elemental composition of the sample.
@@ -95,9 +95,9 @@ class EELSSpectrum(Spectrum):
                 raise ValueError(
                     "%s is not a valid symbol of a chemical element"
                     % element)
-        if not hasattr(self.mapped_parameters, 'Sample'):
-            self.mapped_parameters.add_node('Sample')
-        self.mapped_parameters.Sample.elements = list(self.elements)
+        if not hasattr(self.metadata, 'Sample'):
+            self.metadata.add_node('Sample')
+        self.metadata.Sample.elements = list(self.elements)
         if self.elements:
             self.generate_subshells(include_pre_edges)
 
@@ -321,8 +321,8 @@ class EELSSpectrum(Spectrum):
             I0.axes_manager._set_axis_attribute_values(
                 'navigate',
                 bk_I0_navigate)
-        I0.mapped_parameters.title = (
-            self.mapped_parameters.title + ' elastic intensity')
+        I0.metadata.title = (
+            self.metadata.title + ' elastic intensity')
         if self.tmp_parameters.has_item('filename'):
             I0.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
@@ -408,8 +408,8 @@ class EELSSpectrum(Spectrum):
         del s
 
         # Create spectrum image, stop and return value
-        threshold.mapped_parameters.title = (
-            self.mapped_parameters.title +
+        threshold.metadata.title = (
+            self.metadata.title +
             ' ZLP threshold')
         if self.tmp_parameters.has_item('filename'):
             threshold.tmp_parameters.filename = (
@@ -475,8 +475,8 @@ class EELSSpectrum(Spectrum):
         t_over_lambda = np.log(total_intensity / I0)
         s = self._get_navigation_signal()
         s.data = t_over_lambda
-        s.mapped_parameters.title = (self.mapped_parameters.title +
-                                     ' $\\frac{t}{\\lambda}$')
+        s.metadata.title = (self.metadata.title +
+                            ' $\\frac{t}{\\lambda}$')
         if self.tmp_parameters.has_item('filename'):
             s.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
@@ -542,8 +542,8 @@ class EELSSpectrum(Spectrum):
                 s.data += zlp.data[s.axes_manager._get_data_slice(
                     [(axis.index_in_array, slice(None, self_size)), ])]
 
-        s.mapped_parameters.title = (s.mapped_parameters.title +
-                                     ' after Fourier-log deconvolution')
+        s.metadata.title = (s.metadata.title +
+                            ' after Fourier-log deconvolution')
         if s.tmp_parameters.has_item('filename'):
             s.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
@@ -646,8 +646,8 @@ class EELSSpectrum(Spectrum):
                                axis=axis.index_in_array)
         cl.data *= I0
         cl.crop(-1, None, int(orig_cl_size))
-        cl.mapped_parameters.title = (self.mapped_parameters.title +
-                                      ' after Fourier-ratio deconvolution')
+        cl.metadata.title = (self.metadata.title +
+                             ' after Fourier-ratio deconvolution')
         if cl.tmp_parameters.has_item('filename'):
             cl.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
@@ -680,7 +680,7 @@ class EELSSpectrum(Spectrum):
         self._check_signal_dimension_equals_one()
         ds = self.deepcopy()
         ds.data = ds.data.copy()
-        ds.mapped_parameters.title += (
+        ds.metadata.title += (
             ' after Richardson-Lucy deconvolution %i iterations' %
             iterations)
         if ds.tmp_parameters.has_item('filename'):
@@ -774,7 +774,7 @@ class EELSSpectrum(Spectrum):
 
     def _are_microscope_parameters_missing(self):
         """Check if the EELS parameters necessary to calculate the GOS
-        are defined in mapped_parameters. If not, in interactive mode
+        are defined in metadata. If not, in interactive mode
         raises an UI item to fill the values"""
         must_exist = (
             'TEM.convergence_angle',
@@ -782,7 +782,7 @@ class EELSSpectrum(Spectrum):
             'TEM.EELS.collection_angle',)
         missing_parameters = []
         for item in must_exist:
-            exists = self.mapped_parameters.has_item(item)
+            exists = self.metadata.has_item(item)
             if exists is False:
                 missing_parameters.append(item)
         if missing_parameters:
@@ -816,11 +816,11 @@ class EELSSpectrum(Spectrum):
         collection_angle : float
             In mrad.
         """
-        if self.mapped_parameters.has_item('TEM') is False:
-            self.mapped_parameters.add_node('TEM')
-        if self.mapped_parameters.has_item('TEM.EELS') is False:
-            self.mapped_parameters.TEM.add_node('EELS')
-        mp = self.mapped_parameters
+        if self.metadata.has_item('TEM') is False:
+            self.metadata.add_node('TEM')
+        if self.metadata.has_item('TEM.EELS') is False:
+            self.metadata.TEM.add_node('EELS')
+        mp = self.metadata
         if beam_energy is not None:
             mp.TEM.beam_energy = beam_energy
         if convergence_angle is not None:
@@ -832,18 +832,18 @@ class EELSSpectrum(Spectrum):
 
     @only_interactive
     def _set_microscope_parameters(self):
-        if self.mapped_parameters.has_item('TEM') is False:
-            self.mapped_parameters.add_node('TEM')
-        if self.mapped_parameters.has_item('TEM.EELS') is False:
-            self.mapped_parameters.TEM.add_node('EELS')
+        if self.metadata.has_item('TEM') is False:
+            self.metadata.add_node('TEM')
+        if self.metadata.has_item('TEM.EELS') is False:
+            self.metadata.TEM.add_node('EELS')
         tem_par = TEMParametersUI()
         mapping = {
             'TEM.convergence_angle': 'tem_par.convergence_angle',
             'TEM.beam_energy': 'tem_par.beam_energy',
             'TEM.EELS.collection_angle': 'tem_par.collection_angle', }
         for key, value in mapping.iteritems():
-            if self.mapped_parameters.has_item(key):
-                exec('%s = self.mapped_parameters.%s' % (value, key))
+            if self.metadata.has_item(key):
+                exec('%s = self.metadata.%s' % (value, key))
         tem_par.edit_traits()
         mapping = {
             'TEM.convergence_angle': tem_par.convergence_angle,
@@ -851,7 +851,7 @@ class EELSSpectrum(Spectrum):
             'TEM.EELS.collection_angle': tem_par.collection_angle, }
         for key, value in mapping.iteritems():
             if value != t.Undefined:
-                exec('self.mapped_parameters.%s = %s' % (key, value))
+                exec('self.metadata.%s = %s' % (key, value))
         self._are_microscope_parameters_missing()
 
     def power_law_extrapolation(self, window_size=20,
@@ -884,7 +884,7 @@ class EELSSpectrum(Spectrum):
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         s = self.deepcopy()
-        s.mapped_parameters.title += (
+        s.metadata.title += (
             ' %i channels extrapolated' %
             extrapolation_size)
         if s.tmp_parameters.has_item('filename'):
@@ -995,7 +995,7 @@ class EELSSpectrum(Spectrum):
             If both `n` and `t` are undefined (None).
         AttribureError
             If the beam_energy or the collection angle are not defined in
-            mapped_parameters.
+            metadata.
 
         Notes
         -----
@@ -1031,13 +1031,13 @@ class EELSSpectrum(Spectrum):
 
         # Mapped parameters
         try:
-            e0 = s.mapped_parameters.TEM.beam_energy
+            e0 = s.metadata.TEM.beam_energy
         except:
             raise AttributeError("Please define the beam energy."
                                  "You can do this e.g. by using the "
                                  "set_microscope_parameters method")
         try:
-            beta = s.mapped_parameters.TEM.EELS.collection_angle
+            beta = s.metadata.TEM.EELS.collection_angle
         except:
             raise AttributeError("Please define the collection angle."
                                  "You can do this e.g. by using the "
@@ -1165,7 +1165,7 @@ class EELSSpectrum(Spectrum):
                 print 'Iteration number: ', io + 1, '/', iterations
                 if iterations == io + 1 and full_output is True:
                     sp = sorig._deepcopy_with_new_data(Srfint)
-                    sp.mapped_parameters.title += (
+                    sp.metadata.title += (
                         " estimated surface plasmon excitation.")
                     output['surface plasmon estimation'] = sp
                     del sp
@@ -1174,17 +1174,17 @@ class EELSSpectrum(Spectrum):
         eps = s._deepcopy_with_new_data(e1 + e2 * 1j)
         del s
         eps.set_signal_type("DielectricFunction")
-        eps.mapped_parameters.title = (self.mapped_parameters.title +
-                                       'dielectric function '
-                                       '(from Kramers-Kronig analysis)')
+        eps.metadata.title = (self.metadata.title +
+                              'dielectric function '
+                              '(from Kramers-Kronig analysis)')
         if eps.tmp_parameters.has_item('filename'):
             eps.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
                 '_CDF_after_Kramers_Kronig_transform')
         if 'thickness' in output:
             thickness = eps._get_navigation_signal()
-            thickness.mapped_parameters.title = (
-                self.mapped_parameters.title + ' thickness '
+            thickness.metadata.title = (
+                self.metadata.title + ' thickness '
                 '(calculated using Kramers-Kronig analysis)')
             thickness.data = te[
                 self.axes_manager._get_data_slice([(

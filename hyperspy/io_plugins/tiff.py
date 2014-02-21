@@ -64,7 +64,7 @@ def file_reader(filename, record_by='image', **kwds):
     dc = imread(filename, **kwds)
     dt = 'image'
     return [{'data': dc,
-             'mapped_parameters': {'original_filename': filename,
-                                   'record_by': dt,
-                                   'signal_type': "", }
+             'metadata': {'original_filename': filename,
+                          'record_by': dt,
+                          'signal_type': "", }
              }]

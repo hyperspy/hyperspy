@@ -334,7 +334,7 @@ class MVA():
 
             if self._unfolded4decomposition is True:
                 folding = \
-                    self.mapped_parameters._internal_parameters.folding
+                    self.metadata._internal_parameters.folding
                 target.original_shape = folding.original_shape
 
             # Reproject
@@ -675,7 +675,7 @@ class MVA():
 
         sc = self.deepcopy()
         sc.data = a.T.reshape(self.data.shape)
-        sc.mapped_parameters.title += signal_name
+        sc.metadata.title += signal_name
         if target.mean is not None:
             sc.data += target.mean
         if self._unfolded4decomposition is True:
@@ -748,7 +748,7 @@ class MVA():
                                  "`None`, did you forget to perform a PCA "
                                  "decomposition?")
         s = Spectrum(target.explained_variance_ratio)
-        s.mapped_parameters.title = self.mapped_parameters.title + \
+        s.metadata.title = self.metadata.title + \
             "\nPCA Scree Plot"
         s.axes_manager[-1].name = 'Principal component index'
         s.axes_manager[-1].units = ''
