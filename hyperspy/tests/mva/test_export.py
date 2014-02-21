@@ -26,14 +26,14 @@ class TestMVAExport:
         self.sa = sa
 
     def test_get_bss_factor(self):
-        bss_factors = self.s.get_bss_factors_as_signal()
+        bss_factors = self.s.get_bss_factors()
         assert_equal(bss_factors.axes_manager[-1].scale, self.sa.scale)
         assert_equal(bss_factors.axes_manager[-1].offset, self.sa.offset)
         assert_equal(bss_factors.axes_manager.signal_shape,
                      self.s.axes_manager.signal_shape)
 
     def test_get_bss_loadings(self):
-        bss_loadings = self.s.get_bss_loadings_as_signal()
+        bss_loadings = self.s.get_bss_loadings()
         assert_equal(bss_loadings.axes_manager.navigation_dimension, 1)
         assert_equal(bss_loadings.axes_manager.signal_shape,
                      self.s.axes_manager.navigation_shape)

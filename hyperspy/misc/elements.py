@@ -3553,4 +3553,4 @@ elements = {'Ru': {'general': {'atomic_weight': 101.07,
                                                    'filename': 'Mo.L1'}}},
                    'physical': {'density': 10.28}}}
 
-elements_db = utils.DictionaryBrowser(elements)
+elements_db = utils.DictionaryTreeBrowser(elements)

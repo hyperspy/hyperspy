@@ -54,7 +54,7 @@ To print the content of the parameters simply:
 
 The :py:attr:`~.signal.Signal.original_metadata` and
 :py:attr:`~.signal.Signal.metadata` can be exported to  text files
-using the :py:meth:`~.misc.utils.DictionaryBrowser.export` method, e.g.:
+using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
 .. code-block:: python
     

@@ -232,10 +232,10 @@ chapter can find them. However, they are stored as numpy array. Frequently it
 is useful to obtain the decomposition/BSS factors and loadings as Hyperspy
 signals and Hyperspy provides the following four methods for that pourpose:
 
-* :py:meth:`~.signal.MVATools.get_decomposition_loadings_as_signal`.
-* :py:meth:`~.signal.MVATools.get_decomposition_factors_as_signal`.
-* :py:meth:`~.signal.MVATools.get_bss_loadings_as_signal`.
-* :py:meth:`~.signal.MVATools.get_bss_factors_as_signal`.
+* :py:meth:`~.signal.MVATools.get_decomposition_loadings`.
+* :py:meth:`~.signal.MVATools.get_decomposition_factors`.
+* :py:meth:`~.signal.MVATools.get_bss_loadings`.
+* :py:meth:`~.signal.MVATools.get_bss_factors`.
 
 
 Saving and loading results
