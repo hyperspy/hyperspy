@@ -2953,7 +2953,8 @@ class Signal(MVA,
                         "The navigator dimensions are not compatible with "
                         "those of self.")
             elif navigator == "data":
-                self._plot.navigator_data_function = lambda: self.data
+                self._plot.navigator_data_function = \
+                    lambda axes_manager=None: self.data
             elif navigator == "spectrum":
                 self._plot.navigator_data_function = \
                     get_1D_sum_explorer_wrapper

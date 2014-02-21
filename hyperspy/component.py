@@ -455,6 +455,7 @@ class Component(object):
     @property
     def name(self):
         return(self._name)
+
     @name.setter
     def name(self, value):
         if self.model:
@@ -462,8 +463,8 @@ class Component(object):
                 if value == component.name:
                     if not (component is self):
                         raise ValueError(
-                                "Another component already has "
-                                "the name " + str(value))
+                            "Another component already has "
+                            "the name " + str(value))
                 else:
                     self._name = value
         else:

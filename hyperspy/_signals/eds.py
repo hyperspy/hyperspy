@@ -411,9 +411,9 @@ class EDSSpectrum(Spectrum):
 
         Examples
         --------
-        
+
         >>> specImg.get_lines_intensity(["C_Ka", "Ta_Ma"])
-        
+
         See also
         --------
 
