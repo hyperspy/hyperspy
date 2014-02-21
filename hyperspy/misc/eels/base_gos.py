@@ -23,9 +23,19 @@ class GOSBase(object):
                 str(elements[element]['Atomic_properties']['subshells'].keys()))
 
         self.onset_energy = \
-            elements[element]['Atomic_properties']['Binding_energies'][subshell]['onset_energy (eV)']
+            elements[
+                element][
+                'Atomic_properties'][
+                'Binding_energies'][
+                subshell][
+                'onset_energy (eV)']
         self.subshell_factor = \
-            elements[element]['Atomic_properties']['Binding_energies'][subshell]['factor']
+            elements[
+                element][
+                'Atomic_properties'][
+                'Binding_energies'][
+                subshell][
+                'factor']
         self.Z = elements[element]['General_properties']['Z']
         self.element_dict = elements[element]
 
