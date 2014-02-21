@@ -24,7 +24,7 @@ import traits.api as t
 from scipy import constants
 
 from hyperspy._signals.spectrum import Spectrum
-from hyperspy.misc.eels.elements import elements as elements_db
+from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.gui.egerton_quantification import SpikesRemoval
 from hyperspy.decorators import only_interactive
@@ -120,11 +120,11 @@ class EELSSpectrum(Spectrum):
         end_energy = Eaxis[-1]
         for element in self.elements:
             e_shells = list()
-            for shell in elements_db[element]['subshells']:
+            for shell in elements_db[element]['Atomic_properties']['Binding_energies']:
                 if shell[-1] != 'a':
                     if start_energy <= \
-                            elements_db[element]['subshells'][shell][
-                                'onset_energy'] \
+                            elements_db[element]['Atomic_properties']['Binding_energies'][shell][
+                                'onset_energy (eV)'] \
                             <= end_energy:
                         subshell = '%s_%s' % (element, shell)
                         if subshell not in self.subshells:
