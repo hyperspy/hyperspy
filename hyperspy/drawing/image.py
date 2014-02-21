@@ -168,7 +168,7 @@ class ImagePlot(BlittedFigure):
         self.configure()
         if self.figure is None:
             self.create_figure()
-            self.create_axis()   
+            self.create_axis()
         data = self.data_function(axes_manager=self.axes_manager)
         if rgb_tools.is_rgbx(data):
             self.plot_colorbar = False
@@ -218,20 +218,20 @@ class ImagePlot(BlittedFigure):
             def format_coord(x, y):
                 try:
                     col = self.xaxis.value2index(x)
-                except ValueError: # out of axes limits
+                except ValueError:  # out of axes limits
                     col = -1
-                try:    
+                try:
                     row = self.yaxis.value2index(y)
                 except ValueError:
                     row = -1
-                if col>=0 and row>=0:
-                    z = data[row,col]
-                    return 'x=%1.4f, y=%1.4f, intensity=%1.4f'%(x, y, z)
+                if col >= 0 and row >= 0:
+                    z = data[row, col]
+                    return 'x=%1.4f, y=%1.4f, intensity=%1.4f' % (x, y, z)
                 else:
-                    return 'x=%1.4f, y=%1.4f'%(x, y)
+                    return 'x=%1.4f, y=%1.4f' % (x, y)
             self.ax.format_coord = format_coord
-        if (auto_contrast is True or 
-            auto_contrast is None and self.auto_contrast is True):
+        if (auto_contrast is True or
+                auto_contrast is None and self.auto_contrast is True):
             vmax, vmin = self.vmax, self.vmin
             self.optimize_contrast(data)
             if vmax == vmin and self.vmax != self.vmin and ims:

@@ -22,7 +22,7 @@ import numpy as np
 import traits.api as t
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    from hyperspy.misc.io.tifffile import imsave, TiffFile 
+    from hyperspy.misc.io.tifffile import imsave, TiffFile
 from hyperspy.misc import rgb_tools
 
 # Plugin characteristics
@@ -31,35 +31,36 @@ format_name = 'TIFF'
 description = 'Import/Export standard image formats Christoph Gohlke\'s tifffile library'
 full_suport = False
 file_extensions = ['tif', 'tiff']
-default_extension = 0 # tif
+default_extension = 0  # tif
 
 
 # Writing features
-writes = [(2,0), (2,1)]
+writes = [(2, 0), (2, 1)]
 # ----------------------
 
 axes_label_codes = {
-        'X' : "width",
-        'Y' : "height",
-        'S' : "sample",
-        'P' : "plane",
-        'I' : "image series",         
-        'Z' : "depth",
-        'C' : "color|em-wavelength|channel",
-        'E' : "ex-wavelength|lambda",   
-        'T' : "time",
-        'R' : "region|tile",
-        'A' : "angle",
-        'F' : "phase",
-        'H' : "lifetime",
-        'L' : "exposure",
-        'V' : "event",
-        'Q' : t.Undefined,
-        '_' : t.Undefined}
+    'X': "width",
+    'Y': "height",
+    'S': "sample",
+    'P': "plane",
+    'I': "image series",
+    'Z': "depth",
+    'C': "color|em-wavelength|channel",
+    'E': "ex-wavelength|lambda",
+    'T': "time",
+    'R': "region|tile",
+    'A': "angle",
+    'F': "phase",
+    'H': "lifetime",
+    'L': "exposure",
+    'V': "event",
+    'Q': t.Undefined,
+    '_': t.Undefined}
+
 
 def file_writer(filename, signal, **kwds):
     '''Writes data to tif using Christoph Gohlke's tifffile library
-        
+
         Parameters
         ----------
         filename: str
@@ -77,21 +78,22 @@ def file_writer(filename, signal, **kwds):
             kwds['description'] = signal.metadata.title
 
     imsave(filename, data,
-            software="hyperspy",
-            photometric=photometric,
-            **kwds)
-    
-def file_reader(filename, record_by='image',**kwds):
+           software="hyperspy",
+           photometric=photometric,
+           **kwds)
+
+
+def file_reader(filename, record_by='image', **kwds):
     '''Read data from tif files using Christoph Gohlke's tifffile
     library
-    
+
     Parameters
     ----------
     filename: str
     record_by: {'image'}
         Has no effect because this format only supports recording by
         image.
-    
+
     '''
     with TiffFile(filename, **kwds) as tiff:
         dc = tiff.asarray()
@@ -100,23 +102,22 @@ def file_reader(filename, record_by='image',**kwds):
             dc = rgb_tools.regular_array2rgbx(dc)
             axes = axes[:-1]
         op = {}
-        names =  [axes_label_codes[axis] for axis in axes]
-        axes=[{'size' : size,                                                                
-               'name' : unicode(name),                                          
-               #'scale': scales[i],                                                  
-               #'offset' : origins[i],                                               
-               #'units' : unicode(units[i]),
-               }
-              for size, name in zip(dc.shape, names)]
+        names = [axes_label_codes[axis] for axis in axes]
+        axes = [{'size': size,
+                 'name': unicode(name),
+                 #'scale': scales[i],
+                 #'offset' : origins[i],
+                 #'units' : unicode(units[i]),
+                 }
+                for size, name in zip(dc.shape, names)]
         op = {}
         for key, tag in tiff[0].tags.iteritems():
             op[key] = tag.value
-        mp =  { 'original_filename' : filename,
-                'record_by': "image",
-                'signal_type' : "",}
-        return [{'data' : dc, 
-                 'axes' : axes,
-                 'original_metadata' : op,
-                 'metadata' : mp,
+        mp = {'original_filename': filename,
+              'record_by': "image",
+              'signal_type': "", }
+        return [{'data': dc,
+                 'axes': axes,
+                 'original_metadata': op,
+                 'metadata': mp,
                  }]
-
