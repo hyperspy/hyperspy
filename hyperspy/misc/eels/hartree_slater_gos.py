@@ -80,7 +80,7 @@ class HartreeSlaterGOS(GOSBase):
         subshell = self.subshell
         filename = os.path.join(
             preferences.EELS.eels_gos_files_path,
-            elements[element]['atomic']['subshells'][subshell]['filename'])
+            elements[element]['Atomic_properties']['Binding_energies'][subshell]['filename'])
 
         with open(filename) as f:
             GOS_list = f.read().replace('\r', '').split()

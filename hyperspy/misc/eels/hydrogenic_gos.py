@@ -77,10 +77,10 @@ class HydrogenicGOS(GOSBase):
                 50, 3, 50)
         elif self.subshell[:1] == 'L':
             self.gosfunc = self.gosfuncL
-            self.onset_energy_L3 = self.element_dict['subshells']['L3'][
-                'onset_energy']
-            self.onset_energy_L1 = self.element_dict['subshells']['L1'][
-                'onset_energy']
+            self.onset_energy_L3 = self.element_dict['Atomic_properties']['Binding_energies']['L3'][
+                'onset_energy (eV)']
+            self.onset_energy_L1 = self.element_dict['Atomic_properties']['Binding_energies']['L1'][
+                'onset_energy (eV)']
             self.onset_energy = self.onset_energy_L3
             relative_axis = self.get_parametrized_energy_axis(
                 50, 3, 50)

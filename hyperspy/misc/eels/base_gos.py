@@ -15,18 +15,18 @@ class GOSBase(object):
         if (element in elements) is not True:
             raise ValueError("The given element " + element +
                              " is not in the database.")
-        elif subshell not in elements[element]['atomic']['subshells']:
+        elif subshell not in elements[element]['Atomic_properties']['Binding_energies']:
             raise ValueError(
                 "The given subshell " + subshell +
                 " is not in the database.\n" +
                 "The available subshells are:\n" +
-                str(elements[element]['atomic']['subshells'].keys()))
+                str(elements[element]['Atomic_properties']['subshells'].keys()))
 
         self.onset_energy = \
-            elements[element]['atomic']['subshells'][subshell]['onset_energy']
+            elements[element]['Atomic_properties']['Binding_energies'][subshell]['onset_energy (eV)']
         self.subshell_factor = \
-            elements[element]['atomic']['subshells'][subshell]['factor']
-        self.Z = elements[element]['general']['Z']
+            elements[element]['Atomic_properties']['Binding_energies'][subshell]['factor']
+        self.Z = elements[element]['General_properties']['Z']
         self.element_dict = elements[element]
 
     def get_parametrized_qaxis(self, k1, k2, n):

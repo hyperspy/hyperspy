@@ -120,11 +120,11 @@ class EELSSpectrum(Spectrum):
         end_energy = Eaxis[-1]
         for element in self.elements:
             e_shells = list()
-            for shell in elements_db[element]['atomic']['subshells']:
+            for shell in elements_db[element]['Atomic_properties']['Binding_energies']:
                 if shell[-1] != 'a':
                     if start_energy <= \
-                            elements_db[element]['atomic']['subshells'][shell][
-                                'onset_energy'] \
+                            elements_db[element]['Atomic_properties']['Binding_energies'][shell][
+                                'onset_energy (eV)'] \
                             <= end_energy:
                         subshell = '%s_%s' % (element, shell)
                         if subshell not in self.subshells:
