@@ -8,8 +8,8 @@ import scipy.interpolate
 from hyperspy.misc.eels.base_gos import GOSBase
 from hyperspy.misc.physical_constants import R, e, m0, a0, c
 
-XU = [.52, .42, .30, .29, .22, .30, .22, .16, .12, .13, .13, .14, .16, .18,
-      .19, .22, .14, .11, .12, .12, .12, .10, .10, .10]
+XU = [.82, .52, .52, .42, .30, .29, .22, .30, .22, .16, .12, .13, .13, .14, .16,
+      .18, .19, .22, .14, .11, .12, .12, .12, .10, .10, .10]
 # IE3=[73,99,135,164,200,245,294,347,402,455,513,575,641,710,
 # 779,855,931,1021,1115,1217,1323,1436,1550,1675]
 
@@ -158,8 +158,15 @@ class HydrogenicGOS(GOSBase):
         z = self.Z
         r = 13.606
         zs = z - 0.35 * (8 - 1) - 1.7
-        iz = np.fix(z) - 12
-        u = XU[np.int(iz)]
+        iz = z - 11
+        if iz >= len(XU):
+            # Egerton does not tabulate the correction for Z>36.
+            # This produces XSs that are within 10% of Hartree-Slater XSs
+            # for these elements.
+            u = .1
+        else:
+            # Egerton's correction to the Hydrogenic XS
+            u = XU[np.int(iz)]
         #el3 = IE3[np.int(iz) - 1]
         #el1 = IE1[np.int(iz) - 1]
         el3 = self.onset_energy_L3 + self.energy_shift
@@ -193,6 +200,9 @@ class HydrogenicGOS(GOSBase):
                                                              + 65 / 48) * q + kh2 ** 3 / 3 + 0.75 * kh2 * kh2 + 23 / 48 * kh2 + 5 / 64
             a = ((q - kh2 + 0.25) ** 2 + kh2) ** 4
         rf = ((E + 0.1 - el3) / 1.8 / z / z) ** u
+        # The following commented lines are to give a more accurate GOS
+        # for edges presenting white lines. However, this is not relevant
+        # for quantification by curve fitting.
         # if np.abs(iz - 11) <= 5 and E - el3 <= 20:
             #rf = 1
         return rf * 32 * g * c / a / d * E / r / r / zs ** 4
