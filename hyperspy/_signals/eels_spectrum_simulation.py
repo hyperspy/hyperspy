@@ -20,14 +20,15 @@
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy._signals.spectrum_simulation import SpectrumSimulation
 
+
 class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
     pass
 
 
-#    @auto_replot       
+#    @auto_replot
 #    def add_energy_instability(self, std):
 #        """Introduce random energy instability
-#        
+#
 #        Parameters
 #        ----------
 #        std : float
@@ -38,28 +39,28 @@ class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
 #        """
 #        if abs(std) > 0:
 #            delta_map = np.random.normal(
-#            size = (self.xdimension, self.ydimension), 
+#            size = (self.xdimension, self.ydimension),
 #            scale = abs(std))
 #        else:
-#            delta_map = np.zeros((self.xdimension, 
+#            delta_map = np.zeros((self.xdimension,
 #                    self.ydimension))
 #        for edge in self.edges:
 #            edge.delta.map = delta_map
-#            edge.delta.already_set_map = np.ones((self.xdimension, 
+#            edge.delta.already_set_map = np.ones((self.xdimension,
 #            self.ydimension), dtype = 'Bool')
 #        return delta_map
-    
-        
-        
-#    def simulate(self, maps = None, energy_instability = 0, 
+
+
+
+#    def simulate(self, maps = None, energy_instability = 0,
 #    min_intensity = 0., max_intensity = 1.):
 #        """Create a simulated SI.
-#        
-#        If an image is provided, it will use each RGB color channel as the 
-#        intensity map of each three elements that must be previously defined as 
-#        a set in self.elements. Otherwise it will create a random map for each 
+#
+#        If an image is provided, it will use each RGB color channel as the
+#        intensity map of each three elements that must be previously defined as
+#        a set in self.elements. Otherwise it will create a random map for each
 #        element defined.
-#        
+#
 #        Parameters
 #        ----------
 #        maps : list/tuple of arrays
@@ -70,10 +71,10 @@ class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
 #            minimum edge intensity
 #        max_intensity : float
 #            maximum edge intensity
-#            
+#
 #        Returns
 #        -------
-#        
+#
 #        If energy_instability != 0 it returns the energy shift map
 #        """
 #        if maps is not None:
@@ -83,7 +84,7 @@ class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
 #            self.yscale = 1.
 #            i = 0
 #            if energy_instability > 0:
-#                delta_map = np.random.normal(np.zeros((self.xdimension, 
+#                delta_map = np.random.normal(np.zeros((self.xdimension,
 #                self.ydimension)), energy_instability)
 #            for edge in self.edges:
 #                edge.fine_structure_active = False
@@ -107,20 +108,20 @@ class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
 #            elements"
 #            i = 0
 #            if energy_instability:
-#                delta_map = np.random.normal(np.zeros((self.xdimension, 
+#                delta_map = np.random.normal(np.zeros((self.xdimension,
 #                self.ydimension)), energy_instability)
 #                print delta_map.shape
 #            size = self.xdimension * self.ydimension
 #            for edge in self.edges:
 #                edge.fine_structure_active = False
 #                if not edge.intensity.twin:
-#                    edge.intensity.map = np.random.uniform(0, max_intensity, 
+#                    edge.intensity.map = np.random.uniform(0, max_intensity,
 #                    size).reshape(self.xdimension, self.ydimension)
-#                    edge.intensity.already_set_map = np.ones((self.xdimension, 
+#                    edge.intensity.already_set_map = np.ones((self.xdimension,
 #                    self.ydimension), dtype = 'Bool')
 #                    if energy_instability:
 #                        edge.delta.map = delta_map
-#                        edge.delta.already_set_map = np.ones((self.xdimension, 
+#                        edge.delta.already_set_map = np.ones((self.xdimension,
 #                        self.ydimension), dtype = 'Bool')
 #                    i += 1
 #            self.create_data_cube()

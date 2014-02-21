@@ -5,12 +5,14 @@
 """
 generate the rst files for the examples by iterating over the examples
 """
-import os, glob
+import os
+import glob
 
 import os
 import re
 import sys
 fileList = []
+
 
 def out_of_date(original, derived):
     """
@@ -26,6 +28,7 @@ def out_of_date(original, derived):
 
 noplot_regex = re.compile(r"#\s*-\*-\s*noplot\s*-\*-")
 
+
 def generate_example_rst(app):
     rootdir = os.path.join(app.builder.srcdir, 'hspy_examples')
     exampledir = os.path.join(app.builder.srcdir, 'examples')
@@ -35,18 +38,17 @@ def generate_example_rst(app):
     datad = {}
     for root, subFolders, files in os.walk(rootdir):
         for fname in files:
-            if ( fname.startswith('.') or fname.startswith('#')
-                 or fname.startswith('_') or not fname.endswith('.py') ):
+            if (fname.startswith('.') or fname.startswith('#')
+                    or fname.startswith('_') or not fname.endswith('.py')):
                 continue
 
-            fullpath = os.path.join(root,fname)
+            fullpath = os.path.join(root, fname)
             contents = file(fullpath).read()
             # indent
             relpath = os.path.split(root)[-1]
             datad.setdefault(relpath, []).append((fullpath, fname, contents))
 
-    subdirs = datad.keys()
-    subdirs.sort()
+    subdirs = sorted(datad.keys())
 
     fhindex = file(os.path.join(exampledir, 'index.rst'), 'w')
     fhindex.write("""\
@@ -81,7 +83,7 @@ Hyperspy Examples
 
         subdirIndexFile = os.path.join(rstdir, 'index.rst')
         fhsubdirIndex = file(subdirIndexFile, 'w')
-        fhindex.write('    %s/index.rst\n\n'%subdir)
+        fhindex.write('    %s/index.rst\n\n' % subdir)
 
         fhsubdirIndex.write("""\
 .. _%s-examples-index:
@@ -98,36 +100,38 @@ Hyperspy Examples
 .. toctree::
     :maxdepth: 1
 
-"""%(subdir, subdir))
+""" % (subdir, subdir))
 
         sys.stdout.write(subdir + ", ")
         sys.stdout.flush()
 
-        data = datad[subdir]
-        data.sort()
+        data = sorted(datad[subdir])
 
         for fullpath, fname, contents in data:
             basename, ext = os.path.splitext(fname)
             outputfile = os.path.join(outputdir, fname)
             #thumbfile = os.path.join(thumb_dir, '%s.png'%basename)
-            #print '    static_dir=%s, basename=%s, fullpath=%s, fname=%s, thumb_dir=%s, thumbfile=%s'%(static_dir, basename, fullpath, fname, thumb_dir, thumbfile)
+            # print '    static_dir=%s, basename=%s, fullpath=%s, fname=%s,
+            # thumb_dir=%s, thumbfile=%s'%(static_dir, basename, fullpath,
+            # fname, thumb_dir, thumbfile)
 
-            rstfile = '%s.rst'%basename
+            rstfile = '%s.rst' % basename
             outrstfile = os.path.join(rstdir, rstfile)
 
-            fhsubdirIndex.write('    %s <%s>\n'%(os.path.basename(basename),rstfile))
+            fhsubdirIndex.write(
+                '    %s <%s>\n' %
+                (os.path.basename(basename), rstfile))
 
             if not out_of_date(fullpath, outrstfile):
                 continue
 
             fh = file(outrstfile, 'w')
-            fh.write('.. _%s-%s:\n\n'%(subdir, basename))
-            title = '%s example code: %s'%(subdir, fname)
+            fh.write('.. _%s-%s:\n\n' % (subdir, basename))
+            title = '%s example code: %s' % (subdir, fname)
             #title = '<img src=%s> %s example code: %s'%(thumbfile, subdir, fname)
 
-
             fh.write(title + '\n')
-            fh.write('='*len(title) + '\n\n')
+            fh.write('=' * len(title) + '\n\n')
 
             do_plot = (subdir in ('api',
                                   'pylab_examples',
@@ -146,10 +150,12 @@ Hyperspy Examples
                 fhstatic.close()
 
             # indent the contents
-            contents = '\n'.join(['    %s'%row.rstrip() for row in contents.split('\n')])
+            contents = '\n'.join(['    %s' % row.rstrip()
+                                 for row in contents.split('\n')])
             fh.write(contents)
 
-            fh.write('\n\nKeywords: hyperspy, example, codex (see :ref:`how-to-search-examples`)')
+            fh.write(
+                '\n\nKeywords: hyperspy, example, codex (see :ref:`how-to-search-examples`)')
             fh.close()
 
         fhsubdirIndex.close()
@@ -157,6 +163,7 @@ Hyperspy Examples
     fhindex.close()
 
     print
+
 
 def setup(app):
     app.connect('builder-inited', generate_example_rst)

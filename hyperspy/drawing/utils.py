@@ -289,7 +289,7 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 def _make_heatmap_subplot(spectra):
     from hyperspy._signals.image import Image
     im = Image(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
-    im.mapped_parameters.title = spectra.mapped_parameters.title
+    im.metadata.title = spectra.metadata.title
     im.plot()
     return im._plot.signal_plot.ax
 
@@ -372,7 +372,7 @@ def plot_spectra(
         colors.
     legend: None or list of str or 'auto'
        If list of string, legend for "cascade" or title for "mosaic" is
-       displayed. If 'auto', the title of each spectra (mapped_parameters.title)
+       displayed. If 'auto', the title of each spectra (metadata.title)
        is used.
     legend_picking: bool
         If true, a spectrum can be toggle on and off by clicking on
@@ -425,7 +425,7 @@ def plot_spectra(
 
     if legend is not None:
         if legend == 'auto':
-            legend = [spec.mapped_parameters.title for spec in spectra]
+            legend = [spec.metadata.title for spec in spectra]
         elif hasattr(legend, "__iter__"):
             legend = itertools.cycle(legend)
         else:
@@ -573,7 +573,7 @@ def plot_histograms(signal_list,
         If `None`, use continuous lines, eg: ('-','--','steps','-.',':')
     legend: None or list of str or 'auto', otional.
        Display a legend. If 'auto', the title of each spectra
-       (mapped_parameters.title) is used.
+       (metadata.title) is used.
     legend_picking: bool, otional.
         If true, a spectrum can be toggle on and off by clicking on
         the legended line.
