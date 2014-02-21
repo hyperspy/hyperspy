@@ -20,22 +20,24 @@ import numpy as np
 
 from hyperspy.component import Component, Parameter
 
+
 class Bleasdale(Component):
+
     """Bleasdale function component.
-    
+
     f(x) = (a+b*x)^(-1/c)
-    
+
     Attributes
     ----------
     a : Float
     b : Float
     c : Float
-    
+
     """
 
     def __init__(self):
         # Define the parameters
-        Component.__init__(self, ('a', 'b', 'c'))        
+        Component.__init__(self, ('a', 'b', 'c'))
         # Define the name of the component
 
     def function(self, x):
@@ -44,8 +46,8 @@ class Bleasdale(Component):
         a = self.a.value
         b = self.b.value
         c = self.c.value
-        return (a+b*x)**(-1./c)
-    
+        return (a + b * x) ** (-1. / c)
+
     def grad_a(self, x):
         """
         Returns d(function)/d(parameter_1)
@@ -53,9 +55,9 @@ class Bleasdale(Component):
         a = self.a.value
         b = self.b.value
         c = self.c.value
-        
-        return -(b*x+a)**(-1./c-1.)/c
-    
+
+        return -(b * x + a) ** (-1. / c - 1.) / c
+
     def grad_b(self, x):
         """
         Returns d(function)/d(parameter_1)
@@ -63,9 +65,9 @@ class Bleasdale(Component):
         a = self.a.value
         b = self.b.value
         c = self.c.value
-        
-        return -(x*(b*x+a)**(-1/c-1))/c
-    
+
+        return -(x * (b * x + a) ** (-1 / c - 1)) / c
+
     def grad_c(self, x):
         """
         Returns d(function)/d(parameter_1)
@@ -73,4 +75,4 @@ class Bleasdale(Component):
         a = self.a.value
         b = self.b.value
         c = self.c.value
-        return np.log(b*x+a)/(c**2.*(b*x+a)**(1./c))
+        return np.log(b * x + a) / (c ** 2. * (b * x + a) ** (1. / c))

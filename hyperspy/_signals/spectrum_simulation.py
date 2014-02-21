@@ -20,9 +20,6 @@
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy._signals.simulation import Simulation
 
+
 class SpectrumSimulation(Simulation, Spectrum):
     pass
-
-
-
-

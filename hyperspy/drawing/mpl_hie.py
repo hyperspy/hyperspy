@@ -19,8 +19,9 @@
 from hyperspy.drawing import image, utils
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
 
+
 class MPL_HyperImage_Explorer(MPL_HyperExplorer):
-        
+
     def plot_signal(self):
         if self.signal_plot is not None:
             self.signal_plot.plot()
@@ -33,9 +34,9 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.plot_colorbar = True
         imf.plot()
         self.signal_plot = imf
-        
+
         if self.navigator_plot is not None and imf.figure is not None:
-            utils.on_figure_window_close(self.navigator_plot.figure, 
+            utils.on_figure_window_close(self.navigator_plot.figure,
                                          self.close_navigator_plot)
             utils.on_figure_window_close(
                 imf.figure, self.close_navigator_plot)

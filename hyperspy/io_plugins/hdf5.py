@@ -16,8 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-import h5py
+from distutils.version import StrictVersion
+import warnings
 
+import h5py
 import numpy as np
 from traits.api import Undefined
 
@@ -28,7 +30,7 @@ from hyperspy.axes import AxesManager
 # ----------------------
 format_name = 'HDF5'
 description = \
-    'The default file format for Hyperspy based on the HDF5 standard' 
+    'The default file format for Hyperspy based on the HDF5 standard'
 
 full_suport = False
 # Recognised file extension
@@ -37,7 +39,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
-version = 1.1
+version = "1.1"
 
 # -----------------------
 # File format description
@@ -50,17 +52,17 @@ version = 1.1
 # In addition a number equal to the number of dimensions of the data
 # dataset + 1 of empty groups called coordinates followed by a number
 # must exists with the following attributes:
-#    'name' 
-#    'offset' 
-#    'scale' 
-#    'units' 
+#    'name'
+#    'offset'
+#    'scale'
+#    'units'
 #    'size'
 #    'index_in_array'
 # The experiment group contains a number of attributes that will be
 # directly assigned as class attributes of the Signal instance. In
-# addition the experiment groups may contain 'original_parameters' and 
-# 'mapped_parameters'subgroup that will be 
-# assigned to the same name attributes of the Signal instance as a 
+# addition the experiment groups may contain 'original_metadata' and
+# 'metadata'subgroup that will be
+# assigned to the same name attributes of the Signal instance as a
 # Dictionary Browsers
 # The Experiments group can contain attributes that may be common to all
 # the experiments and that will be accessible as attribures of the
@@ -68,11 +70,39 @@ version = 1.1
 
 not_valid_format = 'The file is not a valid Hyperspy hdf5 file'
 
-def file_reader(filename, record_by, mode = 'r', driver = 'core', 
-                backing_store = False, **kwds):
+current_file_version = None
+latest_file_version = StrictVersion(version)
+
+
+def get_hspy_format_version(f):
+    if "file_format_version" in f.attrs:
+        version = f.attrs["file_format_version"]
+        if isinstance(version, float):
+            version = str(round(version, 2))
+    elif "Experiments" in f:
+        # Chances are that this is a HSpy hdf5 file version 1.0
+        version = "1.0"
+    else:
+        raise IOError(not_valid_format)
+    return StrictVersion(version)
+
+
+def file_reader(filename, record_by, mode='r', driver='core',
+                backing_store=False, **kwds):
     with h5py.File(filename, mode=mode, driver=driver) as f:
-        # If the file has been created with Hyperspy it should cointain a
-        # folder Experiments.
+        # Getting the format version here also checks if it is a valid HSpy
+        # hdf5 file, so the following two lines must not be deleted or moved
+        # elsewhere.
+        global current_file_version
+        current_file_version = get_hspy_format_version(f)
+        global latest_file_version
+        if current_file_version > latest_file_version:
+            warnings.warn("This file was written using a newer version of "
+                          "HyperSpy. I will attempt to load it, but, "
+                          "if I fail, "
+                          "it is likely that I will be more successful at this "
+                          "and other tasks if you upgrade me.")
+
         experiments = []
         exp_dict_list = []
         if 'Experiments' in f:
@@ -85,15 +115,26 @@ def file_reader(filename, record_by, mode = 'r', driver = 'core',
             # Parse the file
             for experiment in experiments:
                 exg = f['Experiments'][experiment]
-                exp=hdfgroup2signaldict(exg)
+                exp = hdfgroup2signaldict(exg)
                 exp_dict_list.append(exp)
         else:
-            # Eventually there will be the possibility of loading the
-            # datasets of any hdf5 file
-            raise IOError('This is not a Hyperspy HDF5')
+            raise IOError('This is not a valid HyperSpy HDF5 file. '
+                          'You can still load the data using a hdf5 reader, '
+                          'e.g. h5py, and manually create a Signal. '
+                          'Please, refer to the User Guide for details')
         return exp_dict_list
 
+
 def hdfgroup2signaldict(group):
+    global current_file_version
+    global latest_file_version
+    if current_file_version < StrictVersion("1.2"):
+        metadata = "mapped_parameters"
+        original_metadata = "original_parameters"
+    else:
+        metadata = "metadata"
+        original_metadata = "original_metadata"
+
     exp = {}
     exp['data'] = group['data'][:]
     axes = []
@@ -105,57 +146,59 @@ def hdfgroup2signaldict(group):
     for axis in axes:
         for key, item in axis.iteritems():
             axis[key] = ensure_unicode(item)
-    exp['mapped_parameters'] = hdfgroup2dict(
-        group['mapped_parameters'], {})
-    exp['original_parameters'] = hdfgroup2dict(
-        group['original_parameters'], {})
+    exp['metadata'] = hdfgroup2dict(
+        group[metadata], {})
+    exp['original_metadata'] = hdfgroup2dict(
+        group[original_metadata], {})
     exp['axes'] = axes
-    exp['attributes']={}
+    exp['attributes'] = {}
     if 'learning_results' in group.keys():
         exp['attributes']['learning_results'] = \
-            hdfgroup2dict(group['learning_results'],{})
+            hdfgroup2dict(group['learning_results'], {})
     if 'peak_learning_results' in group.keys():
         exp['attributes']['peak_learning_results'] = \
-            hdfgroup2dict(group['peak_learning_results'],{})
-        
-    # Load the decomposition results written with the old name,
-    # mva_results
-    if 'mva_results' in group.keys():
-        exp['attributes']['learning_results'] = hdfgroup2dict(
-            group['mva_results'],{})
-    if 'peak_mva_results' in group.keys():
-        exp['attributes']['peak_learning_results']=hdfgroup2dict(
-            group['peak_mva_results'],{})
-    # Replace the old signal and name keys with their current names
-    if 'signal' in exp['mapped_parameters']:
-        exp['mapped_parameters']['signal_type'] = \
-            exp['mapped_parameters']['signal']
-        del exp['mapped_parameters']['signal']
-        
-    if 'name' in exp['mapped_parameters']:
-        exp['mapped_parameters']['title'] = \
-            exp['mapped_parameters']['name']
-        del exp['mapped_parameters']['name']
-    
-    # If the title was not defined on writing the Experiment is 
+            hdfgroup2dict(group['peak_learning_results'], {})
+
+    # If the title was not defined on writing the Experiment is
     # then called __unnamed__. The next "if" simply sets the title
     # back to the empty string
-    if '__unnamed__' == exp['mapped_parameters']['title']:
-        exp['mapped_parameters']['title'] = ''
-        
+    if '__unnamed__' == exp['metadata']['title']:
+        exp['metadata']['title'] = ''
+
+    if current_file_version < StrictVersion("1.1"):
+        # Load the decomposition results written with the old name,
+        # mva_results
+        if 'mva_results' in group.keys():
+            exp['attributes']['learning_results'] = hdfgroup2dict(
+                group['mva_results'], {})
+        if 'peak_mva_results' in group.keys():
+            exp['attributes']['peak_learning_results'] = hdfgroup2dict(
+                group['peak_mva_results'], {})
+        # Replace the old signal and name keys with their current names
+        if 'signal' in exp['metadata']:
+            exp['metadata']['signal_type'] = \
+                exp['metadata']['signal']
+            del exp['metadata']['signal']
+
+        if 'name' in exp['metadata']:
+            exp['metadata']['title'] = \
+                exp['metadata']['name']
+            del exp['metadata']['name']
+
     return exp
 
+
 def dict2hdfgroup(dictionary, group, compression=None):
-    from hyperspy.misc.utils import DictionaryBrowser
+    from hyperspy.misc.utils import DictionaryTreeBrowser
     from hyperspy.signal import Signal
     for key, value in dictionary.iteritems():
         if isinstance(value, dict):
-            dict2hdfgroup(value, group.create_group(key), 
-                          compression = compression)
-        elif isinstance(value, DictionaryBrowser):
+            dict2hdfgroup(value, group.create_group(key),
+                          compression=compression)
+        elif isinstance(value, DictionaryTreeBrowser):
             dict2hdfgroup(value.as_dictionary(),
                           group.create_group(key),
-                          compression = compression)
+                          compression=compression)
         elif isinstance(value, Signal):
             if key.startswith('_sig_'):
                 try:
@@ -167,16 +210,19 @@ def dict2hdfgroup(dictionary, group, compression=None):
         elif isinstance(value, np.ndarray):
             group.create_dataset(key,
                                  data=value,
-                                 compression = compression)
+                                 compression=compression)
         elif value is None:
             group.attrs[key] = '_None_'
-        elif isinstance(value, basestring):
-            group.attrs[key] = value.encode('utf8',
-                                            errors='ignore')
+        elif isinstance(value, str):
+            try:
+                # Store strings as unicode using the default encoding
+                group.attrs[key] = unicode(value)
+            except UnicodeEncodeError:
+                pass
         elif isinstance(value, AxesManager):
             dict2hdfgroup(value.as_dictionary(),
                           group.create_group('_hspy_AxesManager_'
-                                             + key), 
+                                             + key),
                           compression=compression)
         elif value is Undefined:
             continue
@@ -185,24 +231,19 @@ def dict2hdfgroup(dictionary, group, compression=None):
                 group.attrs[key] = value
             except:
                 print("The hdf5 writer could not write the following "
-                "information in the file")
+                      "information in the file")
                 print('%s : %s' % (key, value))
-            
-def hdfgroup2dict(group, dictionary = {}):
+
+
+def hdfgroup2dict(group, dictionary={}):
     for key, value in group.attrs.iteritems():
-        if type(value) is np.string_:
+        if isinstance(value, np.string_):
             if value == '_None_':
                 value = None
-            else:
-                try:
-                    value = value.decode('utf8')
-                except UnicodeError:
-                    # For old files
-                    value = value.decode('latin-1')
-        elif type(value) is np.bool_:
+        elif isinstance(value, np.bool_):
             value = bool(value)
-                    
-        elif type(value) is np.ndarray and \
+
+        elif isinstance(value, np.ndarray) and \
                 value.dtype == np.dtype('|S1'):
             value = value.tolist()
         # skip signals - these are handled below.
@@ -215,18 +256,19 @@ def hdfgroup2dict(group, dictionary = {}):
             if key.startswith('_sig_'):
                 from hyperspy.io import dict2signal
                 dictionary[key[len('_sig_'):]] = (
-                dict2signal(hdfgroup2signaldict(group[key])))
-            elif isinstance(group[key],h5py.Dataset):
-                dictionary[key]=np.array(group[key])
+                    dict2signal(hdfgroup2signaldict(group[key])))
+            elif isinstance(group[key], h5py.Dataset):
+                dictionary[key] = np.array(group[key])
             elif key.startswith('_hspy_AxesManager_'):
                 dictionary[key[len('_hspy_AxesManager_'):]] = \
-                    AxesManager([i 
-                        for k, i in sorted(iter(
-                            hdfgroup2dict(group[key]).iteritems()))])
+                    AxesManager([i
+                                 for k, i in sorted(iter(
+                                     hdfgroup2dict(group[key]).iteritems()))])
             else:
                 dictionary[key] = {}
                 hdfgroup2dict(group[key], dictionary[key])
     return dictionary
+
 
 def write_signal(signal, group, compression='gzip'):
     group.create_dataset('data',
@@ -238,28 +280,29 @@ def write_signal(signal, group, compression='gzip'):
         del(axis_dict['navigate'])
         coord_group = group.create_group(
             'axis-%s' % axis.index_in_array)
-        dict2hdfgroup(axis_dict, coord_group, compression = compression)
+        dict2hdfgroup(axis_dict, coord_group, compression=compression)
     mapped_par = group.create_group('mapped_parameters')
-    dict2hdfgroup(signal.mapped_parameters.as_dictionary(), 
-                  mapped_par, compression = compression)
+    dict2hdfgroup(signal.metadata.as_dictionary(),
+                  mapped_par, compression=compression)
     original_par = group.create_group('original_parameters')
-    dict2hdfgroup(signal.original_parameters.as_dictionary(), 
-                  original_par, compression = compression)
+    dict2hdfgroup(signal.original_metadata.as_dictionary(),
+                  original_par, compression=compression)
     learning_results = group.create_group('learning_results')
-    dict2hdfgroup(signal.learning_results.__dict__, 
-                  learning_results, compression = compression)
-    if hasattr(signal,'peak_learning_results'):
+    dict2hdfgroup(signal.learning_results.__dict__,
+                  learning_results, compression=compression)
+    if hasattr(signal, 'peak_learning_results'):
         peak_learning_results = group.create_group(
             'peak_learning_results')
-        dict2hdfgroup(signal.peak_learning_results.__dict__, 
-                  peak_learning_results, compression = compression)
-                                                                        
-def file_writer(filename, signal, compression = 'gzip', *args, **kwds):
-    with h5py.File(filename, mode = 'w') as f:
-        f.attrs['file_format'] = "Hyperspy"
+        dict2hdfgroup(signal.peak_learning_results.__dict__,
+                      peak_learning_results, compression=compression)
+
+
+def file_writer(filename, signal, compression='gzip', *args, **kwds):
+    with h5py.File(filename, mode='w') as f:
+        f.attrs['file_format'] = "HyperSpy"
         f.attrs['file_format_version'] = version
         exps = f.create_group('Experiments')
-        group_name = signal.mapped_parameters.title if \
-                     signal.mapped_parameters.title else '__unnamed__'
+        group_name = signal.metadata.title if \
+            signal.metadata.title else '__unnamed__'
         expg = exps.create_group(group_name)
-        write_signal(signal,expg, compression = compression)
+        write_signal(signal, expg, compression=compression)

@@ -1,6 +1,7 @@
 import numpy as np
 
-def amari(C,A):
+
+def amari(C, A):
     """Amari test for ICA
     Adapted from the MILCA package http://www.klab.caltech.edu/~kraskov/MILCA/
 
@@ -9,26 +10,27 @@ def amari(C,A):
     C : numpy array
     A : numpy array
     """
-    b,a = C.shape
+    b, a = C.shape
 
-    dummy= np.dot(np.linalg.pinv(A),C)
-    dummy = np.sum(_ntu(np.abs(dummy)),0)-1
+    dummy = np.dot(np.linalg.pinv(A), C)
+    dummy = np.sum(_ntu(np.abs(dummy)), 0) - 1
 
-    dummy2 = np.dot(np.linalg.pinv(C),A)
-    dummy2 = np.sum(_ntu(np.abs(dummy2)),0)-1
+    dummy2 = np.dot(np.linalg.pinv(C), A)
+    dummy2 = np.sum(_ntu(np.abs(dummy2)), 0) - 1
 
-    out=(np.sum(dummy)+np.sum(dummy2))/(2*a*(a-1))
+    out = (np.sum(dummy) + np.sum(dummy2)) / (2 * a * (a - 1))
     return out
+
 
 def _ntu(C):
     m, n = C.shape
     CN = C.copy() * 0
     for t in xrange(n):
-        CN[:,t] = C[:,t] / np.max(np.abs(C[:,t]))
+        CN[:, t] = C[:, t] / np.max(np.abs(C[:, t]))
     return CN
-    
 
-#def ALS(s, thresh =.001, nonnegS = True, nonnegC = True):
+
+# def ALS(s, thresh =.001, nonnegS = True, nonnegC = True):
 #    """Alternate least squares
 #
 #    Wrapper around the R's ALS package
@@ -48,10 +50,10 @@ def _ntu(C):
 #    Dictionary
 #    """
 #    import_rpy()
-##    Format
-##    ic format (channels, components)
-##    W format (experiment, components)
-##    s format (experiment, channels)
+# Format
+# ic format (channels, components)
+# W format (experiment, components)
+# s format (experiment, channels)
 #
 #    nonnegS = 'TRUE' if nonnegS is True else 'FALSE'
 #    nonnegC = 'TRUE' if nonnegC is True else 'FALSE'
@@ -69,7 +71,7 @@ def _ntu(C):
 #    rpy.r['<-']('W', W)
 #    rpy.r['<-']('ic', ic)
 #    i = 0
-#    # Workaround a bug in python rpy version 1
+# Workaround a bug in python rpy version 1
 #    while hasattr(rpy.r, 'test' + str(i)):
 #        rpy.r('test%s = NULL' % i)
 #        i+=1

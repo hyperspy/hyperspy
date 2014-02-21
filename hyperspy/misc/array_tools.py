@@ -7,10 +7,11 @@ except ImportError:
 
 import numpy as np
 
+
 def get_array_memory_size_in_GiB(shape, dtype):
     """Given the size and dtype returns the amount of memory that such
     an array needs to allocate
-    
+
     Parameters
     ----------
     shape: tuple
@@ -19,20 +20,20 @@ def get_array_memory_size_in_GiB(shape, dtype):
     """
     if isinstance(dtype, str):
         dtype = np.dtype(dtype)
-    return np.array(shape).cumprod()[-1] * dtype.itemsize / 2.**30    
+    return np.array(shape).cumprod()[-1] * dtype.itemsize / 2. ** 30
 
-    
+
 def are_aligned(shape1, shape2):
     """Check if two numpy arrays are aligned.
-    
+
     Parameters
     ----------
     shape1, shape2 : iterable
-       
+
     Returns
     -------
     isaligned : bool
-    
+
     """
     isaligned = True
     shape1 = list(shape1)
@@ -46,18 +47,20 @@ def are_aligned(shape1, shape2):
     except IndexError:
         return isaligned
     return isaligned
-    
+
+
 def homogenize_ndim(*args):
     """Given any number of arrays returns the same arrays
     reshaped by adding facing dimensions of size 1.
-    
+
     """
-    
+
     max_len = max([len(ary.shape) for ary in args])
-    
+
     return [ary.reshape((1,) * (max_len - len(ary.shape)) + ary.shape)
             for ary in args]
-                
+
+
 def rebin(a, new_shape):
     """Rebin array.
 
@@ -74,27 +77,27 @@ def rebin(a, new_shape):
     Returns
     -------
     numpy array
-    
+
     Examples
     --------
     >>> a=rand(6,4); b=rebin(a,(3,2))
     >>> a=rand(6); b=rebin(a,(2,))
-    
+
     Notes
     -----
     Adapted from scipy cookbook
-    
+
     """
     shape = a.shape
     lenShape = len(shape)
-    factor = np.asarray(shape)/np.asarray(new_shape)
+    factor = np.asarray(shape) / np.asarray(new_shape)
     evList = ['a.reshape('] + \
-             ['new_shape[%d],factor[%d],'%(i,i) for i in xrange(lenShape)] + \
-             [')'] + ['.sum(%d)'%(i+1) for i in xrange(lenShape)]
+             ['new_shape[%d],factor[%d],' % (i, i) for i in xrange(lenShape)] + \
+             [')'] + ['.sum(%d)' % (i + 1) for i in xrange(lenShape)]
     return eval(''.join(evList))
-    
 
-def sarray2dict(sarray, dictionary = None):
+
+def sarray2dict(sarray, dictionary=None):
     '''Converts a struct array to an ordered dictionary
 
     Parameters
@@ -115,10 +118,10 @@ def sarray2dict(sarray, dictionary = None):
         else:
             print("\nWARNING:")
             print("sarray2dict")
-            print("OrderedDict is not available, using a standard dictionary.\n")
+            print(
+                "OrderedDict is not available, using a standard dictionary.\n")
             dictionary = {}
     for name in sarray.dtype.names:
         dictionary[name] = sarray[name][0] if len(sarray[name]) == 1 \
-        else sarray[name]
+            else sarray[name]
     return dictionary
-

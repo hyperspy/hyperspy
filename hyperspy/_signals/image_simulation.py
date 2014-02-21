@@ -20,9 +20,6 @@
 from hyperspy._signals.image import Image
 from hyperspy._signals.simulation import Simulation
 
+
 class ImageSimulation(Simulation, Image):
     pass
-
-
-
-
