@@ -96,8 +96,8 @@ class VolumePlasmonDrude(Component):
         return np.where(x > 0,
                         x * plasmon_energy * ((x ** 4 - x ** 2 * (2 * plasmon_energy ** 2
                                                                   + fwhm ** 2) + plasmon_energy ** 4) / (x ** 4 + x ** 2
-                                                                                                                      * (fwhm ** 2 - 2 * plasmon_energy ** 2)
-                                                                                                                      + plasmon_energy ** 4) ** 2) * intensity, 0)
+                                                                                                         * (fwhm ** 2 - 2 * plasmon_energy ** 2)
+                                                                                                         + plasmon_energy ** 4) ** 2) * intensity, 0)
 
     def grad_intensity(self, x):
         return self.function(x) / self.intensity.value

@@ -61,7 +61,7 @@ class Test2D:
         vpm.plasmon_energy.map['values'] = np.array([[8., 18.4, 15.8],
                                                      [16.6, 4.3, 3.7]])
         vpm.fwhm.map['values'] = np.array([[2.3, 4.8, 0.53],
-                                                        [3.7, 0.3, 0.3]])
+                                           [3.7, 0.3, 0.3]])
         vpm.intensity.map['is_set'][:] = True
         vpm.plasmon_energy.map['is_set'][:] = True
         vpm.fwhm.map['is_set'][:] = True
