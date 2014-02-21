@@ -40,7 +40,6 @@ class Test_Utils_Stack():
         assert_true((hasattr(s4.original_metadata, 'stack_elements')is False))
         assert_true((s4.metadata.title == 'test'))
 
-
     def test_stack_not_default(self):
         s = self.signal
         s1 = s.deepcopy() + 1
