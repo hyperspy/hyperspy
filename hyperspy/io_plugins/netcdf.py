@@ -151,8 +151,9 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             print \
                 "Warning: the \'%s\' attribute is not defined in the file\
             " % attrib[0]
-    original_metadata = {'record_by': ncfile.type, 'calibration': calibration_dict,
-                         'acquisition': acquisition_dict, 'treatments': treatments_dict}
+    original_metadata = {
+        'record_by': ncfile.type, 'calibration': calibration_dict,
+        'acquisition': acquisition_dict, 'treatments': treatments_dict}
     ncfile.close()
     # Now we'll map some parameters
     record_by = 'image' if original_metadata[

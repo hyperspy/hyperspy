@@ -54,7 +54,7 @@ if are_we_building4windows() or os.name in ['nt', 'dos']:
     # (code adapted from scitools)
     scripts.extend(('bin/win_post_installation.py',
                    'bin/install_hyperspy_here.py',
-                   'bin/uninstall_hyperspy_here.py'))
+                    'bin/uninstall_hyperspy_here.py'))
     batch_files = []
     for script in scripts:
         batch_file = os.path.splitext(script)[0] + '.bat'

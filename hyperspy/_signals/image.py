@@ -98,7 +98,7 @@ class Image(Signal):
         img_data = np.rollaxis(img_data, 0, 3)
         img_data = np.rollaxis(img_data, 0, 2)
         src = mlab.pipeline.scalar_field(img_data)
-        src.name = img_res.mapped_parameters.title
+        src.name = img_res.metadata.title
 
         if hasattr(threshold, "__iter__") is False:
             threshold = [threshold]

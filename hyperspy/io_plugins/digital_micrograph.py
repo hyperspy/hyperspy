@@ -766,10 +766,14 @@ class ImageObject(object):
         return metadata
 
 mapping = {
-    "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions.Collection_semi_angle_mrad": ("TEM.EELS.collection_angle", None),
-    "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions.Convergence_semi_angle_mrad": ("TEM.convergence_angle", None),
-    "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector.exposure_s": ("TEM.dwell_time", None),
-    "ImageList.TagGroup0.ImageTags.Microscope_Info.Voltage": ("TEM.beam_energy", lambda x: x / 1e3)
+    "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions.Collection_semi_angle_mrad":
+    ("TEM.EELS.collection_angle", None),
+    "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions.Convergence_semi_angle_mrad":
+    ("TEM.convergence_angle", None),
+    "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector.exposure_s":
+    ("TEM.dwell_time", None),
+    "ImageList.TagGroup0.ImageTags.Microscope_Info.Voltage":
+    ("TEM.beam_energy", lambda x: x / 1e3)
 }
 
 
