@@ -110,6 +110,9 @@ To close all the figures run the following command:
     learn how to pan/zoom and more  `in the matplotlib documentation
     <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
 
+
+.. _visualization_multi_dim:
+
 Visualisation of multi-dimensional data
 ****************************************
 
@@ -154,7 +157,7 @@ plotted with sliders.
 
 .. code-block:: python
 
-    >>> spec = load('spectrum_image*.tif', stack=True)
+    >>> spec = load('spectrum_image*.rpl', stack=True)
     >>> spec.plot()
     
     
@@ -287,7 +290,7 @@ legended line, a spectrum can be toggled on and off.
      >>> for sigma in range(1, 10):
      ...         g.sigma.value = sigma
      ...         gs = m.as_signal()
-     ...         gs.mapped_parameters.title = "sigma=%i" % sigma
+     ...         gs.metadata.title = "sigma=%i" % sigma
      ...         gaussians.append(gs)
      ...         
      >>> utils.plot.plot_spectra(gaussians,legend='auto')

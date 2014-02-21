@@ -29,7 +29,7 @@ import numpy as np
 
 from hyperspy.misc.io.utils_readfile import *
 from hyperspy import Release
-from hyperspy.misc.utils import DictionaryBrowser
+from hyperspy.misc.utils import DictionaryTreeBrowser
 
 # Plugin characteristics
 # ----------------------
@@ -406,7 +406,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         rpl_info['signal'] = ""
 
     if 'detector-peak-width-ev' in rpl_info:
-        original_parameters['detector-peak-width-ev'] = \
+        original_metadata['detector-peak-width-ev'] = \
             rpl_info['detector-peak-width-ev']
 
     if 'depth-scale' in rpl_info:
@@ -449,7 +449,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     if 'height-name' in rpl_info:
         names[iheight] = rpl_info['height-name']
 
-    mp = DictionaryBrowser({
+    mp = DictionaryTreeBrowser({
         'record_by': record_by,
         'original_filename': os.path.split(filename)[1],
         'signal_type': rpl_info['signal'],
@@ -497,8 +497,8 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     dictionary = {
         'data': data.squeeze(),
         'axes': axes,
-        'mapped_parameters': mp.as_dictionary(),
-        'original_parameters': rpl_info
+        'metadata': mp.as_dictionary(),
+        'original_metadata': rpl_info
     }
     return [dictionary, ]
 
@@ -526,8 +526,8 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
     data_type, data_length = dtype2keys[dc.dtype.name]
     byte_order = endianess2rpl[dc.dtype.byteorder.replace('|', '=')]
     offset = 0
-    if hasattr(signal.mapped_parameters, 'signal_type'):
-        signal_type = signal.mapped_parameters.signal_type
+    if hasattr(signal.metadata, 'signal_type'):
+        signal_type = signal.metadata.signal_type
     else:
         signal_type = ""
     if signal.axes_manager.signal_dimension == 1:
@@ -590,11 +590,11 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
             keys_dictionary['%s-name' % key] = eval(
                 '%s_axis.name' % key)
 
-    if "EDS" in signal.mapped_parameters.signal_type:
-        if signal.mapped_parameters == "EDS_SEM":
-            mp = signal.mapped_parameters.SEM
-        elif self.mapped_parameters == "EDS_TEM":
-            mp = signal.mapped_parameters.TEM
+    if "EDS" in signal.metadata.signal_type:
+        if signal.metadata == "EDS_SEM":
+            mp = signal.metadata.SEM
+        elif self.metadata == "EDS_TEM":
+            mp = signal.metadata.TEM
 
         if mp.has_item('beam_energy'):
             keys_dictionary['beam-energy'] = mp.beam_energy

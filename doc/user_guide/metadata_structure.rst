@@ -1,14 +1,14 @@
-.. _mapped_parameters_structure:
+.. _metadata_structure:
 
 
-Mapped parameters structure
-***************************
+Metadata structure
+******************
 
 General keys
 ============
 
 These are general parameters that are stored in the root of the 
-`mapped_parameters` class.
+`metadata` class.
 
 title
     type: Str
