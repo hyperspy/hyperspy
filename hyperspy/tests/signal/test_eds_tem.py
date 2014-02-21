@@ -82,10 +82,10 @@ class Test_metadata:
         energy_axis.offset = -0.10
         s.get_calibration_from(scalib)
         assert_equal(s.axes_manager.signal_axes[0].scale,
-            energy_axis.scale)
-        
-        
-#class Test_get_lines_intentisity:
+                     energy_axis.scale)
+
+
+# class Test_get_lines_intentisity:
 #    def setUp(self):
 # Create an empty spectrum
 #        s = EDSTEMSpectrum(np.ones((4,2,1024)))
