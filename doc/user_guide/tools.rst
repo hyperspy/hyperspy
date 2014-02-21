@@ -591,7 +591,6 @@ with same dimension.
 
 .. code-block:: python
 
-    >>> import scipy.ndimage
     >>> image = signals.Image(scipy.misc.lena())
     >>> image = utils.stack([utils.stack([image]*3,axis=0)]*3,axis=1)
     >>> image.plot()
