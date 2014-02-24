@@ -1,5 +1,6 @@
 import textwrap
 
+
 class BlittedFigure(object):
 
     def _on_draw(self, *args):
@@ -31,4 +32,3 @@ class BlittedFigure(object):
     def title(self, value):
         # Wrap the title so that each line is not longer than 60 characters.
         self._title = textwrap.fill(value, 60)
-

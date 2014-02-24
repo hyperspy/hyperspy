@@ -32,6 +32,7 @@ class SpectrumFigure(BlittedFigure):
 
     """
     """
+
     def __init__(self, title=""):
         self.figure = None
         self.ax = None
