@@ -226,7 +226,7 @@ def dict2hdfgroup(dictionary, group, compression=None):
                                              + key),
                           compression=compression)
         elif isinstance(value, (datetime.date, datetime.time)):
-                group.attrs["_datetime_" + key] = repr(value)
+            group.attrs["_datetime_" + key] = repr(value)
         elif value is Undefined:
             continue
         else:
