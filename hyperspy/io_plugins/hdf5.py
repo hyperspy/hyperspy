@@ -71,7 +71,7 @@ version = "1.1"
 
 not_valid_format = 'The file is not a valid Hyperspy hdf5 file'
 
-current_file_version = None # Format version of the file being read
+current_file_version = None  # Format version of the file being read
 default_version = StrictVersion(version)
 
 
