@@ -1,3 +1,6 @@
+import textwrap
+
+
 class BlittedFigure(object):
 
     def _on_draw(self, *args):
@@ -20,3 +23,12 @@ class BlittedFigure(object):
             [ax.draw_artist(a) for a in artists if
              a.get_animated() is True]
         canvas.blit(self.figure.bbox)
+
+    @property
+    def title(self):
+        return self._title
+
+    @title.setter
+    def title(self, value):
+        # Wrap the title so that each line is not longer than 60 characters.
+        self._title = textwrap.fill(value, 60)
