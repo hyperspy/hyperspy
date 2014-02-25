@@ -350,7 +350,7 @@ def plot_spectra(
     ----------
     spectra : iterable object
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
-        the spectra can have diffent size and axes.
+        the spectra can have different size and axes.
     style : {'default', 'overlap','cascade', 'mosaic', 'heatmap'}
         The style of the plot. The default is "overlap" and can be
         customized in `preferences`.
@@ -378,7 +378,8 @@ def plot_spectra(
         If true, a spectrum can be toggle on and off by clicking on
         the legended line.
     fig : matplotlib figure or None
-        If None, a default figure will be created.
+        If None, a default figure will be created. Specifying fig will
+        not work for the 'heatmap' style.
 
     Example
     -------
