@@ -240,7 +240,7 @@ def dict2hdfgroup(dictionary, group, compression=None):
 
 def hdfgroup2dict(group, dictionary={}):
     for key, value in group.attrs.iteritems():
-        if isinstance(value, np.string_):
+        if isinstance(value, (np.string_, str)):
             if value == '_None_':
                 value = None
         elif isinstance(value, np.bool_):
