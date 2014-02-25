@@ -18,6 +18,7 @@
 
 from distutils.version import StrictVersion
 import warnings
+import datetime
 
 import h5py
 import numpy as np
@@ -224,6 +225,8 @@ def dict2hdfgroup(dictionary, group, compression=None):
                           group.create_group('_hspy_AxesManager_'
                                              + key),
                           compression=compression)
+        elif isinstance(value, (datetime.date, datetime.time)):
+            group.attrs["_datetime_" + key] = repr(value)
         elif value is Undefined:
             continue
         else:
@@ -249,6 +252,8 @@ def hdfgroup2dict(group, dictionary={}):
         # skip signals - these are handled below.
         if key.startswith('_sig_'):
             pass
+        elif key.startswith('_datetime_'):
+            dictionary[key.replace("_datetime_", "")] = eval(value)
         else:
             dictionary[key] = value
     if not isinstance(group, h5py.Dataset):
@@ -271,6 +276,14 @@ def hdfgroup2dict(group, dictionary={}):
 
 
 def write_signal(signal, group, compression='gzip'):
+    global latest_file_version
+    if latest_file_version < StrictVersion("1.2"):
+        metadata = "mapped_parameters"
+        original_metadata = "original_parameters"
+    else:
+        metadata = "metadata"
+        original_metadata = "original_metadata"
+
     group.create_dataset('data',
                          data=signal.data,
                          compression=compression)
@@ -281,10 +294,10 @@ def write_signal(signal, group, compression='gzip'):
         coord_group = group.create_group(
             'axis-%s' % axis.index_in_array)
         dict2hdfgroup(axis_dict, coord_group, compression=compression)
-    mapped_par = group.create_group('mapped_parameters')
+    mapped_par = group.create_group(metadata)
     dict2hdfgroup(signal.metadata.as_dictionary(),
                   mapped_par, compression=compression)
-    original_par = group.create_group('original_parameters')
+    original_par = group.create_group(original_metadata)
     dict2hdfgroup(signal.original_metadata.as_dictionary(),
                   original_par, compression=compression)
     learning_results = group.create_group('learning_results')
