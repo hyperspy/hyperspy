@@ -3169,9 +3169,9 @@ class Signal(MVA,
         return s
 
     def split(self,
-        axis='auto',
-        number_of_parts='auto',
-        step_sizes='auto'):
+              axis='auto',
+              number_of_parts='auto',
+              step_sizes='auto'):
         """Splits the data into several signals.
 
         The split can be defined by giving the number_of_parts, a homogeneous
@@ -3225,14 +3225,16 @@ class Signal(MVA,
         signal_dict = self._to_dictionary(add_learning_results=False)
 
         if axis == 'auto':
-            mode='auto'
+            mode = 'auto'
             if hasattr(self.metadata._internal_parameters, 'stacking_history'):
                 axis_in_manager = self.metadata._internal_parameters.stacking_history.axis
                 step_sizes = self.metadata._internal_parameters.stacking_history.step_sizes
             else:
-                axis_in_manager = self.axes_manager[-1+1j].index_in_axes_manager
+                axis_in_manager = self.axes_manager[-
+                                                    1 +
+                                                    1j].index_in_axes_manager
         else:
-            mode='manual'
+            mode = 'manual'
             axis_in_manager = self.axes_manager[axis].index_in_axes_manager
 
         axis = self.axes_manager[axis_in_manager].index_in_array
@@ -3254,8 +3256,8 @@ class Signal(MVA,
                 step_sizes = ([shape[axis] // number_of_parts, ] *
                               number_of_parts)
 
-        if isinstance(step_sizes,int):
-            step_sizes = [step_sizes]*int(len_axis/step_sizes)
+        if isinstance(step_sizes, int):
+            step_sizes = [step_sizes] * int(len_axis / step_sizes)
 
         splitted = []
         cut_index = np.array([0] + step_sizes).cumsum()
@@ -3271,13 +3273,12 @@ class Signal(MVA,
             signal_dict['data'] = data
             splitted += self.__class__(**signal_dict),
 
-
         if number_of_parts == len_axis \
-            or step_sizes == [1]*len_axis :
+                or step_sizes == [1] * len_axis:
             for i, spectrum in enumerate(splitted):
-                spectrum.data = spectrum.data[spectrum.axes_manager._get_data_slice([(axis,0)])]
+                spectrum.data = spectrum.data[
+                    spectrum.axes_manager._get_data_slice([(axis, 0)])]
                 spectrum._remove_axis(axis_in_manager)
-
 
         if mode == 'auto' and hasattr(self.original_metadata, 'stack_elements'):
             for i, spectrum in enumerate(splitted):
