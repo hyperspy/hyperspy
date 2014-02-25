@@ -114,10 +114,10 @@ class TestExample1_12(Example1):
     def test_time(self):
         assert_equal(self.s.metadata.time, datetime.time(12, 0))
 
+
 def test_none_metadata():
     s = load(os.path.join(
         my_path,
         "hdf5_files",
         "none_metadata.hdf5"))
     assert_is(s.metadata.should_be_None, None)
-
