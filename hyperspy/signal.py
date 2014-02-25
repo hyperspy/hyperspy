@@ -2417,7 +2417,6 @@ class Signal(MVA,
         self._load_dictionary(kwds)
         self._plot = None
         self.auto_replot = True
-        self.variance = None
         self.inav = SpecialSlicers(self, True)
         self.isig = SpecialSlicers(self, False)
 
@@ -2730,10 +2729,15 @@ class Signal(MVA,
                 that will to stores in the `original_metadata` attribute. It
                 typically contains all the parameters that has been
                 imported from the original data file.
+            variance : nupy array (optional)
+                The variance of the signal. Shaped as the data
 
         """
 
         self.data = np.asanyarray(file_data_dict['data'])
+        if 'variance' not in file_data_dict:
+            file_data_dict['variance'] = None
+        self.variance = np.asanyarray(file_data_dict['variance'])
         if 'axes' not in file_data_dict:
             file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(
@@ -2795,6 +2799,8 @@ class Signal(MVA,
         """
         dic = {}
         dic['data'] = self.data
+        if self.variance is not None:
+            dic['variance'] = self.variance
         dic['axes'] = self.axes_manager._get_axes_dicts()
         dic['metadata'] = \
             self.metadata.deepcopy().as_dictionary()
