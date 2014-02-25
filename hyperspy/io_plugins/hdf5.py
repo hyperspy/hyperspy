@@ -185,6 +185,12 @@ def hdfgroup2signaldict(group):
                 exp['metadata']['name']
             del exp['metadata']['name']
 
+    if current_file_version < StrictVersion("1.2"):
+        if '_internal_parameters' in exp['metadata']:
+            exp['metadata']['_Internal_parameters'] = \
+                exp['metadata']['_internal_parameters']
+            del exp['metadata']['_internal_parameters']
+
     return exp
 
 
