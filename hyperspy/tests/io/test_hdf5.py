@@ -1,4 +1,5 @@
 import os.path
+import datetime
 
 from nose.tools import assert_equal, assert_true, assert_almost_equal
 import numpy as np
@@ -102,4 +103,10 @@ class TestExample1_12(Example1):
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
-            "example1_v1.1.hdf5"))
+            "example1_v1.2.hdf5"))
+
+    def test_date(self):
+        assert_equal(self.s.metadata.date, datetime.date(1991, 10, 1))
+
+    def test_time(self):
+        assert_equal(self.s.metadata.time, datetime.time(12, 0))
