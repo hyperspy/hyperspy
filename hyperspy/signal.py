@@ -2729,15 +2729,16 @@ class Signal(MVA,
                 that will to stores in the `original_metadata` attribute. It
                 typically contains all the parameters that has been
                 imported from the original data file.
-            variance : nupy array (optional)
+            variance : numpy array (optional)
                 The variance of the signal. Shaped as the data
 
         """
 
         self.data = np.asanyarray(file_data_dict['data'])
         if 'variance' not in file_data_dict:
-            file_data_dict['variance'] = None
-        self.variance = np.asanyarray(file_data_dict['variance'])
+            self.variance = None
+        else:
+            self.variance = np.asanyarray(file_data_dict['variance'])
         if 'axes' not in file_data_dict:
             file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(
