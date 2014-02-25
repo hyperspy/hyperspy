@@ -3175,14 +3175,14 @@ class Signal(MVA,
         return s
 
     def split(self,
-        axis='auto', 
-        number_of_parts='auto', 
-        step_sizes='auto'):
+              axis='auto',
+              number_of_parts='auto',
+              step_sizes='auto'):
         """Splits the data into several signals.
 
         The split can be defined by giving the number_of_parts, a homogeneous
         step size or a list of customized step sizes. By default ('auto'),
-        the function is the reverse of utils.stack(). 
+        the function is the reverse of utils.stack().
 
         Parameters
         ----------
@@ -3192,21 +3192,21 @@ class Signal(MVA,
             axis in `axes_manager` or the axis name.
             - If 'auto' and if the object has been created with utils.stack,
             split will return the former list of signals
-            (options stored in 'metadata.stacking_history'              
-             else the last navigation axis will be used. 
+            (options stored in 'metadata.stacking_history'
+             else the last navigation axis will be used.
         number_of_parts : {'auto' | int}
             Number of parts in which the SI will be splitted. The
             splitting is homegenous. When the axis size is not divisible
             by the number_of_parts the reminder data is lost without
             warning. If number_of_parts and step_sizes is 'auto',
             number_of_parts equals the lenght of the axis,
-            step_sizes equals one  and the axis is supress from each sub_spectra. 
+            step_sizes equals one  and the axis is supress from each sub_spectra.
         step_sizes : {'auto' | list of ints | int}
             Size of the splitted parts. If 'auto', the step_sizes equals one.
-            If int, the splitting is homogenous.            
-            
+            If int, the splitting is homogenous.
+
         Examples
-        --------        
+        --------
         >>> s=signals.Spectrum(random.random([4,3,2]))
         >>> s
             <Spectrum, title: , dimensions: (3, 4|2)>
@@ -3220,7 +3220,7 @@ class Signal(MVA,
             <Spectrum, title: , dimensions: (3, 2|2)>]
         >>> s.split(step_sizes=[1,2])
             [<Spectrum, title: , dimensions: (3, 1|2)>,
-            <Spectrum, title: , dimensions: (3, 2|2)>]        
+            <Spectrum, title: , dimensions: (3, 2|2)>]
 
         Returns
         -------
@@ -3229,21 +3229,23 @@ class Signal(MVA,
 
         shape = self.data.shape
         signal_dict = self._to_dictionary(add_learning_results=False)
-        
+
         if axis == 'auto':
-            mode='auto'
+            mode = 'auto'
             if hasattr(self.metadata, 'stacking_history'):
                 axis_in_manager = self.metadata.stacking_history.axis
                 step_sizes = self.metadata.stacking_history.step_sizes
             else:
-                axis_in_manager = self.axes_manager[-1+1j].index_in_axes_manager
+                axis_in_manager = self.axes_manager[-
+                                                    1 +
+                                                    1j].index_in_axes_manager
         else:
-            mode='manual'
+            mode = 'manual'
             axis_in_manager = self.axes_manager[axis].index_in_axes_manager
-        
-        axis = self.axes_manager[axis_in_manager].index_in_array            
+
+        axis = self.axes_manager[axis_in_manager].index_in_array
         len_axis = self.axes_manager[axis_in_manager].size
-            
+
         if number_of_parts is 'auto' and step_sizes is 'auto':
             step_sizes = 1
             number_of_parts = len_axis
@@ -3259,10 +3261,10 @@ class Signal(MVA,
             else:
                 step_sizes = ([shape[axis] // number_of_parts, ] *
                               number_of_parts)
-                              
-        if isinstance(step_sizes,int):
-            step_sizes = [step_sizes]*int(len_axis/step_sizes)
-                
+
+        if isinstance(step_sizes, int):
+            step_sizes = [step_sizes] * int(len_axis / step_sizes)
+
         splitted = []
         cut_index = np.array([0] + step_sizes).cumsum()
 
@@ -3276,15 +3278,14 @@ class Signal(MVA,
                 (slice(cut_index[i], cut_index[i + 1]), Ellipsis)]
             signal_dict['data'] = data
             splitted += self.__class__(**signal_dict),
-            
-            
+
         if number_of_parts == len_axis \
-            or step_sizes == [1]*len_axis :
+                or step_sizes == [1] * len_axis:
             for i, spectrum in enumerate(splitted):
-                spectrum.data = spectrum.data[spectrum.axes_manager._get_data_slice([(axis,0)])]               
+                spectrum.data = spectrum.data[
+                    spectrum.axes_manager._get_data_slice([(axis, 0)])]
                 spectrum._remove_axis(axis_in_manager)
-                
-                
+
         if mode == 'auto' and hasattr(self.original_metadata, 'stack_elements'):
             for i, spectrum in enumerate(splitted):
                 stack_keys = self.original_metadata.stack_elements.keys()
@@ -3293,7 +3294,7 @@ class Signal(MVA,
                 spectrum.original_metadata = self.original_metadata.stack_elements[
                     stack_keys[i]]['original_metadata']
                 spectrum.metadata.title = spectrum.metadata.title[9:]
-                
+
         return splitted
 
     def unfold_if_multidim(self):
