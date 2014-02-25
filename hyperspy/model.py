@@ -85,13 +85,13 @@ class Model(list):
 
         self.chisq = spectrum._get_navigation_signal()
         self.chisq.data.fill(np.nan)
-        self.chisq.mapped_parameters.title = self.spectrum.mapped_parameters.title + \
+        self.chisq.metadata.title = self.spectrum.metadata.title + \
             ' chi-squared'
         self.dof = self.chisq._deepcopy_with_new_data(
             np.zeros_like(
                 self.chisq.data,
                 dtype='int'))
-        self.dof.mapped_parameters.title = self.spectrum.mapped_parameters.title + \
+        self.dof.metadata.title = self.spectrum.metadata.title + \
             ' degrees of freedom'
 
     def __repr__(self):
@@ -251,8 +251,8 @@ class Model(list):
         spectrum = self.spectrum.__class__(
             data,
             axes=self.spectrum.axes_manager._get_axes_dicts())
-        spectrum.mapped_parameters.title = (
-            self.spectrum.mapped_parameters.title + " from fitted model")
+        spectrum.metadata.title = (
+            self.spectrum.metadata.title + " from fitted model")
         if component_list:
             for component_ in self:
                 component_.active = active_state.pop(0)
@@ -721,7 +721,7 @@ class Model(list):
         """Reduced chi-squared. Calculated from self.chisq and self.dof
         """
         tmp = self.chisq / (- self.dof + sum(self.channel_switches) - 1)
-        tmp.mapped_parameters.title = self.spectrum.mapped_parameters.title + \
+        tmp.metadata.title = self.spectrum.metadata.title + \
             ' reduced chi-squared'
         return tmp
 
