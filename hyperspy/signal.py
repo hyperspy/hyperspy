@@ -2543,6 +2543,8 @@ class Signal(MVA,
                 _signal._remove_axis(axis.index_in_axes_manager)
 
         _signal.data = _signal.data[array_slices]
+        if self.variance is not None:
+            _signal.variance = self.variance[array_slices]
         _signal.get_dimensions_from_data()
 
         return _signal
