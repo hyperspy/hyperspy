@@ -74,11 +74,11 @@ class DielectricFunction(Spectrum):
         axis = self.axes_manager.signal_axes[0]
         if cumulative is False:
             dneff1 = k * simps((-1. / self.data).imag * axis.axis,
-                                x=axis.axis,
-                                axis=axis.index_in_array)
-            dneff2  = k * simps(self.data.imag * axis.axis,
-                                x=axis.axis,
-                                axis=axis.index_in_array)
+                               x=axis.axis,
+                               axis=axis.index_in_array)
+            dneff2 = k * simps(self.data.imag * axis.axis,
+                               x=axis.axis,
+                               axis=axis.index_in_array)
             neff1 = self._get_navigation_signal()
             neff2 = self._get_navigation_signal()
             neff1.data = dneff1
@@ -89,22 +89,22 @@ class DielectricFunction(Spectrum):
                              x=axis.axis,
                              axis=axis.index_in_array,
                              initial=0))
-            neff2  = self._deepcopy_with_new_data(
+            neff2 = self._deepcopy_with_new_data(
                 k * cumtrapz(self.data.imag * axis.axis,
                              x=axis.axis,
                              axis=axis.index_in_array,
                              initial=0))
 
         # Prepare return
-        neff1.mapped_parameters.title = (
+        neff1.metadata.title = (
             r"$n_{\mathrm{eff}}\left(-\Im\left(\epsilon^{-1}\right)\right)$ "
             "calculated from " +
-            self.mapped_parameters.title +
+            self.metadata.title +
             " using the Bethe f-sum rule.")
-        neff2.mapped_parameters.title = (
+        neff2.metadata.title = (
             r"$n_{\mathrm{eff}}\left(\epsilon_{2}\right)$ "
             "calculated from " +
-            self.mapped_parameters.title +
+            self.metadata.title +
             " using the Bethe f-sum rule.")
 
         return neff1, neff2
@@ -114,6 +114,6 @@ class DielectricFunction(Spectrum):
                 self.axes_manager.signal_axes[0].scale)
         s = self._deepcopy_with_new_data(data)
         s.set_signal_type("EELS")
-        s.mapped_parameters.title = ("EELS calculated from " +
-                                     self.mapped_parameters.title)
+        s.metadata.title = ("EELS calculated from " +
+                            self.metadata.title)
         return s

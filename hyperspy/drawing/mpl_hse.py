@@ -27,11 +27,12 @@ from hyperspy.drawing import spectrum, utils
 
 
 class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
-    """Plots the current spectrum to the screen and a map with a cursor 
+
+    """Plots the current spectrum to the screen and a map with a cursor
     to explore the SI.
-    
+
     """
-    
+
     def __init__(self):
         super(MPL_HyperSpectrum_Explorer, self).__init__()
         self.xlabel = ''
@@ -39,24 +40,24 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
         self.right_pointer = None
         self._right_pointer_on = False
         self._auto_update_plot = True
-        
+
     @property
     def auto_update_plot(self):
         return self._auto_update_plot
-        
+
     @auto_update_plot.setter
     def auto_update_plot(self, value):
         if self._auto_update_plot is value:
             return
         for line in self.signal_plot.ax_lines + \
-        self.signal_plot.right_ax_lines:
+                self.signal_plot.right_ax_lines:
             line.auto_update = value
         if self.pointer is not None:
             if value is True:
                 self.pointer.add_axes(self.navigator_plot.ax)
             else:
                 self.pointer.disconnect(self.navigator_plot.ax)
-        
+
     @property
     def right_pointer_on(self):
         """I'm the 'x' property."""
@@ -64,13 +65,14 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
 
     @right_pointer_on.setter
     def right_pointer_on(self, value):
-        if value == self._right_pointer_on: return
+        if value == self._right_pointer_on:
+            return
         self._right_pointer_on = value
         if value is True:
             self.add_right_pointer()
         else:
             self.remove_right_pointer()
-   
+
     def plot_signal(self):
         if self.signal_plot is not None:
             self.signal_plot.plot()
@@ -98,33 +100,32 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
             color = self.pointer.color
         else:
             color = 'red'
-        sl.set_line_properties(color=color, type='step')        
+        sl.set_line_properties(color=color, type='step')
         # Add the line to the figure
-          
+
         sf.add_line(sl)
         # If the data is complex create a line in the left axis with the
         # default coordinates
         sl = spectrum.SpectrumLine()
         sl.data_function = self.signal_data_function
         sl.plot_coordinates = True
-        sl.get_complex = any(np.iscomplex(sl.data_function()))        
+        sl.get_complex = any(np.iscomplex(sl.data_function()))
         if sl.get_complex:
-            sl.set_line_properties(color="blue", type='step')       
+            sl.set_line_properties(color="blue", type='step')
             # Add extra line to the figure
             sf.add_line(sl)
-        
-        
+
         self.signal_plot = sf
         sf.plot()
         if self.navigator_plot is not None and sf.figure is not None:
-            utils.on_figure_window_close(self.navigator_plot.figure, 
-            self._disconnect)
+            utils.on_figure_window_close(self.navigator_plot.figure,
+                                         self._disconnect)
             utils.on_figure_window_close(sf.figure,
-                                            self.close_navigator_plot)
+                                         self.close_navigator_plot)
             self._key_nav_cid = \
                 self.signal_plot.figure.canvas.mpl_connect(
-                        'key_press_event',
-                        self.axes_manager.key_navigator)
+                    'key_press_event',
+                    self.axes_manager.key_navigator)
             self._key_nav_cid = \
                 self.navigator_plot.figure.canvas.mpl_connect(
                     'key_press_event',
@@ -133,15 +134,15 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
                 'key_press_event', self.key2switch_right_pointer)
             self.navigator_plot.figure.canvas.mpl_connect(
                 'key_press_event', self.key2switch_right_pointer)
-                
+
     def key2switch_right_pointer(self, event):
         if event.key == "e":
             self.right_pointer_on = not self.right_pointer_on
-            
+
     def add_right_pointer(self):
         if self.signal_plot.right_axes_manager is None:
             self.signal_plot.right_axes_manager = \
-            copy.deepcopy(self.axes_manager)
+                copy.deepcopy(self.axes_manager)
         if self.right_pointer is None:
             pointer = self.assign_pointer()
             self.right_pointer = pointer(
@@ -155,12 +156,12 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
         rl.set_line_properties(color=self.right_pointer.color,
                                type='step')
         self.signal_plot.create_right_axis()
-        self.signal_plot.add_line(rl, ax = 'right')
+        self.signal_plot.add_line(rl, ax='right')
         rl.plot_indices = True
         rl.text_position = (1., 1.05,)
         rl.plot()
         self.right_pointer_on = True
-        
+
     def remove_right_pointer(self):
         for line in self.signal_plot.right_ax_lines:
             self.signal_plot.right_ax_lines.remove(line)

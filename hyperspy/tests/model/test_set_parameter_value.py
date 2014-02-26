@@ -27,11 +27,12 @@ from hyperspy.components import Gaussian
 
 
 class TestSetParameterInModel:
+
     def setUp(self):
         g1 = Gaussian()
         g2 = Gaussian()
         g3 = Gaussian()
-        s = Spectrum(np.arange(1000).reshape(10,10,10))
+        s = Spectrum(np.arange(1000).reshape(10, 10, 10))
         m = create_model(s)
         m.append(g1)
         m.append(g2)
@@ -40,13 +41,13 @@ class TestSetParameterInModel:
         self.g2 = g2
         self.g3 = g3
         self.model = m
-        
+
     def test_set_parameter_value1(self):
         m = self.model
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        m.set_parameters_value('A',20)
+        m.set_parameters_value('A', 20)
         assert_true(np.all(g1.A.map['values'] == 20))
         assert_true(np.all(g2.A.map['values'] == 20))
         assert_true(np.all(g3.A.map['values'] == 20))
@@ -56,7 +57,7 @@ class TestSetParameterInModel:
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        m.set_parameters_value('A',20, component_list=[g1,g2])
+        m.set_parameters_value('A', 20, component_list=[g1, g2])
         assert_true(np.all(g1.A.map['values'] == 20))
         assert_true(np.all(g2.A.map['values'] == 20))
         assert_true(np.all(g3.A.map['values'] == 0))
@@ -66,7 +67,7 @@ class TestSetParameterInModel:
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        m.set_parameters_value('A',20, component_list=[g1], only_current=True)
+        m.set_parameters_value('A', 20, component_list=[g1], only_current=True)
         g1.A.map['values'][0][0] = g1.A.map['values'][0][0] - 20
         assert_true(np.all(g1.A.map['values'] == 0))
         assert_true(np.all(g2.A.map['values'] == 0))

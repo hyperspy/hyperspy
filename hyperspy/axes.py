@@ -24,9 +24,13 @@ from traits.trait_errors import TraitError
 
 from hyperspy.misc.utils import isiterable, ordinal
 
+
 class ndindex_nat(np.ndindex):
+
     def next(self):
         return super(ndindex_nat, self).next()[::-1]
+
+
 def generate_axis(offset, scale, size, offset_index=0):
     """Creates an axis given the offset, scale and number of channels
 
@@ -49,8 +53,9 @@ def generate_axis(offset, scale, size, offset_index=0):
                        offset + scale * (size - 1 - offset_index),
                        size)
 
+
 class DataAxis(t.HasTraits):
-    name=t.Str()
+    name = t.Str()
     units = t.Str()
     scale = t.Float()
     offset = t.Float()
@@ -105,11 +110,12 @@ class DataAxis(t.HasTraits):
                 "This DataAxis does not belong to an AxesManager"
                 " and therefore its index_in_array attribute "
                 " is not defined")
+
     @property
     def index_in_axes_manager(self):
         if self.axes_manager is not None:
             return self.axes_manager._get_axes_in_natural_order().\
-                   index(self)
+                index(self)
         else:
             raise AttributeError(
                 "This DataAxis does not belong to an AxesManager"
@@ -192,8 +198,8 @@ class DataAxis(t.HasTraits):
 
     def _get_name(self):
         name = (self.name if self.name is not t.Undefined
-                          else ("Unnamed " +
-                                ordinal(self.index_in_axes_manager)))
+                else ("Unnamed " +
+                      ordinal(self.index_in_axes_manager)))
         return name
 
     def __repr__(self):
@@ -230,12 +236,12 @@ class DataAxis(t.HasTraits):
 
     def get_axis_dictionary(self):
         adict = {
-            'name' : self.name,
-            'scale' : self.scale,
-            'offset' : self.offset,
-            'size' : self.size,
-            'units' : self.units,
-            'navigate' : self.navigate
+            'name': self.name,
+            'scale': self.scale,
+            'offset': self.offset,
+            'size': self.size,
+            'units': self.units,
+            'navigate': self.navigate
         }
         return adict
 
@@ -265,7 +271,7 @@ class DataAxis(t.HasTraits):
             return None
         else:
             index = int(rounding((value - self.offset) /
-                              self.scale))
+                                 self.scale))
             if self.size > index >= 0:
                 return index
             else:
@@ -283,9 +289,9 @@ class DataAxis(t.HasTraits):
         if self.continuous_value is False:
             self.value = self.index2value(self.index)
 
-    def calibrate(self, value_tuple, index_tuple, modify_calibration = True):
+    def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
-        (index_tuple[1] - index_tuple[0])
+            (index_tuple[1] - index_tuple[0])
         offset = value_tuple[0] - scale * index_tuple[0]
         if modify_calibration is True:
             self.offset = offset
@@ -293,7 +299,9 @@ class DataAxis(t.HasTraits):
         else:
             return offset, scale
 
+
 class AxesManager(t.HasTraits):
+
     """Contains and manages the data axes.
 
     It supports indexing, slicing, subscriptins and iteration. As an interator,
@@ -323,7 +331,7 @@ class AxesManager(t.HasTraits):
         AttributeError when attempting to set its value.
 
     signal_axes, navigation_axes : list
-    	Contain the corresponding DataAxis objects
+        Contain the corresponding DataAxis objects
 
     Examples
     --------
@@ -394,7 +402,7 @@ class AxesManager(t.HasTraits):
         self.on_trait_change(self._update_attributes, '_axes.slice')
         self.on_trait_change(self._update_attributes, '_axes.index')
         self.on_trait_change(self._update_attributes, '_axes.size')
-        self._index = None # index for the iterator
+        self._index = None  # index for the iterator
 
     def _get_positive_index(self, axis):
         if axis < 0:
@@ -405,12 +413,12 @@ class AxesManager(t.HasTraits):
 
     def _array_indices_generator(self):
         shape = (self.navigation_shape[::-1] if self.navigation_size > 0 else
-                 [1,])
+                 [1, ])
         return np.ndindex(*shape)
 
     def _am_indices_generator(self):
         shape = (self.navigation_shape if self.navigation_size > 0 else
-                 [1,])[::-1]
+                 [1, ])[::-1]
         return ndindex_nat(*shape)
 
     def __getitem__(self, y):
@@ -427,20 +435,20 @@ class AxesManager(t.HasTraits):
         elif (isinstance(y.real, float) and not y.real.is_integer() or
                 isinstance(y.imag, float) and not y.imag.is_integer()):
             raise TypeError("axesmanager indices must be integers, "
-                    "complex intergers or strings")
-        if y.imag == 0: # Natural order
+                            "complex intergers or strings")
+        if y.imag == 0:  # Natural order
             return self._get_axes_in_natural_order()[y]
-        elif y.imag == 3: # Array order
+        elif y.imag == 3:  # Array order
             # Array order
             return self._axes[int(y.real)]
-        elif y.imag == 1: # Navigation natural order
+        elif y.imag == 1:  # Navigation natural order
             #
             return self.navigation_axes[int(y.real)]
-        elif y.imag == 2: # Signal natural order
+        elif y.imag == 2:  # Signal natural order
             return self.signal_axes[int(y.real)]
         else:
             raise IndexError("axesmanager imaginary part of complex indices "
-                    "must be 0, 1 or 2")
+                             "must be 0, 1 or 2")
 
     def __getslice__(self, i=None, j=None):
         """x.__getslice__(i, j) <==> x[i:j]
@@ -458,14 +466,15 @@ class AxesManager(t.HasTraits):
     @property
     def _signal_shape_in_array(self):
         return self.signal_shape[::-1]
+
     @property
     def shape(self):
         nav_shape = (self.navigation_shape
                      if self.navigation_shape != (0,)
                      else tuple())
         sig_shape = (self.signal_shape
-             if self.signal_shape != (0,)
-             else tuple())
+                     if self.signal_shape != (0,)
+                     else tuple())
         return nav_shape + sig_shape
 
     def remove(self, axis):
@@ -493,12 +502,11 @@ class AxesManager(t.HasTraits):
             slice.
 
         """
-        cslice = [slice(None),] * len(self._axes)
+        cslice = [slice(None), ] * len(self._axes)
         if fill is not None:
             for index, slice_ in fill:
                 cslice[index] = slice_
         return tuple(cslice)
-
 
     def create_axes(self, axes_list):
         """Given a list of dictionaries defining the axes properties
@@ -517,7 +525,7 @@ class AxesManager(t.HasTraits):
         # Reorder axes_list using index_in_array if it is defined
         # for all axes and the indices are not repeated.
         indices = set([axis['index_in_array'] for axis in axes_list if
-                   'index_in_array' in axis])
+                       'index_in_array' in axis])
         if len(indices) == len(axes_list):
             axes_list.sort(key=lambda x: x['index_in_array'])
         for axis_dict in axes_list:
@@ -622,7 +630,7 @@ class AxesManager(t.HasTraits):
             return
         elif value > len(self._axes):
             raise ValueError("The signal dimension cannot be greater"
-                " than the number of axes which is %i" % len(self._axes))
+                             " than the number of axes which is %i" % len(self._axes))
         elif value < 0:
             raise ValueError(
                 "The signal dimension must be a positive integer")
@@ -645,7 +653,8 @@ class AxesManager(t.HasTraits):
                 axis.on_trait_change(f, 'index', remove=True)
 
     def key_navigator(self, event):
-        if len(self.navigation_axes) not in (1,2): return
+        if len(self.navigation_axes) not in (1, 2):
+            return
         x = self.navigation_axes[0]
         try:
             if event.key == "right" or event.key == "6":
@@ -702,14 +711,15 @@ class AxesManager(t.HasTraits):
 
     def show(self):
         from hyperspy.gui.axes import get_axis_group
-        import traitsui.api  as tui
+        import traitsui.api as tui
         context = {}
         ag = []
         for n, axis in enumerate(self._get_axes_in_natural_order()):
             ag.append(get_axis_group(n, str(axis)))
             context['axis%i' % n] = axis
         ag = tuple(ag)
-        self.edit_traits(view = tui.View(*ag), context = context)
+        self.edit_traits(view=tui.View(*ag), context=context)
+
     def _get_axes_str(self):
         string = "("
         for axis in self.navigation_axes:
@@ -733,8 +743,6 @@ class AxesManager(t.HasTraits):
         string = string.rstrip(", ")
         string += ")"
         return string
-
-
 
     def __repr__(self):
         text = ('<Axes manager, axes: %s>' %
@@ -766,8 +774,8 @@ class AxesManager(t.HasTraits):
 
         if len(coordinates) != self.navigation_dimension:
             raise AttributeError(
-            "The number of coordinates must be equal to the "
-            "navigation dimension that is %i" %
+                "The number of coordinates must be equal to the "
+                "navigation dimension that is %i" %
                 self.navigation_dimension)
         for value, axis in zip(coordinates, self.navigation_axes):
             axis.value = value
@@ -797,8 +805,8 @@ class AxesManager(t.HasTraits):
 
         if len(indices) != self.navigation_dimension:
             raise AttributeError(
-            "The number of indices must be equal to the "
-            "navigation dimension that is %i" %
+                "The number of indices must be equal to the "
+                "navigation dimension that is %i" %
                 self.navigation_dimension)
         for index, axis in zip(indices, self.navigation_axes):
             axis.index = index
@@ -824,7 +832,6 @@ class AxesManager(t.HasTraits):
             values = [values, ] * len(self._axes)
         elif len(values) != len(self._axes):
             raise ValueError("Values must have the same number"
-                "of items are axes are in this AxesManager")
-        for axis, value in zip(self._axes,values):
+                             "of items are axes are in this AxesManager")
+        for axis, value in zip(self._axes, values):
             setattr(axis, attr, value)
-
