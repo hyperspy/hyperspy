@@ -37,7 +37,7 @@ class TestChiSquared:
         g = Gaussian()
         m.append(g)
         m.fit()
-        assert_true(np.allclose(m.chisq(), 2.21793057))
+        assert_true(np.allclose(m.chisq(), 7.78966223))
 
     def test_dof_with_fit(self):
         m = self.model
@@ -53,7 +53,7 @@ class TestChiSquared:
         g = Gaussian()
         m.append(g)
         m.fit()
-        assert_true(np.allclose(m.red_chisq(), 0.44358611))
+        assert_true(np.allclose(m.red_chisq(), 1.55793245))
 
     def test_chisq(self):
         m = self.model
@@ -63,7 +63,7 @@ class TestChiSquared:
         g.centre.value = self.centre
         m.append(g)
         m._calculate_chisq()
-        assert_true(np.allclose(m.chisq(), 2.21793057))
+        assert_true(np.allclose(m.chisq(), 7.78966223))
 
     def test_dof_with_p0(self):
         m = self.model
@@ -85,4 +85,4 @@ class TestChiSquared:
         m._set_p0()
         m._set_current_degrees_of_freedom()
         m._calculate_chisq()
-        assert_true(np.allclose(m.red_chisq(), 0.44358611))
+        assert_true(np.allclose(m.red_chisq(), 1.55793245))
