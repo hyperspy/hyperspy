@@ -132,7 +132,8 @@ class Parameter(object):
 
         """
         if dict['_id_name'] == self._id_name:
-            import types, marshal
+            import types
+            import marshal
             self.map = copy.deepcopy(dict['map'])
             self.value = dict['value']
             self.name = dict['name']
@@ -140,9 +141,12 @@ class Parameter(object):
             self.free = copy.deepcopy(dict['free'])
             self.units = copy.deepcopy(dict['units'])
             self._bounds = copy.deepcopy(dict['_bounds'])
-            self.twin_function = types.FunctionType(marshal.loads(dict['twin_function']), globals())
+            self.twin_function = types.FunctionType(
+                marshal.loads(
+                    dict['twin_function']),
+                globals())
             self.twin_inverse_function = types.FunctionType(marshal.loads(dict['twin_inverse_function']),
-                    globals())
+                                                            globals())
             return dict['id']
         else:
             raise ValueError(
@@ -519,7 +523,8 @@ class Parameter(object):
         dic['_twins'] = [id(t) for t in self._twins]
         dic['_bounds'] = self._bounds
         dic['twin_function'] = marshal.dumps(self.twin_function.func_code)
-        dic['twin_inverse_function'] = marshal.dumps(self.twin_inverse_function.func_code)
+        dic['twin_inverse_function'] = marshal.dumps(
+            self.twin_inverse_function.func_code)
         return dic
 
 
