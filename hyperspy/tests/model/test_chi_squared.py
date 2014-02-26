@@ -20,10 +20,12 @@ import numpy as np
 
 from nose.tools import assert_true
 from hyperspy._signals.spectrum import Spectrum
-from hyperspy.hspy import create_model 
+from hyperspy.hspy import create_model
 from hyperspy.components import Gaussian
 
+
 class TestChiSquared:
+
     def setUp(self):
         s = Spectrum(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
         m = create_model(s)
