@@ -323,5 +323,18 @@ are used by default.
      dimensions: (|128, 95)>,
     <Image, title: Intensity of Ti_Ka at 4.51 keV from Spectrum image,
      dimensions: (|128, 95)>]
+     
+The :py:meth:`~.signal.Signal1DTools.integrate_in_range` 
+method (see :ref:`spectrum tools<integrate_1D-label>`) provides
+an interactive way to generate intensity map.
 
+
+.. code-block:: python
+
+    >>> spec.integrate_in_range()
+    <Image, title: , dimensions: (|128, 95)>
+    
+.. figure::  images/EDS_integrate_in_range.png
+   :align:   center
+   :width:   800
 
