@@ -1,6 +1,7 @@
 import numpy as np
 
-from hyperspy.misc.eds.elements import elements as elements_db
+from hyperspy.misc.elements import elements as elements_db
+
 
 def weight_to_atomic(elements, weight_percent):
     """Convert weight percent (wt%) to atomic percent (at.%).
@@ -20,7 +21,7 @@ def weight_to_atomic(elements, weight_percent):
 
     """
     atomic_weights = np.array(
-        [elements_db[element]['A'] for element in elements])
+        [elements_db[element]['General_properties']['atomic_weight'] for element in elements])
     atomic_percent = weight_percent / atomic_weights / (
         weight_percent / atomic_weights).sum() * 100
     return atomic_percent.tolist()
@@ -44,7 +45,7 @@ def atomic_to_weight(elements, atomic_percent):
     """
 
     atomic_weights = np.array(
-        [elements_db[element]['A'] for element in elements])
+        [elements_db[element]['General_properties']['atomic_weight'] for element in elements])
 
     weight_percent = atomic_percent * atomic_weights / (
         atomic_percent * atomic_weights).sum() * 100
@@ -64,7 +65,7 @@ def density_of_mixture_of_pure_elements(elements, weight_percent):
         A list of element symbols, e.g. ['Al', 'Zn']
     weight_percent: list of float
         A list of weight percent for the different elements. If the total
-        is not equal to 100, each weight percent is divided by the sum 
+        is not equal to 100, each weight percent is divided by the sum
         of the list (normalization).
 
     Returns
@@ -80,8 +81,6 @@ def density_of_mixture_of_pure_elements(elements, weight_percent):
 
     """
     densities = np.array(
-        [elements_db[element]['density'] for element in elements])
+        [elements_db[element]['Physical_properties']['density (g/cm^3)'] for element in elements])
     density = (weight_percent / densities / sum(weight_percent)).sum() ** -1
     return density
-
-

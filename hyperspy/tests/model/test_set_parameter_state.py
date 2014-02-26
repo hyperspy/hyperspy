@@ -27,6 +27,7 @@ from hyperspy.components import Gaussian
 
 
 class TestSetParameterInModel:
+
     def setUp(self):
         g1 = Gaussian()
         g2 = Gaussian()
@@ -40,7 +41,7 @@ class TestSetParameterInModel:
         self.g2 = g2
         self.g3 = g3
         self.model = m
-        
+
     def test_set_parameter_in_model_not_free(self):
         m = self.model
         g1 = self.g1
@@ -69,7 +70,7 @@ class TestSetParameterInModel:
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        m.set_parameters_not_free([g1,g2])
+        m.set_parameters_not_free([g1, g2])
         assert_equal(len(g1.free_parameters), 0)
         assert_equal(len(g2.free_parameters), 0)
         assert_equal(len(g3.free_parameters), len(g3.parameters))
@@ -106,7 +107,7 @@ class TestSetParameterInModel:
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        m.set_parameters_not_free([g2],parameter_name_list=['A'])
+        m.set_parameters_not_free([g2], parameter_name_list=['A'])
         assert_true(g1.A.free)
         assert_true(g1.sigma.free)
         assert_true(g1.centre.free)
@@ -123,7 +124,7 @@ class TestSetParameterInModel:
         g2 = self.g2
         g3 = self.g3
         m.set_parameters_not_free()
-        m.set_parameters_free([g1],parameter_name_list=['centre'])
+        m.set_parameters_free([g1], parameter_name_list=['centre'])
         assert_true(not g1.A.free)
         assert_true(not g1.sigma.free)
         assert_true(g1.centre.free)

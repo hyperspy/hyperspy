@@ -1,39 +1,42 @@
 import numpy as np
 import math
 
-from hyperspy.misc.eds.elements import elements as elements_db
-    
+from hyperspy.misc.elements import elements as elements_db
+
+
 def _get_element_and_line(Xray_line):
     lim = Xray_line.find('_')
-    return Xray_line[:lim], Xray_line[lim+1:]
+    return Xray_line[:lim], Xray_line[lim + 1:]
 
-def get_FWHM_at_Energy(energy_resolution_MnKa,E):
+
+def get_FWHM_at_Energy(energy_resolution_MnKa, E):
     """Calculates the FWHM of a peak at energy E.
-    
+
     Parameters
     ----------
     energy_resolution_MnKa : float
         Energy resolution of Mn Ka in eV
     E : float
         Energy of the peak in keV
-            
+
     Returns
     -------
     float : FWHM of the peak in keV
-    
+
     Notes
     -----
-    From the textbook of Goldstein et al., Plenum publisher, 
+    From the textbook of Goldstein et al., Plenum publisher,
     third edition p 315
-    
+
     """
     FWHM_ref = energy_resolution_MnKa
-    E_ref = elements_db['Mn']['Xray_energy']['Ka']
-    
-    
-    FWHM_e = 2.5*(E-E_ref)*1000 + FWHM_ref*FWHM_ref
-   
-    return math.sqrt(FWHM_e)/1000 # In mrad
+    E_ref = elements_db['Mn']['Atomic_properties']['Xray_lines'][
+        'Ka']['energy (keV)']
+
+    FWHM_e = 2.5 * (E - E_ref) * 1000 + FWHM_ref * FWHM_ref
+
+    return math.sqrt(FWHM_e) / 1000  # In mrad
+
 
 def xray_range(xray_line, beam_energy, density='auto'):
     '''Return the Anderson-Hasler X-ray range.
@@ -66,11 +69,15 @@ def xray_range(xray_line, beam_energy, density='auto'):
 
     element, line = _get_element_and_line(xray_line)
     if density == 'auto':
-        density = elements_db[element]['density']
-    Xray_energy = elements_db[element]['Xray_energy'][line]
+        density = elements_db[
+            element][
+            'Physical_properties'][
+            'density (g/cm^3)']
+    Xray_energy = elements_db[
+        element]['Atomic_properties']['Xray_lines'][line]['energy (keV)']
 
     return 0.064 / density * (np.power(beam_energy, 1.68) -
-                          np.power(Xray_energy, 1.68))
+                              np.power(Xray_energy, 1.68))
 
 
 def electron_range(element, beam_energy, density='auto', tilt=0):
@@ -104,9 +111,10 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
     '''
 
     if density == 'auto':
-        density = elements_db[element]['density']
-    Z = elements_db[element]['Z']
-    A = elements_db[element]['A']
+        density = elements_db[
+            element]['Physical_properties']['density (g/cm^3)']
+    Z = elements_db[element]['General_properties']['Z']
+    A = elements_db[element]['General_properties']['atomic_weight']
 
     return (0.0276 * A / np.power(Z, 0.89) / density *
             np.power(beam_energy, 1.67) * math.cos(math.radians(tilt)))

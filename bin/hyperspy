@@ -18,11 +18,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Hyperspy; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301
 # USA
 
 import sys
-import os, shutil
+import os
+import shutil
 from distutils.version import LooseVersion
 try:
     import argparse             # new in Python 2.7
@@ -33,7 +34,7 @@ except ImportError:
 
 try:
     import PyQt4
-    import sip 
+    import sip
     # Set the QT_API environmental variable so that matplotlib uses API v2
     # instead of API v1 that is the default in Python 2.x
     os.environ['QT_API'] = "pyqt"
@@ -49,20 +50,20 @@ from hyperspy.defaults_parser import preferences
 
 # First we split the argv items in two: the firsts for hyperspy,
 # the rest for ipython
-ipy_argv = [sys.argv[0],]
+ipy_argv = [sys.argv[0], ]
 if '--ipython_args' in sys.argv:
     ipy_argv += sys.argv[sys.argv.index('--ipython_args') + 1:]
     sys.argv = sys.argv[:sys.argv.index('--ipython_args')]
-    
-hyperspy_module_path=os.path.dirname(hyperspy.__file__)
+
+hyperspy_module_path = os.path.dirname(hyperspy.__file__)
 ipy_hspy = os.path.join(hyperspy_module_path, 'ipython_profile')
 ipy_version = LooseVersion(IPython.__version__)
-ipython_environments = ['terminal',]
+ipython_environments = ['terminal', ]
 if ipy_version < LooseVersion('0.11'):
     from IPython.genutils import get_home_dir, get_ipython_dir
     from IPython.iplib import user_setup
     ipy_dir = get_ipython_dir()
-    to_copy = [os.path.join(ipy_hspy, 'ipy_profile_hyperspy.py') ,]
+    to_copy = [os.path.join(ipy_hspy, 'ipy_profile_hyperspy.py'), ]
     destination = ipy_dir
     if not os.path.isdir(ipy_dir):
         # Platform-dependent suffix.
@@ -76,35 +77,35 @@ if ipy_version < LooseVersion('0.11'):
         sys.argv.append('--overwrite_profile')
 else:
     ipy_dir = IPython.utils.path.get_ipython_dir()
-    to_copy = [ os.path.join(ipy_hspy, 'ipython_config.py'),
-                os.path.join(ipy_hspy, 'ipython_console_config.py'),
-                os.path.join(ipy_hspy, 'ipython_qtconsole_config.py'),
-                os.path.join(ipy_hspy, 'ipython_notebook_config.py',),]
+    to_copy = [os.path.join(ipy_hspy, 'ipython_config.py'),
+               os.path.join(ipy_hspy, 'ipython_console_config.py'),
+               os.path.join(ipy_hspy, 'ipython_qtconsole_config.py'),
+               os.path.join(ipy_hspy, 'ipython_notebook_config.py',), ]
     destination = os.path.join(ipy_dir, 'profile_hyperspy')
-    # The ipy_dir may not exist if it is the first time that the user 
-    # runs ipython, therefore we must create it, what is done 
+    # The ipy_dir may not exist if it is the first time that the user
+    # runs ipython, therefore we must create it, what is done
     # automatically when creating a profile
     if not os.path.isdir(ipy_dir) or not os.path.isdir(destination):
         # Use the IPython routines to create the directory and profile
         import IPython.core.profileapp
         ipy_create_profile = IPython.core.profileapp.ProfileCreate()
-        ipy_create_profile.parse_command_line(['hyperspy',])
+        ipy_create_profile.parse_command_line(['hyperspy', ])
         ipy_create_profile.init_config_files()
         sys.argv.append('--overwrite_profile')
-    ipython_environments.extend(['console', 'qtconsole',])
-    
+    ipython_environments.extend(['console', 'qtconsole', ])
+
 if ipy_version > LooseVersion('0.11'):
-        ipython_environments.append('notebook')
-        
+    ipython_environments.append('notebook')
+
 if argp is True:
     parser = argparse.ArgumentParser(
-                 add_help=True, 
-                 version=hyperspy.Release.version,
-                 description = hyperspy.Release.description)
+        add_help=True,
+        version=hyperspy.Release.version,
+        description=hyperspy.Release.description)
 else:
     parser = optparse.OptionParser(
         version=hyperspy.Release.version,
-        description = hyperspy.Release.description)
+        description=hyperspy.Release.description)
 parser.add_argument('environment',
                     nargs='?',
                     choices=ipython_environments,
@@ -113,9 +114,9 @@ parser.add_argument('environment',
                         'Selects the IPython environment in '
                         'which to start Hyperspy. The default is terminal'))
 parser.add_argument('--toolkit',
-                    choices=["qt4", "gtk", "wx", "tk", "None",],
+                    choices=["qt4", "gtk", "wx", "tk", "None", ],
                     default=preferences.General.default_toolkit,
-                    help= (
+                    help=(
                         "Pre-load matplotlib and traitsui for interactive use,"
                         "selecting a particular matplotlib backend and loop "
                         "integration."
@@ -123,29 +124,29 @@ parser.add_argument('--toolkit',
                         "user interface elements are not available. "
                         "None is suitable to run headless."))
 parser.add_argument('--pylab_inline',
-                    action="store_true", 
+                    action="store_true",
                     default=preferences.Plot.pylab_inline,
-                    help = ("If True the figure are displayed inline. "
-                            "This option only has effect when using the "
-                            "qtconsole or notebook"))
+                    help=("If True the figure are displayed inline. "
+                           "This option only has effect when using the "
+                          "qtconsole or notebook"))
 parser.add_argument('--overwrite_profile',
-                    action="store_true", 
+                    action="store_true",
                     default=False,
-                    help = (
+                    help=(
                         'Overwrite the Ipython profile with the default one.'))
 parser.add_argument('--ipython_args',
-                    nargs='*', 
+                    nargs='*',
                     help=(
                         'Arguments to be passed to IPython. '
-                        'This option must be the last one.' 
+                        'This option must be the last one.'
                         'Look at the IPython documentation '
                         'for available options.'))
-                    
+
 if argp is True:
     args = parser.parse_args()
 else:
     options, args = parser.parse_args()
-    
+
 for f in to_copy:
     if not os.path.isfile(os.path.join(
             destination, os.path.split(f)[-1])) or \
@@ -160,8 +161,8 @@ sys.argv = ipy_argv
 # Add the subcommand first
 if args.environment != 'terminal':
     sys.argv.insert(1, args.environment)
-# By default Hyperspy uses the qt backend, but if the user tries to 
-# choose a different one using --pylab= , then we grant him the control        
+# By default Hyperspy uses the qt backend, but if the user tries to
+# choose a different one using --pylab= , then we grant him the control
 add_pylab = True
 if argp is True:
     toolkit = args.toolkit
@@ -190,14 +191,14 @@ if ipy_version < LooseVersion('0.11'):
             break
     if add_toolkit is True:
         if toolkit == "qt":
-            sys.argv.append('-qthread') 
+            sys.argv.append('-qthread')
         elif toolkit == "gtk":
-            sys.argv.append('-gthread') 
+            sys.argv.append('-gthread')
         elif toolkit == "wx":
-            sys.argv.append('-wthread') 
+            sys.argv.append('-wthread')
         elif toolkit == "tk":
-            sys.argv.append('-tkthread') 
-    sys.argv.extend(('-p', 'hyperspy'))       
+            sys.argv.append('-tkthread')
+    sys.argv.extend(('-p', 'hyperspy'))
     from IPython.ipapi import launch_new_instance
     sys.exit(launch_new_instance())
 else:

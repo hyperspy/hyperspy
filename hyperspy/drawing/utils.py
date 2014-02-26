@@ -63,6 +63,7 @@ def on_figure_window_close(figure, function):
 
     figure : mpl figure instance
     function : function
+
     """
     backend = plt.get_backend()
     if backend not in ("GTKAgg", "WXAgg", "TkAgg", "Qt4Agg"):
@@ -76,7 +77,7 @@ def on_figure_window_close(figure, function):
 
     if backend == 'GTKAgg':
         def function_wrapper(*args):
-                function()
+            function()
         window.connect('destroy', function_wrapper)
 
     elif backend == 'WXAgg':
@@ -119,6 +120,7 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
     Returns
     -------
     array: RGB matrix
+
     """
 #    from widgets import cursors
     height, width = im_list[0].data.shape[:2]
@@ -178,8 +180,9 @@ class ColorCycle():
             self.color_cycle = copy.copy(self._color_cycle)
         return self.color_cycle.pop(0)
 
+
 def plot_signals(signal_list, sync=True, navigator="auto",
-        navigator_list=None):
+                 navigator_list=None):
     """Plot several signals at the same time.
 
     Parameters
@@ -228,41 +231,40 @@ def plot_signals(signal_list, sync=True, navigator="auto",
     if navigator_list:
         if not (len(signal_list) == len(navigator_list)):
             raise ValueError(
-                    "signal_list and navigator_list must"
-                    " have the same size")
+                "signal_list and navigator_list must"
+                " have the same size")
 
     if sync:
         axes_manager_list = []
         for signal in signal_list:
             axes_manager_list.append(signal.axes_manager)
 
-
         if not navigator_list:
             navigator_list = []
         if navigator is None:
-            navigator_list.extend([None]*len(signal_list))
+            navigator_list.extend([None] * len(signal_list))
         elif navigator is "slider":
             navigator_list.append("slider")
-            navigator_list.extend([None]*(len(signal_list)-1))
+            navigator_list.extend([None] * (len(signal_list) - 1))
         elif isinstance(navigator, hyperspy.signal.Signal):
             navigator_list.append(navigator)
-            navigator_list.extend([None]*(len(signal_list)-1))
+            navigator_list.extend([None] * (len(signal_list) - 1))
         elif navigator is "spectrum":
-            navigator_list.extend(["spectrum"]*len(signal_list))
+            navigator_list.extend(["spectrum"] * len(signal_list))
         elif navigator is "auto":
-            navigator_list.extend(["auto"]*len(signal_list))
+            navigator_list.extend(["auto"] * len(signal_list))
         else:
             raise ValueError(
-                    "navigator must be one of \"spectrum\",\"auto\","
-                    " \"slider\", None, a Signal instance")
+                "navigator must be one of \"spectrum\",\"auto\","
+                " \"slider\", None, a Signal instance")
 
-        #Check to see if the spectra have the same navigational shapes
+        # Check to see if the spectra have the same navigational shapes
         temp_shape_first = axes_manager_list[0].navigation_shape
         for i, axes_manager in enumerate(axes_manager_list):
             temp_shape = axes_manager.navigation_shape
             if not (temp_shape_first == temp_shape):
                 raise ValueError(
-                        "The spectra does not have the same navigation shape")
+                    "The spectra does not have the same navigation shape")
             axes_manager_list[i] = axes_manager.deepcopy()
             if i > 0:
                 for axis0, axisn in zip(axes_manager_list[0].navigation_axes,
@@ -274,55 +276,62 @@ def plot_signals(signal_list, sync=True, navigator="auto",
                                                    navigator_list,
                                                    axes_manager_list):
             signal.plot(axes_manager=axes_manager, navigator=navigator)
-    
-    #If sync is False
+
+    # If sync is False
     else:
         if not navigator_list:
             navigator_list = []
-            navigator_list.extend([navigator]*len(signal_list))
+            navigator_list.extend([navigator] * len(signal_list))
         for signal, navigator in zip(signal_list, navigator_list):
             signal.plot(navigator=navigator)
+
 
 def _make_heatmap_subplot(spectra):
     from hyperspy._signals.image import Image
     im = Image(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
-    im.mapped_parameters.title = spectra.mapped_parameters.title
+    im.metadata.title = spectra.metadata.title
     im.plot()
     return im._plot.signal_plot.ax
-    
-def _make_overlap_plot(spectra, ax, color="blue",line_style='-'):
-    for spectrum_index, (spectrum, color,line_style) in enumerate(
-            zip(spectra, color,line_style)):
+
+
+def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
+    for spectrum_index, (spectrum, color, line_style) in enumerate(
+            zip(spectra, color, line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
-        ax.plot(x_axis.axis, spectrum.data, color=color,ls=line_style)
+        ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style)
     _set_spectrum_xlabel(spectrum, ax)
     ax.set_ylabel('Intensity')
     ax.autoscale(tight=True)
-    
-def _make_cascade_subplot(spectra, ax, color="blue",line_style='-', padding=1):
+
+
+def _make_cascade_subplot(
+        spectra, ax, color="blue", line_style='-', padding=1):
     max_value = 0
     for spectrum in spectra:
         spectrum_yrange = (np.nanmax(spectrum.data) -
                            np.nanmin(spectrum.data))
         if spectrum_yrange > max_value:
             max_value = spectrum_yrange
-    for spectrum_index, (spectrum, color,line_style) in enumerate(
-            zip(spectra, color,line_style)):
+    for spectrum_index, (spectrum, color, line_style) in enumerate(
+            zip(spectra, color, line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
         data_to_plot = ((spectrum.data - spectrum.data.min()) /
-                            float(max_value) + spectrum_index * padding)
-        ax.plot(x_axis.axis, data_to_plot, color=color,ls=line_style)
+                        float(max_value) + spectrum_index * padding)
+        ax.plot(x_axis.axis, data_to_plot, color=color, ls=line_style)
     _set_spectrum_xlabel(spectrum, ax)
     ax.set_yticks([])
     ax.autoscale(tight=True)
 
-def _plot_spectrum(spectrum, ax, color="blue",line_style='-'):
+
+def _plot_spectrum(spectrum, ax, color="blue", line_style='-'):
     x_axis = spectrum.axes_manager.signal_axes[0]
-    ax.plot(x_axis.axis, spectrum.data, color=color,ls=line_style)
+    ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style)
+
 
 def _set_spectrum_xlabel(spectrum, ax):
     x_axis = spectrum.axes_manager.signal_axes[0]
     ax.set_xlabel("%s (%s)" % (x_axis.name, x_axis.units))
+
 
 def plot_spectra(
         spectra,
@@ -331,6 +340,7 @@ def plot_spectra(
         line_style=None,
         padding=1.,
         legend=None,
+        legend_picking=True,
         fig=None,):
     """Plot several spectra in the same figure.
 
@@ -338,20 +348,19 @@ def plot_spectra(
 
     Parameters
     ----------
-    spectra : iterable
+    spectra : iterable object
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
-        the spectra can have diffent size and axes.
+        the spectra can have different size and axes.
     style : {'default', 'overlap','cascade', 'mosaic', 'heatmap'}
         The style of the plot. The default is "overlap" and can be
         customized in `preferences`.
-    color : valid matplotlib color or a list of them or `None`
-        Sets the color of the lines of the plots when `style` is "cascade"
-        or "mosaic". If a list, if its length is
-        less than the number of spectra to plot, the colors will be cycled. If
-        If `None`, use default matplotlib color cycle.
-    line_style: valid matplotlib line style or a list of them or `None`
-        Sets the line style of the plots for "cascade"
-        or "mosaic". The main line style are '-','--','steps','-.',':'.
+    color : matplotlib color or a list of them or `None`
+        Sets the color of the lines of the plots (no action on 'heatmap').
+        If a list, if its length is less than the number of spectra to plot,
+        the colors will be cycled. If `None`, use default matplotlib color cycle.
+    line_style: matplotlib line style or a list of them or `None`
+        Sets the line style of the plots (no action on 'heatmap').
+        The main line style are '-','--','steps','-.',':'.
         If a list, if its length is less than the number of
         spectra to plot, line_style will be cycled. If
         If `None`, use continuous lines, eg: ('-','--','steps','-.',':')
@@ -361,12 +370,16 @@ def plot_spectra(
         without overlapping. Negative values have the same effect but
         reverse the order of the spectra without reversing the order of the
         colors.
-    legend: None | list of str | 'auto'
+    legend: None or list of str or 'auto'
        If list of string, legend for "cascade" or title for "mosaic" is
-       displayed. If 'auto', the title of each spectra (mapped_parameters.title)
+       displayed. If 'auto', the title of each spectra (metadata.title)
        is used.
-    fig : {matplotlib figure, None}
-        If None, a default figure will be created.
+    legend_picking: bool
+        If true, a spectrum can be toggle on and off by clicking on
+        the legended line.
+    fig : matplotlib figure or None
+        If None, a default figure will be created. Specifying fig will
+        not work for the 'heatmap' style.
 
     Example
     -------
@@ -377,10 +390,9 @@ def plot_spectra(
 
     >>> utils.plot.plot_spectra(s).figure.savefig("test.png")
 
-
     Returns
     -------
-    ax: {matplotlib axes | array of matplotlib axes}
+    ax: matplotlib axes or list of matplotlib axes
         An array is returned when `style` is "mosaic".
 
     """
@@ -391,32 +403,32 @@ def plot_spectra(
 
     if color is not None:
         if hasattr(color, "__iter__"):
-            color  = itertools.cycle(color)
+            color = itertools.cycle(color)
         elif isinstance(color, basestring):
-            color  = itertools.cycle([color])
+            color = itertools.cycle([color])
         else:
             raise ValueError("Color must be None, a valid matplotlib color "
-                            "string or a list of valid matplotlib colors.")
+                             "string or a list of valid matplotlib colors.")
     else:
-        color  = itertools.cycle(plt.rcParams['axes.color_cycle'])
+        color = itertools.cycle(plt.rcParams['axes.color_cycle'])
 
     if line_style is not None:
-        if hasattr(line_style , "__iter__"):
-            line_style   = itertools.cycle(line_style)
+        if hasattr(line_style, "__iter__"):
+            line_style = itertools.cycle(line_style)
         elif isinstance(line_style, basestring):
-            line_style   = itertools.cycle([line_style])
+            line_style = itertools.cycle([line_style])
         else:
             raise ValueError("line_style must be None, a valid matplotlib"
-                            " line_style string or a list of valid matplotlib"
-                            " line_style.")
+                             " line_style string or a list of valid matplotlib"
+                             " line_style.")
     else:
         line_style = ['-'] * len(spectra)
 
     if legend is not None:
         if legend == 'auto':
-            legend = [spec.mapped_parameters.title for spec in spectra]
-        elif hasattr(legend , "__iter__"):
-            legend   = itertools.cycle(legend)
+            legend = [spec.metadata.title for spec in spectra]
+        elif hasattr(legend, "__iter__"):
+            legend = itertools.cycle(legend)
         else:
             raise ValueError("legend must be None, 'auto' or a list of string")
 
@@ -425,9 +437,13 @@ def plot_spectra(
             fig = plt.figure()
         ax = fig.add_subplot(111)
         _make_overlap_plot(spectra,
-                          ax,
-                          color=color,
-                          line_style=line_style,)
+                           ax,
+                           color=color,
+                           line_style=line_style,)
+        if legend is not None:
+            plt.legend(legend)
+            if legend_picking is True:
+                animate_legend(figure=fig)
     elif style == 'cascade':
         if fig is None:
             fig = plt.figure()
@@ -439,16 +455,15 @@ def plot_spectra(
                               padding=padding)
         if legend is not None:
             plt.legend(legend)
-
     elif style == 'mosaic':
         default_fsize = plt.rcParams["figure.figsize"]
         figsize = (default_fsize[0], default_fsize[1] * len(spectra))
         fig, subplots = plt.subplots(len(spectra), 1, figsize=figsize)
         if legend is None:
-            legend  = [legend] * len(spectra)
+            legend = [legend] * len(spectra)
         for spectrum, ax, color, line_style, legend in zip(spectra,
-                subplots, color, line_style, legend):
-            _plot_spectrum(spectrum, ax, color=color,line_style=line_style)
+                                                           subplots, color, line_style, legend):
+            _plot_spectrum(spectrum, ax, color=color, line_style=line_style)
             ax.set_ylabel('Intensity')
             if legend is not None:
                 ax.set_title(legend)
@@ -471,3 +486,121 @@ def plot_spectra(
 
     return ax
 
+
+def animate_legend(figure='last'):
+    """Animate the legend of a figure.
+
+    A spectrum can be toggle on and off by clicking on the legended line.
+
+    Parameters
+    ----------
+
+    figure: 'last' | matplolib.figure
+        If 'last' pick the last figure
+
+    Note
+    ----
+
+    Code inspired from legend_picking.py in the matplotlib gallery
+
+    """
+    if figure == 'last':
+        figure = plt.gcf()
+        ax = plt.gca()
+    else:
+        ax = figure.axes[0]
+    lines = ax.lines
+    lined = dict()
+    leg = ax.get_legend()
+    for legline, origline in zip(leg.get_lines(), lines):
+        legline.set_picker(5)  # 5 pts tolerance
+        lined[legline] = origline
+
+    def onpick(event):
+        # on the pick event, find the orig line corresponding to the
+        # legend proxy line, and toggle the visibility
+        legline = event.artist
+        origline = lined[legline]
+        vis = not origline.get_visible()
+        origline.set_visible(vis)
+        # Change the alpha on the line in the legend so we can see what lines
+        # have been toggled
+        if vis:
+            legline.set_alpha(1.0)
+        else:
+            legline.set_alpha(0.2)
+        figure.canvas.draw()
+
+    figure.canvas.mpl_connect('pick_event', onpick)
+
+    plt.show()
+
+
+def plot_histograms(signal_list,
+                    bins='freedman',
+                    range_bins=None,
+                    color=None,
+                    line_style=None,
+                    legend='auto',
+                    fig=None,
+                    **kwargs):
+    """Plot the histogram of every signal in the list in the same figure.
+
+    This function creates a histogram for each signal and plot the list with
+    the `utils.plot.plot_spectra` function.
+
+    Parameters
+    ----------
+    signal_list : iterable
+        Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
+        the spectra can have diffent size and axes.
+    bins : int or list or str, optional
+        If bins is a string, then it must be one of:
+        'knuth' : use Knuth's rule to determine bins
+        'scotts' : use Scott's rule to determine bins
+        'freedman' : use the Freedman-diaconis rule to determine bins
+        'blocks' : use bayesian blocks for dynamic bin widths
+    range_bins : tuple or None, optional.
+        the minimum and maximum range for the histogram. If not specified,
+        it will be (x.min(), x.max())
+    color : valid matplotlib color or a list of them or `None`, otional.
+        Sets the color of the lines of the plots. If a list, if its length is
+        less than the number of spectra to plot, the colors will be cycled. If
+        If `None`, use default matplotlib color cycle.
+    line_style: valid matplotlib line style or a list of them or `None`, otional.
+        The main line style are '-','--','steps','-.',':'.
+        If a list, if its length is less than the number of
+        spectra to plot, line_style will be cycled. If
+        If `None`, use continuous lines, eg: ('-','--','steps','-.',':')
+    legend: None or list of str or 'auto', otional.
+       Display a legend. If 'auto', the title of each spectra
+       (metadata.title) is used.
+    legend_picking: bool, otional.
+        If true, a spectrum can be toggle on and off by clicking on
+        the legended line.
+    fig : matplotlib figure or None, otional.
+        If None, a default figure will be created.
+    **kwargs
+        other keyword arguments (weight and density) are described in
+        np.histogram().
+    Example
+    -------
+    Histograms of two random chi-square distributions
+    >>> img = signals.Image(np.random.chisquare(1,[10,10,100]))
+    >>> img2 = signals.Image(np.random.chisquare(2,[10,10,100]))
+    >>> utils.plot.plot_histograms([img,img2],legend=['hist1','hist2'])
+
+    Returns
+    -------
+    ax: matplotlib axes or list of matplotlib axes
+        An array is returned when `style` is "mosaic".
+
+    """
+    hists = []
+    for obj in signal_list:
+        hists.append(obj.get_histogram(bins=bins,
+                                       range_bins=range_bins, **kwargs))
+    if line_style is None:
+        line_style = 'steps'
+    return plot_spectra(hists, style='overlap', color=color,
+                        line_style=line_style, legend=legend, fig=fig)
