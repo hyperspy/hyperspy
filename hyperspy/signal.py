@@ -1832,8 +1832,8 @@ class MVATools(object):
         comp_label : string,
             The label that is either the plot title (if plotting in
             separate windows) or the label in the legend (if plotting
-            in the
-            same window)
+            in the same window). In this case, each loading line can be
+            toggled on and off by clicking on the legended line.
 
         with_factors : bool
             If True, also returns figure(s) with the factors for the
@@ -1910,8 +1910,8 @@ class MVATools(object):
         comp_label : string,
             The label that is either the plot title (if plotting in
             separate windows) or the label in the legend (if plotting
-            in the
-            same window)
+            in the same window). In this case, each loading line can be
+            toggled on and off by clicking on the legended line.
 
         with_factors : bool
             If True, also returns figure(s) with the factors for the
