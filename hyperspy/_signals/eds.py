@@ -364,10 +364,11 @@ class EDSSpectrum(Spectrum):
                             only_one=True,
                             only_lines=("Ka", "La", "Ma"),
                             **kwargs):
-        """Return the intensity map of selected Xray lines.
+        """Return the intensity of selected Xray lines.
 
-        The intensity maps are computed by integrating the spectrum over the
-        different X-ray lines. The integration window width
+        The intensities, the number of X-ray counts, are computed by 
+        suming the spectrum over the
+        different X-ray lines. The sum window width
         is calculated from the energy resolution of the detector
         defined as defined in
         `self.metadata.SEM.EDS.energy_resolution_MnKa` or
