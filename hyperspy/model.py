@@ -875,7 +875,7 @@ class Model(list):
             variance = self.spectrum.variance[
                 self.spectrum.axes_manager.indices[
                     ::-
-                    1]]
+                    1]][self.channel_switches]
         d = self() - self.spectrum()[self.channel_switches]
         d *= d / variance  # d = difference^2 / variance
         self.chisq.data[self.spectrum.axes_manager.indices[::-1]] = sum(d)
