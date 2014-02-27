@@ -124,7 +124,9 @@ class Parameter(object):
             _bounds : tuple
                 Tuple of (bmin, bmax), lower and upper bounds of the parameter values
             free : boolean
-                Boolean of the parameter is free
+                Boolean if the parameter is free
+            active : boolean
+                Boolean if the parameter is active
         Returns
         -------
         id_value : int
@@ -141,6 +143,8 @@ class Parameter(object):
             self.free = copy.deepcopy(dict['free'])
             self.units = copy.deepcopy(dict['units'])
             self._bounds = copy.deepcopy(dict['_bounds'])
+            if hasattr(self, 'active') and 'active' in dict:
+                self.active = dict['active']
             self.twin_function = types.FunctionType(
                 marshal.loads(
                     dict['twin_function']),
@@ -522,6 +526,8 @@ class Parameter(object):
         dic['id'] = id(self)
         dic['_twins'] = [id(t) for t in self._twins]
         dic['_bounds'] = self._bounds
+        if hasattr(self, 'active'):
+            dic['active'] = self.active
         dic['twin_function'] = marshal.dumps(self.twin_function.func_code)
         dic['twin_inverse_function'] = marshal.dumps(
             self.twin_inverse_function.func_code)
