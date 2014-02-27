@@ -52,7 +52,6 @@ from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
 
 
-
 class Model(list):
 
     """One-dimensional model and data fitting.
