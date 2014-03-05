@@ -143,6 +143,10 @@ class MVA():
                 ' e.g. s.change_dtype(\'float64\')\n'
                 'Nothing done.')
             return
+
+        if self.axes_manager.navigation_size < 2:
+            raise AttributeError("It is not possible to decompose a dataset "
+                                 "with navigation_dimension < 2")
         # backup the original data
         self._data_before_treatments = self.data.copy()
 
