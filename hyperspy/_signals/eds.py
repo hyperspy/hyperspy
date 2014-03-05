@@ -366,8 +366,9 @@ class EDSSpectrum(Spectrum):
                             **kwargs):
         """Return the intensity map of selected Xray lines.
 
-        The intensity maps are computed by integrating the spectrum over the
-        different X-ray lines. The integration window width
+        The intensities, the number of X-ray counts, are computed by
+        suming the spectrum over the
+        different X-ray lines. The sum window width
         is calculated from the energy resolution of the detector
         defined as defined in
         `self.metadata.SEM.EDS.energy_resolution_MnKa` or
@@ -453,7 +454,7 @@ class EDSSpectrum(Spectrum):
             line_FWHM = utils_eds.get_FWHM_at_Energy(FWHM_MnKa, line_energy)
             det = integration_window_factor * line_FWHM / 2.
             img = self[..., line_energy - det:line_energy + det
-                       ].integrate_simpson(-1)
+                       ].sum(-1)
             img.metadata.title = (
                 'Intensity of %s at %.2f %s from %s' %
                 (Xray_line,
