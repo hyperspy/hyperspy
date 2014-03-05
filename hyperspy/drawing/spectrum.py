@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import textwrap
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -108,6 +110,13 @@ class SpectrumFigure(BlittedFigure):
             x_axis_lower_lims.append(line.axis[0])
             x_axis_upper_lims.append(line.axis[-1])
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
+        if hasattr(self.figure, 'tight_layout'):
+            try:
+                self.figure.tight_layout()
+            except:
+                # tight_layout is a bit brittle, we do this just in case it
+                # complains
+                pass
 
     def close(self):
         for line in self.ax_lines + self.right_ax_lines:

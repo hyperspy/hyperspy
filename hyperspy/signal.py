@@ -60,6 +60,7 @@ from hyperspy.gui.tools import IntegrateArea
 from hyperspy import components
 from hyperspy.misc.utils import underline
 from hyperspy.misc.borrowed.astroML.histtools import histogram
+from hyperspy.drawing.utils import animate_legend
 
 
 class Signal2DTools(object):
@@ -1372,6 +1373,7 @@ class MVATools(object):
         else:
             if self.axes_manager.navigation_dimension == 1:
                 plt.legend(ncol=loadings.shape[0] // 2, loc='best')
+                animate_legend()
             if with_factors:
                 return f, self._plot_factors_or_pchars(factors,
                                                        comp_ids=comp_ids,
@@ -1830,8 +1832,8 @@ class MVATools(object):
         comp_label : string,
             The label that is either the plot title (if plotting in
             separate windows) or the label in the legend (if plotting
-            in the
-            same window)
+            in the same window). In this case, each loading line can be
+            toggled on and off by clicking on the legended line.
 
         with_factors : bool
             If True, also returns figure(s) with the factors for the
@@ -1908,8 +1910,8 @@ class MVATools(object):
         comp_label : string,
             The label that is either the plot title (if plotting in
             separate windows) or the label in the legend (if plotting
-            in the
-            same window)
+            in the same window). In this case, each loading line can be
+            toggled on and off by clicking on the legended line.
 
         with_factors : bool
             If True, also returns figure(s) with the factors for the
@@ -3168,70 +3170,84 @@ class Signal(MVA,
         s.get_dimensions_from_data()
         return s
 
-    def split(self, axis=None, number_of_parts=None, step_sizes=None):
+    def split(self,
+        axis='auto', 
+        number_of_parts='auto', 
+        step_sizes='auto'):
         """Splits the data into several signals.
 
-        The split can be defined either by giving either
-        the number_of_parts for homogenous splitting or a list
-        of customized step sizes. If number_of_pars and step_sizes are
-        not defined (None) the default values are read from
-        metadata.splitting in they are defined there.
+        The split can be defined by giving the number_of_parts, a homogeneous
+        step size or a list of customized step sizes. By default ('auto'),
+        the function is the reverse of utils.stack(). 
 
         Parameters
         ----------
-
-        axis : {int, string, None}
+        axis : {'auto' | int | string}
             Specify the data axis in which to perform the splitting
-            operation. The axis can be specified using the index of the
-            axis in `axes_manager` or the axis name. It can only be None
-            when the value is defined in metadata.splitting
-        number_of_parts : {int | None}
+            operation.  The axis can be specified using the index of the
+            axis in `axes_manager` or the axis name.
+            - If 'auto' and if the object has been created with utils.stack,
+            split will return the former list of signals
+            (options stored in 'metadata.stacking_history'              
+             else the last navigation axis will be used. 
+        number_of_parts : {'auto' | int}
             Number of parts in which the SI will be splitted. The
             splitting is homegenous. When the axis size is not divisible
             by the number_of_parts the reminder data is lost without
-            warning.
-        step_sizes : {list of ints | None}
-            Size of the splitted parts.
-
+            warning. If number_of_parts and step_sizes is 'auto',
+            number_of_parts equals the lenght of the axis,
+            step_sizes equals one  and the axis is supress from each sub_spectra. 
+        step_sizes : {'auto' | list of ints | int}
+            Size of the splitted parts. If 'auto', the step_sizes equals one.
+            If int, the splitting is homogenous.            
+            
+        Examples
+        --------        
+        >>> s=signals.Spectrum(random.random([4,3,2]))
+        >>> s
+            <Spectrum, title: , dimensions: (3, 4|2)>
+        >>> s.split()
+            [<Spectrum, title: , dimensions: (3 |2)>,
+            <Spectrum, title: , dimensions: (3 |2)>,
+            <Spectrum, title: , dimensions: (3 |2)>,
+            <Spectrum, title: , dimensions: (3 |2)>]
+        >>> s.split(step_sizes=2)
+            [<Spectrum, title: , dimensions: (3, 2|2)>,
+            <Spectrum, title: , dimensions: (3, 2|2)>]
+        >>> s.split(step_sizes=[1,2])
+            [<Spectrum, title: , dimensions: (3, 1|2)>,
+            <Spectrum, title: , dimensions: (3, 2|2)>]        
 
         Returns
         -------
-        tuple with the splitted signals
-
+        list of the splitted signals
         """
 
         shape = self.data.shape
         signal_dict = self._to_dictionary(add_learning_results=False)
-        if axis is None:
-            if self.metadata.has_item("splitting.axis"):
-                axis = self.metadata.splitting.axis
+        
+        if axis == 'auto':
+            mode='auto'
+            if hasattr(self.metadata, 'stacking_history'):
+                axis_in_manager = self.metadata.stacking_history.axis
+                step_sizes = self.metadata.stacking_history.step_sizes
             else:
-                raise ValueError(
-                    "Please specify the axis over which I should "
-                    "perform the operation")
+                axis_in_manager = self.axes_manager[-1+1j].index_in_axes_manager
         else:
-            axis = self.axes_manager[axis].index_in_array
-
-        if number_of_parts is None and step_sizes is None:
-            if not self.metadata.has_item(
-                    "splitting.step_sizes"):
-                raise ValueError(
-                    "Please provide either number_of_parts "
-                    "or a step_sizes list.")
-            else:
-                step_sizes = self.metadata.splitting.step_sizes
-                # Remove the splitting subsection of metadata
-                # because it must not be inherited by the splitted
-                # signals.
-                del signal_dict['metadata']['splitting']
-                messages.information(
-                    "Automatically splitting in %s step sizes" %
-                    step_sizes)
-        elif number_of_parts is not None and step_sizes is not None:
+            mode='manual'
+            axis_in_manager = self.axes_manager[axis].index_in_axes_manager
+        
+        axis = self.axes_manager[axis_in_manager].index_in_array            
+        len_axis = self.axes_manager[axis_in_manager].size
+            
+        if number_of_parts is 'auto' and step_sizes is 'auto':
+            step_sizes = 1
+            number_of_parts = len_axis
+        elif number_of_parts is not 'auto' and step_sizes is not 'auto':
             raise ValueError(
-                "Print define step_sizes or number_of_part "
+                "You can define step_sizes or number_of_parts "
                 "but not both.")
-        elif step_sizes is None:
+        elif step_sizes is 'auto':
             if number_of_parts > shape[axis]:
                 raise ValueError(
                     "The number of parts is greater than "
@@ -3239,7 +3255,11 @@ class Signal(MVA,
             else:
                 step_sizes = ([shape[axis] // number_of_parts, ] *
                               number_of_parts)
-        splitted = ()
+                              
+        if isinstance(step_sizes,int):
+            step_sizes = [step_sizes]*int(len_axis/step_sizes)
+                
+        splitted = []
         cut_index = np.array([0] + step_sizes).cumsum()
 
         axes_dict = signal_dict['axes']
@@ -3252,6 +3272,24 @@ class Signal(MVA,
                 (slice(cut_index[i], cut_index[i + 1]), Ellipsis)]
             signal_dict['data'] = data
             splitted += self.__class__(**signal_dict),
+            
+            
+        if number_of_parts == len_axis \
+            or step_sizes == [1]*len_axis :
+            for i, spectrum in enumerate(splitted):
+                spectrum.data = spectrum.data[spectrum.axes_manager._get_data_slice([(axis,0)])]               
+                spectrum._remove_axis(axis_in_manager)
+                
+                
+        if mode == 'auto' and hasattr(self.original_metadata, 'stack_elements'):
+            for i, spectrum in enumerate(splitted):
+                stack_keys = self.original_metadata.stack_elements.keys()
+                spectrum.metadata = self.original_metadata.stack_elements[
+                    stack_keys[i]]['metadata']
+                spectrum.original_metadata = self.original_metadata.stack_elements[
+                    stack_keys[i]]['original_metadata']
+                spectrum.metadata.title = spectrum.metadata.title[9:]
+                
         return splitted
 
     def unfold_if_multidim(self):

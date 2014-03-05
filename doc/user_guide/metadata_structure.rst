@@ -191,18 +191,21 @@ Xray_lines
 thickness
     type: Float
     
-    The thickness of the sample in m.     
-
+    The thickness of the sample in m.   
     
-Splitting
----------
+Stacking_history
+----------------
+
+Generated when using :py:meth:`~.utils.stack`. Used by 
+:py:meth:`~.signal.Signal.split`, to retrieve the former list of signal.
 
 step_sizes
     type: list of int
-    
-    Default splitting step sizes.
+
+    Step sizes used that can be used in split.
+
 axis
     type: int
     
-    The default axis in array over which to split the dataset.
+   The axis index in axes manager on which the dataset were stacked.
 

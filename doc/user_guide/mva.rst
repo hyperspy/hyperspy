@@ -48,9 +48,11 @@ principal component analysis (PCA). To perform PCA on your data set, run the
    >>> s.decomposition()
 
 
-(Note that the s variable must contain a Signal  class or any of its 
-subclasses which most likely has been previously loaded with the `load`
-function, e.g. s = load('my_file.hdf5').)
+Note that the `s` variable must contain a :class:`~.signal.Signal`  class or
+any of its subclasses which most likely has been previously loaded with the
+:func:`~.io.load` function, e.g. ``s = load('my_file.hdf5')``. Also, the signal must be
+multidimensional, i.e. ``s.axes_manager.navigation_size`` must be greater than
+one.
 
 Several algorithms exist for performing this analysis. The default algorithm in
 Hyperspy is :py:const:`SVD`, which performs PCA using an approach called

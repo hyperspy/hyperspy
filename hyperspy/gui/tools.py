@@ -335,6 +335,18 @@ class Smoothing(t.HasTraits):
     differential_order = t.Int(0)
     crop_diff_axis = True
 
+    @property
+    def line_color_rgb(self):
+        try:
+            # PyQt and WX
+            return self.line_color.Get()
+        except AttributeError:
+            try:
+                # PySide
+                return self.line_color.getRgb()
+            except:
+                raise
+
     def __init__(self, signal):
         self.ax = None
         self.data_line = None
@@ -354,8 +366,9 @@ class Smoothing(t.HasTraits):
                                type='scatter')
         l2 = drawing.spectrum.SpectrumLine()
         l2.data_function = self.model2plot
+
         l2.set_line_properties(
-            color=np.array(self.line_color.Get()) / 255.,
+            color=np.array(self.line_color_rgb) / 255.,
             type='line')
         # Add the line to the figure
         hse.signal_plot.add_line(l2)
@@ -375,7 +388,7 @@ class Smoothing(t.HasTraits):
         self.smooth_diff_line = drawing.spectrum.SpectrumLine()
         self.smooth_diff_line.data_function = self.diff_model2plot
         self.smooth_diff_line.set_line_properties(
-            color=np.array(self.line_color.Get()) / 255.,
+            color=np.array(self.line_color_rgb) / 255.,
             type='line')
         self.signal._plot.signal_plot.add_line(self.smooth_diff_line,
                                                ax='right')
@@ -402,10 +415,10 @@ class Smoothing(t.HasTraits):
 
     def _line_color_changed(self, old, new):
         self.smooth_line.line_properties = {
-            'color': np.array(self.line_color.Get()) / 255.}
+            'color': np.array(self.line_color_rgb) / 255.}
         if self.smooth_diff_line is not None:
             self.smooth_diff_line.line_properties = {
-                'color': np.array(self.line_color.Get()) / 255.}
+                'color': np.array(self.line_color_rgb) / 255.}
         self.update_lines()
 
     def diff_model2plot(self, axes_manager=None):

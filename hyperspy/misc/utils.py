@@ -698,6 +698,8 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
 
     """
+    
+    axis_input = copy.deepcopy(axis)
 
     for i, obj in enumerate(signal_list):
         if i == 0:
@@ -759,4 +761,13 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         signal.data = np.concatenate([signal_.data for signal_ in signal_list],
                                      axis=axis.index_in_array)
         signal.get_dimensions_from_data()
+        
+    if axis_input is None:
+        axis_input = signal.axes_manager[-1+1j].index_in_axes_manager
+        step_sizes = 1
+    else:        
+        step_sizes = [obj.axes_manager.shape[axis_input] for obj in signal_list]
+    signal.metadata.set_item('stacking_history.axis',axis_input)
+    signal.metadata.set_item('stacking_history.step_sizes',step_sizes)
+    
     return signal
