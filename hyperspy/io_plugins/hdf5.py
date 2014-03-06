@@ -71,8 +71,8 @@ version = "1.1"
 
 not_valid_format = 'The file is not a valid Hyperspy hdf5 file'
 
-current_file_version = None
-latest_file_version = StrictVersion(version)
+current_file_version = None  # Format version of the file being read
+default_version = StrictVersion(version)
 
 
 def get_hspy_format_version(f):
@@ -96,8 +96,8 @@ def file_reader(filename, record_by, mode='r', driver='core',
         # elsewhere.
         global current_file_version
         current_file_version = get_hspy_format_version(f)
-        global latest_file_version
-        if current_file_version > latest_file_version:
+        global default_version
+        if current_file_version > default_version:
             warnings.warn("This file was written using a newer version of "
                           "HyperSpy. I will attempt to load it, but, "
                           "if I fail, "
@@ -128,7 +128,7 @@ def file_reader(filename, record_by, mode='r', driver='core',
 
 def hdfgroup2signaldict(group):
     global current_file_version
-    global latest_file_version
+    global default_version
     if current_file_version < StrictVersion("1.2"):
         metadata = "mapped_parameters"
         original_metadata = "original_parameters"
@@ -185,6 +185,12 @@ def hdfgroup2signaldict(group):
             exp['metadata']['title'] = \
                 exp['metadata']['name']
             del exp['metadata']['name']
+
+    if current_file_version < StrictVersion("1.2"):
+        if '_internal_parameters' in exp['metadata']:
+            exp['metadata']['_Internal_parameters'] = \
+                exp['metadata']['_internal_parameters']
+            del exp['metadata']['_internal_parameters']
 
     return exp
 
@@ -276,8 +282,7 @@ def hdfgroup2dict(group, dictionary={}):
 
 
 def write_signal(signal, group, compression='gzip'):
-    global latest_file_version
-    if latest_file_version < StrictVersion("1.2"):
+    if default_version < StrictVersion("1.2"):
         metadata = "mapped_parameters"
         original_metadata = "original_parameters"
     else:
@@ -295,7 +300,11 @@ def write_signal(signal, group, compression='gzip'):
             'axis-%s' % axis.index_in_array)
         dict2hdfgroup(axis_dict, coord_group, compression=compression)
     mapped_par = group.create_group(metadata)
-    dict2hdfgroup(signal.metadata.as_dictionary(),
+    metadata_dict = signal.metadata.as_dictionary()
+    if default_version < StrictVersion("1.2"):
+        metadata_dict["_internal_parameters"] = \
+            metadata_dict.pop("_Internal_parameters")
+    dict2hdfgroup(metadata_dict,
                   mapped_par, compression=compression)
     original_par = group.create_group(original_metadata)
     dict2hdfgroup(signal.original_metadata.as_dictionary(),
@@ -310,7 +319,10 @@ def write_signal(signal, group, compression='gzip'):
                       peak_learning_results, compression=compression)
 
 
-def file_writer(filename, signal, compression='gzip', *args, **kwds):
+def file_writer(filename,
+                signal,
+                compression='gzip',
+                *args, **kwds):
     with h5py.File(filename, mode='w') as f:
         f.attrs['file_format'] = "HyperSpy"
         f.attrs['file_format_version'] = version
