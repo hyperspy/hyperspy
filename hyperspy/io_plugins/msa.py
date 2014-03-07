@@ -61,7 +61,7 @@ keywords = {
     # Optional parameters
     # Spectrum characteristics
     'SIGNALTYPE': {'dtype': unicode, 'mapped_to':
-                   'signal_type'},
+                   'Signal.signal_type'},
     'XLABEL': {'dtype': unicode, 'mapped_to': None},
     'YLABEL': {'dtype': unicode, 'mapped_to': None},
     'XUNITS': {'dtype': unicode, 'mapped_to': None},
@@ -238,12 +238,12 @@ def file_reader(filename, encoding='latin-1', **kwds):
 
     mapped.set_item('General.original_filename', filename)
     mapped['record_by'] = 'spectrum'
-    if mapped.has_item('signal_type'):
-        if mapped.signal_type == 'ELS':
-            mapped.signal_type = 'EELS'
+    if mapped.has_item('Signal.signal_type'):
+        if mapped.Signal.signal_type == 'ELS':
+            mapped.Signal.signal_type = 'EELS'
     else:
         # Defaulting to EELS looks reasonable
-        mapped.signal_type = 'EELS'
+        mapped.Signal.signal_type = 'EELS'
 
     dictionary = {
         'data': np.array(y),
@@ -296,7 +296,7 @@ def file_writer(filename, signal, format=None, separator=', ',
         'NPOINTS': signal.axes_manager._axes[0].size,
         'NCOLUMNS': 1,
         'DATATYPE': format,
-        'SIGNALTYPE': signal.metadata.signal_type,
+        'SIGNALTYPE': signal.metadata.Signal.signal_type,
         'XPERCHAN': signal.axes_manager._axes[0].scale,
         'OFFSET': signal.axes_manager._axes[0].offset,
         # Spectrum characteristics
@@ -337,7 +337,7 @@ def file_writer(filename, signal, format=None, separator=', ',
     for key, dic in keywords.iteritems():
 
         if dic['mapped_to'] is not None:
-            if 'SEM' in signal.metadata.signal_type:
+            if 'SEM' in signal.metadata.Signal.signal_type:
                 dic['mapped_to'] = dic['mapped_to'].replace('TEM', 'SEM')
             if signal.metadata.has_item(dic['mapped_to']):
                 loc_kwds[key] = eval('signal.metadata.%s' %

@@ -79,7 +79,7 @@ class Test_metadata:
         results.append(signal_type)
         resultsSEM = [
             mpSEM.Acquisition_instrument.SEM.EDS.energy_resolution_MnKa]
-        resultsSEM.append(mpSEM.signal_type)
+        resultsSEM.append(mpSEM.Signal.signal_type)
         assert_equal(results, resultsSEM)
 
     def test_get_calibration_from(self):

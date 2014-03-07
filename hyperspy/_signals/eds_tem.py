@@ -51,7 +51,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         if mp.has_item('Acquisition_instrument.TEM.EDS') is False:
             mp.Acquisition_instrument.TEM.add_node('EDS')
 
-        mp.signal_type = 'EDS_TEM'
+        mp.Signal.signal_type = 'EDS_TEM'
 
         mp = self.metadata
         if "mp.Acquisition_instrument.TEM.tilt_stage" not in mp:

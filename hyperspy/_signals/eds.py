@@ -31,7 +31,7 @@ class EDSSpectrum(Spectrum):
 
     def __init__(self, *args, **kwards):
         Spectrum.__init__(self, *args, **kwards)
-        if self.metadata.signal_type == 'EDS':
+        if self.metadata.Signal.signal_type == 'EDS':
             print('The microscope type is not set. Use '
                   'set_signal_type(\'EDS_TEM\') or set_signal_type(\'EDS_SEM\')')
 
@@ -432,9 +432,9 @@ class EDSSpectrum(Spectrum):
                 raise ValueError(
                     "Not X-ray line, set them with `add_elements`")
 
-        if self.metadata.signal_type == 'EDS_SEM':
+        if self.metadata.Signal.signal_type == 'EDS_SEM':
             FWHM_MnKa = self.metadata.Acquisition_instrument.SEM.EDS.energy_resolution_MnKa
-        elif self.metadata.signal_type == 'EDS_TEM':
+        elif self.metadata.Signal.signal_type == 'EDS_TEM':
             FWHM_MnKa = self.metadata.Acquisition_instrument.TEM.EDS.energy_resolution_MnKa
         else:
             raise NotImplementedError(
@@ -494,9 +494,9 @@ class EDSSpectrum(Spectrum):
         -----
         Defined by M. Schaffer et al., Ultramicroscopy 107(8), pp 587-597 (2007)
         """
-        if self.metadata.signal_type == 'EDS_SEM':
+        if self.metadata.Signal.signal_type == 'EDS_SEM':
             mp = self.metadata.Acquisition_instrument.SEM
-        elif self.metadata.signal_type == 'EDS_TEM':
+        elif self.metadata.Signal.signal_type == 'EDS_TEM':
             mp = self.metadata.Acquisition_instrument.TEM
 
         tilt_stage = mp.tilt_stage

@@ -2234,7 +2234,7 @@ class MVATools(object):
                                        "navigate": True}] +
                                 self.axes_manager._get_signal_axes_dicts())
         signal.set_signal_origin(self.metadata.signal_origin)
-        signal.set_signal_type(self.metadata.signal_type)
+        signal.set_signal_type(self.metadata.Signal.signal_type)
         for axis in signal.axes_manager._axes[1:]:
             axis.navigate = False
         return signal
@@ -2697,9 +2697,9 @@ class Signal(MVA,
     def _print_summary(self):
         string = "\n\tTitle: "
         string += self.metadata.General.title.decode('utf8')
-        if hasattr(self.metadata, 'signal_type'):
+        if self.metadata.has_item("Signal.signal_type"):
             string += "\n\tSignal type: "
-            string += self.metadata.signal_type
+            string += self.metadata.Signal.signal_type
         string += "\n\tData dimensions: "
         string += str(self.axes_manager.shape)
         if hasattr(self.metadata, 'record_by'):
@@ -2767,8 +2767,8 @@ class Signal(MVA,
                 "signal_origin" not in self.metadata):
             self.metadata.signal_origin = self._signal_origin
         if (self._signal_type or
-                "signal_type" not in self.metadata):
-            self.metadata.signal_type = self._signal_type
+                not self.metadata.has_item("Signal.signal_type")):
+            self.metadata.Signal.signal_type = self._signal_type
 
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array
@@ -4196,9 +4196,9 @@ class Signal(MVA,
         self.__class__ = hyperspy.io.assign_signal_subclass(
             record_by=mp.record_by if "record_by" in mp
             else self._record_by,
-            signal_type=mp.signal_type if "signal_type" in mp
+            signal_type=mp.Signal.signal_type if "signal_type" in mp.Signal
             else self._signal_type,
-            signal_origin=mp.signal_origin if "signal_origin" in mp
+            signal_origin=mp.signal_origin if "signal_origin" in mp.Signal
             else self._signal_origin)
         self.__init__(**self._to_dictionary())
 
@@ -4228,7 +4228,7 @@ class Signal(MVA,
             type.
 
         """
-        self.metadata.signal_type = signal_type
+        self.metadata.Signal.signal_type = signal_type
         self._assign_subclass()
 
     def set_signal_origin(self, origin):

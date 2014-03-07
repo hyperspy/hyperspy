@@ -451,8 +451,8 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
 
     mp = DictionaryTreeBrowser({
         'record_by': record_by,
-        'Genereal': {'original_filename': os.path.split(filename)[1]},
-        'signal_type': rpl_info['signal'],
+        'General': {'original_filename': os.path.split(filename)[1]},
+        "Signal" : {'signal_type': rpl_info['signal']},
     })
 
     if 'convergence-angle' in rpl_info:
@@ -526,8 +526,8 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
     data_type, data_length = dtype2keys[dc.dtype.name]
     byte_order = endianess2rpl[dc.dtype.byteorder.replace('|', '=')]
     offset = 0
-    if hasattr(signal.metadata, 'signal_type'):
-        signal_type = signal.metadata.signal_type
+    if signal.metadata.has_item("Signal.signal_type"):
+        signal_type = signal.metadata.Signal.signal_type
     else:
         signal_type = ""
     if signal.axes_manager.signal_dimension == 1:
@@ -590,10 +590,10 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
             keys_dictionary['%s-name' % key] = eval(
                 '%s_axis.name' % key)
 
-    if "EDS" in signal.metadata.signal_type:
-        if signal.metadata == "EDS_SEM":
+    if "EDS" in signal.metadata.Signal.signal_type:
+        if signal.metadata.Signal.signal_type == "EDS_SEM":
             mp = signal.metadata.Acquisition_instrument.SEM
-        elif self.metadata == "EDS_TEM":
+        elif self.metadata.Signal.signal_type == "EDS_TEM":
             mp = signal.metadata.Acquisition_instrument.TEM
 
         if mp.has_item('beam_energy'):

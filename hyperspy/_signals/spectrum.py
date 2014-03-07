@@ -50,9 +50,9 @@ class Spectrum(Signal):
             '`set_signal_type("EDS_SEM")` instead',
             DeprecationWarning)
         if microscope is None:
-            if self.metadata.signal_type == 'EDS_SEM':
+            if self.metadata.Signal.signal_type == 'EDS_SEM':
                 microscope = 'SEM'
-            elif self.metadata.signal_type == 'EDS_TEM':
+            elif self.metadata.Signal.signal_type == 'EDS_TEM':
                 microscope = 'TEM'
             else:
                 microscope = 'TEM'
@@ -73,9 +73,9 @@ class Spectrum(Signal):
         #from hyperspy._signals.eds_tem import EDSTEMSpectrum
         #from hyperspy._signals.eds_sem import EDSSEMSpectrum
         # if microscope == None:
-            # if self.metadata.signal_type == 'EDS_SEM':
+            # if self.metadata.Signal.signal_type == 'EDS_SEM':
                 #microscope = 'SEM'
-            # elif self.metadata.signal_type == 'EDS_TEM':
+            # elif self.metadata.Signal.signal_type == 'EDS_TEM':
                 #microscope = 'TEM'
             # else:
                 # raise ValueError("Set a microscope. Valid microscopes "

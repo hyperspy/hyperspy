@@ -178,7 +178,9 @@ def hdfgroup2signaldict(group):
                 group['peak_mva_results'], {})
         # Replace the old signal and name keys with their current names
         if 'signal' in exp['metadata']:
-            exp['metadata']['signal_type'] = \
+            if not "Signal" in exp["metadata"]:
+                exp["metadata"]["Signal"] = {}
+            exp['metadata']["Signal"]['signal_type'] = \
                 exp['metadata']['signal']
             del exp['metadata']['signal']
 

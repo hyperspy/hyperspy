@@ -762,9 +762,11 @@ class ImageObject(object):
     def get_metadata(self, metadata={}):
         if "General" not in metadata:
             metadata['General'] = {}
+        if "Signal" not in metadata:
+            metadata['Signal'] = {}
         metadata['General']['title'] = self.title
         metadata['record_by'] = self.record_by
-        metadata['signal_type'] = self.signal_type
+        metadata["Signal"]['signal_type'] = self.signal_type
         return metadata
 
 mapping = {
