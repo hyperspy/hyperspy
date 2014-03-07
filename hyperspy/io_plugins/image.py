@@ -64,14 +64,14 @@ def file_reader(filename, **kwds):
     if len(dc.shape) > 2:
         # It may be a grayscale image that was saved in the RGB or RGBA
         # format
-        if (dc[:,:, 1] == dc[:,:, 2]).all() and \
-                            (dc[:,:, 1] == dc[:,:, 2]).all():
-            dc = dc[:,:, 0]
+        if (dc[:, :, 1] == dc[:,:, 2]).all() and \
+                            (dc[:, :, 1] == dc[:,:, 2]).all():
+            dc = dc[:, :, 0]
     return [{'data': dc,
              'metadata':
-                 {
-                     'General': {'original_filename': os.path.split(filename)[1]},
-                     'record_by': 'image',
-                     "Signal" : {'signal_type': "", },
-                 }
+             {
+                 'General': {'original_filename': os.path.split(filename)[1]},
+                 'record_by': 'image',
+                 "Signal": {'signal_type': "", },
+             }
              }]
