@@ -452,7 +452,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     original_metadata['ser_header_parameters'] = header_parameters
     dictionary = {
         'data': dc,
-        'metadata': {'original_filename': os.path.split(filename)[1],
+        'metadata': {'General' : {'original_filename': os.path.split(filename)[1]},
                      'record_by': record_by,
                      'signal_type': "", },
         'axes': axes,

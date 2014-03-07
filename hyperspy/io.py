@@ -187,7 +187,7 @@ def load(filenames=None,
                                           axis=stack_axis,
                                           new_axis_name=new_axis_name,
                                           mmap=mmap, mmap_dir=mmap_dir)
-            signal.metadata.title = \
+            signal.metadata.General.title = \
                 os.path.split(
                     os.path.split(
                         os.path.abspath(filenames[0])

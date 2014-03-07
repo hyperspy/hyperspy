@@ -453,12 +453,12 @@ class EDSSpectrum(Spectrum):
             det = integration_window_factor * line_FWHM / 2.
             img = self[..., line_energy - det:line_energy + det
                        ].sum(-1)
-            img.metadata.title = (
+            img.metadata.General.title = (
                 'Intensity of %s at %.2f %s from %s' %
                 (Xray_line,
                  line_energy,
                  self.axes_manager.signal_axes[0].units,
-                 self.metadata.title))
+                 self.metadata.General.title))
             if img.axes_manager.navigation_dimension >= 2:
                 img = img.as_image([0, 1])
             elif img.axes_manager.navigation_dimension == 1:

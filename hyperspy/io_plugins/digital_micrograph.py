@@ -760,7 +760,9 @@ class ImageObject(object):
                         self.units))]
 
     def get_metadata(self, metadata={}):
-        metadata['title'] = self.title
+        if "General" not in metadata:
+            metadata['General'] = {}
+        metadata['General']['title'] = self.title
         metadata['record_by'] = self.record_by
         metadata['signal_type'] = self.signal_type
         return metadata
@@ -801,7 +803,7 @@ def file_reader(filename, record_by=None, order=None, verbose=False):
                 'TagGroup0'] = image.imdict.as_dictionary()
             axes = image.get_axes_dict()
             mp = image.get_metadata()
-            mp['original_filename'] = os.path.split(filename)[1]
+            mp['General']['original_filename'] = os.path.split(filename)[1]
             post_process = []
             if image.to_spectrum is True:
                 post_process.append(lambda s: s.to_spectrum())

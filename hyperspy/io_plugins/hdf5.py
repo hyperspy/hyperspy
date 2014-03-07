@@ -163,8 +163,9 @@ def hdfgroup2signaldict(group):
     # If the title was not defined on writing the Experiment is
     # then called __unnamed__. The next "if" simply sets the title
     # back to the empty string
-    if '__unnamed__' == exp['metadata']['title']:
-        exp['metadata']['title'] = ''
+    if "General" in exp["metadata"] and ["title"] in exp["metadata"]["General"]:
+        if '__unnamed__' == exp['metadata']['General']['title']:
+            exp['metadata']["General"]['title'] = ''
 
     if current_file_version < StrictVersion("1.1"):
         # Load the decomposition results written with the old name,
@@ -182,7 +183,9 @@ def hdfgroup2signaldict(group):
             del exp['metadata']['signal']
 
         if 'name' in exp['metadata']:
-            exp['metadata']['title'] = \
+            if "General" not in exp["metadata"]:
+                exp["metadata"]["General"] = {}
+            exp['metadata']['General']['title'] = \
                 exp['metadata']['name']
             del exp['metadata']['name']
 
@@ -327,7 +330,7 @@ def file_writer(filename,
         f.attrs['file_format'] = "HyperSpy"
         f.attrs['file_format_version'] = version
         exps = f.create_group('Experiments')
-        group_name = signal.metadata.title if \
-            signal.metadata.title else '__unnamed__'
+        group_name = signal.metadata.General.title if \
+            signal.metadata.General.title else '__unnamed__'
         expg = exps.create_group(group_name)
         write_signal(signal, expg, compression=compression)

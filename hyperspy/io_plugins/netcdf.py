@@ -195,7 +195,8 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             'units': units[i], }
         for i in xrange(dim)]
     metadata = {}
-    metadata['original_filename'] = os.path.split(filename)[1]
+    metadata['General'] = {}
+    metadata['General']['original_filename'] = os.path.split(filename)[1]
     metadata['record_by'] = record_by
     metadata['signal_type'] = ""
     dictionary = {

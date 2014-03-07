@@ -301,5 +301,5 @@ def eels_constant(s, zlp, t):
     tgt = e0 * (2 * me + e0) / (me + e0)
     k = s._get_navigation_signal()
     k.data = (t * i0 / (332.5 * ke)) * np.log(1 + (beta * tgt / eaxis) ** 2)
-    k.metadata.title = "EELS proportionality constant K"
+    k.metadata.General.title = "EELS proportionality constant K"
     return k

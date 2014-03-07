@@ -321,8 +321,8 @@ class EELSSpectrum(Spectrum):
             I0.axes_manager._set_axis_attribute_values(
                 'navigate',
                 bk_I0_navigate)
-        I0.metadata.title = (
-            self.metadata.title + ' elastic intensity')
+        I0.metadata.General.title = (
+            self.metadata.General.title + ' elastic intensity')
         if self.tmp_parameters.has_item('filename'):
             I0.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
@@ -408,8 +408,8 @@ class EELSSpectrum(Spectrum):
         del s
 
         # Create spectrum image, stop and return value
-        threshold.metadata.title = (
-            self.metadata.title +
+        threshold.metadata.General.title = (
+            self.metadata.General.title +
             ' ZLP threshold')
         if self.tmp_parameters.has_item('filename'):
             threshold.tmp_parameters.filename = (
@@ -475,7 +475,7 @@ class EELSSpectrum(Spectrum):
         t_over_lambda = np.log(total_intensity / I0)
         s = self._get_navigation_signal()
         s.data = t_over_lambda
-        s.metadata.title = (self.metadata.title +
+        s.metadata.General.title = (self.metadata.General.title +
                             ' $\\frac{t}{\\lambda}$')
         if self.tmp_parameters.has_item('filename'):
             s.tmp_parameters.filename = (
@@ -542,7 +542,7 @@ class EELSSpectrum(Spectrum):
                 s.data += zlp.data[s.axes_manager._get_data_slice(
                     [(axis.index_in_array, slice(None, self_size)), ])]
 
-        s.metadata.title = (s.metadata.title +
+        s.metadata.General.title = (s.metadata.General.title +
                             ' after Fourier-log deconvolution')
         if s.tmp_parameters.has_item('filename'):
             s.tmp_parameters.filename = (
@@ -646,7 +646,7 @@ class EELSSpectrum(Spectrum):
                                axis=axis.index_in_array)
         cl.data *= I0
         cl.crop(-1, None, int(orig_cl_size))
-        cl.metadata.title = (self.metadata.title +
+        cl.metadata.General.title = (self.metadata.General.title +
                              ' after Fourier-ratio deconvolution')
         if cl.tmp_parameters.has_item('filename'):
             cl.tmp_parameters.filename = (
@@ -680,7 +680,7 @@ class EELSSpectrum(Spectrum):
         self._check_signal_dimension_equals_one()
         ds = self.deepcopy()
         ds.data = ds.data.copy()
-        ds.metadata.title += (
+        ds.metadata.General.title += (
             ' after Richardson-Lucy deconvolution %i iterations' %
             iterations)
         if ds.tmp_parameters.has_item('filename'):
@@ -884,7 +884,7 @@ class EELSSpectrum(Spectrum):
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         s = self.deepcopy()
-        s.metadata.title += (
+        s.metadata.General.title += (
             ' %i channels extrapolated' %
             extrapolation_size)
         if s.tmp_parameters.has_item('filename'):
@@ -1165,7 +1165,7 @@ class EELSSpectrum(Spectrum):
                 print 'Iteration number: ', io + 1, '/', iterations
                 if iterations == io + 1 and full_output is True:
                     sp = sorig._deepcopy_with_new_data(Srfint)
-                    sp.metadata.title += (
+                    sp.metadata.General.title += (
                         " estimated surface plasmon excitation.")
                     output['surface plasmon estimation'] = sp
                     del sp
@@ -1174,7 +1174,7 @@ class EELSSpectrum(Spectrum):
         eps = s._deepcopy_with_new_data(e1 + e2 * 1j)
         del s
         eps.set_signal_type("DielectricFunction")
-        eps.metadata.title = (self.metadata.title +
+        eps.metadata.General.title = (self.metadata.General.title +
                               'dielectric function '
                               '(from Kramers-Kronig analysis)')
         if eps.tmp_parameters.has_item('filename'):
@@ -1183,8 +1183,8 @@ class EELSSpectrum(Spectrum):
                 '_CDF_after_Kramers_Kronig_transform')
         if 'thickness' in output:
             thickness = eps._get_navigation_signal()
-            thickness.metadata.title = (
-                self.metadata.title + ' thickness '
+            thickness.metadata.General.title = (
+                self.metadata.General.title + ' thickness '
                 '(calculated using Kramers-Kronig analysis)')
             thickness.data = te[
                 self.axes_manager._get_data_slice([(

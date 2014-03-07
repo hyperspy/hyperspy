@@ -1152,22 +1152,22 @@ class Signal1DTools(object):
             pbar.finish()
         width = right - left
         if factor == 0.5:
-            width.metadata.title = (
-                self.metadata.title + " FWHM")
-            left.metadata.title = (
-                self.metadata.title + " FWHM left position")
+            width.metadata.General.title = (
+                self.metadata.General.title + " FWHM")
+            left.metadata.General.title = (
+                self.metadata.General.title + " FWHM left position")
 
-            right.metadata.title = (
-                self.metadata.title + " FWHM right position")
+            right.metadata.General.title = (
+                self.metadata.General.title + " FWHM right position")
         else:
-            width.metadata.title = (
-                self.metadata.title +
+            width.metadata.General.title = (
+                self.metadata.General.title +
                 " full-width at %.1f maximum" % factor)
-            left.metadata.title = (
-                self.metadata.title +
+            left.metadata.General.title = (
+                self.metadata.General.title +
                 " full-width at %.1f maximum left position" % factor)
-            right.metadata.title = (
-                self.metadata.title +
+            right.metadata.General.title = (
+                self.metadata.General.title +
                 " full-width at %.1f maximum right position" % factor)
         if return_interval is True:
             return [width, left, right]
@@ -1466,10 +1466,10 @@ class MVATools(object):
                 s = Image(factor_data,
                           axes=axes_dicts,
                           metadata={
-                              'title': '%s from %s' % (
+                              'General' : {'title': '%s from %s' % (
                                   factor_prefix,
-                                  self.metadata.title),
-                          })
+                                  self.metadata.General.title),
+                          }})
             elif self.axes_manager.signal_dimension == 1:
                 axes = []
                 axes.append(
@@ -1487,9 +1487,9 @@ class MVATools(object):
                 s = Spectrum(factors.T,
                              axes=axes,
                              metadata={
-                                 'title': '%s from %s' % (
-                                     factor_prefix, self.metadata.title),
-                             })
+                                 "General" : {'title': '%s from %s' % (
+                                     factor_prefix, self.metadata.General.title),
+                             }})
             filename = '%ss.%s' % (factor_prefix, factor_format)
             if folder is not None:
                 filename = os.path.join(folder, filename)
@@ -1504,10 +1504,10 @@ class MVATools(object):
                     s = Spectrum(factors[:, index],
                                  axes=[axis_dict, ],
                                  metadata={
-                                     'title': '%s from %s' % (
+                                     "General" : {'title': '%s from %s' % (
                                          factor_prefix,
-                                         self.metadata.title),
-                                 })
+                                         self.metadata.General.title),
+                                 }})
                     filename = '%s-%i.%s' % (factor_prefix,
                                              dim,
                                              factor_format)
@@ -1530,10 +1530,10 @@ class MVATools(object):
                     im = Image(factor_data[..., index],
                                axes=axes_dicts,
                                metadata={
-                                   'title': '%s from %s' % (
+                                   "General" : {'title': '%s from %s' % (
                                        factor_prefix,
-                                       self.metadata.title),
-                               })
+                                       self.metadata.General.title),
+                                       }})
                     filename = '%s-%i.%s' % (factor_prefix,
                                              dim,
                                              factor_format)
@@ -1611,10 +1611,10 @@ class MVATools(object):
                 s = Image(loading_data,
                           axes=axes_dicts,
                           metadata={
-                              'title': '%s from %s' % (
+                              "General" : {'title': '%s from %s' % (
                                   loading_prefix,
-                                  self.metadata.title),
-                          })
+                                  self.metadata.General.title),
+                          }})
             elif self.axes_manager.navigation_dimension == 1:
                 cal_axis = self.axes_manager.navigation_axes[0].\
                     get_axis_dictionary()
@@ -1630,10 +1630,10 @@ class MVATools(object):
                 s = Image(loadings,
                           axes=axes,
                           metadata={
-                              'title': '%s from %s' % (
+                              "General" : {'title': '%s from %s' % (
                                   loading_prefix,
-                                  self.metadata.title),
-                          })
+                                  self.metadata.General.title),
+                                  }})
             filename = '%ss.%s' % (loading_prefix, loading_format)
             if folder is not None:
                 filename = os.path.join(folder, filename)
@@ -1665,10 +1665,10 @@ class MVATools(object):
                     s = Image(loading_data[index, ...],
                               axes=axes_dicts,
                               metadata={
-                                  'title': '%s from %s' % (
+                                  "General" : {'title': '%s from %s' % (
                                       loading_prefix,
-                                      self.metadata.title),
-                              })
+                                      self.metadata.General.title),
+                                      }})
                     filename = '%s-%i.%s' % (loading_prefix,
                                              dim,
                                              loading_format)
@@ -2249,8 +2249,8 @@ class MVATools(object):
         """
         signal = self._get_loadings(self.learning_results.loadings)
         signal.axes_manager._axes[0].name = "Decomposition component index"
-        signal.metadata.title = "Decomposition loadings of " + \
-            self.metadata.title
+        signal.metadata.General.title = "Decomposition loadings of " + \
+            self.metadata.General.title
         return signal
 
     def get_decomposition_factors(self):
@@ -2263,8 +2263,8 @@ class MVATools(object):
         """
         signal = self._get_factors(self.learning_results.factors)
         signal.axes_manager._axes[0].name = "Decomposition component index"
-        signal.metadata.title = ("Decomposition factors of " +
-                                 self.metadata.title)
+        signal.metadata.General.title = ("Decomposition factors of " +
+                                 self.metadata.General.title)
         return signal
 
     def get_bss_loadings(self):
@@ -2278,8 +2278,8 @@ class MVATools(object):
         signal = self._get_loadings(
             self.learning_results.bss_loadings)
         signal.axes_manager[0].name = "BSS component index"
-        signal.metadata.title = ("BSS loadings of " +
-                                 self.metadata.title)
+        signal.metadata.General.title = ("BSS loadings of " +
+                                 self.metadata.General.title)
         return signal
 
     def get_bss_factors(self):
@@ -2292,8 +2292,8 @@ class MVATools(object):
         """
         signal = self._get_factors(self.learning_results.bss_factors)
         signal.axes_manager[0].name = "BSS component index"
-        signal.metadata.title = ("BSS factors of " +
-                                 self.metadata.title)
+        signal.metadata.General.title = ("BSS factors of " +
+                                 self.metadata.General.title)
         return signal
 
     def plot_bss_results(self,
@@ -2467,6 +2467,8 @@ class Signal(MVA,
         self.metadata = DictionaryTreeBrowser()
         mp = self.metadata
         mp.add_node("_Internal_parameters")
+        mp.add_node("General")
+        mp.add_node("Signal")
         mp._Internal_parameters.add_node("folding")
         folding = mp._Internal_parameters.folding
         folding.unfolded = False
@@ -2478,7 +2480,7 @@ class Signal(MVA,
     def __repr__(self):
         string = '<'
         string += self.__class__.__name__
-        string += ", title: %s" % self.metadata.title
+        string += ", title: %s" % self.metadata.General.title
         string += ", dimensions: %s" % (
             self.axes_manager._get_dimension_str())
         string += '>'
@@ -2694,7 +2696,7 @@ class Signal(MVA,
 
     def _print_summary(self):
         string = "\n\tTitle: "
-        string += self.metadata.title.decode('utf8')
+        string += self.metadata.General.title.decode('utf8')
         if hasattr(self.metadata, 'signal_type'):
             string += "\n\tSignal type: "
             string += self.metadata.signal_type
@@ -2756,8 +2758,8 @@ class Signal(MVA,
             file_data_dict['original_metadata'])
         self.metadata.add_dictionary(
             file_data_dict['metadata'])
-        if "title" not in self.metadata:
-            self.metadata.title = ''
+        if "title" not in self.metadata.General:
+            self.metadata.General.title = ''
         if (self._record_by or
                 "record_by" not in self.metadata):
             self.metadata.record_by = self._record_by
@@ -2891,8 +2893,8 @@ class Signal(MVA,
 
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = self.__call__
-        if self.metadata.title:
-            self._plot.signal_title = self.metadata.title
+        if self.metadata.General.title:
+            self._plot.signal_title = self.metadata.General.title
         elif self.tmp_parameters.has_item('filename'):
             self._plot.signal_title = self.tmp_parameters.filename
 
@@ -3012,8 +3014,8 @@ class Signal(MVA,
                 extesion = (self.tmp_parameters.extension
                             if not extension
                             else extension)
-            elif self.metadata.has_item('original_filename'):
-                filename = self.metadata.original_filename
+            elif self.metadata.has_item('General.original_filename'):
+                filename = self.metadata.General.original_filename
             else:
                 raise ValueError('File name not defined')
         if extension is not None:
@@ -3289,7 +3291,7 @@ class Signal(MVA,
                     stack_keys[i]]['metadata']
                 spectrum.original_metadata = self.original_metadata.stack_elements[
                     stack_keys[i]]['original_metadata']
-                spectrum.metadata.title = spectrum.metadata.title[9:]
+                spectrum.metadata.General.title = spectrum.metadata.General.title[9:]
 
         return splitted
 
@@ -3837,7 +3839,7 @@ class Signal(MVA,
             hist_spec.axes_manager[0].offset = bin_edges[0]
 
         hist_spec.axes_manager[0].name = 'value'
-        hist_spec.metadata.title = (img.metadata.title +
+        hist_spec.metadata.General.title = (img.metadata.General.title +
                                     " histogram")
         return hist_spec
 
@@ -4077,7 +4079,7 @@ class Signal(MVA,
             cs.tmp_parameters.extension = self.tmp_parameters.extension
             cs.tmp_parameters.folder = self.tmp_parameters.folder
         if auto_title is True:
-            cs.metadata.title = (cs.metadata.title +
+            cs.metadata.General.title = (cs.metadata.General.title +
                                  ' ' + str(self.axes_manager.indices))
         cs.axes_manager._set_axis_attribute_values("navigate", False)
         return cs

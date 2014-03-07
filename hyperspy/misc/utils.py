@@ -733,8 +733,8 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                 eaxis.navigate = True  # This triggers _update_parameters
                 signal.metadata = obj.metadata
                 # Get the title from 1st object
-                signal.metadata.title = (
-                    "Stack of " + obj.metadata.title)
+                signal.metadata.General.title = (
+                    "Stack of " + obj.metadata.General.title)
                 signal.original_metadata = DictionaryTreeBrowser({})
             else:
                 axis = obj.axes_manager[axis]

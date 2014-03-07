@@ -49,7 +49,7 @@ keywords = {
     # Required parameters
     'FORMAT': {'dtype': unicode, 'mapped_to': None},
     'VERSION': {'dtype': unicode, 'mapped_to': None},
-    'TITLE': {'dtype': unicode, 'mapped_to': 'title'},
+    'TITLE': {'dtype': unicode, 'mapped_to': 'General.title'},
     'DATE': {'dtype': unicode, 'mapped_to': None},
     'TIME': {'dtype': unicode, 'mapped_to': None},
     'OWNER': {'dtype': unicode, 'mapped_to': None},
@@ -209,13 +209,13 @@ def file_reader(filename, encoding='latin-1', **kwds):
             locale.setlocale(locale.LC_TIME, 'english')
         try:
             H, M = time.strptime(parameters['TIME'], "%H:%M")[3:5]
-            mapped['time'] = datetime.time(H, M)
+            mapped.set_item('General.time', datetime.time(H, M))
         except:
             if 'TIME' in parameters and parameters['TIME']:
                 print('The time information could not be retrieved')
         try:
             Y, M, D = time.strptime(parameters['DATE'], "%d-%b-%Y")[0:3]
-            mapped['date'] = datetime.date(Y, M, D)
+            mapped.set_item('General.date', datetime.date(Y, M, D))
         except:
             if 'DATE' in parameters and parameters['DATE']:
                 print('The date information could not be retrieved')
@@ -236,7 +236,7 @@ def file_reader(filename, encoding='latin-1', **kwds):
         'units': parameters['XUNITS'] if 'XUNITS' in parameters else '',
     })
 
-    mapped['original_filename'] = filename
+    mapped.set_item('General.original_filename', filename)
     mapped['record_by'] = 'spectrum'
     if mapped.has_item('signal_type'):
         if mapped.signal_type == 'ELS':
@@ -269,7 +269,7 @@ def file_writer(filename, signal, format=None, separator=', ',
     else:
         if format is None:
             format = 'Y'
-        if hasattr(signal.metadata, "date"):
+        if signal.metadata.has_item("General.date"):
             # Setting locale can raise an exception because
             # their name depends on library versions, platform etc.
             try:
