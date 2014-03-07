@@ -34,7 +34,7 @@ class EDSTEMSpectrum(EDSSpectrum):
     def __init__(self, *args, **kwards):
         EDSSpectrum.__init__(self, *args, **kwards)
         # Attributes defaults
-        if 'Acquisition_instrument.TEM.EDS' not in  self.metadata:
+        if 'Acquisition_instrument.TEM.EDS' not in self.metadata:
             if 'Acquisition_instrument.SEM.EDS' in self.metadata:
                 self.metadata.Acquisition_instrument.TEM = \
                     self.metadata.Acquisition_instrument.SEM
@@ -232,4 +232,5 @@ class EDSTEMSpectrum(EDSSpectrum):
             #mp.Acquisition_instrument.SEM.EDS.elevation_angle = mp_ref.EDS.elevation_angle
 
         if hasattr(mp_ref.EDS, 'live_time'):
-            mp.Acquisition_instrument.TEM.EDS.live_time = mp_ref.EDS.live_time / nb_pix
+            mp.Acquisition_instrument.TEM.EDS.live_time = mp_ref.EDS.live_time / \
+                nb_pix

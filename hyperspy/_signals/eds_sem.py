@@ -32,7 +32,9 @@ class EDSSEMSpectrum(EDSSpectrum):
         # Attributes defaults
         if 'Acquisition_instrument.SEM.EDS' not in self.metadata:
             if 'Acquisition_instrument.TEM' in self.metadata:
-                self.metadata.set_item("Acquisition_instrument.SEM", self.metadata.Acquisition_instrument.TEM)
+                self.metadata.set_item(
+                    "Acquisition_instrument.SEM",
+                    self.metadata.Acquisition_instrument.TEM)
                 del self.metadata.Acquisition_instrument.TEM
         self._set_default_param()
 
@@ -75,7 +77,8 @@ class EDSSEMSpectrum(EDSSpectrum):
         mp.Acquisition_instrument.SEM = mp_ref.deepcopy()
 
         if hasattr(mp_ref.EDS, 'live_time'):
-            mp.Acquisition_instrument.SEM.EDS.live_time = mp_ref.EDS.live_time / nb_pix
+            mp.Acquisition_instrument.SEM.EDS.live_time = mp_ref.EDS.live_time / \
+                nb_pix
 
     def _load_from_TEM_param(self):
         """Transfer metadata.Acquisition_instrument.TEM to metadata.Acquisition_instrument.SEM
@@ -100,13 +103,21 @@ class EDSSEMSpectrum(EDSSpectrum):
         """
         mp = self.metadata
         if "Acquisition_instrument.SEM.tilt_stage" not in mp:
-            mp.set_item("Acquisition_instrument.SEM.tilt_stage", preferences.EDS.eds_tilt_stage)
+            mp.set_item(
+                "Acquisition_instrument.SEM.tilt_stage",
+                preferences.EDS.eds_tilt_stage)
         if "Acquisition_instrument.SEM.EDS.elevation_angle" not in mp:
-            mp.set_item("Acquisition_instrument.SEM.EDS.elevation_angle", preferences.EDS.eds_detector_elevation)
+            mp.set_item(
+                "Acquisition_instrument.SEM.EDS.elevation_angle",
+                preferences.EDS.eds_detector_elevation)
         if "Acquisition_instrument.SEM.EDS.energy_resolution_MnKa" not in mp:
-            mp.set_item("Acquisition_instrument.SEM.EDS.energy_resolution_MnKa", preferences.EDS.eds_mn_ka)
+            mp.set_item(
+                "Acquisition_instrument.SEM.EDS.energy_resolution_MnKa",
+                preferences.EDS.eds_mn_ka)
         if "Acquisition_instrument.SEM.EDS.azimuth_angle" not in mp:
-            mp.set_item("Acquisition_instrument.SEM.EDS.azimuth_angle", preferences.EDS.eds_detector_azimuth)
+            mp.set_item(
+                "Acquisition_instrument.SEM.EDS.azimuth_angle",
+                preferences.EDS.eds_detector_azimuth)
 
     def set_microscope_parameters(self, beam_energy=None, live_time=None,
                                   tilt_stage=None, azimuth_angle=None, elevation_angle=None,

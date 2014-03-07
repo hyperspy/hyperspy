@@ -35,13 +35,20 @@ class Test_metadata:
     def test_sum_live_time(self):
         s = self.signal
         sSum = s.sum(0)
-        assert_equal(sSum.metadata.Acquisition_instrument.TEM.EDS.live_time, 3.1 * 2)
+        assert_equal(
+            sSum.metadata.Acquisition_instrument.TEM.EDS.live_time,
+            3.1 *
+            2)
 
     def test_rebin_live_time(self):
         s = self.signal
         dim = s.axes_manager.shape
         s = s.rebin([dim[0] / 2, dim[1] / 2, dim[2]])
-        assert_equal(s.metadata.Acquisition_instrument.TEM.EDS.live_time, 3.1 * 2 * 2)
+        assert_equal(
+            s.metadata.Acquisition_instrument.TEM.EDS.live_time,
+            3.1 *
+            2 *
+            2)
 
     def test_add_elements(self):
         s = self.signal
@@ -70,7 +77,8 @@ class Test_metadata:
         mpSEM = sSEM.metadata
         results = [mp.Acquisition_instrument.TEM.EDS.energy_resolution_MnKa]
         results.append(signal_type)
-        resultsSEM = [mpSEM.Acquisition_instrument.SEM.EDS.energy_resolution_MnKa]
+        resultsSEM = [
+            mpSEM.Acquisition_instrument.SEM.EDS.energy_resolution_MnKa]
         resultsSEM.append(mpSEM.signal_type)
         assert_equal(results, resultsSEM)
 
