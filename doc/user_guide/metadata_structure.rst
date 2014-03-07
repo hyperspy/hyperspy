@@ -4,6 +4,52 @@
 Metadata structure
 ******************
 
+::
+
+    ├── Acquisition_instrument
+    │   └── TEM
+    │       ├── Detector
+    │       │   ├── EDX
+    │       │   │   ├── azimuth_angle (º)
+    │       │   │   ├── elevation_angle (º)
+    │       │   │   ├── energy_resolution_MnKa (keV)
+    │       │   │   ├── live_time (s)
+    │       │   │   └── real_time (s)
+    │       │   └── EELS
+    │       │       ├── collection_angle (mrad)
+    │       │       ├── dwell_time (s)
+    │       │       ├── exposure (s)
+    │       │       └── spectrometer
+    │       ├── acquisition_mode
+    │       ├── beam_current (nA)
+    │       ├── beam_energy (keV)
+    │       ├── convergence_angle (mrad)
+    │       ├── microscope
+    │       └── tilt_stage (º)
+    ├── General
+    │   ├── date
+    │   ├── original_filename
+    │   ├── time
+    │   └── title
+    ├── Sample
+    │   ├── description
+    │   ├── elements
+    │   ├── thickness
+    │   └── xray_lines
+    └── Signal
+        ├── Noise_properties
+        │   ├── Variance
+        │   ├── Variance_Linear_model
+        │   │   ├── correlation_factor
+        │   │   ├── gain_factor
+        │   │   ├── gain_offset
+        │   │   └── parameters_estimation_method
+        │   └── kind
+        ├── binned
+        ├── kind
+        ├── origin
+        └── record_by
+
 General keys
 ============
 
