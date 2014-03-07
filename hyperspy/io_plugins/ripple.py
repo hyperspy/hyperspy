@@ -456,28 +456,28 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     })
 
     if 'convergence-angle' in rpl_info:
-        mp.set_item('TEM.convergence_angle',
+        mp.set_item('Acquisition_instrument.TEM.convergence_angle',
                     rpl_info['convergence-angle'])
     if 'tilt-stage' in rpl_info:
-        mp.set_item('TEM.tilt_stage',
+        mp.set_item('Acquisition_instrument.TEM.tilt_stage',
                     rpl_info['tilt-stage'])
     if 'collection-angle' in rpl_info:
-        mp.set_item('TEM.EELS.collection_angle',
+        mp.set_item('Acquisition_instrument.TEM.EELS.collection_angle',
                     rpl_info['collection-angle'])
     if 'beam-energy' in rpl_info:
-        mp.set_item('TEM.beam_energy',
+        mp.set_item('Acquisition_instrument.TEM.beam_energy',
                     rpl_info['beam-energy'])
     if 'elevation-angle' in rpl_info:
-        mp.set_item('TEM.EDS.elevation_angle',
+        mp.set_item('Acquisition_instrument.TEM.EDS.elevation_angle',
                     rpl_info['elevation-angle'])
     if 'azimuth-angle' in rpl_info:
-        mp.set_item('TEM.EDS.azimuth_angle',
+        mp.set_item('Acquisition_instrument.TEM.EDS.azimuth_angle',
                     rpl_info['azimuth-angle'])
     if 'energy-resolution' in rpl_info:
-        mp.set_item('TEM.EDS.energy_resolution_MnKa',
+        mp.set_item('Acquisition_instrument.TEM.EDS.energy_resolution_MnKa',
                     rpl_info['energy-resolution'])
     if 'live-time' in rpl_info:
-        mp.set_item('TEM.EDS.live_time',
+        mp.set_item('Acquisition_instrument.TEM.EDS.live_time',
                     rpl_info['live-time'])
 
     axes = []
@@ -592,9 +592,9 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
 
     if "EDS" in signal.metadata.signal_type:
         if signal.metadata == "EDS_SEM":
-            mp = signal.metadata.SEM
+            mp = signal.metadata.Acquisition_instrument.SEM
         elif self.metadata == "EDS_TEM":
-            mp = signal.metadata.TEM
+            mp = signal.metadata.Acquisition_instrument.TEM
 
         if mp.has_item('beam_energy'):
             keys_dictionary['beam-energy'] = mp.beam_energy

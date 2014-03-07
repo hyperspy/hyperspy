@@ -70,21 +70,21 @@ keywords = {
     'COMMENT': {'dtype': unicode, 'mapped_to': None},
     # Microscope
     'BEAMKV': {'dtype': float, 'mapped_to':
-               'TEM.beam_energy'},
+               'Acquisition_instrument.TEM.beam_energy'},
     'EMISSION': {'dtype': float, 'mapped_to': None},
     'PROBECUR': {'dtype': float, 'mapped_to':
-                 'TEM.beam_current'},
+                 'Acquisition_instrument.TEM.beam_current'},
     'BEAMDIAM': {'dtype': float, 'mapped_to': None},
     'MAGCAM': {'dtype': float, 'mapped_to': None},
     'OPERMODE': {'dtype': unicode, 'mapped_to': None},
     'CONVANGLE': {'dtype': float, 'mapped_to':
-                  'TEM.convergence_angle'},
+                  'Acquisition_instrument.TEM.convergence_angle'},
 
     # Specimen
     'THICKNESS': {'dtype': float, 'mapped_to':
                   'Sample.thickness'},
     'XTILTSTGE': {'dtype': float, 'mapped_to':
-                  'TEM.tilt_stage'},
+                  'Acquisition_instrument.TEM.tilt_stage'},
     'YTILTSTGE': {'dtype': float, 'mapped_to': None},
     'XPOSITION': {'dtype': float, 'mapped_to': None},
     'YPOSITION': {'dtype': float, 'mapped_to': None},
@@ -92,26 +92,26 @@ keywords = {
 
     # EELS
     'INTEGTIME': {'dtype': float, 'mapped_to':
-                  'TEM.exposure'},  # in ms
+                  'Acquisition_instrument.TEM.exposure'},  # in ms
     'DWELLTIME': {'dtype': float, 'mapped_to':
-                  'TEM.dwell_time'},  # in ms
+                  'Acquisition_instrument.TEM.dwell_time'},  # in ms
     'COLLANGLE': {'dtype': float, 'mapped_to':
-                  'TEM.EELS.collection_angle'},
+                  'Acquisition_instrument.TEM.EELS.collection_angle'},
     'ELSDET': {'dtype': unicode, 'mapped_to': None},
 
     # EDS
     'ELEVANGLE': {'dtype': float, 'mapped_to':
-                  'TEM.EDS.elevation_angle'},
+                  'Acquisition_instrument.TEM.EDS.elevation_angle'},
     'AZIMANGLE': {'dtype': float, 'mapped_to':
-                  'TEM.EDS.azimuth_angle'},
+                  'Acquisition_instrument.TEM.EDS.azimuth_angle'},
     'SOLIDANGLE': {'dtype': float, 'mapped_to':
-                   'TEM.EDS.solid_angle'},
+                   'Acquisition_instrument.TEM.EDS.solid_angle'},
     'LIVETIME': {'dtype': float, 'mapped_to':
-                 'TEM.EDS.live_time'},
+                 'Acquisition_instrument.TEM.EDS.live_time'},
     'REALTIME': {'dtype': float, 'mapped_to':
-                 'TEM.EDS.real_time'},
+                 'Acquisition_instrument.TEM.EDS.real_time'},
     'FWHMMNKA': {'dtype': float, 'mapped_to':
-                 'TEM.EDS.energy_resolution_MnKa'},
+                 'Acquisition_instrument.TEM.EDS.energy_resolution_MnKa'},
     'TBEWIND': {'dtype': float, 'mapped_to': None},
     'TAUWIND': {'dtype': float, 'mapped_to': None},
     'TDEADLYR': {'dtype': float, 'mapped_to': None},
@@ -122,7 +122,7 @@ keywords = {
     'TDIWIND': {'dtype': float, 'mapped_to': None},
     'THCWIND': {'dtype': float, 'mapped_to': None},
     'EDSDET': {'dtype': unicode, 'mapped_to':
-               'TEM.EDS.EDS_det'},
+               'Acquisition_instrument.TEM.EDS.EDS_det'},
 }
 
 

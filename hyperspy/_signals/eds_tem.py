@@ -34,46 +34,34 @@ class EDSTEMSpectrum(EDSSpectrum):
     def __init__(self, *args, **kwards):
         EDSSpectrum.__init__(self, *args, **kwards)
         # Attributes defaults
-        if hasattr(self.metadata, 'TEM.EDS') == False:
-            self._load_from_SEM_param()
+        if 'Acquisition_instrument.TEM.EDS' not in  self.metadata:
+            if 'Acquisition_instrument.SEM.EDS' in self.metadata:
+                self.metadata.Acquisition_instrument.TEM = \
+                    self.metadata.Acquisition_instrument.SEM
+                del self.metadata.Acquisition_instrument.SEM
         self._set_default_param()
-
-    def _load_from_SEM_param(self):
-        """Transfer metadata.SEM to metadata.TEM"""
-
-        mp = self.metadata
-        if mp.has_item('TEM') is False:
-            mp.add_node('TEM')
-        if mp.has_item('TEM.EDS') is False:
-            mp.TEM.add_node('EDS')
-        mp.signal_type = 'EDS_TEM'
-
-        # Transfer
-        if hasattr(mp, 'SEM'):
-            mp.TEM = mp.SEM
-            del mp.__dict__['SEM']
 
     def _set_default_param(self):
         """Set to value to default (defined in preferences)
         """
 
         mp = self.metadata
-        if mp.has_item('TEM') is False:
-            mp.add_node('TEM')
-        if mp.has_item('TEM.EDS') is False:
-            mp.TEM.add_node('EDS')
+        if mp.has_item('Acquisition_instrument.TEM') is False:
+            mp.add_node('Acquisition_instrument.TEM')
+        if mp.has_item('Acquisition_instrument.TEM.EDS') is False:
+            mp.Acquisition_instrument.TEM.add_node('EDS')
 
         mp.signal_type = 'EDS_TEM'
 
         mp = self.metadata
-        if hasattr(mp.TEM, 'tilt_stage') is False:
-            mp.TEM.tilt_stage = preferences.EDS.eds_tilt_stage
-        if hasattr(mp.TEM.EDS, 'elevation_angle') is False:
-            mp.TEM.EDS.elevation_angle = preferences.EDS.eds_detector_elevation
-        if hasattr(mp.TEM.EDS, 'energy_resolution_MnKa') is False:
-            mp.TEM.EDS.energy_resolution_MnKa = preferences.EDS.eds_mn_ka
-        if hasattr(mp.TEM.EDS, 'azimuth_angle') is False:
-            mp.TEM.EDS.azimuth_angle = preferences.EDS.eds_detector_azimuth
+        if "mp.Acquisition_instrument.TEM.tilt_stage" not in mp:
+            mp.Acquisition_instrument.TEM.tilt_stage = preferences.EDS.eds_tilt_stage
+        if "Acquisition_instrument.TEM.EDS.elevation_angle" not in mp:
+            mp.Acquisition_instrument.TEM.EDS.elevation_angle = preferences.EDS.eds_detector_elevation
+        if "Acquisition_instrument.TEM.EDS.energy_resolution_MnKa" not in mp:
+            mp.Acquisition_instrument.TEM.EDS.energy_resolution_MnKa = preferences.EDS.eds_mn_ka
+        if "Acquisition_instrument.TEM.EDS.azimuth_angle" not in mp:
+            mp.Acquisition_instrument.TEM.EDS.azimuth_angle = preferences.EDS.eds_detector_azimuth
 
     def set_microscope_parameters(self, beam_energy=None, live_time=None,
                                   tilt_stage=None, azimuth_angle=None, elevation_angle=None,
@@ -105,7 +93,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             In eV
 
         """
-        mp_mic = self.metadata.TEM
+        mp_mic = self.metadata.Acquisition_instrument.TEM
 
         if beam_energy is not None:
             mp_mic.beam_energy = beam_energy
@@ -128,27 +116,27 @@ class EDSTEMSpectrum(EDSSpectrum):
         # if mp.has_item('TEM') is False:
             # mp.add_node('TEM')
         # if mp.has_item('TEM.EDS') is False:
-            # mp.TEM.add_node('EDS')
+            # mp.Acquisition_instrument.TEM.add_node('EDS')
         tem_par = TEMParametersUI()
         mapping = {
-            'TEM.beam_energy': 'tem_par.beam_energy',
-            'TEM.tilt_stage': 'tem_par.tilt_stage',
-            'TEM.EDS.live_time': 'tem_par.live_time',
-            'TEM.EDS.azimuth_angle': 'tem_par.azimuth_angle',
-            'TEM.EDS.elevation_angle': 'tem_par.elevation_angle',
-            'TEM.EDS.energy_resolution_MnKa': 'tem_par.energy_resolution_MnKa', }
+            'Acquisition_instrument.TEM.beam_energy': 'tem_par.beam_energy',
+            'Acquisition_instrument.TEM.tilt_stage': 'tem_par.tilt_stage',
+            'Acquisition_instrument.TEM.EDS.live_time': 'tem_par.live_time',
+            'Acquisition_instrument.TEM.EDS.azimuth_angle': 'tem_par.azimuth_angle',
+            'Acquisition_instrument.TEM.EDS.elevation_angle': 'tem_par.elevation_angle',
+            'Acquisition_instrument.TEM.EDS.energy_resolution_MnKa': 'tem_par.energy_resolution_MnKa', }
         for key, value in mapping.iteritems():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
         tem_par.edit_traits()
 
         mapping = {
-            'TEM.beam_energy': tem_par.beam_energy,
-            'TEM.tilt_stage': tem_par.tilt_stage,
-            'TEM.EDS.live_time': tem_par.live_time,
-            'TEM.EDS.azimuth_angle': tem_par.azimuth_angle,
-            'TEM.EDS.elevation_angle': tem_par.elevation_angle,
-            'TEM.EDS.energy_resolution_MnKa': tem_par.elevation_angle, }
+            'Acquisition_instrument.TEM.beam_energy': tem_par.beam_energy,
+            'Acquisition_instrument.TEM.tilt_stage': tem_par.tilt_stage,
+            'Acquisition_instrument.TEM.EDS.live_time': tem_par.live_time,
+            'Acquisition_instrument.TEM.EDS.azimuth_angle': tem_par.azimuth_angle,
+            'Acquisition_instrument.TEM.EDS.elevation_angle': tem_par.elevation_angle,
+            'Acquisition_instrument.TEM.EDS.energy_resolution_MnKa': tem_par.elevation_angle, }
 
         for key, value in mapping.iteritems():
             if value != t.Undefined:
@@ -160,8 +148,8 @@ class EDSTEMSpectrum(EDSSpectrum):
         are defined in metadata. Raise in interactive mode
          an UI item to fill or cahnge the values"""
         must_exist = (
-            'TEM.beam_energy',
-            'TEM.EDS.live_time',)
+            'Acquisition_instrument.TEM.beam_energy',
+            'Acquisition_instrument.TEM.EDS.live_time',)
 
         missing_parameters = []
         for item in must_exist:
@@ -220,28 +208,28 @@ class EDSTEMSpectrum(EDSSpectrum):
                     #ax_m.scale = ref.original_metadata.CHOFFSET / 1000
 
         # Setup metadata
-        if hasattr(ref.metadata, 'TEM'):
-            mp_ref = ref.metadata.TEM
-        elif hasattr(ref.metadata, 'SEM'):
-            mp_ref = ref.metadata.SEM
+        if 'Acquisition_instrument.TEM' in ref.metadata:
+            mp_ref = ref.metadata.Acquisition_instrument.TEM
+        elif 'Acquisition_instrument.SEM' in ref.metadata:
+            mp_ref = ref.metadata.Acquisition_instrument.SEM
         else:
-            raise ValueError("The reference has no metadata.TEM"
-                             "\n nor metadata.SEM ")
+            raise ValueError("The reference has no metadata.Acquisition_instrument.TEM"
+                             "\n nor metadata.Acquisition_instrument.SEM ")
 
         mp = self.metadata
 
-        mp.TEM = mp_ref.deepcopy()
+        mp.Acquisition_instrument.TEM = mp_ref.deepcopy()
 
         # if hasattr(mp_ref, 'tilt_stage'):
-            #mp.SEM.tilt_stage = mp_ref.tilt_stage
+            #mp.Acquisition_instrument.SEM.tilt_stage = mp_ref.tilt_stage
         # if hasattr(mp_ref, 'beam_energy'):
-            #mp.SEM.beam_energy = mp_ref.beam_energy
+            #mp.Acquisition_instrument.SEM.beam_energy = mp_ref.beam_energy
         # if hasattr(mp_ref.EDS, 'energy_resolution_MnKa'):
-            #mp.SEM.EDS.energy_resolution_MnKa = mp_ref.EDS.energy_resolution_MnKa
+            #mp.Acquisition_instrument.SEM.EDS.energy_resolution_MnKa = mp_ref.EDS.energy_resolution_MnKa
         # if hasattr(mp_ref.EDS, 'azimuth_angle'):
-            #mp.SEM.EDS.azimuth_angle = mp_ref.EDS.azimuth_angle
+            #mp.Acquisition_instrument.SEM.EDS.azimuth_angle = mp_ref.EDS.azimuth_angle
         # if hasattr(mp_ref.EDS, 'elevation_angle'):
-            #mp.SEM.EDS.elevation_angle = mp_ref.EDS.elevation_angle
+            #mp.Acquisition_instrument.SEM.EDS.elevation_angle = mp_ref.EDS.elevation_angle
 
         if hasattr(mp_ref.EDS, 'live_time'):
-            mp.TEM.EDS.live_time = mp_ref.EDS.live_time / nb_pix
+            mp.Acquisition_instrument.TEM.EDS.live_time = mp_ref.EDS.live_time / nb_pix
