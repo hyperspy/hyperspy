@@ -451,7 +451,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
 
     mp = DictionaryTreeBrowser({
         'record_by': record_by,
-        'Genereal' : {'original_filename': os.path.split(filename)[1]},
+        'Genereal': {'original_filename': os.path.split(filename)[1]},
         'signal_type': rpl_info['signal'],
     })
 

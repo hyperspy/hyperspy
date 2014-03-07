@@ -1466,10 +1466,10 @@ class MVATools(object):
                 s = Image(factor_data,
                           axes=axes_dicts,
                           metadata={
-                              'General' : {'title': '%s from %s' % (
+                              'General': {'title': '%s from %s' % (
                                   factor_prefix,
                                   self.metadata.General.title),
-                          }})
+                              }})
             elif self.axes_manager.signal_dimension == 1:
                 axes = []
                 axes.append(
@@ -1487,9 +1487,9 @@ class MVATools(object):
                 s = Spectrum(factors.T,
                              axes=axes,
                              metadata={
-                                 "General" : {'title': '%s from %s' % (
+                                 "General": {'title': '%s from %s' % (
                                      factor_prefix, self.metadata.General.title),
-                             }})
+                                 }})
             filename = '%ss.%s' % (factor_prefix, factor_format)
             if folder is not None:
                 filename = os.path.join(folder, filename)
@@ -1504,10 +1504,10 @@ class MVATools(object):
                     s = Spectrum(factors[:, index],
                                  axes=[axis_dict, ],
                                  metadata={
-                                     "General" : {'title': '%s from %s' % (
+                                     "General": {'title': '%s from %s' % (
                                          factor_prefix,
                                          self.metadata.General.title),
-                                 }})
+                                     }})
                     filename = '%s-%i.%s' % (factor_prefix,
                                              dim,
                                              factor_format)
@@ -1530,10 +1530,10 @@ class MVATools(object):
                     im = Image(factor_data[..., index],
                                axes=axes_dicts,
                                metadata={
-                                   "General" : {'title': '%s from %s' % (
+                                   "General": {'title': '%s from %s' % (
                                        factor_prefix,
                                        self.metadata.General.title),
-                                       }})
+                                   }})
                     filename = '%s-%i.%s' % (factor_prefix,
                                              dim,
                                              factor_format)
@@ -1611,10 +1611,10 @@ class MVATools(object):
                 s = Image(loading_data,
                           axes=axes_dicts,
                           metadata={
-                              "General" : {'title': '%s from %s' % (
+                              "General": {'title': '%s from %s' % (
                                   loading_prefix,
                                   self.metadata.General.title),
-                          }})
+                              }})
             elif self.axes_manager.navigation_dimension == 1:
                 cal_axis = self.axes_manager.navigation_axes[0].\
                     get_axis_dictionary()
@@ -1630,10 +1630,10 @@ class MVATools(object):
                 s = Image(loadings,
                           axes=axes,
                           metadata={
-                              "General" : {'title': '%s from %s' % (
+                              "General": {'title': '%s from %s' % (
                                   loading_prefix,
                                   self.metadata.General.title),
-                                  }})
+                              }})
             filename = '%ss.%s' % (loading_prefix, loading_format)
             if folder is not None:
                 filename = os.path.join(folder, filename)
@@ -1665,10 +1665,10 @@ class MVATools(object):
                     s = Image(loading_data[index, ...],
                               axes=axes_dicts,
                               metadata={
-                                  "General" : {'title': '%s from %s' % (
+                                  "General": {'title': '%s from %s' % (
                                       loading_prefix,
                                       self.metadata.General.title),
-                                      }})
+                                  }})
                     filename = '%s-%i.%s' % (loading_prefix,
                                              dim,
                                              loading_format)
@@ -2264,7 +2264,7 @@ class MVATools(object):
         signal = self._get_factors(self.learning_results.factors)
         signal.axes_manager._axes[0].name = "Decomposition component index"
         signal.metadata.General.title = ("Decomposition factors of " +
-                                 self.metadata.General.title)
+                                         self.metadata.General.title)
         return signal
 
     def get_bss_loadings(self):
@@ -2279,7 +2279,7 @@ class MVATools(object):
             self.learning_results.bss_loadings)
         signal.axes_manager[0].name = "BSS component index"
         signal.metadata.General.title = ("BSS loadings of " +
-                                 self.metadata.General.title)
+                                         self.metadata.General.title)
         return signal
 
     def get_bss_factors(self):
@@ -2293,7 +2293,7 @@ class MVATools(object):
         signal = self._get_factors(self.learning_results.bss_factors)
         signal.axes_manager[0].name = "BSS component index"
         signal.metadata.General.title = ("BSS factors of " +
-                                 self.metadata.General.title)
+                                         self.metadata.General.title)
         return signal
 
     def plot_bss_results(self,
@@ -3291,7 +3291,8 @@ class Signal(MVA,
                     stack_keys[i]]['metadata']
                 spectrum.original_metadata = self.original_metadata.stack_elements[
                     stack_keys[i]]['original_metadata']
-                spectrum.metadata.General.title = spectrum.metadata.General.title[9:]
+                spectrum.metadata.General.title = spectrum.metadata.General.title[
+                    9:]
 
         return splitted
 
@@ -3840,7 +3841,7 @@ class Signal(MVA,
 
         hist_spec.axes_manager[0].name = 'value'
         hist_spec.metadata.General.title = (img.metadata.General.title +
-                                    " histogram")
+                                            " histogram")
         return hist_spec
 
     def apply_function(self, function, **kwargs):
@@ -4080,7 +4081,7 @@ class Signal(MVA,
             cs.tmp_parameters.folder = self.tmp_parameters.folder
         if auto_title is True:
             cs.metadata.General.title = (cs.metadata.General.title +
-                                 ' ' + str(self.axes_manager.indices))
+                                         ' ' + str(self.axes_manager.indices))
         cs.axes_manager._set_axis_attribute_values("navigate", False)
         return cs
 
