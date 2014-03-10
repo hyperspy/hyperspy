@@ -40,7 +40,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
-version = "1.1"
+version = "1.2"
 
 # -----------------------
 # File format description
@@ -99,7 +99,8 @@ def file_reader(filename, record_by, mode='r', driver='core',
         global default_version
         if current_file_version > default_version:
             warnings.warn("This file was written using a newer version of "
-                          "HyperSpy. I will attempt to load it, but, "
+                          "the HyperSpy hdf5 file format. "
+                          "I will attempt to load it, but, "
                           "if I fail, "
                           "it is likely that I will be more successful at this "
                           "and other tasks if you upgrade me.")
@@ -163,8 +164,9 @@ def hdfgroup2signaldict(group):
     # If the title was not defined on writing the Experiment is
     # then called __unnamed__. The next "if" simply sets the title
     # back to the empty string
-    if '__unnamed__' == exp['metadata']['title']:
-        exp['metadata']['title'] = ''
+    if "General" in exp["metadata"] and "title" in exp["metadata"]["General"]:
+        if '__unnamed__' == exp['metadata']['General']['title']:
+            exp['metadata']["General"]['title'] = ''
 
     if current_file_version < StrictVersion("1.1"):
         # Load the decomposition results written with the old name,
@@ -177,12 +179,16 @@ def hdfgroup2signaldict(group):
                 group['peak_mva_results'], {})
         # Replace the old signal and name keys with their current names
         if 'signal' in exp['metadata']:
-            exp['metadata']['signal_type'] = \
+            if not "Signal" in exp["metadata"]:
+                exp["metadata"]["Signal"] = {}
+            exp['metadata']["Signal"]['signal_type'] = \
                 exp['metadata']['signal']
             del exp['metadata']['signal']
 
         if 'name' in exp['metadata']:
-            exp['metadata']['title'] = \
+            if "General" not in exp["metadata"]:
+                exp["metadata"]["General"] = {}
+            exp['metadata']['General']['title'] = \
                 exp['metadata']['name']
             del exp['metadata']['name']
 
@@ -191,6 +197,96 @@ def hdfgroup2signaldict(group):
             exp['metadata']['_Internal_parameters'] = \
                 exp['metadata']['_internal_parameters']
             del exp['metadata']['_internal_parameters']
+            if 'stacking_history' in exp['metadata']['_Internal_parameters']:
+                exp['metadata']['_Internal_parameters']["Stacking_history"] = \
+                    exp['metadata']['_Internal_parameters']['stacking_history']
+                del exp['metadata']['_Internal_parameters']["stacking_history"]
+            if 'folding' in exp['metadata']['_Internal_parameters']:
+                exp['metadata']['_Internal_parameters']["Folding"] = \
+                    exp['metadata']['_Internal_parameters']['folding']
+                del exp['metadata']['_Internal_parameters']["folding"]
+        if 'Variance_estimation' in exp['metadata']:
+            if "Noise_properties" not in exp["metadata"]:
+                exp["metadata"]["Noise_properties"] = {}
+            exp['metadata']['Noise_properties']["Variance_linear_model"] = \
+                exp['metadata']['Variance_estimation']
+            del exp['metadata']['Variance_estimation']
+        if "TEM" in exp["metadata"]:
+            if not "Acquisition_instrument" in exp["metadata"]:
+                exp["metadata"]["Acquisition_instrument"] = {}
+            exp["metadata"]["Acquisition_instrument"][
+                "TEM"] = exp["metadata"]["TEM"]
+            del exp["metadata"]["TEM"]
+            if "EELS" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                if "dwell_time" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["dwell_time"] =\
+                        exp["metadata"]["Acquisition_instrument"][
+                            "TEM"]["dwell_time"]
+                    del exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["dwell_time"]
+                if "dwell_time_units" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["dwell_time_units"] =\
+                        exp["metadata"]["Acquisition_instrument"][
+                            "TEM"]["dwell_time_units"]
+                    del exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["dwell_time_units"]
+                if "exposure" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["exposure"] =\
+                        exp["metadata"]["Acquisition_instrument"][
+                            "TEM"]["exposure"]
+                    del exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["exposure"]
+                if "exposure_units" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["exposure_units"] =\
+                        exp["metadata"]["Acquisition_instrument"][
+                            "TEM"]["exposure_units"]
+                    del exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["exposure_units"]
+                if "Detector" not in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                    exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["Detector"] = {}
+                exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = \
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]
+                del exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]
+            if "EDS" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                if "Detector" not in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                    exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["Detector"] = {}
+                exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = \
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EDS"]
+                del exp["metadata"]["Acquisition_instrument"]["TEM"]["EDS"]
+
+        if "SEM" in exp["metadata"]:
+            if not "Acquisition_instrument" in exp["metadata"]:
+                exp["metadata"]["Acquisition_instrument"] = {}
+            exp["metadata"]["Acquisition_instrument"][
+                "SEM"] = exp["metadata"]["SEM"]
+            del exp["metadata"]["TEM"]
+            if "EDS" in exp["metadata"]["Acquisition_instrument"]["SEM"]:
+                if "Detector" not in exp["metadata"]["Acquisition_instrument"]["SEM"]:
+                    exp["metadata"]["Acquisition_instrument"][
+                        "SEM"]["Detector"] = {}
+                exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"] = \
+                    exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
+                del exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
+
+        if "Sample" in exp["metadata"] and "Xray_lines" in exp["metadata"]["Sample"]:
+            exp["metadata"]["Sample"]["xray_lines"] = exp[
+                "metadata"]["Sample"]["Xray_lines"]
+            del exp["metadata"]["Sample"]["Xray_lines"]
+
+        for key in ["title", "date", "time", "original_filename"]:
+            if key in exp["metadata"]:
+                if "General" not in exp["metadata"]:
+                    exp["metadata"]["General"] = {}
+                exp["metadata"]["General"][key] = exp["metadata"][key]
+                del exp["metadata"][key]
+        for key in ["record_by", "signal_origin", "signal_type"]:
+            if key in exp["metadata"]:
+                if "Signal" not in exp["metadata"]:
+                    exp["metadata"]["Signal"] = {}
+                exp["metadata"]["Signal"][key] = exp["metadata"][key]
+                del exp["metadata"][key]
 
     return exp
 
@@ -327,7 +423,7 @@ def file_writer(filename,
         f.attrs['file_format'] = "HyperSpy"
         f.attrs['file_format_version'] = version
         exps = f.create_group('Experiments')
-        group_name = signal.metadata.title if \
-            signal.metadata.title else '__unnamed__'
+        group_name = signal.metadata.General.title if \
+            signal.metadata.General.title else '__unnamed__'
         expg = exps.create_group(group_name)
         write_signal(signal, expg, compression=compression)

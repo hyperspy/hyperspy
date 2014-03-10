@@ -8,7 +8,7 @@ s = signals.SpectrumSimulation(
 s.axes_manager[0].offset = -500
 s.axes_manager[0].units = ""
 s.axes_manager[0].name = "x"
-s.metadata.title = "Simple arctan fit"
+s.metadata.General.title = "Simple arctan fit"
 
 s.add_gaussian_noise(0.1)
 
