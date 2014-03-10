@@ -247,7 +247,8 @@ def hdfgroup2signaldict(group):
                 del exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
 
         if "Sample" in exp["metadata"] and "Xray_lines" in exp["metadata"]["Sample"]:
-            exp["metadata"]["Sample"]["xray_lines"] = exp["metadata"]["Sample"]["Xray_lines"]
+            exp["metadata"]["Sample"]["xray_lines"] = exp[
+                "metadata"]["Sample"]["Xray_lines"]
             del exp["metadata"]["Sample"]["Xray_lines"]
 
         for key in ["title", "date", "time", "original_filename"]:
