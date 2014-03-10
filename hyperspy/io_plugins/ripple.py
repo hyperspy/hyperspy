@@ -463,22 +463,22 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         mp.set_item('Acquisition_instrument.TEM.tilt_stage',
                     rpl_info['tilt-stage'])
     if 'collection-angle' in rpl_info:
-        mp.set_item('Acquisition_instrument.TEM.EELS.collection_angle',
+        mp.set_item('Acquisition_instrument.TEM.Detector.EELS.collection_angle',
                     rpl_info['collection-angle'])
     if 'beam-energy' in rpl_info:
         mp.set_item('Acquisition_instrument.TEM.beam_energy',
                     rpl_info['beam-energy'])
     if 'elevation-angle' in rpl_info:
-        mp.set_item('Acquisition_instrument.TEM.EDS.elevation_angle',
+        mp.set_item('Acquisition_instrument.TEM.Detector.EDS.elevation_angle',
                     rpl_info['elevation-angle'])
     if 'azimuth-angle' in rpl_info:
-        mp.set_item('Acquisition_instrument.TEM.EDS.azimuth_angle',
+        mp.set_item('Acquisition_instrument.TEM.Detector.EDS.azimuth_angle',
                     rpl_info['azimuth-angle'])
     if 'energy-resolution' in rpl_info:
-        mp.set_item('Acquisition_instrument.TEM.EDS.energy_resolution_MnKa',
+        mp.set_item('Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa',
                     rpl_info['energy-resolution'])
     if 'live-time' in rpl_info:
-        mp.set_item('Acquisition_instrument.TEM.EDS.live_time',
+        mp.set_item('Acquisition_instrument.TEM.Detector.EDS.live_time',
                     rpl_info['live-time'])
 
     axes = []
@@ -594,27 +594,27 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
     if "EDS" in signal.metadata.Signal.signal_type:
         if signal.metadata.Signal.signal_type == "EDS_SEM":
             mp = signal.metadata.Acquisition_instrument.SEM
-        elif self.metadata.Signal.signal_type == "EDS_TEM":
+        elif signal.metadata.Signal.signal_type == "EDS_TEM":
             mp = signal.metadata.Acquisition_instrument.TEM
 
         if mp.has_item('beam_energy'):
             keys_dictionary['beam-energy'] = mp.beam_energy
         if mp.has_item('convergence_angle'):
             keys_dictionary['convergence-angle'] = mp.convergence_angle
-        if mp.has_item('EELS.collection_angle'):
-            keys_dictionary['collection-angle'] = mp.EELS.collection_angle
+        if mp.has_item('Detector.EELS.collection_angle'):
+            keys_dictionary['collection-angle'] = mp.Detector.EELS.collection_angle
 
-        if mp.has_item('EDS.elevation_angle'):
-            keys_dictionary['elevation-angle'] = mp.EDS.elevation_angle
+        if mp.has_item('Detector.EDS.elevation_angle'):
+            keys_dictionary['elevation-angle'] = mp.Detector.EDS.elevation_angle
         if mp.has_item('tilt_stage'):
             keys_dictionary['tilt-stage'] = mp.tilt_stage
-        if mp.has_item('EDS.azimuth_angle'):
-            keys_dictionary['azimuth-angle'] = mp.EDS.azimuth_angle
-        if mp.has_item('EDS.live_time'):
-            keys_dictionary['live-time'] = mp.EDS.live_time
-        if mp.has_item('EDS.energy_resolution_MnKa'):
+        if mp.has_item('Detector.EDS.azimuth_angle'):
+            keys_dictionary['azimuth-angle'] = mp.Detector.EDS.azimuth_angle
+        if mp.has_item('Detector.EDS.live_time'):
+            keys_dictionary['live-time'] = mp.Detector.EDS.live_time
+        if mp.has_item('Detector.EDS.energy_resolution_MnKa'):
             keys_dictionary[
-                'energy-resolution'] = mp.EDS.energy_resolution_MnKa
+                'energy-resolution'] = mp.Detector.EDS.energy_resolution_MnKa
 
     write_rpl(filename, keys_dictionary, encoding)
     write_raw(filename, signal, record_by)

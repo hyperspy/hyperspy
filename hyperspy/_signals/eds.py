@@ -69,8 +69,8 @@ class EDSSpectrum(Spectrum):
             mp = self.metadata.Acquisition_instrument.SEM
         else:
             mp = self.metadata.Acquisition_instrument.TEM
-        if hasattr(mp, 'EDS') and hasattr(mp.EDS, 'live_time'):
-            mp.EDS.live_time = mp.EDS.live_time * self.axes_manager.shape[axis]
+        if mp.has_item('Detector.EDS.live_time'):
+            mp.Detector.EDS.live_time = mp.Detector.EDS.live_time * self.axes_manager.shape[axis]
         return super(EDSSpectrum, self).sum(axis)
 
     def rebin(self, new_shape):
@@ -90,12 +90,12 @@ class EDSSpectrum(Spectrum):
                    np.array(new_shape_in_array))
         s = super(EDSSpectrum, self).rebin(new_shape)
         # modify time per spectrum
-        if "Acquisition_instrument.SEM.EDS.live_time" in s.metadata:
+        if "Acquisition_instrument.SEM.Detector.EDS.live_time" in s.metadata:
             for factor in factors:
-                s.metadata.Acquisition_instrument.SEM.EDS.live_time *= factor
-        if "Acquisition_instrument.TEM.EDS.live_time" in s.metadata:
+                s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time *= factor
+        if "Acquisition_instrument.TEM.Detector.EDS.live_time" in s.metadata:
             for factor in factors:
-                s.metadata.Acquisition_instrument.TEM.EDS.live_time *= factor
+                s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time *= factor
         return s
 
     def set_elements(self, elements):
@@ -369,8 +369,8 @@ class EDSSpectrum(Spectrum):
         different X-ray lines. The sum window width
         is calculated from the energy resolution of the detector
         defined as defined in
-        `self.metadata.Acquisition_instrument.SEM.EDS.energy_resolution_MnKa` or
-        `self.metadata.Acquisition_instrument.SEM.EDS.energy_resolution_MnKa`.
+        `self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa` or
+        `self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa`.
 
 
         Parameters
@@ -433,9 +433,9 @@ class EDSSpectrum(Spectrum):
                     "Not X-ray line, set them with `add_elements`")
 
         if self.metadata.Signal.signal_type == 'EDS_SEM':
-            FWHM_MnKa = self.metadata.Acquisition_instrument.SEM.EDS.energy_resolution_MnKa
+            FWHM_MnKa = self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa
         elif self.metadata.Signal.signal_type == 'EDS_TEM':
-            FWHM_MnKa = self.metadata.Acquisition_instrument.TEM.EDS.energy_resolution_MnKa
+            FWHM_MnKa = self.metadata.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa
         else:
             raise NotImplementedError(
                 "This method only works for EDS_TEM or EDS_SEM signals. "
@@ -479,7 +479,7 @@ class EDSSpectrum(Spectrum):
 
         TOA is the angle with which the X-rays leave the surface towards
         the detector. Parameters are read in 'SEM.tilt_stage',
-        'Acquisition_instrument.SEM.EDS.azimuth_angle' and 'SEM.EDS.elevation_angle'
+        'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle' and 'SEM.Detector.EDS.elevation_angle'
          in 'metadata'.
 
         Returns
@@ -500,8 +500,8 @@ class EDSSpectrum(Spectrum):
             mp = self.metadata.Acquisition_instrument.TEM
 
         tilt_stage = mp.tilt_stage
-        azimuth_angle = mp.EDS.azimuth_angle
-        elevation_angle = mp.EDS.elevation_angle
+        azimuth_angle = mp.Detector.EDS.azimuth_angle
+        elevation_angle = mp.Detector.EDS.elevation_angle
 
         TOA = utils.eds.take_off_angle(tilt_stage, azimuth_angle,
                                        elevation_angle)

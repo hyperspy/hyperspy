@@ -248,7 +248,7 @@ def eels_constant(s, zlp, t):
                              "You can do this e.g. by using the "
                              "set_microscope_parameters method")
     try:
-        beta = s.metadata.Acquisition_instrument.TEM.EELS.collection_angle
+        beta = s.metadata.Acquisition_instrument.TEM.Detector.EELS.collection_angle
     except:
         raise AttributeError("Please define the collection angle."
                              "You can do this e.g. by using the "

@@ -779,7 +779,7 @@ class EELSSpectrum(Spectrum):
         must_exist = (
             'Acquisition_instrument.TEM.convergence_angle',
             'Acquisition_instrument.TEM.beam_energy',
-            'Acquisition_instrument.TEM.EELS.collection_angle',)
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle',)
         missing_parameters = []
         for item in must_exist:
             exists = self.metadata.has_item(item)
@@ -801,8 +801,10 @@ class EELSSpectrum(Spectrum):
         else:
             return False
 
-    def set_microscope_parameters(self, beam_energy=None,
-                                  convergence_angle=None, collection_angle=None):
+    def set_microscope_parameters(self,
+                                  beam_energy=None,
+                                  convergence_angle=None,
+                                  collection_angle=None):
         """Set the microscope parameters that are necessary to calculate
         the GOS.
 
@@ -816,31 +818,24 @@ class EELSSpectrum(Spectrum):
         collection_angle : float
             In mrad.
         """
-        if self.metadata.has_item('Acquisition_instrument.TEM') is False:
-            self.metadata.add_node('Acquisition_instrument.TEM')
-        if self.metadata.has_item('Acquisition_instrument.TEM.EELS') is False:
-            self.metadata.Acquisition_instrument.TEM.add_node('EELS')
+
         mp = self.metadata
         if beam_energy is not None:
-            mp.Acquisition_instrument.TEM.beam_energy = beam_energy
+            mp.set_item("Acquisition_instrument.TEM.beam_energy", beam_energy)
         if convergence_angle is not None:
-            mp.Acquisition_instrument.TEM.convergence_angle = convergence_angle
+            mp.set_item("Acquisition_instrument.TEM.convergence_angle", convergence_angle)
         if collection_angle is not None:
-            mp.Acquisition_instrument.TEM.EELS.collection_angle = collection_angle
+            mp.set_item("Acquisition_instrument.TEM.Detector.EELS.collection_angle", collection_angle)
 
         self._are_microscope_parameters_missing()
 
     @only_interactive
     def _set_microscope_parameters(self):
-        if self.metadata.has_item('Acquisition_instrument.TEM') is False:
-            self.metadata.add_node('Acquisition_instrument.TEM')
-        if self.metadata.has_item('Acquisition_instrument.TEM.EELS') is False:
-            self.metadata.Acquisition_instrument.TEM.add_node('EELS')
         tem_par = TEMParametersUI()
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle': 'tem_par.convergence_angle',
             'Acquisition_instrument.TEM.beam_energy': 'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.EELS.collection_angle': 'tem_par.collection_angle', }
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': 'tem_par.collection_angle', }
         for key, value in mapping.iteritems():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
@@ -848,13 +843,14 @@ class EELSSpectrum(Spectrum):
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle': tem_par.convergence_angle,
             'Acquisition_instrument.TEM.beam_energy': tem_par.beam_energy,
-            'Acquisition_instrument.TEM.EELS.collection_angle': tem_par.collection_angle, }
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': tem_par.collection_angle, }
         for key, value in mapping.iteritems():
             if value != t.Undefined:
-                exec('self.metadata.%s = %s' % (key, value))
+                self.metadata.set_item(key, value)
         self._are_microscope_parameters_missing()
 
-    def power_law_extrapolation(self, window_size=20,
+    def power_law_extrapolation(self,
+                                window_size=20,
                                 extrapolation_size=1024,
                                 add_noise=False,
                                 fix_neg_r=False):
@@ -1037,7 +1033,7 @@ class EELSSpectrum(Spectrum):
                                  "You can do this e.g. by using the "
                                  "set_microscope_parameters method")
         try:
-            beta = s.metadata.Acquisition_instrument.TEM.EELS.collection_angle
+            beta = s.metadata.Acquisition_instrument.TEM.Detector.EELS.collection_angle
         except:
             raise AttributeError("Please define the collection angle."
                                  "You can do this e.g. by using the "

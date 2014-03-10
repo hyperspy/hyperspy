@@ -92,26 +92,26 @@ keywords = {
 
     # EELS
     'INTEGTIME': {'dtype': float, 'mapped_to':
-                  'Acquisition_instrument.TEM.exposure'},  # in ms
+                  'Acquisition_instrument.TEM.Detector.EELS.exposure'},  # in ms
     'DWELLTIME': {'dtype': float, 'mapped_to':
-                  'Acquisition_instrument.TEM.dwell_time'},  # in ms
+                  'Acquisition_instrument.TEM.Detector.EELS.dwell_time'},  # in ms
     'COLLANGLE': {'dtype': float, 'mapped_to':
-                  'Acquisition_instrument.TEM.EELS.collection_angle'},
+                  'Acquisition_instrument.TEM.Detector.EELS.collection_angle'},
     'ELSDET': {'dtype': unicode, 'mapped_to': None},
 
     # EDS
     'ELEVANGLE': {'dtype': float, 'mapped_to':
-                  'Acquisition_instrument.TEM.EDS.elevation_angle'},
+                  'Acquisition_instrument.TEM.Detector.EDS.elevation_angle'},
     'AZIMANGLE': {'dtype': float, 'mapped_to':
-                  'Acquisition_instrument.TEM.EDS.azimuth_angle'},
+                  'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle'},
     'SOLIDANGLE': {'dtype': float, 'mapped_to':
-                   'Acquisition_instrument.TEM.EDS.solid_angle'},
+                   'Acquisition_instrument.TEM.Detector.EDS.solid_angle'},
     'LIVETIME': {'dtype': float, 'mapped_to':
-                 'Acquisition_instrument.TEM.EDS.live_time'},
+                 'Acquisition_instrument.TEM.Detector.EDS.live_time'},
     'REALTIME': {'dtype': float, 'mapped_to':
-                 'Acquisition_instrument.TEM.EDS.real_time'},
+                 'Acquisition_instrument.TEM.Detector.EDS.real_time'},
     'FWHMMNKA': {'dtype': float, 'mapped_to':
-                 'Acquisition_instrument.TEM.EDS.energy_resolution_MnKa'},
+                 'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa'},
     'TBEWIND': {'dtype': float, 'mapped_to': None},
     'TAUWIND': {'dtype': float, 'mapped_to': None},
     'TDEADLYR': {'dtype': float, 'mapped_to': None},
@@ -122,7 +122,7 @@ keywords = {
     'TDIWIND': {'dtype': float, 'mapped_to': None},
     'THCWIND': {'dtype': float, 'mapped_to': None},
     'EDSDET': {'dtype': unicode, 'mapped_to':
-               'Acquisition_instrument.TEM.EDS.EDS_det'},
+               'Acquisition_instrument.TEM.Detector.EDS.EDS_det'},
 }
 
 

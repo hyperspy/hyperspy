@@ -3233,8 +3233,7 @@ class Signal(MVA,
                 axis_in_manager = self.metadata._Internal_parameters.Stacking_history.axis
                 step_sizes = self.metadata._Internal_parameters.Stacking_history.step_sizes
             else:
-                axis_in_manager = self.axes_manager[-
-                                                    1 +
+                axis_in_manager = self.axes_manager[-1 +
                                                     1j].index_in_axes_manager
         else:
             mode = 'manual'
