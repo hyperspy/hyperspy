@@ -111,6 +111,6 @@ class Spectrum(Signal):
             raise DataDimensionError(
                 "A Signal dimension must be >= 2 to be converted to an Image")
         im = self.rollaxis(-1 + 3j, 0 + 3j)
-        im.metadata.record_by = "image"
+        im.metadata.Signal.record_by = "image"
         im._assign_subclass()
         return im

@@ -450,9 +450,10 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         names[iheight] = rpl_info['height-name']
 
     mp = DictionaryTreeBrowser({
-        'record_by': record_by,
+    
         'General': {'original_filename': os.path.split(filename)[1]},
-        "Signal": {'signal_type': rpl_info['signal']},
+        "Signal": {'signal_type': rpl_info['signal'],
+                   'record_by': record_by,},
     })
 
     if 'convergence-angle' in rpl_info:

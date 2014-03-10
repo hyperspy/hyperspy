@@ -65,6 +65,8 @@ def file_reader(filename, record_by='image', **kwds):
     dt = 'image'
     return [{'data': dc,
              'metadata': {'General': {'original_filename': filename},
-                          'record_by': dt,
-                          "Signal": {'signal_type': ""}, }
+                          "Signal": {'signal_type': "",
+                                     'record_by': dt,
+                           },
+             },
              }]

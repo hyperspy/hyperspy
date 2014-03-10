@@ -2222,7 +2222,7 @@ class MVATools(object):
                                 axes=([{"size": data.shape[0],
                                         "navigate": True}] +
                                       self.axes_manager._get_navigation_axes_dicts()))
-        signal.set_signal_origin(self.metadata.signal_origin)
+        signal.set_signal_origin(self.metadata.Signal.signal_origin)
         for axis in signal.axes_manager._axes[1:]:
             axis.navigate = False
         return signal
@@ -2233,7 +2233,7 @@ class MVATools(object):
                                 axes=[{"size": factors.shape[-1],
                                        "navigate": True}] +
                                 self.axes_manager._get_signal_axes_dicts())
-        signal.set_signal_origin(self.metadata.signal_origin)
+        signal.set_signal_origin(self.metadata.Signal.signal_origin)
         signal.set_signal_type(self.metadata.Signal.signal_type)
         for axis in signal.axes_manager._axes[1:]:
             axis.navigate = False
@@ -2419,7 +2419,6 @@ class Signal(MVA,
         self._load_dictionary(kwds)
         self._plot = None
         self.auto_replot = True
-        self.variance = None
         self.inav = SpecialSlicers(self, True)
         self.isig = SpecialSlicers(self, False)
 
@@ -2702,9 +2701,9 @@ class Signal(MVA,
             string += self.metadata.Signal.signal_type
         string += "\n\tData dimensions: "
         string += str(self.axes_manager.shape)
-        if hasattr(self.metadata, 'record_by'):
+        if self.metadata.has_item('Signal.record_by'):
             string += "\n\tData representation: "
-            string += self.metadata.record_by
+            string += self.metadata.Signal.record_by
             string += "\n\tData type: "
             string += str(self.data.dtype)
         print string
@@ -2761,11 +2760,11 @@ class Signal(MVA,
         if "title" not in self.metadata.General:
             self.metadata.General.title = ''
         if (self._record_by or
-                "record_by" not in self.metadata):
-            self.metadata.record_by = self._record_by
+                "Signal.record_by" not in self.metadata):
+            self.metadata.Signal.record_by = self._record_by
         if (self._signal_origin or
-                "signal_origin" not in self.metadata):
-            self.metadata.signal_origin = self._signal_origin
+                "Signal.signal_origin" not in self.metadata):
+            self.metadata.Signal.signal_origin = self._signal_origin
         if (self._signal_type or
                 not self.metadata.has_item("Signal.signal_type")):
             self.metadata.Signal.signal_type = self._signal_type
@@ -3456,7 +3455,7 @@ class Signal(MVA,
                 self._record_by = ""
             else:
                 return
-            self.metadata.record_by = self._record_by
+            self.metadata.Signal.record_by = self._record_by
             self._assign_subclass()
 
     def _apply_function_on_data_and_remove_axis(self, function, axis):
@@ -3978,7 +3977,8 @@ class Signal(MVA,
         self.data = self.data.astype(dtype)
 
     def estimate_poissonian_noise_variance(self,
-                                           dc=None, gaussian_noise_var=None):
+                                           dc=None,
+                                           gaussian_noise_var=None):
         """Variance estimation supposing Poissonian noise.
 
         Parameters
@@ -3996,44 +3996,41 @@ class Signal(MVA,
         gain_factor = 1
         gain_offset = 0
         correlation_factor = 1
-        if not self.metadata.has_item("Variance_estimation"):
+        if not self.metadata.has_item("Signal.Noise_properties.Variance_linear_model"):
             print("No Variance estimation parameters found in mapped "
                   "parameters. The variance will be estimated supposing"
                   " perfect poissonian noise")
         if self.metadata.has_item(
-                'Variance_estimation.gain_factor'):
-            gain_factor = self.metadata.\
-                Variance_estimation.gain_factor
+                'Signal.Noise_properties.Variance_linear_model.gain_factor'):
+            gain_factor = self.metadata.Signal.Noise_properties.Variance_linear_model.gain_factor
         if self.metadata.has_item(
-                'Variance_estimation.gain_offset'):
-            gain_offset = self.metadata.Variance_estimation.\
-                gain_offset
+                'Signal.Noise_properties.Variance_linear_model.gain_offset'):
+            gain_offset = self.metadata.Signal.Noise_properties.Variance_linear_model.gain_offset
         if self.metadata.has_item(
-                'Variance_estimation.correlation_factor'):
+                'Signal.Noise_properties.Variance_linear_model.correlation_factor'):
             correlation_factor = \
-                self.metadata.Variance_estimation.\
-                correlation_factor
+                self.metadata.Signal.Noise_properties.Variance_linear_model.correlation_factor
         print "Gain factor = ", gain_factor
         print "Gain offset = ", gain_offset
         print "Correlation factor = ", correlation_factor
         if dc is None:
             dc = self.data
-        self.variance = dc * gain_factor + gain_offset
-        if self.variance.min() < 0:
+        self.metadata.set_item("Signal.Noise_properties.variance", dc * gain_factor + gain_offset)
+        if self.metadata.Signal.Noise_properties.variance.min() < 0:
             if gain_offset == 0 and gaussian_noise_var is None:
                 raise ValueError("The variance estimation results"
                                  "in negative values"
                                  "Maybe the gain_offset is wrong?")
-                self.variance = None
+                self.metadata.Signal.Noise_properties.variance = None
                 return
             elif gaussian_noise_var is None:
                 print "Clipping the variance to the gain_offset value"
                 minimum = 0 if gain_offset < 0 else gain_offset
-                self.variance = np.clip(self.variance, minimum,
+                self.metadata.Signal.Noise_properties.variance = np.clip(self.metadata.Signal.Noise_properties.variance, minimum,
                                         np.Inf)
             else:
                 print "Clipping the variance to the gaussian_noise_var"
-                self.variance = np.clip(self.variance,
+                self.metadata.Signal.Noise_properties.variance = np.clip(self.metadata.Signal.Noise_properties.variance,
                                         gaussian_noise_var,
                                         np.Inf)
 
@@ -4145,7 +4142,7 @@ class Signal(MVA,
         """
         # Roll the spectral axis to-be to the latex index in the array
         sp = self.rollaxis(spectral_axis, -1 + 3j)
-        sp.metadata.record_by = "spectrum"
+        sp.metadata.Signal.record_by = "spectrum"
         sp._assign_subclass()
         return sp
 
@@ -4186,7 +4183,7 @@ class Signal(MVA,
         iaxes = [axis.index_in_array for axis in axes]
         im = self.rollaxis(iaxes[0] + 3j, -1 + 3j).rollaxis(
             iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
-        im.metadata.record_by = "image"
+        im.metadata.Signal.record_by = "image"
         im._assign_subclass()
         return im
 
@@ -4194,11 +4191,11 @@ class Signal(MVA,
         mp = self.metadata
         current_class = self.__class__
         self.__class__ = hyperspy.io.assign_signal_subclass(
-            record_by=mp.record_by if "record_by" in mp
+            record_by=mp.Signal.record_by if "Signal.record_by" in mp
             else self._record_by,
             signal_type=mp.Signal.signal_type if "signal_type" in mp.Signal
             else self._signal_type,
-            signal_origin=mp.signal_origin if "signal_origin" in mp.Signal
+            signal_origin=mp.Signal.signal_origin if "Signal.signal_origin" in mp.Signal
             else self._signal_origin)
         self.__init__(**self._to_dictionary())
 
@@ -4255,7 +4252,7 @@ class Signal(MVA,
             raise ValueError("`origin` must be one of: experiment, simulation")
         if origin is None:
             origin = ""
-        self.metadata.signal_origin = origin
+        self.metadata.Signal.signal_origin = origin
         self._assign_subclass()
 
     def print_summary_statistics(self, formatter="%.3f"):

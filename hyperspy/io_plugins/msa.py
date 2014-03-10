@@ -237,13 +237,13 @@ def file_reader(filename, encoding='latin-1', **kwds):
     })
 
     mapped.set_item('General.original_filename', filename)
-    mapped['record_by'] = 'spectrum'
+    mapped.set_item('Signal.record_by', 'spectrum')
     if mapped.has_item('Signal.signal_type'):
         if mapped.Signal.signal_type == 'ELS':
             mapped.Signal.signal_type = 'EELS'
     else:
         # Defaulting to EELS looks reasonable
-        mapped.Signal.signal_type = 'EELS'
+        mapped.set_item(Signal.signal_type,'EELS')
 
     dictionary = {
         'data': np.array(y),

@@ -921,9 +921,9 @@ class Model(list):
         if method == 'ml':
             weights = None
         if weights is True:
-            if self.spectrum.variance is None:
+            if self.spectrum.Signal.Noise_properties.variance is None:
                 self.spectrum.estimate_poissonian_noise_variance()
-            weights = 1. / np.sqrt(self.spectrum.variance.__getitem__(
+            weights = 1. / np.sqrt(self.spectrum.Signal.Noise_properties.variance.__getitem__(
                 self.axes_manager._getitem_tuple)[self.channel_switches])
         elif weights is not None:
             weights = weights.__getitem__(

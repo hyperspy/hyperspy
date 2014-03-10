@@ -765,7 +765,7 @@ class ImageObject(object):
         if "Signal" not in metadata:
             metadata['Signal'] = {}
         metadata['General']['title'] = self.title
-        metadata['record_by'] = self.record_by
+        metadata["Signal"]['record_by'] = self.record_by
         metadata["Signal"]['signal_type'] = self.signal_type
         return metadata
 

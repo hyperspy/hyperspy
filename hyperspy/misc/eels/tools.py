@@ -156,17 +156,14 @@ def estimate_variance_parameters(
     else:
         print message
     if is_ok:
-        if not noisy_signal.metadata.has_item(
-                'Variance_estimation'):
-            noisy_signal.metadata.add_node(
-                'Variance_estimation')
-        noisy_signal.metadata.Variance_estimation.gain_factor = \
-            results0['fit'][0]
-        noisy_signal.metadata.Variance_estimation.gain_offset = \
-            results0['fit'][1]
-        noisy_signal.metadata.Variance_estimation.correlation_factor = c
-        noisy_signal.metadata.Variance_estimation.\
-            parameters_estimation_method = 'Hyperspy'
+        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.gain_factor",
+            results0['fit'][0])
+        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.gain_offset",
+            results0['fit'][1])
+        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.correlation_factor",
+            c)
+        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.parameters_estimation_method",
+            'HyperSpy')
 
     if fold_back_noisy is True:
         noisy_signal.fold()
