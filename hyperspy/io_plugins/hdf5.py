@@ -40,7 +40,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
-version = "1.1"
+version = "1.2"
 
 # -----------------------
 # File format description
@@ -99,7 +99,8 @@ def file_reader(filename, record_by, mode='r', driver='core',
         global default_version
         if current_file_version > default_version:
             warnings.warn("This file was written using a newer version of "
-                          "HyperSpy. I will attempt to load it, but, "
+                          "the HyperSpy hdf5 file format. "
+                          "I will attempt to load it, but, "
                           "if I fail, "
                           "it is likely that I will be more successful at this "
                           "and other tasks if you upgrade me.")
@@ -196,6 +197,63 @@ def hdfgroup2signaldict(group):
             exp['metadata']['_Internal_parameters'] = \
                 exp['metadata']['_internal_parameters']
             del exp['metadata']['_internal_parameters']
+            if 'stacking_history' in exp['metadata']['_Internal_parameters']:
+                exp['metadata']['_Internal_parameters']["Stacking_history"] = \
+                    exp['metadata']['_Internal_parameters']['stacking_history']
+                del exp['metadata']['_Internal_parameters']["stacking_history"]
+            if 'folding' in exp['metadata']['_Internal_parameters']:
+                exp['metadata']['_Internal_parameters']["Folding"] = \
+                    exp['metadata']['_Internal_parameters']['folding']
+                del exp['metadata']['_Internal_parameters']["folding"]
+        if 'Variance_estimation' in exp['metadata']:
+            if "Noise_properties" not in exp["metadata"]:
+                exp["metadata"]["Noise_properties"] = {}
+            exp['metadata']['Noise_properties']["Variance_linear_model"] = \
+                exp['metadata']['Variance_estimation']
+            del exp['metadata']['Variance_estimation']
+        if "TEM" in exp["metadata"]:
+            if not "Acquisition_instrument" in exp["metadata"]:
+                exp["metadata"]["Acquisition_instrument"] = {}
+            exp["metadata"]["Acquisition_instrument"]["TEM"] = exp["metadata"]["TEM"]
+            del exp["metadata"]["TEM"]
+            if "EELS" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                if "Detector" not in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = {}
+                exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = \
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]
+                del exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]
+            if "EDS" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                if "Detector" not in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = {}
+                exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = \
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EDS"]
+                del exp["metadata"]["Acquisition_instrument"]["TEM"]["EDS"]
+
+        if "SEM" in exp["metadata"]:
+            if not "Acquisition_instrument" in exp["metadata"]:
+                exp["metadata"]["Acquisition_instrument"] = {}
+            exp["metadata"]["Acquisition_instrument"]["SEM"] = exp["metadata"]["SEM"]
+            del exp["metadata"]["TEM"]
+            if "EDS" in exp["metadata"]["Acquisition_instrument"]["SEM"]:
+                if "Detector" not in exp["metadata"]["Acquisition_instrument"]["SEM"]:
+                    exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"] = {}
+                exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"] = \
+                    exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
+                del exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
+
+        for key in ["title", "date", "time", "original_filename"]:
+            if key in exp["metadata"]:
+                if "General" not in exp["metadata"]:
+                    exp["metadata"]["General"] = {}
+                exp["metadata"]["General"][key] = exp["metadata"][key]
+                del exp["metadata"][key]
+        for key in ["record_by", "signal_origin", "signal_type"]:
+            if key in exp["metadata"]:
+                if "Signal" not in exp["metadata"]:
+                    exp["metadata"]["Signal"] = {}
+                exp["metadata"]["Signal"][key] = exp["metadata"][key]
+                del exp["metadata"][key]
+
 
     return exp
 
