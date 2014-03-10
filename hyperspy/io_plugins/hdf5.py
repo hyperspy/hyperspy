@@ -214,17 +214,20 @@ def hdfgroup2signaldict(group):
         if "TEM" in exp["metadata"]:
             if not "Acquisition_instrument" in exp["metadata"]:
                 exp["metadata"]["Acquisition_instrument"] = {}
-            exp["metadata"]["Acquisition_instrument"]["TEM"] = exp["metadata"]["TEM"]
+            exp["metadata"]["Acquisition_instrument"][
+                "TEM"] = exp["metadata"]["TEM"]
             del exp["metadata"]["TEM"]
             if "EELS" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
                 if "Detector" not in exp["metadata"]["Acquisition_instrument"]["TEM"]:
-                    exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = {}
+                    exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["Detector"] = {}
                 exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = \
                     exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]
                 del exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]
             if "EDS" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
                 if "Detector" not in exp["metadata"]["Acquisition_instrument"]["TEM"]:
-                    exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = {}
+                    exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["Detector"] = {}
                 exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = \
                     exp["metadata"]["Acquisition_instrument"]["TEM"]["EDS"]
                 del exp["metadata"]["Acquisition_instrument"]["TEM"]["EDS"]
@@ -232,11 +235,13 @@ def hdfgroup2signaldict(group):
         if "SEM" in exp["metadata"]:
             if not "Acquisition_instrument" in exp["metadata"]:
                 exp["metadata"]["Acquisition_instrument"] = {}
-            exp["metadata"]["Acquisition_instrument"]["SEM"] = exp["metadata"]["SEM"]
+            exp["metadata"]["Acquisition_instrument"][
+                "SEM"] = exp["metadata"]["SEM"]
             del exp["metadata"]["TEM"]
             if "EDS" in exp["metadata"]["Acquisition_instrument"]["SEM"]:
                 if "Detector" not in exp["metadata"]["Acquisition_instrument"]["SEM"]:
-                    exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"] = {}
+                    exp["metadata"]["Acquisition_instrument"][
+                        "SEM"]["Detector"] = {}
                 exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"] = \
                     exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
                 del exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
@@ -253,7 +258,6 @@ def hdfgroup2signaldict(group):
                     exp["metadata"]["Signal"] = {}
                 exp["metadata"]["Signal"][key] = exp["metadata"][key]
                 del exp["metadata"][key]
-
 
     return exp
 
