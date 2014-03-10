@@ -770,10 +770,10 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         step_sizes = [obj.axes_manager.shape[axis_input]
                       for obj in signal_list]
     signal.metadata._Internal_parameters.set_item(
-        'stacking_history.axis',
+        'Stacking_history.axis',
         axis_input)
     signal.metadata._Internal_parameters.set_item(
-        'stacking_history.step_sizes',
+        'Stacking_history.step_sizes',
         step_sizes)
 
     return signal

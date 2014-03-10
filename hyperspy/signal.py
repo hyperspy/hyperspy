@@ -3189,7 +3189,7 @@ class Signal(MVA,
             axis in `axes_manager` or the axis name.
             - If 'auto' and if the object has been created with utils.stack,
             split will return the former list of signals
-            (options stored in 'metadata._Internal_parameters.stacking_history'
+            (options stored in 'metadata._Internal_parameters.Stacking_history'
              else the last navigation axis will be used.
         number_of_parts : {'auto' | int}
             Number of parts in which the SI will be splitted. The
@@ -3229,9 +3229,9 @@ class Signal(MVA,
 
         if axis == 'auto':
             mode = 'auto'
-            if hasattr(self.metadata._Internal_parameters, 'stacking_history'):
-                axis_in_manager = self.metadata._Internal_parameters.stacking_history.axis
-                step_sizes = self.metadata._Internal_parameters.stacking_history.step_sizes
+            if hasattr(self.metadata._Internal_parameters, 'Stacking_history'):
+                axis_in_manager = self.metadata._Internal_parameters.Stacking_history.axis
+                step_sizes = self.metadata._Internal_parameters.Stacking_history.step_sizes
             else:
                 axis_in_manager = self.axes_manager[-
                                                     1 +
