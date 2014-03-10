@@ -72,6 +72,6 @@ def file_reader(filename, **kwds):
              {
                  'General': {'original_filename': os.path.split(filename)[1]},
                  "Signal": {'signal_type': "",
-                            'record_by': 'image',},
+                            'record_by': 'image', },
              }
              }]

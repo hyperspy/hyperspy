@@ -454,8 +454,8 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
         'data': dc,
         'metadata': {'General': {'original_filename': os.path.split(filename)[1]},
                      "Signal": {'signal_type': "",
-                                'record_by': record_by,},
-                    },
+                                'record_by': record_by, },
+                     },
         'axes': axes,
         'original_metadata': original_metadata,
         'mapping': mapping}

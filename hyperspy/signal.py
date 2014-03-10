@@ -4015,7 +4015,11 @@ class Signal(MVA,
         print "Correlation factor = ", correlation_factor
         if dc is None:
             dc = self.data
-        self.metadata.set_item("Signal.Noise_properties.variance", dc * gain_factor + gain_offset)
+        self.metadata.set_item(
+            "Signal.Noise_properties.variance",
+            dc *
+            gain_factor +
+            gain_offset)
         if self.metadata.Signal.Noise_properties.variance.min() < 0:
             if gain_offset == 0 and gaussian_noise_var is None:
                 raise ValueError("The variance estimation results"
@@ -4027,12 +4031,12 @@ class Signal(MVA,
                 print "Clipping the variance to the gain_offset value"
                 minimum = 0 if gain_offset < 0 else gain_offset
                 self.metadata.Signal.Noise_properties.variance = np.clip(self.metadata.Signal.Noise_properties.variance, minimum,
-                                        np.Inf)
+                                                                         np.Inf)
             else:
                 print "Clipping the variance to the gaussian_noise_var"
                 self.metadata.Signal.Noise_properties.variance = np.clip(self.metadata.Signal.Noise_properties.variance,
-                                        gaussian_noise_var,
-                                        np.Inf)
+                                                                         gaussian_noise_var,
+                                                                         np.Inf)
 
     def get_current_signal(self, auto_title=True, auto_filename=True):
         """Returns the data at the current coordinates as a Signal subclass.

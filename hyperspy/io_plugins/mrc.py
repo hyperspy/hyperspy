@@ -186,7 +186,7 @@ def file_reader(filename, endianess='<', **kwds):
     names = ['z', 'y', 'x']
     metadata = {'General': {'original_filename': os.path.split(filename)[1]},
                 "Signal": {'signal_type': "",
-                           'record_by': 'image',},
+                           'record_by': 'image', },
                 }
     # create the axis objects for each axis
     axes = [
