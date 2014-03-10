@@ -21,6 +21,7 @@ import time
 import datetime
 import codecs
 import warnings
+import os
 
 import numpy as np
 
@@ -236,7 +237,7 @@ def file_reader(filename, encoding='latin-1', **kwds):
         'units': parameters['XUNITS'] if 'XUNITS' in parameters else '',
     })
 
-    mapped.set_item('General.original_filename', filename)
+    mapped.set_item('General.original_filename', os.path.split(filename)[1])
     mapped.set_item('Signal.record_by', 'spectrum')
     if mapped.has_item('Signal.signal_type'):
         if mapped.Signal.signal_type == 'ELS':
