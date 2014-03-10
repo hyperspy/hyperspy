@@ -196,8 +196,8 @@ class EDSSpectrum(Spectrum):
         add_lines, add_elements, set_elements..
 
         """
-        if "Sample.Xray_lines" in self.metadata:
-            del self.metadata.Sample.Xray_lines
+        if "Sample.xray_lines" in self.metadata:
+            del self.metadata.Sample.xray_lines
         self.add_lines(lines=lines,
                        only_one=only_one,
                        only_lines=only_lines)
@@ -213,7 +213,7 @@ class EDSSpectrum(Spectrum):
         list of elements, ocassionally it might be useful to customize the
         X-ray lines to be use by all functions by default using this method.
         The list of X-ray lines is stored in
-        `metadata.Sample.Xray_lines`
+        `metadata.Sample.xray_lines`
 
         Parameters
         ----------
@@ -238,14 +238,14 @@ class EDSSpectrum(Spectrum):
         set_lines, add_elements, set_elements.
 
         """
-        if "Sample.Xray_lines" in self.metadata:
-            Xray_lines = set(self.metadata.Sample.Xray_lines)
+        if "Sample.xray_lines" in self.metadata:
+            xray_lines = set(self.metadata.Sample.xray_lines)
         else:
-            Xray_lines = set()
+            xray_lines = set()
         # Define the elements which Xray lines has been customized
         # So that we don't attempt to add new lines automatically
         elements = set()
-        for line in Xray_lines:
+        for line in xray_lines:
             elements.add(line.split("_")[0])
         end_energy = self.axes_manager.signal_axes[0].high_value
         for line in lines:
@@ -258,9 +258,9 @@ class EDSSpectrum(Spectrum):
             if element in elements_db:
                 elements.add(element)
                 if subshell in elements_db[element]['Atomic_properties']['Xray_lines']:
-                    lines_len = len(Xray_lines)
-                    Xray_lines.add(line)
-                    if lines_len != len(Xray_lines):
+                    lines_len = len(xray_lines)
+                    xray_lines.add(line)
+                    if lines_len != len(xray_lines):
                         print("%s line added," % line)
                     else:
                         print("%s line already in." % line)
@@ -287,10 +287,10 @@ class EDSSpectrum(Spectrum):
         self.add_elements(elements)
         if not hasattr(self.metadata, 'Sample'):
             self.metadata.add_node('Sample')
-        if "Sample.Xray_lines" in self.metadata:
-            Xray_lines = Xray_lines.union(
-                self.metadata.Sample.Xray_lines)
-        self.metadata.Sample.Xray_lines = sorted(list(Xray_lines))
+        if "Sample.xray_lines" in self.metadata:
+            xray_lines = xray_lines.union(
+                self.metadata.Sample.xray_lines)
+        self.metadata.Sample.xray_lines = sorted(list(xray_lines))
 
     def _get_lines_from_elements(self,
                                  elements,
@@ -357,7 +357,7 @@ class EDSSpectrum(Spectrum):
         return lines
 
     def get_lines_intensity(self,
-                            Xray_lines=None,
+                            xray_lines=None,
                             plot_result=False,
                             integration_window_factor=2.,
                             only_one=True,
@@ -377,11 +377,11 @@ class EDSSpectrum(Spectrum):
         Parameters
         ----------
 
-        Xray_lines: {None, "best", list of string}
+        xray_lines: {None, "best", list of string}
             If None,
-            if `mapped.parameters.Sample.elements.Xray_lines` contains a
+            if `mapped.parameters.Sample.elements.xray_lines` contains a
             list of lines use those.
-            If `mapped.parameters.Sample.elements.Xray_lines` is undefined
+            If `mapped.parameters.Sample.elements.xray_lines` is undefined
             or empty but `mapped.parameters.Sample.elements` is defined,
             use the same syntax as `add_line` to select a subset of lines
             for the operation.
@@ -421,11 +421,11 @@ class EDSSpectrum(Spectrum):
 
         """
 
-        if Xray_lines is None:
-            if 'Sample.Xray_lines' in self.metadata:
-                Xray_lines = self.metadata.Sample.Xray_lines
+        if xray_lines is None:
+            if 'Sample.xray_lines' in self.metadata:
+                xray_lines = self.metadata.Sample.xray_lines
             elif 'Sample.elements' in self.metadata:
-                Xray_lines = self._get_lines_from_elements(
+                xray_lines = self._get_lines_from_elements(
                     self.metadata.Sample.elements,
                     only_one=only_one,
                     only_lines=only_lines)
@@ -446,7 +446,7 @@ class EDSSpectrum(Spectrum):
         intensities = []
         # test 1D Spectrum (0D problem)
             #signal_to_index = self.axes_manager.navigation_dimension - 2
-        for Xray_line in Xray_lines:
+        for Xray_line in xray_lines:
             element, line = utils_eds._get_element_and_line(Xray_line)
             line_energy = elements_db[element]['Atomic_properties']['Xray_lines'][
                 line]['energy (keV)']

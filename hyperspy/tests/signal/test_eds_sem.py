@@ -72,28 +72,28 @@ class Test_metadata:
     def test_add_lines(self):
         s = self.signal
         s.add_lines(lines=())
-        assert_equal(s.metadata.Sample.Xray_lines, [])
+        assert_equal(s.metadata.Sample.xray_lines, [])
         s.add_lines(("Fe_Ln",))
-        assert_equal(s.metadata.Sample.Xray_lines, ["Fe_Ln"])
+        assert_equal(s.metadata.Sample.xray_lines, ["Fe_Ln"])
         s.add_lines(("Fe_Ln",))
-        assert_equal(s.metadata.Sample.Xray_lines, ["Fe_Ln"])
+        assert_equal(s.metadata.Sample.xray_lines, ["Fe_Ln"])
         s.add_elements(["Ti", ])
         s.add_lines(())
-        assert_equal(s.metadata.Sample.Xray_lines, ['Fe_Ln', 'Ti_La'])
+        assert_equal(s.metadata.Sample.xray_lines, ['Fe_Ln', 'Ti_La'])
         s.set_lines((), only_one=False, only_lines=False)
-        assert_equal(s.metadata.Sample.Xray_lines,
+        assert_equal(s.metadata.Sample.xray_lines,
                      ['Fe_La', 'Fe_Lb3', 'Fe_Ll', 'Fe_Ln', 'Ti_La',
                       'Ti_Lb3', 'Ti_Ll', 'Ti_Ln'])
         s.metadata.Acquisition_instrument.SEM.beam_energy = 0.4
         s.set_lines((), only_one=False, only_lines=False)
-        assert_equal(s.metadata.Sample.Xray_lines, ['Ti_Ll'])
+        assert_equal(s.metadata.Sample.xray_lines, ['Ti_Ll'])
 #        s.add_lines()
-#        results.append(mp.Sample.Xray_lines[1])
+#        results.append(mp.Sample.xray_lines[1])
 #        mp.Acquisition_instrument.SEM.beam_energy = 10.0
 #        s.set_elements(['Al','Ni'])
-#        results.append(mp.Sample.Xray_lines[1])
+#        results.append(mp.Sample.xray_lines[1])
 #        s.add_elements(['Fe'])
-#        results.append(mp.Sample.Xray_lines[1])
+#        results.append(mp.Sample.xray_lines[1])
 #        assert_equal(results, ['Al_Ka','Ni','Ni_Ka','Ni_La','Fe_La'])
 
     def test_default_param(self):
@@ -193,7 +193,7 @@ class Test_tools_bulk:
         s = self.signal
         mp = s.metadata
         xr_range = utils.eds.xray_range(
-            mp.Sample.Xray_lines[0],
+            mp.Sample.xray_lines[0],
             mp.Acquisition_instrument.SEM.beam_energy,
             density=4.37499648818)
         assert_equal(xr_range, 0.19002078834050035)
