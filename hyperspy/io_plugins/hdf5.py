@@ -163,7 +163,7 @@ def hdfgroup2signaldict(group):
     # If the title was not defined on writing the Experiment is
     # then called __unnamed__. The next "if" simply sets the title
     # back to the empty string
-    if "General" in exp["metadata"] and ["title"] in exp["metadata"]["General"]:
+    if "General" in exp["metadata"] and "title" in exp["metadata"]["General"]:
         if '__unnamed__' == exp['metadata']['General']['title']:
             exp['metadata']["General"]['title'] = ''
 

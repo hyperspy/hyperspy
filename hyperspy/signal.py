@@ -2468,8 +2468,8 @@ class Signal(MVA,
         mp.add_node("_Internal_parameters")
         mp.add_node("General")
         mp.add_node("Signal")
-        mp._Internal_parameters.add_node("folding")
-        folding = mp._Internal_parameters.folding
+        mp._Internal_parameters.add_node("Folding")
+        folding = mp._Internal_parameters.Folding
         folding.unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
@@ -3337,7 +3337,7 @@ class Signal(MVA,
         # by
         # the fold function only if it has not been already stored by a
         # previous unfold
-        folding = self.metadata._Internal_parameters.folding
+        folding = self.metadata._Internal_parameters.Folding
         if folding.unfolded is False:
             folding.original_shape = self.data.shape
             folding.original_axes_manager = self.axes_manager
@@ -3402,10 +3402,10 @@ class Signal(MVA,
     @auto_replot
     def fold(self):
         """If the signal was previously unfolded, folds it back"""
-        folding = self.metadata._Internal_parameters.folding
+        folding = self.metadata._Internal_parameters.Folding
         # Note that == must be used instead of is True because
         # if the value was loaded from a file its type can be np.bool_
-        if folding.unfolded == True:
+        if folding.unfolded is True:
             self.data = self.data.reshape(folding.original_shape)
             self.axes_manager = folding.original_axes_manager
             folding.original_shape = None

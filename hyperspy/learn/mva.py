@@ -338,7 +338,7 @@ class MVA():
 
             if self._unfolded4decomposition is True:
                 folding = \
-                    self.metadata._Internal_parameters.folding
+                    self.metadata._Internal_parameters.Folding
                 target.original_shape = folding.original_shape
 
             # Reproject
