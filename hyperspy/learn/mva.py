@@ -700,8 +700,6 @@ class MVA():
         """
         rec = self._calculate_recmatrix(components=components,
                                         mva_type='decomposition')
-        rec.residual = rec.copy()
-        rec.residual.data = self.data - rec.data
         return rec
 
     def get_bss_model(self, components=None):
