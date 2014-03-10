@@ -602,10 +602,12 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
         if mp.has_item('convergence_angle'):
             keys_dictionary['convergence-angle'] = mp.convergence_angle
         if mp.has_item('Detector.EELS.collection_angle'):
-            keys_dictionary['collection-angle'] = mp.Detector.EELS.collection_angle
+            keys_dictionary[
+                'collection-angle'] = mp.Detector.EELS.collection_angle
 
         if mp.has_item('Detector.EDS.elevation_angle'):
-            keys_dictionary['elevation-angle'] = mp.Detector.EDS.elevation_angle
+            keys_dictionary[
+                'elevation-angle'] = mp.Detector.EDS.elevation_angle
         if mp.has_item('tilt_stage'):
             keys_dictionary['tilt-stage'] = mp.tilt_stage
         if mp.has_item('Detector.EDS.azimuth_angle'):

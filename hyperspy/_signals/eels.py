@@ -823,9 +823,13 @@ class EELSSpectrum(Spectrum):
         if beam_energy is not None:
             mp.set_item("Acquisition_instrument.TEM.beam_energy", beam_energy)
         if convergence_angle is not None:
-            mp.set_item("Acquisition_instrument.TEM.convergence_angle", convergence_angle)
+            mp.set_item(
+                "Acquisition_instrument.TEM.convergence_angle",
+                convergence_angle)
         if collection_angle is not None:
-            mp.set_item("Acquisition_instrument.TEM.Detector.EELS.collection_angle", collection_angle)
+            mp.set_item(
+                "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
+                collection_angle)
 
         self._are_microscope_parameters_missing()
 

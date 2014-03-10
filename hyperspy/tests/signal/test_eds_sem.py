@@ -110,7 +110,8 @@ class Test_metadata:
         sTEM = s.deepcopy()
         sTEM.set_signal_type(signal_type)
         mpTEM = sTEM.metadata
-        results = [mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa]
+        results = [
+            mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa]
         results.append(signal_type)
         resultsTEM = [
             mpTEM.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa]

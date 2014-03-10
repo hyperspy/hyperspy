@@ -70,7 +70,8 @@ class EDSSpectrum(Spectrum):
         else:
             mp = self.metadata.Acquisition_instrument.TEM
         if mp.has_item('Detector.EDS.live_time'):
-            mp.Detector.EDS.live_time = mp.Detector.EDS.live_time * self.axes_manager.shape[axis]
+            mp.Detector.EDS.live_time = mp.Detector.EDS.live_time * \
+                self.axes_manager.shape[axis]
         return super(EDSSpectrum, self).sum(axis)
 
     def rebin(self, new_shape):
