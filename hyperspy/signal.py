@@ -2477,11 +2477,17 @@ class Signal(MVA,
         self.tmp_parameters = DictionaryTreeBrowser()
 
     def __repr__(self):
+        if self.metadata._Internal_parameters.Folding.unfolded:
+            unfolded = "unfolded "
+        else:
+            unfolded = ""
         string = '<'
         string += self.__class__.__name__
         string += ", title: %s" % self.metadata.General.title
-        string += ", dimensions: %s" % (
+        string += ", %sdimensions: %s" % (
+            unfolded,
             self.axes_manager._get_dimension_str())
+
         string += '>'
 
         return string
