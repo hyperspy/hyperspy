@@ -631,7 +631,6 @@ class MVA():
 
         Parameters
         ------------
-        target : target or self.peak_learning_results
         components : None, int, or list of ints
              if None, rebuilds SI from all components
              if int, rebuilds SI from components in range 0-given int

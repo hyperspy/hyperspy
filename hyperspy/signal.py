@@ -2414,7 +2414,6 @@ class Signal(MVA,
 
         self._create_metadata()
         self.learning_results = LearningResults()
-        self.peak_learning_results = LearningResults()
         kwds['data'] = data
         self._load_dictionary(kwds)
         self._plot = None
