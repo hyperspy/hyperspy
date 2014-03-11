@@ -2472,6 +2472,7 @@ class Signal(MVA,
         folding.unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
+        mp.Signal.binned = False
         self.original_metadata = DictionaryTreeBrowser()
         self.tmp_parameters = DictionaryTreeBrowser()
 

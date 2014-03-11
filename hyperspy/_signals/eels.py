@@ -51,6 +51,7 @@ class EELSSpectrum(Spectrum):
                 hasattr(self.metadata.Sample, 'elements'):
             print('Elemental composition read from file')
             self.add_elements(self.metadata.Sample.elements)
+        self.metadata.Signal.binned = True
 
     def add_elements(self, elements, include_pre_edges=False):
         """Declare the elemental composition of the sample.
