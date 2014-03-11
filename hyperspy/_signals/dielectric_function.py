@@ -31,7 +31,6 @@ class DielectricFunction(Spectrum):
         Spectrum.__init__(self, *args, **kwards)
         self.metadata.Signal.binned = False
 
-
     def get_number_of_effective_electrons(self, nat, cumulative=False):
         """Compute the number of effective electrons using the Bethe f-sum
         rule.

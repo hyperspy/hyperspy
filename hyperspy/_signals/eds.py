@@ -35,6 +35,7 @@ class EDSSpectrum(Spectrum):
             print('The microscope type is not set. Use '
                   'set_signal_type(\'EDS_TEM\') or set_signal_type(\'EDS_SEM\')')
         self.metadata.Signal.binned = True
+
     def sum(self, axis):
         """Sum the data over the given axis.
 
