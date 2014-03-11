@@ -454,7 +454,7 @@ class EDSSpectrum(Spectrum):
             line_FWHM = utils_eds.get_FWHM_at_Energy(FWHM_MnKa, line_energy)
             det = integration_window_factor * line_FWHM / 2.
             img = self[..., line_energy - det:line_energy + det
-                       ].sum(-1)
+                       ].integrate1D(-1)
             img.metadata.General.title = (
                 'Intensity of %s at %.2f %s from %s' %
                 (Xray_line,
