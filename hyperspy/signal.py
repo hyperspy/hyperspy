@@ -3711,6 +3711,7 @@ class Signal(MVA,
                                axis=axis.index_in_array))
         s._remove_axis(axis.index_in_axes_manager)
         return s
+
     def integrate1D(self, axis):
         """Integrate the signal over the given axis.
 
@@ -3746,6 +3747,7 @@ class Signal(MVA,
             return self.integrate_simpson(axis)
         else:
             return self.sum(axis)
+
     def indexmax(self, axis):
         """Returns a signal with the index of the maximum along an axis.
 
