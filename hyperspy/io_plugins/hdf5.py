@@ -194,17 +194,17 @@ def hdfgroup2signaldict(group):
 
     if current_file_version < StrictVersion("1.2"):
         if '_internal_parameters' in exp['metadata']:
-            exp['metadata']['_Internal_parameters'] = \
+            exp['metadata']['_HyperSpy'] = \
                 exp['metadata']['_internal_parameters']
             del exp['metadata']['_internal_parameters']
-            if 'stacking_history' in exp['metadata']['_Internal_parameters']:
-                exp['metadata']['_Internal_parameters']["Stacking_history"] = \
-                    exp['metadata']['_Internal_parameters']['stacking_history']
-                del exp['metadata']['_Internal_parameters']["stacking_history"]
-            if 'folding' in exp['metadata']['_Internal_parameters']:
-                exp['metadata']['_Internal_parameters']["Folding"] = \
-                    exp['metadata']['_Internal_parameters']['folding']
-                del exp['metadata']['_Internal_parameters']["folding"]
+            if 'stacking_history' in exp['metadata']['_HyperSpy']:
+                exp['metadata']['_HyperSpy']["Stacking_history"] = \
+                    exp['metadata']['_HyperSpy']['stacking_history']
+                del exp['metadata']['_HyperSpy']["stacking_history"]
+            if 'folding' in exp['metadata']['_HyperSpy']:
+                exp['metadata']['_HyperSpy']["Folding"] = \
+                    exp['metadata']['_HyperSpy']['folding']
+                del exp['metadata']['_HyperSpy']["folding"]
         if 'Variance_estimation' in exp['metadata']:
             if "Noise_properties" not in exp["metadata"]:
                 exp["metadata"]["Noise_properties"] = {}
@@ -399,7 +399,7 @@ def write_signal(signal, group, compression='gzip'):
     metadata_dict = signal.metadata.as_dictionary()
     if default_version < StrictVersion("1.2"):
         metadata_dict["_internal_parameters"] = \
-            metadata_dict.pop("_Internal_parameters")
+            metadata_dict.pop("_HyperSpy")
     dict2hdfgroup(metadata_dict,
                   mapped_par, compression=compression)
     original_par = group.create_group(original_metadata)

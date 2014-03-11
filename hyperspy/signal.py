@@ -2464,11 +2464,11 @@ class Signal(MVA,
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
         mp = self.metadata
-        mp.add_node("_Internal_parameters")
+        mp.add_node("_HyperSpy")
         mp.add_node("General")
         mp.add_node("Signal")
-        mp._Internal_parameters.add_node("Folding")
-        folding = mp._Internal_parameters.Folding
+        mp._HyperSpy.add_node("Folding")
+        folding = mp._HyperSpy.Folding
         folding.unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
@@ -3188,7 +3188,7 @@ class Signal(MVA,
             axis in `axes_manager` or the axis name.
             - If 'auto' and if the object has been created with utils.stack,
             split will return the former list of signals
-            (options stored in 'metadata._Internal_parameters.Stacking_history'
+            (options stored in 'metadata._HyperSpy.Stacking_history'
              else the last navigation axis will be used.
         number_of_parts : {'auto' | int}
             Number of parts in which the SI will be splitted. The
@@ -3228,9 +3228,9 @@ class Signal(MVA,
 
         if axis == 'auto':
             mode = 'auto'
-            if hasattr(self.metadata._Internal_parameters, 'Stacking_history'):
-                axis_in_manager = self.metadata._Internal_parameters.Stacking_history.axis
-                step_sizes = self.metadata._Internal_parameters.Stacking_history.step_sizes
+            if hasattr(self.metadata._HyperSpy, 'Stacking_history'):
+                axis_in_manager = self.metadata._HyperSpy.Stacking_history.axis
+                step_sizes = self.metadata._HyperSpy.Stacking_history.step_sizes
             else:
                 axis_in_manager = self.axes_manager[-1 +
                                                     1j].index_in_axes_manager
@@ -3335,7 +3335,7 @@ class Signal(MVA,
         # by
         # the fold function only if it has not been already stored by a
         # previous unfold
-        folding = self.metadata._Internal_parameters.Folding
+        folding = self.metadata._HyperSpy.Folding
         if folding.unfolded is False:
             folding.original_shape = self.data.shape
             folding.original_axes_manager = self.axes_manager
@@ -3400,7 +3400,7 @@ class Signal(MVA,
     @auto_replot
     def fold(self):
         """If the signal was previously unfolded, folds it back"""
-        folding = self.metadata._Internal_parameters.Folding
+        folding = self.metadata._HyperSpy.Folding
         # Note that == must be used instead of is True because
         # if the value was loaded from a file its type can be np.bool_
         if folding.unfolded is True:
