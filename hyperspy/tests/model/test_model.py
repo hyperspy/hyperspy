@@ -5,9 +5,13 @@ from hyperspy.hspy import *
 
 
 class TestModelFitBinned:
+
     def setUp(self):
         np.random.seed(1)
-        s = signals.Spectrum(np.random.normal(scale=2, size=10000)).get_histogram()
+        s = signals.Spectrum(
+            np.random.normal(
+                scale=2,
+                size=10000)).get_histogram()
         s.metadata.Signal.binned = True
         g = components.Gaussian()
         m = create_model(s)
@@ -73,7 +77,9 @@ class TestModelFitBinned:
         nose.tools.assert_almost_equal(self.m[0].centre.value, 0.5)
         nose.tools.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
 
+
 class TestModelWeighted:
+
     def setUp(self):
         np.random.seed(1)
         s = signals.SpectrumSimulation(np.arange(10, 100, 0.1))
@@ -107,7 +113,13 @@ class TestModelWeighted:
 
     def test_fit_fmin_binned(self):
         self.m.spectrum.metadata.Signal.binned = True
-        self.m.fit(fitter="fmin", method="ls", weights=np.arange(10, 100, 0.01))
+        self.m.fit(
+            fitter="fmin",
+            method="ls",
+            weights=np.arange(
+                10,
+                100,
+                0.01))
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9171652269521182, 1.6012882249456402)):
             nose.tools.assert_almost_equal(result, expected, places=5)
@@ -135,7 +147,13 @@ class TestModelWeighted:
 
     def test_fit_fmin_unbinned(self):
         self.m.spectrum.metadata.Signal.binned = False
-        self.m.fit(fitter="fmin", method="ls", weights=np.arange(10, 100, 0.01))
+        self.m.fit(
+            fitter="fmin",
+            method="ls",
+            weights=np.arange(
+                10,
+                100,
+                0.01))
         for result, expected in zip(self.m[0].coefficients.value,
                                     (0.99171625667646135, 0.16012922226345222)):
             nose.tools.assert_almost_equal(result, expected, places=5)

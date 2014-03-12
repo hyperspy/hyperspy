@@ -53,7 +53,9 @@ def test_eds_sem_binned_default():
     s = signals.EDSSEMSpectrum([0])
     nose.tools.assert_true(s.metadata.Signal.binned)
 
+
 class TestModelBinned:
+
     def setUp(self):
         s = signals.Spectrum([1])
         s.axes_manager[0].scale = 0.1
