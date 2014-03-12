@@ -349,7 +349,7 @@ class EELSCLEdge(Component):
         self._axes_manager = original_axes_manager
         self.fetch_stored_values()
 
-        s.metadata.title = self.name.replace(
+        s.metadata.General.title = self.name.replace(
             '_', ' ') + ' fine structure'
 
         return s

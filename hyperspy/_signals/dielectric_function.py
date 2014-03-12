@@ -96,15 +96,15 @@ class DielectricFunction(Spectrum):
                              initial=0))
 
         # Prepare return
-        neff1.metadata.title = (
+        neff1.metadata.General.title = (
             r"$n_{\mathrm{eff}}\left(-\Im\left(\epsilon^{-1}\right)\right)$ "
             "calculated from " +
-            self.metadata.title +
+            self.metadata.General.title +
             " using the Bethe f-sum rule.")
-        neff2.metadata.title = (
+        neff2.metadata.General.title = (
             r"$n_{\mathrm{eff}}\left(\epsilon_{2}\right)$ "
             "calculated from " +
-            self.metadata.title +
+            self.metadata.General.title +
             " using the Bethe f-sum rule.")
 
         return neff1, neff2
@@ -114,6 +114,6 @@ class DielectricFunction(Spectrum):
                 self.axes_manager.signal_axes[0].scale)
         s = self._deepcopy_with_new_data(data)
         s.set_signal_type("EELS")
-        s.metadata.title = ("EELS calculated from " +
-                            self.metadata.title)
+        s.metadata.General.title = ("EELS calculated from " +
+                                    self.metadata.General.title)
         return s

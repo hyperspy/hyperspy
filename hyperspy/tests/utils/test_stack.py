@@ -17,7 +17,7 @@ class Test_Utils_Stack():
         s.axes_manager[1].name = "y"
         s.axes_manager[2].name = "E"
         s.axes_manager[2].scale = 0.5
-        s.metadata.title = 'test'
+        s.metadata.General.title = 'test'
         self.signal = s
 
     def test_stack_default(self):
@@ -38,7 +38,7 @@ class Test_Utils_Stack():
         s4 = s3.split()[0]
         assert_true((s4.data == s.data).all())
         assert_true((hasattr(s4.original_metadata, 'stack_elements')is False))
-        assert_true((s4.metadata.title == 'test'))
+        assert_true((s4.metadata.General.title == 'test'))
 
     def test_stack_not_default(self):
         s = self.signal

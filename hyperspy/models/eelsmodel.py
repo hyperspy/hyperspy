@@ -119,9 +119,9 @@ class EELSModel(Model):
         for component in self:
             if isinstance(component, EELSCLEdge):
                 component.set_microscope_parameters(
-                    E0=self.spectrum.metadata.TEM.beam_energy,
-                    alpha=self.spectrum.metadata.TEM.convergence_angle,
-                    beta=self.spectrum.metadata.TEM.EELS.collection_angle,
+                    E0=self.spectrum.metadata.Acquisition_instrument.TEM.beam_energy,
+                    alpha=self.spectrum.metadata.Acquisition_instrument.TEM.convergence_angle,
+                    beta=self.spectrum.metadata.Acquisition_instrument.TEM.Detector.EELS.collection_angle,
                     energy_scale=self.axis.scale)
                 component.energy_scale = self.axis.scale
                 component._set_fine_structure_coeff()

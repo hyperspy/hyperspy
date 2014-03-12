@@ -443,15 +443,19 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
         original_metadata = {}
     header_parameters = sarray2dict(header)
     sarray2dict(data, header_parameters)
-
+    if len(axes) != len(dc.shape):
+        dc = dc.squeeze()
+    if len(axes) != len(dc.shape):
+        raise IOError("Please report this issue to the HyperSpy developers.")
     # We remove the Array key to save memory avoiding duplication
     del header_parameters['Array']
     original_metadata['ser_header_parameters'] = header_parameters
     dictionary = {
         'data': dc,
-        'metadata': {'original_filename': os.path.split(filename)[1],
-                     'record_by': record_by,
-                     'signal_type': "", },
+        'metadata': {'General': {'original_filename': os.path.split(filename)[1]},
+                     "Signal": {'signal_type': "",
+                                'record_by': record_by, },
+                     },
         'axes': axes,
         'original_metadata': original_metadata,
         'mapping': mapping}
@@ -466,8 +470,8 @@ def get_mode(mode):
 
 
 mapping = {
-    "ObjectInfo.ExperimentalDescription.High_tension_kV": ("TEM.beam_voltage", None),
-    "ObjectInfo.ExperimentalDescription.Emission_uA": ("TEM.beam_intensity", None),
-    "ObjectInfo.ExperimentalDescription.Microscope": ("TEM.microscope", None),
-    "ObjectInfo.ExperimentalDescription.Mode": ("TEM.mode", get_mode),
+    "ObjectInfo.ExperimentalDescription.High_tension_kV": ("Acquisition_instrument.TEM.beam_voltage", None),
+    "ObjectInfo.ExperimentalDescription.Emission_uA": ("Acquisition_instrument.TEM.beam_intensity", None),
+    "ObjectInfo.ExperimentalDescription.Microscope": ("Acquisition_instrument.TEM.microscope", None),
+    "ObjectInfo.ExperimentalDescription.Mode": ("Acquisition_instrument.TEM.mode", get_mode),
 }

@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import textwrap
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -117,8 +119,15 @@ class SpectrumFigure(BlittedFigure):
         for marker in self.ax_markers:
             marker.plot()
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
-        #To be discussed
+        # To be discussed
         self.axes_manager.connect(self.update)
+        if hasattr(self.figure, 'tight_layout'):
+            try:
+                self.figure.tight_layout()
+            except:
+                # tight_layout is a bit brittle, we do this just in case it
+                # complains
+                pass
 
     def close(self):
         for marker in self.ax_markers:
@@ -137,8 +146,8 @@ class SpectrumFigure(BlittedFigure):
         for line in self.ax_lines + \
                 self.right_ax_lines:
             line.update()
-        #To be discussed
-        #self.ax.hspy_fig._draw_animated()
+        # To be discussed
+        # self.ax.hspy_fig._draw_animated()
 
 
 class SpectrumLine(object):
@@ -315,7 +324,11 @@ class SpectrumLine(object):
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
             self.text.set_text((self.axes_manager.indices))
-        self.ax.hspy_fig._draw_animated()
+        try:
+            self.ax.hspy_fig._draw_animated()
+        except:
+            pass
+        # self.ax.hspy_fig._draw_animated()
         # self.ax.figure.canvas.draw_idle()
 
     def close(self):
