@@ -89,13 +89,15 @@ class Polynomial(Component):
 
         """
         axis = signal.axes_manager.signal_axes[0]
-        energy2index = axis._get_index
-        i1 = energy2index(x1) if energy2index(x1) else 0
-        i2 = energy2index(x2) if energy2index(x2) else len(axis.axis) - 1
+        binned = signal.metadata.Signal.binned
+        i1 = axis.value2index(x1) if x1 > axis.low_value else 0
+        i2 = axis.value2index(x2) if x2 < axis.high_value else axis.size - 1
 
         if only_current is True:
             self.coefficients.value = np.polyfit(axis.axis[i1:i2],
                                                  signal()[i1:i2], self.get_polynomial_order())
+            if binned is True:
+                self.coefficients.value /= axis.scale
             return True
         else:
             if self.coefficients.map is None:
@@ -111,6 +113,8 @@ class Polynomial(Component):
                 self.get_polynomial_order() + 1, ] + nav_shape)
             self.coefficients.map['values'][:] = np.rollaxis(cmaps, 0,
                                                              axis.index_in_array)
+            if binned is True:
+                self.coefficients.map["values"] /= axis.scale
             self.coefficients.map['is_set'][:] = True
             signal.fold()
             return True
