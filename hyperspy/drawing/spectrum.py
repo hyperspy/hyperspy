@@ -129,7 +129,6 @@ class SpectrumFigure(BlittedFigure):
                 # complains
                 pass
 
-
     def close(self):
         for marker in self.ax_markers:
             marker.close()
