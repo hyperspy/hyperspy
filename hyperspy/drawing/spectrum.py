@@ -315,7 +315,11 @@ class SpectrumLine(object):
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
             self.text.set_text((self.axes_manager.indices))
-        self.ax.hspy_fig._draw_animated()
+        try:
+            self.ax.hspy_fig._draw_animated()
+        except:
+            pass
+        #self.ax.hspy_fig._draw_animated()
         # self.ax.figure.canvas.draw_idle()
 
     def close(self):
