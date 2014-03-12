@@ -731,7 +731,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                 eaxis = signal.axes_manager._axes[0]
                 eaxis.name = axis_name
                 eaxis.navigate = True  # This triggers _update_parameters
-                signal.metadata = obj.metadata
+                signal.metadata = copy.deepcopy(obj.metadata)
                 # Get the title from 1st object
                 signal.metadata.General.title = (
                     "Stack of " + obj.metadata.General.title)
