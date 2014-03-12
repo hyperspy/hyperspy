@@ -117,7 +117,7 @@ class SpectrumFigure(BlittedFigure):
         for marker in self.ax_markers:
             marker.plot()
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
-        #To be discussed
+        # To be discussed
         self.axes_manager.connect(self.update)
 
     def close(self):
@@ -137,8 +137,8 @@ class SpectrumFigure(BlittedFigure):
         for line in self.ax_lines + \
                 self.right_ax_lines:
             line.update()
-        #To be discussed
-        #self.ax.hspy_fig._draw_animated()
+        # To be discussed
+        # self.ax.hspy_fig._draw_animated()
 
 
 class SpectrumLine(object):
@@ -319,7 +319,7 @@ class SpectrumLine(object):
             self.ax.hspy_fig._draw_animated()
         except:
             pass
-        #self.ax.hspy_fig._draw_animated()
+        # self.ax.hspy_fig._draw_animated()
         # self.ax.figure.canvas.draw_idle()
 
     def close(self):
