@@ -95,6 +95,6 @@ class Offset(Component):
             gi[axis.index_in_array] = slice(i1, i2)
             self.offset.map['values'][:] = dc[gi].mean(axis.index_in_array)
             if binned is True:
-                self.offset.map['values']  /= axis.scale
+                self.offset.map['values'] /= axis.scale
             self.offset.map['is_set'][:] = True
             return True
