@@ -717,7 +717,7 @@ class Model(list):
                     counter += component._nfree_param
 
             to_return = (sum + np.convolve(self.low_loss(self.axes_manager),
-                                      sum_convolved, mode="valid"))[
+                                           sum_convolved, mode="valid"))[
                 self.channel_switches]
 
         else:
@@ -739,6 +739,7 @@ class Model(list):
         if self.spectrum.metadata.Signal.binned is True:
             to_return *= self.spectrum.axes_manager[-1].scale
         return to_return
+
     def _jacobian(self, param, y, weights=None):
         if self.convolved is True:
             counter = 0
