@@ -192,13 +192,13 @@ class Model(list):
 
         self.chisq = spectrum._get_navigation_signal()
         self.chisq.data.fill(np.nan)
-        self.chisq.metadata.title = self.spectrum.metadata.title + \
+        self.chisq.metadata.General.title = self.spectrum.metadata.General.title + \
             ' chi-squared'
         self.dof = self.chisq._deepcopy_with_new_data(
             np.zeros_like(
                 self.chisq.data,
                 dtype='int'))
-        self.dof.metadata.title = self.spectrum.metadata.title + \
+        self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
             ' degrees of freedom'
 
     def __repr__(self):
@@ -865,16 +865,13 @@ class Model(list):
             return [0, self._jacobian(p, y).T]
 
     def _calculate_chisq(self):
-        if self.spectrum.variance is None:
-            # print ("Variance is not set, so using signal itself")
-            # variance = self.spectrum()[self.channel_switches]
-            # variance[variance == 0.0] = 1.0
-            variance = 1.0
-        else:
-            variance = self.spectrum.variance[
+        if self.spectrum.metadata.has_item('Signal.Noise_properties.variance'):
+            variance = self.spectrum.metadata.Signal.Noise_properties.variance.__getitem__([
                 self.spectrum.axes_manager.indices[
                     ::-
-                    1]][self.channel_switches]
+                    1]][self.channel_switches])
+        else:
+            variance = 1.0
         d = self() - self.spectrum()[self.channel_switches]
         d *= d / variance  # d = difference^2 / variance
         self.chisq.data[self.spectrum.axes_manager.indices[::-1]] = sum(d)
@@ -887,7 +884,7 @@ class Model(list):
         """Reduced chi-squared. Calculated from self.chisq and self.dof
         """
         tmp = self.chisq / (- self.dof + sum(self.channel_switches) - 1)
-        tmp.metadata.title = self.spectrum.metadata.title + \
+        tmp.metadata.General.title = self.spectrum.metadata.General.title + \
             ' reduced chi-squared'
         return tmp
 
