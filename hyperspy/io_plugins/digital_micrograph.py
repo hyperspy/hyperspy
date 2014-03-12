@@ -760,16 +760,20 @@ class ImageObject(object):
                         self.units))]
 
     def get_metadata(self, metadata={}):
-        metadata['title'] = self.title
-        metadata['record_by'] = self.record_by
-        metadata['signal_type'] = self.signal_type
+        if "General" not in metadata:
+            metadata['General'] = {}
+        if "Signal" not in metadata:
+            metadata['Signal'] = {}
+        metadata['General']['title'] = self.title
+        metadata["Signal"]['record_by'] = self.record_by
+        metadata["Signal"]['signal_type'] = self.signal_type
         return metadata
 
 mapping = {
-    "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions.Collection_semi_angle_mrad": ("TEM.EELS.collection_angle", None),
-    "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions.Convergence_semi_angle_mrad": ("TEM.convergence_angle", None),
-    "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector.exposure_s": ("TEM.dwell_time", None),
-    "ImageList.TagGroup0.ImageTags.Microscope_Info.Voltage": ("TEM.beam_energy", lambda x: x / 1e3)
+    "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions.Collection_semi_angle_mrad": ("Acquisition_instrument.TEM.Detector.EELS.collection_angle", None),
+    "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions.Convergence_semi_angle_mrad": ("Acquisition_instrument.TEM.convergence_angle", None),
+    "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector.exposure_s": ("Acquisition_instrument.TEM.dwell_time", None),
+    "ImageList.TagGroup0.ImageTags.Microscope_Info.Voltage": ("Acquisition_instrument.TEM.beam_energy", lambda x: x / 1e3)
 }
 
 
@@ -801,7 +805,7 @@ def file_reader(filename, record_by=None, order=None, verbose=False):
                 'TagGroup0'] = image.imdict.as_dictionary()
             axes = image.get_axes_dict()
             mp = image.get_metadata()
-            mp['original_filename'] = os.path.split(filename)[1]
+            mp['General']['original_filename'] = os.path.split(filename)[1]
             post_process = []
             if image.to_spectrum is True:
                 post_process.append(lambda s: s.to_spectrum())

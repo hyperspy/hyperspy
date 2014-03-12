@@ -388,7 +388,7 @@ class Parameter(object):
 
         s = Signal(data=self.map[field],
                    axes=self._axes_manager._get_navigation_axes_dicts())
-        s.metadata.title = self.name
+        s.metadata.General.title = self.name
         for axis in s.axes_manager._axes:
             axis.navigate = False
         if self._number_of_elements > 1:
