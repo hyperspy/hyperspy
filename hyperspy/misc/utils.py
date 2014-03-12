@@ -251,6 +251,7 @@ class DictionaryTreeBrowser(object):
         self.__setattr__(key, value)
 
     def __getattribute__(self, name):
+        name = slugify(name, valid_variable_name=True)
         item = super(DictionaryTreeBrowser, self).__getattribute__(name)
         if isinstance(item, dict) and 'value' in item:
             return item['value']
@@ -698,7 +699,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
 
     """
-    
+
     axis_input = copy.deepcopy(axis)
 
     for i, obj in enumerate(signal_list):
@@ -732,8 +733,8 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                 eaxis.navigate = True  # This triggers _update_parameters
                 signal.metadata = obj.metadata
                 # Get the title from 1st object
-                signal.metadata.title = (
-                    "Stack of " + obj.metadata.title)
+                signal.metadata.General.title = (
+                    "Stack of " + obj.metadata.General.title)
                 signal.original_metadata = DictionaryTreeBrowser({})
             else:
                 axis = obj.axes_manager[axis]
@@ -761,13 +762,18 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         signal.data = np.concatenate([signal_.data for signal_ in signal_list],
                                      axis=axis.index_in_array)
         signal.get_dimensions_from_data()
-        
+
     if axis_input is None:
-        axis_input = signal.axes_manager[-1+1j].index_in_axes_manager
+        axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
         step_sizes = 1
-    else:        
-        step_sizes = [obj.axes_manager.shape[axis_input] for obj in signal_list]
-    signal.metadata.set_item('stacking_history.axis',axis_input)
-    signal.metadata.set_item('stacking_history.step_sizes',step_sizes)
-    
+    else:
+        step_sizes = [obj.axes_manager.shape[axis_input]
+                      for obj in signal_list]
+    signal.metadata._HyperSpy.set_item(
+        'Stacking_history.axis',
+        axis_input)
+    signal.metadata._HyperSpy.set_item(
+        'Stacking_history.step_sizes',
+        step_sizes)
+
     return signal

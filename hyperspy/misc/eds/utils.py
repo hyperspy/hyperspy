@@ -30,12 +30,8 @@ def get_FWHM_at_Energy(energy_resolution_MnKa, E):
 
     """
     FWHM_ref = energy_resolution_MnKa
-    E_ref = elements_db[
-        'Mn'][
-        'Atomic_properties'][
-        'Xray_lines'][
-        'Ka'][
-        'energy (keV)']
+    E_ref = elements_db['Mn']['Atomic_properties']['Xray_lines'][
+        'Ka']['energy (keV)']
 
     FWHM_e = 2.5 * (E - E_ref) * 1000 + FWHM_ref * FWHM_ref
 
@@ -73,13 +69,12 @@ def xray_range(xray_line, beam_energy, density='auto'):
 
     element, line = _get_element_and_line(xray_line)
     if density == 'auto':
-        density = elements_db[element]['Physical_properties']['density']
+        density = elements_db[
+            element][
+            'Physical_properties'][
+            'density (g/cm^3)']
     Xray_energy = elements_db[
-        element][
-        'Atomic_properties'][
-        'Xray_lines'][
-        line][
-        'energy (keV)']
+        element]['Atomic_properties']['Xray_lines'][line]['energy (keV)']
 
     return 0.064 / density * (np.power(beam_energy, 1.68) -
                               np.power(Xray_energy, 1.68))
@@ -117,9 +112,7 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
 
     if density == 'auto':
         density = elements_db[
-            element][
-            'Physical_properties'][
-            'density (g/cm^3)']
+            element]['Physical_properties']['density (g/cm^3)']
     Z = elements_db[element]['General_properties']['Z']
     A = elements_db[element]['General_properties']['atomic_weight']
 

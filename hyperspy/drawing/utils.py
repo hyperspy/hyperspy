@@ -289,7 +289,7 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 def _make_heatmap_subplot(spectra):
     from hyperspy._signals.image import Image
     im = Image(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
-    im.metadata.title = spectra.metadata.title
+    im.metadata.General.title = spectra.metadata.General.title
     im.plot()
     return im._plot.signal_plot.ax
 
@@ -350,7 +350,7 @@ def plot_spectra(
     ----------
     spectra : iterable object
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
-        the spectra can have diffent size and axes.
+        the spectra can have different size and axes.
     style : {'default', 'overlap','cascade', 'mosaic', 'heatmap'}
         The style of the plot. The default is "overlap" and can be
         customized in `preferences`.
@@ -372,13 +372,14 @@ def plot_spectra(
         colors.
     legend: None or list of str or 'auto'
        If list of string, legend for "cascade" or title for "mosaic" is
-       displayed. If 'auto', the title of each spectra (metadata.title)
+       displayed. If 'auto', the title of each spectra (metadata.General.title)
        is used.
     legend_picking: bool
         If true, a spectrum can be toggle on and off by clicking on
         the legended line.
     fig : matplotlib figure or None
-        If None, a default figure will be created.
+        If None, a default figure will be created. Specifying fig will
+        not work for the 'heatmap' style.
 
     Example
     -------
@@ -425,7 +426,7 @@ def plot_spectra(
 
     if legend is not None:
         if legend == 'auto':
-            legend = [spec.metadata.title for spec in spectra]
+            legend = [spec.metadata.General.title for spec in spectra]
         elif hasattr(legend, "__iter__"):
             legend = itertools.cycle(legend)
         else:
@@ -573,7 +574,7 @@ def plot_histograms(signal_list,
         If `None`, use continuous lines, eg: ('-','--','steps','-.',':')
     legend: None or list of str or 'auto', otional.
        Display a legend. If 'auto', the title of each spectra
-       (metadata.title) is used.
+       (metadata.General.title) is used.
     legend_picking: bool, otional.
         If true, a spectrum can be toggle on and off by clicking on
         the legended line.

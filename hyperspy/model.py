@@ -396,8 +396,8 @@ class Model(list):
         spectrum = self.spectrum.__class__(
             data,
             axes=self.spectrum.axes_manager._get_axes_dicts())
-        spectrum.metadata.title = (
-            self.spectrum.metadata.title + " from fitted model")
+        spectrum.metadata.General.title = (
+            self.spectrum.metadata.General.title + " from fitted model")
         if component_list:
             for component_ in self:
                 component_.active = active_state.pop(0)
@@ -921,9 +921,9 @@ class Model(list):
         if method == 'ml':
             weights = None
         if weights is True:
-            if self.spectrum.variance is None:
+            if self.spectrum.Signal.Noise_properties.variance is None:
                 self.spectrum.estimate_poissonian_noise_variance()
-            weights = 1. / np.sqrt(self.spectrum.variance.__getitem__(
+            weights = 1. / np.sqrt(self.spectrum.Signal.Noise_properties.variance.__getitem__(
                 self.axes_manager._getitem_tuple)[self.channel_switches])
         elif weights is not None:
             weights = weights.__getitem__(

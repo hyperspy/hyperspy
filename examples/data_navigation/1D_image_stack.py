@@ -21,7 +21,7 @@ im.axes_manager.navigation_axes[0].scale = 0.3
 im.axes_manager.navigation_axes[0].offset = 100
 
 # Give a title
-im.metadata.title = 'Random image stack'
+im.metadata.General.title = 'Random image stack'
 
 # Plot it
 im.plot()

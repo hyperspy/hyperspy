@@ -28,20 +28,27 @@ class Test_metadata:
     def setUp(self):
         # Create an empty spectrum
         s = EDSTEMSpectrum(np.ones((4, 2, 1024)))
-        s.metadata.TEM.EDS.live_time = 3.1
-        s.metadata.TEM.beam_energy = 15.0
+        s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time = 3.1
+        s.metadata.Acquisition_instrument.TEM.beam_energy = 15.0
         self.signal = s
 
     def test_sum_live_time(self):
         s = self.signal
         sSum = s.sum(0)
-        assert_equal(sSum.metadata.TEM.EDS.live_time, 3.1 * 2)
+        assert_equal(
+            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+            3.1 *
+            2)
 
     def test_rebin_live_time(self):
         s = self.signal
         dim = s.axes_manager.shape
         s = s.rebin([dim[0] / 2, dim[1] / 2, dim[2]])
-        assert_equal(s.metadata.TEM.EDS.live_time, 3.1 * 2 * 2)
+        assert_equal(
+            s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+            3.1 *
+            2 *
+            2)
 
     def test_add_elements(self):
         s = self.signal
@@ -57,21 +64,23 @@ class Test_metadata:
     def test_default_param(self):
         s = self.signal
         mp = s.metadata
-        assert_equal(mp.TEM.EDS.energy_resolution_MnKa,
+        assert_equal(mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa,
                      preferences.EDS.eds_mn_ka)
 
     def test_SEM_to_TEM(self):
         s = self.signal[0, 0]
         signal_type = 'EDS_SEM'
         mp = s.metadata
-        mp.TEM.EDS.energy_resolution_MnKa = 125.3
+        mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa = 125.3
         sSEM = s.deepcopy()
         sSEM.set_signal_type(signal_type)
         mpSEM = sSEM.metadata
-        results = [mp.TEM.EDS.energy_resolution_MnKa]
+        results = [
+            mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa]
         results.append(signal_type)
-        resultsSEM = [mpSEM.SEM.EDS.energy_resolution_MnKa]
-        resultsSEM.append(mpSEM.signal_type)
+        resultsSEM = [
+            mpSEM.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa]
+        resultsSEM.append(mpSEM.Signal.signal_type)
         assert_equal(results, resultsSEM)
 
     def test_get_calibration_from(self):
