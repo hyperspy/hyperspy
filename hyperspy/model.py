@@ -398,6 +398,8 @@ class Model(list):
             axes=self.spectrum.axes_manager._get_axes_dicts())
         spectrum.metadata.General.title = (
             self.spectrum.metadata.General.title + " from fitted model")
+        spectrum.metadata.Signal.binned = self.spectrum.metadata.Signal.binned
+
         if component_list:
             for component_ in self:
                 component_.active = active_state.pop(0)
