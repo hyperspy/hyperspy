@@ -721,7 +721,7 @@ class Signal1DTools(object):
     def _integrate_in_range_commandline(self, signal_range):
         e1 = signal_range[0]
         e2 = signal_range[1]
-        integrated_spectrum = self[..., e1:e2].integrate_simpson(-1)
+        integrated_spectrum = self[..., e1:e2].integrate1D(-1)
         return(integrated_spectrum)
 
     @only_interactive
@@ -831,20 +831,15 @@ class Signal1DTools(object):
             smoother.edit_traits()
 
     def _remove_background_cli(self, signal_range, background_estimator):
-        spectra = self.deepcopy()
-        maxval = self.axes_manager.navigation_size
-        pbar = progressbar(maxval=maxval)
-        for index, spectrum in enumerate(spectra):
-            background_estimator.estimate_parameters(
-                spectrum,
-                signal_range[0],
-                signal_range[1],
-                only_current=True)
-            spectrum.data -= background_estimator.function(
-                spectrum.axes_manager.signal_axes[0].axis).astype(spectra.data.dtype)
-            pbar.update(index)
-        pbar.finish()
-        return(spectra)
+        from hyperspy.model import Model
+        model = Model(self)
+        model.append(background_estimator)
+        background_estimator.estimate_parameters(
+            self,
+            signal_range[0],
+            signal_range[1],
+            only_current=False)
+        return self - model.as_signal()
 
     def remove_background(
             self,
@@ -898,7 +893,7 @@ class Signal1DTools(object):
 
             spectra = self._remove_background_cli(
                 signal_range, background_estimator)
-            return(spectra)
+            return spectra
 
     @interactive_range_selector
     def crop_spectrum(self, left_value=None, right_value=None,):
@@ -2414,7 +2409,6 @@ class Signal(MVA,
 
         self._create_metadata()
         self.learning_results = LearningResults()
-        self.peak_learning_results = LearningResults()
         kwds['data'] = data
         self._load_dictionary(kwds)
         self._plot = None
@@ -2465,14 +2459,15 @@ class Signal(MVA,
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
         mp = self.metadata
-        mp.add_node("_Internal_parameters")
+        mp.add_node("_HyperSpy")
         mp.add_node("General")
         mp.add_node("Signal")
-        mp._Internal_parameters.add_node("Folding")
-        folding = mp._Internal_parameters.Folding
+        mp._HyperSpy.add_node("Folding")
+        folding = mp._HyperSpy.Folding
         folding.unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
+        mp.Signal.binned = False
         self.original_metadata = DictionaryTreeBrowser()
         self.tmp_parameters = DictionaryTreeBrowser()
 
@@ -3195,7 +3190,7 @@ class Signal(MVA,
             axis in `axes_manager` or the axis name.
             - If 'auto' and if the object has been created with utils.stack,
             split will return the former list of signals
-            (options stored in 'metadata._Internal_parameters.Stacking_history'
+            (options stored in 'metadata._HyperSpy.Stacking_history'
              else the last navigation axis will be used.
         number_of_parts : {'auto' | int}
             Number of parts in which the SI will be splitted. The
@@ -3235,9 +3230,9 @@ class Signal(MVA,
 
         if axis == 'auto':
             mode = 'auto'
-            if hasattr(self.metadata._Internal_parameters, 'Stacking_history'):
-                axis_in_manager = self.metadata._Internal_parameters.Stacking_history.axis
-                step_sizes = self.metadata._Internal_parameters.Stacking_history.step_sizes
+            if hasattr(self.metadata._HyperSpy, 'Stacking_history'):
+                axis_in_manager = self.metadata._HyperSpy.Stacking_history.axis
+                step_sizes = self.metadata._HyperSpy.Stacking_history.step_sizes
             else:
                 axis_in_manager = self.axes_manager[-1 +
                                                     1j].index_in_axes_manager
@@ -3291,12 +3286,12 @@ class Signal(MVA,
         if mode == 'auto' and hasattr(self.original_metadata, 'stack_elements'):
             for i, spectrum in enumerate(splitted):
                 stack_keys = self.original_metadata.stack_elements.keys()
-                spectrum.metadata = self.original_metadata.stack_elements[
-                    stack_keys[i]]['metadata']
-                spectrum.original_metadata = self.original_metadata.stack_elements[
-                    stack_keys[i]]['original_metadata']
-                spectrum.metadata.General.title = spectrum.metadata.General.title[
-                    9:]
+                spectrum.metadata = copy.deepcopy(self.original_metadata.stack_elements[
+                    stack_keys[i]]['metadata'])
+                spectrum.original_metadata = copy.deepcopy(self.original_metadata.stack_elements[
+                    stack_keys[i]]['original_metadata'])
+                spectrum.metadata.General.title = self.original_metadata.stack_elements[
+                    stack_keys[i]].metadata.General.title
 
         return splitted
 
@@ -3342,7 +3337,7 @@ class Signal(MVA,
         # by
         # the fold function only if it has not been already stored by a
         # previous unfold
-        folding = self.metadata._Internal_parameters.Folding
+        folding = self.metadata._HyperSpy.Folding
         if folding.unfolded is False:
             folding.original_shape = self.data.shape
             folding.original_axes_manager = self.axes_manager
@@ -3407,7 +3402,7 @@ class Signal(MVA,
     @auto_replot
     def fold(self):
         """If the signal was previously unfolded, folds it back"""
-        folding = self.metadata._Internal_parameters.Folding
+        folding = self.metadata._HyperSpy.Folding
         # Note that == must be used instead of is True because
         # if the value was loaded from a file its type can be np.bool_
         if folding.unfolded is True:
@@ -3717,6 +3712,42 @@ class Signal(MVA,
                                axis=axis.index_in_array))
         s._remove_axis(axis.index_in_axes_manager)
         return s
+
+    def integrate1D(self, axis):
+        """Integrate the signal over the given axis.
+
+        The integration is performed using Simpson's rule if
+        `metadata.Signal.binned` is False and summation over the given axis if
+        True.
+
+        Parameters
+        ----------
+        axis : {int | string}
+           The axis can be specified using the index of the axis in
+           `axes_manager` or the axis name.
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum_in_mask, mean
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.var(-1).data.shape
+        (64,64)
+
+        """
+        if self.metadata.Signal.binned is False:
+            return self.integrate_simpson(axis)
+        else:
+            return self.sum(axis)
 
     def indexmax(self, axis):
         """Returns a signal with the index of the maximum along an axis.
