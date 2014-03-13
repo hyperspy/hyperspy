@@ -6,6 +6,12 @@ model from a linear combinantion of predefined components and can use multiple
 optimisation algorithms to fit the model to experimental data. It supports
 bounds and weights.
 
+.. versionadded:: 0.7
+   
+    Before creating a model verify that the ``Signal.binned`` metadata
+    attribute of the signal is set to the correct value because the resulting
+    model depends on this parameter. See :ref:`signal.binned` for more details.
+
 Creating a model
 ^^^^^^^^^^^^^^^^
 
