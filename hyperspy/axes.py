@@ -324,6 +324,7 @@ class DataAxis(t.HasTraits):
             i2 = self.size - 1
         return i1, i2
 
+
 class AxesManager(t.HasTraits):
 
     """Contains and manages the data axes.

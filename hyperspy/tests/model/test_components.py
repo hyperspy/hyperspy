@@ -5,6 +5,7 @@ from hyperspy.hspy import *
 
 
 class TestPowerLaw:
+
     def setUp(self):
         s = signals.Spectrum(np.empty((1024)))
         s.axes_manager[0].offset = 100
@@ -39,7 +40,9 @@ class TestPowerLaw:
         nose.tools.assert_almost_equal(g.A.value, 10.084913947965161)
         nose.tools.assert_almost_equal(g.r.value, 4.0017676988807409)
 
+
 class TestOffset:
+
     def setUp(self):
         s = signals.Spectrum(np.empty((10)))
         s.axes_manager[0].scale = 0.01
@@ -70,7 +73,9 @@ class TestOffset:
                               only_current=True)
         nose.tools.assert_almost_equal(g.offset.value, 10)
 
+
 class TestiPolynomial:
+
     def setUp(self):
         s = signals.Spectrum(np.empty((1024)))
         s.axes_manager[0].offset = -5
@@ -106,7 +111,9 @@ class TestiPolynomial:
         nose.tools.assert_almost_equal(g.coefficients.value[1], 2)
         nose.tools.assert_almost_equal(g.coefficients.value[2], 3)
 
+
 class TestGaussian:
+
     def setUp(self):
         s = signals.Spectrum(np.empty((1024)))
         s.axes_manager[0].offset = -5

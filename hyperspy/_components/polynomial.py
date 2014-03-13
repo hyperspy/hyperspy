@@ -93,8 +93,8 @@ class Polynomial(Component):
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if only_current is True:
             estimation = np.polyfit(axis.axis[i1:i2],
-                                                 signal()[i1:i2],
-                                                 self.get_polynomial_order())
+                                    signal()[i1:i2],
+                                    self.get_polynomial_order())
             if binned is True:
                 self.coefficients.value = estimation / axis.scale
             else:
