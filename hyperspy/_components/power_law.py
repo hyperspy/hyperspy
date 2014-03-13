@@ -102,14 +102,13 @@ class PowerLaw(Component):
         """
 
         axis = signal.axes_manager.signal_axes[0]
-        i1 = axis.value2index(x1) if x1 > axis.low_value else 0
-        i2 = axis.value2index(x2) if x2 < axis.high_value else axis.size - 1
-        axis = signal.axes_manager.signal_axes[0]
-        if not (i2 - i1) % 2 == 0:
+        i1, i2 = axis.value_range_to_indices(x1, x2)
+        if not (i2 + i1) % 2 == 0:
             i2 -= 1
-        x2 = axis.axis[i2]
         i3 = (i2 + i1) / 2
-        E3 = axis.axis[i3]
+        x1 = axis.index2value(i1)
+        x2 = axis.index2value(i2)
+        x3 = axis.index2value(i3)
         if only_current is True:
             dc = signal()
             I1 = axis.scale * np.sum(dc[i1:i3], 0)
@@ -124,11 +123,13 @@ class PowerLaw(Component):
         try:
             r = 2 * np.log(I1 / I2) / math.log(x2 / x1)
             k = 1 - r
-            A = k * I2 / (x2 ** k - E3 ** k)
+            A = k * I2 / (x2 ** k - x3 ** k)
             r = np.nan_to_num(r)
             A = np.nan_to_num(A)
         except:
             return False
+        if signal.metadata.Signal.binned is True:
+            A /= axis.scale
         if only_current is True:
             self.r.value = r
             self.A.value = A

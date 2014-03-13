@@ -90,14 +90,15 @@ class Polynomial(Component):
         """
         axis = signal.axes_manager.signal_axes[0]
         binned = signal.metadata.Signal.binned
-        i1 = axis.value2index(x1) if x1 > axis.low_value else 0
-        i2 = axis.value2index(x2) if x2 < axis.high_value else axis.size - 1
-
+        i1, i2 = axis.value_range_to_indices(x1, x2)
         if only_current is True:
-            self.coefficients.value = np.polyfit(axis.axis[i1:i2],
-                                                 signal()[i1:i2], self.get_polynomial_order())
+            estimation = np.polyfit(axis.axis[i1:i2],
+                                                 signal()[i1:i2],
+                                                 self.get_polynomial_order())
             if binned is True:
-                self.coefficients.value /= axis.scale
+                self.coefficients.value = estimation / axis.scale
+            else:
+                self.coefficients.value = estimation
             return True
         else:
             if self.coefficients.map is None:
