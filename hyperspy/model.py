@@ -1362,7 +1362,7 @@ class Model(list):
                     else component.parameters
                 for parameter in parameters:
                     if not hasattr(parameter.value, '__iter__'):
-                        print("\t\t%s\t%f" % (
+                        print("\t\t%s\t%g" % (
                             parameter.name, parameter.value))
 
     def enable_adjust_position(self, components=None, fix_them=True):
