@@ -2472,7 +2472,7 @@ class Signal(MVA,
         self.tmp_parameters = DictionaryTreeBrowser()
 
     def __repr__(self):
-        if self.metadata._Internal_parameters.Folding.unfolded:
+        if self.metadata._HyperSpy.Folding.unfolded:
             unfolded = "unfolded "
         else:
             unfolded = ""
