@@ -141,4 +141,5 @@ class PowerLaw(Component):
             self.A.map['is_set'][:] = True
             self.r.map['values'][:] = r
             self.r.map['is_set'][:] = True
+            self.fetch_stored_values()
             return True

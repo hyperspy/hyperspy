@@ -122,9 +122,9 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             from_index = self.axis.value2index(self.ss_left_value)
             bg_array[from_index:] = self.background_estimator.function(
                 self.axis.axis[from_index:])
-            return bg_array
+            to_return = bg_array
         elif self.bg_line_range == 'full':
-            return self.background_estimator.function(self.axis.axis)
+            to_return = self.background_estimator.function(self.axis.axis)
         elif self.bg_line_range == 'ss_range':
             bg_array = np.zeros(self.axis.axis.shape)
             bg_array[:] = fill_with
@@ -132,6 +132,11 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             to_index = self.axis.value2index(self.ss_right_value)
             bg_array[from_index:] = self.background_estimator.function(
                 self.axis.axis[from_index:to_index])
+            to_return = bg_array
+
+        if self.signal.metadata.Signal.binned is True:
+            to_return *= self.axis.scale
+        return to_return
 
     def span_selector_changed(self):
         if self.background_estimator is None:

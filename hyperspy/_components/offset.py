@@ -95,4 +95,5 @@ class Offset(Component):
             if binned is True:
                 self.offset.map['values'] /= axis.scale
             self.offset.map['is_set'][:] = True
+            self.fetch_stored_values()
             return True

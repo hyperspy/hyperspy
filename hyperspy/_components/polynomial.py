@@ -118,4 +118,5 @@ class Polynomial(Component):
                 self.coefficients.map["values"] /= axis.scale
             self.coefficients.map['is_set'][:] = True
             signal.fold()
+            self.fetch_stored_values()
             return True

@@ -180,6 +180,7 @@ class Gaussian(Component):
             self.sigma.map['is_set'][:] = True
             self.centre.map['values'][:] = center
             self.centre.map['is_set'][:] = True
+            self.fetch_stored_values()
             return True
 
     @property

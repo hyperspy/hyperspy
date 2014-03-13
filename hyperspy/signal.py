@@ -831,20 +831,15 @@ class Signal1DTools(object):
             smoother.edit_traits()
 
     def _remove_background_cli(self, signal_range, background_estimator):
-        spectra = self.deepcopy()
-        maxval = self.axes_manager.navigation_size
-        pbar = progressbar(maxval=maxval)
-        for index, spectrum in enumerate(spectra):
-            background_estimator.estimate_parameters(
-                spectrum,
-                signal_range[0],
-                signal_range[1],
-                only_current=True)
-            spectrum.data -= background_estimator.function(
-                spectrum.axes_manager.signal_axes[0].axis).astype(spectra.data.dtype)
-            pbar.update(index)
-        pbar.finish()
-        return(spectra)
+        from hyperspy.model import Model
+        model = Model(self)
+        model.append(background_estimator)
+        background_estimator.estimate_parameters(
+            self,
+            signal_range[0],
+            signal_range[1],
+            only_current=False)
+        return self - model.as_signal()
 
     def remove_background(
             self,
@@ -898,7 +893,7 @@ class Signal1DTools(object):
 
             spectra = self._remove_background_cli(
                 signal_range, background_estimator)
-            return(spectra)
+            return spectra
 
     @interactive_range_selector
     def crop_spectrum(self, left_value=None, right_value=None,):
