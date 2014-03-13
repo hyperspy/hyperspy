@@ -398,6 +398,8 @@ class Model(list):
             axes=self.spectrum.axes_manager._get_axes_dicts())
         spectrum.metadata.General.title = (
             self.spectrum.metadata.General.title + " from fitted model")
+        spectrum.metadata.Signal.binned = self.spectrum.metadata.Signal.binned
+
         if component_list:
             for component_ in self:
                 component_.active = active_state.pop(0)
@@ -561,12 +563,11 @@ class Model(list):
                     if component.active:
                         np.add(sum_, component.function(axis),
                                sum_)
-                return sum_
             else:
                 for component in self:  # Cut the parameters list
                     np.add(sum_, component.function(axis),
                            sum_)
-                return sum_
+            to_return = sum_
 
         else:  # convolved
             counter = 0
@@ -596,7 +597,9 @@ class Model(list):
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[self.channel_switches]
-            return to_return
+        if self.spectrum.metadata.Signal.binned is True:
+            to_return *= self.spectrum.axes_manager[-1].scale
+        return to_return
 
     # TODO: the way it uses the axes
     def _set_signal_range_in_pixels(self, i1=None, i2=None):
@@ -715,8 +718,8 @@ class Model(list):
                                                                  component._nfree_param], self.axis.axis), sum)
                     counter += component._nfree_param
 
-            return (sum + np.convolve(self.low_loss(self.axes_manager),
-                                      sum_convolved, mode="valid"))[
+            to_return = (sum + np.convolve(self.low_loss(self.axes_manager),
+                                           sum_convolved, mode="valid"))[
                 self.channel_switches]
 
         else:
@@ -733,7 +736,11 @@ class Model(list):
                         sum += component.__tempcall__(param[counter:counter +
                                                             component._nfree_param], axis)
                     counter += component._nfree_param
-            return sum
+            to_return = sum
+
+        if self.spectrum.metadata.Signal.binned is True:
+            to_return *= self.spectrum.axes_manager[-1].scale
+        return to_return
 
     def _jacobian(self, param, y, weights=None):
         if self.convolved is True:
@@ -768,9 +775,9 @@ class Model(list):
                             grad = np.vstack((grad, par_grad))
                         counter += component._nfree_param
             if weights is None:
-                return grad[1:, self.channel_switches]
+                to_return = grad[1:, self.channel_switches]
             else:
-                return grad[1:, self.channel_switches] * weights
+                to_return = grad[1:, self.channel_switches] * weights
         else:
             axis = self.axis.axis[self.channel_switches]
             counter = 0
@@ -788,9 +795,12 @@ class Model(list):
                         grad = np.vstack((grad, par_grad))
                     counter += component._nfree_param
             if weights is None:
-                return grad[1:, :]
+                to_return = grad[1:, :]
             else:
-                return grad[1:, :] * weights
+                to_return = grad[1:, :] * weights
+        if self.spectrum.metadata.Signal.binned is True:
+            to_return *= self.spectrum.axes_manager[-1].scale
+        return to_return
 
     def _function4odr(self, param, x):
         return self._model_function(param)
@@ -921,9 +931,9 @@ class Model(list):
         if method == 'ml':
             weights = None
         if weights is True:
-            if self.spectrum.Signal.Noise_properties.variance is None:
+            if "metadata.Signal.Noise_properties.variance" not in self.spectrum.metadata:
                 self.spectrum.estimate_poissonian_noise_variance()
-            weights = 1. / np.sqrt(self.spectrum.Signal.Noise_properties.variance.__getitem__(
+            weights = 1. / np.sqrt(self.spectrum.metadata.Signal.Noise_properties.variance.__getitem__(
                 self.axes_manager._getitem_tuple)[self.channel_switches])
         elif weights is not None:
             weights = weights.__getitem__(

@@ -51,6 +51,7 @@ class EELSSpectrum(Spectrum):
                 hasattr(self.metadata.Sample, 'elements'):
             print('Elemental composition read from file')
             self.add_elements(self.metadata.Sample.elements)
+        self.metadata.Signal.binned = True
 
     def add_elements(self, elements, include_pre_edges=False):
         """Declare the elemental composition of the sample.
@@ -292,7 +293,7 @@ class EELSSpectrum(Spectrum):
         self._check_signal_dimension_equals_one()
 
         if isinstance(threshold, numbers.Number):
-            I0 = self.isig[:threshold].integrate_simpson(-1)
+            I0 = self.isig[:threshold].integrate1D(-1)
             I0.axes_manager.set_signal_dimension(
                 min(2, self.axes_manager.navigation_dimension))
 
@@ -312,7 +313,7 @@ class EELSSpectrum(Spectrum):
                     I0[self.axes_manager.indices] = np.nan
                 else:
                     I0[self.axes_manager.indices].data[:] = (
-                        s[:threshold_].integrate_simpson(-1).data)
+                        s[:threshold_].integrate1D(-1).data)
                 pbar.update(i)
             pbar.finish()
             threshold.axes_manager._set_axis_attribute_values(
@@ -465,9 +466,9 @@ class EELSSpectrum(Spectrum):
         # TODO: Write units tests
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
-        total_intensity = self.integrate_simpson(axis.index_in_array).data
+        total_intensity = self.integrate1D(axis.index_in_array).data
         if zlp is not None:
-            I0 = zlp.integrate_simpson(axis.index_in_array).data
+            I0 = zlp.integrate1D(axis.index_in_array).data
         else:
             I0 = self.estimate_elastic_scattering_intensity(
                 threshold=threshold,).data
@@ -1052,7 +1053,7 @@ class EELSSpectrum(Spectrum):
                 if zlp.axes_manager.signal_dimension == 0:
                     i0 = zlp.data
                 else:
-                    i0 = zlp.data.sum(axis.index_in_array)
+                    i0 = zlp.integrate1D(axis.index_in_axes_manager).data
             else:
                 raise ValueError('The ZLP signal dimensions are not '
                                  'compatible with the dimensions of the '

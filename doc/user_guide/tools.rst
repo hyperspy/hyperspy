@@ -181,6 +181,54 @@ classifiying the dimensions of a three-dimensional dataset by
     modify Hyperspy's default choice.
 
 
+.. _signal.binned:
+
+Binned and unbinned signals
+---------------------------
+
+.. versionadded:: 0.7
+   
+Signals that are a histogram of a probability density function (pdf) should
+have the ``signal.metadata.Signal.binned`` attribute set to
+``True``. This is because some methods operate differently in signals that are
+*binned*.
+
+The default value of the ``binned`` attribute is shown in the
+following table:
+
+.. table:: Binned default values for the different subclasses.
+
+
+    +---------------------------------------------------------------+--------+
+    |                       Signal subclass                         | binned |
+    +===============================================================+========+
+    |                 :py:class:`~.signal.Signal`                   | False  |
+    +---------------------------------------------------------------+--------+
+    |           :py:class:`~._signals.spectrum.Spectrum`            | False  |
+    +---------------------------------------------------------------+--------+
+    | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | False  |
+    +---------------------------------------------------------------+--------+
+    |           :py:class:`~._signals.eels.EELSSpectrum`            | True   |
+    +---------------------------------------------------------------+--------+
+    |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | True   |
+    +---------------------------------------------------------------+--------+
+    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | True   |
+    +---------------------------------------------------------------+--------+
+    |              :py:class:`~._signals.image.Image`               | False  |
+    +---------------------------------------------------------------+--------+
+    |    :py:class:`~._signals.image_simulation.ImageSimulation`    | False  |
+    +---------------------------------------------------------------+--------+
+
+
+
+
+
+To change the default value:
+
+.. code-block:: python
+    
+    >>> s.metadata.Signal.binned = True 
+
 Generic tools
 -------------
 

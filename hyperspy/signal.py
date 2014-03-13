@@ -721,7 +721,7 @@ class Signal1DTools(object):
     def _integrate_in_range_commandline(self, signal_range):
         e1 = signal_range[0]
         e2 = signal_range[1]
-        integrated_spectrum = self[..., e1:e2].integrate_simpson(-1)
+        integrated_spectrum = self[..., e1:e2].integrate1D(-1)
         return(integrated_spectrum)
 
     @only_interactive
@@ -831,20 +831,15 @@ class Signal1DTools(object):
             smoother.edit_traits()
 
     def _remove_background_cli(self, signal_range, background_estimator):
-        spectra = self.deepcopy()
-        maxval = self.axes_manager.navigation_size
-        pbar = progressbar(maxval=maxval)
-        for index, spectrum in enumerate(spectra):
-            background_estimator.estimate_parameters(
-                spectrum,
-                signal_range[0],
-                signal_range[1],
-                only_current=True)
-            spectrum.data -= background_estimator.function(
-                spectrum.axes_manager.signal_axes[0].axis).astype(spectra.data.dtype)
-            pbar.update(index)
-        pbar.finish()
-        return(spectra)
+        from hyperspy.model import Model
+        model = Model(self)
+        model.append(background_estimator)
+        background_estimator.estimate_parameters(
+            self,
+            signal_range[0],
+            signal_range[1],
+            only_current=False)
+        return self - model.as_signal()
 
     def remove_background(
             self,
@@ -898,7 +893,7 @@ class Signal1DTools(object):
 
             spectra = self._remove_background_cli(
                 signal_range, background_estimator)
-            return(spectra)
+            return spectra
 
     @interactive_range_selector
     def crop_spectrum(self, left_value=None, right_value=None,):
@@ -2472,6 +2467,7 @@ class Signal(MVA,
         folding.unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
+        mp.Signal.binned = False
         self.original_metadata = DictionaryTreeBrowser()
         self.tmp_parameters = DictionaryTreeBrowser()
 
@@ -3710,6 +3706,42 @@ class Signal(MVA,
                                axis=axis.index_in_array))
         s._remove_axis(axis.index_in_axes_manager)
         return s
+
+    def integrate1D(self, axis):
+        """Integrate the signal over the given axis.
+
+        The integration is performed using Simpson's rule if
+        `metadata.Signal.binned` is False and summation over the given axis if
+        True.
+
+        Parameters
+        ----------
+        axis : {int | string}
+           The axis can be specified using the index of the axis in
+           `axes_manager` or the axis name.
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum_in_mask, mean
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.var(-1).data.shape
+        (64,64)
+
+        """
+        if self.metadata.Signal.binned is False:
+            return self.integrate_simpson(axis)
+        else:
+            return self.sum(axis)
 
     def indexmax(self, axis):
         """Returns a signal with the index of the maximum along an axis.
