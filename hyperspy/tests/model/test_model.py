@@ -81,7 +81,9 @@ class TestModelFitBinned:
     def test_wrong_method(self):
         self.m.fit(method="dummy")
 
+
 class TestModelWeighted:
+
     def setUp(self):
         np.random.seed(1)
         s = signals.SpectrumSimulation(np.arange(10, 100, 0.1))
@@ -161,10 +163,10 @@ class TestModelWeighted:
         for result, expected in zip(self.m[0].coefficients.value,
                                     (0.99136169230026261, 0.18483060534056939)):
             nose.tools.assert_almost_equal(result, expected, places=5)
+
     def test_chisq(self):
         self.m.spectrum.metadata.Signal.binned = True
         self.m.fit(fitter="leastsq", method="wls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596693502778, 1.6628238107916631)):
             nose.tools.assert_almost_equal(result, expected, places=5)
-

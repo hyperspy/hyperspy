@@ -58,6 +58,7 @@ weights_deprecation_warning = (
     'in the next release. '
     'Please use `method="wls"` for weighted least squares instead.')
 
+
 class Model(list):
 
     """One-dimensional model and data fitting.
@@ -887,7 +888,7 @@ class Model(list):
             if isinstance(variance, Signal):
                 variance = variance.data.__getitem__(
                     self.spectrum.axes_manager._getitem_tuple
-                    )[self.channel_switches]
+                )[self.channel_switches]
         else:
             variance = 1.0
         d = self() - self.spectrum()[self.channel_switches]
@@ -995,7 +996,9 @@ class Model(list):
                 weights = 1. / np.sqrt(
                     self.spectrum.metadata.Signal.Noise_properties.variance)
         else:
-            raise ValueError('method must be "ls", "wls" or "ml" but %s given' % method)
+            raise ValueError(
+                'method must be "ls", "wls" or "ml" but %s given' %
+                method)
         args = (self.spectrum()[self.channel_switches],
                 weights)
 
@@ -1008,8 +1011,8 @@ class Model(list):
             self.p0, pcov = output[0:2]
 
             if (self.axis.size > len(self.p0)) and pcov is not None:
-                pcov *= ((self._errfunc(self.p0, *args)**2).sum()/
-                (len(args[0])-len(self.p0)))
+                pcov *= ((self._errfunc(self.p0, *args) ** 2).sum() /
+                         (len(args[0]) - len(self.p0)))
                 self.p_std = np.sqrt(np.diag(pcov))
             self.fit_output = output
 
@@ -1043,8 +1046,8 @@ class Model(list):
             self.p0 = m.params
             if (self.axis.size > len(self.p0)) and m.perror is not None:
                 self.p_std = m.perror * np.sqrt(
-                    (self._errfunc(self.p0, *args)**2).sum()/
-                    (len(args[0])-len(self.p0)))
+                    (self._errfunc(self.p0, *args) ** 2).sum() /
+                    (len(args[0]) - len(self.p0)))
             self.fit_output = m
         else:
         # General optimizers (incluiding constrained ones(tnc,l_bfgs_b)
