@@ -167,6 +167,8 @@ class TestModelWeighted:
     def test_chisq(self):
         self.m.spectrum.metadata.Signal.binned = True
         self.m.fit(fitter="leastsq", method="wls")
-        for result, expected in zip(self.m[0].coefficients.value,
-                                    (9.9165596693502778, 1.6628238107916631)):
-            nose.tools.assert_almost_equal(result, expected, places=5)
+        nose.tools.assert_almost_equal(self.m.chisq.data, 3029.16949561)
+
+    def test_red_chisq(self):
+        self.m.fit(fitter="leastsq", method="wls")
+        nose.tools.assert_almost_equal(self.m.red_chisq.data, 3.37700055)
