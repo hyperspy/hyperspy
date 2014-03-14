@@ -19,6 +19,7 @@
 import copy
 import os
 import tempfile
+import warnings
 
 import numpy as np
 import numpy.linalg
@@ -50,7 +51,12 @@ from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
+from hyperspy.signal import Signal
 
+weights_deprecation_warning = (
+    'The `weights` argument is deprecated and and will be removed '
+    'in the next release. '
+    'Please use `method="wls"` for weighted least squares instead.')
 
 class Model(list):
 
@@ -876,10 +882,12 @@ class Model(list):
 
     def _calculate_chisq(self):
         if self.spectrum.metadata.has_item('Signal.Noise_properties.variance'):
-            variance = self.spectrum.metadata.Signal.Noise_properties.variance.__getitem__([
-                self.spectrum.axes_manager.indices[
-                    ::-
-                    1]][self.channel_switches])
+
+            variance = self.spectrum.metadata.Signal.Noise_properties.variance
+            if isinstance(variance, Signal):
+                variance = variance.data.__getitem__(
+                    self.spectrum.axes_manager._getitem_tuple
+                    )[self.channel_switches]
         else:
             variance = 1.0
         d = self() - self.spectrum()[self.channel_switches]
@@ -901,7 +909,8 @@ class Model(list):
     def fit(self, fitter=None, method='ls', grad=False, weights=None,
             bounded=False, ext_bounding=False, update_plot=False,
             **kwargs):
-        """Fits the model to the experimental data
+        """Fits the model to the experimental data.
+
 
         Parameters
         ----------
@@ -913,19 +922,18 @@ class Model(list):
             maximum likelihood estimation, but it is less robust than
             the Levenberg–Marquardt based leastsq and mpfit, and it is
             better to use it after one of them to refine the estimation.
-        method : {'ls', 'ml'}
-            Choose 'ls' (default) for least squares and 'ml' for
-            maximum-likelihood estimation. The latter only works with
-            fitter = 'fmin'.
+        method : {'ls', 'wls', 'ml'}
+            Choose 'ls' (default) for least squares, 'wls' for weighted least
+            squares and 'ml' for poissonian maximum-likelihood estimation.
+            The latter only works when `fitter` is "fmin".
+            The weights are calculated using
+            the `Signal.Noise_properties.variance` attribute of the spectrum
+            metadata attribute. If not defined, a poissonian noise variance is
+            calculated using
+            :meth:`spectrum.Spectrum.estimate_poissonian_noise_variance`.
         grad : bool
             If True, the analytical gradient is used if defined to
             speed up the estimation.
-        weights : {None, True, numpy.array}
-            If None, performs standard least squares. If True
-            performs weighted least squares where the weights are
-            calculated using spectrum.Spectrum.estimate_poissonian_noise_variance.
-            Alternatively, external weights can be supplied by passing
-            a weights array of the same dimensions as the signal.
         ext_bounding : bool
             If True, enforce bounding by keeping the value of the
             parameters constant out of the defined bounding area.
@@ -946,6 +954,10 @@ class Model(list):
         multifit
 
         """
+        if weights is not None:
+            warnings.warn(weights_deprecation_warning, DeprecationWarning)
+            method = "wls"
+
         if fitter is None:
             fitter = preferences.Model.default_fitter
         switch_aap = (update_plot != self._get_auto_update_plot())
@@ -970,15 +982,20 @@ class Model(list):
             grad_ls = self._gradient_ls
         if method == 'ml':
             weights = None
-        if weights is True:
-            if "metadata.Signal.Noise_properties.variance" not in self.spectrum.metadata:
+        elif method == "wls":
+            if "Signal.Noise_properties.variance" not in self.spectrum.metadata:
                 self.spectrum.estimate_poissonian_noise_variance()
-            weights = 1. / np.sqrt(self.spectrum.metadata.Signal.Noise_properties.variance.__getitem__(
-                self.axes_manager._getitem_tuple)[self.channel_switches])
-        elif weights is not None:
-            weights = weights.__getitem__(
-                self.axes_manager._getitem_tuple)[
-                self.channel_switches]
+            weights = 1. / np.sqrt(
+                self.spectrum.metadata.Signal.Noise_properties.variance.data.__getitem__(
+                    self.axes_manager._getitem_tuple)[self.channel_switches])
+        elif method == "ls":
+            if "metadata.Signal.Noise_properties.variance" not in self.spectrum.metadata:
+                weights = 1
+            else:
+                weights = 1. / np.sqrt(
+                    self.spectrum.metadata.Signal.Noise_properties.variance)
+        else:
+            raise ValueError('method must be "ls", "wls" or "ml" but %s given' % method)
         args = (self.spectrum()[self.channel_switches],
                 weights)
 
@@ -988,12 +1005,12 @@ class Model(list):
                 leastsq(self._errfunc, self.p0[:], Dfun=jacobian,
                         col_deriv=1, args=args, full_output=True, **kwargs)
 
-            self.p0 = output[0]
-            var_matrix = output[1]
-            # In Scipy 0.7 sometimes the variance matrix is None (maybe a
-            # bug?) so...
-            if var_matrix is not None:
-                self.p_std = np.sqrt(np.diag(var_matrix))
+            self.p0, pcov = output[0:2]
+
+            if (self.axis.size > len(self.p0)) and pcov is not None:
+                pcov *= ((self._errfunc(self.p0, *args)**2).sum()/
+                (len(args[0])-len(self.p0)))
+                self.p_std = np.sqrt(np.diag(pcov))
             self.fit_output = output
 
         elif fitter == "odr":
@@ -1014,7 +1031,6 @@ class Model(list):
             autoderivative = 1
             if grad is True:
                 autoderivative = 0
-
             if bounded is True:
                 self.set_mpfit_parameters_info()
             elif bounded is False:
@@ -1025,16 +1041,18 @@ class Model(list):
                           'weights': weights}, autoderivative=autoderivative,
                       quiet=1)
             self.p0 = m.params
-            self.p_std = m.perror
+            if (self.axis.size > len(self.p0)) and m.perror is not None:
+                self.p_std = m.perror * np.sqrt(
+                    (self._errfunc(self.p0, *args)**2).sum()/
+                    (len(args[0])-len(self.p0)))
             self.fit_output = m
-
         else:
         # General optimizers (incluiding constrained ones(tnc,l_bfgs_b)
         # Least squares or maximum likelihood
             if method == 'ml':
                 tominimize = self._poisson_likelihood_function
                 fprime = grad_ml
-            elif method == 'ls':
+            elif method in ['ls', "wls"]:
                 tominimize = self._errfunc2
                 fprime = grad_ls
 
@@ -1138,6 +1156,10 @@ class Model(list):
         fit
 
         """
+        if weights is not None:
+            warnings.warn(weights_deprecation_warning, DeprecationWarning)
+            method = "wls"
+            weights = None
 
         if autosave is not False:
             fd, autosave_fn = tempfile.mkstemp(
