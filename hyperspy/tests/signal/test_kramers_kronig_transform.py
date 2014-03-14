@@ -65,7 +65,7 @@ class Test2D:
         vpm.intensity.map['is_set'][:] = True
         vpm.plasmon_energy.map['is_set'][:] = True
         vpm.fwhm.map['is_set'][:] = True
-        s.data = (m.as_signal() * k).data * scale
+        s.data = (m.as_signal() * k).data
 
         # Create ZLP
         z = s.deepcopy()
