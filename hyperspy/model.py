@@ -866,10 +866,10 @@ class Model(list):
 
     def _calculate_chisq(self):
         if self.spectrum.metadata.has_item('Signal.Noise_properties.variance'):
-            variance = self.spectrum.metadata.Signal.Noise_properties.variance.__getitem__([
+            variance = self.spectrum.metadata.Signal.Noise_properties.variance[
                 self.spectrum.axes_manager.indices[
                     ::-
-                    1]][self.channel_switches])
+                    1]][self.channel_switches]
         else:
             variance = 1.0
         d = self() - self.spectrum()[self.channel_switches]
