@@ -93,6 +93,6 @@ class TestChiSquared:
         m = self.model
         g = Gaussian()
         m.append(g)
-        m.set_signal_range(1,7)
+        m.set_signal_range(1, 7)
         m.fit()
         assert_true(np.allclose(m.red_chisq(), 2.87544335))
