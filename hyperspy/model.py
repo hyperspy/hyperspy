@@ -54,7 +54,7 @@ from hyperspy.component import Component
 from hyperspy.signal import Signal
 
 weights_deprecation_warning = (
-    'The `weights` argument is deprecated and and will be removed '
+    'The `weights` argument is deprecated and will be removed '
     'in the next release. '
     'Please use `method="wls"` for weighted least squares instead.')
 
@@ -1159,10 +1159,10 @@ class Model(list):
         fit
 
         """
-        if weights is not None:
+        if "weights" in kwargs and kwargs["weights"] is not None:
             warnings.warn(weights_deprecation_warning, DeprecationWarning)
-            method = "wls"
-            weights = None
+            kwargs["method"] = "wls"
+            del kwargs["weights"]
 
         if autosave is not False:
             fd, autosave_fn = tempfile.mkstemp(
