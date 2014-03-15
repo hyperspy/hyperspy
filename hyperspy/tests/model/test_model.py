@@ -172,3 +172,75 @@ class TestModelWeighted:
     def test_red_chisq(self):
         self.m.fit(fitter="leastsq", method="wls")
         nose.tools.assert_almost_equal(self.m.red_chisq.data, 3.37700055)
+
+class TestModelScalarVariance:
+    def setUp(self):
+        s = signals.SpectrumSimulation(np.ones(100))
+        m = create_model(s)
+        m.append(components.Offset())
+        self.s = s
+        self.m = m
+
+    def test_std1_chisq(self):
+        std = 1
+        np.random.seed(1)
+        self.s.add_gaussian_noise(std)
+        self.s.metadata.set_item("Signal.Noise_properties.variance", std**2)
+        self.m.fit(fitter="leastsq", method="ls")
+        nose.tools.assert_almost_equals(self.m.chisq.data, 78.35015229)
+
+    def test_std10_chisq(self):
+        std = 10
+        np.random.seed(1)
+        self.s.add_gaussian_noise(std)
+        self.s.metadata.set_item("Signal.Noise_properties.variance", std**2)
+        self.m.fit(fitter="leastsq", method="ls")
+        nose.tools.assert_almost_equals(self.m.chisq.data, 78.35015229)
+
+
+    def test_std1_red_chisq(self):
+        std = 1
+        np.random.seed(1)
+        self.s.add_gaussian_noise(std)
+        self.s.metadata.set_item("Signal.Noise_properties.variance", std**2)
+        self.m.fit(fitter="leastsq", method="ls")
+        nose.tools.assert_almost_equals(self.m.red_chisq.data, 0.79949135)
+
+    def test_std10_red_chisq(self):
+        std = 10
+        np.random.seed(1)
+        self.s.add_gaussian_noise(std)
+        self.s.metadata.set_item("Signal.Noise_properties.variance", std**2)
+        self.m.fit(fitter="leastsq", method="ls")
+        nose.tools.assert_almost_equals(self.m.red_chisq.data, 0.79949135)
+
+    def test_std1_red_chisq(self):
+        std = 1
+        self.m.set_signal_range(10,50)
+        np.random.seed(1)
+        self.s.add_gaussian_noise(std)
+        self.s.metadata.set_item("Signal.Noise_properties.variance", std**2)
+        self.m.fit(fitter="leastsq", method="ls")
+        nose.tools.assert_almost_equals(self.m.red_chisq.data, 0.86206965)
+
+class TestModelSignalVariance:
+    def setUp(self):
+        variance = signals.SpectrumSimulation(np.arange(100,300).reshape((2, 100)))
+        s = variance.deepcopy()
+        np.random.seed(1)
+        std = 10
+        s.add_gaussian_noise(std)
+        s.add_poissonian_noise()
+        s.metadata.set_item("Signal.Noise_properties.variance",
+                                 variance + std**2)
+        m = create_model(s)
+        m.append(components.Polynomial(order=1))
+        self.s = s
+        self.m = m
+
+    def test_std1_red_chisq(self):
+        self.m.multifit(fitter="leastsq", method="wls")
+        nose.tools.assert_almost_equals(self.m.red_chisq.data[0],
+                                        0.79693355673230915)
+        nose.tools.assert_almost_equals(self.m.red_chisq.data[1],
+                                        0.91453032901427167)
