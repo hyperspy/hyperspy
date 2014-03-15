@@ -1007,10 +1007,10 @@ class Model(list):
                 variance = self.spectrum.metadata.Signal.Noise_properties.variance
                 if isinstance(variance, Signal):
                     if (variance.axes_manager.navigation_shape ==
-                        self.spectrum.axes_manager.navigation_shape):
+                            self.spectrum.axes_manager.navigation_shape):
                         variance = variance.data.__getitem__(
                             self.axes_manager._getitem_tuple)[
-                                self.channel_switches]
+                            self.channel_switches]
                     else:
                         raise AttributeError("The `navigation_shape` of the "
                                              "variance signals is not equal to"
@@ -1020,7 +1020,6 @@ class Model(list):
                     raise AttributeError("Variance must be a number or a "
                                          "`Signal` instance but currently it is"
                                          "a %s" % type(variances))
-
 
             weights = 1. / np.sqrt(variance)
         else:
