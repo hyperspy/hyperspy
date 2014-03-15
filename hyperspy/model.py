@@ -198,6 +198,7 @@ class Model(list):
         self._plot = None
 
         self.chisq = spectrum._get_navigation_signal()
+        self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
         self.chisq.metadata.General.title = self.spectrum.metadata.General.title + \
             ' chi-squared'
@@ -892,7 +893,7 @@ class Model(list):
         else:
             variance = 1.0
         d = self() - self.spectrum()[self.channel_switches]
-        d *= d / variance  # d = difference^2 / variance
+        d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.spectrum.axes_manager.indices[::-1]] = sum(d)
 
     def _set_current_degrees_of_freedom(self):
