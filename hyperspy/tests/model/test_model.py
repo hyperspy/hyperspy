@@ -98,21 +98,21 @@ class TestModelWeighted:
 
     def test_fit_leastsq_binned(self):
         self.m.spectrum.metadata.Signal.binned = True
-        self.m.fit(fitter="leastsq", method="wls")
+        self.m.fit(fitter="leastsq", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596693502778, 1.6628238107916631)):
             nose.tools.assert_almost_equal(result, expected, places=5)
 
     def test_fit_odr_binned(self):
         self.m.spectrum.metadata.Signal.binned = True
-        self.m.fit(fitter="odr", method="wls")
+        self.m.fit(fitter="odr", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596548961972, 1.6628247412317521)):
             nose.tools.assert_almost_equal(result, expected, places=5)
 
     def test_fit_mpfit_binned(self):
         self.m.spectrum.metadata.Signal.binned = True
-        self.m.fit(fitter="mpfit", method="wls")
+        self.m.fit(fitter="mpfit", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596607108739, 1.6628243846485873)):
             nose.tools.assert_almost_equal(result, expected, places=5)
@@ -132,21 +132,21 @@ class TestModelWeighted:
 
     def test_fit_leastsq_unbinned(self):
         self.m.spectrum.metadata.Signal.binned = False
-        self.m.fit(fitter="leastsq", method="wls")
+        self.m.fit(fitter="leastsq", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (0.99165596391487121, 0.16628254242532492)):
             nose.tools.assert_almost_equal(result, expected, places=5)
 
     def test_fit_odr_unbinned(self):
         self.m.spectrum.metadata.Signal.binned = False
-        self.m.fit(fitter="odr", method="wls")
+        self.m.fit(fitter="odr", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (0.99165596548961943, 0.16628247412317315)):
             nose.tools.assert_almost_equal(result, expected, places=5)
 
     def test_fit_mpfit_unbinned(self):
         self.m.spectrum.metadata.Signal.binned = False
-        self.m.fit(fitter="mpfit", method="wls")
+        self.m.fit(fitter="mpfit", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (0.99165596295068958, 0.16628257462820528)):
             nose.tools.assert_almost_equal(result, expected, places=5)
@@ -166,11 +166,11 @@ class TestModelWeighted:
 
     def test_chisq(self):
         self.m.spectrum.metadata.Signal.binned = True
-        self.m.fit(fitter="leastsq", method="wls")
+        self.m.fit(fitter="leastsq", method="ls")
         nose.tools.assert_almost_equal(self.m.chisq.data, 3029.16949561)
 
     def test_red_chisq(self):
-        self.m.fit(fitter="leastsq", method="wls")
+        self.m.fit(fitter="leastsq", method="ls")
         nose.tools.assert_almost_equal(self.m.red_chisq.data, 3.37700055)
 
 
@@ -245,7 +245,7 @@ class TestModelSignalVariance:
         self.m = m
 
     def test_std1_red_chisq(self):
-        self.m.multifit(fitter="leastsq", method="wls")
+        self.m.multifit(fitter="leastsq", method="ls")
         nose.tools.assert_almost_equals(self.m.red_chisq.data[0],
                                         0.79693355673230915)
         nose.tools.assert_almost_equals(self.m.red_chisq.data[1],

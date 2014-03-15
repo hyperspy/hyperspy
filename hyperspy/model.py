@@ -20,7 +20,7 @@ import copy
 import os
 import tempfile
 import warnings
-
+import numbers
 import numpy as np
 import numpy.linalg
 import scipy.odr as odr
@@ -55,8 +55,7 @@ from hyperspy.signal import Signal
 
 weights_deprecation_warning = (
     'The `weights` argument is deprecated and will be removed '
-    'in the next release. '
-    'Please use `method="wls"` for weighted least squares instead.')
+    'in the next release. ')
 
 
 class Model(list):
@@ -908,7 +907,7 @@ class Model(list):
             ' reduced chi-squared'
         return tmp
 
-    def fit(self, fitter=None, method='ls', grad=False, weights=None,
+    def fit(self, fitter=None, method='ls', grad=False,
             bounded=False, ext_bounding=False, update_plot=False,
             **kwargs):
         """Fits the model to the experimental data.
@@ -918,47 +917,56 @@ class Model(list):
         ----------
         fitter : {None, "leastsq", "odr", "mpfit", "fmin"}
             The optimizer to perform the fitting. If None the fitter
-            defined in the Preferences is used. leastsq is the most
-            stable but it does not support bounding. mpfit supports
-            bounding. fmin is the only one that supports
-            maximum likelihood estimation, but it is less robust than
-            the Levenberg–Marquardt based leastsq and mpfit, and it is
-            better to use it after one of them to refine the estimation.
-        method : {'ls', 'wls', 'ml'}
-            Choose 'ls' (default) for least squares, 'wls' for weighted least
-            squares and 'ml' for poissonian maximum-likelihood estimation.
-            The latter only works when `fitter` is "fmin".
-            The weights are calculated using
-            the `Signal.Noise_properties.variance` attribute of the spectrum
-            metadata attribute. If not defined, a poissonian noise variance is
-            calculated using
-            :meth:`spectrum.Spectrum.estimate_poissonian_noise_variance`.
+            defined in `preferences.Model.default_fitter` is used.
+            "leastsq" performs least squares using the Levenberg–Marquardt
+            algorithm.
+            "mpfit"  performs least squares using the Levenberg–Marquardt
+            algorithm and, unlike "leastsq", support bounded optimization.
+            "fmin" performs curve fitting using a downhill simplex algorithm.
+            It is less robust than the Levenberg-Marquardt based optimizers,
+            but, at present, it is the only one that support maximum likelihood
+            optimization for poissonian noise.
+            "odr" performs the optimization using the orthogonal distance
+            regression algorithm. It does not support bounds.
+            "leastsq", "odr" and "mpfit" can estimate the standard deviation of
+            the estimated value of the parameters if the
+            "metada.Signal.Noise_properties.variance" attribute is defined.
+            Note that if it is not defined the standard deviation is estimated
+            using variance equal 1, what in most cases will result in a wrong
+            estimation. If `variance` is a `Signal` instance of the
+            same `navigation_dimension` as the spectrum, and `method` is "ls"
+            weighted least squares is performed.
+        method : {'ls', 'ml'}
+            Choose 'ls' (default) for least squares and 'ml' for poissonian
+            maximum-likelihood estimation.  The latter is only available when
+            `fitter` is "fmin".
         grad : bool
             If True, the analytical gradient is used if defined to
-            speed up the estimation.
-        ext_bounding : bool
-            If True, enforce bounding by keeping the value of the
-            parameters constant out of the defined bounding area.
+            speed up the optimization.
         bounded : bool
             If True performs bounded optimization if the fitter
-            supports it. Currently only mpfit support bounding.
+            supports it. Currently only "mpfit" support it.
         update_plot : bool
             If True, the plot is updated during the optimization
             process. It slows down the optimization but it permits
             to visualize the optimization progress.
+        ext_bounding : bool
+            If True, enforce bounding by keeping the value of the
+            parameters constant out of the defined bounding area.
 
         **kwargs : key word arguments
             Any extra key word argument will be passed to the chosen
-            fitter
+            fitter. For more information read the docstring of the optimizer
+            of your choice in `scipy.optimize`.
 
         See Also
         --------
         multifit
 
         """
-        if weights is not None:
+        if "weights" in kwargs:
             warnings.warn(weights_deprecation_warning, DeprecationWarning)
-            method = "wls"
+            del kwargs["weights"]
 
         if fitter is None:
             fitter = preferences.Model.default_fitter
@@ -982,23 +990,42 @@ class Model(list):
             odr_jacobian = self._jacobian4odr
             grad_ml = self._gradient_ml
             grad_ls = self._gradient_ls
+
+        if bounded is True and fitter not in ("mpfit", "tnc", "l_bfgs_b"):
+            raise NotImplementedError("Bounded optimization is only available "
+                                      "for the mpfit optimizer.")
         if method == 'ml':
             weights = None
-        elif method == "wls":
-            if "Signal.Noise_properties.variance" not in self.spectrum.metadata:
-                self.spectrum.estimate_poissonian_noise_variance()
-            weights = 1. / np.sqrt(
-                self.spectrum.metadata.Signal.Noise_properties.variance.data.__getitem__(
-                    self.axes_manager._getitem_tuple)[self.channel_switches])
+            if fitter != "fmin":
+                raise NotImplementedError("Maximum likelihood estimation "
+                                          'is only implemented for the "fmin" '
+                                          'optimizer')
         elif method == "ls":
-            if "metadata.Signal.Noise_properties.variance" not in self.spectrum.metadata:
-                weights = 1
+            if "Signal.Noise_properties.variance" not in self.spectrum.metadata:
+                variance = 1
             else:
-                weights = 1. / np.sqrt(
-                    self.spectrum.metadata.Signal.Noise_properties.variance)
+                variance = self.spectrum.metadata.Signal.Noise_properties.variance
+                if isinstance(variance, Signal):
+                    if (variance.axes_manager.navigation_shape ==
+                        self.spectrum.axes_manager.navigation_shape):
+                        variance = variance.data.__getitem__(
+                            self.axes_manager._getitem_tuple)[
+                                self.channel_switches]
+                    else:
+                        raise AttributeError("The `navigation_shape` of the "
+                                             "variance signals is not equal to"
+                                             "the variance shape of the "
+                                             "spectrum")
+                elif not isinstance(variance, numbers.Number):
+                    raise AttributeError("Variance must be a number or a "
+                                         "`Signal` instance but currently it is"
+                                         "a %s" % type(variances))
+
+
+            weights = 1. / np.sqrt(variance)
         else:
             raise ValueError(
-                'method must be "ls", "wls" or "ml" but %s given' %
+                'method must be "ls" or "ml" but %s given' %
                 method)
         args = (self.spectrum()[self.channel_switches],
                 weights)
@@ -1160,9 +1187,8 @@ class Model(list):
         fit
 
         """
-        if "weights" in kwargs and kwargs["weights"] is not None:
+        if "weights" in kwargs:
             warnings.warn(weights_deprecation_warning, DeprecationWarning)
-            kwargs["method"] = "wls"
             del kwargs["weights"]
 
         if autosave is not False:
@@ -1196,7 +1222,7 @@ class Model(list):
             else:
                 messages.information(
                     "The chosen fitter does not suppport bounding."
-                    "If you require boundinig please select one of the "
+                    "If you require bounding please select one of the "
                     "following fitters instead: mpfit, tnc, l_bfgs_b")
                 kwargs['bounded'] = False
         i = 0
