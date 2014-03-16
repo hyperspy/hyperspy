@@ -1019,7 +1019,7 @@ class Model(list):
                 elif not isinstance(variance, numbers.Number):
                     raise AttributeError("Variance must be a number or a "
                                          "`Signal` instance but currently it is"
-                                         "a %s" % type(variances))
+                                         "a %s" % type(variance))
 
             weights = 1. / np.sqrt(variance)
         else:
