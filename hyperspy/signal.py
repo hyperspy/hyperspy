@@ -4059,7 +4059,7 @@ class Signal(MVA,
         else:
             dc = expected_value.data
         if self.metadata.has_item(
-            "Signal.Noise_properties.Variance_linear_model"):
+                "Signal.Noise_properties.Variance_linear_model"):
             vlm = self.metadata.Signal.Noise_properties.Variance_linear_model
         else:
             self.metadata.add_node(
