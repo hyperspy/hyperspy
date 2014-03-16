@@ -912,6 +912,13 @@ class Model(list):
             **kwargs):
         """Fits the model to the experimental data.
 
+        The chi-squared, reduced chi-squared and the degrees of freedom are
+        computed automatically when fitting. They are stored as signals, in the
+        `chisq`, `red_chisq`  and `dof`. Note that,
+        unless ``metadata.Signal.Noise_properties.variance`` contains an accurate
+        estimation of the variance of the data, the chi-squared and reduced
+        chi-squared cannot be computed correctly. This is also true for
+        homocedastic noise.
 
         Parameters
         ----------
@@ -932,8 +939,9 @@ class Model(list):
             the estimated value of the parameters if the
             "metada.Signal.Noise_properties.variance" attribute is defined.
             Note that if it is not defined the standard deviation is estimated
-            using variance equal 1, what in most cases will result in a wrong
-            estimation. If `variance` is a `Signal` instance of the
+            using variance equal 1, what, if the noise is heterocedatic, will
+            result in a biased estimation of the parameter values and errors.i
+            If `variance` is a `Signal` instance of the
             same `navigation_dimension` as the spectrum, and `method` is "ls"
             weighted least squares is performed.
         method : {'ls', 'ml'}
