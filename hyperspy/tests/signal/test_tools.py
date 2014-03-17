@@ -74,7 +74,7 @@ class Test2D:
         self.signal.estimate_poissonian_noise_variance()
         assert_true(
             (self.signal.metadata.Signal.Noise_properties.variance.data ==
-            self.signal.data).all())
+             self.signal.data).all())
 
     def test_estimate_poissonian_noise_with_args(self):
         self.signal.estimate_poissonian_noise_variance(
@@ -84,7 +84,8 @@ class Test2D:
             correlation_factor=0.5)
         assert_true(
             (self.signal.metadata.Signal.Noise_properties.variance.data ==
-            (self.signal.data * 2 + 1) * 0.5).all())
+             (self.signal.data * 2 + 1) * 0.5).all())
+
 
 class Test3D:
 
