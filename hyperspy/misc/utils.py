@@ -259,10 +259,15 @@ class DictionaryTreeBrowser(object):
             return item
 
     def __setattr__(self, key, value):
+        slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
-            value = DictionaryTreeBrowser(value)
+            if self.has_item(slugified_key):
+                self.get_item(slugified_key).add_dictionary(value)
+                return
+            else:
+                value = DictionaryTreeBrowser(value)
         super(DictionaryTreeBrowser, self).__setattr__(
-            slugify(key, valid_variable_name=True),
+            slugified_key,
             {'key': key, 'value': value})
 
     def __len__(self):
