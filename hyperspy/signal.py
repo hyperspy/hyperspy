@@ -4055,9 +4055,9 @@ class Signal(MVA,
 
         """
         if expected_value is None:
-            dc = self.data
+            dc = self.data.copy()
         else:
-            dc = expected_value.data
+            dc = expected_value.data.copy()
         if self.metadata.has_item(
                 "Signal.Noise_properties.Variance_linear_model"):
             vlm = self.metadata.Signal.Noise_properties.Variance_linear_model
