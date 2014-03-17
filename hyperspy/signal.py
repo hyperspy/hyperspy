@@ -4073,7 +4073,7 @@ class Signal(MVA,
 
         if gain_offset is None:
             if not vlm.has_item("gain_offset"):
-                vlm.gain_offset = 1
+                vlm.gain_offset = 0
             gain_offset = vlm.gain_offset
 
         if correlation_factor is None:
