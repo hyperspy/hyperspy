@@ -4025,10 +4025,10 @@ class Signal(MVA,
         A poissonian noise  variance is equal to the expected value. With the
         default arguments, this method simply sets the variance attribute to
         the given `expected_value`. However, more generally (although then
-        noise is not strictly poissonian), the variance is proportional to the
-        expected value. Moreover,
-        when the noise is a mixture of white (gaussian) and poissonian noise,
-        the variance is described by the following linear model:
+        noise is not strictly poissonian), the variance may be proportional to
+        the expected value. Moreover, when the noise is a mixture of white
+        (gaussian) and poissonian noise, the variance is described by the
+        following linear model:
 
             .. math::
 
