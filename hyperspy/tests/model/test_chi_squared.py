@@ -88,3 +88,11 @@ class TestChiSquared:
         m._set_current_degrees_of_freedom()
         m._calculate_chisq()
         assert_true(np.allclose(m.red_chisq(), 1.55793245))
+
+    def test_chisq_in_range(self):
+        m = self.model
+        g = Gaussian()
+        m.append(g)
+        m.set_signal_range(1, 7)
+        m.fit()
+        assert_true(np.allclose(m.red_chisq(), 2.87544335))

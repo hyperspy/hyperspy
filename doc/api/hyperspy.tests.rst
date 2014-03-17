@@ -6,6 +6,7 @@ Subpackages
 
 .. toctree::
 
+    hyperspy.tests.axes
     hyperspy.tests.component
     hyperspy.tests.io
     hyperspy.tests.model
