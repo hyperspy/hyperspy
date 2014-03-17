@@ -397,7 +397,8 @@ estimated accurately. If the variance is not defined, the standard deviation of
 the parameters are still computed and stored in the
 :attr:`~.component.Parameter.std` attribute by setting variance equal 1.
 However, the value won't be correct unless an accurate value of the variance is
-defined in ``metadata.Signal.Noise_properties.variance``.
+defined in ``metadata.Signal.Noise_properties.variance``. See
+:ref:`signal.noise_properties` for more information.
 
 In the following example, we add poissonian noise to the data instead of
 gaussian noise and proceed to fit as in the previous example.
@@ -416,15 +417,15 @@ gaussian noise and proceed to fit as in the previous example.
     >>> line.coefficients.std
     (0.0081710549764721901, 1.4117294994070277)
 
-Because the noise is heterocedastic, the least square optimizer estimation is
+Because the noise is heterocedastic, the least squares optimizer estimation is
 biased. A more accurate result can be obtained by using weighted least squares
 instead that, although still biased for poissonian noise, is a good 
 approximation in most cases.
 
 .. code-block:: python
 
-   >>> s.estimate_poissonian_noise_variance(expected_value=signals.Spectrum(np.arange(300)))>>>
-   m.fit()
+   >>> s.estimate_poissonian_noise_variance(expected_value=signals.Spectrum(np.arange(300)))
+   >>> m.fit()
    >>> line.coefficients.value
    (1.0004224896604759, -0.46982916592391377)
    >>> line.coefficients.std
@@ -438,7 +439,7 @@ instead that is an unbiased estimator for poissonian noise.
 
    >>> m.fit(fitter="fmin", method="ml")
    >>> line.coefficients.value
-   (1.0004224896604759, -0.46982916592391377)
+   (1.0030718094185611, -0.63590210946134107)
 
 Problems of ill-conditioning and divergence can be ameliorated by using bounded
 optimization. Currently, only the "mpfit" optimizer supports bounds. In the
