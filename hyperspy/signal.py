@@ -3285,12 +3285,14 @@ class Signal(MVA,
 
         if mode == 'auto' and hasattr(self.original_metadata, 'stack_elements'):
             for i, spectrum in enumerate(splitted):
-                spectrum.metadata = copy.deepcopy(self.original_metadata.stack_elements['element'+ str(i)]['metadata'])
-                spectrum.original_metadata = copy.deepcopy(self.original_metadata.stack_elements['element'+
-                    str(i)]['original_metadata'])
-                spectrum.metadata.General.title = self.original_metadata.stack_elements['element'+
-                    str(i)].metadata.General.title
-
+                spectrum.metadata = copy.deepcopy(
+                    self.original_metadata.stack_elements[
+                        'element' +
+                        str(i)]['metadata'])
+                spectrum.original_metadata = copy.deepcopy(self.original_metadata.stack_elements['element' +
+                                                                                                 str(i)]['original_metadata'])
+                spectrum.metadata.General.title = self.original_metadata.stack_elements['element' +
+                                                                                        str(i)].metadata.General.title
 
         return splitted
 
