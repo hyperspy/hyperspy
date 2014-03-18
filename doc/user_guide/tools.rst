@@ -758,3 +758,73 @@ Electron and X-ray range
 
 The electron and X-ray range in a bulk material can be estimated with 
 :py:meth:`~.utils.eds.electron_range` and :py:meth:`~.utils.eds.xray_range`
+
+
+.. _signal.noise_properties:
+
+Setting the noise properties
+----------------------------
+
+Some data operations require the data variance. Those methods use the  
+``metadata.Signal.Noise_properties.variance`` attribute if it exists. You can
+set this attribute as in the following example where we set the variance to be
+10:
+
+.. code-block:: python
+
+    s.metadata.Signal.set_item("Noise_properties.variance", 10)
+
+For heterocedastic noise the ``variance`` attribute must be a
+:class:`~.signal.Signal`.  Poissonian noise is a common case  of
+heterocedastic noise where the variance is equal to the expected value. The
+:meth:`~.signal.Signal.estimate_poissonian_noise_variance`
+:class:`~.signal.Signal` method can help setting the variance of data with
+semi-poissonian noise. With the default arguments, this method simply sets the
+variance attribute to the given ``expected_value``. However, more generally
+(although then noise is not strictly poissonian), the variance may be proportional
+to the expected value. Moreover, when the noise is a mixture of white
+(gaussian) and poissonian noise, the variance is described by the following
+linear model:
+
+    .. math::
+
+        \mathrm{Var}[X] = (a * \mathrm{E}[X] + b) * c
+
+Where `a` is the ``gain_factor``, `b` is the ``gain_offset`` (the gaussian
+noise variance) and `c` the ``correlation_factor``. The correlation
+factor accounts for correlation of adjacent signal elements that can
+be modeled as a convolution with a gaussian point spread function.
+:meth:`~.signal.Signal.estimate_poissonian_noise_variance` can be used to set
+the noise properties when the variance can be described by this linear model,
+for example:
+
+
+.. code-block:: python
+
+  >>> s = signals.SpectrumSimulation(np.ones(100))
+  >>> s.add_poissonian_noise()
+  >>> s.metadata
+  ├── General
+  │   └── title = 
+  └── Signal
+      ├── binned = False
+      ├── record_by = spectrum
+      ├── signal_origin = simulation
+      └── signal_type = 
+
+  >>> s.estimate_poissonian_noise_variance()
+  >>> s.metadata
+  ├── General
+  │   └── title = 
+  └── Signal
+      ├── Noise_properties
+      │   ├── Variance_linear_model
+      │   │   ├── correlation_factor = 1
+      │   │   ├── gain_factor = 1
+      │   │   └── gain_offset = 0
+      │   └── variance = <SpectrumSimulation, title: Variance of , dimensions: (|100)>
+      ├── binned = False
+      ├── record_by = spectrum
+      ├── signal_origin = simulation
+      └── signal_type = 
+

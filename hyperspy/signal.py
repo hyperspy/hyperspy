@@ -4013,66 +4013,90 @@ class Signal(MVA,
         self.data = self.data.astype(dtype)
 
     def estimate_poissonian_noise_variance(self,
-                                           dc=None,
-                                           gaussian_noise_var=None):
-        """Variance estimation supposing Poissonian noise.
+                                           expected_value=None,
+                                           gain_factor=None,
+                                           gain_offset=None,
+                                           correlation_factor=None):
+        """Estimate the poissonian noise variance of the signal.
+
+        The variance is stored in the
+        ``metadata.Signal.Noise_properties.variance`` attribute.
+
+        A poissonian noise  variance is equal to the expected value. With the
+        default arguments, this method simply sets the variance attribute to
+        the given `expected_value`. However, more generally (although then
+        noise is not strictly poissonian), the variance may be proportional to
+        the expected value. Moreover, when the noise is a mixture of white
+        (gaussian) and poissonian noise, the variance is described by the
+        following linear model:
+
+            .. math::
+
+                \mathrm{Var}[X] = (a * \mathrm{E}[X] + b) * c
+
+        Where `a` is the `gain_factor`, `b` is the `gain_offset` (the gaussian
+        noise variance) and `c` the `correlation_factor`. The correlation
+        factor accounts for correlation of adjacent signal elements that can
+        be modeled as a convolution with a gaussian point spread function.
+
 
         Parameters
         ----------
-        dc : None or numpy array
-            If None the SI is used to estimate its variance.
-            Otherwise, the
-            provided array will be used.
-        Note
-        ----
-        The gain_factor and gain_offset from the aquisition parameters
-        are used
+        expected_value : None or Signal instance.
+            If None, the signal data is taken as the expected value. Note that
+            this may be inaccurate where `data` is small.
+        gain_factor, gain_offset, correlation_factor: None or float.
+            All three must be positive. If None, take the values from
+            ``metadata.Signal.Noise_properties.Variance_linear_model`` if
+            defined. Otherwise suppose poissonian noise i.e. ``gain_factor=1``,
+            ``gain_offset=0``, ``correlation_factor=1``. If not None, the
+            values are stored in
+            ``metadata.Signal.Noise_properties.Variance_linear_model``.
 
         """
-        gain_factor = 1
-        gain_offset = 0
-        correlation_factor = 1
-        if not self.metadata.has_item("Signal.Noise_properties.Variance_linear_model"):
-            print("No Variance estimation parameters found in mapped "
-                  "parameters. The variance will be estimated supposing"
-                  " perfect poissonian noise")
+        if expected_value is None:
+            dc = self.data.copy()
+        else:
+            dc = expected_value.data.copy()
         if self.metadata.has_item(
-                'Signal.Noise_properties.Variance_linear_model.gain_factor'):
-            gain_factor = self.metadata.Signal.Noise_properties.Variance_linear_model.gain_factor
-        if self.metadata.has_item(
-                'Signal.Noise_properties.Variance_linear_model.gain_offset'):
-            gain_offset = self.metadata.Signal.Noise_properties.Variance_linear_model.gain_offset
-        if self.metadata.has_item(
-                'Signal.Noise_properties.Variance_linear_model.correlation_factor'):
-            correlation_factor = \
-                self.metadata.Signal.Noise_properties.Variance_linear_model.correlation_factor
-        print "Gain factor = ", gain_factor
-        print "Gain offset = ", gain_offset
-        print "Correlation factor = ", correlation_factor
-        if dc is None:
-            dc = self.data
+                "Signal.Noise_properties.Variance_linear_model"):
+            vlm = self.metadata.Signal.Noise_properties.Variance_linear_model
+        else:
+            self.metadata.add_node(
+                "Signal.Noise_properties.Variance_linear_model")
+            vlm = self.metadata.Signal.Noise_properties.Variance_linear_model
+
+        if gain_factor is None:
+            if not vlm.has_item("gain_factor"):
+                vlm.gain_factor = 1
+            gain_factor = vlm.gain_factor
+
+        if gain_offset is None:
+            if not vlm.has_item("gain_offset"):
+                vlm.gain_offset = 0
+            gain_offset = vlm.gain_offset
+
+        if correlation_factor is None:
+            if not vlm.has_item("correlation_factor"):
+                vlm.correlation_factor = 1
+            correlation_factor = vlm.correlation_factor
+
+        if gain_offset < 0:
+            raise ValueError("`gain_offset` must be positive.")
+        if gain_factor < 0:
+            raise ValueError("`gain_factor` must be positive.")
+        if correlation_factor < 0:
+            raise ValueError("`correlation_factor` must be positive.")
+
+        variance = (dc * gain_factor + gain_offset) * correlation_factor
+        # The lower bound of the variance is the gaussian noise.
+        variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
+        variance = type(self)(variance,
+                              axes=self.axes_manager._get_axes_dicts())
+        variance.metadata.General.title = ("Variance of " +
+                                           self.metadata.General.title)
         self.metadata.set_item(
-            "Signal.Noise_properties.variance",
-            dc *
-            gain_factor +
-            gain_offset)
-        if self.metadata.Signal.Noise_properties.variance.min() < 0:
-            if gain_offset == 0 and gaussian_noise_var is None:
-                raise ValueError("The variance estimation results"
-                                 "in negative values"
-                                 "Maybe the gain_offset is wrong?")
-                self.metadata.Signal.Noise_properties.variance = None
-                return
-            elif gaussian_noise_var is None:
-                print "Clipping the variance to the gain_offset value"
-                minimum = 0 if gain_offset < 0 else gain_offset
-                self.metadata.Signal.Noise_properties.variance = np.clip(self.metadata.Signal.Noise_properties.variance, minimum,
-                                                                         np.Inf)
-            else:
-                print "Clipping the variance to the gaussian_noise_var"
-                self.metadata.Signal.Noise_properties.variance = np.clip(self.metadata.Signal.Noise_properties.variance,
-                                                                         gaussian_noise_var,
-                                                                         np.Inf)
+            "Signal.Noise_properties.variance", variance)
 
     def get_current_signal(self, auto_title=True, auto_filename=True):
         """Returns the data at the current coordinates as a Signal subclass.
