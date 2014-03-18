@@ -50,11 +50,11 @@ class Test_Utils_Stack():
         result_list = result_signal.split()
         assert_true(len(result_list) == 3)
         assert_true((result_list[0].data == result_signal[::, 0].data).all())
-        
+
     def test_stack_bigger_than_ten(self):
         s = self.signal
         list_s = [s] * 12
-        list_s.append(s.deepcopy() * 3 )
+        list_s.append(s.deepcopy() * 3)
         list_s[-1].metadata.General.title = 'test'
         s1 = utils.stack(list_s)
         res = s1.split()
