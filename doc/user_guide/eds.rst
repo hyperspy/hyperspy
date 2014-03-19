@@ -317,7 +317,7 @@ are used by default.
    
 .. code-block:: python
 
-    >>> spec.set_lines(["Ni_La","Ti_Ka","Al_Ka"])
+    >>> spec_img.set_lines(["Ni_La","Ti_Ka","Al_Ka"])
     >>> spec_img.get_lines_intensity()
     [<Image, title: Intensity of Al_Ka at 1.49 keV from Spectrum image,
      dimensions: (|128, 95)>,
