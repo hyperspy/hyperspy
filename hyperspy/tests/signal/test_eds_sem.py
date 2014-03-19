@@ -94,9 +94,9 @@ class Test_metadata:
         s.set_elements(["Ti", "Al"])
         s.set_lines(['Al_Ka'])
         assert_equal(s.metadata.Sample.xray_lines, ['Al_Ka', 'Ti_Ka'])
-        
+
         del s.metadata.Sample.xray_lines
-        s.set_elements(['Al','Ni'])
+        s.set_elements(['Al', 'Ni'])
         s.add_lines()
         assert_equal(s.metadata.Sample.xray_lines, ['Al_Ka', 'Ni_Ka'])
         s.metadata.Acquisition_instrument.SEM.beam_energy = 10.0
