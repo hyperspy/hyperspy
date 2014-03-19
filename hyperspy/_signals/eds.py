@@ -284,7 +284,7 @@ class EDSSpectrum(Spectrum):
                     only_one=only_one,
                     only_lines=only_lines)
                 if new_lines:
-                    self.add_lines(list(new_lines)+list(lines))
+                    self.add_lines(list(new_lines) + list(lines))
         self.add_elements(elements)
         if not hasattr(self.metadata, 'Sample'):
             self.metadata.add_node('Sample')
