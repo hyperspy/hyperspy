@@ -174,10 +174,10 @@ follow:
 .. code-block:: python
 
     >>> spec.metadata.Sample
-    ├── Xray_lines = ['Al_Ka', 'Ni_La', 'Ti_Ka']
     ├── description = Sample 1.3
     ├── elements = ['Al', 'Ni', 'Ti']
-    └── thickness = 100
+    ├── thickness = 100
+    └── xray_lines = ['Al_Ka', 'Ni_La', 'Ti_Ka']
 
 
 The following methods are either called "set" or "add". When "set" 
@@ -209,11 +209,12 @@ elements will be added automatically. Several lines per elements can be defined.
 
 .. code-block:: python
 
+    >>> spec.set_elements(["Ni","Ti","Al"])
     >>> spec.set_lines(["Ni_La","Ti_Ka","Al_Ka"])
     >>> spec.add_lines(["Ti_La"])
     >>> spec.metadata.Sample
-    ├── Xray_lines = ['Al_Ka', 'Ni_La', 'Ti_Ka', 'Ti_La']
-    └── elements = ['Al', 'Ni', 'Ti']    
+    ├── elements = ['Al', 'Ni', 'Ti'] 
+    └── xray_lines = ['Al_Ka', 'Ni_La', 'Ti_Ka', 'Ti_La']  
     
 These methods can be used automatically, if the beam energy is set. 
 The most excited X-ray line is selected per element (highest energy above an 
@@ -225,13 +226,13 @@ overvoltage of 2 (< beam energy / 2)).
     >>> spec.metadata.TEM.beam_energy = 30
     >>> spec.add_lines()
     >>> spec.metadata.Sample
-    ├── Xray_lines = ['Al_Ka', 'Ni_Ka', 'Ti_Ka']
-    └── elements = ['Al', 'Ni', 'Ti']
+    ├── elements = ['Al', 'Ni', 'Ti']
+    └── Xray_lines = ['Al_Ka', 'Ni_Ka', 'Ti_Ka']
     >>> spec.metadata.TEM.beam_energy = 5
-    >>> spec.set_lines([])
+    >>> spec.add_lines()
     >>> spec.metadata.Sample
-    ├── Xray_lines = ['Al_Ka', 'Ni_La', 'Ti_La']
-    └── elements = ['Al', 'Ni', 'Ti']
+    ├── elements = ['Al', 'Ni', 'Ti']
+    └── Xray_lines = ['Al_Ka', 'Ni_La', 'Ti_La']
     
 A warning is raised, if setting a X-ray lines higher than the beam energy.
 
