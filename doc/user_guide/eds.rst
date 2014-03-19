@@ -29,7 +29,8 @@ For a single spectrum:
     >>> spec = load("spectrum.msa")    
     
 For a spectrum_image (The .rpl file is recorded as an image in this example,
-The method :py:meth:`~.signal.Signal.as_spectrum` set it back to a spectrum):
+The method :py:meth:`~.signal.Signal.as_spectrum` set it back to a spectrum
+with the energy axis in first position):
 
 .. code-block:: python
 
@@ -221,12 +222,12 @@ overvoltage of 2 (< beam energy / 2)).
 .. code-block:: python
 
     >>> spec.set_elements(["Ni","Ti","Al"])
-    >>> spec.metadata.SEM.beam_energy = 30
+    >>> spec.metadata.TEM.beam_energy = 30
     >>> spec.add_lines()
     >>> spec.metadata.Sample
     ├── Xray_lines = ['Al_Ka', 'Ni_Ka', 'Ti_Ka']
     └── elements = ['Al', 'Ni', 'Ti']
-    >>> spec.metadata.SEM.beam_energy = 5
+    >>> spec.metadata.TEM.beam_energy = 5
     >>> spec.set_lines([])
     >>> spec.metadata.Sample
     ├── Xray_lines = ['Al_Ka', 'Ni_La', 'Ti_La']
@@ -236,7 +237,7 @@ A warning is raised, if setting a X-ray lines higher than the beam energy.
 
 .. code-block:: python
 
-    >>> spec.metadata.SEM.beam_energy = 5
+    >>> spec.metadata.TEM.beam_energy = 5
     >>> spec.add_lines(["Ta_Ka"])
     Warning: Ta Ka is above the data energy range.
 
