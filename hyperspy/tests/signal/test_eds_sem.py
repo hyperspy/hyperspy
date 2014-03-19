@@ -87,7 +87,7 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.SEM.beam_energy = 0.4
         s.set_lines((), only_one=False, only_lines=False)
         assert_equal(s.metadata.Sample.xray_lines, ['Ti_Ll'])
-        
+
     def test_add_lines_auto(self):
         s = self.signal
         s.axes_manager.signal_axes[0].scale = 1e-2
