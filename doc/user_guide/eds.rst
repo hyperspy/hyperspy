@@ -29,11 +29,11 @@ For a single spectrum:
     >>> spec = load("spectrum.msa")    
     
 For a spectrum_image (The .rpl file is recorded as an image in this example,
-The option record_by='spectrum' set it back to a spectrum):
+The method :py:meth:`~.signal.Signal.as_spectrum` set it back to a spectrum):
 
 .. code-block:: python
 
-    >>> spec_img = load("spectrum_image.rpl",record_by="spectrum")   
+    >>> spec_img = load("spectrum_image.rpl").as_spectrum(0)   
     
 For a stack of spectrum_images (The "*" replace all chains of string, in this
 example 01, 02, 03,...):
@@ -158,7 +158,7 @@ method.
     >>> # Load spectrum.msa which contains the parameters
     >>> spec = load("spectrum.msa",signal_type="EDS_TEM")
     >>> # Load spectrum_image.rpl which contains no parameters
-    >>> spec_img = load("spectrum_image.rpl",record_by="spectrum",signal_type="EDS_TEM")
+    >>> spec_img = load("spectrum_image.rpl",signal_type="EDS_TEM").as_spectrum(0)
     >>> # Set all the properties of spec to spec_img
     >>> spec_img.get_calibration_from(spec)
     
