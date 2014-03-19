@@ -70,23 +70,24 @@ as follow:
     
 .. code-block:: python
 
-    >>> spec.metadata.TEM
-    ├── EDS
-    │   ├── azimuth_angle = 0.0
-    │   ├── elevation_angle = 37.0
-    │   ├── energy_resolution_MnKa = 130.0
-    │   ├── live_time = 30.0
-    │   └── real_time = 55.0
+    >>> spec.metadata.Acquisition_instrument.TEM
+    ├── Detector
+    │   └── EDS
+    │       ├── azimuth_angle = 0.0
+    │       ├── elevation_angle = 37.0
+    │       ├── energy_resolution_MnKa = 130.0
+    │       ├── live_time = 30.0
+    │       └── real_time = 55.0
     ├── beam_current = 0.0
     ├── beam_energy = 300
-    └── tilt_stage = 36.0
+    └── tilt_stage = 36.0    
 
 
 These parameters can be set directly:
 
 .. code-block:: python
 
-    >>> spec.metadata.TEM.beam_energy = 300
+    >>> spec.metadata.Acquisition_instrument.TEM.beam_energy = 300
 
 or with the  
 :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` method:
@@ -223,12 +224,12 @@ overvoltage of 2 (< beam energy / 2)).
 .. code-block:: python
 
     >>> spec.set_elements(["Ni","Ti","Al"])
-    >>> spec.metadata.TEM.beam_energy = 30
+    >>> spec.metadata.Acquisition_instrument.TEM.beam_energy = 30
     >>> spec.add_lines()
     >>> spec.metadata.Sample
     ├── elements = ['Al', 'Ni', 'Ti']
     └── Xray_lines = ['Al_Ka', 'Ni_Ka', 'Ti_Ka']
-    >>> spec.metadata.TEM.beam_energy = 5
+    >>> spec.metadata.Acquisition_instrument.TEM.beam_energy = 5
     >>> spec.add_lines()
     >>> spec.metadata.Sample
     ├── elements = ['Al', 'Ni', 'Ti']
@@ -238,7 +239,7 @@ A warning is raised, if setting a X-ray lines higher than the beam energy.
 
 .. code-block:: python
 
-    >>> spec.metadata.TEM.beam_energy = 5
+    >>> spec.metadata.Acquisition_instrument.TEM.beam_energy = 5
     >>> spec.add_lines(["Ta_Ka"])
     Warning: Ta Ka is above the data energy range.
 
