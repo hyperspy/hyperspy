@@ -170,13 +170,13 @@ class EDSSEMSpectrum(EDSSpectrum):
             md.set_item(
                 "Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa",
                 energy_resolution_MnKa)
-                
+
         if beam_energy is None and \
-              live_time is None and \
-              tilt_stage is None and \
-              azimuth_angle is None and \
-              elevation_angle is None and \
-              energy_resolution_MnKa is None:
+                live_time is None and \
+                tilt_stage is None and \
+                azimuth_angle is None and \
+                elevation_angle is None and \
+                energy_resolution_MnKa is None:
             self._set_microscope_parameters()
 
     @only_interactive
