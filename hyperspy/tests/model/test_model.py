@@ -35,7 +35,7 @@ class TestModelFitBinned:
 
     def test_fit_leastsq(self):
         self.m.fit(fitter="leastsq")
-        nose.tools.assert_almost_equal(self.m[0].A.value, 9976.14526082)
+        nose.tools.assert_almost_equal(self.m[0].A.value, 9976.14526082, 5)
         nose.tools.assert_almost_equal(self.m[0].centre.value, -0.110610727064)
         nose.tools.assert_almost_equal(self.m[0].sigma.value, 1.98380707571)
 
