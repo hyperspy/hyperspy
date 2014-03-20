@@ -78,7 +78,7 @@ class EDSSEMSpectrum(EDSSpectrum):
 
         if hasattr(mp_ref.Detector.EDS, 'live_time'):
             mp.Acquisition_instrument.SEM.Detector.EDS.live_time = \
-                mp_ref.DetectorEDS.live_time / nb_pix
+                mp_ref.Detector.EDS.live_time / nb_pix
 
     def _load_from_TEM_param(self):
         """Transfer metadata.Acquisition_instrument.TEM to metadata.Acquisition_instrument.SEM
@@ -171,7 +171,7 @@ class EDSSEMSpectrum(EDSSpectrum):
                 "Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa",
                 energy_resolution_MnKa)
 
-        self._set_microscope_parameters()
+        self._are_microscope_parameters_missing()
 
     @only_interactive
     def _set_microscope_parameters(self):

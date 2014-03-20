@@ -725,7 +725,9 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                                      shape=stack_shape,)
 
                 signal = type(obj)(data=data)
-                signal.axes_manager._axes[1:] = obj.axes_manager._axes
+                signal.axes_manager._axes[
+                    1:] = copy.deepcopy(
+                    obj.axes_manager._axes)
                 axis_name = new_axis_name
                 axis_names = [axis_.name for axis_ in
                               signal.axes_manager._axes[1:]]
