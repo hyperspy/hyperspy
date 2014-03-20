@@ -76,19 +76,24 @@ class Offset(Component):
 
         """
         axis = signal.axes_manager.signal_axes[0]
-        energy2index = axis._get_index
-        i1 = energy2index(x1) if energy2index(x1) else 0
-        i2 = energy2index(x2) if energy2index(x2) else len(axis.axis) - 1
+        binned = signal.metadata.Signal.binned
+        i1, i2 = axis.value_range_to_indices(x1, x2)
 
         if only_current is True:
             self.offset.value = signal()[i1:i2].mean()
+            print self.offset.value
+            if binned is True:
+                self.offset.value /= axis.scale
             return True
         else:
-            if self.A.map is None:
+            if self.offset.map is None:
                 self._create_arrays()
             dc = signal.data
             gi = [slice(None), ] * len(dc.shape)
             gi[axis.index_in_array] = slice(i1, i2)
             self.offset.map['values'][:] = dc[gi].mean(axis.index_in_array)
+            if binned is True:
+                self.offset.map['values'] /= axis.scale
             self.offset.map['is_set'][:] = True
+            self.fetch_stored_values()
             return True
