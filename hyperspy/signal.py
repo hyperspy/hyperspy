@@ -2548,9 +2548,12 @@ class Signal(MVA,
 
         _signal.data = _signal.data[array_slices]
         if self.metadata.has_item('Signal.Noise_properties.variance'):
-            _signal.metadata.Signal.Noise_properties.variance = self.metadata.Signal.Noise_properties.variance.__getitem__(
+            if isinstance(self.metadata.Signal.Noise_properties.variance, Signal):
+                _signal.metadata.Signal.Noise_properties.variance = self.metadata.Signal.Noise_properties.variance.__getitem__(
                 _orig_slices,
                 isNavigation)
+            else:
+                _signal.metadata.Signal.Noise_properties.variance = self.metadata.Signal.Noise_properties.variance 
         _signal.get_dimensions_from_data()
 
         return _signal
