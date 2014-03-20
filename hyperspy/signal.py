@@ -2551,8 +2551,6 @@ class Signal(MVA,
             _signal.metadata.Signal.Noise_properties.variance = self.metadata.Signal.Noise_properties.variance.__getitem__(
                 _orig_slices,
                 isNavigation)
-        # if self.variance is not None:
-        #     _signal.variance = self.variance[array_slices]
         _signal.get_dimensions_from_data()
 
         return _signal
