@@ -179,21 +179,29 @@ class Test3D_Navigate_0_and_1:
 
     def test_1px_navigation_indexer_slice(self):
         s = self.signal.inav[1:2]
+        s1 = self.signal
+        s1.estimate_poissonian_noise_variance()
+        s1_1 = s1.inav[1:2]
         d = self.data[:, 1:2]
         assert_true((s.data == d).all())
         assert_equal(s.axes_manager._axes[1].offset, 1)
         assert_equal(s.axes_manager._axes[1].size, 1)
         assert_equal(s.axes_manager._axes[1].scale,
                      self.signal.axes_manager._axes[1].scale)
+        assert_true((s1.metadata.Signal.Noise_properties.variance.data[:,1:2] == s1_1.metadata.Signal.Noise_properties.variance.data).all())
 
     def test_1px_signal_indexer_slice(self):
         s = self.signal.isig[1:2]
         d = self.data[:, :, 1:2]
+        s1 = self.signal
+        s1.estimate_poissonian_noise_variance()
+        s1_1 = s1.isig[1:2]
         assert_true((s.data == d).all())
         assert_equal(s.axes_manager.signal_axes[0].offset, 1)
         assert_equal(s.axes_manager.signal_axes[0].size, 1)
         assert_equal(s.axes_manager.signal_axes[0].scale,
                      self.signal.axes_manager.signal_axes[0].scale)
+        assert_true((s1.metadata.Signal.Noise_properties.variance.data[:,:,1:2] == s1_1.metadata.Signal.Noise_properties.variance.data).all())
 
     def test_dimension_when_indexing(self):
         s = self.signal[0]
