@@ -1,7 +1,10 @@
 import os.path
 import datetime
 
-from nose.tools import assert_equal, assert_true, assert_almost_equal
+from nose.tools import (assert_equal,
+                        assert_true,
+                        assert_almost_equal,
+                        assert_is)
 import numpy as np
 
 from hyperspy.io import load
@@ -106,7 +109,15 @@ class TestExample1_12(Example1):
             "example1_v1.2.hdf5"))
 
     def test_date(self):
-        assert_equal(self.s.metadata.date, datetime.date(1991, 10, 1))
+        assert_equal(self.s.metadata.General.date, datetime.date(1991, 10, 1))
 
     def test_time(self):
-        assert_equal(self.s.metadata.time, datetime.time(12, 0))
+        assert_equal(self.s.metadata.General.time, datetime.time(12, 0))
+
+
+def test_none_metadata():
+    s = load(os.path.join(
+        my_path,
+        "hdf5_files",
+        "none_metadata.hdf5"))
+    assert_is(s.metadata.should_be_None, None)

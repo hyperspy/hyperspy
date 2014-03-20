@@ -16,7 +16,7 @@ s.axes_manager.navigation_axes[0].scale = 0.3
 s.axes_manager.navigation_axes[0].offset = 100
 
 # Give a title
-s.metadata.title = 'Random line spectrum'
+s.metadata.General.title = 'Random line spectrum'
 
 # Plot it
 s.plot()

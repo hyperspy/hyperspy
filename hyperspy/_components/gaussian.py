@@ -93,7 +93,7 @@ class Gaussian(Component):
                                                                                   * self.sigma.value ** 2)) * self.A.value) / (sqrt2pi *
                                                                                                                                self.sigma.value ** 3)
 
-    def estimate_parameters(self, signal, E1, E2, only_current=False):
+    def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the gaussian by calculating the momenta.
 
         Parameters
@@ -134,10 +134,10 @@ class Gaussian(Component):
 
         """
         axis = signal.axes_manager.signal_axes[0]
-
-        energy2index = axis._get_index
-        i1 = energy2index(E1) if energy2index(E1) else 0
-        i2 = energy2index(E2) if energy2index(E2) else len(axis.axis) - 1
+        binned = signal.metadata.Signal.binned
+        axis = signal.axes_manager.signal_axes[0]
+        binned = signal.metadata.Signal.binned
+        i1, i2 = axis.value_range_to_indices(x1, x2)
         X = axis.axis[i1:i2]
         if only_current is True:
             data = signal()[i1:i2]
@@ -156,8 +156,7 @@ class Gaussian(Component):
             center_shape = list(data.shape)
             center_shape[i] = 1
 
-        center = np.sum(X.reshape(X_shape) * data, i
-                        ) / np.sum(data, i)
+        center = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
 
         sigma = np.sqrt(np.abs(np.sum((X.reshape(X_shape) - center.reshape(
             center_shape)) ** 2 * data, i) / np.sum(data, i)))
@@ -166,16 +165,22 @@ class Gaussian(Component):
             self.centre.value = center
             self.sigma.value = sigma
             self.A.value = height * sigma * sqrt2pi
+            if binned is True:
+                self.A.value /= axis.scale
             return True
         else:
             if self.A.map is None:
                 self._create_arrays()
             self.A.map['values'][:] = height * sigma * sqrt2pi
+
+            if binned is True:
+                self.A.map['values'] /= axis.scale
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma
             self.sigma.map['is_set'][:] = True
             self.centre.map['values'][:] = center
             self.centre.map['is_set'][:] = True
+            self.fetch_stored_values()
             return True
 
     @property

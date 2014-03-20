@@ -60,6 +60,7 @@ from hyperspy.gui.tools import IntegrateArea
 from hyperspy import components
 from hyperspy.misc.utils import underline
 from hyperspy.misc.borrowed.astroML.histtools import histogram
+from hyperspy.drawing.utils import animate_legend
 
 
 class Signal2DTools(object):
@@ -720,7 +721,7 @@ class Signal1DTools(object):
     def _integrate_in_range_commandline(self, signal_range):
         e1 = signal_range[0]
         e2 = signal_range[1]
-        integrated_spectrum = self[..., e1:e2].integrate_simpson(-1)
+        integrated_spectrum = self[..., e1:e2].integrate1D(-1)
         return(integrated_spectrum)
 
     @only_interactive
@@ -830,20 +831,15 @@ class Signal1DTools(object):
             smoother.edit_traits()
 
     def _remove_background_cli(self, signal_range, background_estimator):
-        spectra = self.deepcopy()
-        maxval = self.axes_manager.navigation_size
-        pbar = progressbar(maxval=maxval)
-        for index, spectrum in enumerate(spectra):
-            background_estimator.estimate_parameters(
-                spectrum,
-                signal_range[0],
-                signal_range[1],
-                only_current=True)
-            spectrum.data -= background_estimator.function(
-                spectrum.axes_manager.signal_axes[0].axis).astype(spectra.data.dtype)
-            pbar.update(index)
-        pbar.finish()
-        return(spectra)
+        from hyperspy.model import Model
+        model = Model(self)
+        model.append(background_estimator)
+        background_estimator.estimate_parameters(
+            self,
+            signal_range[0],
+            signal_range[1],
+            only_current=False)
+        return self - model.as_signal()
 
     def remove_background(
             self,
@@ -897,7 +893,7 @@ class Signal1DTools(object):
 
             spectra = self._remove_background_cli(
                 signal_range, background_estimator)
-            return(spectra)
+            return spectra
 
     @interactive_range_selector
     def crop_spectrum(self, left_value=None, right_value=None,):
@@ -1151,22 +1147,22 @@ class Signal1DTools(object):
             pbar.finish()
         width = right - left
         if factor == 0.5:
-            width.metadata.title = (
-                self.metadata.title + " FWHM")
-            left.metadata.title = (
-                self.metadata.title + " FWHM left position")
+            width.metadata.General.title = (
+                self.metadata.General.title + " FWHM")
+            left.metadata.General.title = (
+                self.metadata.General.title + " FWHM left position")
 
-            right.metadata.title = (
-                self.metadata.title + " FWHM right position")
+            right.metadata.General.title = (
+                self.metadata.General.title + " FWHM right position")
         else:
-            width.metadata.title = (
-                self.metadata.title +
+            width.metadata.General.title = (
+                self.metadata.General.title +
                 " full-width at %.1f maximum" % factor)
-            left.metadata.title = (
-                self.metadata.title +
+            left.metadata.General.title = (
+                self.metadata.General.title +
                 " full-width at %.1f maximum left position" % factor)
-            right.metadata.title = (
-                self.metadata.title +
+            right.metadata.General.title = (
+                self.metadata.General.title +
                 " full-width at %.1f maximum right position" % factor)
         if return_interval is True:
             return [width, left, right]
@@ -1372,6 +1368,7 @@ class MVATools(object):
         else:
             if self.axes_manager.navigation_dimension == 1:
                 plt.legend(ncol=loadings.shape[0] // 2, loc='best')
+                animate_legend()
             if with_factors:
                 return f, self._plot_factors_or_pchars(factors,
                                                        comp_ids=comp_ids,
@@ -1464,10 +1461,10 @@ class MVATools(object):
                 s = Image(factor_data,
                           axes=axes_dicts,
                           metadata={
-                              'title': '%s from %s' % (
+                              'General': {'title': '%s from %s' % (
                                   factor_prefix,
-                                  self.metadata.title),
-                          })
+                                  self.metadata.General.title),
+                              }})
             elif self.axes_manager.signal_dimension == 1:
                 axes = []
                 axes.append(
@@ -1485,9 +1482,9 @@ class MVATools(object):
                 s = Spectrum(factors.T,
                              axes=axes,
                              metadata={
-                                 'title': '%s from %s' % (
-                                     factor_prefix, self.metadata.title),
-                             })
+                                 "General": {'title': '%s from %s' % (
+                                     factor_prefix, self.metadata.General.title),
+                                 }})
             filename = '%ss.%s' % (factor_prefix, factor_format)
             if folder is not None:
                 filename = os.path.join(folder, filename)
@@ -1502,10 +1499,10 @@ class MVATools(object):
                     s = Spectrum(factors[:, index],
                                  axes=[axis_dict, ],
                                  metadata={
-                                     'title': '%s from %s' % (
+                                     "General": {'title': '%s from %s' % (
                                          factor_prefix,
-                                         self.metadata.title),
-                                 })
+                                         self.metadata.General.title),
+                                     }})
                     filename = '%s-%i.%s' % (factor_prefix,
                                              dim,
                                              factor_format)
@@ -1528,10 +1525,10 @@ class MVATools(object):
                     im = Image(factor_data[..., index],
                                axes=axes_dicts,
                                metadata={
-                                   'title': '%s from %s' % (
+                                   "General": {'title': '%s from %s' % (
                                        factor_prefix,
-                                       self.metadata.title),
-                               })
+                                       self.metadata.General.title),
+                                   }})
                     filename = '%s-%i.%s' % (factor_prefix,
                                              dim,
                                              factor_format)
@@ -1609,10 +1606,10 @@ class MVATools(object):
                 s = Image(loading_data,
                           axes=axes_dicts,
                           metadata={
-                              'title': '%s from %s' % (
+                              "General": {'title': '%s from %s' % (
                                   loading_prefix,
-                                  self.metadata.title),
-                          })
+                                  self.metadata.General.title),
+                              }})
             elif self.axes_manager.navigation_dimension == 1:
                 cal_axis = self.axes_manager.navigation_axes[0].\
                     get_axis_dictionary()
@@ -1628,10 +1625,10 @@ class MVATools(object):
                 s = Image(loadings,
                           axes=axes,
                           metadata={
-                              'title': '%s from %s' % (
+                              "General": {'title': '%s from %s' % (
                                   loading_prefix,
-                                  self.metadata.title),
-                          })
+                                  self.metadata.General.title),
+                              }})
             filename = '%ss.%s' % (loading_prefix, loading_format)
             if folder is not None:
                 filename = os.path.join(folder, filename)
@@ -1663,10 +1660,10 @@ class MVATools(object):
                     s = Image(loading_data[index, ...],
                               axes=axes_dicts,
                               metadata={
-                                  'title': '%s from %s' % (
+                                  "General": {'title': '%s from %s' % (
                                       loading_prefix,
-                                      self.metadata.title),
-                              })
+                                      self.metadata.General.title),
+                                  }})
                     filename = '%s-%i.%s' % (loading_prefix,
                                              dim,
                                              loading_format)
@@ -1830,8 +1827,8 @@ class MVATools(object):
         comp_label : string,
             The label that is either the plot title (if plotting in
             separate windows) or the label in the legend (if plotting
-            in the
-            same window)
+            in the same window). In this case, each loading line can be
+            toggled on and off by clicking on the legended line.
 
         with_factors : bool
             If True, also returns figure(s) with the factors for the
@@ -1908,8 +1905,8 @@ class MVATools(object):
         comp_label : string,
             The label that is either the plot title (if plotting in
             separate windows) or the label in the legend (if plotting
-            in the
-            same window)
+            in the same window). In this case, each loading line can be
+            toggled on and off by clicking on the legended line.
 
         with_factors : bool
             If True, also returns figure(s) with the factors for the
@@ -2220,7 +2217,7 @@ class MVATools(object):
                                 axes=([{"size": data.shape[0],
                                         "navigate": True}] +
                                       self.axes_manager._get_navigation_axes_dicts()))
-        signal.set_signal_origin(self.metadata.signal_origin)
+        signal.set_signal_origin(self.metadata.Signal.signal_origin)
         for axis in signal.axes_manager._axes[1:]:
             axis.navigate = False
         return signal
@@ -2231,8 +2228,8 @@ class MVATools(object):
                                 axes=[{"size": factors.shape[-1],
                                        "navigate": True}] +
                                 self.axes_manager._get_signal_axes_dicts())
-        signal.set_signal_origin(self.metadata.signal_origin)
-        signal.set_signal_type(self.metadata.signal_type)
+        signal.set_signal_origin(self.metadata.Signal.signal_origin)
+        signal.set_signal_type(self.metadata.Signal.signal_type)
         for axis in signal.axes_manager._axes[1:]:
             axis.navigate = False
         return signal
@@ -2247,8 +2244,8 @@ class MVATools(object):
         """
         signal = self._get_loadings(self.learning_results.loadings)
         signal.axes_manager._axes[0].name = "Decomposition component index"
-        signal.metadata.title = "Decomposition loadings of " + \
-            self.metadata.title
+        signal.metadata.General.title = "Decomposition loadings of " + \
+            self.metadata.General.title
         return signal
 
     def get_decomposition_factors(self):
@@ -2261,8 +2258,8 @@ class MVATools(object):
         """
         signal = self._get_factors(self.learning_results.factors)
         signal.axes_manager._axes[0].name = "Decomposition component index"
-        signal.metadata.title = ("Decomposition factors of " +
-                                 self.metadata.title)
+        signal.metadata.General.title = ("Decomposition factors of " +
+                                         self.metadata.General.title)
         return signal
 
     def get_bss_loadings(self):
@@ -2276,8 +2273,8 @@ class MVATools(object):
         signal = self._get_loadings(
             self.learning_results.bss_loadings)
         signal.axes_manager[0].name = "BSS component index"
-        signal.metadata.title = ("BSS loadings of " +
-                                 self.metadata.title)
+        signal.metadata.General.title = ("BSS loadings of " +
+                                         self.metadata.General.title)
         return signal
 
     def get_bss_factors(self):
@@ -2290,8 +2287,8 @@ class MVATools(object):
         """
         signal = self._get_factors(self.learning_results.bss_factors)
         signal.axes_manager[0].name = "BSS component index"
-        signal.metadata.title = ("BSS factors of " +
-                                 self.metadata.title)
+        signal.metadata.General.title = ("BSS factors of " +
+                                         self.metadata.General.title)
         return signal
 
     def plot_bss_results(self,
@@ -2412,12 +2409,10 @@ class Signal(MVA,
 
         self._create_metadata()
         self.learning_results = LearningResults()
-        self.peak_learning_results = LearningResults()
         kwds['data'] = data
         self._load_dictionary(kwds)
         self._plot = None
         self.auto_replot = True
-        self.variance = None
         self.inav = SpecialSlicers(self, True)
         self.isig = SpecialSlicers(self, False)
 
@@ -2464,21 +2459,30 @@ class Signal(MVA,
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
         mp = self.metadata
-        mp.add_node("_internal_parameters")
-        mp._internal_parameters.add_node("folding")
-        folding = mp._internal_parameters.folding
+        mp.add_node("_HyperSpy")
+        mp.add_node("General")
+        mp.add_node("Signal")
+        mp._HyperSpy.add_node("Folding")
+        folding = mp._HyperSpy.Folding
         folding.unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
+        mp.Signal.binned = False
         self.original_metadata = DictionaryTreeBrowser()
         self.tmp_parameters = DictionaryTreeBrowser()
 
     def __repr__(self):
+        if self.metadata._HyperSpy.Folding.unfolded:
+            unfolded = "unfolded "
+        else:
+            unfolded = ""
         string = '<'
         string += self.__class__.__name__
-        string += ", title: %s" % self.metadata.title
-        string += ", dimensions: %s" % (
+        string += ", title: %s" % self.metadata.General.title
+        string += ", %sdimensions: %s" % (
+            unfolded,
             self.axes_manager._get_dimension_str())
+
         string += '>'
 
         return string
@@ -2694,15 +2698,15 @@ class Signal(MVA,
 
     def _print_summary(self):
         string = "\n\tTitle: "
-        string += self.metadata.title.decode('utf8')
-        if hasattr(self.metadata, 'signal_type'):
+        string += self.metadata.General.title.decode('utf8')
+        if self.metadata.has_item("Signal.signal_type"):
             string += "\n\tSignal type: "
-            string += self.metadata.signal_type
+            string += self.metadata.Signal.signal_type
         string += "\n\tData dimensions: "
         string += str(self.axes_manager.shape)
-        if hasattr(self.metadata, 'record_by'):
+        if self.metadata.has_item('Signal.record_by'):
             string += "\n\tData representation: "
-            string += self.metadata.record_by
+            string += self.metadata.Signal.record_by
             string += "\n\tData type: "
             string += str(self.data.dtype)
         print string
@@ -2756,17 +2760,17 @@ class Signal(MVA,
             file_data_dict['original_metadata'])
         self.metadata.add_dictionary(
             file_data_dict['metadata'])
-        if "title" not in self.metadata:
-            self.metadata.title = ''
+        if "title" not in self.metadata.General:
+            self.metadata.General.title = ''
         if (self._record_by or
-                "record_by" not in self.metadata):
-            self.metadata.record_by = self._record_by
+                "Signal.record_by" not in self.metadata):
+            self.metadata.Signal.record_by = self._record_by
         if (self._signal_origin or
-                "signal_origin" not in self.metadata):
-            self.metadata.signal_origin = self._signal_origin
+                "Signal.signal_origin" not in self.metadata):
+            self.metadata.Signal.signal_origin = self._signal_origin
         if (self._signal_type or
-                "signal_type" not in self.metadata):
-            self.metadata.signal_type = self._signal_type
+                not self.metadata.has_item("Signal.signal_type")):
+            self.metadata.Signal.signal_type = self._signal_type
 
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array
@@ -2891,8 +2895,8 @@ class Signal(MVA,
 
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = self.__call__
-        if self.metadata.title:
-            self._plot.signal_title = self.metadata.title
+        if self.metadata.General.title:
+            self._plot.signal_title = self.metadata.General.title
         elif self.tmp_parameters.has_item('filename'):
             self._plot.signal_title = self.tmp_parameters.filename
 
@@ -3012,8 +3016,8 @@ class Signal(MVA,
                 extesion = (self.tmp_parameters.extension
                             if not extension
                             else extension)
-            elif self.metadata.has_item('original_filename'):
-                filename = self.metadata.original_filename
+            elif self.metadata.has_item('General.original_filename'):
+                filename = self.metadata.General.original_filename
             else:
                 raise ValueError('File name not defined')
         if extension is not None:
@@ -3188,7 +3192,7 @@ class Signal(MVA,
             axis in `axes_manager` or the axis name.
             - If 'auto' and if the object has been created with utils.stack,
             split will return the former list of signals
-            (options stored in 'metadata.stacking_history'
+            (options stored in 'metadata._HyperSpy.Stacking_history'
              else the last navigation axis will be used.
         number_of_parts : {'auto' | int}
             Number of parts in which the SI will be splitted. The
@@ -3228,12 +3232,11 @@ class Signal(MVA,
 
         if axis == 'auto':
             mode = 'auto'
-            if hasattr(self.metadata, 'stacking_history'):
-                axis_in_manager = self.metadata.stacking_history.axis
-                step_sizes = self.metadata.stacking_history.step_sizes
+            if hasattr(self.metadata._HyperSpy, 'Stacking_history'):
+                axis_in_manager = self.metadata._HyperSpy.Stacking_history.axis
+                step_sizes = self.metadata._HyperSpy.Stacking_history.step_sizes
             else:
-                axis_in_manager = self.axes_manager[-
-                                                    1 +
+                axis_in_manager = self.axes_manager[-1 +
                                                     1j].index_in_axes_manager
         else:
             mode = 'manual'
@@ -3285,11 +3288,12 @@ class Signal(MVA,
         if mode == 'auto' and hasattr(self.original_metadata, 'stack_elements'):
             for i, spectrum in enumerate(splitted):
                 stack_keys = self.original_metadata.stack_elements.keys()
-                spectrum.metadata = self.original_metadata.stack_elements[
-                    stack_keys[i]]['metadata']
-                spectrum.original_metadata = self.original_metadata.stack_elements[
-                    stack_keys[i]]['original_metadata']
-                spectrum.metadata.title = spectrum.metadata.title[9:]
+                spectrum.metadata = copy.deepcopy(self.original_metadata.stack_elements[
+                    stack_keys[i]]['metadata'])
+                spectrum.original_metadata = copy.deepcopy(self.original_metadata.stack_elements[
+                    stack_keys[i]]['original_metadata'])
+                spectrum.metadata.General.title = self.original_metadata.stack_elements[
+                    stack_keys[i]].metadata.General.title
 
         return splitted
 
@@ -3335,7 +3339,7 @@ class Signal(MVA,
         # by
         # the fold function only if it has not been already stored by a
         # previous unfold
-        folding = self.metadata._internal_parameters.folding
+        folding = self.metadata._HyperSpy.Folding
         if folding.unfolded is False:
             folding.original_shape = self.data.shape
             folding.original_axes_manager = self.axes_manager
@@ -3400,10 +3404,10 @@ class Signal(MVA,
     @auto_replot
     def fold(self):
         """If the signal was previously unfolded, folds it back"""
-        folding = self.metadata._internal_parameters.folding
+        folding = self.metadata._HyperSpy.Folding
         # Note that == must be used instead of is True because
         # if the value was loaded from a file its type can be np.bool_
-        if folding.unfolded == True:
+        if folding.unfolded is True:
             self.data = self.data.reshape(folding.original_shape)
             self.axes_manager = folding.original_axes_manager
             folding.original_shape = None
@@ -3453,7 +3457,7 @@ class Signal(MVA,
                 self._record_by = ""
             else:
                 return
-            self.metadata.record_by = self._record_by
+            self.metadata.Signal.record_by = self._record_by
             self._assign_subclass()
 
     def _apply_function_on_data_and_remove_axis(self, function, axis):
@@ -3711,6 +3715,42 @@ class Signal(MVA,
         s._remove_axis(axis.index_in_axes_manager)
         return s
 
+    def integrate1D(self, axis):
+        """Integrate the signal over the given axis.
+
+        The integration is performed using Simpson's rule if
+        `metadata.Signal.binned` is False and summation over the given axis if
+        True.
+
+        Parameters
+        ----------
+        axis : {int | string}
+           The axis can be specified using the index of the axis in
+           `axes_manager` or the axis name.
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum_in_mask, mean
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.var(-1).data.shape
+        (64,64)
+
+        """
+        if self.metadata.Signal.binned is False:
+            return self.integrate_simpson(axis)
+        else:
+            return self.sum(axis)
+
     def indexmax(self, axis):
         """Returns a signal with the index of the maximum along an axis.
 
@@ -3837,8 +3877,8 @@ class Signal(MVA,
             hist_spec.axes_manager[0].offset = bin_edges[0]
 
         hist_spec.axes_manager[0].name = 'value'
-        hist_spec.metadata.title = (img.metadata.title +
-                                    " histogram")
+        hist_spec.metadata.General.title = (img.metadata.General.title +
+                                            " histogram")
         return hist_spec
 
     def apply_function(self, function, **kwargs):
@@ -3975,64 +4015,90 @@ class Signal(MVA,
         self.data = self.data.astype(dtype)
 
     def estimate_poissonian_noise_variance(self,
-                                           dc=None, gaussian_noise_var=None):
-        """Variance estimation supposing Poissonian noise.
+                                           expected_value=None,
+                                           gain_factor=None,
+                                           gain_offset=None,
+                                           correlation_factor=None):
+        """Estimate the poissonian noise variance of the signal.
+
+        The variance is stored in the
+        ``metadata.Signal.Noise_properties.variance`` attribute.
+
+        A poissonian noise  variance is equal to the expected value. With the
+        default arguments, this method simply sets the variance attribute to
+        the given `expected_value`. However, more generally (although then
+        noise is not strictly poissonian), the variance may be proportional to
+        the expected value. Moreover, when the noise is a mixture of white
+        (gaussian) and poissonian noise, the variance is described by the
+        following linear model:
+
+            .. math::
+
+                \mathrm{Var}[X] = (a * \mathrm{E}[X] + b) * c
+
+        Where `a` is the `gain_factor`, `b` is the `gain_offset` (the gaussian
+        noise variance) and `c` the `correlation_factor`. The correlation
+        factor accounts for correlation of adjacent signal elements that can
+        be modeled as a convolution with a gaussian point spread function.
+
 
         Parameters
         ----------
-        dc : None or numpy array
-            If None the SI is used to estimate its variance.
-            Otherwise, the
-            provided array will be used.
-        Note
-        ----
-        The gain_factor and gain_offset from the aquisition parameters
-        are used
+        expected_value : None or Signal instance.
+            If None, the signal data is taken as the expected value. Note that
+            this may be inaccurate where `data` is small.
+        gain_factor, gain_offset, correlation_factor: None or float.
+            All three must be positive. If None, take the values from
+            ``metadata.Signal.Noise_properties.Variance_linear_model`` if
+            defined. Otherwise suppose poissonian noise i.e. ``gain_factor=1``,
+            ``gain_offset=0``, ``correlation_factor=1``. If not None, the
+            values are stored in
+            ``metadata.Signal.Noise_properties.Variance_linear_model``.
 
         """
-        gain_factor = 1
-        gain_offset = 0
-        correlation_factor = 1
-        if not self.metadata.has_item("Variance_estimation"):
-            print("No Variance estimation parameters found in mapped "
-                  "parameters. The variance will be estimated supposing"
-                  " perfect poissonian noise")
+        if expected_value is None:
+            dc = self.data.copy()
+        else:
+            dc = expected_value.data.copy()
         if self.metadata.has_item(
-                'Variance_estimation.gain_factor'):
-            gain_factor = self.metadata.\
-                Variance_estimation.gain_factor
-        if self.metadata.has_item(
-                'Variance_estimation.gain_offset'):
-            gain_offset = self.metadata.Variance_estimation.\
-                gain_offset
-        if self.metadata.has_item(
-                'Variance_estimation.correlation_factor'):
-            correlation_factor = \
-                self.metadata.Variance_estimation.\
-                correlation_factor
-        print "Gain factor = ", gain_factor
-        print "Gain offset = ", gain_offset
-        print "Correlation factor = ", correlation_factor
-        if dc is None:
-            dc = self.data
-        self.variance = dc * gain_factor + gain_offset
-        if self.variance.min() < 0:
-            if gain_offset == 0 and gaussian_noise_var is None:
-                raise ValueError("The variance estimation results"
-                                 "in negative values"
-                                 "Maybe the gain_offset is wrong?")
-                self.variance = None
-                return
-            elif gaussian_noise_var is None:
-                print "Clipping the variance to the gain_offset value"
-                minimum = 0 if gain_offset < 0 else gain_offset
-                self.variance = np.clip(self.variance, minimum,
-                                        np.Inf)
-            else:
-                print "Clipping the variance to the gaussian_noise_var"
-                self.variance = np.clip(self.variance,
-                                        gaussian_noise_var,
-                                        np.Inf)
+                "Signal.Noise_properties.Variance_linear_model"):
+            vlm = self.metadata.Signal.Noise_properties.Variance_linear_model
+        else:
+            self.metadata.add_node(
+                "Signal.Noise_properties.Variance_linear_model")
+            vlm = self.metadata.Signal.Noise_properties.Variance_linear_model
+
+        if gain_factor is None:
+            if not vlm.has_item("gain_factor"):
+                vlm.gain_factor = 1
+            gain_factor = vlm.gain_factor
+
+        if gain_offset is None:
+            if not vlm.has_item("gain_offset"):
+                vlm.gain_offset = 0
+            gain_offset = vlm.gain_offset
+
+        if correlation_factor is None:
+            if not vlm.has_item("correlation_factor"):
+                vlm.correlation_factor = 1
+            correlation_factor = vlm.correlation_factor
+
+        if gain_offset < 0:
+            raise ValueError("`gain_offset` must be positive.")
+        if gain_factor < 0:
+            raise ValueError("`gain_factor` must be positive.")
+        if correlation_factor < 0:
+            raise ValueError("`correlation_factor` must be positive.")
+
+        variance = (dc * gain_factor + gain_offset) * correlation_factor
+        # The lower bound of the variance is the gaussian noise.
+        variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
+        variance = type(self)(variance,
+                              axes=self.axes_manager._get_axes_dicts())
+        variance.metadata.General.title = ("Variance of " +
+                                           self.metadata.General.title)
+        self.metadata.set_item(
+            "Signal.Noise_properties.variance", variance)
 
     def get_current_signal(self, auto_title=True, auto_filename=True):
         """Returns the data at the current coordinates as a Signal subclass.
@@ -4077,8 +4143,8 @@ class Signal(MVA,
             cs.tmp_parameters.extension = self.tmp_parameters.extension
             cs.tmp_parameters.folder = self.tmp_parameters.folder
         if auto_title is True:
-            cs.metadata.title = (cs.metadata.title +
-                                 ' ' + str(self.axes_manager.indices))
+            cs.metadata.General.title = (cs.metadata.General.title +
+                                         ' ' + str(self.axes_manager.indices))
         cs.axes_manager._set_axis_attribute_values("navigate", False)
         return cs
 
@@ -4142,7 +4208,7 @@ class Signal(MVA,
         """
         # Roll the spectral axis to-be to the latex index in the array
         sp = self.rollaxis(spectral_axis, -1 + 3j)
-        sp.metadata.record_by = "spectrum"
+        sp.metadata.Signal.record_by = "spectrum"
         sp._assign_subclass()
         return sp
 
@@ -4183,7 +4249,7 @@ class Signal(MVA,
         iaxes = [axis.index_in_array for axis in axes]
         im = self.rollaxis(iaxes[0] + 3j, -1 + 3j).rollaxis(
             iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
-        im.metadata.record_by = "image"
+        im.metadata.Signal.record_by = "image"
         im._assign_subclass()
         return im
 
@@ -4191,11 +4257,11 @@ class Signal(MVA,
         mp = self.metadata
         current_class = self.__class__
         self.__class__ = hyperspy.io.assign_signal_subclass(
-            record_by=mp.record_by if "record_by" in mp
+            record_by=mp.Signal.record_by if "Signal.record_by" in mp
             else self._record_by,
-            signal_type=mp.signal_type if "signal_type" in mp
+            signal_type=mp.Signal.signal_type if "signal_type" in mp.Signal
             else self._signal_type,
-            signal_origin=mp.signal_origin if "signal_origin" in mp
+            signal_origin=mp.Signal.signal_origin if "Signal.signal_origin" in mp.Signal
             else self._signal_origin)
         self.__init__(**self._to_dictionary())
 
@@ -4225,7 +4291,7 @@ class Signal(MVA,
             type.
 
         """
-        self.metadata.signal_type = signal_type
+        self.metadata.Signal.signal_type = signal_type
         self._assign_subclass()
 
     def set_signal_origin(self, origin):
@@ -4252,7 +4318,7 @@ class Signal(MVA,
             raise ValueError("`origin` must be one of: experiment, simulation")
         if origin is None:
             origin = ""
-        self.metadata.signal_origin = origin
+        self.metadata.Signal.signal_origin = origin
         self._assign_subclass()
 
     def print_summary_statistics(self, formatter="%.3f"):

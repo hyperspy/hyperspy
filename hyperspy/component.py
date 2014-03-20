@@ -388,7 +388,7 @@ class Parameter(object):
 
         s = Signal(data=self.map[field],
                    axes=self._axes_manager._get_navigation_axes_dicts())
-        s.metadata.title = self.name
+        s.metadata.General.title = self.name
         for axis in s.axes_manager._axes:
             axis.navigate = False
         if self._number_of_elements > 1:
@@ -679,6 +679,8 @@ class Component(object):
             self.model.axes_manager = axes_manager
             self.charge()
         s = self.__call__()
+        if self.model.spectrum.metadata.Signal.binned is True:
+            s *= self.model.spectrum.axes_manager.signal_axes[0].scale
         if old_axes_manager is not None:
             self.model.axes_manager = old_axes_manager
             self.charge()
