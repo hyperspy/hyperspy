@@ -195,6 +195,36 @@ class Test3D_Navigate_0_and_1:
         assert_equal(s.axes_manager.signal_axes[0].scale,
                      self.signal.axes_manager.signal_axes[0].scale)
 
+    def test_signal_indexer_slice_variance_signal(self):
+        s1 = self.signal
+        s1.estimate_poissonian_noise_variance()
+        s1_1 = s1.isig[1:2]
+        assert_true((s1.metadata.Signal.Noise_properties.variance.data[
+                    :, :, 1:2] == s1_1.metadata.Signal.Noise_properties.variance.data).all())
+
+    def test_navigation_indexer_slice_variance_signal(self):
+        s1 = self.signal
+        s1.estimate_poissonian_noise_variance()
+        s1_1 = s1.inav[1:2]
+        assert_true((s1.metadata.Signal.Noise_properties.variance.data[
+                    :, 1:2] == s1_1.metadata.Signal.Noise_properties.variance.data).all())
+
+    def test_signal_indexer_slice_variance_float(self):
+        s1 = self.signal
+        s1.metadata.set_item("Signal.Noise_properties.variance", 1.2)
+        s1_1 = s1.isig[1:2]
+        assert_equal(
+            s1.metadata.Signal.Noise_properties.variance,
+            s1_1.metadata.Signal.Noise_properties.variance)
+
+    def test_navigation_indexer_slice_variance_float(self):
+        s1 = self.signal
+        s1.metadata.set_item("Signal.Noise_properties.variance", 1.2)
+        s1_1 = s1.inav[1:2]
+        assert_equal(
+            s1.metadata.Signal.Noise_properties.variance,
+            s1_1.metadata.Signal.Noise_properties.variance)
+
     def test_dimension_when_indexing(self):
         s = self.signal[0]
         assert_equal(s.data.shape, self.data[:, 0, :].shape)
