@@ -664,10 +664,7 @@ class Signal1DTools(object):
         area.
 
         The energy range can either be selected through a GUI or the command
-        line.  When `signal_range` is "interactive" the operation is performed
-        in-place, i.e. the original spectrum is replaced. Otherwise the
-        operation is performed not-in-place, i.e. a new object is returned with
-        the result of the integration.
+        line.
 
         Parameters
         ----------
@@ -680,7 +677,7 @@ class Signal1DTools(object):
 
         Returns
         -------
-        integrated_spectrum : {Signal subclass, None}
+        integrated_spectrum : Signal subclass
 
         See Also
         --------
@@ -689,11 +686,11 @@ class Signal1DTools(object):
         Examples
         --------
 
-        Using the GUI (in-place operation).
+        Using the GUI
 
         >>> s.integrate_in_range()
 
-        Using the CLI (not-in-place operation).
+        Using the CLI
 
         >>> s_int = s.integrate_in_range(signal_range=(560,None))
 
@@ -710,13 +707,14 @@ class Signal1DTools(object):
         """
 
         if signal_range == 'interactive':
-            ia = IntegrateArea(self, signal_range)
+            self_copy = self.deepcopy()
+            ia = IntegrateArea(self_copy, signal_range)
             ia.edit_traits()
-            integrated_spectrum = None
+            integrated_spectrum = self_copy
         else:
             integrated_spectrum = self._integrate_in_range_commandline(
                 signal_range)
-        return(integrated_spectrum)
+        return integrated_spectrum
 
     def _integrate_in_range_commandline(self, signal_range):
         e1 = signal_range[0]

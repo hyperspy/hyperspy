@@ -848,11 +848,12 @@ class IntegrateArea(SpanSelectorInSpectrum):
         )
         # Replaces the original signal inplace with the new integrated spectrum
         plot = False
-        if self.signal._plot:
+        if self.signal._plot and integrated_spectrum.axes_manager.shape != ():
             self.signal._plot.close()
             plot = True
         self.signal.__init__(**integrated_spectrum._to_dictionary())
         self.signal._assign_subclass()
         self.signal.axes_manager.set_signal_dimension(0)
+
         if plot is True:
             self.signal.plot()

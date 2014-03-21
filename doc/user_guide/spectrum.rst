@@ -48,8 +48,7 @@ Integration
 
 The :py:meth:`~.signal.Signal1DTools.integrate_in_range` method provides a GUI
 and a CLI to integrate the 1D signal dimension in a given range using the
-Simpson's rule. The GUI operates in-place while the CLI opearation is
-not-in-place. 
+Simpson's rule.
 
 Data smoothing
 ^^^^^^^^^^^^^^
