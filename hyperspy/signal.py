@@ -664,7 +664,7 @@ class Signal1DTools(object):
         area.
 
         The energy range can either be selected through a GUI or the command
-        line. 
+        line.
 
         Parameters
         ----------
@@ -708,7 +708,7 @@ class Signal1DTools(object):
 
         if signal_range == 'interactive':
             self_copy = self.deepcopy()
-            ia = IntegrateArea(self_copy , signal_range)
+            ia = IntegrateArea(self_copy, signal_range)
             ia.edit_traits()
             integrated_spectrum = self_copy
         else:
