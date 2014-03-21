@@ -293,7 +293,7 @@ legended line, a spectrum can be toggled on and off.
      >>> for sigma in range(1, 10):
      ...         g.sigma.value = sigma
      ...         gs = m.as_signal()
-     ...         gs.metadata.title = "sigma=%i" % sigma
+     ...         gs.metadata.General.title = "sigma=%i" % sigma
      ...         gaussians.append(gs)
      ...         
      >>> utils.plot.plot_spectra(gaussians,legend='auto')

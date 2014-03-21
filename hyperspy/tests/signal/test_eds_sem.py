@@ -87,14 +87,21 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.SEM.beam_energy = 0.4
         s.set_lines((), only_one=False, only_lines=False)
         assert_equal(s.metadata.Sample.xray_lines, ['Ti_Ll'])
-#        s.add_lines()
-#        results.append(mp.Sample.xray_lines[1])
-#        mp.Acquisition_instrument.SEM.beam_energy = 10.0
-#        s.set_elements(['Al','Ni'])
-#        results.append(mp.Sample.xray_lines[1])
-#        s.add_elements(['Fe'])
-#        results.append(mp.Sample.xray_lines[1])
-#        assert_equal(results, ['Al_Ka','Ni','Ni_Ka','Ni_La','Fe_La'])
+
+    def test_add_lines_auto(self):
+        s = self.signal
+        s.axes_manager.signal_axes[0].scale = 1e-2
+        s.set_elements(["Ti", "Al"])
+        s.set_lines(['Al_Ka'])
+        assert_equal(s.metadata.Sample.xray_lines, ['Al_Ka', 'Ti_Ka'])
+
+        del s.metadata.Sample.xray_lines
+        s.set_elements(['Al', 'Ni'])
+        s.add_lines()
+        assert_equal(s.metadata.Sample.xray_lines, ['Al_Ka', 'Ni_Ka'])
+        s.metadata.Acquisition_instrument.SEM.beam_energy = 10.0
+        s.set_lines([])
+        assert_equal(s.metadata.Sample.xray_lines, ['Al_Ka', 'Ni_La'])
 
     def test_default_param(self):
         s = self.signal

@@ -252,7 +252,10 @@ def hdfgroup2signaldict(group):
                 if "Detector" not in exp["metadata"]["Acquisition_instrument"]["TEM"]:
                     exp["metadata"]["Acquisition_instrument"][
                         "TEM"]["Detector"] = {}
-                exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = \
+                if "EDS" not in exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"]:
+                    exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["Detector"]["EDS"] = {}
+                exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"]["EDS"] = \
                     exp["metadata"]["Acquisition_instrument"]["TEM"]["EDS"]
                 del exp["metadata"]["Acquisition_instrument"]["TEM"]["EDS"]
 
@@ -266,7 +269,10 @@ def hdfgroup2signaldict(group):
                 if "Detector" not in exp["metadata"]["Acquisition_instrument"]["SEM"]:
                     exp["metadata"]["Acquisition_instrument"][
                         "SEM"]["Detector"] = {}
-                exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"] = \
+                if "EDS" not in exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"]:
+                    exp["metadata"]["Acquisition_instrument"][
+                        "SEM"]["Detector"]["EDS"] = {}
+                exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"]["EDS"] = \
                     exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
                 del exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
 

@@ -6,6 +6,12 @@ model from a linear combinantion of predefined components and can use multiple
 optimisation algorithms to fit the model to experimental data. It supports
 bounds and weights.
 
+.. versionadded:: 0.7
+   
+    Before creating a model verify that the ``Signal.binned`` metadata
+    attribute of the signal is set to the correct value because the resulting
+    model depends on this parameter. See :ref:`signal.binned` for more details.
+
 Creating a model
 ^^^^^^^^^^^^^^^^
 
@@ -330,17 +336,151 @@ Fitting the model to the data
 
 To fit the model to the data at the current coordinates (e.g. to fit one
 spectrum at a particular point in a spectrum-image) use
-:py:meth:`~.optimizers.Optimizers.fit`.
+:py:meth:`~.model.Model.fit`.
+
+The following table summarizes the features of the currently available
+optimizers:
+
+
+.. table:: Features of curve fitting optimizers.
+
+    +-----------+--------+------------------+-----------------------------------+
+    | Optimizer | Bounds | Error estimation | Method                            |
+    +===========+========+==================+===================================+
+    | "leastsq" |  No    | Yes              | least squares                     |
+    +-----------+--------+------------------+-----------------------------------+
+    | "mpfit"   |  Yes   | Yes              | least squares                     |
+    +-----------+--------+------------------+-----------------------------------+
+    | "odr"     |  No    | Yes              | least squares                     |
+    +-----------+--------+------------------+-----------------------------------+
+    |  "fmin"   |  No    | No               | least squares, maximum likelihood |
+    +-----------+--------+------------------+-----------------------------------+
+
+The following example shows how to perfom least squares with error estimation.
+
+First we create data consisting of a line line ``y = a*x + b`` with ``a = 1``
+and ``b = 100`` and we add white noise to it:
 
 .. code-block:: python
-    
-    >>> m.fit() # Fit the data at the current coordinates
-        
+
+    >>> s = signals.SpectrumSimulation(
+    ...     np.arange(100, 300))
+    >>> s.add_gaussian_noise(std=100)
+
+To fit it we create a model consisting of a
+:class:`~._components.polynomial.Polynomial` component of order 1 and fit it
+to the data.
+
+.. code-block:: python
+
+    >>> m = create_model(s)
+    >>> line  = components.Polynomial(order=1)
+    >>> m.append(line)
+    >>> m.fit()
+
+On fitting completion, the optimized value of the parameters and their estimated standard deviation
+are stored in the following line attributes:
+
+.. code-block:: python
+
+    >>> line.coefficients.value
+    (0.99246156488437653, 103.67507406125888)
+    >>> line.coefficients.std
+    (0.11771053738516088, 13.541061301257537)
+
+
+
+When the noise is heterocedastic, only if the
+``metadata.Signal.Noise_properties.variance`` attribute of the
+:class:`~._signals.spectrum.Spectrum` instance is defined can the errors be
+estimated accurately. If the variance is not defined, the standard deviation of
+the parameters are still computed and stored in the
+:attr:`~.component.Parameter.std` attribute by setting variance equal 1.
+However, the value won't be correct unless an accurate value of the variance is
+defined in ``metadata.Signal.Noise_properties.variance``. See
+:ref:`signal.noise_properties` for more information.
+
+In the following example, we add poissonian noise to the data instead of
+gaussian noise and proceed to fit as in the previous example.
+
+.. code-block:: python
+
+    >>> s = signals.SpectrumSimulation(
+    ...     np.arange(300))
+    >>> s.add_poissonian_noise()
+    >>> m = create_model(s)
+    >>> line  = components.Polynomial(order=1)
+    >>> m.append(line)
+    >>> m.fit()
+    >>> line.coefficients.value
+    (1.0052331707848698, -1.0723588390873573)
+    >>> line.coefficients.std
+    (0.0081710549764721901, 1.4117294994070277)
+
+Because the noise is heterocedastic, the least squares optimizer estimation is
+biased. A more accurate result can be obtained by using weighted least squares
+instead that, although still biased for poissonian noise, is a good 
+approximation in most cases.
+
+.. code-block:: python
+
+   >>> s.estimate_poissonian_noise_variance(expected_value=signals.Spectrum(np.arange(300)))
+   >>> m.fit()
+   >>> line.coefficients.value
+   (1.0004224896604759, -0.46982916592391377)
+   >>> line.coefficients.std
+   (0.0055752036447948173, 0.46950832982673557)
+
+
+We can use poissonian maximum likelihood estimation
+instead that is an unbiased estimator for poissonian noise.
+
+.. code-block:: python
+
+   >>> m.fit(fitter="fmin", method="ml")
+   >>> line.coefficients.value
+   (1.0030718094185611, -0.63590210946134107)
+
+Problems of ill-conditioning and divergence can be ameliorated by using bounded
+optimization. Currently, only the "mpfit" optimizer supports bounds. In the
+following example a gaussian histogram is fitted using a
+:class:`~._components.gaussian.Gaussian` component using mpfit and bounds on
+the ``centre`` parameter.
+
+.. code-block:: python
+
+    >>> s = signals.Signal(np.random.normal(loc=10, scale=0.01,
+    size=1e5)).get_histogram()
+    >>> s.metadata.Signal.binned = True
+    >>> m = create_model(s)
+    >>> g1 = components.Gaussian()
+    >>> m.append(g1)
+    >>> g1.centre.value = 7
+    >>> g1.centre.bmin = 7
+    >>> g1.centre.bmax = 14
+    >>> g1.centre.bounded = True
+    >>> m.fit(fitter="mpfit", bounded=True)
+    >>> m.print_current_values()
+    Components  Parameter   Value
+    Gaussian
+            sigma   0.00996345
+            A   99918.7
+            centre  9.99976
+
+
+
 .. versionadded:: 0.7
 
-In addition, it is possible to fit a given component  independently using the
-:py:meth:`~.model.Model.fit_component` method, that is specially useful to ease
-setting starting parameters.
+    The chi-squared, reduced chi-squared and the degrees of freedom are
+    computed automatically when fitting. They are stored as signals, in the
+    :attr:`~.model.Model.chisq`, :attr:`~.model.Model.red_chisq`  and
+    :attr:`~.model.Model.dof` attributes of the model respectively. Note that,
+    unless ``metadata.Signal.Noise_properties.variance`` contains an accurate
+    estimation of the variance of the data, the chi-squared and reduced
+    chi-squared cannot be computed correctly. This is also true for
+    homocedastic noise. 
+        
+
 
 Visualizing the model
 ^^^^^^^^^^^^^^^^^^^^^
@@ -365,22 +505,35 @@ is possible to display the individual components by calling
 To disable this feature call :py:meth:`~.model.Model.disable_plot_components`.
 
     
-Setting the position of parameter interactively
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Setting the initial parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Non-linear regression often requires setting sensible starting 
+parameters. This can be done by plotting the model and adjusting the parameters
+by hand. 
+
+.. versionadded:: 0.7
+
+    In addition, it is possible to fit a given component  independently using
+    the :py:meth:`~.model.Model.fit_component` method.
+
+    
+
 .. versionadded:: 0.6
 
-:py:meth:`~.model.Model.enable_adjust_position` provides an interactive way of
-setting the position of the components with a well define position.
-:py:meth:`~.model.Model.disable_adjust_position` disables the tool. This
-feature will be made from user friendly but adding a button to the UI to
-enable/disable it.
-    
-.. figure::  images/model_adjust_position.png
-   :align:   center
-   :width:   500    
+    Also, :py:meth:`~.model.Model.enable_adjust_position` provides an
+    interactive way of setting the position of the components with a well
+    define position.  :py:meth:`~.model.Model.disable_adjust_position` disables
+    the tool. 
 
-   Adjust the position of the components interactively by dragging the 
-   vertical lines.
+
+    .. figure::  images/model_adjust_position.png
+        :align:   center
+        :width:   500    
+
+        Interactive component position adjustment tool.Drag the vertical lines
+        to set the initial value of the position parameter. 
+
 
 
 Exclude data from the fitting process
@@ -393,11 +546,11 @@ undesired spectral channels from the fitting process:
 * :py:meth:`~.model.Model.remove_signal_range`
 * :py:meth:`~.model.Model.reset_signal_range`
 
-Working with multidimensional datasets
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Fitting multidimensional datasets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To fit the model to the full datataset use :py:meth:`~.model.Model.multifit`, 
-e.g.:
+To fit the model to all the elements of a multidimensional datataset use
+:py:meth:`~.model.Model.multifit`, e.g.:
     
 .. code-block:: python
 
@@ -421,6 +574,7 @@ The :py:class:`~.model.Model` :py:meth:`~.model.Model.plot_results`,
 :py:class:`~.component.Parameter` :py:meth:`~.component.Parameter.plot` methods
 can be used to visualise the result of the fit **when fitting multidimensional
 datasets**.
+
 
 
 Saving and loading the result of the fit

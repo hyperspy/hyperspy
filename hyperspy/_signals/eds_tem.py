@@ -120,7 +120,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                 "Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa",
                 energy_resolution_MnKa)
 
-        self._set_microscope_parameters()
+        self._are_microscope_parameters_missing()
 
     @only_interactive
     def _set_microscope_parameters(self):

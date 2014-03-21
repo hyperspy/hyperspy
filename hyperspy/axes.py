@@ -299,6 +299,31 @@ class DataAxis(t.HasTraits):
         else:
             return offset, scale
 
+    def value_range_to_indices(self, v1, v2):
+        """Convert the given range to index range.
+
+        When an out of the axis limits, the endpoint is used instead.
+
+        Parameters
+        ----------
+        v1, v2 : float
+            The end points of the interval in the axis units. v2 must be
+            greater than v1.
+
+        """
+        if v1 > v2:
+            raise ValueError("v2 must be greater than v1.")
+
+        if v1 is not None and v1 > self.low_value and v1 <= self.high_value:
+            i1 = self.value2index(v1)
+        else:
+            i1 = 0
+        if v2 is not None and v2 < self.high_value and v2 >= self.low_value:
+            i2 = self.value2index(v2)
+        else:
+            i2 = self.size - 1
+        return i1, i2
+
 
 class AxesManager(t.HasTraits):
 
