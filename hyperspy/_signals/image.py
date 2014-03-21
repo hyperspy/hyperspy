@@ -40,7 +40,7 @@ class Image(Signal):
 
         """
         return self.as_spectrum(0 + 3j)
-        
+
     def plot_orthoview_animated(image):
         """
         Plot an orthogonal view of a 3D images
@@ -49,13 +49,13 @@ class Image(Signal):
         ---------
 
         image: signals.Image
-            An image in 3D.
+            An 3D image.
 
-        isotropic_voxel:
-            If True, generate a new image, scaling z in order to obtain isotropic
-            voxel.
         """
-        
+        if len(image.axes_manager.shape) != 3:
+            raise ValueError(
+                "Image must have 3 dimension.")
+
         im_xy = image.deepcopy()
         im_xy.metadata.General.title = 'xy'
         im_xy.axes_manager.set_signal_dimension(0)
