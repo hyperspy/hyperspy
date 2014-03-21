@@ -41,7 +41,7 @@ class Image(Signal):
         """
         return self.as_spectrum(0 + 3j)
 
-    def plot_orthoview_animated(image):
+    def plot_orthoview(image):
         """
         Plot an orthogonal view of a 3D images
 
