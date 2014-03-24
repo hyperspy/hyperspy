@@ -36,12 +36,14 @@ from scipy.optimize import (leastsq,
 from traits.trait_errors import TraitError
 import traits.api as t
 
+from hyperspy import components
 from hyperspy import messages
 from hyperspy.signal import Signal
 import hyperspy.drawing.spectrum
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.misc import progressbar
+from hyperspy.signal import Signal
 from hyperspy._signals.eels import EELSSpectrum, Spectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
@@ -81,7 +83,7 @@ class Model(list):
     Attributes
     ----------
 
-    spectrum : Spectrum instance
+    spectrum : Spectrum instance or a dictionary of model
         It contains the data to fit.
     chisq : A Signal of floats
         Chi-squared of the signal (or np.nan if not yet fit)
@@ -180,23 +182,84 @@ class Model(list):
 
     _firstimetouch = True
 
+    def __init__(self, spectrum, **kwds):
+
+        self._plot = None
+        if isinstance(spectrum, dict):
+            self._load_dictionary(spectrum)
+        else:
+            kwds['spectrum'] = spectrum
+            self._load_dictionary(kwds)
+
+    def _load_dictionary(self, dic):
+        """Load data from dictionary.
+
+        Parameters
+        ----------
+        dic : dictionary
+            A dictionary containing at least a 'spectrum' keyword with either
+            a spectrum itself, or a dictionary created with spectrum._to_dictionary()
+            Additionally the dictionary can containt the following items:
+            spectrum : Signal type or dictionary
+                Either a signal itself, or a dictionary created from one
+            axes_manager : dictionary (optional)
+                Dictionary to define the axes (see the
+                documentation of the AxesManager class for more details).
+            free_parameters_boundaries : list (optional)
+                A list of free parameters boundaries
+            low_loss : (optional)
+            convolved : boolean (optional)
+            components : dictionary (optional)
+                Dictionary, with information about components of the model
+                (see the documentation of component.to_dictionary() method)
+        """
+
+        if isinstance(dic['spectrum'], dict):
+            self.spectrum = Spectrum(**dic['spectrum'])
+        else:
+            self.spectrum = dic['spectrum']
+
+        self.axes_manager = self.spectrum.axes_manager
+        self.axis = self.axes_manager.signal_axes[0]
+        self.axes_manager.connect(self.fetch_stored_values)
+        self.channel_switches = np.array([True] * len(self.axis.axis))
+
+        if 'free_parameters_boundaries' in dic:
+            self.free_parameters_boundaries = copy.deepcopy(dic['free_parameters_boundaries'])
+        else:
+            self.free_parameters_boundaries = None
+
+        if 'low_loss' in dic:
+            if dic['low_loss'] is not None:
+                self._low_loss = Signal(**dic['low_loss'])
+            else:
+                self._low_loss = None
+        else:
+            self._low_loss = None
+
+        if 'convolved' in dic:
+            self.convolved = dic['convolved']
+        else:
+            self.convolved = False
+
+        if 'components' in dic:
+            while len(self) != 0:
+                self.remove(self[0])
+            id_dict = {}
+
+            for c in dic['components']:
+                self.append(getattr(components, c['_id_name'])())
+                id_dict.update(self[-1]._load_dictionary(c))
+            # deal with twins:
+            for c in dic['components']:
+                for p in c['parameters']:
+                    for t in p['_twins']:
+                        id_dict[t].twin = id_dict[p['id']]
+
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
         # raise an exception when using windows.connect
         return id(self)
-
-    def __init__(self, spectrum):
-        self.convolved = False
-        self.spectrum = spectrum
-        self.axes_manager = self.spectrum.axes_manager
-        self.axis = self.axes_manager.signal_axes[0]
-        self.axes_manager.connect(self.fetch_stored_values)
-
-        self.free_parameters_boundaries = None
-        self.channel_switches = np.array([True] * len(self.axis.axis))
-        self._low_loss = None
-        self._position_widgets = []
-        self._plot = None
 
         self.chisq = spectrum._get_navigation_signal()
         self.chisq.change_dtype("float")
@@ -1740,6 +1803,48 @@ class Model(list):
                     else:
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
+
+    def as_dictionary(self, indices = None):
+        """Returns a dictionary of the model, including full Signal dictionary,
+        all components and all values of their components, and twin functions.
+
+        Parameters
+        ----------
+        indices : tuple
+            A tuple of indices to return a particular point of a model
+        Returns
+        -------
+        dictionary : a complete dictionary of the model
+
+        Examples
+        --------
+        >>> s = signals.Spectrum(np.random.random((10,100)))
+        >>> m = create_model(s)
+        >>> l1 = components.Lorentzian()
+        >>> l2 = components.Lorentzian()
+        >>> m.append(l1)
+        >>> m.append(l2)
+        >>> dict = m.as_dictionary()
+        >>> m2 = create_model(dict)
+
+        """
+        dic = {}
+        if indices is not None:
+            dic['spectrum'] = self.spectrum.inav[indices]._to_dictionary()
+            if self._low_loss is not None:
+                dic['low_loss'] = self._low_loss.inav[indices]._to_dictionary()
+            else:
+                dic['low_loss'] = self._low_loss
+        else:
+            dic['spectrum'] = self.spectrum._to_dictionary()
+            if self._low_loss is not None:
+                dic['low_loss'] = self._low_loss._to_dictionary()
+            else:
+                dic['low_loss'] = self._low_loss
+        dic['components'] = [c.as_dictionary(indices) for c in self]
+        dic['free_parameters_boundaries'] = copy.deepcopy(self.free_parameters_boundaries)
+        dic['convolved'] = self.convolved
+        return dic
 
     def __getitem__(self, value, not_components=False, isNavigation=None):
         """x.__getitem__(y) <==> x[y]"""
