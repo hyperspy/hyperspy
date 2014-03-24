@@ -131,6 +131,7 @@ class EELSCLEdge(Component):
         self.intensity.value = 1
         self.intensity.bmin = 0.
         self.intensity.bmax = None
+        self._init_par['name']
 
     # Automatically fix the fine structure when the fine structure is
     # disable.

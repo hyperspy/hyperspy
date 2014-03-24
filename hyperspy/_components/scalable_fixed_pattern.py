@@ -78,6 +78,7 @@ class ScalableFixedPattern(Component):
         self.isbackground = True
         self.convolved = False
         self.interpolate = True
+        self._init_par = ['spectrum']
 
     def prepare_interpolator(self, kind='linear', fill_value=0, **kwargs):
         """Prepare interpolation.
