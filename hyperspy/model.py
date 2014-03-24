@@ -1846,7 +1846,7 @@ class Model(list):
                 except TypeError:
                     tmp = []
                     for i in c._init_par:
-                        tmp.append(getattr(c,i))
+                        tmp.append(getattr(c, i))
                     _model.append(getattr(components, c._id_name)(*tmp))
             if isNavigation:
                 _model.dof.data = self.dof.data[array_slices[:-1]]
