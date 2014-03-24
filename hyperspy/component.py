@@ -880,10 +880,10 @@ class Component(object):
             from hyperspy.signal import Signal
             dic['_init_par'] = self._init_par
             for i in self._init_par:
-                if isinstance(getattr(self,i), Signal):
+                if isinstance(getattr(self, i), Signal):
                     dic[i] = getattr(self, i)._to_dictionary()
                 else:
-                    dic[i]=getattr(self,i)
+                    dic[i] = getattr(self, i)
         return dic
 
     def _load_dictionary(self, dic):
