@@ -37,7 +37,9 @@ from traits.trait_errors import TraitError
 import traits.api as t
 
 from hyperspy import messages
+from hyperspy.signal import Signal
 import hyperspy.drawing.spectrum
+from hyperspy.axes import AxesManager
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.misc import progressbar
 from hyperspy._signals.eels import EELSSpectrum, Spectrum
@@ -207,6 +209,9 @@ class Model(list):
                 dtype='int'))
         self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
             ' degrees of freedom'
+
+        self.inav = modelSpecialSlicers(self, True)
+        self.isig = modelSpecialSlicers(self, False)
 
     def __repr__(self):
         return "<Model %s>" % super(Model, self).__repr__()
@@ -1736,7 +1741,7 @@ class Model(list):
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
 
-    def __getitem__(self, value):
+    def __getitem__(self, value, not_components=False, isNavigation=None):
         """x.__getitem__(y) <==> x[y]"""
         if isinstance(value, str):
             component_list = []
@@ -1757,5 +1762,116 @@ class Model(list):
                 raise ValueError(
                     "Component name \"" + str(value) +
                     "\" not found in model")
-        else:
+        elif not not_components:
             return list.__getitem__(self, value)
+        else:
+            if isNavigation is None:
+                raise ValueError('has to be either navigation or signal slice')
+            slices = value
+            try:
+                len(slices)
+            except TypeError:
+                slices = (slices,)
+
+            if not isNavigation:
+                slices_new = ()
+                for s in slices:
+                    if not isinstance(s, slice):
+                        slices_new += (slice(s, s + 1, None),)
+                    else:
+                        slices_new += (s,)
+                slices = slices_new
+
+            _orig_slices = slices
+
+            # Create a deepcopy of self.spectrum that contains a view of
+            # self.spectrum.data
+            _spectrum = self.spectrum._deepcopy_with_new_data(
+                self.spectrum.data)
+
+            if isNavigation:
+                idx = [el.index_in_array for el in
+                       _spectrum.axes_manager.navigation_axes]
+            else:
+                idx = [el.index_in_array for el in
+                       _spectrum.axes_manager.signal_axes]
+
+            # Add support for Ellipsis
+            if Ellipsis in _orig_slices:
+                _orig_slices = list(_orig_slices)
+                # Expand the first Ellipsis
+                ellipsis_index = _orig_slices.index(Ellipsis)
+                _orig_slices.remove(Ellipsis)
+                _orig_slices = (_orig_slices[:ellipsis_index] +
+                                [slice(None), ] * max(0, len(idx) - len(_orig_slices)) +
+                                _orig_slices[ellipsis_index:])
+                # Replace all the following Ellipses by :
+                while Ellipsis in _orig_slices:
+                    _orig_slices[_orig_slices.index(Ellipsis)] = slice(None)
+                _orig_slices = tuple(_orig_slices)
+            if len(_orig_slices) > len(idx):
+                raise IndexError("too many indices")
+
+            slices = np.array([slice(None,)] *
+                              len(_spectrum.axes_manager._axes))
+
+            slices[idx] = _orig_slices + (slice(None),) * max(
+                0, len(idx) - len(_orig_slices))
+
+            array_slices = []
+            for slice_, axis in zip(slices, _spectrum.axes_manager._axes):
+                if (isinstance(slice_, slice) or
+                        len(_spectrum.axes_manager._axes) < 2):
+                    array_slices.append(axis._slice_me(slice_))
+                else:
+                    if isinstance(slice_, float):
+                        slice_ = axis.value2index(slice_)
+                    array_slices.append(slice_)
+                    _spectrum._remove_axis(axis.index_in_axes_manager)
+
+            _spectrum.data = _spectrum.data[array_slices]
+            if self.spectrum.metadata.has_item('Signal.Noise_properties.variance'):
+                if isinstance(self.spectrum.metadata.Signal.Noise_properties.variance, Signal):
+                    _spectrum.metadata.Signal.Noise_properties.variance = self.spectrum.metadata.Signal.Noise_properties.variance.__getitem__(
+                        _orig_slices,
+                        isNavigation)
+            _spectrum.get_dimensions_from_data()
+            from hyperspy.model import Model
+            from hyperspy import components
+            _model = Model(_spectrum)
+            # create components:
+            for c in self:
+                _model.append(getattr(components, c._id_name)())
+            if isNavigation:
+                _model.dof.data = self.dof.data[array_slices[:-1]]
+                _model.chisq.data = self.chisq.data[array_slices[:-1]]
+                for ic, c in enumerate(_model):
+                    for p_new, p_orig in zip(c.parameters, self[ic].parameters):
+                        p_new.map = p_orig.map[array_slices[:-1]]
+                        p_new.value = p_new.map['values'].ravel()[0]
+                    # if hasattr(c, '_important'):
+                    #    for i in c._important:
+                    #        if i['signal_like']:
+                    #            tmp  = getattr(_model[ic], i['name']).__getitem__(_orig_slices, isNavigation)
+                    #            getattr(c, i['name']) = tmp
+                    #        else:
+                    # getattr(c, i['name']) = getattr(_model[ic], i['name'])
+            else:
+                for ic, c in enumerate(_model):
+                    for p_new, p_orig in zip(c.parameters, self[ic].parameters):
+                        p_new.map = p_orig.map
+                        p_new.value = p_new.map['values'].ravel()[0]
+                _model.dof.data = self.dof.data
+                for index in _model.axes_manager:
+                    _model._calculate_chisq()
+            return _model
+
+
+class modelSpecialSlicers:
+
+    def __init__(self, model, isNavigation):
+        self.isNavigation = isNavigation
+        self.model = model
+
+    def __getitem__(self, slices):
+        return self.model.__getitem__(slices, True, self.isNavigation)
