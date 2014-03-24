@@ -1841,7 +1841,13 @@ class Model(list):
             _model = Model(_spectrum)
             # create components:
             for c in self:
-                _model.append(getattr(components, c._id_name)())
+                try:
+                    _model.append(getattr(components, c._id_name)())
+                except TypeError:
+                    tmp = []
+                    for i in c._init_par:
+                        tmp.append(getattr(c,i))
+                    _model.append(getattr(components, c._id_name)(*tmp))
             if isNavigation:
                 _model.dof.data = self.dof.data[array_slices[:-1]]
                 _model.chisq.data = self.chisq.data[array_slices[:-1]]
