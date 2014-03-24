@@ -505,6 +505,7 @@ class Component(object):
             parameter = Parameter()
             self.parameters.append(parameter)
             parameter.name = name
+            parameter._id_name = name
             setattr(self, name, parameter)
             if hasattr(self, 'grad_' + name):
                 parameter.grad = getattr(self, 'grad_' + name)
