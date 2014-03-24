@@ -249,7 +249,16 @@ class Model(list):
             id_dict = {}
 
             for c in dic['components']:
-                self.append(getattr(components, c['_id_name'])())
+                if '_init_par' in c:
+                    tmp = []
+                    for i in c['_init_par']:
+                        if i == 'spectrum':
+                            tmp.append(Spectrum(**c[i]))
+                        else:
+                            tmp.append(c[i])
+                    self.append(getattr(components, c['_id_name'])(*tmp))
+                else:
+                    self.append(getattr(components, c['_id_name'])())
                 id_dict.update(self[-1]._load_dictionary(c))
             # deal with twins:
             for c in dic['components']:

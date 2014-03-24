@@ -876,6 +876,14 @@ class Component(object):
         dic['name'] = self.name
         dic['_id_name'] = self._id_name
         dic['parameters'] = [p.as_dictionary(indices) for p in self.parameters]
+        if hasattr(self, '_init_par'):
+            from hyperspy.signal import Signal
+            dic['_init_par'] = self._init_par
+            for i in self._init_par:
+                if isinstance(getattr(self,i), Signal):
+                    dic[i] = getattr(self, i)._to_dictionary()
+                else:
+                    dic[i]=getattr(self,i)
         return dic
 
     def _load_dictionary(self, dic):

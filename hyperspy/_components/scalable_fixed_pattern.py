@@ -65,7 +65,6 @@ class ScalableFixedPattern(Component):
     def __init__(self, spectrum):
 
         Component.__init__(self, ['yscale', 'xscale', 'shift'])
-
         self._position = self.shift
         self.spectrum = spectrum
         self.yscale.free = True
