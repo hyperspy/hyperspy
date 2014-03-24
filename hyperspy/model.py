@@ -225,7 +225,8 @@ class Model(list):
         self.channel_switches = np.array([True] * len(self.axis.axis))
 
         if 'free_parameters_boundaries' in dic:
-            self.free_parameters_boundaries = copy.deepcopy(dic['free_parameters_boundaries'])
+            self.free_parameters_boundaries = copy.deepcopy(
+                dic['free_parameters_boundaries'])
         else:
             self.free_parameters_boundaries = None
 
@@ -1804,7 +1805,7 @@ class Model(list):
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
 
-    def as_dictionary(self, indices = None):
+    def as_dictionary(self, indices=None):
         """Returns a dictionary of the model, including full Signal dictionary,
         all components and all values of their components, and twin functions.
 
@@ -1842,7 +1843,8 @@ class Model(list):
             else:
                 dic['low_loss'] = self._low_loss
         dic['components'] = [c.as_dictionary(indices) for c in self]
-        dic['free_parameters_boundaries'] = copy.deepcopy(self.free_parameters_boundaries)
+        dic['free_parameters_boundaries'] = copy.deepcopy(
+            self.free_parameters_boundaries)
         dic['convolved'] = self.convolved
         return dic
 
