@@ -1758,7 +1758,6 @@ class Model(list):
             for p in c.parameters:
                 p.map = p.map.reshape(nav_shape)
 
-
     def fold(self):
         """If the model was previously unfolded, folds it back"""
         old_chisq_data = self.chisq.data.copy()
@@ -1778,7 +1777,6 @@ class Model(list):
         for c in self:
             for p in c.parameters:
                 p.map = p.map.reshape(nav_shape)
-
 
     def __getitem__(self, value):
         """x.__getitem__(y) <==> x[y]"""
@@ -1803,4 +1801,3 @@ class Model(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
-
