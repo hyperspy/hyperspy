@@ -26,6 +26,7 @@ class TestSignalFolding:
         self.s.unfold()
         nose.tools.assert_true("unfolded" in repr(self.s))
 
+
 class TestSignalVarianceFolding:
 
     def setUp(self):
@@ -44,4 +45,3 @@ class TestSignalVarianceFolding:
         s.unfold_signal_space()
         nose.tools.assert_equal(s.metadata.Signal.Noise_properties.variance.axes_manager.signal_shape,
                                 (self.s.axes_manager.signal_size,))
-
