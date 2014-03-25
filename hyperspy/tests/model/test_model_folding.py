@@ -28,7 +28,7 @@ class TestModelFolding:
 
     def setUp(self):
         g = Gaussian()
-        s = Spectrum(np.random.random((10,20,30)))
+        s = Spectrum(np.random.random((10, 20, 30)))
         m = create_model(s)
         m.append(g)
         self.model = m
@@ -53,4 +53,3 @@ class TestModelFolding:
         assert_true(m[0].sigma.map.shape == shape)
         assert_true(m.chisq.data.shape == shape)
         assert_true(m.dof.data.shape == shape)
-
