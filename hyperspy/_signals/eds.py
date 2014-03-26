@@ -35,6 +35,70 @@ class EDSSpectrum(Spectrum):
             print('The microscope type is not set. Use '
                   'set_signal_type(\'EDS_TEM\') or set_signal_type(\'EDS_SEM\')')
         self.metadata.Signal.binned = True
+        
+    def _get_line_energy(self, Xray_line, FWHM_MnKa=None):
+        """
+        Get the line energy and the energy resolution of a Xray line. 
+        
+        The return values are in the same units than the signal axis
+        
+        Parameters
+        ----------
+        
+        Xray_line : strings
+            Valid element X-ray lines e.g. Fe_Kb.
+            
+        FWHM_MnKa: {None, float, 'auto'}
+            The energy resolution of the detector in eV
+            if 'auto', used the one in 
+            'self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa'
+        
+        Returns
+        ------
+        
+        float: the line energy, if FWHM_MnKa is None
+        (float,float): the line energy and the energy resolution, if FWHM_MnKa is not None
+        """
+        
+        units_name = self.axes_manager.signal_axes[0].units
+        element, line = utils_eds._get_element_and_line(Xray_line)
+        
+        if FWHM_MnKa == 'auto':
+            if self.metadata.Signal.signal_type == 'EDS_SEM':
+                FWHM_MnKa = self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa
+            elif self.metadata.Signal.signal_type == 'EDS_TEM':
+                FWHM_MnKa = self.metadata.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa
+            else:
+                raise NotImplementedError(
+                    "This method only works for EDS_TEM or EDS_SEM signals. "
+                    "You can use `set_signal_type(\"EDS_TEM\")` or"
+                    "`set_signal_type(\"EDS_SEM\")` to convert to one of these"
+                    "signal types.")
+        
+        if units_name == 'eV':
+            line_energy = elements_db[element]['Atomic_properties']['Xray_lines'][
+                line]['energy (keV)'] * 1000
+            if FWHM_MnKa is not None:
+                line_FWHM = utils_eds.get_FWHM_at_Energy(FWHM_MnKa, 
+                                    line_energy / 1000) * 1000
+        elif units_name == 'keV':
+            line_energy = elements_db[element]['Atomic_properties']['Xray_lines'][
+                line]['energy (keV)']
+            if FWHM_MnKa is not None:
+                line_FWHM = utils_eds.get_FWHM_at_Energy(FWHM_MnKa, 
+                                    line_energy)
+        else:
+            raise ValueError(
+                        "%s is not a valid units for the energy axis. "
+                        "Only `eV` and `keV` are supported. "
+                        "If `s` is the variable containing this EDS spectrum:\n "
+                        ">>> s.axes_manager.signal_axes[0].units = \'keV\' \n"
+                         % (units_name))
+        if FWHM_MnKa is None:                 
+            return line_energy
+        else:
+            return line_energy, line_FWHM       
+
 
     def sum(self, axis):
         """Sum the data over the given axis.
@@ -149,7 +213,7 @@ class EDSSpectrum(Spectrum):
         if not isiterable(elements) or isinstance(elements, basestring):
             raise ValueError(
                 "Input must be in the form of a list. For example, "
-                "if `s` is the variable containing this EELS spectrum:\n "
+                "if `s` is the variable containing this EDS spectrum:\n "
                 ">>> s.add_elements(('C',))\n"
                 "See the docstring for more information.")
         if "Sample.elements" in self.metadata:
@@ -434,24 +498,13 @@ class EDSSpectrum(Spectrum):
                 raise ValueError(
                     "Not X-ray line, set them with `add_elements`")
 
-        if self.metadata.Signal.signal_type == 'EDS_SEM':
-            FWHM_MnKa = self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa
-        elif self.metadata.Signal.signal_type == 'EDS_TEM':
-            FWHM_MnKa = self.metadata.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa
-        else:
-            raise NotImplementedError(
-                "This method only works for EDS_TEM or EDS_SEM signals. "
-                "You can use `set_signal_type(\"EDS_TEM\")` or"
-                "`set_signal_type(\"EDS_SEM\")` to convert to one of these"
-                "signal types.")
+
         intensities = []
         # test 1D Spectrum (0D problem)
             #signal_to_index = self.axes_manager.navigation_dimension - 2
-        for Xray_line in xray_lines:
-            element, line = utils_eds._get_element_and_line(Xray_line)
-            line_energy = elements_db[element]['Atomic_properties']['Xray_lines'][
-                line]['energy (keV)']
-            line_FWHM = utils_eds.get_FWHM_at_Energy(FWHM_MnKa, line_energy)
+        for Xray_line in xray_lines:           
+            line_energy, line_FWHM = self._get_line_energy(Xray_line,
+                FWHM_MnKa='auto')
             det = integration_window_factor * line_FWHM / 2.
             img = self[..., line_energy - det:line_energy + det
                        ].integrate1D(-1)
