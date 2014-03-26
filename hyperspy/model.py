@@ -1365,22 +1365,22 @@ class Model(list):
                 np.arange(
                     self.spectrum.axes_manager.navigation_size),
                 parallel)
-            pass_slices = [(l[0], l[-1]+1) for l in cuts]
-            models = [self.inav[l[0]:l[-1]+1].as_dictionary() for l in cuts]
+            pass_slices = [(l[0], l[-1] + 1) for l in cuts]
+            models = [self.inav[l[0]:l[-1] + 1].as_dictionary() for l in cuts]
             res = []
             for i in xrange(parallel):
                 if i < num:
-                    res.append( ipyth.apply_async(
+                    res.append(ipyth.apply_async(
                         multifit_kernel,
                         models[i],
                         pass_slices[i],
                         kwargs))
                 else:
-                    res.append( multip.apply_async(
+                    res.append(multip.apply_async(
                         multifit_kernel,
                         [models[i],
-                        pass_slices[i],
-                        kwargs,]))
+                         pass_slices[i],
+                         kwargs, ]))
 
             # gather the results back
             results = []
@@ -1390,7 +1390,8 @@ class Model(list):
                 slices = r[0]
                 model_dict = r[1]
                 tm = self.inav[slices[0]:slices[1]]
-                self.chisq.data[slices[0]:slices[1]] = model_dict['chisq']['data'].copy()
+                self.chisq.data[
+                    slices[0]:slices[1]] = model_dict['chisq']['data'].copy()
                 for ic, c in enumerate(self):
                     for p in c.parameters:
                         for p_d in model_dict['components'][ic]['parameters']:
