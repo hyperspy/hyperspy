@@ -1852,7 +1852,8 @@ class Model(list):
                         p_new.twin_inverse_function = p_orig.twin_inverse_function
                         p_new.map = p_orig.map[array_slices[:-1]]
                         p_new.value = p_new.map['values'].ravel()[0]
-                        twin_dict[id(p_orig)] = ([id(i) for i in list(p_orig._twins)], p_new)
+                        twin_dict[id(p_orig)] = ([id(i)
+                                                  for i in list(p_orig._twins)], p_new)
                     # if hasattr(c, '_important'):
                     #    for i in c._important:
                     #        if i['signal_like']:
@@ -1867,7 +1868,8 @@ class Model(list):
                         p_new.twin_inverse_function = p_orig.twin_inverse_function
                         p_new.map = p_orig.map
                         p_new.value = p_new.map['values'].ravel()[0]
-                        twin_dict[id(p_orig)] = ([id(i) for i in list(p_orig._twins)], p_new)
+                        twin_dict[id(p_orig)] = ([id(i)
+                                                  for i in list(p_orig._twins)], p_new)
                 _model.dof.data = self.dof.data
                 for index in _model.axes_manager:
                     _model._calculate_chisq()
