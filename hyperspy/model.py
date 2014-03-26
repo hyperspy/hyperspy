@@ -1840,6 +1840,7 @@ class Model(list):
             from hyperspy import components
             _model = Model(_spectrum)
             # create components:
+            twin_dict = {}
             for c in self:
                 _model.append(getattr(components, c._id_name)())
             if isNavigation:
@@ -1847,8 +1848,11 @@ class Model(list):
                 _model.chisq.data = self.chisq.data[array_slices[:-1]]
                 for ic, c in enumerate(_model):
                     for p_new, p_orig in zip(c.parameters, self[ic].parameters):
+                        p_new.twin_function = p_orig.twin_function
+                        p_new.twin_inverse_function = p_orig.twin_inverse_function
                         p_new.map = p_orig.map[array_slices[:-1]]
                         p_new.value = p_new.map['values'].ravel()[0]
+                        twin_dict[id(p_orig)] = ([id(i) for i in list(p_orig._twins)], p_new)
                     # if hasattr(c, '_important'):
                     #    for i in c._important:
                     #        if i['signal_like']:
@@ -1859,11 +1863,17 @@ class Model(list):
             else:
                 for ic, c in enumerate(_model):
                     for p_new, p_orig in zip(c.parameters, self[ic].parameters):
+                        p_new.twin_function = p_orig.twin_function
+                        p_new.twin_inverse_function = p_orig.twin_inverse_function
                         p_new.map = p_orig.map
                         p_new.value = p_new.map['values'].ravel()[0]
+                        twin_dict[id(p_orig)] = ([id(i) for i in list(p_orig._twins)], p_new)
                 _model.dof.data = self.dof.data
                 for index in _model.axes_manager:
                     _model._calculate_chisq()
+            for k in twin_dict.keys():
+                for tw_id in twin_dict[k][0]:
+                    twin_dict[tw_id][1].twin = twin_dict[k][1]
             return _model
 
 
