@@ -1250,7 +1250,7 @@ class Model(list):
             self.update_plot()
 
     def multifit(self, mask=None, fetch_only_fixed=False,
-                 autosave=False, autosave_every=10, **kwargs):
+                 autosave=False, autosave_every=10, parallel=None, **kwargs):
         """Fit the data to the model at all the positions of the
         navigation dimensions.
 
@@ -1269,6 +1269,10 @@ class Model(list):
             with a frequency defined by autosave_every.
         autosave_every : int
             Save the result of fitting every given number of spectra.
+        parallel : {None, int}
+            If None, does not parallelise multifit. If int, will look for
+            ipython clusters with the required number of workers and create
+            multiprocessing cluster if none of not enough found.
 
         **kwargs : key word arguments
             Any extra key word argument will be passed to
@@ -1303,8 +1307,6 @@ class Model(list):
                 str(self.axes_manager._navigation_shape_in_array))
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager.navigation_size - masked_elements
-        if maxval > 0:
-            pbar = progressbar.progressbar(maxval=maxval)
         if 'bounded' in kwargs and kwargs['bounded'] is True:
             if kwargs['fitter'] == 'mpfit':
                 self.set_mpfit_parameters_info()
@@ -1318,22 +1320,91 @@ class Model(list):
                     "If you require bounding please select one of the "
                     "following fitters instead: mpfit, tnc, l_bfgs_b")
                 kwargs['bounded'] = False
-        i = 0
-        for index in self.axes_manager:
-            if mask is None or not mask[index[::-1]]:
-                self.fit(**kwargs)
-                i += 1
-                if maxval > 0:
-                    pbar.update(i)
-            if autosave is True and i % autosave_every == 0:
-                self.save_parameters2file(autosave_fn)
-        if maxval > 0:
-            pbar.finish()
-        if autosave is True:
-            messages.information(
-                'Deleting the temporary file %s pixels' % (
-                    autosave_fn + 'npz'))
-            os.remove(autosave_fn + '.npz')
+        if parallel is None or parallel <= 0:
+            if maxval > 0:
+                pbar = progressbar.progressbar(maxval=maxval)
+            i = 0
+            for index in self.axes_manager:
+                if mask is None or not mask[index[::-1]]:
+                    self.fit(**kwargs)
+                    i += 1
+                    if maxval > 0:
+                        pbar.update(i)
+                if autosave is True and i % autosave_every == 0:
+                    self.save_parameters2file(autosave_fn)
+            if maxval > 0:
+                pbar.finish()
+            if autosave is True:
+                messages.information(
+                    'Deleting the temporary file %s pixels' % (
+                        autosave_fn + 'npz'))
+                os.remove(autosave_fn + '.npz')
+        else:
+            # look for cluster, if not (enougth) found, create multiprocessing
+            # pool
+            from IPython.parallel import Client
+            num = 0
+            try:
+                c = Client(profile='hyperspy')
+                num = len(c.ids[:parallel])
+                ipyth = c.load_balanced_view()
+                ipyth.targets = c.ids[:parallel]
+            except IOError:
+                pass
+            if num != parallel:
+                from multiprocessing import Pool
+                multip = Pool(processes=int(parallel - num))
+            # create function to pass to workers
+            # from hyperspy.model import multifit_kernel
+            def multifit_kernel(model_dict, slices, kwargs):
+                print 'got to kernel!'
+                import hyperspy.hspy as hp
+                m = hp.create_model(model_dict)
+                m.multifit(**kwargs)
+                d = m.as_dictionary()
+                del d['spectrum']
+                # delete everything else that doesn't matter. Only maps of
+                # parameters and chisq matter
+                return slices, d
+            # split model and send to workers
+            self.unfold()
+            cuts = np.array_split(
+                np.arange(
+                    self.spectrum.axes_manager.navigation_size),
+                parallel)
+            pass_slices = [(l[0], l[-1]) for l in cuts]
+            models = [self.inav[l[0]:l[-1]].as_dictionary() for l in cuts]
+            for i in xrange(parallel):
+                multifit_kernel(models[i], pass_slices[i], kwargs)
+                # if i < num:
+                #     r_ipython = ipyth.apply_async(
+                #         multifit_kernel,
+                #         models[i],
+                #         pass_slices[i],
+                #         kwargs)
+                # else:
+                #     r_multip = multip.apply_async(
+                #         multifit_kernel,
+                #         models[i],
+                #         pass_slices[i],
+                #         kwargs)
+            # gather the results back
+            results = []
+            if num != 0:
+                results.append(r_ipython.get())
+            if num != parallel:
+                results.append(r_multip.get())
+            for r in results:
+                slices = r[0]
+                model_dict = r[1]
+                tm = self.inav[slices[0]:slices[1]]
+                tm.chisq.data = model_dict['chisq']['data'].copy()
+                for ic, c in enumerate(tm):
+                    for p in c.parameters:
+                        for p_d in model_dict['components'][ic]['parameters']:
+                            if p_d['_id_name'] == p._id_name:
+                                p.map = p_d['map'].copy()
+            self.fold()
 
     def save_parameters2file(self, filename):
         """Save the parameters array in binary format
@@ -1911,7 +1982,7 @@ class Model(list):
             for p in c.parameters:
                 p.map = p.map.reshape(nav_shape)
 
-    def __getitem__(self, value):
+    def __getitem__(self, value, not_components=False, isNavigation=None):
         """x.__getitem__(y) <==> x[y]"""
         if isinstance(value, str):
             component_list = []
