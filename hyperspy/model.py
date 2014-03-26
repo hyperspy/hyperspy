@@ -1753,7 +1753,7 @@ class Model(list):
             old_dof_data.reshape(nav_shape).astype(int))
         self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
             ' degrees of freedom'
-
+        self.axes_manager = self.spectrum.axes_manager
         for c in self:
             c._axes_manager = self.axes_manager
             for p in c.parameters:
@@ -1774,7 +1774,7 @@ class Model(list):
             old_dof_data.reshape(nav_shape).astype(int))
         self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
             ' degrees of freedom'
-
+        self.axes_manager = self.spectrum.axes_manager
         for c in self:
             c._axes_manager = self.axes_manager
             for p in c.parameters:

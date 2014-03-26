@@ -37,9 +37,11 @@ class TestModelFolding:
         m = self.model
         m.unfold()
         shape = m.spectrum.axes_manager.navigation_shape
+        assert_true(m.axes_manager.navigation_shape == shape)
         assert_true(m[0].A.map.shape == shape)
         assert_true(m[0].centre.map.shape == shape)
         assert_true(m[0].sigma.map.shape == shape)
+        assert_true(m[0]._axes_manager.navigation_shape == shape)
         assert_true(m.chisq.data.shape == shape)
         assert_true(m.dof.data.shape == shape)
 
@@ -48,8 +50,10 @@ class TestModelFolding:
         shape = m.spectrum.axes_manager.navigation_shape
         m.unfold()
         m.fold()
+        assert_true(m.axes_manager.navigation_shape == shape)
         assert_true(m[0].A.map.shape == shape)
         assert_true(m[0].centre.map.shape == shape)
         assert_true(m[0].sigma.map.shape == shape)
+        assert_true(m[0]._axes_manager.navigation_shape == shape)
         assert_true(m.chisq.data.shape == shape)
         assert_true(m.dof.data.shape == shape)
