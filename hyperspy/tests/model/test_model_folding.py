@@ -36,24 +36,24 @@ class TestModelFolding:
     def test_unfold(self):
         m = self.model
         m.unfold()
-        shape = m.spectrum.axes_manager.navigation_shape
-        assert_true(m.axes_manager.navigation_shape == shape)
+        shape = m.spectrum.axes_manager.navigation_shape[::-1]
+        assert_true(m.axes_manager.navigation_shape == shape[::-1])
         assert_true(m[0].A.map.shape == shape)
         assert_true(m[0].centre.map.shape == shape)
         assert_true(m[0].sigma.map.shape == shape)
-        assert_true(m[0]._axes_manager.navigation_shape == shape)
+        assert_true(m[0]._axes_manager.navigation_shape[::-1] == shape)
         assert_true(m.chisq.data.shape == shape)
         assert_true(m.dof.data.shape == shape)
 
     def test_fold(self):
         m = self.model
-        shape = m.spectrum.axes_manager.navigation_shape
+        shape = m.spectrum.axes_manager.navigation_shape[::-1]
         m.unfold()
         m.fold()
-        assert_true(m.axes_manager.navigation_shape == shape)
+        assert_true(m.axes_manager.navigation_shape[::-1] == shape)
         assert_true(m[0].A.map.shape == shape)
         assert_true(m[0].centre.map.shape == shape)
         assert_true(m[0].sigma.map.shape == shape)
-        assert_true(m[0]._axes_manager.navigation_shape == shape)
+        assert_true(m[0]._axes_manager.navigation_shape[::-1] == shape)
         assert_true(m.chisq.data.shape == shape)
         assert_true(m.dof.data.shape == shape)

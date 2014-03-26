@@ -1948,7 +1948,7 @@ class Model(list):
         old_chisq_data = self.chisq.data.copy()
         old_dof_data = self.dof.data.copy()
         self.spectrum.unfold_navigation_space()
-        nav_shape = self.spectrum.axes_manager.navigation_shape
+        nav_shape = self.spectrum.axes_manager.navigation_shape[::-1]
         self.chisq = self.spectrum._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data = old_chisq_data.reshape(nav_shape)
@@ -1969,7 +1969,7 @@ class Model(list):
         old_chisq_data = self.chisq.data.copy()
         old_dof_data = self.dof.data.copy()
         self.spectrum.fold()
-        nav_shape = self.spectrum.axes_manager.navigation_shape
+        nav_shape = self.spectrum.axes_manager.navigation_shape[::-1]
         self.chisq = self.spectrum._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data = old_chisq_data.reshape(nav_shape)
