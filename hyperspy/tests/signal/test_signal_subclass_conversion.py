@@ -21,7 +21,7 @@ class Test1d():
     def test_set_EELS(self):
         s = self.s.as_spectrum(0)
         s.set_signal_type("EELS")
-        assert_equal(s.metadata.signal_type, "EELS")
+        assert_equal(s.metadata.Signal.signal_type, "EELS")
         assert_true(isinstance(s, signals.EELSSpectrum))
 
 
@@ -50,9 +50,9 @@ class Test2d():
         s = self.s.as_spectrum(0)
         s.set_signal_type("EELS")
         im = s.as_image((1, 0))
-        assert_equal(im.metadata.signal_type, "EELS")
+        assert_equal(im.metadata.Signal.signal_type, "EELS")
         s = im.as_spectrum((0))
-        assert_equal(s.metadata.signal_type, "EELS")
+        assert_equal(s.metadata.Signal.signal_type, "EELS")
         assert_true(isinstance(s, signals.EELSSpectrum))
 
 

@@ -338,7 +338,7 @@ class MVA():
 
             if self._unfolded4decomposition is True:
                 folding = \
-                    self.metadata._internal_parameters.folding
+                    self.metadata._HyperSpy.Folding
                 target.original_shape = folding.original_shape
 
             # Reproject
@@ -631,7 +631,6 @@ class MVA():
 
         Parameters
         ------------
-        target : target or self.peak_learning_results
         components : None, int, or list of ints
              if None, rebuilds SI from all components
              if int, rebuilds SI from components in range 0-given int
@@ -675,7 +674,7 @@ class MVA():
 
         sc = self.deepcopy()
         sc.data = a.T.reshape(self.data.shape)
-        sc.metadata.title += signal_name
+        sc.metadata.General.title += signal_name
         if target.mean is not None:
             sc.data += target.mean
         if self._unfolded4decomposition is True:
@@ -700,8 +699,6 @@ class MVA():
         """
         rec = self._calculate_recmatrix(components=components,
                                         mva_type='decomposition')
-        rec.residual = rec.copy()
-        rec.residual.data = self.data - rec.data
         return rec
 
     def get_bss_model(self, components=None):
@@ -748,7 +745,7 @@ class MVA():
                                  "`None`, did you forget to perform a PCA "
                                  "decomposition?")
         s = Spectrum(target.explained_variance_ratio)
-        s.metadata.title = self.metadata.title + \
+        s.metadata.General.title = self.metadata.General.title + \
             "\nPCA Scree Plot"
         s.axes_manager[-1].name = 'Principal component index'
         s.axes_manager[-1].units = ''

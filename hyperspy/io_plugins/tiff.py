@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import os
 import numpy as np
 import warnings
 with warnings.catch_warnings():
@@ -64,7 +64,9 @@ def file_reader(filename, record_by='image', **kwds):
     dc = imread(filename, **kwds)
     dt = 'image'
     return [{'data': dc,
-             'metadata': {'original_filename': filename,
-                          'record_by': dt,
-                          'signal_type': "", }
+             'metadata': {'General': {'original_filename': os.path.split(filename)[1]},
+                          "Signal": {'signal_type': "",
+                                     'record_by': dt,
+                                     },
+                          },
              }]
