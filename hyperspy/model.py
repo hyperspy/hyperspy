@@ -1397,6 +1397,9 @@ class Model(list):
                         for p_d in model_dict['components'][ic]['parameters']:
                             if p_d['_id_name'] == p._id_name:
                                 p.map[slices[0]:slices[1]] = p_d['map'].copy()
+            if num != parallel:
+                multip.close()
+                multip.join()
             self.fold()
 
     def save_parameters2file(self, filename):
