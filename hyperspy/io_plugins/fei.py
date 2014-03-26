@@ -384,6 +384,11 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
             'size': data['ArrayLength'][0],
             'index_in_array': header['NumberDimensions'][0]
         })
+        
+        # FEI seems to use the international system of units (SI) for the
+        # energy scale (eV).
+        axes[-1]['units'] = 'eV'
+        axes[-1]['name'] = 'Energy'
 
         array_shape.append(data['ArrayLength'][0])
 
