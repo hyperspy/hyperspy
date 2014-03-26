@@ -128,7 +128,7 @@ class EDSSEMSpectrum(EDSSpectrum):
                                   energy_resolution_MnKa=None):
         """Set the microscope parameters.
 
-        If no arguments are given, raises an interactive mode to fill 
+        If no arguments are given, raises an interactive mode to fill
         the values.
 
         Parameters
