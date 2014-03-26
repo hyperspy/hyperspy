@@ -26,6 +26,8 @@ class Spline(Component):
 
     def __init__(self, tck):
         Component.__init__(self, ('c', 'dump'))
+        self._tck = tck
+        self._init_par = ['_tck']
         self.t, self.c.value, self.k = tck
         self.dump.free = False
 

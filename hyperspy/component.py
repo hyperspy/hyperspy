@@ -124,7 +124,9 @@ class Parameter(object):
             _bounds : tuple
                 Tuple of (bmin, bmax), lower and upper bounds of the parameter values
             free : boolean
-                Boolean of the parameter is free
+                Boolean if the parameter is free
+            active : boolean
+                Boolean if the parameter is active
         Returns
         -------
         id_value : int
@@ -132,6 +134,8 @@ class Parameter(object):
 
         """
         if dict['_id_name'] == self._id_name:
+            import types
+            import marshal
             self.map = copy.deepcopy(dict['map'])
             self.value = dict['value']
             self.name = dict['name']
@@ -139,8 +143,14 @@ class Parameter(object):
             self.free = copy.deepcopy(dict['free'])
             self.units = copy.deepcopy(dict['units'])
             self._bounds = copy.deepcopy(dict['_bounds'])
-            self.twin_function = dict['twin_function']
-            self.twin_inverse_function = dict['twin_inverse_function']
+            if hasattr(self, 'active') and 'active' in dict:
+                self.active = dict['active']
+            self.twin_function = types.FunctionType(
+                marshal.loads(
+                    dict['twin_function']),
+                globals())
+            self.twin_inverse_function = types.FunctionType(marshal.loads(dict['twin_inverse_function']),
+                                                            globals())
             return dict['id']
         else:
             raise ValueError(
@@ -498,6 +508,7 @@ class Parameter(object):
         dic : dictionary
 
         """
+        import marshal
         dic = {}
         dic['name'] = self.name
         dic['_id_name'] = self._id_name
@@ -515,8 +526,11 @@ class Parameter(object):
         dic['id'] = id(self)
         dic['_twins'] = [id(t) for t in self._twins]
         dic['_bounds'] = self._bounds
-        dic['twin_function'] = self.twin_function
-        dic['twin_inverse_function'] = self.twin_inverse_function
+        if hasattr(self, 'active'):
+            dic['active'] = self.active
+        dic['twin_function'] = marshal.dumps(self.twin_function.func_code)
+        dic['twin_inverse_function'] = marshal.dumps(
+            self.twin_inverse_function.func_code)
         return dic
 
 
@@ -860,8 +874,16 @@ class Component(object):
         """
         dic = {}
         dic['name'] = self.name
-        dic['type'] = type(self)
+        dic['_id_name'] = self._id_name
         dic['parameters'] = [p.as_dictionary(indices) for p in self.parameters]
+        if hasattr(self, '_init_par'):
+            from hyperspy.signal import Signal
+            dic['_init_par'] = self._init_par
+            for i in self._init_par:
+                if isinstance(getattr(self, i), Signal):
+                    dic[i] = getattr(self, i)._to_dictionary()
+                else:
+                    dic[i] = getattr(self, i)
         return dic
 
     def _load_dictionary(self, dic):
