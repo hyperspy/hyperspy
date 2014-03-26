@@ -1869,7 +1869,49 @@ class Model(list):
         dic['convolved'] = self.convolved
         return dic
 
-    def __getitem__(self, value, not_components=False, isNavigation=None):
+    def unfold(self):
+        """Modifies the shape of the model by unfolding the navigation dimensions
+        see signal.unfold_navigation_space()
+        """
+        old_chisq_data = self.chisq.data.copy()
+        old_dof_data = self.dof.data.copy()
+        self.spectrum.unfold_navigation_space()
+        nav_shape = self.spectrum.axes_manager.navigation_shape
+        self.chisq = self.spectrum._get_navigation_signal()
+        self.chisq.change_dtype("float")
+        self.chisq.data = old_chisq_data.reshape(nav_shape)
+        self.chisq.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' chi-squared'
+        self.dof = self.chisq._deepcopy_with_new_data(
+            old_dof_data.reshape(nav_shape).astype(int))
+        self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' degrees of freedom'
+
+        for c in self:
+            for p in c.parameters:
+                p.map = p.map.reshape(nav_shape)
+
+    def fold(self):
+        """If the model was previously unfolded, folds it back"""
+        old_chisq_data = self.chisq.data.copy()
+        old_dof_data = self.dof.data.copy()
+        self.spectrum.fold()
+        nav_shape = self.spectrum.axes_manager.navigation_shape
+        self.chisq = self.spectrum._get_navigation_signal()
+        self.chisq.change_dtype("float")
+        self.chisq.data = old_chisq_data.reshape(nav_shape)
+        self.chisq.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' chi-squared'
+        self.dof = self.chisq._deepcopy_with_new_data(
+            old_dof_data.reshape(nav_shape).astype(int))
+        self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' degrees of freedom'
+
+        for c in self:
+            for p in c.parameters:
+                p.map = p.map.reshape(nav_shape)
+
+    def __getitem__(self, value):
         """x.__getitem__(y) <==> x[y]"""
         if isinstance(value, str):
             component_list = []
