@@ -1755,6 +1755,7 @@ class Model(list):
             ' degrees of freedom'
 
         for c in self:
+            c._axes_manager = self.axes_manager
             for p in c.parameters:
                 p.map = p.map.reshape(nav_shape)
 
@@ -1775,6 +1776,7 @@ class Model(list):
             ' degrees of freedom'
 
         for c in self:
+            c._axes_manager = self.axes_manager
             for p in c.parameters:
                 p.map = p.map.reshape(nav_shape)
 
