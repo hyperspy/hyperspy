@@ -1356,6 +1356,7 @@ class Model(list):
                 multip = Pool(processes=int(parallel - num))
             # create function to pass to workers
             # from hyperspy.model import multifit_kernel
+
             def multifit_kernel(model_dict, slices, kwargs):
                 print 'got to kernel!'
                 import hyperspy.hspy as hp
