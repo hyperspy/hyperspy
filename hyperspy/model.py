@@ -1320,19 +1320,19 @@ class Model(list):
                     "If you require bounding please select one of the "
                     "following fitters instead: mpfit, tnc, l_bfgs_b")
                 kwargs['bounded'] = False
-        if parallel is None or parallel <= 0:
-            if maxval > 0:
+        if parallel is None or parallel <= 1:
+            if maxval > 0 and parallel != 1:
                 pbar = progressbar.progressbar(maxval=maxval)
             i = 0
             for index in self.axes_manager:
                 if mask is None or not mask[index[::-1]]:
                     self.fit(**kwargs)
                     i += 1
-                    if maxval > 0:
+                    if maxval > 0 and parallel != 1:
                         pbar.update(i)
                 if autosave is True and i % autosave_every == 0:
                     self.save_parameters2file(autosave_fn)
-            if maxval > 0:
+            if maxval > 0 and parallel != 1:
                 pbar.finish()
             if autosave is True:
                 messages.information(
@@ -1342,6 +1342,7 @@ class Model(list):
         else:
             # look for cluster, if not (enougth) found, create multiprocessing
             # pool
+            kwargs['parallel'] = 1
             from IPython.parallel import Client
             num = 0
             try:
@@ -1354,57 +1355,47 @@ class Model(list):
             if num != parallel:
                 from multiprocessing import Pool
                 multip = Pool(processes=int(parallel - num))
-            # create function to pass to workers
-            # from hyperspy.model import multifit_kernel
 
-            def multifit_kernel(model_dict, slices, kwargs):
-                print 'got to kernel!'
-                import hyperspy.hspy as hp
-                m = hp.create_model(model_dict)
-                m.multifit(**kwargs)
-                d = m.as_dictionary()
-                del d['spectrum']
-                # delete everything else that doesn't matter. Only maps of
-                # parameters and chisq matter
-                return slices, d
+            # import function to pass to workers
+            from hyperspy.model import multifit_kernel
+
             # split model and send to workers
             self.unfold()
             cuts = np.array_split(
                 np.arange(
                     self.spectrum.axes_manager.navigation_size),
                 parallel)
-            pass_slices = [(l[0], l[-1]) for l in cuts]
-            models = [self.inav[l[0]:l[-1]].as_dictionary() for l in cuts]
+            pass_slices = [(l[0], l[-1]+1) for l in cuts]
+            models = [self.inav[l[0]:l[-1]+1].as_dictionary() for l in cuts]
+            res = []
             for i in xrange(parallel):
-                multifit_kernel(models[i], pass_slices[i], kwargs)
-                # if i < num:
-                #     r_ipython = ipyth.apply_async(
-                #         multifit_kernel,
-                #         models[i],
-                #         pass_slices[i],
-                #         kwargs)
-                # else:
-                #     r_multip = multip.apply_async(
-                #         multifit_kernel,
-                #         models[i],
-                #         pass_slices[i],
-                #         kwargs)
+                if i < num:
+                    res.append( ipyth.apply_async(
+                        multifit_kernel,
+                        models[i],
+                        pass_slices[i],
+                        kwargs))
+                else:
+                    res.append( multip.apply_async(
+                        multifit_kernel,
+                        [models[i],
+                        pass_slices[i],
+                        kwargs,]))
+
             # gather the results back
             results = []
-            if num != 0:
-                results.append(r_ipython.get())
-            if num != parallel:
-                results.append(r_multip.get())
+            for i in xrange(parallel):
+                results.append(res[i].get())
             for r in results:
                 slices = r[0]
                 model_dict = r[1]
                 tm = self.inav[slices[0]:slices[1]]
-                tm.chisq.data = model_dict['chisq']['data'].copy()
-                for ic, c in enumerate(tm):
+                self.chisq.data[slices[0]:slices[1]] = model_dict['chisq']['data'].copy()
+                for ic, c in enumerate(self):
                     for p in c.parameters:
                         for p_d in model_dict['components'][ic]['parameters']:
                             if p_d['_id_name'] == p._id_name:
-                                p.map = p_d['map'].copy()
+                                p.map[slices[0]:slices[1]] = p_d['map'].copy()
             self.fold()
 
     def save_parameters2file(self, filename):
@@ -2125,3 +2116,14 @@ class modelSpecialSlicers:
 
     def __getitem__(self, slices):
         return self.model.__getitem__(slices, True, self.isNavigation)
+
+
+def multifit_kernel(model_dict, slices, kwargs):
+    import hyperspy.hspy as hp
+    m = hp.create_model(model_dict)
+    m.multifit(**kwargs)
+    d = m.as_dictionary()
+    del d['spectrum']
+    # delete everything else that doesn't matter. Only maps of
+    # parameters and chisq matter
+    return slices, d
