@@ -782,5 +782,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     signal.metadata._HyperSpy.set_item(
         'Stacking_history.step_sizes',
         step_sizes)
+        
+    signal.__init__(**signal._to_dictionary())
 
     return signal
