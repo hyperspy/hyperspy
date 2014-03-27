@@ -1250,7 +1250,8 @@ class Model(list):
             self.update_plot()
 
     def multifit(self, mask=None, fetch_only_fixed=False,
-                 autosave=False, autosave_every=10, parallel=None, **kwargs):
+                 autosave=False, autosave_every=10, parallel=None, ipython_timeout=1.,
+                 **kwargs):
         """Fit the data to the model at all the positions of the
         navigation dimensions.
 
@@ -1270,9 +1271,13 @@ class Model(list):
         autosave_every : int
             Save the result of fitting every given number of spectra.
         parallel : {None, int}
-            If None, does not parallelise multifit. If int, will look for
-            ipython clusters with the required number of workers and create
-            multiprocessing cluster if none of not enough found.
+            If None or 1, does not parallelise multifit. If >1, will look for
+            ipython clusters with the required number of workers. If none or not enougth
+            are found, it will create multiprocessing cluster with the required number
+            of workers, so that the model is always calculated on the specified number
+            of cores.
+        ipython_timeout : float
+            Timeout to be passed for ipython parallel Client.
 
         **kwargs : key word arguments
             Any extra key word argument will be passed to
@@ -1346,7 +1351,7 @@ class Model(list):
             from IPython.parallel import Client, error
             num = 0
             try:
-                c = Client(profile='hyperspy')
+                c = Client(profile='hyperspy', timeout=ipython_timeout)
                 num = len(c.ids[:parallel])
                 ipyth = c.load_balanced_view()
                 ipyth.targets = c.ids[:parallel]
