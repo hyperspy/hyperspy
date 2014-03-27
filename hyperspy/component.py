@@ -152,9 +152,12 @@ class Parameter(object):
             if hasattr(self, 'active') and 'active' in dict:
                 self.active = dict['active']
             if 'cloud_avail' in dict and cloud_avail:
-                self.twin_function = pickle.loads(dict['twin_function'])
-                self.twin_inverse_function = pickle.loads(
-                    dict['twin_inverse_function'])
+                def tw(): pass
+                def tiw(): pass
+                tw.func_code = pickle.loads(dict['twin_function'])
+                tiw.func_code = pickle.loads(dict['twin_inverse_function'])
+                self.twin_function = tw
+                self.twin_inverse_function = tiw
             else:
                 self.twin_function = types.FunctionType(
                     marshal.loads(
