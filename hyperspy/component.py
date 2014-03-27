@@ -135,7 +135,8 @@ class Parameter(object):
         """
         if dict['_id_name'] == self._id_name:
             try:
-                import cloud, pickle
+                import cloud
+                import pickle
                 cloud_avail = True
             except ImportError:
                 cloud_avail = False
@@ -152,14 +153,15 @@ class Parameter(object):
                 self.active = dict['active']
             if 'cloud_avail' in dict and cloud_avail:
                 self.twin_function = pickle.loads(dict['twin_function'])
-                self.twin_inverse_function = pickle.loads(dict['twin_inverse_function'])
+                self.twin_inverse_function = pickle.loads(
+                    dict['twin_inverse_function'])
             else:
                 self.twin_function = types.FunctionType(
                     marshal.loads(
                         dict['twin_function']),
                     globals())
                 self.twin_inverse_function = types.FunctionType(marshal.loads(dict['twin_inverse_function']),
-                                                            globals())
+                                                                globals())
             return dict['id']
         else:
             raise ValueError(
@@ -543,7 +545,8 @@ class Parameter(object):
         if hasattr(self, 'active'):
             dic['active'] = self.active
         if cloud_avail:
-            dic['twin_function'] = cloud.serialization.cloudpickle.dumps(self.twin_function.func_code)
+            dic['twin_function'] = cloud.serialization.cloudpickle.dumps(
+                self.twin_function.func_code)
             dic['twin_inverse_function'] = cloud.serialization.cloudpickle.dumps(
                 self.twin_inverse_function.func_code)
             dic['cloud_avail'] = True
