@@ -328,7 +328,7 @@ class EDSSpectrum(Spectrum):
                         print("%s line added," % line)
                     else:
                         print("%s line already in." % line)
-                    if (self._get_line_energy(element+ '_' +subshell) > end_energy):
+                    if (self._get_line_energy(element + '_' + subshell) > end_energy):
                         print("Warning: %s %s is above the data energy range."
                               % (element, subshell))
                 else:
@@ -398,7 +398,7 @@ class EDSSpectrum(Spectrum):
             for subshell in elements_db[element]['Atomic_properties']['Xray_lines'].keys():
                 if only_lines and subshell not in only_lines:
                     continue
-                if (self._get_line_energy(element+ '_' +subshell) < end_energy):
+                if (self._get_line_energy(element + '_' + subshell) < end_energy):
                     element_lines.append(element + "_" + subshell)
             if only_one and element_lines:
             # Choose the best line
