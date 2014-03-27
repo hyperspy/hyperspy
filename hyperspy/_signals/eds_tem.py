@@ -70,11 +70,10 @@ class EDSTEMSpectrum(EDSSpectrum):
                                   azimuth_angle=None,
                                   elevation_angle=None,
                                   energy_resolution_MnKa=None):
-        """Set the microscope parameters that are necessary to quantify
-        the spectrum.
+        """Set the microscope parameters.
 
-        If not all of them are defined, raises in interactive mode
-        raises an UI item to fill the values
+        If no arguments are given, raises an interactive mode to fill
+        the values.
 
         Parameters
         ----------
