@@ -2096,7 +2096,8 @@ class Model(list):
                         p_new.twin_function = p_orig.twin_function
                         p_new.twin_inverse_function = p_orig.twin_inverse_function
                         p_new.map = p_orig.map[array_slices[:-1]]
-                        p_new.value = p_new.map['values'].ravel()[0]
+                        #p_new.value = p_new.map['values'].ravel()[0]
+                        p_new.value = p_orig.value
                         twin_dict[id(p_orig)] = ([id(i)
                                                   for i in list(p_orig._twins)], p_new)
                     # if hasattr(c, '_important'):
