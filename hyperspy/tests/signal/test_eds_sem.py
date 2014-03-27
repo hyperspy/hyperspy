@@ -175,13 +175,13 @@ class Test_get_lines_intentisity:
                                              plot_result=False,
                                              integration_window_factor=5)[0]
         assert_true(np.allclose(24.99516, sAl.data, atol=1e-3))
-        
+
     def test_eV(self):
         s = self.signal
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 40
         energy_axis.units = 'eV'
-        
+
         sAl = s.get_lines_intensity(["Al_Ka"],
                                     plot_result=False,
                                     integration_window_factor=5)[0]
