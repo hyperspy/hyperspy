@@ -1350,7 +1350,7 @@ class Model(list):
                 num = len(c.ids[:parallel])
                 ipyth = c.load_balanced_view()
                 ipyth.targets = c.ids[:parallel]
-            except (error.TimeoutError,IOError):
+            except (error.TimeoutError, IOError):
                 pass
             if num != parallel:
                 from multiprocessing import Pool
