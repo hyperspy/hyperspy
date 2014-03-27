@@ -1343,14 +1343,14 @@ class Model(list):
             # look for cluster, if not (enougth) found, create multiprocessing
             # pool
             kwargs['parallel'] = 1
-            from IPython.parallel import Client
+            from IPython.parallel import Client, error
             num = 0
             try:
                 c = Client(profile='hyperspy')
                 num = len(c.ids[:parallel])
                 ipyth = c.load_balanced_view()
                 ipyth.targets = c.ids[:parallel]
-            except IOError:
+            except (error.TimeoutError,IOError):
                 pass
             if num != parallel:
                 from multiprocessing import Pool
