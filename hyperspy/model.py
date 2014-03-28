@@ -1840,6 +1840,21 @@ class Model(list):
         dic['components'] = [c.as_dictionary(indices) for c in self]
         dic['free_parameters_boundaries'] = copy.deepcopy(self.free_parameters_boundaries)
         dic['convolved'] = self.convolved
+        def remove_empty_numpy_strings(dic):
+            for k, v in dic.iteritems():
+                if isinstance(v, dict):
+                    remove_empty_numpy_strings(v)
+                elif isinstance(v, list):
+                    for vv in v:
+                        if isinstance(vv, dict):
+                            remove_empty_numpy_strings(vv)
+                        elif isinstance(vv, numpy.string_) and len(vv) == 0:
+                            vv = ''
+                elif isinstance(v, numpy.string_) and len(v) == 0:
+                    del dic[k]
+                    dic[k] = ''
+        remove_empty_numpy_strings(dic)
+                        
         return dic
 
     def __getitem__(self, value):
