@@ -28,3 +28,4 @@ setup/windows/requires/*
 setup/windows/reccomends/*
 doc/examples
 doc/gh-pages
+*Thumbs.db
