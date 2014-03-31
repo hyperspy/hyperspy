@@ -104,6 +104,14 @@ hyperspy.misc.progressbar module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.misc.rgb_tools module
+------------------------------
+
+.. automodule:: hyperspy.misc.rgb_tools
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.misc.spectrum_tools module
 -----------------------------------
 

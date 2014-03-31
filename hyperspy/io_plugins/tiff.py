@@ -19,9 +19,13 @@
 import os
 import numpy as np
 import warnings
+
+import numpy as np
+import traits.api as t
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    from hyperspy.misc.io.tifffile import imsave, imread
+    from hyperspy.misc.io.tifffile import imsave, TiffFile
+from hyperspy.misc import rgb_tools
 
 # Plugin characteristics
 # ----------------------
@@ -36,17 +40,49 @@ default_extension = 0  # tif
 writes = [(2, 0), (2, 1)]
 # ----------------------
 
+axes_label_codes = {
+    'X': "width",
+    'Y': "height",
+    'S': "sample",
+    'P': "plane",
+    'I': "image series",
+    'Z': "depth",
+    'C': "color|em-wavelength|channel",
+    'E': "ex-wavelength|lambda",
+    'T': "time",
+    'R': "region|tile",
+    'A': "angle",
+    'F': "phase",
+    'H': "lifetime",
+    'L': "exposure",
+    'V': "event",
+    'Q': t.Undefined,
+    '_': t.Undefined}
 
-def file_writer(filename, signal, _rescale=True, **kwds):
+
+def file_writer(filename, signal, **kwds):
     '''Writes data to tif using Christoph Gohlke's tifffile library
 
         Parameters
         ----------
         filename: str
         signal: a Signal instance
-    '''
 
-    imsave(filename, signal.data.squeeze(), **kwds)
+    '''
+    data = signal.data
+    if signal.is_rgbx is True:
+        data = rgb_tools.rgbx2regular_array(data)
+        photometric = "rgb"
+    else:
+        photometric = "minisblack"
+    if description not in kwds:
+        if signal.metadata.General.title:
+            kwds['description'] = signal.metadata.General.title
+
+    imsave(filename, data,
+           software="hyperspy",
+           photometric=photometric,
+           **kwds)
 
 
 def file_reader(filename, record_by='image', **kwds):
@@ -61,12 +97,29 @@ def file_reader(filename, record_by='image', **kwds):
         image.
 
     '''
-    dc = imread(filename, **kwds)
-    dt = 'image'
+    with TiffFile(filename, **kwds) as tiff:
+        dc = tiff.asarray()
+        axes = tiff.series[0]['axes']
+        if tiff.is_rgb:
+            dc = rgb_tools.regular_array2rgbx(dc)
+            axes = axes[:-1]
+        op = {}
+        names = [axes_label_codes[axis] for axis in axes]
+        axes = [{'size': size,
+                 'name': unicode(name),
+                 #'scale': scales[i],
+                 #'offset' : origins[i],
+                 #'units' : unicode(units[i]),
+                 }
+                for size, name in zip(dc.shape, names)]
+        op = {}
+        for key, tag in tiff[0].tags.iteritems():
+            op[key] = tag.value
     return [{'data': dc,
+             'original_metadata': op,
              'metadata': {'General': {'original_filename': os.path.split(filename)[1]},
                           "Signal": {'signal_type': "",
-                                     'record_by': dt,
+                                     'record_by': "image",
                                      },
                           },
              }]

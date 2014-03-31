@@ -19,8 +19,9 @@
 import os
 
 import numpy as np
-
 from scipy.misc import imread, imsave
+
+from hyperspy.misc.rgb_tools import regular_array2rgbx
 
 # Plugin characteristics
 # ----------------------
@@ -64,9 +65,11 @@ def file_reader(filename, **kwds):
     if len(dc.shape) > 2:
         # It may be a grayscale image that was saved in the RGB or RGBA
         # format
-        if (dc[:, :, 1] == dc[:,:, 2]).all() and \
-                            (dc[:, :, 1] == dc[:,:, 2]).all():
-            dc = dc[:, :, 0]
+        if (dc[:,:, 1] == dc[:,:, 2]).all() and \
+                            (dc[:,:, 1] == dc[:,:, 2]).all():
+            dc = dc[:,:, 0]
+        else:
+            dc = regular_array2rgbx(dc)
     return [{'data': dc,
              'metadata':
              {

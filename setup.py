@@ -179,6 +179,8 @@ with update_version_when_dev() as version:
              'tests/io/dm4_3D_data/*.dm4',
              'tests/io/msa_files/*.msa',
              'tests/io/hdf5_files/*.hdf5',
+             'tests/io/tiff_files/*.tif',
+             'tests/io/npy_files/*.npy',
              'tests/drawing/*.ipynb',
              ],
         },

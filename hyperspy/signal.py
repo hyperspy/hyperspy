@@ -56,6 +56,7 @@ from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
 from hyperspy.misc import spectrum_tools
+from hyperspy.misc import rgb_tools
 from hyperspy.gui.tools import IntegrateArea
 from hyperspy import components
 from hyperspy.misc.utils import underline
@@ -2869,11 +2870,14 @@ class Signal(MVA,
             navigator) or navigation_shape + signal_shape must be equal
             to the navigator_shape of the current object (for a dynamic
             navigator).
+            If the signal dtype is RGB or RGBA this parameters has no
+            effect and is always "slider".
 
         axes_manager : {None, axes_manager}
             If None `axes_manager` is used.
 
         """
+
         if self._plot is not None:
             try:
                 self._plot.close()
@@ -2884,6 +2888,11 @@ class Signal(MVA,
 
         if axes_manager is None:
             axes_manager = self.axes_manager
+        if self.is_rgbx is True:
+            if axes_manager.navigation_size < 2:
+                navigator = None
+            else:
+                navigator = "slider"
         if axes_manager.signal_dimension == 0:
             self._plot = mpl_he.MPL_HyperExplorer()
         elif axes_manager.signal_dimension == 1:
@@ -3993,13 +4002,25 @@ class Signal(MVA,
         return copy.deepcopy(self)
 
     def change_dtype(self, dtype):
-        """Change the data type
+        """Change the data type.
 
         Parameters
         ----------
-
         dtype : str or dtype
-            Typecode or data-type to which the array is cast.
+            Typecode or data-type to which the array is cast. In
+            addition to all standard numpy dtypes HyperSpy
+            supports four extra dtypes for RGB images:
+            "rgb8", "rgba8", "rgb16" and "rgba16". Changing from
+            and to any rgbx dtype is more constrained than most
+            other dtype conversions. To change to a rgbx dtype
+            the signal `record_by` must be "spectrum",
+            `signal_dimension` must be 3(4) for rgb(rgba) dtypes
+            and the dtype must be uint8(uint16) for rgbx8(rgbx16).
+            After conversion `record_by` becomes `image` and the
+            spectra dimension is removed. The dtype of images of
+            dtype rgbx8(rgbx16) can only be changed to uint8(uint16)
+            and the `record_by` becomes "spectrum".
+
 
         Examples
         --------
@@ -4013,8 +4034,50 @@ class Signal(MVA,
         array([ 1.,  2.,  3.,  4.,  5.])
 
         """
+        if not isinstance(dtype, np.dtype):
+            if dtype in rgb_tools.rgb_dtypes:
+                if self.metadata.Signal.record_by != "spectrum":
+                    raise AttributeError("Only spectrum signals can be converted "
+                                         "to RGB images.")
+                    if "rgba" in dtype:
+                        if self.axes_manager.signal_size != 4:
+                            raise AttributeError(
+                                "Only spectra with signal_size equal to 4 can be"
+                                "converted to RGBA images")
+                    else:
+                        if self.axes_manager.signal_size != 3:
+                            raise AttributeError(
+                                "Only spectra with signal_size equal to 3 can be"
+                                " converted to RGBA images")
+                if "8" in dtype and self.data.dtype.name != "uint8":
+                    raise AttributeError(
+                        "Only signals with dtype uint8 can be converted to rgb8 images")
+                elif "16" in dtype and self.data.dtype.name != "uint16":
+                    raise AttributeError(
+                        "Only signals with dtype uint16 can be converted to rgb16 images")
+                dtype = rgb_tools.rgb_dtypes[dtype]
+                self.data = rgb_tools.regular_array2rgbx(self.data)
+                self.axes_manager.remove(-1)
+                self.metadata.Signal.record_by = "image"
+                self._assign_subclass()
+                return
+            else:
+                dtype = np.dtype(dtype)
+        if rgb_tools.is_rgbx(self.data) is True:
+            ddtype = self.data.dtype.fields["B"][0]
 
-        self.data = self.data.astype(dtype)
+            if ddtype != dtype:
+                raise ValueError(
+                    "It is only possibile to change to %s." %
+                    ddtype)
+            self.data = rgb_tools.rgbx2regular_array(self.data)
+            self.get_dimensions_from_data()
+            self.metadata.Signal.record_by = "spectrum"
+            self.axes_manager[-1 + 2j].name = "RGB index"
+            self._assign_subclass()
+            return
+        else:
+            self.data = self.data.astype(dtype)
 
     def estimate_poissonian_noise_variance(self,
                                            expected_value=None,
@@ -4355,6 +4418,18 @@ class Signal(MVA,
         print("Q3:\t" + formatter % np.percentile(data,
                                                   75))
         print("max:\t" + formatter % data.max())
+
+    @property
+    def is_rgba(self):
+        return rgb_tools.is_rgba(self.data)
+
+    @property
+    def is_rgb(self):
+        return rgb_tools.is_rgb(self.data)
+
+    @property
+    def is_rgbx(self):
+        return rgb_tools.is_rgbx(self.data)
 
 # Implement binary operators
 for name in (
