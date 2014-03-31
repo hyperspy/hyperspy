@@ -391,7 +391,6 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
         axes[-1]['name'] = 'Energy'
         axes[-1]['scale'] *= 0.001
 
-
         array_shape.append(data['ArrayLength'][0])
 
     elif record_by == 'image':
