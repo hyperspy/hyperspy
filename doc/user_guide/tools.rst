@@ -181,6 +181,54 @@ classifiying the dimensions of a three-dimensional dataset by
     modify Hyperspy's default choice.
 
 
+.. _signal.binned:
+
+Binned and unbinned signals
+---------------------------
+
+.. versionadded:: 0.7
+   
+Signals that are a histogram of a probability density function (pdf) should
+have the ``signal.metadata.Signal.binned`` attribute set to
+``True``. This is because some methods operate differently in signals that are
+*binned*.
+
+The default value of the ``binned`` attribute is shown in the
+following table:
+
+.. table:: Binned default values for the different subclasses.
+
+
+    +---------------------------------------------------------------+--------+
+    |                       Signal subclass                         | binned |
+    +===============================================================+========+
+    |                 :py:class:`~.signal.Signal`                   | False  |
+    +---------------------------------------------------------------+--------+
+    |           :py:class:`~._signals.spectrum.Spectrum`            | False  |
+    +---------------------------------------------------------------+--------+
+    | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | False  |
+    +---------------------------------------------------------------+--------+
+    |           :py:class:`~._signals.eels.EELSSpectrum`            | True   |
+    +---------------------------------------------------------------+--------+
+    |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | True   |
+    +---------------------------------------------------------------+--------+
+    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | True   |
+    +---------------------------------------------------------------+--------+
+    |              :py:class:`~._signals.image.Image`               | False  |
+    +---------------------------------------------------------------+--------+
+    |    :py:class:`~._signals.image_simulation.ImageSimulation`    | False  |
+    +---------------------------------------------------------------+--------+
+
+
+
+
+
+To change the default value:
+
+.. code-block:: python
+    
+    >>> s.metadata.Signal.binned = True 
+
 Generic tools
 -------------
 
@@ -493,9 +541,9 @@ to make a horizontal "collage" of the image stack:
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]
+    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]*5))
     >>> image_stack.axes_manager[1].name = "x"
-    >>> image_stack.axes_manager[2].name = "y"))
+    >>> image_stack.axes_manager[2].name = "y"
     >>> for image, angle in zip(image_stack, (0, 45, 90, 135, 180)):
     ...    image.data[:] = scipy.ndimage.rotate(image.data, angle=angle,
     ...    reshape=False)
@@ -504,10 +552,7 @@ to make a horizontal "collage" of the image stack:
 
 .. figure::  images/rotate_lena.png
   :align:   center
-  :width:   500    
-
-
-
+  :width:   500  
 
 .. versionadded:: 0.7
 
@@ -584,6 +629,37 @@ It is also possible to unfold only the navigation or only the signal space:
 
 * :py:meth:`~.signal.Signal.unfold_navigation_space`
 * :py:meth:`~.signal.Signal.unfold_signal_space`
+
+Splitting and stacking
+^^^^^^^^^^^^^^^^^^^^^^
+
+Several objects can be stacked together over an existing axis or over a 
+new axis using the :py:func:`~.utils.stack` function, if they share axis
+with same dimension. 
+
+.. code-block:: python
+
+    >>> image = signals.Image(scipy.misc.lena())
+    >>> image = utils.stack([utils.stack([image]*3,axis=0)]*3,axis=1)
+    >>> image.plot()
+    
+.. figure::  images/stack_lena_3_3.png
+  :align:   center
+  :width:   500    
+ 
+An object can be splitted into several objects
+with the :py:meth:`~.signal.Signal.split` method. This function can be used 
+to reverse the :py:func:`~.utils.stack` function:
+
+.. code-block:: python
+
+    >>> image = image.split()[0].split()[0]
+    >>> image.plot()
+    
+.. figure::  images/split_lena_3_3.png
+  :align:   center
+  :width:   400    
+
 
 Simple operations over one axis
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -682,3 +758,73 @@ Electron and X-ray range
 
 The electron and X-ray range in a bulk material can be estimated with 
 :py:meth:`~.utils.eds.electron_range` and :py:meth:`~.utils.eds.xray_range`
+
+
+.. _signal.noise_properties:
+
+Setting the noise properties
+----------------------------
+
+Some data operations require the data variance. Those methods use the  
+``metadata.Signal.Noise_properties.variance`` attribute if it exists. You can
+set this attribute as in the following example where we set the variance to be
+10:
+
+.. code-block:: python
+
+    s.metadata.Signal.set_item("Noise_properties.variance", 10)
+
+For heterocedastic noise the ``variance`` attribute must be a
+:class:`~.signal.Signal`.  Poissonian noise is a common case  of
+heterocedastic noise where the variance is equal to the expected value. The
+:meth:`~.signal.Signal.estimate_poissonian_noise_variance`
+:class:`~.signal.Signal` method can help setting the variance of data with
+semi-poissonian noise. With the default arguments, this method simply sets the
+variance attribute to the given ``expected_value``. However, more generally
+(although then noise is not strictly poissonian), the variance may be proportional
+to the expected value. Moreover, when the noise is a mixture of white
+(gaussian) and poissonian noise, the variance is described by the following
+linear model:
+
+    .. math::
+
+        \mathrm{Var}[X] = (a * \mathrm{E}[X] + b) * c
+
+Where `a` is the ``gain_factor``, `b` is the ``gain_offset`` (the gaussian
+noise variance) and `c` the ``correlation_factor``. The correlation
+factor accounts for correlation of adjacent signal elements that can
+be modeled as a convolution with a gaussian point spread function.
+:meth:`~.signal.Signal.estimate_poissonian_noise_variance` can be used to set
+the noise properties when the variance can be described by this linear model,
+for example:
+
+
+.. code-block:: python
+
+  >>> s = signals.SpectrumSimulation(np.ones(100))
+  >>> s.add_poissonian_noise()
+  >>> s.metadata
+  ├── General
+  │   └── title = 
+  └── Signal
+      ├── binned = False
+      ├── record_by = spectrum
+      ├── signal_origin = simulation
+      └── signal_type = 
+
+  >>> s.estimate_poissonian_noise_variance()
+  >>> s.metadata
+  ├── General
+  │   └── title = 
+  └── Signal
+      ├── Noise_properties
+      │   ├── Variance_linear_model
+      │   │   ├── correlation_factor = 1
+      │   │   ├── gain_factor = 1
+      │   │   └── gain_offset = 0
+      │   └── variance = <SpectrumSimulation, title: Variance of , dimensions: (|100)>
+      ├── binned = False
+      ├── record_by = spectrum
+      ├── signal_origin = simulation
+      └── signal_type = 
+

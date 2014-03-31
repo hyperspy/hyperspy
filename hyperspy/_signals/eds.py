@@ -21,7 +21,7 @@ import numpy as np
 
 from hyperspy import utils
 from hyperspy._signals.spectrum import Spectrum
-from hyperspy.misc.eds.elements import elements as elements_db
+from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 
@@ -31,9 +31,10 @@ class EDSSpectrum(Spectrum):
 
     def __init__(self, *args, **kwards):
         Spectrum.__init__(self, *args, **kwards)
-        if self.metadata.signal_type == 'EDS':
+        if self.metadata.Signal.signal_type == 'EDS':
             print('The microscope type is not set. Use '
                   'set_signal_type(\'EDS_TEM\') or set_signal_type(\'EDS_SEM\')')
+        self.metadata.Signal.binned = True
 
     def sum(self, axis):
         """Sum the data over the given axis.
@@ -65,12 +66,13 @@ class EDSSpectrum(Spectrum):
 
         """
         # modify time spend per spectrum
-        if hasattr(self.metadata, 'SEM'):
-            mp = self.metadata.SEM
+        if "Acquisition_instrument.SEM" in self.metadata:
+            mp = self.metadata.Acquisition_instrument.SEM
         else:
-            mp = self.metadata.TEM
-        if hasattr(mp, 'EDS') and hasattr(mp.EDS, 'live_time'):
-            mp.EDS.live_time = mp.EDS.live_time * self.axes_manager.shape[axis]
+            mp = self.metadata.Acquisition_instrument.TEM
+        if mp.has_item('Detector.EDS.live_time'):
+            mp.Detector.EDS.live_time = mp.Detector.EDS.live_time * \
+                self.axes_manager.shape[axis]
         return super(EDSSpectrum, self).sum(axis)
 
     def rebin(self, new_shape):
@@ -90,12 +92,12 @@ class EDSSpectrum(Spectrum):
                    np.array(new_shape_in_array))
         s = super(EDSSpectrum, self).rebin(new_shape)
         # modify time per spectrum
-        if "SEM.EDS.live_time" in s.metadata:
+        if "Acquisition_instrument.SEM.Detector.EDS.live_time" in s.metadata:
             for factor in factors:
-                s.metadata.SEM.EDS.live_time *= factor
-        if "TEM.EDS.live_time" in s.metadata:
+                s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time *= factor
+        if "Acquisition_instrument.TEM.Detector.EDS.live_time" in s.metadata:
             for factor in factors:
-                s.metadata.TEM.EDS.live_time *= factor
+                s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time *= factor
         return s
 
     def set_elements(self, elements):
@@ -117,7 +119,7 @@ class EDSSpectrum(Spectrum):
         >>> s.set_elements(['Ni', 'O'],['Ka','Ka'])
         Adding Ni_Ka Line
         Adding O_Ka Line
-        >>> s.mapped_paramters.SEM.beam_energy = 10
+        >>> s.mapped_paramters.Acquisition_instrument.SEM.beam_energy = 10
         >>> s.set_elements(['Ni', 'O'])
         Adding Ni_La Line
         Adding O_Ka Line
@@ -195,8 +197,8 @@ class EDSSpectrum(Spectrum):
         add_lines, add_elements, set_elements..
 
         """
-        if "Sample.Xray_lines" in self.metadata:
-            del self.metadata.Sample.Xray_lines
+        if "Sample.xray_lines" in self.metadata:
+            del self.metadata.Sample.xray_lines
         self.add_lines(lines=lines,
                        only_one=only_one,
                        only_lines=only_lines)
@@ -212,7 +214,7 @@ class EDSSpectrum(Spectrum):
         list of elements, ocassionally it might be useful to customize the
         X-ray lines to be use by all functions by default using this method.
         The list of X-ray lines is stored in
-        `metadata.Sample.Xray_lines`
+        `metadata.Sample.xray_lines`
 
         Parameters
         ----------
@@ -237,14 +239,14 @@ class EDSSpectrum(Spectrum):
         set_lines, add_elements, set_elements.
 
         """
-        if "Sample.Xray_lines" in self.metadata:
-            Xray_lines = set(self.metadata.Sample.Xray_lines)
+        if "Sample.xray_lines" in self.metadata:
+            xray_lines = set(self.metadata.Sample.xray_lines)
         else:
-            Xray_lines = set()
+            xray_lines = set()
         # Define the elements which Xray lines has been customized
         # So that we don't attempt to add new lines automatically
         elements = set()
-        for line in Xray_lines:
+        for line in xray_lines:
             elements.add(line.split("_")[0])
         end_energy = self.axes_manager.signal_axes[0].high_value
         for line in lines:
@@ -256,14 +258,14 @@ class EDSSpectrum(Spectrum):
                     "Please provide a valid line symbol e.g. Fe_Ka")
             if element in elements_db:
                 elements.add(element)
-                if subshell in elements_db[element]['Xray_energy']:
-                    lines_len = len(Xray_lines)
-                    Xray_lines.add(line)
-                    if lines_len != len(Xray_lines):
+                if subshell in elements_db[element]['Atomic_properties']['Xray_lines']:
+                    lines_len = len(xray_lines)
+                    xray_lines.add(line)
+                    if lines_len != len(xray_lines):
                         print("%s line added," % line)
                     else:
                         print("%s line already in." % line)
-                    if (elements_db[element]['Xray_energy'][subshell] >
+                    if (elements_db[element]['Atomic_properties']['Xray_lines'][subshell]['energy (keV)'] >
                             end_energy):
                         print("Warning: %s %s is above the data energy range."
                               % (element, subshell))
@@ -282,14 +284,14 @@ class EDSSpectrum(Spectrum):
                     only_one=only_one,
                     only_lines=only_lines)
                 if new_lines:
-                    self.add_lines(new_lines)
+                    self.add_lines(list(new_lines) + list(lines))
         self.add_elements(elements)
         if not hasattr(self.metadata, 'Sample'):
             self.metadata.add_node('Sample')
-        if "Sample.Xray_lines" in self.metadata:
-            Xray_lines = Xray_lines.union(
-                self.metadata.Sample.Xray_lines)
-        self.metadata.Sample.Xray_lines = sorted(list(Xray_lines))
+        if "Sample.xray_lines" in self.metadata:
+            xray_lines = xray_lines.union(
+                self.metadata.Sample.xray_lines)
+        self.metadata.Sample.xray_lines = sorted(list(xray_lines))
 
     def _get_lines_from_elements(self,
                                  elements,
@@ -314,16 +316,14 @@ class EDSSpectrum(Spectrum):
         -------
 
         """
-        if hasattr(self.metadata, 'SEM') and \
-                hasattr(self.metadata.SEM, 'beam_energy'):
-            beam_energy = self.metadata.SEM.beam_energy
-        elif hasattr(self.metadata, 'TEM') and \
-                hasattr(self.metadata.TEM, 'beam_energy'):
-            beam_energy = self.metadata.TEM.beam_energy
+        if "Acquisition_instrument.SEM.beam_energy" in self.metadata:
+            beam_energy = self.metadata.Acquisition_instrument.SEM.beam_energy
+        elif "Acquisition_instrument.TEM.beam_energy" in self.metadata:
+            beam_energy = self.metadata.Acquisition_instrument.TEM.beam_energy
         else:
             raise AttributeError(
-                "To use this method the beam energy `TEM.beam_energy` "
-                "or `SEM.beam_energy` must be defined in "
+                "To use this method the beam energy `Acquisition_instrument.TEM.beam_energy` "
+                "or `Acquisition_instrument.SEM.beam_energy` must be defined in "
                 "`metadata`.")
 
         end_energy = self.axes_manager.signal_axes[0].high_value
@@ -333,10 +333,10 @@ class EDSSpectrum(Spectrum):
         for element in elements:
             # Possible line (existing and excited by electron)
             element_lines = []
-            for subshell in elements_db[element]['Xray_energy'].keys():
+            for subshell in elements_db[element]['Atomic_properties']['Xray_lines'].keys():
                 if only_lines and subshell not in only_lines:
                     continue
-                if (elements_db[element]['Xray_energy'][subshell] <
+                if (elements_db[element]['Atomic_properties']['Xray_lines'][subshell]['energy (keV)'] <
                         end_energy):
 
                     element_lines.append(element + "_" + subshell)
@@ -344,8 +344,8 @@ class EDSSpectrum(Spectrum):
             # Choose the best line
                 select_this = -1
                 for i, line in enumerate(element_lines):
-                    if (elements_db[element]['Xray_energy']
-                            [line.split("_")[1]] < beam_energy / 2):
+                    if (elements_db[element]['Atomic_properties']['Xray_lines']
+                            [line.split("_")[1]]['energy (keV)'] < beam_energy / 2):
                         select_this = i
                         break
                 element_lines = [element_lines[select_this], ]
@@ -358,7 +358,7 @@ class EDSSpectrum(Spectrum):
         return lines
 
     def get_lines_intensity(self,
-                            Xray_lines=None,
+                            xray_lines=None,
                             plot_result=False,
                             integration_window_factor=2.,
                             only_one=True,
@@ -366,22 +366,23 @@ class EDSSpectrum(Spectrum):
                             **kwargs):
         """Return the intensity map of selected Xray lines.
 
-        The intensity maps are computed by integrating the spectrum over the
-        different X-ray lines. The integration window width
+        The intensities, the number of X-ray counts, are computed by
+        suming the spectrum over the
+        different X-ray lines. The sum window width
         is calculated from the energy resolution of the detector
         defined as defined in
-        `self.metadata.SEM.EDS.energy_resolution_MnKa` or
-        `self.metadata.SEM.EDS.energy_resolution_MnKa`.
+        `self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa` or
+        `self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa`.
 
 
         Parameters
         ----------
 
-        Xray_lines: {None, "best", list of string}
+        xray_lines: {None, "best", list of string}
             If None,
-            if `mapped.parameters.Sample.elements.Xray_lines` contains a
+            if `mapped.parameters.Sample.elements.xray_lines` contains a
             list of lines use those.
-            If `mapped.parameters.Sample.elements.Xray_lines` is undefined
+            If `mapped.parameters.Sample.elements.xray_lines` is undefined
             or empty but `mapped.parameters.Sample.elements` is defined,
             use the same syntax as `add_line` to select a subset of lines
             for the operation.
@@ -421,11 +422,11 @@ class EDSSpectrum(Spectrum):
 
         """
 
-        if Xray_lines is None:
-            if 'Sample.Xray_lines' in self.metadata:
-                Xray_lines = self.metadata.Sample.Xray_lines
+        if xray_lines is None:
+            if 'Sample.xray_lines' in self.metadata:
+                xray_lines = self.metadata.Sample.xray_lines
             elif 'Sample.elements' in self.metadata:
-                Xray_lines = self._get_lines_from_elements(
+                xray_lines = self._get_lines_from_elements(
                     self.metadata.Sample.elements,
                     only_one=only_one,
                     only_lines=only_lines)
@@ -433,10 +434,10 @@ class EDSSpectrum(Spectrum):
                 raise ValueError(
                     "Not X-ray line, set them with `add_elements`")
 
-        if self.metadata.signal_type == 'EDS_SEM':
-            FWHM_MnKa = self.metadata.SEM.EDS.energy_resolution_MnKa
-        elif self.metadata.signal_type == 'EDS_TEM':
-            FWHM_MnKa = self.metadata.TEM.EDS.energy_resolution_MnKa
+        if self.metadata.Signal.signal_type == 'EDS_SEM':
+            FWHM_MnKa = self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa
+        elif self.metadata.Signal.signal_type == 'EDS_TEM':
+            FWHM_MnKa = self.metadata.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa
         else:
             raise NotImplementedError(
                 "This method only works for EDS_TEM or EDS_SEM signals. "
@@ -446,19 +447,20 @@ class EDSSpectrum(Spectrum):
         intensities = []
         # test 1D Spectrum (0D problem)
             #signal_to_index = self.axes_manager.navigation_dimension - 2
-        for Xray_line in Xray_lines:
+        for Xray_line in xray_lines:
             element, line = utils_eds._get_element_and_line(Xray_line)
-            line_energy = elements_db[element]['Xray_energy'][line]
+            line_energy = elements_db[element]['Atomic_properties']['Xray_lines'][
+                line]['energy (keV)']
             line_FWHM = utils_eds.get_FWHM_at_Energy(FWHM_MnKa, line_energy)
             det = integration_window_factor * line_FWHM / 2.
             img = self[..., line_energy - det:line_energy + det
-                       ].integrate_simpson(-1)
-            img.metadata.title = (
+                       ].integrate1D(-1)
+            img.metadata.General.title = (
                 'Intensity of %s at %.2f %s from %s' %
                 (Xray_line,
                  line_energy,
                  self.axes_manager.signal_axes[0].units,
-                 self.metadata.title))
+                 self.metadata.General.title))
             if img.axes_manager.navigation_dimension >= 2:
                 img = img.as_image([0, 1])
             elif img.axes_manager.navigation_dimension == 1:
@@ -479,7 +481,7 @@ class EDSSpectrum(Spectrum):
 
         TOA is the angle with which the X-rays leave the surface towards
         the detector. Parameters are read in 'SEM.tilt_stage',
-        'SEM.EDS.azimuth_angle' and 'SEM.EDS.elevation_angle'
+        'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle' and 'SEM.Detector.EDS.elevation_angle'
          in 'metadata'.
 
         Returns
@@ -494,14 +496,14 @@ class EDSSpectrum(Spectrum):
         -----
         Defined by M. Schaffer et al., Ultramicroscopy 107(8), pp 587-597 (2007)
         """
-        if self.metadata.signal_type == 'EDS_SEM':
-            mp = self.metadata.SEM
-        elif self.metadata.signal_type == 'EDS_TEM':
-            mp = self.metadata.TEM
+        if self.metadata.Signal.signal_type == 'EDS_SEM':
+            mp = self.metadata.Acquisition_instrument.SEM
+        elif self.metadata.Signal.signal_type == 'EDS_TEM':
+            mp = self.metadata.Acquisition_instrument.TEM
 
         tilt_stage = mp.tilt_stage
-        azimuth_angle = mp.EDS.azimuth_angle
-        elevation_angle = mp.EDS.elevation_angle
+        azimuth_angle = mp.Detector.EDS.azimuth_angle
+        elevation_angle = mp.Detector.EDS.elevation_angle
 
         TOA = utils.eds.take_off_angle(tilt_stage, azimuth_angle,
                                        elevation_angle)

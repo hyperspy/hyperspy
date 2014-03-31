@@ -151,6 +151,7 @@ with update_version_when_dev() as version:
                   'hyperspy.tests.model',
                   'hyperspy.tests.signal',
                   'hyperspy.tests.utils',
+                  'hyperspy.tests.axes',
                   'hyperspy.models',
                   'hyperspy.misc',
                   'hyperspy.misc.eels',

@@ -33,23 +33,30 @@ class Test_metadata:
         s.axes_manager.signal_axes[0].scale = 1e-3
         s.axes_manager.signal_axes[0].units = "keV"
         s.axes_manager.signal_axes[0].name = "Energy"
-        s.metadata.SEM.EDS.live_time = 3.1
-        s.metadata.SEM.beam_energy = 15.0
-        s.metadata.SEM.tilt_stage = -38
-        s.metadata.SEM.EDS.azimuth_angle = 63
-        s.metadata.SEM.EDS.elevation_angle = 35
+        s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time = 3.1
+        s.metadata.Acquisition_instrument.SEM.beam_energy = 15.0
+        s.metadata.Acquisition_instrument.SEM.tilt_stage = -38
+        s.metadata.Acquisition_instrument.SEM.Detector.EDS.azimuth_angle = 63
+        s.metadata.Acquisition_instrument.SEM.Detector.EDS.elevation_angle = 35
         self.signal = s
 
     def test_sum_live_time(self):
         s = self.signal
         sSum = s.sum(0)
-        assert_equal(sSum.metadata.SEM.EDS.live_time, 3.1 * 2)
+        assert_equal(
+            sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time,
+            3.1 *
+            2)
 
     def test_rebin_live_time(self):
         s = self.signal
         dim = s.axes_manager.shape
         s = s.rebin([dim[0] / 2, dim[1] / 2, dim[2]])
-        assert_equal(s.metadata.SEM.EDS.live_time, 3.1 * 2 * 2)
+        assert_equal(
+            s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time,
+            3.1 *
+            2 *
+            2)
 
     def test_add_elements(self):
         s = self.signal
@@ -65,48 +72,57 @@ class Test_metadata:
     def test_add_lines(self):
         s = self.signal
         s.add_lines(lines=())
-        assert_equal(s.metadata.Sample.Xray_lines, [])
+        assert_equal(s.metadata.Sample.xray_lines, [])
         s.add_lines(("Fe_Ln",))
-        assert_equal(s.metadata.Sample.Xray_lines, ["Fe_Ln"])
+        assert_equal(s.metadata.Sample.xray_lines, ["Fe_Ln"])
         s.add_lines(("Fe_Ln",))
-        assert_equal(s.metadata.Sample.Xray_lines, ["Fe_Ln"])
+        assert_equal(s.metadata.Sample.xray_lines, ["Fe_Ln"])
         s.add_elements(["Ti", ])
         s.add_lines(())
-        assert_equal(s.metadata.Sample.Xray_lines, ['Fe_Ln', 'Ti_La'])
+        assert_equal(s.metadata.Sample.xray_lines, ['Fe_Ln', 'Ti_La'])
         s.set_lines((), only_one=False, only_lines=False)
-        assert_equal(s.metadata.Sample.Xray_lines,
+        assert_equal(s.metadata.Sample.xray_lines,
                      ['Fe_La', 'Fe_Lb3', 'Fe_Ll', 'Fe_Ln', 'Ti_La',
                       'Ti_Lb3', 'Ti_Ll', 'Ti_Ln'])
-        s.metadata.SEM.beam_energy = 0.4
+        s.metadata.Acquisition_instrument.SEM.beam_energy = 0.4
         s.set_lines((), only_one=False, only_lines=False)
-        assert_equal(s.metadata.Sample.Xray_lines, ['Ti_Ll'])
-#        s.add_lines()
-#        results.append(mp.Sample.Xray_lines[1])
-#        mp.SEM.beam_energy = 10.0
-#        s.set_elements(['Al','Ni'])
-#        results.append(mp.Sample.Xray_lines[1])
-#        s.add_elements(['Fe'])
-#        results.append(mp.Sample.Xray_lines[1])
-#        assert_equal(results, ['Al_Ka','Ni','Ni_Ka','Ni_La','Fe_La'])
+        assert_equal(s.metadata.Sample.xray_lines, ['Ti_Ll'])
+
+    def test_add_lines_auto(self):
+        s = self.signal
+        s.axes_manager.signal_axes[0].scale = 1e-2
+        s.set_elements(["Ti", "Al"])
+        s.set_lines(['Al_Ka'])
+        assert_equal(s.metadata.Sample.xray_lines, ['Al_Ka', 'Ti_Ka'])
+
+        del s.metadata.Sample.xray_lines
+        s.set_elements(['Al', 'Ni'])
+        s.add_lines()
+        assert_equal(s.metadata.Sample.xray_lines, ['Al_Ka', 'Ni_Ka'])
+        s.metadata.Acquisition_instrument.SEM.beam_energy = 10.0
+        s.set_lines([])
+        assert_equal(s.metadata.Sample.xray_lines, ['Al_Ka', 'Ni_La'])
 
     def test_default_param(self):
         s = self.signal
         mp = s.metadata
-        assert_equal(mp.SEM.EDS.energy_resolution_MnKa,
+        assert_equal(mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa,
                      preferences.EDS.eds_mn_ka)
 
     def test_SEM_to_TEM(self):
         s = self.signal[0, 0]
         signal_type = 'EDS_TEM'
         mp = s.metadata
-        mp.SEM.EDS.energy_resolution_MnKa = 125.3
+        mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa = 125.3
         sTEM = s.deepcopy()
         sTEM.set_signal_type(signal_type)
         mpTEM = sTEM.metadata
-        results = [mp.SEM.EDS.energy_resolution_MnKa]
+        results = [
+            mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa]
         results.append(signal_type)
-        resultsTEM = [mpTEM.TEM.EDS.energy_resolution_MnKa]
-        resultsTEM.append(mpTEM.signal_type)
+        resultsTEM = [
+            mpTEM.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa]
+        resultsTEM.append(mpTEM.Signal.signal_type)
         assert_equal(results, resultsTEM)
 
     def test_get_calibration_from(self):
@@ -137,8 +153,8 @@ class Test_get_lines_intentisity:
         g.sigma.value = 0.05
         g.centre.value = 1.487
         s.data[:] = g.function(energy_axis.axis)
-        s.metadata.SEM.EDS.live_time = 3.1
-        s.metadata.SEM.beam_energy = 15.0
+        s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time = 3.1
+        s.metadata.Acquisition_instrument.SEM.beam_energy = 15.0
         self.signal = s
 
     def test(self):
@@ -146,26 +162,26 @@ class Test_get_lines_intentisity:
         sAl = s.get_lines_intensity(["Al_Ka"],
                                     plot_result=False,
                                     integration_window_factor=5)[0]
-        assert_true(np.allclose(1, sAl.data[0, 0, 0], atol=1e-3))
+        assert_true(np.allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3))
         sAl = s[0].get_lines_intensity(["Al_Ka"],
                                        plot_result=False,
                                        integration_window_factor=5)[0]
-        assert_true(np.allclose(1, sAl.data[0, 0], atol=1e-3))
+        assert_true(np.allclose(24.99516, sAl.data[0, 0], atol=1e-3))
         sAl = s[0, 0].get_lines_intensity(["Al_Ka"],
                                           plot_result=False,
                                           integration_window_factor=5)[0]
-        assert_true(np.allclose(1, sAl.data[0], atol=1e-3))
+        assert_true(np.allclose(24.99516, sAl.data[0], atol=1e-3))
         sAl = s[0, 0, 0].get_lines_intensity(["Al_Ka"],
                                              plot_result=False,
                                              integration_window_factor=5)[0]
-        assert_true(np.allclose(1, sAl.data, atol=1e-3))
+        assert_true(np.allclose(24.99516, sAl.data, atol=1e-3))
 
 
 class Test_tools_bulk:
 
     def setUp(self):
         s = EDSSEMSpectrum(np.ones(1024))
-        s.metadata.SEM.beam_energy = 5.0
+        s.metadata.Acquisition_instrument.SEM.beam_energy = 5.0
         s.set_elements(['Al', 'Zn'])
         s.add_lines()
         self.signal = s
@@ -175,16 +191,16 @@ class Test_tools_bulk:
         mp = s.metadata
         elec_range = utils.eds.electron_range(
             mp.Sample.elements[0],
-            mp.SEM.beam_energy,
+            mp.Acquisition_instrument.SEM.beam_energy,
             density='auto',
-            tilt=mp.SEM.tilt_stage)
+            tilt=mp.Acquisition_instrument.SEM.tilt_stage)
         assert_equal(elec_range, 0.41350651162374225)
 
     def test_xray_range(self):
         s = self.signal
         mp = s.metadata
         xr_range = utils.eds.xray_range(
-            mp.Sample.Xray_lines[0],
-            mp.SEM.beam_energy,
+            mp.Sample.xray_lines[0],
+            mp.Acquisition_instrument.SEM.beam_energy,
             density=4.37499648818)
         assert_equal(xr_range, 0.19002078834050035)

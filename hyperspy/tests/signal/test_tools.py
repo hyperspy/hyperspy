@@ -16,9 +16,6 @@ class Test2D:
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "E"
         self.signal.axes_manager[0].scale = 0.5
-        self.signal.metadata.set_item('splitting.axis', 0)
-        self.signal.metadata.set_item(
-            'splitting.step_sizes', [2, 2])
         self.data = self.signal.data.copy()
 
     def test_axis_by_str(self):
@@ -60,14 +57,34 @@ class Test2D:
 
     def test_split_default(self):
         result = self.signal.split()
-        assert_true(len(result) == 2)
-        assert_true((result[0].data == self.data[:2, :]).all())
-        assert_true((result[1].data == self.data[2:4, :]).all())
+        assert_true(len(result) == 5)
+        assert_true((result[0].data == self.data[0]).all())
 
     def test_histogram(self):
         result = self.signal.get_histogram(3)
         assert_true(isinstance(result, signals.Spectrum))
         assert_true((result.data == np.array([17, 16, 17])).all())
+
+    def test_estimate_poissonian_noise_copy_data(self):
+        self.signal.estimate_poissonian_noise_variance()
+        assert_true(self.signal.metadata.Signal.Noise_properties.variance.data
+                    is not self.signal.data)
+
+    def test_estimate_poissonian_noise_noarg(self):
+        self.signal.estimate_poissonian_noise_variance()
+        assert_true(
+            (self.signal.metadata.Signal.Noise_properties.variance.data ==
+             self.signal.data).all())
+
+    def test_estimate_poissonian_noise_with_args(self):
+        self.signal.estimate_poissonian_noise_variance(
+            expected_value=self.signal,
+            gain_factor=2,
+            gain_offset=1,
+            correlation_factor=0.5)
+        assert_true(
+            (self.signal.metadata.Signal.Noise_properties.variance.data ==
+             (self.signal.data * 2 + 1) * 0.5).all())
 
 
 class Test3D:
@@ -78,9 +95,6 @@ class Test3D:
         self.signal.axes_manager[1].name = "y"
         self.signal.axes_manager[2].name = "E"
         self.signal.axes_manager[0].scale = 0.5
-        self.signal.metadata.set_item('splitting.axis', 0)
-        self.signal.metadata.set_item(
-            'splitting.step_sizes', [2, 2])
         self.data = self.signal.data.copy()
 
     def test_rebin(self):

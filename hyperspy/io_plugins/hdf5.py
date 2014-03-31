@@ -18,6 +18,7 @@
 
 from distutils.version import StrictVersion
 import warnings
+import datetime
 
 import h5py
 import numpy as np
@@ -39,7 +40,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
-version = "1.1"
+version = "1.2"
 
 # -----------------------
 # File format description
@@ -70,8 +71,8 @@ version = "1.1"
 
 not_valid_format = 'The file is not a valid Hyperspy hdf5 file'
 
-current_file_version = None
-latest_file_version = StrictVersion(version)
+current_file_version = None  # Format version of the file being read
+default_version = StrictVersion(version)
 
 
 def get_hspy_format_version(f):
@@ -95,10 +96,11 @@ def file_reader(filename, record_by, mode='r', driver='core',
         # elsewhere.
         global current_file_version
         current_file_version = get_hspy_format_version(f)
-        global latest_file_version
-        if current_file_version > latest_file_version:
+        global default_version
+        if current_file_version > default_version:
             warnings.warn("This file was written using a newer version of "
-                          "HyperSpy. I will attempt to load it, but, "
+                          "the HyperSpy hdf5 file format. "
+                          "I will attempt to load it, but, "
                           "if I fail, "
                           "it is likely that I will be more successful at this "
                           "and other tasks if you upgrade me.")
@@ -127,7 +129,7 @@ def file_reader(filename, record_by, mode='r', driver='core',
 
 def hdfgroup2signaldict(group):
     global current_file_version
-    global latest_file_version
+    global default_version
     if current_file_version < StrictVersion("1.2"):
         metadata = "mapped_parameters"
         original_metadata = "original_parameters"
@@ -162,8 +164,9 @@ def hdfgroup2signaldict(group):
     # If the title was not defined on writing the Experiment is
     # then called __unnamed__. The next "if" simply sets the title
     # back to the empty string
-    if '__unnamed__' == exp['metadata']['title']:
-        exp['metadata']['title'] = ''
+    if "General" in exp["metadata"] and "title" in exp["metadata"]["General"]:
+        if '__unnamed__' == exp['metadata']['General']['title']:
+            exp['metadata']["General"]['title'] = ''
 
     if current_file_version < StrictVersion("1.1"):
         # Load the decomposition results written with the old name,
@@ -176,14 +179,120 @@ def hdfgroup2signaldict(group):
                 group['peak_mva_results'], {})
         # Replace the old signal and name keys with their current names
         if 'signal' in exp['metadata']:
-            exp['metadata']['signal_type'] = \
+            if not "Signal" in exp["metadata"]:
+                exp["metadata"]["Signal"] = {}
+            exp['metadata']["Signal"]['signal_type'] = \
                 exp['metadata']['signal']
             del exp['metadata']['signal']
 
         if 'name' in exp['metadata']:
-            exp['metadata']['title'] = \
+            if "General" not in exp["metadata"]:
+                exp["metadata"]["General"] = {}
+            exp['metadata']['General']['title'] = \
                 exp['metadata']['name']
             del exp['metadata']['name']
+
+    if current_file_version < StrictVersion("1.2"):
+        if '_internal_parameters' in exp['metadata']:
+            exp['metadata']['_HyperSpy'] = \
+                exp['metadata']['_internal_parameters']
+            del exp['metadata']['_internal_parameters']
+            if 'stacking_history' in exp['metadata']['_HyperSpy']:
+                exp['metadata']['_HyperSpy']["Stacking_history"] = \
+                    exp['metadata']['_HyperSpy']['stacking_history']
+                del exp['metadata']['_HyperSpy']["stacking_history"]
+            if 'folding' in exp['metadata']['_HyperSpy']:
+                exp['metadata']['_HyperSpy']["Folding"] = \
+                    exp['metadata']['_HyperSpy']['folding']
+                del exp['metadata']['_HyperSpy']["folding"]
+        if 'Variance_estimation' in exp['metadata']:
+            if "Noise_properties" not in exp["metadata"]:
+                exp["metadata"]["Noise_properties"] = {}
+            exp['metadata']['Noise_properties']["Variance_linear_model"] = \
+                exp['metadata']['Variance_estimation']
+            del exp['metadata']['Variance_estimation']
+        if "TEM" in exp["metadata"]:
+            if not "Acquisition_instrument" in exp["metadata"]:
+                exp["metadata"]["Acquisition_instrument"] = {}
+            exp["metadata"]["Acquisition_instrument"][
+                "TEM"] = exp["metadata"]["TEM"]
+            del exp["metadata"]["TEM"]
+            if "EELS" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                if "dwell_time" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["dwell_time"] =\
+                        exp["metadata"]["Acquisition_instrument"][
+                            "TEM"]["dwell_time"]
+                    del exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["dwell_time"]
+                if "dwell_time_units" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["dwell_time_units"] =\
+                        exp["metadata"]["Acquisition_instrument"][
+                            "TEM"]["dwell_time_units"]
+                    del exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["dwell_time_units"]
+                if "exposure" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["exposure"] =\
+                        exp["metadata"]["Acquisition_instrument"][
+                            "TEM"]["exposure"]
+                    del exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["exposure"]
+                if "exposure_units" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["exposure_units"] =\
+                        exp["metadata"]["Acquisition_instrument"][
+                            "TEM"]["exposure_units"]
+                    del exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["exposure_units"]
+                if "Detector" not in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                    exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["Detector"] = {}
+                exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = \
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]
+                del exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]
+            if "EDS" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                if "Detector" not in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                    exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["Detector"] = {}
+                if "EDS" not in exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"]:
+                    exp["metadata"]["Acquisition_instrument"][
+                        "TEM"]["Detector"]["EDS"] = {}
+                exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"]["EDS"] = \
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EDS"]
+                del exp["metadata"]["Acquisition_instrument"]["TEM"]["EDS"]
+
+        if "SEM" in exp["metadata"]:
+            if not "Acquisition_instrument" in exp["metadata"]:
+                exp["metadata"]["Acquisition_instrument"] = {}
+            exp["metadata"]["Acquisition_instrument"][
+                "SEM"] = exp["metadata"]["SEM"]
+            del exp["metadata"]["SEM"]
+            if "EDS" in exp["metadata"]["Acquisition_instrument"]["SEM"]:
+                if "Detector" not in exp["metadata"]["Acquisition_instrument"]["SEM"]:
+                    exp["metadata"]["Acquisition_instrument"][
+                        "SEM"]["Detector"] = {}
+                if "EDS" not in exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"]:
+                    exp["metadata"]["Acquisition_instrument"][
+                        "SEM"]["Detector"]["EDS"] = {}
+                exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"]["EDS"] = \
+                    exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
+                del exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
+
+        if "Sample" in exp["metadata"] and "Xray_lines" in exp["metadata"]["Sample"]:
+            exp["metadata"]["Sample"]["xray_lines"] = exp[
+                "metadata"]["Sample"]["Xray_lines"]
+            del exp["metadata"]["Sample"]["Xray_lines"]
+
+        for key in ["title", "date", "time", "original_filename"]:
+            if key in exp["metadata"]:
+                if "General" not in exp["metadata"]:
+                    exp["metadata"]["General"] = {}
+                exp["metadata"]["General"][key] = exp["metadata"][key]
+                del exp["metadata"][key]
+        for key in ["record_by", "signal_origin", "signal_type"]:
+            if key in exp["metadata"]:
+                if "Signal" not in exp["metadata"]:
+                    exp["metadata"]["Signal"] = {}
+                exp["metadata"]["Signal"][key] = exp["metadata"][key]
+                del exp["metadata"][key]
 
     return exp
 
@@ -224,6 +333,8 @@ def dict2hdfgroup(dictionary, group, compression=None):
                           group.create_group('_hspy_AxesManager_'
                                              + key),
                           compression=compression)
+        elif isinstance(value, (datetime.date, datetime.time)):
+            group.attrs["_datetime_" + key] = repr(value)
         elif value is Undefined:
             continue
         else:
@@ -237,7 +348,7 @@ def dict2hdfgroup(dictionary, group, compression=None):
 
 def hdfgroup2dict(group, dictionary={}):
     for key, value in group.attrs.iteritems():
-        if isinstance(value, np.string_):
+        if isinstance(value, (np.string_, str)):
             if value == '_None_':
                 value = None
         elif isinstance(value, np.bool_):
@@ -249,6 +360,8 @@ def hdfgroup2dict(group, dictionary={}):
         # skip signals - these are handled below.
         if key.startswith('_sig_'):
             pass
+        elif key.startswith('_datetime_'):
+            dictionary[key.replace("_datetime_", "")] = eval(value)
         else:
             dictionary[key] = value
     if not isinstance(group, h5py.Dataset):
@@ -271,6 +384,13 @@ def hdfgroup2dict(group, dictionary={}):
 
 
 def write_signal(signal, group, compression='gzip'):
+    if default_version < StrictVersion("1.2"):
+        metadata = "mapped_parameters"
+        original_metadata = "original_parameters"
+    else:
+        metadata = "metadata"
+        original_metadata = "original_metadata"
+
     group.create_dataset('data',
                          data=signal.data,
                          compression=compression)
@@ -281,10 +401,14 @@ def write_signal(signal, group, compression='gzip'):
         coord_group = group.create_group(
             'axis-%s' % axis.index_in_array)
         dict2hdfgroup(axis_dict, coord_group, compression=compression)
-    mapped_par = group.create_group('mapped_parameters')
-    dict2hdfgroup(signal.metadata.as_dictionary(),
+    mapped_par = group.create_group(metadata)
+    metadata_dict = signal.metadata.as_dictionary()
+    if default_version < StrictVersion("1.2"):
+        metadata_dict["_internal_parameters"] = \
+            metadata_dict.pop("_HyperSpy")
+    dict2hdfgroup(metadata_dict,
                   mapped_par, compression=compression)
-    original_par = group.create_group('original_parameters')
+    original_par = group.create_group(original_metadata)
     dict2hdfgroup(signal.original_metadata.as_dictionary(),
                   original_par, compression=compression)
     learning_results = group.create_group('learning_results')
@@ -297,12 +421,15 @@ def write_signal(signal, group, compression='gzip'):
                       peak_learning_results, compression=compression)
 
 
-def file_writer(filename, signal, compression='gzip', *args, **kwds):
+def file_writer(filename,
+                signal,
+                compression='gzip',
+                *args, **kwds):
     with h5py.File(filename, mode='w') as f:
         f.attrs['file_format'] = "HyperSpy"
         f.attrs['file_format_version'] = version
         exps = f.create_group('Experiments')
-        group_name = signal.metadata.title if \
-            signal.metadata.title else '__unnamed__'
+        group_name = signal.metadata.General.title if \
+            signal.metadata.General.title else '__unnamed__'
         expg = exps.create_group(group_name)
         write_signal(signal, expg, compression=compression)

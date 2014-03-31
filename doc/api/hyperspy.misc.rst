@@ -32,6 +32,14 @@ hyperspy.misc.config_dir module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.misc.elements module
+-----------------------------
+
+.. automodule:: hyperspy.misc.elements
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.misc.image_tools module
 --------------------------------
 

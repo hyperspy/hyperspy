@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import numpy as np
 import warnings
 
 import numpy as np
@@ -113,11 +115,10 @@ def file_reader(filename, record_by='image', **kwds):
         op = {}
         for key, tag in tiff[0].tags.iteritems():
             op[key] = tag.value
-        mp = {'original_filename': filename,
-              'record_by': "image",
-              'signal_type': "", }
-        return [{'data': dc,
-                 'axes': axes,
-                 'original_metadata': op,
-                 'metadata': mp,
-                 }]
+    return [{'data': dc,
+             'metadata': {'General': {'original_filename': os.path.split(filename)[1]},
+                          "Signal": {'signal_type': "",
+                                     'record_by': "image",
+                                     },
+                          },
+             }]

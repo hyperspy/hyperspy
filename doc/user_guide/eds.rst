@@ -29,11 +29,12 @@ For a single spectrum:
     >>> spec = load("spectrum.msa")    
     
 For a spectrum_image (The .rpl file is recorded as an image in this example,
-The option record_by='spectrum' set it back to a spectrum):
+The method :py:meth:`~.signal.Signal.as_spectrum` set it back to a spectrum
+with the energy axis in first position):
 
 .. code-block:: python
 
-    >>> spec_img = load("spectrum_image.rpl",record_by="spectrum")   
+    >>> spec_img = load("spectrum_image.rpl").as_spectrum(0)   
     
 For a stack of spectrum_images (The "*" replace all chains of string, in this
 example 01, 02, 03,...):
@@ -69,23 +70,24 @@ as follow:
     
 .. code-block:: python
 
-    >>> spec.metadata.TEM
-    ├── EDS
-    │   ├── azimuth_angle = 0.0
-    │   ├── elevation_angle = 37.0
-    │   ├── energy_resolution_MnKa = 130.0
-    │   ├── live_time = 30.0
-    │   └── real_time = 55.0
+    >>> spec.metadata.Acquisition_instrument.TEM
+    ├── Detector
+    │   └── EDS
+    │       ├── azimuth_angle = 0.0
+    │       ├── elevation_angle = 37.0
+    │       ├── energy_resolution_MnKa = 130.0
+    │       ├── live_time = 30.0
+    │       └── real_time = 55.0
     ├── beam_current = 0.0
     ├── beam_energy = 300
-    └── tilt_stage = 36.0
+    └── tilt_stage = 36.0    
 
 
 These parameters can be set directly:
 
 .. code-block:: python
 
-    >>> spec.metadata.TEM.beam_energy = 300
+    >>> spec.metadata.Acquisition_instrument.TEM.beam_energy = 300
 
 or with the  
 :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` method:
@@ -158,7 +160,7 @@ method.
     >>> # Load spectrum.msa which contains the parameters
     >>> spec = load("spectrum.msa",signal_type="EDS_TEM")
     >>> # Load spectrum_image.rpl which contains no parameters
-    >>> spec_img = load("spectrum_image.rpl",record_by="spectrum",signal_type="EDS_TEM")
+    >>> spec_img = load("spectrum_image.rpl",signal_type="EDS_TEM").as_spectrum(0)
     >>> # Set all the properties of spec to spec_img
     >>> spec_img.get_calibration_from(spec)
     
@@ -173,10 +175,10 @@ follow:
 .. code-block:: python
 
     >>> spec.metadata.Sample
-    ├── Xray_lines = ['Al_Ka', 'Ni_La', 'Ti_Ka']
     ├── description = Sample 1.3
     ├── elements = ['Al', 'Ni', 'Ti']
-    └── thickness = 100
+    ├── thickness = 100
+    └── xray_lines = ['Al_Ka', 'Ni_La', 'Ti_Ka']
 
 
 The following methods are either called "set" or "add". When "set" 
@@ -208,11 +210,12 @@ elements will be added automatically. Several lines per elements can be defined.
 
 .. code-block:: python
 
+    >>> spec.set_elements(["Ni","Ti","Al"])
     >>> spec.set_lines(["Ni_La","Ti_Ka","Al_Ka"])
     >>> spec.add_lines(["Ti_La"])
     >>> spec.metadata.Sample
-    ├── Xray_lines = ['Al_Ka', 'Ni_La', 'Ti_Ka', 'Ti_La']
-    └── elements = ['Al', 'Ni', 'Ti']    
+    ├── elements = ['Al', 'Ni', 'Ti'] 
+    └── xray_lines = ['Al_Ka', 'Ni_La', 'Ti_Ka', 'Ti_La']  
     
 These methods can be used automatically, if the beam energy is set. 
 The most excited X-ray line is selected per element (highest energy above an 
@@ -221,22 +224,22 @@ overvoltage of 2 (< beam energy / 2)).
 .. code-block:: python
 
     >>> spec.set_elements(["Ni","Ti","Al"])
-    >>> spec.metadata.SEM.beam_energy = 30
+    >>> spec.metadata.Acquisition_instrument.TEM.beam_energy = 30
     >>> spec.add_lines()
     >>> spec.metadata.Sample
-    ├── Xray_lines = ['Al_Ka', 'Ni_Ka', 'Ti_Ka']
-    └── elements = ['Al', 'Ni', 'Ti']
-    >>> spec.metadata.SEM.beam_energy = 5
-    >>> spec.set_lines([])
+    ├── elements = ['Al', 'Ni', 'Ti']
+    └── Xray_lines = ['Al_Ka', 'Ni_Ka', 'Ti_Ka']
+    >>> spec.metadata.Acquisition_instrument.TEM.beam_energy = 5
+    >>> spec.add_lines()
     >>> spec.metadata.Sample
-    ├── Xray_lines = ['Al_Ka', 'Ni_La', 'Ti_La']
-    └── elements = ['Al', 'Ni', 'Ti']
+    ├── elements = ['Al', 'Ni', 'Ti']
+    └── Xray_lines = ['Al_Ka', 'Ni_La', 'Ti_La']
     
 A warning is raised, if setting a X-ray lines higher than the beam energy.
 
 .. code-block:: python
 
-    >>> spec.metadata.SEM.beam_energy = 5
+    >>> spec.metadata.Acquisition_instrument.TEM.beam_energy = 5
     >>> spec.add_lines(["Ta_Ka"])
     Warning: Ta Ka is above the data energy range.
 
@@ -248,19 +251,31 @@ An elemental database is available with the energy of the X-ray lines.
 
 .. code-block:: python
 
-    >>>  elements_EDS["Fe"]
-    ├── A = 55.845
-    ├── Xray_energy
-    │   ├── Ka = 6.404
-    │   ├── Kb = 7.0568
-    │   ├── La = 0.705
-    │   ├── Lb3 = 0.792
-    │   ├── Ll = 0.615
-    │   └── Ln = 0.62799
+    >>>  utils.material.elements.Fe.General_properties
     ├── Z = 26
-    ├── density = 7.874
+    ├── atomic_weight = 55.845
     └── name = iron
-
+    >>>  utils.material.elements.Fe.Physical_properties
+    └── density (g/cm^3) = 7.874
+    >>>  utils.material.elements.Fe.Atomic_properties.Xray_lines
+    ├── Ka
+    │   ├── energy (keV) = 6.404
+    │   └── factor = 1
+    ├── Kb
+    │   ├── energy (keV) = 7.0568
+    │   └── factor = 0.1
+    ├── La
+    │   ├── energy (keV) = 0.705
+    │   └── factor = 1
+    ├── Lb3
+    │   ├── energy (keV) = 0.792
+    │   └── factor = 0.08
+    ├── Ll
+    │   ├── energy (keV) = 0.615
+    │   └── factor = 0.04
+    └── Ln
+        ├── energy (keV) = 0.62799
+        └── factor = 0.01
 
 Plotting
 --------
@@ -303,7 +318,7 @@ are used by default.
    
 .. code-block:: python
 
-    >>> spec.set_lines(["Ni_La","Ti_Ka","Al_Ka"])
+    >>> spec_img.set_lines(["Ni_La","Ti_Ka","Al_Ka"])
     >>> spec_img.get_lines_intensity()
     [<Image, title: Intensity of Al_Ka at 1.49 keV from Spectrum image,
      dimensions: (|128, 95)>,

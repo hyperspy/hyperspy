@@ -301,7 +301,7 @@ class EELSCLEdge(Component):
         cts[itab] = self.tab_xsection(E[itab])
         bsignal[itab] = False
         cts[bsignal] = self.A * E[bsignal] ** -self.r
-        return cts * self.intensity.value * self.energy_scale
+        return cts * self.intensity.value
 
     def grad_intensity(self, E):
         return self.function(E) / self.intensity.value
@@ -349,7 +349,7 @@ class EELSCLEdge(Component):
         self._axes_manager = original_axes_manager
         self.fetch_stored_values()
 
-        s.metadata.title = self.name.replace(
+        s.metadata.General.title = self.name.replace(
             '_', ' ') + ' fine structure'
 
         return s

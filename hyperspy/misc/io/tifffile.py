@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # tifffile.py
 
-# Copyright (c) 2008-2013, Christoph Gohlke
-# Copyright (c) 2008-2013, The Regents of the University of California
+# Copyright (c) 2008-2014, Christoph Gohlke
+# Copyright (c) 2008-2014, The Regents of the University of California
 # Produced at the Laboratory for Fluorescence Dynamics
 # All rights reserved.
 #
@@ -34,13 +34,13 @@
 """Read and write image data from and to TIFF files.
 
 Image and meta-data can be read from TIFF, BigTIFF, OME-TIFF, STK, LSM, NIH,
-ImageJ, FluoView, SEQ and GEL files.
+ImageJ, MicroManager, FluoView, SEQ and GEL files.
 Only a subset of the TIFF specification is supported, mainly uncompressed
 and losslessly compressed 2**(0 to 6) bit integer, 16, 32 and 64-bit float,
 grayscale and RGB(A) images, which are commonly used in bio-scientific imaging.
 Specifically, reading JPEG/CCITT compressed image data or EXIF/IPTC/GPS/XMP
 meta-data is not implemented. Only primary info records are read for STK,
-FluoView, and NIH image formats.
+FluoView, MicroManager, and NIH image formats.
 
 TIFF, the Tagged Image File Format, is under the control of Adobe Systems.
 BigTIFF allows for files greater than 4 GB. STK, LSM, FluoView, SEQ, GEL,
@@ -56,13 +56,13 @@ For command line usage run ``python tifffile.py --help``
 :Organization:
   Laboratory for Fluorescence Dynamics, University of California, Irvine
 
-:Version: 2013.05.02
+:Version: 2014.02.05
 
 Requirements
 ------------
 * `CPython 2.7 or 3.3 <http://www.python.org>`_
 * `Numpy 1.7 <http://www.numpy.org>`_
-* `Matplotlib 1.2 <http://www.matplotlib.org>`_  (optional for plotting)
+* `Matplotlib 1.3 <http://www.matplotlib.org>`_  (optional for plotting)
 * `Tifffile.c 2013.01.18 <http://www.lfd.uci.edu/~gohlke/>`_
   (recommended for faster decoding of PackBits and LZW encoded strings)
 
@@ -85,7 +85,8 @@ Other Python packages and modules for reading bio-scientific TIFF files:
 Acknowledgements
 ----------------
 *  Egor Zindy, University of Manchester, for cz_lsm_scan_info specifics.
-*  Wim Lewis, for a bug fix and some read_cz_lsm functions.
+*  Wim Lewis for a bug fix and some read_cz_lsm functions.
+*  Hadrien Mary for help on reading MicroManager files.
 
 References
 ----------
@@ -103,6 +104,8 @@ References
     http://rsbweb.nih.gov/ij/developer/source/ij/io/TiffDecoder.java.html
 (8) UltraQuant(r) Version 6.0 for Windows Start-Up Guide.
     http://www.ultralum.com/images%20ultralum/pdf/UQStart%20Up%20Guide.pdf
+(9) Micro-Manager File Formats.
+    http://www.micro-manager.org/wiki/Micro-Manager_File_Formats
 
 Examples
 --------
@@ -138,6 +141,7 @@ import glob
 import math
 import zlib
 import time
+import json
 import struct
 import warnings
 import datetime
@@ -147,19 +151,21 @@ from xml.etree import cElementTree as ElementTree
 
 import numpy
 
-__version__ = '2013.05.02'
+__version__ = '2014.02.05'
 __docformat__ = 'restructuredtext en'
 __all__ = ['imsave', 'imread', 'imshow', 'TiffFile', 'TiffSequence']
 
 
 def imsave(filename, data, photometric=None, planarconfig=None,
            resolution=None, description=None, software='tifffile.py',
-           byteorder=None, bigtiff=False):
+           byteorder=None, bigtiff=False, compress=0, extratags=()):
     """Write image data to TIFF file.
 
-    Image data are written uncompressed in one stripe per plane.
+    Image data are written in one stripe per plane.
     Dimensions larger than 2 or 3 (depending on photometric mode and
     planar configuration) are flattened and saved as separate pages.
+    The 'sample_format' and 'bits_per_sample' TIFF tags are derived from
+    the data type.
 
     Parameters
     ----------
@@ -187,18 +193,39 @@ def imsave(filename, data, photometric=None, planarconfig=None,
         The endianness of the data in the file.
         By default this is the system's native byte order.
     bigtiff : bool
-        If True the BigTIFF format is used.
-        By default the standard TIFF format is used for data less than 2040 MB.
+        If True, the BigTIFF format is used.
+        By default the standard TIFF format is used for data less than 2000 MB.
+    compress : int
+        Values from 0 to 9 controlling the level of zlib compression.
+        If 0, data are written uncompressed (default).
+    extratags: sequence of tuples
+        Additional tags as [(code, dtype, count, value, writeonce)].
+        code : int
+            The TIFF tag Id.
+        dtype : str
+            Data type of items in `value` in Python struct format.
+            One of B, s, H, I, 2I, b, h, i, f, d, Q, or q.
+        count : int
+            Number of data values. Not used for string values.
+        value : sequence
+            `Count` values compatible with `dtype`.
+        writeonce : bool
+            If True, the tag is written to the first page only.
 
     Examples
     --------
-    >>> data = numpy.random.rand(10, 3, 301, 219)
-    >>> imsave('temp.tif', data)
+    >>> data = numpy.ones((2, 5, 3, 301, 219), 'float32') * 0.5
+    >>> imsave('temp.tif', data, compress=6)
+
+    >>> data = numpy.ones((5, 301, 219, 3), 'uint8') + 127
+    >>> value = u'{"shape": %s}' % str(list(data.shape))
+    >>> imsave('temp.tif', data, extratags=[(270, 's', 0, value, True)])
 
     """
     assert(photometric in (None, 'minisblack', 'miniswhite', 'rgb'))
     assert(planarconfig in (None, 'contig', 'planar'))
     assert(byteorder in (None, '<', '>'))
+    assert(0 <= compress <= 9)
 
     if byteorder is None:
         byteorder = '<' if sys.byteorder == 'little' else '>'
@@ -207,7 +234,7 @@ def imsave(filename, data, photometric=None, planarconfig=None,
     data_shape = shape = data.shape
     data = numpy.atleast_2d(data)
 
-    if not bigtiff and data.size * data.dtype.itemsize < 2040*2**20:
+    if not bigtiff and data.size * data.dtype.itemsize < 2000*2**20:
         bigtiff = False
         offset_size = 4
         tag_size = 12
@@ -257,11 +284,15 @@ def imsave(filename, data, photometric=None, planarconfig=None,
         extrasamples = samplesperpixel - 1
     else:
         planarconfig = None
+        # remove trailing 1s
+        while len(shape) > 2 and shape[-1] == 1:
+            shape = shape[:-1]
         data = data.reshape((-1, 1) + shape[-2:] + (1, ))
 
     shape = data.shape  # (pages, planes, height, width, contig samples)
 
-    bytestr = bytes if sys.version[0] == '2' else lambda x: bytes(x, 'ascii')
+    bytestr = bytes if sys.version[0] == '2' else (
+        lambda x: bytes(x, 'utf-8') if isinstance(x, str) else x)
     tifftypes = {'B': 1, 's': 2, 'H': 3, 'I': 4, '2I': 5, 'b': 6,
                  'h': 8, 'i': 9, 'f': 11, 'd': 12, 'Q': 16, 'q': 17}
     tifftags = {
@@ -274,38 +305,39 @@ def imsave(filename, data, photometric=None, planarconfig=None,
         'planar_configuration': 284, 'page_name': 285, 'resolution_unit': 296,
         'software': 305, 'datetime': 306, 'predictor': 317, 'color_map': 320,
         'extra_samples': 338, 'sample_format': 339}
-
-    tags = []
-    tag_data = []
+    tags = []  # list of (code, ifdentry, ifdvalue, writeonce)
 
     def pack(fmt, *val):
         return struct.pack(byteorder+fmt, *val)
 
-    def tag(name, dtype, number, value, offset=[0]):
-        # append tag binary string to tags list
-        # append (offset, value as binary string) to tag_data list
-        # increment offset by tag_size
+    def addtag(code, dtype, count, value, writeonce=False):
+        # compute ifdentry and ifdvalue bytes from code, dtype, count, value
+        # append (code, ifdentry, ifdvalue, writeonce) to tags list
+        code = tifftags[code] if code in tifftags else int(code)
+        if dtype not in tifftypes:
+            raise ValueError("unknown dtype %s" % dtype)
+        tifftype = tifftypes[dtype]
+        rawcount = count
         if dtype == 's':
             value = bytestr(value) + b'\0'
-            number = len(value)
+            count = rawcount = len(value)
             value = (value, )
-        t = [pack('HH', tifftags[name], tifftypes[dtype]),
-             pack(offset_format, number)]
         if len(dtype) > 1:
-            number *= int(dtype[:-1])
+            count *= int(dtype[:-1])
             dtype = dtype[-1]
-        if number == 1:
+        ifdentry = [pack('HH', code, tifftype),
+                    pack(offset_format, rawcount)]
+        ifdvalue = None
+        if count == 1:
             if isinstance(value, (tuple, list)):
                 value = value[0]
-            t.append(pack(val_format, pack(dtype, value)))
-        elif struct.calcsize(dtype) * number <= offset_size:
-            t.append(pack(val_format, pack(str(number)+dtype, *value)))
+            ifdentry.append(pack(val_format, pack(dtype, value)))
+        elif struct.calcsize(dtype) * count <= offset_size:
+            ifdentry.append(pack(val_format, pack(str(count)+dtype, *value)))
         else:
-            t.append(pack(offset_format, 0))
-            tag_data.append((offset[0] + offset_size + 4,
-                             pack(str(number)+dtype, *value)))
-        tags.append(b''.join(t))
-        offset[0] += tag_size
+            ifdentry.append(pack(offset_format, 0))
+            ifdvalue = pack(str(count)+dtype, *value)
+        tags.append((code, b''.join(ifdentry), ifdvalue, writeonce))
 
     def rational(arg, max_denominator=1000000):
         # return nominator and denominator from float or two integers
@@ -317,103 +349,140 @@ def imsave(filename, data, photometric=None, planarconfig=None,
         return f.numerator, f.denominator
 
     if software:
-        tag('software', 's', 0, software)
+        addtag('software', 's', 0, software, writeonce=True)
     if description:
-        tag('image_description', 's', 0, description)
+        addtag('image_description', 's', 0, description, writeonce=True)
     elif shape != data_shape:
-        tag('image_description', 's', 0,
-            "shape=(%s)" % (",".join('%i' % i for i in data_shape)))
-    tag('datetime', 's', 0,
-        datetime.datetime.now().strftime("%Y:%m:%d %H:%M:%S"))
-    # write previous tags only once
-    writeonce = (len(tags), len(tag_data)) if shape[0] > 1 else None
-    tag('compression', 'H', 1, 1)
-    tag('orientation', 'H', 1, 1)
-    tag('image_width', 'I', 1, shape[-2])
-    tag('image_length', 'I', 1, shape[-3])
-    tag('new_subfile_type', 'I', 1, 0 if shape[0] == 1 else 2)
-    tag('sample_format', 'H', 1,
-        {'u': 1, 'i': 2, 'f': 3, 'c': 6}[data.dtype.kind])
-    tag('photometric', 'H', 1,
-        {'miniswhite': 0, 'minisblack': 1, 'rgb': 2}[photometric])
-    tag('samples_per_pixel', 'H', 1, samplesperpixel)
+        addtag('image_description', 's', 0,
+               "shape=(%s)" % (",".join('%i' % i for i in data_shape)),
+               writeonce=True)
+    addtag('datetime', 's', 0,
+           datetime.datetime.now().strftime("%Y:%m:%d %H:%M:%S"),
+           writeonce=True)
+    addtag('compression', 'H', 1, 32946 if compress else 1)
+    addtag('orientation', 'H', 1, 1)
+    addtag('image_width', 'I', 1, shape[-2])
+    addtag('image_length', 'I', 1, shape[-3])
+    addtag('new_subfile_type', 'I', 1, 0 if shape[0] == 1 else 2)
+    addtag('sample_format', 'H', 1,
+           {'u': 1, 'i': 2, 'f': 3, 'c': 6}[data.dtype.kind])
+    addtag('photometric', 'H', 1,
+           {'miniswhite': 0, 'minisblack': 1, 'rgb': 2}[photometric])
+    addtag('samples_per_pixel', 'H', 1, samplesperpixel)
     if planarconfig:
-        tag('planar_configuration', 'H', 1, 1 if planarconfig=='contig' else 2)
-        tag('bits_per_sample', 'H', samplesperpixel,
-            (data.dtype.itemsize * 8, ) * samplesperpixel)
+        addtag('planar_configuration', 'H', 1, 1 if planarconfig=='contig'
+               else 2)
+        addtag('bits_per_sample', 'H', samplesperpixel,
+               (data.dtype.itemsize * 8, ) * samplesperpixel)
     else:
-        tag('bits_per_sample', 'H', 1, data.dtype.itemsize * 8)
+        addtag('bits_per_sample', 'H', 1, data.dtype.itemsize * 8)
     if extrasamples:
         if photometric == 'rgb':
-            tag('extra_samples', 'H', 1, 1)  # alpha channel
+            addtag('extra_samples', 'H', 1, 1)  # alpha channel
         else:
-            tag('extra_samples', 'H', extrasamples, (0, ) * extrasamples)
+            addtag('extra_samples', 'H', extrasamples, (0, ) * extrasamples)
     if resolution:
-        tag('x_resolution', '2I', 1, rational(resolution[0]))
-        tag('y_resolution', '2I', 1, rational(resolution[1]))
-        tag('resolution_unit', 'H', 1, 2)
-    tag('rows_per_strip', 'I', 1, shape[-3])
+        addtag('x_resolution', '2I', 1, rational(resolution[0]))
+        addtag('y_resolution', '2I', 1, rational(resolution[1]))
+        addtag('resolution_unit', 'H', 1, 2)
+    addtag('rows_per_strip', 'I', 1, shape[-3])
+
     # use one strip per plane
     strip_byte_counts = (data[0, 0].size * data.dtype.itemsize, ) * shape[1]
-    tag('strip_byte_counts', offset_format, shape[1], strip_byte_counts)
-    # strip_offsets must be the last tag; will be updated later
-    tag('strip_offsets', offset_format, shape[1], (0, ) * shape[1])
+    addtag('strip_byte_counts', offset_format, shape[1], strip_byte_counts)
+    addtag('strip_offsets', offset_format, shape[1], (0, ) * shape[1])
 
-    fh = open(filename, 'wb')
-    seek = fh.seek
-    tell = fh.tell
+    # add extra tags from users
+    for t in extratags:
+        addtag(*t)
 
-    def write(arg, *args):
-        fh.write(pack(arg, *args) if args else arg)
+    # the entries in an IFD must be sorted in ascending order by tag code
+    tags = sorted(tags, key=lambda x: x[0])
 
-    write({'<': b'II', '>': b'MM'}[byteorder])
-    if bigtiff:
-        write('HHH', 43, 8, 0)
-    else:
-        write('H', 42)
-    ifd_offset = tell()
-    write(offset_format, 0)  # first IFD
-    for i in range(shape[0]):
-        # update pointer at ifd_offset
-        pos = tell()
-        seek(ifd_offset)
-        write(offset_format, pos)
-        seek(pos)
-        # write tags
-        write(numtag_format, len(tags))
-        tag_offset = tell()
-        write(b''.join(tags))
+    with open(filename, 'wb') as fh:
+        seek = fh.seek
+        tell = fh.tell
+
+        def write(arg, *args):
+            fh.write(pack(arg, *args) if args else arg)
+
+        write({'<': b'II', '>': b'MM'}[byteorder])
+        if bigtiff:
+            write('HHH', 43, 8, 0)
+        else:
+            write('H', 42)
         ifd_offset = tell()
-        write(offset_format, 0)  # offset to next IFD
-        # write extra tag data and update pointers
-        for off, dat in tag_data:
+        write(offset_format, 0)  # first IFD
+
+        for pageindex in range(shape[0]):
+            # update pointer at ifd_offset
             pos = tell()
-            seek(tag_offset + off)
+            seek(ifd_offset)
             write(offset_format, pos)
             seek(pos)
-            write(dat)
-        # update strip_offsets
-        pos = tell()
-        if len(strip_byte_counts) == 1:
-            seek(ifd_offset - offset_size)
-            write(offset_format, pos)
-        else:
-            seek(pos - offset_size*shape[1])
-            strip_offset = pos
-            for size in strip_byte_counts:
-                write(offset_format, strip_offset)
-                strip_offset += size
-        seek(pos)
-        # write data
-        data[i].tofile(fh)  # if this fails try to update Python and numpy
-        fh.flush()
-        # remove tags that should be written only once
-        if writeonce:
-            tags = tags[writeonce[0]:]
-            d = writeonce[0] * tag_size
-            tag_data = [(o-d, v) for (o, v) in tag_data[writeonce[1]:]]
-            writeonce = None
-    fh.close()
+
+            # write ifdentries
+            write(numtag_format, len(tags))
+            tag_offset = tell()
+            write(b''.join(t[1] for t in tags))
+            ifd_offset = tell()
+            write(offset_format, 0)  # offset to next IFD
+
+            # write tag values and patch offsets in ifdentries, if necessary
+            for tagindex, tag in enumerate(tags):
+                if tag[2]:
+                    pos = tell()
+                    seek(tag_offset + tagindex*tag_size + offset_size + 4)
+                    write(offset_format, pos)
+                    seek(pos)
+                    if tag[0] == 273:
+                        strip_offsets_offset = pos
+                    elif tag[0] == 279:
+                        strip_byte_counts_offset = pos
+                    write(tag[2])
+
+            # write image data
+            data_offset = tell()
+            if compress:
+                strip_byte_counts = []
+                for plane in data[pageindex]:
+                    plane = zlib.compress(plane, compress)
+                    strip_byte_counts.append(len(plane))
+                    fh.write(plane)
+            else:
+                # if this fails try update Python/numpy
+                data[pageindex].tofile(fh)
+                fh.flush()
+
+            # update strip_offsets and strip_byte_counts if necessary
+            pos = tell()
+            for tagindex, tag in enumerate(tags):
+                if tag[0] == 273:  # strip_offsets
+                    if tag[2]:
+                        seek(strip_offsets_offset)
+                        strip_offset = data_offset
+                        for size in strip_byte_counts:
+                            write(offset_format, strip_offset)
+                            strip_offset += size
+                    else:
+                        seek(tag_offset + tagindex*tag_size + offset_size + 4)
+                        write(offset_format, data_offset)
+                elif tag[0] == 279:  # strip_byte_counts
+                    if compress:
+                        if tag[2]:
+                            seek(strip_byte_counts_offset)
+                            for size in strip_byte_counts:
+                                write(offset_format, size)
+                        else:
+                            seek(tag_offset + tagindex*tag_size +
+                                 offset_size + 4)
+                            write(offset_format, strip_byte_counts[0])
+                    break
+            seek(pos)
+            fh.flush()
+            # remove tags that should be written only once
+            if pageindex == 0:
+                tags = [t for t in tags if not t[-1]]
 
 
 def imread(files, *args, **kwargs):
@@ -500,6 +569,8 @@ class TiffFile(object):
         All TIFF pages in file.
     series : list of Records(shape, dtype, axes, TiffPages)
         TIFF pages with compatible shapes and types.
+    micromanager_metadata: dict
+        Extra MicroManager non-TIFF metadata in the file, if exists.
 
     All attributes are read-only.
 
@@ -556,6 +627,7 @@ class TiffFile(object):
             if tif._fh:
                 tif._fh.close()
                 tif._fh = None
+        self._tiffs = {}
 
     def _fromfile(self):
         """Read TIFF header and all page records from file."""
@@ -583,6 +655,10 @@ class TiffFile(object):
                 break
         if not self.pages:
             raise ValueError("empty TIFF file")
+
+        if self.is_micromanager:
+            # MicroManager files contain metadata not stored in TIFF tags.
+            self.micromanager_metadata = read_micromanager_metadata(self._fh)
 
     @lazyattr
     def series(self):
@@ -677,7 +753,7 @@ class TiffFile(object):
                       for s in shapes]
         return series
 
-    def asarray(self, key=None, series=None):
+    def asarray(self, key=None, series=None, memmap=False):
         """Return image data of multiple TIFF pages as numpy array.
 
         By default the first image series is returned.
@@ -688,6 +764,8 @@ class TiffFile(object):
             Defines which pages to return as array.
         series : int
             Defines which series of pages to return as array.
+        memmap : bool
+            If True, use numpy.memmap to read arrays from file if possible.
 
         """
         if key is None and series is None:
@@ -709,19 +787,19 @@ class TiffFile(object):
             raise TypeError("key must be an int, slice, or sequence")
 
         if len(pages) == 1:
-            return pages[0].asarray()
+            return pages[0].asarray(memmap=memmap)
         elif self.is_nih:
-            result = numpy.vstack(p.asarray(colormapped=False,
-                                            squeeze=False) for p in pages)
+            result = numpy.vstack(
+                p.asarray(colormapped=False, squeeze=False, memmap=memmap)
+                for p in pages)
             if pages[0].is_palette:
                 result = numpy.take(pages[0].color_map, result, axis=1)
                 result = numpy.swapaxes(result, 0, 1)
         else:
             if self.is_ome and any(p is None for p in pages):
                 firstpage = next(p for p in pages if p)
-                nopage = numpy.zeros_like(
-                    firstpage.asarray())
-            result = numpy.vstack((p.asarray() if p else nopage)
+                nopage = numpy.zeros_like(firstpage.asarray(memmap=memmap))
+            result = numpy.vstack((p.asarray(memmap=memmap) if p else nopage)
                                   for p in pages)
         if key is None:
             try:
@@ -903,6 +981,10 @@ class TiffFile(object):
         return self.pages[0].is_imagej
 
     @lazyattr
+    def is_micromanager(self):
+        return self.pages[0].is_micromanager
+
+    @lazyattr
     def is_nih(self):
         return self.pages[0].is_nih
 
@@ -937,13 +1019,13 @@ class TiffPage(object):
         Dictionary of tags in page.
         Tag values are also directly accessible as attributes.
     color_map : numpy array
-        Color look up table if exists.
+        Color look up table, if exists.
     mm_uic_tags: Record(dict)
         Consolidated MetaMorph mm_uic# tags, if exists.
     cz_lsm_scan_info: Record(dict)
         LSM scan info attributes, if exists.
     imagej_tags: Record(dict)
-        Consolidated ImageJ description and meta_data tags, if exists.
+        Consolidated ImageJ description and metadata tags, if exists.
 
     All attributes are read-only.
 
@@ -988,12 +1070,26 @@ class TiffPage(object):
             warnings.warn("corrupted page list")
             raise StopIteration()
 
+        tagcode = 0
         for _ in range(numtags):
             try:
                 tag = TiffTag(self.parent)
-                tags[tag.name] = tag
             except TiffTag.Error as e:
                 warnings.warn(str(e))
+            finally:
+                if tagcode > tag.code:
+                    warnings.warn("tags are not ordered by code")
+                tagcode = tag.code
+                if not tag.name in tags:
+                    tags[tag.name] = tag
+                else:
+                    # some files contain multiple IFD with same code
+                    # e.g. MicroManager files contain two image_description
+                    for ext in ('_1', '_2', '_3'):
+                        name = tag.name + ext
+                        if not name in tags:
+                            tags[name] = tag
+                            break
 
         # read LSM info subrecords
         if self.is_lsm:
@@ -1069,14 +1165,18 @@ class TiffPage(object):
 
         if self.is_imagej:
             # consolidate imagej meta data
-            adict = imagej_description(tags['image_description'].value)
-            try:
-                adict.update(imagej_meta_data(
-                    tags['imagej_meta_data'].value,
-                    tags['imagej_byte_counts'].value,
-                    self.parent.byteorder))
-            except Exception:
-                pass
+            if 'image_description_1' in self.tags:  # MicroManager
+                adict = imagej_description(tags['image_description_1'].value)
+            else:
+                adict = imagej_description(tags['image_description'].value)
+            if 'imagej_metadata' in tags:
+                try:
+                    adict.update(imagej_metadata(
+                        tags['imagej_metadata'].value,
+                        tags['imagej_byte_counts'].value,
+                        self.parent.byteorder))
+                except Exception as e:
+                    warnings.warn(str(e))
             self.imagej_tags = Record(adict)
 
         if not 'image_length' in self.tags or not 'image_width' in self.tags:
@@ -1175,7 +1275,8 @@ class TiffPage(object):
             self.strip_byte_counts = numpy.prod(self.shape) * (
                 self.bits_per_sample // 8)
 
-    def asarray(self, squeeze=True, colormapped=True, rgbonly=True):
+    def asarray(self, squeeze=True, colormapped=True, rgbonly=True,
+                memmap=False):
         """Read image data from file and return as numpy array.
 
         Raise ValueError if format is unsupported.
@@ -1185,12 +1286,14 @@ class TiffPage(object):
         Parameters
         ----------
         squeeze : bool
-            If True all length-1 dimensions (except X and Y) are
+            If True, all length-1 dimensions (except X and Y) are
             squeezed out from result.
         colormapped : bool
-            If True color mapping is applied for palette-indexed images.
+            If True, color mapping is applied for palette-indexed images.
         rgbonly : bool
-            If True return RGB(A) image without additional extra samples.
+            If True, return RGB(A) image without additional extra samples.
+        memmap : bool
+            If True, use numpy.memmap to read array if possible.
 
         """
         fh = self.parent._fh
@@ -1218,6 +1321,8 @@ class TiffPage(object):
         image_length = self.image_length
         typecode = self.parent.byteorder + dtype
         bits_per_sample = self.bits_per_sample
+        byteorder_is_native = ({'big': '>', 'little': '<'}[sys.byteorder] ==
+                               self.parent.byteorder)
 
         if self.is_tiled:
             if 'tile_offsets' in self.tags:
@@ -1251,21 +1356,30 @@ class TiffPage(object):
             and all(offsets[i] == offsets[i+1] - byte_counts[i]
                     for i in range(len(offsets)-1))))):
             # contiguous data
-            fh.seek(offsets[0])
-            result = numpy_fromfile(fh, typecode, numpy.prod(shape))
-            result = result.astype('=' + dtype)
+            if (memmap and not (self.is_tiled or self.predictor or
+                                ('extra_samples' in self.tags) or
+                                (colormapped and self.is_palette) or
+                                (not byteorder_is_native))):
+                result = numpy.memmap(fh, typecode, 'r', offsets[0], shape)
+            else:
+                fh.seek(offsets[0])
+                result = numpy_fromfile(fh, typecode, numpy.prod(shape))
+                result = result.astype('=' + dtype)
         else:
             if self.planar_configuration == 'contig':
                 runlen *= self.samples_per_pixel
             if bits_per_sample in (8, 16, 32, 64, 128):
                 if (bits_per_sample * runlen) % 8:
                     raise ValueError("data and sample size mismatch")
-                unpack = lambda x: numpy.fromstring(x, typecode)
+
+                def unpack(x):
+                    return numpy.fromstring(x, typecode)
             elif isinstance(bits_per_sample, tuple):
-                unpack = lambda x: unpackrgb(x, typecode, bits_per_sample)
+                def unpack(x):
+                    return unpackrgb(x, typecode, bits_per_sample)
             else:
-                unpack = lambda x: unpackints(x, typecode, bits_per_sample,
-                                              runlen)
+                def unpack(x):
+                    return unpackints(x, typecode, bits_per_sample, runlen)
             decompress = TIFF_DECOMPESSORS[self.compression]
             if self.is_tiled:
                 result = numpy.empty(shape, dtype)
@@ -1292,7 +1406,8 @@ class TiffPage(object):
                 index = 0
                 for offset, bytecount in zip(offsets, byte_counts):
                     fh.seek(offset)
-                    strip = unpack(decompress(fh.read(bytecount)))
+                    strip = fh.read(bytecount)
+                    strip = unpack(decompress(strip))
                     size = min(result.size, strip.size, strip_size,
                                result.size - index)
                     result[index:index+size] = strip[:size]
@@ -1346,10 +1461,10 @@ class TiffPage(object):
             '%s bit' % str(self.bits_per_sample),
             self.photometric if 'photometric' in self.tags else '',
             self.compression if self.compression else 'raw',
-            ','.join(t[3:] for t in ('is_stk', 'is_lsm', 'is_nih', 'is_ome',
-                                     'is_imagej', 'is_fluoview', 'is_mdgel',
-                                     'is_mediacy', 'is_reduced', 'is_tiled')
-                     if getattr(self, t))) if s)
+            '|'.join(t[3:] for t in (
+                'is_stk', 'is_lsm', 'is_nih', 'is_ome', 'is_imagej',
+                'is_micromanager', 'is_fluoview', 'is_mdgel', 'is_mediacy',
+                'is_reduced', 'is_tiled') if getattr(self, t))) if s)
         return "Page %i: %s" % (self.index, s)
 
     def __getattr__(self, name):
@@ -1428,8 +1543,16 @@ class TiffPage(object):
     @lazyattr
     def is_imagej(self):
         """True if page contains ImageJ description."""
-        return ('image_description' in self.tags and
-                self.tags['image_description'].value.startswith(b'ImageJ='))
+        return (
+            ('image_description' in self.tags and
+             self.tags['image_description'].value.startswith(b'ImageJ=')) or
+            ('image_description_1' in self.tags and  # Micromanager
+             self.tags['image_description_1'].value.startswith(b'ImageJ=')))
+
+    @lazyattr
+    def is_micromanager(self):
+        """True if page contains Micro-Manager metadata."""
+        return 'micromanager_metadata' in self.tags
 
 
 class TiffTag(object):
@@ -1446,7 +1569,7 @@ class TiffTag(object):
     count : int
         Number of values.
     value : various types
-        Tag data. For codes in CUSTOM_TAGS the 4 bytes file content.
+        Tag data as Python object.
     value_offset : int
         Location of value in file, if any.
 
@@ -1454,7 +1577,7 @@ class TiffTag(object):
 
     """
     __slots__ = ('code', 'name', 'count', 'dtype', 'value', 'value_offset',
-                 '_offset')
+                 '_offset', '_value')
 
     class Error(Exception):
         pass
@@ -1486,6 +1609,7 @@ class TiffTag(object):
         data = fh.read(size)
         code, dtype = struct.unpack(byteorder + fmt[:2], data[:4])
         count, value = struct.unpack(byteorder + fmt[2:], data[4:])
+        self._value = value
 
         if code in TIFF_TAGS:
             name = TIFF_TAGS[code][0]
@@ -1529,7 +1653,7 @@ class TiffTag(object):
             if len(value) == 1:
                 value = value[0]
 
-        if dtype.endswith('s'):
+        if dtype.endswith('s') and isinstance(value, bytes):
             value = stripnull(value)
 
         self.code = code
@@ -1749,8 +1873,6 @@ class TiffTags(Record):
     def __str__(self):
         """Return string with information about all tags."""
         s = []
-        #sortbycode = lambda a, b: cmp(a.code, b.code)
-        #for tag in sorted(self.values(), sortbycode):
         for tag in sorted(self.values(), key=lambda x: x.code):
             typecode = "%i%s" % (tag.count * int(tag.dtype[0]), tag.dtype[1])
             line = "* %i %s (%s) %s" % (tag.code, tag.name, typecode,
@@ -1767,6 +1889,11 @@ def read_bytes(fh, byteorder, dtype, count):
 def read_numpy(fh, byteorder, dtype, count):
     """Read tag data from file and return as numpy array."""
     return numpy_fromfile(fh, byteorder+dtype[-1], count)
+
+
+def read_json(fh, byteorder, dtype, count):
+    """Read tag data from file and return as object."""
+    return json.loads(unicode(stripnull(fh.read(count)), 'utf-8'))
 
 
 def read_mm_header(fh, byteorder, dtype, count):
@@ -1891,16 +2018,13 @@ def read_nih_image_header(fh, byteorder, dtype, count):
     return a
 
 
-def imagej_meta_data(data, bytecounts, byteorder):
+def imagej_metadata(data, bytecounts, byteorder):
     """Return dict from ImageJ meta data tag value."""
 
-    if sys.version_info[0] > 2:
-        _str = lambda x: str(x, 'cp1252')
-    else:
-        _str = str
+    _str = str if sys.version_info[0] < 3 else lambda x: str(x, 'cp1252')
 
     def read_string(data, byteorder):
-        return _str(data[1::2])
+        return _str(stripnull(data[0 if byteorder == '<' else 1::2]))
 
     def read_double(data, byteorder):
         return struct.unpack(byteorder+('d' * (len(data) // 8)), data)
@@ -1909,18 +2033,20 @@ def imagej_meta_data(data, bytecounts, byteorder):
         #return struct.unpack('b' * len(data), data)
         return numpy.fromstring(data, 'uint8')
 
-    metadata_types = {
+    metadata_types = {  # big endian
         b'info': ('info', read_string),
         b'labl': ('labels', read_string),
         b'rang': ('ranges', read_double),
         b'luts': ('luts', read_bytes),
         b'roi ': ('roi', read_bytes),
         b'over': ('overlays', read_bytes)}
+    metadata_types.update(  # little endian
+        dict((k[::-1], v) for k, v in metadata_types.items()))
 
     if not bytecounts:
         raise ValueError("no ImageJ meta data")
 
-    if not data.startswith(b'IJIJ'):
+    if not data[:4] in (b'IJIJ', b'JIJI'):
         raise ValueError("invalid ImageJ meta data")
 
     header_size = bytecounts[0]
@@ -1946,15 +2072,10 @@ def imagej_meta_data(data, bytecounts, byteorder):
 
 def imagej_description(description):
     """Return dict from ImageJ image_description tag."""
-
     def _bool(val):
         return {b'true': True, b'false': False}[val.lower()]
 
-    if sys.version_info[0] > 2:
-        _str = lambda x: str(x, 'cp1252')
-    else:
-        _str = str
-
+    _str = str if sys.version_info[0] < 3 else lambda x: str(x, 'cp1252')
     result = {}
     for line in description.splitlines():
         try:
@@ -1971,6 +2092,60 @@ def imagej_description(description):
                 pass
         result[_str(key)] = val
     return result
+
+
+def read_micromanager_metadata(fh):
+    """Read MicroManager non-TIFF settings from open file and return as dict.
+
+    The settings can be used to read image data without parsing the TIFF file.
+
+    Raise ValueError if file does not contain valid MicroManager metadata.
+
+    """
+    fh.seek(0)
+    try:
+        byteorder = {b'II': '<', b'MM': '>'}[fh.read(2)]
+    except IndexError:
+        raise ValueError("not a MicroManager TIFF file")
+
+    results = {}
+    fh.seek(8)
+    (index_header, index_offset, display_header, display_offset,
+     comments_header, comments_offset, summary_header, summary_length
+     ) = struct.unpack(byteorder + "IIIIIIII", fh.read(32))
+
+    if summary_header != 2355492:
+        raise ValueError("invalid MicroManager summary_header")
+    results['summary'] = read_json(fh, byteorder, None, summary_length)
+
+    if index_header != 54773648:
+        raise ValueError("invalid MicroManager index_header")
+    fh.seek(index_offset)
+    header, count = struct.unpack(byteorder + "II", fh.read(8))
+    if header != 3453623:
+        raise ValueError("invalid MicroManager index_header")
+    data = struct.unpack(byteorder + "IIIII"*count, fh.read(20*count))
+    results['index_map'] = {
+        'channel': data[::5], 'slice': data[1::5], 'frame': data[2::5],
+        'position': data[3::5], 'offset': data[4::5]}
+
+    if display_header != 483765892:
+        raise ValueError("invalid MicroManager display_header")
+    fh.seek(display_offset)
+    header, count = struct.unpack(byteorder + "II", fh.read(8))
+    if header != 347834724:
+        raise ValueError("invalid MicroManager display_header")
+    results['display_settings'] = read_json(fh, byteorder, None, count)
+
+    if comments_header != 99384722:
+        raise ValueError("invalid MicroManager comments_header")
+    fh.seek(comments_offset)
+    header, count = struct.unpack(byteorder + "II", fh.read(8))
+    if header != 84720485:
+        raise ValueError("invalid MicroManager comments_header")
+    results['comments'] = read_json(fh, byteorder, None, count)
+
+    return results
 
 
 def _replace_by(module_function, package=None, warn=True):
@@ -2294,15 +2469,13 @@ def format_size(size):
 def natural_sorted(iterable):
     """Return human sorted list of strings.
 
-    Examples
-    --------
     >>> natural_sorted(['f1', 'f2', 'f10'])
     ['f1', 'f2', 'f10']
 
     """
+    def sortkey(x):
+        return [(int(c) if c.isdigit() else c) for c in re.split(numbers, x)]
     numbers = re.compile('(\d+)')
-    sortkey = lambda x: [(int(c) if c.isdigit() else c)
-                         for c in re.split(numbers, x)]
     return sorted(iterable, key=sortkey)
 
 
@@ -3100,7 +3273,8 @@ CUSTOM_TAGS = {
     40100: ('mc_id_old', read_bytes),
     50288: ('mc_id', read_bytes),
     50296: ('mc_frame_properties', read_bytes),
-    50839: ('imagej_meta_data', read_bytes),
+    50839: ('imagej_metadata', read_bytes),
+    51123: ('micromanager_metadata', read_json),
 }
 
 # Max line length of printed output
@@ -3185,6 +3359,8 @@ def imshow(data, title=None, vmin=0, vmax=None, cmap=None,
             data /= datamax
     elif data.dtype.kind == 'b':
         datamax = 1
+    elif data.dtype.kind == 'c':
+        raise NotImplementedError("complex type")  # TODO: handle complex types
 
     if not isrgb:
         if vmax is None:
@@ -3396,7 +3572,9 @@ def main(argv=None):
     images = [(None, tif[0 if settings.page < 0 else settings.page])]
     if not settings.noplot:
         print("Reading image data... ", end=' ')
-        notnone = lambda x: next(i for i in x if i is not None)
+
+        def notnone(x):
+            return next(i for i in x if i is not None)
         start = time.time()
         try:
             if settings.page >= 0:
@@ -3424,6 +3602,7 @@ def main(argv=None):
                 raise
             else:
                 print(e)
+
     tif.close()
 
     print("\nTIFF file:", tif)
@@ -3438,10 +3617,14 @@ def main(argv=None):
         if page.is_palette:
             print("\nColor Map:", page.color_map.shape, page.color_map.dtype)
         for attr in ('cz_lsm_info', 'cz_lsm_scan_information', 'mm_uic_tags',
-                     'mm_header', 'imagej_tags', 'nih_image_header'):
+                     'mm_header', 'imagej_tags', 'micromanager_metadata',
+                     'nih_image_header'):
             if hasattr(page, attr):
                 print("", attr.upper(), Record(getattr(page, attr)), sep="\n")
         print()
+        if page.is_micromanager:
+            print('MICROMANAGER_FILE_METADATA')
+            print(Record(tif.micromanager_metadata))
 
     if images and not settings.noplot:
         try:
@@ -3478,9 +3661,8 @@ def main(argv=None):
 TIFFfile = TiffFile  # backwards compatibility
 
 if sys.version_info[0] > 2:
-    basestring = str
+    basestring = str, bytes
     unicode = str
 
 if __name__ == "__main__":
     sys.exit(main())
-

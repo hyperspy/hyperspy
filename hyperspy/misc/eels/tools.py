@@ -156,17 +156,14 @@ def estimate_variance_parameters(
     else:
         print message
     if is_ok:
-        if not noisy_signal.metadata.has_item(
-                'Variance_estimation'):
-            noisy_signal.metadata.add_node(
-                'Variance_estimation')
-        noisy_signal.metadata.Variance_estimation.gain_factor = \
-            results0['fit'][0]
-        noisy_signal.metadata.Variance_estimation.gain_offset = \
-            results0['fit'][1]
-        noisy_signal.metadata.Variance_estimation.correlation_factor = c
-        noisy_signal.metadata.Variance_estimation.\
-            parameters_estimation_method = 'Hyperspy'
+        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.gain_factor",
+                                       results0['fit'][0])
+        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.gain_offset",
+                                       results0['fit'][1])
+        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.correlation_factor",
+                                       c)
+        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.parameters_estimation_method",
+                                       'HyperSpy')
 
     if fold_back_noisy is True:
         noisy_signal.fold()
@@ -245,13 +242,13 @@ def eels_constant(s, zlp, t):
 
     # Mapped parameters
     try:
-        e0 = s.metadata.TEM.beam_energy
+        e0 = s.metadata.Acquisition_instrument.TEM.beam_energy
     except:
         raise AttributeError("Please define the beam energy."
                              "You can do this e.g. by using the "
                              "set_microscope_parameters method")
     try:
-        beta = s.metadata.TEM.EELS.collection_angle
+        beta = s.metadata.Acquisition_instrument.TEM.Detector.EELS.collection_angle
     except:
         raise AttributeError("Please define the collection angle."
                              "You can do this e.g. by using the "
@@ -301,5 +298,5 @@ def eels_constant(s, zlp, t):
     tgt = e0 * (2 * me + e0) / (me + e0)
     k = s._get_navigation_signal()
     k.data = (t * i0 / (332.5 * ke)) * np.log(1 + (beta * tgt / eaxis) ** 2)
-    k.metadata.title = "EELS proportionality constant K"
+    k.metadata.General.title = "EELS proportionality constant K"
     return k
