@@ -3377,6 +3377,10 @@ class Signal(MVA,
         for axis in to_remove:
             self.axes_manager.remove(axis.index_in_axes_manager)
         self.data = self.data.squeeze()
+        if self.metadata.has_item('Signal.Noise_properties.variance'):
+            variance = self.metadata.Signal.Noise_properties.variance
+            if isinstance(variance, Signal):
+                variance._unfold(steady_axes, unfolded_axis)
 
     def unfold(self):
         """Modifies the shape of the data by unfolding the signal and
@@ -3424,6 +3428,10 @@ class Signal(MVA,
             folding.original_shape = None
             folding.original_axes_manager = None
             folding.unfolded = False
+            if self.metadata.has_item('Signal.Noise_properties.variance'):
+                variance = self.metadata.Signal.Noise_properties.variance
+                if isinstance(variance, Signal):
+                    variance.fold()
 
     def _make_sure_data_is_contiguous(self):
         if self.data.flags['C_CONTIGUOUS'] is False:

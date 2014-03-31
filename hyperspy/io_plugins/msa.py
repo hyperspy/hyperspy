@@ -244,7 +244,7 @@ def file_reader(filename, encoding='latin-1', **kwds):
             mapped.Signal.signal_type = 'EELS'
     else:
         # Defaulting to EELS looks reasonable
-        mapped.set_item(Signal.signal_type, 'EELS')
+        mapped.set_item('Signal.signal_type', 'EELS')
 
     dictionary = {
         'data': np.array(y),
