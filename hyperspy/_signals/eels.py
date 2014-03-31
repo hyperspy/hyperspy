@@ -19,22 +19,19 @@
 import numbers
 
 import numpy as np
-import matplotlib.pyplot as plt
 import traits.api as t
 from scipy import constants
 
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
-from hyperspy.gui.egerton_quantification import SpikesRemoval
 from hyperspy.decorators import only_interactive
 from hyperspy.gui.eels import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.components import PowerLaw
-from hyperspy.misc.utils import isiterable, closest_power_of_two
-from hyperspy.misc.utils import isiterable, underline
+from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
 
 
@@ -719,63 +716,6 @@ class EELSSpectrum(Spectrum):
             pbar.finish()
 
         return ds
-
-    def _spikes_diagnosis(self, signal_mask=None,
-                          navigation_mask=None):
-        """Plots a histogram to help in choosing the threshold for
-        spikes removal.
-
-        Parameters
-        ----------
-        signal_mask: boolean array
-            Restricts the operation to the signal locations not marked
-            as True (masked)
-        navigation_mask: boolean array
-            Restricts the operation to the navigation locations not
-            marked as True (masked).
-
-        See also
-        --------
-        spikes_removal_tool
-
-        """
-        self._check_signal_dimension_equals_one()
-        dc = self.data
-        if signal_mask is not None:
-            dc = dc[..., ~signal_mask]
-        if navigation_mask is not None:
-            dc = dc[~navigation_mask, :]
-        der = np.abs(np.diff(dc, 1, -1))
-        plt.figure()
-        plt.hist(np.ravel(der.max(-1)), 100)
-        plt.xlabel('Threshold')
-        plt.ylabel('Counts')
-        plt.draw()
-
-    def spikes_removal_tool(self, signal_mask=None,
-                            navigation_mask=None):
-        """Graphical interface to remove spikes from EELS spectra.
-
-        Parameters
-        ----------
-        signal_mask: boolean array
-            Restricts the operation to the signal locations not marked
-            as True (masked)
-        navigation_mask: boolean array
-            Restricts the operation to the navigation locations not
-            marked as True (masked)
-
-        See also
-        --------
-        _spikes_diagnosis,
-
-        """
-        self._check_signal_dimension_equals_one()
-        sr = SpikesRemoval(self,
-                           navigation_mask=navigation_mask,
-                           signal_mask=signal_mask)
-        sr.edit_traits()
-        return sr
 
     def _are_microscope_parameters_missing(self):
         """Check if the EELS parameters necessary to calculate the GOS

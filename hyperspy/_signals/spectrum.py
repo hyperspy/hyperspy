@@ -18,8 +18,11 @@
 
 import warnings
 
+import matplotlib.pyplot as plt
+
 from hyperspy.exceptions import DataDimensionError
 from hyperspy.signal import Signal
+from hyperspy.gui.egerton_quantification import SpikesRemoval
 
 
 class Spectrum(Signal):
@@ -114,3 +117,60 @@ class Spectrum(Signal):
         im.metadata.Signal.record_by = "image"
         im._assign_subclass()
         return im
+
+    def _spikes_diagnosis(self, signal_mask=None,
+                          navigation_mask=None):
+        """Plots a histogram to help in choosing the threshold for
+        spikes removal.
+
+        Parameters
+        ----------
+        signal_mask: boolean array
+            Restricts the operation to the signal locations not marked
+            as True (masked)
+        navigation_mask: boolean array
+            Restricts the operation to the navigation locations not
+            marked as True (masked).
+
+        See also
+        --------
+        spikes_removal_tool
+
+        """
+        self._check_signal_dimension_equals_one()
+        dc = self.data
+        if signal_mask is not None:
+            dc = dc[..., ~signal_mask]
+        if navigation_mask is not None:
+            dc = dc[~navigation_mask, :]
+        der = np.abs(np.diff(dc, 1, -1))
+        plt.figure()
+        plt.hist(np.ravel(der.max(-1)), 100)
+        plt.xlabel('Threshold')
+        plt.ylabel('Counts')
+        plt.draw()
+
+    def spikes_removal_tool(self, signal_mask=None,
+                            navigation_mask=None):
+        """Graphical interface to remove spikes from EELS spectra.
+
+        Parameters
+        ----------
+        signal_mask: boolean array
+            Restricts the operation to the signal locations not marked
+            as True (masked)
+        navigation_mask: boolean array
+            Restricts the operation to the navigation locations not
+            marked as True (masked)
+
+        See also
+        --------
+        _spikes_diagnosis,
+
+        """
+        self._check_signal_dimension_equals_one()
+        sr = SpikesRemoval(self,
+                           navigation_mask=navigation_mask,
+                           signal_mask=signal_mask)
+        sr.edit_traits()
+        return sr
