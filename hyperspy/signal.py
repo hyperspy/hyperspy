@@ -3999,15 +3999,15 @@ class Signal(MVA,
         return copy.deepcopy(self)
 
     def change_dtype(self, dtype):
-        """Change the data type
+        """Change the data type.
 
         Parameters
         ----------
         dtype : str or dtype
             Typecode or data-type to which the array is cast. In
-            addition to all available numpy dtypes Hyperspy
+            addition to all standard numpy dtypes HyperSpy
             supports four extra dtypes for RGB images:
-            rgb8, rgba8, rgb16 and rgba16. However, changing from
+            "rgb8", "rgba8", "rgb16" and "rgba16". Changing from
             and to any rgbx dtype is more constrained than most
             other dtype conversions. To change to a rgbx dtype
             the signal `record_by` must be "spectrum",

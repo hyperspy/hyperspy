@@ -699,6 +699,49 @@ type in place, e.g.:
         Data type: float64
 
 
+.. versionadded:: 0.7
+
+    In addition to all standard numpy dtypes HyperSpy supports four extra
+    dtypes for RGB images: rgb8, rgba8, rgb16 and rgba16. Changing
+    from and to any rgbx dtype is more constrained than most other dtype
+    conversions. To change to a rgbx dtype the signal `record_by` must be
+    "spectrum", `signal_dimension` must be 3(4) for rgb(rgba) dtypes and the
+    dtype must be uint8(uint16) for rgbx8(rgbx16).  After conversion
+    `record_by` becomes `image` and the spectra dimension is removed. The dtype
+    of images of dtype rgbx8(rgbx16) can only be changed to uint8(uint16) and
+    the `record_by` becomes "spectrum".
+
+    In the following example we create 
+
+   .. code-block:: python
+
+        >>> rgb_test = np.zeros((1024, 1024, 3))
+        >>> ly, lx = rgb_test.shape[:2]
+        >>> offset_factor = 0.16
+        >>> size_factor = 3
+        >>> Y, X = np.ogrid[0:lx, 0:ly]
+        >>> rgb_test[:,:,0] = (X - lx / 2 - lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
+        >>> rgb_test[:,:,1] = (X - lx / 2 + lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
+        >>> rgb_test[:,:,2] = (X - lx / 2) ** 2 + (Y - ly / 2 + ly*offset_factor) ** 2 < lx * ly / size_factor **2
+        >>> rgb_test *= 2**16 - 1
+        >>> s = signals.Spectrum(rgb_test)
+        >>> s.change_dtype("uint16")
+        >>> s
+        <Spectrum, title: , dimensions: (1024, 1024|3)>
+        >>> s.change_dtype("rgb16")
+        >>> s
+        <Image, title: , dimensions: (|1024, 1024)>
+        >>> s.plot()
+
+
+   .. figure::  images/rgb_example.png
+      :align:   center
+      :width:   500    
+
+      RGB data type example.
+      
+
+
 Basic statistical analysis
 --------------------------
 .. versionadded:: 0.7
