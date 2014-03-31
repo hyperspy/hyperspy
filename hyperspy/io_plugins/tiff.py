@@ -116,7 +116,7 @@ def file_reader(filename, record_by='image', **kwds):
         for key, tag in tiff[0].tags.iteritems():
             op[key] = tag.value
     return [{'data': dc,
-             'original_metadata' : op,
+             'original_metadata': op,
              'metadata': {'General': {'original_filename': os.path.split(filename)[1]},
                           "Signal": {'signal_type': "",
                                      'record_by': "image",
