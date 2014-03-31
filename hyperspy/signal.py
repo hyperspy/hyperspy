@@ -563,7 +563,7 @@ class Signal1DTools(object):
         if max_shift is not None:
             if interpolate is True:
                 max_shift *= ip
-            shift_array.clip(a_min=-max_shift, a_max=max_shift)
+            shift_array.clip(-max_shift, max_shift)
         if interpolate is True:
             shift_array /= ip
         shift_array *= axis.scale
