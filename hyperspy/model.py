@@ -1372,6 +1372,8 @@ class Model(list):
                 parallel)
             pass_slices = [(l[0], l[-1] + 1) for l in cuts]
             models = [self.inav[l[0]:l[-1] + 1].as_dictionary() for l in cuts]
+            for m in models:
+                del m['spectrum']['metadata']['_HyperSpy']
             res = []
             for i in xrange(parallel):
                 if i < num:
