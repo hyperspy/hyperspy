@@ -247,6 +247,6 @@ class TestModelSignalVariance:
     def test_std1_red_chisq(self):
         self.m.multifit(fitter="leastsq", method="ls")
         nose.tools.assert_almost_equals(self.m.red_chisq.data[0],
-                                        0.79693355673230915)
+                                        0.76858164262344941)
         nose.tools.assert_almost_equals(self.m.red_chisq.data[1],
-                                        0.91453032901427167)
+                                        0.89013220114858838)
