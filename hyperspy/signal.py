@@ -2868,14 +2868,12 @@ class Signal(MVA,
             to the navigator_shape of the current object (for a dynamic
             navigator).
             If the signal dtype is RGB or RGBA this parameters has no
-            effect and is always None.
+            effect and is always "slider".
 
         axes_manager : {None, axes_manager}
             If None `axes_manager` is used.
 
         """
-        if self.is_rgbx is True:
-            navigator = None
 
         if self._plot is not None:
             try:
@@ -2887,6 +2885,11 @@ class Signal(MVA,
 
         if axes_manager is None:
             axes_manager = self.axes_manager
+        if self.is_rgbx is True:
+            if axes_manager.navigation_size < 2:
+                navigator = None
+            else:
+                navigator = "slider"
         if axes_manager.signal_dimension == 0:
             self._plot = mpl_he.MPL_HyperExplorer()
         elif axes_manager.signal_dimension == 1:
