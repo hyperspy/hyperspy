@@ -7,6 +7,7 @@ from hyperspy.hspy import *
 
 my_path = os.path.dirname(__file__)
 
+
 def test_rgba16():
     s = load(os.path.join(
         my_path,
