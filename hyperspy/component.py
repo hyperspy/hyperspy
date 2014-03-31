@@ -134,8 +134,14 @@ class Parameter(object):
 
         """
         if dict['_id_name'] == self._id_name:
-            import types
-            import marshal
+            try:
+                import cloud
+                import pickle
+                cloud_avail = True
+            except ImportError:
+                cloud_avail = False
+                import types
+                import marshal
             self.map = copy.deepcopy(dict['map'])
             self.value = dict['value']
             self.name = dict['name']
@@ -145,12 +151,17 @@ class Parameter(object):
             self._bounds = copy.deepcopy(dict['_bounds'])
             if hasattr(self, 'active') and 'active' in dict:
                 self.active = dict['active']
-            self.twin_function = types.FunctionType(
-                marshal.loads(
-                    dict['twin_function']),
-                globals())
-            self.twin_inverse_function = types.FunctionType(marshal.loads(dict['twin_inverse_function']),
-                                                            globals())
+            if 'cloud_avail' in dict and cloud_avail:
+                self.twin_function = pickle.loads(dict['twin_function'])
+                self.twin_inverse_function = pickle.loads(
+                    dict['twin_inverse_function'])
+            else:
+                self.twin_function = types.FunctionType(
+                    marshal.loads(
+                        dict['twin_function']),
+                    globals())
+                self.twin_inverse_function = types.FunctionType(marshal.loads(dict['twin_inverse_function']),
+                                                                globals())
             return dict['id']
         else:
             raise ValueError(
@@ -509,6 +520,11 @@ class Parameter(object):
 
         """
         import marshal
+        try:
+            import cloud
+            cloud_avail = True
+        except ImportError:
+            cloud_avail = False
         dic = {}
         dic['name'] = self.name
         dic['_id_name'] = self._id_name
@@ -528,9 +544,16 @@ class Parameter(object):
         dic['_bounds'] = self._bounds
         if hasattr(self, 'active'):
             dic['active'] = self.active
-        dic['twin_function'] = marshal.dumps(self.twin_function.func_code)
-        dic['twin_inverse_function'] = marshal.dumps(
-            self.twin_inverse_function.func_code)
+        if cloud_avail:
+            dic['twin_function'] = cloud.serialization.cloudpickle.dumps(
+                self.twin_function)
+            dic['twin_inverse_function'] = cloud.serialization.cloudpickle.dumps(
+                self.twin_inverse_function)
+            dic['cloud_avail'] = True
+        else:
+            dic['twin_function'] = marshal.dumps(self.twin_function.func_code)
+            dic['twin_inverse_function'] = marshal.dumps(
+                self.twin_inverse_function.func_code)
         return dic
 
 
