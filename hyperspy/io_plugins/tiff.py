@@ -76,8 +76,8 @@ def file_writer(filename, signal, **kwds):
     else:
         photometric = "minisblack"
     if description not in kwds:
-        if signal.metadata.title:
-            kwds['description'] = signal.metadata.title
+        if signal.metadata.General.title:
+            kwds['description'] = signal.metadata.General.title
 
     imsave(filename, data,
            software="hyperspy",
