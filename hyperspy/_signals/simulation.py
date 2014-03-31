@@ -48,4 +48,7 @@ class Simulation(Signal):
                                  self.data.shape,
                                  **kwargs)
         original_dtype = self.data.dtype
-        self.data = (self.data.astype(noise.dtype) + noise).astype(original_dtype)
+        self.data = (
+            self.data.astype(
+                noise.dtype) +
+            noise).astype(original_dtype)
