@@ -4073,7 +4073,6 @@ class Signal(MVA,
         else:
             self.data = self.data.astype(dtype)
 
-
     def estimate_poissonian_noise_variance(self,
                                            expected_value=None,
                                            gain_factor=None,

@@ -591,7 +591,7 @@ class EELSSpectrum(Spectrum):
         """
         self._check_signal_dimension_equals_one()
         orig_cl_size = self.axes_manager.signal_axes[0].size
-            
+
         if threshold is None:
             threshold = ll.estimate_elastic_scattering_threshold()
 
