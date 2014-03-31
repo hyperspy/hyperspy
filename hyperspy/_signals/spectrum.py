@@ -117,6 +117,7 @@ class Spectrum(Signal):
         im.metadata.Signal.record_by = "image"
         im._assign_subclass()
         return im
+
     def _spikes_diagnosis(self, signal_mask=None,
                           navigation_mask=None):
         """Plots a histogram to help in choosing the threshold for
@@ -173,4 +174,3 @@ class Spectrum(Signal):
                            signal_mask=signal_mask)
         sr.edit_traits()
         return sr
-
