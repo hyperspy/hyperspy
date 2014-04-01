@@ -95,7 +95,11 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         self.span_selector_changed()
 
     def _ss_left_value_changed(self, old, new):
-        self.span_selector_changed()
+        try:
+            self.span_selector_changed()
+        except ValueError:
+            if self.ss_right_value != np.nan:
+                raise
 
     def _ss_right_value_changed(self, old, new):
         self.span_selector_changed()
@@ -343,7 +347,11 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.span_selector_changed()
 
     def _ss_left_value_changed(self, old, new):
-        self.span_selector_changed()
+        try:
+            self.span_selector_changed()
+        except ValueError:
+            if self.ss_right_value != np.nan:
+                raise
 
     def _ss_right_value_changed(self, old, new):
         self.span_selector_changed()
