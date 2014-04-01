@@ -3960,7 +3960,13 @@ class Signal(MVA,
         # If the function has an axis argument and the signal dimension is 1,
         # we suppose that it can operate on the full array and we don't
         # interate over the coordinates.
-        fargs = inspect.getargspec(function).args
+        try:
+            fargs = inspect.getargspec(function).args
+        except TypeError:
+            # This is probably a Cython function that is not supported by
+            # inspect.
+            fargs = []
+
         if not ndkwargs and (self.axes_manager.signal_dimension == 1 and
                              "axis" in fargs):
             kwargs['axis'] = \
