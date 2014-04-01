@@ -35,9 +35,9 @@ class TestModelFitBinned:
 
     def test_fit_leastsq(self):
         self.m.fit(fitter="leastsq")
-        nose.tools.assert_almost_equal(self.m[0].A.value, 9976.14526082, 5)
+        nose.tools.assert_almost_equal(self.m[0].A.value, 9976.14526082, 1)
         nose.tools.assert_almost_equal(self.m[0].centre.value, -0.110610727064)
-        nose.tools.assert_almost_equal(self.m[0].sigma.value, 1.98380707571)
+        nose.tools.assert_almost_equal(self.m[0].sigma.value, 1.98380707571, 5)
 
     def test_fit_mpfit(self):
         self.m.fit(fitter="mpfit")
@@ -47,7 +47,7 @@ class TestModelFitBinned:
 
     def test_fit_odr(self):
         self.m.fit(fitter="odr")
-        nose.tools.assert_almost_equal(self.m[0].A.value, 9976.14531979, 5)
+        nose.tools.assert_almost_equal(self.m[0].A.value, 9976.14531979, 3)
         nose.tools.assert_almost_equal(self.m[0].centre.value, -0.110610724054)
         nose.tools.assert_almost_equal(self.m[0].sigma.value, 1.98380709939)
 
@@ -65,7 +65,7 @@ class TestModelFitBinned:
 
     def test_fit_odr_grad(self):
         self.m.fit(fitter="odr", grad=True)
-        nose.tools.assert_almost_equal(self.m[0].A.value, 9976.14531979, 5)
+        nose.tools.assert_almost_equal(self.m[0].A.value, 9976.14531979, 3)
         nose.tools.assert_almost_equal(self.m[0].centre.value, -0.110610724054)
         nose.tools.assert_almost_equal(self.m[0].sigma.value, 1.98380709939)
 
