@@ -291,7 +291,7 @@ class DictionaryTreeBrowser(object):
                 key = item_['key']
                 if key == "_db_index":
                     continue
-                if isinstance(item_['value'], DictionaryTreeBrowser):
+                if hasattr(item_['value'], 'as_dictionary'):
                     item = item_['value'].as_dictionary()
                 else:
                     item = item_['value']
