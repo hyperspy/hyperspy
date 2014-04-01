@@ -161,7 +161,7 @@ class EDSSEMSpectrum(EDSSpectrum):
             md.set_item(
                 "Acquisition_instrument.SEM.Detector.EDS.azimuth_angle",
                 azimuth_angle)
-        if tilt_stage is not None:
+        if elevation_angle is not None:
             md.set_item(
                 "Acquisition_instrument.SEM.Detector.EDS.elevation_angle",
                 elevation_angle)
