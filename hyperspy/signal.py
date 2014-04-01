@@ -1951,7 +1951,7 @@ class MVATools(object):
             no_nans=no_nans,
             per_row=per_row)
 
-    def export_decomposition_results(sezalf, comp_ids=None,
+    def export_decomposition_results(self, comp_ids=None,
                                      folder=None,
                                      calibrate=True,
                                      factor_prefix='factor',
