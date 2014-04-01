@@ -850,8 +850,15 @@ class EELSSpectrum(Spectrum):
             _A = pl.A.map['values']
             _A[_r <= 0] = 0
             pl.A.map['values'] = _A
+        # If the signal is binned we need to bin the extrapolated power law
+        # what, in a first approximation, can be done by multiplying by the
+        # axis step size.
+        if self.metadata.Signal.binned is True:
+            factor = s.axes_manager[-1].scale
+        else:
+            factor = 1
         s.data[..., axis.size:] = (
-            pl.A.map['values'][..., np.newaxis] *
+            factor * pl.A.map['values'][..., np.newaxis] *
             s.axes_manager.signal_axes[0].axis[np.newaxis, axis.size:] ** (
                 -pl.r.map['values'][..., np.newaxis]))
         return s
