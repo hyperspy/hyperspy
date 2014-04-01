@@ -176,12 +176,26 @@ class Test_get_lines_intentisity:
                                              integration_window_factor=5)[0]
         assert_true(np.allclose(24.99516, sAl.data, atol=1e-3))
 
+    def test_eV(self):
+        s = self.signal
+        energy_axis = s.axes_manager.signal_axes[0]
+        energy_axis.scale = 40
+        energy_axis.units = 'eV'
+
+        sAl = s.get_lines_intensity(["Al_Ka"],
+                                    plot_result=False,
+                                    integration_window_factor=5)[0]
+        assert_true(np.allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3))
+
 
 class Test_tools_bulk:
 
     def setUp(self):
         s = EDSSEMSpectrum(np.ones(1024))
         s.metadata.Acquisition_instrument.SEM.beam_energy = 5.0
+        energy_axis = s.axes_manager.signal_axes[0]
+        energy_axis.scale = 0.01
+        energy_axis.units = 'keV'
         s.set_elements(['Al', 'Zn'])
         s.add_lines()
         self.signal = s
