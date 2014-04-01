@@ -1,3 +1,5 @@
+import copy
+
 import nose.tools
 import numpy as np
 
@@ -32,3 +34,13 @@ class TestDataAxis:
     @nose.tools.raises(ValueError)
     def test_value_range_to_indices_v1_greater_than_v2(self):
         self.axis.value_range_to_indices(2, 1)
+
+    def test_deepcopy(self):
+        ac = copy.deepcopy(self.axis)
+        ac.offset = 100
+        nose.tools.assert_not_equal(self.axis.offset, ac.offset)
+
+    def test_deepcopy_on_trait_change(self):
+        ac = copy.deepcopy(self.axis)
+        ac.offset = 100
+        nose.tools.assert_equal(ac.axis[0], ac.offset)
