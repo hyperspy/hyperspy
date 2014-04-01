@@ -248,6 +248,13 @@ class DataAxis(t.HasTraits):
     def copy(self):
         return DataAxis(**self.get_axis_dictionary())
 
+    def __copy__(self):
+        return self.copy()
+
+    def __deepcopy__(self, memo):
+        cp = self.copy()
+        return cp
+
     def update_value(self):
         self.value = self.axis[self.index]
 
