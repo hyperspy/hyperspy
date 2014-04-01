@@ -305,11 +305,11 @@ Noise_properties
 ----------------
 
 variance
-    type: float or numpy array
+    type: float or Signal instance.
 
-    The variance of the data. It can be a float when the noise is Gaussian or 
-    a numpy array, in which case it must have the same dimensions as
-    :attr:`~.signal.Signal.data`.
+    The variance of the data. It can be a float when the noise is Gaussian or a
+    :class:`~.signal.Signal` instance if the noise is heteroscedastic, in which
+    case it must have the same dimensions as :attr:`~.signal.Signal.data`.
 
 Variance_linear_model
 ^^^^^^^^^^^^^^^^^^^^^
