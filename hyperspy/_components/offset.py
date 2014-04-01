@@ -81,7 +81,6 @@ class Offset(Component):
 
         if only_current is True:
             self.offset.value = signal()[i1:i2].mean()
-            print self.offset.value
             if binned is True:
                 self.offset.value /= axis.scale
             return True
