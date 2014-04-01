@@ -126,11 +126,10 @@ class EDSSEMSpectrum(EDSSpectrum):
                                   azimuth_angle=None,
                                   elevation_angle=None,
                                   energy_resolution_MnKa=None):
-        """Set the microscope parameters that are necessary to quantify
-        the spectrum.
+        """Set the microscope parameters.
 
-        If not all of them are defined, raises in interactive mode
-        raises an UI item to fill the values
+        If no arguments are given, raises an interactive mode to fill
+        the values.
 
         Parameters
         ----------
@@ -171,7 +170,9 @@ class EDSSEMSpectrum(EDSSpectrum):
                 "Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa",
                 energy_resolution_MnKa)
 
-        self._are_microscope_parameters_missing()
+        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
+               elevation_angle, energy_resolution_MnKa]) == {None}:
+            self._are_microscope_parameters_missing()
 
     @only_interactive
     def _set_microscope_parameters(self):
