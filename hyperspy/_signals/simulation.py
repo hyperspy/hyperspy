@@ -43,5 +43,12 @@ class Simulation(Signal):
         std : float
 
         """
-        noise = np.random.normal(0, std, self.data.shape, **kwargs)
-        self.data += noise
+        noise = np.random.normal(0,
+                                 std,
+                                 self.data.shape,
+                                 **kwargs)
+        original_dtype = self.data.dtype
+        self.data = (
+            self.data.astype(
+                noise.dtype) +
+            noise).astype(original_dtype)

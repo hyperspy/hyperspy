@@ -845,7 +845,8 @@ class Model(list):
         data and parameters
         """
         mf = self._model_function(param)
-        return -(y * np.log(mf) - mf).sum()
+        with np.errstate(invalid='ignore'):
+            return -(y * np.log(mf) - mf).sum()
 
     def _gradient_ml(self, param, y, weights=None):
         mf = self._model_function(param)

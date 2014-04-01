@@ -1927,7 +1927,7 @@ Outputs:
 
         for j in range(n):
             r[j:n, j] = r[j, j:n]
-        x = numpy.diagonal(r)
+        x = numpy.diagonal(r).copy()
         wa = qtb.copy()
 
         # Eliminate the diagonal matrix d using a givens rotation
