@@ -851,7 +851,7 @@ class EELSSpectrum(Spectrum):
             _A[_r <= 0] = 0
             pl.A.map['values'] = _A
         s.data[..., axis.size:] = (
-            pl.A.map['values'][..., np.newaxis] *
+            s.axes_manager[-1].scale*pl.A.map['values'][..., np.newaxis] *
             s.axes_manager.signal_axes[0].axis[np.newaxis, axis.size:] ** (
                 -pl.r.map['values'][..., np.newaxis]))
         return s
