@@ -385,6 +385,12 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
             'index_in_array': header['NumberDimensions'][0]
         })
 
+        # FEI seems to use the international system of units (SI) for the
+        # energy scale (eV).
+        axes[-1]['units'] = 'keV'
+        axes[-1]['name'] = 'Energy'
+        axes[-1]['scale'] *= 0.001
+
         array_shape.append(data['ArrayLength'][0])
 
     elif record_by == 'image':
@@ -469,9 +475,14 @@ def get_mode(mode):
         return "TEM"
 
 
+def get_degree(value):
+    return np.degrees(float(value))
+
+
 mapping = {
-    "ObjectInfo.ExperimentalDescription.High_tension_kV": ("Acquisition_instrument.TEM.beam_voltage", None),
-    "ObjectInfo.ExperimentalDescription.Emission_uA": ("Acquisition_instrument.TEM.beam_intensity", None),
+    "ObjectInfo.ExperimentalDescription.High_tension_kV": ("Acquisition_instrument.TEM.beam_energy", None),
     "ObjectInfo.ExperimentalDescription.Microscope": ("Acquisition_instrument.TEM.microscope", None),
-    "ObjectInfo.ExperimentalDescription.Mode": ("Acquisition_instrument.TEM.mode", get_mode),
+    "ObjectInfo.ExperimentalDescription.Mode": ("Acquisition_instrument.TEM.acquisition_mode", get_mode),
+    "ObjectInfo.ExperimentalConditions.MicroscopeConditions.Tilt1": ("Acquisition_instrument.TEM.tilt_stage", get_degree),
+
 }
