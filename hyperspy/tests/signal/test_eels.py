@@ -81,7 +81,7 @@ class TestEstimateZLPCentre():
     def test_estimate_zero_loss_peak_centre(self):
         s = self.spectrum
         nose.tools.assert_true(np.allclose(s.estimate_zero_loss_peak_centre().data,
-                                np.arange(100, 101, 0.1)))
+                                           np.arange(100, 101, 0.1)))
 
 
 class TestAlignZLP():
@@ -127,12 +127,13 @@ class TestAlignZLP():
 
 
 class TestPowerLawExtrapolation:
+
     def setUp(self):
-       s = hp.signals.EELSSpectrum(0.1 * np.arange(50, 250, 0.5) ** -3.)
-       s.metadata.Signal.binned = False
-       s.axes_manager[-1].offset = 50
-       s.axes_manager[-1].scale = 0.5
-       self.s = s
+        s = hp.signals.EELSSpectrum(0.1 * np.arange(50, 250, 0.5) ** -3.)
+        s.metadata.Signal.binned = False
+        s.axes_manager[-1].offset = 50
+        s.axes_manager[-1].scale = 0.5
+        self.s = s
 
     def test_unbinned(self):
         sc = self.s.isig[:300]
@@ -145,4 +146,3 @@ class TestPowerLawExtrapolation:
         sc = self.s.isig[:300]
         s = sc.power_law_extrapolation(extrapolation_size=100)
         nose.tools.assert_true(np.allclose(s.data, self.s.data))
-
