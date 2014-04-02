@@ -524,11 +524,12 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
             self.canvas.mpl_disconnect(self.on_move_cid)
             self.on_move_cid = self.canvas.mpl_connect('motion_notify_event',
                                         self.move_right)
-            self.move_right(event)
-            return
-        width_increment = self.range[0] - event.xdata
-        self.rect.set_x(event.xdata)
-        self.rect.set_width(self.rect.get_width() + width_increment)
+            self.rect.set_x(self.range[1])
+            self.rect.set_width(event.xdata-self.range[1])
+        else:
+            width_increment = self.range[0] - event.xdata
+            self.rect.set_x(event.xdata)
+            self.rect.set_width(self.rect.get_width() + width_increment)
         self.update_range()
         if self.onmove_callback is not None:
             self.onmove_callback(*self.range)
@@ -542,11 +543,10 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
             self.canvas.mpl_disconnect(self.on_move_cid)
             self.on_move_cid = self.canvas.mpl_connect('motion_notify_event',
                                         self.move_left)
-            self.move_left(event)
-            return
-        width_increment = \
-            event.xdata - self.range[1]
-        self.rect.set_width(self.rect.get_width() + width_increment)
+            self.rect.set_width(self.range[0] - event.xdata)
+            self.rect.set_x(event.xdata)
+        else:
+            self.rect.set_width(event.xdata - self.rect.get_x())
         self.update_range()
         if self.onmove_callback is not None:
             self.onmove_callback(*self.range)
