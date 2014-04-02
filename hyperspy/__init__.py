@@ -33,7 +33,6 @@ More details in the :mod:`~hyperspy.hspy` docstring.
 # -*- coding: utf-8 -*-
 
 
-
 import Release
 
 __version__ = Release.version
