@@ -9,24 +9,6 @@ These methods are only available for the following signals:
 
 * :py:class:`~._signals.eels.EELSSpectrum`
 
-Spikes removal
-^^^^^^^^^^^^^^
-.. versionadded:: 0.5
-    The :py:meth:`~._signals.eels.EELSSpectrum.spikes_removal_tool` replaces the
-    old :py:meth:`~._signals.eels.EELSSpectrum.remove_spikes`.
-
-
-:py:meth:`~._signals.eels.EELSSpectrum.spikes_removal_tool` provides an user
-interface to remove spikes from spectra.
-
-
-.. figure::  images/spikes_removal_tool.png
-   :align:   center
-   :width:   500    
-
-   Spikes removal tool
-
-
 Define the elemental composition of the sample
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -37,13 +19,8 @@ The elemental composition of the sample can be defined using
 in the :py:attr:`~.signal.Signal.metadata` attribute (see
 :ref:`metadata_structure`)
 
-Estimate the FWHM of a peak
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* :py:meth:`~._signals.eels.EELSSpectrum.estimate_FWHM`
-
 Estimate the thickness
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 The :py:meth:`~._signals.eels.EELSSpectrum.estimate_thickness` can estimate the
 thickness from a low-loss EELS spectrum.
@@ -87,6 +64,8 @@ as end energy for the integration at each spectra or use the same energy value
 for all spectra. Also, if no threshold is specified, the routine will perform a
 rough estimation of the inflexion values at each spectrum.
 
+
+.. _eels.kk:
 
 Kramers-Kronig Analysis
 ^^^^^^^^^^^^^^^^^^^^^^^

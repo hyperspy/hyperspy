@@ -507,6 +507,8 @@ addition Hyperspy extend numpy's broadcasting rules to the following cases:
 |   s2 + s1  |       a              |      b           |
 +------------+----------------------+------------------+
 
+.. _signal.iterator:
+
 Iterating over the navigation axes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -630,6 +632,9 @@ It is also possible to unfold only the navigation or only the signal space:
 * :py:meth:`~.signal.Signal.unfold_navigation_space`
 * :py:meth:`~.signal.Signal.unfold_signal_space`
 
+
+.. _signal.stack_split:
+
 Splitting and stacking
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -672,6 +677,8 @@ Simple operations over one axis
 * :py:meth:`~.signal.Signal.var`
 * :py:meth:`~.signal.Signal.diff`
 * :py:meth:`~.signal.Signal.integrate_simpson`
+
+.. _signal.change_dtype:
 
 Changing the data type
 ^^^^^^^^^^^^^^^^^^^^^^

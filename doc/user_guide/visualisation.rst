@@ -263,6 +263,8 @@ other signals) whatever their dimension. The two functions,
 :py:func:`~.drawing.utils.plot_spectra` and :py:func:`~.drawing.utils.plot_signals`
 , are explained and exemplified in this chapter. 
 
+.. _plot.spectra:
+
 Plotting several spectra
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -372,7 +374,9 @@ The function returns a matplotlib ax object, which can be used to customize the 
 
 .. figure::  images/plot_spectra_customize.png
   :align:   center
-  :width:   500    
+  :width:   500
+  
+.. _plot.signals:
 
 Plotting several signals
 ^^^^^^^^^^^^^^^^^^^^^^^^

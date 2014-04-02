@@ -331,6 +331,8 @@ example:
             A	4.000000
             centre	0.000000
 
+.. _model.fitting:            
+
 Fitting the model to the data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -480,7 +482,7 @@ the ``centre`` parameter.
     chi-squared cannot be computed correctly. This is also true for
     homocedastic noise. 
         
-
+.. _model.visualization:
 
 Visualizing the model
 ^^^^^^^^^^^^^^^^^^^^^
@@ -504,7 +506,8 @@ is possible to display the individual components by calling
 
 To disable this feature call :py:meth:`~.model.Model.disable_plot_components`.
 
-    
+.. _model.starting:
+
 Setting the initial parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

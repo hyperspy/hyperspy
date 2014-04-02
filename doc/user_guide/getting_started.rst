@@ -161,6 +161,9 @@ The toolkit can be specified on start using the `--toolkit` flag. Also, the
 default value can be configured in :ref:`preferences
 <configuring-hyperspy-label>`.
 
+.. _inline_plotting:
+
+
 Inline plotting
 ---------------
 .. versionadded:: 0.7
