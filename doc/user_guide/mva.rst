@@ -203,7 +203,8 @@ To perform BSS on the result of a decomposition, run the
     way to estimate this number in the case of a PCA decomposition is by
     inspecting the :ref:`scree-plot`.
 
-
+.. _mva.visualization:
+    
 Visualising results
 ===================
 
@@ -223,6 +224,8 @@ and 3 it is wise to provide the number of factors or loadings you wish to
 visualise, since the default is plot all. For BSS the default is the number you
 included when running the :py:meth:`~.learn.mva.MVA.blind_source_separation`
 method.
+
+.. _mva.get_results:
 
 Obtaining the results as Signal instances
 =========================================
