@@ -111,18 +111,15 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         self.bg_line.plot()
 
     def bg_to_plot(self, axes_manager=None, fill_with=np.nan):
-        left, right = self.ss_left_value, self.ss_right_value
-        if left > right:
-            left, right = right, left
         # First try to update the estimation
         self.background_estimator.estimate_parameters(
-            self.signal, left, right,
+            self.signal, self.ss_left_value, self.ss_right_value,
             only_current=True)
 
         if self.bg_line_range == 'from_left_range':
             bg_array = np.zeros(self.axis.axis.shape)
             bg_array[:] = fill_with
-            from_index = self.axis.value2index(left)
+            from_index = self.axis.value2index(self.ss_left_value)
             bg_array[from_index:] = self.background_estimator.function(
                 self.axis.axis[from_index:])
             to_return = bg_array
@@ -131,8 +128,8 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         elif self.bg_line_range == 'ss_range':
             bg_array = np.zeros(self.axis.axis.shape)
             bg_array[:] = fill_with
-            from_index = self.axis.value2index(left)
-            to_index = self.axis.value2index(right)
+            from_index = self.axis.value2index(self.ss_left_value)
+            to_index = self.axis.value2index(self.ss_right_value)
             bg_array[from_index:] = self.background_estimator.function(
                 self.axis.axis[from_index:to_index])
             to_return = bg_array
