@@ -39,7 +39,7 @@ class TestImage:
         sigmas = signals.Signal(np.array([0, 1]))
         sigmas.axes_manager.set_signal_dimension(0)
         im.map(gaussian_filter,
-                          sigma=sigmas)
+               sigma=sigmas)
         assert_true(np.allclose(im.data, np.array(
             [[[0., 1., 2.],
                 [3., 4., 5.],
