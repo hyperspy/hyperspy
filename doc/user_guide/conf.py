@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Hyperspy User Guide documentation build configuration file, created by
+# HyperSpy User Guide documentation build configuration file, created by
 # sphinx-quickstart on Wed Feb 29 15:14:48 2012.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -52,8 +52,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Hyperspy User Guide [Draft]'
-copyright = u'2011-2013, The Hyperspy Developers'
+project = u'HyperSpy User Guide [Draft]'
+copyright = u'2011-2013, The HyperSpy Developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -115,7 +115,7 @@ html_theme = 'default'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-html_title = "Hyperspy User Guide v%s" % Release.version
+html_title = "HyperSpy User Guide v%s" % Release.version
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #html_short_title = None
@@ -176,7 +176,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'HyperspyUserGuidedoc'
+htmlhelp_basename = 'HyperSpyUserGuidedoc'
 
 
 # -- Options for LaTeX output --------------------------------------------
@@ -195,8 +195,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'HyperspyUserGuide.tex', u'Hyperspy User Guide',
-     u'The Hyperspy Developers', 'manual'),
+    ('index', 'HyperSpyUserGuide.tex', u'HyperSpy User Guide',
+     u'The HyperSpy Developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -225,8 +225,8 @@ latex_logo = '_static/hyperspy_logo.png'
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'hyperspyuserguide', u'Hyperspy User Guide Documentation',
-     [u'The Hyperspy Developers'], 1)
+    ('index', 'hyperspyuserguide', u'HyperSpy User Guide Documentation',
+     [u'The HyperSpy Developers'], 1)
 ]
 
 
@@ -240,8 +240,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'HyperspyUserGuide', u'Hyperspy User Guide Documentation',
-     u'The Hyperspy Developers', 'HyperspyUserGuide', 'One line description of project.',
+    ('index', 'HyperSpyUserGuide', u'HyperSpy User Guide Documentation',
+     u'The HyperSpy Developers', 'HyperSpyUserGuide', 'One line description of project.',
      'Miscellaneous'),
 ]
 
@@ -258,10 +258,10 @@ texinfo_documents = [
 # -- Options for Epub output ---------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = u'Hyperspy User Guide'
-epub_author = u'The Hyperspy Developers'
-epub_publisher = u'he Hyperspy Developers'
-epub_copyright = u'2011-2013, he Hyperspy Developers'
+epub_title = u'HyperSpy User Guide'
+epub_author = u'The HyperSpy Developers'
+epub_publisher = u'he HyperSpy Developers'
+epub_copyright = u'2011-2013, he HyperSpy Developers'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.

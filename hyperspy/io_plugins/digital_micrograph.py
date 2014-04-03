@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright 2010 Stefano Mazzucco
-# Copyright 2011 The Hyperspy developers
+# Copyright 2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy. It is a fork of the original PIL dm3 plugin
+# This file is part of  HyperSpy. It is a fork of the original PIL dm3 plugin
 # written by Stefano Mazzucco.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 # Plugin to read the Gatan Digital Micrograph(TM) file format
 
@@ -679,7 +679,7 @@ class ImageObject(object):
             print msg
             raise IOError(
                 'Unable to read this DM file in packed complex format. '
-                'Pleare report the issue to the Hyperspy developers providing'
+                'Pleare report the issue to the HyperSpy developers providing'
                 ' the file if possible')
         N = int(self.shape[0] / 2)      # think about a 2Nx2N matrix
         # create an empty 2Nx2N ndarray of complex

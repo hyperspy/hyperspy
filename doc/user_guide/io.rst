@@ -11,7 +11,7 @@ Loading and saving data
 Loading files: the load function
 ================================
 
-Hyperspy can read and write to multiple formats (see :ref:`supported-formats`).
+HyperSpy can read and write to multiple formats (see :ref:`supported-formats`).
 To load data use the :py:func:`~.io.load` command. For example, to load the
 image lena.jpg you can type:
 
@@ -29,7 +29,7 @@ If the loading was successful, the variable :guilabel:`s` contains a generic
     normally need to access it there.)
 
 
-Hyperspy will try to guess the most likely data type for the corresponding
+HyperSpy will try to guess the most likely data type for the corresponding
 file. However, you can force it to read the data as a particular data type by
 providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 ``image`` or ``EELS``, e.g.:
@@ -39,10 +39,10 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
     >>> s = load("filename", signal = "EELS")
 
 Some file formats store some extra information about the data, which can be
-stored in "attributes". If Hyperspy manages to read some extra information
+stored in "attributes". If HyperSpy manages to read some extra information
 about the data it stores it in :py:attr:`~.signal.Signal.original_metadata`
 attribute. Also, it is possible that other information will be mapped by
-Hyperspy to a standard location where it can be used by some standard routines,
+HyperSpy to a standard location where it can be used by some standard routines,
 the :py:attr:`~.signal.Signal.metadata` attribute.
 
 To print the content of the parameters simply:
@@ -74,8 +74,8 @@ functions, e.g.:
 or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
 
 
-By default Hyperspy will return a list of all the files loaded. Alternatively,
-Hyperspy can stack the data of the files contain data with exactly the same
+By default HyperSpy will return a list of all the files loaded. Alternatively,
+HyperSpy can stack the data of the files contain data with exactly the same
 dimensions. If this is not the case an error is raised.
 
 It is also possible to load multiple files with a single command without
@@ -132,7 +132,7 @@ Supported formats
 =================
 
 Here is a summary of the different formats that are currently supported by
-Hyperspy.
+HyperSpy.
 
 
 .. table:: Supported file formats
@@ -173,7 +173,7 @@ of arbitrary dimensions. It is based on the `HDF5 open standard
 applications
 <http://www.hdfgroup.org/products/hdf5_tools/SWSummarybyName.htm>`_.
 
-Note that only HDF5 files written by Hyperspy are supported.
+Note that only HDF5 files written by HyperSpy are supported.
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -187,8 +187,8 @@ compression: One of None, 'gzip', 'szip', 'lzf'.
 NetCDF
 ------
 
-This was the default format in Hyperspy's predecessor, EELSLab, but it has been
-superseeded by :ref:`HDF5` in Hyperspy. We provide only reading capabilities
+This was the default format in HyperSpy's predecessor, EELSLab, but it has been
+superseeded by :ref:`HDF5` in HyperSpy. We provide only reading capabilities
 but we do not support writing to this format.
 
 Note that only NetCDF files written by EELSLab are supported.
@@ -232,7 +232,7 @@ calibrated energy data. It  is possible to personalise the separator with the
 .. Warning::
 
     However, if a different separator is chosen the resulting file will not
-    comply with the MSA/EMSA standard and Hyperspy and other software may not
+    comply with the MSA/EMSA standard and HyperSpy and other software may not
     be able to read it.
     
 The default encoding is `latin-1`. It is possible to set a different encoding
@@ -268,7 +268,7 @@ using the encoding argument, e.g.:
 Images
 ------
 
-Hyperspy is able to read and write data too all the image formats supported by
+HyperSpy is able to read and write data too all the image formats supported by
 `the Python Image Library <http://www.pythonware.com/products/pil/>`_ (PIL).
 This includes png, pdf, gif etc.
 
@@ -283,7 +283,7 @@ analysis purposes.
 TIFF
 ----
 
-Since version 4.1 Hyperspy can read and write 2D and 3D TIFF files using using
+Since version 4.1 HyperSpy can read and write 2D and 3D TIFF files using using
 Christoph Gohlke's tifffile library. In particular it supports reading and
 writing of TIFF, BigTIFF, OME-TIFF, STK, LSM, NIH, and FluoView files. Most of
 these are uncompressed or losslessly compressed 2**(0 to 6) bit integer,16, 32
@@ -291,7 +291,7 @@ and 64-bit float, grayscale and RGB(A) images, which are commonly used in
 bio-scientific imaging. See `the library webpage
 <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_ for more details.
 
-Currently Hyperspy cannot read the TIFF tags.
+Currently HyperSpy cannot read the TIFF tags.
 
  
 .. _dm3-format:
@@ -299,7 +299,7 @@ Currently Hyperspy cannot read the TIFF tags.
 Gatan Digital Micrograph
 ------------------------
 
-Hyperspy can read both dm3 and dm4 files but the reading features are not
+HyperSpy can read both dm3 and dm4 files but the reading features are not
 complete (and probably they will be unless Gatan releases the specifications of
 the format). That said, we understand that this is an important feature and if
 loading a particular Digital Micrograph file fails for you, please report it as
@@ -311,14 +311,14 @@ us aware of the problem.
 FEI TIA ser and emi
 -------------------
 
-Hyperspy can read ``ser`` and ``emi`` files but the reading features are not
+HyperSpy can read ``ser`` and ``emi`` files but the reading features are not
 complete (and probably they will be unless FEI releases the specifications of
 the format). That said we know that this is an important feature and if loading
 a particular ser or emi file fails for you, please report it as an issue in the
 `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make us aware of the
 problem.
 
-Hyperspy (unlike TIA) can read data directly from the ``.ser`` files. However,
+HyperSpy (unlike TIA) can read data directly from the ``.ser`` files. However,
 by doing so, the information that is stored in the emi file is lost.
 Therefore strongly reccommend to load using the ``.emi`` file instead.
 

@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import locale
 import time
@@ -306,7 +306,7 @@ def file_writer(filename, signal, format=None, separator=', ',
         #        'YLABEL' : '',
         'XUNITS': signal.axes_manager._axes[0].units,
         #        'YUNITS' : '',
-        'COMMENT': 'File created by Hyperspy version %s' % Release.version,
+        'COMMENT': 'File created by HyperSpy version %s' % Release.version,
         # Microscope
         #        'BEAMKV' : ,
         #        'EMISSION' : ,

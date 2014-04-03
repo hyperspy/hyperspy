@@ -18,7 +18,7 @@ Loading
 ^^^^^^^^
 
 All data are loaded with the :py:func:`~.io.load` function, as described in details in 
-:ref:`Loading files<loading_files>`. Hyperspy is able to import different formats,
+:ref:`Loading files<loading_files>`. HyperSpy is able to import different formats,
 among them ".msa" and ".rpl" (the raw format of Oxford Instrument and Brucker). 
 
 Here is three example for files exported by Oxford Instrument software (INCA).

@@ -285,7 +285,7 @@ signal_kind
     
     A term that describes the signal type, e.g. EDX, PES... This information 
     can be used by HyperSpy to load the file as a specific signal class and 
-    therefore the naming should be standarised. Currently Hyperspy provides 
+    therefore the naming should be standarised. Currently HyperSpy provides 
     special signal class for photoemission spectroscopy and electron energy 
     loss spectroscopy and the signal_kind in these cases should be respectively 
     PES and EELS.

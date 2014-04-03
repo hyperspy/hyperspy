@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import struct
 from glob import glob
@@ -297,7 +297,7 @@ def load_ser_file(filename, verbose=False):
             raise IOError(
                 "The file does not contains valid data"
                 "If it is a single spectrum, the data is contained in the  "
-                ".emi file but Hyperspy cannot currently extract this information.")
+                ".emi file but HyperSpy cannot currently extract this information.")
 
         data_offsets = header['Data_Offsets'][0]
         try:
@@ -335,7 +335,7 @@ def get_xml_info_from_emi(emi_file):
 
 
 def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
-    """Reads the information from the file and returns it in the Hyperspy
+    """Reads the information from the file and returns it in the HyperSpy
     required format.
 
     """

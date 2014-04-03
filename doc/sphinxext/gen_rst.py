@@ -55,7 +55,7 @@ def generate_example_rst(app):
 .. _examples-index:
 
 ####################
-Hyperspy Examples
+HyperSpy Examples
 ####################
 
 .. htmlonly::
