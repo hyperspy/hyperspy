@@ -3922,6 +3922,13 @@ class Signal(MVA,
         keyword arguments : any valid keyword argument
             All extra keyword arguments are passed to the
 
+        Notes
+        -----
+        This method is similar to Python's :func:`map` that can also be utilize
+        with a :class:`Signal` instance for similar purposes. However, this
+        method has the advantage of being faster because it iterates the numpy
+        array instead of the :class:`Signal`.
+
         Examples
         --------
         Apply a gaussian filter to all the images in the dataset. The sigma
