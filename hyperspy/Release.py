@@ -75,7 +75,7 @@ keywords = ['EDX',
             'spectrum image']
 
 info = u"""
-    H y p e r s p y
+    H y p e r S p y
     Version %s
     
     http://www.hyperspy.org
