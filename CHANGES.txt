@@ -76,6 +76,8 @@ Plotting
   spectra in the same figure. See :ref:`plot.spectra`.
 * New function, :py:func:`~.drawing.utils.plot_signals`, to plot several
   signals at the same time. See :ref:`plot.signals`.
+* New function, :py:func:`~.drawing.utils.plot_histograms`, to plot the histrograms
+  of several signals at the same time. See :ref:`plot.signals`.
 
 Curve fitting
 ^^^^^^^^^^^^^
@@ -116,10 +118,19 @@ EELS
 EDS
 ^^^
 
-* New signal, EDSSpectrum especialized in EDS data analysis. See
-  :ref:`eds_tools-label`.
+* New signal, EDSSpectrum especialized in EDS data analysis, with subsignal 
+  for EDS with SEM and with TEM: EDSSEMSpectrum and EDSTEMSpectrum. See
+  :ref:`eds-label`.
 * New database of EDS lines available in the ``elements`` attribute of the 
   ``hspy.utils.material`` module.
+* Adapted methods to calibrate the spectrum, the detector and the microscope.
+  See :ref:`eds_calibration-label`.
+* Specific methods to describe the sample, 
+  :py:meth:`~._signals.eds.EDSSpectrum.add_elements` and 
+  :py:meth:`~._signals.eds.EDSSpectrum.add_lines`. See :ref:`eds_sample-label`
+* New method to get the intensity of specific X-ray lines:
+  :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. See 
+  :ref:`eds_plot-label`
 
 API changes
 -----------

@@ -80,7 +80,7 @@ complex dielectric funtion from a low-loss EELS spectrum. In addition, it can
 estimate the thickness if the refractive index is known and approximately
 correct for surface plasmon excitations in layers.
 
-.. _eds_tools-label:
+.. _eels_tools-label:
 
 
 
