@@ -136,8 +136,8 @@ class CalibrationHandler(SpanSelectorInSpectrumHandler):
 
 
 class SpanSelectorInSpectrum(t.HasTraits):
-    ss_left_value = t.Float()
-    ss_right_value = t.Float()
+    ss_left_value = t.Float(np.nan)
+    ss_right_value = t.Float(np.nan)
     is_ok = t.Bool(False)
 
     def __init__(self, signal):
