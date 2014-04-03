@@ -46,7 +46,7 @@ Core
 * New :attr:`~signal.Signal.metadata` attribute, ``Signal.binned``. Several
   methods behave differently on binned and unbinned signals.
   See :ref:`signal.binned`.
-* New :py:meth:`~.signal.Signal.apply_function` method to easily transform the
+* New :py:meth:`~.signal.Signal.map` method to easily transform the
   data using a function that operates on individual signals. See
   :ref:`signal.iterator`.
 * New :py:meth:`~.signal.Signal.get_histogram` and

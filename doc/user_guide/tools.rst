@@ -561,7 +561,7 @@ to make a horizontal "collage" of the image stack:
 
 Transforming the data at each coordinate as in the previous example using an
 external function can be more easily accomplished using the
-:py:meth:`~.signal.Signal.apply_function` method:
+:py:meth:`~.signal.Signal.map` method:
 
 .. code-block:: python
 
@@ -569,7 +569,7 @@ external function can be more easily accomplished using the
     >>> image_stack = signals.Image(np.array([scipy.misc.lena()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
-    >>> image_stack.apply_function(scipy.ndimage.rotate,
+    >>> image_stack.map(scipy.ndimage.rotate,
     ...                            angle=45,
     ...                            reshape=False)
     >>> collage = utils.stack([image for image in image_stack], axis=0)
@@ -579,7 +579,7 @@ external function can be more easily accomplished using the
   :align:   center
   :width:   500    
 
-The :py:meth:`~.signal.Signal.apply_function` method can also take variable 
+The :py:meth:`~.signal.Signal.map` method can also take variable 
 arguments as in the following example.
 
 .. code-block:: python
@@ -592,7 +592,7 @@ arguments as in the following example.
     >>> angles.axes_manager.set_signal_dimension(0)
     >>> modes = signals.Signal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
     >>> modes.axes_manager.set_signal_dimension(0)
-    >>> image_stack.apply_function(scipy.ndimage.rotate,
+    >>> image_stack.map(scipy.ndimage.rotate,
     ...                            angle=angles,
     ...                            reshape=False,
     ...                            mode=modes)
