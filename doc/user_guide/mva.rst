@@ -5,7 +5,7 @@ Introduction
 ============
 
 HyperSpy provides easy access to several "machine learning" algorithms which
-can be useful when analysing hyperspectral data. In particular, decomposition
+can be useful when analysing multidimensional data. In particular, decomposition
 algorithms such as principal component analysis (PCA) or blind source
 separation (BSS) algorithms such as independent component analysis (ICA) are
 available through the methods described in this section.
@@ -153,8 +153,6 @@ example:
     * if list of ints, only the components in the given list are used to
       construct the model.
 
-Usually a low integer (<10) will be the appropriate choice for most types of
-hyperspectral data
 
 .. HINT::
     Unlike most of the analysis functions, this function returns a new

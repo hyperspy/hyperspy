@@ -251,7 +251,7 @@ Ripple
 
 This `open standard format
 <http://www.nist.gov/lispix/doc/image-file-formats/raw-file-format.htm>`_ is
-widely used to exchange hyperspectral data. However, it only supports data of
+widely used to exchange multidimensional data. However, it only supports data of
 up to three dimensions. It can be used to exchange data with Bruker and `Lispix
 <http://www.nist.gov/lispix/>`_. Used in combination with the :ref:`import-rpl`
 it is very useful for exporting data to Gatan's Digital Micrograph.

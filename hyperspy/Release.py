@@ -27,7 +27,7 @@ name = 'hyperspy'
 # by the output of "git describe" if git is available or the git
 # hash if .git is present.
 version = "0.6+dev"
-description = "Hyperspectral data analysis toolbox"
+description = "Multidimensional data analysis toolbox"
 license = 'GPL v3'
 
 authors = {
@@ -60,6 +60,7 @@ keywords = ['EDX',
             'energy dispersive x-rays',
             'hyperspectral',
             'hyperspectrum',
+            'multidimensional',
             'hyperspy',
             'machine learning',
             'microscopy',
