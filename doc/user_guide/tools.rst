@@ -10,7 +10,7 @@ The Signal class and its subclasses
     Do not worry if you do not understand it all.
     
 
-Hyperspy stores the data in the :py:class:`~.signal.Signal` class, that is
+HyperSpy stores the data in the :py:class:`~.signal.Signal` class, that is
 the object that you get when e.g. you load a single file using
 :py:func:`~.io.load`. Most of the data analysis functions are also contained in
 this class or its specialized subclasses. The :py:class:`~.signal.Signal` class
@@ -77,7 +77,7 @@ The different subclasses are characterized by three
 `signal_type`
     Describes the nature of the signal. It can be any string, normally the 
     acronym associated with a
-    particular signal. In certain cases Hyperspy provides features that are 
+    particular signal. In certain cases HyperSpy provides features that are 
     only available for a 
     particular signal type through :py:class:`~.signal.Signal` subclasses.
     The :py:class:`~.signal.Signal` method 
@@ -89,7 +89,7 @@ The different subclasses are characterized by three
 `signal_origin`
     Describes the origin of the signal and can be "simulation" or 
     "experiment" or "",
-    the latter meaning undefined. In certain cases Hyperspy provides features 
+    the latter meaning undefined. In certain cases HyperSpy provides features 
     that are only available for a 
     particular signal origin. The :py:class:`~.signal.Signal` method 
     :py:meth:`~.signal.Signal.set_signal_origin`
@@ -155,13 +155,13 @@ The following example shows how to transform between different subclasses.
 The navigation and signal dimensions
 ------------------------------------
 
-Hyperspy can deal with data of arbitrary dimensions. Each dimension is
+HyperSpy can deal with data of arbitrary dimensions. Each dimension is
 internally classified as either "navigation" or "signal" and the way this
 classification is done determines the behaviour of the signal.
 
 The concept is probably best understood with an example: let's imagine a three
 dimensional dataset. This dataset could be an spectrum image acquired by
-scanning over a sample in two dimensions. In Hyperspy's terminology the
+scanning over a sample in two dimensions. In HyperSpy's terminology the
 spectrum dimension would be the signal dimension and the two other dimensions
 would be the navigation dimensions. We could see the same dataset as an image
 stack instead.  Actually it could has been acquired by capturing two
@@ -178,7 +178,7 @@ classifiying the dimensions of a three-dimensional dataset by
 
     Although each dimension can be arbitrarily classified as "navigation
     dimension" or "signal dimension", for most common tasks there is no need to
-    modify Hyperspy's default choice.
+    modify HyperSpy's default choice.
 
 
 .. _signal.binned:
@@ -257,19 +257,19 @@ in a :py:class:`~.signal.Signal`. The result of indexing a
 :py:class:`~.signal.Signal` is another :py:class:`~.signal.Signal` that shares
 a subset of the data of the original :py:class:`~.signal.Signal`.
  
-Hyperspy's Signal indexing is similar to numpy array indexing and, therefore,
+HyperSpy's Signal indexing is similar to numpy array indexing and, therefore,
 rather that explaining this feature in detail we will just give some examples
 of usage here. The interested reader is encouraged to read the `numpy
 documentation on the subject  <http://ipython.org/>`_ for a detailed
 explanation of the concept. When doing so it is worth to keep in mind the
 following main differences:
 
-* Hyperspy (unlike numpy) does not support:
+* HyperSpy (unlike numpy) does not support:
 
   + Indexing using arrays.
   + Adding new axes using the newaxis object.
     
-* Hyperspy (unlike numpy):
+* HyperSpy (unlike numpy):
 
   + Supports indexing with decimal numbers.
   + Uses the image order for indexing i.e. [x, y, z,...] (hyperspy) vs 
@@ -307,8 +307,8 @@ Lets start by indexing a single spectrum:
     array([5, 7, 9])
 
 
-Unlike numpy, Hyperspy supports indexing using decimal numbers, in which case
-Hyperspy indexes using the axis scales instead of the indices.
+Unlike numpy, HyperSpy supports indexing using decimal numbers, in which case
+HyperSpy indexes using the axis scales instead of the indices.
  
 .. code-block:: python
 
@@ -467,7 +467,7 @@ augmented binary assignments (+=, -=, \*=, /=, //=, %=, \*\*=, <<=, >>=, &=,
 These operations are performed element-wise. When the dimensions of the signals
 are not equal `numpy broadcasting rules apply
 <http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_ *first*. In
-addition Hyperspy extend numpy's broadcasting rules to the following cases:
+addition HyperSpy extend numpy's broadcasting rules to the following cases:
 
 +------------+----------------------+------------------+
 | **Signal** | **NavigationShape**  | **SignalShape**  |

@@ -87,7 +87,7 @@ correct for surface plasmon excitations in layers.
 EELS curve fitting
 ------------------
 
-Hyperspy makes it really easy to quantify EELS core-loss spectra by curve
+HyperSpy makes it really easy to quantify EELS core-loss spectra by curve
 fitting as it is shown in the next example of quantification of a boron nitride
 EELS spectrum from the `The EELS Data Base
 <http://pc-web.cemes.fr/eelsdb/index.php?page=home.php>`_. 
@@ -124,7 +124,7 @@ effect of multiple scattering by Fourier-ratio convolution.
     >>> m = create_model(s, ll=ll)
 
 
-Hyperspy has created the model and configured it automatically:
+HyperSpy has created the model and configured it automatically:
 
 .. code-block:: python
        

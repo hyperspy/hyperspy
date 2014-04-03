@@ -116,7 +116,7 @@ To close all the figures run the following command:
 Visualisation of multi-dimensional data
 ****************************************
 
-With the aim to ease the data analysis of multidimensionnal data, Hyperspy
+With the aim to ease the data analysis of multidimensionnal data, HyperSpy
 provides a powerful and flexible :py:meth:`~.signal.Signal.plot` method to
 visualize n-dimensional data. In this chapter, the visualisation of data of 3
 or more dimensions is exemplified with a image stack and a 4D hyperspectrum
@@ -218,7 +218,7 @@ Lastly, if no navigator is needed, "navigator=None" can be used.
 Using Mayavi to visualize 3D data
 ---------------------------------
 
-Although Hyperspy does not currently support plotting when signal_dimension is
+Although HyperSpy does not currently support plotting when signal_dimension is
 greater than 2, `Mayavi <http://docs.enthought.com/mayavi/mayavi/>`_ can be
 used for this purpose.
 
@@ -258,7 +258,7 @@ found in :ref:`EDS lines intensity<get_lines_intensity>`.
 Comparing objects
 -----------------
 
-Hyperspy provides two functions to compare different objects (spectra, images or
+HyperSpy provides two functions to compare different objects (spectra, images or
 other signals) whatever their dimension. The two functions, 
 :py:func:`~.drawing.utils.plot_spectra` and :py:func:`~.drawing.utils.plot_signals`
 , are explained and exemplified in this chapter. 

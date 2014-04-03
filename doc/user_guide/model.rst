@@ -1,7 +1,7 @@
 Curve fitting
 *************
 
-Hyperspy can perform curve fitting in n-dimensional data sets. It can create a
+HyperSpy can perform curve fitting in n-dimensional data sets. It can create a
 model from a linear combinantion of predefined components and can use multiple
 optimisation algorithms to fit the model to experimental data. It supports
 bounds and weights.
@@ -32,7 +32,7 @@ the accelerating voltage, convergence and collection angles etc.
 Adding components to the model
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In Hyperspy a model consists of a linear combination of :py:mod:`~.components`.
+In HyperSpy a model consists of a linear combination of :py:mod:`~.components`.
 These are some of the components which are currently available:
 
 
