@@ -1,3 +1,5 @@
+.. _eds-label:
+
 Energy-Dispersive X-Rays Spectrometry (EDS)
 ******************************************
 
@@ -43,7 +45,9 @@ example 01, 02, 03,...):
 
     >>> spec_img_3D = load("spectrum_image_*.rpl",stack=True)  
     >>> spec_img_3D = spec_img_3D.as_spectrum(0) 
-    
+
+.. _eds_calibration-label: 
+   
 Microscope and detector parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -164,7 +168,8 @@ method.
     >>> # Set all the properties of spec to spec_img
     >>> spec_img.get_calibration_from(spec)
     
-    
+.. _eds_sample-label:
+   
 Describing the sample
 ---------------------
 
@@ -276,6 +281,8 @@ An elemental database is available with the energy of the X-ray lines.
     └── Ln
         ├── energy (keV) = 0.62799
         └── factor = 0.01
+
+.. _eds_plot-label: 
 
 Plotting
 --------
