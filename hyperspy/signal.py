@@ -4356,14 +4356,14 @@ class Signal(MVA,
 
         Parameters
         ----------
-        signal_type : {"EELS", "EDS_TEM", "EDS_SEM", str}
+        signal_type : {"EELS", "EDS_TEM", "EDS_SEM", "DielectricFunction"}
             Currently there are special features for "EELS" (electron
             energy-loss spectroscopy), "EDS_TEM" (energy dispersive X-rays of
             thin samples, normally obtained in a transmission electron
-            microscope) and "EDS_SEM" (energy dispersive X-rays of
-            thick samples, normally obtained in a scanning electron
-            microscope) so setting the signal_type to the correct acronym
-            is highly advisable when analyzing any signal for which Hyperspy
+            microscope), "EDS_SEM" (energy dispersive X-rays of thick samples,
+            normally obtained in a scanning electron microscope) and
+            "DielectricFuction". Setting the signal_type to the correct acronym
+            is highly advisable when analyzing any signal for which HyperSpy
             provides extra features. Even if Hyperspy does not provide extra
             features for the signal that you are analyzing, it is good practice
             to set signal_type to a value that best describes the data signal
