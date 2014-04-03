@@ -234,5 +234,6 @@ man_pages = [
 # Add the hyperspy website to the intersphinx domains
 intersphinx_mapping = {'hyperspyweb': ('http://hyperspy.org/', None)}
 
+
 def setup(app):
     app.add_javascript('copybutton.js')
