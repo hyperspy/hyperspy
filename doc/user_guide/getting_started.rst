@@ -63,7 +63,7 @@ these options add the `-h` flag:
                     [--ipython_args [IPYTHON_ARGS [IPYTHON_ARGS ...]]]
                     [{terminal,console,qtconsole,notebook}]
 
-    Hyperspectral data analysis toolbox
+    Multidimensional data analysis toolbox
  
     positional arguments:
       {terminal,console,qtconsole,notebook}

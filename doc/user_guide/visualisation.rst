@@ -76,8 +76,8 @@ more will disable the extra cursor:
 
    Visualisation of a 2D spectrum image using two pointers.
 
-When exploring a 2D hyperspectral object of high spatial resolution the default
-size of the rectangular cursors can be too small to be dragged or even seen. It
+Sometimes the default size of the rectangular cursors used to navigate images
+can be too small to be dragged or even seen. It
 is possible to change the size of the cursors by pressing the ``+`` and ``-``
 keys  **when the navigator window is selected**.
 
