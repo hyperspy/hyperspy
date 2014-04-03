@@ -3900,7 +3900,7 @@ class Signal(MVA,
                                             " histogram")
         return hist_spec
 
-    def apply_function(self, function, **kwargs):
+    def map(self, function, **kwargs):
         """Apply a function to the signal data at all the coordinates.
 
         The function must operate on numpy arrays and the output *must have the
@@ -3922,6 +3922,13 @@ class Signal(MVA,
         keyword arguments : any valid keyword argument
             All extra keyword arguments are passed to the
 
+        Notes
+        -----
+        This method is similar to Python's :func:`map` that can also be utilize
+        with a :class:`Signal` instance for similar purposes. However, this
+        method has the advantage of being faster because it iterates the numpy
+        array instead of the :class:`Signal`.
+
         Examples
         --------
         Apply a gaussian filter to all the images in the dataset. The sigma
@@ -3929,7 +3936,7 @@ class Signal(MVA,
 
         >>> import scipy.ndimage
         >>> im = signals.Image(np.random.random((10, 64, 64)))
-        >>> im.apply_function(scipy.ndimage.gaussian_filter, sigma=2.5)
+        >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)
 
         Apply a gaussian filter to all the images in the dataset. The sigmal
         parameter is variable.
@@ -3937,7 +3944,7 @@ class Signal(MVA,
         >>> im = signals.Image(np.random.random((10, 64, 64)))
         >>> sigmas = signals.Signal(np.linspace(2,5,10))
         >>> sigmas.axes_manager.set_signal_dimension(0)
-        >>> im.apply_function(scipy.ndimage.gaussian_filter, sigma=sigmas)
+        >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
         """
         # Sepate ndkwargs
