@@ -52,6 +52,7 @@ from hyperspy.drawing.widgets import (DraggableVerticalLine,
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
 from hyperspy.signal import Signal
+from hyperspy.utils.partial import CmpPartial
 
 weights_deprecation_warning = (
     'The `weights` argument is deprecated and will be removed '
@@ -350,13 +351,13 @@ class Model(list):
             component.connect(self.update_plot)
             for parameter in component.parameters:
                 if self.spectrum._plot is not None:
-                    parameter.connect(self.update_plot)
+                    parameter.connect( CmpPartial(self.update_plot, component) )
 
     def _disconnect_parameters2update_plot(self):
         for component in self:
             component.disconnect(self.update_plot)
             for parameter in component.parameters:
-                parameter.disconnect(self.update_plot)
+                parameter.disconnect( CmpPartial(self.update_plot, component) )
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True):
         """Returns a recreation of the dataset using the model.
@@ -513,10 +514,15 @@ class Model(list):
             self._connect_parameters2update_plot()
             self.update_plot()
 
-    def update_plot(self):
+    def update_plot(self, component=None, *args, **kwargs):
         if self.spectrum._plot is not None:
             try:
-                self.spectrum._plot.signal_plot.ax_lines[1].update()
+                if component is None:
+                    for i in xrange(1,len(self.spectrum._plot.signal_plot.ax_lines)):
+                        self.spectrum._plot.signal_plot.ax_lines[i].update()
+                else:
+                    self.spectrum._plot.signal_plot.ax_lines[1].update()
+                    self.spectrum._plot.signal_plot.ax_lines[2 + self.index(component)].update()
             except:
                 self._disconnect_parameters2update_plot()
 
@@ -1466,7 +1472,7 @@ class Model(list):
                         print("\t\t%s\t%g" % (
                             parameter.name, parameter.value))
 
-    def enable_adjust_position(self, components=None, fix_them=True):
+    def enable_adjust_position(self, components=None, fix_them=True, show_label=True):
         """Allow changing the *x* position of component by dragging
         a vertical line that is plotted in the signal model figure
 
@@ -1523,9 +1529,13 @@ class Model(list):
                 # The value is outside of the axis range
                 continue
             # Create the vertical line and labels
-            self._position_widgets.extend((
-                DraggableVerticalLine(am),
-                DraggableLabel(am),))
+            if show_label:
+                self._position_widgets.extend((
+                    DraggableVerticalLine(am),
+                    DraggableLabel(am),))
+            else:
+                self._position_widgets.extend((
+                    DraggableVerticalLine(am),))
             # Store the component to reset its twin when disabling
             # adjust position
             self._position_widgets[-1].component = component
@@ -1533,8 +1543,9 @@ class Model(list):
             w.string = component._get_short_description().replace(
                 ' component', '')
             w.add_axes(self._plot.signal_plot.ax)
-            self._position_widgets[-2].add_axes(
-                self._plot.signal_plot.ax)
+            if show_label:
+                self._position_widgets[-2].add_axes(
+                    self._plot.signal_plot.ax)
             # Create widget -> parameter connection
             am._axes[0].continuous_value = True
             am._axes[0].on_trait_change(set_value, 'value')
