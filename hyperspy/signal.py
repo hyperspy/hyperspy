@@ -4477,7 +4477,7 @@ class Signal(MVA,
         par = prepar + par[::-1]
         return self.data[par]
 
-    def get_nearest(self, ind, radii):
+    def get_nearest(self, centre, radii):
         """Returns a signal view of elements within specified radii of centre.
 
         Either indices (int) or axes values (float) can be specified for both radii and centre
@@ -4496,7 +4496,7 @@ class Signal(MVA,
         TypeError if centre is not iterable
         """
 
-        par, center = self._nearest_indices(ind, radii)
+        par, c = self._nearest_indices(centre, radii)
         return self.inav[par]
 
     def _nearest_indices(self, ind, radii, slice_step=None):
