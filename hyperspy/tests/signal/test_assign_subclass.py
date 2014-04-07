@@ -56,6 +56,7 @@ def test_weird_spectrum():
 
 
 class TestSignalAssignSubclass:
+
     def setUp(self):
         self.s = Spectrum([0])
 
@@ -66,4 +67,3 @@ class TestSignalAssignSubclass:
     def test_type(self):
         self.s.set_signal_origin("simulation")
         assert_true(isinstance(self.s, SpectrumSimulation))
-
