@@ -4452,6 +4452,84 @@ class Signal(MVA,
     def is_rgbx(self):
         return rgb_tools.is_rgbx(self.data)
 
+    def get_nearest_array(self, centre, radii):
+        """Returns an array view of elements within specified radii of centre.
+
+        Either indices (int) or axes values (float) can be specified for both radii and centre
+
+        Parameters
+        __________
+        centre : iterable of ints or floats
+            Indices of centre (at least one has to be specified)
+        radii : {int, float, iterable}
+            Distances around centre to look around in axes
+
+        Raises
+        ______
+        IndexError if too many indices or radii are specified, or if an index is out of the axis limits
+
+        TypeError if centre is not iterable
+        """
+
+        par, c = self._nearest_indices(centre, radii)
+        prepar = ()
+        for i in xrange(len(self.data.shape) - 1 - len(par)):
+            prepar = prepar + (slice(None),)
+        par = prepar + par[::-1]
+        return self.data[par]
+
+    def get_nearest(self, ind, radii):
+        """Returns a signal view of elements within specified radii of centre.
+
+        Either indices (int) or axes values (float) can be specified for both radii and centre
+
+        Parameters
+        __________
+        centre : iterable of ints or floats
+            Indices of centre (at least one has to be specified)
+        radii : {int, float, iterable}
+            Distances around centre to look around in axes
+
+        Raises
+        ______
+        IndexError if too many indices or radii are specified, or if an index is out of the axis limits
+
+        TypeError if centre is not iterable
+        """
+
+        par, center = self._nearest_indices(ind, radii)
+        return self.inav[par]
+
+    def _nearest_indices(self, ind, radii, slice_step=None):
+        shape = self.axes_manager.navigation_shape
+        try:
+            if len(shape) < len(ind):
+                raise IndexError("too many indices specified")
+        except TypeError:
+            raise TypeError("indices have to be iterable (tuple, list,...)")
+        for c, i in enumerate(ind):
+            if isinstance(i, float):
+                ind[c] = self.axes_manager[c].value2index(i)
+            elif i < self.axes_manager[c].low_index or i > self.axes_manager[c].high_index:
+                raise IndexError("The index if out of the axis limits")
+        try:
+            if len(radii) != len(ind):
+                raise IndexError("number of radii has to be the same as number of indices")
+        except TypeError:
+            radii = [radii for i in ind]
+        for c, r in enumerate(radii):
+            if isinstance(r, float):
+                radii[c] = self.axes_manager[c].value2index(self.axes_manager[c].axis[0] + r)
+        par = ()
+        center = ()
+        for c, i in enumerate(ind):
+            top = min(i + radii[c] + 1, shape[c])
+            bot = max(0, i - radii[c])
+            center = center + (i - bot,)
+            par = par + (slice(bot,top,slice_step),)
+        return par, center
+
+
 # Implement binary operators
 for name in (
     # Arithmetic operators
