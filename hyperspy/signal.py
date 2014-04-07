@@ -651,8 +651,7 @@ class Signal1DTools(object):
             reference_indices=reference_indices,
             max_shift=max_shift,
             interpolate=interpolate,
-            number_of_interpolation_points=
-            number_of_interpolation_points,
+            number_of_interpolation_points=number_of_interpolation_points,
             mask=mask)
         for signal in also_align + [self]:
             signal.shift1D(shift_array=shift_array,
@@ -4514,19 +4513,22 @@ class Signal(MVA,
                 raise IndexError("The index if out of the axis limits")
         try:
             if len(radii) != len(ind):
-                raise IndexError("number of radii has to be the same as number of indices")
+                raise IndexError(
+                    "number of radii has to be the same as number of indices")
         except TypeError:
             radii = [radii for i in ind]
         for c, r in enumerate(radii):
             if isinstance(r, float):
-                radii[c] = self.axes_manager[c].value2index(self.axes_manager[c].axis[0] + r)
+                radii[c] = self.axes_manager[c].value2index(
+                    self.axes_manager[c].axis[0] +
+                    r)
         par = ()
         center = ()
         for c, i in enumerate(ind):
             top = min(i + radii[c] + 1, shape[c])
             bot = max(0, i - radii[c])
             center = center + (i - bot,)
-            par = par + (slice(bot,top,slice_step),)
+            par = par + (slice(bot, top, slice_step),)
         return par, center
 
 
