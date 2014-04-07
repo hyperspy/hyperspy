@@ -53,3 +53,17 @@ def test_weird_spectrum():
         signal_type="weird",
         signal_origin="")
     assert_true(cls is Spectrum)
+
+
+class TestSignalAssignSubclass:
+
+    def setUp(self):
+        self.s = Spectrum([0])
+
+    def test_type(self):
+        self.s.set_signal_type("EELS")
+        assert_true(isinstance(self.s, EELSSpectrum))
+
+    def test_type(self):
+        self.s.set_signal_origin("simulation")
+        assert_true(isinstance(self.s, SpectrumSimulation))

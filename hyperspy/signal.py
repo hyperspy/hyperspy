@@ -4343,11 +4343,14 @@ class Signal(MVA,
         mp = self.metadata
         current_class = self.__class__
         self.__class__ = hyperspy.io.assign_signal_subclass(
-            record_by=mp.Signal.record_by if "Signal.record_by" in mp
+            record_by=mp.Signal.record_by
+            if "Signal.record_by" in mp
             else self._record_by,
-            signal_type=mp.Signal.signal_type if "signal_type" in mp.Signal
+            signal_type=mp.Signal.signal_type
+            if "Signal.signal_type" in mp
             else self._signal_type,
-            signal_origin=mp.Signal.signal_origin if "Signal.signal_origin" in mp.Signal
+            signal_origin=mp.Signal.signal_origin
+            if "Signal.signal_origin" in mp
             else self._signal_origin)
         self.__init__(**self._to_dictionary())
 
