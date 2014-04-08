@@ -208,6 +208,7 @@ class Model(list):
                 dtype='int'))
         self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
             ' degrees of freedom'
+        self._suspend_update = 0
 
     def __repr__(self):
         return "<Model %s>" % super(Model, self).__repr__()
@@ -515,7 +516,20 @@ class Model(list):
             self.update_plot()
 
     def update_plot(self, component=None, *args, **kwargs):
-        if self.spectrum._plot is not None:
+        """Update model plot.
+
+        Parameters
+        ----------
+        component : hyperspy component, optional
+            If supplied, only updates plot of given component and total model.
+            If None (default), total and all components will be updated.
+
+        See Also
+        --------
+        suspend_update
+        resume_update
+        """
+        if self.spectrum._plot is not None and not (self._suspend_update > 0):
             try:
                 if component is None:
                     for i in xrange(1,len(self.spectrum._plot.signal_plot.ax_lines)):
@@ -525,6 +539,35 @@ class Model(list):
                     self.spectrum._plot.signal_plot.ax_lines[2 + self.index(component)].update()
             except:
                 self._disconnect_parameters2update_plot()
+
+    def suspend_update(self):
+        """Prevents update_plot() from doing anything until resumed
+
+        See Also
+        --------
+        resume_update
+        update_plot
+        """
+        self._suspend_update += 1
+
+    def resume_update(self, update=True):
+        """Resumes plot update after suspension by suspend_update()
+
+        Parameters
+        ----------
+        update : bool, optional
+            If True, updates plot (default(. This update will still be suppressed if
+            suspend_update has been called more times than resume_update().
+
+        See Also
+        --------
+        suspend_update
+        update_plot
+        """
+        if self._suspend_update > 0:
+            self._suspend_update -= 1
+        if update:
+            self.update_plot()
 
     def _fetch_values_from_p0(self, p_std=None):
         """Fetch the parameter values from the output of the optimzer `self.p0`
