@@ -348,14 +348,14 @@ class Model(list):
 
     def _connect_parameters2update_plot(self):
         for component in self:
-            component.connect(self.update_plot)
+            component.connect(CmpPartial(self.update_plot, component))
             for parameter in component.parameters:
                 if self.spectrum._plot is not None:
                     parameter.connect( CmpPartial(self.update_plot, component) )
 
     def _disconnect_parameters2update_plot(self):
         for component in self:
-            component.disconnect(self.update_plot)
+            component.disconnect(CmpPartial(self.update_plot, component))
             for parameter in component.parameters:
                 parameter.disconnect( CmpPartial(self.update_plot, component) )
 
@@ -522,7 +522,8 @@ class Model(list):
                         self.spectrum._plot.signal_plot.ax_lines[i].update()
                 else:
                     self.spectrum._plot.signal_plot.ax_lines[1].update()
-                    self.spectrum._plot.signal_plot.ax_lines[2 + self.index(component)].update()
+                    if len(self.spectrum._plot.signal_plot.ax_lines) > 2 + self.index(component):
+                        self.spectrum._plot.signal_plot.ax_lines[2 + self.index(component)].update()
             except:
                 self._disconnect_parameters2update_plot()
 
