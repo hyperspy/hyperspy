@@ -208,6 +208,8 @@ class Model(list):
                 dtype='int'))
         self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
             ' degrees of freedom'
+        self._adjust_position_all = None
+        self._plot_components = False
 
     def __repr__(self):
         return "<Model %s>" % super(Model, self).__repr__()
@@ -282,6 +284,11 @@ class Model(list):
         list.append(self, object)
         object.model = self
         self._touch()
+        if self._plot_components:
+            self._plot_component(object)
+        if self._adjust_position_all is not None:
+            self._make_position_adjuster(object, self._adjust_position_all[0],
+               self._adjust_position_all[1])
 
     def extend(self, iterable):
         for object in iterable:
@@ -317,6 +324,19 @@ class Model(list):
 
         """
         object = self._get_component(object)
+        for pw in self._position_widgets:
+            if hasattr(pw, 'component') and pw.component is object:
+                pw.component._position.twin = None
+                del pw.component
+                pw.close()
+                del pw
+        if hasattr(object, '_model_plot_line'):
+            line = object._model_plot_line
+            line.close()
+            del line
+            idx = self.index(object)
+            self.spectrum._plot.signal_plot.ax_lines.remove(
+                self.spectrum._plot.signal_plot.ax_lines[2+idx])
         list.remove(self, object)
         object.model = None
         if touch is True:
@@ -522,8 +542,9 @@ class Model(list):
                         self.spectrum._plot.signal_plot.ax_lines[i].update()
                 else:
                     self.spectrum._plot.signal_plot.ax_lines[1].update()
-                    if len(self.spectrum._plot.signal_plot.ax_lines) > 2 + self.index(component):
-                        self.spectrum._plot.signal_plot.ax_lines[2 + self.index(component)].update()
+                    idx = self.index(component)
+                    if len(self.spectrum._plot.signal_plot.ax_lines) > 2 + idx:
+                        self.spectrum._plot.signal_plot.ax_lines[2 + idx].update()
             except:
                 self._disconnect_parameters2update_plot()
 
@@ -1328,20 +1349,25 @@ class Model(list):
             self.enable_plot_components()
 
     def enable_plot_components(self):
-        if self._plot is None:
+        if self._plot is None or self._plot_components:
             return
+        self._plot_components = True
         for component in [component for component in self if
                           component.active is True]:
-            line = hyperspy.drawing.spectrum.SpectrumLine()
-            line.data_function = component._component2plot
-            # Add the line to the figure
-            self._plot.signal_plot.add_line(line)
-            line.plot()
-            component._model_plot_line = line
+            self._plot_component(component)
         on_figure_window_close(self._plot.signal_plot.figure,
                                self.disable_plot_components)
 
+    def _plot_component(self, component):
+        line = hyperspy.drawing.spectrum.SpectrumLine()
+        line.data_function = component._component2plot
+        # Add the line to the figure
+        self._plot.signal_plot.add_line(line)
+        line.plot()
+        component._model_plot_line = line
+
     def disable_plot_components(self):
+        self._plot_components = False
         if self._plot is None:
             return
         for component in self:
@@ -1506,6 +1532,8 @@ class Model(list):
                                self.disable_adjust_position)
         if components:
             components = [self._get_component(x) for x in components]
+        else:
+            self._adjust_position_all = (fix_them, show_label)
 
         components = components if components else self
         if not components:
@@ -1513,51 +1541,54 @@ class Model(list):
             return
         components = [
             component for component in components if component.active]
-        axis_dict = self.axes_manager.signal_axes[0].get_axis_dictionary()
-        for component in self:
-            if (component._position is not None and
-                    not component._position.twin):
-                set_value = component._position._setvalue
-                get_value = component._position._getvalue
-            else:
-                continue
-            # Create an AxesManager for the widget
-            am = AxesManager([axis_dict, ])
-            am._axes[0].navigate = True
-            try:
-                am._axes[0].value = get_value()
-            except TraitError:
-                # The value is outside of the axis range
-                continue
-            # Create the vertical line and labels
-            if show_label:
-                self._position_widgets.extend((
-                    DraggableVerticalLine(am),
-                    DraggableLabel(am),))
-            else:
-                self._position_widgets.extend((
-                    DraggableVerticalLine(am),))
-            # Store the component to reset its twin when disabling
-            # adjust position
-            self._position_widgets[-1].component = component
-            w = self._position_widgets[-1]
-            w.string = component._get_short_description().replace(
-                ' component', '')
-            w.add_axes(self._plot.signal_plot.ax)
-            if show_label:
-                self._position_widgets[-2].add_axes(
-                    self._plot.signal_plot.ax)
-            # Create widget -> parameter connection
-            am._axes[0].continuous_value = True
-            am._axes[0].on_trait_change(set_value, 'value')
-            # Create parameter -> widget connection
-            # This is done with a duck typing trick
-            # We disguise the AxesManager axis of Parameter by adding
-            # the _twin attribute
-            am._axes[0]._twins = set()
-            component._position.twin = am._axes[0]
+        for component in components:
+            self._make_position_adjuster(component, fix_them, show_label)
 
-    def disable_adjust_position(self, components=None, fix_them=True):
+    def _make_position_adjuster(self, component, fix_it, show_label):
+        if (component._position is not None and
+                not component._position.twin):
+            set_value = component._position._setvalue
+            get_value = component._position._getvalue
+        else:
+            return
+        # Create an AxesManager for the widget
+        axis_dict = self.axes_manager.signal_axes[0].get_axis_dictionary()
+        am = AxesManager([axis_dict, ])
+        am._axes[0].navigate = True
+        try:
+            am._axes[0].value = get_value()
+        except TraitError:
+            # The value is outside of the axis range
+            return
+        # Create the vertical line and labels
+        if show_label:
+            self._position_widgets.extend((
+                DraggableVerticalLine(am),
+                DraggableLabel(am),))
+        else:
+            self._position_widgets.extend((
+                DraggableVerticalLine(am),))
+        # Store the component to reset its twin when disabling
+        # adjust position
+        self._position_widgets[-1].component = component
+        w = self._position_widgets[-1]
+        w.string = component._get_short_description().replace(
+            ' component', '')
+        w.add_axes(self._plot.signal_plot.ax)
+        if show_label:
+            self._position_widgets[-2].add_axes(
+                self._plot.signal_plot.ax)
+        # Create widget -> parameter connection
+        am._axes[0].continuous_value = True
+        am._axes[0].on_trait_change(set_value, 'value')
+        # Create parameter -> widget connection
+        # This is done with a duck typing trick
+        # We disguise the AxesManager axis of Parameter by adding
+        # the _twin attribute
+        am._axes[0]._twins = set()
+        component._position.twin = am._axes[0]
+
+    def disable_adjust_position(self):
         """Disables the interactive adjust position feature
 
         See also
@@ -1565,6 +1596,7 @@ class Model(list):
         enable_adjust_position
 
         """
+        self._adjust_position_all = False
         while self._position_widgets:
             pw = self._position_widgets.pop()
             if hasattr(pw, 'component'):
