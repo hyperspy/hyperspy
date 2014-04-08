@@ -190,3 +190,11 @@ class Gaussian(Component):
     @fwhm.setter
     def fwhm(self, value):
         self.sigma.value = value / sigma2fwhm
+
+    @property
+    def maximum(self):
+        return self.A.value / (self.sigma.value * sqrt2pi)
+
+    @maximum.setter
+    def maximum(self, value):
+        self.A.value = value * self.sigma.value * sqrt2pi
