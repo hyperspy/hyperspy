@@ -24,12 +24,15 @@ class CmpPartial(partial):
        super(partial, self).__init__(args, kwargs)
 
     def __eq__(self, other):
-        return self.args == other.args and self.func == other.func \
+        return hasattr(other, "func") and hasattr(other, "args") and self.args == other.args and self.func == other.func \
             and self.keywords == other.keywords
 
     def __ne__(self, other):
-        return self.args != other.args or self.func != other.func \
+        return (not hasattr(other, "func")) or (not hasattr(args, "func")) or self.args != other.args or self.func != other.func \
             or self.keywords != other.keywords
+
+    def __str__(self):
+        return self.func.func_name + "(" + str(self.args) + ")"
 
     @property
     def func_code(self):
