@@ -199,7 +199,8 @@ class DataAxis(t.HasTraits):
     def _get_name(self):
         name = (self.name if self.name is not t.Undefined
                 else ("Unnamed " +
-                      ordinal(self.index_in_axes_manager)))
+                      ordinal(self.index_in_axes_manager)) if self.axes_manager is not None 
+                else "Unnamed")
         return name
 
     def __repr__(self):
@@ -276,6 +277,12 @@ class DataAxis(t.HasTraits):
         """
         if value is None:
             return None
+        elif isinstance(value, np.ndarray):
+            index = ((value - self.offset) / self.scale).round().astype(int)
+            if np.all(self.size > index) and np.all(index >= 0):
+                return index
+            else:
+                raise ValueError("A value is out of the axis limits")
         else:
             index = int(rounding((value - self.offset) /
                                  self.scale))
@@ -557,7 +564,7 @@ class AxesManager(t.HasTraits):
         # Reorder axes_list using index_in_array if it is defined
         # for all axes and the indices are not repeated.
         indices = set([axis['index_in_array'] for axis in axes_list if
-                       'index_in_array' in axis])
+                       hasattr(axis, 'index_in_array')])
         if len(indices) == len(axes_list):
             axes_list.sort(key=lambda x: x['index_in_array'])
         for axis_dict in axes_list:
