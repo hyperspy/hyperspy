@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import math
 
 import numpy as np
 import traits.api as t
@@ -199,7 +200,7 @@ class DataAxis(t.HasTraits):
     def _get_name(self):
         name = (self.name if self.name is not t.Undefined
                 else ("Unnamed " +
-                      ordinal(self.index_in_axes_manager)) if self.axes_manager is not None 
+                      ordinal(self.index_in_axes_manager)) if self.axes_manager is not None
                 else "Unnamed")
         return name
 
@@ -264,28 +265,38 @@ class DataAxis(t.HasTraits):
 
         Parameters
         ----------
-        value : float
+        value : number or numpy array
 
         Returns
         -------
-        int
+        index : integer or numpy array
 
         Raises
         ------
-        ValueError if value is out of the axis limits.
+        ValueError if any value is out of the axis limits.
 
         """
         if value is None:
             return None
-        elif isinstance(value, np.ndarray):
-            index = ((value - self.offset) / self.scale).round().astype(int)
+
+        if isinstance(value, np.ndarray):
+            if rounding is round:
+                rounding = np.round
+            elif rounding is math.ceil:
+                rounding = np.ceil
+            elif rounding is math.floor:
+                rounding = np.floor
+
+        index = rounding((value - self.offset) / self.scale)
+
+        if isinstance(value, np.ndarray):
+            index = index.astype(int)
             if np.all(self.size > index) and np.all(index >= 0):
                 return index
             else:
                 raise ValueError("A value is out of the axis limits")
         else:
-            index = int(rounding((value - self.offset) /
-                                 self.scale))
+            index = int(index)
             if self.size > index >= 0:
                 return index
             else:
