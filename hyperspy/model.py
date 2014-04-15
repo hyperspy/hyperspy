@@ -431,7 +431,7 @@ class Model(list):
         return spectrum
 
     def _get_auto_update_plot(self):
-        if self._plot is not None and self._plot.is_active() is True:
+        if self._plot is not None and self._plot.is_active() is True and self._suspend_update == 0:
             return True
         else:
             return False
@@ -548,6 +548,8 @@ class Model(list):
         resume_update
         update_plot
         """
+        if self._suspend_update == 0:
+            self._disconnect_parameters2update_plot()
         self._suspend_update += 1
 
     def resume_update(self, update=True):
@@ -566,6 +568,8 @@ class Model(list):
         """
         if self._suspend_update > 0:
             self._suspend_update -= 1
+        if self._get_auto_update_plot() is True:    # Needs to happen after decrement
+            self._connect_parameters2update_plot()
         if update:
             self.update_plot()
 
