@@ -21,7 +21,7 @@ from functools import partial
 
 class CmpPartial(partial):
     def __init__(self, *args, **kwargs):
-       super(partial, self).__init__(args, kwargs)
+       super(CmpPartial, self).__init__(args, kwargs)
 
     def __eq__(self, other):
         return hasattr(other, "func") and hasattr(other, "args") and self.args == other.args and self.func == other.func \
