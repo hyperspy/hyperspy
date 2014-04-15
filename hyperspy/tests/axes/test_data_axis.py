@@ -62,19 +62,19 @@ class TestDataAxis:
     def test_value2index_array_in(self):
         nose.tools.assert_equal(
             self.axis.value2index(np.array([10.15, 10.15])).tolist(),
-                                  [2, 2])
+            [2, 2])
 
     def test_value2index_array_in_ceil(self):
         nose.tools.assert_equal(
             self.axis.value2index(np.array([10.14, 10.14]),
                                   rounding=math.ceil).tolist(),
-                                  [2, 2])
+            [2, 2])
 
     def test_value2index_array_in_floor(self):
         nose.tools.assert_equal(
             self.axis.value2index(np.array([10.15, 10.15]),
                                   rounding=math.floor).tolist(),
-                                  [1, 1])
+            [1, 1])
 
     @nose.tools.raises(ValueError)
     def test_value2index_array_out(self):
