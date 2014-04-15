@@ -265,15 +265,15 @@ class DataAxis(t.HasTraits):
 
         Parameters
         ----------
-        value : float
+        value : number or numpy array
 
         Returns
         -------
-        int
+        index : integer or numpy array
 
         Raises
         ------
-        ValueError if value is out of the axis limits.
+        ValueError if any value is out of the axis limits.
 
         """
         if value is None:
