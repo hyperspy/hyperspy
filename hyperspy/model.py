@@ -541,7 +541,7 @@ class Model(list):
                 self._disconnect_parameters2update_plot()
 
     def suspend_update(self):
-        """Prevents update_plot() from doing anything until resumed
+        """Prevents plot from updating until resume_update() is called
 
         See Also
         --------
@@ -558,7 +558,7 @@ class Model(list):
         Parameters
         ----------
         update : bool, optional
-            If True, updates plot (default(. This update will still be suppressed if
+            If True, updates plot (default). This update will still be suppressed if
             suspend_update has been called more times than resume_update().
 
         See Also
