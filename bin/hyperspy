@@ -202,7 +202,10 @@ if ipy_version < LooseVersion('0.11'):
     from IPython.ipapi import launch_new_instance
     sys.exit(launch_new_instance())
 else:
-    from IPython.frontend.terminal.ipapp import launch_new_instance
+    if ipy_version >= LooseVersion('1.0'):
+        from IPython.terminal.ipapp import launch_new_instance
+    else:
+        from IPython.frontend.terminal.ipapp import launch_new_instance
     sys.argv.append('--profile=hyperspy')
     for arg in sys.argv:
         if 'pylab' in arg:
