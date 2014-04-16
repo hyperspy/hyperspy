@@ -341,6 +341,8 @@ class Model(list):
         object.model = None
         if touch is True:
             self._touch()
+        if self._get_auto_update_plot():
+            self.update_plot()
 
     def _touch(self):
         """Run model setup tasks
@@ -1517,6 +1519,9 @@ class Model(list):
             This can
             be useful to iteratively adjust the component positions and
             fit the model.
+        show_label : bool, optional
+            If True, a label showing the component name is added to the
+            plot next to the vertical line.
 
         See also
         --------
@@ -1565,18 +1570,23 @@ class Model(list):
             self._position_widgets.extend((
                 DraggableVerticalLine(am),
                 DraggableLabel(am),))
+            # Store the component for bookkeeping, and to reset 
+            # its twin when disabling adjust position
+            self._position_widgets[-2].component = component
+            self._position_widgets[-1].component = component
+            w = self._position_widgets[-1]
+            w.string = component._get_short_description().replace(
+                ' component', '')
+            w.add_axes(self._plot.signal_plot.ax)
+            self._position_widgets[-2].add_axes(
+                self._plot.signal_plot.ax)
         else:
             self._position_widgets.extend((
                 DraggableVerticalLine(am),))
-        # Store the component to reset its twin when disabling
-        # adjust position
-        self._position_widgets[-1].component = component
-        w = self._position_widgets[-1]
-        w.string = component._get_short_description().replace(
-            ' component', '')
-        w.add_axes(self._plot.signal_plot.ax)
-        if show_label:
-            self._position_widgets[-2].add_axes(
+            # Store the component for bookkeeping, and to reset 
+            # its twin when disabling adjust position
+            self._position_widgets[-1].component = component
+            self._position_widgets[-1].add_axes(
                 self._plot.signal_plot.ax)
         # Create widget -> parameter connection
         am._axes[0].continuous_value = True
