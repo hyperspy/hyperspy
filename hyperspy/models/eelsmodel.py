@@ -203,8 +203,8 @@ class EELSModel(Model):
                     interactive_ns[edge.name] = edge
                     interactive_ns[element].append(edge)
 
-    def resolve_fine_structure(self, preedge_safe_window_width=
-                               preferences.EELS.preedge_safe_window_width, i1=0):
+    def resolve_fine_structure(
+            self, preedge_safe_window_width=preferences.EELS.preedge_safe_window_width, i1=0):
         """Adjust the fine structure of all edges to avoid overlapping
 
         This function is called automatically everytime the position of an edge
