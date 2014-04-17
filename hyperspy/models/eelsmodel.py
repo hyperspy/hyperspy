@@ -203,8 +203,8 @@ class EELSModel(Model):
                     interactive_ns[edge.name] = edge
                     interactive_ns[element].append(edge)
 
-    def resolve_fine_structure(self, preedge_safe_window_width=
-                               preferences.EELS.preedge_safe_window_width, i1=0):
+    def resolve_fine_structure(
+            self, preedge_safe_window_width=preferences.EELS.preedge_safe_window_width, i1=0):
         """Adjust the fine structure of all edges to avoid overlapping
 
         This function is called automatically everytime the position of an edge
@@ -257,7 +257,7 @@ class EELSModel(Model):
         else:
             return
 
-    def fit(self, fitter=None, method='ls', grad=False, weights=None,
+    def fit(self, fitter=None, method='ls', grad=False,
             bounded=False, ext_bounding=False, update_plot=False,
             kind='std', **kwargs):
         """Fits the model to the experimental data
@@ -279,12 +279,6 @@ class EELSModel(Model):
         grad : bool
             If True, the analytical gradient is used if defined to
             speed up the estimation.
-        weights : {None, True, numpy.array}
-            If None, performs standard least squares. If True
-            performs weighted least squares where the weights are
-            calculated using spectrum.Spectrum.estimate_poissonian_noise_variance.
-            Alternatively, external weights can be supplied by passing
-            a weights array of the same dimensions as the signal.
         ext_bounding : bool
             If True, enforce bounding by keeping the value of the
             parameters constant out of the defined bounding area.
@@ -312,7 +306,6 @@ class EELSModel(Model):
             self.smart_fit(fitter=fitter,
                            method=method,
                            grad=grad,
-                           weights=weights,
                            bounded=bounded,
                            ext_bounding=ext_bounding,
                            update_plot=update_plot,
@@ -322,7 +315,6 @@ class EELSModel(Model):
                       fitter=fitter,
                       method=method,
                       grad=grad,
-                      weights=weights,
                       bounded=bounded,
                       ext_bounding=ext_bounding,
                       update_plot=update_plot,
