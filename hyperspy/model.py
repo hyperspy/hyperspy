@@ -432,7 +432,9 @@ class Model(list):
         return spectrum
 
     def _get_auto_update_plot(self):
-        if self._plot is not None and self._plot.is_active() is True and self._suspend_update == 0:
+        if (self._plot is not None and
+            self._plot.is_active() is True and
+            self._suspend_update is False):
             return True
         else:
             return False
