@@ -349,6 +349,7 @@ class Model(list):
 
         This function is called everytime that we add or remove components
         from the model.
+
         """
         if self._get_auto_update_plot() is True:
             self._connect_parameters2update_plot()
@@ -544,21 +545,20 @@ class Model(list):
             self._connect_parameters2update_plot()
             self.update_plot()
 
-    def update_plot(self, component=None, *args, **kwargs):
+    def update_plot(self, *args, **kwargs):
         if self.spectrum._plot is not None:
             try:
-                if component is None:
-                    for i in xrange(1, len(self.spectrum._plot.signal_plot.ax_lines)):
-                        self.spectrum._plot.signal_plot.ax_lines[i].update()
-                else:
-                    self.spectrum._plot.signal_plot.ax_lines[1].update()
-                    idx = self.index(component)
-                    if len(self.spectrum._plot.signal_plot.ax_lines) > 2 + idx:
-                        self.spectrum._plot.signal_plot.ax_lines[
-                            2 +
-                            idx].update()
+                self._update_model_line()
+                for component in [component for component in self if
+                                component.active is True]:
+                    self._update_component_line(component)
             except:
                 self._disconnect_parameters2update_plot()
+
+    def _update_model_line(self):
+        if (self._get_auto_update_plot() is True and
+            self._model_line is not None):
+            self._model_line.update()
 
     def _fetch_values_from_p0(self, p_std=None):
         """Fetch the parameter values from the output of the optimzer `self.p0`
@@ -1392,6 +1392,10 @@ class Model(list):
         line.plot()
         component._model_plot_line = line
         self._connect_component_line(component)
+
+    def _update_component_line(self, component):
+        if hasattr(component, "_model_plot_line"):
+            component._model_plot_line.update()
 
     def _disable_plot_component(self, component):
         self._disconnect_component_line(component)
