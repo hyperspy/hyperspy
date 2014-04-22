@@ -48,8 +48,7 @@ Integration
 
 The :py:meth:`~.signal.Signal1DTools.integrate_in_range` method provides a GUI
 and a CLI to integrate the 1D signal dimension in a given range using the
-Simpson's rule. The GUI operates in-place while the CLI opearation is
-not-in-place. 
+Simpson's rule.
 
 Data smoothing
 ^^^^^^^^^^^^^^
@@ -60,6 +59,21 @@ passed) can perform data smoothing with different algorithms:
 * :py:meth:`~.signal.Signal1DTools.smooth_lowess`
 * :py:meth:`~.signal.Signal1DTools.smooth_tv`
 * :py:meth:`~.signal.Signal1DTools.smooth_savitzky_golay`
+
+Spikes removal
+^^^^^^^^^^^^^^
+.. versionadded:: 0.5
+
+:py:meth:`~._signals.spectrum.Spectrum.spikes_removal_tool` provides an user
+interface to remove spikes from spectra.
+
+
+.. figure::  images/spikes_removal_tool.png
+   :align:   center
+   :width:   500    
+
+   Spikes removal tool
+
 
 Other methods
 ^^^^^^^^^^^^^^

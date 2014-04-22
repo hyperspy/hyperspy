@@ -9,24 +9,6 @@ These methods are only available for the following signals:
 
 * :py:class:`~._signals.eels.EELSSpectrum`
 
-Spikes removal
-^^^^^^^^^^^^^^
-.. versionadded:: 0.5
-    The :py:meth:`~._signals.eels.EELSSpectrum.spikes_removal_tool` replaces the
-    old :py:meth:`~._signals.eels.EELSSpectrum.remove_spikes`.
-
-
-:py:meth:`~._signals.eels.EELSSpectrum.spikes_removal_tool` provides an user
-interface to remove spikes from spectra.
-
-
-.. figure::  images/spikes_removal_tool.png
-   :align:   center
-   :width:   500    
-
-   Spikes removal tool
-
-
 Define the elemental composition of the sample
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -37,13 +19,8 @@ The elemental composition of the sample can be defined using
 in the :py:attr:`~.signal.Signal.metadata` attribute (see
 :ref:`metadata_structure`)
 
-Estimate the FWHM of a peak
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* :py:meth:`~._signals.eels.EELSSpectrum.estimate_FWHM`
-
 Estimate the thickness
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 The :py:meth:`~._signals.eels.EELSSpectrum.estimate_thickness` can estimate the
 thickness from a low-loss EELS spectrum.
@@ -88,6 +65,8 @@ for all spectra. Also, if no threshold is specified, the routine will perform a
 rough estimation of the inflexion values at each spectrum.
 
 
+.. _eels.kk:
+
 Kramers-Kronig Analysis
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -101,14 +80,14 @@ complex dielectric funtion from a low-loss EELS spectrum. In addition, it can
 estimate the thickness if the refractive index is known and approximately
 correct for surface plasmon excitations in layers.
 
-.. _eds_tools-label:
+.. _eels_tools-label:
 
 
 
 EELS curve fitting
 ------------------
 
-Hyperspy makes it really easy to quantify EELS core-loss spectra by curve
+HyperSpy makes it really easy to quantify EELS core-loss spectra by curve
 fitting as it is shown in the next example of quantification of a boron nitride
 EELS spectrum from the `The EELS Data Base
 <http://pc-web.cemes.fr/eelsdb/index.php?page=home.php>`_. 
@@ -145,7 +124,7 @@ effect of multiple scattering by Fourier-ratio convolution.
     >>> m = create_model(s, ll=ll)
 
 
-Hyperspy has created the model and configured it automatically:
+HyperSpy has created the model and configured it automatically:
 
 .. code-block:: python
        

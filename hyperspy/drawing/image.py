@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
 
@@ -28,6 +28,7 @@ from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
 from hyperspy.gui.tools import ImageContrastEditor
 from hyperspy.misc import math_tools
+from hyperspy.misc import rgb_tools
 from hyperspy.drawing.figure import BlittedFigure
 
 
@@ -169,6 +170,9 @@ class ImagePlot(BlittedFigure):
             self.create_figure()
             self.create_axis()
         data = self.data_function(axes_manager=self.axes_manager)
+        if rgb_tools.is_rgbx(data):
+            self.plot_colorbar = False
+            data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
         if self.auto_contrast is True:
             self.optimize_contrast(data)
         if (not self.axes_manager or
@@ -207,24 +211,25 @@ class ImagePlot(BlittedFigure):
     def update(self, auto_contrast=None):
         ims = self.ax.images
         redraw_colorbar = False
-        data = self.data_function(axes_manager=self.axes_manager)
-        numrows, numcols = data.shape
-
-        def format_coord(x, y):
-            try:
-                col = self.xaxis.value2index(x)
-            except ValueError:  # out of axes limits
-                col = -1
-            try:
-                row = self.yaxis.value2index(y)
-            except ValueError:
-                row = -1
-            if col >= 0 and row >= 0:
-                z = data[row, col]
-                return 'x=%1.4f, y=%1.4f, intensity=%1.4f' % (x, y, z)
-            else:
-                return 'x=%1.4f, y=%1.4f' % (x, y)
-        self.ax.format_coord = format_coord
+        data = rgb_tools.rgbx2regular_array(self.data_function(axes_manager=self.axes_manager),
+                                            plot_friendly=True)
+        numrows, numcols = data.shape[:2]
+        if len(data.shape) == 2:
+            def format_coord(x, y):
+                try:
+                    col = self.xaxis.value2index(x)
+                except ValueError:  # out of axes limits
+                    col = -1
+                try:
+                    row = self.yaxis.value2index(y)
+                except ValueError:
+                    row = -1
+                if col >= 0 and row >= 0:
+                    z = data[row, col]
+                    return 'x=%1.4f, y=%1.4f, intensity=%1.4f' % (x, y, z)
+                else:
+                    return 'x=%1.4f, y=%1.4f' % (x, y)
+            self.ax.format_coord = format_coord
         if (auto_contrast is True or
                 auto_contrast is None and self.auto_contrast is True):
             vmax, vmin = self.vmax, self.vmin

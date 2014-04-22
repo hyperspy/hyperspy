@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
 
@@ -139,6 +139,8 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         return to_return
 
     def span_selector_changed(self):
+        if (self.ss_left_value is np.nan) or (self.ss_right_value is np.nan):
+            return
         if self.background_estimator is None:
             print("No bg estimator")
             return

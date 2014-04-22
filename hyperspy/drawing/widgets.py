@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
 
@@ -113,8 +113,8 @@ class DraggablePatch(object):
         self.set_on(False)
 
     def onpick(self, event):
-        if event.artist is self.patch:
-            self.picked = True
+        self.picked = (event.artist is self.patch)
+            
 
     def onmove(self, event):
         """This method must be provided by the subclass"""
@@ -519,6 +519,9 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
     def move_left(self, event):
         if self.buttonDown is False or self.ignore(event):
             return
+        # Do not move the left edge beyond the right one.
+        if event.xdata >= self.range[1]:
+            return
         width_increment = self.range[0] - event.xdata
         self.rect.set_x(event.xdata)
         self.rect.set_width(self.rect.get_width() + width_increment)
@@ -529,6 +532,9 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
     def move_right(self, event):
         if self.buttonDown is False or self.ignore(event):
+            return
+        # Do not move the right edge beyond the left one.
+        if event.xdata <= self.range[0]:
             return
         width_increment = \
             event.xdata - self.range[1]

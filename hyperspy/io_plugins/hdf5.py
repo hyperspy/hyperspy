@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from distutils.version import StrictVersion
 import warnings
@@ -31,7 +31,7 @@ from hyperspy.axes import AxesManager
 # ----------------------
 format_name = 'HDF5'
 description = \
-    'The default file format for Hyperspy based on the HDF5 standard'
+    'The default file format for HyperSpy based on the HDF5 standard'
 
 full_suport = False
 # Recognised file extension
@@ -69,7 +69,7 @@ version = "1.2"
 # the experiments and that will be accessible as attribures of the
 # Experimentsinstance
 
-not_valid_format = 'The file is not a valid Hyperspy hdf5 file'
+not_valid_format = 'The file is not a valid HyperSpy hdf5 file'
 
 current_file_version = None  # Format version of the file being read
 default_version = StrictVersion(version)
