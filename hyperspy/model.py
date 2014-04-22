@@ -433,8 +433,8 @@ class Model(list):
 
     def _get_auto_update_plot(self):
         if (self._plot is not None and
-            self._plot.is_active() is True and
-            self._suspend_update is False):
+                self._plot.is_active() is True and
+                self._suspend_update is False):
             return True
         else:
             return False
@@ -532,7 +532,7 @@ class Model(list):
         suspend_update
         resume_update
         """
-        if self.spectrum._plot is not None and not (self._suspend_update > 0):
+        if self.spectrum._plot is not None and self._suspend_update is False:
             try:
                 if component is None:
                     for i in xrange(1, len(self.spectrum._plot.signal_plot.ax_lines)):
