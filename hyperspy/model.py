@@ -550,14 +550,14 @@ class Model(list):
             try:
                 self._update_model_line()
                 for component in [component for component in self if
-                                component.active is True]:
+                                  component.active is True]:
                     self._update_component_line(component)
             except:
                 self._disconnect_parameters2update_plot()
 
     def _update_model_line(self):
         if (self._get_auto_update_plot() is True and
-            self._model_line is not None):
+                self._model_line is not None):
             self._model_line.update()
 
     def _fetch_values_from_p0(self, p_std=None):
