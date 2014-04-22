@@ -52,7 +52,6 @@ from hyperspy.drawing.widgets import (DraggableVerticalLine,
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
 from hyperspy.signal import Signal
-from hyperspy.utils.partial import CmpPartial
 
 weights_deprecation_warning = (
     'The `weights` argument is deprecated and will be removed '
@@ -196,6 +195,7 @@ class Model(list):
         self._low_loss = None
         self._position_widgets = []
         self._plot = None
+        self._model_line = None
 
         self.chisq = spectrum._get_navigation_signal()
         self.chisq.change_dtype("float")
@@ -288,7 +288,7 @@ class Model(list):
             self._plot_component(object)
         if self._adjust_position_all is not None:
             self._make_position_adjuster(object, self._adjust_position_all[0],
-               self._adjust_position_all[1])
+                                         self._adjust_position_all[1])
 
     def extend(self, iterable):
         for object in iterable:
@@ -336,7 +336,7 @@ class Model(list):
             del line
             idx = self.index(object)
             self.spectrum._plot.signal_plot.ax_lines.remove(
-                self.spectrum._plot.signal_plot.ax_lines[2+idx])
+                self.spectrum._plot.signal_plot.ax_lines[2 + idx])
         list.remove(self, object)
         object.model = None
         if touch is True:
@@ -349,6 +349,7 @@ class Model(list):
 
         This function is called everytime that we add or remove components
         from the model.
+
         """
         if self._get_auto_update_plot() is True:
             self._connect_parameters2update_plot()
@@ -369,17 +370,25 @@ class Model(list):
                                               dimension, knot_position)
 
     def _connect_parameters2update_plot(self):
-        for component in self:
-            component.connect(CmpPartial(self.update_plot, component))
+        if self._model_line is None:
+            return
+        for i, component in enumerate(self):
+            component.connect(
+                self._model_line.update)
             for parameter in component.parameters:
-                if self.spectrum._plot is not None:
-                    parameter.connect( CmpPartial(self.update_plot, component) )
+                parameter.connect(self._model_line.update)
+        if self._plot_components is True:
+            self._connect_component_lines()
 
     def _disconnect_parameters2update_plot(self):
+        if self._model_line is None:
+            return
         for component in self:
-            component.disconnect(CmpPartial(self.update_plot, component))
+            component.disconnect(self._model_line.update)
             for parameter in component.parameters:
-                parameter.disconnect( CmpPartial(self.update_plot, component) )
+                parameter.disconnect(self._model_line.update)
+        if self._plot_components is True:
+            self._disconnect_component_lines()
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True):
         """Returns a recreation of the dataset using the model.
@@ -536,19 +545,20 @@ class Model(list):
             self._connect_parameters2update_plot()
             self.update_plot()
 
-    def update_plot(self, component=None, *args, **kwargs):
+    def update_plot(self, *args, **kwargs):
         if self.spectrum._plot is not None:
             try:
-                if component is None:
-                    for i in xrange(1,len(self.spectrum._plot.signal_plot.ax_lines)):
-                        self.spectrum._plot.signal_plot.ax_lines[i].update()
-                else:
-                    self.spectrum._plot.signal_plot.ax_lines[1].update()
-                    idx = self.index(component)
-                    if len(self.spectrum._plot.signal_plot.ax_lines) > 2 + idx:
-                        self.spectrum._plot.signal_plot.ax_lines[2 + idx].update()
+                self._update_model_line()
+                for component in [component for component in self if
+                                  component.active is True]:
+                    self._update_component_line(component)
             except:
                 self._disconnect_parameters2update_plot()
+
+    def _update_model_line(self):
+        if (self._get_auto_update_plot() is True and
+                self._model_line is not None):
+            self._model_line.update()
 
     def _fetch_values_from_p0(self, p_std=None):
         """Fetch the parameter values from the output of the optimzer `self.p0`
@@ -1344,21 +1354,35 @@ class Model(list):
         _plot.signal_plot.add_line(l2)
         l2.plot()
         on_figure_window_close(_plot.signal_plot.figure,
-                               self._disconnect_parameters2update_plot)
+                               self._close_plot)
+
+        self._model_line = l2
         self._plot = self.spectrum._plot
         self._connect_parameters2update_plot()
         if plot_components is True:
             self.enable_plot_components()
 
-    def enable_plot_components(self):
-        if self._plot is None or self._plot_components:
-            return
-        self._plot_components = True
+    def _connect_component_line(self, component):
+        if hasattr(component, "_model_plot_line"):
+            component.connect(component._model_plot_line.update)
+            for parameter in component.parameters:
+                parameter.connect(component._model_plot_line.update)
+
+    def _disconnect_component_line(self, component):
+        if hasattr(component, "_model_plot_line"):
+            component.disconnect(component._model_plot_line.update)
+            for parameter in component.parameters:
+                parameter.disconnect(component._model_plot_line.update)
+
+    def _connect_component_lines(self):
         for component in [component for component in self if
                           component.active is True]:
-            self._plot_component(component)
-        on_figure_window_close(self._plot.signal_plot.figure,
-                               self.disable_plot_components)
+            self._connect_component_line(component)
+
+    def _disconnect_component_lines(self):
+        for component in [component for component in self if
+                          component.active is True]:
+            self._disconnect_component_line(component)
 
     def _plot_component(self, component):
         line = hyperspy.drawing.spectrum.SpectrumLine()
@@ -1367,15 +1391,39 @@ class Model(list):
         self._plot.signal_plot.add_line(line)
         line.plot()
         component._model_plot_line = line
+        self._connect_component_line(component)
+
+    def _update_component_line(self, component):
+        if hasattr(component, "_model_plot_line"):
+            component._model_plot_line.update()
+
+    def _disable_plot_component(self, component):
+        self._disconnect_component_line(component)
+        if hasattr(component, "_model_plot_line"):
+            component._model_plot_line.close()
+            del component._model_plot_line
+        self._plot_components = False
+
+    def _close_plot(self):
+        if self._plot_components is True:
+            self.disable_plot_components()
+        self._disconnect_parameters2update_plot()
+        self._model_line = None
+
+    def enable_plot_components(self):
+        if self._plot is None or self._plot_components:
+            return
+        self._plot_components = True
+        for component in [component for component in self if
+                          component.active is True]:
+            self._plot_component(component)
 
     def disable_plot_components(self):
-        self._plot_components = False
         if self._plot is None:
             return
         for component in self:
-            if hasattr(component, "_model_plot_line"):
-                component._model_plot_line.close()
-                del component._model_plot_line
+            self._disable_plot_component(component)
+        self._plot_components = False
 
     def set_current_values_to(self, components_list=None, mask=None):
         """Set parameter values for all positions to the current ones.
@@ -1501,7 +1549,8 @@ class Model(list):
                         print("\t\t%s\t%g" % (
                             parameter.name, parameter.value))
 
-    def enable_adjust_position(self, components=None, fix_them=True, show_label=True):
+    def enable_adjust_position(
+            self, components=None, fix_them=True, show_label=True):
         """Allow changing the *x* position of component by dragging
         a vertical line that is plotted in the signal model figure
 
@@ -1570,7 +1619,7 @@ class Model(list):
             self._position_widgets.extend((
                 DraggableVerticalLine(am),
                 DraggableLabel(am),))
-            # Store the component for bookkeeping, and to reset 
+            # Store the component for bookkeeping, and to reset
             # its twin when disabling adjust position
             self._position_widgets[-2].component = component
             self._position_widgets[-1].component = component
@@ -1583,7 +1632,7 @@ class Model(list):
         else:
             self._position_widgets.extend((
                 DraggableVerticalLine(am),))
-            # Store the component for bookkeeping, and to reset 
+            # Store the component for bookkeeping, and to reset
             # its twin when disabling adjust position
             self._position_widgets[-1].component = component
             self._position_widgets[-1].add_axes(
