@@ -353,13 +353,13 @@ class Model(list):
             component.connect(self.update_plot)
             for parameter in component.parameters:
                 if self.spectrum._plot is not None:
-                    parameter.connect( CmpPartial(self.update_plot, component) )
+                    parameter.connect(CmpPartial(self.update_plot, component))
 
     def _disconnect_parameters2update_plot(self):
         for component in self:
             component.disconnect(self.update_plot)
             for parameter in component.parameters:
-                parameter.disconnect( CmpPartial(self.update_plot, component) )
+                parameter.disconnect(CmpPartial(self.update_plot, component))
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True):
         """Returns a recreation of the dataset using the model.
@@ -432,7 +432,9 @@ class Model(list):
         return spectrum
 
     def _get_auto_update_plot(self):
-        if self._plot is not None and self._plot.is_active() is True and self._suspend_update == 0:
+        if (self._plot is not None and
+                self._plot.is_active() is True and
+                self._suspend_update is False):
             return True
         else:
             return False
@@ -530,14 +532,16 @@ class Model(list):
         suspend_update
         resume_update
         """
-        if self.spectrum._plot is not None and not (self._suspend_update > 0):
+        if self.spectrum._plot is not None and self._suspend_update is False:
             try:
                 if component is None:
-                    for i in xrange(1,len(self.spectrum._plot.signal_plot.ax_lines)):
+                    for i in xrange(1, len(self.spectrum._plot.signal_plot.ax_lines)):
                         self.spectrum._plot.signal_plot.ax_lines[i].update()
                 else:
                     self.spectrum._plot.signal_plot.ax_lines[1].update()
-                    self.spectrum._plot.signal_plot.ax_lines[2 + self.index(component)].update()
+                    self.spectrum._plot.signal_plot.ax_lines[
+                        2 +
+                        self.index(component)].update()
             except:
                 self._disconnect_parameters2update_plot()
 
@@ -576,16 +580,16 @@ class Model(list):
                 warnings.warn("Update not suspended, nothing to resume.")
 
             if update is True:
+                # Ideally, the update flag should in stead work like this:
+                # If update is true, update_plot is called if any action
+                # would have called it while updating was suspended.
+                # However, this is prohibitively difficult to track, so
+                # in stead it is simply assume that a change has happened
+                # between suspend and resume, and therefore that the plot
+                # needs to update. As we do not know what has changed,
+                # all components need to update. This can however be
+                # suppressed by setting update to false
                 self.update_plot()
-                """ Ideally, the update flag should in stead work like this:
-                    If update is true, update_plot is called if any action 
-                    would have called it while updating was suspended. 
-                    However, this is prohibitively difficult to track, so 
-                    in stead it is simply assume that a change has happened
-                    between suspend and resume, and therefore that the plot
-                    needs to update. As we do not know what has changed,
-                    all components need to update. This can however be 
-                    suppressed by setting update to false"""
 
     def _fetch_values_from_p0(self, p_std=None):
         """Fetch the parameter values from the output of the optimzer `self.p0`
@@ -1533,7 +1537,8 @@ class Model(list):
                         print("\t\t%s\t%g" % (
                             parameter.name, parameter.value))
 
-    def enable_adjust_position(self, components=None, fix_them=True, show_label=True):
+    def enable_adjust_position(
+            self, components=None, fix_them=True, show_label=True):
         """Allow changing the *x* position of component by dragging
         a vertical line that is plotted in the signal model figure
 
