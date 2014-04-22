@@ -363,7 +363,7 @@ class Model(list):
             self._plot_component(object)
         if self._adjust_position_all is not None:
             self._make_position_adjuster(object, self._adjust_position_all[0],
-               self._adjust_position_all[1])
+                                         self._adjust_position_all[1])
 
     def extend(self, iterable):
         for object in iterable:
@@ -411,7 +411,7 @@ class Model(list):
             del line
             idx = self.index(object)
             self.spectrum._plot.signal_plot.ax_lines.remove(
-                self.spectrum._plot.signal_plot.ax_lines[2+idx])
+                self.spectrum._plot.signal_plot.ax_lines[2 + idx])
         list.remove(self, object)
         object.model = None
         if touch is True:
@@ -448,13 +448,13 @@ class Model(list):
             component.connect(CmpPartial(self.update_plot, component))
             for parameter in component.parameters:
                 if self.spectrum._plot is not None:
-                    parameter.connect( CmpPartial(self.update_plot, component) )
+                    parameter.connect(CmpPartial(self.update_plot, component))
 
     def _disconnect_parameters2update_plot(self):
         for component in self:
             component.disconnect(CmpPartial(self.update_plot, component))
             for parameter in component.parameters:
-                parameter.disconnect( CmpPartial(self.update_plot, component) )
+                parameter.disconnect(CmpPartial(self.update_plot, component))
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True):
         """Returns a recreation of the dataset using the model.
@@ -615,13 +615,15 @@ class Model(list):
         if self.spectrum._plot is not None:
             try:
                 if component is None:
-                    for i in xrange(1,len(self.spectrum._plot.signal_plot.ax_lines)):
+                    for i in xrange(1, len(self.spectrum._plot.signal_plot.ax_lines)):
                         self.spectrum._plot.signal_plot.ax_lines[i].update()
                 else:
                     self.spectrum._plot.signal_plot.ax_lines[1].update()
                     idx = self.index(component)
                     if len(self.spectrum._plot.signal_plot.ax_lines) > 2 + idx:
-                        self.spectrum._plot.signal_plot.ax_lines[2 + idx].update()
+                        self.spectrum._plot.signal_plot.ax_lines[
+                            2 +
+                            idx].update()
             except:
                 self._disconnect_parameters2update_plot()
 
@@ -1576,7 +1578,8 @@ class Model(list):
                         print("\t\t%s\t%g" % (
                             parameter.name, parameter.value))
 
-    def enable_adjust_position(self, components=None, fix_them=True, show_label=True):
+    def enable_adjust_position(
+            self, components=None, fix_them=True, show_label=True):
         """Allow changing the *x* position of component by dragging
         a vertical line that is plotted in the signal model figure
 
@@ -1645,7 +1648,7 @@ class Model(list):
             self._position_widgets.extend((
                 DraggableVerticalLine(am),
                 DraggableLabel(am),))
-            # Store the component for bookkeeping, and to reset 
+            # Store the component for bookkeeping, and to reset
             # its twin when disabling adjust position
             self._position_widgets[-2].component = component
             self._position_widgets[-1].component = component
@@ -1658,7 +1661,7 @@ class Model(list):
         else:
             self._position_widgets.extend((
                 DraggableVerticalLine(am),))
-            # Store the component for bookkeeping, and to reset 
+            # Store the component for bookkeeping, and to reset
             # its twin when disabling adjust position
             self._position_widgets[-1].component = component
             self._position_widgets[-1].add_axes(
