@@ -353,13 +353,13 @@ class Model(list):
             component.connect(self.update_plot)
             for parameter in component.parameters:
                 if self.spectrum._plot is not None:
-                    parameter.connect( CmpPartial(self.update_plot, component) )
+                    parameter.connect(CmpPartial(self.update_plot, component))
 
     def _disconnect_parameters2update_plot(self):
         for component in self:
             component.disconnect(self.update_plot)
             for parameter in component.parameters:
-                parameter.disconnect( CmpPartial(self.update_plot, component) )
+                parameter.disconnect(CmpPartial(self.update_plot, component))
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True):
         """Returns a recreation of the dataset using the model.
@@ -533,11 +533,13 @@ class Model(list):
         if self.spectrum._plot is not None and not (self._suspend_update > 0):
             try:
                 if component is None:
-                    for i in xrange(1,len(self.spectrum._plot.signal_plot.ax_lines)):
+                    for i in xrange(1, len(self.spectrum._plot.signal_plot.ax_lines)):
                         self.spectrum._plot.signal_plot.ax_lines[i].update()
                 else:
                     self.spectrum._plot.signal_plot.ax_lines[1].update()
-                    self.spectrum._plot.signal_plot.ax_lines[2 + self.index(component)].update()
+                    self.spectrum._plot.signal_plot.ax_lines[
+                        2 +
+                        self.index(component)].update()
             except:
                 self._disconnect_parameters2update_plot()
 
@@ -569,7 +571,8 @@ class Model(list):
         update_plot
         """
         if self._get_auto_update_plot() is True:
-            if self._suspend_update is True:    # Needs to happen after decrement
+            # Needs to happen after decrement
+            if self._suspend_update is True:
                 self._suspend_update = False
                 self._connect_parameters2update_plot()
             else:
@@ -1533,7 +1536,8 @@ class Model(list):
                         print("\t\t%s\t%g" % (
                             parameter.name, parameter.value))
 
-    def enable_adjust_position(self, components=None, fix_them=True, show_label=True):
+    def enable_adjust_position(
+            self, components=None, fix_them=True, show_label=True):
         """Allow changing the *x* position of component by dragging
         a vertical line that is plotted in the signal model figure
 
