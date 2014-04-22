@@ -35,6 +35,7 @@ from scipy.optimize import (leastsq,
                             fmin_powell)
 from traits.trait_errors import TraitError
 import traits.api as t
+import warnings
 
 from hyperspy import messages
 import hyperspy.drawing.spectrum
@@ -208,7 +209,7 @@ class Model(list):
                 dtype='int'))
         self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
             ' degrees of freedom'
-        self._suspend_update = 0
+        self._suspend_update = False
 
     def __repr__(self):
         return "<Model %s>" % super(Model, self).__repr__()
@@ -548,9 +549,11 @@ class Model(list):
         resume_update
         update_plot
         """
-        if self._suspend_update == 0:
+        if self._suspend_update is False:
+            self._suspend_update = True
             self._disconnect_parameters2update_plot()
-        self._suspend_update += 1
+        else:
+            warnings.warn("Update already suspended, does nothing.")
 
     def resume_update(self, update=True):
         """Resumes plot update after suspension by suspend_update()
@@ -558,20 +561,31 @@ class Model(list):
         Parameters
         ----------
         update : bool, optional
-            If True, updates plot (default). This update will still be suppressed if
-            suspend_update has been called more times than resume_update().
+            If True, updates plot (default).
 
         See Also
         --------
         suspend_update
         update_plot
         """
-        if self._suspend_update > 0:
-            self._suspend_update -= 1
-        if self._get_auto_update_plot() is True:    # Needs to happen after decrement
-            self._connect_parameters2update_plot()
-        if update:
-            self.update_plot()
+        if self._get_auto_update_plot() is True:
+            if self._suspend_update is True:    # Needs to happen after decrement
+                self._suspend_update = False
+                self._connect_parameters2update_plot()
+            else:
+                warnings.warn("Update not suspended, nothing to resume.")
+
+            if update is True:
+                self.update_plot()
+                """ Ideally, the update flag should in stead work like this:
+                    If update is true, update_plot is called if any action 
+                    would have called it while updating was suspended. 
+                    However, this is prohibitively difficult to track, so 
+                    in stead it is simply assume that a change has happened
+                    between suspend and resume, and therefore that the plot
+                    needs to update. As we do not know what has changed,
+                    all components need to update. This can however be 
+                    suppressed by setting update to false"""
 
     def _fetch_values_from_p0(self, p_std=None):
         """Fetch the parameter values from the output of the optimzer `self.p0`
