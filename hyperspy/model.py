@@ -185,11 +185,19 @@ class Model(list):
     def __init__(self, spectrum, **kwds):
 
         self._plot = None
+        self._position_widgets = []
+        self._adjust_position_all = None
+        self._plot_components = False
         if isinstance(spectrum, dict):
             self._load_dictionary(spectrum)
         else:
             kwds['spectrum'] = spectrum
             self._load_dictionary(kwds)
+
+    def __hash__(self):
+        # This is needed to simulate a hashable object so that PySide does not
+        # raise an exception when using windows.connect
+        return id(self)
 
     def _load_dictionary(self, dic):
         """Load data from dictionary.
@@ -212,6 +220,10 @@ class Model(list):
             components : dictionary (optional)
                 Dictionary, with information about components of the model
                 (see the documentation of component.to_dictionary() method)
+            chisq : dictionary
+                A dictionary of signal of chi-squared
+            dof : dictionary
+                A dictionary of signal of degrees-of-freedom
         """
 
         if isinstance(dic['spectrum'], dict):
@@ -223,6 +235,23 @@ class Model(list):
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
         self.channel_switches = np.array([True] * len(self.axis.axis))
+
+        if 'chisq' in dic:
+            self.chisq = Signal(**dic['chisq'])
+        else:
+            self.chisq = self.spectrum._get_navigation_signal()
+            self.chisq.change_dtype("float")
+            self.chisq.data.fill(np.nan)
+            self.chisq.metadata.General.title = self.spectrum.metadata.General.title + \
+                ' chi-squared'
+
+        if 'dof' in dic:
+            self.dof = Signal(**dic['dof'])
+        else:
+            self.dof = self.chisq._deepcopy_with_new_data(
+                np.zeros_like(self.chisq.data, dtype='int'))
+            self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
+                ' degrees of freedom'
 
         if 'free_parameters_boundaries' in dic:
             self.free_parameters_boundaries = copy.deepcopy(
@@ -256,25 +285,6 @@ class Model(list):
                 for p in c['parameters']:
                     for t in p['_twins']:
                         id_dict[t].twin = id_dict[p['id']]
-
-    def __hash__(self):
-        # This is needed to simulate a hashable object so that PySide does not
-        # raise an exception when using windows.connect
-        return id(self)
-
-        self.chisq = spectrum._get_navigation_signal()
-        self.chisq.change_dtype("float")
-        self.chisq.data.fill(np.nan)
-        self.chisq.metadata.General.title = self.spectrum.metadata.General.title + \
-            ' chi-squared'
-        self.dof = self.chisq._deepcopy_with_new_data(
-            np.zeros_like(
-                self.chisq.data,
-                dtype='int'))
-        self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
-            ' degrees of freedom'
-        self._adjust_position_all = None
-        self._plot_components = False
 
     def __repr__(self):
         return "<Model %s>" % super(Model, self).__repr__()
