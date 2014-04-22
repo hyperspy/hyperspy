@@ -384,9 +384,9 @@ class Model(list):
         if self._model_line is None:
             return
         for component in self:
-            component.disconnect(self._model_line)
+            component.disconnect(self._model_line.update)
             for parameter in component.parameters:
-                parameter.disconnect(self._model_line)
+                parameter.disconnect(self._model_line.update)
         if self._plot_components is True:
             self._disconnect_component_lines()
 
