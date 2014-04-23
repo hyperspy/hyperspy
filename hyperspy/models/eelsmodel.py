@@ -159,6 +159,7 @@ class EELSModel(Model):
     @property
     def _active_background_components(self):
         return [bc for bc in self._background_components if bc.active]
+
     def _add_edges_from_subshells_names(self, e_shells=None,
                                         copy2interactive_ns=True):
         """Create the Edge instances and configure them appropiately
@@ -246,7 +247,8 @@ class EELSModel(Model):
                         structure of edge number", i2 + 1, "to avoid conflicts\
                          with edge number", i1 + 1
                         self._active_edges[i2].fine_structure_active = False
-                        self._active_edges[i2].fine_structure_coeff.free = False
+                        self._active_edges[
+                            i2].fine_structure_coeff.free = False
                         self.resolve_fine_structure(i1=i2)
                     else:
                         new_fine_structure_width = distance_between_edges - \
