@@ -343,7 +343,7 @@ class Model(list):
         object.model = None
         if touch is True:
             self._touch()
-        if self._get_auto_update_plot():
+        if self._plot_active:
             self.update_plot()
 
     def _touch(self):
@@ -548,11 +548,10 @@ class Model(list):
             self._connect_parameters2update_plot()
             self.update_plot()
 
-
     def update_plot(self, component=None, *args, **kwargs):
         """Update model plot.
 
-	The updating can be suspended using `suspend_update`.
+        The updating can be suspended using `suspend_update`.
 
         See Also
         --------
@@ -612,9 +611,9 @@ class Model(list):
                 self.update_plot()
         else:
             warnings.warn("Update not suspended, nothing to resume.")
-            
+
     def _update_model_line(self):
-        if (self._get_auto_update_plot() is True and
+        if (self._plot_active is True and
                 self._model_line is not None):
             self._model_line.update()
 
