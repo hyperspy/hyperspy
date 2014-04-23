@@ -35,6 +35,7 @@ from scipy.optimize import (leastsq,
                             fmin_powell)
 from traits.trait_errors import TraitError
 import traits.api as t
+import warnings
 
 from hyperspy import messages
 import hyperspy.drawing.spectrum
@@ -208,6 +209,7 @@ class Model(list):
                 dtype='int'))
         self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
             ' degrees of freedom'
+        self._suspend_update = False
         self._adjust_position_all = None
         self._plot_components = False
 
@@ -341,7 +343,7 @@ class Model(list):
         object.model = None
         if touch is True:
             self._touch()
-        if self._get_auto_update_plot():
+        if self._plot_active:
             self.update_plot()
 
     def _touch(self):
@@ -351,7 +353,7 @@ class Model(list):
         from the model.
 
         """
-        if self._get_auto_update_plot() is True:
+        if self._plot_active is True:
             self._connect_parameters2update_plot()
 
     __touch = _touch
@@ -370,7 +372,7 @@ class Model(list):
                                               dimension, knot_position)
 
     def _connect_parameters2update_plot(self):
-        if self._model_line is None:
+        if self._plot_active is False:
             return
         for i, component in enumerate(self):
             component.connect(
@@ -460,7 +462,8 @@ class Model(list):
                 component_.active = active_state.pop(0)
         return spectrum
 
-    def _get_auto_update_plot(self):
+    @property
+    def _plot_active(self):
         if self._plot is not None and self._plot.is_active() is True:
             return True
         else:
@@ -536,7 +539,7 @@ class Model(list):
         store_current_values
 
         """
-        switch_aap = (False != self._get_auto_update_plot())
+        switch_aap = (False != self._plot_active)
         if switch_aap is True:
             self._disconnect_parameters2update_plot()
         for component in self:
@@ -545,8 +548,18 @@ class Model(list):
             self._connect_parameters2update_plot()
             self.update_plot()
 
-    def update_plot(self, *args, **kwargs):
-        if self.spectrum._plot is not None:
+    def update_plot(self, component=None, *args, **kwargs):
+        """Update model plot.
+
+        The updating can be suspended using `suspend_update`.
+
+        See Also
+        --------
+        suspend_update
+        resume_update
+
+        """
+        if self._plot_active is True and self._suspend_update is False:
             try:
                 self._update_model_line()
                 for component in [component for component in self if
@@ -555,8 +568,52 @@ class Model(list):
             except:
                 self._disconnect_parameters2update_plot()
 
+    def suspend_update(self):
+        """Prevents plot from updating until resume_update() is called
+
+        See Also
+        --------
+        resume_update
+        update_plot
+        """
+        if self._suspend_update is False:
+            self._suspend_update = True
+            self._disconnect_parameters2update_plot()
+        else:
+            warnings.warn("Update already suspended, does nothing.")
+
+    def resume_update(self, update=True):
+        """Resumes plot update after suspension by suspend_update()
+
+        Parameters
+        ----------
+        update : bool, optional
+            If True, also updates plot after resuming (default).
+
+        See Also
+        --------
+        suspend_update
+        update_plot
+        """
+        if self._suspend_update is True:
+            self._suspend_update = False
+            self._connect_parameters2update_plot()
+            if update is True:
+                # Ideally, the update flag should in stead work like this:
+                # If update is true, update_plot is called if any action
+                # would have called it while updating was suspended.
+                # However, this is prohibitively difficult to track, so
+                # in stead it is simply assume that a change has happened
+                # between suspend and resume, and therefore that the plot
+                # needs to update. As we do not know what has changed,
+                # all components need to update. This can however be
+                # suppressed by setting update to false
+                self.update_plot()
+        else:
+            warnings.warn("Update not suspended, nothing to resume.")
+
     def _update_model_line(self):
-        if (self._get_auto_update_plot() is True and
+        if (self._plot_active is True and
                 self._model_line is not None):
             self._model_line.update()
 
@@ -681,8 +738,7 @@ class Model(list):
         self.backup_channel_switches = copy.copy(self.channel_switches)
         self.channel_switches[:] = False
         self.channel_switches[i1:i2] = True
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     @interactive_range_selector
     def set_signal_range(self, x1=None, x2=None):
@@ -711,8 +767,7 @@ class Model(list):
         x2 : None or float
         """
         self.channel_switches[i1:i2] = False
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     @interactive_range_selector
     def remove_signal_range(self, x1=None, x2=None):
@@ -742,8 +797,7 @@ class Model(list):
         x2 : None or float
         """
         self.channel_switches[i1:i2] = True
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     @interactive_range_selector
     def add_signal_range(self, x1=None, x2=None):
@@ -761,8 +815,7 @@ class Model(list):
 
     def reset_the_signal_range(self):
         self.channel_switches[:] = True
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     def _model_function(self, param):
 
@@ -1019,7 +1072,7 @@ class Model(list):
 
         if fitter is None:
             fitter = preferences.Model.default_fitter
-        switch_aap = (update_plot != self._get_auto_update_plot())
+        switch_aap = (update_plot != self._plot_active)
         if switch_aap is True and update_plot is False:
             self._disconnect_parameters2update_plot()
 

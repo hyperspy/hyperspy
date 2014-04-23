@@ -506,6 +506,14 @@ is possible to display the individual components by calling
 
 To disable this feature call :py:meth:`~.model.Model.disable_plot_components`.
 
+.. versionadded:: 0.7.1
+
+   By default the model plot is automatically updated when any parameter value
+   changes. It is possible to suspend this feature with 
+   :py:meth:`~.model.Model.suspend_update`. To resume it use
+   :py:meth:`~.model.Model.resume_update`. 
+
+
 .. _model.starting:
 
 Setting the initial parameters
