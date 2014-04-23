@@ -113,8 +113,7 @@ class DraggablePatch(object):
         self.set_on(False)
 
     def onpick(self, event):
-        if event.artist is self.patch:
-            self.picked = True
+        self.picked = (event.artist is self.patch)
 
     def onmove(self, event):
         """This method must be provided by the subclass"""
