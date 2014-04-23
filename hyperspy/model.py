@@ -330,7 +330,7 @@ class Model(list):
         This function is called everytime that we add or remove components
         from the model.
         """
-        if self._get_auto_update_plot() is True:
+        if self._plot_active is True:
             self._connect_parameters2update_plot()
 
     __touch = _touch
@@ -431,10 +431,9 @@ class Model(list):
                 component_.active = active_state.pop(0)
         return spectrum
 
-    def _get_auto_update_plot(self):
-        if (self._plot is not None and
-                self._plot.is_active() is True and
-                self._suspend_update is False):
+    @property
+    def _plot_active(self):
+        if self._plot is not None and self._plot.is_active() is True:
             return True
         else:
             return False
@@ -509,7 +508,7 @@ class Model(list):
         store_current_values
 
         """
-        switch_aap = (False != self._get_auto_update_plot())
+        switch_aap = (False != self._plot_active)
         if switch_aap is True:
             self._disconnect_parameters2update_plot()
         for component in self:
@@ -532,7 +531,7 @@ class Model(list):
         suspend_update
         resume_update
         """
-        if self.spectrum._plot is not None and self._suspend_update is False:
+        if self._plot_active is True and self._suspend_update is False:
             try:
                 if component is None:
                     for i in xrange(1, len(self.spectrum._plot.signal_plot.ax_lines)):
@@ -572,7 +571,7 @@ class Model(list):
         suspend_update
         update_plot
         """
-        if self._get_auto_update_plot() is True:
+        if self._plot_active is True:
             # Needs to happen after decrement
             if self._suspend_update is True:
                 self._suspend_update = False
@@ -713,8 +712,7 @@ class Model(list):
         self.backup_channel_switches = copy.copy(self.channel_switches)
         self.channel_switches[:] = False
         self.channel_switches[i1:i2] = True
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     @interactive_range_selector
     def set_signal_range(self, x1=None, x2=None):
@@ -743,8 +741,7 @@ class Model(list):
         x2 : None or float
         """
         self.channel_switches[i1:i2] = False
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     @interactive_range_selector
     def remove_signal_range(self, x1=None, x2=None):
@@ -774,8 +771,7 @@ class Model(list):
         x2 : None or float
         """
         self.channel_switches[i1:i2] = True
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     @interactive_range_selector
     def add_signal_range(self, x1=None, x2=None):
@@ -793,8 +789,7 @@ class Model(list):
 
     def reset_the_signal_range(self):
         self.channel_switches[:] = True
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     def _model_function(self, param):
 
@@ -1051,7 +1046,7 @@ class Model(list):
 
         if fitter is None:
             fitter = preferences.Model.default_fitter
-        switch_aap = (update_plot != self._get_auto_update_plot())
+        switch_aap = (update_plot != self._plot_active)
         if switch_aap is True and update_plot is False:
             self._disconnect_parameters2update_plot()
 
