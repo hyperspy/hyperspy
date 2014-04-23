@@ -956,4 +956,3 @@ class EELSModel(Model):
                 self.resolve_fine_structure()
         else:
             warnings.warn("Not suspended, nothing to resume.")
-

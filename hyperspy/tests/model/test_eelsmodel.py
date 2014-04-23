@@ -3,7 +3,9 @@ import nose.tools
 
 import hyperspy.hspy as hs
 
+
 class TestEELSModel:
+
     def setUp(self):
         s = hs.signals.EELSSpectrum(np.empty(200))
         s.set_microscope_parameters(100, 10, 10)
@@ -30,4 +32,3 @@ class TestEELSModel:
         m.enable_fine_structure()
         m.resolve_fine_structure()
         nose.tools.assert_equal(window, m["B_K"].fine_structure_width)
-
