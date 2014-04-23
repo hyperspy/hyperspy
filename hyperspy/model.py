@@ -573,6 +573,7 @@ class Model(list):
         update_plot
         """
         if self._get_auto_update_plot() is True:
+            # Needs to happen after decrement
             if self._suspend_update is True:
                 self._suspend_update = False
                 self._connect_parameters2update_plot()
