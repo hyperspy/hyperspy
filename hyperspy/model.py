@@ -349,6 +349,8 @@ class Model(list):
                                               dimension, knot_position)
 
     def _connect_parameters2update_plot(self):
+        if self._plot_active is False:
+            return
         for component in self:
             component.connect(self.update_plot)
             for parameter in component.parameters:
