@@ -75,6 +75,7 @@ class EELSModel(Model):
                  auto_add_edges=True, ll=None,
                  GOS=None, *args, **kwargs):
         Model.__init__(self, spectrum, *args, **kwargs)
+        self._suspend_auto_fine_structure_width = False
         self.convolved = False
         self.low_loss = ll
         self.GOS = GOS
@@ -225,8 +226,13 @@ class EELSModel(Model):
             minimum distance between the fine structure of an ionization edge
             and that of the following one.
         """
+
+        if self._suspend_auto_fine_structure_width is True:
+            return
+
         if not self._active_edges:
             return
+
         while (self._active_edges[i1].fine_structure_active is False and
                i1 < len(self._active_edges) - 1):
             i1 += 1
@@ -912,3 +918,42 @@ class EELSModel(Model):
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.fine_structure_coeff.free = True
+
+    def suspend_auto_fine_structure_width(self):
+        """Disable the automatic adjustament of the core-loss edges fine
+        structure width.
+
+        See Also
+        --------
+        resume_update
+        update_plot
+
+        """
+        if self._suspend_auto_fine_structure_width is False:
+            self._suspend_auto_fine_structure_width = True
+        else:
+            warnings.warn("Already suspended, does nothing.")
+
+    def resume_auto_fine_structure_width(self, update=True):
+        """Enable the automatic adjustament of the core-loss edges fine
+        structure width.
+
+        Parameters
+        ----------
+        update : bool, optional
+            If True, also execute the automatic adjustment (default).
+
+
+        See Also
+        --------
+        suspend_update
+        update_plot
+
+        """
+        if self._suspend_auto_fine_structure_width is True:
+            self._suspend_auto_fine_structure_width = False
+            if update is True:
+                self.resolve_fine_structure()
+        else:
+            warnings.warn("Not suspended, nothing to resume.")
+
