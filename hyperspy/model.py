@@ -573,25 +573,23 @@ class Model(list):
         suspend_update
         update_plot
         """
-        if self._plot_active is True:
-            # Needs to happen after decrement
             if self._suspend_update is True:
                 self._suspend_update = False
                 self._connect_parameters2update_plot()
+                if update is True:
+                    # Ideally, the update flag should in stead work like this:
+                    # If update is true, update_plot is called if any action
+                    # would have called it while updating was suspended.
+                    # However, this is prohibitively difficult to track, so
+                    # in stead it is simply assume that a change has happened
+                    # between suspend and resume, and therefore that the plot
+                    # needs to update. As we do not know what has changed,
+                    # all components need to update. This can however be
+                    # suppressed by setting update to false
+                    self.update_plot()
             else:
                 warnings.warn("Update not suspended, nothing to resume.")
 
-            if update is True:
-                # Ideally, the update flag should in stead work like this:
-                # If update is true, update_plot is called if any action
-                # would have called it while updating was suspended.
-                # However, this is prohibitively difficult to track, so
-                # in stead it is simply assume that a change has happened
-                # between suspend and resume, and therefore that the plot
-                # needs to update. As we do not know what has changed,
-                # all components need to update. This can however be
-                # suppressed by setting update to false
-                self.update_plot()
 
     def _fetch_values_from_p0(self, p_std=None):
         """Fetch the parameter values from the output of the optimzer `self.p0`
