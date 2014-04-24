@@ -18,6 +18,7 @@
 
 import warnings
 
+import numpy as np
 import matplotlib.pyplot as plt
 
 from hyperspy.exceptions import DataDimensionError
