@@ -214,9 +214,9 @@ class SpikesRemoval(SpanSelectorInSpectrum):
     index = t.Int(0)
     add_noise = t.Bool(True,
                        desc="Add noise to the healed portion of the "
-                                  "spectrum. Use the noise properties "
-                                  "defined in metadata if present, otherwise "
-                                  "it defaults to shot noise.")
+                       "spectrum. Use the noise properties "
+                       "defined in metadata if present, otherwise "
+                       "it defaults to shot noise.")
     view = tu.View(tu.Group(
         tu.Group(
             tu.Item('show_derivative_histogram', show_label=False),
@@ -269,7 +269,6 @@ class SpikesRemoval(SpanSelectorInSpectrum):
                     self.noise_type = "white"
         else:
             self.noise_type = "shot noise"
-
 
     def _threshold_changed(self, old, new):
         self.index = 0
@@ -429,7 +428,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             if self.noise_type == "white":
                 data[left:right] += np.random.normal(
                     scale=np.sqrt(self.noise_variance),
-                    size=right-left)
+                    size=right - left)
             elif self.noise_type == "heteroscedastic":
                 noise_variance = self.noise_variance(
                     axes_manager=self.signal.axes_manager)[left:right]
