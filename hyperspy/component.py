@@ -898,6 +898,7 @@ class Component(object):
         dic = {}
         dic['name'] = self.name
         dic['_id_name'] = self._id_name
+        dic['active'] = self.active
         dic['parameters'] = [p.as_dictionary(indices) for p in self.parameters]
         return dic
 
@@ -925,6 +926,7 @@ class Component(object):
 
         """
         self.name = copy.deepcopy(dic['name'])
+        self.active = dic['active']
         id_dict = {}
         for p in dic['parameters']:
             idname = p['_id_name']
