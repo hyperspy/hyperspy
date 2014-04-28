@@ -567,6 +567,7 @@ class Component(object):
         self._update_free_parameters()
         self.active = True
         self.active_map = None
+        self._pixel_level_switching = False
         self.isbackground = False
         self.convolved = True
         self.parameters = tuple(self.parameters)
@@ -575,6 +576,22 @@ class Component(object):
         self._id_version = '1.0'
         self._position = None
         self.model = None
+
+    @property
+    def enable_pixel_level_switching(self):
+        return self._pixel_level_switching
+
+    @enable_pixel_level_switching.setter
+    def enable_pixel_level_switching(self, value):
+        if isinstance(value, bool):
+            if value:
+                self._pixel_level_switching = value
+                self._create_active_map()
+            else:
+                self._pixel_level_switching = value
+                self.active_map = None
+        else:
+            raise ValueError('Only boolean values are permitted')
 
     @property
     def name(self):
@@ -688,24 +705,34 @@ class Component(object):
 
             i += lenght
 
+    def _create_active_map(self):
+        if self.enable_pixel_level_switching:
+            shape = self._axes_manager._navigation_shape_in_array
+            if len(shape) == 1 and shape[0] == 0:
+                shape = [1, ]
+            if (not isinstance(self.active_map, np.ndarray)) or self.active_map.shape != shape:
+                self.active_map = np.ones(shape, dtype=bool)
+        else:
+            raise ValueError(
+                "Pixel level switching of a component has to be enabled")
+
     def _create_arrays(self):
-        shape = self._axes_manager._navigation_shape_in_array
-        if len(shape) == 1 and shape[0] == 0:
-            shape = [1, ]
-        if (not isinstance(self.active_map, np.ndarray)) or self.active_map.shape != shape:
-            self.active_map = np.ones(shape, dtype=bool)
+        if self.enable_pixel_level_switching:
+            self._create_active_map()
         for parameter in self.parameters:
             parameter._create_array()
 
     def store_current_parameters_in_map(self):
-        ind = self._axes_manager.indices[::-1]
-        self.active_map[ind] = self.active
+        if self.enable_pixel_level_switching:
+            ind = self._axes_manager.indices[::-1]
+            self.active_map[ind] = self.active
         for parameter in self.parameters:
             parameter.store_current_value_in_array()
 
     def fetch_stored_values(self, only_fixed=False):
-        ind = self._axes_manager.indices[::-1]
-        self.active = self.active_map[ind]
+        if self.enable_pixel_level_switching:
+            ind = self._axes_manager.indices[::-1]
+            self.active = self.active_map[ind]
         if only_fixed is True:
             parameters = (set(self.parameters) -
                           set(self.free_parameters))
@@ -908,13 +935,17 @@ class Component(object):
         dic = {}
         dic['name'] = self.name
         dic['_id_name'] = self._id_name
-        if indices is not None:
-            dic['active_map'] = self.active_map[
-                tuple([slice(i, i + 1, 1) for i in indices[::-1]])].copy()
-            dic['active'] = dic['active_map'][tuple([0 for i in indices])]
+        dic['enable_pixel_level_switching'] = self.enable_pixel_level_switching
+        if self.enable_pixel_level_switching:
+            if indices is not None:
+                dic['active_map'] = self.active_map[
+                    tuple([slice(i, i + 1, 1) for i in indices[::-1]])].copy()
+                dic['active'] = dic['active_map'][tuple([0 for i in indices])]
+            else:
+                dic['active'] = self.active
+                dic['active_map'] = self.active_map.copy()
         else:
             dic['active'] = self.active
-            dic['active_map'] = self.active_map.copy()
         dic['parameters'] = [p.as_dictionary(indices) for p in self.parameters]
         return dic
 
@@ -943,7 +974,9 @@ class Component(object):
         """
         self.name = copy.deepcopy(dic['name'])
         self.active = dic['active']
-        self.active_map = dic['active_map']
+        self.enable_pixel_level_switching = dic['enable_pixel_level_switching']
+        if self.enable_pixel_level_switching:
+            self.active_map = dic['active_map']
         id_dict = {}
         for p in dic['parameters']:
             idname = p['_id_name']
