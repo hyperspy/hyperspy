@@ -908,7 +908,12 @@ class Component(object):
         dic = {}
         dic['name'] = self.name
         dic['_id_name'] = self._id_name
-        dic['active'] = self.active
+        if indices is not None:
+            dic['active_map'] = self.active_map[tuple([slice(i, i + 1, 1) for i in indices[::-1]])].copy()
+            dic['active'] = dic['active_map'][tuple([0 for i in indices])]
+        else:
+            dic['active'] = self.active
+            dic['active_map'] = self.active_map.copy()
         dic['parameters'] = [p.as_dictionary(indices) for p in self.parameters]
         return dic
 
@@ -937,6 +942,7 @@ class Component(object):
         """
         self.name = copy.deepcopy(dic['name'])
         self.active = dic['active']
+        self.active_map = dic['active_map']
         id_dict = {}
         for p in dic['parameters']:
             idname = p['_id_name']
