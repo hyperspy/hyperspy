@@ -35,6 +35,7 @@ from scipy.optimize import (leastsq,
                             fmin_powell)
 from traits.trait_errors import TraitError
 import traits.api as t
+import warnings
 
 from hyperspy import components
 from hyperspy import messages
@@ -55,7 +56,6 @@ from hyperspy.drawing.widgets import (DraggableVerticalLine,
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
 from hyperspy.signal import Signal
-from hyperspy.utils.partial import CmpPartial
 
 weights_deprecation_warning = (
     'The `weights` argument is deprecated and will be removed '
@@ -188,6 +188,8 @@ class Model(list):
         self._position_widgets = []
         self._adjust_position_all = None
         self._plot_components = False
+        self._suspend_update = False
+        self._model_line = None
         if isinstance(spectrum, dict):
             self._load_dictionary(spectrum)
         else:
@@ -416,7 +418,7 @@ class Model(list):
         object.model = None
         if touch is True:
             self._touch()
-        if self._get_auto_update_plot():
+        if self._plot_active:
             self.update_plot()
 
     def _touch(self):
@@ -424,8 +426,9 @@ class Model(list):
 
         This function is called everytime that we add or remove components
         from the model.
+
         """
-        if self._get_auto_update_plot() is True:
+        if self._plot_active is True:
             self._connect_parameters2update_plot()
 
     __touch = _touch
@@ -444,17 +447,25 @@ class Model(list):
                                               dimension, knot_position)
 
     def _connect_parameters2update_plot(self):
-        for component in self:
-            component.connect(CmpPartial(self.update_plot, component))
+        if self._plot_active is False:
+            return
+        for i, component in enumerate(self):
+            component.connect(
+                self._model_line.update)
             for parameter in component.parameters:
-                if self.spectrum._plot is not None:
-                    parameter.connect(CmpPartial(self.update_plot, component))
+                parameter.connect(self._model_line.update)
+        if self._plot_components is True:
+            self._connect_component_lines()
 
     def _disconnect_parameters2update_plot(self):
+        if self._model_line is None:
+            return
         for component in self:
-            component.disconnect(CmpPartial(self.update_plot, component))
+            component.disconnect(self._model_line.update)
             for parameter in component.parameters:
-                parameter.disconnect(CmpPartial(self.update_plot, component))
+                parameter.disconnect(self._model_line.update)
+        if self._plot_components is True:
+            self._disconnect_component_lines()
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True):
         """Returns a recreation of the dataset using the model.
@@ -526,7 +537,8 @@ class Model(list):
                 component_.active = active_state.pop(0)
         return spectrum
 
-    def _get_auto_update_plot(self):
+    @property
+    def _plot_active(self):
         if self._plot is not None and self._plot.is_active() is True:
             return True
         else:
@@ -602,7 +614,7 @@ class Model(list):
         store_current_values
 
         """
-        switch_aap = (False != self._get_auto_update_plot())
+        switch_aap = (False != self._plot_active)
         if switch_aap is True:
             self._disconnect_parameters2update_plot()
         for component in self:
@@ -612,20 +624,73 @@ class Model(list):
             self.update_plot()
 
     def update_plot(self, component=None, *args, **kwargs):
-        if self.spectrum._plot is not None:
+        """Update model plot.
+
+        The updating can be suspended using `suspend_update`.
+
+        See Also
+        --------
+        suspend_update
+        resume_update
+
+        """
+        if self._plot_active is True and self._suspend_update is False:
             try:
-                if component is None:
-                    for i in xrange(1, len(self.spectrum._plot.signal_plot.ax_lines)):
-                        self.spectrum._plot.signal_plot.ax_lines[i].update()
-                else:
-                    self.spectrum._plot.signal_plot.ax_lines[1].update()
-                    idx = self.index(component)
-                    if len(self.spectrum._plot.signal_plot.ax_lines) > 2 + idx:
-                        self.spectrum._plot.signal_plot.ax_lines[
-                            2 +
-                            idx].update()
+                self._update_model_line()
+                for component in [component for component in self if
+                                  component.active is True]:
+                    self._update_component_line(component)
             except:
                 self._disconnect_parameters2update_plot()
+
+    def suspend_update(self):
+        """Prevents plot from updating until resume_update() is called
+
+        See Also
+        --------
+        resume_update
+        update_plot
+        """
+        if self._suspend_update is False:
+            self._suspend_update = True
+            self._disconnect_parameters2update_plot()
+        else:
+            warnings.warn("Update already suspended, does nothing.")
+
+    def resume_update(self, update=True):
+        """Resumes plot update after suspension by suspend_update()
+
+        Parameters
+        ----------
+        update : bool, optional
+            If True, also updates plot after resuming (default).
+
+        See Also
+        --------
+        suspend_update
+        update_plot
+        """
+        if self._suspend_update is True:
+            self._suspend_update = False
+            self._connect_parameters2update_plot()
+            if update is True:
+                # Ideally, the update flag should in stead work like this:
+                # If update is true, update_plot is called if any action
+                # would have called it while updating was suspended.
+                # However, this is prohibitively difficult to track, so
+                # in stead it is simply assume that a change has happened
+                # between suspend and resume, and therefore that the plot
+                # needs to update. As we do not know what has changed,
+                # all components need to update. This can however be
+                # suppressed by setting update to false
+                self.update_plot()
+        else:
+            warnings.warn("Update not suspended, nothing to resume.")
+
+    def _update_model_line(self):
+        if (self._plot_active is True and
+                self._model_line is not None):
+            self._model_line.update()
 
     def _fetch_values_from_p0(self, p_std=None):
         """Fetch the parameter values from the output of the optimzer `self.p0`
@@ -748,8 +813,7 @@ class Model(list):
         self.backup_channel_switches = copy.copy(self.channel_switches)
         self.channel_switches[:] = False
         self.channel_switches[i1:i2] = True
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     @interactive_range_selector
     def set_signal_range(self, x1=None, x2=None):
@@ -778,8 +842,7 @@ class Model(list):
         x2 : None or float
         """
         self.channel_switches[i1:i2] = False
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     @interactive_range_selector
     def remove_signal_range(self, x1=None, x2=None):
@@ -809,8 +872,7 @@ class Model(list):
         x2 : None or float
         """
         self.channel_switches[i1:i2] = True
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     @interactive_range_selector
     def add_signal_range(self, x1=None, x2=None):
@@ -828,8 +890,7 @@ class Model(list):
 
     def reset_the_signal_range(self):
         self.channel_switches[:] = True
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     def _model_function(self, param):
 
@@ -838,7 +899,7 @@ class Model(list):
             sum_convolved = np.zeros(len(self.convolution_axis))
             sum = np.zeros(len(self.axis.axis))
             for component in self:  # Cut the parameters list
-                if component.active is True:
+                if component.active:
                     if component.convolved is True:
                         np.add(sum_convolved, component.__tempcall__(param[
                             counter:counter + component._nfree_param],
@@ -857,7 +918,7 @@ class Model(list):
             counter = 0
             first = True
             for component in self:  # Cut the parameters list
-                if component.active is True:
+                if component.active:
                     if first is True:
                         sum = component.__tempcall__(param[counter:counter +
                                                            component._nfree_param], axis)
@@ -1086,7 +1147,7 @@ class Model(list):
 
         if fitter is None:
             fitter = preferences.Model.default_fitter
-        switch_aap = (update_plot != self._get_auto_update_plot())
+        switch_aap = (update_plot != self._plot_active)
         if switch_aap is True and update_plot is False:
             self._disconnect_parameters2update_plot()
 
@@ -1421,21 +1482,35 @@ class Model(list):
         _plot.signal_plot.add_line(l2)
         l2.plot()
         on_figure_window_close(_plot.signal_plot.figure,
-                               self._disconnect_parameters2update_plot)
+                               self._close_plot)
+
+        self._model_line = l2
         self._plot = self.spectrum._plot
         self._connect_parameters2update_plot()
         if plot_components is True:
             self.enable_plot_components()
 
-    def enable_plot_components(self):
-        if self._plot is None or self._plot_components:
-            return
-        self._plot_components = True
+    def _connect_component_line(self, component):
+        if hasattr(component, "_model_plot_line"):
+            component.connect(component._model_plot_line.update)
+            for parameter in component.parameters:
+                parameter.connect(component._model_plot_line.update)
+
+    def _disconnect_component_line(self, component):
+        if hasattr(component, "_model_plot_line"):
+            component.disconnect(component._model_plot_line.update)
+            for parameter in component.parameters:
+                parameter.disconnect(component._model_plot_line.update)
+
+    def _connect_component_lines(self):
         for component in [component for component in self if
-                          component.active is True]:
-            self._plot_component(component)
-        on_figure_window_close(self._plot.signal_plot.figure,
-                               self.disable_plot_components)
+                          component.active]:
+            self._connect_component_line(component)
+
+    def _disconnect_component_lines(self):
+        for component in [component for component in self if
+                          component.active]:
+            self._disconnect_component_line(component)
 
     def _plot_component(self, component):
         line = hyperspy.drawing.spectrum.SpectrumLine()
@@ -1444,15 +1519,39 @@ class Model(list):
         self._plot.signal_plot.add_line(line)
         line.plot()
         component._model_plot_line = line
+        self._connect_component_line(component)
+
+    def _update_component_line(self, component):
+        if hasattr(component, "_model_plot_line"):
+            component._model_plot_line.update()
+
+    def _disable_plot_component(self, component):
+        self._disconnect_component_line(component)
+        if hasattr(component, "_model_plot_line"):
+            component._model_plot_line.close()
+            del component._model_plot_line
+        self._plot_components = False
+
+    def _close_plot(self):
+        if self._plot_components is True:
+            self.disable_plot_components()
+        self._disconnect_parameters2update_plot()
+        self._model_line = None
+
+    def enable_plot_components(self):
+        if self._plot is None or self._plot_components:
+            return
+        self._plot_components = True
+        for component in [component for component in self if
+                          component.active]:
+            self._plot_component(component)
 
     def disable_plot_components(self):
-        self._plot_components = False
         if self._plot is None:
             return
         for component in self:
-            if hasattr(component, "_model_plot_line"):
-                component._model_plot_line.close()
-                del component._model_plot_line
+            self._disable_plot_component(component)
+        self._plot_components = False
 
     def set_current_values_to(self, components_list=None, mask=None):
         """Set parameter values for all positions to the current ones.
@@ -1527,7 +1626,7 @@ class Model(list):
 
         """
         for component in self:
-            if only_active is False or component.active is True:
+            if only_active is False or component.active:
                 component.export(folder=folder, format=format,
                                  save_std=save_std, only_free=only_free)
 
@@ -1551,7 +1650,7 @@ class Model(list):
 
         """
         for component in self:
-            if only_active is False or component.active is True:
+            if only_active is False or component.active:
                 component.plot(only_free=only_free)
 
     def print_current_values(self, only_free=True):
@@ -1566,7 +1665,7 @@ class Model(list):
         """
         print "Components\tParameter\tValue"
         for component in self:
-            if component.active is True:
+            if component.active:
                 if component.name:
                     print(component.name)
                 else:
@@ -1860,6 +1959,15 @@ class Model(list):
             component_list = [self._get_component(x) for x in component_list]
 
         for _component in component_list:
+            if parameter_name == 'active':
+                _component.active = value
+                if only_current:
+                    _component.active_map[
+                        self.axes_manager.indices[
+                            ::-
+                            1]] = value
+                else:
+                    _component.active_map.fill(value)
             for _parameter in _component.parameters:
                 if _parameter.name == parameter_name:
                     if only_current:

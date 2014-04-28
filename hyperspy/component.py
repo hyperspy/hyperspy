@@ -566,6 +566,7 @@ class Component(object):
         self.init_parameters(parameter_name_list)
         self._update_free_parameters()
         self.active = True
+        self.active_map = None
         self.isbackground = False
         self.convolved = True
         self.parameters = tuple(self.parameters)
@@ -688,14 +689,23 @@ class Component(object):
             i += lenght
 
     def _create_arrays(self):
+        shape = self._axes_manager._navigation_shape_in_array
+        if len(shape) == 1 and shape[0] == 0:
+            shape = [1, ]
+        if (not isinstance(self.active_map, np.ndarray)) or self.active_map.shape != shape:
+            self.active_map = np.ones(shape, dtype=bool)
         for parameter in self.parameters:
             parameter._create_array()
 
     def store_current_parameters_in_map(self):
+        ind = self._axes_manager.indices[::-1]
+        self.active_map[ind] = self.active
         for parameter in self.parameters:
             parameter.store_current_value_in_array()
 
     def fetch_stored_values(self, only_fixed=False):
+        ind = self._axes_manager.indices[::-1]
+        self.active = self.active_map[ind]
         if only_fixed is True:
             parameters = (set(self.parameters) -
                           set(self.free_parameters))
