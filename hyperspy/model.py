@@ -824,7 +824,7 @@ class Model(list):
             sum_convolved = np.zeros(len(self.convolution_axis))
             sum = np.zeros(len(self.axis.axis))
             for component in self:  # Cut the parameters list
-                if component.active is True:
+                if component.active:
                     if component.convolved is True:
                         np.add(sum_convolved, component.__tempcall__(param[
                             counter:counter + component._nfree_param],
@@ -843,7 +843,7 @@ class Model(list):
             counter = 0
             first = True
             for component in self:  # Cut the parameters list
-                if component.active is True:
+                if component.active:
                     if first is True:
                         sum = component.__tempcall__(param[counter:counter +
                                                            component._nfree_param], axis)
@@ -1429,12 +1429,12 @@ class Model(list):
 
     def _connect_component_lines(self):
         for component in [component for component in self if
-                          component.active is True]:
+                          component.active ]:
             self._connect_component_line(component)
 
     def _disconnect_component_lines(self):
         for component in [component for component in self if
-                          component.active is True]:
+                          component.active]:
             self._disconnect_component_line(component)
 
     def _plot_component(self, component):
@@ -1468,7 +1468,7 @@ class Model(list):
             return
         self._plot_components = True
         for component in [component for component in self if
-                          component.active is True]:
+                          component.active]:
             self._plot_component(component)
 
     def disable_plot_components(self):
@@ -1551,7 +1551,7 @@ class Model(list):
 
         """
         for component in self:
-            if only_active is False or component.active is True:
+            if only_active is False or component.active:
                 component.export(folder=folder, format=format,
                                  save_std=save_std, only_free=only_free)
 
@@ -1575,7 +1575,7 @@ class Model(list):
 
         """
         for component in self:
-            if only_active is False or component.active is True:
+            if only_active is False or component.active:
                 component.plot(only_free=only_free)
 
     def print_current_values(self, only_free=True):
@@ -1590,7 +1590,7 @@ class Model(list):
         """
         print "Components\tParameter\tValue"
         for component in self:
-            if component.active is True:
+            if component.active:
                 if component.name:
                     print(component.name)
                 else:
