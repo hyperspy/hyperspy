@@ -141,6 +141,33 @@ index in the model.
     >>> m["Carbon"]
     <Carbon (Gaussian component)>
 
+To "switch off" any of the components, user can set :py:attr:`~.component.Component.active` to `False`. Alternatively,
+if the model contains more that a single pixel, it is possible to activate and deactivate the components pixel-by-pixel
+by first enabling it (:py:attr:`~.component.Component.enable_pixel_level_switching`) and then using 
+:py:meth:`~.model.Model.set_component_active_value`.
+Example:
+
+.. code-block:: python
+    >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> m = create_model(s)
+    >>> g1 = components.Gaussian()
+    >>> g2 = components.Gaussian()
+    >>> m.extend([g1,g2])
+    >>> g1.enable_pixel_level_switching = True
+    >>> g1.active_map
+    array([ True,  True,  True,  True,  True,  True,  True,  True,  True,  True], dtype=bool)
+    >>> g2.active_map is None
+    True
+    >>> m.set_component_active_value(False)
+    >>> g1.active_map
+    array([False, False, False, False, False, False, False, False, False, False], dtype=bool)
+    >>> m.set_component_active_value(True, only_current=True)
+    >>> g1.active_map
+    array([ True, False, False, False, False, False, False, False, False, False], dtype=bool)
+    >>> g1.enable_pixel_level_switching = False
+    >>> g1.active_map is None
+    True
+
 
 Getting and setting parameter values and attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -162,6 +189,7 @@ Example:
 .. code-block:: python
 
     >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> m = create_model(s)
     >>> g1 = components.Gaussian()
     >>> g2 = components.Gaussian()
     >>> m.extend([g1,g2])
