@@ -463,7 +463,9 @@ class Component(object):
         if isinstance(value, bool):
             if value:
                 if self._pixel_level_switching:
-                    print ('Pixel level component switching is already enabled for %s' % self.name)
+                    print (
+                        'Pixel level component switching is already enabled for %s' %
+                        self.name)
                     return
                 if self._axes_manager.navigation_size < 2:
                     print ('Only a single pixel in the signal, skipping')
