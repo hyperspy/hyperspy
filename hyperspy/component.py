@@ -909,7 +909,8 @@ class Component(object):
         dic['name'] = self.name
         dic['_id_name'] = self._id_name
         if indices is not None:
-            dic['active_map'] = self.active_map[tuple([slice(i, i + 1, 1) for i in indices[::-1]])].copy()
+            dic['active_map'] = self.active_map[
+                tuple([slice(i, i + 1, 1) for i in indices[::-1]])].copy()
             dic['active'] = dic['active_map'][tuple([0 for i in indices])]
         else:
             dic['active'] = self.active
