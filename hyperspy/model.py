@@ -1429,7 +1429,7 @@ class Model(list):
 
     def _connect_component_lines(self):
         for component in [component for component in self if
-                          component.active ]:
+                          component.active]:
             self._connect_component_line(component)
 
     def _disconnect_component_lines(self):
