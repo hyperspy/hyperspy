@@ -88,7 +88,7 @@ class TestSetParameterInModel:
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        m.set_parameters_value('active', False, component_list=[g1,g2])
+        m.set_parameters_value('active', False, component_list=[g1, g2])
         assert_true(np.all(np.logical_not(g1.active_map)))
         assert_true(np.all(np.logical_not(g2.active_map)))
         assert_true(np.all(g3.active_map))
@@ -98,7 +98,11 @@ class TestSetParameterInModel:
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        m.set_parameters_value('active', False, component_list=[g1], only_current=True)
+        m.set_parameters_value(
+            'active',
+            False,
+            component_list=[g1],
+            only_current=True)
         g1.active_map[0][0] = not g1.active_map[0][0]
         assert_true(np.all(g1.active_map))
         assert_true(np.all(g2.active_map))

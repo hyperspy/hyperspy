@@ -1887,7 +1887,10 @@ class Model(list):
             if parameter_name == 'active':
                 _component.active = value
                 if only_current:
-                    _component.active_map[self.axes_manager.indices[::-1]] = value
+                    _component.active_map[
+                        self.axes_manager.indices[
+                            ::-
+                            1]] = value
                 else:
                     _component.active_map.fill(value)
             for _parameter in _component.parameters:
