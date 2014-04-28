@@ -96,3 +96,23 @@ class TestChiSquared:
         m.set_signal_range(1, 7)
         m.fit()
         assert_true(np.allclose(m.red_chisq(), 2.87544335))
+
+    def test_chisq_with_inactive_components(self):
+        m = self.model
+        ga = Gaussian()
+        gin = Gaussian()
+        m.append(ga)
+        m.append(gin)
+        gin.active = False
+        m.fit()
+        assert_true(np.allclose(m.chisq(), 7.78966223))
+
+    def test_dof_with_inactive_components(self):
+        m = self.model
+        ga = Gaussian()
+        gin = Gaussian()
+        m.append(ga)
+        m.append(gin)
+        gin.active = False
+        m.fit()
+        assert_true(np.equal(m.dof(), 3))
