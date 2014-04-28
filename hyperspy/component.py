@@ -468,7 +468,7 @@ class Component(object):
                 self._pixel_level_switching = value
                 self.active_map = None
         else:
-            raise ValueError ('Only boolean values are permitted')
+            raise ValueError('Only boolean values are permitted')
 
     @property
     def name(self):
@@ -590,8 +590,7 @@ class Component(object):
                 self.active_map = np.ones(shape, dtype=bool)
         else:
             raise ValueError(
-                    "Pixel level switching of a component has to be enabled")
-
+                "Pixel level switching of a component has to be enabled")
 
     def _create_arrays(self):
         if self.enable_pixel_level_switching:

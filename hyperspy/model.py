@@ -1893,7 +1893,8 @@ class Model(list):
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
 
-    def set_component_active_value(self, value, component_list=None, only_current=False):
+    def set_component_active_value(
+            self, value, component_list=None, only_current=False):
         """
         Sets the component 'active' parameter to a specified value
 
