@@ -19,6 +19,7 @@
 import os
 
 import numpy as np
+import warnings
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import slugify
@@ -463,12 +464,12 @@ class Component(object):
         if isinstance(value, bool):
             if value:
                 if self._pixel_level_switching:
-                    print (
+                    warnings.warn(
                         'Pixel level component switching is already enabled for %s' %
-                        self.name)
+                        self.name, RuntimeWarning)
                     return
                 if self._axes_manager.navigation_size < 2:
-                    print ('Only a single pixel in the signal, skipping')
+                    warnings.warn('Only a single pixel in the signal, skipping', RuntimeWarning)
                     return
                 self._pixel_level_switching = value
                 self._create_active_map()
