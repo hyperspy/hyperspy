@@ -469,7 +469,9 @@ class Component(object):
                         self.name, RuntimeWarning)
                     return
                 if self._axes_manager.navigation_size < 2:
-                    warnings.warn('Only a single pixel in the signal, skipping', RuntimeWarning)
+                    warnings.warn(
+                        'Only a single pixel in the signal, skipping',
+                        RuntimeWarning)
                     return
                 self._pixel_level_switching = value
                 self._create_active_map()
