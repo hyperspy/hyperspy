@@ -1884,15 +1884,6 @@ class Model(list):
             component_list = [self._get_component(x) for x in component_list]
 
         for _component in component_list:
-            if parameter_name == 'active':
-                _component.active = value
-                if only_current:
-                    _component.active_map[
-                        self.axes_manager.indices[
-                            ::-
-                            1]] = value
-                else:
-                    _component.active_map.fill(value)
             for _parameter in _component.parameters:
                 if _parameter.name == parameter_name:
                     if only_current:
@@ -1901,6 +1892,51 @@ class Model(list):
                     else:
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
+
+    def set_component_active_value(self, value, component_list=None, only_current=False):
+        """
+        Sets the component 'active' parameter to a specified value
+
+        Parameters
+        ----------
+        value : bool
+            The new value of the 'active' parameter
+        component_list : list of hyperspy components, optional
+            A list of components whos parameters will changed. The components
+            can be specified by name, index or themselves.
+
+        only_current : bool, default False
+            If True, will only change the parameter value at the current position in the model
+            If False, will change the parameter value for all the positions.
+
+        Examples
+        --------
+        >>> v1 = components.Voigt()
+        >>> v2 = components.Voigt()
+        >>> m.extend([v1,v2])
+        >>> m.set_component_active_value(False)
+        >>> m.set_component_active_value(True, component_list=[v1])
+        >>> m.set_component_active_value(False, component_list=[v1], only_current=True)
+
+        """
+
+        if not component_list:
+            component_list = []
+            for _component in self:
+                component_list.append(_component)
+        else:
+            component_list = [self._get_component(x) for x in component_list]
+
+        for _component in component_list:
+            _component.active = value
+            if _component.enable_pixel_level_switching:
+                if only_current:
+                    _component.active_map[
+                        self.axes_manager.indices[
+                            ::-
+                            1]] = value
+                else:
+                    _component.active_map.fill(value)
 
     def __getitem__(self, value):
         """x.__getitem__(y) <==> x[y]"""
