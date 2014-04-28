@@ -116,4 +116,3 @@ class TestChiSquared:
         gin.active = False
         m.fit()
         assert_true(np.equal(m.dof(), 3))
-
