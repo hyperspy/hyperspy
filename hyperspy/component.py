@@ -462,6 +462,12 @@ class Component(object):
     def enable_pixel_level_switching(self, value):
         if isinstance(value, bool):
             if value:
+                if self._pixel_level_switching:
+                    print ('Pixel level component switching is already enabled for %s' % self.name)
+                    return
+                if self._axes_manager.navigation_size < 2:
+                    print ('Only a single pixel in the signal, skipping')
+                    return
                 self._pixel_level_switching = value
                 self._create_active_map()
             else:
