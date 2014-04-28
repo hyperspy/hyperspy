@@ -250,7 +250,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.line = signal._plot.signal_plot.ax_lines[0]
         self.ax = signal._plot.signal_plot.ax
         signal._plot.auto_update_plot = False
-        signal.axes_manager.indices = self.coordinates[0]
+        if len(self.coordinates) > 1:
+            signal.axes_manager.indices = self.coordinates[0]
         self.threshold = 400
         self.index = 0
         self.argmax = None
@@ -333,7 +334,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             self.interpolated_line = None
         self.reset_span_selector()
         self.update_spectrum_line()
-        self.signal._plot.pointer.update_patch_position()
+        if len(self.coordinates) > 1:
+            self.signal._plot.pointer.update_patch_position()
 
     def update_spectrum_line(self):
         self.line.auto_update = True
