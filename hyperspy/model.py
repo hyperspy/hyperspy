@@ -1,25 +1,26 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
 import os
 import tempfile
-
+import warnings
+import numbers
 import numpy as np
 import numpy.linalg
 import scipy.odr as odr
@@ -34,6 +35,7 @@ from scipy.optimize import (leastsq,
                             fmin_powell)
 from traits.trait_errors import TraitError
 import traits.api as t
+import warnings
 
 from hyperspy import messages
 import hyperspy.drawing.spectrum
@@ -50,6 +52,11 @@ from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
+from hyperspy.signal import Signal
+
+weights_deprecation_warning = (
+    'The `weights` argument is deprecated and will be removed '
+    'in the next release. ')
 
 
 class Model(list):
@@ -75,6 +82,11 @@ class Model(list):
 
     spectrum : Spectrum instance
         It contains the data to fit.
+    chisq : A Signal of floats
+        Chi-squared of the signal (or np.nan if not yet fit)
+    dof : A Signal of integers
+        Degrees of freedom of the signal (0 if not yet fit)
+    red_chisq
 
     Methods
     -------
@@ -184,6 +196,22 @@ class Model(list):
         self._low_loss = None
         self._position_widgets = []
         self._plot = None
+        self._model_line = None
+
+        self.chisq = spectrum._get_navigation_signal()
+        self.chisq.change_dtype("float")
+        self.chisq.data.fill(np.nan)
+        self.chisq.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' chi-squared'
+        self.dof = self.chisq._deepcopy_with_new_data(
+            np.zeros_like(
+                self.chisq.data,
+                dtype='int'))
+        self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' degrees of freedom'
+        self._suspend_update = False
+        self._adjust_position_all = None
+        self._plot_components = False
 
     def __repr__(self):
         return "<Model %s>" % super(Model, self).__repr__()
@@ -258,6 +286,11 @@ class Model(list):
         list.append(self, object)
         object.model = self
         self._touch()
+        if self._plot_components:
+            self._plot_component(object)
+        if self._adjust_position_all is not None:
+            self._make_position_adjuster(object, self._adjust_position_all[0],
+                                         self._adjust_position_all[1])
 
     def extend(self, iterable):
         for object in iterable:
@@ -293,18 +326,34 @@ class Model(list):
 
         """
         object = self._get_component(object)
+        for pw in self._position_widgets:
+            if hasattr(pw, 'component') and pw.component is object:
+                pw.component._position.twin = None
+                del pw.component
+                pw.close()
+                del pw
+        if hasattr(object, '_model_plot_line'):
+            line = object._model_plot_line
+            line.close()
+            del line
+            idx = self.index(object)
+            self.spectrum._plot.signal_plot.ax_lines.remove(
+                self.spectrum._plot.signal_plot.ax_lines[2 + idx])
         list.remove(self, object)
         object.model = None
         if touch is True:
             self._touch()
+        if self._plot_active:
+            self.update_plot()
 
     def _touch(self):
         """Run model setup tasks
 
         This function is called everytime that we add or remove components
         from the model.
+
         """
-        if self._get_auto_update_plot() is True:
+        if self._plot_active is True:
             self._connect_parameters2update_plot()
 
     __touch = _touch
@@ -323,17 +372,25 @@ class Model(list):
                                               dimension, knot_position)
 
     def _connect_parameters2update_plot(self):
-        for component in self:
-            component.connect(self.update_plot)
+        if self._plot_active is False:
+            return
+        for i, component in enumerate(self):
+            component.connect(
+                self._model_line.update)
             for parameter in component.parameters:
-                if self.spectrum._plot is not None:
-                    parameter.connect(self.update_plot)
+                parameter.connect(self._model_line.update)
+        if self._plot_components is True:
+            self._connect_component_lines()
 
     def _disconnect_parameters2update_plot(self):
+        if self._model_line is None:
+            return
         for component in self:
-            component.disconnect(self.update_plot)
+            component.disconnect(self._model_line.update)
             for parameter in component.parameters:
-                parameter.disconnect(self.update_plot)
+                parameter.disconnect(self._model_line.update)
+        if self._plot_components is True:
+            self._disconnect_component_lines()
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True):
         """Returns a recreation of the dataset using the model.
@@ -354,14 +411,14 @@ class Model(list):
 
         Examples
         --------
-        >>>> s = signals.Spectrum(np.random.random((10,100)))
-        >>>> m = create_model(s)
-        >>>> l1 = components.Lorentzian()
-        >>>> l2 = components.Lorentzian()
-        >>>> m.append(l1)
-        >>>> m.append(l2)
-        >>>> s1 = m.as_signal()
-        >>>> s2 = m.as_signal(component_list=[l1])
+        >>> s = signals.Spectrum(np.random.random((10,100)))
+        >>> m = create_model(s)
+        >>> l1 = components.Lorentzian()
+        >>> l2 = components.Lorentzian()
+        >>> m.append(l1)
+        >>> m.append(l2)
+        >>> s1 = m.as_signal()
+        >>> s2 = m.as_signal(component_list=[l1])
 
         """
 
@@ -398,12 +455,15 @@ class Model(list):
             axes=self.spectrum.axes_manager._get_axes_dicts())
         spectrum.metadata.General.title = (
             self.spectrum.metadata.General.title + " from fitted model")
+        spectrum.metadata.Signal.binned = self.spectrum.metadata.Signal.binned
+
         if component_list:
             for component_ in self:
                 component_.active = active_state.pop(0)
         return spectrum
 
-    def _get_auto_update_plot(self):
+    @property
+    def _plot_active(self):
         if self._plot is not None and self._plot.is_active() is True:
             return True
         else:
@@ -479,7 +539,7 @@ class Model(list):
         store_current_values
 
         """
-        switch_aap = (False != self._get_auto_update_plot())
+        switch_aap = (False != self._plot_active)
         if switch_aap is True:
             self._disconnect_parameters2update_plot()
         for component in self:
@@ -488,12 +548,74 @@ class Model(list):
             self._connect_parameters2update_plot()
             self.update_plot()
 
-    def update_plot(self):
-        if self.spectrum._plot is not None:
+    def update_plot(self, component=None, *args, **kwargs):
+        """Update model plot.
+
+        The updating can be suspended using `suspend_update`.
+
+        See Also
+        --------
+        suspend_update
+        resume_update
+
+        """
+        if self._plot_active is True and self._suspend_update is False:
             try:
-                self.spectrum._plot.signal_plot.ax_lines[1].update()
+                self._update_model_line()
+                for component in [component for component in self if
+                                  component.active is True]:
+                    self._update_component_line(component)
             except:
                 self._disconnect_parameters2update_plot()
+
+    def suspend_update(self):
+        """Prevents plot from updating until resume_update() is called
+
+        See Also
+        --------
+        resume_update
+        update_plot
+        """
+        if self._suspend_update is False:
+            self._suspend_update = True
+            self._disconnect_parameters2update_plot()
+        else:
+            warnings.warn("Update already suspended, does nothing.")
+
+    def resume_update(self, update=True):
+        """Resumes plot update after suspension by suspend_update()
+
+        Parameters
+        ----------
+        update : bool, optional
+            If True, also updates plot after resuming (default).
+
+        See Also
+        --------
+        suspend_update
+        update_plot
+        """
+        if self._suspend_update is True:
+            self._suspend_update = False
+            self._connect_parameters2update_plot()
+            if update is True:
+                # Ideally, the update flag should in stead work like this:
+                # If update is true, update_plot is called if any action
+                # would have called it while updating was suspended.
+                # However, this is prohibitively difficult to track, so
+                # in stead it is simply assume that a change has happened
+                # between suspend and resume, and therefore that the plot
+                # needs to update. As we do not know what has changed,
+                # all components need to update. This can however be
+                # suppressed by setting update to false
+                self.update_plot()
+        else:
+            warnings.warn("Update not suspended, nothing to resume.")
+
+    def _update_model_line(self):
+        if (self._plot_active is True and
+                self._model_line is not None):
+            self._model_line.update()
 
     def _fetch_values_from_p0(self, p_std=None):
         """Fetch the parameter values from the output of the optimzer `self.p0`
@@ -561,12 +683,11 @@ class Model(list):
                     if component.active:
                         np.add(sum_, component.function(axis),
                                sum_)
-                return sum_
             else:
                 for component in self:  # Cut the parameters list
                     np.add(sum_, component.function(axis),
                            sum_)
-                return sum_
+            to_return = sum_
 
         else:  # convolved
             counter = 0
@@ -596,7 +717,9 @@ class Model(list):
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[self.channel_switches]
-            return to_return
+        if self.spectrum.metadata.Signal.binned is True:
+            to_return *= self.spectrum.axes_manager[-1].scale
+        return to_return
 
     # TODO: the way it uses the axes
     def _set_signal_range_in_pixels(self, i1=None, i2=None):
@@ -615,8 +738,7 @@ class Model(list):
         self.backup_channel_switches = copy.copy(self.channel_switches)
         self.channel_switches[:] = False
         self.channel_switches[i1:i2] = True
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     @interactive_range_selector
     def set_signal_range(self, x1=None, x2=None):
@@ -645,8 +767,7 @@ class Model(list):
         x2 : None or float
         """
         self.channel_switches[i1:i2] = False
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     @interactive_range_selector
     def remove_signal_range(self, x1=None, x2=None):
@@ -676,8 +797,7 @@ class Model(list):
         x2 : None or float
         """
         self.channel_switches[i1:i2] = True
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     @interactive_range_selector
     def add_signal_range(self, x1=None, x2=None):
@@ -695,8 +815,7 @@ class Model(list):
 
     def reset_the_signal_range(self):
         self.channel_switches[:] = True
-        if self._get_auto_update_plot() is True:
-            self.update_plot()
+        self.update_plot()
 
     def _model_function(self, param):
 
@@ -715,8 +834,8 @@ class Model(list):
                                                                  component._nfree_param], self.axis.axis), sum)
                     counter += component._nfree_param
 
-            return (sum + np.convolve(self.low_loss(self.axes_manager),
-                                      sum_convolved, mode="valid"))[
+            to_return = (sum + np.convolve(self.low_loss(self.axes_manager),
+                                           sum_convolved, mode="valid"))[
                 self.channel_switches]
 
         else:
@@ -733,7 +852,11 @@ class Model(list):
                         sum += component.__tempcall__(param[counter:counter +
                                                             component._nfree_param], axis)
                     counter += component._nfree_param
-            return sum
+            to_return = sum
+
+        if self.spectrum.metadata.Signal.binned is True:
+            to_return *= self.spectrum.axes_manager[-1].scale
+        return to_return
 
     def _jacobian(self, param, y, weights=None):
         if self.convolved is True:
@@ -768,9 +891,9 @@ class Model(list):
                             grad = np.vstack((grad, par_grad))
                         counter += component._nfree_param
             if weights is None:
-                return grad[1:, self.channel_switches]
+                to_return = grad[1:, self.channel_switches]
             else:
-                return grad[1:, self.channel_switches] * weights
+                to_return = grad[1:, self.channel_switches] * weights
         else:
             axis = self.axis.axis[self.channel_switches]
             counter = 0
@@ -788,9 +911,12 @@ class Model(list):
                         grad = np.vstack((grad, par_grad))
                     counter += component._nfree_param
             if weights is None:
-                return grad[1:, :]
+                to_return = grad[1:, :]
             else:
-                return grad[1:, :] * weights
+                to_return = grad[1:, :] * weights
+        if self.spectrum.metadata.Signal.binned is True:
+            to_return *= self.spectrum.axes_manager[-1].scale
+        return to_return
 
     def _function4odr(self, param, x):
         return self._model_function(param)
@@ -812,7 +938,8 @@ class Model(list):
         data and parameters
         """
         mf = self._model_function(param)
-        return -(y * np.log(mf) - mf).sum()
+        with np.errstate(invalid='ignore'):
+            return -(y * np.log(mf) - mf).sum()
 
     def _gradient_ml(self, param, y, weights=None):
         mf = self._model_function(param)
@@ -848,57 +975,104 @@ class Model(list):
         else:
             return [0, self._jacobian(p, y).T]
 
-    def fit(self, fitter=None, method='ls', grad=False, weights=None,
+    def _calculate_chisq(self):
+        if self.spectrum.metadata.has_item('Signal.Noise_properties.variance'):
+
+            variance = self.spectrum.metadata.Signal.Noise_properties.variance
+            if isinstance(variance, Signal):
+                variance = variance.data.__getitem__(
+                    self.spectrum.axes_manager._getitem_tuple
+                )[self.channel_switches]
+        else:
+            variance = 1.0
+        d = self(onlyactive=True) - self.spectrum()[self.channel_switches]
+        d *= d / (1. * variance)  # d = difference^2 / variance.
+        self.chisq.data[self.spectrum.axes_manager.indices[::-1]] = sum(d)
+
+    def _set_current_degrees_of_freedom(self):
+        self.dof.data[self.spectrum.axes_manager.indices[::-1]] = len(self.p0)
+
+    @property
+    def red_chisq(self):
+        """Reduced chi-squared. Calculated from self.chisq and self.dof
+        """
+        tmp = self.chisq / (- self.dof + sum(self.channel_switches) - 1)
+        tmp.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' reduced chi-squared'
+        return tmp
+
+    def fit(self, fitter=None, method='ls', grad=False,
             bounded=False, ext_bounding=False, update_plot=False,
             **kwargs):
-        """Fits the model to the experimental data
+        """Fits the model to the experimental data.
+
+        The chi-squared, reduced chi-squared and the degrees of freedom are
+        computed automatically when fitting. They are stored as signals, in the
+        `chisq`, `red_chisq`  and `dof`. Note that,
+        unless ``metadata.Signal.Noise_properties.variance`` contains an accurate
+        estimation of the variance of the data, the chi-squared and reduced
+        chi-squared cannot be computed correctly. This is also true for
+        homocedastic noise.
 
         Parameters
         ----------
         fitter : {None, "leastsq", "odr", "mpfit", "fmin"}
             The optimizer to perform the fitting. If None the fitter
-            defined in the Preferences is used. leastsq is the most
-            stable but it does not support bounding. mpfit supports
-            bounding. fmin is the only one that supports
-            maximum likelihood estimation, but it is less robust than
-            the Levenberg–Marquardt based leastsq and mpfit, and it is
-            better to use it after one of them to refine the estimation.
+            defined in `preferences.Model.default_fitter` is used.
+            "leastsq" performs least squares using the Levenberg–Marquardt
+            algorithm.
+            "mpfit"  performs least squares using the Levenberg–Marquardt
+            algorithm and, unlike "leastsq", support bounded optimization.
+            "fmin" performs curve fitting using a downhill simplex algorithm.
+            It is less robust than the Levenberg-Marquardt based optimizers,
+            but, at present, it is the only one that support maximum likelihood
+            optimization for poissonian noise.
+            "odr" performs the optimization using the orthogonal distance
+            regression algorithm. It does not support bounds.
+            "leastsq", "odr" and "mpfit" can estimate the standard deviation of
+            the estimated value of the parameters if the
+            "metada.Signal.Noise_properties.variance" attribute is defined.
+            Note that if it is not defined the standard deviation is estimated
+            using variance equal 1, what, if the noise is heterocedatic, will
+            result in a biased estimation of the parameter values and errors.i
+            If `variance` is a `Signal` instance of the
+            same `navigation_dimension` as the spectrum, and `method` is "ls"
+            weighted least squares is performed.
         method : {'ls', 'ml'}
-            Choose 'ls' (default) for least squares and 'ml' for
-            maximum-likelihood estimation. The latter only works with
-            fitter = 'fmin'.
+            Choose 'ls' (default) for least squares and 'ml' for poissonian
+            maximum-likelihood estimation.  The latter is only available when
+            `fitter` is "fmin".
         grad : bool
             If True, the analytical gradient is used if defined to
-            speed up the estimation.
-        weights : {None, True, numpy.array}
-            If None, performs standard least squares. If True
-            performs weighted least squares where the weights are
-            calculated using spectrum.Spectrum.estimate_poissonian_noise_variance.
-            Alternatively, external weights can be supplied by passing
-            a weights array of the same dimensions as the signal.
-        ext_bounding : bool
-            If True, enforce bounding by keeping the value of the
-            parameters constant out of the defined bounding area.
+            speed up the optimization.
         bounded : bool
             If True performs bounded optimization if the fitter
-            supports it. Currently only mpfit support bounding.
+            supports it. Currently only "mpfit" support it.
         update_plot : bool
             If True, the plot is updated during the optimization
             process. It slows down the optimization but it permits
             to visualize the optimization progress.
+        ext_bounding : bool
+            If True, enforce bounding by keeping the value of the
+            parameters constant out of the defined bounding area.
 
         **kwargs : key word arguments
             Any extra key word argument will be passed to the chosen
-            fitter
+            fitter. For more information read the docstring of the optimizer
+            of your choice in `scipy.optimize`.
 
         See Also
         --------
         multifit
 
         """
+        if "weights" in kwargs:
+            warnings.warn(weights_deprecation_warning, DeprecationWarning)
+            del kwargs["weights"]
+
         if fitter is None:
             fitter = preferences.Model.default_fitter
-        switch_aap = (update_plot != self._get_auto_update_plot())
+        switch_aap = (update_plot != self._plot_active)
         if switch_aap is True and update_plot is False:
             self._disconnect_parameters2update_plot()
 
@@ -918,17 +1092,42 @@ class Model(list):
             odr_jacobian = self._jacobian4odr
             grad_ml = self._gradient_ml
             grad_ls = self._gradient_ls
+
+        if bounded is True and fitter not in ("mpfit", "tnc", "l_bfgs_b"):
+            raise NotImplementedError("Bounded optimization is only available "
+                                      "for the mpfit optimizer.")
         if method == 'ml':
             weights = None
-        if weights is True:
-            if self.spectrum.Signal.Noise_properties.variance is None:
-                self.spectrum.estimate_poissonian_noise_variance()
-            weights = 1. / np.sqrt(self.spectrum.Signal.Noise_properties.variance.__getitem__(
-                self.axes_manager._getitem_tuple)[self.channel_switches])
-        elif weights is not None:
-            weights = weights.__getitem__(
-                self.axes_manager._getitem_tuple)[
-                self.channel_switches]
+            if fitter != "fmin":
+                raise NotImplementedError("Maximum likelihood estimation "
+                                          'is only implemented for the "fmin" '
+                                          'optimizer')
+        elif method == "ls":
+            if "Signal.Noise_properties.variance" not in self.spectrum.metadata:
+                variance = 1
+            else:
+                variance = self.spectrum.metadata.Signal.Noise_properties.variance
+                if isinstance(variance, Signal):
+                    if (variance.axes_manager.navigation_shape ==
+                            self.spectrum.axes_manager.navigation_shape):
+                        variance = variance.data.__getitem__(
+                            self.axes_manager._getitem_tuple)[
+                            self.channel_switches]
+                    else:
+                        raise AttributeError("The `navigation_shape` of the "
+                                             "variance signals is not equal to"
+                                             "the variance shape of the "
+                                             "spectrum")
+                elif not isinstance(variance, numbers.Number):
+                    raise AttributeError("Variance must be a number or a "
+                                         "`Signal` instance but currently it is"
+                                         "a %s" % type(variance))
+
+            weights = 1. / np.sqrt(variance)
+        else:
+            raise ValueError(
+                'method must be "ls" or "ml" but %s given' %
+                method)
         args = (self.spectrum()[self.channel_switches],
                 weights)
 
@@ -938,12 +1137,12 @@ class Model(list):
                 leastsq(self._errfunc, self.p0[:], Dfun=jacobian,
                         col_deriv=1, args=args, full_output=True, **kwargs)
 
-            self.p0 = output[0]
-            var_matrix = output[1]
-            # In Scipy 0.7 sometimes the variance matrix is None (maybe a
-            # bug?) so...
-            if var_matrix is not None:
-                self.p_std = np.sqrt(np.diag(var_matrix))
+            self.p0, pcov = output[0:2]
+
+            if (self.axis.size > len(self.p0)) and pcov is not None:
+                pcov *= ((self._errfunc(self.p0, *args) ** 2).sum() /
+                         (len(args[0]) - len(self.p0)))
+                self.p_std = np.sqrt(np.diag(pcov))
             self.fit_output = output
 
         elif fitter == "odr":
@@ -964,7 +1163,6 @@ class Model(list):
             autoderivative = 1
             if grad is True:
                 autoderivative = 0
-
             if bounded is True:
                 self.set_mpfit_parameters_info()
             elif bounded is False:
@@ -975,16 +1173,18 @@ class Model(list):
                           'weights': weights}, autoderivative=autoderivative,
                       quiet=1)
             self.p0 = m.params
-            self.p_std = m.perror
+            if (self.axis.size > len(self.p0)) and m.perror is not None:
+                self.p_std = m.perror * np.sqrt(
+                    (self._errfunc(self.p0, *args) ** 2).sum() /
+                    (len(args[0]) - len(self.p0)))
             self.fit_output = m
-
         else:
         # General optimizers (incluiding constrained ones(tnc,l_bfgs_b)
         # Least squares or maximum likelihood
             if method == 'ml':
                 tominimize = self._poisson_likelihood_function
                 fprime = grad_ml
-            elif method == 'ls':
+            elif method in ['ls', "wls"]:
                 tominimize = self._errfunc2
                 fprime = grad_ls
 
@@ -1045,11 +1245,12 @@ class Model(list):
                 ------------
                 tnc and l_bfgs_b
                 """ % fitter
-
         if np.iterable(self.p0) == 0:
             self.p0 = (self.p0,)
         self._fetch_values_from_p0(p_std=self.p_std)
         self.store_current_values()
+        self._calculate_chisq()
+        self._set_current_degrees_of_freedom()
         if ext_bounding is True:
             self._disable_ext_bounding()
         if switch_aap is True and update_plot is False:
@@ -1087,6 +1288,9 @@ class Model(list):
         fit
 
         """
+        if "weights" in kwargs:
+            warnings.warn(weights_deprecation_warning, DeprecationWarning)
+            del kwargs["weights"]
 
         if autosave is not False:
             fd, autosave_fn = tempfile.mkstemp(
@@ -1119,7 +1323,7 @@ class Model(list):
             else:
                 messages.information(
                     "The chosen fitter does not suppport bounding."
-                    "If you require boundinig please select one of the "
+                    "If you require bounding please select one of the "
                     "following fitters instead: mpfit, tnc, l_bfgs_b")
                 kwargs['bounded'] = False
         i = 0
@@ -1203,33 +1407,76 @@ class Model(list):
         _plot.signal_plot.add_line(l2)
         l2.plot()
         on_figure_window_close(_plot.signal_plot.figure,
-                               self._disconnect_parameters2update_plot)
+                               self._close_plot)
+
+        self._model_line = l2
         self._plot = self.spectrum._plot
         self._connect_parameters2update_plot()
         if plot_components is True:
             self.enable_plot_components()
 
-    def enable_plot_components(self):
-        if self._plot is None:
-            return
+    def _connect_component_line(self, component):
+        if hasattr(component, "_model_plot_line"):
+            component.connect(component._model_plot_line.update)
+            for parameter in component.parameters:
+                parameter.connect(component._model_plot_line.update)
+
+    def _disconnect_component_line(self, component):
+        if hasattr(component, "_model_plot_line"):
+            component.disconnect(component._model_plot_line.update)
+            for parameter in component.parameters:
+                parameter.disconnect(component._model_plot_line.update)
+
+    def _connect_component_lines(self):
         for component in [component for component in self if
                           component.active is True]:
-            line = hyperspy.drawing.spectrum.SpectrumLine()
-            line.data_function = component._component2plot
-            # Add the line to the figure
-            self._plot.signal_plot.add_line(line)
-            line.plot()
-            component._model_plot_line = line
-        on_figure_window_close(self._plot.signal_plot.figure,
-                               self.disable_plot_components)
+            self._connect_component_line(component)
+
+    def _disconnect_component_lines(self):
+        for component in [component for component in self if
+                          component.active is True]:
+            self._disconnect_component_line(component)
+
+    def _plot_component(self, component):
+        line = hyperspy.drawing.spectrum.SpectrumLine()
+        line.data_function = component._component2plot
+        # Add the line to the figure
+        self._plot.signal_plot.add_line(line)
+        line.plot()
+        component._model_plot_line = line
+        self._connect_component_line(component)
+
+    def _update_component_line(self, component):
+        if hasattr(component, "_model_plot_line"):
+            component._model_plot_line.update()
+
+    def _disable_plot_component(self, component):
+        self._disconnect_component_line(component)
+        if hasattr(component, "_model_plot_line"):
+            component._model_plot_line.close()
+            del component._model_plot_line
+        self._plot_components = False
+
+    def _close_plot(self):
+        if self._plot_components is True:
+            self.disable_plot_components()
+        self._disconnect_parameters2update_plot()
+        self._model_line = None
+
+    def enable_plot_components(self):
+        if self._plot is None or self._plot_components:
+            return
+        self._plot_components = True
+        for component in [component for component in self if
+                          component.active is True]:
+            self._plot_component(component)
 
     def disable_plot_components(self):
         if self._plot is None:
             return
         for component in self:
-            if hasattr(component, "_model_plot_line"):
-                component._model_plot_line.close()
-                del component._model_plot_line
+            self._disable_plot_component(component)
+        self._plot_components = False
 
     def set_current_values_to(self, components_list=None, mask=None):
         """Set parameter values for all positions to the current ones.
@@ -1286,7 +1533,7 @@ class Model(list):
             current folder is used by default.
         format : str
             The format to which the data will be exported. It must be the
-            extension of any format supported by Hyperspy. If None, the default
+            extension of any format supported by HyperSpy. If None, the default
             format for exporting as defined in the `Preferences` will be used.
         save_std : bool
             If True, also the standard deviation will be saved.
@@ -1352,10 +1599,11 @@ class Model(list):
                     else component.parameters
                 for parameter in parameters:
                     if not hasattr(parameter.value, '__iter__'):
-                        print("\t\t%s\t%f" % (
+                        print("\t\t%s\t%g" % (
                             parameter.name, parameter.value))
 
-    def enable_adjust_position(self, components=None, fix_them=True):
+    def enable_adjust_position(
+            self, components=None, fix_them=True, show_label=True):
         """Allow changing the *x* position of component by dragging
         a vertical line that is plotted in the signal model figure
 
@@ -1373,6 +1621,9 @@ class Model(list):
             This can
             be useful to iteratively adjust the component positions and
             fit the model.
+        show_label : bool, optional
+            If True, a label showing the component name is added to the
+            plot next to the vertical line.
 
         See also
         --------
@@ -1388,6 +1639,8 @@ class Model(list):
                                self.disable_adjust_position)
         if components:
             components = [self._get_component(x) for x in components]
+        else:
+            self._adjust_position_all = (fix_them, show_label)
 
         components = components if components else self
         if not components:
@@ -1395,28 +1648,33 @@ class Model(list):
             return
         components = [
             component for component in components if component.active]
+        for component in components:
+            self._make_position_adjuster(component, fix_them, show_label)
+
+    def _make_position_adjuster(self, component, fix_it, show_label):
+        if (component._position is not None and
+                not component._position.twin):
+            set_value = component._position._setvalue
+            get_value = component._position._getvalue
+        else:
+            return
+        # Create an AxesManager for the widget
         axis_dict = self.axes_manager.signal_axes[0].get_axis_dictionary()
-        for component in self:
-            if (component._position is not None and
-                    not component._position.twin):
-                set_value = component._position._setvalue
-                get_value = component._position._getvalue
-            else:
-                continue
-            # Create an AxesManager for the widget
-            am = AxesManager([axis_dict, ])
-            am._axes[0].navigate = True
-            try:
-                am._axes[0].value = get_value()
-            except TraitError:
-                # The value is outside of the axis range
-                continue
-            # Create the vertical line and labels
+        am = AxesManager([axis_dict, ])
+        am._axes[0].navigate = True
+        try:
+            am._axes[0].value = get_value()
+        except TraitError:
+            # The value is outside of the axis range
+            return
+        # Create the vertical line and labels
+        if show_label:
             self._position_widgets.extend((
                 DraggableVerticalLine(am),
                 DraggableLabel(am),))
-            # Store the component to reset its twin when disabling
-            # adjust position
+            # Store the component for bookkeeping, and to reset
+            # its twin when disabling adjust position
+            self._position_widgets[-2].component = component
             self._position_widgets[-1].component = component
             w = self._position_widgets[-1]
             w.string = component._get_short_description().replace(
@@ -1424,17 +1682,25 @@ class Model(list):
             w.add_axes(self._plot.signal_plot.ax)
             self._position_widgets[-2].add_axes(
                 self._plot.signal_plot.ax)
-            # Create widget -> parameter connection
-            am._axes[0].continuous_value = True
-            am._axes[0].on_trait_change(set_value, 'value')
-            # Create parameter -> widget connection
-            # This is done with a duck typing trick
-            # We disguise the AxesManager axis of Parameter by adding
-            # the _twin attribute
-            am._axes[0]._twins = set()
-            component._position.twin = am._axes[0]
+        else:
+            self._position_widgets.extend((
+                DraggableVerticalLine(am),))
+            # Store the component for bookkeeping, and to reset
+            # its twin when disabling adjust position
+            self._position_widgets[-1].component = component
+            self._position_widgets[-1].add_axes(
+                self._plot.signal_plot.ax)
+        # Create widget -> parameter connection
+        am._axes[0].continuous_value = True
+        am._axes[0].on_trait_change(set_value, 'value')
+        # Create parameter -> widget connection
+        # This is done with a duck typing trick
+        # We disguise the AxesManager axis of Parameter by adding
+        # the _twin attribute
+        am._axes[0]._twins = set()
+        component._position.twin = am._axes[0]
 
-    def disable_adjust_position(self, components=None, fix_them=True):
+    def disable_adjust_position(self):
         """Disables the interactive adjust position feature
 
         See also
@@ -1442,6 +1708,7 @@ class Model(list):
         enable_adjust_position
 
         """
+        self._adjust_position_all = False
         while self._position_widgets:
             pw = self._position_widgets.pop()
             if hasattr(pw, 'component'):

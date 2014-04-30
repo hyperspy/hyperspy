@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 #  for more information on the RPL/RAW format, see
 #  http://www.nist.gov/lispix/
@@ -77,7 +77,7 @@ rpl_keys = {
     # X-ray keys
     'ev-per-chan': float,    # usually 5 or 10 eV
     'detector-peak-width-ev': float,  # usually 150 eV
-    # Hyperspy-specific keys
+    # HyperSpy-specific keys
     'depth-origin': float,
     'depth-scale': float,
     'depth-units': unicode,
@@ -88,7 +88,7 @@ rpl_keys = {
     'height-scale': float,
     'height-units': unicode,
     'signal': unicode,
-    # EELS Hyperspy keys
+    # EELS HyperSpy keys
     'collection-angle': float,
     # TEM Hyperespy keys
     'convergence-angle': float,
@@ -281,10 +281,10 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     Alternatively, dictionary 'rpl_info' containing the information can
     be given.
 
-    Some keys are specific to Hyperspy and will be ignored by other software.
+    Some keys are specific to HyperSpy and will be ignored by other software.
 
     RPL stands for "Raw Parameter List", an ASCII text, tab delimited file in
-    which Hyperspy reads the image parameters for a raw file.
+    which HyperSpy reads the image parameters for a raw file.
 
                     TABLE OF RPL PARAMETERS
         key             type     description
@@ -301,7 +301,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
       # X-ray keys:
       ev-per-chan      int      # optional, eV per channel
       detector-peak-width-ev  int   # optional, FWHM for the Mn K-alpha line
-      # Hyperspy-specific keys
+      # HyperSpy-specific keys
       depth-origin    int      # energy offset in pixels
       depth-scale     float    # energy scaling (units per pixel)
       depth-units     str      # energy units, usually eV
@@ -625,7 +625,7 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
 def write_rpl(filename, keys_dictionary, encoding='ascii'):
     f = codecs.open(filename, 'w', encoding=encoding,
                     errors='ignore')
-    f.write(';File created by Hyperspy version %s\n' % Release.version)
+    f.write(';File created by HyperSpy version %s\n' % Release.version)
     f.write('key\tvalue\n')
     # Even if it is not necessary, we sort the keywords when writing
     # to make the rpl file more human friendly

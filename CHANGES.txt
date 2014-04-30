@@ -14,41 +14,123 @@ v0.7
 New features
 ------------
 
-* New signal, EDSSpectrum especialized in EDS data analysis. See
-  :ref:`eds_tools-label`.
+Core
+^^^^
+
 * New syntax to index the :py:class:`~.axes.AxesManager`.
-* New Signal methods: 
+* New Signal methods to transform between Signal subclasses. More information
+  :ref:`here <transforming.signal>`.
 
   + :py:meth:`~.signal.Signal.set_signal_type`
   + :py:meth:`~.signal.Signal.set_signal_origin`
   + :py:meth:`~.signal.Signal.as_image`
   + :py:meth:`~.signal.Signal.as_spectrum`
-  + :py:meth:`~.signal.Signal1DTools.estimate_peak_width`
-  + :py:meth:`~.signal.Signal1DTools.integrate_in_range`
 
-* New database of EDS lines available in the user namespace, elements_EDS.
-* The string representaion of the signal class now print the shape of the 
+* The string representation of the Signal class now prints the shape of the 
   data and includes a separator between the navigation and the signal axes e.g
   (100, 10| 5) for a signal with two navigation axes of size 100 and 10 and one
   signal axis of size 5.
-* Added several extra options to the Signal :py:meth:`~.signal.Signal.plot` 
-  method. See :ref:`visualization-label`.
-* Add support for RGBA data.
+* Add support for RGBA data. See :ref:`signal.change_dtype`.
+* The default toolkit can now be saved in the preferences.
+* Added full compatibility with the Qt toolkit that is now the default.
+* Added compatibility witn the the GTK and TK toolkits, although with no GUI
+  features.
+* It is now possible to run HyperSpy in 
+  :ref:`a headless system <headless-label>`.
+* Added a CLI to :py:meth:`~.signal.Signal1DTools.remove_background`.
+* New :py:meth:`~.signal.Signal1DTools.estimate_peak_width` method to estimate
+  peak width.
+* New methods to integrate over one axis:
+  :py:meth:`~.signal.Signal.integrate1D` and
+  :py:meth:`~.signal.Signal1DTools.integrate_in_range`.
+* New :attr:`~signal.Signal.metadata` attribute, ``Signal.binned``. Several
+  methods behave differently on binned and unbinned signals.
+  See :ref:`signal.binned`.
+* New :py:meth:`~.signal.Signal.map` method to easily transform the
+  data using a function that operates on individual signals. See
+  :ref:`signal.iterator`.
+* New :py:meth:`~.signal.Signal.get_histogram` and
+  :py:meth:`~.signal.Signal.print_summary_statistics` methods.
+* The spikes removal tool has been moved to the :class:`~._signal.Spectrum`
+  class so that it is available for all its subclasses.
+* The :py:meth:`~.signal.Signal.split` method now can automatically split back
+  stacked signals into its original part. See :ref:`signal.stack_split`.
+
+IO
+^^
+
 * Improved support for FEI's emi and ser files.
 * Improved support for Gatan's dm3 files.
-* Add Gatan's dm4 reading capabilities.
-* Hyperspy now uses the blitting capabilities of the different toolkits to
+* Add support for reading Gatan's dm4 files.
+
+Plotting
+^^^^^^^^
+
+* Use the blitting capabilities of the different toolkits to
   speed up the plotting of images.
-* Hyperspy is now fully compatible with the Qt toolkit in addition to the WX
-  toolkit. The Qt toolkit is now the default. 
-* Hyperspy can now use the GTK and TK toolkits, although without the GUI
-  features.
-* The default toolkit can now be saved in the preferences.
-* It is now possible to run hyperspy in 
-  :ref:`a headless system <headless-label>`.
-* The Signal method 
-  :py:meth:`~.signal.Signal1DTools.remove_background`
-  now can be used without the GUI.
+* Added several extra options to the Signal :py:meth:`~.signal.Signal.plot` 
+  method to customize the navigator. See :ref:`visualization-label`.
+* Add compatibility with IPython's matplotlib inline plotting. See
+  :ref:`inline_plotting`.
+* New function, :py:func:`~.drawing.utils.plot_spectra`, to plot several
+  spectra in the same figure. See :ref:`plot.spectra`.
+* New function, :py:func:`~.drawing.utils.plot_signals`, to plot several
+  signals at the same time. See :ref:`plot.signals`.
+* New function, :py:func:`~.drawing.utils.plot_histograms`, to plot the histrograms
+  of several signals at the same time. See :ref:`plot.signals`.
+
+Curve fitting
+^^^^^^^^^^^^^
+
+* The chi-squared, reduced chi-squared and the degrees of freedom are
+  computed automatically when fitting. See :ref:`model.fitting`.
+* New functionality to plot the individual components of a model. See
+  :ref:`model.visualization`.
+* New method, :py:meth:`~.model.Model.fit_component`, to help setting the 
+  starting parameters. See :ref:`model.starting`.
+
+Machine learning
+^^^^^^^^^^^^^^^^
+
+* The PCA scree plot can now be easily obtained as a Signal. See
+  :ref:`scree-plot`. 
+* The decomposition and blind source separation components can now be obtained
+  as :py:class:`~.signal.Signal` instances. See :ref:`mva.get_results`.
+* New methods to plot the decomposition and blind source separation results
+  that support n-dimensional loadings. See :ref:`mva.visualization`.
+
+Dielectric function
+^^^^^^^^^^^^^^^^^^^
+
+* New :class:`~.signal.Signal` subclass,
+  :class:`~._signals.dielectric_function.DielectricFunction`.
+
+EELS
+^^^^
+
+* New method, 
+  :meth:`~._signals.eels.EELSSpectrum.kramers_kronig_analysis` to calculate 
+  the dielectric function from low-loss electron energy-loss spectra based on
+  the Kramers-Kronig relations. See :ref:`eels.kk`.
+* New method to align the zero-loss peak,
+  :meth:`~._signals.eels.EELSSpectrum.align_zero_loss_peak`.
+
+EDS
+^^^
+
+* New signal, EDSSpectrum especialized in EDS data analysis, with subsignal 
+  for EDS with SEM and with TEM: EDSSEMSpectrum and EDSTEMSpectrum. See
+  :ref:`eds-label`.
+* New database of EDS lines available in the ``elements`` attribute of the 
+  ``hspy.utils.material`` module.
+* Adapted methods to calibrate the spectrum, the detector and the microscope.
+  See :ref:`eds_calibration-label`.
+* Specific methods to describe the sample, 
+  :py:meth:`~._signals.eds.EDSSpectrum.add_elements` and 
+  :py:meth:`~._signals.eds.EDSSpectrum.add_lines`. See :ref:`eds_sample-label`
+* New method to get the intensity of specific X-ray lines:
+  :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. See 
+  :ref:`eds_plot-label`
 
 API changes
 -----------
@@ -58,9 +140,12 @@ API changes
   hyperspy.hspy. A new hyperspy.utils module is imported instead.
 * Objects that have been renamed 
   
-  + elements -> elements_EELS
-  + Signal.navigation_indexer -> inav  
-  + Signal.signal_indexer -> isig 
+  + ``hspy.elements`` -> ``utils.material.elements``.
+  + ``Signal.navigation_indexer`` -> ``inav``.
+  + ``Signal.signal_indexer`` -> ``isig``.
+  + ``Signal.mapped_parameters`` -> ``Signal.metadata``.
+  + ``Signal.original_parameters`` -> ``Signal.original_metadata``.
+* The metadata has been reorganized. See :ref:`metadata_structure`. 
 * The following signal methods now operate out-of-place:
 
   + :py:meth:`~.signal.Signal.swap_axes`
@@ -170,7 +255,7 @@ Mayor bugs fixed
 *  The `load` function `signal_type` keyword was not passed to the readers.
 * The spikes removal tool was unable to find the next spikes when the spike was detected close to the limits of the spectrum.
 * `load` was raising an UnicodeError when the title contained non-ASCII characters.
-* In Windows `Hyperspy Here` was opening in the current folder, not in the selected folder.
+* In Windows `HyperSpy Here` was opening in the current folder, not in the selected folder.
 * The fine structure coefficients were overwritten with their std when charging values from the model.
 * Storing the parameters in the maps and all the related functionality was broken for 1D spectrum.
 * Remove_background was broken for 1D spectrum.
@@ -198,8 +283,8 @@ New features
 * Add the possibility to load a stack memory mapped (similar to ImageJ
   virtual stack).
 * Improved hyperspy starter script that now includes the possibility
-  to start Hyperspy in the new IPython notebook.
-* Add "Hyperspy notebook here" to the Windows context menu.
+  to start HyperSpy in the new IPython notebook.
+* Add "HyperSpy notebook here" to the Windows context menu.
 * The information displayed in the plots produced by Signal.plot have 
   been enhanced.
 * Added Egerton's sigmak3 and sigmal3 GOS calculations (translated 
@@ -231,7 +316,7 @@ API changes
 * Spectrum and Image are not loaded into the user namespace by default.
   The signals module is loaded instead.
 * Change the default BSS algorithm to sklearn fastica, that is now 
-  distributed with Hyperspy and used in case that sklearn is not 
+  distributed with HyperSpy and used in case that sklearn is not 
   installed e.g. when using EPDFree.
 * _slicing_axes was renamed to signal_axes.
 * _non_slicing_axes to navigation_axes.
@@ -242,7 +327,7 @@ API changes
 * EELSCLEdge.freedelta was renamed to free_energy_shift.
 * EELSCLEdge.delta was renamed to energy_shift.
 * A value of True in a mask now means that the item is masked all over 
-  Hyperspy.
+  HyperSpy.
 
 
 .. _changes_0.4.1:
@@ -261,7 +346,7 @@ New features
  * New _id_name attribute for Components and Parameters. Improvements in their __repr__ methods.
  * Component.name can now be overwriten by the user.
  * New Signal.__str__ method.
- * Include Hyperspy in The Python Package Index.
+ * Include HyperSpy in The Python Package Index.
 
 
 Bugs fixed

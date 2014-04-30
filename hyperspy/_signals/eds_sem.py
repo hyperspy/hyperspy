@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
 
 import traits.api as t
@@ -78,7 +78,7 @@ class EDSSEMSpectrum(EDSSpectrum):
 
         if hasattr(mp_ref.Detector.EDS, 'live_time'):
             mp.Acquisition_instrument.SEM.Detector.EDS.live_time = \
-                mp_ref.DetectorEDS.live_time / nb_pix
+                mp_ref.Detector.EDS.live_time / nb_pix
 
     def _load_from_TEM_param(self):
         """Transfer metadata.Acquisition_instrument.TEM to metadata.Acquisition_instrument.SEM
@@ -126,11 +126,10 @@ class EDSSEMSpectrum(EDSSpectrum):
                                   azimuth_angle=None,
                                   elevation_angle=None,
                                   energy_resolution_MnKa=None):
-        """Set the microscope parameters that are necessary to quantify
-        the spectrum.
+        """Set the microscope parameters.
 
-        If not all of them are defined, raises in interactive mode
-        raises an UI item to fill the values
+        If no arguments are given, raises an interactive mode to fill
+        the values.
 
         Parameters
         ----------
@@ -162,7 +161,7 @@ class EDSSEMSpectrum(EDSSpectrum):
             md.set_item(
                 "Acquisition_instrument.SEM.Detector.EDS.azimuth_angle",
                 azimuth_angle)
-        if tilt_stage is not None:
+        if elevation_angle is not None:
             md.set_item(
                 "Acquisition_instrument.SEM.Detector.EDS.elevation_angle",
                 elevation_angle)
@@ -171,7 +170,9 @@ class EDSSEMSpectrum(EDSSpectrum):
                 "Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa",
                 energy_resolution_MnKa)
 
-        self._set_microscope_parameters()
+        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
+               elevation_angle, energy_resolution_MnKa]) == {None}:
+            self._are_microscope_parameters_missing()
 
     @only_interactive
     def _set_microscope_parameters(self):

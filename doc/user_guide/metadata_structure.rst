@@ -4,14 +4,13 @@
 Metadata structure
 ******************
 
-The :class:`~.signal.Signal` class store metadata in the 
+The :class:`~.signal.Signal` class stores metadata in the 
 :attr:`~.signal.Signal.metadata` attribute that has a tree structure. By
 convention, the nodes labels are capitalized and the leaves are not
 capitalized.
 
-When a leave contains a quantity that is not dimensionless, the units can be
-specified by an extra leave by appending the "_units" suffix to the leave
-label.
+When a leaf contains a quantity that is not dimensionless, the units can be
+given in an extra leaf with the same label followed by the "_units" suffix.
 
 The metadata structure is represented in the following tree diagram. The
 default units are given in parentheses. Details about the leaves can be found
@@ -285,7 +284,7 @@ signal_kind
     
     A term that describes the signal type, e.g. EDX, PES... This information 
     can be used by HyperSpy to load the file as a specific signal class and 
-    therefore the naming should be standarised. Currently Hyperspy provides 
+    therefore the naming should be standarised. Currently HyperSpy provides 
     special signal class for photoemission spectroscopy and electron energy 
     loss spectroscopy and the signal_kind in these cases should be respectively 
     PES and EELS.
@@ -305,11 +304,11 @@ Noise_properties
 ----------------
 
 variance
-    type: float or numpy array
+    type: float or Signal instance.
 
-    The variance of the data. It can be a float when the noise is Gaussian or 
-    a numpy array, in which case it must have the same dimensions as
-    :attr:`~.signal.Signal.data`.
+    The variance of the data. It can be a float when the noise is Gaussian or a
+    :class:`~.signal.Signal` instance if the noise is heteroscedastic, in which
+    case it must have the same dimensions as :attr:`~.signal.Signal.data`.
 
 Variance_linear_model
 ^^^^^^^^^^^^^^^^^^^^^

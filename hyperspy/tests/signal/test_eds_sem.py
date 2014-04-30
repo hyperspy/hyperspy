@@ -1,19 +1,19 @@
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
 import numpy as np
@@ -87,14 +87,21 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.SEM.beam_energy = 0.4
         s.set_lines((), only_one=False, only_lines=False)
         assert_equal(s.metadata.Sample.xray_lines, ['Ti_Ll'])
-#        s.add_lines()
-#        results.append(mp.Sample.xray_lines[1])
-#        mp.Acquisition_instrument.SEM.beam_energy = 10.0
-#        s.set_elements(['Al','Ni'])
-#        results.append(mp.Sample.xray_lines[1])
-#        s.add_elements(['Fe'])
-#        results.append(mp.Sample.xray_lines[1])
-#        assert_equal(results, ['Al_Ka','Ni','Ni_Ka','Ni_La','Fe_La'])
+
+    def test_add_lines_auto(self):
+        s = self.signal
+        s.axes_manager.signal_axes[0].scale = 1e-2
+        s.set_elements(["Ti", "Al"])
+        s.set_lines(['Al_Ka'])
+        assert_equal(s.metadata.Sample.xray_lines, ['Al_Ka', 'Ti_Ka'])
+
+        del s.metadata.Sample.xray_lines
+        s.set_elements(['Al', 'Ni'])
+        s.add_lines()
+        assert_equal(s.metadata.Sample.xray_lines, ['Al_Ka', 'Ni_Ka'])
+        s.metadata.Acquisition_instrument.SEM.beam_energy = 10.0
+        s.set_lines([])
+        assert_equal(s.metadata.Sample.xray_lines, ['Al_Ka', 'Ni_La'])
 
     def test_default_param(self):
         s = self.signal
@@ -169,12 +176,26 @@ class Test_get_lines_intentisity:
                                              integration_window_factor=5)[0]
         assert_true(np.allclose(24.99516, sAl.data, atol=1e-3))
 
+    def test_eV(self):
+        s = self.signal
+        energy_axis = s.axes_manager.signal_axes[0]
+        energy_axis.scale = 40
+        energy_axis.units = 'eV'
+
+        sAl = s.get_lines_intensity(["Al_Ka"],
+                                    plot_result=False,
+                                    integration_window_factor=5)[0]
+        assert_true(np.allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3))
+
 
 class Test_tools_bulk:
 
     def setUp(self):
         s = EDSSEMSpectrum(np.ones(1024))
         s.metadata.Acquisition_instrument.SEM.beam_energy = 5.0
+        energy_axis = s.axes_manager.signal_axes[0]
+        energy_axis.scale = 0.01
+        energy_axis.units = 'keV'
         s.set_elements(['Al', 'Zn'])
         s.add_lines()
         self.signal = s

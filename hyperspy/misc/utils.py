@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
 import inspect
@@ -259,10 +259,15 @@ class DictionaryTreeBrowser(object):
             return item
 
     def __setattr__(self, key, value):
+        slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
-            value = DictionaryTreeBrowser(value)
+            if self.has_item(slugified_key):
+                self.get_item(slugified_key).add_dictionary(value)
+                return
+            else:
+                value = DictionaryTreeBrowser(value)
         super(DictionaryTreeBrowser, self).__setattr__(
-            slugify(key, valid_variable_name=True),
+            slugified_key,
             {'key': key, 'value': value})
 
     def __len__(self):
@@ -720,7 +725,9 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                                      shape=stack_shape,)
 
                 signal = type(obj)(data=data)
-                signal.axes_manager._axes[1:] = obj.axes_manager._axes
+                signal.axes_manager._axes[
+                    1:] = copy.deepcopy(
+                    obj.axes_manager._axes)
                 axis_name = new_axis_name
                 axis_names = [axis_.name for axis_ in
                               signal.axes_manager._axes[1:]]
@@ -731,7 +738,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                 eaxis = signal.axes_manager._axes[0]
                 eaxis.name = axis_name
                 eaxis.navigate = True  # This triggers _update_parameters
-                signal.metadata = obj.metadata
+                signal.metadata = copy.deepcopy(obj.metadata)
                 # Get the title from 1st object
                 signal.metadata.General.title = (
                     "Stack of " + obj.metadata.General.title)

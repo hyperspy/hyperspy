@@ -121,3 +121,15 @@ def test_none_metadata():
         "hdf5_files",
         "none_metadata.hdf5"))
     assert_is(s.metadata.should_be_None, None)
+
+
+def test_rgba16():
+    s = load(os.path.join(
+        my_path,
+        "hdf5_files",
+        "test_rgba16.hdf5"))
+    data = np.load(os.path.join(
+        my_path,
+        "npy_files",
+        "test_rgba16.npy"))
+    assert_true((s.data == data).all())

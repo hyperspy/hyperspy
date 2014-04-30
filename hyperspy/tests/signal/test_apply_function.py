@@ -16,7 +16,7 @@ class TestImage:
 
     def test_constant_sigma(self):
         im = self.im
-        im.apply_function(gaussian_filter, sigma=1)
+        im.map(gaussian_filter, sigma=1)
         assert_true(np.allclose(im.data, np.array(
             [[[1.68829507, 2.2662213, 2.84414753],
               [3.42207377, 4., 4.57792623],
@@ -28,7 +28,7 @@ class TestImage:
 
     def test_constant_sigma_navdim0(self):
         im = self.im[0]
-        im.apply_function(gaussian_filter, sigma=1)
+        im.map(gaussian_filter, sigma=1)
         assert_true(np.allclose(im.data, np.array(
             [[1.68829507, 2.2662213, 2.84414753],
              [3.42207377, 4., 4.57792623],
@@ -38,8 +38,8 @@ class TestImage:
         im = self.im
         sigmas = signals.Signal(np.array([0, 1]))
         sigmas.axes_manager.set_signal_dimension(0)
-        im.apply_function(gaussian_filter,
-                          sigma=sigmas)
+        im.map(gaussian_filter,
+               sigma=sigmas)
         assert_true(np.allclose(im.data, np.array(
             [[[0., 1., 2.],
                 [3., 4., 5.],
@@ -51,7 +51,7 @@ class TestImage:
 
     def test_axes_argument(self):
         im = self.im
-        im.apply_function(rotate, angle=45, reshape=False)
+        im.map(rotate, angle=45, reshape=False)
         assert_true(np.allclose(im.data, np.array(
             [[[0., 2.23223305, 0.],
               [0.46446609, 4., 7.53553391],
@@ -69,7 +69,7 @@ class TestSpectrum:
 
     def test_constant_sigma(self):
         s = self.s
-        s.apply_function(gaussian_filter1d, sigma=1)
+        s.map(gaussian_filter1d, sigma=1)
         assert_true(np.allclose(s.data, np.array(
             ([[0.42207377, 1., 1.57792623],
               [3.42207377, 4., 4.57792623]]))))

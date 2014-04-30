@@ -1,10 +1,10 @@
 ﻿Introduction
 ============
 
-What is Hyperspy
+What is HyperSpy
 ----------------
 
-Hyperspy is an open source Python library which provides tools to facilitate
+HyperSpy is an open source Python library which provides tools to facilitate
 the interactive data analysis of multidimensional datasets that can be
 described as multidimensional arrays of a given signal (e.g. a 2D array of
 spectra a.k.a spectrum image).
@@ -29,10 +29,10 @@ because by collaborating we advance faster, mainly by avoiding reinventing the
 wheel. Idealistic as it may sound, many other people think like this and it is
 thanks to them that this project exists.
 
-Hyperspy's character
+HyperSpy's character
 --------------------
 
-Hyperspy has been written by a subset of the people who use it, a particularity
+HyperSpy has been written by a subset of the people who use it, a particularity
 that sets its character:
   
 * The main way of interacting with the program is through the command line.
@@ -47,14 +47,14 @@ that sets its character:
     * Writing and maintaining user
       interfaces (UIs) require time from the developers and the current ones
       prefer to spend their time adding new features. Maybe in the future we
-      will provide a fully featured GUI, but Hyperspy will always remain fully
+      will provide a fully featured GUI, but HyperSpy will always remain fully
       scriptable.
 
 * That said, UIs are provided where there is a clear productivity advantage in
   doing so.
   For example, there are UIs to perform windows quantification, data smoothing,
   adjusting the preferences, loading data...
-* We see Hyperspy as a collaborative project, and therefore we care
+* We see HyperSpy as a collaborative project, and therefore we care
   about making it easy for others to contribute to it. In other words,
   we want to minimise the “user becomes developer” threshold. To achieve this
   goal we:
