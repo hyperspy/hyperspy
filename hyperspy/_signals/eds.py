@@ -559,7 +559,7 @@ class EDSSpectrum(Spectrum):
 
         return TOA
 
-    def plot_Xray_lines(self,
+    def plot_xray_lines(self,
                         xray_lines=None,
                         only_lines=("a", "b"),
                         only_one=False,
