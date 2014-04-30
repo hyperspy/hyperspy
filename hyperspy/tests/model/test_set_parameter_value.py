@@ -82,9 +82,9 @@ class TestSetParameterInModel:
         g2.enable_pixel_level_switching = True
         g3.enable_pixel_level_switching = True
         m.set_component_active_value(False)
-        assert_true(np.all(np.logical_not(g1.active_map)))
-        assert_true(np.all(np.logical_not(g2.active_map)))
-        assert_true(np.all(np.logical_not(g3.active_map)))
+        assert_true(np.all(np.logical_not(g1._active_array)))
+        assert_true(np.all(np.logical_not(g2._active_array)))
+        assert_true(np.all(np.logical_not(g3._active_array)))
 
     def test_set_active_value2(self):
         m = self.model
@@ -95,9 +95,9 @@ class TestSetParameterInModel:
         g2.enable_pixel_level_switching = True
         g3.enable_pixel_level_switching = True
         m.set_component_active_value(False, component_list=[g1, g2])
-        assert_true(np.all(np.logical_not(g1.active_map)))
-        assert_true(np.all(np.logical_not(g2.active_map)))
-        assert_true(np.all(g3.active_map))
+        assert_true(np.all(np.logical_not(g1._active_array)))
+        assert_true(np.all(np.logical_not(g2._active_array)))
+        assert_true(np.all(g3._active_array))
 
     def test_set_active_value3(self):
         m = self.model
@@ -110,7 +110,7 @@ class TestSetParameterInModel:
         m.set_component_active_value(False,
                                      component_list=[g1],
                                      only_current=True)
-        g1.active_map[0][0] = not g1.active_map[0][0]
-        assert_true(np.all(g1.active_map))
-        assert_true(np.all(g2.active_map))
-        assert_true(np.all(g3.active_map))
+        g1._active_array[0][0] = not g1._active_array[0][0]
+        assert_true(np.all(g1._active_array))
+        assert_true(np.all(g2._active_array))
+        assert_true(np.all(g3._active_array))

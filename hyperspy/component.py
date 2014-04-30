@@ -444,7 +444,7 @@ class Component(object):
         self.init_parameters(parameter_name_list)
         self._update_free_parameters()
         self.active = True
-        self.active_map = None
+        self._active_array = None
         self.isbackground = False
         self.convolved = True
         self.parameters = tuple(self.parameters)
@@ -479,13 +479,13 @@ class Component(object):
                     RuntimeWarning)
                 return
             # Store value at current position
-            self._create_active_map()
+            self._create_active_array()
             self._store_active_value_in_array(self._active)
             self._pixel_level_switching = True
         else:  # Turn off
             # Get the value at the current position before switching it off
             self._active = self.active
-            self.active_map = None
+            self._active_array = None
             self._pixel_level_switching = False
 
     @property
@@ -528,11 +528,11 @@ class Component(object):
     def active(self):
         if self.enable_pixel_level_switching is True:
             # The following should set
-            self.active = self.active_map[self._axes_manager.indices[::-1]]
+            self.active = self._active_array[self._axes_manager.indices[::-1]]
         return self._active
 
     def _store_active_value_in_array(self, value):
-        self.active_map[self._axes_manager.indices[::-1]] = value
+        self._active_array[self._axes_manager.indices[::-1]] = value
 
     @active.setter
     def active(self, arg):
@@ -611,17 +611,17 @@ class Component(object):
 
             i += lenght
 
-    def _create_active_map(self):
+    def _create_active_array(self):
         shape = self._axes_manager._navigation_shape_in_array
         if len(shape) == 1 and shape[0] == 0:
             shape = [1, ]
-        if (not isinstance(self.active_map, np.ndarray)
-                or self.active_map.shape != shape):
-            self.active_map = np.ones(shape, dtype=bool)
+        if (not isinstance(self._active_array, np.ndarray)
+                or self._active_array.shape != shape):
+            self._active_array = np.ones(shape, dtype=bool)
 
     def _create_arrays(self):
         if self.enable_pixel_level_switching:
-            self._create_active_map()
+            self._create_active_array()
         for parameter in self.parameters:
             parameter._create_array()
 

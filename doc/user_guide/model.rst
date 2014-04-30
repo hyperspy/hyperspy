@@ -163,18 +163,18 @@ back to `True`.
         >>> g2 = components.Gaussian()
         >>> m.extend([g1,g2])
         >>> g1.enable_pixel_level_switching = True
-        >>> g1.active_map
+        >>> g1._active_array
         array([ True,  True,  True,  True,  True,  True,  True,  True,  True,  True], dtype=bool)
-        >>> g2.active_map is None
+        >>> g2._active_array is None
         True
         >>> m.set_component_active_value(False)
-        >>> g1.active_map
+        >>> g1._active_array
         array([False, False, False, False, False, False, False, False, False, False], dtype=bool)
         >>> m.set_component_active_value(True, only_current=True)
-        >>> g1.active_map
+        >>> g1._active_array
         array([ True, False, False, False, False, False, False, False, False, False], dtype=bool)
         >>> g1.enable_pixel_level_switching = False
-        >>> g1.active_map is None
+        >>> g1._active_array is None
         True
  
 

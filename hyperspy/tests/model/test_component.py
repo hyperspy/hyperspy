@@ -18,7 +18,7 @@ class TestMultidimensionalActive:
         c._axes_manager.indices = (1, 1)
         c.active = True
         c.enable_pixel_level_switching = True
-        nose.tools.assert_true(np.all(c.active_map))
+        nose.tools.assert_true(np.all(c._active_array))
 
     def test_enable_pixel_switching_current_off(self):
         c = self.c
@@ -32,7 +32,7 @@ class TestMultidimensionalActive:
         c.active = True
         c.enable_pixel_level_switching = True
         c.enable_pixel_level_switching = False
-        nose.tools.assert_is(c.active_map, None)
+        nose.tools.assert_is(c._active_array, None)
 
     def test_disable_pixel_switching_current_on(self):
         c = self.c
