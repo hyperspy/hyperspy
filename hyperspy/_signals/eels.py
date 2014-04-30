@@ -405,7 +405,7 @@ class EELSSpectrum(Spectrum):
         threshold.data[:] = saxis.index2value(inflexion)
         if isinstance(inflexion, np.ndarray):
             threshold.data[inflexion == 0] = np.nan
-        else: # Single spectrum
+        else:  # Single spectrum
             if inflexion == 0:
                 threshold.data[:] = np.nan
         del s

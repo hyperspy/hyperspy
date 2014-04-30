@@ -42,7 +42,6 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         gauss2.centre.value = 5
         s.data[:] = (gauss.function(energy_axis.axis) +
                      gauss2.function(energy_axis.axis))
-#        s.add_poissonian_noise()
         self.signal = s
 
     def test_min_in_window_with_smoothing(self):
@@ -52,6 +51,14 @@ class Test_Estimate_Elastic_Scattering_Threshold:
             number_of_points=5,
             tol=0.00001)
         nose.tools.assert_true(np.allclose(thr.data, 2.5))
+
+    def test_min_in_window_without_smoothing_single_spectrum(self):
+        s = self.signal[0, 0]
+        thr = s.estimate_elastic_scattering_threshold(
+            window=5,
+            number_of_points=0,
+            tol=0.001)
+        nose.tools.assert_true(np.allclose(thr.data, 2.49))
 
     def test_min_in_window_without_smoothing(self):
         s = self.signal
