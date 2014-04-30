@@ -152,7 +152,7 @@ back to `True`.
     In multidimensional signals it is possible to store the value of the
     :py:attr:`~.component.Component.active` attribute at each navigation index.
     To enable this feature for a given component set the
-    :py:attr:`~.component.Component.enable_pixel_level_switching` attribute to
+    :py:attr:`~.component.Component.active_is_multidimensional` attribute to
     `True`. 
 
     .. code-block:: python
@@ -162,7 +162,7 @@ back to `True`.
         >>> g1 = components.Gaussian()
         >>> g2 = components.Gaussian()
         >>> m.extend([g1,g2])
-        >>> g1.enable_pixel_level_switching = True
+        >>> g1.active_is_multidimensional = True
         >>> g1._active_array
         array([ True,  True,  True,  True,  True,  True,  True,  True,  True,  True], dtype=bool)
         >>> g2._active_array is None
@@ -173,7 +173,7 @@ back to `True`.
         >>> m.set_component_active_value(True, only_current=True)
         >>> g1._active_array
         array([ True, False, False, False, False, False, False, False, False, False], dtype=bool)
-        >>> g1.enable_pixel_level_switching = False
+        >>> g1.active_is_multidimensional = False
         >>> g1._active_array is None
         True
  

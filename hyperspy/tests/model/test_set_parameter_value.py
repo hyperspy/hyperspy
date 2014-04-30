@@ -78,9 +78,9 @@ class TestSetParameterInModel:
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        g1.enable_pixel_level_switching = True
-        g2.enable_pixel_level_switching = True
-        g3.enable_pixel_level_switching = True
+        g1.active_is_multidimensional = True
+        g2.active_is_multidimensional = True
+        g3.active_is_multidimensional = True
         m.set_component_active_value(False)
         assert_true(np.all(np.logical_not(g1._active_array)))
         assert_true(np.all(np.logical_not(g2._active_array)))
@@ -91,9 +91,9 @@ class TestSetParameterInModel:
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        g1.enable_pixel_level_switching = True
-        g2.enable_pixel_level_switching = True
-        g3.enable_pixel_level_switching = True
+        g1.active_is_multidimensional = True
+        g2.active_is_multidimensional = True
+        g3.active_is_multidimensional = True
         m.set_component_active_value(False, component_list=[g1, g2])
         assert_true(np.all(np.logical_not(g1._active_array)))
         assert_true(np.all(np.logical_not(g2._active_array)))
@@ -104,9 +104,9 @@ class TestSetParameterInModel:
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        g1.enable_pixel_level_switching = True
-        g2.enable_pixel_level_switching = True
-        g3.enable_pixel_level_switching = True
+        g1.active_is_multidimensional = True
+        g2.active_is_multidimensional = True
+        g3.active_is_multidimensional = True
         m.set_component_active_value(False,
                                      component_list=[g1],
                                      only_current=True)

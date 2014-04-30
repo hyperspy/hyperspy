@@ -454,39 +454,39 @@ class Component(object):
         self._position = None
         self.model = None
 
-    _pixel_level_switching = False
+    _active_is_multidimensional = False
     _active = True
 
     @property
-    def enable_pixel_level_switching(self):
-        return self._pixel_level_switching
+    def active_is_multidimensional(self):
+        return self._active_is_multidimensional
 
-    @enable_pixel_level_switching.setter
-    def enable_pixel_level_switching(self, value):
+    @active_is_multidimensional.setter
+    def active_is_multidimensional(self, value):
         if not isinstance(value, bool):
             raise ValueError('Only boolean values are permitted')
 
-        if value == self.enable_pixel_level_switching:
+        if value == self.active_is_multidimensional:
             warnings.warn(
-                'Pixel level component switching is already %s for %s' %
+                '`active_is_multidimensional` already %s for %s' %
                 (str(value), self.name), RuntimeWarning)
             return
 
         if value:  # Turn on
             if self._axes_manager.navigation_size < 2:
                 warnings.warn(
-                    'Only a single pixel in the signal, skipping',
+                    '`navigation_size` < 2, skipping',
                     RuntimeWarning)
                 return
             # Store value at current position
             self._create_active_array()
             self._store_active_value_in_array(self._active)
-            self._pixel_level_switching = True
+            self._active_is_multidimensional = True
         else:  # Turn off
             # Get the value at the current position before switching it off
             self._active = self.active
             self._active_array = None
-            self._pixel_level_switching = False
+            self._active_is_multidimensional = False
 
     @property
     def name(self):
@@ -526,7 +526,7 @@ class Component(object):
 
     @property
     def active(self):
-        if self.enable_pixel_level_switching is True:
+        if self.active_is_multidimensional is True:
             # The following should set
             self.active = self._active_array[self._axes_manager.indices[::-1]]
         return self._active
@@ -539,7 +539,7 @@ class Component(object):
         if self._active == arg:
             return
         self._active = arg
-        if self.enable_pixel_level_switching is True:
+        if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
 
         for f in self.connected_functions:
@@ -620,7 +620,7 @@ class Component(object):
             self._active_array = np.ones(shape, dtype=bool)
 
     def _create_arrays(self):
-        if self.enable_pixel_level_switching:
+        if self.active_is_multidimensional:
             self._create_active_array()
         for parameter in self.parameters:
             parameter._create_array()
@@ -630,7 +630,7 @@ class Component(object):
             parameter.store_current_value_in_array()
 
     def fetch_stored_values(self, only_fixed=False):
-        if self.enable_pixel_level_switching:
+        if self.active_is_multidimensional:
             # Store the stored value in self._active and trigger the connected
             # functions.
             self.active = self.active

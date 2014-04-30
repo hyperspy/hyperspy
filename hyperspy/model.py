@@ -1930,7 +1930,7 @@ class Model(list):
 
         for _component in component_list:
             _component.active = value
-            if _component.enable_pixel_level_switching:
+            if _component.active_is_multidimensional:
                 if only_current:
                     _component._active_array[
                         self.axes_manager.indices[
