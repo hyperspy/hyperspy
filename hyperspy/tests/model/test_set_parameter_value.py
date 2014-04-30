@@ -115,14 +115,3 @@ class TestSetParameterInModel:
         assert_true(np.all(g2.active_map))
         assert_true(np.all(g3.active_map))
 
-    def test_enable_pixel_switching(self):
-        m = self.model
-        g1 = self.g1
-        g2 = self.g2
-        g3 = self.g3
-        g1.enable_pixel_level_switching = True
-        g2.enable_pixel_level_switching = True
-        g2.enable_pixel_level_switching = False
-        assert_true(np.all(g1.active_map))
-        assert_true(g2.active_map is None)
-        assert_true(g3.active_map is None)
