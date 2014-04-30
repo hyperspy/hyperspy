@@ -1,23 +1,23 @@
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
 import numpy as np
-from nose.tools import assert_true, assert_equal, assert_not_equal
+import nose.tools
 
 import hyperspy.hspy as hp
 
@@ -51,7 +51,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
             window=5,
             number_of_points=5,
             tol=0.00001)
-        assert_true(np.allclose(thr.data, 2.5))
+        nose.tools.assert_true(np.allclose(thr.data, 2.5))
 
     def test_min_in_window_without_smoothing(self):
         s = self.signal
@@ -59,7 +59,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
             window=5,
             number_of_points=0,
             tol=0.001)
-        assert_true(np.allclose(thr.data, 2.49))
+        nose.tools.assert_true(np.allclose(thr.data, 2.49))
 
     def test_min_not_in_window(self):
         # If I use a much lower window, this is the value that has to be
@@ -67,7 +67,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         s = self.signal
         data = s.estimate_elastic_scattering_threshold(window=1.5,
                                                        tol=0.001).data
-        assert_true(np.all(np.isnan(data)))
+        nose.tools.assert_true(np.all(np.isnan(data)))
 
 
 class TestEstimateZLPCentre():
@@ -80,8 +80,8 @@ class TestEstimateZLPCentre():
 
     def test_estimate_zero_loss_peak_centre(self):
         s = self.spectrum
-        assert_true(np.allclose(s.estimate_zero_loss_peak_centre().data,
-                                np.arange(100, 101, 0.1)))
+        nose.tools.assert_true(np.allclose(s.estimate_zero_loss_peak_centre().data,
+                                           np.arange(100, 101, 0.1)))
 
 
 class TestAlignZLP():
@@ -106,14 +106,14 @@ class TestAlignZLP():
         s = self.spectrum
         s.align_zero_loss_peak(calibrate=True, print_stats=False)
         zlpc = s.estimate_zero_loss_peak_centre()
-        assert_true(np.allclose(zlpc.data.mean(), 0))
-        assert_true(np.allclose(zlpc.data.std(), 0))
+        nose.tools.assert_true(np.allclose(zlpc.data.mean(), 0))
+        nose.tools.assert_true(np.allclose(zlpc.data.std(), 0))
 
     def test_align_zero_loss_peak_calibrate_false(self):
         s = self.spectrum
         s.align_zero_loss_peak(calibrate=False, print_stats=False)
         zlpc = s.estimate_zero_loss_peak_centre()
-        assert_true(np.allclose(zlpc.data.std(), 0))
+        nose.tools.assert_true(np.allclose(zlpc.data.std(), 0))
 
     def test_also_aligns(self):
         s = self.spectrum
@@ -122,5 +122,27 @@ class TestAlignZLP():
                                print_stats=False,
                                also_align=[s2])
         zlpc = s2.estimate_zero_loss_peak_centre()
-        assert_equal(zlpc.data.mean(), 0)
-        assert_equal(zlpc.data.std(), 0)
+        nose.tools.assert_equal(zlpc.data.mean(), 0)
+        nose.tools.assert_equal(zlpc.data.std(), 0)
+
+
+class TestPowerLawExtrapolation:
+
+    def setUp(self):
+        s = hp.signals.EELSSpectrum(0.1 * np.arange(50, 250, 0.5) ** -3.)
+        s.metadata.Signal.binned = False
+        s.axes_manager[-1].offset = 50
+        s.axes_manager[-1].scale = 0.5
+        self.s = s
+
+    def test_unbinned(self):
+        sc = self.s.isig[:300]
+        s = sc.power_law_extrapolation(extrapolation_size=100)
+        nose.tools.assert_true(np.allclose(s.data, self.s.data))
+
+    def test_binned(self):
+        self.s.data *= self.s.axes_manager[-1].scale
+        self.s.metadata.Signal.binned = True
+        sc = self.s.isig[:300]
+        s = sc.power_law_extrapolation(extrapolation_size=100)
+        nose.tools.assert_true(np.allclose(s.data, self.s.data))

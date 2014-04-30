@@ -1,19 +1,19 @@
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
 import os
@@ -194,6 +194,36 @@ class Test3D_Navigate_0_and_1:
         assert_equal(s.axes_manager.signal_axes[0].size, 1)
         assert_equal(s.axes_manager.signal_axes[0].scale,
                      self.signal.axes_manager.signal_axes[0].scale)
+
+    def test_signal_indexer_slice_variance_signal(self):
+        s1 = self.signal
+        s1.estimate_poissonian_noise_variance()
+        s1_1 = s1.isig[1:2]
+        assert_true((s1.metadata.Signal.Noise_properties.variance.data[
+                    :, :, 1:2] == s1_1.metadata.Signal.Noise_properties.variance.data).all())
+
+    def test_navigation_indexer_slice_variance_signal(self):
+        s1 = self.signal
+        s1.estimate_poissonian_noise_variance()
+        s1_1 = s1.inav[1:2]
+        assert_true((s1.metadata.Signal.Noise_properties.variance.data[
+                    :, 1:2] == s1_1.metadata.Signal.Noise_properties.variance.data).all())
+
+    def test_signal_indexer_slice_variance_float(self):
+        s1 = self.signal
+        s1.metadata.set_item("Signal.Noise_properties.variance", 1.2)
+        s1_1 = s1.isig[1:2]
+        assert_equal(
+            s1.metadata.Signal.Noise_properties.variance,
+            s1_1.metadata.Signal.Noise_properties.variance)
+
+    def test_navigation_indexer_slice_variance_float(self):
+        s1 = self.signal
+        s1.metadata.set_item("Signal.Noise_properties.variance", 1.2)
+        s1_1 = s1.inav[1:2]
+        assert_equal(
+            s1.metadata.Signal.Noise_properties.variance,
+            s1_1.metadata.Signal.Noise_properties.variance)
 
     def test_dimension_when_indexing(self):
         s = self.signal[0]

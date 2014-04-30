@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
 import os.path
@@ -56,6 +56,7 @@ from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
 from hyperspy.misc import spectrum_tools
+from hyperspy.misc import rgb_tools
 from hyperspy.gui.tools import IntegrateArea
 from hyperspy import components
 from hyperspy.misc.utils import underline
@@ -563,7 +564,7 @@ class Signal1DTools(object):
         if max_shift is not None:
             if interpolate is True:
                 max_shift *= ip
-            shift_array.clip(a_min=-max_shift, a_max=max_shift)
+            shift_array.clip(-max_shift, max_shift)
         if interpolate is True:
             shift_array /= ip
         shift_array *= axis.scale
@@ -664,10 +665,7 @@ class Signal1DTools(object):
         area.
 
         The energy range can either be selected through a GUI or the command
-        line.  When `signal_range` is "interactive" the operation is performed
-        in-place, i.e. the original spectrum is replaced. Otherwise the
-        operation is performed not-in-place, i.e. a new object is returned with
-        the result of the integration.
+        line.
 
         Parameters
         ----------
@@ -680,7 +678,7 @@ class Signal1DTools(object):
 
         Returns
         -------
-        integrated_spectrum : {Signal subclass, None}
+        integrated_spectrum : Signal subclass
 
         See Also
         --------
@@ -689,11 +687,11 @@ class Signal1DTools(object):
         Examples
         --------
 
-        Using the GUI (in-place operation).
+        Using the GUI
 
         >>> s.integrate_in_range()
 
-        Using the CLI (not-in-place operation).
+        Using the CLI
 
         >>> s_int = s.integrate_in_range(signal_range=(560,None))
 
@@ -710,18 +708,19 @@ class Signal1DTools(object):
         """
 
         if signal_range == 'interactive':
-            ia = IntegrateArea(self, signal_range)
+            self_copy = self.deepcopy()
+            ia = IntegrateArea(self_copy, signal_range)
             ia.edit_traits()
-            integrated_spectrum = None
+            integrated_spectrum = self_copy
         else:
             integrated_spectrum = self._integrate_in_range_commandline(
                 signal_range)
-        return(integrated_spectrum)
+        return integrated_spectrum
 
     def _integrate_in_range_commandline(self, signal_range):
         e1 = signal_range[0]
         e2 = signal_range[1]
-        integrated_spectrum = self[..., e1:e2].integrate_simpson(-1)
+        integrated_spectrum = self[..., e1:e2].integrate1D(-1)
         return(integrated_spectrum)
 
     @only_interactive
@@ -831,20 +830,15 @@ class Signal1DTools(object):
             smoother.edit_traits()
 
     def _remove_background_cli(self, signal_range, background_estimator):
-        spectra = self.deepcopy()
-        maxval = self.axes_manager.navigation_size
-        pbar = progressbar(maxval=maxval)
-        for index, spectrum in enumerate(spectra):
-            background_estimator.estimate_parameters(
-                spectrum,
-                signal_range[0],
-                signal_range[1],
-                only_current=True)
-            spectrum.data -= background_estimator.function(
-                spectrum.axes_manager.signal_axes[0].axis).astype(spectra.data.dtype)
-            pbar.update(index)
-        pbar.finish()
-        return(spectra)
+        from hyperspy.model import Model
+        model = Model(self)
+        model.append(background_estimator)
+        background_estimator.estimate_parameters(
+            self,
+            signal_range[0],
+            signal_range[1],
+            only_current=False)
+        return self - model.as_signal()
 
     def remove_background(
             self,
@@ -898,7 +892,7 @@ class Signal1DTools(object):
 
             spectra = self._remove_background_cli(
                 signal_range, background_estimator)
-            return(spectra)
+            return spectra
 
     @interactive_range_selector
     def crop_spectrum(self, left_value=None, right_value=None,):
@@ -1957,7 +1951,7 @@ class MVATools(object):
             no_nans=no_nans,
             per_row=per_row)
 
-    def export_decomposition_results(sezalf, comp_ids=None,
+    def export_decomposition_results(self, comp_ids=None,
                                      folder=None,
                                      calibrate=True,
                                      factor_prefix='factor',
@@ -2316,7 +2310,7 @@ class MVATools(object):
         Signal}
             See `plot` documentation for details.
         factors_dim, loadings_dim: int
-            Currently Hyperspy cannot plot signals of dimension higher than
+            Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the BSS results when the
             factors or the loadings have signal dimension greater than 2
             we can view the data as spectra(images) by setting this parameter
@@ -2357,7 +2351,7 @@ class MVATools(object):
         Signal}
             See `plot` documentation for details.
         factors_dim, loadings_dim : int
-            Currently Hyperspy cannot plot signals of dimension higher than
+            Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the BSS results when the
             factors or the loadings have signal dimension greater than 2
             we can view the data as spectra(images) by setting this parameter
@@ -2472,15 +2466,22 @@ class Signal(MVA,
         folding.unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
+        mp.Signal.binned = False
         self.original_metadata = DictionaryTreeBrowser()
         self.tmp_parameters = DictionaryTreeBrowser()
 
     def __repr__(self):
+        if self.metadata._HyperSpy.Folding.unfolded:
+            unfolded = "unfolded "
+        else:
+            unfolded = ""
         string = '<'
         string += self.__class__.__name__
         string += ", title: %s" % self.metadata.General.title
-        string += ", dimensions: %s" % (
+        string += ", %sdimensions: %s" % (
+            unfolded,
             self.axes_manager._get_dimension_str())
+
         string += '>'
 
         return string
@@ -2545,6 +2546,11 @@ class Signal(MVA,
                 _signal._remove_axis(axis.index_in_axes_manager)
 
         _signal.data = _signal.data[array_slices]
+        if self.metadata.has_item('Signal.Noise_properties.variance'):
+            if isinstance(self.metadata.Signal.Noise_properties.variance, Signal):
+                _signal.metadata.Signal.Noise_properties.variance = self.metadata.Signal.Noise_properties.variance.__getitem__(
+                    _orig_slices,
+                    isNavigation)
         _signal.get_dimensions_from_data()
 
         return _signal
@@ -2864,11 +2870,14 @@ class Signal(MVA,
             navigator) or navigation_shape + signal_shape must be equal
             to the navigator_shape of the current object (for a dynamic
             navigator).
+            If the signal dtype is RGB or RGBA this parameters has no
+            effect and is always "slider".
 
         axes_manager : {None, axes_manager}
             If None `axes_manager` is used.
 
         """
+
         if self._plot is not None:
             try:
                 self._plot.close()
@@ -2879,6 +2888,11 @@ class Signal(MVA,
 
         if axes_manager is None:
             axes_manager = self.axes_manager
+        if self.is_rgbx is True:
+            if axes_manager.navigation_size < 2:
+                navigator = None
+            else:
+                navigator = "slider"
         if axes_manager.signal_dimension == 0:
             self._plot = mpl_he.MPL_HyperExplorer()
         elif axes_manager.signal_dimension == 1:
@@ -3283,13 +3297,14 @@ class Signal(MVA,
 
         if mode == 'auto' and hasattr(self.original_metadata, 'stack_elements'):
             for i, spectrum in enumerate(splitted):
-                stack_keys = self.original_metadata.stack_elements.keys()
-                spectrum.metadata = self.original_metadata.stack_elements[
-                    stack_keys[i]]['metadata']
-                spectrum.original_metadata = self.original_metadata.stack_elements[
-                    stack_keys[i]]['original_metadata']
-                spectrum.metadata.General.title = spectrum.metadata.General.title[
-                    9:]
+                spectrum.metadata = copy.deepcopy(
+                    self.original_metadata.stack_elements[
+                        'element' +
+                        str(i)]['metadata'])
+                spectrum.original_metadata = copy.deepcopy(self.original_metadata.stack_elements['element' +
+                                                                                                 str(i)]['original_metadata'])
+                spectrum.metadata.General.title = self.original_metadata.stack_elements['element' +
+                                                                                        str(i)].metadata.General.title
 
         return splitted
 
@@ -3362,6 +3377,10 @@ class Signal(MVA,
         for axis in to_remove:
             self.axes_manager.remove(axis.index_in_axes_manager)
         self.data = self.data.squeeze()
+        if self.metadata.has_item('Signal.Noise_properties.variance'):
+            variance = self.metadata.Signal.Noise_properties.variance
+            if isinstance(variance, Signal):
+                variance._unfold(steady_axes, unfolded_axis)
 
     def unfold(self):
         """Modifies the shape of the data by unfolding the signal and
@@ -3409,6 +3428,10 @@ class Signal(MVA,
             folding.original_shape = None
             folding.original_axes_manager = None
             folding.unfolded = False
+            if self.metadata.has_item('Signal.Noise_properties.variance'):
+                variance = self.metadata.Signal.Noise_properties.variance
+                if isinstance(variance, Signal):
+                    variance.fold()
 
     def _make_sure_data_is_contiguous(self):
         if self.data.flags['C_CONTIGUOUS'] is False:
@@ -3711,6 +3734,42 @@ class Signal(MVA,
         s._remove_axis(axis.index_in_axes_manager)
         return s
 
+    def integrate1D(self, axis):
+        """Integrate the signal over the given axis.
+
+        The integration is performed using Simpson's rule if
+        `metadata.Signal.binned` is False and summation over the given axis if
+        True.
+
+        Parameters
+        ----------
+        axis : {int | string}
+           The axis can be specified using the index of the axis in
+           `axes_manager` or the axis name.
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        sum_in_mask, mean
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.var(-1).data.shape
+        (64,64)
+
+        """
+        if self.metadata.Signal.binned is False:
+            return self.integrate_simpson(axis)
+        else:
+            return self.sum(axis)
+
     def indexmax(self, axis):
         """Returns a signal with the index of the maximum along an axis.
 
@@ -3841,7 +3900,7 @@ class Signal(MVA,
                                             " histogram")
         return hist_spec
 
-    def apply_function(self, function, **kwargs):
+    def map(self, function, **kwargs):
         """Apply a function to the signal data at all the coordinates.
 
         The function must operate on numpy arrays and the output *must have the
@@ -3863,6 +3922,13 @@ class Signal(MVA,
         keyword arguments : any valid keyword argument
             All extra keyword arguments are passed to the
 
+        Notes
+        -----
+        This method is similar to Python's :func:`map` that can also be utilize
+        with a :class:`Signal` instance for similar purposes. However, this
+        method has the advantage of being faster because it iterates the numpy
+        array instead of the :class:`Signal`.
+
         Examples
         --------
         Apply a gaussian filter to all the images in the dataset. The sigma
@@ -3870,7 +3936,7 @@ class Signal(MVA,
 
         >>> import scipy.ndimage
         >>> im = signals.Image(np.random.random((10, 64, 64)))
-        >>> im.apply_function(scipy.ndimage.gaussian_filter, sigma=2.5)
+        >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)
 
         Apply a gaussian filter to all the images in the dataset. The sigmal
         parameter is variable.
@@ -3878,7 +3944,7 @@ class Signal(MVA,
         >>> im = signals.Image(np.random.random((10, 64, 64)))
         >>> sigmas = signals.Signal(np.linspace(2,5,10))
         >>> sigmas.axes_manager.set_signal_dimension(0)
-        >>> im.apply_function(scipy.ndimage.gaussian_filter, sigma=sigmas)
+        >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
         """
         # Sepate ndkwargs
@@ -3901,7 +3967,13 @@ class Signal(MVA,
         # If the function has an axis argument and the signal dimension is 1,
         # we suppose that it can operate on the full array and we don't
         # interate over the coordinates.
-        fargs = inspect.getargspec(function).args
+        try:
+            fargs = inspect.getargspec(function).args
+        except TypeError:
+            # This is probably a Cython function that is not supported by
+            # inspect.
+            fargs = []
+
         if not ndkwargs and (self.axes_manager.signal_dimension == 1 and
                              "axis" in fargs):
             kwargs['axis'] = \
@@ -3951,13 +4023,25 @@ class Signal(MVA,
         return copy.deepcopy(self)
 
     def change_dtype(self, dtype):
-        """Change the data type
+        """Change the data type.
 
         Parameters
         ----------
-
         dtype : str or dtype
-            Typecode or data-type to which the array is cast.
+            Typecode or data-type to which the array is cast. In
+            addition to all standard numpy dtypes HyperSpy
+            supports four extra dtypes for RGB images:
+            "rgb8", "rgba8", "rgb16" and "rgba16". Changing from
+            and to any rgbx dtype is more constrained than most
+            other dtype conversions. To change to a rgbx dtype
+            the signal `record_by` must be "spectrum",
+            `signal_dimension` must be 3(4) for rgb(rgba) dtypes
+            and the dtype must be uint8(uint16) for rgbx8(rgbx16).
+            After conversion `record_by` becomes `image` and the
+            spectra dimension is removed. The dtype of images of
+            dtype rgbx8(rgbx16) can only be changed to uint8(uint16)
+            and the `record_by` becomes "spectrum".
+
 
         Examples
         --------
@@ -3971,70 +4055,136 @@ class Signal(MVA,
         array([ 1.,  2.,  3.,  4.,  5.])
 
         """
+        if not isinstance(dtype, np.dtype):
+            if dtype in rgb_tools.rgb_dtypes:
+                if self.metadata.Signal.record_by != "spectrum":
+                    raise AttributeError("Only spectrum signals can be converted "
+                                         "to RGB images.")
+                    if "rgba" in dtype:
+                        if self.axes_manager.signal_size != 4:
+                            raise AttributeError(
+                                "Only spectra with signal_size equal to 4 can be"
+                                "converted to RGBA images")
+                    else:
+                        if self.axes_manager.signal_size != 3:
+                            raise AttributeError(
+                                "Only spectra with signal_size equal to 3 can be"
+                                " converted to RGBA images")
+                if "8" in dtype and self.data.dtype.name != "uint8":
+                    raise AttributeError(
+                        "Only signals with dtype uint8 can be converted to rgb8 images")
+                elif "16" in dtype and self.data.dtype.name != "uint16":
+                    raise AttributeError(
+                        "Only signals with dtype uint16 can be converted to rgb16 images")
+                dtype = rgb_tools.rgb_dtypes[dtype]
+                self.data = rgb_tools.regular_array2rgbx(self.data)
+                self.axes_manager.remove(-1)
+                self.metadata.Signal.record_by = "image"
+                self._assign_subclass()
+                return
+            else:
+                dtype = np.dtype(dtype)
+        if rgb_tools.is_rgbx(self.data) is True:
+            ddtype = self.data.dtype.fields["B"][0]
 
-        self.data = self.data.astype(dtype)
+            if ddtype != dtype:
+                raise ValueError(
+                    "It is only possibile to change to %s." %
+                    ddtype)
+            self.data = rgb_tools.rgbx2regular_array(self.data)
+            self.get_dimensions_from_data()
+            self.metadata.Signal.record_by = "spectrum"
+            self.axes_manager[-1 + 2j].name = "RGB index"
+            self._assign_subclass()
+            return
+        else:
+            self.data = self.data.astype(dtype)
 
     def estimate_poissonian_noise_variance(self,
-                                           dc=None,
-                                           gaussian_noise_var=None):
-        """Variance estimation supposing Poissonian noise.
+                                           expected_value=None,
+                                           gain_factor=None,
+                                           gain_offset=None,
+                                           correlation_factor=None):
+        """Estimate the poissonian noise variance of the signal.
+
+        The variance is stored in the
+        ``metadata.Signal.Noise_properties.variance`` attribute.
+
+        A poissonian noise  variance is equal to the expected value. With the
+        default arguments, this method simply sets the variance attribute to
+        the given `expected_value`. However, more generally (although then
+        noise is not strictly poissonian), the variance may be proportional to
+        the expected value. Moreover, when the noise is a mixture of white
+        (gaussian) and poissonian noise, the variance is described by the
+        following linear model:
+
+            .. math::
+
+                \mathrm{Var}[X] = (a * \mathrm{E}[X] + b) * c
+
+        Where `a` is the `gain_factor`, `b` is the `gain_offset` (the gaussian
+        noise variance) and `c` the `correlation_factor`. The correlation
+        factor accounts for correlation of adjacent signal elements that can
+        be modeled as a convolution with a gaussian point spread function.
+
 
         Parameters
         ----------
-        dc : None or numpy array
-            If None the SI is used to estimate its variance.
-            Otherwise, the
-            provided array will be used.
-        Note
-        ----
-        The gain_factor and gain_offset from the aquisition parameters
-        are used
+        expected_value : None or Signal instance.
+            If None, the signal data is taken as the expected value. Note that
+            this may be inaccurate where `data` is small.
+        gain_factor, gain_offset, correlation_factor: None or float.
+            All three must be positive. If None, take the values from
+            ``metadata.Signal.Noise_properties.Variance_linear_model`` if
+            defined. Otherwise suppose poissonian noise i.e. ``gain_factor=1``,
+            ``gain_offset=0``, ``correlation_factor=1``. If not None, the
+            values are stored in
+            ``metadata.Signal.Noise_properties.Variance_linear_model``.
 
         """
-        gain_factor = 1
-        gain_offset = 0
-        correlation_factor = 1
-        if not self.metadata.has_item("Signal.Noise_properties.Variance_linear_model"):
-            print("No Variance estimation parameters found in mapped "
-                  "parameters. The variance will be estimated supposing"
-                  " perfect poissonian noise")
+        if expected_value is None:
+            dc = self.data.copy()
+        else:
+            dc = expected_value.data.copy()
         if self.metadata.has_item(
-                'Signal.Noise_properties.Variance_linear_model.gain_factor'):
-            gain_factor = self.metadata.Signal.Noise_properties.Variance_linear_model.gain_factor
-        if self.metadata.has_item(
-                'Signal.Noise_properties.Variance_linear_model.gain_offset'):
-            gain_offset = self.metadata.Signal.Noise_properties.Variance_linear_model.gain_offset
-        if self.metadata.has_item(
-                'Signal.Noise_properties.Variance_linear_model.correlation_factor'):
-            correlation_factor = \
-                self.metadata.Signal.Noise_properties.Variance_linear_model.correlation_factor
-        print "Gain factor = ", gain_factor
-        print "Gain offset = ", gain_offset
-        print "Correlation factor = ", correlation_factor
-        if dc is None:
-            dc = self.data
+                "Signal.Noise_properties.Variance_linear_model"):
+            vlm = self.metadata.Signal.Noise_properties.Variance_linear_model
+        else:
+            self.metadata.add_node(
+                "Signal.Noise_properties.Variance_linear_model")
+            vlm = self.metadata.Signal.Noise_properties.Variance_linear_model
+
+        if gain_factor is None:
+            if not vlm.has_item("gain_factor"):
+                vlm.gain_factor = 1
+            gain_factor = vlm.gain_factor
+
+        if gain_offset is None:
+            if not vlm.has_item("gain_offset"):
+                vlm.gain_offset = 0
+            gain_offset = vlm.gain_offset
+
+        if correlation_factor is None:
+            if not vlm.has_item("correlation_factor"):
+                vlm.correlation_factor = 1
+            correlation_factor = vlm.correlation_factor
+
+        if gain_offset < 0:
+            raise ValueError("`gain_offset` must be positive.")
+        if gain_factor < 0:
+            raise ValueError("`gain_factor` must be positive.")
+        if correlation_factor < 0:
+            raise ValueError("`correlation_factor` must be positive.")
+
+        variance = (dc * gain_factor + gain_offset) * correlation_factor
+        # The lower bound of the variance is the gaussian noise.
+        variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
+        variance = type(self)(variance,
+                              axes=self.axes_manager._get_axes_dicts())
+        variance.metadata.General.title = ("Variance of " +
+                                           self.metadata.General.title)
         self.metadata.set_item(
-            "Signal.Noise_properties.variance",
-            dc *
-            gain_factor +
-            gain_offset)
-        if self.metadata.Signal.Noise_properties.variance.min() < 0:
-            if gain_offset == 0 and gaussian_noise_var is None:
-                raise ValueError("The variance estimation results"
-                                 "in negative values"
-                                 "Maybe the gain_offset is wrong?")
-                self.metadata.Signal.Noise_properties.variance = None
-                return
-            elif gaussian_noise_var is None:
-                print "Clipping the variance to the gain_offset value"
-                minimum = 0 if gain_offset < 0 else gain_offset
-                self.metadata.Signal.Noise_properties.variance = np.clip(self.metadata.Signal.Noise_properties.variance, minimum,
-                                                                         np.Inf)
-            else:
-                print "Clipping the variance to the gaussian_noise_var"
-                self.metadata.Signal.Noise_properties.variance = np.clip(self.metadata.Signal.Noise_properties.variance,
-                                                                         gaussian_noise_var,
-                                                                         np.Inf)
+            "Signal.Noise_properties.variance", variance)
 
     def get_current_signal(self, auto_title=True, auto_filename=True):
         """Returns the data at the current coordinates as a Signal subclass.
@@ -4193,11 +4343,14 @@ class Signal(MVA,
         mp = self.metadata
         current_class = self.__class__
         self.__class__ = hyperspy.io.assign_signal_subclass(
-            record_by=mp.Signal.record_by if "Signal.record_by" in mp
+            record_by=mp.Signal.record_by
+            if "Signal.record_by" in mp
             else self._record_by,
-            signal_type=mp.Signal.signal_type if "signal_type" in mp.Signal
+            signal_type=mp.Signal.signal_type
+            if "Signal.signal_type" in mp
             else self._signal_type,
-            signal_origin=mp.Signal.signal_origin if "Signal.signal_origin" in mp.Signal
+            signal_origin=mp.Signal.signal_origin
+            if "Signal.signal_origin" in mp
             else self._signal_origin)
         self.__init__(**self._to_dictionary())
 
@@ -4213,15 +4366,15 @@ class Signal(MVA,
 
         Parameters
         ----------
-        signal_type : {"EELS", "EDS_TEM", "EDS_SEM", str}
+        signal_type : {"EELS", "EDS_TEM", "EDS_SEM", "DielectricFunction"}
             Currently there are special features for "EELS" (electron
             energy-loss spectroscopy), "EDS_TEM" (energy dispersive X-rays of
             thin samples, normally obtained in a transmission electron
-            microscope) and "EDS_SEM" (energy dispersive X-rays of
-            thick samples, normally obtained in a scanning electron
-            microscope) so setting the signal_type to the correct acronym
-            is highly advisable when analyzing any signal for which Hyperspy
-            provides extra features. Even if Hyperspy does not provide extra
+            microscope), "EDS_SEM" (energy dispersive X-rays of thick samples,
+            normally obtained in a scanning electron microscope) and
+            "DielectricFuction". Setting the signal_type to the correct acronym
+            is highly advisable when analyzing any signal for which HyperSpy
+            provides extra features. Even if HyperSpy does not provide extra
             features for the signal that you are analyzing, it is good practice
             to set signal_type to a value that best describes the data signal
             type.
@@ -4289,6 +4442,18 @@ class Signal(MVA,
         print("Q3:\t" + formatter % np.percentile(data,
                                                   75))
         print("max:\t" + formatter % data.max())
+
+    @property
+    def is_rgba(self):
+        return rgb_tools.is_rgba(self.data)
+
+    @property
+    def is_rgb(self):
+        return rgb_tools.is_rgb(self.data)
+
+    @property
+    def is_rgbx(self):
+        return rgb_tools.is_rgbx(self.data)
 
 # Implement binary operators
 for name in (

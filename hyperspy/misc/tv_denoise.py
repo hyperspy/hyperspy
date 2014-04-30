@@ -1,5 +1,5 @@
 # Original file from scikits-images
-# Modified by the Hyperspy developers to add _tv_denoise_1d
+# Modified by the HyperSpy developers to add _tv_denoise_1d
 
 
 import numpy as np

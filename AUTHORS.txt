@@ -1,5 +1,5 @@
-Hyperspy is maintened by `an active community of developers <https://github.com/hyperspy/hyperspy/contributors>`_.
+HyperSpy is maintened by `an active community of developers <https://github.com/hyperspy/hyperspy/contributors>`_.
 
-The Hyperspy logo was created by Stefano Mazzucco. It is a modified version of `this figure <http://en.wikipedia.org/wiki/File:Hypercube.svg>`_ and the same GFDL license applies.
+The HyperSpy logo was created by Stefano Mazzucco. It is a modified version of `this figure <http://en.wikipedia.org/wiki/File:Hypercube.svg>`_ and the same GFDL license applies.
  
 The website is a fork of the Ipython website.

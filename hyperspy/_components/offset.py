@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
 import numpy as np
@@ -76,19 +76,23 @@ class Offset(Component):
 
         """
         axis = signal.axes_manager.signal_axes[0]
-        energy2index = axis._get_index
-        i1 = energy2index(x1) if energy2index(x1) else 0
-        i2 = energy2index(x2) if energy2index(x2) else len(axis.axis) - 1
+        binned = signal.metadata.Signal.binned
+        i1, i2 = axis.value_range_to_indices(x1, x2)
 
         if only_current is True:
             self.offset.value = signal()[i1:i2].mean()
+            if binned is True:
+                self.offset.value /= axis.scale
             return True
         else:
-            if self.A.map is None:
+            if self.offset.map is None:
                 self._create_arrays()
             dc = signal.data
             gi = [slice(None), ] * len(dc.shape)
             gi[axis.index_in_array] = slice(i1, i2)
             self.offset.map['values'][:] = dc[gi].mean(axis.index_in_array)
+            if binned is True:
+                self.offset.map['values'] /= axis.scale
             self.offset.map['is_set'][:] = True
+            self.fetch_stored_values()
             return True

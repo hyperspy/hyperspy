@@ -44,6 +44,14 @@ hyperspy.tests.io.test_msa module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.io.test_tiff module
+----------------------------------
+
+.. automodule:: hyperspy.tests.io.test_tiff
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

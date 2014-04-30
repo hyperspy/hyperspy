@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2013 The Hyperspy developers
+# Copyright 2007-2013 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 from scipy import constants
@@ -26,6 +26,10 @@ from hyperspy.misc.eels.tools import eels_constant
 
 class DielectricFunction(Spectrum):
     _signal_type = "DielectricFunction"
+
+    def __init__(self, *args, **kwards):
+        Spectrum.__init__(self, *args, **kwards)
+        self.metadata.Signal.binned = False
 
     def get_number_of_effective_electrons(self, nat, cumulative=False):
         """Compute the number of effective electrons using the Bethe f-sum

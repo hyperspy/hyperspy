@@ -1,26 +1,27 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 
 import numpy as np
-
 from scipy.misc import imread, imsave
+
+from hyperspy.misc.rgb_tools import regular_array2rgbx
 
 # Plugin characteristics
 # ----------------------
@@ -64,9 +65,11 @@ def file_reader(filename, **kwds):
     if len(dc.shape) > 2:
         # It may be a grayscale image that was saved in the RGB or RGBA
         # format
-        if (dc[:, :, 1] == dc[:,:, 2]).all() and \
-                            (dc[:, :, 1] == dc[:,:, 2]).all():
-            dc = dc[:, :, 0]
+        if (dc[:,:, 1] == dc[:,:, 2]).all() and \
+                            (dc[:,:, 1] == dc[:,:, 2]).all():
+            dc = dc[:,:, 0]
+        else:
+            dc = regular_array2rgbx(dc)
     return [{'data': dc,
              'metadata':
              {

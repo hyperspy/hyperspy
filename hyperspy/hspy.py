@@ -1,20 +1,47 @@
+"""
+
+All public packages, functions and classes are in this package. This package is
+automatically imported in the user namespace when starting HyperSpy using the
+starting script e.g. by typing ``hyperspy`` in a console, using the context
+menu entries or using the links in the ``Start Menu``, the
+:mod:`~hyperspy.hspy` package is imported in the user namespace. When using
+HyperSpy as a library, it is reccommended to import the :mod:`~hyperspy.hspy`
+package as follows:
+
+    from hyperspy import hspy as hs
+
+Functions:
+
+    create_model
+        Create a model for curve fitting.
+
+    get_configuration_directory_path
+        Return the configuration directory path.
+
+    load
+        Load data into Signal instaces from supported files.
+
+    preferences
+        Preferences class instance to configure the default value of different
+        parameters. It has a CLI and a GUI that can be started by execting its
+        `gui` method i.e. `preferences.gui()`.
+
+
+The :mod:`~hyperspy.hspy` package contains the following subpackages:
+
+    :mod:`~hyperspy.hspy.signals`
+        Specialized Signal instances.
+
+    :mod:`~hyperspy.hspy.utils`
+        Functions that operate of Signal instances and other goodies.
+
+    :mod:`~hyperspy.hspy.components`
+        Components that can be used to create a model for curve fitting.
+
+For more details see their doctrings.
+
+"""
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
-#
-# This file is part of  Hyperspy.
-#
-#  Hyperspy is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-#  Hyperspy is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import matplotlib.pyplot as plt
 plt.rcParams['image.cmap'] = 'gray'

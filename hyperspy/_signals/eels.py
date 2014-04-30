@@ -1,40 +1,37 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numbers
 
 import numpy as np
-import matplotlib.pyplot as plt
 import traits.api as t
 from scipy import constants
 
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
-from hyperspy.gui.egerton_quantification import SpikesRemoval
 from hyperspy.decorators import only_interactive
 from hyperspy.gui.eels import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.misc.progressbar import progressbar
 from hyperspy.components import PowerLaw
-from hyperspy.misc.utils import isiterable, closest_power_of_two
-from hyperspy.misc.utils import isiterable, underline
+from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
 
 
@@ -51,6 +48,7 @@ class EELSSpectrum(Spectrum):
                 hasattr(self.metadata.Sample, 'elements'):
             print('Elemental composition read from file')
             self.add_elements(self.metadata.Sample.elements)
+        self.metadata.Signal.binned = True
 
     def add_elements(self, elements, include_pre_edges=False):
         """Declare the elemental composition of the sample.
@@ -292,7 +290,7 @@ class EELSSpectrum(Spectrum):
         self._check_signal_dimension_equals_one()
 
         if isinstance(threshold, numbers.Number):
-            I0 = self.isig[:threshold].integrate_simpson(-1)
+            I0 = self.isig[:threshold].integrate1D(-1)
             I0.axes_manager.set_signal_dimension(
                 min(2, self.axes_manager.navigation_dimension))
 
@@ -312,7 +310,7 @@ class EELSSpectrum(Spectrum):
                     I0[self.axes_manager.indices] = np.nan
                 else:
                     I0[self.axes_manager.indices].data[:] = (
-                        s[:threshold_].integrate_simpson(-1).data)
+                        s[:threshold_].integrate1D(-1).data)
                 pbar.update(i)
             pbar.finish()
             threshold.axes_manager._set_axis_attribute_values(
@@ -465,9 +463,9 @@ class EELSSpectrum(Spectrum):
         # TODO: Write units tests
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
-        total_intensity = self.integrate_simpson(axis.index_in_array).data
+        total_intensity = self.integrate1D(axis.index_in_array).data
         if zlp is not None:
-            I0 = zlp.integrate_simpson(axis.index_in_array).data
+            I0 = zlp.integrate1D(axis.index_in_array).data
         else:
             I0 = self.estimate_elastic_scattering_intensity(
                 threshold=threshold,).data
@@ -590,6 +588,10 @@ class EELSSpectrum(Spectrum):
         """
         self._check_signal_dimension_equals_one()
         orig_cl_size = self.axes_manager.signal_axes[0].size
+
+        if threshold is None:
+            threshold = ll.estimate_elastic_scattering_threshold()
+
         if extrapolate_coreloss is True:
             cl = self.power_law_extrapolation(
                 window_size=20,
@@ -714,63 +716,6 @@ class EELSSpectrum(Spectrum):
             pbar.finish()
 
         return ds
-
-    def _spikes_diagnosis(self, signal_mask=None,
-                          navigation_mask=None):
-        """Plots a histogram to help in choosing the threshold for
-        spikes removal.
-
-        Parameters
-        ----------
-        signal_mask: boolean array
-            Restricts the operation to the signal locations not marked
-            as True (masked)
-        navigation_mask: boolean array
-            Restricts the operation to the navigation locations not
-            marked as True (masked).
-
-        See also
-        --------
-        spikes_removal_tool
-
-        """
-        self._check_signal_dimension_equals_one()
-        dc = self.data
-        if signal_mask is not None:
-            dc = dc[..., ~signal_mask]
-        if navigation_mask is not None:
-            dc = dc[~navigation_mask, :]
-        der = np.abs(np.diff(dc, 1, -1))
-        plt.figure()
-        plt.hist(np.ravel(der.max(-1)), 100)
-        plt.xlabel('Threshold')
-        plt.ylabel('Counts')
-        plt.draw()
-
-    def spikes_removal_tool(self, signal_mask=None,
-                            navigation_mask=None):
-        """Graphical interface to remove spikes from EELS spectra.
-
-        Parameters
-        ----------
-        signal_mask: boolean array
-            Restricts the operation to the signal locations not marked
-            as True (masked)
-        navigation_mask: boolean array
-            Restricts the operation to the navigation locations not
-            marked as True (masked)
-
-        See also
-        --------
-        _spikes_diagnosis,
-
-        """
-        self._check_signal_dimension_equals_one()
-        sr = SpikesRemoval(self,
-                           navigation_mask=navigation_mask,
-                           signal_mask=signal_mask)
-        sr.edit_traits()
-        return sr
 
     def _are_microscope_parameters_missing(self):
         """Check if the EELS parameters necessary to calculate the GOS
@@ -905,8 +850,15 @@ class EELSSpectrum(Spectrum):
             _A = pl.A.map['values']
             _A[_r <= 0] = 0
             pl.A.map['values'] = _A
+        # If the signal is binned we need to bin the extrapolated power law
+        # what, in a first approximation, can be done by multiplying by the
+        # axis step size.
+        if self.metadata.Signal.binned is True:
+            factor = s.axes_manager[-1].scale
+        else:
+            factor = 1
         s.data[..., axis.size:] = (
-            pl.A.map['values'][..., np.newaxis] *
+            factor * pl.A.map['values'][..., np.newaxis] *
             s.axes_manager.signal_axes[0].axis[np.newaxis, axis.size:] ** (
                 -pl.r.map['values'][..., np.newaxis]))
         return s
@@ -1052,7 +1004,7 @@ class EELSSpectrum(Spectrum):
                 if zlp.axes_manager.signal_dimension == 0:
                     i0 = zlp.data
                 else:
-                    i0 = zlp.data.sum(axis.index_in_array)
+                    i0 = zlp.integrate1D(axis.index_in_axes_manager).data
             else:
                 raise ValueError('The ZLP signal dimensions are not '
                                  'compatible with the dimensions of the '

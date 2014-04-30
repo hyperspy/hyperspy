@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
 
 import numpy as np
@@ -36,6 +36,70 @@ class EDSSpectrum(Spectrum):
         if self.metadata.Signal.signal_type == 'EDS':
             print('The microscope type is not set. Use '
                   'set_signal_type(\'EDS_TEM\') or set_signal_type(\'EDS_SEM\')')
+        self.metadata.Signal.binned = True
+
+    def _get_line_energy(self, Xray_line, FWHM_MnKa=None):
+        """
+        Get the line energy and the energy resolution of a Xray line.
+
+        The return values are in the same units than the signal axis
+
+        Parameters
+        ----------
+
+        Xray_line : strings
+            Valid element X-ray lines e.g. Fe_Kb.
+
+        FWHM_MnKa: {None, float, 'auto'}
+            The energy resolution of the detector in eV
+            if 'auto', used the one in
+            'self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa'
+
+        Returns
+        ------
+
+        float: the line energy, if FWHM_MnKa is None
+        (float,float): the line energy and the energy resolution, if FWHM_MnKa is not None
+        """
+
+        units_name = self.axes_manager.signal_axes[0].units
+        element, line = utils_eds._get_element_and_line(Xray_line)
+
+        if FWHM_MnKa == 'auto':
+            if self.metadata.Signal.signal_type == 'EDS_SEM':
+                FWHM_MnKa = self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa
+            elif self.metadata.Signal.signal_type == 'EDS_TEM':
+                FWHM_MnKa = self.metadata.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa
+            else:
+                raise NotImplementedError(
+                    "This method only works for EDS_TEM or EDS_SEM signals. "
+                    "You can use `set_signal_type(\"EDS_TEM\")` or"
+                    "`set_signal_type(\"EDS_SEM\")` to convert to one of these"
+                    "signal types.")
+
+        if units_name == 'eV':
+            line_energy = elements_db[element]['Atomic_properties']['Xray_lines'][
+                line]['energy (keV)'] * 1000
+            if FWHM_MnKa is not None:
+                line_FWHM = utils_eds.get_FWHM_at_Energy(FWHM_MnKa,
+                                                         line_energy / 1000) * 1000
+        elif units_name == 'keV':
+            line_energy = elements_db[element]['Atomic_properties']['Xray_lines'][
+                line]['energy (keV)']
+            if FWHM_MnKa is not None:
+                line_FWHM = utils_eds.get_FWHM_at_Energy(FWHM_MnKa,
+                                                         line_energy)
+        else:
+            raise ValueError(
+                "%s is not a valid units for the energy axis. "
+                "Only `eV` and `keV` are supported. "
+                "If `s` is the variable containing this EDS spectrum:\n "
+                ">>> s.axes_manager.signal_axes[0].units = \'keV\' \n"
+                % (units_name))
+        if FWHM_MnKa is None:
+            return line_energy
+        else:
+            return line_energy, line_FWHM
 
     def sum(self, axis):
         """Sum the data over the given axis.
@@ -150,7 +214,7 @@ class EDSSpectrum(Spectrum):
         if not isiterable(elements) or isinstance(elements, basestring):
             raise ValueError(
                 "Input must be in the form of a list. For example, "
-                "if `s` is the variable containing this EELS spectrum:\n "
+                "if `s` is the variable containing this EDS spectrum:\n "
                 ">>> s.add_elements(('C',))\n"
                 "See the docstring for more information.")
         if "Sample.elements" in self.metadata:
@@ -266,8 +330,7 @@ class EDSSpectrum(Spectrum):
                         print("%s line added," % line)
                     else:
                         print("%s line already in." % line)
-                    if (elements_db[element]['Atomic_properties']['Xray_lines'][subshell]['energy (keV)'] >
-                            end_energy):
+                    if (self._get_line_energy(element + '_' + subshell) > end_energy):
                         print("Warning: %s %s is above the data energy range."
                               % (element, subshell))
                 else:
@@ -285,7 +348,7 @@ class EDSSpectrum(Spectrum):
                     only_one=only_one,
                     only_lines=only_lines)
                 if new_lines:
-                    self.add_lines(new_lines)
+                    self.add_lines(list(new_lines) + list(lines))
         self.add_elements(elements)
         if not hasattr(self.metadata, 'Sample'):
             self.metadata.add_node('Sample')
@@ -337,16 +400,13 @@ class EDSSpectrum(Spectrum):
             for subshell in elements_db[element]['Atomic_properties']['Xray_lines'].keys():
                 if only_lines and subshell not in only_lines:
                     continue
-                if (elements_db[element]['Atomic_properties']['Xray_lines'][subshell]['energy (keV)'] <
-                        end_energy):
-
+                if (self._get_line_energy(element + '_' + subshell) < end_energy):
                     element_lines.append(element + "_" + subshell)
             if only_one and element_lines:
             # Choose the best line
                 select_this = -1
                 for i, line in enumerate(element_lines):
-                    if (elements_db[element]['Atomic_properties']['Xray_lines']
-                            [line.split("_")[1]]['energy (keV)'] < beam_energy / 2):
+                    if (self._get_line_energy(line) < beam_energy / 2):
                         select_this = i
                         break
                 element_lines = [element_lines[select_this], ]
@@ -435,27 +495,15 @@ class EDSSpectrum(Spectrum):
                 raise ValueError(
                     "Not X-ray line, set them with `add_elements`")
 
-        if self.metadata.Signal.signal_type == 'EDS_SEM':
-            FWHM_MnKa = self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa
-        elif self.metadata.Signal.signal_type == 'EDS_TEM':
-            FWHM_MnKa = self.metadata.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa
-        else:
-            raise NotImplementedError(
-                "This method only works for EDS_TEM or EDS_SEM signals. "
-                "You can use `set_signal_type(\"EDS_TEM\")` or"
-                "`set_signal_type(\"EDS_SEM\")` to convert to one of these"
-                "signal types.")
         intensities = []
         # test 1D Spectrum (0D problem)
             #signal_to_index = self.axes_manager.navigation_dimension - 2
         for Xray_line in xray_lines:
-            element, line = utils_eds._get_element_and_line(Xray_line)
-            line_energy = elements_db[element]['Atomic_properties']['Xray_lines'][
-                line]['energy (keV)']
-            line_FWHM = utils_eds.get_FWHM_at_Energy(FWHM_MnKa, line_energy)
+            line_energy, line_FWHM = self._get_line_energy(Xray_line,
+                                                           FWHM_MnKa='auto')
             det = integration_window_factor * line_FWHM / 2.
             img = self[..., line_energy - det:line_energy + det
-                       ].sum(-1)
+                       ].integrate1D(-1)
             img.metadata.General.title = (
                 'Intensity of %s at %.2f %s from %s' %
                 (Xray_line,
