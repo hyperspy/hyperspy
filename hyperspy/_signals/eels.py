@@ -372,7 +372,8 @@ class EELSSpectrum(Spectrum):
         -------
         threshold : Signal
             A Signal of the same dimension as the input spectrum
-            navigation space containing the estimated threshold.
+            navigation space containing the estimated threshold. Where the
+            threshold couldn't be estimated the value is set to nan.
 
         See Also
         --------
@@ -401,10 +402,12 @@ class EELSSpectrum(Spectrum):
             tol = np.max(np.abs(s.data).min(axis.index_in_array))
         saxis = s.axes_manager[-1]
         inflexion = (np.abs(s.data) <= tol).argmax(saxis.index_in_array)
-        print tol
-        print inflexion
         threshold.data[:] = saxis.index2value(inflexion)
-        threshold.data[inflexion == 0] = np.nan
+        if isinstance(inflexion, np.ndarray):
+            threshold.data[inflexion == 0] = np.nan
+        else: # Single spectrum
+            if inflexion == 0:
+                threshold.data[:] = np.nan
         del s
 
         # Create spectrum image, stop and return value
