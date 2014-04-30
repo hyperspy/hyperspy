@@ -514,7 +514,7 @@ class EDSSpectrum(Spectrum):
     def plot_Xray_lines(self,
                         xray_lines=None,
                         only_lines=("a", "b"),
-                        only_one=False,                        
+                        only_one=False,
                         **kwargs):
         """
         Annotate a spec.plot() with the name of the selected X-ray
