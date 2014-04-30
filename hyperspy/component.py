@@ -472,7 +472,7 @@ class Component(object):
                 (str(value), self.name), RuntimeWarning)
             return
 
-        if value: # Turn on
+        if value:  # Turn on
             if self._axes_manager.navigation_size < 2:
                 warnings.warn(
                     'Only a single pixel in the signal, skipping',
@@ -482,7 +482,7 @@ class Component(object):
             self._create_active_map()
             self._store_active_value_in_array(self._active)
             self._pixel_level_switching = True
-        else: # Turn off
+        else:  # Turn off
             # Get the value at the current position before switching it off
             self._active = self.active
             self.active_map = None
@@ -616,7 +616,7 @@ class Component(object):
         if len(shape) == 1 and shape[0] == 0:
             shape = [1, ]
         if (not isinstance(self.active_map, np.ndarray)
-            or self.active_map.shape != shape):
+                or self.active_map.shape != shape):
             self.active_map = np.ones(shape, dtype=bool)
 
     def _create_arrays(self):

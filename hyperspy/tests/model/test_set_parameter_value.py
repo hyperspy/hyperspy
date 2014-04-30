@@ -114,4 +114,3 @@ class TestSetParameterInModel:
         assert_true(np.all(g1.active_map))
         assert_true(np.all(g2.active_map))
         assert_true(np.all(g3.active_map))
-
