@@ -386,11 +386,11 @@ class EELSSpectrum(Spectrum):
 
         # Progress Bar
         axis = self.axes_manager.signal_axes[0]
-        max_index = min(axis.value2index(window), axis.size - 1)
-        min_index = max(0, axis.value2index(start))
+        min_index, max_index = axis.value_range_to_indices(start,
+                                                           start + window)
         if max_index < min_index + 10:
             raise ValueError("Please select a bigger window")
-        s = self[..., min_index: max_index].deepcopy()
+        s = self.isig[min_index:max_index].deepcopy()
         if number_of_points:
             s.smooth_savitzky_golay(polynomial_order=polynomial_order,
                                     number_of_points=number_of_points,
@@ -401,7 +401,9 @@ class EELSSpectrum(Spectrum):
             tol = np.max(np.abs(s.data).min(axis.index_in_array))
         saxis = s.axes_manager[-1]
         inflexion = (np.abs(s.data) <= tol).argmax(saxis.index_in_array)
-        threshold.data[:] = saxis.offset + saxis.scale * inflexion
+        print tol
+        print inflexion
+        threshold.data[:] = saxis.index2value(inflexion)
         threshold.data[inflexion == 0] = np.nan
         del s
 
