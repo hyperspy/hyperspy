@@ -512,9 +512,9 @@ class EDSSpectrum(Spectrum):
         return TOA
 
     def plot_Xray_lines(self,
-                        Xray_lines=None,
-                        only_one=False,
+                        xray_lines=None,
                         only_lines=("a", "b"),
+                        only_one=False,                        
                         **kwargs):
         """
         Annotate a spec.plot() with the name of the selected X-ray
@@ -522,12 +522,13 @@ class EDSSpectrum(Spectrum):
 
         Parameters
         ----------
-        Xray_lines: None or list of string
+        xray_lines: {None, 'from_elements', list of string}
             If None,
-            if `mapped.parameters.Sample.elements.Xray_lines` contains a
+            if `mapped.parameters.Sample.elements.xray_lines` contains a
             list of lines use those.
-            If `mapped.parameters.Sample.elements.Xray_lines` is undefined
-            or empty but `mapped.parameters.Sample.elements` is defined,
+            If `mapped.parameters.Sample.elements.xray_lines` is undefined
+            or empty or if xray_lines equals 'from_elements' and
+            `mapped.parameters.Sample.elements` is defined,
             use the same syntax as `add_line` to select a subset of lines
             for the operation.
             Alternatively, provide an iterable containing
@@ -556,34 +557,27 @@ class EDSSpectrum(Spectrum):
                 elif only_line == 'b':
                     only_lines.extend(['Kb', 'Lb1', 'Mb'])
 
-        if Xray_lines is None:
-            if 'Sample.Xray_lines' in self.metadata:
-                Xray_lines = self.metadata.Sample.Xray_lines
+        if xray_lines is None or xray_lines == 'from_elements':
+            if 'Sample.xray_lines' in self.metadata \
+                    and xray_lines != 'from_elements':
+                xray_lines = self.metadata.Sample.xray_lines
             elif 'Sample.elements' in self.metadata:
-                Xray_lines = self._get_lines_from_elements(
+                xray_lines = self._get_lines_from_elements(
                     self.metadata.Sample.elements,
                     only_one=only_one,
                     only_lines=only_lines)
             else:
                 raise ValueError(
-                    "Not X-ray line, set them with `add_elements`")
+                    "No elements defined, set them with `add_elements`")
 
         line_energy = []
         intensity = []
-        for Xray_line in Xray_lines:
-            element, line = utils_eds._get_element_and_line(Xray_line)
-            line_energy.append(elements_db[element]['Atomic_properties']['Xray_lines'][
-                line]['energy (keV)'])
-            relative_factor = elements_db[element]['Atomic_properties']['Xray_lines'][
-                line]['factor']
-            a_eng = elements_db[
-                element][
-                'Atomic_properties'][
-                'Xray_lines'][
-                line[
-                    0] +
-                'a'][
-                'energy (keV)']
+        for xray_line in xray_lines:
+            element, line = utils_eds._get_element_and_line(xray_line)
+            line_energy.append(self._get_line_energy(xray_line))
+            relative_factor = elements_db[element][
+                'Atomic_properties']['Xray_lines'][line]['factor']
+            a_eng = self._get_line_energy(element + '_' + line[0] + 'a')
             # if fixed_height:
                 # intensity.append(self[..., a_eng].data.flatten().mean()
                              #* relative_factor)
@@ -602,6 +596,6 @@ class EDSSpectrum(Spectrum):
             text.type = 'text'
             text.set_marker_properties(rotation=90)
             text.set_data(x1=line_energy[i],
-                          y1=intensity[i] * 1.1, text=Xray_lines[i])
+                          y1=intensity[i] * 1.1, text=xray_lines[i])
             self._plot.signal_plot.add_marker(text)
             text.plot()
