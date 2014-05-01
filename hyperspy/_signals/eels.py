@@ -337,18 +337,22 @@ class EELSSpectrum(Spectrum):
                                               number_of_points=5,
                                               polynomial_order=3,
                                               start=1.):
-        """Calculates the first inflexion point of the spectrum derivative
-        within a window using a specified tolerance.
+        """Calculate the first inflexion point of the spectrum derivative
+        within a window.
 
-        It previously smoothes the data using a Savitzky-Golay algorithm
-        (can be turned off). This method assumes that the zero-loss peak is
-        located at position zero in all the spectra.
+        This method assumes that the zero-loss peak is located at position zero
+        in all the spectra. Currently it looks for an inflexion point, that can
+        be a local maximum or minimum. Therefore, to estimate the elastic
+        scattering threshold `start` + `window` must be less than the first
+        maximum for all spectra (often the bulk plasmon maximum). If there is
+        more than one inflexion point in energy the window it selects the
+        smoother one what, often, but not always, is a good choice in this
+        case.
 
         Parameters
         ----------
-
         window : {None, float}
-            If None, the search for the local minimum is performed
+            If None, the search for the local inflexion point is performed
             using the full energy range. A positive float will restrict
             the search to the (0,window] energy window, where window is given
             in the axis units. If no inflexion point is found in this
@@ -371,6 +375,7 @@ class EELSSpectrum(Spectrum):
 
         Returns
         -------
+
         threshold : Signal
             A Signal of the same dimension as the input spectrum
             navigation space containing the estimated threshold. Where the
@@ -378,7 +383,18 @@ class EELSSpectrum(Spectrum):
 
         See Also
         --------
-        align1D
+
+        estimate_elastic_scattering_intensity,align_zero_loss_peak,
+        find_peaks1D_ohaver, fourier_ratio_deconvolution.
+
+        Notes
+        -----
+
+        The main purpose of this method is to be used as input for
+        `estimate_elastic_scattering_intensity`. Indeed, for currently
+        achievable energy resolutions, there is not such a thing as a elastic
+        scattering threshold. Therefore, please be aware of the limitations of
+        this method when using it.
 
         """
         self._check_signal_dimension_equals_one()
@@ -412,7 +428,7 @@ class EELSSpectrum(Spectrum):
         del s
         if np.isnan(threshold.data).any():
             warnings.warn("No inflexion point could we found in some positions "
-                          "that have been marked with nans.")
+                         "that have been marked with nans.")
         # Create spectrum image, stop and return value
         threshold.metadata.General.title = (
             self.metadata.General.title +
