@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numbers
+import warnings
 
 import numpy as np
 import traits.api as t
@@ -409,7 +410,9 @@ class EELSSpectrum(Spectrum):
             if inflexion == 0:
                 threshold.data[:] = np.nan
         del s
-
+        if np.isnan(threshold.data).any():
+            warnings.warn("No inflexion point could we found in some positions "
+                         "that have been marked with nans.")
         # Create spectrum image, stop and return value
         threshold.metadata.General.title = (
             self.metadata.General.title +
