@@ -78,51 +78,39 @@ class TestSetParameterInModel:
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        g1.enable_pixel_level_switching = True
-        g2.enable_pixel_level_switching = True
-        g3.enable_pixel_level_switching = True
+        g1.active_is_multidimensional = True
+        g2.active_is_multidimensional = True
+        g3.active_is_multidimensional = True
         m.set_component_active_value(False)
-        assert_true(np.all(np.logical_not(g1.active_map)))
-        assert_true(np.all(np.logical_not(g2.active_map)))
-        assert_true(np.all(np.logical_not(g3.active_map)))
+        assert_true(np.all(np.logical_not(g1._active_array)))
+        assert_true(np.all(np.logical_not(g2._active_array)))
+        assert_true(np.all(np.logical_not(g3._active_array)))
 
     def test_set_active_value2(self):
         m = self.model
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        g1.enable_pixel_level_switching = True
-        g2.enable_pixel_level_switching = True
-        g3.enable_pixel_level_switching = True
+        g1.active_is_multidimensional = True
+        g2.active_is_multidimensional = True
+        g3.active_is_multidimensional = True
         m.set_component_active_value(False, component_list=[g1, g2])
-        assert_true(np.all(np.logical_not(g1.active_map)))
-        assert_true(np.all(np.logical_not(g2.active_map)))
-        assert_true(np.all(g3.active_map))
+        assert_true(np.all(np.logical_not(g1._active_array)))
+        assert_true(np.all(np.logical_not(g2._active_array)))
+        assert_true(np.all(g3._active_array))
 
     def test_set_active_value3(self):
         m = self.model
         g1 = self.g1
         g2 = self.g2
         g3 = self.g3
-        g1.enable_pixel_level_switching = True
-        g2.enable_pixel_level_switching = True
-        g3.enable_pixel_level_switching = True
+        g1.active_is_multidimensional = True
+        g2.active_is_multidimensional = True
+        g3.active_is_multidimensional = True
         m.set_component_active_value(False,
                                      component_list=[g1],
                                      only_current=True)
-        g1.active_map[0][0] = not g1.active_map[0][0]
-        assert_true(np.all(g1.active_map))
-        assert_true(np.all(g2.active_map))
-        assert_true(np.all(g3.active_map))
-
-    def test_enable_pixel_switching(self):
-        m = self.model
-        g1 = self.g1
-        g2 = self.g2
-        g3 = self.g3
-        g1.enable_pixel_level_switching = True
-        g2.enable_pixel_level_switching = True
-        g2.enable_pixel_level_switching = False
-        assert_true(np.all(g1.active_map))
-        assert_true(g2.active_map is None)
-        assert_true(g3.active_map is None)
+        g1._active_array[0][0] = not g1._active_array[0][0]
+        assert_true(np.all(g1._active_array))
+        assert_true(np.all(g2._active_array))
+        assert_true(np.all(g3._active_array))

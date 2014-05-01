@@ -2064,14 +2064,14 @@ class Model(list):
 
         for _component in component_list:
             _component.active = value
-            if _component.enable_pixel_level_switching:
+            if _component.active_is_multidimensional:
                 if only_current:
-                    _component.active_map[
+                    _component._active_array[
                         self.axes_manager.indices[
                             ::-
                             1]] = value
                 else:
-                    _component.active_map.fill(value)
+                    _component._active_array.fill(value)
 
     def __getitem__(self, value):
         """x.__getitem__(y) <==> x[y]"""

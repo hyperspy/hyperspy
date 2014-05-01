@@ -20,6 +20,7 @@ import os
 import copy
 
 import numpy as np
+import warnings
 
 from hyperspy.axes import AxesManager
 from hyperspy.defaults_parser import preferences
@@ -566,8 +567,7 @@ class Component(object):
         self.init_parameters(parameter_name_list)
         self._update_free_parameters()
         self.active = True
-        self.active_map = None
-        self._pixel_level_switching = False
+        self._active_array = None
         self.isbackground = False
         self.convolved = True
         self.parameters = tuple(self.parameters)
@@ -577,21 +577,39 @@ class Component(object):
         self._position = None
         self.model = None
 
-    @property
-    def enable_pixel_level_switching(self):
-        return self._pixel_level_switching
+    _active_is_multidimensional = False
+    _active = True
 
-    @enable_pixel_level_switching.setter
-    def enable_pixel_level_switching(self, value):
-        if isinstance(value, bool):
-            if value:
-                self._pixel_level_switching = value
-                self._create_active_map()
-            else:
-                self._pixel_level_switching = value
-                self.active_map = None
-        else:
+    @property
+    def active_is_multidimensional(self):
+        return self._active_is_multidimensional
+
+    @active_is_multidimensional.setter
+    def active_is_multidimensional(self, value):
+        if not isinstance(value, bool):
             raise ValueError('Only boolean values are permitted')
+
+        if value == self.active_is_multidimensional:
+            warnings.warn(
+                '`active_is_multidimensional` already %s for %s' %
+                (str(value), self.name), RuntimeWarning)
+            return
+
+        if value:  # Turn on
+            if self._axes_manager.navigation_size < 2:
+                warnings.warn(
+                    '`navigation_size` < 2, skipping',
+                    RuntimeWarning)
+                return
+            # Store value at current position
+            self._create_active_array()
+            self._store_active_value_in_array(self._active)
+            self._active_is_multidimensional = True
+        else:  # Turn off
+            # Get the value at the current position before switching it off
+            self._active = self.active
+            self._active_array = None
+            self._active_is_multidimensional = False
 
     @property
     def name(self):
@@ -629,17 +647,29 @@ class Component(object):
         if f in self.connected_functions:
             self.connected_functions.remove(f)
 
-    def _get_active(self):
-        return self.__active
+    @property
+    def active(self):
+        if self.active_is_multidimensional is True:
+            # The following should set
+            self.active = self._active_array[self._axes_manager.indices[::-1]]
+        return self._active
 
-    def _set_active(self, arg):
-        self.__active = arg
+    def _store_active_value_in_array(self, value):
+        self._active_array[self._axes_manager.indices[::-1]] = value
+
+    @active.setter
+    def active(self, arg):
+        if self._active == arg:
+            return
+        self._active = arg
+        if self.active_is_multidimensional is True:
+            self._store_active_value_in_array(arg)
+
         for f in self.connected_functions:
             try:
                 f()
             except:
                 self.disconnect(f)
-    active = property(_get_active, _set_active)
 
     def init_parameters(self, parameter_name_list):
         for name in parameter_name_list:
@@ -705,34 +735,29 @@ class Component(object):
 
             i += lenght
 
-    def _create_active_map(self):
-        if self.enable_pixel_level_switching:
-            shape = self._axes_manager._navigation_shape_in_array
-            if len(shape) == 1 and shape[0] == 0:
-                shape = [1, ]
-            if (not isinstance(self.active_map, np.ndarray)) or self.active_map.shape != shape:
-                self.active_map = np.ones(shape, dtype=bool)
-        else:
-            raise ValueError(
-                "Pixel level switching of a component has to be enabled")
+    def _create_active_array(self):
+        shape = self._axes_manager._navigation_shape_in_array
+        if len(shape) == 1 and shape[0] == 0:
+            shape = [1, ]
+        if (not isinstance(self._active_array, np.ndarray)
+                or self._active_array.shape != shape):
+            self._active_array = np.ones(shape, dtype=bool)
 
     def _create_arrays(self):
-        if self.enable_pixel_level_switching:
-            self._create_active_map()
+        if self.active_is_multidimensional:
+            self._create_active_array()
         for parameter in self.parameters:
             parameter._create_array()
 
     def store_current_parameters_in_map(self):
-        if self.enable_pixel_level_switching:
-            ind = self._axes_manager.indices[::-1]
-            self.active_map[ind] = self.active
         for parameter in self.parameters:
             parameter.store_current_value_in_array()
 
     def fetch_stored_values(self, only_fixed=False):
-        if self.enable_pixel_level_switching:
-            ind = self._axes_manager.indices[::-1]
-            self.active = self.active_map[ind]
+        if self.active_is_multidimensional:
+            # Store the stored value in self._active and trigger the connected
+            # functions.
+            self.active = self.active
         if only_fixed is True:
             parameters = (set(self.parameters) -
                           set(self.free_parameters))
@@ -935,15 +960,15 @@ class Component(object):
         dic = {}
         dic['name'] = self.name
         dic['_id_name'] = self._id_name
-        dic['enable_pixel_level_switching'] = self.enable_pixel_level_switching
-        if self.enable_pixel_level_switching:
+        dic['active_is_multidimensional'] = self.active_is_multidimensional
+        if self.active_is_multidimensional:
             if indices is not None:
-                dic['active_map'] = self.active_map[
+                dic['active_array'] = self._active_array[
                     tuple([slice(i, i + 1, 1) for i in indices[::-1]])].copy()
-                dic['active'] = dic['active_map'][tuple([0 for i in indices])]
+                dic['active'] = dic['_active_array'][tuple([0 for i in indices])]
             else:
                 dic['active'] = self.active
-                dic['active_map'] = self.active_map.copy()
+                dic['active_array'] = self._active_array.copy()
         else:
             dic['active'] = self.active
         dic['parameters'] = [p.as_dictionary(indices) for p in self.parameters]
@@ -974,9 +999,9 @@ class Component(object):
         """
         self.name = copy.deepcopy(dic['name'])
         self.active = dic['active']
-        self.enable_pixel_level_switching = dic['enable_pixel_level_switching']
-        if self.enable_pixel_level_switching:
-            self.active_map = dic['active_map']
+        self.active_is_multidimensional = dic['active_is_multidimensional']
+        if self.active_is_multidimensional:
+            self._active_array = dic['active_array']
         id_dict = {}
         for p in dic['parameters']:
             idname = p['_id_name']
