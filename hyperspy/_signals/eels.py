@@ -276,10 +276,7 @@ class EELSSpectrum(Spectrum):
         Returns
         -------
         I0: Signal
-            The elastic scattering intensity. If the navigation size is 0
-            returns a float. Otherwise it returns a Spectrum, Image or a
-            Signal, depending on the currenct spectrum navigation
-            dimensions.
+            The elastic scattering intensity.
 
         See Also
         --------
