@@ -211,7 +211,7 @@ class DictionaryTreeBrowser(object):
                 continue
             if not isinstance(key_, types.MethodType):
                 key = ensure_unicode(value['key'])
-                value = ensure_unicode(value['value'])
+                value = ensure_unicode(value['_dtb_value_'])
                 if isinstance(value, DictionaryTreeBrowser):
                     if j == eoi - 1:
                         symbol = u'└── '
@@ -253,8 +253,8 @@ class DictionaryTreeBrowser(object):
     def __getattribute__(self, name):
         name = slugify(name, valid_variable_name=True)
         item = super(DictionaryTreeBrowser, self).__getattribute__(name)
-        if isinstance(item, dict) and 'value' in item:
-            return item['value']
+        if isinstance(item, dict) and '_dtb_value_' in item and "key" in item:
+            return item['_dtb_value_']
         else:
             return item
 
@@ -268,7 +268,7 @@ class DictionaryTreeBrowser(object):
                 value = DictionaryTreeBrowser(value)
         super(DictionaryTreeBrowser, self).__setattr__(
             slugified_key,
-            {'key': key, 'value': value})
+            {'key': key, '_dtb_value_': value})
 
     def __len__(self):
         return len(
@@ -291,10 +291,10 @@ class DictionaryTreeBrowser(object):
                 key = item_['key']
                 if key == "_db_index":
                     continue
-                if isinstance(item_['value'], DictionaryTreeBrowser):
-                    item = item_['value'].as_dictionary()
+                if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
+                    item = item_['_dtb_value_'].as_dictionary()
                 else:
-                    item = item_['value']
+                    item = item_['_dtb_value_']
                 par_dict.__setitem__(key, item)
         return par_dict
 
