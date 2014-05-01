@@ -1000,7 +1000,8 @@ class Component(object):
         """
         self.name = copy.deepcopy(dic['name'])
         self.active = dic['active']
-        self.active_is_multidimensional = dic['active_is_multidimensional']
+        if dic['active_is_multidimensional']:
+            self.active_is_multidimensional = dic['active_is_multidimensional']
         if self.active_is_multidimensional:
             self._active_array = dic['active_array']
         id_dict = {}
