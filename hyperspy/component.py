@@ -965,7 +965,7 @@ class Component(object):
             if indices is not None:
                 dic['active_array'] = self._active_array[
                     tuple([slice(i, i + 1, 1) for i in indices[::-1]])].copy()
-                dic['active'] = dic['_active_array'][
+                dic['active'] = dic['active_array'][
                     tuple([0 for i in indices])]
             else:
                 dic['active'] = self.active
