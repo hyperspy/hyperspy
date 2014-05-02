@@ -741,6 +741,8 @@ class Component(object):
             self.model.axes_manager = axes_manager
             self.charge()
         s = self.__call__()
+        if not self.active:
+            s.fill(np.nan)
         if self.model.spectrum.metadata.Signal.binned is True:
             s *= self.model.spectrum.axes_manager.signal_axes[0].scale
         if old_axes_manager is not None:
