@@ -3898,6 +3898,7 @@ class Signal(MVA,
         hist_spec.axes_manager[0].name = 'value'
         hist_spec.metadata.General.title = (img.metadata.General.title +
                                             " histogram")
+        hist_spec.metadata.Signal.binned = True
         return hist_spec
 
     def map(self, function, **kwargs):

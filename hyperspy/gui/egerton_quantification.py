@@ -212,12 +212,18 @@ class SpikesRemoval(SpanSelectorInSpectrum):
     interpolator = None
     default_spike_width = t.Int(5)
     index = t.Int(0)
+    add_noise = t.Bool(True,
+                       desc="Add noise to the healed portion of the "
+                       "spectrum. Use the noise properties "
+                       "defined in metadata if present, otherwise "
+                       "it defaults to shot noise.")
     view = tu.View(tu.Group(
         tu.Group(
             tu.Item('show_derivative_histogram', show_label=False),
             'threshold',
             show_border=True,),
         tu.Group(
+            'add_noise',
             'interpolator_kind',
             'default_spike_width',
             tu.Group(
@@ -244,7 +250,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.line = signal._plot.signal_plot.ax_lines[0]
         self.ax = signal._plot.signal_plot.ax
         signal._plot.auto_update_plot = False
-        signal.axes_manager.indices = self.coordinates[0]
+        if len(self.coordinates) > 1:
+            signal.axes_manager.indices = self.coordinates[0]
         self.threshold = 400
         self.index = 0
         self.argmax = None
@@ -252,6 +259,17 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self._temp_mask = np.zeros(self.signal().shape, dtype='bool')
         self.signal_mask = signal_mask
         self.navigation_mask = navigation_mask
+        md = self.signal.metadata
+        from hyperspy.signal import Signal
+        if "Signal.Noise_properties" in md:
+            if "Signal.Noise_properties.variance" in md:
+                self.noise_variance = md.Signal.Noise_properties.variance
+                if isinstance(md.Signal.Noise_properties.variance, Signal):
+                    self.noise_type = "heteroscedastic"
+                else:
+                    self.noise_type = "white"
+        else:
+            self.noise_type = "shot noise"
 
     def _threshold_changed(self, old, new):
         self.index = 0
@@ -316,7 +334,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             self.interpolated_line = None
         self.reset_span_selector()
         self.update_spectrum_line()
-        self.signal._plot.pointer.update_patch_position()
+        if len(self.coordinates) > 1:
+            self.signal._plot.pointer.update_patch_position()
 
     def update_spectrum_line(self):
         self.line.auto_update = True
@@ -389,8 +408,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         iright = right + pad
         ileft = np.clip(ileft, 0, len(data))
         iright = np.clip(iright, 0, len(data))
-        left = np.clip(left, 0, len(data))
-        right = np.clip(right, 0, len(data))
+        left = int(np.clip(left, 0, len(data)))
+        right = int(np.clip(right, 0, len(data)))
         x = np.hstack((axis.axis[ileft:left], axis.axis[right:iright]))
         y = np.hstack((data[ileft:left], data[right:iright]))
         if ileft == 0:
@@ -407,7 +426,21 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             data[left:right] = intp(axis.axis[left:right])
 
         # Add noise
-        data = np.random.poisson(np.clip(data, 0, np.inf))
+        if self.add_noise is True:
+            if self.noise_type == "white":
+                data[left:right] += np.random.normal(
+                    scale=np.sqrt(self.noise_variance),
+                    size=right - left)
+            elif self.noise_type == "heteroscedastic":
+                noise_variance = self.noise_variance(
+                    axes_manager=self.signal.axes_manager)[left:right]
+                noise = [np.random.normal(scale=np.sqrt(item))
+                         for item in noise_variance]
+                data[left:right] += noise
+            else:
+                data[left:right] = np.random.poisson(
+                    np.clip(data[left:right], 0, np.inf))
+
         return data
 
     def span_selector_changed(self):
