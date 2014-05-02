@@ -356,6 +356,9 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.kind = self.spline_order
         self.span_selector_changed()
 
+    def _add_noise_changed(self, old, new):
+        self.span_selector_changed()
+
     def _interpolator_kind_changed(self, old, new):
         if new == 'linear':
             self.kind = new
