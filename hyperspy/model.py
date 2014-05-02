@@ -824,7 +824,7 @@ class Model(list):
             sum_convolved = np.zeros(len(self.convolution_axis))
             sum = np.zeros(len(self.axis.axis))
             for component in self:  # Cut the parameters list
-                if component.active is True:
+                if component.active:
                     if component.convolved is True:
                         np.add(sum_convolved, component.__tempcall__(param[
                             counter:counter + component._nfree_param],
@@ -843,7 +843,7 @@ class Model(list):
             counter = 0
             first = True
             for component in self:  # Cut the parameters list
-                if component.active is True:
+                if component.active:
                     if first is True:
                         sum = component.__tempcall__(param[counter:counter +
                                                            component._nfree_param], axis)
@@ -1429,12 +1429,12 @@ class Model(list):
 
     def _connect_component_lines(self):
         for component in [component for component in self if
-                          component.active is True]:
+                          component.active]:
             self._connect_component_line(component)
 
     def _disconnect_component_lines(self):
         for component in [component for component in self if
-                          component.active is True]:
+                          component.active]:
             self._disconnect_component_line(component)
 
     def _plot_component(self, component):
@@ -1468,7 +1468,7 @@ class Model(list):
             return
         self._plot_components = True
         for component in [component for component in self if
-                          component.active is True]:
+                          component.active]:
             self._plot_component(component)
 
     def disable_plot_components(self):
@@ -1551,7 +1551,7 @@ class Model(list):
 
         """
         for component in self:
-            if only_active is False or component.active is True:
+            if only_active is False or component.active:
                 component.export(folder=folder, format=format,
                                  save_std=save_std, only_free=only_free)
 
@@ -1575,7 +1575,7 @@ class Model(list):
 
         """
         for component in self:
-            if only_active is False or component.active is True:
+            if only_active is False or component.active:
                 component.plot(only_free=only_free)
 
     def print_current_values(self, only_free=True):
@@ -1590,7 +1590,7 @@ class Model(list):
         """
         print "Components\tParameter\tValue"
         for component in self:
-            if component.active is True:
+            if component.active:
                 if component.name:
                     print(component.name)
                 else:
@@ -1892,6 +1892,52 @@ class Model(list):
                     else:
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
+
+    def set_component_active_value(
+            self, value, component_list=None, only_current=False):
+        """
+        Sets the component 'active' parameter to a specified value
+
+        Parameters
+        ----------
+        value : bool
+            The new value of the 'active' parameter
+        component_list : list of hyperspy components, optional
+            A list of components whos parameters will changed. The components
+            can be specified by name, index or themselves.
+
+        only_current : bool, default False
+            If True, will only change the parameter value at the current position in the model
+            If False, will change the parameter value for all the positions.
+
+        Examples
+        --------
+        >>> v1 = components.Voigt()
+        >>> v2 = components.Voigt()
+        >>> m.extend([v1,v2])
+        >>> m.set_component_active_value(False)
+        >>> m.set_component_active_value(True, component_list=[v1])
+        >>> m.set_component_active_value(False, component_list=[v1], only_current=True)
+
+        """
+
+        if not component_list:
+            component_list = []
+            for _component in self:
+                component_list.append(_component)
+        else:
+            component_list = [self._get_component(x) for x in component_list]
+
+        for _component in component_list:
+            _component.active = value
+            if _component.active_is_multidimensional:
+                if only_current:
+                    _component._active_array[
+                        self.axes_manager.indices[
+                            ::-
+                            1]] = value
+                else:
+                    _component._active_array.fill(value)
 
     def __getitem__(self, value):
         """x.__getitem__(y) <==> x[y]"""
