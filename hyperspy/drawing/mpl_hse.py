@@ -150,6 +150,12 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
             self.right_pointer.size = self.pointer.size
             self.right_pointer.color = 'blue'
             self.right_pointer.add_axes(self.navigator_plot.ax)
+
+        if self.right_pointer is not None:
+            for axis in self.axes_manager.navigation_axes[
+                    self._pointer_nav_dim:]:
+                self.signal_plot.right_axes_manager._axes[
+                    axis.index_in_array] = axis
         rl = spectrum.SpectrumLine()
         rl.autoscale = True
         rl.data_function = self.signal_data_function

@@ -38,6 +38,7 @@ class MPL_HyperExplorer(object):
         self.axis = None
         self.pointer = None
         self._key_nav_cid = None
+        self._pointer_nav_dim = None
 
     def plot_signal(self):
         # This method should be implemented by the subclasses.
@@ -142,6 +143,7 @@ class MPL_HyperExplorer(object):
             Pointer = widgets.DraggableVerticalLine
         else:
             Pointer = None
+        self._pointer_nav_dim = nav_dim
         return Pointer
 
     def _disconnect(self):
