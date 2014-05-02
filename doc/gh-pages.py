@@ -34,6 +34,8 @@ pages_repo = 'git@github.com:hyperspy/hyperspy-doc.git'
 #-----------------------------------------------------------------------------
 # Functions
 #-----------------------------------------------------------------------------
+
+
 def sh(cmd):
     """Execute command in a subshell, return status code."""
     return check_call(cmd, shell=True)
@@ -67,7 +69,7 @@ def sh3(cmd):
 
 def init_repo(path):
     """clone the gh-pages repo if we haven't already."""
-    sh("git clone %s %s"%(pages_repo, path))
+    sh("git clone %s %s" % (pages_repo, path))
     here = os.getcwdu()
     cd(path)
     sh('git checkout gh-pages')
@@ -132,4 +134,3 @@ if __name__ == '__main__':
     print
     print 'Now verify the build in: %r' % dest
     print "If everything looks good, 'git push'"
-
