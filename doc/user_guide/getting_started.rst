@@ -4,8 +4,8 @@ Getting started
 Starting hyperspy
 -----------------
 
-Hyperspy is a Python library to analyze multidimensional. Hyperspy does not
-have a GUI. Instead, the most common way of running Hyperspy is interactively
+HyperSpy is a Python library to analyze multidimensional. HyperSpy does not
+have a GUI. Instead, the most common way of running HyperSpy is interactively
 using the wonderful interactive computing package `IPython
 <http://ipython.org>`_. In this section we describe the different ways to start
 hyperspy in the different operating systems.
@@ -13,7 +13,7 @@ hyperspy in the different operating systems.
 Starting hyperspy from the terminal
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In all operating systems (OS) you can start Hyperspy
+In all operating systems (OS) you can start HyperSpy
 by opening a system terminal and typing hyperspy:
 
 .. code-block:: bash
@@ -21,19 +21,19 @@ by opening a system terminal and typing hyperspy:
     $ hyperspy
 
 
-If Hyperspy is correctly installed it should welcome you with a message similar
+If HyperSpy is correctly installed it should welcome you with a message similar
 to:
 
 .. code-block:: ipython
     
-    H y p e r s p y
+    H y p e r S p y
     Version 0.7
     
     http://www.hyperspy.org	
 	
 
 If IPython 0.11 or newer and the Qt libraries are installed in your system it
-is also possible to run Hyperspy in `IPython's QtConsole
+is also possible to run HyperSpy in `IPython's QtConsole
 <http://ipython.org/ipython-doc/stable/interactive/qtconsole.html>`_ by
 executing `hyperspy qtconsole` in a terminal:
 
@@ -42,10 +42,10 @@ executing `hyperspy qtconsole` in a terminal:
     $ hyperspy qtconsole
 
 If IPython 0.12 or newer is installed in your system it is also possible to run
-Hyperspy in `IPython's HTML notebook
+HyperSpy in `IPython's HTML notebook
 <http://ipython.org/ipython-doc/stable/interactive/htmlnotebook.html>`_ that
 runs inside your browser. The Notebook is probably **the most agreeable way**
-to work with Hyperspy interactively. You can start it from a terminal as
+to work with HyperSpy interactively. You can start it from a terminal as
 follows
 
 .. code-block:: bash
@@ -63,12 +63,12 @@ these options add the `-h` flag:
                     [--ipython_args [IPYTHON_ARGS [IPYTHON_ARGS ...]]]
                     [{terminal,console,qtconsole,notebook}]
 
-    Hyperspectral data analysis toolbox
+    Multidimensional data analysis toolbox
  
     positional arguments:
       {terminal,console,qtconsole,notebook}
                             Selects the IPython environment in which to start
-                            Hyperspy. The default is terminal
+                            HyperSpy. The default is terminal
  
     optional arguments:
       -h, --help            show this help message and exit
@@ -94,13 +94,13 @@ This option is only available for Windows and in Linux when using Gnome.
 Windows
 """""""
 
-In Windows it is possible to start Hyperspy from :menuselection:`Start Menu -->
-Programs --> Hyperspy`.
+In Windows it is possible to start HyperSpy from :menuselection:`Start Menu -->
+Programs --> HyperSpy`.
 
-Alternatively, one can start Hyperspy in any folder by pressing the :kbd:`right
+Alternatively, one can start HyperSpy in any folder by pressing the :kbd:`right
 mouse button` or on a yellow folder icon or (in some cases) on the empty area
-of a folder, and choosing :menuselection:`Hyperspy qtconsole here` or
-:menuselection:`Hyperspy notebook here` from the context menu.
+of a folder, and choosing :menuselection:`HyperSpy qtconsole here` or
+:menuselection:`HyperSpy notebook here` from the context menu.
 
 
 .. figure::  images/windows_hyperspy_here.png
@@ -118,13 +118,13 @@ choosing :menuselection:`open terminal` in the file menu if
 :program:`nautilus-open-terminal` is installed in your system.
 
 Altenatively (and more conviently), if you are using Gnome place `this
-<https://github.com/downloads/hyperspy/hyperspy/Hyperspy%20QtConsole%20here.sh>`_
+<https://github.com/downloads/hyperspy/hyperspy/HyperSpy%20QtConsole%20here.sh>`_
 and `this
-<https://github.com/downloads/hyperspy/hyperspy/Hyperspy%20Notebook%20here.sh>`_
+<https://github.com/downloads/hyperspy/hyperspy/HyperSpy%20Notebook%20here.sh>`_
 in the :file:`/.gnome2/nautilus-scripts` folder in your home directory (create
 it if it does not exists) and make them executable to get the
-:menuselection:`Scripts --> Hyperspy QtConsole Here` and
-:menuselection:`Scripts --> Hyperspy Notebook Here` entries in the context
+:menuselection:`Scripts --> HyperSpy QtConsole Here` and
+:menuselection:`Scripts --> HyperSpy Notebook Here` entries in the context
 menu. 
 
 
@@ -134,14 +134,14 @@ menu.
 
    Starting hyperspy using the Gnome nautilus context menu.
 
-Using Hyperspy as a library
+Using HyperSpy as a library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When starting hyperspy by using the file browser context menu or by running the
 `hyperspy` script in the terminal, the `hyperspy` script simply starts and
 configures IPython appropiately and imports the contents of the
 :py:mod:`~.hspy` module in the user namespace. Of course, It is possible to use
-Hyperspy as a library by simply importing its modules. The recommended way to
+HyperSpy as a library by simply importing its modules. The recommended way to
 do it is importing the hspy module as follows:
 
 .. code-block:: python
@@ -152,7 +152,7 @@ Choosing a toolkit
 ------------------
 .. versionadded:: 0.7
 
-Hyperspy fully supports the Qt toolkit in addition to the WX toolkit. GTK and
+HyperSpy fully supports the Qt toolkit in addition to the WX toolkit. GTK and
 TK are also supported but the user interface elements are not available. The
 default toolkit is Qt4/PySide because currently is the one that works best in
 most platforms.
@@ -168,7 +168,7 @@ Inline plotting
 ---------------
 .. versionadded:: 0.7
 
-Hyperspy can be started using the IPython inline plotting mode by passing the
+HyperSpy can be started using the IPython inline plotting mode by passing the
 `--pylab_inline` flag when starting hyperspy. In inline-mode, calling any
 plotting function embeds the resulting plots in the Notebook or QtConsole
 instead of raising figure windows. The main drawback is that these plots are
@@ -212,12 +212,12 @@ question mark to the name of a function. e.g.:
 This syntax is a shortcut to the standard way one of displaying the help
 associated to a given functions (docstring in Python jargon) and it is one of
 the many features of `IPython <http://ipython.scipy.org/moin/>`_, which is the
-interactive python shell that Hyperspy uses under the hood.
+interactive python shell that HyperSpy uses under the hood.
 
 Please note that the documentation of the code is a work in progress, so not
 all the objects are documented yet.
 
-Up-to-date documentation is always available in `the Hyperspy website.
+Up-to-date documentation is always available in `the HyperSpy website.
 <http://hyperspy.org/documentation.html>`_
 
 
@@ -230,7 +230,7 @@ highly recommended to read the `Ipython documentation
 <http://ipython.scipy.org/moin/Documentation>`_ (specially their `Getting
 started <http://ipython.org/ipython-doc/stable/interactive/tutorial.html>`_
 section) for many more useful features that will boost your efficiency when
-working with Hyperspy/Python interactively.
+working with HyperSpy/Python interactively.
 
 
 Loading data
@@ -264,9 +264,9 @@ files. For more details read :ref:`loading_files`
 "Loading" zadata from a numpy array
 ---------------------------------
 
-Hyperspy can operate on any numpy array by assigning it to a Signal class.
+HyperSpy can operate on any numpy array by assigning it to a Signal class.
 This is useful e.g. for loading data stored in a format that is not yet
-supported by Hyperspy—supposing that they can be read with another Python
+supported by HyperSpy—supposing that they can be read with another Python
 library—or to explore numpy arrays generated by other Python
 libraries. Simply select the most appropiate signal from the
 :py:mod:`~.signals` module and create a new instance by passing a numpy array
@@ -285,11 +285,11 @@ of the signal class.
 The navigation and signal dimensions
 ------------------------------------
 
-In Hyperspy the data is interpreted as a signal array and, therefore, the data
-axes are not equivalent. Hyperspy distiguises between *signal* and *navigation*
+In HyperSpy the data is interpreted as a signal array and, therefore, the data
+axes are not equivalent. HyperSpy distiguises between *signal* and *navigation*
 axes and most functions operate on the *signal* axes and iterate on the
 *navigation* axes. For example, an EELS spectrum image (i.e. a 2D array of
-spectra) has three dimensions X, Y and energy-loss. In Hyperspy, X and Y are
+spectra) has three dimensions X, Y and energy-loss. In HyperSpy, X and Y are
 the *navigation* dimensions an the energy-loss is the *signal* dimension. To
 make this distinction more explicit the representation of the object includes
 a separator ``|`` between the navigaton and signal dimensions e.g.
@@ -311,7 +311,7 @@ An image stack has signal dimension 2 and navigation dimension 1.
     >>> im
     <Image, title: , dimensions: (30|20, 10)>
 
-Note the Hyperspy rearranges the axes position to match the following pattern:
+Note the HyperSpy rearranges the axes position to match the following pattern:
 (navigatons axis 0,..., navigation axis n|signal axis 0,..., signal axis n).
 This is the order used for :ref:`indexing the Signal class <signal.indexing>`.
 
@@ -382,7 +382,7 @@ the extension of the filename.
     >>> d.save("example_processed.hdf5")
 
 Some file formats are much better at maintaining the information about
-how you processed your data.  The preferred format in Hyperspy is hdf5,
+how you processed your data.  The preferred format in HyperSpy is hdf5,
 the hierarchical data format.  This format keeps the most information
 possible.
 
@@ -392,9 +392,9 @@ There are optional flags that may be passed to the save function. See
 Accessing and setting the metadata
 ----------------------------------
 
-When loading a file Hyperspy stores all metadata in the Signal 
+When loading a file HyperSpy stores all metadata in the Signal 
 :py:attr:`~.signal.Signal.original_metadata` attribute. In addition, some of
-those metadata and any new metadata generated by Hyperspy are stored in 
+those metadata and any new metadata generated by HyperSpy are stored in 
 :py:attr:`~.signal.Signal.metadata` attribute. 
 
 
@@ -457,7 +457,7 @@ those metadata and any new metadata generated by Hyperspy are stored in
 Configuring hyperspy
 --------------------
 
-The behaviour of Hyperspy can be customised using the
+The behaviour of HyperSpy can be customised using the
 :py:class:`~.defaults_parser.Preferences` class. The easiest way to do it is by
 calling the :meth:`gui` method:
 

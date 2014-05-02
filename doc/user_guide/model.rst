@@ -1,7 +1,7 @@
 Curve fitting
 *************
 
-Hyperspy can perform curve fitting in n-dimensional data sets. It can create a
+HyperSpy can perform curve fitting in n-dimensional data sets. It can create a
 model from a linear combinantion of predefined components and can use multiple
 optimisation algorithms to fit the model to experimental data. It supports
 bounds and weights.
@@ -32,7 +32,7 @@ the accelerating voltage, convergence and collection angles etc.
 Adding components to the model
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In Hyperspy a model consists of a linear combination of :py:mod:`~.components`.
+In HyperSpy a model consists of a linear combination of :py:mod:`~.components`.
 These are some of the components which are currently available:
 
 
@@ -505,6 +505,14 @@ is possible to display the individual components by calling
     >>> m.plot(plot_components=True) # Visualise the results
 
 To disable this feature call :py:meth:`~.model.Model.disable_plot_components`.
+
+.. versionadded:: 0.7.1
+
+   By default the model plot is automatically updated when any parameter value
+   changes. It is possible to suspend this feature with 
+   :py:meth:`~.model.Model.suspend_update`. To resume it use
+   :py:meth:`~.model.Model.resume_update`. 
+
 
 .. _model.starting:
 

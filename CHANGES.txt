@@ -76,6 +76,8 @@ Plotting
   spectra in the same figure. See :ref:`plot.spectra`.
 * New function, :py:func:`~.drawing.utils.plot_signals`, to plot several
   signals at the same time. See :ref:`plot.signals`.
+* New function, :py:func:`~.drawing.utils.plot_histograms`, to plot the histrograms
+  of several signals at the same time. See :ref:`plot.signals`.
 
 Curve fitting
 ^^^^^^^^^^^^^
@@ -116,10 +118,19 @@ EELS
 EDS
 ^^^
 
-* New signal, EDSSpectrum especialized in EDS data analysis. See
-  :ref:`eds_tools-label`.
+* New signal, EDSSpectrum especialized in EDS data analysis, with subsignal 
+  for EDS with SEM and with TEM: EDSSEMSpectrum and EDSTEMSpectrum. See
+  :ref:`eds-label`.
 * New database of EDS lines available in the ``elements`` attribute of the 
   ``hspy.utils.material`` module.
+* Adapted methods to calibrate the spectrum, the detector and the microscope.
+  See :ref:`eds_calibration-label`.
+* Specific methods to describe the sample, 
+  :py:meth:`~._signals.eds.EDSSpectrum.add_elements` and 
+  :py:meth:`~._signals.eds.EDSSpectrum.add_lines`. See :ref:`eds_sample-label`
+* New method to get the intensity of specific X-ray lines:
+  :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. See 
+  :ref:`eds_plot-label`
 
 API changes
 -----------
@@ -244,7 +255,7 @@ Mayor bugs fixed
 *  The `load` function `signal_type` keyword was not passed to the readers.
 * The spikes removal tool was unable to find the next spikes when the spike was detected close to the limits of the spectrum.
 * `load` was raising an UnicodeError when the title contained non-ASCII characters.
-* In Windows `Hyperspy Here` was opening in the current folder, not in the selected folder.
+* In Windows `HyperSpy Here` was opening in the current folder, not in the selected folder.
 * The fine structure coefficients were overwritten with their std when charging values from the model.
 * Storing the parameters in the maps and all the related functionality was broken for 1D spectrum.
 * Remove_background was broken for 1D spectrum.
@@ -272,8 +283,8 @@ New features
 * Add the possibility to load a stack memory mapped (similar to ImageJ
   virtual stack).
 * Improved hyperspy starter script that now includes the possibility
-  to start Hyperspy in the new IPython notebook.
-* Add "Hyperspy notebook here" to the Windows context menu.
+  to start HyperSpy in the new IPython notebook.
+* Add "HyperSpy notebook here" to the Windows context menu.
 * The information displayed in the plots produced by Signal.plot have 
   been enhanced.
 * Added Egerton's sigmak3 and sigmal3 GOS calculations (translated 
@@ -305,7 +316,7 @@ API changes
 * Spectrum and Image are not loaded into the user namespace by default.
   The signals module is loaded instead.
 * Change the default BSS algorithm to sklearn fastica, that is now 
-  distributed with Hyperspy and used in case that sklearn is not 
+  distributed with HyperSpy and used in case that sklearn is not 
   installed e.g. when using EPDFree.
 * _slicing_axes was renamed to signal_axes.
 * _non_slicing_axes to navigation_axes.
@@ -316,7 +327,7 @@ API changes
 * EELSCLEdge.freedelta was renamed to free_energy_shift.
 * EELSCLEdge.delta was renamed to energy_shift.
 * A value of True in a mask now means that the item is masked all over 
-  Hyperspy.
+  HyperSpy.
 
 
 .. _changes_0.4.1:
@@ -335,7 +346,7 @@ New features
  * New _id_name attribute for Components and Parameters. Improvements in their __repr__ methods.
  * Component.name can now be overwriten by the user.
  * New Signal.__str__ method.
- * Include Hyperspy in The Python Package Index.
+ * Include HyperSpy in The Python Package Index.
 
 
 Bugs fixed

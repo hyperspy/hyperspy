@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Hyperspy documentation build configuration file, created by
+# HyperSpy documentation build configuration file, created by
 # sphinx-quickstart on Mon Oct 18 11:10:55 2010.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -56,8 +56,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Hyperspy'
-copyright = u'2012, The Hyperspy development team'
+project = u'HyperSpy'
+copyright = u'2012, The HyperSpy development team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -180,7 +180,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Hyperspydoc'
+htmlhelp_basename = 'HyperSpydoc'
 
 
 # -- Options for LaTeX output --------------------------------------------
@@ -194,8 +194,8 @@ htmlhelp_basename = 'Hyperspydoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'Hyperspy.tex', u'Hyperspy Documentation',
-     u'The Hyperspy Developers', 'manual'),
+    ('index', 'HyperSpy.tex', u'HyperSpy Documentation',
+     u'The HyperSpy Developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -227,8 +227,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'hyperspy', u'Hyperspy Documentation',
-     [u'The Hyperspy developers'], 1)
+    ('index', 'hyperspy', u'HyperSpy Documentation',
+     [u'The HyperSpy developers'], 1)
 ]
 
 # Add the hyperspy website to the intersphinx domains

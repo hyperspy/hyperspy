@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import math
 
 import numpy as np
 import traits.api as t
@@ -199,7 +200,8 @@ class DataAxis(t.HasTraits):
     def _get_name(self):
         name = (self.name if self.name is not t.Undefined
                 else ("Unnamed " +
-                      ordinal(self.index_in_axes_manager)))
+                      ordinal(self.index_in_axes_manager)) if self.axes_manager is not None
+                else "Unnamed")
         return name
 
     def __repr__(self):
@@ -263,22 +265,38 @@ class DataAxis(t.HasTraits):
 
         Parameters
         ----------
-        value : float
+        value : number or numpy array
 
         Returns
         -------
-        int
+        index : integer or numpy array
 
         Raises
         ------
-        ValueError if value is out of the axis limits.
+        ValueError if any value is out of the axis limits.
 
         """
         if value is None:
             return None
+
+        if isinstance(value, np.ndarray):
+            if rounding is round:
+                rounding = np.round
+            elif rounding is math.ceil:
+                rounding = np.ceil
+            elif rounding is math.floor:
+                rounding = np.floor
+
+        index = rounding((value - self.offset) / self.scale)
+
+        if isinstance(value, np.ndarray):
+            index = index.astype(int)
+            if np.all(self.size > index) and np.all(index >= 0):
+                return index
+            else:
+                raise ValueError("A value is out of the axis limits")
         else:
-            index = int(rounding((value - self.offset) /
-                                 self.scale))
+            index = int(index)
             if self.size > index >= 0:
                 return index
             else:
@@ -557,7 +575,7 @@ class AxesManager(t.HasTraits):
         # Reorder axes_list using index_in_array if it is defined
         # for all axes and the indices are not repeated.
         indices = set([axis['index_in_array'] for axis in axes_list if
-                       'index_in_array' in axis])
+                       hasattr(axis, 'index_in_array')])
         if len(indices) == len(axes_list):
             axes_list.sort(key=lambda x: x['index_in_array'])
         for axis_dict in axes_list:

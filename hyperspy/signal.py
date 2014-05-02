@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
 import os.path
@@ -2310,7 +2310,7 @@ class MVATools(object):
         Signal}
             See `plot` documentation for details.
         factors_dim, loadings_dim: int
-            Currently Hyperspy cannot plot signals of dimension higher than
+            Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the BSS results when the
             factors or the loadings have signal dimension greater than 2
             we can view the data as spectra(images) by setting this parameter
@@ -2351,7 +2351,7 @@ class MVATools(object):
         Signal}
             See `plot` documentation for details.
         factors_dim, loadings_dim : int
-            Currently Hyperspy cannot plot signals of dimension higher than
+            Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the BSS results when the
             factors or the loadings have signal dimension greater than 2
             we can view the data as spectra(images) by setting this parameter
@@ -4343,11 +4343,14 @@ class Signal(MVA,
         mp = self.metadata
         current_class = self.__class__
         self.__class__ = hyperspy.io.assign_signal_subclass(
-            record_by=mp.Signal.record_by if "Signal.record_by" in mp
+            record_by=mp.Signal.record_by
+            if "Signal.record_by" in mp
             else self._record_by,
-            signal_type=mp.Signal.signal_type if "signal_type" in mp.Signal
+            signal_type=mp.Signal.signal_type
+            if "Signal.signal_type" in mp
             else self._signal_type,
-            signal_origin=mp.Signal.signal_origin if "Signal.signal_origin" in mp.Signal
+            signal_origin=mp.Signal.signal_origin
+            if "Signal.signal_origin" in mp
             else self._signal_origin)
         self.__init__(**self._to_dictionary())
 
@@ -4371,7 +4374,7 @@ class Signal(MVA,
             normally obtained in a scanning electron microscope) and
             "DielectricFuction". Setting the signal_type to the correct acronym
             is highly advisable when analyzing any signal for which HyperSpy
-            provides extra features. Even if Hyperspy does not provide extra
+            provides extra features. Even if HyperSpy does not provide extra
             features for the signal that you are analyzing, it is good practice
             to set signal_type to a value that best describes the data signal
             type.

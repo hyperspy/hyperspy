@@ -1,13 +1,13 @@
-Installing Hyperspy
+Installing HyperSpy
 ===================
 
-For the easiest way to install Hyperspy in Windows 
+For the easiest way to install HyperSpy in Windows 
 :ref:`read this <quick-windows-install>`.
 
-For the easiest way to install Hyperspy in MacOs 
+For the easiest way to install HyperSpy in MacOs 
 :ref:`read this <quick-mac-install>`.
 
-The easiest way to install Hyperspy in Ubuntu Linux is by downloading and
+The easiest way to install HyperSpy in Ubuntu Linux is by downloading and
 installing the deb file from the `Download section
 <http://hyperspy.org/download.html>`_.
 
@@ -16,23 +16,23 @@ For installing in any other platform you can
 
 .. _quick-windows-install:
 
-Quick instructions to install Hyperspy in Windows
+Quick instructions to install HyperSpy in Windows
 -------------------------------------------------
 
-Since version 0.6 Hyperspy is distributed in Windows with all the required
+Since version 0.6 HyperSpy is distributed in Windows with all the required
 libraries and nothing else is required. 
 
 
 .. _quick-mac-install:
 
-Quick instructions to install Hyperspy in MacOs
+Quick instructions to install HyperSpy in MacOs
 -------------------------------------------------
 
 #. Download and install `Canopy. <https://www.enthought.com/products/canopy/>`_
    Canopy/EPD is recommended for the best performance (it is compiled
    using Intel MKL libraries) and the easiest intallation (all the required
    libraries are included). The academic license is free. Since version 0.5
-   Hyperspy runs (with limited functionality) in Canopy Free.
+   HyperSpy runs (with limited functionality) in Canopy Free.
 
 #. Open a new terminal and type: `easy_install hyperspy`
 
@@ -49,7 +49,7 @@ Install using Python installers
    recommended in this platform because the Python installers do not create
    entries in the ``Start Menu`` or the ``Context Menu``
 
-Since version 4.1 Hyperspy is listed in the `Python Package Index
+Since version 4.1 HyperSpy is listed in the `Python Package Index
 <http://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded
 and installed using `distribute <http://pypi.python.org/pypi/distribute>`_ or
 (our favourite) `pip <http://pypi.python.org/pypi/pip>`_. Depending on your
@@ -120,9 +120,9 @@ To get the development version from our git repository you need to install `git
 
     $ git clone https://github.com/hyperspy/hyperspy.git
 
-To install Hyperspy you could proceed like in :ref:`iinstall-released-source`.
+To install HyperSpy you could proceed like in :ref:`iinstall-released-source`.
 However, if you are installing from the development version most likely you
-will prefer to install Hyperspy using  `pip <http://www.pip-installer.org>`_
+will prefer to install HyperSpy using  `pip <http://www.pip-installer.org>`_
 development mode: 
 
 
@@ -171,11 +171,11 @@ Installing the required libraries
 ---------------------------------
     
     
-When installing Hyperspy using Python installers or from source the Python
+When installing HyperSpy using Python installers or from source the Python
 programming language and the following libraries must be installed in the
 system: numpy, scipy, matplotlib (>= 1.2), ipython, traits and traitsui. For
 full functionality it is recommended to also install h5py, mdp and
-scikit-learn. In Windows Hyperspy uses the Ipython's QtConsole nd therefore Qt
+scikit-learn. In Windows HyperSpy uses the Ipython's QtConsole nd therefore Qt
 and PyQt or PySide are also required.
 
 
@@ -194,12 +194,12 @@ Known issues
 Windows
 ^^^^^^^
 
-* Hyperspy does not work with an standard installation of the full version of 
+* HyperSpy does not work with an standard installation of the full version of 
   EPD 7.3-2 due to a problem of compilation in the h5py. The solution is to 
-  uninstall Hyperspy and EPD and install a newer version of Hyperspy for
+  uninstall HyperSpy and EPD and install a newer version of HyperSpy for
   Windows that, since version 0.6, does not require the installation of 
   any other Python libraries.
-* If Hyperspy fails to start in Windows try installing the Microsoft Visual 
+* If HyperSpy fails to start in Windows try installing the Microsoft Visual 
   C++ 2008 redistributable packages (
   `64 bit <http://www.microsoft.com/download/en/details.aspx?id=15336>`_ 
   or `32 bit <http://www.microsoft.com/download/en/details.aspx?id=29>`_)
@@ -207,19 +207,19 @@ Windows
 * In some Windows machines an error is printed at the end of the installation
   and the entries in the context menu and the Start Menu are not installed 
   properly. In most cases the problem can be solved by restarting the computer
-  and reinstalling Hyperspy.
+  and reinstalling HyperSpy.
 * Due to a `Python bug <http://bugs.python.org/issue13276>`_ sometimes uninstalling
-  Hyperspy does not uninstall the "Hyperspy Here" entries in the context menu.
+  HyperSpy does not uninstall the "HyperSpy Here" entries in the context menu.
   Please run the following code in a Windows Terminal with administrator rights 
   to remove the entries manually:
   
   .. code-block:: bash
 
     $ uninstall_hyperspy_here
-* If Hyperspy raise a MemoryError exceptions:
+* If HyperSpy raise a MemoryError exceptions:
 
   * Install the 64bit if you're using the 32bit one and you are running
-    Hyperspy in a 64bit system.
+    HyperSpy in a 64bit system.
   * Increase the available RAM but closing other applications or physically
     adding more RAM to your computer.
 

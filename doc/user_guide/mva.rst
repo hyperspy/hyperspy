@@ -4,8 +4,8 @@ Machine learning
 Introduction
 ============
 
-Hyperspy provides easy access to several "machine learning" algorithms which
-can be useful when analysing hyperspectral data. In particular, decomposition
+HyperSpy provides easy access to several "machine learning" algorithms which
+can be useful when analysing multidimensional data. In particular, decomposition
 algorithms such as principal component analysis (PCA) or blind source
 separation (BSS) algorithms such as independent component analysis (ICA) are
 available through the methods described in this section.
@@ -26,7 +26,7 @@ Preferences.
 Nomenclature
 ============
 
-Hyperspy performs the decomposition of a dataset into two new datasets: one
+HyperSpy performs the decomposition of a dataset into two new datasets: one
 with the dimension of the signal space which we will call `factors` and the
 other with the dimension of the navigation space which we will call `loadings`.
 The same nomenclature applies to the result of BSS.
@@ -55,7 +55,7 @@ multidimensional, i.e. ``s.axes_manager.navigation_size`` must be greater than
 one.
 
 Several algorithms exist for performing this analysis. The default algorithm in
-Hyperspy is :py:const:`SVD`, which performs PCA using an approach called
+HyperSpy is :py:const:`SVD`, which performs PCA using an approach called
 "singular value decomposition". This method has many options. For more details
 read method documentation.
 
@@ -65,7 +65,7 @@ Poissonian noise
 
 Most decomposition algorithms assume that the noise of the data follows a
 Gaussian distribution. In the case that the data that you are analysing follow
-a Poissonian distribution instead, Hyperspy can "normalize" the data by
+a Poissonian distribution instead, HyperSpy can "normalize" the data by
 performing a scaling operation which can greatly enhance the result.
 
 To perform Poissonian noise normalisation:
@@ -134,7 +134,7 @@ is achieved by using a limited set of components to make a model of the
 original, omitting the later components that ideally contain only noise. This
 is know as *dimensionality reduction*.
 
-To perform this operation with Hyperspy, run the
+To perform this operation with HyperSpy, run the
 :py:meth:`~.learn.mva.MVA.get_decomposition_model` method, usually after
 estimating the dimension of your data e.g. by using the :ref:`scree-plot`. For
 example:
@@ -153,8 +153,6 @@ example:
     * if list of ints, only the components in the given list are used to
       construct the model.
 
-Usually a low integer (<10) will be the appropriate choice for most types of
-hyperspectral data
 
 .. HINT::
     Unlike most of the analysis functions, this function returns a new
@@ -185,7 +183,7 @@ introductory article
 <http://www.sciencedirect.com/science/article/pii/S0893608000000265>`_ or `this
 other article
 <http://www.sciencedirect.com/science/article/pii/S030439911000255X>`_ from the
-authors of Hyperspy for an application to EELS analysis.
+authors of HyperSpy for an application to EELS analysis.
 
 To perform BSS on the result of a decomposition, run the
 :py:meth:`~.learn.mva.MVA.blind_source_separation` method, e.g.:
@@ -234,8 +232,8 @@ Obtaining the results as Signal instances
 The decomposition and BSS results are internally stored in the
 :py:class:`~.signal.Signal` class where all the methods discussed in this
 chapter can find them. However, they are stored as numpy array. Frequently it
-is useful to obtain the decomposition/BSS factors and loadings as Hyperspy
-signals and Hyperspy provides the following four methods for that pourpose:
+is useful to obtain the decomposition/BSS factors and loadings as HyperSpy
+signals and HyperSpy provides the following four methods for that pourpose:
 
 * :py:meth:`~.signal.MVATools.get_decomposition_loadings`.
 * :py:meth:`~.signal.MVATools.get_decomposition_factors`.
@@ -253,7 +251,7 @@ Saving in the main file
 -------------------------
 
 When you save the object on which you've performed machine learning analysis in
-the :ref:`hdf5-format` format (the default in Hyperspy) (see
+the :ref:`hdf5-format` format (the default in HyperSpy) (see
 :ref:`saving_files`) the result of the analysis is automatically saved in the
 file and it is loaded with the rest of the data when you load the file.
 
@@ -282,7 +280,7 @@ Exporting
 ---------
 
 It is possible to export the results of machine learning to any format
-supported by Hyperspy using:
+supported by HyperSpy using:
 
 * :py:meth:`~.signal.MVATools.export_decomposition_results` or
 * :py:meth:`~.signal.MVATools.export_bss_results`.
@@ -292,7 +290,7 @@ data is exported, so please consult the method documentation. The options
 include the choice of file format, the prefixes for loadings and factors,
 saving figures instead of data and more.
 
-Please note that the exported data cannot easily be loaded into Hyperspy's
+Please note that the exported data cannot easily be loaded into HyperSpy's
 machine learning structure.
 
 

@@ -1,21 +1,21 @@
 #/usr/bin/python
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import sys
@@ -45,11 +45,11 @@ def uninstall_hyperspy_here():
             if sys.getwindowsversion()[0] < 6.:  # Older than Windows Vista:
                 _winreg.DeleteKey(
                     _winreg.HKEY_LOCAL_MACHINE,
-                    r'Software\Classes\Folder\Shell\Hyperspy_%s_here\Command' %
+                    r'Software\Classes\Folder\Shell\HyperSpy_%s_here\Command' %
                     env)
                 _winreg.DeleteKey(
                     _winreg.HKEY_LOCAL_MACHINE,
-                    r'Software\Classes\Folder\Shell\Hyperspy_%s_here' %
+                    r'Software\Classes\Folder\Shell\HyperSpy_%s_here' %
                     env)
             else:  # Vista or newer
                 _winreg.DeleteKey(
@@ -68,21 +68,21 @@ def uninstall_hyperspy_here():
                     _winreg.HKEY_CLASSES_ROOT,
                     r'Directory\Background\shell\hyperspy_%s_here' %
                     env)
-            print("Hyperspy %s here correctly uninstalled" % env)
+            print("HyperSpy %s here correctly uninstalled" % env)
         except:
-            print("Failed to uninstall Hyperspy %s here" % env)
+            print("Failed to uninstall HyperSpy %s here" % env)
 
 
 def install_hyperspy_here():
-    # First uninstall old Hyperspy context menu entries
+    # First uninstall old HyperSpy context menu entries
     try:
         if sys.getwindowsversion()[0] < 6.:  # Older than Windows Vista:
             _winreg.DeleteKey(
                 _winreg.HKEY_LOCAL_MACHINE,
-                r'Software\Classes\Folder\Shell\Hyperspy_here\Command')
+                r'Software\Classes\Folder\Shell\HyperSpy_here\Command')
             _winreg.DeleteKey(
                 _winreg.HKEY_LOCAL_MACHINE,
-                r'Software\Classes\Folder\Shell\Hyperspy_here')
+                r'Software\Classes\Folder\Shell\HyperSpy_here')
         else:  # Vista or newer
             _winreg.DeleteKey(
                 _winreg.HKEY_CLASSES_ROOT,
@@ -108,19 +108,19 @@ def install_hyperspy_here():
         if sys.getwindowsversion()[0] < 6.:  # Before Windows Vista
             key = _winreg.CreateKey(
                 _winreg.HKEY_LOCAL_MACHINE,
-                r'Software\Classes\Folder\Shell\Hyperspy_%s_here' %
+                r'Software\Classes\Folder\Shell\HyperSpy_%s_here' %
                 env)
             _winreg.SetValueEx(
                 key,
                 "",
                 0,
                 _winreg.REG_SZ,
-                "Hyperspy %s here" %
+                "HyperSpy %s here" %
                 env)
             key.Close()
             key = _winreg.CreateKey(
                 _winreg.HKEY_LOCAL_MACHINE,
-                r'Software\Classes\Folder\Shell\Hyperspy_%s_here\Command' %
+                r'Software\Classes\Folder\Shell\HyperSpy_%s_here\Command' %
                 env)
             _winreg.SetValueEx(
                 key,
@@ -140,7 +140,7 @@ def install_hyperspy_here():
                 "",
                 0,
                 _winreg.REG_SZ,
-                "Hyperspy %s here" %
+                "HyperSpy %s here" %
                 env)
             key.Close()
             key = _winreg.CreateKey(
@@ -164,7 +164,7 @@ def install_hyperspy_here():
                 "",
                 0,
                 _winreg.REG_SZ,
-                "Hyperspy %s Here" %
+                "HyperSpy %s Here" %
                 env)
             key.Close()
             key = _winreg.CreateKey(
@@ -174,7 +174,7 @@ def install_hyperspy_here():
             _winreg.SetValueEx(key, "", 0, _winreg.REG_EXPAND_SZ, script)
             key.Close()
 
-    print("Hyperspy here correctly installed")
+    print("HyperSpy here correctly installed")
 
 
 def install():
@@ -196,9 +196,9 @@ def install():
                                          'hyperspy_notebook.bat')
     # Create the start_menu entry
     if sys.getwindowsversion()[0] < 6.:  # Older than Windows Vista:
-        hspy_sm_path = os.path.join(start_menu, "Programs", "Hyperspy")
+        hspy_sm_path = os.path.join(start_menu, "Programs", "HyperSpy")
     else:
-        hspy_sm_path = os.path.join(start_menu, "Hyperspy")
+        hspy_sm_path = os.path.join(start_menu, "HyperSpy")
     if os.path.isdir(hspy_sm_path):
         try:
             shutil.rmtree(hspy_sm_path)
@@ -212,14 +212,14 @@ def install():
     notebook_link_path = os.path.join(hspy_sm_path,
                                       'hyperspy_notebook.lnk')
     create_shortcut(hyperspy_qtconsole_bat,
-                    'Hyperspy QtConsole',
+                    'HyperSpy QtConsole',
                     qtconsole_link_path,
                     "",
                     os.path.expanduser("~"),
                     os.path.join(logo_path,
                                  'hyperspy_qtconsole_logo.ico'))
     create_shortcut(hyperspy_notebook_bat,
-                    'Hyperspy Notebook',
+                    'HyperSpy Notebook',
                     notebook_link_path,
                     "",
                     os.path.expanduser("~"),
@@ -233,13 +233,13 @@ def install():
             'address': r"http://hyperspy.org/hyperspy-doc/current/index.html",
             'link_name': "hyperspy_doc.lnk",
             'hspy_sm_path': hspy_sm_path,
-            'description': 'Hyperspy online documentation',
+            'description': 'HyperSpy online documentation',
             'icon_path': os.path.join(logo_path, 'hyperspy_doc_logo.ico')},
         {
             'address': r"http://hyperspy.org",
             'link_name': "hyperspy_homepage.lnk",
             'hspy_sm_path': hspy_sm_path,
-            'description': 'Hyperspy homepage',
+            'description': 'HyperSpy homepage',
             'icon_path': os.path.join(logo_path, 'hyperspy_home_logo.ico')},
     ]
     for link in links:
@@ -248,7 +248,7 @@ def install():
     if admin_rights() is True:
         install_hyperspy_here()
     else:
-        print("To start Hyperspy from the context menu install Hyperspy "
+        print("To start HyperSpy from the context menu install HyperSpy "
               "with administrator rights")
 
     print "All was installed correctly"

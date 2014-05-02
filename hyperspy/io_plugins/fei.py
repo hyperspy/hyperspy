@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import struct
 from glob import glob
@@ -87,18 +87,6 @@ def dimension_array_dtype(n, DescriptionLength, UnitsLength):
     return dt_list
 
 
-def get_number_of_dimensions(file):
-    file.seek(26)
-    number_of_dimensions = readLELong(file)
-    return number_of_dimensions
-
-
-def get_total_number_of_elements(file):
-    file.seek(14)
-    number_of_number_of_elements = readLELong(file)
-    return number_of_number_of_elements
-
-
 def get_lengths(file):
     file.seek(24, 1)
     description_length = readLELong(file)
@@ -120,19 +108,15 @@ def get_header_dtype_list(file):
         ("OffsetArrayOffset", "<u4"),
         ("NumberDimensions", "<u4"),
     ]
-    number_of_dimensions = get_number_of_dimensions(file)
-    total_number_of_elements = get_total_number_of_elements(file)
+    header = np.fromfile(file,
+                         dtype=np.dtype(header_list),
+                         count=1)
     # Go to the beginning of the dimension array section
     file.seek(30)
-    for n in xrange(1, number_of_dimensions + 1):
+    for n in xrange(1, header["NumberDimensions"] + 1):
         description_length, unit_length = get_lengths(file)
         header_list += dimension_array_dtype(
             n, description_length, unit_length)
-    # Here we can check if the OffsetArrayOffset == file.tell()
-
-    # Read the data offset
-    header_list += [("Data_Offsets", ("<u4", total_number_of_elements)), ]
-    header_list += [("Tag_Offsets", ("<u4", total_number_of_elements)), ]
     file.seek(0)
     return header_list
 
@@ -295,15 +279,13 @@ def load_ser_file(filename, verbose=False):
 
         if header['ValidNumberElements'] == 0:
             raise IOError(
-                "The file does not contains valid data"
+                "The file does not contains valid data. "
                 "If it is a single spectrum, the data is contained in the  "
-                ".emi file but Hyperspy cannot currently extract this information.")
+                ".emi file but HyperSpy cannot currently extract this information.")
 
-        data_offsets = header['Data_Offsets'][0]
-        try:
-            data_offsets = data_offsets[0]
-        except:
-            pass
+        # Read the first element of data offsets
+        f.seek(header["OffsetArrayOffset"][0])
+        data_offsets = readLELong(f)
         data_dtype_list = get_data_dtype_list(
             f,
             data_offsets,
@@ -335,7 +317,7 @@ def get_xml_info_from_emi(emi_file):
 
 
 def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
-    """Reads the information from the file and returns it in the Hyperspy
+    """Reads the information from the file and returns it in the HyperSpy
     required format.
 
     """
@@ -387,9 +369,8 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
 
         # FEI seems to use the international system of units (SI) for the
         # energy scale (eV).
-        axes[-1]['units'] = 'keV'
+        axes[-1]['units'] = 'eV'
         axes[-1]['name'] = 'Energy'
-        axes[-1]['scale'] *= 0.001
 
         array_shape.append(data['ArrayLength'][0])
 
