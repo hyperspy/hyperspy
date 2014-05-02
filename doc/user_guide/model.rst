@@ -141,6 +141,42 @@ index in the model.
     >>> m["Carbon"]
     <Carbon (Gaussian component)>
 
+It is possible to "switch off" a component by setting its
+:py:attr:`~.component.Component.active` to `False`. When a components is
+switched off, to all effects it is as if it was not part of the model. To
+switch it on simply set the :py:attr:`~.component.Component.active` attribute
+back to `True`.
+
+.. versionadded:: 0.7.1
+
+    In multidimensional signals it is possible to store the value of the
+    :py:attr:`~.component.Component.active` attribute at each navigation index.
+    To enable this feature for a given component set the
+    :py:attr:`~.component.Component.active_is_multidimensional` attribute to
+    `True`. 
+
+    .. code-block:: python
+ 
+        >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
+        >>> m = create_model(s)
+        >>> g1 = components.Gaussian()
+        >>> g2 = components.Gaussian()
+        >>> m.extend([g1,g2])
+        >>> g1.active_is_multidimensional = True
+        >>> g1._active_array
+        array([ True,  True,  True,  True,  True,  True,  True,  True,  True,  True], dtype=bool)
+        >>> g2._active_array is None
+        True
+        >>> m.set_component_active_value(False)
+        >>> g1._active_array
+        array([False, False, False, False, False, False, False, False, False, False], dtype=bool)
+        >>> m.set_component_active_value(True, only_current=True)
+        >>> g1._active_array
+        array([ True, False, False, False, False, False, False, False, False, False], dtype=bool)
+        >>> g1.active_is_multidimensional = False
+        >>> g1._active_array is None
+        True
+ 
 
 Getting and setting parameter values and attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -162,6 +198,7 @@ Example:
 .. code-block:: python
 
     >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> m = create_model(s)
     >>> g1 = components.Gaussian()
     >>> g2 = components.Gaussian()
     >>> m.extend([g1,g2])
