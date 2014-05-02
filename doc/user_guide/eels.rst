@@ -233,3 +233,21 @@ edge functionalities:
 * :py:meth:`~.models.eelsmodel.EELSModel.free_edges`
 * :py:meth:`~.models.eelsmodel.EELSModel.fix_fine_structure`
 * :py:meth:`~.models.eelsmodel.EELSModel.free_fine_structure`
+
+
+When fitting edges with fine structure enabled it is often desirable that the
+fine structure region of nearby ionization edges does not overlap. HyperSpy
+provides a method,
+:py:meth:`~.models.eelsmodel.EELSModel.resolve_fine_structure`, to
+automatically adjust the fine structure to prevent fine structure to avoid
+overlapping. This method is executed automatically when e.g. components are
+added or removed from the model, but sometimes is necessary to call it
+manually.
+
+.. versionadded:: 0.7.1
+
+   Sometimes it is desirable to disable the automatic adjustment of the fine
+   structure width. It is possible to suspend this feature by calling
+   :py:meth:`~.models.eelsmodel.EELSModel.suspend_auto_fine_structure_width`.
+   To resume it use
+   :py:meth:`~.models.eelsmodel.EELSModel.suspend_auto_fine_structure_width`

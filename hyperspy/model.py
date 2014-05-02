@@ -754,7 +754,7 @@ class Model(list):
         -----
         To use the full energy range call the function without arguments.
         """
-        i1, i2 = self.axis.value2index(x1), self.axis.value2index(x2)
+        i1, i2 = self.axis.value_range_to_indices(x1, x2)
         self._set_signal_range_in_pixels(i1, i2)
 
     def _remove_signal_range_in_pixels(self, i1=None, i2=None):
@@ -780,7 +780,7 @@ class Model(list):
         x2 : None or float
 
         """
-        i1, i2 = self.axis.value2index(x1), self.axis.value2index(x2)
+        i1, i2 = self.axis.value_range_to_indices(x1, x2)
         self._remove_signal_range_in_pixels(i1, i2)
 
     def reset_signal_range(self):
@@ -810,7 +810,7 @@ class Model(list):
         x2 : None or float
 
         """
-        i1, i2 = self.axis.value2index(x1), self.axis.value2index(x2)
+        i1, i2 = self.axis.value_range_to_indices(x1, x2)
         self._add_signal_range_in_pixels(i1, i2)
 
     def reset_the_signal_range(self):
