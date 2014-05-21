@@ -98,14 +98,14 @@ class EDSSpectrum(Spectrum):
             return line_energy
         else:
             return line_energy, line_FWHM
-            
+
     def _get_beam_energy(self):
         """
         Get the beam energy.
-        
+
         The return value is in the same units than the signal axis
         """
-        
+
         if "Acquisition_instrument.SEM.beam_energy" in self.metadata:
             beam_energy = self.metadata.Acquisition_instrument.SEM.beam_energy
         elif "Acquisition_instrument.TEM.beam_energy" in self.metadata:
@@ -115,9 +115,9 @@ class EDSSpectrum(Spectrum):
                 "To use this method the beam energy `Acquisition_instrument.TEM.beam_energy` "
                 "or `Acquisition_instrument.SEM.beam_energy` must be defined in "
                 "`metadata`.")
-                
+
         units_name = self.axes_manager.signal_axes[0].units
-        
+
         if units_name == 'eV':
             beam_energy = beam_energy * 1000
         return beam_energy
@@ -403,7 +403,7 @@ class EDSSpectrum(Spectrum):
         """
 
         beam_energy = self._get_beam_energy()
-        
+
         end_energy = self.axes_manager.signal_axes[0].high_value
         if beam_energy < end_energy:
             end_energy = beam_energy
