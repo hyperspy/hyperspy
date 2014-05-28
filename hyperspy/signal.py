@@ -3733,7 +3733,7 @@ class Signal(MVA,
                                axis=axis.index_in_array))
         s._remove_axis(axis.index_in_axes_manager)
         return s
-        
+
     def fft(self, shape_fft=None, axes=None):
         """Compute the discrete Fourier Transform.
 
@@ -3772,13 +3772,13 @@ class Signal(MVA,
             im_fft = Image(np.fft.fftn(self.data, s=shape_fft, axes=axes))
         else:
             im_fft = Spectrum(np.fft.fftn(self.data, s=shape_fft, axes=axes))
-        
+
         # scaling
         if axes is None:
             axes = range(len(self.axes_manager.shape))
         if shape_fft is None:
-            shape_fft = self.axes_manager.shape     
-        
+            shape_fft = self.axes_manager.shape
+
         for ax, dim in zip(axes, shape_fft):
             axis = im_fft.axes_manager[ax]
             axis.scale = 1. / dim / self.axes_manager[ax].scale
@@ -3787,7 +3787,7 @@ class Signal(MVA,
             axis.offset = -axis.high_value / 2.
 
         return im_fft
-        
+
     def ifft(self, shape_ifft=None, axes=None):
         """
         Compute the inverse discrete Fourier Transform.
@@ -3839,21 +3839,24 @@ class Signal(MVA,
         if self.axes_manager.signal_dimension == 2:
             im_ifft = Image(np.fft.ifftn(self.data, s=shape_ifft, axes=axes))
         else:
-            im_ifft = Spectrum(np.fft.ifftn(self.data, s=shape_ifft, axes=axes))
-            
-            
+            im_ifft = Spectrum(
+                np.fft.ifftn(
+                    self.data,
+                    s=shape_ifft,
+                    axes=axes))
+
         # scaling
         if axes is None:
             axes = range(len(self.axes_manager.shape))
         if shape_ifft is None:
-            shape_ifft = self.axes_manager.shape     
-        
+            shape_ifft = self.axes_manager.shape
+
         for ax, dim in zip(axes, shape_ifft):
             axis = im_ifft.axes_manager[ax]
             axis.scale = 1. / dim / self.axes_manager[ax].scale
             #axis.units = str(self.axes_manager[ax].units) + '$^{-1}$'
             axis.offset = 0
-        
+
         return im_ifft
 
     def integrate1D(self, axis):
