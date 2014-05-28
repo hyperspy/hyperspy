@@ -1,25 +1,25 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
 from hyperspy import messages
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
-    ripple, tiff)
+                                 ripple, tiff)
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff]
 try:
     from hyperspy.io_plugins import netcdf
@@ -30,14 +30,14 @@ except ImportError:
     # old EELSLab files. Therefore, we print no message if it is not
     # available
     #~ messages.information('The NetCDF IO features are not available')
-    
+
 try:
     from hyperspy.io_plugins import hdf5
     io_plugins.append(hdf5)
 except ImportError:
     messages.warning('The HDF5 IO features are not available. '
-    'It is highly reccomended to install h5py')
-    
+                     'It is highly reccomended to install h5py')
+
 try:
     from hyperspy.io_plugins import image
     io_plugins.append(image)
@@ -46,7 +46,6 @@ except ImportError:
 
 default_write_ext = set()
 for plugin in io_plugins:
-    if plugin.writes:    
+    if plugin.writes:
         default_write_ext.add(
             plugin.file_extensions[plugin.default_extension])
-

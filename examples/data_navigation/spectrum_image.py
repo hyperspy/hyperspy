@@ -21,10 +21,9 @@ s.axes_manager.navigation_axes[1].scale = 0.1
 s.axes_manager.navigation_axes[1].offset = 100
 
 # Give a title
-s.mapped_parameters.title = 'Random spectrum image'
+s.metadata.General.title = 'Random spectrum image'
 
 # Plot it
 s.plot()
 
-show() # No necessary when running in the HyperSpy's IPython profile
-
+show()  # No necessary when running in the HyperSpy's IPython profile

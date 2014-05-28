@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANdata WARRANTdata; without even the implied warranty of
 # MERCHANTABILITdata or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # dataou should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import scipy.linalg
@@ -22,10 +22,11 @@ import scipy.linalg
 from hyperspy.misc.machine_learning.import_sklearn import *
 from hyperspy import messages
 
-def svd_pca(data, fast = False, output_dimension = None, centre = None,
-            auto_transpose = True):
+
+def svd_pca(data, fast=False, output_dimension=None, centre=None,
+            auto_transpose=True):
     """Perform PCA using SVD.
-    
+
     Parameters
     ----------
     data : numpy array
@@ -37,14 +38,14 @@ def svd_pca(data, fast = False, output_dimension = None, centre = None,
         Number of components to estimate when fast is True
     centre : None | 'variables' | 'trials'
         If None no centring is applied. If 'variable' the centring will be
-        performed in the variable axis. If 'trials', the centring will be 
+        performed in the variable axis. If 'trials', the centring will be
         performed in the 'trials' axis.
     auto_transpose : bool
         If True, automatically transposes the data to boost performance
-    
+
     Returns
     -------
-    
+
     factors : numpy array
     loadings : numpy array
     explained_variance : numpy array
@@ -53,15 +54,15 @@ def svd_pca(data, fast = False, output_dimension = None, centre = None,
     N, M = data.shape
     if centre is not None:
         if centre == 'variables':
-            mean = data.mean(1)[:,np.newaxis]
+            mean = data.mean(1)[:, np.newaxis]
         elif centre == 'trials':
-            mean = data.mean(0)[np.newaxis,:]
+            mean = data.mean(0)[np.newaxis, :]
         else:
             raise AttributeError(
                 'centre must be one of: None, variables, trials')
         data -= mean
     else:
-        mean = None 
+        mean = None
     if auto_transpose is True:
         if N < M:
             print("Auto transposing the data")
@@ -74,7 +75,7 @@ def svd_pca(data, fast = False, output_dimension = None, centre = None,
                                   'define the output_dimension')
         U, S, V = fast_svd(data, output_dimension)
     else:
-        U, S, V = scipy.linalg.svd(data, full_matrices = False)
+        U, S, V = scipy.linalg.svd(data, full_matrices=False)
     if auto_transpose is False:
         factors = V.T
         explained_variance = S ** 2 / N

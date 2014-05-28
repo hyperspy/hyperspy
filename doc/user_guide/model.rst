@@ -1,13 +1,16 @@
 Curve fitting
 *************
 
-Hyperspy can perform curve fitting in n-dimensional data sets. It can create a
+HyperSpy can perform curve fitting in n-dimensional data sets. It can create a
 model from a linear combinantion of predefined components and can use multiple
 optimisation algorithms to fit the model to experimental data. It supports
 bounds and weights.
 
-Generics tools
---------------
+.. versionadded:: 0.7
+   
+    Before creating a model verify that the ``Signal.binned`` metadata
+    attribute of the signal is set to the correct value because the resulting
+    model depends on this parameter. See :ref:`signal.binned` for more details.
 
 Creating a model
 ^^^^^^^^^^^^^^^^
@@ -29,7 +32,7 @@ the accelerating voltage, convergence and collection angles etc.
 Adding components to the model
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In Hyperspy a model consists of a linear combination of :py:mod:`~.components`.
+In HyperSpy a model consists of a linear combination of :py:mod:`~.components`.
 These are some of the components which are currently available:
 
 
@@ -88,7 +91,7 @@ data that can be modelled using gaussians we might proceed as follows:
 
 We could use the append method two times to add the two gaussians, but when
 adding multiple components it is handier to use the extend method that enables
-adding a list of components at once
+adding a list of components at once.
 
 
 .. code-block:: python
@@ -98,7 +101,7 @@ adding a list of components at once
     [<Gaussian component>, <Gaussian component>, <Gaussian component>]
     
     
-We can customise the name of the components
+We can customise the name of the components.
 
 .. code-block:: python
 
@@ -109,9 +112,71 @@ We can customise the name of the components
     [<Carbon (Gaussian component)>,
      <Hydrogen (Gaussian component)>,
      <Nitrogen (Gaussian component)>]
-    
-    
 
+
+Two components cannot have the same name.
+
+.. code-block:: python
+
+    >>> gaussian2.name = 'Carbon'
+    Traceback (most recent call last):
+      File "<ipython-input-5-2b5669fae54a>", line 1, in <module>
+        g2.name = "Carbon"
+      File "/home/fjd29/Python/hyperspy/hyperspy/component.py", line 466, in name
+        "the name " + str(value))
+    ValueError: Another component already has the name Carbon
+
+
+It is possible to access the components in the model by their name or by the
+index in the model.
+    
+.. code-block:: python
+
+    >>> m
+    [<Carbon (Gaussian component)>,
+     <Hydrogen (Gaussian component)>,
+     <Nitrogen (Gaussian component)>]
+    >>> m[0]
+    <Carbon (Gaussian component)>
+    >>> m["Carbon"]
+    <Carbon (Gaussian component)>
+
+It is possible to "switch off" a component by setting its
+:py:attr:`~.component.Component.active` to `False`. When a components is
+switched off, to all effects it is as if it was not part of the model. To
+switch it on simply set the :py:attr:`~.component.Component.active` attribute
+back to `True`.
+
+.. versionadded:: 0.7.1
+
+    In multidimensional signals it is possible to store the value of the
+    :py:attr:`~.component.Component.active` attribute at each navigation index.
+    To enable this feature for a given component set the
+    :py:attr:`~.component.Component.active_is_multidimensional` attribute to
+    `True`. 
+
+    .. code-block:: python
+ 
+        >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
+        >>> m = create_model(s)
+        >>> g1 = components.Gaussian()
+        >>> g2 = components.Gaussian()
+        >>> m.extend([g1,g2])
+        >>> g1.active_is_multidimensional = True
+        >>> g1._active_array
+        array([ True,  True,  True,  True,  True,  True,  True,  True,  True,  True], dtype=bool)
+        >>> g2._active_array is None
+        True
+        >>> m.set_component_active_value(False)
+        >>> g1._active_array
+        array([False, False, False, False, False, False, False, False, False, False], dtype=bool)
+        >>> m.set_component_active_value(True, only_current=True)
+        >>> g1._active_array
+        array([ True, False, False, False, False, False, False, False, False, False], dtype=bool)
+        >>> g1.active_is_multidimensional = False
+        >>> g1._active_array is None
+        True
+ 
 
 Getting and setting parameter values and attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -133,6 +198,7 @@ Example:
 .. code-block:: python
 
     >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> m = create_model(s)
     >>> g1 = components.Gaussian()
     >>> g2 = components.Gaussian()
     >>> m.extend([g1,g2])
@@ -302,22 +368,158 @@ example:
             A	4.000000
             centre	0.000000
 
+.. _model.fitting:            
+
 Fitting the model to the data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To fit the model to the data at the current coordinates (e.g. to fit one
 spectrum at a particular point in a spectrum-image) use
-:py:meth:`~.optimizers.Optimizers.fit`.
+:py:meth:`~.model.Model.fit`.
+
+The following table summarizes the features of the currently available
+optimizers:
+
+
+.. table:: Features of curve fitting optimizers.
+
+    +-----------+--------+------------------+-----------------------------------+
+    | Optimizer | Bounds | Error estimation | Method                            |
+    +===========+========+==================+===================================+
+    | "leastsq" |  No    | Yes              | least squares                     |
+    +-----------+--------+------------------+-----------------------------------+
+    | "mpfit"   |  Yes   | Yes              | least squares                     |
+    +-----------+--------+------------------+-----------------------------------+
+    | "odr"     |  No    | Yes              | least squares                     |
+    +-----------+--------+------------------+-----------------------------------+
+    |  "fmin"   |  No    | No               | least squares, maximum likelihood |
+    +-----------+--------+------------------+-----------------------------------+
+
+The following example shows how to perfom least squares with error estimation.
+
+First we create data consisting of a line line ``y = a*x + b`` with ``a = 1``
+and ``b = 100`` and we add white noise to it:
 
 .. code-block:: python
-    
-    >>> m.fit() # Fit the data at the current coordinates
-        
+
+    >>> s = signals.SpectrumSimulation(
+    ...     np.arange(100, 300))
+    >>> s.add_gaussian_noise(std=100)
+
+To fit it we create a model consisting of a
+:class:`~._components.polynomial.Polynomial` component of order 1 and fit it
+to the data.
+
+.. code-block:: python
+
+    >>> m = create_model(s)
+    >>> line  = components.Polynomial(order=1)
+    >>> m.append(line)
+    >>> m.fit()
+
+On fitting completion, the optimized value of the parameters and their estimated standard deviation
+are stored in the following line attributes:
+
+.. code-block:: python
+
+    >>> line.coefficients.value
+    (0.99246156488437653, 103.67507406125888)
+    >>> line.coefficients.std
+    (0.11771053738516088, 13.541061301257537)
+
+
+
+When the noise is heterocedastic, only if the
+``metadata.Signal.Noise_properties.variance`` attribute of the
+:class:`~._signals.spectrum.Spectrum` instance is defined can the errors be
+estimated accurately. If the variance is not defined, the standard deviation of
+the parameters are still computed and stored in the
+:attr:`~.component.Parameter.std` attribute by setting variance equal 1.
+However, the value won't be correct unless an accurate value of the variance is
+defined in ``metadata.Signal.Noise_properties.variance``. See
+:ref:`signal.noise_properties` for more information.
+
+In the following example, we add poissonian noise to the data instead of
+gaussian noise and proceed to fit as in the previous example.
+
+.. code-block:: python
+
+    >>> s = signals.SpectrumSimulation(
+    ...     np.arange(300))
+    >>> s.add_poissonian_noise()
+    >>> m = create_model(s)
+    >>> line  = components.Polynomial(order=1)
+    >>> m.append(line)
+    >>> m.fit()
+    >>> line.coefficients.value
+    (1.0052331707848698, -1.0723588390873573)
+    >>> line.coefficients.std
+    (0.0081710549764721901, 1.4117294994070277)
+
+Because the noise is heterocedastic, the least squares optimizer estimation is
+biased. A more accurate result can be obtained by using weighted least squares
+instead that, although still biased for poissonian noise, is a good 
+approximation in most cases.
+
+.. code-block:: python
+
+   >>> s.estimate_poissonian_noise_variance(expected_value=signals.Spectrum(np.arange(300)))
+   >>> m.fit()
+   >>> line.coefficients.value
+   (1.0004224896604759, -0.46982916592391377)
+   >>> line.coefficients.std
+   (0.0055752036447948173, 0.46950832982673557)
+
+
+We can use poissonian maximum likelihood estimation
+instead that is an unbiased estimator for poissonian noise.
+
+.. code-block:: python
+
+   >>> m.fit(fitter="fmin", method="ml")
+   >>> line.coefficients.value
+   (1.0030718094185611, -0.63590210946134107)
+
+Problems of ill-conditioning and divergence can be ameliorated by using bounded
+optimization. Currently, only the "mpfit" optimizer supports bounds. In the
+following example a gaussian histogram is fitted using a
+:class:`~._components.gaussian.Gaussian` component using mpfit and bounds on
+the ``centre`` parameter.
+
+.. code-block:: python
+
+    >>> s = signals.Signal(np.random.normal(loc=10, scale=0.01,
+    size=1e5)).get_histogram()
+    >>> s.metadata.Signal.binned = True
+    >>> m = create_model(s)
+    >>> g1 = components.Gaussian()
+    >>> m.append(g1)
+    >>> g1.centre.value = 7
+    >>> g1.centre.bmin = 7
+    >>> g1.centre.bmax = 14
+    >>> g1.centre.bounded = True
+    >>> m.fit(fitter="mpfit", bounded=True)
+    >>> m.print_current_values()
+    Components  Parameter   Value
+    Gaussian
+            sigma   0.00996345
+            A   99918.7
+            centre  9.99976
+
+
+
 .. versionadded:: 0.7
 
-In addition, it is possible to fit a given component  independently using the
-:py:meth:`~.model.Model.fit_component` method, that is specially useful to ease
-setting starting parameters.
+    The chi-squared, reduced chi-squared and the degrees of freedom are
+    computed automatically when fitting. They are stored as signals, in the
+    :attr:`~.model.Model.chisq`, :attr:`~.model.Model.red_chisq`  and
+    :attr:`~.model.Model.dof` attributes of the model respectively. Note that,
+    unless ``metadata.Signal.Noise_properties.variance`` contains an accurate
+    estimation of the variance of the data, the chi-squared and reduced
+    chi-squared cannot be computed correctly. This is also true for
+    homocedastic noise. 
+        
+.. _model.visualization:
 
 Visualizing the model
 ^^^^^^^^^^^^^^^^^^^^^
@@ -341,23 +543,45 @@ is possible to display the individual components by calling
 
 To disable this feature call :py:meth:`~.model.Model.disable_plot_components`.
 
+.. versionadded:: 0.7.1
+
+   By default the model plot is automatically updated when any parameter value
+   changes. It is possible to suspend this feature with 
+   :py:meth:`~.model.Model.suspend_update`. To resume it use
+   :py:meth:`~.model.Model.resume_update`. 
+
+
+.. _model.starting:
+
+Setting the initial parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Non-linear regression often requires setting sensible starting 
+parameters. This can be done by plotting the model and adjusting the parameters
+by hand. 
+
+.. versionadded:: 0.7
+
+    In addition, it is possible to fit a given component  independently using
+    the :py:meth:`~.model.Model.fit_component` method.
+
     
-Setting the position of parameter interactively
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. versionadded:: 0.6
 
-:py:meth:`~.model.Model.enable_adjust_position` provides an interactive way of
-setting the position of the components with a well define position.
-:py:meth:`~.model.Model.disable_adjust_position` disables the tool. This
-feature will be made from user friendly but adding a button to the UI to
-enable/disable it.
-    
-.. figure::  images/model_adjust_position.png
-   :align:   center
-   :width:   500    
+    Also, :py:meth:`~.model.Model.enable_adjust_position` provides an
+    interactive way of setting the position of the components with a well
+    define position.  :py:meth:`~.model.Model.disable_adjust_position` disables
+    the tool. 
 
-   Adjust the position of the components interactively by dragging the 
-   vertical lines.
+
+    .. figure::  images/model_adjust_position.png
+        :align:   center
+        :width:   500    
+
+        Interactive component position adjustment tool.Drag the vertical lines
+        to set the initial value of the position parameter. 
+
 
 
 Exclude data from the fitting process
@@ -370,11 +594,11 @@ undesired spectral channels from the fitting process:
 * :py:meth:`~.model.Model.remove_signal_range`
 * :py:meth:`~.model.Model.reset_signal_range`
 
-Working with multidimensional datasets
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Fitting multidimensional datasets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To fit the model to the full datataset use :py:meth:`~.model.Model.multifit`, 
-e.g.:
+To fit the model to all the elements of a multidimensional datataset use
+:py:meth:`~.model.Model.multifit`, e.g.:
     
 .. code-block:: python
 
@@ -398,6 +622,7 @@ The :py:class:`~.model.Model` :py:meth:`~.model.Model.plot_results`,
 :py:class:`~.component.Parameter` :py:meth:`~.component.Parameter.plot` methods
 can be used to visualise the result of the fit **when fitting multidimensional
 datasets**.
+
 
 
 Saving and loading the result of the fit
@@ -429,152 +654,3 @@ parameter attributes:
 * :py:meth:`~.model.Model.set_parameters_value`
 
 
-EELS curve fitting
-------------------
-
-Hyperspy makes it really easy to quantify EELS core-loss spectra by curve
-fitting as it is shown in the next example of quantification of a boron nitride
-EELS spectrum from the `The EELS Data Base
-<http://pc-web.cemes.fr/eelsdb/index.php?page=home.php>`_. 
-
-Load the core-loss and low-loss spectra
-
-
-.. code-block:: python
-       
-    >>> s = load("BN_(hex)_B_K_Giovanni_Bertoni_100.msa")
-    >>> ll = load("BN_(hex)_LowLoss_Giovanni_Bertoni_96.msa")
-
-
-Set some important experimental information that is missing from the original
-core-loss file
-
-.. code-block:: python
-       
-    >>> s.set_microscope_parameters(beam_energy=100, convergence_angle=0.2, collection_angle=2.55)
-    
-    
-Define the chemical composition of the sample
-
-.. code-block:: python
-       
-    >>> s.add_elements(('B', 'N'))
-    
-    
-We pass the low-loss spectrum to :py:func:`~.hspy.create_model` to include the
-effect of multiple scattering by Fourier-ratio convolution.
-
-.. code-block:: python
-       
-    >>> m = create_model(s, ll=ll)
-
-
-Hyperspy has created the model and configured it automatically:
-
-.. code-block:: python
-       
-    >>> m
-    [<background (PowerLaw component)>,
-    <N_K (EELSCLEdge component)>,
-    <B_K (EELSCLEdge component)>]
-
-
-Furthermore, the components are available in the user namespace
-
-.. code-block:: python
-
-    >>> N_K
-    <N_K (EELSCLEdge component)>
-    >>> B_K
-    <B_K (EELSCLEdge component)>
-    >>> background
-    <background (PowerLaw component)>
-
-
-Conveniently, variables named as the element symbol contain all the eels
-core-loss components of the element to facilitate applying some methods to all
-of them at once. Although in this example the list contains just one component
-this is not generally the case.
-
-.. code-block:: python
-       
-    >>> N
-    [<N_K (EELSCLEdge component)>]
-
-
-By default the fine structure features are disabled (although the default value
-can be configured (see :ref:`configuring-hyperspy-label`). We must enable them
-to accurately fit this spectrum.
-
-.. code-block:: python
-       
-    >>> m.enable_fine_structure()
-
-
-We use smart_fit instead of standard fit method because smart_fit is optimized
-to fit EELS core-loss spectra
-
-.. code-block:: python
-       
-    >>> m.smart_fit()
-
-Print the result of the fit 
-
-.. code-block:: python
-
-    >>> m.quantify()
-    Absolute quantification:
-    Elem.	Intensity
-    B	0.045648
-    N	0.048061
-
-
-Visualize the result
-
-.. code-block:: python
-
-    >>> m.plot()
-    
-
-.. figure::  images/curve_fitting_BN.png
-   :align:   center
-   :width:   500    
-
-   Curve fitting quantification of a boron nitride EELS core-loss spectrum from
-   `The EELS Data Base
-   <http://pc-web.cemes.fr/eelsdb/index.php?page=home.php>`_
-   
-
-There are several methods that are only available in
-:py:class:`~.models.eelsmodel.EELSModel`:
-
-* :py:meth:`~.models.eelsmodel.EELSModel.smart_fit` is a fit method that is 
-  more robust than the standard routine when fitting EELS data.
-* :py:meth:`~.models.eelsmodel.EELSModel.quantify` prints the intensity at 
-  the current locations of all the EELS ionisation edges in the model.
-* :py:meth:`~.models.eelsmodel.EELSModel.remove_fine_structure_data` removes 
-  the fine structure spectral data range (as defined by the 
-  :py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_width)` 
-  ionisation edge components. It is specially useful when fitting without 
-  convolving with a zero-loss peak.
-
-The following methods permit to easily enable/disable background and ionisation
-edges components:
-
-* :py:meth:`~.models.eelsmodel.EELSModel.enable_edges`
-* :py:meth:`~.models.eelsmodel.EELSModel.enable_background`
-* :py:meth:`~.models.eelsmodel.EELSModel.disable_background`
-* :py:meth:`~.models.eelsmodel.EELSModel.enable_fine_structure`
-* :py:meth:`~.models.eelsmodel.EELSModel.disable_fine_structure`
-
-The following methods permit to easily enable/disable several ionisation 
-edge functionalities:
-
-* :py:meth:`~.models.eelsmodel.EELSModel.set_all_edges_intensities_positive`
-* :py:meth:`~.models.eelsmodel.EELSModel.unset_all_edges_intensities_positive`
-* :py:meth:`~.models.eelsmodel.EELSModel.enable_free_onset_energy`
-* :py:meth:`~.models.eelsmodel.EELSModel.disable_free_onset_energy`
-* :py:meth:`~.models.eelsmodel.EELSModel.fix_edges`
-* :py:meth:`~.models.eelsmodel.EELSModel.free_edges`
-* :py:meth:`~.models.eelsmodel.EELSModel.fix_fine_structure`
-* :py:meth:`~.models.eelsmodel.EELSModel.free_fine_structure`

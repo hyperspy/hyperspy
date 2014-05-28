@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
 name = 'hyperspy'
@@ -24,22 +24,22 @@ name = 'hyperspy'
 # if the version of the last release is 0.4.1 the version of the
 # next development version afterwards must be 0.4.1+dev.
 # When running setup.py the "+dev" string will be replaced (if possible)
-# by the output of "git describe" if git is available or the git 
+# by the output of "git describe" if git is available or the git
 # hash if .git is present.
-version = "0.6+dev"
-description = "Hyperspectral data analysis toolbox"
+version = "0.7+dev"
+description = "Multidimensional data analysis toolbox"
 license = 'GPL v3'
 
 authors = {
-    'all'    : ('The Hyperspy developers',
-                'hyperspy-devel@googlegroups.com'),}
+    'all': ('The HyperSpy developers',
+            'hyperspy-devel@googlegroups.com'), }
 
 url = 'http://hyperspy.org'
 
 download_url = 'http://www.hyperspy.org'
 documentation_url = 'http://hyperspy.org/hyperspy-doc/current/index.html'
 
-platforms = ['Linux','Mac OSX','Windows XP/2000/NT','Windows 95/98/ME']
+platforms = ['Linux', 'Mac OSX', 'Windows XP/2000/NT', 'Windows 95/98/ME']
 
 keywords = ['EDX',
             'EELS',
@@ -60,6 +60,7 @@ keywords = ['EDX',
             'energy dispersive x-rays',
             'hyperspectral',
             'hyperspectrum',
+            'multidimensional',
             'hyperspy',
             'machine learning',
             'microscopy',
@@ -74,10 +75,9 @@ keywords = ['EDX',
             'spectrum image']
 
 info = u"""
-    H y p e r s p y
+    H y p e r S p y
     Version %s
-    
-    http://www.hyperspy.org
-    
-    """ % version.replace('_', ' ')
 
+    http://www.hyperspy.org
+
+    """ % version.replace('_', ' ')
