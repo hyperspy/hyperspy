@@ -289,8 +289,7 @@ def load_with_reader(filename,
 
 def assign_signal_subclass(record_by="",
                            signal_type="",
-                           signal_origin="",
-                           is_ft=""):
+                           signal_origin=""):
     """Given record_by and signal_type return the matching Signal subclass.
 
     Parameters
@@ -309,7 +308,7 @@ def assign_signal_subclass(record_by="",
     if record_by and record_by not in ["image", "spectrum"]:
         raise ValueError("record_by must be one of: None, empty string, "
                          "\"image\" or \"spectrum\"")
-    if signal_origin and signal_origin not in ["experiment", "simulation","fourier_transform"]:
+    if signal_origin and signal_origin not in ["experiment", "simulation"]:
         raise ValueError("signal_origin must be one of: None, empty string, "
                          "\"experiment\" or \"simulation\"")
 

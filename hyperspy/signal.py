@@ -2381,7 +2381,6 @@ class Signal(MVA,
     _record_by = ""
     _signal_type = ""
     _signal_origin = ""
-    _is_ft = ""
 
     def __init__(self, data, **kwds):
         """Create a Signal from a numpy array.
@@ -3735,7 +3734,7 @@ class Signal(MVA,
         s._remove_axis(axis.index_in_axes_manager)
         return s
         
-    def fft(self, s=None, axes=None):
+    def fft(self, shape_fft=None, axes=None):
         """Compute the discrete Fourier Transform.
 
         This function computes the discrete Fourier Transform over
@@ -3744,7 +3743,7 @@ class Signal(MVA,
 
         Parameters
         ----------
-        s : int or sequence of ints, optional
+        shape_fft : int or sequence of ints, optional
             Shape (length of each transformed axis) of the output
             (`s[0]` refers to axis 0, `s[1]` to axis 1, etc.).
             This corresponds to `n` for `fft(x, n)`.
@@ -3757,45 +3756,105 @@ class Signal(MVA,
             axes are used, or all axes if `s` is also not specified.
             Repeated indices in `axes` means that the transform over that axis is
             performed multiple times.
-            
+
         Return
-        ------        
-        signals.FourierTransformSignal
-        
+        ------
+        signals.Signal
+
         Notes
-        -----        
-        For further information see the documentation of numpy.fft.fft, 
-        numpy.fft.fft2 or numpy.fft.fftn
+        -----
+        For further information see the documentation of numpy.fft.fftn
         """
-        from _signals.fourier_transform_signal import FourierTransformSignal
-        dim=len(self.axes_manager.shape)
-        if dim==1:
-            if axes==None:
-                axis=-1
-            data=np.fft.fft(self.data,n=s,axis=axis)
-        elif dim==2:
-            if axes==None:
-                axes=(-2,-1)
-            data=np.fft.fft2(self.data,s=s,axes=axes)
+
+        from hyperspy.signals import Signal, Spectrum, Image
+
+        if self.axes_manager.signal_dimension == 2:
+            im_fft = Image(np.fft.fftn(self.data, s=shape_fft, axes=axes))
         else:
-            data=np.fft.fftn(self.data,s=s,axes=axes)
-            
-        im_fft=Signal(data)        
-        #im_fft.mapped_parameters=copy.copy(self.mapped_parameters)        
+            im_fft = Spectrum(np.fft.fftn(self.data, s=shape_fft, axes=axes))
         
-        #im_fft._assign_subclass()
-   
-        #im_fft.axes_manager=copy.copy(self.axes_manager)
-        #im_fft.get_dimensions_from_data()
-        im_fft=FourierTransformSignal(data)
-        im_fft.mapped_parameters.is_ft = True
-        if self.axes_manager.signal_dimension==2:
-            im_fft.axes_manager.set_signal_dimension(2)
-        #scale, to be verified
-        for i in range(dim):
-            im_fft.axes_manager[i].scale=1/self.axes_manager[i].scale
-            
+        # scaling
+        if axes is None:
+            axes = range(len(self.axes_manager.shape))
+        if shape_fft is None:
+            shape_fft = self.axes_manager.shape     
+        
+        for ax, dim in zip(axes, shape_fft):
+            axis = im_fft.axes_manager[ax]
+            axis.scale = 1. / dim / self.axes_manager[ax].scale
+            axis.units = str(self.axes_manager[ax].units) + '$^{-1}$'
+            axis.offset = 0
+            axis.offset = -axis.high_value / 2.
+
         return im_fft
+        
+    def ifft(self, shape_ifft=None, axes=None):
+        """
+        Compute the inverse discrete Fourier Transform.
+
+        This function computes the inverse of the discrete
+        Fourier Transform over any number of axes in an M-dimensional array by
+        means of the Fast Fourier Transform (FFT).  In other words,
+        ``ifftn(fftn(a)) == a`` to within numerical accuracy.
+        For a description of the definitions and conventions used, see `numpy.fft`.
+
+        The input, analogously to `ifft`, should be ordered in the same way as is
+        returned by `fftn`, i.e. it should have the term for zero frequency
+        in all axes in the low-order corner, the positive frequency terms in the
+        first half of all axes, the term for the Nyquist frequency in the middle
+        of all axes and the negative frequency terms in the second half of all
+        axes, in order of decreasingly negative frequency.
+
+        Parameters
+        ----------
+
+        shape_ifft : int or sequence of ints, optional
+            Shape (length of each transformed axis) of the output
+            (``s[0]`` refers to axis 0, ``s[1]`` to axis 1, etc.).
+            This corresponds to ``n`` for ``ifft(x, n)``.
+            Along any axis, if the given shape is smaller than that of the input,
+            the input is cropped.  If it is larger, the input is padded with zeros.
+            if `s` is not given, the shape of the input (along the axes specified
+            by `axes`) is used.  See notes for issue on `ifft` zero padding.
+        axes : int or sequence of ints, optional
+            Axes over which to compute the IFFT.  If not given, the last ``len(s)``
+            axes are used, or all axes if `s` is also not specified.
+            Repeated indices in `axes` means that the inverse transform over that
+            axis is performed multiple times.
+
+        Return
+        ------
+        signals.Signal
+
+        Notes
+        -----
+        For further information see the documentation of numpy.fft.ifftn
+
+        """
+
+        from hyperspy.signals import Signal, Spectrum, Image
+
+        dim = len(self.axes_manager.shape)
+
+        if self.axes_manager.signal_dimension == 2:
+            im_ifft = Image(np.fft.ifftn(self.data, s=shape_ifft, axes=axes))
+        else:
+            im_ifft = Spectrum(np.fft.ifftn(self.data, s=shape_ifft, axes=axes))
+            
+            
+        # scaling
+        if axes is None:
+            axes = range(len(self.axes_manager.shape))
+        if shape_ifft is None:
+            shape_ifft = self.axes_manager.shape     
+        
+        for ax, dim in zip(axes, shape_ifft):
+            axis = im_ifft.axes_manager[ax]
+            axis.scale = 1. / dim / self.axes_manager[ax].scale
+            #axis.units = str(self.axes_manager[ax].units) + '$^{-1}$'
+            axis.offset = 0
+        
+        return im_ifft
 
     def integrate1D(self, axis):
         """Integrate the signal over the given axis.
