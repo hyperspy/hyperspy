@@ -61,7 +61,6 @@ class EDSSpectrum(Spectrum):
         """
 
         units_name = self.axes_manager.signal_axes[0].units
-        element, line = utils_eds._get_element_and_line(Xray_line)
 
         if FWHM_MnKa == 'auto':
             if self.metadata.Signal.signal_type == 'EDS_SEM':
@@ -74,16 +73,13 @@ class EDSSpectrum(Spectrum):
                     "You can use `set_signal_type(\"EDS_TEM\")` or"
                     "`set_signal_type(\"EDS_SEM\")` to convert to one of these"
                     "signal types.")
-
+        line_energy = utils_eds._get_energy_xray_line(Xray_line)
         if units_name == 'eV':
-            line_energy = elements_db[element]['Atomic_properties']['Xray_lines'][
-                line]['energy (keV)'] * 1000
+            line_energy *= 1000
             if FWHM_MnKa is not None:
                 line_FWHM = utils_eds.get_FWHM_at_Energy(FWHM_MnKa,
                                                          line_energy / 1000) * 1000
         elif units_name == 'keV':
-            line_energy = elements_db[element]['Atomic_properties']['Xray_lines'][
-                line]['energy (keV)']
             if FWHM_MnKa is not None:
                 line_FWHM = utils_eds.get_FWHM_at_Energy(FWHM_MnKa,
                                                          line_energy)
