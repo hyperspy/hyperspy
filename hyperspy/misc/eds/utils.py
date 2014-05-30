@@ -7,7 +7,8 @@ from hyperspy.misc.elements import elements as elements_db
 def _get_element_and_line(Xray_line):
     lim = Xray_line.find('_')
     return Xray_line[:lim], Xray_line[lim + 1:]
-    
+
+
 def _get_energy_xray_line(xray_line):
     energy, line = _get_element_and_line(xray_line)
     return elements_db[energy]['Atomic_properties']['Xray_lines'][
@@ -36,7 +37,7 @@ def get_FWHM_at_Energy(energy_resolution_MnKa, E):
     """
     FWHM_ref = energy_resolution_MnKa
     E_ref = _get_energy_xray_line('Mn_Ka')
-    
+
     FWHM_e = 2.5 * (E - E_ref) * 1000 + FWHM_ref * FWHM_ref
 
     return math.sqrt(FWHM_e) / 1000  # In mrad
