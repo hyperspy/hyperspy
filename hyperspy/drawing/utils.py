@@ -341,7 +341,8 @@ def plot_spectra(
         padding=1.,
         legend=None,
         legend_picking=True,
-        fig=None,):
+        fig=None,
+        ax=None,):
     """Plot several spectra in the same figure.
 
     Extra keyword arguments are passed to `matplotlib.figure`.
@@ -380,6 +381,7 @@ def plot_spectra(
     fig : matplotlib figure or None
         If None, a default figure will be created. Specifying fig will
         not work for the 'heatmap' style.
+    ax : matplotlib ax or None
 
     Example
     -------
@@ -447,7 +449,8 @@ def plot_spectra(
     elif style == 'cascade':
         if fig is None:
             fig = plt.figure()
-        ax = fig.add_subplot(111)
+        if ax is None:
+            ax = fig.add_subplot(111)
         _make_cascade_subplot(spectra,
                               ax,
                               color=color,
