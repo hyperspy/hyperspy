@@ -381,7 +381,9 @@ def plot_spectra(
     fig : matplotlib figure or None
         If None, a default figure will be created. Specifying fig will
         not work for the 'heatmap' style.
-    ax : matplotlib ax or None
+    ax : matplotlib ax (subplot) or None
+        If None, a default ax will be created. Will not work for 'mosaic'
+        or 'heatmap' style.
 
     Example
     -------
@@ -437,7 +439,8 @@ def plot_spectra(
     if style == 'overlap':
         if fig is None:
             fig = plt.figure()
-        ax = fig.add_subplot(111)
+        if ax is None:
+            ax = fig.add_subplot(111)
         _make_overlap_plot(spectra,
                            ax,
                            color=color,
