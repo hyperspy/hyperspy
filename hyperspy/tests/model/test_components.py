@@ -66,6 +66,7 @@ class TestPowerLaw:
         nose.tools.assert_almost_equal(g.A.value, 10.064378823244837)
         nose.tools.assert_almost_equal(g.r.value, 4.0017522876514304)
 
+
 class TestOffset:
 
     def setUp(self):
