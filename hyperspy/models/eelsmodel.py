@@ -381,7 +381,7 @@ class EELSModel(Model):
         if not start_energy or start_energy < E0:
             start_energy = E0
         iee_list = [edge.onset_energy.value for edge in self._active_edges
-               if edge.onset_energy.value > start_energy]
+                    if edge.onset_energy.value > start_energy]
         iee = min(iee_list) if iee_list else None
         return iee
 
