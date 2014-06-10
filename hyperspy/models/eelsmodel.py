@@ -450,7 +450,7 @@ class EELSModel(Model):
                             'please use the powerlaw keyword to specify one'
                             ' of them')
                         return
-                else: # No power law component
+                else:  # No power law component
                     return
 
         if powerlaw.estimate_parameters(
