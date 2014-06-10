@@ -390,7 +390,7 @@ class EELSModel(Model):
         ea = self.axis.axis[self.channel_switches]
         #~print "Fitting the", self._backgroundtype, "background"
         edges = copy.copy(self._active_edges)
-        edge = edges.pop(0)
+        edge = edges[0]
         if start_energy is None:
             start_energy = ea[0]
         i = 0
