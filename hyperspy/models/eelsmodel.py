@@ -365,6 +365,26 @@ class EELSModel(Model):
         for i in xrange(0, len(self._active_edges)):
             self._fit_edge(i, start_energy, **kwargs)
 
+    def _get_first_ionization_edge_energy(self, start_energy=None):
+        """Calculate the first ionization edge energy.
+
+        Returns
+        -------
+        iee : float or None
+            The first ionization edge energy or None if no edge is defined in
+            the model.
+
+        """
+        if not self._active_edges:
+            return None
+        E0 = self.axis.axis[self.channel_switches][0]
+        if not start_energy or start_energy < E0:
+            start_energy = E0
+        iee_list = [edge.onset_energy.value for edge in self._active_edges
+               if edge.onset_energy.value > start_energy]
+        iee = min(iee_list) if iee_list else None
+        return iee
+
     def fit_background(self, start_energy=None, kind='single', **kwargs):
         """Fit the background to the first active ionization edge
         in the energy range.

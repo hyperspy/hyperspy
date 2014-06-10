@@ -32,3 +32,17 @@ class TestEELSModel:
         m.enable_fine_structure()
         m.resolve_fine_structure()
         nose.tools.assert_equal(window, m["B_K"].fine_structure_width)
+
+    def test_get_first_ionization_edge_energy_C_B(self):
+        nose.tools.assert_equal(self.m._get_first_ionization_edge_energy(),
+                                self.m["B_K"].onset_energy.value)
+
+    def test_get_first_ionization_edge_energy_C(self):
+        self.m["B_K"].active = False
+        nose.tools.assert_equal(self.m._get_first_ionization_edge_energy(),
+                                self.m["C_K"].onset_energy.value)
+
+    def test_get_first_ionization_edge_energy_None(self):
+        self.m["B_K"].active = False
+        self.m["C_K"].active = False
+        nose.tools.assert_is_none(self.m._get_first_ionization_edge_energy())
