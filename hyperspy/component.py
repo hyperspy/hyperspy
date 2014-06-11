@@ -389,7 +389,10 @@ class Parameter(object):
 
         s = Signal(data=self.map[field],
                    axes=self._axes_manager._get_navigation_axes_dicts())
-        s.metadata.General.title = self.name
+        s.metadata.General.title = ("%s parameter" % self.name
+                                    if self.component is None
+                                    else "%s parameter of %s component" %
+                                    (self.name, self.component.name))
         for axis in s.axes_manager._axes:
             axis.navigate = False
         if self._number_of_elements > 1:
