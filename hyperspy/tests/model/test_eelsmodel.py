@@ -76,3 +76,51 @@ class TestEELSModel:
                                        2.6598803469440986)
         nose.tools.assert_almost_equal(self.m._background_components[0].r.value,
                                        3.0494030409062058)
+
+    def test_get_start_energy_none(self):
+        nose.tools.assert_equal(self.m._get_start_energy(),
+                                150)
+    def test_get_start_energy_above(self):
+        nose.tools.assert_equal(self.m._get_start_energy(170),
+                                170)
+    def test_get_start_energy_below(self):
+        nose.tools.assert_equal(self.m._get_start_energy(100),
+                                150)
+
+class TestFitBackground:
+
+    def setUp(self):
+        s = hs.signals.EELSSpectrum(np.ones(200))
+        s.set_microscope_parameters(100, 10, 10)
+        s.axes_manager[-1].offset = 150
+        CE = hs.utils.material.elements.C.Atomic_properties.Binding_energies.K.onset_energy_eV
+        BE = hs.utils.material.elements.B.Atomic_properties.Binding_energies.K.onset_energy_eV
+        s.isig[BE:] += 1
+        s.isig[CE:] += 1
+        s.add_elements(("Be", "B", "C"))
+        self.m = hs.create_model(s, auto_background=False)
+        self.m.append(hs.components.Offset())
+
+    def test_fit_background_B_C(self):
+        self.m.fit_background()
+        nose.tools.assert_almost_equal(self.m["Offset"].offset.value,
+                                    1)
+        nose.tools.assert_true(self.m["B_K"].active)
+        nose.tools.assert_true(self.m["C_K"].active)
+
+    def test_fit_background_C(self):
+        self.m["B_K"].active = False
+        self.m.fit_background()
+        nose.tools.assert_almost_equal(self.m["Offset"].offset.value,
+                                    1.71212121212)
+        nose.tools.assert_false(self.m["B_K"].active)
+        nose.tools.assert_true(self.m["C_K"].active)
+
+    def test_fit_background_no_edge(self):
+        self.m["B_K"].active = False
+        self.m["C_K"].active = False
+        self.m.fit_background()
+        nose.tools.assert_almost_equal(self.m["Offset"].offset.value,
+                                    2.13567839196)
+        nose.tools.assert_false(self.m["B_K"].active)
+        nose.tools.assert_false(self.m["C_K"].active)
