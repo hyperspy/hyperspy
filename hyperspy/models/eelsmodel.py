@@ -365,51 +365,69 @@ class EELSModel(Model):
         for i in xrange(0, len(self._active_edges)):
             self._fit_edge(i, start_energy, **kwargs)
 
-    def fit_background(self, start_energy=None, kind='single', **kwargs):
+    def _get_first_ionization_edge_energy(self, start_energy=None):
+        """Calculate the first ionization edge energy.
+
+        Returns
+        -------
+        iee : float or None
+            The first ionization edge energy or None if no edge is defined in
+            the model.
+
+        """
+        if not self._active_edges:
+            return None
+        start_energy = self._get_start_energy(start_energy)
+        iee_list = [edge.onset_energy.value for edge in self._active_edges
+                    if edge.onset_energy.value > start_energy]
+        iee = min(iee_list) if iee_list else None
+        return iee
+
+    def _get_start_energy(self, start_energy=None):
+        E0 = self.axis.axis[self.channel_switches][0]
+        if not start_energy or start_energy < E0:
+            start_energy = E0
+        return start_energy
+
+    def fit_background(self, start_energy=None, only_current=True, **kwargs):
         """Fit the background to the first active ionization edge
         in the energy range.
 
         Parameters
         ----------
-        start_energy : {float, None}
+        start_energy : {float, None}, optional
             If float, limit the range of energies from the left to the
-            given value.
-        kind : {'single', 'multi'}
-            If 'single' fit only the current location. If 'multi'
-            use multifit.
+            given value. Default None.
+        only_current : bool, optional
+            If True, only fit the background at the current coordinates.
+            Default True.
         **kwargs : extra key word arguments
             All extra key word arguments are passed to fit or
-        multifit, depending on the value of kind.
+            multifit.
 
         """
 
         # If there is no active background compenent do nothing
         if not self._active_background_components:
             return
-
-        ea = self.axis.axis[self.channel_switches]
-        #~print "Fitting the", self._backgroundtype, "background"
-        edges = copy.copy(self._active_edges)
-        edge = edges.pop(0)
-        if start_energy is None:
-            start_energy = ea[0]
-        i = 0
-        while edge.onset_energy.value < start_energy:
-            i += 1
-            edge = edges.pop(0)
-        self.set_signal_range(
-            start_energy, edge.onset_energy.value -
-            preferences.EELS.preedge_safe_window_width)
-        self.disable_edges(edges)
-        if kind == 'single':
+        iee = self._get_first_ionization_edge_energy(start_energy=start_energy)
+        if iee is not None:
+            to_disable = [edge for edge in self._active_edges
+                          if edge.onset_energy.value >= iee]
+            E2 = iee - preferences.EELS.preedge_safe_window_width
+            self.disable_edges(to_disable)
+        else:
+            E2 = None
+        self.set_signal_range(start_energy, E2)
+        if only_current:
             self.fit(**kwargs)
-        if kind == 'multi':
+        else:
             self.multifit(**kwargs)
         self.channel_switches = copy.copy(self.backup_channel_switches)
-        self.enable_edges(edges)
+        if iee is not None:
+            self.enable_edges(to_disable)
 
-    def two_area_background_estimation(self, E1=None, E2=None,
-                                       powerlaw=None):
+    def two_area_background_estimation(self, E1=None, E2=None, powerlaw=None):
         """Estimates the parameters of a power law background with the two
         area method.
 
@@ -422,22 +440,6 @@ class EELSModel(Model):
             background components of the model
 
         """
-        ea = self.axis.axis[self.channel_switches]
-        if E1 is None or E1 < ea[0]:
-            E1 = ea[0]
-        else:
-            E1 = E1
-        if E2 is None:
-            if self._active_edges:
-                i = 0
-                while self._active_edges[i].onset_energy.value < E1:
-                    i += 1
-                E2 = self._active_edges[i].onset_energy.value - \
-                    preferences.EELS.preedge_safe_window_width
-            else:
-                E2 = ea[-1]
-        else:
-            E2 = E2
         if powerlaw is None:
             for component in self._active_background_components:
                 if isinstance(component, components.PowerLaw):
@@ -450,11 +452,21 @@ class EELSModel(Model):
                             'please use the powerlaw keyword to specify one'
                             ' of them')
                         return
+                else:  # No power law component
+                    return
 
-        if powerlaw.estimate_parameters(
-                self.spectrum, E1, E2, False) is True:
-            self.fetch_stored_values()
-        else:
+        ea = self.axis.axis[self.channel_switches]
+        E1 = self._get_start_energy(E1)
+        if E2 is None:
+            E2 = self._get_first_ionization_edge_energy(start_energy=E1)
+            if E2 is None:
+                E2 = ea[-1]
+            else:
+                E2 = E2 - \
+                    preferences.EELS.preedge_safe_window_width
+
+        if not powerlaw.estimate_parameters(
+                self.spectrum, E1, E2, only_current=False):
             messages.warning(
                 "The power law background parameters could not "
                 "be estimated.\n"

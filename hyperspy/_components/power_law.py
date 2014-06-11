@@ -19,6 +19,7 @@
 import math
 
 import numpy as np
+import scipy.integrate
 
 from hyperspy.component import Component
 
@@ -101,6 +102,7 @@ class PowerLaw(Component):
 
         """
 
+        binned = signal.metadata.Signal.binned
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if not (i2 + i1) % 2 == 0:
@@ -110,16 +112,11 @@ class PowerLaw(Component):
         x2 = axis.index2value(i2)
         x3 = axis.index2value(i3)
         if only_current is True:
-            dc = signal()
-            I1 = axis.scale * np.sum(dc[i1:i3], 0)
-            I2 = axis.scale * np.sum(dc[i3:i2], 0)
+            s = signal.get_current_signal()
         else:
-            dc = signal.data
-            gi = [slice(None), ] * len(dc.shape)
-            gi[axis.index_in_array] = slice(i1, i3)
-            I1 = axis.scale * np.sum(dc[gi], axis.index_in_array)
-            gi[axis.index_in_array] = slice(i3, i2)
-            I2 = axis.scale * np.sum(dc[gi], axis.index_in_array)
+            s = signal
+        I1 = s.isig[i1:i3].integrate1D(2j).data
+        I2 = s.isig[i3:i2].integrate1D(2j).data
         try:
             r = 2 * np.log(I1 / I2) / math.log(x2 / x1)
             k = 1 - r
@@ -128,8 +125,6 @@ class PowerLaw(Component):
             A = np.nan_to_num(A)
         except:
             return False
-        if signal.metadata.Signal.binned is True:
-            A /= axis.scale
         if only_current is True:
             self.r.value = r
             self.A.value = A
