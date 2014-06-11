@@ -80,12 +80,15 @@ class TestEELSModel:
     def test_get_start_energy_none(self):
         nose.tools.assert_equal(self.m._get_start_energy(),
                                 150)
+
     def test_get_start_energy_above(self):
         nose.tools.assert_equal(self.m._get_start_energy(170),
                                 170)
+
     def test_get_start_energy_below(self):
         nose.tools.assert_equal(self.m._get_start_energy(100),
                                 150)
+
 
 class TestFitBackground:
 
@@ -104,7 +107,7 @@ class TestFitBackground:
     def test_fit_background_B_C(self):
         self.m.fit_background()
         nose.tools.assert_almost_equal(self.m["Offset"].offset.value,
-                                    1)
+                                       1)
         nose.tools.assert_true(self.m["B_K"].active)
         nose.tools.assert_true(self.m["C_K"].active)
 
@@ -112,7 +115,7 @@ class TestFitBackground:
         self.m["B_K"].active = False
         self.m.fit_background()
         nose.tools.assert_almost_equal(self.m["Offset"].offset.value,
-                                    1.71212121212)
+                                       1.71212121212)
         nose.tools.assert_false(self.m["B_K"].active)
         nose.tools.assert_true(self.m["C_K"].active)
 
@@ -121,6 +124,6 @@ class TestFitBackground:
         self.m["C_K"].active = False
         self.m.fit_background()
         nose.tools.assert_almost_equal(self.m["Offset"].offset.value,
-                                    2.13567839196)
+                                       2.13567839196)
         nose.tools.assert_false(self.m["B_K"].active)
         nose.tools.assert_false(self.m["C_K"].active)
