@@ -254,10 +254,11 @@ class TestModelSignalVariance:
 
 
 class TestMultifit:
+
     def setUp(self):
-        s = signals.Spectrum(np.empty((2,200)))
+        s = signals.Spectrum(np.empty((2, 200)))
         s.axes_manager[-1].offset = 1
-        s.data[:] = 2 * s.axes_manager[-1].axis**(-3)
+        s.data[:] = 2 * s.axes_manager[-1].axis ** (-3)
         m = create_model(s)
         m.append(components.PowerLaw())
         m[0].A.value = 2
@@ -275,13 +276,13 @@ class TestMultifit:
     def test_fetch_only_fixed_false(self):
         self.m.multifit(fetch_only_fixed=False)
         np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
-                                                [3., 100.])
+                                             [3., 100.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
-                                        [2., 2.])
+                                             [2., 2.])
 
     def test_fetch_only_fixed_true(self):
         self.m.multifit(fetch_only_fixed=True)
         np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
-                                        [3., 3.])
+                                             [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
-                                        [2., 2.])
+                                             [2., 2.])
