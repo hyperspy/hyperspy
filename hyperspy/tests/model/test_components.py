@@ -16,7 +16,7 @@ class TestPowerLaw:
         m[0].r.value = 4
         self.m = m
 
-    def test_estimate_parameters_binned(self):
+    def test_estimate_parameters_binned_only_current(self):
         self.m.spectrum.metadata.Signal.binned = True
         s = self.m.as_signal()
         s.metadata.Signal.binned = True
@@ -28,7 +28,7 @@ class TestPowerLaw:
         nose.tools.assert_almost_equal(g.A.value, 10.084913947965161)
         nose.tools.assert_almost_equal(g.r.value, 4.0017676988807409)
 
-    def test_estimate_parameters_unbinned(self):
+    def test_estimate_parameters_unbinned_only_current(self):
         self.m.spectrum.metadata.Signal.binned = False
         s = self.m.as_signal()
         s.metadata.Signal.binned = False
@@ -37,8 +37,34 @@ class TestPowerLaw:
                               None,
                               None,
                               only_current=True)
+        nose.tools.assert_almost_equal(g.A.value, 10.064378823244837)
+        nose.tools.assert_almost_equal(g.r.value, 4.0017522876514304)
+
+    def test_estimate_parameters_binned(self):
+        self.m.spectrum.metadata.Signal.binned = True
+        s = self.m.as_signal()
+        s.metadata.Signal.binned = True
+        g = components.PowerLaw()
+        g._axes_manager = self.m.spectrum.axes_manager
+        g.estimate_parameters(s,
+                              None,
+                              None,
+                              only_current=False)
         nose.tools.assert_almost_equal(g.A.value, 10.084913947965161)
         nose.tools.assert_almost_equal(g.r.value, 4.0017676988807409)
+
+    def test_estimate_parameters_unbinned(self):
+        self.m.spectrum.metadata.Signal.binned = False
+        s = self.m.as_signal()
+        s.metadata.Signal.binned = False
+        g = components.PowerLaw()
+        g._axes_manager = self.m.spectrum.axes_manager
+        g.estimate_parameters(s,
+                              None,
+                              None,
+                              only_current=False)
+        nose.tools.assert_almost_equal(g.A.value, 10.064378823244837)
+        nose.tools.assert_almost_equal(g.r.value, 4.0017522876514304)
 
 
 class TestOffset:
