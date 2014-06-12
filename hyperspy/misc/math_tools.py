@@ -50,6 +50,7 @@ def order_of_magnitude(number):
     """
     return math.floor(math.log10(number))
 
+
 def isfloat(number):
     """Check if a number or array is of float type.
 
