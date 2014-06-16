@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.testing
 import nose.tools
 
 from hyperspy.hspy import *
@@ -250,3 +251,38 @@ class TestModelSignalVariance:
                                         0.79693355673230915)
         nose.tools.assert_almost_equals(self.m.red_chisq.data[1],
                                         0.91453032901427167)
+
+
+class TestMultifit:
+
+    def setUp(self):
+        s = signals.Spectrum(np.empty((2, 200)))
+        s.axes_manager[-1].offset = 1
+        s.data[:] = 2 * s.axes_manager[-1].axis ** (-3)
+        m = create_model(s)
+        m.append(components.PowerLaw())
+        m[0].A.value = 2
+        m[0].r.value = 2
+        m.store_current_values()
+        m.axes_manager.indices = (1,)
+        m[0].r.value = 100
+        m[0].A.value = 2
+        m.store_current_values()
+        m[0].A.free = False
+        self.m = m
+        m.axes_manager.indices = (0,)
+        m[0].A.value = 100
+
+    def test_fetch_only_fixed_false(self):
+        self.m.multifit(fetch_only_fixed=False)
+        np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
+                                             [3., 100.])
+        np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
+                                             [2., 2.])
+
+    def test_fetch_only_fixed_true(self):
+        self.m.multifit(fetch_only_fixed=True)
+        np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
+                                             [3., 3.])
+        np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
+                                             [2., 2.])

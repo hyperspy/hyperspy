@@ -1327,8 +1327,10 @@ class Model(list):
                     "following fitters instead: mpfit, tnc, l_bfgs_b")
                 kwargs['bounded'] = False
         i = 0
+        self.axes_manager.disconnect(self.fetch_stored_values)
         for index in self.axes_manager:
             if mask is None or not mask[index[::-1]]:
+                self.fetch_stored_values(only_fixed=fetch_only_fixed)
                 self.fit(**kwargs)
                 i += 1
                 if maxval > 0:
@@ -1337,6 +1339,7 @@ class Model(list):
                 self.save_parameters2file(autosave_fn)
         if maxval > 0:
             pbar.finish()
+        self.axes_manager.connect(self.fetch_stored_values)
         if autosave is True:
             messages.information(
                 'Deleting the temporary file %s pixels' % (

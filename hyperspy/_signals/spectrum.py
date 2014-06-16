@@ -173,5 +173,5 @@ class Spectrum(Signal):
         sr = SpikesRemoval(self,
                            navigation_mask=navigation_mask,
                            signal_mask=signal_mask)
-        sr.edit_traits()
+        sr.configure_traits()
         return sr
