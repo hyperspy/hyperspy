@@ -218,3 +218,32 @@ class Test_tools_bulk:
             mp.Acquisition_instrument.SEM.beam_energy,
             density=4.37499648818)
         assert_equal(xr_range, 0.1900368800933955)
+
+
+class Test_energy_units:
+
+    def setUp(self):
+        s = EDSSEMSpectrum(np.ones(1024))
+        s.metadata.Acquisition_instrument.SEM.beam_energy = 5.0
+        s.axes_manager.signal_axes[0].units = 'keV'
+        s.set_microscope_parameters(energy_resolution_MnKa=130)
+        self.signal = s
+
+    def test_beam_energy(self):
+        s = self.signal
+        assert_equal(s._get_beam_energy(), 5.0)
+        s.axes_manager.signal_axes[0].units = 'eV'
+        assert_equal(s._get_beam_energy(), 5000.0)
+        s.axes_manager.signal_axes[0].units = 'keV'
+
+    def test_line_energy(self):
+        s = self.signal
+        assert_equal(s._get_line_energy('Al_Ka'), 1.4865)
+        s.axes_manager.signal_axes[0].units = 'eV'
+        assert_equal(s._get_line_energy('Al_Ka'), 1486.5)
+        s.axes_manager.signal_axes[0].units = 'keV'
+
+        assert_equal(s._get_line_energy('Al_Ka', FWHM_MnKa='auto'),
+                     (1.4865, 0.07661266213883969))
+        assert_equal(s._get_line_energy('Al_Ka', FWHM_MnKa=128),
+                     (1.4865, 0.073167615787314))
