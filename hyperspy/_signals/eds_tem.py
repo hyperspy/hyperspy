@@ -242,10 +242,10 @@ class EDSTEMSpectrum(EDSSpectrum):
         if mp_ref.has_item("Detector.EDS.live_time"):
             mp.Acquisition_instrument.TEM.Detector.EDS.live_time = \
                 mp_ref.Detector.EDS.live_time / nb_pix
-                
+
     def quantification_cliff_lorimer(self,
-                                   intensities,
-                                   kfactors):
+                                     intensities,
+                                     kfactors):
         """
         Quantification using Cliff-Lorimer
 
@@ -264,7 +264,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         >>> s.set_elements(["Ni", "Cr",'Al'])
         >>> s.set_lines(["Ni_Ka", "Cr_Ka", "Al_Ka"])
         >>> kfactors = [1.47,1.72]
-        >>> intensities = s.get_lines_intensity()  
+        >>> intensities = s.get_lines_intensity()
         >>> res = s.quant_cliff_lorimer_simple(intensities,kfactors)
         >>> utils.plot.plot_signals(res)
         """
