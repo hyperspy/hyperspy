@@ -21,6 +21,7 @@ from nose.tools import assert_true, assert_equal
 
 from hyperspy.signals import EDSTEMSpectrum
 from hyperspy.defaults_parser import preferences
+from hyperspy.components import Gaussian
 
 
 class Test_metadata:
@@ -92,6 +93,43 @@ class Test_metadata:
         s.get_calibration_from(scalib)
         assert_equal(s.axes_manager.signal_axes[0].scale,
                      energy_axis.scale)
+                     
+class Test_quantification:
+
+    def setUp(self):
+        s = EDSTEMSpectrum(np.ones([2,1024]))
+        energy_axis = s.axes_manager.signal_axes[0]
+        energy_axis.scale = 1e-2
+        energy_axis.units = 'keV'
+        energy_axis.name = "Energy"
+        s.set_microscope_parameters(beam_energy=200, 
+                                    live_time=3.1, tilt_stage=0.0,
+                                    azimuth_angle=None, elevation_angle=35, 
+                                    energy_resolution_MnKa=130) 
+        elements = ['Al', 'Zn']
+        xray_lines = ['Al_Ka', 'Zn_Ka']
+        intensities = [300,500]
+        for i, xray_line in enumerate(xray_lines):
+            gauss = Gaussian()
+            line_energy, FWHM = s._get_line_energy(xray_line,FWHM_MnKa='auto')
+            gauss.centre.value = line_energy
+            gauss.A.value = intensities[i]
+            gauss.sigma.value = FWHM
+            s.data[:] += gauss.function(energy_axis.axis)
+
+        s.set_elements(elements)
+        s.add_lines(xray_lines)
+        self.signal = s
+
+    def test_quant_lorimer_simple(self):
+        s = self.signal
+        kfactors = [2.0009344042484134]
+        intensities = s.get_lines_intensity()
+        res = s.quantification_cliff_lorimer(intensities, kfactors)
+        assert_true(np.allclose(res[0].data, np.array(
+                    [ 0.2270779,  0.2270779]), atol=1e-3))
+
+
 
 
 # class Test_get_lines_intentisity:

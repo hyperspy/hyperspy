@@ -18,6 +18,7 @@
 from __future__ import division
 
 import traits.api as t
+import numpy as np
 
 from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.decorators import only_interactive
