@@ -242,3 +242,57 @@ class EDSTEMSpectrum(EDSSpectrum):
         if mp_ref.has_item("Detector.EDS.live_time"):
             mp.Acquisition_instrument.TEM.Detector.EDS.live_time = \
                 mp_ref.Detector.EDS.live_time / nb_pix
+                
+    def quantification_cliff_lorimer(self,
+                                   intensities,
+                                   kfactors):
+        """
+        Quantification using Cliff-Lorimer
+
+        Parameters
+        ----------
+        kfactors: list of float
+            the list of kfactor, compared to the first
+            elements. eg. kfactors = [1.2, 2.5]
+            for kfactors_name = ['Cu_Ka/Al_Ka', 'Nb_Ka/Al_Ka']
+        intensities: list of signal.Signals
+            the intensities for each X-ray lines.
+
+        Examples
+        ---------
+        >>> #s is a signals.EDSTEMSpectrum
+        >>> s.set_elements(["Ni", "Cr",'Al'])
+        >>> s.set_lines(["Ni_Ka", "Cr_Ka", "Al_Ka"])
+        >>> kfactors = [1.47,1.72]
+        >>> intensities = s.get_lines_intensity()  
+        >>> res = s.quant_cliff_lorimer_simple(intensities,kfactors)
+        >>> utils.plot.plot_signals(res)
+        """
+
+        xrays = self.metadata.Sample.xray_lines
+        beam_energy = self._get_beam_energy()
+
+        ab = []
+        for i, kba in enumerate(kfactors):
+            # ab = Ia/Ib / kab
+            ab.append(intensities[0].data / intensities[i + 1].data / kba)
+        # Ca = ab /(1 + ab + ab/ac + ab/ad + ...)
+        composition = np.ones(ab[0].shape)
+        for i, ab1 in enumerate(ab):
+            if i == 0:
+                composition += ab[0]
+            else:
+                composition += (ab[0] / ab1)
+        composition = ab[0] / composition
+        res_compo = []
+        # Cb = Ca / ab
+        for i, xray in enumerate(xrays):
+            if i == 0:
+                data_res = composition
+            else:
+                data_res = composition / ab[i - 1]
+            data_res = np.nan_to_num(data_res)
+            res_compo.append(intensities[i].deepcopy())
+            res_compo[-1].data = data_res
+            res_compo[-1].metadata.General.title = 'Composition ' + xray
+        return res_compo
