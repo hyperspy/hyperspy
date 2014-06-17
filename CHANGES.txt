@@ -6,7 +6,22 @@ see `the github commits changelog
 <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
 
-.. _changes_0.7:
+.. _changes_0.7.1:
+
+v0.7.1
+======
+
+This is a maintenance release. A list of fixed issues is available in the
+`0.7.1 milestone
+<https://github.com/hyperspy/hyperspy/issues?milestone=4&page=1&state=closed>`_
+in the github repository.
+
+
+New features
+------------
+.. _changes_0.7.1:
+
+* Add suspend/resume model plot updating. See :ref:`model.visualization`.
 
 v0.7
 ====
