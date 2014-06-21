@@ -286,3 +286,27 @@ class TestMultifit:
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [2., 2.])
+
+class TestStoreCurrentValues:
+    def setUp(self):
+        self.m = create_model(signals.Spectrum(np.arange(10)))
+        self.o = components.Offset()
+        self.m.append(self.o)
+
+    def test_active(self):
+        self.o.offset.value = 2
+        self.o.offset.std = 3
+        self.m.store_current_values()
+        nose.tools.assert_equal(self.o.offset.map["values"][0], 2)
+        nose.tools.assert_equal(self.o.offset.map["is_set"][0], True)
+
+    def test_not_active(self):
+        self.o.active = False
+        self.o.offset.value = 2
+        self.o.offset.std = 3
+        self.m.store_current_values()
+        nose.tools.assert_not_equal(self.o.offset.map["values"][0], 2)
+        nose.tools.assert_not_equal(self.o.offset.map["is_set"][0], True)
+
+
+
