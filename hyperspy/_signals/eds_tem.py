@@ -273,7 +273,8 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         xray_lines = self.metadata.Sample.xray_lines        
         data_res = utils_eds.quantification_cliff_lorimer(
-                        kfactors=kfactors,intensities=intensities)
+                        kfactors=kfactors,
+                        intensities=[intensity.data for intensity in intensities])
         spec_res=[]
         for xray_line, data, intensity in zip(
                     xray_lines,data_res,intensities):
