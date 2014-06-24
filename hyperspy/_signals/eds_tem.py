@@ -255,16 +255,17 @@ class EDSTEMSpectrum(EDSSpectrum):
         ----------
         kfactors: list of float
             the list of kfactor, compared to the first
-            elements. eg. kfactors = [1.2, 2.5]
-            for kfactors_name = ['Cu_Ka/Al_Ka', 'Nb_Ka/Al_Ka']
+            elements. eg. kfactors = [1.47,1.72]
+            for kfactors_name = ['Cr_Ka/Al_Ka', 'Ni_Ka/Al_Ka'] 
+            with kfactors_name in alphabetical order
         intensities: list of signal.Signals
             the intensities for each X-ray lines.
 
         Examples
         ---------
         >>> #s is a signals.EDSTEMSpectrum
-        >>> s.set_elements(["Ni", "Cr",'Al'])
-        >>> s.set_lines(["Ni_Ka", "Cr_Ka", "Al_Ka"])
+        >>> s.set_elements(["Al", "Cr", "Ni"])
+        >>> s.set_lines(["Al_Ka","Cr_Ka", "Ni_Ka"])
         >>> kfactors = [1.47,1.72]
         >>> intensities = s.get_lines_intensity()
         >>> res = s.quantification_cliff_lorimer(intensities,kfactors)
