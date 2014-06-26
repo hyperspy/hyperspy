@@ -784,3 +784,24 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         step_sizes)
 
     return signal
+
+
+def fix_linescan_energy_shift(ll, s):
+    shift_array = ll.estimate_shift1D(-3.,3.)
+
+    ll_array = []
+    s_array = []
+    for ll_one, s_one, shift_value in zip(ll, s, shift_array):
+        ll_temp = ll_one[:]
+        s_temp = s_one[:]
+
+        ll_temp.axes_manager.signal_axes[0].offset += shift_value
+        zlp_centre = ll_temp.estimate_zero_loss_peak_centre()
+        ll_temp.axes_manager.signal_axes[0].offset -= zlp_centre.data 
+
+        s_temp.axes_manager.signal_axes[0].offset += shift_value + zlp_centre.data
+
+        ll_array.append(ll_temp)
+        s_array.append(s_temp)
+
+    return ll_array, s_array
