@@ -333,6 +333,22 @@ def _set_spectrum_xlabel(spectrum, ax):
     ax.set_xlabel("%s (%s)" % (x_axis.name, x_axis.units))
 
 
+def _add_yaxis_position_cascade_style(
+        spectrum, 
+        ax, 
+        rounding=2,
+        shift=0.0):
+    y_axis = spectrum.axes_manager.navigation_axes[0]
+    position = np.around(y_axis.axis, decimals=rounding)+shift
+    line_start_array = []
+    for line in ax.lines:
+        line_start = line.get_ydata()[0:10].mean()
+        line_start_array.append(line_start)
+    ax.set_yticks(line_start_array)
+    ax.set_yticklabels(position)
+    ax.set_ylabel("%s (%s)" % ("Position", y_axis.units))
+
+
 def plot_spectra(
         spectra,
         style='default',
