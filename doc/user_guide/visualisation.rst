@@ -389,8 +389,8 @@ signals must have the same dimensions. To plot two spectra at the same time:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
-    >>> s2 = signals.Spectrum(np.random.random((10,10,100)))
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100))
     >>> utils.plot.plot_signals([s1, s2])
 
 .. figure::  images/plot_signals.png
@@ -405,8 +405,8 @@ To specify the navigator:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
-    >>> s2 = signals.Spectrum(np.random.random((10,10,100))) 
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
     >>> utils.plot.plot_signals([s1, s2], navigator="slider")
 
 .. figure::  images/plot_signals_slider.png
@@ -420,9 +420,9 @@ For example:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
-    >>> s2 = signals.Spectrum(np.random.random((10,10,100))) 
-    >>> s3 = signals.Spectrum(np.random.random((10,10))) 
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s3 = signals.Spectrum(np.random.random(10,10)) 
     >>> utils.plot.plot_signals([s1, s2], navigator_list=["slider", s3])
 
 .. figure::  images/plot_signals_navigator_list.png
@@ -435,8 +435,8 @@ each plot:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
-    >>> s2 = signals.Spectrum(np.random.random((10,10,100))) 
+    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
     >>> utils.plot.plot_signals([s1, s2], sync=False, navigator_list=["slider", "slider"])
 
 .. figure::  images/plot_signals_sync.png
