@@ -644,8 +644,8 @@ class EELSSpectrum(Spectrum):
             print("FWHM = %1.2f" % fwhm)
 
         I0 = ll.estimate_elastic_scattering_intensity(threshold=threshold)
+        I0 = I0.data
         if ll.axes_manager.navigation_size > 0:
-            I0 = I0.data
             I0_shape = list(I0.shape)
             I0_shape.insert(axis.index_in_array, 1)
             I0 = I0.reshape(I0_shape)
@@ -666,7 +666,7 @@ class EELSSpectrum(Spectrum):
         zshape[axis.index_in_array] = jk.shape[axis.index_in_array]
         cl.data = np.fft.irfft(z.reshape(zshape) * jk / jl,
                                axis=axis.index_in_array)
-        cl.data *= I0.data
+        cl.data *= I0
         cl.crop(-1, None, int(orig_cl_size))
         cl.metadata.General.title = (self.metadata.General.title +
                                      ' after Fourier-ratio deconvolution')
