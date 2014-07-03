@@ -784,3 +784,14 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         step_sizes)
 
     return signal
+
+class ROIBox:
+    def __init__(self):
+        self.spectrums = set()
+        self.x0 = 0
+        self.x1 = 0
+        self.y0 = 0
+        self.y1 = 0
+
+    def get_position(self):
+        return x0, x1, y0, y1
