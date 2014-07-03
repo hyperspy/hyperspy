@@ -2415,6 +2415,7 @@ class Signal(MVA,
         self.inav = SpecialSlicers(self, True)
         self.isig = SpecialSlicers(self, False)
         self.ROIs = set()
+        self.cascade_test = None
 
     @property
     def mapped_parameters(self):
@@ -2906,6 +2907,7 @@ class Signal(MVA,
 
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = self.__call__
+        self._plot.signal_test = self
         if self.metadata.General.title:
             self._plot.signal_title = self.metadata.General.title
         elif self.tmp_parameters.has_item('filename'):

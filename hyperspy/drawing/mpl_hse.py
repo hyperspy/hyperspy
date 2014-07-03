@@ -116,7 +116,14 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
             sf.add_line(sl)
 
         self.signal_plot = sf
-        sf.plot()
+        if self.signal_test.cascade_test:
+            x0 = self.axes_manager.bounds_test[0]
+            x1 = self.axes_manager.bounds_test[1]
+            y0 = self.axes_manager.bounds_test[2]
+            y1 = self.axes_manager.bounds_test[3]
+            sf.plot_cascade(self.signal_test[x0:x1,y0:y0+1])
+        else:
+            sf.plot()
         if self.navigator_plot is not None and sf.figure is not None:
             utils.on_figure_window_close(self.navigator_plot.figure,
                                          self._disconnect)

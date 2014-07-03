@@ -27,7 +27,6 @@ from hyperspy import messages
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
 
-
 class SpectrumFigure(BlittedFigure):
 
     """
@@ -107,6 +106,25 @@ class SpectrumFigure(BlittedFigure):
         x_axis_lower_lims = []
         for line in self.ax_lines:
             line.plot()
+            x_axis_lower_lims.append(line.axis[0])
+            x_axis_upper_lims.append(line.axis[-1])
+        plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
+        if hasattr(self.figure, 'tight_layout'):
+            try:
+                self.figure.tight_layout()
+            except:
+                # tight_layout is a bit brittle, we do this just in case it
+                # complains
+                pass
+
+    def plot_cascade(self, spectrum):
+        self.ax.set_xlabel(self.xlabel)
+        self.ax.set_ylabel(self.ylabel)
+        self.ax.set_title(self.title)
+        x_axis_upper_lims = []
+        x_axis_lower_lims = []
+        for line in self.ax_lines:
+            line.plot_cascade(spectrum)
             x_axis_lower_lims.append(line.axis[0])
             x_axis_upper_lims.append(line.axis[-1])
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
@@ -281,6 +299,13 @@ class SpectrumLine(object):
                                      color=self.line.get_color(),
                                      animated=True)
         self.ax.figure.canvas.draw()
+
+    def plot_cascade(self, spectrum):
+        utils._make_cascade_subplot(spectrum, ax=self.ax)
+        for line in self.ax.lines:
+            line.set_animated(True)
+        self.ax.figure.canvas.draw()
+
 
     def update(self, force_replot=False):
         """Update the current spectrum figure"""

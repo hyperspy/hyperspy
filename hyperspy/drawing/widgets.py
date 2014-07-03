@@ -233,6 +233,118 @@ class DraggableSquare(ResizebleDraggablePatch):
                     pass
 
 
+class ResizebleDraggableRectangle(ResizebleDraggablePatch):
+
+    def __init__(self, axes_manager):
+        DraggablePatch.__init__(self, axes_manager)
+        self.xsize = 1
+        self.ysize = 1
+        self.bounds = []
+
+    def set_xsize(self, xsize):
+        self.xsize = xsize
+        self.update_patch_size()
+
+    def increase_xsize(self):
+        self.set_xsize(self.xsize + 2)
+
+    def decrease_xsize(self):
+        if self.xsize > 2:
+            self.set_xsize(self.xsize - 2)
+
+    def set_ysize(self, ysize):
+        self.ysize = ysize
+        self.update_patch_size()
+
+    def increase_ysize(self):
+        self.set_ysize(self.ysize + 2)
+
+    def decrease_ysize(self):
+        if self.ysize > 2:
+            self.set_ysize(self.ysize - 2)
+
+    def on_key_press(self, event):
+        if event.key == "x":
+            self.increase_xsize()
+        if event.key == "c":
+            self.decrease_xsize()
+        if event.key == "y":
+            self.increase_ysize()
+        if event.key == "u":
+            self.decrease_ysize()
+
+
+    def set_patch(self):
+        self.calculate_size()
+        self.calculate_position()
+        self.patch = plt.Rectangle(
+            self._position, self._xsize, self._ysize,
+            animated=self.blit,
+            fill=False,
+            lw=2,
+            ec=self.color,
+            picker=True,)
+
+    def calculate_size(self):
+        xaxis = self.axes_manager.navigation_axes[0]
+        yaxis = self.axes_manager.navigation_axes[1]
+        self._xsize = xaxis.scale * self.xsize
+        self._ysize = yaxis.scale * self.ysize
+
+    def calculate_position(self):
+        coordinates = np.array(self.axes_manager.coordinates[:2])
+        self._position = coordinates - (
+            self._xsize / 2., self._ysize / 2.)
+
+    def calculate_bounds(self):
+        position = self._position
+        xsize = self._xsize
+        ysize = self._ysize
+        x0 = position[0]+0.5
+        x1 = position[0]+xsize+0.5
+        y0 = position[1]+0.5
+        y1 = position[1]+ysize+0.5
+        self.bounds = [x0,x1,y0,y1]
+        self.axes_manager.bounds_test = self.bounds
+
+    def update_patch_size(self):
+        self.calculate_size()
+        self.patch.set_width(self._xsize)
+        self.patch.set_height(self._ysize)
+        self.update_patch_position()
+
+    def update_patch_position(self):
+        self.calculate_position()
+        self.patch.set_xy(self._position)
+        self.draw_patch()
+
+    def onmove(self, event):
+        'on mouse motion draw the cursor if picked'
+        if self.picked is True and event.inaxes:
+            xaxis = self.axes_manager.navigation_axes[0]
+            yaxis = self.axes_manager.navigation_axes[1]
+            wxindex = xaxis.value2index(event.xdata)
+            wyindex = yaxis.value2index(event.ydata)
+            #print(event.xdata, event.ydata,wxindex, wyindex, self._position)
+            #print(event.ydata - self._position[1])
+            if self.axes_manager.indices[1] != wyindex:
+                try:
+                    yaxis.index = wyindex
+                except traits.api.TraitError:
+                    # Index out of range, we do nothing
+                    pass
+
+            if self.axes_manager.indices[0] != wxindex:
+                try:
+                    xaxis.index = wxindex
+                except traits.api.TraitError:
+                    # Index out of range, we do nothing
+                    pass
+            self.calculate_bounds()
+            print(self._position, self._xsize, self._ysize)
+            print(self.bounds)
+
+
 class DraggableHorizontalLine(DraggablePatch):
 
     def __init__(self, axes_manager):
