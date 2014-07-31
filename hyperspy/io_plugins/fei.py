@@ -329,11 +329,11 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     if record_by == 'spectrum':
         array_shape = [None, ] * int(ndim)
         i_array = range(ndim)
-        if len(data['PositionY']) > 1 and \
-                (data['PositionY'][0] == data['PositionY'][1]):
-            # The spatial dimensions are stored in the reversed order
-            # We reverse the shape
-            i_array.reverse()
+        # if len(data['PositionY']) > 1 and \
+        #         (data['PositionY'][0] == data['PositionY'][1]):
+        # The spatial dimensions are stored in the reversed order
+        # We reverse the shape
+        #     i_array.reverse()
         # Extra dimensions
         for i in xrange(ndim):
             if i_array[i] == ndim - 1:
