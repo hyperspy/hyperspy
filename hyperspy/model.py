@@ -524,7 +524,8 @@ class Model(list):
         If the parameters array has not being defined yet it creates it filling
         it with the current parameters."""
         for component in self:
-            component.store_current_parameters_in_map()
+            if component.active:
+                component.store_current_parameters_in_map()
 
     def fetch_stored_values(self, only_fixed=False):
         """Fetch the value of the parameters that has been previously stored.
