@@ -521,9 +521,9 @@ class SmoothingLowess(Smoothing):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):
-        smoothed = utils.lowess(self.axis, self.signal(),
-                                self.smoothing_parameter,
-                                self.number_of_iterations)
+        smoothed = spectrum_tools.lowess(self.axis, self.signal(),
+                                         self.smoothing_parameter,
+                                         self.number_of_iterations)
 
         return smoothed
 

@@ -347,153 +347,57 @@ def interpolate1D(number_of_interpolation_points, data):
     interpolator = scipy.interpolate.interp1d(old_ax, data)
     return interpolator(new_ax)
 
-# def lowess(x, y, f=2/3., iter=3):
-#    """lowess(x, y, f=2./3., iter=3) -> yest
-#
-#    Lowess smoother: Robust locally weighted regression.
-#    The lowess function fits a nonparametric regression curve to a scatterplot.
-#    The arrays x and y contain an equal number of elements; each pair
-#    (x[i], y[i]) defines a data point in the scatterplot. The function returns
-#    the estimated (smooth) values of y.
-#
-#    The smoothing span is given by f. A larger value for f will result in a
-#    smoother curve. The number of robustifying iterations is given by iter. The
-#    function will run faster with a smaller number of iterations.
-#
-#    Code adapted from Biopython:
-#
-#    Original doc:
-#
-#    This module implements the Lowess function for nonparametric regression.
-#
-#    Functions:
-#    lowess        Fit a smooth nonparametric regression curve to a scatterplot.
-#
-#    For more information, see
-#
-#    William S. Cleveland: "Robust locally weighted regression and smoothing
-#    scatterplots", Journal of the American Statistical Association, December 1979,
-#    volume 74, number 368, pp. 829-836.
-#
-#    William S. Cleveland and Susan J. Devlin: "Locally weighted regression: An
-#    approach to regression analysis by local fitting", Journal of the American
-#    Statistical Association, September 1988, volume 83, number 403, pp. 596-610.
-#    """
-#    n = len(x)
-#    r = int(np.ceil(f*n))
-#    h = [np.sort(abs(x-x[i]))[r] for i in xrange(n)]
-#    w = np.clip(abs(([x]-np.transpose([x]))/h),0.0,1.0)
-#    w = 1-w*w*w
-#    w = w*w*w
-#    yest = np.zeros(n,'d')
-#    delta = np.ones(n,'d')
-#    for iteration in xrange(iter):
-#        for i in xrange(n):
-#            weights = delta * w[:,i]
-#            b = np.array([np.sum(weights*y), np.sum(weights*y*x)])
-#            A = np.array([[np.sum(weights), np.sum(weights*x)],
-#                     [np.sum(weights*x), np.sum(weights*x*x)]])
-#            beta = np.linalg.solve(A,b)
-#            yest[i] = beta[0] + beta[1]*x[i]
-#        residuals = y-yest
-#        s = np.median(abs(residuals))
-#        delta = np.clip(residuals/(6*s),-1,1)
-#        delta = 1-delta*delta
-#        delta = delta*delta
-#    return yest
-#
-# def wavelet_poissonian_denoising(spectrum):
-#    """Denoise data with pure Poissonian noise using wavelets
-#
-#    Wrapper around the R packages EbayesThresh and wavethresh
-#
-#    Parameters
-#    ----------
-#    spectrum : spectrum instance
-#
-#    Returns
-#    -------
-#    Spectrum instance.
-#    """
-#    import_rpy()
-#    rpy.r.library('EbayesThresh')
-#    rpy.r.library('wavethresh')
-#    rpy.r['<-']('X',spectrum)
-#    rpy.r('XHF <- hft(X)')
-#    rpy.r('XHFwd  <- wd(XHF, bc="symmetric")')
-#    rpy.r('XHFwdT  <- ebayesthresh.wavelet(XHFwd)')
-#    rpy.r('XHFdn  <- wr(XHFwdT)')
-#    XHFest = rpy.r('XHFest <- hft.inv(XHFdn)')
-#    return XHFest
-#
-# def wavelet_gaussian_denoising(spectrum):
-#    """Denoise data with pure Gaussian noise using wavelets
-#
-#    Wrapper around the R packages EbayesThresh and wavethresh
-#
-#    Parameters
-#    ----------
-#    spectrum : spectrum instance
-#
-#    Returns
-#    -------
-#    Spectrum instance.
-#    """
-#    import_rpy()
-#    rpy.r.library('EbayesThresh')
-#    rpy.r.library('wavethresh')
-#    rpy.r['<-']('X',spectrum)
-#    rpy.r('Xwd  <- wd(X, bc="symmetric")')
-#    rpy.r('XwdT  <- ebayesthresh.wavelet(Xwd)')
-#    Xdn = rpy.r('Xdn  <- wr(XwdT)')
-#    return Xdn
-#
-# def wavelet_dd_denoising(spectrum):
-#    """Denoise data with arbitraty noise using wavelets
-#
-#    Wrapper around the R packages EbayesThresh, wavethresh and DDHFm
-#
-#    Parameters
-#    ----------
-#    spectrum : spectrum instance
-#
-#    Returns
-#    -------
-#    Spectrum instance.
-#    """
-#    import_rpy()
-#    rpy.r.library('EbayesThresh')
-#    rpy.r.library('wavethresh')
-#    rpy.r.library('DDHFm')
-#    rpy.r['<-']('X',spectrum)
-#    rpy.r('XDDHF <- ddhft.np.2(X)')
-#    rpy.r('XDDHFwd  <- wd(XDDHF$hft,filter.number = 8, bc="symmetric" )')
-#    rpy.r('XDDHFwdT  <- ebayesthresh.wavelet(XDDHFwd)')
-#    rpy.r('XDDHFdn  <- wr(XDDHFwdT)')
-#    rpy.r('XDDHF$hft  <- wr(XDDHFwdT)')
-#    XHFest = rpy.r('XHFest <- ddhft.np.inv(XDDHF)')
-#    return XHFest
+def lowess(x, y, f=2/3., iter=3):
+   """lowess(x, y, f=2./3., iter=3) -> yest
 
-# def loess(y,x = None, span = 0.2):
-#    """locally weighted scatterplot smoothing
-#
-#    Wrapper around the R funcion loess
-#
-#    Parameters
-#    ----------
-#    spectrum : spectrum instance
-#    span : float
-#        parameter to control the smoothing
-#
-#    Returns
-#    -------
-#    Spectrum instance.
-#    """
-#    import_rpy()
-#    if x is None:
-#        x = np.arange(0,len(y))
-#    rpy.r['<-']('x',x)
-#    rpy.r['<-']('y',y)
-#    rpy.r('y.loess <- loess(y ~ x, span = %s, data.frame(x=x, y=y))' % span)
-#    loess = rpy.r('y.predict <- predict(y.loess, data.frame(x=x))')
-#    return loess
+   Lowess smoother: Robust locally weighted regression.
+   The lowess function fits a nonparametric regression curve to a scatterplot.
+   The arrays x and y contain an equal number of elements; each pair
+   (x[i], y[i]) defines a data point in the scatterplot. The function returns
+   the estimated (smooth) values of y.
+
+   The smoothing span is given by f. A larger value for f will result in a
+   smoother curve. The number of robustifying iterations is given by iter. The
+   function will run faster with a smaller number of iterations.
+
+   Code adapted from Biopython:
+
+   Original doc:
+
+   This module implements the Lowess function for nonparametric regression.
+
+   Functions:
+   lowess        Fit a smooth nonparametric regression curve to a scatterplot.
+
+   For more information, see
+
+   William S. Cleveland: "Robust locally weighted regression and smoothing
+   scatterplots", Journal of the American Statistical Association, December 1979,
+   volume 74, number 368, pp. 829-836.
+
+   William S. Cleveland and Susan J. Devlin: "Locally weighted regression: An
+   approach to regression analysis by local fitting", Journal of the American
+   Statistical Association, September 1988, volume 83, number 403, pp. 596-610.
+   """
+   n = len(x)
+   r = int(np.ceil(f*n))
+   h = [np.sort(abs(x-x[i]))[r] for i in xrange(n)]
+   w = np.clip(abs(([x]-np.transpose([x]))/h),0.0,1.0)
+   w = 1-w*w*w
+   w = w*w*w
+   yest = np.zeros(n,'d')
+   delta = np.ones(n,'d')
+   for iteration in xrange(iter):
+       for i in xrange(n):
+           weights = delta * w[:,i]
+           b = np.array([np.sum(weights*y), np.sum(weights*y*x)])
+           A = np.array([[np.sum(weights), np.sum(weights*x)],
+                    [np.sum(weights*x), np.sum(weights*x*x)]])
+           beta = np.linalg.solve(A,b)
+           yest[i] = beta[0] + beta[1]*x[i]
+       residuals = y-yest
+       s = np.median(abs(residuals))
+       delta = np.clip(residuals/(6*s),-1,1)
+       delta = 1-delta*delta
+       delta = delta*delta
+   return yest
