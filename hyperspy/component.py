@@ -103,7 +103,7 @@ class Parameter(object):
         if self.component is not None:
             text += ' of %s' % self.component._get_short_description()
         text = '<' + text + '>'
-        return text
+        return text.encode('utf8')
 
     def __len__(self):
         return self._number_of_elements

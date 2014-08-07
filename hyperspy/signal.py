@@ -2484,7 +2484,7 @@ class Signal(MVA,
 
         string += '>'
 
-        return string
+        return string.encode('utf8')
 
     def __getitem__(self, slices, isNavigation=None):
         try:
