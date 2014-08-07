@@ -380,8 +380,12 @@ def lowess(x, y, f=2 / 3., iter=3):
     approach to regression analysis by local fitting", Journal of the American
     Statistical Association, September 1988, volume 83, number 403, pp. 596-610.
     """
+    if not isinstance(iter, (int, long)) or iter < 1:
+        raise ValueError("iter must be an integer greater than 0")
+    if 1 < f < 0:
+        return ValuerError("f must be between 0 and 1.")
     n = len(x)
-    r = int(np.ceil(f * n))
+    r = np.clip(int(np.ceil(f * n)) - 1, 3, n-1)
     h = [np.sort(abs(x - x[i]))[r] for i in xrange(n)]
     w = np.clip(abs(([x] - np.transpose([x])) / h), 0.0, 1.0)
     w = 1 - w * w * w
