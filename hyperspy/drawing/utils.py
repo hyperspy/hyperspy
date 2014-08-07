@@ -207,7 +207,7 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 
     >>> s_cl = load("coreloss.dm3")
     >>> s_ll = load("lowloss.dm3")
-    >>> utils.plot_signals([s_cl, s_ll])
+    >>> utils.plot.plot_signals([s_cl, s_ll])
 
     Specifying the navigator:
 
@@ -221,7 +221,7 @@ def plot_signals(signal_list, sync=True, navigator="auto",
     >>> s_ll = load("lowloss.dm3")
     >>> s_edx = load("edx.dm3")
     >>> s_adf = load("adf.dm3")
-    >>> utils.plot_signals(
+    >>> utils.plot.plot_signals(
             [s_cl, s_ll, s_edx], navigator_list=["slider",None,s_adf])
 
     """
@@ -429,10 +429,10 @@ def plot_spectra(
         line_style = ['-'] * len(spectra)
 
     if legend is not None:
-        if legend == 'auto':
-            legend = [spec.metadata.General.title for spec in spectra]
-        elif hasattr(legend, "__iter__"):
+        if hasattr(legend, "__iter__"):
             legend = itertools.cycle(legend)
+        elif legend == 'auto':
+            legend = [spec.metadata.General.title for spec in spectra]
         else:
             raise ValueError("legend must be None, 'auto' or a list of string")
 
