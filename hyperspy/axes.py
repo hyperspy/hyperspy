@@ -211,7 +211,7 @@ class DataAxis(t.HasTraits):
         if self.navigate is True:
             text += ", index: %i" % self.index
         text += ">"
-        return text
+        return text.encode('utf8')
 
     def __str__(self):
         return self._get_name() + " axis"
