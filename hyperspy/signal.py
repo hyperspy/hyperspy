@@ -651,8 +651,7 @@ class Signal1DTools(object):
             reference_indices=reference_indices,
             max_shift=max_shift,
             interpolate=interpolate,
-            number_of_interpolation_points=
-            number_of_interpolation_points,
+            number_of_interpolation_points=number_of_interpolation_points,
             mask=mask)
         for signal in also_align + [self]:
             signal.shift1D(shift_array=shift_array,
