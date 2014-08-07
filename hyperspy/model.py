@@ -214,7 +214,7 @@ class Model(list):
         self._plot_components = False
 
     def __repr__(self):
-        return "<Model %s>" % super(Model, self).__repr__()
+        return u"<Model %s>".encode('utf8') % super(Model, self).__repr__()
 
     def _get_component(self, object):
         if isinstance(object, int) or isinstance(object, str):

@@ -233,7 +233,7 @@ class BaseEstimator(object):
 
     def __repr__(self):
         class_name = self.__class__.__name__
-        return '%s(%s)' % (
+        return u'%s(%s)'.encode('utf8') % (
             class_name,
             _pprint(self.get_params(deep=False),
                     offset=len(class_name),
