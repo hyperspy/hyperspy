@@ -333,7 +333,6 @@ class SpectrumRangeSelector(SpanSelectorInSpectrum):
 class Smoothing(t.HasTraits):
     line_color = t.Color('blue')
     differential_order = t.Int(0)
-    crop_diff_axis = True
 
     @property
     def line_color_rgb(self):
@@ -403,14 +402,10 @@ class Smoothing(t.HasTraits):
     def _differential_order_changed(self, old, new):
         if old == 0:
             self.turn_diff_line_on(new)
+            self.smooth_diff_line.plot()
         if new == 0:
             self.turn_diff_line_off()
             return
-        if self.crop_diff_axis is True:
-            self.smooth_diff_line.axis =\
-                self.axis[:-new] + (self.axis[1] - self.axis[0]) * new
-        if old == 0:
-            self.smooth_diff_line.plot()
         self.smooth_diff_line.update(force_replot=True)
 
     def _line_color_changed(self, old, new):
@@ -432,25 +427,17 @@ class Smoothing(t.HasTraits):
         if maxval > 0:
             pbar = progressbar(
                 maxval=maxval)
-        up_to = None
         if self.differential_order == 0:
             f = self.model2plot
         else:
             f = self.diff_model2plot
-            if self.crop_diff_axis is True:
-                up_to = -self.differential_order
-        i = 0
-        for spectrum in self.signal:
+
+        for i, spectrum in enumerate(self.signal):
             spectrum.data[:] = f()
-            i += 1
             if maxval > 0:
                 pbar.update(i)
         if maxval > 0:
             pbar.finish()
-        if self.differential_order > 0:
-            self.signal.axes_manager.signal_axes[0].offset = \
-                self.smooth_diff_line.axis[0]
-            self.signal.crop(-1, 0, int(-self.differential_order))
         self.signal._replot()
         self.signal._plot.auto_update_plot = True
 
@@ -467,7 +454,6 @@ class Smoothing(t.HasTraits):
 class SmoothingSavitzkyGolay(Smoothing):
     polynomial_order = t.Int(3)
     number_of_points = t.Int(5)
-    crop_diff_axis = False
     view = tu.View(
         tu.Group(
             'polynomial_order',
@@ -489,8 +475,10 @@ class SmoothingSavitzkyGolay(Smoothing):
         self.update_lines()
 
     def diff_model2plot(self, axes_manager=None):
-        smoothed = spectrum_tools.sg(self.signal(), self.number_of_points,
-                                     self.polynomial_order, self.differential_order)
+        smoothed = spectrum_tools.sg(self.signal(),
+                                     self.number_of_points,
+                                     self.polynomial_order,
+                                     self.differential_order)
         return smoothed
 
     def model2plot(self, axes_manager=None):
@@ -506,13 +494,10 @@ class SmoothingLowess(Smoothing):
                                   )
     number_of_iterations = t.Range(low=1,
                                    value=1)
-    differential_order = t.Range(low=0,
-                                 value=0)
     view = tu.View(
         tu.Group(
             'smoothing_parameter',
             'number_of_iterations',
-            'differential_order',
             'line_color'),
         kind='live',
         handler=SmoothingHandler,
@@ -539,7 +524,6 @@ class SmoothingTV(Smoothing):
     view = tu.View(
         tu.Group(
             'smoothing_parameter',
-            'differential_order',
             'line_color'),
         kind='live',
         handler=SmoothingHandler,
