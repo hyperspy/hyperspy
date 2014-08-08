@@ -500,9 +500,14 @@ class SmoothingSavitzkyGolay(Smoothing):
 
 
 class SmoothingLowess(Smoothing):
-    smoothing_parameter = t.Float(2 / 3.)
-    number_of_iterations = t.Int(3)
-    differential_order = t.Int(0)
+    smoothing_parameter = t.Range(low=0.,
+                                  high=1.,
+                                  value=0.5,
+                                  )
+    number_of_iterations = t.Range(low=1,
+                                   value=1)
+    differential_order = t.Range(low=0,
+                                 value=0)
     view = tu.View(
         tu.Group(
             'smoothing_parameter',
