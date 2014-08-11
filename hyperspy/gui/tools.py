@@ -18,6 +18,7 @@
 
 import numpy as np
 import scipy as sp
+from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
 import traits.api as t
 import traitsui.api as tu
@@ -422,6 +423,7 @@ class Smoothing(t.HasTraits):
         return smoothed
 
     def apply(self):
+        # Generic apply method for smoothers that cannot operate in ndarrays.
         self.signal._plot.auto_update_plot = False
         maxval = self.signal.axes_manager.navigation_size
         if maxval > 0:
@@ -451,14 +453,32 @@ class Smoothing(t.HasTraits):
                 type='line')
 
 
+
 class SmoothingSavitzkyGolay(Smoothing):
-    polynomial_order = t.Int(3)
-    number_of_points = t.Int(5)
+    polynomial_order = t.Int(
+        3,
+        desc="The order of the polynomial used to fit the samples."
+             "`polyorder` must be less than `window_length`.")
+    window_lenght = t.Int(
+        5,
+        desc="`window_length` must be a positive odd integer.")
+    window_lenght_fraction = t.Range(
+        low=0.,
+        high=1.,
+        desc="Window lenght as fraction of total number of points.")
+    _calling_from_wlfrac_change = False
+    _calling_from_wl_change = False
+
     view = tu.View(
         tu.Group(
+            'window_lenght',
+            'window_lenght_fraction',
             'polynomial_order',
-            'number_of_points',
-            'differential_order',
+            tu.Item(
+                name='differential_order',
+                tooltip='The order of the derivative to compute.  This must be a'
+                     'nonnegative integer.  The default is 0, which means to '
+                     'filter the data without differentiating.',),
             'line_color'),
         kind='live',
         handler=SmoothingHandler,
@@ -468,23 +488,55 @@ class SmoothingSavitzkyGolay(Smoothing):
     def _polynomial_order_changed(self, old, new):
         self.update_lines()
 
-    def _number_of_points_changed(self, old, new):
+    def _window_lenght_changed(self, old, new):
+        if self._calling_from_wlfrac_change:
+            self._calling_from_wlfrac_change = False
+            self.update_lines()
+            return
+        self._calling_from_wl_change = True
+        self.window_lenght_fraction = float(new) /\
+            self.signal.axes_manager.signal_axes[0].size
         self.update_lines()
+
+    def _window_lenght_fraction_changed(self, old, new):
+        size = self.signal.axes_manager.signal_axes[0].size
+        if self._calling_from_wl_change:
+            self._calling_from_wl_change = False
+            return
+        wl = round(new * size)
+        if wl <= self.polynomial_order:
+            wl = self.polynomial_order + 1
+        if wl % 2 == 0:
+            wl += 1
+        if wl > size:
+            wl = size
+        if wl % 2 == 0:
+            wl -= 1
+        self._calling_from_wlfrac_change = True
+        self.window_lenght = int(wl)
 
     def _differential_order(self, old, new):
         self.update_lines()
 
     def diff_model2plot(self, axes_manager=None):
-        smoothed = spectrum_tools.sg(self.signal(),
-                                     self.number_of_points,
-                                     self.polynomial_order,
-                                     self.differential_order)
+        smoothed = savgol_filter(
+            x=self.signal(),
+            window_length=self.window_lenght,
+            polyorder=self.polynomial_order,
+            deriv=self.differential_order,
+            delta=self.signal.axes_manager.signal_axes[0].scale)
         return smoothed
 
     def model2plot(self, axes_manager=None):
-        smoothed = spectrum_tools.sg(self.signal(), self.number_of_points,
-                                     self.polynomial_order, 0)
+        smoothed = savgol_filter(x=self.signal(),
+                                 window_length=self.window_lenght,
+                                 polyorder=self.polynomial_order,
+                                 deriv=0)
         return smoothed
+
+    def apply(self):
+        self.signal.data[:] = self.diff_model2plot()
+        self.signal._replot()
 
 
 class SmoothingLowess(Smoothing):
