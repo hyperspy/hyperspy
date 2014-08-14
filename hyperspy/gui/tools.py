@@ -24,6 +24,12 @@ import traits.api as t
 import traitsui.api as tu
 from traitsui.menu import (OKButton, ApplyButton, CancelButton,
                            ModalButtons, OKCancelButtons)
+try:
+    from statsmodels.nonparametric.smoothers_lowess import lowess
+    statsmodels_installed = True
+except:
+    statsmodels_installed = False
+
 
 from hyperspy.misc import utils
 from hyperspy import drawing
@@ -555,6 +561,12 @@ class SmoothingLowess(Smoothing):
         handler=SmoothingHandler,
         buttons=OKCancelButtons,
         title='Lowess Smoothing',)
+    def __init__(self, *args, **kwargs):
+        if not statsmodels_installed:
+            raise ImportError("statsmodels is not installed. This package is "
+                              "required for this feature.")
+        super(SmoothingLowess, self).__init__(*args, **kwargs)
+
 
     def _smoothing_parameter_changed(self, old, new):
         self.update_lines()
@@ -563,11 +575,13 @@ class SmoothingLowess(Smoothing):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):
-        smoothed = spectrum_tools.lowess(self.axis, self.signal(),
-                                         self.smoothing_parameter,
-                                         self.number_of_iterations)
-
-        return smoothed
+        return lowess(
+            endog=self.signal(),
+            exog=self.axis,
+            frac=self.smoothing_parameter,
+            it=self.number_of_iterations,
+            is_sorted=True,
+            return_sorted=False)
 
 
 class SmoothingTV(Smoothing):
