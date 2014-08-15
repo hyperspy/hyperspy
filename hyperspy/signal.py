@@ -2993,7 +2993,7 @@ class Signal(MVA,
         If no extension is provided the default file format as defined
         in the `preferences` is used.
         Please note that not all the formats supports saving datasets of
-        arbitrary dimensions, e.g. msa only suports 1D data.
+        arbitrary dimensions, e.g. msa only supports 1D data.
 
         Each format accepts a different set of parameters. For details
         see the specific format documentation.
@@ -3010,7 +3010,7 @@ class Signal(MVA,
             True(False) it (does not) overwrites the file if it exists.
         extension : {None, 'hdf5', 'rpl', 'msa',common image extensions e.g. 'tiff', 'png'}
             The extension of the file that defines the file format.
-            If None, the extesion is taken from the first not None in the follwoing list:
+            If None, the extension is taken from the first not None in the following list:
             i) the filename
             ii)  `tmp_parameters.extension`
             iii) `preferences.General.default_file_format` in this order.
