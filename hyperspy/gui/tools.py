@@ -24,12 +24,6 @@ import traits.api as t
 import traitsui.api as tu
 from traitsui.menu import (OKButton, ApplyButton, CancelButton,
                            ModalButtons, OKCancelButtons)
-try:
-    from statsmodels.nonparametric.smoothers_lowess import lowess
-    statsmodels_installed = True
-except:
-    statsmodels_installed = False
-
 
 from hyperspy.misc import utils
 from hyperspy import drawing
@@ -358,6 +352,7 @@ class Smoothing(t.HasTraits):
         self.data_line = None
         self.smooth_line = None
         self.signal = signal
+        self.single_spectrum = self.signal.get_current_signal().deepcopy()
         self.axis = self.signal.axes_manager.signal_axes[0].axis
         self.plot()
 
@@ -427,27 +422,6 @@ class Smoothing(t.HasTraits):
         smoothed = np.diff(self.model2plot(axes_manager),
                            self.differential_order)
         return smoothed
-
-    def apply(self):
-        # Generic apply method for smoothers that cannot operate in ndarrays.
-        self.signal._plot.auto_update_plot = False
-        maxval = self.signal.axes_manager.navigation_size
-        if maxval > 0:
-            pbar = progressbar(
-                maxval=maxval)
-        if self.differential_order == 0:
-            f = self.model2plot
-        else:
-            f = self.diff_model2plot
-
-        for i, spectrum in enumerate(self.signal):
-            spectrum.data[:] = f()
-            if maxval > 0:
-                pbar.update(i)
-        if maxval > 0:
-            pbar.finish()
-        self.signal._replot()
-        self.signal._plot.auto_update_plot = True
 
     def close(self):
         if self.signal._plot.is_active():
@@ -568,26 +542,29 @@ class SmoothingLowess(Smoothing):
         buttons=OKCancelButtons,
         title='Lowess Smoothing',)
     def __init__(self, *args, **kwargs):
-        if not statsmodels_installed:
-            raise ImportError("statsmodels is not installed. This package is "
-                              "required for this feature.")
         super(SmoothingLowess, self).__init__(*args, **kwargs)
 
-
     def _smoothing_parameter_changed(self, old, new):
-        self.update_lines()
+        if new == 0:
+            self.smoothing_parameter = old
+        else:
+            self.update_lines()
 
     def _number_of_iterations_changed(self, old, new):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):
-        return lowess(
-            endog=self.signal(),
-            exog=self.axis,
-            frac=self.smoothing_parameter,
-            it=self.number_of_iterations,
-            is_sorted=True,
-            return_sorted=False)
+        self.single_spectrum.data = self.signal().copy()
+        self.single_spectrum.smooth_lowess(
+            smoothing_parameter=self.smoothing_parameter,
+            number_of_iterations=self.number_of_iterations,)
+
+        return self.single_spectrum.data
+
+    def apply(self):
+        self.signal.smooth_lowess(smoothing_parameter=self.smoothing_parameter,
+                                  number_of_iterations=self.number_of_iterations)
+        self.signal._replot()
 
 
 class SmoothingTV(Smoothing):

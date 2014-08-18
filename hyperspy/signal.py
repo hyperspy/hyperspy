@@ -28,6 +28,11 @@ import scipy.interpolate
 from scipy.signal import savgol_filter
 import scipy as sp
 from matplotlib import pyplot as plt
+try:
+    from statsmodels.nonparametric.smoothers_lowess import lowess
+    statsmodels_installed = True
+except:
+    statsmodels_installed = False
 
 from hyperspy import messages
 from hyperspy.axes import AxesManager
@@ -780,8 +785,7 @@ class Signal1DTools(object):
                 smoother.window_length = window_length
             smoother.edit_traits()
 
-    def smooth_lowess(self, smoothing_parameter=None,
-                      number_of_iterations=None):
+    def smooth_lowess(self, smoothing_parameter=None, number_of_iterations=None):
         """Lowess data smoothing in place.
 
         Raises
@@ -789,16 +793,25 @@ class Signal1DTools(object):
         SignalDimensionError if the signal dimension is not 1.
 
         """
+        if not statsmodels_installed:
+            raise ImportError("statsmodels is not installed. This package is "
+                              "required for this feature.")
         self._check_signal_dimension_equals_one()
-        smoother = SmoothingLowess(self)
-        if smoothing_parameter is not None:
-            smoother.smoothing_parameter = smoothing_parameter
-        if number_of_iterations is not None:
-            smoother.number_of_iterations = number_of_iterations
         if smoothing_parameter is None or number_of_iterations is None:
+            smoother = SmoothingLowess(self)
+            if smoothing_parameter is not None:
+                smoother.smoothing_parameter = smoothing_parameter
+            if number_of_iterations is not None:
+                smoother.number_of_iterations = number_of_iterations
             smoother.edit_traits()
         else:
-            smoother.apply()
+            self.map(lowess,
+                     exog=self.axes_manager[-1].axis,
+                     frac=smoothing_parameter,
+                     it=number_of_iterations,
+                     is_sorted=True,
+                     return_sorted=False)
+
 
     def smooth_tv(self, smoothing_parameter=None, differential_order=0):
         """Total variation data smoothing in place.
