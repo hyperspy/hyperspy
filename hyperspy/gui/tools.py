@@ -18,7 +18,6 @@
 
 import numpy as np
 import scipy as sp
-from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
 import traits.api as t
 import traitsui.api as tu
@@ -30,7 +29,6 @@ from hyperspy import drawing
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.gui import messages
 from hyperspy.misc.progressbar import progressbar
-from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import DraggableVerticalLine
 from hyperspy.misc import spectrum_tools
@@ -472,7 +470,6 @@ class SmoothingSavitzkyGolay(Smoothing):
         if nwl <  self.signal.axes_manager[2j].size:
             self.window_length = nwl
 
-
     def _decrease_window_length_fired(self):
         if self.window_length % 2:
             nwl = self.window_length - 2
@@ -498,24 +495,23 @@ class SmoothingSavitzkyGolay(Smoothing):
             self.polynomial_order += 1
             print("Differential order must be <= polynomial order. "
                   "Polynomial order set to %i." % self.polynomial_order)
-        else:
-            self.update_lines()
+        super(SmoothingSavitzkyGolay, self)._differential_order_changed(old, new)
 
     def diff_model2plot(self, axes_manager=None):
-        smoothed = savgol_filter(
-            x=self.signal(),
+        self.single_spectrum.data = self.signal().copy()
+        self.single_spectrum.smooth_savitzky_golay(
+            polynomial_order=self.polynomial_order,
             window_length=self.window_length,
-            polyorder=self.polynomial_order,
-            deriv=self.differential_order,
-            delta=self.signal.axes_manager.signal_axes[0].scale)
-        return smoothed
+            differential_order=self.differential_order)
+        return self.single_spectrum.data
 
     def model2plot(self, axes_manager=None):
-        smoothed = savgol_filter(x=self.signal(),
-                                 window_length=self.window_length,
-                                 polyorder=self.polynomial_order,
-                                 deriv=0)
-        return smoothed
+        self.single_spectrum.data = self.signal().copy()
+        self.single_spectrum.smooth_savitzky_golay(
+            polynomial_order=self.polynomial_order,
+            window_length=self.window_length,
+            differential_order=0)
+        return self.single_spectrum.data
 
     def apply(self):
         self.signal.smooth_savitzky_golay(
@@ -586,10 +582,11 @@ class SmoothingTV(Smoothing):
         self.update_lines()
 
     def model2plot(self, axes_manager=None):
-        smoothed = _tv_denoise_1d(self.signal(),
-                                  weight=self.smoothing_parameter,)
-        return smoothed
+        self.single_spectrum.data = self.signal().copy()
+        self.single_spectrum.smooth_tv(
+            smoothing_parameter=self.smoothing_parameter,)
 
+        return self.single_spectrum.data
 
 class ButterworthFilter(Smoothing):
     cutoff_frequency_ratio = t.Range(0., 1., 0.05)

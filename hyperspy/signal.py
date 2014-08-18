@@ -52,6 +52,7 @@ from hyperspy.gui.tools import (
     SmoothingLowess,
     SmoothingTV,
     ButterworthFilter)
+from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.gui.egerton_quantification import BackgroundRemoval
 from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
@@ -813,7 +814,7 @@ class Signal1DTools(object):
                      return_sorted=False)
 
 
-    def smooth_tv(self, smoothing_parameter=None, differential_order=0):
+    def smooth_tv(self, smoothing_parameter=None):
         """Total variation data smoothing in place.
 
         Raises
@@ -822,14 +823,11 @@ class Signal1DTools(object):
 
         """
         self._check_signal_dimension_equals_one()
-        smoother = SmoothingTV(self)
-        smoother.differential_order = differential_order
-        if smoothing_parameter is not None:
-            smoother.smoothing_parameter = smoothing_parameter
         if smoothing_parameter is None:
+            smoother = SmoothingTV(self)
             smoother.edit_traits()
         else:
-            smoother.apply()
+            self.map(_tv_denoise_1d, weight=smoothing_parameter,)
 
     def filter_butterworth(self,
                            cutoff_frequency_ratio=None,
