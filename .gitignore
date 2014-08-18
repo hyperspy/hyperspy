@@ -29,3 +29,4 @@ setup/windows/reccomends/*
 doc/examples
 doc/gh-pages
 *Thumbs.db
+.ropeproject/*

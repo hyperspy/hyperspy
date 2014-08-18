@@ -64,7 +64,7 @@ class Polynomial(Component):
             return x * 0
 
     def __repr__(self):
-        return 'Component <%s order polynomial>' % (
+        return u'Component <%s order polynomial>'.encode('utf8') % (
             ordinal(self.get_polynomial_order()))
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
