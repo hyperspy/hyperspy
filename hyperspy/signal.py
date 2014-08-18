@@ -25,6 +25,7 @@ import inspect
 import numpy as np
 import numpy.ma as ma
 import scipy.interpolate
+from scipy.signal import savgol_filter
 import scipy as sp
 from matplotlib import pyplot as plt
 
@@ -748,31 +749,39 @@ class Signal1DTools(object):
         calibration = SpectrumCalibration(self)
         calibration.edit_traits()
 
-    def smooth_savitzky_golay(self, polynomial_order=None,
-                              number_of_points=None, differential_order=0):
-        """Savitzky-Golay data smoothing in place.
+    def smooth_savitzky_golay(self,
+                              polynomial_order=None,
+                              window_length=None,
+                              differential_order=0):
+        """Savitzky-Golay data smoothing.
+
+        The operation is performed in-place.
 
         """
         self._check_signal_dimension_equals_one()
         if (polynomial_order is not None and
-                number_of_points is not None):
-            for spectrum in self:
-                spectrum.data[:] = spectrum_tools.sg(self(),
-                                                     number_of_points,
-                                                     polynomial_order,
-                                                     differential_order)
+            window_length is not None):
+            axis = self.axes_manager.signal_axes[0]
+            self.data = savgol_filter(
+                x=self.data,
+                window_length=window_length,
+                polyorder=polynomial_order,
+                deriv=differential_order,
+                delta=axis.scale,
+                axis=axis.index_in_array)
+
         else:
+            # Interactive mode
             smoother = SmoothingSavitzkyGolay(self)
             smoother.differential_order = differential_order
             if polynomial_order is not None:
                 smoother.polynomial_order = polynomial_order
-            if number_of_points is not None:
-                smoother.number_of_points = number_of_points
-
+            if window_length is not None:
+                smoother.window_length = window_length
             smoother.edit_traits()
 
     def smooth_lowess(self, smoothing_parameter=None,
-                      number_of_iterations=None, differential_order=0):
+                      number_of_iterations=None):
         """Lowess data smoothing in place.
 
         Raises
@@ -782,12 +791,11 @@ class Signal1DTools(object):
         """
         self._check_signal_dimension_equals_one()
         smoother = SmoothingLowess(self)
-        smoother.differential_order = differential_order
         if smoothing_parameter is not None:
             smoother.smoothing_parameter = smoothing_parameter
         if number_of_iterations is not None:
             smoother.number_of_iterations = number_of_iterations
-        if smoothing_parameter is None or smoothing_parameter is None:
+        if smoothing_parameter is None or number_of_iterations is None:
             smoother.edit_traits()
         else:
             smoother.apply()
@@ -3209,7 +3217,7 @@ class Signal(MVA,
             splitting is homegenous. When the axis size is not divisible
             by the number_of_parts the reminder data is lost without
             warning. If number_of_parts and step_sizes is 'auto',
-            number_of_parts equals the lenght of the axis,
+            number_of_parts equals the length of the axis,
             step_sizes equals one  and the axis is supress from each sub_spectra.
         step_sizes : {'auto' | list of ints | int}
             Size of the splitted parts. If 'auto', the step_sizes equals one.

@@ -459,26 +459,25 @@ class Smoothing(t.HasTraits):
                 type='line')
 
 
-
 class SmoothingSavitzkyGolay(Smoothing):
     polynomial_order = t.Int(
         3,
         desc="The order of the polynomial used to fit the samples."
              "`polyorder` must be less than `window_length`.")
-    window_lenght = t.Int(
+    window_length = t.Int(
         5,
         desc="`window_length` must be a positive odd integer.")
-    window_lenght_fraction = t.Range(
-        low=0.,
-        high=1.,
-        desc="Window lenght as fraction of total number of points.")
-    _calling_from_wlfrac_change = False
-    _calling_from_wl_change = False
+    increase_window_length = t.Button(orientation="horizontal", label="+")
+    decrease_window_length = t.Button(orientation="horizontal", label="-")
 
     view = tu.View(
         tu.Group(
-            'window_lenght',
-            'window_lenght_fraction',
+            tu.Group(
+                'window_length',
+                tu.Item('decrease_window_length', show_label=False),
+                tu.Item('increase_window_length', show_label=False),
+            orientation="horizontal"),
+
             'polynomial_order',
             tu.Item(
                 name='differential_order',
@@ -491,43 +490,47 @@ class SmoothingSavitzkyGolay(Smoothing):
         buttons=OKCancelButtons,
         title='Savitzky-Golay Smoothing',)
 
+    def _increase_window_length_fired(self):
+        if self.window_length % 2:
+            nwl = self.window_length + 2
+        else:
+            nwl = self.window_length + 1
+        if nwl <  self.signal.axes_manager[2j].size:
+            self.window_length = nwl
+
+
+    def _decrease_window_length_fired(self):
+        if self.window_length % 2:
+            nwl = self.window_length - 2
+        else:
+            nwl = self.window_length - 1
+        if nwl >  self.polynomial_order:
+            self.window_length = nwl
+        else:
+            print("The window lenght must be greated than the polynomial order")
+
     def _polynomial_order_changed(self, old, new):
+        if self.window_length <= new:
+            self.window_length = new + 2 if new % 2 else new + 1
+            print("Polynomial order must be < window length. "
+                  "Window length set to %i." % self.window_length)
         self.update_lines()
 
-    def _window_lenght_changed(self, old, new):
-        if self._calling_from_wlfrac_change:
-            self._calling_from_wlfrac_change = False
+    def _window_length_changed(self, old, new):
+        self.update_lines()
+
+    def _differential_order_changed(self, old, new):
+        if new > self.polynomial_order:
+            self.polynomial_order += 1
+            print("Differential order must be <= polynomial order. "
+                  "Polynomial order set to %i." % self.polynomial_order)
+        else:
             self.update_lines()
-            return
-        self._calling_from_wl_change = True
-        self.window_lenght_fraction = float(new) /\
-            self.signal.axes_manager.signal_axes[0].size
-        self.update_lines()
-
-    def _window_lenght_fraction_changed(self, old, new):
-        size = self.signal.axes_manager.signal_axes[0].size
-        if self._calling_from_wl_change:
-            self._calling_from_wl_change = False
-            return
-        wl = round(new * size)
-        if wl <= self.polynomial_order:
-            wl = self.polynomial_order + 1
-        if wl % 2 == 0:
-            wl += 1
-        if wl > size:
-            wl = size
-        if wl % 2 == 0:
-            wl -= 1
-        self._calling_from_wlfrac_change = True
-        self.window_lenght = int(wl)
-
-    def _differential_order(self, old, new):
-        self.update_lines()
 
     def diff_model2plot(self, axes_manager=None):
         smoothed = savgol_filter(
             x=self.signal(),
-            window_length=self.window_lenght,
+            window_length=self.window_length,
             polyorder=self.polynomial_order,
             deriv=self.differential_order,
             delta=self.signal.axes_manager.signal_axes[0].scale)
@@ -535,13 +538,16 @@ class SmoothingSavitzkyGolay(Smoothing):
 
     def model2plot(self, axes_manager=None):
         smoothed = savgol_filter(x=self.signal(),
-                                 window_length=self.window_lenght,
+                                 window_length=self.window_length,
                                  polyorder=self.polynomial_order,
                                  deriv=0)
         return smoothed
 
     def apply(self):
-        self.signal.data[:] = self.diff_model2plot()
+        self.signal.smooth_savitzky_golay(
+            polynomial_order=self.polynomial_order,
+            window_length=self.window_length,
+            differential_order=self.differential_order)
         self.signal._replot()
 
 
