@@ -331,7 +331,7 @@ class EELSSpectrum(Spectrum):
     def estimate_elastic_scattering_threshold(self,
                                               window=10.,
                                               tol=None,
-                                              number_of_points=5,
+                                              window_length=5,
                                               polynomial_order=3,
                                               start=1.):
         """Calculate the first inflexion point of the spectrum derivative
@@ -359,10 +359,10 @@ class EELSSpectrum(Spectrum):
             automatically calculated as the minimum value that guarantees
             finding an inflexion point in all the spectra in given energy
             range.
-        number_of_points : int
+        window_length : int
             If non zero performs order three Savitzky-Golay smoothing
             to the data to avoid falling in local minima caused by
-            the noise.
+            the noise. It must be an odd interger.
         polynomial_order : int
             Savitzky-Golay filter polynomial order.
         start : float
@@ -406,9 +406,9 @@ class EELSSpectrum(Spectrum):
         if max_index < min_index + 10:
             raise ValueError("Please select a bigger window")
         s = self.isig[min_index:max_index].deepcopy()
-        if number_of_points:
+        if window_length:
             s.smooth_savitzky_golay(polynomial_order=polynomial_order,
-                                    number_of_points=number_of_points,
+                                    window_length=window_length,
                                     differential_order=1)
         else:
             s = s.diff(-1)
