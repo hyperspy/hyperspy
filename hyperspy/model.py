@@ -393,7 +393,7 @@ class Model(list):
             self._disconnect_component_lines()
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
-        show_progressbar=None):
+                  show_progressbar=None):
         """Returns a recreation of the dataset using the model.
         the spectral range that is not fitted is filled with nans.
 
@@ -444,7 +444,7 @@ class Model(list):
             self.channel_switches[:] = True
         maxval = self.axes_manager.navigation_size
         pbar = progressbar.progressbar(maxval=maxval,
-            disabled=not show_progressbar)
+                                       disabled=not show_progressbar)
         i = 0
         for index in self.axes_manager:
             self.fetch_stored_values(only_fixed=False)
@@ -1187,8 +1187,8 @@ class Model(list):
                     (len(args[0]) - len(self.p0)))
             self.fit_output = m
         else:
-        # General optimizers (incluiding constrained ones(tnc,l_bfgs_b)
-        # Least squares or maximum likelihood
+            # General optimizers (incluiding constrained ones(tnc,l_bfgs_b)
+            # Least squares or maximum likelihood
             if method == 'ml':
                 tominimize = self._poisson_likelihood_function
                 fprime = grad_ml
@@ -1286,7 +1286,7 @@ class Model(list):
             with a frequency defined by autosave_every.
         autosave_every : int
             Save the result of fitting every given number of spectra.
-            
+
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
@@ -1303,7 +1303,7 @@ class Model(list):
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
-        
+
         if "weights" in kwargs:
             warnings.warn(weights_deprecation_warning, DeprecationWarning)
             del kwargs["weights"]
@@ -1329,7 +1329,7 @@ class Model(list):
         maxval = self.axes_manager.navigation_size - masked_elements
         if maxval > 0:
             pbar = progressbar.progressbar(maxval=maxval,
-                disabled=not show_progressbar)
+                                           disabled=not show_progressbar)
         if 'bounded' in kwargs and kwargs['bounded'] is True:
             if kwargs['fitter'] == 'mpfit':
                 self.set_mpfit_parameters_info()

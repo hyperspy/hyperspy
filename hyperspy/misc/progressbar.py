@@ -237,6 +237,7 @@ default_widgets = [Percentage(), ' ', Bar()]
 
 
 class DummyProgressBar:
+
     def __init__(self, *args, **kwargs):
         return
 
@@ -248,6 +249,7 @@ class DummyProgressBar:
 
     def next(self, *args, **kwargs):
         return
+
     def update(self, *args, **kwargs):
         return
 

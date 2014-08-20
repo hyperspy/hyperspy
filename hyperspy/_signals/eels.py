@@ -119,7 +119,8 @@ class EELSSpectrum(Spectrum):
         end_energy = Eaxis[-1]
         for element in self.elements:
             e_shells = list()
-            for shell in elements_db[element]['Atomic_properties']['Binding_energies']:
+            for shell in elements_db[element][
+                    'Atomic_properties']['Binding_energies']:
                 if shell[-1] != 'a':
                     if start_energy <= \
                             elements_db[element]['Atomic_properties']['Binding_energies'][shell][
@@ -278,7 +279,7 @@ class EELSSpectrum(Spectrum):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
-        
+
 
         Returns
         -------
@@ -292,7 +293,7 @@ class EELSSpectrum(Spectrum):
         """
         # TODO: Write units tests
         self._check_signal_dimension_equals_one()
-        
+
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
@@ -311,7 +312,7 @@ class EELSSpectrum(Spectrum):
             I0.axes_manager.set_signal_dimension(0)
             pbar = hyperspy.misc.progressbar.progressbar(
                 maxval=self.axes_manager.navigation_size,
-                )
+            )
             for i, s in enumerate(self):
                 threshold_ = threshold[self.axes_manager.indices].data[0]
                 if np.isnan(threshold_):
@@ -725,7 +726,7 @@ class EELSSpectrum(Spectrum):
         maxval = self.axes_manager.navigation_size
         if maxval > 0:
             pbar = progressbar(maxval=maxval,
-                disabled=not show_progressbar)
+                               disabled=not show_progressbar)
         for D in self:
             D = D.data.copy()
             if psf.axes_manager.navigation_dimension != 0:
@@ -738,7 +739,7 @@ class EELSSpectrum(Spectrum):
             for i in xrange(iterations):
                 first = np.convolve(kernel, O)[imax: imax + psf_size]
                 O = O * (np.convolve(kernel[::-1],
-                         D / first)[mimax: mimax + psf_size])
+                                     D / first)[mimax: mimax + psf_size])
             s[:] = O
             j += 1
             if maxval > 0:

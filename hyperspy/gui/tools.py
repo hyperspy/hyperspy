@@ -598,10 +598,10 @@ class Load(t.HasTraits):
 class ImageContrastHandler(tu.Handler):
 
     def close(self, info, is_ok):
-# Removes the span selector from the plot
-#        info.object.span_selector_switch(False)
-#        if is_ok is True:
-#            self.apply(info)
+        # Removes the span selector from the plot
+        #        info.object.span_selector_switch(False)
+        #        if is_ok is True:
+        #            self.apply(info)
         if is_ok is False:
             info.object.image.update(auto_contrast=True)
         info.object.close()

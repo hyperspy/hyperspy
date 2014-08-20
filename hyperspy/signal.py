@@ -147,7 +147,7 @@ class Signal2DTools(object):
 
         """
         if show_progressbar is None:
-            show_progressbar = preferences.General.show_progressbar        
+            show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_two()
         if roi is not None:
             # Get the indices of the roi
@@ -181,10 +181,10 @@ class Signal2DTools(object):
                 dtype=dtype)
             np.fill_diagonal(pcarray['max_value'], max_value)
             pbar = progressbar(maxval=nrows * images_number,
-                disabled=not show_progressbar).start()
+                               disabled=not show_progressbar).start()
         else:
             pbar = progressbar(maxval=images_number,
-                disabled=not show_progressbar).start()
+                               disabled=not show_progressbar).start()
 
         # Main iteration loop. Fills the rows of pcarray when reference
         # is stat
@@ -449,7 +449,7 @@ class Signal1DTools(object):
                           imaximum)
 
     def interpolate_in_between(self, start, end, delta=3,
-        show_progressbar=None, **kwargs):
+                               show_progressbar=None, **kwargs):
         """Replace the data in a given range by interpolation.
 
         The operation is performed in place.
@@ -1157,7 +1157,7 @@ class Signal1DTools(object):
         maxval = self.axes_manager.navigation_size
         if maxval > 0:
             pbar = progressbar(maxval=maxval,
-                disabled=not show_progressbar)
+                               disabled=not show_progressbar)
         for i, spectrum in enumerate(self):
             if window is not None:
                 vmax = axis.index2value(spectrum.data.argmax())
@@ -2257,7 +2257,7 @@ class MVATools(object):
 
     def _get_factors(self, factors):
         signal = self.__class__(factors.T.reshape((-1,) +
-                                self.axes_manager.signal_shape[::-1]),
+                                                  self.axes_manager.signal_shape[::-1]),
                                 axes=[{"size": factors.shape[-1],
                                        "navigate": True}] +
                                 self.axes_manager._get_signal_axes_dicts())
@@ -2581,7 +2581,8 @@ class Signal(MVA,
 
         _signal.data = _signal.data[array_slices]
         if self.metadata.has_item('Signal.Noise_properties.variance'):
-            if isinstance(self.metadata.Signal.Noise_properties.variance, Signal):
+            if isinstance(
+                    self.metadata.Signal.Noise_properties.variance, Signal):
                 _signal.metadata.Signal.Noise_properties.variance = self.metadata.Signal.Noise_properties.variance.__getitem__(
                     _orig_slices,
                     isNavigation)
@@ -3329,7 +3330,8 @@ class Signal(MVA,
                     spectrum.axes_manager._get_data_slice([(axis, 0)])]
                 spectrum._remove_axis(axis_in_manager)
 
-        if mode == 'auto' and hasattr(self.original_metadata, 'stack_elements'):
+        if mode == 'auto' and hasattr(
+                self.original_metadata, 'stack_elements'):
             for i, spectrum in enumerate(splitted):
                 spectrum.metadata = copy.deepcopy(
                     self.original_metadata.stack_elements[
@@ -4532,7 +4534,7 @@ for name in (
     # operands. They should be defined only for commutative operators
     # but for simplicity we don't support this at all atm.
     #~exec("setattr(Signal, \'%s\', %s)" % (name[:2] + "r" + name[2:],
-                                          #~name))
+    #~name))
 
 # Implement unary arithmetic operations
 for name in (
