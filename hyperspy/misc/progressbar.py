@@ -240,13 +240,15 @@ class DummyProgressBar:
     def __init__(self, *args, **kwargs):
         return
 
-    def start(self):
+    def start(self, *args, **kwargs):
         return
 
-    def finish(self):
+    def finish(self, *args, **kwargs):
         return
 
-    def next(self):
+    def next(self, *args, **kwargs):
+        return
+    def update(self, *args, **kwargs):
         return
 
 
