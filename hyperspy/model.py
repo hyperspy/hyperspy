@@ -392,7 +392,8 @@ class Model(list):
         if self._plot_components is True:
             self._disconnect_component_lines()
 
-    def as_signal(self, component_list=None, out_of_range_to_nan=True):
+    def as_signal(self, component_list=None, out_of_range_to_nan=True,
+        show_progressbar=None):
         """Returns a recreation of the dataset using the model.
         the spectral range that is not fitted is filled with nans.
 
@@ -404,6 +405,9 @@ class Model(list):
             be specified by name, index or themselves.
         out_of_range_to_nan : bool
             If True the spectral range that is not fitted is filled with nans.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Returns
         -------
@@ -421,6 +425,8 @@ class Model(list):
         >>> s2 = m.as_signal(component_list=[l1])
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
 
         if component_list:
             component_list = [self._get_component(x) for x in component_list]
@@ -437,7 +443,8 @@ class Model(list):
             channel_switches_backup = copy.copy(self.channel_switches)
             self.channel_switches[:] = True
         maxval = self.axes_manager.navigation_size
-        pbar = progressbar.progressbar(maxval=maxval)
+        pbar = progressbar.progressbar(maxval=maxval,
+            disabled=not show_progressbar)
         i = 0
         for index in self.axes_manager:
             self.fetch_stored_values(only_fixed=False)
@@ -1259,7 +1266,8 @@ class Model(list):
             self.update_plot()
 
     def multifit(self, mask=None, fetch_only_fixed=False,
-                 autosave=False, autosave_every=10, **kwargs):
+                 autosave=False, autosave_every=10, show_progressbar=None,
+                 **kwargs):
         """Fit the data to the model at all the positions of the
         navigation dimensions.
 
@@ -1278,6 +1286,10 @@ class Model(list):
             with a frequency defined by autosave_every.
         autosave_every : int
             Save the result of fitting every given number of spectra.
+            
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         **kwargs : key word arguments
             Any extra key word argument will be passed to
@@ -1289,6 +1301,9 @@ class Model(list):
         fit
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
+        
         if "weights" in kwargs:
             warnings.warn(weights_deprecation_warning, DeprecationWarning)
             del kwargs["weights"]
@@ -1313,7 +1328,8 @@ class Model(list):
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager.navigation_size - masked_elements
         if maxval > 0:
-            pbar = progressbar.progressbar(maxval=maxval)
+            pbar = progressbar.progressbar(maxval=maxval,
+                disabled=not show_progressbar)
         if 'bounded' in kwargs and kwargs['bounded'] is True:
             if kwargs['fitter'] == 'mpfit':
                 self.set_mpfit_parameters_info()

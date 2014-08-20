@@ -259,7 +259,9 @@ class EELSSpectrum(Spectrum):
                                   also_align + [self])
 
     def estimate_elastic_scattering_intensity(self,
-                                              threshold):
+                                              threshold,
+                                              show_progressbar=None,
+                                              ):
         """Rough estimation of the elastic scattering intensity by
         truncation of a EELS low-loss spectrum.
 
@@ -273,6 +275,10 @@ class EELSSpectrum(Spectrum):
             threshold value in the energy units. Alternatively a constant
             threshold can be specified in energy/index units by passing
             float/int.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+        
 
         Returns
         -------
@@ -286,6 +292,9 @@ class EELSSpectrum(Spectrum):
         """
         # TODO: Write units tests
         self._check_signal_dimension_equals_one()
+        
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
 
         if isinstance(threshold, numbers.Number):
             I0 = self.isig[:threshold].integrate1D(-1)
@@ -301,7 +310,8 @@ class EELSSpectrum(Spectrum):
                 I0.axes_manager._get_axis_attribute_values('navigate'))
             I0.axes_manager.set_signal_dimension(0)
             pbar = hyperspy.misc.progressbar.progressbar(
-                maxval=self.axes_manager.navigation_size)
+                maxval=self.axes_manager.navigation_size,
+                )
             for i, s in enumerate(self):
                 threshold_ = threshold[self.axes_manager.indices].data[0]
                 if np.isnan(threshold_):
@@ -714,7 +724,8 @@ class EELSSpectrum(Spectrum):
         j = 0
         maxval = self.axes_manager.navigation_size
         if maxval > 0:
-            pbar = progressbar(maxval=maxval)
+            pbar = progressbar(maxval=maxval,
+                disabled=not show_progressbar)
         for D in self:
             D = D.data.copy()
             if psf.axes_manager.navigation_dimension != 0:

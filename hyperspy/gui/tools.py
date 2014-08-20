@@ -33,6 +33,8 @@ from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import DraggableVerticalLine
 from hyperspy.misc import spectrum_tools
+from hyperspy.defaults_parser import preferences
+
 
 import sys
 
