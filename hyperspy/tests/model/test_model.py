@@ -416,3 +416,25 @@ class TestStoreCurrentValues:
         self.o.offset.std = 3
         self.m.store_current_values()
         nose.tools.assert_not_equal(self.o.offset.map["values"][0], 2)
+
+
+class TestSetCurrentValuesTo:
+
+    def setUp(self):
+        self.m = hs.create_model(hs.signals.Spectrum(
+            np.arange(10).reshape(2, 5)))
+        self.comps = [hs.components.Offset(), hs.components.Offset()]
+        self.m.extend(self.comps)
+
+    def test_set_all(self):
+        for c in self.comps:
+            c.offset.value = 2
+        self.m.assign_current_values_to_all()
+        nose.tools.assert_true((self.comps[0].offset.map["values"] == 2).all())
+        nose.tools.assert_true((self.comps[1].offset.map["values"] == 2).all())
+
+    def test_set_1(self):
+        self.comps[1].offset.value = 2
+        self.m.assign_current_values_to_all([self.comps[1]])
+        nose.tools.assert_true((self.comps[0].offset.map["values"] != 2).all())
+        nose.tools.assert_true((self.comps[1].offset.map["values"] == 2).all())
