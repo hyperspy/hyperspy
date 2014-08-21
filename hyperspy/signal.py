@@ -25,8 +25,14 @@ import inspect
 import numpy as np
 import numpy.ma as ma
 import scipy.interpolate
+from scipy.signal import savgol_filter
 import scipy as sp
 from matplotlib import pyplot as plt
+try:
+    from statsmodels.nonparametric.smoothers_lowess import lowess
+    statsmodels_installed = True
+except:
+    statsmodels_installed = False
 
 from hyperspy import messages
 from hyperspy.axes import AxesManager
@@ -46,6 +52,7 @@ from hyperspy.gui.tools import (
     SmoothingLowess,
     SmoothingTV,
     ButterworthFilter)
+from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.gui.egerton_quantification import BackgroundRemoval
 from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
@@ -775,67 +782,131 @@ class Signal1DTools(object):
         calibration = SpectrumCalibration(self)
         calibration.edit_traits()
 
-    def smooth_savitzky_golay(self, polynomial_order=None,
-                              number_of_points=None, differential_order=0):
-        """Savitzky-Golay data smoothing in place.
+    def smooth_savitzky_golay(self,
+                              polynomial_order=None,
+                              window_length=None,
+                              differential_order=0):
+        """Apply a Savitzky-Golay filter to the data in place.
+
+        If `polynomial_order` or `window_length` or `differential_order` are
+        None the method is run in interactive mode.
+
+        Parameters
+        ----------
+        window_length : int
+            The length of the filter window (i.e. the number of coefficients).
+            `window_length` must be a positive odd integer.
+        polynomial_order : int
+            The order of the polynomial used to fit the samples.
+            `polyorder` must be less than `window_length`.
+        differential_order: int, optional
+            The order of the derivative to compute.  This must be a
+            nonnegative integer.  The default is 0, which means to filter
+            the data without differentiating.
+
+        Notes
+        -----
+        More information about the filter in `scipy.signal.savgol_filter`.
 
         """
         self._check_signal_dimension_equals_one()
         if (polynomial_order is not None and
-                number_of_points is not None):
-            for spectrum in self:
-                spectrum.data[:] = spectrum_tools.sg(self(),
-                                                     number_of_points,
-                                                     polynomial_order,
-                                                     differential_order)
+                window_length is not None):
+            axis = self.axes_manager.signal_axes[0]
+            self.data = savgol_filter(
+                x=self.data,
+                window_length=window_length,
+                polyorder=polynomial_order,
+                deriv=differential_order,
+                delta=axis.scale,
+                axis=axis.index_in_array)
+
         else:
+            # Interactive mode
             smoother = SmoothingSavitzkyGolay(self)
             smoother.differential_order = differential_order
             if polynomial_order is not None:
                 smoother.polynomial_order = polynomial_order
-            if number_of_points is not None:
-                smoother.number_of_points = number_of_points
-
+            if window_length is not None:
+                smoother.window_length = window_length
             smoother.edit_traits()
 
-    def smooth_lowess(self, smoothing_parameter=None,
-                      number_of_iterations=None, differential_order=0):
+    def smooth_lowess(self,
+                      smoothing_parameter=None,
+                      number_of_iterations=None,
+                      show_progressbar=None):
         """Lowess data smoothing in place.
 
+        If `smoothing_parameter` or `number_of_iterations` are None the method
+        is run in interactive mode.
+
+        Parameters
+        ----------
+        smoothing_parameter: float or None
+            Between 0 and 1. The fraction of the data used
+            when estimating each y-value.
+        number_of_iterations: int or None
+            The number of residual-based reweightings
+            to perform.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
+        ImportError if statsmodels is not installed.
+
+        Notes
+        -----
+        This method uses the lowess algorithm from statsmodels. statsmodels
+        is required for this method.
 
         """
+        if not statsmodels_installed:
+            raise ImportError("statsmodels is not installed. This package is "
+                              "required for this feature.")
         self._check_signal_dimension_equals_one()
-        smoother = SmoothingLowess(self)
-        smoother.differential_order = differential_order
-        if smoothing_parameter is not None:
-            smoother.smoothing_parameter = smoothing_parameter
-        if number_of_iterations is not None:
-            smoother.number_of_iterations = number_of_iterations
-        if smoothing_parameter is None or smoothing_parameter is None:
+        if smoothing_parameter is None or number_of_iterations is None:
+            smoother = SmoothingLowess(self)
+            if smoothing_parameter is not None:
+                smoother.smoothing_parameter = smoothing_parameter
+            if number_of_iterations is not None:
+                smoother.number_of_iterations = number_of_iterations
             smoother.edit_traits()
         else:
-            smoother.apply()
+            self.map(lowess,
+                     exog=self.axes_manager[-1].axis,
+                     frac=smoothing_parameter,
+                     it=number_of_iterations,
+                     is_sorted=True,
+                     return_sorted=False,
+                     show_progressbar=show_progressbar)
 
-    def smooth_tv(self, smoothing_parameter=None, differential_order=0):
+    def smooth_tv(self, smoothing_parameter=None, show_progressbar=None):
         """Total variation data smoothing in place.
 
+        Parameters
+        ----------
+        smoothing_parameter: float or None
+           Denoising weight relative to L2 minimization. If None the method
+           is run in interactive mode.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
 
         """
         self._check_signal_dimension_equals_one()
-        smoother = SmoothingTV(self)
-        smoother.differential_order = differential_order
-        if smoothing_parameter is not None:
-            smoother.smoothing_parameter = smoothing_parameter
         if smoothing_parameter is None:
+            smoother = SmoothingTV(self)
             smoother.edit_traits()
         else:
-            smoother.apply()
+            self.map(_tv_denoise_1d, weight=smoothing_parameter,
+                     show_progressbar=show_progressbar)
 
     def filter_butterworth(self,
                            cutoff_frequency_ratio=None,
@@ -3244,7 +3315,7 @@ class Signal(MVA,
             splitting is homegenous. When the axis size is not divisible
             by the number_of_parts the reminder data is lost without
             warning. If number_of_parts and step_sizes is 'auto',
-            number_of_parts equals the lenght of the axis,
+            number_of_parts equals the length of the axis,
             step_sizes equals one  and the axis is supress from each sub_spectra.
         step_sizes : {'auto' | list of ints | int}
             Size of the splitted parts. If 'auto', the step_sizes equals one.

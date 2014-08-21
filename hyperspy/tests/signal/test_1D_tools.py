@@ -19,8 +19,17 @@
 import os
 
 import numpy as np
-
 from nose.tools import assert_true, assert_equal, assert_not_equal
+from nose.plugins.skip import SkipTest
+import nose.tools
+from scipy.signal import savgol_filter
+try:
+    from statsmodels.nonparametric.smoothers_lowess import lowess
+    skip_lowess = False
+except:
+    skip_lowess = True
+
+from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.hspy import *
 
@@ -200,3 +209,56 @@ class TestEstimatePeakWidth():
         assert_equal(width, np.nan)
         assert_equal(left, np.nan)
         assert_equal(right, np.nan)
+
+class TestSmoothing:
+    def setUp(self):
+        n, m = 2, 100
+        self.s = signals.SpectrumSimulation(np.arange(n*m).reshape(n, m))
+        np.random.seed(1)
+        self.s.add_gaussian_noise(0.1)
+
+
+    def test_lowess(self):
+        if skip_lowess:
+            raise SkipTest
+        frac = 0.5
+        it = 1
+        data = self.s.data.copy()
+        for i in range(data.shape[0]):
+            data[i, :] = lowess(
+                endog=data[i, :],
+                exog=self.s.axes_manager[-1].axis,
+                frac=frac,
+                it=it,
+                is_sorted=True,
+                return_sorted=False,)
+        self.s.smooth_lowess(smoothing_parameter=frac,
+                             number_of_iterations=it,)
+        nose.tools.assert_true(np.allclose(data, self.s.data))
+
+    def test_tv(self):
+        weight = 1
+        data = self.s.data.copy()
+        for i in range(data.shape[0]):
+            data[i, :] = _tv_denoise_1d(
+                im=data[i, :],
+                weight=weight,)
+        self.s.smooth_tv(smoothing_parameter=weight,)
+        nose.tools.assert_true(np.allclose(data, self.s.data))
+
+    def test_savgol(self):
+        window_length = 13
+        polyorder = 1
+        deriv = 1
+        data = savgol_filter(
+            x=self.s.data,
+            window_length=window_length,
+            polyorder=polyorder,
+            deriv=deriv,
+            delta=self.s.axes_manager[-1].scale,
+            axis=-1,)
+        self.s.smooth_savitzky_golay(
+            window_length=window_length,
+            polynomial_order=polyorder,
+            differential_order=deriv,)
+        nose.tools.assert_true(np.allclose(data, self.s.data))
