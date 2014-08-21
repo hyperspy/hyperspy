@@ -450,7 +450,7 @@ class SmoothingSavitzkyGolay(Smoothing):
                 'window_length',
                 tu.Item('decrease_window_length', show_label=False),
                 tu.Item('increase_window_length', show_label=False),
-            orientation="horizontal"),
+                orientation="horizontal"),
 
             'polynomial_order',
             tu.Item(
@@ -469,7 +469,7 @@ class SmoothingSavitzkyGolay(Smoothing):
             nwl = self.window_length + 2
         else:
             nwl = self.window_length + 1
-        if nwl <  self.signal.axes_manager[2j].size:
+        if nwl < self.signal.axes_manager[2j].size:
             self.window_length = nwl
 
     def _decrease_window_length_fired(self):
@@ -477,10 +477,11 @@ class SmoothingSavitzkyGolay(Smoothing):
             nwl = self.window_length - 2
         else:
             nwl = self.window_length - 1
-        if nwl >  self.polynomial_order:
+        if nwl > self.polynomial_order:
             self.window_length = nwl
         else:
-            print("The window lenght must be greated than the polynomial order")
+            print(
+                "The window lenght must be greated than the polynomial order")
 
     def _polynomial_order_changed(self, old, new):
         if self.window_length <= new:
@@ -497,7 +498,11 @@ class SmoothingSavitzkyGolay(Smoothing):
             self.polynomial_order += 1
             print("Differential order must be <= polynomial order. "
                   "Polynomial order set to %i." % self.polynomial_order)
-        super(SmoothingSavitzkyGolay, self)._differential_order_changed(old, new)
+        super(
+            SmoothingSavitzkyGolay,
+            self)._differential_order_changed(
+            old,
+            new)
 
     def diff_model2plot(self, axes_manager=None):
         self.single_spectrum.data = self.signal().copy()
@@ -539,6 +544,7 @@ class SmoothingLowess(Smoothing):
         handler=SmoothingHandler,
         buttons=OKCancelButtons,
         title='Lowess Smoothing',)
+
     def __init__(self, *args, **kwargs):
         super(SmoothingLowess, self).__init__(*args, **kwargs)
 
@@ -555,7 +561,8 @@ class SmoothingLowess(Smoothing):
         self.single_spectrum.data = self.signal().copy()
         self.single_spectrum.smooth_lowess(
             smoothing_parameter=self.smoothing_parameter,
-            number_of_iterations=self.number_of_iterations,)
+            number_of_iterations=self.number_of_iterations,
+            show_progressbar=False)
 
         return self.single_spectrum.data
 
@@ -586,9 +593,11 @@ class SmoothingTV(Smoothing):
     def model2plot(self, axes_manager=None):
         self.single_spectrum.data = self.signal().copy()
         self.single_spectrum.smooth_tv(
-            smoothing_parameter=self.smoothing_parameter,)
+            smoothing_parameter=self.smoothing_parameter,
+            show_progressbar=False)
 
         return self.single_spectrum.data
+
 
 class ButterworthFilter(Smoothing):
     cutoff_frequency_ratio = t.Range(0., 1., 0.05)

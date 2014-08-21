@@ -793,7 +793,7 @@ class Signal1DTools(object):
         """
         self._check_signal_dimension_equals_one()
         if (polynomial_order is not None and
-            window_length is not None):
+                window_length is not None):
             axis = self.axes_manager.signal_axes[0]
             self.data = savgol_filter(
                 x=self.data,
@@ -813,8 +813,15 @@ class Signal1DTools(object):
                 smoother.window_length = window_length
             smoother.edit_traits()
 
-    def smooth_lowess(self, smoothing_parameter=None, number_of_iterations=None):
+    def smooth_lowess(self,
+                      smoothing_parameter=None,
+                      number_of_iterations=None,
+                      show_progressbar=None):
         """Lowess data smoothing in place.
+
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Raises
         ------
@@ -838,11 +845,15 @@ class Signal1DTools(object):
                      frac=smoothing_parameter,
                      it=number_of_iterations,
                      is_sorted=True,
-                     return_sorted=False)
+                     return_sorted=False,
+                     show_progressbar=show_progressbar)
 
-
-    def smooth_tv(self, smoothing_parameter=None):
+    def smooth_tv(self, smoothing_parameter=None, show_progressbar=None):
         """Total variation data smoothing in place.
+
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Raises
         ------
@@ -854,7 +865,8 @@ class Signal1DTools(object):
             smoother = SmoothingTV(self)
             smoother.edit_traits()
         else:
-            self.map(_tv_denoise_1d, weight=smoothing_parameter,)
+            self.map(_tv_denoise_1d, weight=smoothing_parameter,
+                     show_progressbar=show_progressbar)
 
     def filter_butterworth(self,
                            cutoff_frequency_ratio=None,
