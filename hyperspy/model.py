@@ -1498,17 +1498,37 @@ class Model(list):
             The operation won't be performed where mask is True.
 
         """
+
+        warnings.warn(
+            "This method has been renamed to `assign_current_values_to_all` "
+            "and it will be removed in the next release", DeprecationWarning)
+        return self.assign_current_values_to_all(
+            components_list=components_list, mask=mask)
+
+    def assign_current_values_to_all(self, components_list=None, mask=None):
+        """Set parameter values for all positions to the current ones.
+
+        Parameters
+        ----------
+        component_list : list of components, optional
+            If a list of components is given, the operation will be performed
+            only in the value of the parameters of the given components.
+            The components can be specified by name, index or themselves.
+        mask : boolean numpy array or None, optional
+            The operation won't be performed where mask is True.
+
+        """
         if components_list is None:
             components_list = []
             for comp in self:
                 if comp.active:
                     components_list.append(comp)
         else:
-            component_list = [self._get_component(x) for x in component_list]
+            components_list = [self._get_component(x) for x in components_list]
 
         for comp in components_list:
             for parameter in comp.parameters:
-                parameter.set_current_value_to(mask=mask)
+                parameter.assign_current_value_to_all(mask=mask)
 
     def _enable_ext_bounding(self, components=None):
         """
