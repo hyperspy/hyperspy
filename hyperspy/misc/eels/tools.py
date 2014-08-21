@@ -178,7 +178,7 @@ def power_law_perc_area(E1, E2, r):
     a = E1
     b = E2
     return 100 * ((a ** r * r - a ** r) * (a / (a ** r * r - a ** r) -
-                  (b + a) / ((b + a) ** r * r - (b + a) ** r))) / a
+                                           (b + a) / ((b + a) ** r * r - (b + a) ** r))) / a
 
 
 def rel_std_of_fraction(a, std_a, b, std_b, corr_factor=1):
@@ -264,7 +264,7 @@ def eels_constant(s, zlp, t):
         if (zlp.axes_manager.navigation_dimension ==
                 s.axes_manager.navigation_dimension):
             if zlp.axes_manager.signal_dimension == 0:
-                i0 = i0.data
+                i0 = zlp.data
             else:
                 i0 = zlp.data.sum(axis.index_in_array)
         else:
@@ -289,9 +289,6 @@ def eels_constant(s, zlp, t):
             raise ValueError('The thickness signal dimensions are not '
                              'compatible with the dimensions of the '
                              'low-loss signal')
-    # Slicer to get the signal data from 0 to axis.size
-    slicer = s.axes_manager._get_data_slice(
-        [(axis.index_in_array, slice(None, axis.size)), ])
 
     # Kinetic definitions
     ke = e0 * (1 + e0 / 2. / me) / (1 + e0 / me) ** 2

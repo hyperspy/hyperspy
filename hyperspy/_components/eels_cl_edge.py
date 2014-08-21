@@ -18,12 +18,9 @@
 
 from __future__ import division
 import math
-import copy
 
 import numpy as np
-import scipy as sp
-import scipy.interpolate
-from scipy.interpolate import splev, splrep, splint
+from scipy.interpolate import splev
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.component import Component

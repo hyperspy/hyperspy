@@ -16,13 +16,10 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
-
 import numpy as np
 from nose.tools import (
     assert_true,
     assert_equal,
-    assert_not_equal,
     raises)
 
 from hyperspy.signal import Signal
@@ -67,7 +64,7 @@ class TestBinaryOperatorsCase1:
 
     @raises(ValueError)
     def test_s3_plus_s1(self):
-        n = self.s3 + self.s1
+        self.s3 + self.s1
 
 
 class TestBinaryOperatorsCase2:

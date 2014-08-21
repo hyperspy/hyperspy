@@ -1,15 +1,11 @@
-from nose.tools import (
-    assert_true,
-    assert_equal,
-    assert_not_equal,
-    raises)
+from nose.tools import assert_true
 import numpy as np
 
 from hyperspy.signal import Signal
 from hyperspy import utils
 
 
-class Test_Utils_Stack():
+class TestUtilsStack():
 
     def setUp(self):
         s = Signal(np.ones((3, 2, 5)))

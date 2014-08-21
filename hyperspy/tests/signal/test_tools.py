@@ -1,9 +1,7 @@
 import numpy as np
 from nose.tools import (
     assert_true,
-    assert_equal,
-    assert_not_equal,
-    raises)
+    assert_equal,)
 
 from hyperspy.signal import Signal
 from hyperspy import signals

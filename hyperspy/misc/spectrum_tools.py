@@ -1,5 +1,3 @@
-import math
-
 import numpy as np
 import scipy.interpolate
 import scipy.signal
@@ -173,5 +171,3 @@ def interpolate1D(number_of_interpolation_points, data):
     new_ax = np.linspace(0, 100, ch * ip - (ip - 1))
     interpolator = scipy.interpolate.interp1d(old_ax, data)
     return interpolator(new_ax)
-
-

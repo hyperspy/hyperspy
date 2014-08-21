@@ -18,7 +18,7 @@
 
 import traits.api as t
 import traitsui.api as tu
-from traitsui.menu import OKButton, ApplyButton, CancelButton, ModalButtons
+from traitsui.menu import OKButton, CancelButton
 
 
 class General(t.HasTraits):
