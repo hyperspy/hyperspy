@@ -114,6 +114,7 @@ class TestModel:
         m.extend((g1, g2))
         m._get_component(1.2)
 
+
 class TestModelFitBinned:
 
     def setUp(self):
@@ -190,6 +191,7 @@ class TestModelFitBinned:
     @nose.tools.raises(ValueError)
     def test_wrong_method(self):
         self.m.fit(method="dummy")
+
 
 class TestModelWeighted:
 
@@ -282,6 +284,7 @@ class TestModelWeighted:
         self.m.fit(fitter="leastsq", method="ls")
         nose.tools.assert_almost_equal(self.m.red_chisq.data, 3.37700055)
 
+
 class TestModelScalarVariance:
 
     def setUp(self):
@@ -332,6 +335,7 @@ class TestModelScalarVariance:
         self.m.fit(fitter="leastsq", method="ls")
         nose.tools.assert_almost_equals(self.m.red_chisq.data, 0.86206965)
 
+
 class TestModelSignalVariance:
 
     def setUp(self):
@@ -357,6 +361,7 @@ class TestModelSignalVariance:
                                         0.79693355673230915)
         nose.tools.assert_almost_equals(self.m.red_chisq.data[1],
                                         0.91453032901427167)
+
 
 class TestMultifit:
 
@@ -392,7 +397,9 @@ class TestMultifit:
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [2., 2.])
 
+
 class TestStoreCurrentValues:
+
     def setUp(self):
         self.m = create_model(signals.Spectrum(np.arange(10)))
         self.o = components.Offset()
@@ -412,6 +419,3 @@ class TestStoreCurrentValues:
         self.m.store_current_values()
         nose.tools.assert_not_equal(self.o.offset.map["values"][0], 2)
         nose.tools.assert_not_equal(self.o.offset.map["is_set"][0], True)
-
-
-
