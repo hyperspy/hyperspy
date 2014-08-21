@@ -786,9 +786,27 @@ class Signal1DTools(object):
                               polynomial_order=None,
                               window_length=None,
                               differential_order=0):
-        """Savitzky-Golay data smoothing.
+        """Apply a Savitzky-Golay filter to the data in place.
 
-        The operation is performed in-place.
+        If `polynomial_order` or `window_length` or `differential_order` are
+        None the method is run in interactive mode.
+
+        Parameters
+        ----------
+        window_length : int
+            The length of the filter window (i.e. the number of coefficients).
+            `window_length` must be a positive odd integer.
+        polynomial_order : int
+            The order of the polynomial used to fit the samples.
+            `polyorder` must be less than `window_length`.
+        differential_order: int, optional
+            The order of the derivative to compute.  This must be a
+            nonnegative integer.  The default is 0, which means to filter
+            the data without differentiating.
+
+        Notes
+        -----
+        More information about the filter in `scipy.signal.savgol_filter`.
 
         """
         self._check_signal_dimension_equals_one()
@@ -819,6 +837,17 @@ class Signal1DTools(object):
                       show_progressbar=None):
         """Lowess data smoothing in place.
 
+        If `smoothing_parameter` or `number_of_iterations` are None the method
+        is run in interactive mode.
+
+        Parameters
+        ----------
+        smoothing_parameter: float or None
+            Between 0 and 1. The fraction of the data used
+            when estimating each y-value.
+        number_of_iterations: int or None
+            The number of residual-based reweightings
+            to perform.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
@@ -826,6 +855,12 @@ class Signal1DTools(object):
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
+        ImportError if statsmodels is not installed.
+
+        Notes
+        -----
+        This method uses the lowess algorithm from statsmodels. statsmodels
+        is required for this method.
 
         """
         if not statsmodels_installed:
@@ -851,6 +886,11 @@ class Signal1DTools(object):
     def smooth_tv(self, smoothing_parameter=None, show_progressbar=None):
         """Total variation data smoothing in place.
 
+        Parameters
+        ----------
+        smoothing_parameter: float or None
+           Denoising weight relative to L2 minimization. If None the method
+           is run in interactive mode.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
