@@ -23,6 +23,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from traits.api import Undefined
 
+import hyperspy.messages as messages
+
 
 def _plot_quiver_scatter_overlay(image, axes_manager,
                                  calibrate=True, shifts=None,
