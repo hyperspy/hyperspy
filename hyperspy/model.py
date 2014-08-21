@@ -553,7 +553,7 @@ class Model(list):
             self._connect_parameters2update_plot()
             self.update_plot()
 
-    def update_plot(self, component=None, *args, **kwargs):
+    def update_plot(self, *args, **kwargs):
         """Update model plot.
 
         The updating can be suspended using `suspend_update`.
@@ -965,7 +965,6 @@ class Model(list):
             errfunc = self._model_function(p) - y
             if weights is not None:
                 errfunc *= weights
-            jacobian = None
             status = 0
             return [status, errfunc]
         else:
