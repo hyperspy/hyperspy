@@ -1,5 +1,4 @@
 import numpy as np
-import math
 
 
 def bragg_scattering_angle(d, E0=100):

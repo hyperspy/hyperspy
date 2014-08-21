@@ -441,7 +441,6 @@ def progressbar(text="calculating", maxval=100, disabled=False):
 
 
 if __name__ == '__main__':
-    import os
 
     def example1():
         widgets = ['Test: ', Percentage(), ' ', Bar(marker=RotatingMarker()),

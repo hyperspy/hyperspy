@@ -1,39 +1,36 @@
-import os
-
 import numpy as np
-import numpy.testing
 import nose.tools
 
-from hyperspy.hspy import *
-from hyperspy.components import Gaussian
+import hyperspy.hspy as hs
 
 
 class TestModel:
 
     def setUp(self):
-        s = signals.Spectrum(np.empty(1))
-        m = create_model(s)
+        s = hs.signals.Spectrum(np.empty(1))
+        m = hs.create_model(s)
         self.model = m
 
     def test_access_component_by_name(self):
         m = self.model
-        g1 = Gaussian()
-        g2 = Gaussian()
+        g1 = hs.components.Gaussian()
+        g2 = hs.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
         nose.tools.assert_is(m["test"], g2)
 
     def test_access_component_by_index(self):
         m = self.model
-        g1 = Gaussian()
-        g2 = Gaussian()
+        g1 = hs.components.Gaussian()
+        g2 = hs.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
         nose.tools.assert_is(m[1], g2)
 
     def test_component_name_when_append(self):
         m = self.model
-        gs = [Gaussian(), Gaussian(), Gaussian()]
+        gs = [
+            hs.components.Gaussian(), hs.components.Gaussian(), hs.components.Gaussian()]
         m.extend(gs)
         nose.tools.assert_is(m['Gaussian'], gs[0])
         nose.tools.assert_is(m['Gaussian_0'], gs[1])
@@ -42,11 +39,12 @@ class TestModel:
     @nose.tools.raises(ValueError)
     def test_several_component_with_same_name(self):
         m = self.model
-        gs = [Gaussian(), Gaussian(), Gaussian()]
+        gs = [
+            hs.components.Gaussian(), hs.components.Gaussian(), hs.components.Gaussian()]
         m.extend(gs)
-        m[0]._name = "Gaussian"
-        m[1]._name = "Gaussian"
-        m[2]._name = "Gaussian"
+        m[0]._name = "hs.components.Gaussian"
+        m[1]._name = "hs.components.Gaussian"
+        m[2]._name = "hs.components.Gaussian"
         m['Gaussian']
 
     @nose.tools.raises(ValueError)
@@ -57,50 +55,50 @@ class TestModel:
     @nose.tools.raises(ValueError)
     def test_component_already_in_model(self):
         m = self.model
-        g1 = Gaussian()
+        g1 = hs.components.Gaussian()
         m.extend((g1, g1))
 
     def test_remove_component(self):
         m = self.model
-        g1 = Gaussian()
+        g1 = hs.components.Gaussian()
         m.append(g1)
         m.remove(g1)
         nose.tools.assert_equal(len(m), 0)
 
     def test_remove_component_by_index(self):
         m = self.model
-        g1 = Gaussian()
+        g1 = hs.components.Gaussian()
         m.append(g1)
         m.remove(0)
         nose.tools.assert_equal(len(m), 0)
 
     def test_remove_component_by_name(self):
         m = self.model
-        g1 = Gaussian()
+        g1 = hs.components.Gaussian()
         m.append(g1)
         m.remove(g1.name)
         nose.tools.assert_equal(len(m), 0)
 
     def test_get_component_by_name(self):
         m = self.model
-        g1 = Gaussian()
-        g2 = Gaussian()
+        g1 = hs.components.Gaussian()
+        g2 = hs.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
         nose.tools.assert_is(m._get_component("test"), g2)
 
     def test_get_component_by_index(self):
         m = self.model
-        g1 = Gaussian()
-        g2 = Gaussian()
+        g1 = hs.components.Gaussian()
+        g2 = hs.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
         nose.tools.assert_is(m._get_component(1), g2)
 
     def test_get_component_by_component(self):
         m = self.model
-        g1 = Gaussian()
-        g2 = Gaussian()
+        g1 = hs.components.Gaussian()
+        g2 = hs.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
         nose.tools.assert_is(m._get_component(g2), g2)
@@ -108,8 +106,8 @@ class TestModel:
     @nose.tools.raises(ValueError)
     def test_get_component_wrong(self):
         m = self.model
-        g1 = Gaussian()
-        g2 = Gaussian()
+        g1 = hs.components.Gaussian()
+        g2 = hs.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
         m._get_component(1.2)
@@ -119,13 +117,13 @@ class TestModelFitBinned:
 
     def setUp(self):
         np.random.seed(1)
-        s = signals.Spectrum(
+        s = hs.signals.Spectrum(
             np.random.normal(
                 scale=2,
                 size=10000)).get_histogram()
         s.metadata.Signal.binned = True
-        g = components.Gaussian()
-        m = create_model(s)
+        g = hs.components.Gaussian()
+        m = hs.create_model(s)
         m.append(g)
         g.sigma.value = 1
         g.centre.value = 0.5
@@ -197,14 +195,14 @@ class TestModelWeighted:
 
     def setUp(self):
         np.random.seed(1)
-        s = signals.SpectrumSimulation(np.arange(10, 100, 0.1))
+        s = hs.signals.SpectrumSimulation(np.arange(10, 100, 0.1))
         s.metadata.set_item("Signal.Noise_properties.variance",
-                            signals.Spectrum(np.arange(10, 100, 0.01)))
+                            hs.signals.Spectrum(np.arange(10, 100, 0.01)))
         s.axes_manager[0].scale = 0.1
         s.axes_manager[0].offset = 10
         s.add_poissonian_noise()
-        m = create_model(s)
-        m.append(components.Polynomial(1))
+        m = hs.create_model(s)
+        m.append(hs.components.Polynomial(1))
         self.m = m
 
     def test_fit_leastsq_binned(self):
@@ -288,9 +286,9 @@ class TestModelWeighted:
 class TestModelScalarVariance:
 
     def setUp(self):
-        s = signals.SpectrumSimulation(np.ones(100))
-        m = create_model(s)
-        m.append(components.Offset())
+        s = hs.signals.SpectrumSimulation(np.ones(100))
+        m = hs.create_model(s)
+        m.append(hs.components.Offset())
         self.s = s
         self.m = m
 
@@ -326,7 +324,7 @@ class TestModelScalarVariance:
         self.m.fit(fitter="leastsq", method="ls")
         nose.tools.assert_almost_equals(self.m.red_chisq.data, 0.79949135)
 
-    def test_std1_red_chisq(self):
+    def test_std1_red_chisq_in_range(self):
         std = 1
         self.m.set_signal_range(10, 50)
         np.random.seed(1)
@@ -339,7 +337,7 @@ class TestModelScalarVariance:
 class TestModelSignalVariance:
 
     def setUp(self):
-        variance = signals.SpectrumSimulation(
+        variance = hs.signals.SpectrumSimulation(
             np.arange(
                 100, 300).reshape(
                 (2, 100)))
@@ -350,8 +348,8 @@ class TestModelSignalVariance:
         s.add_poissonian_noise()
         s.metadata.set_item("Signal.Noise_properties.variance",
                             variance + std ** 2)
-        m = create_model(s)
-        m.append(components.Polynomial(order=1))
+        m = hs.create_model(s)
+        m.append(hs.components.Polynomial(order=1))
         self.s = s
         self.m = m
 
@@ -366,11 +364,11 @@ class TestModelSignalVariance:
 class TestMultifit:
 
     def setUp(self):
-        s = signals.Spectrum(np.empty((2, 200)))
+        s = hs.signals.Spectrum(np.empty((2, 200)))
         s.axes_manager[-1].offset = 1
         s.data[:] = 2 * s.axes_manager[-1].axis ** (-3)
-        m = create_model(s)
-        m.append(components.PowerLaw())
+        m = hs.create_model(s)
+        m.append(hs.components.PowerLaw())
         m[0].A.value = 2
         m[0].r.value = 2
         m.store_current_values()
@@ -401,8 +399,8 @@ class TestMultifit:
 class TestStoreCurrentValues:
 
     def setUp(self):
-        self.m = create_model(signals.Spectrum(np.arange(10)))
-        self.o = components.Offset()
+        self.m = hs.create_model(hs.signals.Spectrum(np.arange(10)))
+        self.o = hs.components.Offset()
         self.m.append(self.o)
 
     def test_active(self):
@@ -418,4 +416,3 @@ class TestStoreCurrentValues:
         self.o.offset.std = 3
         self.m.store_current_values()
         nose.tools.assert_not_equal(self.o.offset.map["values"][0], 2)
-        nose.tools.assert_not_equal(self.o.offset.map["is_set"][0], True)

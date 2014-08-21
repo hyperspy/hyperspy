@@ -34,7 +34,6 @@ try:
 except:
     statsmodels_installed = False
 
-from hyperspy import messages
 from hyperspy.axes import AxesManager
 from hyperspy import io
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
@@ -4604,8 +4603,9 @@ for name in (
     # The following commented line enables the operators with swapped
     # operands. They should be defined only for commutative operators
     # but for simplicity we don't support this at all atm.
-    #~exec("setattr(Signal, \'%s\', %s)" % (name[:2] + "r" + name[2:],
-    #~name))
+
+    # exec("setattr(Signal, \'%s\', %s)" % (name[:2] + "r" + name[2:],
+    # name))
 
 # Implement unary arithmetic operations
 for name in (

@@ -1,17 +1,17 @@
 import numpy as np
 import nose.tools
 
-from hyperspy.hspy import *
+import hyperspy.hspy as hs
 
 
 class TestPowerLaw:
 
     def setUp(self):
-        s = signals.Spectrum(np.empty((1024)))
+        s = hs.signals.Spectrum(np.empty((1024)))
         s.axes_manager[0].offset = 100
         s.axes_manager[0].scale = 0.01
-        m = create_model(s)
-        m.append(components.PowerLaw())
+        m = hs.create_model(s)
+        m.append(hs.components.PowerLaw())
         m[0].A.value = 10
         m[0].r.value = 4
         self.m = m
@@ -20,7 +20,7 @@ class TestPowerLaw:
         self.m.spectrum.metadata.Signal.binned = True
         s = self.m.as_signal()
         s.metadata.Signal.binned = True
-        g = components.PowerLaw()
+        g = hs.components.PowerLaw()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -32,7 +32,7 @@ class TestPowerLaw:
         self.m.spectrum.metadata.Signal.binned = False
         s = self.m.as_signal()
         s.metadata.Signal.binned = False
-        g = components.PowerLaw()
+        g = hs.components.PowerLaw()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -44,7 +44,7 @@ class TestPowerLaw:
         self.m.spectrum.metadata.Signal.binned = True
         s = self.m.as_signal()
         s.metadata.Signal.binned = True
-        g = components.PowerLaw()
+        g = hs.components.PowerLaw()
         g._axes_manager = self.m.spectrum.axes_manager
         g.estimate_parameters(s,
                               None,
@@ -57,7 +57,7 @@ class TestPowerLaw:
         self.m.spectrum.metadata.Signal.binned = False
         s = self.m.as_signal()
         s.metadata.Signal.binned = False
-        g = components.PowerLaw()
+        g = hs.components.PowerLaw()
         g._axes_manager = self.m.spectrum.axes_manager
         g.estimate_parameters(s,
                               None,
@@ -70,10 +70,10 @@ class TestPowerLaw:
 class TestOffset:
 
     def setUp(self):
-        s = signals.Spectrum(np.empty((10)))
+        s = hs.signals.Spectrum(np.empty((10)))
         s.axes_manager[0].scale = 0.01
-        m = create_model(s)
-        m.append(components.Offset())
+        m = hs.create_model(s)
+        m.append(hs.components.Offset())
         m[0].offset.value = 10
         self.m = m
 
@@ -81,7 +81,7 @@ class TestOffset:
         self.m.spectrum.metadata.Signal.binned = True
         s = self.m.as_signal()
         s.metadata.Signal.binned = True
-        g = components.Offset()
+        g = hs.components.Offset()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -92,7 +92,7 @@ class TestOffset:
         self.m.spectrum.metadata.Signal.binned = False
         s = self.m.as_signal()
         s.metadata.Signal.binned = False
-        g = components.Offset()
+        g = hs.components.Offset()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -103,11 +103,11 @@ class TestOffset:
 class TestiPolynomial:
 
     def setUp(self):
-        s = signals.Spectrum(np.empty((1024)))
+        s = hs.signals.Spectrum(np.empty((1024)))
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
-        m = create_model(s)
-        m.append(components.Polynomial(order=2))
+        m = hs.create_model(s)
+        m.append(hs.components.Polynomial(order=2))
         m[0].coefficients.value = (0.5, 2, 3)
         self.m = m
 
@@ -115,7 +115,7 @@ class TestiPolynomial:
         self.m.spectrum.metadata.Signal.binned = True
         s = self.m.as_signal()
         s.metadata.Signal.binned = True
-        g = components.Polynomial(order=2)
+        g = hs.components.Polynomial(order=2)
         g.estimate_parameters(s,
                               None,
                               None,
@@ -128,7 +128,7 @@ class TestiPolynomial:
         self.m.spectrum.metadata.Signal.binned = False
         s = self.m.as_signal()
         s.metadata.Signal.binned = False
-        g = components.Polynomial(order=2)
+        g = hs.components.Polynomial(order=2)
         g.estimate_parameters(s,
                               None,
                               None,
@@ -141,11 +141,11 @@ class TestiPolynomial:
 class TestGaussian:
 
     def setUp(self):
-        s = signals.Spectrum(np.empty((1024)))
+        s = hs.signals.Spectrum(np.empty((1024)))
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
-        m = create_model(s)
-        m.append(components.Gaussian())
+        m = hs.create_model(s)
+        m.append(hs.components.Gaussian())
         m[0].sigma.value = 0.5
         m[0].centre.value = 1
         m[0].A.value = 2
@@ -155,7 +155,7 @@ class TestGaussian:
         self.m.spectrum.metadata.Signal.binned = True
         s = self.m.as_signal()
         s.metadata.Signal.binned = True
-        g = components.Gaussian()
+        g = hs.components.Gaussian()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -168,7 +168,7 @@ class TestGaussian:
         self.m.spectrum.metadata.Signal.binned = False
         s = self.m.as_signal()
         s.metadata.Signal.binned = False
-        g = components.Gaussian()
+        g = hs.components.Gaussian()
         g.estimate_parameters(s,
                               None,
                               None,
