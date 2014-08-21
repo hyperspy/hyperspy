@@ -76,7 +76,8 @@ class Signal2DTools(object):
                          medfilter=True,
                          hanning=True,
                          plot=False,
-                         dtype='float',):
+                         dtype='float',
+                         show_progressbar=None):
         """Estimate the shifts in a image using phase correlation
 
         This method can only estimate the shift by comparing
@@ -120,6 +121,9 @@ class Signal2DTools(object):
         dtype : str or dtype
             Typecode or data-type in which the calculations must be
             performed.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Returns
         -------
@@ -142,6 +146,8 @@ class Signal2DTools(object):
         Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_two()
         if roi is not None:
             # Get the indices of the roi
@@ -174,9 +180,11 @@ class Signal2DTools(object):
                 plot=plot,
                 dtype=dtype)
             np.fill_diagonal(pcarray['max_value'], max_value)
-            pbar = progressbar(maxval=nrows * images_number).start()
+            pbar = progressbar(maxval=nrows * images_number,
+                               disabled=not show_progressbar).start()
         else:
-            pbar = progressbar(maxval=images_number).start()
+            pbar = progressbar(maxval=images_number,
+                               disabled=not show_progressbar).start()
 
         # Main iteration loop. Fills the rows of pcarray when reference
         # is stat
@@ -369,7 +377,8 @@ class Signal1DTools(object):
                 shift_array,
                 interpolation_method='linear',
                 crop=True,
-                fill_value=np.nan):
+                fill_value=np.nan,
+                show_progressbar=None):
         """Shift the data in place over the signal axis by the amount specified
         by an array.
 
@@ -389,19 +398,24 @@ class Signal1DTools(object):
         fill_value : float
             If crop is False fill the data outside of the original
             interval with the given value where needed.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
 
         """
-
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         offset = axis.offset
         original_axis = axis.axis.copy()
         pbar = progressbar(
-            maxval=self.axes_manager.navigation_size)
+            maxval=self.axes_manager.navigation_size,
+            disabled=not show_progressbar)
         for i, (dat, shift) in enumerate(zip(
                 self._iterate_signal(),
                 shift_array.ravel(()))):
@@ -434,7 +448,8 @@ class Signal1DTools(object):
                 self.crop(axis.index_in_axes_manager,
                           imaximum)
 
-    def interpolate_in_between(self, start, end, delta=3, **kwargs):
+    def interpolate_in_between(self, start, end, delta=3,
+                               show_progressbar=None, **kwargs):
         """Replace the data in a given range by interpolation.
 
         The operation is performed in place.
@@ -448,12 +463,17 @@ class Signal1DTools(object):
         All extra keyword arguments are passed to
         scipy.interpolate.interp1d. See the function documentation
         for details.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         i1 = axis._get_index(start)
@@ -461,7 +481,8 @@ class Signal1DTools(object):
         i0 = int(np.clip(i1 - delta, 0, np.inf))
         i3 = int(np.clip(i2 + delta, 0, axis.size))
         pbar = progressbar(
-            maxval=self.axes_manager.navigation_size)
+            maxval=self.axes_manager.navigation_size,
+            disabled=not show_progressbar)
         for i, dat in enumerate(self._iterate_signal()):
             dat_int = sp.interpolate.interp1d(
                 range(i0, i1) + range(i2, i3),
@@ -489,7 +510,8 @@ class Signal1DTools(object):
                          max_shift=None,
                          interpolate=True,
                          number_of_interpolation_points=5,
-                         mask=None):
+                         mask=None,
+                         show_progressbar=None):
         """Estimate the shifts in the current signal axis using
          cross-correlation.
 
@@ -522,6 +544,9 @@ class Signal1DTools(object):
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Returns
         -------
@@ -532,6 +557,8 @@ class Signal1DTools(object):
         SignalDimensionError if the signal dimension is not 1.
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         ip = number_of_interpolation_points + 1
         axis = self.axes_manager.signal_axes[0]
@@ -546,7 +573,8 @@ class Signal1DTools(object):
         if interpolate is True:
             ref = spectrum_tools.interpolate1D(ip, ref)
         pbar = progressbar(
-            maxval=self.axes_manager.navigation_size)
+            maxval=self.axes_manager.navigation_size,
+            disabled=not show_progressbar)
         for i, (dat, indices) in enumerate(zip(
                 self._iterate_signal(),
                 self.axes_manager._array_indices_generator())):
@@ -1079,7 +1107,8 @@ class Signal1DTools(object):
     def estimate_peak_width(self,
                             factor=0.5,
                             window=None,
-                            return_interval=False):
+                            return_interval=False,
+                            show_progressbar=None):
         """Estimate the width of the highest intensity of peak
         of the spectra at a given fraction of its maximum.
 
@@ -1102,6 +1131,9 @@ class Signal1DTools(object):
             If True, returns 2 extra signals with the positions of the
             desired height fraction at the left and right of the
             peak.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Returns
         -------
@@ -1109,6 +1141,8 @@ class Signal1DTools(object):
         `return_interval`.
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         if not 0 < factor < 1:
             raise ValueError("factor must be between 0 and 1.")
@@ -1122,7 +1156,8 @@ class Signal1DTools(object):
         x = axis.axis
         maxval = self.axes_manager.navigation_size
         if maxval > 0:
-            pbar = progressbar(maxval=maxval)
+            pbar = progressbar(maxval=maxval,
+                               disabled=not show_progressbar)
         for i, spectrum in enumerate(self):
             if window is not None:
                 vmax = axis.index2value(spectrum.data.argmax())
@@ -2222,7 +2257,7 @@ class MVATools(object):
 
     def _get_factors(self, factors):
         signal = self.__class__(factors.T.reshape((-1,) +
-                                self.axes_manager.signal_shape[::-1]),
+                                                  self.axes_manager.signal_shape[::-1]),
                                 axes=[{"size": factors.shape[-1],
                                        "navigate": True}] +
                                 self.axes_manager._get_signal_axes_dicts())
@@ -2546,7 +2581,8 @@ class Signal(MVA,
 
         _signal.data = _signal.data[array_slices]
         if self.metadata.has_item('Signal.Noise_properties.variance'):
-            if isinstance(self.metadata.Signal.Noise_properties.variance, Signal):
+            if isinstance(
+                    self.metadata.Signal.Noise_properties.variance, Signal):
                 _signal.metadata.Signal.Noise_properties.variance = self.metadata.Signal.Noise_properties.variance.__getitem__(
                     _orig_slices,
                     isNavigation)
@@ -3294,7 +3330,8 @@ class Signal(MVA,
                     spectrum.axes_manager._get_data_slice([(axis, 0)])]
                 spectrum._remove_axis(axis_in_manager)
 
-        if mode == 'auto' and hasattr(self.original_metadata, 'stack_elements'):
+        if mode == 'auto' and hasattr(
+                self.original_metadata, 'stack_elements'):
             for i, spectrum in enumerate(splitted):
                 spectrum.metadata = copy.deepcopy(
                     self.original_metadata.stack_elements[
@@ -3900,7 +3937,8 @@ class Signal(MVA,
         hist_spec.metadata.Signal.binned = True
         return hist_spec
 
-    def map(self, function, **kwargs):
+    def map(self, function,
+            show_progressbar=None, **kwargs):
         """Apply a function to the signal data at all the coordinates.
 
         The function must operate on numpy arrays and the output *must have the
@@ -3919,6 +3957,9 @@ class Signal(MVA,
 
         function : function
             A function that can be applied to the signal.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
         keyword arguments : any valid keyword argument
             All extra keyword arguments are passed to the
 
@@ -3947,6 +3988,8 @@ class Signal(MVA,
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         # Sepate ndkwargs
         ndkwargs = ()
         for key, value in kwargs.iteritems():
@@ -3990,7 +4033,8 @@ class Signal(MVA,
         else:
             # Iteration over coordinates.
             pbar = progressbar(
-                maxval=self.axes_manager.navigation_size)
+                maxval=self.axes_manager.navigation_size,
+                disabled=not show_progressbar)
             iterators = [signal[1]._iterate_signal() for signal in ndkwargs]
             iterators = tuple([self._iterate_signal()] + iterators)
             for data in zip(*iterators):
@@ -4490,7 +4534,7 @@ for name in (
     # operands. They should be defined only for commutative operators
     # but for simplicity we don't support this at all atm.
     #~exec("setattr(Signal, \'%s\', %s)" % (name[:2] + "r" + name[2:],
-                                          #~name))
+    #~name))
 
 # Implement unary arithmetic operations
 for name in (
