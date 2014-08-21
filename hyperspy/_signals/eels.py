@@ -687,8 +687,8 @@ class EELSSpectrum(Spectrum):
                 'after_fourier_ratio_deconvolution')
         return cl
 
-    def richardson_lucy_deconvolution(self, psf, iterations=15,
-                                      mask=None):
+    def richardson_lucy_deconvolution(self, psf, iterations=15, mask=None,
+                                      show_progressbar=None):
         """1D Richardson-Lucy Poissonian deconvolution of
         the spectrum by the given kernel.
 
@@ -701,6 +701,9 @@ class EELSSpectrum(Spectrum):
             It must have the same signal dimension as the current
             spectrum and a spatial dimension of 0 or the same as the
             current spectrum.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Notes:
         -----
@@ -710,6 +713,8 @@ class EELSSpectrum(Spectrum):
         Ultramicroscopy 96, no. 3–4 (September 2003): 385–400.
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         ds = self.deepcopy()
         ds.data = ds.data.copy()

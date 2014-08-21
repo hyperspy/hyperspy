@@ -29,19 +29,16 @@ from scipy.optimize import (leastsq,
                             fmin_cg,
                             fmin_ncg,
                             fmin_bfgs,
-                            fmin_cobyla,
                             fmin_l_bfgs_b,
                             fmin_tnc,
                             fmin_powell)
 from traits.trait_errors import TraitError
-import traits.api as t
-import warnings
 
 from hyperspy import messages
 import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.misc import progressbar
-from hyperspy._signals.eels import EELSSpectrum, Spectrum
+from hyperspy._signals.eels import Spectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
@@ -931,15 +928,6 @@ class Model(list):
 
     def _jacobian4odr(self, param, x):
         return self._jacobian(param, x)
-
-    def calculate_p_std(self, p0, method, *args):
-        print "Estimating the standard deviation"
-        f = self._poisson_likelihood_function if method == 'ml' \
-            else self._errfunc2
-        hess = approx_hessian(p0, f, *args)
-        ihess = np.linalg.inv(hess)
-        p_std = np.sqrt(1. / np.diag(ihess))
-        return p_std
 
     def _poisson_likelihood_function(self, param, y, weights=None):
         """Returns the likelihood function of the model for the given

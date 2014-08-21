@@ -21,21 +21,14 @@ import scipy as sp
 import matplotlib.pyplot as plt
 import traits.api as t
 import traitsui.api as tu
-from traitsui.menu import (OKButton, ApplyButton, CancelButton,
-                           ModalButtons, OKCancelButtons)
+from traitsui.menu import (OKButton, CancelButton, OKCancelButtons)
 
-from hyperspy.misc import utils
 from hyperspy import drawing
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.gui import messages
-from hyperspy.misc.progressbar import progressbar
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import DraggableVerticalLine
-from hyperspy.misc import spectrum_tools
-from hyperspy.defaults_parser import preferences
 
-
-import sys
 
 OurApplyButton = tu.Action(name="Apply",
                            action="apply")
@@ -672,7 +665,7 @@ class ImageContrastHandler(tu.Handler):
         """Handles the **Apply** button being clicked.
 
         """
-        obj = info.object._help()
+        info.object._help()
 
 
 class ImageContrastEditor(t.HasTraits):
@@ -873,7 +866,7 @@ class IntegrateArea(SpanSelectorInSpectrum):
 
     def __init__(self, signal, signal_range=None):
         if signal.axes_manager.signal_dimension != 1:
-            raise SignalOutputDimensionError(
+            raise SignalDimensionError(
                 signal.axes.signal_dimension, 1)
 
         self.signal = signal

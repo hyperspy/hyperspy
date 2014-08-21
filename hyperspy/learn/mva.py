@@ -18,8 +18,6 @@
 
 
 from __future__ import division
-import sys
-import os
 import types
 
 import numpy as np
@@ -33,13 +31,11 @@ except:
 
 
 from hyperspy.misc.machine_learning.import_sklearn import *
-from hyperspy.misc import utils
 import hyperspy.misc.io.tools as io_tools
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
-from hyperspy.defaults_parser import preferences
 from hyperspy import messages
-from hyperspy.decorators import auto_replot, do_not_replot
+from hyperspy.decorators import do_not_replot
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 

@@ -16,13 +16,10 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
-
 import numpy as np
 from nose.tools import (
     assert_true,
     assert_equal,
-    assert_not_equal,
     raises)
 
 from hyperspy.signal import Signal
@@ -76,7 +73,7 @@ class Test1D:
 
     @raises(ValueError)
     def test_step0_slice(self):
-        s = self.signal[::0]
+        self.signal[::0]
 
     def test_index(self):
         s = self.signal[3]
@@ -122,7 +119,7 @@ class Test1D:
 
     @raises(IndexError)
     def test_navigation_indexer_navdim0(self):
-        s = self.signal.inav[3]
+        self.signal.inav[3]
 
     def test_minus_one_index(self):
         s = self.signal[-1]
@@ -140,17 +137,18 @@ class Test3D_SignalDim0:
         s = self.signal
         assert((s[:].data == s.data).all())
 
-    def test_signal_indexer_signal_dim0(self):
+    @raises(IndexError)
+    def test_signal_indexer_signal_dim0_idx_error1(self):
         s = self.signal
         assert((s.isig[:].data == s.data).all())
 
     @raises(IndexError)
-    def test_signal_indexer_signal_dim0(self):
+    def test_signal_indexer_signal_dim0_idx_error2(self):
         s = self.signal
         assert((s.isig[:, :].data == s.data).all())
 
     @raises(IndexError)
-    def test_signal_indexer_signal_dim0(self):
+    def test_signal_indexer_signal_dim0_idx_error3(self):
         s = self.signal
         s.isig[0]
 
@@ -199,15 +197,17 @@ class Test3D_Navigate_0_and_1:
         s1 = self.signal
         s1.estimate_poissonian_noise_variance()
         s1_1 = s1.isig[1:2]
-        assert_true((s1.metadata.Signal.Noise_properties.variance.data[
-                    :, :, 1:2] == s1_1.metadata.Signal.Noise_properties.variance.data).all())
+        assert_true((
+            s1.metadata.Signal.Noise_properties.variance.data[:, :, 1:2] ==
+            s1_1.metadata.Signal.Noise_properties.variance.data).all())
 
     def test_navigation_indexer_slice_variance_signal(self):
         s1 = self.signal
         s1.estimate_poissonian_noise_variance()
         s1_1 = s1.inav[1:2]
-        assert_true((s1.metadata.Signal.Noise_properties.variance.data[
-                    :, 1:2] == s1_1.metadata.Signal.Noise_properties.variance.data).all())
+        assert_true((
+            s1.metadata.Signal.Noise_properties.variance.data[:, 1:2] ==
+            s1_1.metadata.Signal.Noise_properties.variance.data).all())
 
     def test_signal_indexer_slice_variance_float(self):
         s1 = self.signal
@@ -343,7 +343,7 @@ class TestEllipsis:
         s = self.signal.inav[..., 0]
         assert_true((s.data == self.data[0, ...]).all())
 
-    def test_ellipsis_navigation(self):
+    def test_ellipsis_navigation2(self):
         self.signal.axes_manager._axes[-2].navigate = False
         self.signal.axes_manager._axes[-3].navigate = False
         s = self.signal.isig[..., 0]

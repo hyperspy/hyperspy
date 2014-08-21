@@ -3,13 +3,13 @@ import os
 import numpy as np
 from nose.tools import assert_true
 
-from hyperspy.hspy import *
+import hyperspy.hspy as hs
 
 my_path = os.path.dirname(__file__)
 
 
 def test_rgba16():
-    s = load(os.path.join(
+    s = hs.load(os.path.join(
         my_path,
         "tiff_files",
         "test_rgba16.tif"))

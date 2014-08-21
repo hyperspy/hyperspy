@@ -1,4 +1,4 @@
-from nose.tools import assert_true, assert_equal, raises
+import nose.tools
 import numpy as np
 
 from hyperspy.signals import Spectrum, Image
@@ -11,9 +11,9 @@ class Test2D():
 
     def test_to_image(self):
         s = self.im.to_spectrum()
-        assert_true(isinstance(s, Spectrum))
-        assert_equal(s.data.shape, self.im.data.T.shape)
-        assert_true(s.data.flags["C_CONTIGUOUS"])
+        nose.tools.assert_true(isinstance(s, Spectrum))
+        nose.tools.assert_equal(s.data.shape, self.im.data.T.shape)
+        nose.tools.assert_true(s.data.flags["C_CONTIGUOUS"])
 
 
 class Test3D():
@@ -23,9 +23,9 @@ class Test3D():
 
     def test_to_image(self):
         s = self.im.to_spectrum()
-        assert_true(isinstance(s, Spectrum))
-        assert_equal(s.data.shape, (3, 4, 2))
-        assert_true(s.data.flags["C_CONTIGUOUS"])
+        nose.tools.assert_true(isinstance(s, Spectrum))
+        nose.tools.assert_equal(s.data.shape, (3, 4, 2))
+        nose.tools.assert_true(s.data.flags["C_CONTIGUOUS"])
 
 
 class Test4D():
@@ -35,6 +35,6 @@ class Test4D():
 
     def test_to_image(self):
         s = self.s.to_spectrum()
-        assert_true(isinstance(s, Spectrum))
-        assert_equal(s.data.shape, (3, 4, 5, 2))
-        assert_true(s.data.flags["C_CONTIGUOUS"])
+        nose.tools.assert_true(isinstance(s, Spectrum))
+        nose.tools.assert_equal(s.data.shape, (3, 4, 5, 2))
+        nose.tools.assert_true(s.data.flags["C_CONTIGUOUS"])

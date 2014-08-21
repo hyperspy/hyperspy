@@ -3,7 +3,6 @@ import datetime
 
 from nose.tools import (assert_equal,
                         assert_true,
-                        assert_almost_equal,
                         assert_is)
 import numpy as np
 
@@ -70,11 +69,6 @@ class Example1():
              4637.0,
              4429.0,
              4217.0], self.s.data.tolist())
-
-    def test_original_metadata(self):
-        assert_almost_equal(
-            example1_original_metadata,
-            self.s.original_metadata.as_dictionary())
 
     def test_original_metadata(self):
         assert_equal(
