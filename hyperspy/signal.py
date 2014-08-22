@@ -29,7 +29,7 @@ try:
     from scipy.signal import savgol_filter
     savgol_imported = True
 except ImportError:
-    savgol_import = False
+    savgol_imported = False
 import scipy as sp
 from matplotlib import pyplot as plt
 try:
