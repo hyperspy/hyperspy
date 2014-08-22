@@ -28,13 +28,11 @@ libraries and nothing else is required.
 Quick instructions to install HyperSpy in MacOs
 -------------------------------------------------
 
-#. Download and install `Canopy. <https://www.enthought.com/products/canopy/>`_
-   Canopy/EPD is recommended for the best performance (it is compiled
+#. Download and install `Anaconda. <https://store.continuum.io/cshop/anaconda/>`_
+   Anaconda is recommended for the best performance (it is compiled
    using Intel MKL libraries) and the easiest intallation (all the required
-   libraries are included). The academic license is free. Since version 0.5
-   HyperSpy runs (with limited functionality) in Canopy Free.
-
-#. Open a new terminal and type: `easy_install hyperspy`
+   libraries are included). The academic license is free.
+#. Open a new terminal and type: `pip install hyperspy`
 
 For more options and details read the rest of the documentation.
 
@@ -196,11 +194,6 @@ Known issues
 Windows
 ^^^^^^^
 
-* HyperSpy does not work with an standard installation of the full version of 
-  EPD 7.3-2 due to a problem of compilation in the h5py. The solution is to 
-  uninstall HyperSpy and EPD and install a newer version of HyperSpy for
-  Windows that, since version 0.6, does not require the installation of 
-  any other Python libraries.
 * If HyperSpy fails to start in Windows try installing the Microsoft Visual 
   C++ 2008 redistributable packages (
   `64 bit <http://www.microsoft.com/download/en/details.aspx?id=15336>`_ 
