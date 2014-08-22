@@ -25,7 +25,11 @@ import inspect
 import numpy as np
 import numpy.ma as ma
 import scipy.interpolate
-from scipy.signal import savgol_filter
+try:
+    from scipy.signal import savgol_filter
+    savgol_imported = True
+except ImportError:
+    savgol_import = False
 import scipy as sp
 from matplotlib import pyplot as plt
 try:
@@ -808,6 +812,9 @@ class Signal1DTools(object):
         More information about the filter in `scipy.signal.savgol_filter`.
 
         """
+        if not savgol_imported:
+            raise ImportError("scipy >= 0.14 needs to be installed to use"
+                              "this feature.")
         self._check_signal_dimension_equals_one()
         if (polynomial_order is not None and
                 window_length is not None):
