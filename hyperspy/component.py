@@ -136,11 +136,10 @@ class Parameter(object):
         """
         if dict['_id_name'] == self._id_name:
             try:
-                import cloud
-                import pickle
-                cloud_avail = True
+                import dill
+                dill_avail = True
             except ImportError:
-                cloud_avail = False
+                dill_avail = False
                 import types
                 import marshal
             self.map = copy.deepcopy(dict['map'])
@@ -152,9 +151,9 @@ class Parameter(object):
             self._bounds = copy.deepcopy(dict['_bounds'])
             if hasattr(self, 'active') and 'active' in dict:
                 self.active = dict['active']
-            if 'cloud_avail' in dict and cloud_avail:
-                self.twin_function = pickle.loads(dict['twin_function'])
-                self.twin_inverse_function = pickle.loads(
+            if 'dill_avail' in dict and dill_avail:
+                self.twin_function = dill.loads(dict['twin_function'])
+                self.twin_inverse_function = dill.loads(
                     dict['twin_inverse_function'])
             else:
                 self.twin_function = types.FunctionType(
@@ -528,10 +527,10 @@ class Parameter(object):
         """
         import marshal
         try:
-            import cloud
-            cloud_avail = True
+            import dill
+            dill_avail = True
         except ImportError:
-            cloud_avail = False
+            dill_avail = False
         dic = {}
         dic['name'] = self.name
         dic['_id_name'] = self._id_name
@@ -551,12 +550,11 @@ class Parameter(object):
         dic['_bounds'] = self._bounds
         if hasattr(self, 'active'):
             dic['active'] = self.active
-        if cloud_avail:
-            dic['twin_function'] = cloud.serialization.cloudpickle.dumps(
-                self.twin_function)
-            dic['twin_inverse_function'] = cloud.serialization.cloudpickle.dumps(
+        if dill_avail:
+            dic['twin_function'] = dill.dumps(self.twin_function)
+            dic['twin_inverse_function'] = dill.dumps(
                 self.twin_inverse_function)
-            dic['cloud_avail'] = True
+            dic['dill_avail'] = True
         else:
             dic['twin_function'] = marshal.dumps(self.twin_function.func_code)
             dic['twin_inverse_function'] = marshal.dumps(
