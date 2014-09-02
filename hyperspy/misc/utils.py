@@ -89,7 +89,11 @@ def str2num(string, **kargs):
 
 
 import numpy as np
-_slugify_strip_re_data = ''.join(c for c in map(chr,np.delete(np.arange(256), [95,32])) if not c.isalnum())
+_slugify_strip_re_data = ''.join(
+    c for c in map(
+        chr, np.delete(
+            np.arange(256), [
+                95, 32])) if not c.isalnum())
 
 
 def slugify(value, valid_variable_name=False):
