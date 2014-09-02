@@ -99,6 +99,10 @@ class GeneralConfig(t.HasTraits):
                         desc='If enabled, HyperSpy will store a log in the current directory '
                         'of all the commands typed')
 
+    show_progressbar = t.CBool(True,
+                               label='Show progress bar',
+                               desc='If enabled, show a progress bar when available')
+
     def _logger_on_changed(self, old, new):
         if new is True:
             turn_logging_on()

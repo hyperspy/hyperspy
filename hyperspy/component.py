@@ -175,7 +175,7 @@ class Parameter(object):
         if self.component is not None:
             text += ' of %s' % self.component._get_short_description()
         text = '<' + text + '>'
-        return text
+        return text.encode('utf8')
 
     def __len__(self):
         return self._number_of_elements
@@ -199,7 +199,10 @@ class Parameter(object):
             return self.twin_function(self.twin.value)
 
     def _setvalue(self, arg):
-        if hasattr(arg, "__len__"):
+        try:
+            # Use try/except instead of hasattr("__len__") because a numpy
+            # memmap has a __len__ wrapper even for numbers that raises a
+            # TypeError when calling. See issue #349.
             if len(arg) != self._number_of_elements:
                 raise ValueError(
                     "The lenght of the parameter must be ",
@@ -207,11 +210,11 @@ class Parameter(object):
             else:
                 if not isinstance(arg, tuple):
                     arg = tuple(arg)
-
-        elif self._number_of_elements != 1:
-            raise ValueError(
-                "The lenght of the parameter must be ",
-                self._number_of_elements)
+        except TypeError:
+            if self._number_of_elements != 1:
+                raise ValueError(
+                    "The lenght of the parameter must be ",
+                    self._number_of_elements)
         old_value = self.__value
 
         if self.twin is not None:
@@ -461,7 +464,10 @@ class Parameter(object):
 
         s = Signal(data=self.map[field],
                    axes=self._axes_manager._get_navigation_axes_dicts())
-        s.metadata.General.title = self.name
+        s.metadata.General.title = ("%s parameter" % self.name
+                                    if self.component is None
+                                    else "%s parameter of %s component" %
+                                    (self.name, self.component.name))
         for axis in s.axes_manager._axes:
             axis.navigate = False
         if self._number_of_elements > 1:
@@ -865,6 +871,8 @@ class Component(object):
             self.model.axes_manager = axes_manager
             self.charge()
         s = self.__call__()
+        if not self.active:
+            s.fill(np.nan)
         if self.model.spectrum.metadata.Signal.binned is True:
             s *= self.model.spectrum.axes_manager.signal_axes[0].scale
         if old_axes_manager is not None:

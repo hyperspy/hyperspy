@@ -361,6 +361,22 @@ The function returns a matplotlib ax object, which can be used to customize the 
   :align:   center
   :width:   500
   
+A matplotlib ax and fig object can also be specified, which can be used to put several
+subplots in the same figure. This will only work for "cascade" and "overlap" styles:
+
+.. code-block:: python
+
+    >>> fig, axarr = plt.subplots(1,2)
+    >>> s1 = signals.Spectrum(np.random.random((6,1000)))
+    >>> s2 = signals.Spectrum(np.random.random((6,1000)))
+    >>> utils.plot.plot_spectra(s1, style='cascade',color='blue',ax=axarr[0],fig=fig)
+    >>> utils.plot.plot_spectra(s2, style='cascade',color='red',ax=axarr[1],fig=fig)
+    >>> fig.canvas.draw()
+
+.. figure::  images/plot_spectra_ax_argument.png
+  :align:   center
+  :width:   500
+
 .. _plot.signals:
 
 Plotting several signals
@@ -373,8 +389,8 @@ signals must have the same dimensions. To plot two spectra at the same time:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
+    >>> s2 = signals.Spectrum(np.random.random((10,10,100)))
     >>> utils.plot.plot_signals([s1, s2])
 
 .. figure::  images/plot_signals.png
@@ -389,8 +405,8 @@ To specify the navigator:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
+    >>> s2 = signals.Spectrum(np.random.random((10,10,100))) 
     >>> utils.plot.plot_signals([s1, s2], navigator="slider")
 
 .. figure::  images/plot_signals_slider.png
@@ -404,9 +420,9 @@ For example:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
-    >>> s3 = signals.Spectrum(np.random.random(10,10)) 
+    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
+    >>> s2 = signals.Spectrum(np.random.random((10,10,100))) 
+    >>> s3 = signals.Spectrum(np.random.random((10,10))) 
     >>> utils.plot.plot_signals([s1, s2], navigator_list=["slider", s3])
 
 .. figure::  images/plot_signals_navigator_list.png
@@ -419,8 +435,8 @@ each plot:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
+    >>> s2 = signals.Spectrum(np.random.random((10,10,100))) 
     >>> utils.plot.plot_signals([s1, s2], sync=False, navigator_list=["slider", "slider"])
 
 .. figure::  images/plot_signals_sync.png

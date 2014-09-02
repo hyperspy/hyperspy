@@ -562,7 +562,8 @@ class ImageObject(object):
         if len(self.scales) == 1:
             return "spectrum"
         elif (('ImageTags.Meta_Data.Format' in self.imdict and
-               self.imdict.ImageTags.Meta_Data.Format == "Spectrum image") or (
+               self.imdict.ImageTags.Meta_Data.Format in ("Spectrum image",
+                                                          "Spectrum")) or (
                 "ImageTags.spim" in self.imdict)) and len(self.scales) == 2:
             return "spectrum"
         else:

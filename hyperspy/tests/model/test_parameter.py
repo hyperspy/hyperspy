@@ -16,14 +16,10 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
-
 import numpy as np
-
 from nose.tools import (assert_true,
                         assert_false,
                         assert_equal,
-                        assert_not_equal,
                         raises)
 from hyperspy.component import Parameter
 
@@ -155,7 +151,7 @@ class TestParameterLen2:
         self.par.value = 2
 
     @raises(ValueError)
-    def test_set_value_wrong_length(self):
+    def test_set_value_wrong_length2(self):
         self.par.value = (2, 2, 2)
 
     def test_set_value_bounded(self):

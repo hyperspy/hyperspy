@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from nose.tools import assert_true, assert_equal, assert_not_equal
+from nose.tools import assert_true
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.hspy import create_model
 from hyperspy.components import Gaussian

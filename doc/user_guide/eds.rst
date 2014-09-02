@@ -265,22 +265,22 @@ An elemental database is available with the energy of the X-ray lines.
     >>>  utils.material.elements.Fe.Atomic_properties.Xray_lines
     ├── Ka
     │   ├── energy (keV) = 6.404
-    │   └── factor = 1
+    │   └── weight = 1.0
     ├── Kb
     │   ├── energy (keV) = 7.0568
-    │   └── factor = 0.1
+    │   └── weight = 0.1272
     ├── La
     │   ├── energy (keV) = 0.705
-    │   └── factor = 1
+    │   └── weight = 1.0
     ├── Lb3
     │   ├── energy (keV) = 0.792
-    │   └── factor = 0.08
+    │   └── weight = 0.02448
     ├── Ll
     │   ├── energy (keV) = 0.615
-    │   └── factor = 0.04
+    │   └── weight = 0.3086
     └── Ln
         ├── energy (keV) = 0.62799
-        └── factor = 0.01
+        └── weight = 0.12525
 
 .. _eds_plot-label: 
 

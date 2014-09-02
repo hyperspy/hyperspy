@@ -29,13 +29,10 @@ from scipy.optimize import (leastsq,
                             fmin_cg,
                             fmin_ncg,
                             fmin_bfgs,
-                            fmin_cobyla,
                             fmin_l_bfgs_b,
                             fmin_tnc,
                             fmin_powell)
 from traits.trait_errors import TraitError
-import traits.api as t
-import warnings
 
 from hyperspy import components
 from hyperspy import messages
@@ -43,8 +40,7 @@ import hyperspy.drawing.spectrum
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.misc import progressbar
-from hyperspy.signal import Signal
-from hyperspy._signals.eels import EELSSpectrum, Spectrum
+from hyperspy._signals.eels import Spectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
@@ -289,7 +285,7 @@ class Model(list):
                         id_dict[t].twin = id_dict[p['id']]
 
     def __repr__(self):
-        return "<Model %s>" % super(Model, self).__repr__()
+        return u"<Model %s>".encode('utf8') % super(Model, self).__repr__()
 
     def _get_component(self, object):
         if isinstance(object, int) or isinstance(object, str):
@@ -467,7 +463,8 @@ class Model(list):
         if self._plot_components is True:
             self._disconnect_component_lines()
 
-    def as_signal(self, component_list=None, out_of_range_to_nan=True):
+    def as_signal(self, component_list=None, out_of_range_to_nan=True,
+                  show_progressbar=None):
         """Returns a recreation of the dataset using the model.
         the spectral range that is not fitted is filled with nans.
 
@@ -479,6 +476,9 @@ class Model(list):
             be specified by name, index or themselves.
         out_of_range_to_nan : bool
             If True the spectral range that is not fitted is filled with nans.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Returns
         -------
@@ -496,6 +496,8 @@ class Model(list):
         >>> s2 = m.as_signal(component_list=[l1])
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
 
         if component_list:
             component_list = [self._get_component(x) for x in component_list]
@@ -512,7 +514,8 @@ class Model(list):
             channel_switches_backup = copy.copy(self.channel_switches)
             self.channel_switches[:] = True
         maxval = self.axes_manager.navigation_size
-        pbar = progressbar.progressbar(maxval=maxval)
+        pbar = progressbar.progressbar(maxval=maxval,
+                                       disabled=not show_progressbar)
         i = 0
         for index in self.axes_manager:
             self.fetch_stored_values(only_fixed=False)
@@ -599,7 +602,8 @@ class Model(list):
         If the parameters array has not being defined yet it creates it filling
         it with the current parameters."""
         for component in self:
-            component.store_current_parameters_in_map()
+            if component.active:
+                component.store_current_parameters_in_map()
 
     def fetch_stored_values(self, only_fixed=False):
         """Fetch the value of the parameters that has been previously stored.
@@ -623,7 +627,7 @@ class Model(list):
             self._connect_parameters2update_plot()
             self.update_plot()
 
-    def update_plot(self, component=None, *args, **kwargs):
+    def update_plot(self, *args, **kwargs):
         """Update model plot.
 
         The updating can be suspended using `suspend_update`.
@@ -829,7 +833,7 @@ class Model(list):
         -----
         To use the full energy range call the function without arguments.
         """
-        i1, i2 = self.axis.value2index(x1), self.axis.value2index(x2)
+        i1, i2 = self.axis.value_range_to_indices(x1, x2)
         self._set_signal_range_in_pixels(i1, i2)
 
     def _remove_signal_range_in_pixels(self, i1=None, i2=None):
@@ -855,7 +859,7 @@ class Model(list):
         x2 : None or float
 
         """
-        i1, i2 = self.axis.value2index(x1), self.axis.value2index(x2)
+        i1, i2 = self.axis.value_range_to_indices(x1, x2)
         self._remove_signal_range_in_pixels(i1, i2)
 
     def reset_signal_range(self):
@@ -885,7 +889,7 @@ class Model(list):
         x2 : None or float
 
         """
-        i1, i2 = self.axis.value2index(x1), self.axis.value2index(x2)
+        i1, i2 = self.axis.value_range_to_indices(x1, x2)
         self._add_signal_range_in_pixels(i1, i2)
 
     def reset_the_signal_range(self):
@@ -999,15 +1003,6 @@ class Model(list):
     def _jacobian4odr(self, param, x):
         return self._jacobian(param, x)
 
-    def calculate_p_std(self, p0, method, *args):
-        print "Estimating the standard deviation"
-        f = self._poisson_likelihood_function if method == 'ml' \
-            else self._errfunc2
-        hess = approx_hessian(p0, f, *args)
-        ihess = np.linalg.inv(hess)
-        p_std = np.sqrt(1. / np.diag(ihess))
-        return p_std
-
     def _poisson_likelihood_function(self, param, y, weights=None):
         """Returns the likelihood function of the model for the given
         data and parameters
@@ -1044,7 +1039,6 @@ class Model(list):
             errfunc = self._model_function(p) - y
             if weights is not None:
                 errfunc *= weights
-            jacobian = None
             status = 0
             return [status, errfunc]
         else:
@@ -1254,8 +1248,8 @@ class Model(list):
                     (len(args[0]) - len(self.p0)))
             self.fit_output = m
         else:
-        # General optimizers (incluiding constrained ones(tnc,l_bfgs_b)
-        # Least squares or maximum likelihood
+            # General optimizers (incluiding constrained ones(tnc,l_bfgs_b)
+            # Least squares or maximum likelihood
             if method == 'ml':
                 tominimize = self._poisson_likelihood_function
                 fprime = grad_ml
@@ -1333,7 +1327,8 @@ class Model(list):
             self.update_plot()
 
     def multifit(self, mask=None, fetch_only_fixed=False,
-                 autosave=False, autosave_every=10, **kwargs):
+                 autosave=False, autosave_every=10, show_progressbar=None,
+                 **kwargs):
         """Fit the data to the model at all the positions of the
         navigation dimensions.
 
@@ -1353,6 +1348,10 @@ class Model(list):
         autosave_every : int
             Save the result of fitting every given number of spectra.
 
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+
         **kwargs : key word arguments
             Any extra key word argument will be passed to
             the fit method. See the fit method documentation for
@@ -1363,6 +1362,9 @@ class Model(list):
         fit
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
+
         if "weights" in kwargs:
             warnings.warn(weights_deprecation_warning, DeprecationWarning)
             del kwargs["weights"]
@@ -1387,7 +1389,8 @@ class Model(list):
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager.navigation_size - masked_elements
         if maxval > 0:
-            pbar = progressbar.progressbar(maxval=maxval)
+            pbar = progressbar.progressbar(maxval=maxval,
+                                           disabled=not show_progressbar)
         if 'bounded' in kwargs and kwargs['bounded'] is True:
             if kwargs['fitter'] == 'mpfit':
                 self.set_mpfit_parameters_info()
@@ -1402,8 +1405,10 @@ class Model(list):
                     "following fitters instead: mpfit, tnc, l_bfgs_b")
                 kwargs['bounded'] = False
         i = 0
+        self.axes_manager.disconnect(self.fetch_stored_values)
         for index in self.axes_manager:
             if mask is None or not mask[index[::-1]]:
+                self.fetch_stored_values(only_fixed=fetch_only_fixed)
                 self.fit(**kwargs)
                 i += 1
                 if maxval > 0:
@@ -1412,6 +1417,7 @@ class Model(list):
                 self.save_parameters2file(autosave_fn)
         if maxval > 0:
             pbar.finish()
+        self.axes_manager.connect(self.fetch_stored_values)
         if autosave is True:
             messages.information(
                 'Deleting the temporary file %s pixels' % (
@@ -1566,17 +1572,37 @@ class Model(list):
             The operation won't be performed where mask is True.
 
         """
+
+        warnings.warn(
+            "This method has been renamed to `assign_current_values_to_all` "
+            "and it will be removed in the next release", DeprecationWarning)
+        return self.assign_current_values_to_all(
+            components_list=components_list, mask=mask)
+
+    def assign_current_values_to_all(self, components_list=None, mask=None):
+        """Set parameter values for all positions to the current ones.
+
+        Parameters
+        ----------
+        component_list : list of components, optional
+            If a list of components is given, the operation will be performed
+            only in the value of the parameters of the given components.
+            The components can be specified by name, index or themselves.
+        mask : boolean numpy array or None, optional
+            The operation won't be performed where mask is True.
+
+        """
         if components_list is None:
             components_list = []
             for comp in self:
                 if comp.active:
                     components_list.append(comp)
         else:
-            component_list = [self._get_component(x) for x in component_list]
+            components_list = [self._get_component(x) for x in components_list]
 
         for comp in components_list:
             for parameter in comp.parameters:
-                parameter.set_current_value_to(mask=mask)
+                parameter.assign_current_value_to_all(mask=mask)
 
     def _enable_ext_bounding(self, components=None):
         """
