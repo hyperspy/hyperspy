@@ -1,4 +1,4 @@
-from nose.tools import assert_true, assert_equal, raises
+import nose.tools
 import numpy as np
 
 from hyperspy.signals import Signal
@@ -16,8 +16,6 @@ class Test1D():
         self.signal.axes_manager[0].scale = 0.01
 
     def test_integrate_in_range(self):
-        integrated_signal = self.signal.integrate_in_range(
-            signal_range=(
-                None,
-                None))
-        assert_true(np.allclose(integrated_signal.data, 20,))
+        integrated_signal = self.signal.integrate_in_range(signal_range=(None,
+                                                                         None))
+        nose.tools.assert_true(np.allclose(integrated_signal.data, 20,))

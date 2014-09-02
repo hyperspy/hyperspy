@@ -2,67 +2,82 @@
 Electron Energy Loss Spectroscopy
 *********************************
 
-Tools
------
+.. _eels_tools-label:
 
-These methods are only available for the following signals:
+Tools for EELS data analysis
+----------------------------
 
-* :py:class:`~._signals.eels.EELSSpectrum`
+The functions described in this chapter are only available for the
+:py:class:`~._signals.eels.EELSSpectrum` class. To transform a
+:py:class:`~.signal.Signal` (or subclass) into a
+:py:class:`~._signals.eels.EELSSpectrum`:
 
-Define the elemental composition of the sample
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. code-block:: python
+       
+    >>> s.set_signal_type("EELS")
 
-It can be useful to define the composition of the sample for archiving purposes
-or for some other process (e.g. curve fitting) that may use this information.
-The elemental composition of the sample can be defined using
-:py:meth:`~._signals.eels.EELSSpectrum.add_elements`. The information is stored
-in the :py:attr:`~.signal.Signal.metadata` attribute (see
-:ref:`metadata_structure`)
+Note these chapter discusses features that are available only for
+:py:class:`~._signals.eels.EELSSpectrum` class. However, this class inherits
+many useful feature from its parent class that are documented in previous
+chapters.
 
-Estimate the thickness
-^^^^^^^^^^^^^^^^^^^^^^
+
+Elemental composition of the sample
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It can be useful to define the elemental composition of the sample for
+archiving purposes or to use some feature (e.g. curve fitting) that requieres
+this information.  The elemental composition of the sample can be declared
+using :py:meth:`~._signals.eels.EELSSpectrum.add_elements`. The information is
+stored in the :py:attr:`~.signal.Signal.metadata` attribute (see
+:ref:`metadata_structure`). This information is saved to file when saving in
+the hdf5 format.
+
+Thickness estimation
+^^^^^^^^^^^^^^^^^^^^
 
 The :py:meth:`~._signals.eels.EELSSpectrum.estimate_thickness` can estimate the
-thickness from a low-loss EELS spectrum.
+thickness from a low-loss EELS spectrum using the Log-Ratio method.
 
-Estimate zero loss peak centre
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Zero-loss peak centre and alignment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* :py:meth:`~._signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre`
+The :py:meth:`~._signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre` can be used to estimate the position of the zero-loss peak. The method assumes that the ZLP is the most intense feature in the spectra. For a more general approach see :py:meth:`~.signal.Signal1DTools.find_peaks1D_ohaver`.
+
+The :py:meth:`~._signals.eels.EELSSpectrum.align_zero_loss_peak` can
+align the ZLP with subpixel accuracy. It is more robust and easy to use than
+:py:meth:`~.signal.Signal1DTools.align1D` for the task. Note that it is possible to apply the same alignment to other spectra using the `also_align` argument. This can be useful e.g. to align core-loss spectra acquired quasi-simultaneously.
+
 
 Deconvolutions
 ^^^^^^^^^^^^^^
+
+Three deconvolution methods are currently available:
 
 * :py:meth:`~._signals.eels.EELSSpectrum.fourier_log_deconvolution`
 * :py:meth:`~._signals.eels.EELSSpectrum.fourier_ratio_deconvolution`
 * :py:meth:`~._signals.eels.EELSSpectrum.richardson_lucy_deconvolution`
 
-Estimate elastic scattering threshold
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Use
-:py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold` to
-calculate separation point between elastic and inelastic scattering on some
-EELS low-loss spectra. This algorithm calculates the derivative of the signal
-and assigns the inflexion point to the first point below a certain tolerance.
-This tolerance value can be set using the tol keyword.
-
-Currently, the method uses smoothing to reduce the impact of the noise in the
-measure. The number of points used for the smoothing window can be specified by
-the npoints keyword. 
-
 Estimate elastic scattering intensity
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Use
+The
 :py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_intensity`
-to calculate the integral below the zero loss peak (elastic intensity) from
-EELS low-loss spectra containing the zero loss peak. This integral can use the
-threshold image calculated by the
+can be used to calculate the integral of the zero loss peak (elastic intensity)
+from EELS low-loss spectra containing the zero loss peak using the
+(rudimentary) threshold method. The threshold can be global or spectrum-wise.
+If no threshold is provided it is automatically calculated using
 :py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold`
-as end energy for the integration at each spectra or use the same energy value
-for all spectra. Also, if no threshold is specified, the routine will perform a
-rough estimation of the inflexion values at each spectrum.
+with default values.
+
+:py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold`
+can be used to  calculate separation point between elastic and inelastic
+scattering on EELS low-loss spectra. This algorithm calculates the derivative
+of the signal and assigns the inflexion point to the first point below a
+certain tolerance.  This tolerance value can be set using the `tol` keyword.
+Currently, the method uses smoothing to reduce the impact of the noise in the
+measure. The number of points used for the smoothing window can be specified by
+the npoints keyword.
 
 
 .. _eels.kk:
@@ -80,7 +95,6 @@ complex dielectric funtion from a low-loss EELS spectrum. In addition, it can
 estimate the thickness if the refractive index is known and approximately
 correct for surface plasmon excitations in layers.
 
-.. _eels_tools-label:
 
 
 

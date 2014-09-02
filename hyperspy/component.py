@@ -127,7 +127,10 @@ class Parameter(object):
             return self.twin_function(self.twin.value)
 
     def _setvalue(self, arg):
-        if hasattr(arg, "__len__"):
+        try:
+            # Use try/except instead of hasattr("__len__") because a numpy
+            # memmap has a __len__ wrapper even for numbers that raises a
+            # TypeError when calling. See issue #349.
             if len(arg) != self._number_of_elements:
                 raise ValueError(
                     "The lenght of the parameter must be ",
@@ -135,11 +138,11 @@ class Parameter(object):
             else:
                 if not isinstance(arg, tuple):
                     arg = tuple(arg)
-
-        elif self._number_of_elements != 1:
-            raise ValueError(
-                "The lenght of the parameter must be ",
-                self._number_of_elements)
+        except TypeError:
+            if self._number_of_elements != 1:
+                raise ValueError(
+                    "The lenght of the parameter must be ",
+                    self._number_of_elements)
         old_value = self.__value
 
         if self.twin is not None:

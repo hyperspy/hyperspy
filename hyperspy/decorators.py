@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 # custom exceptions
-from hyperspy import messages
 from hyperspy.exceptions import NoInteractiveError
 from hyperspy.defaults_parser import preferences
 from hyperspy.gui.tools import SpectrumRangeSelector

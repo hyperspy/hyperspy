@@ -48,7 +48,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         s = self.signal
         thr = s.estimate_elastic_scattering_threshold(
             window=5,
-            number_of_points=5,
+            window_length=5,
             tol=0.00001)
         nose.tools.assert_true(np.allclose(thr.data, 2.5))
 
@@ -56,7 +56,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         s = self.signal[0, 0]
         thr = s.estimate_elastic_scattering_threshold(
             window=5,
-            number_of_points=0,
+            window_length=0,
             tol=0.001)
         nose.tools.assert_true(np.allclose(thr.data, 2.49))
 
@@ -64,7 +64,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         s = self.signal
         thr = s.estimate_elastic_scattering_threshold(
             window=5,
-            number_of_points=0,
+            window_length=0,
             tol=0.001)
         nose.tools.assert_true(np.allclose(thr.data, 2.49))
 

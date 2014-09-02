@@ -28,13 +28,11 @@ libraries and nothing else is required.
 Quick instructions to install HyperSpy in MacOs
 -------------------------------------------------
 
-#. Download and install `Canopy. <https://www.enthought.com/products/canopy/>`_
-   Canopy/EPD is recommended for the best performance (it is compiled
+#. Download and install `Anaconda. <https://store.continuum.io/cshop/anaconda/>`_
+   Anaconda is recommended for the best performance (it is compiled
    using Intel MKL libraries) and the easiest intallation (all the required
-   libraries are included). The academic license is free. Since version 0.5
-   HyperSpy runs (with limited functionality) in Canopy Free.
-
-#. Open a new terminal and type: `easy_install hyperspy`
+   libraries are included). The academic license is free.
+#. Open a new terminal and type: `pip install hyperspy`
 
 For more options and details read the rest of the documentation.
 
@@ -174,17 +172,19 @@ Installing the required libraries
 When installing HyperSpy using Python installers or from source the Python
 programming language and the following libraries must be installed in the
 system: numpy, scipy, matplotlib (>= 1.2), ipython, traits and traitsui. For
-full functionality it is recommended to also install h5py, mdp and
-scikit-learn. In Windows HyperSpy uses the Ipython's QtConsole nd therefore Qt
-and PyQt or PySide are also required.
+full functionality it is recommended to also install h5py and scikit-learn.
+In addition, since version 0.7.2 the lowess filter requires statsmodels. In
+Windows HyperSpy uses the Ipython's QtConsole and therefore Qt and PyQt or
+PySide are also required.
 
 
 In Debian/Ubuntu you can install the libraries as follows:
 
 .. code-block:: bash
 
-    $ sudo apt-get install python-numpy python-matplotlib ipython python-traits
-    python-traitsui python-h5py python-mdp python-scikits-learn python-nose
+    $ sudo apt-get install python-numpy python-matplotlib ipython
+    ipython-notebook python-traits python-traitsui python-h5py
+    python-scikits-learn python-nose python-statsmodels
 
 .. _known-issues:
 
@@ -194,11 +194,6 @@ Known issues
 Windows
 ^^^^^^^
 
-* HyperSpy does not work with an standard installation of the full version of 
-  EPD 7.3-2 due to a problem of compilation in the h5py. The solution is to 
-  uninstall HyperSpy and EPD and install a newer version of HyperSpy for
-  Windows that, since version 0.6, does not require the installation of 
-  any other Python libraries.
 * If HyperSpy fails to start in Windows try installing the Microsoft Visual 
   C++ 2008 redistributable packages (
   `64 bit <http://www.microsoft.com/download/en/details.aspx?id=15336>`_ 
