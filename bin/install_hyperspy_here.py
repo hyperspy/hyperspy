@@ -4,15 +4,15 @@ import os
 
 
 def install_hyperspy_here():
-    # First uninstall old Hyperspy context menu entries
+    # First uninstall old HyperSpy context menu entries
     try:
         if sys.getwindowsversion()[0] < 6.:  # Older than Windows Vista:
             _winreg.DeleteKey(
                 _winreg.HKEY_LOCAL_MACHINE,
-                r'Software\Classes\Folder\Shell\Hyperspy_here\Command')
+                r'Software\Classes\Folder\Shell\HyperSpy_here\Command')
             _winreg.DeleteKey(
                 _winreg.HKEY_LOCAL_MACHINE,
-                r'Software\Classes\Folder\Shell\Hyperspy_here')
+                r'Software\Classes\Folder\Shell\HyperSpy_here')
         else:  # Vista or newer
             _winreg.DeleteKey(
                 _winreg.HKEY_CLASSES_ROOT,
@@ -38,19 +38,19 @@ def install_hyperspy_here():
         if sys.getwindowsversion()[0] < 6.:  # Before Windows Vista
             key = _winreg.CreateKey(
                 _winreg.HKEY_LOCAL_MACHINE,
-                r'Software\Classes\Folder\Shell\Hyperspy_%s_here' %
+                r'Software\Classes\Folder\Shell\HyperSpy_%s_here' %
                 env)
             _winreg.SetValueEx(
                 key,
                 "",
                 0,
                 _winreg.REG_SZ,
-                "Hyperspy %s here" %
+                "HyperSpy %s here" %
                 env)
             key.Close()
             key = _winreg.CreateKey(
                 _winreg.HKEY_LOCAL_MACHINE,
-                r'Software\Classes\Folder\Shell\Hyperspy_%s_here\Command' %
+                r'Software\Classes\Folder\Shell\HyperSpy_%s_here\Command' %
                 env)
             _winreg.SetValueEx(
                 key,
@@ -70,7 +70,7 @@ def install_hyperspy_here():
                 "",
                 0,
                 _winreg.REG_SZ,
-                "Hyperspy %s here" %
+                "HyperSpy %s here" %
                 env)
             key.Close()
             key = _winreg.CreateKey(
@@ -94,7 +94,7 @@ def install_hyperspy_here():
                 "",
                 0,
                 _winreg.REG_SZ,
-                "Hyperspy %s Here" %
+                "HyperSpy %s Here" %
                 env)
             key.Close()
             key = _winreg.CreateKey(
@@ -104,7 +104,7 @@ def install_hyperspy_here():
             _winreg.SetValueEx(key, "", 0, _winreg.REG_EXPAND_SZ, script)
             key.Close()
 
-    print("Hyperspy here correctly installed")
+    print("HyperSpy here correctly installed")
 
 if __name__ == "__main__":
     install_hyperspy_here()

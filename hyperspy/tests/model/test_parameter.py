@@ -1,29 +1,25 @@
-# Copyright 2007-2012 The Hyperspy developers
+# Copyright 2007-2012 The HyperSpy developers
 #
-# This file is part of Hyperspy.
+# This file is part of HyperSpy.
 #
-# Hyperspy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Hyperspy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Hyperspy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-
-import os
 
 import numpy as np
-
 from nose.tools import (assert_true,
                         assert_false,
                         assert_equal,
-                        assert_not_equal,
                         raises)
 from hyperspy.component import Parameter
 
@@ -155,7 +151,7 @@ class TestParameterLen2:
         self.par.value = 2
 
     @raises(ValueError)
-    def test_set_value_wrong_length(self):
+    def test_set_value_wrong_length2(self):
         self.par.value = (2, 2, 2)
 
     def test_set_value_bounded(self):

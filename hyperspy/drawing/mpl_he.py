@@ -1,23 +1,23 @@
-# Copyright 2007-2013 The Hyperspy developers
+# Copyright 2007-2013 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from traits.api import Undefined
 
-from hyperspy.drawing import widgets, spectrum, image, utils
+from hyperspy.drawing import widgets, spectrum, image
 from hyperspy.gui.axes import navigation_sliders
 
 
@@ -38,6 +38,7 @@ class MPL_HyperExplorer(object):
         self.axis = None
         self.pointer = None
         self._key_nav_cid = None
+        self._pointer_nav_dim = None
 
     def plot_signal(self):
         # This method should be implemented by the subclasses.
@@ -142,6 +143,7 @@ class MPL_HyperExplorer(object):
             Pointer = widgets.DraggableVerticalLine
         else:
             Pointer = None
+        self._pointer_nav_dim = nav_dim
         return Pointer
 
     def _disconnect(self):

@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
 import inspect
@@ -211,7 +211,7 @@ class DictionaryTreeBrowser(object):
                 continue
             if not isinstance(key_, types.MethodType):
                 key = ensure_unicode(value['key'])
-                value = ensure_unicode(value['value'])
+                value = ensure_unicode(value['_dtb_value_'])
                 if isinstance(value, DictionaryTreeBrowser):
                     if j == eoi - 1:
                         symbol = u'└── '
@@ -253,8 +253,8 @@ class DictionaryTreeBrowser(object):
     def __getattribute__(self, name):
         name = slugify(name, valid_variable_name=True)
         item = super(DictionaryTreeBrowser, self).__getattribute__(name)
-        if isinstance(item, dict) and 'value' in item:
-            return item['value']
+        if isinstance(item, dict) and '_dtb_value_' in item and "key" in item:
+            return item['_dtb_value_']
         else:
             return item
 
@@ -268,7 +268,7 @@ class DictionaryTreeBrowser(object):
                 value = DictionaryTreeBrowser(value)
         super(DictionaryTreeBrowser, self).__setattr__(
             slugified_key,
-            {'key': key, 'value': value})
+            {'key': key, '_dtb_value_': value})
 
     def __len__(self):
         return len(
@@ -291,10 +291,10 @@ class DictionaryTreeBrowser(object):
                 key = item_['key']
                 if key == "_db_index":
                     continue
-                if isinstance(item_['value'], DictionaryTreeBrowser):
-                    item = item_['value'].as_dictionary()
+                if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
+                    item = item_['_dtb_value_'].as_dictionary()
                 else:
-                    item = item_['value']
+                    item = item_['_dtb_value_']
                 par_dict.__setitem__(key, item)
         return par_dict
 
@@ -774,7 +774,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
         step_sizes = 1
     else:
-        step_sizes = [obj.axes_manager.shape[axis_input]
+        step_sizes = [obj.axes_manager[axis_input].size
                       for obj in signal_list]
     signal.metadata._HyperSpy.set_item(
         'Stacking_history.axis',

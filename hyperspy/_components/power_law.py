@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
 
@@ -110,16 +110,11 @@ class PowerLaw(Component):
         x2 = axis.index2value(i2)
         x3 = axis.index2value(i3)
         if only_current is True:
-            dc = signal()
-            I1 = axis.scale * np.sum(dc[i1:i3], 0)
-            I2 = axis.scale * np.sum(dc[i3:i2], 0)
+            s = signal.get_current_signal()
         else:
-            dc = signal.data
-            gi = [slice(None), ] * len(dc.shape)
-            gi[axis.index_in_array] = slice(i1, i3)
-            I1 = axis.scale * np.sum(dc[gi], axis.index_in_array)
-            gi[axis.index_in_array] = slice(i3, i2)
-            I2 = axis.scale * np.sum(dc[gi], axis.index_in_array)
+            s = signal
+        I1 = s.isig[i1:i3].integrate1D(2j).data
+        I2 = s.isig[i3:i2].integrate1D(2j).data
         try:
             r = 2 * np.log(I1 / I2) / math.log(x2 / x1)
             k = 1 - r
@@ -128,8 +123,6 @@ class PowerLaw(Component):
             A = np.nan_to_num(A)
         except:
             return False
-        if signal.metadata.Signal.binned is True:
-            A /= axis.scale
         if only_current is True:
             self.r.value = r
             self.A.value = A
