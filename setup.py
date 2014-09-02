@@ -167,8 +167,7 @@ with update_version_when_dev() as version:
                   ],
         requires=install_req,
         scripts=scripts,
-        package_data=
-        {
+        package_data={
             'hyperspy':
             ['bin/*.py',
              'ipython_profile/*',
