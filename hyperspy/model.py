@@ -1524,7 +1524,9 @@ class Model(list):
                     if res[i].ready():
                         print str(i),
                         results.append(res[i].get())
-                        result_q = np.delete(result_q, result_q.searchsorted(i))
+                        result_q = np.delete(
+                            result_q,
+                            result_q.searchsorted(i))
             print ' '
             # for i in xrange(parallel):
             #     results.append(res[i].get())
