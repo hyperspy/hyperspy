@@ -1476,6 +1476,7 @@ class Model(list):
                 c = Client(profile='hyperspy', timeout=ipython_timeout)
                 num = len(c.ids[:parallel])
                 ipyth = c.load_balanced_view()
+                # ipyth = c.direct_view()
                 ipyth.targets = c.ids[:parallel]
             except (error.TimeoutError, IOError):
                 pass
@@ -1498,6 +1499,7 @@ class Model(list):
             for m in models:
                 del m['spectrum']['metadata']['_HyperSpy']
             res = []
+            print 'Sending chuncks: ',
             for i in xrange(parallel):
                 if i < num:
                     res.append(ipyth.apply_async(
@@ -1505,6 +1507,7 @@ class Model(list):
                         models[i],
                         pass_slices[i],
                         kwargs))
+                    print str(i),
                 else:
                     res.append(multip.apply_async(
                         multifit_kernel,
@@ -1513,9 +1516,18 @@ class Model(list):
                          kwargs, ]))
 
             # gather the results back
+            print ' receiving chunks: ',
             results = []
-            for i in xrange(parallel):
-                results.append(res[i].get())
+            result_q = np.arange(parallel)
+            while result_q.size:
+                for i in result_q:
+                    if res[i].ready():
+                        print str(i),
+                        results.append(res[i].get())
+                        result_q = np.delete(result_q, result_q.searchsorted(i))
+            print ' '
+            # for i in xrange(parallel):
+            #     results.append(res[i].get())
             for r in results:
                 slices = r[0]
                 model_dict = r[1]
