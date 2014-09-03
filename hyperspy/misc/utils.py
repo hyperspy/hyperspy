@@ -25,6 +25,7 @@ from StringIO import StringIO
 import codecs
 import collections
 import tempfile
+import unicodedata
 
 import numpy as np
 
@@ -104,7 +105,6 @@ def slugify(value, valid_variable_name=False):
     Adapted from Django's "django/template/defaultfilters.py".
 
     """
-    import unicodedata
     if not isinstance(value, unicode):
         try:
             # Convert to unicode using the default encoding
