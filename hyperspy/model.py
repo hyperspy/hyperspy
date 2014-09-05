@@ -1395,7 +1395,6 @@ class Model(list):
                 " shape: %s" +
                 str(self.axes_manager._navigation_shape_in_array))
 
-
         if parallel is None or parallel <= 1:
             if autosave is not False:
                 fd, autosave_fn = tempfile.mkstemp(
@@ -1478,7 +1477,7 @@ class Model(list):
             if mask is not None:
                 orig_mask = mask.copy()
                 unf_mask = orig_mask.ravel()
-                masks = [unf_mask[l[0]:l[-1]+1] for l in cuts]
+                masks = [unf_mask[l[0]:l[-1] + 1] for l in cuts]
             for m in models:
                 del m['spectrum']['metadata']['_HyperSpy']
             res = []
