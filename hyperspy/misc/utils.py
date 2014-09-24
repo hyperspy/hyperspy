@@ -25,6 +25,7 @@ from StringIO import StringIO
 import codecs
 import collections
 import tempfile
+import unicodedata
 
 import numpy as np
 
@@ -88,8 +89,12 @@ def str2num(string, **kargs):
     return np.loadtxt(stringIO, **kargs)
 
 
-_slugify_strip_re = re.compile(r'[^\w\s-]')
-_slugify_hyphenate_re = re.compile(r'[-\s]+')
+import numpy as np
+_slugify_strip_re_data = ''.join(
+    c for c in map(
+        chr, np.delete(
+            np.arange(256), [
+                95, 32])) if not c.isalnum())
 
 
 def slugify(value, valid_variable_name=False):
@@ -100,7 +105,6 @@ def slugify(value, valid_variable_name=False):
     Adapted from Django's "django/template/defaultfilters.py".
 
     """
-    import unicodedata
     if not isinstance(value, unicode):
         try:
             # Convert to unicode using the default encoding
@@ -109,8 +113,8 @@ def slugify(value, valid_variable_name=False):
             # Try latin1. If this does not work an exception is raised.
             value = unicode(value, "latin1")
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    value = unicode(_slugify_strip_re.sub('', value).strip())
-    value = _slugify_hyphenate_re.sub('_', value)
+    value = unicode(value.translate(None, _slugify_strip_re_data).strip())
+    value = value.replace(' ', '_')
     if valid_variable_name is True:
         if value[:1].isdigit():
             value = u'Number_' + value
