@@ -1,28 +1,30 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import math
 
 import numpy as np
 import traits.api as t
 from traits.trait_errors import TraitError
 
 from hyperspy.misc.utils import isiterable, ordinal
+from hyperspy.misc.math_tools import isfloat
 
 
 class ndindex_nat(np.ndindex):
@@ -130,7 +132,7 @@ class DataAxis(t.HasTraits):
         return index
 
     def _get_index(self, value):
-        if isinstance(value, float):
+        if isfloat(value):
             return self.value2index(value)
         else:
             return value
@@ -156,23 +158,23 @@ class DataAxis(t.HasTraits):
             stop = slice_.stop
             step = slice_.step
         else:
-            if isinstance(slice_, float):
+            if isfloat(slice_):
                 start = v2i(slice_)
             else:
                 start = self._get_positive_index(slice_)
             stop = start + 1
             step = None
 
-        if isinstance(step, float):
+        if isfloat(step):
             step = int(round(step / self.scale))
-        if isinstance(start, float):
+        if isfloat(start):
             try:
                 start = v2i(start)
             except ValueError:
                 # The value is below the axis limits
                 # we slice from the start.
                 start = None
-        if isinstance(stop, float):
+        if isfloat(stop):
             try:
                 stop = v2i(stop)
             except ValueError:
@@ -199,7 +201,8 @@ class DataAxis(t.HasTraits):
     def _get_name(self):
         name = (self.name if self.name is not t.Undefined
                 else ("Unnamed " +
-                      ordinal(self.index_in_axes_manager)))
+                      ordinal(self.index_in_axes_manager)) if self.axes_manager is not None
+                else "Unnamed")
         return name
 
     def __repr__(self):
@@ -208,7 +211,7 @@ class DataAxis(t.HasTraits):
         if self.navigate is True:
             text += ", index: %i" % self.index
         text += ">"
-        return text
+        return text.encode('utf8')
 
     def __str__(self):
         return self._get_name() + " axis"
@@ -248,6 +251,13 @@ class DataAxis(t.HasTraits):
     def copy(self):
         return DataAxis(**self.get_axis_dictionary())
 
+    def __copy__(self):
+        return self.copy()
+
+    def __deepcopy__(self, memo):
+        cp = self.copy()
+        return cp
+
     def update_value(self):
         self.value = self.axis[self.index]
 
@@ -256,22 +266,38 @@ class DataAxis(t.HasTraits):
 
         Parameters
         ----------
-        value : float
+        value : number or numpy array
 
         Returns
         -------
-        int
+        index : integer or numpy array
 
         Raises
         ------
-        ValueError if value is out of the axis limits.
+        ValueError if any value is out of the axis limits.
 
         """
         if value is None:
             return None
+
+        if isinstance(value, np.ndarray):
+            if rounding is round:
+                rounding = np.round
+            elif rounding is math.ceil:
+                rounding = np.ceil
+            elif rounding is math.floor:
+                rounding = np.floor
+
+        index = rounding((value - self.offset) / self.scale)
+
+        if isinstance(value, np.ndarray):
+            index = index.astype(int)
+            if np.all(self.size > index) and np.all(index >= 0):
+                return index
+            else:
+                raise ValueError("A value is out of the axis limits")
         else:
-            index = int(rounding((value - self.offset) /
-                                 self.scale))
+            index = int(index)
             if self.size > index >= 0:
                 return index
             else:
@@ -457,8 +483,8 @@ class AxesManager(t.HasTraits):
                 if y == axis.name:
                     return axis
             raise ValueError("There is no DataAxis named %s" % y)
-        elif (isinstance(y.real, float) and not y.real.is_integer() or
-                isinstance(y.imag, float) and not y.imag.is_integer()):
+        elif (isfloat(y.real) and not y.real.is_integer() or
+                isfloat(y.imag) and not y.imag.is_integer()):
             raise TypeError("axesmanager indices must be integers, "
                             "complex intergers or strings")
         if y.imag == 0:  # Natural order
@@ -550,7 +576,7 @@ class AxesManager(t.HasTraits):
         # Reorder axes_list using index_in_array if it is defined
         # for all axes and the indices are not repeated.
         indices = set([axis['index_in_array'] for axis in axes_list if
-                       'index_in_array' in axis])
+                       hasattr(axis, 'index_in_array')])
         if len(indices) == len(axes_list):
             axes_list.sort(key=lambda x: x['index_in_array'])
         for axis_dict in axes_list:

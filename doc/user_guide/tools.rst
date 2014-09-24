@@ -10,7 +10,7 @@ The Signal class and its subclasses
     Do not worry if you do not understand it all.
     
 
-Hyperspy stores the data in the :py:class:`~.signal.Signal` class, that is
+HyperSpy stores the data in the :py:class:`~.signal.Signal` class, that is
 the object that you get when e.g. you load a single file using
 :py:func:`~.io.load`. Most of the data analysis functions are also contained in
 this class or its specialized subclasses. The :py:class:`~.signal.Signal` class
@@ -77,7 +77,7 @@ The different subclasses are characterized by three
 `signal_type`
     Describes the nature of the signal. It can be any string, normally the 
     acronym associated with a
-    particular signal. In certain cases Hyperspy provides features that are 
+    particular signal. In certain cases HyperSpy provides features that are 
     only available for a 
     particular signal type through :py:class:`~.signal.Signal` subclasses.
     The :py:class:`~.signal.Signal` method 
@@ -89,7 +89,7 @@ The different subclasses are characterized by three
 `signal_origin`
     Describes the origin of the signal and can be "simulation" or 
     "experiment" or "",
-    the latter meaning undefined. In certain cases Hyperspy provides features 
+    the latter meaning undefined. In certain cases HyperSpy provides features 
     that are only available for a 
     particular signal origin. The :py:class:`~.signal.Signal` method 
     :py:meth:`~.signal.Signal.set_signal_origin`
@@ -155,13 +155,13 @@ The following example shows how to transform between different subclasses.
 The navigation and signal dimensions
 ------------------------------------
 
-Hyperspy can deal with data of arbitrary dimensions. Each dimension is
+HyperSpy can deal with data of arbitrary dimensions. Each dimension is
 internally classified as either "navigation" or "signal" and the way this
 classification is done determines the behaviour of the signal.
 
 The concept is probably best understood with an example: let's imagine a three
 dimensional dataset. This dataset could be an spectrum image acquired by
-scanning over a sample in two dimensions. In Hyperspy's terminology the
+scanning over a sample in two dimensions. In HyperSpy's terminology the
 spectrum dimension would be the signal dimension and the two other dimensions
 would be the navigation dimensions. We could see the same dataset as an image
 stack instead.  Actually it could has been acquired by capturing two
@@ -178,7 +178,7 @@ classifiying the dimensions of a three-dimensional dataset by
 
     Although each dimension can be arbitrarily classified as "navigation
     dimension" or "signal dimension", for most common tasks there is no need to
-    modify Hyperspy's default choice.
+    modify HyperSpy's default choice.
 
 
 .. _signal.binned:
@@ -243,7 +243,6 @@ subclasses.
 .. _signal.indexing:
 
 Indexing
-
 ^^^^^^^^
 .. versionadded:: 0.6
 
@@ -257,19 +256,19 @@ in a :py:class:`~.signal.Signal`. The result of indexing a
 :py:class:`~.signal.Signal` is another :py:class:`~.signal.Signal` that shares
 a subset of the data of the original :py:class:`~.signal.Signal`.
  
-Hyperspy's Signal indexing is similar to numpy array indexing and, therefore,
+HyperSpy's Signal indexing is similar to numpy array indexing and, therefore,
 rather that explaining this feature in detail we will just give some examples
 of usage here. The interested reader is encouraged to read the `numpy
 documentation on the subject  <http://ipython.org/>`_ for a detailed
 explanation of the concept. When doing so it is worth to keep in mind the
 following main differences:
 
-* Hyperspy (unlike numpy) does not support:
+* HyperSpy (unlike numpy) does not support:
 
   + Indexing using arrays.
   + Adding new axes using the newaxis object.
     
-* Hyperspy (unlike numpy):
+* HyperSpy (unlike numpy):
 
   + Supports indexing with decimal numbers.
   + Uses the image order for indexing i.e. [x, y, z,...] (hyperspy) vs 
@@ -307,8 +306,8 @@ Lets start by indexing a single spectrum:
     array([5, 7, 9])
 
 
-Unlike numpy, Hyperspy supports indexing using decimal numbers, in which case
-Hyperspy indexes using the axis scales instead of the indices.
+Unlike numpy, HyperSpy supports indexing using decimal numbers, in which case
+HyperSpy indexes using the axis scales instead of the indices.
  
 .. code-block:: python
 
@@ -467,7 +466,7 @@ augmented binary assignments (+=, -=, \*=, /=, //=, %=, \*\*=, <<=, >>=, &=,
 These operations are performed element-wise. When the dimensions of the signals
 are not equal `numpy broadcasting rules apply
 <http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_ *first*. In
-addition Hyperspy extend numpy's broadcasting rules to the following cases:
+addition HyperSpy extend numpy's broadcasting rules to the following cases:
 
 +------------+----------------------+------------------+
 | **Signal** | **NavigationShape**  | **SignalShape**  |
@@ -506,6 +505,8 @@ addition Hyperspy extend numpy's broadcasting rules to the following cases:
 +------------+----------------------+------------------+
 |   s2 + s1  |       a              |      b           |
 +------------+----------------------+------------------+
+
+.. _signal.iterator:
 
 Iterating over the navigation axes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -559,7 +560,7 @@ to make a horizontal "collage" of the image stack:
 
 Transforming the data at each coordinate as in the previous example using an
 external function can be more easily accomplished using the
-:py:meth:`~.signal.Signal.apply_function` method:
+:py:meth:`~.signal.Signal.map` method:
 
 .. code-block:: python
 
@@ -567,7 +568,7 @@ external function can be more easily accomplished using the
     >>> image_stack = signals.Image(np.array([scipy.misc.lena()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
-    >>> image_stack.apply_function(scipy.ndimage.rotate,
+    >>> image_stack.map(scipy.ndimage.rotate,
     ...                            angle=45,
     ...                            reshape=False)
     >>> collage = utils.stack([image for image in image_stack], axis=0)
@@ -577,7 +578,7 @@ external function can be more easily accomplished using the
   :align:   center
   :width:   500    
 
-The :py:meth:`~.signal.Signal.apply_function` method can also take variable 
+The :py:meth:`~.signal.Signal.map` method can also take variable 
 arguments as in the following example.
 
 .. code-block:: python
@@ -590,7 +591,7 @@ arguments as in the following example.
     >>> angles.axes_manager.set_signal_dimension(0)
     >>> modes = signals.Signal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
     >>> modes.axes_manager.set_signal_dimension(0)
-    >>> image_stack.apply_function(scipy.ndimage.rotate,
+    >>> image_stack.map(scipy.ndimage.rotate,
     ...                            angle=angles,
     ...                            reshape=False,
     ...                            mode=modes)
@@ -629,6 +630,9 @@ It is also possible to unfold only the navigation or only the signal space:
 
 * :py:meth:`~.signal.Signal.unfold_navigation_space`
 * :py:meth:`~.signal.Signal.unfold_signal_space`
+
+
+.. _signal.stack_split:
 
 Splitting and stacking
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -673,6 +677,8 @@ Simple operations over one axis
 * :py:meth:`~.signal.Signal.diff`
 * :py:meth:`~.signal.Signal.integrate_simpson`
 
+.. _signal.change_dtype:
+
 Changing the data type
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -697,6 +703,49 @@ type in place, e.g.:
         Data dimensions: (21, 42, 2048)
         Data representation: spectrum
         Data type: float64
+
+
+.. versionadded:: 0.7
+
+    In addition to all standard numpy dtypes HyperSpy supports four extra
+    dtypes for RGB images: rgb8, rgba8, rgb16 and rgba16. Changing
+    from and to any rgbx dtype is more constrained than most other dtype
+    conversions. To change to a rgbx dtype the signal `record_by` must be
+    "spectrum", `signal_dimension` must be 3(4) for rgb(rgba) dtypes and the
+    dtype must be uint8(uint16) for rgbx8(rgbx16).  After conversion
+    `record_by` becomes `image` and the spectra dimension is removed. The dtype
+    of images of dtype rgbx8(rgbx16) can only be changed to uint8(uint16) and
+    the `record_by` becomes "spectrum".
+
+    In the following example we create 
+
+   .. code-block:: python
+
+        >>> rgb_test = np.zeros((1024, 1024, 3))
+        >>> ly, lx = rgb_test.shape[:2]
+        >>> offset_factor = 0.16
+        >>> size_factor = 3
+        >>> Y, X = np.ogrid[0:lx, 0:ly]
+        >>> rgb_test[:,:,0] = (X - lx / 2 - lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
+        >>> rgb_test[:,:,1] = (X - lx / 2 + lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
+        >>> rgb_test[:,:,2] = (X - lx / 2) ** 2 + (Y - ly / 2 + ly*offset_factor) ** 2 < lx * ly / size_factor **2
+        >>> rgb_test *= 2**16 - 1
+        >>> s = signals.Spectrum(rgb_test)
+        >>> s.change_dtype("uint16")
+        >>> s
+        <Spectrum, title: , dimensions: (1024, 1024|3)>
+        >>> s.change_dtype("rgb16")
+        >>> s
+        <Image, title: , dimensions: (|1024, 1024)>
+        >>> s.plot()
+
+
+   .. figure::  images/rgb_example.png
+      :align:   center
+      :width:   500    
+
+      RGB data type example.
+      
 
 
 Basic statistical analysis
@@ -752,12 +801,6 @@ with histograms of several random chi-square distributions:
    :width:   500    
 
    Comparing histograms
-
-Electron and X-ray range
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-The electron and X-ray range in a bulk material can be estimated with 
-:py:meth:`~.utils.eds.electron_range` and :py:meth:`~.utils.eds.xray_range`
 
 
 .. _signal.noise_properties:

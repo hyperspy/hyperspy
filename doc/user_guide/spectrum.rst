@@ -60,6 +60,21 @@ passed) can perform data smoothing with different algorithms:
 * :py:meth:`~.signal.Signal1DTools.smooth_tv`
 * :py:meth:`~.signal.Signal1DTools.smooth_savitzky_golay`
 
+Spikes removal
+^^^^^^^^^^^^^^
+.. versionadded:: 0.5
+
+:py:meth:`~._signals.spectrum.Spectrum.spikes_removal_tool` provides an user
+interface to remove spikes from spectra.
+
+
+.. figure::  images/spikes_removal_tool.png
+   :align:   center
+   :width:   500    
+
+   Spikes removal tool
+
+
 Other methods
 ^^^^^^^^^^^^^^
 

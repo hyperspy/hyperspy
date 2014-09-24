@@ -1,7 +1,7 @@
 .. _examples-index:
 
 ####################
-Hyperspy Examples
+HyperSpy Examples
 ####################
 
 .. htmlonly::

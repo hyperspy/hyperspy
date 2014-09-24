@@ -1,9 +1,7 @@
 import numpy as np
 from nose.tools import (
     assert_true,
-    assert_equal,
-    assert_not_equal,
-    raises)
+    assert_equal,)
 
 from hyperspy.signal import Signal
 from hyperspy import signals
@@ -64,6 +62,7 @@ class Test2D:
         result = self.signal.get_histogram(3)
         assert_true(isinstance(result, signals.Spectrum))
         assert_true((result.data == np.array([17, 16, 17])).all())
+        assert_true(result.metadata.Signal.binned)
 
     def test_estimate_poissonian_noise_copy_data(self):
         self.signal.estimate_poissonian_noise_variance()

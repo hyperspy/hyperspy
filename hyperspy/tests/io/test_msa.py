@@ -1,9 +1,5 @@
-import StringIO
-
-from nose.tools import assert_true, assert_equal
+from nose.tools import assert_equal
 import os.path
-
-from nose.tools import assert_equal, assert_true
 
 from hyperspy.io import load
 

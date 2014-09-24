@@ -2,12 +2,17 @@
 .. _visualization-label:
 
 
-Data visualisation
+Data visualization
 ******************
 
-The object returned by :py:func:`~.io.load` is a :py:class:`~.signal.Signal`
-and has a :py:meth:`~.signal.Signal.plot` method which plots the data and
-allows navigation.
+The object returned by :py:func:`~.io.load`, a :py:class:`~.signal.Signal`
+instance, has a :py:meth:`~.signal.Signal.plot` method that is powerful and
+flexible tools to visualize n-dimensional data. In this chapter, the
+visualisation of multidimensional data  is exemplified with two experimental
+datasets: an EELS spectrum image and an EDX dataset consisting of a secondary
+electron emission image stack and a 3D hyperspectrum , both simoultaneously
+acquired by recording two signals in parallel in a FIB/SEM.
+
 
 .. code-block:: python
     
@@ -16,6 +21,9 @@ allows navigation.
 
 if the object is single spectrum or an image one window will appear when
 calling the plot method.
+
+Multidimensional spectral data
+==============================
 
 If the object is a 1D or 2D spectrum-image (i.e. with 2 or 3 dimensions when
 including energy) two figures will appear, one containing a plot of the
@@ -38,26 +46,6 @@ the x-axis if 1D:
    :width:   500
 
    Visualisation of a 1D spectrum image
-   
-Equivalently, if the object is a 1D or 2D image stack two figures will appear, 
-one containing a plot of the image at the current coordinates and the other
-a spectrum or an image obtained by summing over the image dimensions:
-   
-.. _1D_image_stack.png:
-
-.. figure::  images/1D_image_stack.png
-   :align:   center
-   :width:   500    
-
-   Visualisation of a 1D image stack
-   
-.. _2D_image_stack.png:
-
-.. figure::  images/2D_image_stack.png
-   :align:   center
-   :width:   500
-   
-   Visualisation of a 2D image stack
 
 To change the current coordinates, click on the pointer (which will be a line
 or a square depending on the dimensions of the data) and drag it around. It is
@@ -76,14 +64,10 @@ more will disable the extra cursor:
 
    Visualisation of a 2D spectrum image using two pointers.
 
-When exploring a 2D hyperspectral object of high spatial resolution the default
-size of the rectangular cursors can be too small to be dragged or even seen. It
+Sometimes the default size of the rectangular cursors used to navigate images
+can be too small to be dragged or even seen. It
 is possible to change the size of the cursors by pressing the ``+`` and ``-``
 keys  **when the navigator window is selected**.
-
-The same keys can be used to explore an image stack.
-
-
 
 =========   =============================
 key         function    
@@ -110,30 +94,37 @@ To close all the figures run the following command:
     learn how to pan/zoom and more  `in the matplotlib documentation
     <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
 
+Multidimensional image data
+===========================
 
-.. _visualization_multi_dim:
+Equivalently, if the object is a 1D or 2D image stack two figures will appear, 
+one containing a plot of the image at the current coordinates and the other
+a spectrum or an image obtained by summing over the image dimensions:
+   
+.. _1D_image_stack.png:
 
-Visualisation of multi-dimensional data
-****************************************
+.. figure::  images/1D_image_stack.png
+   :align:   center
+   :width:   500    
 
-With the aim to ease the data analysis of multidimensionnal data, Hyperspy
-provides a powerful and flexible :py:meth:`~.signal.Signal.plot` method to
-visualize n-dimensional data. In this chapter, the visualisation of data of 3
-or more dimensions is exemplified with a image stack and a 4D hyperspectrum
-obtained by recording two signals in parallele in a FIB/SEM: the intensity of
-the secondary electron emission (SE image) and the X-ray spectrum (EDS map).
+   Visualisation of a 1D image stack
+   
+.. _2D_image_stack.png:
 
-The plot() function
--------------------
+.. figure::  images/2D_image_stack.png
+   :align:   center
+   :width:   500
+   
+   Visualisation of a 2D image stack
 
-The visualisation with :py:meth:`~.signal.Signal.plot` of 1D and 2D signal is
-given in :ref:`getting started <getting-help-label>`. Further options are shown
-here.
 
-Stack of images
-^^^^^^^^^^^^^^^
+The same keys can be used to explore an image stack.
 
-Stack of 2D images can be imported as an 3D image and plotted with a slider.
+Customizing the "navigator"
+===========================
+
+Stack of 2D images can be imported as an 3D image and plotted with a slider
+instead of the 2D navigator as in the previous example.
 
 .. code-block:: python
 
@@ -147,8 +138,6 @@ Stack of 2D images can be imported as an 3D image and plotted with a slider.
 
    Visualisation of a 3D image with a slider.   
    
-Spectrum images
-^^^^^^^^^^^^^^
 
 A stack of 2D spectrum images can be imported as a 3D spectrum image and
 plotted with sliders.
@@ -179,9 +168,6 @@ can be used as an external signal for the navigator.
 
    Visualisation of a 3D spectrum image. The navigator is an external signal.
    
-Stack of spectral images
-^^^^^^^^^^^^^^^^^^^^^^^^
-
 The 3D spectrum image can be transformed in a stack of spectral images for an
 alternative display.
 
@@ -216,9 +202,9 @@ the "maximum spectrum" for which each channel is the maximum of all pixels.
 Lastly, if no navigator is needed, "navigator=None" can be used.
 
 Using Mayavi to visualize 3D data
----------------------------------
+=================================
 
-Although Hyperspy does not currently support plotting when signal_dimension is
+Although HyperSpy does not currently support plotting when signal_dimension is
 greater than 2, `Mayavi <http://docs.enthought.com/mayavi/mayavi/>`_ can be
 used for this purpose.
 
@@ -255,16 +241,17 @@ found in :ref:`EDS lines intensity<get_lines_intensity>`.
 
 .. _plot_spectra:
 
-Comparing objects
------------------
+Plotting multiple signals
+=========================
 
-Hyperspy provides two functions to compare different objects (spectra, images or
-other signals) whatever their dimension. The two functions, 
-:py:func:`~.drawing.utils.plot_spectra` and :py:func:`~.drawing.utils.plot_signals`
-, are explained and exemplified in this chapter. 
+HyperSpy provides two functions to plot multiple signals (spectra, images or
+other signals): :py:func:`~.drawing.utils.plot_spectra` and
+:py:func:`~.drawing.utils.plot_signals` in the ``utils.plot`` package.
+
+.. _plot.spectra:
 
 Plotting several spectra
-^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------
 
 .. versionadded:: 0.7
 
@@ -372,7 +359,25 @@ The function returns a matplotlib ax object, which can be used to customize the 
 
 .. figure::  images/plot_spectra_customize.png
   :align:   center
-  :width:   500    
+  :width:   500
+  
+A matplotlib ax and fig object can also be specified, which can be used to put several
+subplots in the same figure. This will only work for "cascade" and "overlap" styles:
+
+.. code-block:: python
+
+    >>> fig, axarr = plt.subplots(1,2)
+    >>> s1 = signals.Spectrum(np.random.random((6,1000)))
+    >>> s2 = signals.Spectrum(np.random.random((6,1000)))
+    >>> utils.plot.plot_spectra(s1, style='cascade',color='blue',ax=axarr[0],fig=fig)
+    >>> utils.plot.plot_spectra(s2, style='cascade',color='red',ax=axarr[1],fig=fig)
+    >>> fig.canvas.draw()
+
+.. figure::  images/plot_spectra_ax_argument.png
+  :align:   center
+  :width:   500
+
+.. _plot.signals:
 
 Plotting several signals
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -384,8 +389,8 @@ signals must have the same dimensions. To plot two spectra at the same time:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
+    >>> s2 = signals.Spectrum(np.random.random((10,10,100)))
     >>> utils.plot.plot_signals([s1, s2])
 
 .. figure::  images/plot_signals.png
@@ -400,8 +405,8 @@ To specify the navigator:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
+    >>> s2 = signals.Spectrum(np.random.random((10,10,100))) 
     >>> utils.plot.plot_signals([s1, s2], navigator="slider")
 
 .. figure::  images/plot_signals_slider.png
@@ -415,9 +420,9 @@ For example:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
-    >>> s3 = signals.Spectrum(np.random.random(10,10)) 
+    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
+    >>> s2 = signals.Spectrum(np.random.random((10,10,100))) 
+    >>> s3 = signals.Spectrum(np.random.random((10,10))) 
     >>> utils.plot.plot_signals([s1, s2], navigator_list=["slider", s3])
 
 .. figure::  images/plot_signals_navigator_list.png
@@ -430,8 +435,8 @@ each plot:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random(10,10,100)) 
-    >>> s2 = signals.Spectrum(np.random.random(10,10,100)) 
+    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
+    >>> s2 = signals.Spectrum(np.random.random((10,10,100))) 
     >>> utils.plot.plot_signals([s1, s2], sync=False, navigator_list=["slider", "slider"])
 
 .. figure::  images/plot_signals_sync.png

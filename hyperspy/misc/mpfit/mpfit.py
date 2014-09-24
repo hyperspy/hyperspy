@@ -406,7 +406,7 @@ Perform Levenberg-Marquardt least-squares minimization, based on MINPACK-1.
    Translated from MPFIT (Craig Markwardt's IDL package) to Python,
    August, 2002.  Mark Rivers
    Converted from Numeric to numpy (Sergey Koposov, July 2008)
-   Fixed the analytic derivatives features (The Hyperspy Developers, 2011)
+   Fixed the analytic derivatives features (The HyperSpy Developers, 2011)
 """
 
 import numpy
@@ -1927,7 +1927,7 @@ Outputs:
 
         for j in range(n):
             r[j:n, j] = r[j, j:n]
-        x = numpy.diagonal(r)
+        x = numpy.diagonal(r).copy()
         wa = qtb.copy()
 
         # Eliminate the diagonal matrix d using a givens rotation

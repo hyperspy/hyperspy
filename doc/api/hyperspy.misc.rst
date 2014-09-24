@@ -12,6 +12,7 @@ Subpackages
     hyperspy.misc.io
     hyperspy.misc.machine_learning
     hyperspy.misc.mpfit
+    hyperspy.misc.tests
 
 Submodules
 ----------
@@ -100,6 +101,14 @@ hyperspy.misc.progressbar module
 --------------------------------
 
 .. automodule:: hyperspy.misc.progressbar
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.misc.rgb_tools module
+------------------------------
+
+.. automodule:: hyperspy.misc.rgb_tools
     :members:
     :undoc-members:
     :show-inheritance:

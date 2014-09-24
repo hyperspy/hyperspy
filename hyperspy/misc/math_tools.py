@@ -49,3 +49,15 @@ def order_of_magnitude(number):
     Float
     """
     return math.floor(math.log10(number))
+
+
+def isfloat(number):
+    """Check if a number or array is of float type.
+
+    This is necessary because e.g. isinstance(np.float32(2), float) is False.
+
+    """
+    if hasattr(number, "dtype"):
+        return np.issubdtype(number, np.float)
+    else:
+        return isinstance(number, float)

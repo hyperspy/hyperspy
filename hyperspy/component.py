@@ -1,24 +1,25 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 
 import numpy as np
+import warnings
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import slugify
@@ -102,7 +103,7 @@ class Parameter(object):
         if self.component is not None:
             text += ' of %s' % self.component._get_short_description()
         text = '<' + text + '>'
-        return text
+        return text.encode('utf8')
 
     def __len__(self):
         return self._number_of_elements
@@ -126,7 +127,10 @@ class Parameter(object):
             return self.twin_function(self.twin.value)
 
     def _setvalue(self, arg):
-        if hasattr(arg, "__len__"):
+        try:
+            # Use try/except instead of hasattr("__len__") because a numpy
+            # memmap has a __len__ wrapper even for numbers that raises a
+            # TypeError when calling. See issue #349.
             if len(arg) != self._number_of_elements:
                 raise ValueError(
                     "The lenght of the parameter must be ",
@@ -134,11 +138,11 @@ class Parameter(object):
             else:
                 if not isinstance(arg, tuple):
                     arg = tuple(arg)
-
-        elif self._number_of_elements != 1:
-            raise ValueError(
-                "The lenght of the parameter must be ",
-                self._number_of_elements)
+        except TypeError:
+            if self._number_of_elements != 1:
+                raise ValueError(
+                    "The lenght of the parameter must be ",
+                    self._number_of_elements)
         old_value = self.__value
 
         if self.twin is not None:
@@ -388,7 +392,10 @@ class Parameter(object):
 
         s = Signal(data=self.map[field],
                    axes=self._axes_manager._get_navigation_axes_dicts())
-        s.metadata.General.title = self.name
+        s.metadata.General.title = ("%s parameter" % self.name
+                                    if self.component is None
+                                    else "%s parameter of %s component" %
+                                    (self.name, self.component.name))
         for axis in s.axes_manager._axes:
             axis.navigate = False
         if self._number_of_elements > 1:
@@ -443,6 +450,7 @@ class Component(object):
         self.init_parameters(parameter_name_list)
         self._update_free_parameters()
         self.active = True
+        self._active_array = None
         self.isbackground = False
         self.convolved = True
         self.parameters = tuple(self.parameters)
@@ -451,6 +459,40 @@ class Component(object):
         self._id_version = '1.0'
         self._position = None
         self.model = None
+
+    _active_is_multidimensional = False
+    _active = True
+
+    @property
+    def active_is_multidimensional(self):
+        return self._active_is_multidimensional
+
+    @active_is_multidimensional.setter
+    def active_is_multidimensional(self, value):
+        if not isinstance(value, bool):
+            raise ValueError('Only boolean values are permitted')
+
+        if value == self.active_is_multidimensional:
+            warnings.warn(
+                '`active_is_multidimensional` already %s for %s' %
+                (str(value), self.name), RuntimeWarning)
+            return
+
+        if value:  # Turn on
+            if self._axes_manager.navigation_size < 2:
+                warnings.warn(
+                    '`navigation_size` < 2, skipping',
+                    RuntimeWarning)
+                return
+            # Store value at current position
+            self._create_active_array()
+            self._store_active_value_in_array(self._active)
+            self._active_is_multidimensional = True
+        else:  # Turn off
+            # Get the value at the current position before switching it off
+            self._active = self.active
+            self._active_array = None
+            self._active_is_multidimensional = False
 
     @property
     def name(self):
@@ -488,17 +530,29 @@ class Component(object):
         if f in self.connected_functions:
             self.connected_functions.remove(f)
 
-    def _get_active(self):
-        return self.__active
+    @property
+    def active(self):
+        if self.active_is_multidimensional is True:
+            # The following should set
+            self.active = self._active_array[self._axes_manager.indices[::-1]]
+        return self._active
 
-    def _set_active(self, arg):
-        self.__active = arg
+    def _store_active_value_in_array(self, value):
+        self._active_array[self._axes_manager.indices[::-1]] = value
+
+    @active.setter
+    def active(self, arg):
+        if self._active == arg:
+            return
+        self._active = arg
+        if self.active_is_multidimensional is True:
+            self._store_active_value_in_array(arg)
+
         for f in self.connected_functions:
             try:
                 f()
             except:
                 self.disconnect(f)
-    active = property(_get_active, _set_active)
 
     def init_parameters(self, parameter_name_list):
         for name in parameter_name_list:
@@ -564,7 +618,17 @@ class Component(object):
 
             i += lenght
 
+    def _create_active_array(self):
+        shape = self._axes_manager._navigation_shape_in_array
+        if len(shape) == 1 and shape[0] == 0:
+            shape = [1, ]
+        if (not isinstance(self._active_array, np.ndarray)
+                or self._active_array.shape != shape):
+            self._active_array = np.ones(shape, dtype=bool)
+
     def _create_arrays(self):
+        if self.active_is_multidimensional:
+            self._create_active_array()
         for parameter in self.parameters:
             parameter._create_array()
 
@@ -573,6 +637,10 @@ class Component(object):
             parameter.store_current_value_in_array()
 
     def fetch_stored_values(self, only_fixed=False):
+        if self.active_is_multidimensional:
+            # Store the stored value in self._active and trigger the connected
+            # functions.
+            self.active = self.active
         if only_fixed is True:
             parameters = (set(self.parameters) -
                           set(self.free_parameters))
@@ -616,7 +684,7 @@ class Component(object):
         format : str
             The format to which the data will be exported. It must be
             the
-            extension of any format supported by Hyperspy. If None, the
+            extension of any format supported by HyperSpy. If None, the
             default
             format for exporting as defined in the `Preferences` will be
              used.
@@ -680,6 +748,8 @@ class Component(object):
             self.model.axes_manager = axes_manager
             self.charge()
         s = self.__call__()
+        if not self.active:
+            s.fill(np.nan)
         if self.model.spectrum.metadata.Signal.binned is True:
             s *= self.model.spectrum.axes_manager.signal_axes[0].scale
         if old_axes_manager is not None:
