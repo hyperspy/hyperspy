@@ -24,6 +24,7 @@ from hyperspy.component import Parameter, Component
 from hyperspy.hspy import create_model
 from hyperspy.components import Gaussian, Lorentzian
 
+
 def remove_empty_numpy_strings(dic):
     for k, v in dic.iteritems():
         if isinstance(v, dict):
@@ -54,8 +55,12 @@ class TestParameterDictionary:
     def setUp(self):
         self.par = Parameter()
         self.par.name = 'asd'
-        def ft(x) : return x*x
-        def fit(x) : return x*x + 1
+
+        def ft(x):
+            return x * x
+
+        def fit(x):
+            return x * x + 1
         self.par.twin_function = ft
         self.par.twin_inverse_function = fit
         self.par._axes_manager = DummyAxesManager()
@@ -63,10 +68,10 @@ class TestParameterDictionary:
         self.par.value = 1
         self.par.std = 0.1
         self.par.store_current_value_in_array()
-        
+
     def test_to_dictionary(self):
         d = self.par.as_dictionary()
-        
+
         nt.assert_true(d['name'] == self.par.name)
         nt.assert_true(d['_id_name'] == self.par._id_name)
         nt.assert_true(d['map']['values'][0] == 1)
@@ -96,8 +101,9 @@ class TestParameterDictionary:
 
         rn = np.random.random()
         nt.assert_equal(p.twin_function(rn), self.par.twin_function(rn))
-        nt.assert_equal(p.twin_inverse_function(rn), self.par.twin_inverse_function(rn))
-
+        nt.assert_equal(
+            p.twin_inverse_function(rn),
+            self.par.twin_inverse_function(rn))
 
     @nt.raises(ValueError)
     def test_invalid_name(self):
@@ -105,6 +111,7 @@ class TestParameterDictionary:
         d['_id_name'] = 'newone'
         p = Parameter()
         _id = p._load_dictionary(d)
+
 
 class TestComponentDictionary:
 
@@ -120,7 +127,7 @@ class TestComponentDictionary:
         self.comp.par1.std = 0.2
         self.comp.par2.std = 0.5
         self.comp.store_current_parameters_in_map()
-        
+
     def test_to_dictionary(self):
         d = self.comp.as_dictionary()
         c = self.comp
@@ -134,7 +141,7 @@ class TestComponentDictionary:
 
         c.active_is_multidimensional = True
         d1 = c.as_dictionary()
-        nt.assert_true(d1['active_is_multidimensional'])      
+        nt.assert_true(d1['active_is_multidimensional'])
         nt.assert_true(d1['active_array'] == c._active_array)
 
     def test_load_dictionary(self):
@@ -145,8 +152,10 @@ class TestComponentDictionary:
         id_dict = n._load_dictionary(d)
         nt.assert_equal(c.name, n.name)
         nt.assert_equal(c.active, n.active)
-        nt.assert_equal(c.active_is_multidimensional, n.active_is_multidimensional)
-        
+        nt.assert_equal(
+            c.active_is_multidimensional,
+            n.active_is_multidimensional)
+
         for pn, pc in zip(n.parameters, c.parameters):
             dn = pn.as_dictionary()
             del dn['id']
@@ -165,23 +174,23 @@ class TestComponentDictionary:
     def test_invalid_parameter_name(self):
         c = self.comp
         d = c.as_dictionary()
-        n = Component([a+'s' for a in self.parameter_names])
+        n = Component([a + 's' for a in self.parameter_names])
         n._id_name = 'dummy names yay!'
         id_dict = n._load_dictionary(d)
+
 
 class TestModelDictionary:
 
     def setUp(self):
         s = Spectrum(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
         m = create_model(s)
-        m._low_loss = (s+3.0).deepcopy()
+        m._low_loss = (s + 3.0).deepcopy()
         self.model = m
-        
+
         m.append(Gaussian())
         m.append(Gaussian())
         m[0].A.twin = m[1].A
         m.fit()
-
 
     def test_to_dictionary(self):
         m = self.model
@@ -203,7 +212,9 @@ class TestModelDictionary:
         remove_empty_numpy_strings(tmp)
         nt.assert_equal(tmp, d['spectrum'])
 
-        nt.assert_equal(d['free_parameters_boundaries'], m.free_parameters_boundaries)
+        nt.assert_equal(
+            d['free_parameters_boundaries'],
+            m.free_parameters_boundaries)
         nt.assert_equal(d['convolved'], m.convolved)
 
         for num, c in enumerate(m):
@@ -219,13 +230,15 @@ class TestModelDictionary:
         mn._load_dictionary(d)
         mo = self.model
 
-        nt.assert_true(np.allclose(mo.spectrum.data, mn.spectrum.data)) 
+        nt.assert_true(np.allclose(mo.spectrum.data, mn.spectrum.data))
         nt.assert_true(np.allclose(mo.chisq.data, mn.chisq.data))
         nt.assert_true(np.allclose(mo.dof.data, mn.dof.data))
 
         nt.assert_true(np.allclose(mn._low_loss.data, mo._low_loss.data))
 
-        nt.assert_equal(mn.free_parameters_boundaries, mo.free_parameters_boundaries)
+        nt.assert_equal(
+            mn.free_parameters_boundaries,
+            mo.free_parameters_boundaries)
         nt.assert_equal(mn.convolved, mo.convolved)
         for i in range(len(mn)):
             nt.assert_equal(mn[i]._id_name, mo[i]._id_name)

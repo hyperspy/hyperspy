@@ -156,7 +156,8 @@ class Parameter(object):
                 self.twin_inverse_function = dill.loads(
                     dict['twin_inverse_function'])
             elif 'dill_avail' in dict:
-                raise ValueError("the dictionary was constructed using \"dill\" package, which is not available on the system") 
+                raise ValueError(
+                    "the dictionary was constructed using \"dill\" package, which is not available on the system")
             else:
                 self.twin_function = types.FunctionType(
                     marshal.loads(
@@ -1010,7 +1011,8 @@ class Component(object):
             self.name = copy.deepcopy(dic['name'])
             self.active = dic['active']
             if dic['active_is_multidimensional']:
-                self.active_is_multidimensional = dic['active_is_multidimensional']
+                self.active_is_multidimensional = dic[
+                    'active_is_multidimensional']
             if self.active_is_multidimensional:
                 self._active_array = dic['active_array']
             id_dict = {}
@@ -1021,7 +1023,8 @@ class Component(object):
                     t_id = par._load_dictionary(p)
                     id_dict[t_id] = par
                 else:
-                    raise ValueError("_id_name of parameters in component and dictionary do not match")
+                    raise ValueError(
+                        "_id_name of parameters in component and dictionary do not match")
             return id_dict
         else:
             raise ValueError(
