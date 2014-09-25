@@ -2021,11 +2021,15 @@ class Model(list):
         dic = {}
         if indices is not None:
             dic['spectrum'] = self.spectrum.inav[indices]._to_dictionary()
+            dic['chisq'] = self.chisq[indices]._to_dictionary()
+            dic['dof'] = self.dof[indices]._to_dictionary()
             if self._low_loss is not None:
                 dic['low_loss'] = self._low_loss.inav[indices]._to_dictionary()
             else:
                 dic['low_loss'] = self._low_loss
         else:
+            dic['chisq'] = self.chisq._to_dictionary()
+            dic['dof'] = self.dof._to_dictionary()
             dic['spectrum'] = self.spectrum._to_dictionary()
             if self._low_loss is not None:
                 dic['low_loss'] = self._low_loss._to_dictionary()

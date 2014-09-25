@@ -155,6 +155,8 @@ class Parameter(object):
                 self.twin_function = dill.loads(dict['twin_function'])
                 self.twin_inverse_function = dill.loads(
                     dict['twin_inverse_function'])
+            elif 'dill_avail' in dict:
+                raise ValueError("the dictionary was constructed using \"dill\" package, which is not available on the system") 
             else:
                 self.twin_function = types.FunctionType(
                     marshal.loads(
@@ -1004,16 +1006,24 @@ class Component(object):
             setting up correct twins.
 
         """
-        self.name = copy.deepcopy(dic['name'])
-        self.active = dic['active']
-        if dic['active_is_multidimensional']:
-            self.active_is_multidimensional = dic['active_is_multidimensional']
-        if self.active_is_multidimensional:
-            self._active_array = dic['active_array']
-        id_dict = {}
-        for p in dic['parameters']:
-            idname = p['_id_name']
-            par = getattr(self, idname)
-            t_id = par._load_dictionary(p)
-            id_dict[t_id] = par
-        return id_dict
+        if dic['_id_name'] == self._id_name:
+            self.name = copy.deepcopy(dic['name'])
+            self.active = dic['active']
+            if dic['active_is_multidimensional']:
+                self.active_is_multidimensional = dic['active_is_multidimensional']
+            if self.active_is_multidimensional:
+                self._active_array = dic['active_array']
+            id_dict = {}
+            for p in dic['parameters']:
+                idname = p['_id_name']
+                if hasattr(self, idname):
+                    par = getattr(self, idname)
+                    t_id = par._load_dictionary(p)
+                    id_dict[t_id] = par
+                else:
+                    raise ValueError("_id_name of parameters in component and dictionary do not match")
+            return id_dict
+        else:
+            raise ValueError(
+                "_id_name of component and dictionary do not match, \ncomponent._id_name = %s \ndictionary['_id_name'] = %s" %
+                (self._id_name, dic['_id_name']))
