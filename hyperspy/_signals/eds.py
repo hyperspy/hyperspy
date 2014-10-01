@@ -512,6 +512,11 @@ class EDSSpectrum(Spectrum):
             line_energy, line_FWHM = self._get_line_energy(Xray_line,
                                                            FWHM_MnKa='auto')
             det = integration_window_factor * line_FWHM / 2.
+            ax = self.axes_manager.signal_axes[0]
+            if line_energy - det < ax.low_value or \
+                    line_energy + det > ax.high_value:
+                raise ValueError(
+                    "%s is outside the energy range." % (Xray_line))            
             img = self[..., line_energy - det:line_energy + det
                        ].integrate1D(-1)
             img.metadata.General.title = (
