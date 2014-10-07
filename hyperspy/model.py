@@ -2408,6 +2408,7 @@ class modelSpecialSlicers:
 def multifit_kernel(model_dict, slices, kwargs):
     import hyperspy.hspy as hp
     m = hp.create_model(model_dict)
+    kwargs['show_progressbar'] = False
     m.multifit(**kwargs)
     d = m.as_dictionary()
     del d['spectrum']
