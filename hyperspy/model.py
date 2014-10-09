@@ -2367,7 +2367,7 @@ class Model(list):
                         p_new.free = p_orig.free
                         p_new.std = p_orig.std
                         p_new.ext_bounded = p_orig.ext_bounded
-                        p_new.ext_force_positive = p_orig.ext_force_positive                        
+                        p_new.ext_force_positive = p_orig.ext_force_positive
                         p_new.twin_function = p_orig.twin_function
                         p_new.twin_inverse_function = p_orig.twin_inverse_function
                         p_new.map = p_orig.map[array_slices[:-1]]
