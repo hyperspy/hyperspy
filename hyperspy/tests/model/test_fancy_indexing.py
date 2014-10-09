@@ -38,6 +38,8 @@ class TestModelIndexing:
         g.sigma.value = 150.
         data = g.function(axes)
         s = SpectrumSimulation(data)
+        s.axes_manager[-1].offset = -150.
+        s.axes_manager[-1].scale = 0.5
         s.add_gaussian_noise(2.0)
         m = create_model(s)
         m.append(Gaussian())
@@ -49,7 +51,9 @@ class TestModelIndexing:
         s = self.model.spectrum.isig[:300]
         m = self.model.isig[:300]
         m1 = self.model.isig[300:]
+        m2 = self.model.isig[:0.]
         assert_true((s.data == m.spectrum.data).all())
+        assert_true((s.data == m2.spectrum.data).all())
         assert_true((m.dof.data == self.model.dof.data).all())
         for ic, c in enumerate(m):
             for p_new, p_old in zip(c.parameters, self.model[ic].parameters):
