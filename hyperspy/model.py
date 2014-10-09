@@ -1447,24 +1447,10 @@ class Model(list):
         else:
             # look for cluster, if not (enougth) found, create multiprocessing
             # pool
-            kwargs['parallel'] = 1
-            from IPython.parallel import Client, error
-            num = 0
-            try:
-                c = Client(profile='hyperspy', timeout=ipython_timeout)
-                num = len(c.ids[:parallel])
-                ipyth = c.load_balanced_view()
-                # ipyth = c.direct_view()
-                ipyth.targets = c.ids[:parallel]
-            except (error.TimeoutError, IOError):
-                pass
-            if num != parallel:
-                from multiprocessing import Pool
-                multip = Pool(processes=int(parallel - num))
-
-            # import function to pass to workers
-            from hyperspy.model import multifit_kernel
-
+            from hyperspy.misc import multiprocessing
+            pool, pool_type = multiprocessing.pool(parallel,
+                                                   ipython_timeout=ipython_timeout)
+            import inspect
             # split model and send to workers
             # self.axes_manager.disconnect(self.fetch_stored_values)
             self.unfold()
@@ -1473,48 +1459,39 @@ class Model(list):
                     self.spectrum.axes_manager.navigation_size),
                 parallel)
             pass_slices = [(l[0], l[-1] + 1) for l in cuts]
-            models = [self.inav[l[0]:l[-1] + 1].as_dictionary() for l in cuts]
+            # Prepare kwargs
+            # add all arguments to kwargs
+            [kwargs.update({arg: locals()[arg]})
+                for arg in inspect.getargspec(self.multifit).args]
+
+            # add default arguments from the specific model
+            m_fit_args = inspect.getargspec(self.fit)
+            for i in range(-len(m_fit_args.defaults), 0):
+                arg = m_fit_args.args[i]
+                if arg not in kwargs.keys():
+                    kwargs.update({arg: m_fit_args.defaults[i]})
             if mask is not None:
                 orig_mask = mask.copy()
                 unf_mask = orig_mask.ravel()
-                masks = [unf_mask[l[0]:l[-1] + 1] for l in cuts]
+                masks = [unf_mask[l[0]: l[-1] + 1] for l in cuts]
+                kwargs['mask'] = mask
+            try:
+                del kwargs['kind']
+            except:
+                pass
+            del kwargs['self']
+            kwargs['parallel'] = 1
+            kwargs['show_progressbar'] = False
+            models = [(self.inav[l[0]: l[-1] + 1].as_dictionary(),
+                       kwargs) for l in cuts]
             for m in models:
-                del m['spectrum']['metadata']['_HyperSpy']
-            res = []
-            print 'Sending chuncks: ',
-            for i in xrange(parallel):
-                if mask is not None:
-                    kwargs['mask'] = masks[i]
-                if i < num:
-                    res.append(ipyth.apply_async(
-                        multifit_kernel,
-                        models[i],
-                        pass_slices[i],
-                        kwargs))
-                else:
-                    res.append(multip.apply_async(
-                        multifit_kernel,
-                        [models[i],
-                         pass_slices[i],
-                         kwargs, ]))
-                print str(i),
-            # gather the results back
-            print ' receiving chunks: ',
-            results = []
-            result_q = np.arange(parallel)
-            while result_q.size:
-                for i in result_q:
-                    if res[i].ready():
-                        print str(i),
-                        results.append(res[i].get())
-                        result_q = np.delete(
-                            result_q,
-                            result_q.searchsorted(i))
-            print ' '
-            for r in results:
-                slices = r[0]
-                model_dict = r[1]
-                tm = self.inav[slices[0]:slices[1]]
+                del m[0]['spectrum']['metadata']['_HyperSpy']
+            results = pool.map_async(multiprocessing.multifit, models)
+            if pool_type == 'mp':
+                pool.close()
+                pool.join()
+            results = results.get()
+            for model_dict, slices in zip(results, pass_slices):
                 self.chisq.data[
                     slices[0]:slices[1]] = model_dict['chisq']['data'].copy()
                 for ic, c in enumerate(self):
@@ -1522,9 +1499,6 @@ class Model(list):
                         for p_d in model_dict['components'][ic]['parameters']:
                             if p_d['_id_name'] == p._id_name:
                                 p.map[slices[0]:slices[1]] = p_d['map'].copy()
-            if num != parallel:
-                multip.close()
-                multip.join()
             self.fold()
 
     def save_parameters2file(self, filename):
@@ -2414,14 +2388,3 @@ class modelSpecialSlicers:
     def __getitem__(self, slices):
         return self.model.__getitem__(slices, True, self.isNavigation)
 
-
-def multifit_kernel(model_dict, slices, kwargs):
-    import hyperspy.hspy as hp
-    m = hp.create_model(model_dict)
-    kwargs['show_progressbar'] = False
-    m.multifit(**kwargs)
-    d = m.as_dictionary()
-    del d['spectrum']
-    # delete everything else that doesn't matter. Only maps of
-    # parameters and chisq matter
-    return slices, d
