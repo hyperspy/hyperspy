@@ -2077,7 +2077,12 @@ class Model(list):
                 _model.dof.data = self.dof.data[array_slices[:-1]]
                 _model.chisq.data = self.chisq.data[array_slices[:-1]]
                 for ic, c in enumerate(_model):
+                    c.name = self[ic].name
                     for p_new, p_orig in zip(c.parameters, self[ic].parameters):
+                        p_new.free = p_orig.free
+                        p_new.std = p_orig.std
+                        p_new.ext_bounded = p_orig.ext_bounded
+                        p_new.ext_force_positive = p_orig.ext_force_positive                        
                         p_new.twin_function = p_orig.twin_function
                         p_new.twin_inverse_function = p_orig.twin_inverse_function
                         p_new.map = p_orig.map[array_slices[:-1]]
