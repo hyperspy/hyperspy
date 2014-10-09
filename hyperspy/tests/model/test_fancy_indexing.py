@@ -15,9 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
-
-import os
-
 import numpy as np
 from nose.tools import assert_true
 
@@ -42,7 +39,10 @@ class TestModelIndexing:
         s.axes_manager[-1].scale = 0.5
         s.add_gaussian_noise(2.0)
         m = create_model(s)
-        m.append(Gaussian())
+        g = Gaussian()
+        g.A.ext_force_positive = True
+        g.A.ext_bounded = True
+        m.append(g)
         for index in m.axes_manager:
             m.fit()
         self.model = m
@@ -52,6 +52,8 @@ class TestModelIndexing:
         m = self.model.isig[:300]
         m1 = self.model.isig[300:]
         m2 = self.model.isig[:0.]
+        assert_true(m1[0].A.ext_bounded ==
+                    m[0].A.ext_bounded)
         assert_true((s.data == m.spectrum.data).all())
         assert_true((s.data == m2.spectrum.data).all())
         assert_true((m.dof.data == self.model.dof.data).all())
@@ -68,6 +70,8 @@ class TestModelIndexing:
         m = self.model.inav[0::2]
         assert_true((m.chisq.data == self.model.chisq.data[:, 0::2]).all())
         assert_true((m.dof.data == self.model.dof.data[:, 0::2]).all())
+        assert_true(m.inav[:2][0].A.ext_force_positive ==
+                    m[0].A.ext_force_positive)
         for ic, c in enumerate(m):
             for p_new, p_old in zip(c.parameters, self.model[ic].parameters):
                 assert_true((p_old.map[:, 0::2] == p_new.map).all())
