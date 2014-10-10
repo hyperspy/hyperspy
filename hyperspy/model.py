@@ -1449,7 +1449,7 @@ class Model(list):
             # pool
             from hyperspy.misc import multiprocessing_hs
             pool, pool_type = multiprocessing_hs.pool(parallel,
-                                                   ipython_timeout=ipython_timeout)
+                                                      ipython_timeout=ipython_timeout)
             import inspect
             # split model and send to workers
             # self.axes_manager.disconnect(self.fetch_stored_values)
@@ -2388,4 +2388,3 @@ class modelSpecialSlicers:
 
     def __getitem__(self, slices):
         return self.model.__getitem__(slices, True, self.isNavigation)
-
