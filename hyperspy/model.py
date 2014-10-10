@@ -1447,8 +1447,8 @@ class Model(list):
         else:
             # look for cluster, if not (enougth) found, create multiprocessing
             # pool
-            from hyperspy.misc import multiprocessing
-            pool, pool_type = multiprocessing.pool(parallel,
+            from hyperspy.misc import multiprocessing_hs
+            pool, pool_type = multiprocessing_hs.pool(parallel,
                                                    ipython_timeout=ipython_timeout)
             import inspect
             # split model and send to workers
@@ -1474,7 +1474,6 @@ class Model(list):
                 orig_mask = mask.copy()
                 unf_mask = orig_mask.ravel()
                 masks = [unf_mask[l[0]: l[-1] + 1] for l in cuts]
-                kwargs['mask'] = mask
             try:
                 del kwargs['kind']
             except:
@@ -1484,9 +1483,11 @@ class Model(list):
             kwargs['show_progressbar'] = False
             models = [(self.inav[l[0]: l[-1] + 1].as_dictionary(),
                        kwargs) for l in cuts]
-            for m in models:
+            for num, m in enumerate(models):
                 del m[0]['spectrum']['metadata']['_HyperSpy']
-            results = pool.map_async(multiprocessing.multifit, models)
+                if masks is not None:
+                    m[1]['mask'] = masks[num]
+            results = pool.map_async(multiprocessing_hs.multifit, models)
             if pool_type == 'mp':
                 pool.close()
                 pool.join()
