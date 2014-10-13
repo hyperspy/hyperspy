@@ -1485,7 +1485,7 @@ class Model(list):
                        kwargs) for l in cuts]
             for num, m in enumerate(models):
                 del m[0]['spectrum']['metadata']['_HyperSpy']
-                if masks is not None:
+                if mask is not None:
                     m[1]['mask'] = masks[num]
             results = pool.map_async(multiprocessing_hs.multifit, models)
             if pool_type == 'mp':
