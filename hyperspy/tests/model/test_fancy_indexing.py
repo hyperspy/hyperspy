@@ -72,6 +72,7 @@ class TestModelIndexing:
         assert_true((m.dof.data == self.model.dof.data[:, 0::2]).all())
         assert_true(m.inav[:2][0].A.ext_force_positive ==
                     m[0].A.ext_force_positive)
+        assert_true(m.chisq.data.shape == (4, 2))
         for ic, c in enumerate(m):
             for p_new, p_old in zip(c.parameters, self.model[ic].parameters):
                 assert_true((p_old.map[:, 0::2] == p_new.map).all())
