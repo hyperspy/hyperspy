@@ -1449,7 +1449,7 @@ class Model(list):
             # pool
             from hyperspy.misc import multiprocessing_hs
             pool, pool_type = multiprocessing_hs.pool_hs(parallel,
-                                                      ipython_timeout=ipython_timeout)
+                                                         ipython_timeout=ipython_timeout)
             import inspect
             # split model and send to workers
             # self.axes_manager.disconnect(self.fetch_stored_values)
@@ -2336,8 +2336,19 @@ class Model(list):
                         tmp.append(getattr(c, i))
                     _model.append(getattr(components, c._id_name)(*tmp))
             if isNavigation:
-                _model.dof.data = self.dof.data[array_slices[:-1]]
-                _model.chisq.data = self.chisq.data[array_slices[:-1]]
+                # TODO: fix the 0-dimension slices
+                _model.dof.data = np.atleast_1d(
+                    self.dof.data[
+                        tuple(
+                            array_slices[
+                                :-
+                                1])])
+                _model.chisq.data = np.atleast_1d(
+                    self.chisq.data[
+                        tuple(
+                            array_slices[
+                                :-
+                                1])])
                 for ic, c in enumerate(_model):
                     c.name = self[ic].name
                     for p_new, p_orig in zip(c.parameters, self[ic].parameters):
@@ -2347,8 +2358,13 @@ class Model(list):
                         p_new.ext_force_positive = p_orig.ext_force_positive
                         p_new.twin_function = p_orig.twin_function
                         p_new.twin_inverse_function = p_orig.twin_inverse_function
-                        p_new.map = p_orig.map[array_slices[:-1]]
-                        #p_new.value = p_new.map['values'].ravel()[0]
+                        p_new.map = np.atleast_1d(
+                            p_orig.map[
+                                tuple(
+                                    array_slices[
+                                        :-
+                                        1])])
+                        # p_new.value = p_new.map['values'].ravel()[0]
                         p_new.value = p_orig.value
                         twin_dict[id(p_orig)] = ([id(i)
                                                   for i in list(p_orig._twins)], p_new)
