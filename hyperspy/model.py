@@ -1448,7 +1448,7 @@ class Model(list):
             # look for cluster, if not (enougth) found, create multiprocessing
             # pool
             from hyperspy.misc import multiprocessing_hs
-            pool, pool_type = multiprocessing_hs.pool(parallel,
+            pool, pool_type = multiprocessing_hs.pool_hs(parallel,
                                                       ipython_timeout=ipython_timeout)
             import inspect
             # split model and send to workers
@@ -1472,7 +1472,7 @@ class Model(list):
                     kwargs.update({arg: m_fit_args.defaults[i]})
             if mask is not None:
                 orig_mask = mask.copy()
-                unf_mask = orig_mask.ravel()
+                unf_mask = mask.ravel()
                 masks = [unf_mask[l[0]: l[-1] + 1] for l in cuts]
             try:
                 del kwargs['kind']
@@ -1485,6 +1485,8 @@ class Model(list):
                        kwargs) for l in cuts]
             for num, m in enumerate(models):
                 del m[0]['spectrum']['metadata']['_HyperSpy']
+                del m[0]['chisq']['metadata']['_HyperSpy']
+                del m[0]['dof']['metadata']['_HyperSpy']
                 if mask is not None:
                     m[1]['mask'] = masks[num]
             results = pool.map_async(multiprocessing_hs.multifit, models)

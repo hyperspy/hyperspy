@@ -1,5 +1,5 @@
 
-def pool(parallel, pool_type=None, ipython_timeout=1.):
+def pool_hs(parallel, pool_type=None, ipython_timeout=1.):
     """
     Create a pool for multiprocessing
 
@@ -12,22 +12,22 @@ def pool(parallel, pool_type=None, ipython_timeout=1.):
         from IPython.parallel import Client, error
         try:
             c = Client(profile='hyperspy', timeout=ipython_timeout)
-            pool = c[:parallel]
+            _pool = c[:parallel]
             pool_type = 'ipython'
         except (error.TimeoutError, IOError):
             from multiprocessing import Pool
             pool_type = 'mp'
-            pool = Pool(processes=parallel)
+            _pool = Pool(processes=parallel)
     elif pool_type == 'iypthon':
         from IPython.parallel import Client
         c = Client(profile='hyperspy', timeout=ipython_timeout)
-        pool = c[:parallel]
+        _pool = c[:parallel]
         pool_type = 'ipython'
     else:
         from multiprocessing import Pool
         pool_type = 'mp'
-        pool = Pool(processes=parallel)
-    return pool, pool_type
+        _pool = Pool(processes=parallel)
+    return _pool, pool_type
 
 
 def multifit(args):
