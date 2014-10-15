@@ -4,16 +4,18 @@ import numpy as np
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.signal import Signal
 
+
 class TestDictionaryBrowser:
+
     def setUp(self):
         tree = DictionaryTreeBrowser(
             {
                 "Node1": {"leaf11": 11,
                           "Node11": {"leaf111": 111},
-                },
+                          },
                 "Node2": {"leaf21": 21,
                           "Node21": {"leaf211": 211},
-                },
+                          },
             })
         self.tree = tree
 
@@ -22,7 +24,7 @@ class TestDictionaryBrowser:
             "Node1": {"leaf12": 12,
                       "Node11": {"leaf111": 222,
                                  "Node111": {"leaf1111": 1111}, },
-            },
+                      },
             "Node3": {
                 "leaf31": 31},
         })
@@ -32,13 +34,13 @@ class TestDictionaryBrowser:
                        "Node11": {"leaf111": 222,
                                   "Node111": {
                                       "leaf1111": 1111},
+                                  },
                        },
-            },
              "Node2": {"leaf21": 21,
                        "Node21": {"leaf211": 211},
-             },
+                       },
              "Node3": {"leaf31": 31},
-            }, self.tree.as_dictionary())
+             }, self.tree.as_dictionary())
 
     def test_add_signal_in_dictionary(self):
         tree = self.tree
@@ -50,8 +52,12 @@ class TestDictionaryBrowser:
         nose.tools.assert_true(np.all(
             tree.signal_name.data == s.data
         ))
-        nose.tools.assert_equal(tree.signal_name.metadata.as_dictionary(), s.metadata.as_dictionary())
-        nose.tools.assert_equal(tree.signal_name.axes_manager._get_axes_dicts(), s.axes_manager._get_axes_dicts())
+        nose.tools.assert_equal(
+            tree.signal_name.metadata.as_dictionary(),
+            s.metadata.as_dictionary())
+        nose.tools.assert_equal(
+            tree.signal_name.axes_manager._get_axes_dicts(),
+            s.axes_manager._get_axes_dicts())
 
     def test_signal_to_dictionary(self):
         tree = self.tree
@@ -89,5 +95,4 @@ class TestDictionaryBrowser:
                                    'original_metadata': {},
                                    'tmp_parameters': {}
                                    }
-                }, d)
-
+            }, d)
