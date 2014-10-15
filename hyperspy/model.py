@@ -2074,8 +2074,18 @@ class Model(list):
             for c in self:
                 _model.append(getattr(components, c._id_name)())
             if isNavigation:
-                _model.dof.data = np.atleast_1d(self.dof.data[tuple(array_slices[:-1])])
-                _model.chisq.data = np.atleast_1d(self.chisq.data[tuple(array_slices[:-1])])
+                _model.dof.data = np.atleast_1d(
+                    self.dof.data[
+                        tuple(
+                            array_slices[
+                                :-
+                                1])])
+                _model.chisq.data = np.atleast_1d(
+                    self.chisq.data[
+                        tuple(
+                            array_slices[
+                                :-
+                                1])])
                 for ic, c in enumerate(_model):
                     c.name = self[ic].name
                     for p_new, p_orig in zip(c.parameters, self[ic].parameters):
@@ -2085,7 +2095,12 @@ class Model(list):
                         p_new.ext_force_positive = p_orig.ext_force_positive
                         p_new.twin_function = p_orig.twin_function
                         p_new.twin_inverse_function = p_orig.twin_inverse_function
-                        p_new.map = np.atleast_1d(p_orig.map[tuple(array_slices[:-1])])
+                        p_new.map = np.atleast_1d(
+                            p_orig.map[
+                                tuple(
+                                    array_slices[
+                                        :-
+                                        1])])
                         p_new.value = p_orig.value
                         twin_dict[id(p_orig)] = ([id(i)
                                                   for i in list(p_orig._twins)], p_new)
