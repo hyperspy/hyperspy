@@ -26,24 +26,26 @@ class TestParametersAsSignals:
 
     def setUp(self):
         self.gaussian = Gaussian()
-        self.gaussian._axes_manager = Signal(np.empty((3,3,1))).axes_manager
-
+        self.gaussian._axes_manager = Signal(np.empty((3, 3, 1))).axes_manager
 
     def test_always_active(self):
         g = self.gaussian
         g.active_is_multidimensional = False
         g._create_arrays()
-        nt.assert_true(np.all(g.A.as_signal('values').data == np.zeros((3,3)) ))
+        nt.assert_true(
+            np.all(
+                g.A.as_signal('values').data == np.zeros(
+                    (3, 3))))
 
     def test_some_inactive(self):
         g = self.gaussian
         g.active_is_multidimensional = True
         g._create_arrays()
         g.A.map['values'].fill(3.)
-        g._active_array[2,0] = False
-        g._active_array[0,0] = False
+        g._active_array[2, 0] = False
+        g._active_array[0, 0] = False
         ans = np.array([[np.nan, 0, 0],
                         [0, 0, 0],
                         [np.nan, 0, 0]])
-        nt.assert_true(np.isnan(g.A.as_signal('values').data[[0,2],[0]]).all())
-
+        nt.assert_true(
+            np.isnan(g.A.as_signal('values').data[[0, 2], [0]]).all())
