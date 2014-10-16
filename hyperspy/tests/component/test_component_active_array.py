@@ -41,11 +41,7 @@ class TestParametersAsSignals:
         g = self.gaussian
         g.active_is_multidimensional = True
         g._create_arrays()
-        g.A.map['values'].fill(3.)
         g._active_array[2, 0] = False
         g._active_array[0, 0] = False
-        ans = np.array([[np.nan, 0, 0],
-                        [0, 0, 0],
-                        [np.nan, 0, 0]])
         nt.assert_true(
             np.isnan(g.A.as_signal('values').data[[0, 2], [0]]).all())
