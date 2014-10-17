@@ -630,18 +630,21 @@ class EDSSpectrum(Spectrum):
                 raise ValueError(
                     "No elements defined, set them with `add_elements`")
 
+        end_energy = self.axes_manager.signal_axes[0].high_value
+        start_energy = self.axes_manager.signal_axes[0].low_value
+        xray_lines = [xray_line for xray_line in xray_lines if
+                      start_energy < self._get_line_energy(xray_line)]
+        xray_lines = [xray_line for xray_line in xray_lines if
+                      end_energy > self._get_line_energy(xray_line)]
+
         line_energy = []
         intensity = []
         for xray_line in xray_lines:
             element, line = utils_eds._get_element_and_line(xray_line)
             line_energy.append(self._get_line_energy(xray_line))
             relative_factor = elements_db[element][
-                'Atomic_properties']['Xray_lines'][line]['factor']
+                'Atomic_properties']['Xray_lines'][line]['weight']
             a_eng = self._get_line_energy(element + '_' + line[0] + 'a')
-            # if fixed_height:
-                # intensity.append(self[..., a_eng].data.flatten().mean()
-                             #* relative_factor)
-            # else:
             intensity.append(self[..., a_eng].data * relative_factor)
 
         self.plot(**kwargs)
