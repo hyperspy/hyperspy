@@ -23,9 +23,8 @@
 # general functions for reading data from files
 
 import struct
-import os
 
-from hyperspy.exceptions import *
+from hyperspy.exceptions import ByteOrderError
 
 # Declare simple TagDataType structures for faster execution.
 # The variables are named as following:

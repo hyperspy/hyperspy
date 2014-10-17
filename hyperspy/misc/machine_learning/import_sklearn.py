@@ -27,4 +27,3 @@ try:
         sklearn_installed = True
 except ImportError:
     sklearn_installed = False
-    from hyperspy.misc.machine_learning.fastica import FastICA

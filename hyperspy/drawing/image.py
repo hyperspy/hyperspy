@@ -194,7 +194,9 @@ class ImagePlot(BlittedFigure):
             if self.pixel_units is not None:
                 self.ax.scalebar = widgets.Scale_Bar(
                     ax=self.ax,
-                    units=self.pixel_units,)
+                    units=self.pixel_units,
+                    animated=True,
+                )
 
         if self.plot_colorbar is True:
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)

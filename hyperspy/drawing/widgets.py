@@ -324,7 +324,8 @@ class DraggableLabel(DraggablePatch):
 class Scale_Bar():
 
     def __init__(self, ax, units, pixel_size=None, color='white',
-                 position=None, max_size_ratio=0.25, lw=2, lenght=None):
+                 position=None, max_size_ratio=0.25, lw=2, lenght=None,
+                 animated=False):
         """Add a scale bar to an image.
 
         Parameteres
@@ -349,6 +350,7 @@ class Scale_Bar():
 
         """
 
+        self.animated = animated
         self.ax = ax
         self.units = units
         self.pixel_size = pixel_size
@@ -410,9 +412,14 @@ class Scale_Bar():
         x1, y1 = self.position
         x2, y2 = x1 + self.lenght / ps, y1
         self.line, = self.ax.plot([x1, x2], [y1, y2],
-                                  linestyle='-', lw=line_width)
+                                  linestyle='-',
+                                  lw=line_width,
+                                  animated=self.animated)
         self.text = self.ax.text(*self.text_position,
-                                 s=self.get_units_string(), ha='center', size='medium')
+                                 s=self.get_units_string(),
+                                 ha='center',
+                                 size='medium',
+                                 animated=self.animated)
         self.ax.set_xlim(self.xmin, self.xmax)
         self.ax.set_ylim(self.ymin, self.ymax)
         self.ax.figure.canvas.draw()

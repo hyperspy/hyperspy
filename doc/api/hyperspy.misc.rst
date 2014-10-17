@@ -12,6 +12,7 @@ Subpackages
     hyperspy.misc.io
     hyperspy.misc.machine_learning
     hyperspy.misc.mpfit
+    hyperspy.misc.tests
 
 Submodules
 ----------

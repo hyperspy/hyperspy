@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numbers
+import warnings
 
 import numpy as np
 import traits.api as t
@@ -118,7 +119,8 @@ class EELSSpectrum(Spectrum):
         end_energy = Eaxis[-1]
         for element in self.elements:
             e_shells = list()
-            for shell in elements_db[element]['Atomic_properties']['Binding_energies']:
+            for shell in elements_db[element][
+                    'Atomic_properties']['Binding_energies']:
                 if shell[-1] != 'a':
                     if start_energy <= \
                             elements_db[element]['Atomic_properties']['Binding_energies'][shell][
@@ -258,7 +260,9 @@ class EELSSpectrum(Spectrum):
                                   also_align + [self])
 
     def estimate_elastic_scattering_intensity(self,
-                                              threshold):
+                                              threshold,
+                                              show_progressbar=None,
+                                              ):
         """Rough estimation of the elastic scattering intensity by
         truncation of a EELS low-loss spectrum.
 
@@ -272,14 +276,15 @@ class EELSSpectrum(Spectrum):
             threshold value in the energy units. Alternatively a constant
             threshold can be specified in energy/index units by passing
             float/int.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+
 
         Returns
         -------
         I0: Signal
-            The elastic scattering intensity. If the navigation size is 0
-            returns a float. Otherwise it returns a Spectrum, Image or a
-            Signal, depending on the currenct spectrum navigation
-            dimensions.
+            The elastic scattering intensity.
 
         See Also
         --------
@@ -288,6 +293,9 @@ class EELSSpectrum(Spectrum):
         """
         # TODO: Write units tests
         self._check_signal_dimension_equals_one()
+
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
 
         if isinstance(threshold, numbers.Number):
             I0 = self.isig[:threshold].integrate1D(-1)
@@ -303,7 +311,8 @@ class EELSSpectrum(Spectrum):
                 I0.axes_manager._get_axis_attribute_values('navigate'))
             I0.axes_manager.set_signal_dimension(0)
             pbar = hyperspy.misc.progressbar.progressbar(
-                maxval=self.axes_manager.navigation_size)
+                maxval=self.axes_manager.navigation_size,
+            )
             for i, s in enumerate(self):
                 threshold_ = threshold[self.axes_manager.indices].data[0]
                 if np.isnan(threshold_):
@@ -333,21 +342,25 @@ class EELSSpectrum(Spectrum):
     def estimate_elastic_scattering_threshold(self,
                                               window=10.,
                                               tol=None,
-                                              number_of_points=5,
+                                              window_length=5,
                                               polynomial_order=3,
                                               start=1.):
-        """Calculates the first inflexion point of the spectrum derivative
-        within a window using a specified tolerance.
+        """Calculate the first inflexion point of the spectrum derivative
+        within a window.
 
-        It previously smoothes the data using a Savitzky-Golay algorithm
-        (can be turned off). This method assumes that the zero-loss peak is
-        located at position zero in all the spectra.
+        This method assumes that the zero-loss peak is located at position zero
+        in all the spectra. Currently it looks for an inflexion point, that can
+        be a local maximum or minimum. Therefore, to estimate the elastic
+        scattering threshold `start` + `window` must be less than the first
+        maximum for all spectra (often the bulk plasmon maximum). If there is
+        more than one inflexion point in energy the window it selects the
+        smoother one what, often, but not always, is a good choice in this
+        case.
 
         Parameters
         ----------
-
         window : {None, float}
-            If None, the search for the local minimum is performed
+            If None, the search for the local inflexion point is performed
             using the full energy range. A positive float will restrict
             the search to the (0,window] energy window, where window is given
             in the axis units. If no inflexion point is found in this
@@ -357,10 +370,10 @@ class EELSSpectrum(Spectrum):
             automatically calculated as the minimum value that guarantees
             finding an inflexion point in all the spectra in given energy
             range.
-        number_of_points : int
+        window_length : int
             If non zero performs order three Savitzky-Golay smoothing
             to the data to avoid falling in local minima caused by
-            the noise.
+            the noise. It must be an odd interger.
         polynomial_order : int
             Savitzky-Golay filter polynomial order.
         start : float
@@ -370,13 +383,26 @@ class EELSSpectrum(Spectrum):
 
         Returns
         -------
+
         threshold : Signal
             A Signal of the same dimension as the input spectrum
-            navigation space containing the estimated threshold.
+            navigation space containing the estimated threshold. Where the
+            threshold couldn't be estimated the value is set to nan.
 
         See Also
         --------
-        align1D
+
+        estimate_elastic_scattering_intensity,align_zero_loss_peak,
+        find_peaks1D_ohaver, fourier_ratio_deconvolution.
+
+        Notes
+        -----
+
+        The main purpose of this method is to be used as input for
+        `estimate_elastic_scattering_intensity`. Indeed, for currently
+        achievable energy resolutions, there is not such a thing as a elastic
+        scattering threshold. Therefore, please be aware of the limitations of
+        this method when using it.
 
         """
         self._check_signal_dimension_equals_one()
@@ -386,14 +412,14 @@ class EELSSpectrum(Spectrum):
 
         # Progress Bar
         axis = self.axes_manager.signal_axes[0]
-        max_index = min(axis.value2index(window), axis.size - 1)
-        min_index = max(0, axis.value2index(start))
+        min_index, max_index = axis.value_range_to_indices(start,
+                                                           start + window)
         if max_index < min_index + 10:
             raise ValueError("Please select a bigger window")
-        s = self[..., min_index: max_index].deepcopy()
-        if number_of_points:
+        s = self.isig[min_index:max_index].deepcopy()
+        if window_length:
             s.smooth_savitzky_golay(polynomial_order=polynomial_order,
-                                    number_of_points=number_of_points,
+                                    window_length=window_length,
                                     differential_order=1)
         else:
             s = s.diff(-1)
@@ -401,10 +427,16 @@ class EELSSpectrum(Spectrum):
             tol = np.max(np.abs(s.data).min(axis.index_in_array))
         saxis = s.axes_manager[-1]
         inflexion = (np.abs(s.data) <= tol).argmax(saxis.index_in_array)
-        threshold.data[:] = saxis.offset + saxis.scale * inflexion
-        threshold.data[inflexion == 0] = np.nan
+        threshold.data[:] = saxis.index2value(inflexion)
+        if isinstance(inflexion, np.ndarray):
+            threshold.data[inflexion == 0] = np.nan
+        else:  # Single spectrum
+            if inflexion == 0:
+                threshold.data[:] = np.nan
         del s
-
+        if np.isnan(threshold.data).any():
+            warnings.warn("No inflexion point could we found in some positions "
+                          "that have been marked with nans.")
         # Create spectrum image, stop and return value
         threshold.metadata.General.title = (
             self.metadata.General.title +
@@ -622,10 +654,9 @@ class EELSSpectrum(Spectrum):
             fwhm = float(ll.get_current_signal().estimate_peak_width()())
             print("FWHM = %1.2f" % fwhm)
 
-        I0 = ll.estimate_elastic_scattering_intensity(
-            threshold=threshold)
+        I0 = ll.estimate_elastic_scattering_intensity(threshold=threshold)
+        I0 = I0.data
         if ll.axes_manager.navigation_size > 0:
-            I0 = I0.data
             I0_shape = list(I0.shape)
             I0_shape.insert(axis.index_in_array, 1)
             I0 = I0.reshape(I0_shape)
@@ -656,8 +687,8 @@ class EELSSpectrum(Spectrum):
                 'after_fourier_ratio_deconvolution')
         return cl
 
-    def richardson_lucy_deconvolution(self, psf, iterations=15,
-                                      mask=None):
+    def richardson_lucy_deconvolution(self, psf, iterations=15, mask=None,
+                                      show_progressbar=None):
         """1D Richardson-Lucy Poissonian deconvolution of
         the spectrum by the given kernel.
 
@@ -670,6 +701,9 @@ class EELSSpectrum(Spectrum):
             It must have the same signal dimension as the current
             spectrum and a spatial dimension of 0 or the same as the
             current spectrum.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Notes:
         -----
@@ -679,6 +713,8 @@ class EELSSpectrum(Spectrum):
         Ultramicroscopy 96, no. 3–4 (September 2003): 385–400.
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         ds = self.deepcopy()
         ds.data = ds.data.copy()
@@ -694,7 +730,8 @@ class EELSSpectrum(Spectrum):
         j = 0
         maxval = self.axes_manager.navigation_size
         if maxval > 0:
-            pbar = progressbar(maxval=maxval)
+            pbar = progressbar(maxval=maxval,
+                               disabled=not show_progressbar)
         for D in self:
             D = D.data.copy()
             if psf.axes_manager.navigation_dimension != 0:
@@ -707,7 +744,7 @@ class EELSSpectrum(Spectrum):
             for i in xrange(iterations):
                 first = np.convolve(kernel, O)[imax: imax + psf_size]
                 O = O * (np.convolve(kernel[::-1],
-                         D / first)[mimax: mimax + psf_size])
+                                     D / first)[mimax: mimax + psf_size])
             s[:] = O
             j += 1
             if maxval > 0:

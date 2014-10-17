@@ -6,7 +6,7 @@ import scipy as sp
 import scipy.interpolate
 
 from hyperspy.misc.eels.base_gos import GOSBase
-from hyperspy.misc.physical_constants import R, e, m0, a0, c
+from hyperspy.misc.physical_constants import R
 
 XU = [
     .82, .52, .52, .42, .30, .29, .22, .30, .22, .16, .12, .13, .13, .14, .16,
@@ -15,7 +15,7 @@ XU = [
 # 779,855,931,1021,1115,1217,1323,1436,1550,1675]
 
 # IE1=[118,149,189,229,270,320,377,438,500,564,628,695,769,846,
-    # 926,1008,1096,1194,1142,1248,1359,1476,1596,1727]
+# 926,1008,1096,1194,1142,1248,1359,1476,1596,1727]
 
 
 class HydrogenicGOS(GOSBase):
@@ -123,7 +123,7 @@ class HydrogenicGOS(GOSBase):
                                        qint)
 
     def gosfuncK(self, E, qa02):
-    # gosfunc calculates (=DF/DE) which IS PER EV AND PER ATOM
+        # gosfunc calculates (=DF/DE) which IS PER EV AND PER ATOM
         z = self.Z
         r = 13.606
         zs = 1.0
@@ -153,8 +153,9 @@ class HydrogenicGOS(GOSBase):
             r * zs ** 4) * c / d * (q + kh2 / 3 + 1 / 3) / (a * r)
 
     def gosfuncL(self, E, qa02):
-    # gosfunc calculates (=DF/DE) which IS PER EV AND PER ATOM
-    # Note: quad function only works with qa02 due to IF statements in function
+        # gosfunc calculates (=DF/DE) which IS PER EV AND PER ATOM
+        # Note: quad function only works with qa02 due to IF statements in
+        # function
 
         z = self.Z
         r = 13.606
@@ -205,5 +206,5 @@ class HydrogenicGOS(GOSBase):
         # for edges presenting white lines. However, this is not relevant
         # for quantification by curve fitting.
         # if np.abs(iz - 11) <= 5 and E - el3 <= 20:
-            #rf = 1
+        #rf = 1
         return rf * 32 * g * c / a / d * E / r / r / zs ** 4

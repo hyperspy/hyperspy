@@ -16,15 +16,12 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
-
 import numpy as np
+import nose.tools
 
-from nose.tools import assert_true, assert_equal, assert_not_equal, raises
-from hyperspy.signals import EELSSpectrum
 from hyperspy.components import VolumePlasmonDrude, Lorentzian
 from hyperspy.misc.eels.tools import eels_constant
-from hyperspy.hspy import *
+import hyperspy.hspy as hs
 
 
 class Test2D:
@@ -41,12 +38,12 @@ class Test2D:
 
         # Parameters
         i0 = 1.
-        t = signals.Signal(np.arange(10, 70, 10).reshape((2, 3)))  # thickness
+        t = hs.signals.Signal(np.arange(10, 70, 10).reshape((2, 3)))
         t.axes_manager.set_signal_dimension(0)
         scale = 0.02
 
         # Create an 3x2x2048 spectrum with Drude plasmon
-        s = EELSSpectrum(np.zeros((2, 3, 2 * 2048)))
+        s = hs.signals.EELSSpectrum(np.zeros((2, 3, 2 * 2048)))
         s.set_microscope_parameters(
             beam_energy=300.0,
             convergence_angle=5,
@@ -55,7 +52,7 @@ class Test2D:
         k = eels_constant(s, i0, t)
 
         vpm = VolumePlasmonDrude()
-        m = create_model(s, auto_background=False)
+        m = hs.create_model(s, auto_background=False)
         m.append(vpm)
         vpm.intensity.map['values'][:] = 1
         vpm.plasmon_energy.map['values'] = np.array([[8., 18.4, 15.8],
@@ -93,9 +90,9 @@ class Test2D:
                                              iterations=1,
                                              n=1000.)
         s = cdf.get_electron_energy_loss_spectrum(self.zlp, self.thickness)
-        assert_true(np.allclose(s.data,
-                                self.s.data[..., 1:],
-                                rtol=0.01))
+        nose.tools.assert_true(np.allclose(s.data,
+                                           self.s.data[..., 1:],
+                                           rtol=0.01))
 
     def test_df_given_thickness(self):
         """The kramers kronig analysis method applied to the signal we
@@ -107,9 +104,9 @@ class Test2D:
                                              iterations=1,
                                              t=self.thickness)
         s = cdf.get_electron_energy_loss_spectrum(self.zlp, self.thickness)
-        assert_true(np.allclose(s.data,
-                                self.s.data[..., 1:],
-                                rtol=0.01))
+        nose.tools.assert_true(np.allclose(s.data,
+                                           self.s.data[..., 1:],
+                                           rtol=0.01))
 
     def test_bethe_sum_rule(self):
         df = self.s.kramers_kronig_analysis(zlp=self.zlp,
@@ -117,12 +114,14 @@ class Test2D:
                                             n=1000.)
         neff1, neff2 = df.get_number_of_effective_electrons(nat=50e27,
                                                             cumulative=False)
-        assert_true(np.allclose(neff1.data,
-                                np.array([[0.91187657, 4.72490711, 3.60594653],
-                                          [3.88077047, 0.26759741, 0.19813647]])))
-        assert_true(np.allclose(neff2.data,
-                                np.array([[0.91299039, 4.37469112, 3.41580094],
-                                          [3.64866394, 0.15693674, 0.11146413]])))
+        nose.tools.assert_true(
+            np.allclose(neff1.data,
+                        np.array([[0.91187657, 4.72490711, 3.60594653],
+                                  [3.88077047, 0.26759741, 0.19813647]])))
+        nose.tools.assert_true(
+            np.allclose(neff2.data,
+                        np.array([[0.91299039, 4.37469112, 3.41580094],
+                                  [3.64866394, 0.15693674, 0.11146413]])))
 
     def test_thickness_estimation(self):
         """Kramers kronig analysis gives a rough estimation of sample
@@ -134,11 +133,11 @@ class Test2D:
                                                      iterations=1,
                                                      n=1000.,
                                                      full_output=True)
-        assert_true(np.allclose(self.thickness.data,
-                                output['thickness'].data, rtol=0.01))
+        nose.tools.assert_true(np.allclose(self.thickness.data,
+                                           output['thickness'].data, rtol=0.01))
 
-    @raises(ValueError)
+    @nose.tools.raises(ValueError)
     def test_thicness_input_array(self):
-        cdf = self.s.kramers_kronig_analysis(zlp=self.zlp,
-                                             iterations=1,
-                                             t=self.thickness.data)
+        self.s.kramers_kronig_analysis(zlp=self.zlp,
+                                       iterations=1,
+                                       t=self.thickness.data)
