@@ -78,16 +78,21 @@ class TestModelIndexing:
             for p_new, p_old in zip(c.parameters, self.model[ic].parameters):
                 assert_true((p_old.map[:, 0::2] == p_new.map).all())
 
+
 class TestModelIndexingClass:
 
     def setUp(self):
-        s_eels = EELSSpectrum([range(10)]*3)
-        s_eels.metadata.set_item('Acquisition_instrument.TEM.Detector.EELS.collection_angle', 3.0)
+        s_eels = EELSSpectrum([range(10)] * 3)
+        s_eels.metadata.set_item(
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle',
+            3.0)
         s_eels.metadata.set_item('Acquisition_instrument.TEM.beam_energy', 1.0)
-        s_eels.metadata.set_item('Acquisition_instrument.TEM.convergence_angle', 2.0)
+        s_eels.metadata.set_item(
+            'Acquisition_instrument.TEM.convergence_angle',
+            2.0)
         self.eels_m = create_model(s_eels)
 
     def test_model_class(self):
         m_eels = self.eels_m
-        assert_true(type(m_eels) == type(m_eels.isig[1:]))
-        assert_true(type(m_eels) == type(m_eels.inav[1:]))
+        assert_true(isinstance(m_eels, type(m_eels.isig[1:])))
+        assert_true(isinstance(m_eels, type(m_eels.inav[1:])))
