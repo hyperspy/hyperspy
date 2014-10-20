@@ -2068,7 +2068,9 @@ class Model(list):
             _spectrum.get_dimensions_from_data()
             from hyperspy.model import Model
             from hyperspy import components
-            _model = Model(_spectrum)
+            _model = self.__class__(_spectrum)
+            for c in _model:
+                _model.remove(c)
             # create components:
             twin_dict = {}
             for c in self:
