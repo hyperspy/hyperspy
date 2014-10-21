@@ -1,7 +1,9 @@
 import numpy as np
+import nose.tools
+from nose.plugins.skip import SkipTest
 
-from nose.tools import assert_true, raises
 from hyperspy import signals
+from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 
 class TestNdAxes:
@@ -36,36 +38,36 @@ class TestNdAxes:
         self.s2 = s2
         self.s12 = s12
 
-    def test_consistensy(self):
+    def test_consistency(self):
         s1 = self.s1
         s2 = self.s2
         s12 = self.s12
         s1.decomposition()
         s2.decomposition()
         s12.decomposition()
-        assert_true((s2.learning_results.loadings ==
+        nose.tools.assert_true((s2.learning_results.loadings ==
                      s12.learning_results.loadings).all())
-        assert_true((s2.learning_results.factors ==
+        nose.tools.assert_true((s2.learning_results.factors ==
                      s12.learning_results.factors).all())
-        assert_true((s1.learning_results.loadings ==
+        nose.tools.assert_true((s1.learning_results.loadings ==
                      s2.learning_results.factors).all())
-        assert_true((s1.learning_results.factors ==
+        nose.tools.assert_true((s1.learning_results.factors ==
                      s2.learning_results.loadings).all())
 
-    def test_consistensy_poissonian(self):
+    def test_consistence_poisson(self):
         s1 = self.s1
         s2 = self.s2
         s12 = self.s12
         s1.decomposition(normalize_poissonian_noise=True)
         s2.decomposition(normalize_poissonian_noise=True)
         s12.decomposition(normalize_poissonian_noise=True)
-        assert_true((s2.learning_results.loadings ==
+        nose.tools.assert_true((s2.learning_results.loadings ==
                      s12.learning_results.loadings).all())
-        assert_true((s2.learning_results.factors ==
+        nose.tools.assert_true((s2.learning_results.factors ==
                      s12.learning_results.factors).all())
-        assert_true((s1.learning_results.loadings ==
+        nose.tools.assert_true((s1.learning_results.loadings ==
                      s2.learning_results.factors).all())
-        assert_true((s1.learning_results.factors ==
+        nose.tools.assert_true((s1.learning_results.factors ==
                      s2.learning_results.loadings).all())
 
 
@@ -77,9 +79,21 @@ class TestGetExplainedVarinaceRation():
         self.s = s
 
     def test_data(self):
-        assert_true((self.s.get_explained_variance_ratio().data ==
+        nose.tools.assert_true((self.s.get_explained_variance_ratio().data ==
                      self.s.learning_results.explained_variance_ratio).all())
 
-    @raises(AttributeError)
+    @nose.tools.raises(AttributeError)
     def test_no_evr(self):
         self.s.get_explained_variance_ration()
+
+class TestReturnInfo:
+    def setUp(self):
+        self.s = signals.Signal(np.empty((5, 10)))
+
+    def test_decomposition_not_supported(self):
+        nose.tools.assert_is_none(self.s.decomposition(return_info=True))
+
+    def test_decomposition_supported(self):
+        if not sklearn_installed:
+            raise SkipTest
+        nose.tools.assert_is_not_none(self.s.decomposition(algorithm="sklearn_pca", return_info=True))
