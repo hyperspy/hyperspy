@@ -46,13 +46,13 @@ class TestNdAxes:
         s2.decomposition()
         s12.decomposition()
         nose.tools.assert_true((s2.learning_results.loadings ==
-                     s12.learning_results.loadings).all())
+                                s12.learning_results.loadings).all())
         nose.tools.assert_true((s2.learning_results.factors ==
-                     s12.learning_results.factors).all())
+                                s12.learning_results.factors).all())
         nose.tools.assert_true((s1.learning_results.loadings ==
-                     s2.learning_results.factors).all())
+                                s2.learning_results.factors).all())
         nose.tools.assert_true((s1.learning_results.factors ==
-                     s2.learning_results.loadings).all())
+                                s2.learning_results.loadings).all())
 
     def test_consistence_poisson(self):
         s1 = self.s1
@@ -62,13 +62,13 @@ class TestNdAxes:
         s2.decomposition(normalize_poissonian_noise=True)
         s12.decomposition(normalize_poissonian_noise=True)
         nose.tools.assert_true((s2.learning_results.loadings ==
-                     s12.learning_results.loadings).all())
+                                s12.learning_results.loadings).all())
         nose.tools.assert_true((s2.learning_results.factors ==
-                     s12.learning_results.factors).all())
+                                s12.learning_results.factors).all())
         nose.tools.assert_true((s1.learning_results.loadings ==
-                     s2.learning_results.factors).all())
+                                s2.learning_results.factors).all())
         nose.tools.assert_true((s1.learning_results.factors ==
-                     s2.learning_results.loadings).all())
+                                s2.learning_results.loadings).all())
 
 
 class TestGetExplainedVarinaceRation():
@@ -80,13 +80,15 @@ class TestGetExplainedVarinaceRation():
 
     def test_data(self):
         nose.tools.assert_true((self.s.get_explained_variance_ratio().data ==
-                     self.s.learning_results.explained_variance_ratio).all())
+                                self.s.learning_results.explained_variance_ratio).all())
 
     @nose.tools.raises(AttributeError)
     def test_no_evr(self):
         self.s.get_explained_variance_ration()
 
+
 class TestReturnInfo:
+
     def setUp(self):
         self.s = signals.Signal(np.empty((5, 10)))
 
@@ -96,4 +98,5 @@ class TestReturnInfo:
     def test_decomposition_supported(self):
         if not sklearn_installed:
             raise SkipTest
-        nose.tools.assert_is_not_none(self.s.decomposition(algorithm="sklearn_pca", return_info=True))
+        nose.tools.assert_is_not_none(
+            self.s.decomposition(algorithm="sklearn_pca", return_info=True))
