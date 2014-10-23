@@ -6,6 +6,26 @@ see `the github commits changelog
 <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
 
+.. _changes_0.7.3:
+
+v0.7.3
+======
+
+This is a maintenance release. A list of fixed issues is available in the
+`0.7.3 milestone
+<https://github.com/hyperspy/hyperspy/issues?milestone=6&page=1&state=closed>`_
+in the github repository.
+
+.. _changes_0.7.2:
+
+v0.7.2
+======
+
+This is a maintenance release. A list of fixed issues is available in the
+`0.7.2 milestone
+<https://github.com/hyperspy/hyperspy/issues?milestone=5&page=1&state=closed>`_
+in the github repository.
+
 .. _changes_0.7.1:
 
 v0.7.1

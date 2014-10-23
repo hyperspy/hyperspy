@@ -17,9 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-
-import numpy as np
-import traits.api as t
+import warnings
 
 from hyperspy.model import Model
 from hyperspy.components import EELSCLEdge
@@ -28,10 +26,7 @@ from hyperspy.misc.ipython_tools import get_interactive_ns
 from hyperspy.defaults_parser import preferences
 import hyperspy.messages as messages
 from hyperspy import components
-from hyperspy.decorators import only_interactive
-from hyperspy.exceptions import MissingParametersError
 from hyperspy._signals.eels import EELSSpectrum
-import hyperspy.gui.messages as messagesui
 
 
 def _give_me_delta(master, slave):
@@ -446,7 +441,7 @@ class EELSModel(Model):
                     if powerlaw is None:
                         powerlaw = component
                     else:
-                        message.warning(
+                        messages.warning(
                             'There are more than two power law '
                             'background components defined in this model, '
                             'please use the powerlaw keyword to specify one'

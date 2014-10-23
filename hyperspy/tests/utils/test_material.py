@@ -2,7 +2,7 @@
 import numpy as np
 from nose.tools import assert_almost_equal
 
-from hyperspy.hspy import *
+import hyperspy.hspy as hs
 from hyperspy.misc.elements import elements_db
 
 
@@ -19,12 +19,12 @@ class TestWeightToFromAtomic():
         self.wt = [100 * w / mol_weight.sum() for w in mol_weight]
 
     def test_weight_to_atomic(self):
-        cwt = utils.material.weight_to_atomic(self.elements, self.wt)
+        cwt = hs.utils.material.weight_to_atomic(self.elements, self.wt)
         assert_almost_equal(cwt[0], self.at[0])
         assert_almost_equal(cwt[1], self.at[1])
 
     def test_atomic_to_weight(self):
-        cat = utils.material.atomic_to_weight(self.elements, self.at)
+        cat = hs.utils.material.atomic_to_weight(self.elements, self.at)
         assert_almost_equal(cat[0], self.wt[0])
         assert_almost_equal(cat[1], self.wt[1])
 
@@ -39,5 +39,5 @@ def test_density_of_mixture():
     volumes = wt / densities
     density = 100. / volumes.sum()
     assert_almost_equal(density,
-                        utils.material.density_of_mixture_of_pure_elements(
+                        hs.utils.material.density_of_mixture_of_pure_elements(
                             elements, wt))

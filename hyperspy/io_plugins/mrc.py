@@ -136,7 +136,6 @@ def get_data_type(index, endianess='<'):
 
 def file_reader(filename, endianess='<', **kwds):
     metadata = {}
-    dtype_list = get_std_dtype_list(endianess) + get_fei_dtype_list(endianess)
     f = open(filename, 'rb')
     std_header = np.fromfile(f, dtype=get_std_dtype_list(endianess),
                              count=1)

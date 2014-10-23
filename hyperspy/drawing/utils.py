@@ -207,7 +207,7 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 
     >>> s_cl = load("coreloss.dm3")
     >>> s_ll = load("lowloss.dm3")
-    >>> utils.plot_signals([s_cl, s_ll])
+    >>> utils.plot.plot_signals([s_cl, s_ll])
 
     Specifying the navigator:
 
@@ -221,7 +221,7 @@ def plot_signals(signal_list, sync=True, navigator="auto",
     >>> s_ll = load("lowloss.dm3")
     >>> s_edx = load("edx.dm3")
     >>> s_adf = load("adf.dm3")
-    >>> utils.plot_signals(
+    >>> utils.plot.plot_signals(
             [s_cl, s_ll, s_edx], navigator_list=["slider",None,s_adf])
 
     """
@@ -341,7 +341,8 @@ def plot_spectra(
         padding=1.,
         legend=None,
         legend_picking=True,
-        fig=None,):
+        fig=None,
+        ax=None,):
     """Plot several spectra in the same figure.
 
     Extra keyword arguments are passed to `matplotlib.figure`.
@@ -380,6 +381,9 @@ def plot_spectra(
     fig : matplotlib figure or None
         If None, a default figure will be created. Specifying fig will
         not work for the 'heatmap' style.
+    ax : matplotlib ax (subplot) or None
+        If None, a default ax will be created. Will not work for 'mosaic'
+        or 'heatmap' style.
 
     Example
     -------
@@ -425,17 +429,18 @@ def plot_spectra(
         line_style = ['-'] * len(spectra)
 
     if legend is not None:
-        if legend == 'auto':
-            legend = [spec.metadata.General.title for spec in spectra]
-        elif hasattr(legend, "__iter__"):
+        if hasattr(legend, "__iter__"):
             legend = itertools.cycle(legend)
+        elif legend == 'auto':
+            legend = [spec.metadata.General.title for spec in spectra]
         else:
             raise ValueError("legend must be None, 'auto' or a list of string")
 
     if style == 'overlap':
         if fig is None:
             fig = plt.figure()
-        ax = fig.add_subplot(111)
+        if ax is None:
+            ax = fig.add_subplot(111)
         _make_overlap_plot(spectra,
                            ax,
                            color=color,
@@ -447,7 +452,8 @@ def plot_spectra(
     elif style == 'cascade':
         if fig is None:
             fig = plt.figure()
-        ax = fig.add_subplot(111)
+        if ax is None:
+            ax = fig.add_subplot(111)
         _make_cascade_subplot(spectra,
                               ax,
                               color=color,

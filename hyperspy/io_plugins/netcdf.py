@@ -20,7 +20,6 @@ import os
 
 import numpy as np
 
-from hyperspy import Release
 from hyperspy import messages
 
 no_netcdf = False

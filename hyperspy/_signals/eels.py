@@ -119,7 +119,8 @@ class EELSSpectrum(Spectrum):
         end_energy = Eaxis[-1]
         for element in self.elements:
             e_shells = list()
-            for shell in elements_db[element]['Atomic_properties']['Binding_energies']:
+            for shell in elements_db[element][
+                    'Atomic_properties']['Binding_energies']:
                 if shell[-1] != 'a':
                     if start_energy <= \
                             elements_db[element]['Atomic_properties']['Binding_energies'][shell][
@@ -259,7 +260,9 @@ class EELSSpectrum(Spectrum):
                                   also_align + [self])
 
     def estimate_elastic_scattering_intensity(self,
-                                              threshold):
+                                              threshold,
+                                              show_progressbar=None,
+                                              ):
         """Rough estimation of the elastic scattering intensity by
         truncation of a EELS low-loss spectrum.
 
@@ -273,6 +276,10 @@ class EELSSpectrum(Spectrum):
             threshold value in the energy units. Alternatively a constant
             threshold can be specified in energy/index units by passing
             float/int.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+
 
         Returns
         -------
@@ -286,6 +293,9 @@ class EELSSpectrum(Spectrum):
         """
         # TODO: Write units tests
         self._check_signal_dimension_equals_one()
+
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
 
         if isinstance(threshold, numbers.Number):
             I0 = self.isig[:threshold].integrate1D(-1)
@@ -301,7 +311,8 @@ class EELSSpectrum(Spectrum):
                 I0.axes_manager._get_axis_attribute_values('navigate'))
             I0.axes_manager.set_signal_dimension(0)
             pbar = hyperspy.misc.progressbar.progressbar(
-                maxval=self.axes_manager.navigation_size)
+                maxval=self.axes_manager.navigation_size,
+            )
             for i, s in enumerate(self):
                 threshold_ = threshold[self.axes_manager.indices].data[0]
                 if np.isnan(threshold_):
@@ -331,7 +342,7 @@ class EELSSpectrum(Spectrum):
     def estimate_elastic_scattering_threshold(self,
                                               window=10.,
                                               tol=None,
-                                              number_of_points=5,
+                                              window_length=5,
                                               polynomial_order=3,
                                               start=1.):
         """Calculate the first inflexion point of the spectrum derivative
@@ -359,10 +370,10 @@ class EELSSpectrum(Spectrum):
             automatically calculated as the minimum value that guarantees
             finding an inflexion point in all the spectra in given energy
             range.
-        number_of_points : int
+        window_length : int
             If non zero performs order three Savitzky-Golay smoothing
             to the data to avoid falling in local minima caused by
-            the noise.
+            the noise. It must be an odd interger.
         polynomial_order : int
             Savitzky-Golay filter polynomial order.
         start : float
@@ -406,9 +417,9 @@ class EELSSpectrum(Spectrum):
         if max_index < min_index + 10:
             raise ValueError("Please select a bigger window")
         s = self.isig[min_index:max_index].deepcopy()
-        if number_of_points:
+        if window_length:
             s.smooth_savitzky_golay(polynomial_order=polynomial_order,
-                                    number_of_points=number_of_points,
+                                    window_length=window_length,
                                     differential_order=1)
         else:
             s = s.diff(-1)
@@ -676,8 +687,8 @@ class EELSSpectrum(Spectrum):
                 'after_fourier_ratio_deconvolution')
         return cl
 
-    def richardson_lucy_deconvolution(self, psf, iterations=15,
-                                      mask=None):
+    def richardson_lucy_deconvolution(self, psf, iterations=15, mask=None,
+                                      show_progressbar=None):
         """1D Richardson-Lucy Poissonian deconvolution of
         the spectrum by the given kernel.
 
@@ -690,6 +701,9 @@ class EELSSpectrum(Spectrum):
             It must have the same signal dimension as the current
             spectrum and a spatial dimension of 0 or the same as the
             current spectrum.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Notes:
         -----
@@ -699,6 +713,8 @@ class EELSSpectrum(Spectrum):
         Ultramicroscopy 96, no. 3–4 (September 2003): 385–400.
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         ds = self.deepcopy()
         ds.data = ds.data.copy()
@@ -714,7 +730,8 @@ class EELSSpectrum(Spectrum):
         j = 0
         maxval = self.axes_manager.navigation_size
         if maxval > 0:
-            pbar = progressbar(maxval=maxval)
+            pbar = progressbar(maxval=maxval,
+                               disabled=not show_progressbar)
         for D in self:
             D = D.data.copy()
             if psf.axes_manager.navigation_dimension != 0:
@@ -727,7 +744,7 @@ class EELSSpectrum(Spectrum):
             for i in xrange(iterations):
                 first = np.convolve(kernel, O)[imax: imax + psf_size]
                 O = O * (np.convolve(kernel[::-1],
-                         D / first)[mimax: mimax + psf_size])
+                                     D / first)[mimax: mimax + psf_size])
             s[:] = O
             j += 1
             if maxval > 0:

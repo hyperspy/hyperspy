@@ -19,7 +19,6 @@
 import math
 
 import numpy as np
-import scipy.integrate
 
 from hyperspy.component import Component
 
@@ -102,7 +101,6 @@ class PowerLaw(Component):
 
         """
 
-        binned = signal.metadata.Signal.binned
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if not (i2 + i1) % 2 == 0:
