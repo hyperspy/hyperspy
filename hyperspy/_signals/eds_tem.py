@@ -247,7 +247,8 @@ class EDSTEMSpectrum(EDSSpectrum):
 
     def quantification_cliff_lorimer(self,
                                      intensities,
-                                     kfactors):
+                                     kfactors,
+                                     reference_line='auto'):
         """
         Quantification using Cliff-Lorimer
 
@@ -256,10 +257,15 @@ class EDSTEMSpectrum(EDSSpectrum):
         kfactors: list of float
             the list of kfactor, compared to the first
             elements. eg. kfactors = [1.47,1.72]
-            for kfactors_name = ['Cr_Ka/Al_Ka', 'Ni_Ka/Al_Ka'] 
-            with kfactors_name in alphabetical order
+            for kfactors_name = ['Cr_Ka/Al_Ka', 'Ni_Ka/Al_Ka']
+            with kfactors_name in alphabetical order.
         intensities: list of signal.Signals
-            the intensities for each X-ray lines.
+            the intensities for each X-ray lines in the alphabetical order.
+        reference_line: 'auto' or str
+            The reference line. If 'auto', the first line in the alphabetic
+            order is chosen ('Al_Ka' in the previous example.)
+            If reference_line = 'Cr_Ka', then
+            kfactors should be ['Al_Ka/Cr_Ka', 'Ni_Ka/Cr_Ka']
 
         Examples
         ---------
@@ -272,15 +278,20 @@ class EDSTEMSpectrum(EDSSpectrum):
         >>> utils.plot.plot_signals(res)
         """
 
-        xray_lines = self.metadata.Sample.xray_lines        
+        xray_lines = self.metadata.Sample.xray_lines
+        indexes = range(len(xray_lines))
+        if reference_line != 'auto':
+            index = [indexes.pop(xray_lines.index(reference_line))]
+            indexes = index + indexes
         data_res = utils_eds.quantification_cliff_lorimer(
-                        kfactors=kfactors,
-                        intensities=[intensity.data for intensity in intensities])
-        spec_res=[]
-        for xray_line, data, intensity in zip(
-                    xray_lines,data_res,intensities):
+            kfactors=kfactors,
+            intensities=[intensities[i].data for i in indexes])
+        spec_res = []
+        for xray_line, index, intensity in zip(
+                xray_lines, indexes, intensities):
             element, line = utils_eds._get_element_and_line(xray_line)
             spec_res.append(intensity.deepcopy())
-            spec_res[-1].data = data
-            spec_res[-1].metadata.General.title = 'Weight fraction of ' + element
+            spec_res[-1].data = data_res[index]
+            spec_res[-1].metadata.General.title = 'Weight fraction of ' +\
+                element
         return spec_res
