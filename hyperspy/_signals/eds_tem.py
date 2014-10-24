@@ -255,24 +255,27 @@ class EDSTEMSpectrum(EDSSpectrum):
         Parameters
         ----------
         kfactors: list of float
-            the list of kfactor, compared to the first
-            elements. eg. kfactors = [1.47,1.72]
-            for kfactors_name = ['Cr_Ka/Al_Ka', 'Ni_Ka/Al_Ka']
-            with kfactors_name in alphabetical order.
-        intensities: list of signal.Signals
-            the intensities for each X-ray lines in the alphabetical order.
+            the list of kfactors ratio between the lines, alphabetically
+            sorted, and a reference line. e.g [1.47,1.72] for
+            ['Cr_Ka/Al_Ka', 'Ni_Ka/Al_Ka']
+        intensities: list of signal
+            the intensitiy for each X-ray lines in the alphabetical order.
         reference_line: 'auto' or str
             The reference line. If 'auto', the first line in the alphabetic
-            order is chosen ('Al_Ka' in the previous example.)
+            order is used ('Al_Ka' in the previous example).
             If reference_line = 'Cr_Ka', then
             kfactors should be ['Al_Ka/Cr_Ka', 'Ni_Ka/Cr_Ka']
+
+        Return
+        ------
+        A list of quantified elemental maps in weight fraction.
 
         Examples
         ---------
         >>> #s is a signals.EDSTEMSpectrum
         >>> s.set_elements(["Al", "Cr", "Ni"])
         >>> s.set_lines(["Al_Ka","Cr_Ka", "Ni_Ka"])
-        >>> kfactors = [1.47,1.72]
+        >>> kfactors = [1.47,1.72] #['Cr_Ka/Al_Ka', 'Ni_Ka/Al_Ka']
         >>> intensities = s.get_lines_intensity()
         >>> res = s.quantification_cliff_lorimer(intensities,kfactors)
         >>> utils.plot.plot_signals(res)

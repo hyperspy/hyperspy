@@ -170,8 +170,9 @@ def quantification_cliff_lorimer(intensities, kfactors):
 
     Parameters
     ----------
-    intensities: list of list of float
-        the intensities for each X-ray lines.
+    intensities: list or numpy.array
+        the intensities for each X-ray lines. The first axis should be the 
+        elements axis.
     kfactors: list of float
         the list of kfactor, compared to the first
         elements. eg. kfactors = [1.47,1.72]
@@ -179,7 +180,7 @@ def quantification_cliff_lorimer(intensities, kfactors):
 
     Return
     ------
-    A list of list of float containing the weight fraction with the same
+    numpy.array containing the weight fraction with the same
     shape as intensities.
     """
     ab = []
