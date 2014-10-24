@@ -68,6 +68,8 @@ class TestParameterDictionary:
         self.par.value = 1
         self.par.std = 0.1
         self.par.store_current_value_in_array()
+        self.par.__ext_bounded = False
+        self.par.__ext_force_positive = False
 
     def test_to_dictionary(self):
         d = self.par.as_dictionary()
@@ -82,6 +84,8 @@ class TestParameterDictionary:
         nt.assert_true(d['free'] == self.par.free)
         nt.assert_true(d['id'] == id(self.par))
         nt.assert_true(d['_bounds'] == self.par._bounds)
+        nt.assert_true(d['__ext_bounded'] == self.par.__ext_bounded)
+        nt.assert_true(d['__ext_force_positive'] == self.par.__ext_force_positive)
 
     def test_load_dictionary(self):
         d = self.par.as_dictionary()
