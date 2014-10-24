@@ -468,6 +468,8 @@ class Parameter(object):
 
         s = Signal(data=self.map[field],
                    axes=self._axes_manager._get_navigation_axes_dicts())
+        if self.component.active_is_multidimensional:
+            s.data[np.logical_not(self.component._active_array)] = np.nan
         s.metadata.General.title = ("%s parameter" % self.name
                                     if self.component is None
                                     else "%s parameter of %s component" %
