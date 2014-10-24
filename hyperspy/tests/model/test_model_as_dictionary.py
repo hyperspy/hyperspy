@@ -85,7 +85,8 @@ class TestParameterDictionary:
         nt.assert_true(d['id'] == id(self.par))
         nt.assert_true(d['_bounds'] == self.par._bounds)
         nt.assert_true(d['__ext_bounded'] == self.par.__ext_bounded)
-        nt.assert_true(d['__ext_force_positive'] == self.par.__ext_force_positive)
+        nt.assert_true(
+            d['__ext_force_positive'] == self.par.__ext_force_positive)
 
     def test_load_dictionary(self):
         d = self.par.as_dictionary()
