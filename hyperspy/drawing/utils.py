@@ -333,6 +333,30 @@ def _set_spectrum_xlabel(spectrum, ax):
     ax.set_xlabel("%s (%s)" % (x_axis.name, x_axis.units))
 
 
+def _set_imshow_colormap(ax, colormap=None):
+    """Set the colormap of an image plotted with matplotlib.imshow
+    such as plot_spectra heatmap style. 
+
+    Parameters
+    ----------
+    ax : matplotlib ax (subplot) object
+    colormap : matplotlib cmap object
+        If not specified: will use the jet colormap
+
+    Example
+    -------
+    >>> s = signals.Signal(np.random.random((100,100))) 
+    >>> ax = utils.plot.plot_spectra(s, style='heatmap')
+    >>> from matplotlib.drawing.utils import _set_imshow_colormap
+    >>> _set_imshow_colormap(ax)
+
+    """
+    if colormap is None:
+        import matplotlib.cm
+        colormap = matplotlib.cm.jet
+    ax.images[0].set_cmap(colormap)
+
+
 def plot_spectra(
         spectra,
         style='default',
