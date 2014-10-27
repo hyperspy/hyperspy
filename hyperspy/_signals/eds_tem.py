@@ -268,7 +268,7 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         Return
         ------
-        A list of quantified elemental maps in weight fraction.
+        A list of quantified elemental maps in percent fraction.
 
         Examples
         ---------
@@ -294,7 +294,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                 xray_lines, indexes, intensities):
             element, line = utils_eds._get_element_and_line(xray_line)
             spec_res.append(intensity.deepcopy())
-            spec_res[-1].data = data_res[index]
-            spec_res[-1].metadata.General.title = 'Weight fraction of ' +\
+            spec_res[-1].data = data_res[index] * 100.
+            spec_res[-1].metadata.General.title = 'Weight percent of ' +\
                 element
         return spec_res
