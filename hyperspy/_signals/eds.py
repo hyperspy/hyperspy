@@ -121,6 +121,34 @@ class EDSSpectrum(Spectrum):
             beam_energy = beam_energy * 1000
         return beam_energy
 
+    def _xray_lines_in_range(self, xray_lines):
+        """
+        Return the lines in the energy range
+
+        Parameters
+        ----------
+        xray_lines: List of string
+            The xray_lines
+
+        Return
+        ------
+        The list of xray_lines in the energy range
+        """
+        ax = self.axes_manager.signal_axes[0]
+        low_value = ax.low_value
+        high_value = ax.high_value
+        if self._get_beam_energy() < high_value:
+            high_value = self._get_beam_energy()
+        xray_lines_in_range = []
+        xray_lines_not_in_range = []
+        for xray_line in xray_lines:
+            line_energy = self._get_line_energy(xray_line)
+            if line_energy > low_value and line_energy < high_value:
+                xray_lines_in_range.append(xray_line)
+            else:
+                xray_lines_not_in_range.append(xray_line)
+        return xray_lines_in_range, xray_lines_not_in_range
+
     def sum(self, axis):
         """Sum the data over the given axis.
 
