@@ -110,28 +110,14 @@ class Parameter(object):
         Parameters
         ----------
         dict : dictionary
-            A dictionary containing following items:
+            A dictionary containing at least the following items:
             _id_name : string
                 _id_name of the original parameter, used to create the dictionary. Has to match with the
                 self._id_name
-            map : map
-                a map of saved values, standard deviations and booleans 'is_set' for every point of the model
-            value : float
-                current value of the parameter
-            std : float
-                current standard deviation fo the parameter
-            units : string
-                Units of the parameter
-            twin_function : function
-                Twin function for the parameter
-            twin_inverse_function : function
-                Inverse twin function for the parameter
-            _bounds : tuple
-                Tuple of (bmin, bmax), lower and upper bounds of the parameter values
-            free : boolean
-                Boolean if the parameter is free
-            active : boolean
-                Boolean if the parameter is active
+            _whitelist : dictionary
+                a dictionary, which keys are used as keywords to match with the parameter attributes.
+                For more information see :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
+            * any field from _whitelist.keys() *
         Returns
         -------
         id_value : int
@@ -492,17 +478,19 @@ class Parameter(object):
                 filename, '_std'))
 
     def as_dictionary(self):
-        """Returns parameter as a dictionary
-
-        Parameters
-        ----------
-        indices : tuple
-            a tuple of indices in navigational space of the signal, to return only specific point of the model as a
-            dictionary
+        """Returns parameter as a dictionary, saving all attributes from self._whitelist.keys()
+                For more information see :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
 
         Returns
         -------
         dic : dictionary
+            _id_name : string
+                _id_name of the original parameter, used to create the dictionary. Has to match with the
+                self._id_name
+            _whitelist : dictionary
+                a dictionary, which keys are used as keywords to match with the parameter attributes.
+                For more information see :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys() *
 
         """
         dic = {'_twins': [id(t) for t in self._twins]}
@@ -906,12 +894,19 @@ class Component(object):
     def as_dictionary(self):
         """Returns component as a dictionary
 
-        All items are copies.
+        All items are references;
+        For more information on method and conventions, see :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
 
         Returns
         -------
         dic : dictionary
-
+            A dictionary, containing at least the following fields:
+            parameters : list
+                a list of dictionaries of the parameters, one per
+            _whitelist : dictionary
+                a dictionary with keys used as references saved attributes, for more information, see
+                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys() *
         """
         dic = {'parameters': [p.as_dictionary() for p in self.parameters]}
         export_to_dictionary(self, self._whitelist, dic)
@@ -924,14 +919,16 @@ class Component(object):
         ----------
         dict : dictionary
             A dictionary containing following items:
-            type : type
-                A type object that has been colled to initialise the component before loading the dictionary and running
-                this function
-            name : string
-                Name of the component
+            _id_name : string
+                _id_name of the original component, used to create the dictionary. Has to match with the
+                self._id_name
             parameters : list
-                A list of dictionaries, one for a parameter of the component each (see parameter.as_dictionary()
-                documentation for more info)
+                A list of dictionaries, one per parameter of the component (see parameter.as_dictionary()
+                documentation for more)
+            _whitelist : dictionary
+                a dictionary, which keys are used as keywords to match with the component attributes.
+                For more information see :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
+            * any field from _whitelist.keys() *
 
         Returns
         -------

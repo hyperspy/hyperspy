@@ -27,6 +27,15 @@ except ImportError:
 
 
 def set_attr(target, attrs, value):
+    """ Like operator.attrgetter, but for setattr - supports "nested" attributes.
+
+        Parameters
+        ----------
+            target : object
+            attrs : string
+            value : object
+
+        """
     where = attrs.rfind('.')
     if where != -1:
         target = attrgetter(attrs[:where])(target)
@@ -34,6 +43,28 @@ def set_attr(target, attrs, value):
 
 
 def export_to_dictionary(target, whitelist, dic):
+    """ Exports attributes of target from whitelist.keys() to dictionary dic
+        All values are references only
+
+        Parameters
+        ----------
+            target : object
+                must contain the (nested) attributes of the whitelist.keys()
+            whitelist : dictionary
+                A dictionary, keys of which are used as attributes for exporting.
+                For easier loading afterwards, highly advisable to contain key '_whitelist'.
+                The convention is as follows:
+                * key starts with '_init_' (e.g. key = '_init_volume'):
+                    object of the whitelist[key] is saved, used for initialization of the target
+                * key starts with '_fn_' (e.g. key = '_fn_twin_function'):
+                    the targeted attribute is a function, and is pickled (preferably with dill package).
+                    A tuple of (Bool, value) is exported, where Bool is whether dill package is available,
+                    and value is pickled function.
+                * key is '_id_' (e.g. key = '_id_'):
+                    the id of the target is exported (e.g. id(target) )
+            dic : dictionary
+                A dictionary where the object will be exported
+    """
     for key, value in whitelist.iteritems():
         if key.startswith('_init_'):
             dic[key] = value
@@ -50,6 +81,26 @@ def export_to_dictionary(target, whitelist, dic):
 
 
 def load_from_dictionary(target, dic):
+    """ Loads attributes of target to dictionary dic
+        The attribute list is read from dic['_whitelist'].keys()
+        All values are references only
+
+        Parameters
+        ----------
+            target : object
+                must contain the (nested) attributes of the whitelist.keys()
+            dic : dictionary
+                A dictionary, containing field '_whitelist', which is a dictionary with all keys that were exported
+                The convention is as follows:
+                * key starts with '_init_' (e.g. key = '_init_volume'):
+                    object had to be used for initialization of the target
+                * key starts with '_fn_' (e.g. key = '_fn_twin_function'):
+                    the value is a tuple of (Bool, picked_function), the targeted attribute is assigned
+                    unpickled (preferably with dill package) function.
+                    Bool is whether dill package was used pickling.
+                * key is '_id_' (e.g. key = '_id_'):
+                    skipped.
+    """
     for key in dic['_whitelist'].keys():
         value = dic[key]
         if key.startswith('_fn_'):

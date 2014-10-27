@@ -66,7 +66,7 @@ class Model(list):
     A model is constructed as a linear combination of :mod:`components` that
     are added to the model using :meth:`append` or :meth:`extend`. There
     are many predifined components available in the in the :mod:`components`
-    module. If needed, new components can easyly created using the code of
+    module. If needed, new components can easily created using the code of
     existing components as a template.
 
     Once defined, the model can be fitted to the data using :meth:`fit` or
@@ -208,23 +208,14 @@ class Model(list):
         dic : dictionary
             A dictionary containing at least a 'spectrum' keyword with either
             a spectrum itself, or a dictionary created with spectrum._to_dictionary()
-            Additionally the dictionary can containt the following items:
-            spectrum : Signal type or dictionary
-                Either a signal itself, or a dictionary created from one
-            axes_manager : dictionary (optional)
-                Dictionary to define the axes (see the
-                documentation of the AxesManager class for more details).
-            free_parameters_boundaries : list (optional)
-                A list of free parameters boundaries
-            low_loss : (optional)
-            convolved : boolean (optional)
+            Additionally the dictionary can contain the following items:
+            _whitelist : dictionary
+                a dictionary with keys used as references of  save attributes, for more information, see
+                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
             components : dictionary (optional)
                 Dictionary, with information about components of the model
                 (see the documentation of component.to_dictionary() method)
-            chisq : dictionary
-                A dictionary of signal of chi-squared
-            dof : dictionary
-                A dictionary of signal of degrees-of-freedom
+            * any field from _whitelist.keys() *
         """
 
         if isinstance(dic['spectrum'], dict):
@@ -1982,17 +1973,22 @@ class Model(list):
                         _parameter.assign_current_value_to_all()
 
     def as_dictionary(self):
-        """Returns a dictionary of the model, including full Signal dictionary,
-        all components and all values of their components, and twin functions.
+        """Returns a dictionary of the model, including full Signal,
+        all components, degrees of freedom (dof) and chi-squared (chisq) with values.
 
-        Parameters
-        ----------
-        indices : tuple
-            A tuple of indices to return a particular point of a model
+        All values (except functions) are references
+
         Returns
         -------
-        dictionary : a complete dictionary of the model
-
+        dictionary : a complete dictionary of the model, which includes at least the following fields:
+            components : list
+                a list of dictionaries of components, one per
+            spectrum : Signal
+                a Signal of the original model
+            _whitelist : dictionary
+                a dictionary with keys used as references for saved attributes, for more information, see
+                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys() *
         Examples
         --------
         >>> s = signals.Spectrum(np.random.random((10,100)))
