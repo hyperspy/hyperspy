@@ -540,19 +540,17 @@ class EDSSpectrum(Spectrum):
             else:
                 raise ValueError(
                     "Not X-ray line, set them with `add_elements`")
+        xray_lines, xray_not_here = self._xray_lines_in_range(xray_lines)
+        for xray in xray_not_here:
+            print("Warning: %s is not in the data energy range." % (xray))
 
         intensities = []
         # test 1D Spectrum (0D problem)
-            #signal_to_index = self.axes_manager.navigation_dimension - 2
+            # signal_to_index = self.axes_manager.navigation_dimension - 2
         for Xray_line in xray_lines:
             line_energy, line_FWHM = self._get_line_energy(Xray_line,
                                                            FWHM_MnKa='auto')
-            det = integration_window_factor * line_FWHM / 2.
-            ax = self.axes_manager.signal_axes[0]
-            if line_energy - det < ax.low_value or \
-                    line_energy + det > ax.high_value:
-                raise ValueError(
-                    "%s is outside the energy range." % (Xray_line))            
+            det = integration_window_factor * line_FWHM / 2.        
             img = self[..., line_energy - det:line_energy + det
                        ].integrate1D(-1)
             img.metadata.General.title = (
