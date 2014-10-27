@@ -361,7 +361,6 @@ class EDSSpectrum(Spectrum):
         elements = set()
         for line in xray_lines:
             elements.add(line.split("_")[0])
-        end_energy = self.axes_manager.signal_axes[0].high_value
         for line in lines:
             try:
                 element, subshell = line.split("_")
@@ -379,16 +378,15 @@ class EDSSpectrum(Spectrum):
                         print("%s line added," % line)
                     else:
                         print("%s line already in." % line)
-                    if (self._get_line_energy(element + '_' +
-                                              subshell) > end_energy):
-                        print("Warning: %s %s is above the data energy range."
-                              % (element, subshell))
                 else:
                     raise ValueError(
                         "%s is not a valid line of %s." % (line, element))
             else:
                 raise ValueError(
                     "%s is not a valid symbol of an element." % element)
+        xray_not_here = self._xray_lines_in_range(xray_lines)[1]
+        for xray in xray_not_here:
+            print("Warning: %s is not in the data energy range." % (xray))
         if "Sample.elements" in self.metadata:
             extra_elements = (set(self.metadata.Sample.elements) -
                               elements)
