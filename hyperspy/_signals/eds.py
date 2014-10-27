@@ -432,10 +432,6 @@ class EDSSpectrum(Spectrum):
         """
 
         beam_energy = self._get_beam_energy()
-
-        end_energy = self.axes_manager.signal_axes[0].high_value
-        if beam_energy < end_energy:
-            end_energy = beam_energy
         lines = []
         for element in elements:
             # Possible line (existing and excited by electron)
@@ -444,9 +440,8 @@ class EDSSpectrum(Spectrum):
                                                  ]['Xray_lines'].keys():
                 if only_lines and subshell not in only_lines:
                     continue
-                if (self._get_line_energy(element + '_' +
-                                          subshell) < end_energy):
-                    element_lines.append(element + "_" + subshell)
+                element_lines.append(element + "_" + subshell)
+            element_lines = self._xray_lines_in_range(element_lines)[0]
             if only_one and element_lines:
                 # Choose the best line
                 select_this = -1
