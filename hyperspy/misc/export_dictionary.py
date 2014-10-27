@@ -25,11 +25,12 @@ except ImportError:
     import types
     import marshal
 
+
 def set_attr(target, attrs, value):
     where = attrs.rfind('.')
     if where != -1:
         target = attrgetter(attrs[:where])(target)
-    setattr(target, attrs[where+1:], value)
+    setattr(target, attrs[where + 1:], value)
 
 
 def export_to_dictionary(target, whitelist, dic):
@@ -40,7 +41,8 @@ def export_to_dictionary(target, whitelist, dic):
             if dill_avail:
                 dic[key] = (True, dill.dumps(attrgetter(key[4:])(target)))
             else:
-                dic[key] = (False, marshal.dumps(attrgetter(key[4:])(target).func_code))
+                dic[key] = (
+                    False, marshal.dumps(attrgetter(key[4:])(target).func_code))
         elif key == '_id_':
             dic[key] = id(target)
         else:
@@ -58,7 +60,11 @@ def load_from_dictionary(target, dic):
                 set_attr(target, key[4:], dill.loads(value[1]))
 
             else:
-                set_attr(target, key[4:], types.FunctionType(marshal.loads(value[1]), globals()))
+                set_attr(
+                    target, key[
+                        4:], types.FunctionType(
+                        marshal.loads(
+                            value[1]), globals()))
         elif key.startswith('_init_') or key.startswith('_id_'):
             pass
         else:

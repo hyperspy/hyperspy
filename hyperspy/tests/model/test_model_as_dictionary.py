@@ -194,7 +194,7 @@ class TestModelDictionary:
 
         m.append(Gaussian())
         m.append(Gaussian())
-        m.append(ScalableFixedPattern(s*0.3))
+        m.append(ScalableFixedPattern(s * 0.3))
         m[0].A.twin = m[1].A
         m.fit()
 
@@ -220,7 +220,8 @@ class TestModelDictionary:
             remove_empty_numpy_strings(tmp)
             nt.assert_equal(d['components'][num]['name'], tmp['name'])
             nt.assert_equal(d['components'][num]['_id_name'], tmp['_id_name'])
-        nt.assert_equal(d['components'][-1]['_whitelist']['_init_spectrum'], m.spectrum*0.3)
+        nt.assert_equal(
+            d['components'][-1]['_whitelist']['_init_spectrum'], m.spectrum * 0.3)
 
     def test_load_dictionary(self):
         d = self.model.as_dictionary()

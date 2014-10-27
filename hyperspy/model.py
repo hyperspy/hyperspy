@@ -2005,7 +2005,10 @@ class Model(list):
         >>> m2 = create_model(dict)
 
         """
-        dic = {'components': [c.as_dictionary() for c in self], 'spectrum': self.spectrum}
+        dic = {
+            'components': [
+                c.as_dictionary() for c in self],
+            'spectrum': self.spectrum}
         export_to_dictionary(self, self._whitelist, dic)
 
         def remove_empty_numpy_strings(dic):
