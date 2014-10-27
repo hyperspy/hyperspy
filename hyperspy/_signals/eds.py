@@ -593,13 +593,13 @@ class EDSSpectrum(Spectrum):
             for the operation.
             Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols.
+        only_lines : None or list of strings
+            If not None, use only the given lines (eg. ('a','Kb')).
+            If None, use all lines.
         only_one : bool
             If False, use all the lines of each element in the data spectral
             range. If True use only the line at the highest energy
             above an overvoltage of 2 (< beam energy / 2).
-        only_lines : None or list of strings
-            If not None, use only the given lines (eg. ('a','Kb')).
-            If None, use all lines.
         kwargs
             The extra keyword arguments for plot()
 
@@ -630,12 +630,9 @@ class EDSSpectrum(Spectrum):
                 raise ValueError(
                     "No elements defined, set them with `add_elements`")
 
-        end_energy = self.axes_manager.signal_axes[0].high_value
-        start_energy = self.axes_manager.signal_axes[0].low_value
-        xray_lines = [xray_line for xray_line in xray_lines if
-                      start_energy < self._get_line_energy(xray_line)]
-        xray_lines = [xray_line for xray_line in xray_lines if
-                      end_energy > self._get_line_energy(xray_line)]
+        xray_lines, xray_not_here = self._xray_lines_in_range(xray_lines)
+        for xray in xray_not_here:
+            print("Warning: %s is not in the data energy range." % (xray))
 
         line_energy = []
         intensity = []
