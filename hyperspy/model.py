@@ -52,6 +52,7 @@ from hyperspy.drawing.widgets import (DraggableVerticalLine,
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
 from hyperspy.signal import Signal
+from hyperspy.misc.export_dictionary import export_to_dictionary, load_from_dictionary
 
 weights_deprecation_warning = (
     'The `weights` argument is deprecated and will be removed '
@@ -186,6 +187,8 @@ class Model(list):
         self._plot_components = False
         self._suspend_update = False
         self._model_line = None
+        self._whitelist = {'_whitelist': None, 'chisq.data': None, 'dof.data': None, '_low_loss': None,
+                           'free_parameters_boundaries': None, 'convolved': None}
         if isinstance(spectrum, dict):
             self._load_dictionary(spectrum)
         else:
@@ -234,41 +237,18 @@ class Model(list):
         self.axes_manager.connect(self.fetch_stored_values)
         self.channel_switches = np.array([True] * len(self.axis.axis))
 
-        if 'chisq' in dic:
-            self.chisq = Signal(**dic['chisq'])
-        else:
-            self.chisq = self.spectrum._get_navigation_signal()
-            self.chisq.change_dtype("float")
-            self.chisq.data.fill(np.nan)
-            self.chisq.metadata.General.title = self.spectrum.metadata.General.title + \
-                ' chi-squared'
-
-        if 'dof' in dic:
-            self.dof = Signal(**dic['dof'])
-        else:
-            self.dof = self.chisq._deepcopy_with_new_data(
-                np.zeros_like(self.chisq.data, dtype='int'))
-            self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
-                ' degrees of freedom'
-
-        if 'free_parameters_boundaries' in dic:
-            self.free_parameters_boundaries = copy.deepcopy(
-                dic['free_parameters_boundaries'])
-        else:
-            self.free_parameters_boundaries = None
-
-        if 'low_loss' in dic:
-            if dic['low_loss'] is not None:
-                self._low_loss = Signal(**dic['low_loss'])
-            else:
-                self._low_loss = None
-        else:
-            self._low_loss = None
-
-        if 'convolved' in dic:
-            self.convolved = dic['convolved']
-        else:
-            self.convolved = False
+        self.chisq = self.spectrum._get_navigation_signal()
+        self.chisq.change_dtype("float")
+        self.chisq.data.fill(np.nan)
+        self.chisq.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' chi-squared'
+        self.dof = self.chisq._deepcopy_with_new_data(
+            np.zeros_like(self.chisq.data, dtype='int'))
+        self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' degrees of freedom'
+        self.free_parameters_boundaries = None
+        self._low_loss = None
+        self.convolved = False
 
         if 'components' in dic:
             while len(self) != 0:
@@ -276,13 +256,20 @@ class Model(list):
             id_dict = {}
 
             for c in dic['components']:
-                self.append(getattr(components, c['_id_name'])())
+                args = {}
+                for k, v in c['_whitelist'].iteritems():
+                    if k.startswith('_init_'):
+                        args[k[6:]] = v
+                self.append(getattr(components, c['_id_name'])(**args))
                 id_dict.update(self[-1]._load_dictionary(c))
             # deal with twins:
             for c in dic['components']:
                 for p in c['parameters']:
                     for t in p['_twins']:
-                        id_dict[t].twin = id_dict[p['id']]
+                        id_dict[t].twin = id_dict[p['_id_']]
+
+        if '_whitelist' in dic:
+            load_from_dictionary(self, dic)
 
     def __repr__(self):
         return u"<Model %s>".encode('utf8') % super(Model, self).__repr__()
@@ -1994,7 +1981,7 @@ class Model(list):
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
 
-    def as_dictionary(self, indices=None):
+    def as_dictionary(self):
         """Returns a dictionary of the model, including full Signal dictionary,
         all components and all values of their components, and twin functions.
 
@@ -2018,27 +2005,8 @@ class Model(list):
         >>> m2 = create_model(dict)
 
         """
-        dic = {}
-        if indices is not None:
-            dic['spectrum'] = self.spectrum.inav[indices]._to_dictionary()
-            dic['chisq'] = self.chisq[indices]._to_dictionary()
-            dic['dof'] = self.dof[indices]._to_dictionary()
-            if self._low_loss is not None:
-                dic['low_loss'] = self._low_loss.inav[indices]._to_dictionary()
-            else:
-                dic['low_loss'] = self._low_loss
-        else:
-            dic['chisq'] = self.chisq._to_dictionary()
-            dic['dof'] = self.dof._to_dictionary()
-            dic['spectrum'] = self.spectrum._to_dictionary()
-            if self._low_loss is not None:
-                dic['low_loss'] = self._low_loss._to_dictionary()
-            else:
-                dic['low_loss'] = self._low_loss
-        dic['components'] = [c.as_dictionary(indices) for c in self]
-        dic['free_parameters_boundaries'] = copy.deepcopy(
-            self.free_parameters_boundaries)
-        dic['convolved'] = self.convolved
+        dic = {'components': [c.as_dictionary() for c in self], 'spectrum': self.spectrum}
+        export_to_dictionary(self, self._whitelist, dic)
 
         def remove_empty_numpy_strings(dic):
             for k, v in dic.iteritems():

@@ -22,7 +22,7 @@ import nose.tools as nt
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.component import Parameter, Component
 from hyperspy.hspy import create_model
-from hyperspy.components import Gaussian, Lorentzian
+from hyperspy.components import Gaussian, Lorentzian, ScalableFixedPattern
 
 
 def remove_empty_numpy_strings(dic):
@@ -68,8 +68,8 @@ class TestParameterDictionary:
         self.par.value = 1
         self.par.std = 0.1
         self.par.store_current_value_in_array()
-        self.par.__ext_bounded = False
-        self.par.__ext_force_positive = False
+        self.par.ext_bounded = False
+        self.par.ext_force_positive = False
 
     def test_to_dictionary(self):
         d = self.par.as_dictionary()
@@ -82,11 +82,11 @@ class TestParameterDictionary:
         nt.assert_true(d['value'] == self.par.value)
         nt.assert_true(d['std'] == self.par.std)
         nt.assert_true(d['free'] == self.par.free)
-        nt.assert_true(d['id'] == id(self.par))
+        nt.assert_true(d['_id_'] == id(self.par))
         nt.assert_true(d['_bounds'] == self.par._bounds)
-        nt.assert_true(d['__ext_bounded'] == self.par.__ext_bounded)
+        nt.assert_true(d['ext_bounded'] == self.par.ext_bounded)
         nt.assert_true(
-            d['__ext_force_positive'] == self.par.__ext_force_positive)
+            d['ext_force_positive'] == self.par.ext_force_positive)
 
     def test_load_dictionary(self):
         d = self.par.as_dictionary()
@@ -147,14 +147,14 @@ class TestComponentDictionary:
         c.active_is_multidimensional = True
         d1 = c.as_dictionary()
         nt.assert_true(d1['active_is_multidimensional'])
-        nt.assert_true(d1['active_array'] == c._active_array)
+        nt.assert_true(d1['_active_array'] == c._active_array)
 
     def test_load_dictionary(self):
         c = self.comp
         d = c.as_dictionary()
         n = Component(self.parameter_names)
         n._id_name = 'dummy names yay!'
-        id_dict = n._load_dictionary(d)
+        _ = n._load_dictionary(d)
         nt.assert_equal(c.name, n.name)
         nt.assert_equal(c.active, n.active)
         nt.assert_equal(
@@ -163,9 +163,9 @@ class TestComponentDictionary:
 
         for pn, pc in zip(n.parameters, c.parameters):
             dn = pn.as_dictionary()
-            del dn['id']
+            del dn['_id_']
             dc = pc.as_dictionary()
-            del dc['id']
+            del dc['_id_']
             nt.assert_true(dn == dc)
 
     @nt.raises(ValueError)
@@ -194,6 +194,7 @@ class TestModelDictionary:
 
         m.append(Gaussian())
         m.append(Gaussian())
+        m.append(ScalableFixedPattern(s*0.3))
         m[0].A.twin = m[1].A
         m.fit()
 
@@ -201,21 +202,13 @@ class TestModelDictionary:
         m = self.model
         d = m.as_dictionary()
 
-        tmp = m._low_loss._to_dictionary()
-        remove_empty_numpy_strings(tmp)
-        nt.assert_equal(tmp, d['low_loss'])
+        nt.assert_equal(m._low_loss, d['_low_loss'])
 
-        tmp = m.chisq._to_dictionary()
-        remove_empty_numpy_strings(tmp)
-        nt.assert_equal(tmp, d['chisq'])
+        nt.assert_true(np.all(m.chisq.data == d['chisq.data']))
 
-        tmp = m.dof._to_dictionary()
-        remove_empty_numpy_strings(tmp)
-        nt.assert_equal(tmp, d['dof'])
+        nt.assert_true(np.all(m.dof.data == d['dof.data']))
 
-        tmp = m.spectrum._to_dictionary()
-        remove_empty_numpy_strings(tmp)
-        nt.assert_equal(tmp, d['spectrum'])
+        nt.assert_equal(m.spectrum, d['spectrum'])
 
         nt.assert_equal(
             d['free_parameters_boundaries'],
@@ -227,6 +220,7 @@ class TestModelDictionary:
             remove_empty_numpy_strings(tmp)
             nt.assert_equal(d['components'][num]['name'], tmp['name'])
             nt.assert_equal(d['components'][num]['_id_name'], tmp['_id_name'])
+        nt.assert_equal(d['components'][-1]['_whitelist']['_init_spectrum'], m.spectrum*0.3)
 
     def test_load_dictionary(self):
         d = self.model.as_dictionary()

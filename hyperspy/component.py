@@ -28,6 +28,7 @@ from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.exceptions import NavigationDimensionError
+from hyperspy.misc.export_dictionary import export_to_dictionary, load_from_dictionary
 
 
 class Parameter(object):
@@ -99,6 +100,9 @@ class Parameter(object):
         self.map = None
         self.model = None
         self._id_name = ''
+        self._whitelist = {'_whitelist': None, '_id_name': None, 'value': None, 'std': None, 'free': None, '_id_': None,
+                           'units': None, 'map': None, '_bounds': None, 'ext_bounded': None, 'name': None,
+                           'ext_force_positive': None, '_fn_twin_function': None, '_fn_twin_inverse_function': None}
 
     def _load_dictionary(self, dict):
         """Load data from dictionary
@@ -135,39 +139,8 @@ class Parameter(object):
 
         """
         if dict['_id_name'] == self._id_name:
-            try:
-                import dill
-                dill_avail = True
-            except ImportError:
-                dill_avail = False
-                import types
-                import marshal
-            self.map = copy.deepcopy(dict['map'])
-            self.value = dict['value']
-            self.name = dict['name']
-            self.std = copy.deepcopy(dict['std'])
-            self.free = copy.deepcopy(dict['free'])
-            self.units = copy.deepcopy(dict['units'])
-            self._bounds = copy.deepcopy(dict['_bounds'])
-            self.__ext_bounded = copy.deepcopy(dict['__ext_bounded'])
-            self.__ext_force_positive = copy.deepcopy(dict['__ext_force_positive'])
-            if hasattr(self, 'active') and 'active' in dict:
-                self.active = dict['active']
-            if 'dill_avail' in dict and dill_avail:
-                self.twin_function = dill.loads(dict['twin_function'])
-                self.twin_inverse_function = dill.loads(
-                    dict['twin_inverse_function'])
-            elif 'dill_avail' in dict:
-                raise ValueError(
-                    "the dictionary was constructed using \"dill\" package, which is not available on the system")
-            else:
-                self.twin_function = types.FunctionType(
-                    marshal.loads(
-                        dict['twin_function']),
-                    globals())
-                self.twin_inverse_function = types.FunctionType(marshal.loads(dict['twin_inverse_function']),
-                                                                globals())
-            return dict['id']
+            load_from_dictionary(self, dict)
+            return dict['_id_']
         else:
             raise ValueError(
                 "_id_name of parameter and dictionary do not match, \nparameter._id_name = %s \ndictionary['_id_name'] = %s" %
@@ -518,7 +491,7 @@ class Parameter(object):
             self.as_signal(field='std').save(append2pathname(
                 filename, '_std'))
 
-    def as_dictionary(self, indices=None):
+    def as_dictionary(self):
         """Returns parameter as a dictionary
 
         Parameters
@@ -532,42 +505,8 @@ class Parameter(object):
         dic : dictionary
 
         """
-        import marshal
-        try:
-            import dill
-            dill_avail = True
-        except ImportError:
-            dill_avail = False
-        dic = {}
-        dic['name'] = self.name
-        dic['_id_name'] = self._id_name
-        if indices is not None:
-            dic['map'] = copy.deepcopy(
-                self.map[tuple([slice(i, i + 1, 1) for i in indices[::-1]])])
-            dic['value'] = dic['map']['values'][tuple([0 for i in indices])]
-            dic['std'] = dic['map']['std'][tuple([0 for i in indices])]
-        else:
-            dic['map'] = copy.deepcopy(self.map)
-            dic['value'] = self.value
-            dic['std'] = self.std
-        dic['free'] = self.free
-        dic['units'] = self.units
-        dic['id'] = id(self)
-        dic['_twins'] = [id(t) for t in self._twins]
-        dic['_bounds'] = self._bounds
-        dic['__ext_bounded'] = self.ext_bounded
-        dic['__ext_force_positive'] = self.ext_force_positive
-        if hasattr(self, 'active'):
-            dic['active'] = self.active
-        if dill_avail:
-            dic['twin_function'] = dill.dumps(self.twin_function)
-            dic['twin_inverse_function'] = dill.dumps(
-                self.twin_inverse_function)
-            dic['dill_avail'] = True
-        else:
-            dic['twin_function'] = marshal.dumps(self.twin_function.func_code)
-            dic['twin_inverse_function'] = marshal.dumps(
-                self.twin_inverse_function.func_code)
+        dic = {'_twins': [id(t) for t in self._twins]}
+        export_to_dictionary(self, self._whitelist, dic)
         return dic
 
 
@@ -589,6 +528,8 @@ class Component(object):
         self._id_version = '1.0'
         self._position = None
         self.model = None
+        self._whitelist = {'_whitelist': None, '_id_name': None, 'name': None, 'active_is_multidimensional': None,
+                           '_active_array': None, 'active': None}
 
     _active_is_multidimensional = False
     _active = True
@@ -962,7 +903,7 @@ class Component(object):
         for _parameter in parameter_list:
             _parameter.free = False
 
-    def as_dictionary(self, indices=None):
+    def as_dictionary(self):
         """Returns component as a dictionary
 
         All items are copies.
@@ -972,22 +913,8 @@ class Component(object):
         dic : dictionary
 
         """
-        dic = {}
-        dic['name'] = self.name
-        dic['_id_name'] = self._id_name
-        dic['active_is_multidimensional'] = self.active_is_multidimensional
-        if self.active_is_multidimensional:
-            if indices is not None:
-                dic['active_array'] = self._active_array[
-                    tuple([slice(i, i + 1, 1) for i in indices[::-1]])].copy()
-                dic['active'] = dic['active_array'][
-                    tuple([0 for i in indices])]
-            else:
-                dic['active'] = self.active
-                dic['active_array'] = self._active_array.copy()
-        else:
-            dic['active'] = self.active
-        dic['parameters'] = [p.as_dictionary(indices) for p in self.parameters]
+        dic = {'parameters': [p.as_dictionary() for p in self.parameters]}
+        export_to_dictionary(self, self._whitelist, dic)
         return dic
 
     def _load_dictionary(self, dic):
@@ -1014,13 +941,6 @@ class Component(object):
 
         """
         if dic['_id_name'] == self._id_name:
-            self.name = copy.deepcopy(dic['name'])
-            self.active = dic['active']
-            if dic['active_is_multidimensional']:
-                self.active_is_multidimensional = dic[
-                    'active_is_multidimensional']
-            if self.active_is_multidimensional:
-                self._active_array = dic['active_array']
             id_dict = {}
             for p in dic['parameters']:
                 idname = p['_id_name']
@@ -1031,6 +951,7 @@ class Component(object):
                 else:
                     raise ValueError(
                         "_id_name of parameters in component and dictionary do not match")
+            load_from_dictionary(self, dic)
             return id_dict
         else:
             raise ValueError(
