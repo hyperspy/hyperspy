@@ -106,6 +106,11 @@ class Test_metadata:
         s.set_lines([])
         nose.tools.assert_equal(
             s.metadata.Sample.xray_lines, ['Al_Ka', 'Ni_La'])
+        s.metadata.Acquisition_instrument.SEM.beam_energy = 200
+        s.set_elements(['Au', 'Ni'])
+        s.set_lines([])
+        nose.tools.assert_equal(s.metadata.Sample.xray_lines,
+                                ['Au_La', 'Ni_Ka'])
 
     def test_default_param(self):
         s = self.signal
