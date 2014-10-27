@@ -483,10 +483,12 @@ class Parameter(object):
 
         Returns
         -------
-        dic : dictionary
+        dic : dictionary with the following keys:
             _id_name : string
                 _id_name of the original parameter, used to create the dictionary. Has to match with the
                 self._id_name
+            _twins : list
+                a list of ids of the twins of the parameter
             _whitelist : dictionary
                 a dictionary, which keys are used as keywords to match with the parameter attributes.
                 For more information see :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
