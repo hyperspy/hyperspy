@@ -919,7 +919,9 @@ class Component(object):
                 :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys() *
         """
-        dic = {'parameters': [p.as_dictionary(picklable) for p in self.parameters]}
+        dic = {
+            'parameters': [
+                p.as_dictionary(picklable) for p in self.parameters]}
         export_to_dictionary(self, self._whitelist, dic, picklable)
         return dic
 
