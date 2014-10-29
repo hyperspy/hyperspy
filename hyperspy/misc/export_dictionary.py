@@ -42,9 +42,10 @@ def set_attr(target, attrs, value):
     setattr(target, attrs[where + 1:], value)
 
 
-def export_to_dictionary(target, whitelist, dic):
+def export_to_dictionary(target, whitelist, dic, picklable=False):
     """ Exports attributes of target from whitelist.keys() to dictionary dic
-        All values are references only
+        All values are references only by default.
+        If picklable=True, the functions are copies (hence allows arbitrary closure)
 
         Parameters
         ----------
@@ -57,9 +58,10 @@ def export_to_dictionary(target, whitelist, dic):
                 * key starts with '_init_' (e.g. key = '_init_volume'):
                     object of the whitelist[key] is saved, used for initialization of the target
                 * key starts with '_fn_' (e.g. key = '_fn_twin_function'):
-                    the targeted attribute is a function, and is pickled (preferably with dill package).
-                    A tuple of (Bool, value) is exported, where Bool is whether dill package is available,
-                    and value is pickled function.
+                    the targeted attribute is a function, and may be pickled (preferably with dill package).
+                    A tuple of (thing, value) is exported, where thing is None if function is passed as-is, and bool if
+                    dill package is used to pickle the function,
+                    and value is the result.
                 * key is '_id_' (e.g. key = '_id_'):
                     the id of the target is exported (e.g. id(target) )
             dic : dictionary
@@ -69,11 +71,14 @@ def export_to_dictionary(target, whitelist, dic):
         if key.startswith('_init_'):
             dic[key] = value
         elif key.startswith('_fn_'):
-            if dill_avail:
-                dic[key] = (True, dill.dumps(attrgetter(key[4:])(target)))
+            if picklable:
+                if dill_avail:
+                    dic[key] = (True, dill.dumps(attrgetter(key[4:])(target)))
+                else:
+                    dic[key] = (
+                        False, marshal.dumps(attrgetter(key[4:])(target).func_code))
             else:
-                dic[key] = (
-                    False, marshal.dumps(attrgetter(key[4:])(target).func_code))
+                dic[key] = (None, attrgetter(key[4:])(target))
         elif key == '_id_':
             dic[key] = id(target)
         else:
@@ -95,27 +100,30 @@ def load_from_dictionary(target, dic):
                 * key starts with '_init_' (e.g. key = '_init_volume'):
                     object had to be used for initialization of the target
                 * key starts with '_fn_' (e.g. key = '_fn_twin_function'):
-                    the value is a tuple of (Bool, picked_function), the targeted attribute is assigned
+                    the value is a tuple of (thing, picked_function), the targeted attribute is assigned
                     unpickled (preferably with dill package) function.
-                    Bool is whether dill package was used pickling.
+                    thing {Bool, None} shows whether if the function was pickled and if using the dill package
                 * key is '_id_' (e.g. key = '_id_'):
                     skipped.
     """
     for key in dic['_whitelist'].keys():
         value = dic[key]
         if key.startswith('_fn_'):
-            if value[0] and not dill_avail:
-                raise ValueError(
-                    "the dictionary was constructed using \"dill\" package, which is not available on the system")
-            elif dill_avail:
-                set_attr(target, key[4:], dill.loads(value[1]))
-
+            if value[0] is None:
+                set_attr(target, key[4:], value[1])
             else:
-                set_attr(
-                    target, key[
-                        4:], types.FunctionType(
-                        marshal.loads(
-                            value[1]), globals()))
+                if value[0] and not dill_avail:
+                    raise ValueError(
+                        "the dictionary was constructed using \"dill\" package, which is not available on the system")
+                elif dill_avail:
+                    set_attr(target, key[4:], dill.loads(value[1]))
+
+                else:
+                    set_attr(
+                        target, key[
+                            4:], types.FunctionType(
+                            marshal.loads(
+                                value[1]), globals()))
         elif key.startswith('_init_') or key.startswith('_id_'):
             pass
         else:

@@ -1972,11 +1972,16 @@ class Model(list):
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
 
-    def as_dictionary(self):
+    def as_dictionary(self, picklable=False):
         """Returns a dictionary of the model, including full Signal,
         all components, degrees of freedom (dof) and chi-squared (chisq) with values.
 
         All values (except functions) are references
+
+        Parameters
+        ----------
+        picklable : Bool (optional, False)
+            If any found functions will be pickled
 
         Returns
         -------
@@ -2003,9 +2008,9 @@ class Model(list):
         """
         dic = {
             'components': [
-                c.as_dictionary() for c in self],
+                c.as_dictionary(picklable) for c in self],
             'spectrum': self.spectrum}
-        export_to_dictionary(self, self._whitelist, dic)
+        export_to_dictionary(self, self._whitelist, dic, picklable)
 
         def remove_empty_numpy_strings(dic):
             for k, v in dic.iteritems():
