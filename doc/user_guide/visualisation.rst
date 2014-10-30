@@ -337,7 +337,6 @@ There are also two other styles, "heatmap" and "mosaic":
   :align:   center
   :width:   500    
 
-
 .. code-block:: python
 
     >>> s = signals.Spectrum(np.random.random((2,1000)))
