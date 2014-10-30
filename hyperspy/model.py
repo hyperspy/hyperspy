@@ -218,7 +218,10 @@ class Model(list):
             object = self[object]
         elif not isinstance(object, Component):
             raise ValueError("Not a component or component id.")
-        return object
+         if object in self:
+             return object
+         else:
+             raise ValueError("The component is not in the model.")
 
     def insert(self):
         raise NotImplementedError
