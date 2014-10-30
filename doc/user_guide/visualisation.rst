@@ -337,12 +337,25 @@ There are also two other styles, "heatmap" and "mosaic":
   :align:   center
   :width:   500    
 
+
 .. code-block:: python
 
     >>> s = signals.Spectrum(np.random.random((2,1000)))
     >>> utils.plot.plot_spectra(s, style='mosaic')
     
 .. figure::  images/plot_spectra_mosaic.png
+  :align:   center
+  :width:   500    
+
+For the "heatmap" style, different `matplotlib color schemes <http://matplotlib.org/examples/color/colormaps_reference.html>`_ can be used:
+
+.. code-block:: python
+
+    >>> import matplotlib.cm
+    >>> ax = utils.plot.plot_spectra(s, style="heatmap")
+    >>> ax.images[0].set_cmap(matplotlib.cm.jet)
+
+.. figure::  images/plot_spectra_heatmap_jet.png
   :align:   center
   :width:   500    
 
