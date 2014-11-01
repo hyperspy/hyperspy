@@ -628,10 +628,32 @@ datasets**.
 Saving and loading the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To save the result of the fit to a single file use
-:py:meth:`~.model.Model.save_parameters2file` and
-:py:meth:`~.model.Model.load_parameters_from_file` to load back the results
-into the same model structure.
+As of HyperSpy 0.7.4, the following is the only way to save a model to  a file
+and load it back. Note that this method is known to be brittle i.e. there is no
+guarantee that a version of HyperSpy different from the one used to save the
+model will be able to load it sucessfully.  Also, it is advisable not to use
+this method in combination with functions that alter the value of the
+parameters interactively (e.g.  `enable_adjust_position`) as the modifications
+made by this functions are normally not stored in the IPython notebook or
+Python script.
+
+To save a model:
+
+1. Save the parameter arrays to a file using
+   :py:meth:`~.model.Model.save_parameters2file`.
+
+2. Save all the commands that used to create the model to a file. This
+   can be done in the form of an IPython notebook or a Python script.
+   
+3.  (Optional) Comment out or delete the fitting commangs (e.g. `multifit`).
+
+To recreate the model:
+
+1. Execute the IPython notebook or Python script.
+
+2. Use :py:meth:`~.model.Model.load_parameters_from_file` to load back the
+   parameter values and arrays.
+
 
 Exporting the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
