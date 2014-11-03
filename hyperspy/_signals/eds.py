@@ -538,7 +538,10 @@ class EDSSpectrum(Spectrum):
         xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
             xray_lines)
         for xray in xray_not_here:
-            warnings.warn("%s is not in the data energy range." % (xray))
+            warnings.warn("%s is not in the data energy range." % (xray) +
+                          "You can remove it with" +
+                          "s.metadata.Sample.xray_lines.remove('%s')"
+                          % (xray))
 
         intensities = []
         # test 1D Spectrum (0D problem)
