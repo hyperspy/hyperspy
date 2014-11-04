@@ -56,6 +56,8 @@ def _slice_all_whitelist(_from, _to, array_slices, isNav):
                 attrsetter(_to, key, attrgetter(key)(_from))
 
 # Will be imported once it is merged
+
+
 def attrsetter(target, attrs, value):
     """ Like operator.attrgetter, but for setattr - supports "nested" attributes.
 
