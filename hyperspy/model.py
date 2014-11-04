@@ -219,29 +219,35 @@ class Model(list):
 
     _firstimetouch = True
 
+    def __hash__(self):
+        # This is needed to simulate a hashable object so that PySide does not
+        # raise an exception when using windows.connect
+        return id(self)
+
     def __init__(self, spectrum, **kwds):
 
         self._plot = None
         self._position_widgets = []
         self._adjust_position_all = None
         self._plot_components = False
-        self._whitelist = {'_whitelist': None, 'chisq.data': None, 'dof.data': None, '_low_loss': None,
-                           'free_parameters_boundaries': None, 'convolved': None}
-        self.components = ModelComponents(self)
         self._suspend_update = False
+        self._model_line = None
         self._adjust_position_all = None
         self._plot_components = False
-        self._model_line = None
+        self._whitelist = {
+            '_whitelist': None,
+            'convolved': None,
+            'free_parameters_boundaries': None,
+            'low_loss': ['sig', None],
+            'chisq.data': ['inav', None],
+            'dof.data': ['inav', None]
+        }
+        self.components = ModelComponents(self)
         if isinstance(spectrum, dict):
             self._load_dictionary(spectrum)
         else:
             kwds['spectrum'] = spectrum
             self._load_dictionary(kwds)
-
-    def __hash__(self):
-        # This is needed to simulate a hashable object so that PySide does not
-        # raise an exception when using windows.connect
-        return id(self)
 
     def _load_dictionary(self, dic):
         """Load data from dictionary.

@@ -101,9 +101,10 @@ class Parameter(t.HasTraits):
 
     # traitsui bugs out trying to make an editor for this, so always specify!
     # (it bugs out, because both editor shares the object, and Array editors
-    # don't like non-sequence objects). TextEditor() works well.
-    value = t.Property(
-        t.Either([t.CFloat(0), Array()]))
+    # don't like non-sequence objects). TextEditor() works well, so does
+    # RangeEditor() as it works with bmin/bmax.
+    value = t.Property(t.Either([t.CFloat(0), Array()]))
+
     units = t.Str('')
     free = t.Property(t.CBool(True))
 
@@ -123,9 +124,21 @@ class Parameter(t.HasTraits):
         self.map = None
         self.model = None
         self._id_name = ''
-        self._whitelist = {'_whitelist': None, '_id_name': None, 'value': None, 'std': None, 'free': None, '_id_': None,
-                           'units': None, 'map': None, '_bounds': None, 'ext_bounded': None, 'name': None,
-                           'ext_force_positive': None, '_fn_twin_function': None, '_fn_twin_inverse_function': None}
+        self._whitelist = {'_whitelist': None,
+                           '_id_name': None,
+                           'value': None,
+                           'std': None,
+                           'free': None,
+                           '_id_': ['id', None],
+                           'units': None,
+                           'map': ['inav', None],
+                           '_bounds': None,
+                           'ext_bounded': None,
+                           'name': None,
+                           'ext_force_positive': None,
+                           'twin_function': ['fn', None],
+                           'twin_inverse_function': ['fn', None],
+                           }
 
     def _load_dictionary(self, dict):
         """Load data from dictionary
@@ -569,8 +582,13 @@ class Component(t.HasTraits):
         self._id_version = '1.0'
         self._position = None
         self.model = None
-        self._whitelist = {'_whitelist': None, '_id_name': None, 'name': None, 'active_is_multidimensional': None,
-                           '_active_array': None, 'active': None}
+        self._whitelist = {'_whitelist': None,
+                           '_id_name': None,
+                           'name': None,
+                           'active_is_multidimensional': None,
+                           '_active_array': ['inav', None],
+                           'active': None
+                           }
 
     _name = ''
     _active_is_multidimensional = False

@@ -203,7 +203,7 @@ class TestModelDictionary:
         m = self.model
         d = m.as_dictionary()
 
-        nt.assert_equal(m._low_loss, d['_low_loss'])
+        nt.assert_equal(m.low_loss, d['low_loss'])
 
         nt.assert_true(np.all(m.chisq.data == d['chisq.data']))
 
