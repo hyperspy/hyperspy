@@ -209,6 +209,8 @@ class Model(list):
         self._suspend_update = False
         self._adjust_position_all = None
         self._plot_components = False
+        self._whitelist = {'_whitelist': None, 'chisq.data': None, 'dof.data': None, '_low_loss': None,
+                           'free_parameters_boundaries': None, 'convolved': None}
 
     def __repr__(self):
         return u"<Model %s>".encode('utf8') % super(Model, self).__repr__()

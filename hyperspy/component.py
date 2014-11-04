@@ -96,6 +96,10 @@ class Parameter(object):
         self.units = ''
         self.map = None
         self.model = None
+        self._id_name = ''
+        self._whitelist = {'_whitelist': None, '_id_name': None, 'value': None, 'std': None, 'free': None, '_id_': None,
+                           'units': None, 'map': None, '_bounds': None, 'ext_bounded': None, 'name': None,
+                           'ext_force_positive': None, '_fn_twin_function': None, '_fn_twin_inverse_function': None}
 
     def __repr__(self):
         text = ''
@@ -461,6 +465,8 @@ class Component(object):
         self._id_version = '1.0'
         self._position = None
         self.model = None
+        self._whitelist = {'_whitelist': None, '_id_name': None, 'name': None, 'active_is_multidimensional': None,
+                           '_active_array': None, 'active': None}
 
     _active_is_multidimensional = False
     _active = True
@@ -561,6 +567,7 @@ class Component(object):
             parameter = Parameter()
             self.parameters.append(parameter)
             parameter.name = name
+            parameter._id_name = name
             setattr(self, name, parameter)
             if hasattr(self, 'grad_' + name):
                 parameter.grad = getattr(self, 'grad_' + name)
