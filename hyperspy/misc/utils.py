@@ -45,6 +45,7 @@ def attrsetter(target, attrs, value):
         target = attrgetter(attrs[:where])(target)
     setattr(target, attrs[where + 1:], value)
 
+
 def generate_axis(origin, step, N, index=0):
     """Creates an axis given the origin, step and number of channels
 
