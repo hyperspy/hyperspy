@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
+from operator import attrgetter
 import inspect
 import copy
 import types
@@ -28,6 +29,21 @@ import unicodedata
 
 import numpy as np
 
+
+def attrsetter(target, attrs, value):
+    """ Like operator.attrgetter, but for setattr - supports "nested" attributes.
+
+        Parameters
+        ----------
+            target : object
+            attrs : string
+            value : object
+
+    """
+    where = attrs.rfind('.')
+    if where != -1:
+        target = attrgetter(attrs[:where])(target)
+    setattr(target, attrs[where + 1:], value)
 
 def generate_axis(origin, step, N, index=0):
     """Creates an axis given the origin, step and number of channels
