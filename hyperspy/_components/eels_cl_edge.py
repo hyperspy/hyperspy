@@ -350,3 +350,6 @@ class EELSCLEdge(Component):
             '_', ' ') + ' fine structure'
 
         return s
+
+    def __getinitargs__(self):
+        return self.element+'_'+self.subshell, self.GOS._name

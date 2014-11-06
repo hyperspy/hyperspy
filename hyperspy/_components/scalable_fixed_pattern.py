@@ -119,3 +119,6 @@ class ScalableFixedPattern(Component):
 
     def grad_yscale(self, x):
         return self.function(x) / self.yscale.value
+
+    def __getinitargs__(self):
+        return (self.spectrum,)
