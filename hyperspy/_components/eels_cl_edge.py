@@ -352,4 +352,4 @@ class EELSCLEdge(Component):
         return s
 
     def __getinitargs__(self):
-        return self.element+'_'+self.subshell, self.GOS._name
+        return self.element + '_' + self.subshell, self.GOS._name
