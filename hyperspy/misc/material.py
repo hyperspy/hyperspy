@@ -11,20 +11,26 @@ def weight_to_atomic(elements, weight_percent):
     elements: list of str
         A list of element abbreviations, e.g. ['Al','Zn']
 
-    weight_percent: list of float
+    weight_percent: array of float
         The weight fractions (composition) of the sample.
 
     Returns
     -------
-    atomic_percent : list
+    atomic_percent : array of float
         Composition in atomic percent.
+    
+    Calculate the atomic percent of modern bronze given its weight percent:
+    >>> utils.material.weight_to_atomic(("Cu", "Sn"), (88, 12))
 
     """
     atomic_weights = np.array(
-        [elements_db[element]['General_properties']['atomic_weight'] for element in elements])
-    atomic_percent = weight_percent / atomic_weights / (
-        weight_percent / atomic_weights).sum() * 100
-    return atomic_percent.tolist()
+        [elements_db[element]['General_properties']['atomic_weight']
+            for element in elements])
+    atomic_percent = np.array(map(np.divide, weight_percent, atomic_weights))
+    sum_weight = atomic_percent.sum(axis=0)/100.
+    for i, el in enumerate(elements):
+        atomic_percent[i] /= sum_weight
+    return atomic_percent
 
 
 def atomic_to_weight(elements, atomic_percent):
@@ -35,21 +41,30 @@ def atomic_to_weight(elements, atomic_percent):
     elements: list of str
         A list of element abbreviations, e.g. ['Al','Zn']
 
-    atomic_percent: list of float
+    atomic_percent: array of float
         The atomic fractions (composition) of the sample.
 
     Returns
     -------
-    weight_percent : composition in weight percent.
+    weight_percent : array of float
+        composition in weight percent.
+
+    Examples
+    --------
+
+    Calculate the weight percent of modern bronze given its atomic percent:
+    >>> utils.material.atomic_to_weight(("Cu", "Sn"), (88, 12))
 
     """
 
     atomic_weights = np.array(
-        [elements_db[element]['General_properties']['atomic_weight'] for element in elements])
-
-    weight_percent = atomic_percent * atomic_weights / (
-        atomic_percent * atomic_weights).sum() * 100
-    return weight_percent.tolist()
+        [elements_db[element]['General_properties']['atomic_weight']
+            for element in elements])
+    weight_percent = np.array(map(np.divide, atomic_percent, atomic_weights))
+    sum_atomic = weight_percent.sum(axis=0)/100.
+    for i, el in enumerate(elements):
+        weight_percent[i] /= sum_atomic
+    return weight_percent
 
 
 def density_of_mixture_of_pure_elements(elements, weight_percent):
