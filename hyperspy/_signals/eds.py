@@ -578,7 +578,8 @@ class EDSSpectrum(Spectrum):
         return TOA
 
     def atomic_to_weigth(self, atomic_percent, elements='auto'):
-        """Convert atomic percent maps to weight percent maps.
+        """Convert the maps of composition from atomic percent to weight
+        percent.
 
         Parameters
         ----------
@@ -590,8 +591,12 @@ class EDSSpectrum(Spectrum):
 
         Returns
         -------
-        weight_percent : list of signals
-            composition in weight percent.
+        weight_percent : same as atomic_percent
+            The maps of composition in weight percent.
+
+        See also
+        --------
+        utils.material.atomic_to_weight
 
         """
         if elements == 'auto':
@@ -610,7 +615,8 @@ class EDSSpectrum(Spectrum):
         return weight_percent
 
     def weight_to_atomic(self, weight_percent, elements='auto'):
-        """Convert weigth percent maps to atomic percent maps.
+        """Convert the maps of composition from weight percent to weight
+        atomic.
 
         Parameters
         ----------
@@ -622,8 +628,12 @@ class EDSSpectrum(Spectrum):
 
         Returns
         -------
-        atomic_percent : list of signals
-            composition in atomic percent.
+        atomic_percent : same as weight_percent
+            The maps of composition in atomic percent.
+
+        See also
+        --------
+        utils.material.weight_to_atomic
 
         """
         if elements == 'auto':
@@ -638,5 +648,5 @@ class EDSSpectrum(Spectrum):
             atomic_percent = weight_percent.deepcopy()
             atomic_percent.data = utils.material.weight_to_atomic(
                 elements, atomic_percent.data)
-            atomic_percent.data = np.nan_to_num(atomic_percent.data)     
+            atomic_percent.data = np.nan_to_num(atomic_percent.data)
         return atomic_percent
