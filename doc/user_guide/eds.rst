@@ -348,3 +348,12 @@ an interactive way to generate intensity map.
    :align:   center
    :width:   800
 
+Quantification
+--------------
+
+The obtained composition is in weight percent. It can be changed transformed into atomic percent with :py:meth:`~._signals.eds.EDSSpectrum.weight_to_atomic`. The reverse method is :py:meth:`~._signals.eds.EDSSpectrum.atomic_to_weigth`.
+
+.. code-block:: python
+
+    >>> atomic_percent = spec.weight_to_atomic(weight_percent)
+
