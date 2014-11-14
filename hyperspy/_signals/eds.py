@@ -576,3 +576,67 @@ class EDSSpectrum(Spectrum):
                                        elevation_angle)
 
         return TOA
+
+    def atomic_to_weigth(self, atomic_percent, elements='auto'):
+        """Convert atomic percent maps to weight percent maps.
+
+        Parameters
+        ----------
+        atomic_percent: list of signals or signals
+            The atomic fractions (composition) of the sample.
+        elements: list of str or 'auto'
+            A list of element abbreviations, e.g. ['Al','Zn']. If 'auto', take
+            `metadata.Sample.elements`
+
+        Returns
+        -------
+        weight_percent : list of signals
+            composition in weight percent.
+
+        """
+        if elements == 'auto':
+            elements = self.metadata.Sample.elements
+        if isinstance(atomic_percent, list):
+            weight_percent = utils.stack(atomic_percent)
+            weight_percent.data = utils.material.atomic_to_weight(
+                elements, weight_percent.data)
+            weight_percent.data = np.nan_to_num(weight_percent.data)
+            weight_percent = weight_percent.split()
+        else:
+            weight_percent = atomic_percent.deepcopy()
+            weight_percent.data = utils.material.atomic_to_weight(
+                elements, atomic_percent.data)
+            weight_percent.data = np.nan_to_num(weight_percent.data)
+        return weight_percent
+
+    def weight_to_atomic(self, weight_percent, elements='auto'):
+        """Convert weigth percent maps to atomic percent maps.
+
+        Parameters
+        ----------
+        weight_percent: list of signals or signals
+            The weight fractions (composition) of the sample.
+        elements: list of str or 'auto'
+            A list of element abbreviations, e.g. ['Al','Zn']. If 'auto', take
+            `metadata.Sample.elements`
+
+        Returns
+        -------
+        atomic_percent : list of signals
+            composition in atomic percent.
+
+        """
+        if elements == 'auto':
+            elements = self.metadata.Sample.elements
+        if isinstance(weight_percent, list):
+            atomic_percent = utils.stack(weight_percent)
+            atomic_percent.data = utils.material.weight_to_atomic(
+                elements, atomic_percent.data)
+            atomic_percent.data = np.nan_to_num(atomic_percent.data)
+            atomic_percent = atomic_percent.split()
+        else:
+            atomic_percent = weight_percent.deepcopy()
+            atomic_percent.data = utils.material.weight_to_atomic(
+                elements, atomic_percent.data)
+            atomic_percent.data = np.nan_to_num(atomic_percent.data)     
+        return atomic_percent
