@@ -348,3 +348,17 @@ an interactive way to generate intensity map.
    :align:   center
    :width:   800
 
+Quantification
+--------------
+
+For the moment, only one TEM quantification method (Cliff-Lorimer) is implemented.
+
+Quantification can be applied from the intensities (background subtracted) with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification_cliff_lorimer` method. The required kfactors can be usually found in the EDS manufacturer software.
+
+.. code-block:: python
+
+    >>> spec.set_elements(["Al", "Cr", "Ni"])
+    >>> spec.add_lines()
+    >>> kfactors = [1.47,1.72]
+    >>> weight_percent = spec.quantification_cliff_lorimer(intensities, kfactors)
+
