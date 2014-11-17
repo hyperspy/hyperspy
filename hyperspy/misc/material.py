@@ -38,7 +38,7 @@ def _weight_to_atomic(weight_percent, elements):
     return atomic_percent
 
 
-def weight_to_atomic(weight_percent, elements):
+def weight_to_atomic(weight_percent, elements='auto'):
     """Convert weight percent (wt%) to atomic percent (at.%).
 
     Parameters
@@ -46,22 +46,36 @@ def weight_to_atomic(weight_percent, elements):
     weight_percent: list of float or list of signals
         The weight fractions (composition) of the sample.
     elements: list of str
-        A list of element abbreviations, e.g. ['Al','Zn']
+        A list of element abbreviations, e.g. ['Al','Zn']. If elements is
+        'auto', take the elements in en each signal metadata of th
+        weight_percent list.
 
     Returns
     -------
     atomic_percent : as weight_percent
         Composition in atomic percent.
 
+    Examples
+    --------
     Calculate the atomic percent of modern bronze given its weight percent:
     >>> utils.material.weight_to_atomic((88, 12), ("Cu", "Sn"))
     array([ 93.19698614,   6.80301386])
 
     """
+
     if isinstance(weight_percent[0], float) or isinstance(
             weight_percent[0], int):
+        if elements == 'auto':
+            raise ValueError("Elements needs to be provided.")
         return _weight_to_atomic(weight_percent, elements)
     else:
+        if elements == 'auto':
+            elements = []
+            for weight in weight_percent:
+                if len(weight.metadata.Sample.elements) > 1:
+                    raise ValueError("Elements needs to be provided.")
+                else:
+                    elements.append(weight.metadata.Sample.elements[0])
         atomic_percent = stack(weight_percent)
         atomic_percent.data = _weight_to_atomic(
             atomic_percent.data, elements)
@@ -87,7 +101,6 @@ def _atomic_to_weight(atomic_percent, elements):
 
     Examples
     --------
-
     Calculate the weight percent of modern bronze given its atomic percent:
     >>> utils.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
     array([ 88.00501989,  11.99498011])
@@ -107,7 +120,7 @@ def _atomic_to_weight(atomic_percent, elements):
     return weight_percent
 
 
-def atomic_to_weight(atomic_percent, elements):
+def atomic_to_weight(atomic_percent, elements='auto'):
     """Convert atomic percent to weight percent.
 
     Parameters
@@ -115,7 +128,9 @@ def atomic_to_weight(atomic_percent, elements):
     atomic_percent: list of float or list of signals
         The atomic fractions (composition) of the sample.
     elements: list of str
-        A list of element abbreviations, e.g. ['Al','Zn']
+        A list of element abbreviations, e.g. ['Al','Zn']. If elements is
+        'auto', take the elements in en each signal metadata of the
+        atomic_percent list.
 
     Returns
     -------
@@ -124,7 +139,6 @@ def atomic_to_weight(atomic_percent, elements):
 
     Examples
     --------
-
     Calculate the weight percent of modern bronze given its atomic percent:
     >>> utils.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
     array([ 88.00501989,  11.99498011])
@@ -132,8 +146,17 @@ def atomic_to_weight(atomic_percent, elements):
     """
     if isinstance(atomic_percent[0], float) or isinstance(
             atomic_percent[0], int):
+        if elements == 'auto':
+            raise ValueError("Elements needs to be provided.")
         return _atomic_to_weight(atomic_percent, elements)
     else:
+        if elements == 'auto':
+            elements = []
+            for atomic in atomic_percent:
+                if len(atomic.metadata.Sample.elements) > 1:
+                    raise ValueError("Elements needs to be provided.")
+                else:
+                    elements.append(atomic.metadata.Sample.elements[0])
         weight_percent = stack(atomic_percent)
         weight_percent.data = _atomic_to_weight(
             weight_percent.data, elements)
@@ -164,7 +187,6 @@ def _density_of_mixture_of_pure_elements(weight_percent, elements):
 
     Examples
     --------
-
     Calculate the density of modern bronze given its weight percent:
     >>> utils.material.density_of_mixture_of_pure_elements(
             (88, 12),("Cu", "Sn"))
@@ -184,7 +206,7 @@ def _density_of_mixture_of_pure_elements(weight_percent, elements):
     return np.sum(weight_percent, axis=0) / sum_densities.sum(axis=0)
 
 
-def density_of_mixture_of_pure_elements(weight_percent, elements):
+def density_of_mixture_of_pure_elements(weight_percent, elements='auto'):
     """Calculate the density a mixture of elements.
 
     The density of the elements is retrieved from an internal database. The
@@ -198,7 +220,9 @@ def density_of_mixture_of_pure_elements(weight_percent, elements):
         is not equal to 100, each weight percent is divided by the sum
         of the list (normalization).
     elements: list of str
-        A list of element symbols, e.g. ['Al', 'Zn']
+        A list of element symbols, e.g. ['Al', 'Zn']. If elements is 'auto',
+        take the elements in en each signal metadata of the weight_percent
+        list.
 
     Returns
     -------
@@ -206,7 +230,6 @@ def density_of_mixture_of_pure_elements(weight_percent, elements):
 
     Examples
     --------
-
     Calculate the density of modern bronze given its weight percent:
     >>> utils.material.density_of_mixture_of_pure_elements(
             (88, 12),("Cu", "Sn"))
@@ -215,8 +238,17 @@ def density_of_mixture_of_pure_elements(weight_percent, elements):
     """
     if isinstance(weight_percent[0], float) or isinstance(
             weight_percent[0], int):
+        if elements == 'auto':
+            raise ValueError("Elements needs to be provided.")
         return _density_of_mixture_of_pure_elements(weight_percent, elements)
     else:
+        if elements == 'auto':
+            elements = []
+            for weight in weight_percent:
+                if len(weight.metadata.Sample.elements) > 1:
+                    raise ValueError("Elements needs to be provided.")
+                else:
+                    elements.append(weight.metadata.Sample.elements[0])
         density = weight_percent[0].deepcopy()
         density.data = _density_of_mixture_of_pure_elements(
             stack(weight_percent).data, elements)
