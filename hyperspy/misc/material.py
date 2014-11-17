@@ -1,5 +1,6 @@
 import numpy as np
 import numbers
+import warnings
 
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.utils import stack
@@ -35,7 +36,10 @@ def _weight_to_atomic(weight_percent, elements):
     atomic_percent = np.array(map(np.divide, weight_percent, atomic_weights))
     sum_weight = atomic_percent.sum(axis=0)/100.
     for i, el in enumerate(elements):
+        warnings.simplefilter("ignore")
         atomic_percent[i] /= sum_weight
+        warnings.simplefilter('default')
+        atomic_percent[i] = np.where(sum_weight == 0.0, 0.0, atomic_percent[i])
     return atomic_percent
 
 
@@ -107,7 +111,10 @@ def _atomic_to_weight(atomic_percent, elements):
     weight_percent = np.array(map(np.multiply, atomic_percent, atomic_weights))
     sum_atomic = weight_percent.sum(axis=0)/100.
     for i, el in enumerate(elements):
+        warnings.simplefilter("ignore")
         weight_percent[i] /= sum_atomic
+        warnings.simplefilter('default')
+        weight_percent[i] = np.where(sum_atomic == 0.0, 0.0, weight_percent[i])
     return weight_percent
 
 
@@ -142,7 +149,6 @@ def atomic_to_weight(atomic_percent, elements='auto'):
         weight_percent = stack(atomic_percent)
         weight_percent.data = _atomic_to_weight(
             weight_percent.data, elements)
-        weight_percent.data = np.nan_to_num(weight_percent.data)
         weight_percent = weight_percent.split()
         return weight_percent
 
@@ -185,7 +191,11 @@ def _density_of_mixture_of_pure_elements(weight_percent, elements):
     sum_densities = np.zeros_like(weight_percent, dtype='float')
     for i, weight in enumerate(weight_percent):
         sum_densities[i] = weight / densities[i]
-    return np.sum(weight_percent, axis=0) / sum_densities.sum(axis=0)
+    sum_densities = sum_densities.sum(axis=0)
+    warnings.simplefilter("ignore")
+    density = np.sum(weight_percent, axis=0) / sum_densities
+    warnings.simplefilter('default')
+    return np.where(sum_densities == 0.0, 0.0, density)
 
 
 def density_of_mixture_of_pure_elements(weight_percent, elements='auto'):
@@ -225,7 +235,6 @@ def density_of_mixture_of_pure_elements(weight_percent, elements='auto'):
         density = weight_percent[0].deepcopy()
         density.data = _density_of_mixture_of_pure_elements(
             stack(weight_percent).data, elements)
-        density.data = np.nan_to_num(density.data)
         return density
 
 
