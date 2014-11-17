@@ -1,4 +1,5 @@
 import numpy as np
+import numbers
 
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.utils import stack
@@ -62,20 +63,10 @@ def weight_to_atomic(weight_percent, elements='auto'):
     array([ 93.19698614,   6.80301386])
 
     """
-
-    if isinstance(weight_percent[0], float) or isinstance(
-            weight_percent[0], int):
-        if elements == 'auto':
-            raise ValueError("Elements needs to be provided.")
+    elements = _elements_auto(weight_percent, elements)
+    if isinstance(weight_percent[0], numbers.Number):
         return _weight_to_atomic(weight_percent, elements)
     else:
-        if elements == 'auto':
-            elements = []
-            for weight in weight_percent:
-                if len(weight.metadata.Sample.elements) > 1:
-                    raise ValueError("Elements needs to be provided.")
-                else:
-                    elements.append(weight.metadata.Sample.elements[0])
         atomic_percent = stack(weight_percent)
         atomic_percent.data = _weight_to_atomic(
             atomic_percent.data, elements)
@@ -144,19 +135,10 @@ def atomic_to_weight(atomic_percent, elements='auto'):
     array([ 88.00501989,  11.99498011])
 
     """
-    if isinstance(atomic_percent[0], float) or isinstance(
-            atomic_percent[0], int):
-        if elements == 'auto':
-            raise ValueError("Elements needs to be provided.")
+    elements = _elements_auto(atomic_percent, elements)
+    if isinstance(atomic_percent[0], numbers.Number):
         return _atomic_to_weight(atomic_percent, elements)
     else:
-        if elements == 'auto':
-            elements = []
-            for atomic in atomic_percent:
-                if len(atomic.metadata.Sample.elements) > 1:
-                    raise ValueError("Elements needs to be provided.")
-                else:
-                    elements.append(atomic.metadata.Sample.elements[0])
         weight_percent = stack(atomic_percent)
         weight_percent.data = _atomic_to_weight(
             weight_percent.data, elements)
@@ -207,7 +189,7 @@ def _density_of_mixture_of_pure_elements(weight_percent, elements):
 
 
 def density_of_mixture_of_pure_elements(weight_percent, elements='auto'):
-    """Calculate the density a mixture of elements.
+    """Calculate the density of a mixture of elements.
 
     The density of the elements is retrieved from an internal database. The
     calculation is only valid if there is no interaction between the
@@ -236,21 +218,30 @@ def density_of_mixture_of_pure_elements(weight_percent, elements='auto'):
     8.6903187973131466
 
     """
-    if isinstance(weight_percent[0], float) or isinstance(
-            weight_percent[0], int):
-        if elements == 'auto':
-            raise ValueError("Elements needs to be provided.")
+    elements = _elements_auto(weight_percent, elements)
+    if isinstance(weight_percent[0], numbers.Number):
         return _density_of_mixture_of_pure_elements(weight_percent, elements)
     else:
-        if elements == 'auto':
-            elements = []
-            for weight in weight_percent:
-                if len(weight.metadata.Sample.elements) > 1:
-                    raise ValueError("Elements needs to be provided.")
-                else:
-                    elements.append(weight.metadata.Sample.elements[0])
         density = weight_percent[0].deepcopy()
         density.data = _density_of_mixture_of_pure_elements(
             stack(weight_percent).data, elements)
         density.data = np.nan_to_num(density.data)
         return density
+
+
+def _elements_auto(composition, elements):
+    if isinstance(composition[0], numbers.Number):
+        if elements == 'auto':
+            raise ValueError("The elements needs to be provided.")
+    else:
+        if elements == 'auto':
+            elements = []
+            for compo in composition:
+                if len(compo.metadata.Sample.elements) > 1:
+                    raise ValueError(
+                        "The signal %s contains more than one "
+                        "element but this function requires only one element "
+                        "per signal." % compo.metadata.General.title)
+                else:
+                    elements.append(compo.metadata.Sample.elements[0])
+    return elements
