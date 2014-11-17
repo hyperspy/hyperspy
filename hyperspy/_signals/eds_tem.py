@@ -20,6 +20,7 @@ from __future__ import division
 import traits.api as t
 import numpy as np
 
+from hyperspy import utils
 from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.decorators import only_interactive
 from hyperspy.gui.eds import TEMParametersUI
@@ -248,7 +249,8 @@ class EDSTEMSpectrum(EDSSpectrum):
     def quantification_cliff_lorimer(self,
                                      intensities,
                                      kfactors,
-                                     reference_line='auto'):
+                                     reference_line='auto',
+                                     composition_units='weight'):
         """
         Quantification using Cliff-Lorimer
 
@@ -265,10 +267,14 @@ class EDSTEMSpectrum(EDSSpectrum):
             order is used ('Al_Ka' in the previous example).
             If reference_line = 'Cr_Ka', then
             kfactors should be ['Al_Ka/Cr_Ka', 'Ni_Ka/Cr_Ka']
+        composition_units: 'weight' or 'atomic'
+            Cliff-Lorimer return weight percent. By choosing 'atomic', the
+            return composition is in atomic percent.
 
         Return
         ------
-        A list of quantified elemental maps in percent fraction.
+        A list of quantified elemental maps giving the composition of the
+        sample.
 
         Examples
         ---------
@@ -299,4 +305,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                 element
             spec_res[-1].metadata.set_item("Sample.elements", ([element]))
             spec_res[-1].metadata.set_item("Sample.xray_lines", ([xray_line]))
-        return spec_res
+        if composition_units == 'atomic':
+            return utils.material.weight_to_atomic(spec_res)
+        else:
+            return spec_res
