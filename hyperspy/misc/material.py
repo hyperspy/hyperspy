@@ -1,18 +1,18 @@
 import numpy as np
 
 from hyperspy.misc.elements import elements as elements_db
+from hyperspy.misc.utils import stack
 
 
-def weight_to_atomic(elements, weight_percent):
+def _weight_to_atomic(weight_percent, elements):
     """Convert weight percent (wt%) to atomic percent (at.%).
 
     Parameters
     ----------
-    elements: list of str
-        A list of element abbreviations, e.g. ['Al','Zn']
-
     weight_percent: array of float
         The weight fractions (composition) of the sample.
+    elements: list of str
+        A list of element abbreviations, e.g. ['Al','Zn']
 
     Returns
     -------
@@ -20,7 +20,7 @@ def weight_to_atomic(elements, weight_percent):
         Composition in atomic percent.
 
     Calculate the atomic percent of modern bronze given its weight percent:
-    >>> utils.material.weight_to_atomic(("Cu", "Sn"), (88, 12))
+    >>> utils.material.weight_to_atomic((88, 12), ("Cu", "Sn"))
     array([ 93.19698614,   6.80301386])
 
     """
@@ -38,16 +38,47 @@ def weight_to_atomic(elements, weight_percent):
     return atomic_percent
 
 
-def atomic_to_weight(elements, atomic_percent):
+def weight_to_atomic(weight_percent, elements):
+    """Convert weight percent (wt%) to atomic percent (at.%).
+
+    Parameters
+    ----------
+    weight_percent: list of float or list of signals
+        The weight fractions (composition) of the sample.
+    elements: list of str
+        A list of element abbreviations, e.g. ['Al','Zn']
+
+    Returns
+    -------
+    atomic_percent : as weight_percent
+        Composition in atomic percent.
+
+    Calculate the atomic percent of modern bronze given its weight percent:
+    >>> utils.material.weight_to_atomic((88, 12), ("Cu", "Sn"))
+    array([ 93.19698614,   6.80301386])
+
+    """
+    if isinstance(weight_percent[0], float) or isinstance(
+            weight_percent[0], int):
+        return _weight_to_atomic(weight_percent, elements)
+    else:
+        atomic_percent = stack(weight_percent)
+        atomic_percent.data = _weight_to_atomic(
+            atomic_percent.data, elements)
+        atomic_percent.data = np.nan_to_num(atomic_percent.data)
+        atomic_percent = atomic_percent.split()
+        return atomic_percent
+
+
+def _atomic_to_weight(atomic_percent, elements):
     """Convert atomic percent to weight percent.
 
     Parameters
     ----------
+    atomic_percent: array
+        The atomic fractions (composition) of the sample.
     elements: list of str
         A list of element abbreviations, e.g. ['Al','Zn']
-
-    atomic_percent: array of float
-        The atomic fractions (composition) of the sample.
 
     Returns
     -------
@@ -58,7 +89,7 @@ def atomic_to_weight(elements, atomic_percent):
     --------
 
     Calculate the weight percent of modern bronze given its atomic percent:
-    >>> utils.material.atomic_to_weight(("Cu", "Sn"), [93.2, 6.8])
+    >>> utils.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
     array([ 88.00501989,  11.99498011])
 
     """
@@ -76,7 +107,42 @@ def atomic_to_weight(elements, atomic_percent):
     return weight_percent
 
 
-def density_of_mixture_of_pure_elements(elements, weight_percent):
+def atomic_to_weight(atomic_percent, elements):
+    """Convert atomic percent to weight percent.
+
+    Parameters
+    ----------
+    atomic_percent: list of float or list of signals
+        The atomic fractions (composition) of the sample.
+    elements: list of str
+        A list of element abbreviations, e.g. ['Al','Zn']
+
+    Returns
+    -------
+    weight_percent : as atomic_percent
+        composition in weight percent.
+
+    Examples
+    --------
+
+    Calculate the weight percent of modern bronze given its atomic percent:
+    >>> utils.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
+    array([ 88.00501989,  11.99498011])
+
+    """
+    if isinstance(atomic_percent[0], float) or isinstance(
+            atomic_percent[0], int):
+        return _atomic_to_weight(atomic_percent, elements)
+    else:
+        weight_percent = stack(atomic_percent)
+        weight_percent.data = _atomic_to_weight(
+            weight_percent.data, elements)
+        weight_percent.data = np.nan_to_num(weight_percent.data)
+        weight_percent = weight_percent.split()
+        return weight_percent
+
+
+def _density_of_mixture_of_pure_elements(weight_percent, elements):
     """Calculate the density a mixture of elements.
 
     The density of the elements is retrieved from an internal database. The
@@ -85,12 +151,12 @@ def density_of_mixture_of_pure_elements(elements, weight_percent):
 
     Parameters
     ----------
-    elements: list of str
-        A list of element symbols, e.g. ['Al', 'Zn']
-    weight_percent: list of float
+    weight_percent: array
         A list of weight percent for the different elements. If the total
         is not equal to 100, each weight percent is divided by the sum
         of the list (normalization).
+    elements: list of str
+        A list of element symbols, e.g. ['Al', 'Zn']
 
     Returns
     -------
@@ -100,8 +166,8 @@ def density_of_mixture_of_pure_elements(elements, weight_percent):
     --------
 
     Calculate the density of modern bronze given its weight percent:
-    >>> utils.material.density_of_mixture_of_pure_elements(("Cu", "Sn"),
-                                                           (88, 12))
+    >>> utils.material.density_of_mixture_of_pure_elements(
+            (88, 12),("Cu", "Sn"))
     8.6903187973131466
 
     """
@@ -116,3 +182,43 @@ def density_of_mixture_of_pure_elements(elements, weight_percent):
     for i, weight in enumerate(weight_percent):
         sum_densities[i] = weight / densities[i]
     return np.sum(weight_percent, axis=0) / sum_densities.sum(axis=0)
+
+
+def density_of_mixture_of_pure_elements(weight_percent, elements):
+    """Calculate the density a mixture of elements.
+
+    The density of the elements is retrieved from an internal database. The
+    calculation is only valid if there is no interaction between the
+    components.
+
+    Parameters
+    ----------
+    weight_percent: list of float or list of signals
+        A list of weight percent for the different elements. If the total
+        is not equal to 100, each weight percent is divided by the sum
+        of the list (normalization).
+    elements: list of str
+        A list of element symbols, e.g. ['Al', 'Zn']
+
+    Returns
+    -------
+    density: The density in g/cm3.
+
+    Examples
+    --------
+
+    Calculate the density of modern bronze given its weight percent:
+    >>> utils.material.density_of_mixture_of_pure_elements(
+            (88, 12),("Cu", "Sn"))
+    8.6903187973131466
+
+    """
+    if isinstance(weight_percent[0], float) or isinstance(
+            weight_percent[0], int):
+        return _density_of_mixture_of_pure_elements(weight_percent, elements)
+    else:
+        density = weight_percent[0].deepcopy()
+        density.data = _density_of_mixture_of_pure_elements(
+            stack(weight_percent).data, elements)
+        density.data = np.nan_to_num(density.data)
+        return density
