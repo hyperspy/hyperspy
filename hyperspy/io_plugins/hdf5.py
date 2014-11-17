@@ -119,7 +119,6 @@ def file_reader(filename, record_by, mode='r', driver='core',
             for experiment in experiments:
                 exg = f['Experiments'][experiment]
                 exp = hdfgroup2signaldict(exg)
-                # exp = hdfgroup2dict(exg)
                 exp_dict_list.append(exp)
         else:
             raise IOError('This is not a valid HyperSpy HDF5 file. '
@@ -332,12 +331,16 @@ def dict2hdfgroup(dictionary, group, compression=None):
             group.attrs[key] = '_None_'
         elif isinstance(value, str):
             try:
-                # Store strings as unicode using the default encoding
-                group.attrs[key] = unicode(value)
-            except UnicodeEncodeError:
-                pass
-            except UnicodeDecodeError:
-                group.attrs['_bs_' + key] = np.void(value)  # binary string
+                _ = value.index('\x00')  # binary string if has any null characters (otherwise not supported by hdf5)
+                group.attrs['_bs_' + key] = np.void(value)
+            except ValueError:
+                try:
+                    # Store strings as unicode using the default encoding
+                    group.attrs[key] = unicode(value)
+                except UnicodeEncodeError:
+                    pass
+                except UnicodeDecodeError:
+                    group.attrs['_bs_' + key] = np.void(value)  # binary string
         elif isinstance(value, AxesManager):
             dict2hdfgroup(value.as_dictionary(),
                           group.create_group('_hspy_AxesManager_'
