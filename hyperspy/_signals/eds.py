@@ -519,6 +519,7 @@ class EDSSpectrum(Spectrum):
         for Xray_line in xray_lines:
             line_energy, line_FWHM = self._get_line_energy(Xray_line,
                                                            FWHM_MnKa='auto')
+            element, line = utils_eds._get_element_and_line(Xray_line)
             det = integration_window_factor * line_FWHM / 2.
             img = self[..., line_energy - det:line_energy + det
                        ].integrate1D(-1)
@@ -538,6 +539,8 @@ class EDSSpectrum(Spectrum):
                          line_energy,
                          self.axes_manager.signal_axes[0].units,
                          img.data))
+            img.metadata.set_item("Sample.elements", ([element]))
+            img.metadata.set_item("Sample.xray_lines", ([Xray_line]))
             intensities.append(img)
         if plot_result and img.axes_manager.signal_dimension != 0:
             utils.plot.plot_signals(intensities, **kwargs)
