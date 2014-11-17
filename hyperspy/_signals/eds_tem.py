@@ -297,4 +297,6 @@ class EDSTEMSpectrum(EDSSpectrum):
             spec_res[-1].data = data_res[index] * 100.
             spec_res[-1].metadata.General.title = 'Weight percent of ' +\
                 element
+            spec_res[-1].metadata.set_item("Sample.elements", ([element]))
+            spec_res[-1].metadata.set_item("Sample.xray_lines", ([xray_line]))
         return spec_res
