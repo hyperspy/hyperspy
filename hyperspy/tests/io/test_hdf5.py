@@ -108,6 +108,7 @@ class TestExample1_12(Example1):
     def test_time(self):
         assert_equal(self.s.metadata.General.time, datetime.time(12, 0))
 
+
 class TestNewSavedMetadata:
 
     def setUp(self):
@@ -117,7 +118,9 @@ class TestNewSavedMetadata:
             "with_lists_etc.hdf5"))
 
     def test_signal_inside(self):
-        assert_true(np.all(self.s.data == self.s.metadata.Signal.Noise_properties.variance.data))
+        assert_true(
+            np.all(
+                self.s.data == self.s.metadata.Signal.Noise_properties.variance.data))
 
     def test_empty_things(self):
         assert_equal(self.s.metadata.test.empty_list, [])
@@ -125,7 +128,7 @@ class TestNewSavedMetadata:
 
     def test_simple_things(self):
         assert_equal(self.s.metadata.test.list, [42])
-        assert_equal(self.s.metadata.test.tuple, (1,2))
+        assert_equal(self.s.metadata.test.tuple, (1, 2))
 
     def test_inside_things(self):
         assert_equal(self.s.metadata.test.list_inside_list, [42, 137, [0, 1]])
@@ -134,9 +137,14 @@ class TestNewSavedMetadata:
         assert_equal(self.s.metadata.test.tuple_inside_list, [137, (123, 44)])
 
     def test_binary_string(self):
-        import marshal, types
-        f = types.FunctionType(marshal.loads(self.s.metadata.test.binary_string), globals())
+        import marshal
+        import types
+        f = types.FunctionType(
+            marshal.loads(
+                self.s.metadata.test.binary_string),
+            globals())
         assert_equal(f(3.5), 4.5)
+
 
 def test_none_metadata():
     s = load(os.path.join(

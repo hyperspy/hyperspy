@@ -331,7 +331,9 @@ def dict2hdfgroup(dictionary, group, compression=None):
             group.attrs[key] = '_None_'
         elif isinstance(value, str):
             try:
-                _ = value.index('\x00')  # binary string if has any null characters (otherwise not supported by hdf5)
+                # binary string if has any null characters (otherwise not
+                # supported by hdf5)
+                _ = value.index('\x00')
                 group.attrs['_bs_' + key] = np.void(value)
             except ValueError:
                 try:
