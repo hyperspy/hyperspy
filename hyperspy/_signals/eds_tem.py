@@ -292,13 +292,12 @@ class EDSTEMSpectrum(EDSSpectrum):
         xray_lines = self.metadata.Sample.xray_lines
         composition = utils.stack(intensities)
         composition.data = utils_eds.quantification_cliff_lorimer(
-            composition.data, kfactors=kfactors)
+            composition.data, kfactors=kfactors) * 100.
         composition = composition.split()
         if composition_units == 'atomic':
             composition = utils.material.weight_to_atomic(composition)
         for i, xray_line in enumerate(xray_lines):
             element, line = utils_eds._get_element_and_line(xray_line)
-            composition[i] *= 100.
             composition[i].metadata.General.title = composition_units + \
                 ' percent of ' + element
             composition[i].metadata.set_item("Sample.elements", ([element]))
@@ -310,5 +309,5 @@ class EDSTEMSpectrum(EDSSpectrum):
                       % (element, xray_line, composition[i].data,
                          composition_units))
         if plot_result and composition[i].axes_manager.signal_dimension != 0:
-             utils.plot.plot_signals(composition, **kwargs)
+            utils.plot.plot_signals(composition, **kwargs)
         return composition

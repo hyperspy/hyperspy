@@ -366,7 +366,8 @@ The obtained composition is in weight percent. It can be changed transformed int
 
 .. code-block:: python
 
-    >>> weight_percent = spec.quantification_cliff_lorimer(intensities, kfactors, composition_units='atomic')
+    >>> weight_percent = spec.quantification_cliff_lorimer
+    >>> 	(intensities, kfactors, composition_units='atomic')
 
 either with :py:func:`~.misc.material.weight_to_atomic`. The reverse method is :py:func:`~.misc.material.atomic_to_weigth`.
 
