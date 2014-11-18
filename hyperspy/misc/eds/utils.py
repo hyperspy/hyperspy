@@ -175,12 +175,8 @@ def quantification_cliff_lorimer(intensities,
         the intensities for each X-ray lines. The first axis should be the
         elements axis.
     kfactors: list of float
-        the list of kfactor, compared to the first
-        elements. eg. kfactors = [1, 1.47, 1.72]
-        for kfactors_name = ['Al_Ka','Cr_Ka', 'Ni_Ka']
-     min_intensity: float
-         The minimum intensity below which the intensity is considered equal to
-         zeros.
+        The list of kfactor in same order as intensities eg. kfactors =
+        [1, 1.47, 1.72] for ['Al_Ka','Cr_Ka', 'Ni_Ka']
 
     Return
     ------
@@ -188,22 +184,36 @@ def quantification_cliff_lorimer(intensities,
     shape as intensities.
     """
     # Value used as an threshold to prevent using zeros as denominator
-    min_intensity=0.1
+    min_intensity = 0.1
     dim = intensities.shape
-    dim2 = reduce(lambda x, y: x*y, dim[1:])
-    intens = intensities.reshape(dim[0], dim2)
-    intens = intens.astype('float')
-    for i in range(dim2):
-        index = np.where(intens[:, i] > min_intensity)[0]
+    if len(dim) > 1:
+        dim2 = reduce(lambda x, y: x*y, dim[1:])
+        intens = intensities.reshape(dim[0], dim2)
+        intens = intens.astype('float')
+        for i in range(dim2):
+            index = np.where(intens[:, i] > min_intensity)[0]
+            if len(index) > 1:
+                ref_index, ref_index2 = index[:2]
+                intens[:, i] = _quantification_cliff_lorimer(
+                    intens[:, i], kfactors, ref_index, ref_index2)
+            else:
+                intens[:, i] = np.zeros_like(intens[:, i])
+                if len(index) == 1:
+                    intens[index[0], i] = 1.
+        return intens.reshape(dim)
+    else:
+        # intens = intensities.copy()
+        # intens = intens.astype('float')
+        index = np.where(intensities > min_intensity)[0]
         if len(index) > 1:
             ref_index, ref_index2 = index[:2]
-            intens[:, i] = _quantification_cliff_lorimer(
-                intens[:, i], kfactors, ref_index, ref_index2)
+            intens = _quantification_cliff_lorimer(
+                intensities, kfactors, ref_index, ref_index2)
         else:
-            intens[:, i] = np.zeros_like(intens[:, i])
+            intens = np.zeros_like(intensities)
             if len(index) == 1:
-                intens[index[0], i] = 1.
-    return intens.reshape(dim)
+                intens[index[0]] = 1.
+        return intens
 
 
 def _quantification_cliff_lorimer(intensities,
@@ -219,9 +229,8 @@ def _quantification_cliff_lorimer(intensities,
         the intensities for each X-ray lines. The first axis should be the
         elements axis.
     kfactors: list of float
-        the list of kfactor, compared to the first
-        elements. eg. kfactors = [1, 1.47, 1.72]
-        for kfactors_name = ['Al_Ka','Cr_Ka', 'Ni_Ka']
+        The list of kfactor in same order as  intensities eg. kfactors =
+        [1, 1.47, 1.72] for ['Al_Ka','Cr_Ka', 'Ni_Ka']
     ref_index, ref_index2: int
         index of the elements that will be in the denominator. Should be non
         zeros if possible.

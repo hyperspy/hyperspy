@@ -249,24 +249,20 @@ class EDSTEMSpectrum(EDSSpectrum):
     def quantification_cliff_lorimer(self,
                                      intensities,
                                      kfactors,
-                                     reference_line='auto',
-                                     composition_units='weight'):
+                                     composition_units='weight',
+                                     plot_result=False):
         """
         Quantification using Cliff-Lorimer
 
         Parameters
         ----------
-        kfactors: list of float
-            the list of kfactors ratio between the lines, alphabetically
-            sorted, and a reference line. e.g [1.47,1.72] for
-            ['Cr_Ka/Al_Ka', 'Ni_Ka/Al_Ka']
         intensities: list of signal
-            the intensitiy for each X-ray lines in the alphabetical order.
-        reference_line: 'auto' or str
-            The reference line. If 'auto', the first line in the alphabetic
-            order is used ('Al_Ka' in the previous example).
-            If reference_line = 'Cr_Ka', then
-            kfactors should be ['Al_Ka/Cr_Ka', 'Ni_Ka/Cr_Ka']
+            the intensitiy for each X-ray lines.
+        kfactors: list of float
+            The list of kfactor in same order as intensities. Note that
+            intensities provided by hyperspy are sorted by the aplhabetical
+            order of the X-ray lines. eg. kfactors =[0.982, 1.32, 1.60] for
+            ['Al_Ka','Cr_Ka', 'Ni_Ka'].
         composition_units: 'weight' or 'atomic'
             Cliff-Lorimer return weight percent. By choosing 'atomic', the
             return composition is in atomic percent.
@@ -281,31 +277,26 @@ class EDSTEMSpectrum(EDSSpectrum):
         >>> #s is a signals.EDSTEMSpectrum
         >>> s.set_elements(["Al", "Cr", "Ni"])
         >>> s.set_lines(["Al_Ka","Cr_Ka", "Ni_Ka"])
-        >>> kfactors = [1.47,1.72] #['Cr_Ka/Al_Ka', 'Ni_Ka/Al_Ka']
+        >>> kfactors = [0.982, 1.32, 1.60]
         >>> intensities = s.get_lines_intensity()
         >>> res = s.quantification_cliff_lorimer(intensities,kfactors)
-        >>> utils.plot.plot_signals(res)
         """
 
         xray_lines = self.metadata.Sample.xray_lines
-        indexes = range(len(xray_lines))
-        if reference_line != 'auto':
-            index = [indexes.pop(xray_lines.index(reference_line))]
-            indexes = index + indexes
-        data_res = utils_eds.quantification_cliff_lorimer(
-            kfactors=kfactors,
-            intensities=[intensities[i].data for i in indexes])
-        spec_res = []
-        for xray_line, index, intensity in zip(
-                xray_lines, indexes, intensities):
-            element, line = utils_eds._get_element_and_line(xray_line)
-            spec_res.append(intensity.deepcopy())
-            spec_res[-1].data = data_res[index] * 100.
-            spec_res[-1].metadata.General.title = 'Weight percent of ' +\
-                element
-            spec_res[-1].metadata.set_item("Sample.elements", ([element]))
-            spec_res[-1].metadata.set_item("Sample.xray_lines", ([xray_line]))
+        composition = utils.stack(intensities)
+        composition.data = utils_eds.quantification_cliff_lorimer(
+            composition.data, kfactors=kfactors)
+        composition = composition.split()
         if composition_units == 'atomic':
-            return utils.material.weight_to_atomic(spec_res)
-        else:
-            return spec_res
+            composition = utils.material.weight_to_atomic(composition)
+        for i, xray_line in enumerate(xray_lines):
+            element, line = utils_eds._get_element_and_line(xray_line)
+            composition[i] *= 100.
+            composition[i].metadata.General.title = composition_units + \
+                ' percent of ' + element
+            composition[i].metadata.set_item("Sample.elements", ([element]))
+            composition[i].metadata.set_item(
+                "Sample.xray_lines", ([xray_line]))
+        if plot_result:
+             utils.plot.plot_signals(composition)
+        return composition
