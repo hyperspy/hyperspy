@@ -250,7 +250,8 @@ class EDSTEMSpectrum(EDSSpectrum):
                                      intensities,
                                      kfactors,
                                      composition_units='weight',
-                                     plot_result=False):
+                                     plot_result=False,
+                                     **kwargs):
         """
         Quantification using Cliff-Lorimer
 
@@ -266,17 +267,23 @@ class EDSTEMSpectrum(EDSSpectrum):
         composition_units: 'weight' or 'atomic'
             Cliff-Lorimer return weight percent. By choosing 'atomic', the
             return composition is in atomic percent.
+        plot_result : bool
+            If True, plot the calculated composition. If the current
+            object is a single spectrum it prints the result instead.
+        kwargs
+            The extra keyword arguments for plotting. See
+            `utils.plot.plot_signals`
 
         Return
         ------
         A list of quantified elemental maps giving the composition of the
-        sample.
+        sample in weight or atomic percent.
 
         Examples
         ---------
         >>> #s is a signals.EDSTEMSpectrum
         >>> s.set_elements(["Al", "Cr", "Ni"])
-        >>> s.set_lines(["Al_Ka","Cr_Ka", "Ni_Ka"])
+        >>> s.add_lines()
         >>> kfactors = [0.982, 1.32, 1.60]
         >>> intensities = s.get_lines_intensity()
         >>> res = s.quantification_cliff_lorimer(intensities,kfactors)
@@ -297,6 +304,11 @@ class EDSTEMSpectrum(EDSSpectrum):
             composition[i].metadata.set_item("Sample.elements", ([element]))
             composition[i].metadata.set_item(
                 "Sample.xray_lines", ([xray_line]))
-        if plot_result:
-             utils.plot.plot_signals(composition)
+            if plot_result and \
+                    composition[i].axes_manager.signal_dimension == 0:
+                print("%s (%s): Composition = %.2f %s percent"
+                      % (element, xray_line, composition[i].data,
+                         composition_units))
+        if plot_result and composition[i].axes_manager.signal_dimension != 0:
+             utils.plot.plot_signals(composition, **kwargs)
         return composition

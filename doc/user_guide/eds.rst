@@ -359,6 +359,6 @@ Quantification can be applied from the intensities (background subtracted) with 
 
     >>> spec.set_elements(["Al", "Cr", "Ni"])
     >>> spec.add_lines()
-    >>> kfactors = [1.47,1.72]
+    >>> kfactors = [0.982, 1.32, 1.60]
     >>> weight_percent = spec.quantification_cliff_lorimer(intensities, kfactors)
 
