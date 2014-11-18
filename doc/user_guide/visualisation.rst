@@ -346,6 +346,18 @@ There are also two other styles, "heatmap" and "mosaic":
   :align:   center
   :width:   500    
 
+For the "heatmap" style, different `matplotlib color schemes <http://matplotlib.org/examples/color/colormaps_reference.html>`_ can be used:
+
+.. code-block:: python
+
+    >>> import matplotlib.cm
+    >>> ax = utils.plot.plot_spectra(s, style="heatmap")
+    >>> ax.images[0].set_cmap(matplotlib.cm.jet)
+
+.. figure::  images/plot_spectra_heatmap_jet.png
+  :align:   center
+  :width:   500    
+
 The function returns a matplotlib ax object, which can be used to customize the figure:
 
 .. code-block:: python

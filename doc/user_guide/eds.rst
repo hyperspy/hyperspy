@@ -362,3 +362,16 @@ Quantification can be applied from the intensities (background subtracted) with 
     >>> kfactors = [0.982, 1.32, 1.60]
     >>> weight_percent = spec.quantification_cliff_lorimer(intensities, kfactors)
 
+The obtained composition is in weight percent. It can be changed transformed into atomic percent either with the option :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification_cliff_lorimer`:
+
+.. code-block:: python
+
+    >>> weight_percent = spec.quantification_cliff_lorimer(intensities, kfactors, composition_units='atomic')
+
+either with :py:func:`~.misc.material.weight_to_atomic`. The reverse method is :py:func:`~.misc.material.atomic_to_weigth`.
+
+.. code-block:: python
+	
+    >>> atomic_percent = utils.material.weight_to_atomic(weight_percent)
+
+
