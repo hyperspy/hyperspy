@@ -19,7 +19,7 @@
 import numpy as np
 from nose.tools import assert_true, assert_equal
 
-from hyperspy.signals import EDSTEMSpectrum
+from hyperspy.signals import EDSTEMSpectrum, Simulation
 from hyperspy.defaults_parser import preferences
 from hyperspy.components import Gaussian
 from hyperspy.misc.eds import utils as utils_eds
@@ -147,6 +147,18 @@ class Test_quantification:
                           [1.,  0.,  0.]])))
 
 
+class Test_vacum_mask:
+
+    def setUp(self):
+        s = Simulation(np.array([np.linspace(0.001, 0.5, 20)]*100).T)
+        s.add_poissonian_noise()
+        s = EDSTEMSpectrum(s.data)
+        self.signal = s
+
+    def test_vacuum_mask(self):
+        s = self.signal
+        assert_equal(s.vacuum_mask().data[0], True)
+        assert_equal(s.vacuum_mask().data[-1], False)
 
 
 # class Test_get_lines_intentisity:
