@@ -250,6 +250,8 @@ class EDSTEMSpectrum(EDSSpectrum):
                                      intensities,
                                      kfactors,
                                      composition_units='weight',
+                                     navigation_mask=1.0,
+                                     closing=True,
                                      plot_result=False,
                                      **kwargs):
         """
@@ -267,6 +269,13 @@ class EDSTEMSpectrum(EDSSpectrum):
         composition_units: 'weight' or 'atomic'
             Cliff-Lorimer return weight percent. By choosing 'atomic', the
             return composition is in atomic percent.
+        navigation_mask : None or float or boolean numpy.array
+            The navigation locations marked as True are not used in the
+            quantification. If int is given the vacuum_mask method is used to
+            generate a mask with the int value as threhsold.
+        closing: bool
+            If true, applied a morphologic closing to the mask obtained by
+            vacuum_mask.
         plot_result : bool
             If True, plot the calculated composition. If the current
             object is a single spectrum it prints the result instead.
@@ -287,12 +296,20 @@ class EDSTEMSpectrum(EDSSpectrum):
         >>> kfactors = [0.982, 1.32, 1.60]
         >>> intensities = s.get_lines_intensity()
         >>> res = s.quantification_cliff_lorimer(intensities,kfactors)
-        """
 
+        See also
+        --------
+        vacuum_mask
+        """
+        if isinstance(navigation_mask, float):
+            navigation_mask = self.vacuum_mask(navigation_mask, closing).data
+        elif navigation_mask is not None:
+            navigation_mask = navigation_mask.data
         xray_lines = self.metadata.Sample.xray_lines
         composition = utils.stack(intensities)
         composition.data = utils_eds.quantification_cliff_lorimer(
-            composition.data, kfactors=kfactors) * 100.
+            composition.data, kfactors=kfactors,
+            mask=navigation_mask) * 100.
         composition = composition.split()
         if composition_units == 'atomic':
             composition = utils.material.weight_to_atomic(composition)

@@ -165,7 +165,8 @@ def take_off_angle(tilt_stage,
 
 
 def quantification_cliff_lorimer(intensities,
-                                 kfactors):
+                                 kfactors,
+                                 mask=None):
     """
     Quantification using Cliff-Lorimer
 
@@ -177,6 +178,9 @@ def quantification_cliff_lorimer(intensities,
     kfactors: list of float
         The list of kfactor in same order as intensities eg. kfactors =
         [1, 1.47, 1.72] for ['Al_Ka','Cr_Ka', 'Ni_Ka']
+    mask: array of bool
+        The mask with the dimension of intensities[0]. If a pixel is True,
+        the composition is set to zero.
 
     Return
     ------
@@ -200,7 +204,11 @@ def quantification_cliff_lorimer(intensities,
                 intens[:, i] = np.zeros_like(intens[:, i])
                 if len(index) == 1:
                     intens[index[0], i] = 1.
-        return intens.reshape(dim)
+        intens = intens.reshape(dim)
+        if mask is not None:
+            for i in range(dim[0]):
+                intens[i][mask] = 0
+        return intens
     else:
         # intens = intensities.copy()
         # intens = intens.astype('float')
