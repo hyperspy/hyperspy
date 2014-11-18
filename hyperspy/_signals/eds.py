@@ -576,29 +576,3 @@ class EDSSpectrum(Spectrum):
                                        elevation_angle)
 
         return TOA
-
-    def vacuum_mask(self, threshold=1.0, closing=True):
-        """
-        Generate mask of the vacuum region
-
-        Parameters
-        ----------
-        threshold: float
-            For a given pixel, maximum value in the energy axis below which the
-            pixel is considered as vacuum.
-        closing: bool
-            If true, applied a morphologic closing to the mask
-
-        Return
-        ------
-        mask: signal
-            The mask of the region
-        """
-        from scipy.ndimage.morphology import binary_dilation, binary_erosion
-        mask = (self.max(-1) <= threshold)
-        if closing:
-            mask.data = binary_dilation(mask.data, border_value=0)
-            mask.data = binary_erosion(mask.data, border_value=1)
-        return mask
-
-
