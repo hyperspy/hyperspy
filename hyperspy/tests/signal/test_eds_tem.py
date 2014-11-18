@@ -22,6 +22,7 @@ from nose.tools import assert_true, assert_equal
 from hyperspy.signals import EDSTEMSpectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.components import Gaussian
+from hyperspy.misc.eds import utils as utils_eds
 
 
 class Test_metadata:
@@ -122,13 +123,28 @@ class Test_quantification:
         s.add_lines(xray_lines)
         self.signal = s
 
-    def test_quant_lorimer_simple(self):
+    def test_quant_lorimer(self):
         s = self.signal
-        kfactors = [2.0009344042484134]
+        kfactors = [1, 2.0009344042484134]
         intensities = s.get_lines_intensity()
         res = s.quantification_cliff_lorimer(intensities, kfactors)
         assert_true(np.allclose(res[0].data, np.array(
-                    [0.2270779, 0.2270779]), atol=1e-3))
+                    [22.70779, 22.70779]), atol=1e-3))
+
+    def test_quant_zeros(self):
+        intens = np.array([[0.5, 0.5, 0.5],
+                           [0., 0.5, 0.5],
+                           [0.5, 0.0, 0.5],
+                           [0.5, 0.5, 0.0],
+                           [0.5, 0.0, 0.0]]).T
+        assert_true(np.allclose(
+            utils_eds.quantification_cliff_lorimer(
+                intens, [1, 1, 3]).T,
+                np.array([[0.2,  0.2,  0.6],
+                          [0.,  0.25,  0.75],
+                          [0.25,  0.,  0.75],
+                          [0.5,  0.5,  0.],
+                          [1.,  0.,  0.]])))
 
 
 
