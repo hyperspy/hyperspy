@@ -240,17 +240,19 @@ def density_of_mixture_of_pure_elements(weight_percent, elements='auto'):
 
 def _elements_auto(composition, elements):
     if isinstance(composition[0], numbers.Number):
-        if elements == 'auto':
-            raise ValueError("The elements needs to be provided.")
+        if isinstance(elements, str):
+            if elements == 'auto':
+                raise ValueError("The elements needs to be provided.")
     else:
-        if elements == 'auto':
-            elements = []
-            for compo in composition:
-                if len(compo.metadata.Sample.elements) > 1:
-                    raise ValueError(
-                        "The signal %s contains more than one "
-                        "element but this function requires only one element "
-                        "per signal." % compo.metadata.General.title)
-                else:
-                    elements.append(compo.metadata.Sample.elements[0])
+        if isinstance(elements, str):
+            if elements == 'auto':
+                elements = []
+                for compo in composition:
+                    if len(compo.metadata.Sample.elements) > 1:
+                        raise ValueError(
+                            "The signal %s contains more than one element "
+                            "but this function requires only one element "
+                            "per signal." % compo.metadata.General.title)
+                    else:
+                        elements.append(compo.metadata.Sample.elements[0])
     return elements
