@@ -22,6 +22,8 @@ import numpy as np
 import warnings
 
 import traits.api as t
+import traitsui.api as tu
+from traits.trait_numeric import Array
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import slugify
@@ -85,7 +87,10 @@ class Parameter(t.HasTraits):
     __ext_bounded = False
     __ext_force_positive = False
     
-    value = t.Property( t.Either([t.Float(0), t.undefined]) )
+    # traitsui bugs out trying to make an editor for this, so always specify!
+    # (it bugs out, because both editor shares the object, and Array editors 
+    # don't like non-sequence objects). TextEditor() works well.
+    value = t.Property( t.Either([t.Float(0), Array()]), editor=tu.TextEditor())
     free = t.Property( t.Bool(True) )
 
     def __init__(self):
@@ -172,7 +177,8 @@ class Parameter(t.HasTraits):
                 bmax = (self.bmax if self.bmin is not None
                         else np.inf)
                 self.__value = np.clip(arg, bmin, bmax)
-        if hasattr(self, 'map') and self.map is not None:
+        if (self._number_of_elements == 1 and
+            hasattr(self, 'map') and self.map is not None):
             self.store_current_value_in_array()
 
         if (self._number_of_elements != 1 and
@@ -452,6 +458,9 @@ class Parameter(t.HasTraits):
 
 class Component(t.HasTraits):
     __axes_manager = None
+    
+    active = t.Property( t.Bool(True) )
+    name = t.Property( t.Str('') )
 
     def __init__(self, parameter_name_list):
         self.connected_functions = list()
@@ -463,12 +472,13 @@ class Component(t.HasTraits):
         self.isbackground = False
         self.convolved = True
         self.parameters = tuple(self.parameters)
-        self._name = ''
         self._id_name = self.__class__.__name__
         self._id_version = '1.0'
         self._position = None
         self.model = None
+        self.name = ''
 
+    _name = ''
     _active_is_multidimensional = False
     _active = True
 
@@ -503,12 +513,11 @@ class Component(t.HasTraits):
             self._active_array = None
             self._active_is_multidimensional = False
 
-    @property
-    def name(self):
+    def _get_name(self):
         return(self._name)
 
-    @name.setter
-    def name(self, value):
+    def _set_name(self, value):
+        old_value = self._name
         if self.model:
             for component in self.model:
                 if value == component.name:
@@ -520,6 +529,7 @@ class Component(t.HasTraits):
                     self._name = value
         else:
             self._name = value
+        self.trait_property_changed('name', old_value, self._name)
 
     @property
     def _axes_manager(self):
@@ -539,8 +549,7 @@ class Component(t.HasTraits):
         if f in self.connected_functions:
             self.connected_functions.remove(f)
 
-    @property
-    def active(self):
+    def _get_active(self):
         if self.active_is_multidimensional is True:
             # The following should set
             self.active = self._active_array[self._axes_manager.indices[::-1]]
@@ -549,10 +558,10 @@ class Component(t.HasTraits):
     def _store_active_value_in_array(self, value):
         self._active_array[self._axes_manager.indices[::-1]] = value
 
-    @active.setter
-    def active(self, arg):
+    def _set_active(self, arg):
         if self._active == arg:
             return
+        old_value = self._active
         self._active = arg
         if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
@@ -562,6 +571,7 @@ class Component(t.HasTraits):
                 f()
             except:
                 self.disconnect(f)
+        self.trait_property_changed('active', old_value, self._active)
 
     def init_parameters(self, parameter_name_list):
         for name in parameter_name_list:
