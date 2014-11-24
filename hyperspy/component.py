@@ -21,6 +21,8 @@ import os
 import numpy as np
 import warnings
 
+import traits.api as t
+
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
@@ -28,7 +30,7 @@ from hyperspy.misc.io.tools import (incremental_filename,
 from hyperspy.exceptions import NavigationDimensionError
 
 
-class Parameter(object):
+class Parameter(t.HasTraits):
 
     """Model parameter
 
@@ -76,21 +78,23 @@ class Parameter(object):
     """
     __number_of_elements = 1
     __value = 0
+    __free = True
     _bounds = (None, None)
     __twin = None
     _axes_manager = None
     __ext_bounded = False
     __ext_force_positive = False
+    
+    value = t.Property( t.Either([t.Float(0), t.undefined]) )
+    free = t.Property( t.Bool(True) )
 
     def __init__(self):
         self._twins = set()
         self.connected_functions = list()
         self.twin_function = lambda x: x
         self.twin_inverse_function = lambda x: x
-        self.value = 0
         self.std = None
         self.component = None
-        self.free = True
         self.grad = None
         self.name = ''
         self.units = ''
@@ -120,13 +124,13 @@ class Parameter(object):
             if self.twin:
                 self.twin.disconnect(f)
 
-    def _getvalue(self):
+    def _get_value(self):
         if self.twin is None:
             return self.__value
         else:
             return self.twin_function(self.twin.value)
 
-    def _setvalue(self, arg):
+    def _set_value(self, arg):
         try:
             # Use try/except instead of hasattr("__len__") because a numpy
             # memmap has a __len__ wrapper even for numbers that raises a
@@ -168,6 +172,8 @@ class Parameter(object):
                 bmax = (self.bmax if self.bmin is not None
                         else np.inf)
                 self.__value = np.clip(arg, bmin, bmax)
+        if hasattr(self, 'map') and self.map is not None:
+            self.store_current_value_in_array()
 
         if (self._number_of_elements != 1 and
                 not isinstance(self.__value, tuple)):
@@ -178,20 +184,21 @@ class Parameter(object):
                     f()
                 except:
                     self.disconnect(f)
-    value = property(_getvalue, _setvalue)
+        self.trait_property_changed('value', old_value, self.__value)
 
     # Fix the parameter when coupled
-    def _getfree(self):
+    def _get_free(self):
         if self.twin is None:
             return self.__free
         else:
             return False
 
-    def _setfree(self, arg):
+    def _set_free(self, arg):
+        old_value = self.__free
         self.__free = arg
         if self.component is not None:
             self.component._update_free_parameters()
-    free = property(_getfree, _setfree)
+        self.trait_property_changed('free', old_value, self.__free)
 
     def _set_twin(self, arg):
         if arg is None:
@@ -443,7 +450,7 @@ class Parameter(object):
                 filename, '_std'))
 
 
-class Component(object):
+class Component(t.HasTraits):
     __axes_manager = None
 
     def __init__(self, parameter_name_list):
@@ -565,6 +572,7 @@ class Component(object):
             if hasattr(self, 'grad_' + name):
                 parameter.grad = getattr(self, 'grad_' + name)
             parameter.component = self
+            self.add_trait(name, t.Instance(Parameter))
 
     def _get_long_description(self):
         if self.name:
