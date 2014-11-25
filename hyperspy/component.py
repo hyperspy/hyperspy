@@ -31,6 +31,16 @@ from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.exceptions import NavigationDimensionError
 
+class NoneFloat(t.Float):   # Lazy solution, but usable
+    default_value = None
+    
+    def validate(self, object, name, value):
+        if value == "None" or value == u"None":
+            value = None
+        if value is None:
+            super(NoneFloat, self).validate(object, name, 0)
+            return None
+        return super(NoneFloat, self).validate(object, name, value)
 
 class Parameter(t.HasTraits):
 
@@ -91,7 +101,11 @@ class Parameter(t.HasTraits):
     # (it bugs out, because both editor shares the object, and Array editors 
     # don't like non-sequence objects). TextEditor() works well.
     value = t.Property( t.Either([t.Float(0), Array()]), editor=tu.TextEditor())
+    units = t.Str('')
     free = t.Property( t.Bool(True) )
+    
+    bmin = t.Property( NoneFloat(), label="Lower bounds" )
+    bmax = t.Property( NoneFloat(), label="Upper bounds" )
 
     def __init__(self):
         self._twins = set()
@@ -102,7 +116,6 @@ class Parameter(t.HasTraits):
         self.component = None
         self.grad = None
         self.name = ''
-        self.units = ''
         self.map = None
         self.model = None
 
@@ -240,13 +253,14 @@ class Parameter(t.HasTraits):
             return self._bounds[0][0]
 
     def _set_bmin(self, arg):
+        old_value = self.bmin
         if self._number_of_elements == 1:
             self._bounds = (arg, self.bmax)
         else:
             self._bounds = ((arg, self.bmax),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-    bmin = property(_get_bmin, _set_bmin)
+        self.trait_property_changed('bmin', old_value, arg)
 
     def _get_bmax(self):
         if self._number_of_elements == 1:
@@ -255,13 +269,14 @@ class Parameter(t.HasTraits):
             return self._bounds[0][1]
 
     def _set_bmax(self, arg):
+        old_value = self.bmax
         if self._number_of_elements == 1:
             self._bounds = (self.bmin, arg)
         else:
             self._bounds = ((self.bmin, arg),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-    bmax = property(_get_bmax, _set_bmax)
+        self.trait_property_changed('bmax', old_value, arg)
 
     @property
     def _number_of_elements(self):
