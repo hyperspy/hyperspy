@@ -3297,10 +3297,15 @@ class Signal(MVA,
         if s.metadata.has_item('Signal.Noise_properties.variance'):
             if isinstance(s.metadata.Signal.Noise_properties.variance, Signal):
                 var = s.metadata.Signal.Noise_properties.variance
-                s.metadata.Signal.Noise_properties.variance = var._deepcopy_with_new_data(np.sqrt(array_tools.rebin(var.data**2, new_shape_in_array)))
+                s.metadata.Signal.Noise_properties.variance = var._deepcopy_with_new_data(
+                    np.sqrt(
+                        array_tools.rebin(
+                            var.data ** 2,
+                            new_shape_in_array)))
                 for axis in s.metadata.Signal.Noise_properties.variance.axes_manager._axes:
                     axis.scale *= factors[axis.index_in_array]
-                s.metadata.Signal.Noise_properties.variance.get_dimensions_from_data()
+                s.metadata.Signal.Noise_properties.variance.get_dimensions_from_data(
+                )
         return s
 
     def split(self,

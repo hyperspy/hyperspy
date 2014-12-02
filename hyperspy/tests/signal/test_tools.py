@@ -102,9 +102,17 @@ class Test3D:
         new_s = self.signal.rebin((2, 1, 6))
         var = new_s.metadata.Signal.Noise_properties.variance
         assert_true(new_s.data.shape == (1, 2, 6))
-        assert_true(new_s.metadata.Signal.Noise_properties.variance.data.shape == (1, 2, 6))
+        assert_true(
+            new_s.metadata.Signal.Noise_properties.variance.data.shape == (
+                1,
+                2,
+                6))
         from hyperspy.misc.array_tools import rebin
-        assert_true(np.all(np.sqrt(rebin(self.signal.data**2, (1, 2, 6))) == var))
+        assert_true(
+            np.all(
+                np.sqrt(
+                    rebin(
+                        self.signal.data ** 2, (1, 2, 6))) == var))
 
     @raises(AttributeError)
     def test_rebin_no_variance(self):
