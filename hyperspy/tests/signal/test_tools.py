@@ -85,6 +85,24 @@ class Test2D:
             (self.signal.metadata.Signal.Noise_properties.variance.data ==
              (self.signal.data * 2 + 1) * 0.5).all())
 
+    def test_extend_prepend(self):
+        extended = self.signal.extend_dimension(-3.1, "x", 100)
+        assert_true((extended.data[:6, :] == 100).all())
+
+    def test_extend_prepend_offset(self):
+        extended = self.signal.extend_dimension(-3.1, "x", 100)
+        assert_equal(extended.axes_manager["x"].offset,
+                     self.signal.axes_manager["x"].offset -3)
+
+    def test_extend_append(self):
+        extended = self.signal.extend_dimension(3.1, "x", 100)
+        assert_true((extended.data[-6:, :] == 100).all())
+
+    def test_extend_append_offset(self):
+        extended = self.signal.extend_dimension(3.1, "x", 100)
+        assert_equal(extended.axes_manager["x"].offset,
+                     self.signal.axes_manager["x"].offset)
+
 
 class Test3D:
 

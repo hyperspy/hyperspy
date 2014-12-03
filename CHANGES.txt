@@ -6,6 +6,21 @@ see `the github commits changelog
 <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
 
+.. _changes_0.7.4:
+
+v0.7.4
+======
+
+This is a maintenance release. A list of fixed issues is available in the
+`0.7.4 milestone
+<https://github.com/hyperspy/hyperspy/issues?milestone=6&page=1&state=closed>`_
+in the github repository.
+
+New features
+------------
+
+* New method, :py:meth:`~.signal.Signal.extend_dimension`
+
 .. _changes_0.7.3:
 
 v0.7.3

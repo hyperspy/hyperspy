@@ -72,6 +72,7 @@ from hyperspy import components
 from hyperspy.misc.utils import underline
 from hyperspy.misc.borrowed.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
+from hyperspy.misc.math_tools import isfloat
 
 
 class Signal2DTools(object):
@@ -334,6 +335,14 @@ class Signal2DTools(object):
             return_shifts = True
         else:
             return_shifts = False
+        bottom, top = (int(np.floor(-shifts[:, 0].min())) if
+                       -shifts[:, 0].min() < 0 else None,
+                       int(np.ceil(-shifts[:, 0].max())) if
+                       -shifts[:, 0].max() > 0 else 0)
+        right, left = (int(np.floor(-shifts[:, 1].min())) if
+                       -shifts[:, 1].min() < 0 else None,
+                       int(np.ceil(-shifts[:, 1].max())) if
+                           -shifts[:, 1].max() > 0 else 0)
         # Translate with sub-pixel precision if necesary
         for im, shift in zip(self._iterate_signal(),
                              shifts):
@@ -344,17 +353,7 @@ class Signal2DTools(object):
 
         # Crop the image to the valid size
         if crop is True:
-            shifts = -shifts
-            bottom, top = (int(np.floor(shifts[:, 0].min())) if
-                           shifts[:, 0].min() < 0 else None,
-                           int(np.ceil(shifts[:, 0].max())) if
-                           shifts[:, 0].max() > 0 else 0)
-            right, left = (int(np.floor(shifts[:, 1].min())) if
-                           shifts[:, 1].min() < 0 else None,
-                           int(np.ceil(shifts[:, 1].max())) if
-                           shifts[:, 1].max() > 0 else 0)
             self.crop_image(top, bottom, left, right)
-            shifts = -shifts
         if return_shifts:
             return shifts
 
@@ -3944,6 +3943,67 @@ class Signal(MVA,
         s = self.indexmax(axis)
         s.data = self.axes_manager[axis].index2value(s.data)
         return s
+
+    def extend_dimension(self, increment, axis, fill_value=0):
+        """Increase dimension size to the right or left.
+
+        The size in increased by concatenating an array of the appropiate
+        shape to the data.
+
+        Parameters
+        ----------
+        increment: int or float
+            The size increment. If negative, the concatenation is perform from
+            the left, if positive from the righg. If float, the increment is
+            given in the axis units.
+        axis : {int | string}
+           The axis can be specified using the index of the axis in
+           `axes_manager` or the axis name.
+        fill_value: number
+            The filling value of the added data.
+
+        Returns
+        -------
+        s : extended copy of the object.
+
+        Examples
+        --------
+
+        >>> s = signals.Signal(np.ones((2,2)))
+        >>> s.data
+        array([[ 1.,  1.],
+               [ 1.,  1.]])
+        >>> s.extend_dimension(increment=-2, axis=1, fill_value=10).data
+        array([[ 10.,  10.,   1.,   1.],
+               [ 10.,  10.,   1.,   1.]])
+        >>> s.extend_dimension(increment=-2, axis=0, fill_value=10).data
+        array([[ 10.,  10.],
+               [ 10.,  10.],
+               [  1.,   1.],
+               [  1.,   1.]])
+
+        """
+        if not self.axes_manager.shape:
+            raise SignalDimensionError(
+                "Signal does not have axes, cannot extend.")
+        iaxis = self.axes_manager[axis].index_in_array
+        if isfloat(increment):
+            increment = int(round(increment / self.axes_manager[axis].scale))
+        if increment == 0:
+            return self.deepcopy()
+        shape = list(self.data.shape)
+        shape[iaxis] = abs(increment)
+        border = np.empty(shape)
+        border[:] = fill_value
+        data = np.concatenate((self.data, border)[::np.sign(increment)],
+                              axis=iaxis)
+        s = self._deepcopy_with_new_data(data)
+        axis = s.axes_manager[axis]
+        axis.size += abs(increment)
+        if increment < 0:
+            axis.offset += axis.scale * increment
+        return s
+
 
     def get_histogram(img, bins='freedman', range_bins=None, **kwargs):
         """Return a histogram of the signal data.

@@ -610,6 +610,14 @@ method or GUIs if cropping :ref:`spectra <spectrum.crop>` or :ref:`images
 <image.crop>`. There is also a general :py:meth:`~.signal.Signal.crop`
 method that operates *in place*.
 
+Extending the size of a dimension
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. versionadded:: 0.7.4
+
+   It is possible extend any axis to the left or the right with the
+   :py:meth:`~.signal.Signal.extend_dimension` method.
+
+
 Rebinning
 ^^^^^^^^^
 
