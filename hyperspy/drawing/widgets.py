@@ -216,8 +216,6 @@ class DraggableSquare(ResizebleDraggablePatch):
             yaxis = self.axes_manager.navigation_axes[1]
             wxindex = xaxis.value2index(event.xdata)
             wyindex = yaxis.value2index(event.ydata)
-            wxindex = xaxis.value2index(event.xdata)
-            wyindex = yaxis.value2index(event.ydata)
             if self.axes_manager.indices[1] != wyindex:
                 try:
                     yaxis.index = wyindex
@@ -236,47 +234,62 @@ class DraggableSquare(ResizebleDraggablePatch):
 class ResizebleDraggableRectangle(ResizebleDraggablePatch):
 
     def __init__(self, axes_manager):
-        DraggablePatch.__init__(self, axes_manager)
+        super(ResizebleDraggableRectangle, self).__init__(axes_manager)
         self.xsize = 1
         self.ysize = 1
         self.bounds = []
+        self.pick_on_frame = False
+        self.pick_offset = (0,0)
+        self.resize_color = 'green'
+        self.resizers = []
+
+    def set_size(self, size):
+        self.xsize = size
+        self.ysize = size
+        self.update_patch_size()
+        self._apply_geometry()
 
     def set_xsize(self, xsize):
         self.xsize = xsize
         self.update_patch_size()
+        self._apply_geometry()
 
     def increase_xsize(self):
-        self.set_xsize(self.xsize + 2)
+        self.set_xsize(self.xsize + 1)
 
     def decrease_xsize(self):
-        if self.xsize > 2:
-            self.set_xsize(self.xsize - 2)
+        if self.xsize >= 2:
+            self.set_xsize(self.xsize - 1)
 
     def set_ysize(self, ysize):
         self.ysize = ysize
         self.update_patch_size()
+        self._apply_geometry()
 
     def increase_ysize(self):
-        self.set_ysize(self.ysize + 2)
+        self.set_ysize(self.ysize + 1)
 
     def decrease_ysize(self):
-        if self.ysize > 2:
-            self.set_ysize(self.ysize - 2)
+        if self.ysize >= 2:
+            self.set_ysize(self.ysize - 1)
 
     def on_key_press(self, event):
         if event.key == "x":
             self.increase_xsize()
-        if event.key == "c":
+        elif event.key == "c":
             self.decrease_xsize()
-        if event.key == "y":
+        elif event.key == "y":
             self.increase_ysize()
-        if event.key == "u":
+        elif event.key == "u":
             self.decrease_ysize()
+        else:
+            super(ResizebleDraggableRectangle, self).on_key_press(event)
 
 
     def set_patch(self):
         self.calculate_size()
         self.calculate_position()
+        self.calculate_bounds()
         self.patch = plt.Rectangle(
             self._position, self._xsize, self._ysize,
             animated=self.blit,
@@ -284,6 +297,29 @@ class ResizebleDraggableRectangle(ResizebleDraggablePatch):
             lw=2,
             ec=self.color,
             picker=True,)
+        self.resizers = []
+        dx = self._xsize / self.xsize
+        dy = self._ysize / self.ysize
+        
+        p = self._position - (dx, dy)
+        r = plt.Rectangle(p, dx, dy, animated=self.blit, fill=True, lw=0,
+                          fc=self.resize_color, picker=True,)
+        self.resizers.append(r)
+        
+        p = self._position + (self._xsize + dx, -dy)
+        r = plt.Rectangle(p, dx, dy, animated=self.blit, fill=True, lw=0,
+                          fc=self.resize_color, picker=True,)
+        self.resizers.append(r)
+        
+        p = self._position + (-dx, self._ysize + dy)
+        r = plt.Rectangle(p, dx, dy, animated=self.blit, fill=True, lw=0,
+                          fc=self.resize_color, picker=True,)
+        self.resizers.append(r)
+        
+        p = self._position + (self._xsize + dx, self._ysize + dy)
+        r = plt.Rectangle(p, dx, dy, animated=self.blit, fill=True, lw=0,
+                          fc=self.resize_color, picker=True,)
+        self.resizers.append(r)
 
     def calculate_size(self):
         xaxis = self.axes_manager.navigation_axes[0]
@@ -294,55 +330,139 @@ class ResizebleDraggableRectangle(ResizebleDraggablePatch):
     def calculate_position(self):
         coordinates = np.array(self.axes_manager.coordinates[:2])
         self._position = coordinates - (
-            self._xsize / 2., self._ysize / 2.)
+            self._xsize / (2.*self.xsize),
+            self._ysize / (2.*self.ysize))
 
     def calculate_bounds(self):
         position = self._position
-        xsize = self._xsize
-        ysize = self._ysize
-        x0 = position[0]+0.5
-        x1 = position[0]+xsize+0.5
-        y0 = position[1]+0.5
-        y1 = position[1]+ysize+0.5
-        self.bounds = [x0,x1,y0,y1]
-        self.axes_manager.bounds_test = self.bounds
+        x0 = position[0]
+        x1 = position[0] + self._xsize
+        y0 = position[1]
+        y1 = position[1] + self._ysize
+        self.bounds = [x0,y0,x1,y1]
 
     def update_patch_size(self):
         self.calculate_size()
         self.patch.set_width(self._xsize)
         self.patch.set_height(self._ysize)
-        self.update_patch_position()
+        self.calculate_bounds()
+        self.draw_patch()
 
     def update_patch_position(self):
         self.calculate_position()
         self.patch.set_xy(self._position)
+        self.calculate_bounds()
         self.draw_patch()
+        
+    def update_patch_geometry(self):
+        self.calculate_size()
+        self.patch.set_width(self._xsize)
+        self.patch.set_height(self._ysize)
+        self.calculate_position()
+        self.patch.set_xy(self._position)
+        self.calculate_bounds()
+        self.draw_patch()
+        
+            
+    def _apply_geometry(self, x1=None, y1=None):
+        xaxis = self.axes_manager.navigation_axes[0]
+        yaxis = self.axes_manager.navigation_axes[1]
+        if x1 is None: x1 = xaxis.index
+        if y1 is None: y1 = yaxis.index
+        x2 = x1 + self.xsize
+        y2 = y1 + self.ysize
+        if np.abs(x1 - x2) < 2:
+            xaxis.slice = None
+        else:
+            xaxis.slice = slice(x1, x2)
+        if np.abs(y1 - y2) < 2:
+            yaxis.slice = None
+        else:
+            yaxis.slice = slice(y1, y2)
+            
+        try:
+            xaxis.index = x1
+        except traits.api.TraitError:
+            # Index out of range, we do nothing
+            pass
+        try:
+            yaxis.index = y1
+        except traits.api.TraitError:
+            # Index out of range, we do nothing
+            pass
 
+    def onpick(self, event):
+        super(ResizebleDraggableRectangle, self).onpick(event)
+        
+        if event.artist in self.resizers:
+            x = event.mouseevent.xdata
+            y = event.mouseevent.ydata
+            dx = self._xsize / self.xsize
+            dy = self._ysize / self.ysize
+            xaxis = self.axes_manager.navigation_axes[0]
+            yaxis = self.axes_manager.navigation_axes[1]
+            ix = xaxis.value2index(x + 0.5*dx)
+            iy = yaxis.value2index(y + 0.5*dy)
+            self.pick_offset = (ix-xaxis.index, iy-yaxis.index)
+
+            corner = self.resizers.index(event.artist)
+            self.pick_on_frame = corner
+        else:
+            self.pick_on_frame = False
+        
     def onmove(self, event):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
             xaxis = self.axes_manager.navigation_axes[0]
             yaxis = self.axes_manager.navigation_axes[1]
-            wxindex = xaxis.value2index(event.xdata)
-            wyindex = yaxis.value2index(event.ydata)
-            #print(event.xdata, event.ydata,wxindex, wyindex, self._position)
-            #print(event.ydata - self._position[1])
-            if self.axes_manager.indices[1] != wyindex:
-                try:
-                    yaxis.index = wyindex
-                except traits.api.TraitError:
-                    # Index out of range, we do nothing
-                    pass
-
-            if self.axes_manager.indices[0] != wxindex:
-                try:
-                    xaxis.index = wxindex
-                except traits.api.TraitError:
-                    # Index out of range, we do nothing
-                    pass
-            self.calculate_bounds()
-            print(self._position, self._xsize, self._ysize)
-            print(self.bounds)
+            dx = self._xsize / self.xsize
+            dy = self._ysize / self.ysize
+            ix = xaxis.value2index(event.xdata + 0.5*dx)
+            iy = yaxis.value2index(event.ydata + 0.5*dy)
+            ibounds = [xaxis.index, yaxis.index, xaxis.index + self.xsize,
+                       yaxis.index + self.ysize]
+            if self.pick_on_frame is not False:
+                posx = None
+                posy = None
+                corner = self.pick_on_frame
+                if corner % 2 == 0: # Left side start
+                    if ix > ibounds[2]:    # flipped to right
+                        posx = ibounds[2]
+                        self.xsize = ix - ibounds[2]
+                    else:
+                        posx = ix
+                        self.xsize = ibounds[2] - ix
+                else:   # Right side start
+                    if ix < ibounds[0]:  # Flipped to left
+                        posx = ix
+                        self.xsize = ibounds[0] - ix
+                    else:
+                        self.xsize = ix - ibounds[0]
+                if corner // 2 == 0: # Top side start
+                    if iy > ibounds[3]:    # flipped to botton
+                        posy = ibounds[3]
+                        self.ysize = iy - ibounds[3]
+                    else:
+                        posy = iy
+                        self.ysize = ibounds[3] - iy
+                else:   # Bottom side start
+                    if iy < ibounds[1]:  # Flipped to top
+                        posy = iy
+                        self.ysize = ibounds[1] - iy
+                    else:
+                        self.ysize = iy - ibounds[1]
+                if self.xsize < 1:
+                    self.xsize = 1
+                if self.ysize < 1:
+                    self.ysize = 1
+                self._apply_geometry(posx, posy)
+                self.update_patch_geometry()
+            else:
+                ix -= self.pick_offset[0]
+                iy -= self.pick_offset[1]
+                self._apply_geometry(ix, iy)
+                self.update_patch_position()
+            
 
 
 class DraggableHorizontalLine(DraggablePatch):

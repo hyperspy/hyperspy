@@ -234,8 +234,14 @@ class DataAxis(t.HasTraits):
     def _update_slice(self, value):
         if value is False:
             self.slice = slice(None)
-        else:
+        elif value is True:
             self.slice = None
+        if not hasattr(value, '__getitem__'):
+            pass
+        elif len(value) == 1:
+            self.slice = slice(value, value+1)
+        elif 2 <= len(value) <= 3:
+            self.slice = slice(*value)
 
     def get_axis_dictionary(self):
         adict = {
@@ -628,20 +634,21 @@ class AxesManager(t.HasTraits):
 
     def _update_attributes(self):
         getitem_tuple = ()
-        values = []
         self.signal_axes = ()
         self.navigation_axes = ()
         for axis in self._axes:
             # Until we find a better place, take property of the axes
             # here to avoid difficult to debug bugs.
             axis.axes_manager = self
-            if axis.slice is None:
-                getitem_tuple += axis.index,
-                values.append(axis.value)
+            if axis.navigate:
                 self.navigation_axes += axis,
             else:
-                getitem_tuple += axis.slice,
                 self.signal_axes += axis,
+                
+            if axis.slice is None:
+                getitem_tuple += axis.index,
+            else:
+                getitem_tuple += axis.slice,
 
         self.signal_axes = self.signal_axes[::-1]
         self.navigation_axes = self.navigation_axes[::-1]
@@ -696,13 +703,13 @@ class AxesManager(t.HasTraits):
 
     def connect(self, f):
         for axis in self._axes:
-            if axis.slice is None:
-                axis.on_trait_change(f, 'index')
+            if axis.navigate:
+                axis.on_trait_change(f, ['index', 'slice'])
 
     def disconnect(self, f):
         for axis in self._axes:
-            if axis.slice is None:
-                axis.on_trait_change(f, 'index', remove=True)
+            if axis.navigate:
+                axis.on_trait_change(f, ['index', 'slice'], remove=True)
 
     def key_navigator(self, event):
         if len(self.navigation_axes) not in (1, 2):
