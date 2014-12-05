@@ -633,7 +633,8 @@ class AxesManager(t.HasTraits):
         self._axes.append(axis)
 
     def _update_attributes(self):
-        getitem_tuple = ()
+        getitem_tuple_sig_sliced = ()
+        getitem_tuple_all_sliced = ()
         self.signal_axes = ()
         self.navigation_axes = ()
         for axis in self._axes:
@@ -642,17 +643,20 @@ class AxesManager(t.HasTraits):
             axis.axes_manager = self
             if axis.navigate:
                 self.navigation_axes += axis,
+                getitem_tuple_sig_sliced += axis.index,
             else:
                 self.signal_axes += axis,
+                getitem_tuple_sig_sliced += axis.slice,
                 
             if axis.slice is None:
-                getitem_tuple += axis.index,
+                getitem_tuple_all_sliced += axis.index,
             else:
-                getitem_tuple += axis.slice,
+                getitem_tuple_all_sliced += axis.slice,
 
         self.signal_axes = self.signal_axes[::-1]
         self.navigation_axes = self.navigation_axes[::-1]
-        self._getitem_tuple = getitem_tuple
+        self._getitem_tuple = getitem_tuple_sig_sliced
+        self._getitem_tuple_all = getitem_tuple_all_sliced
         self.signal_dimension = len(self.signal_axes)
         self.navigation_dimension = len(self.navigation_axes)
         if self.navigation_dimension != 0:

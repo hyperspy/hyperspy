@@ -2826,7 +2826,7 @@ class Signal(MVA,
     def __call__(self, axes_manager=None):
         if axes_manager is None:
             axes_manager = self.axes_manager
-        d = self.data.__getitem__(axes_manager._getitem_tuple)
+        d = self.data.__getitem__(axes_manager._getitem_tuple_all)
         while len(np.shape(d)) > len(axes_manager.signal_axes):
             d = np.mean(d, axis=0)
         return np.atleast_1d(d)
