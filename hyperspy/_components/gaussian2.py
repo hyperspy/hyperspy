@@ -26,9 +26,14 @@ sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
-class Gaussian(Component):
+class Gaussian2(Component):
 
-    """Normalized gaussian function component
+    """Normalized gaussian function component, with a height parameter instead
+    of the A parameter (scaling difference of sigma * sqrt(2*Pi)). This makes
+    the parameter vs. peak maximum independent of sigma, and thereby makes 
+    locking of the parameter more viable. As long as there it no binning,
+    the height parameter corresponds directly to the peak maximum, if not,
+    the value is scaled by a linear constant (signal_axis.scale).
 
     .. math::
 
@@ -38,7 +43,7 @@ class Gaussian(Component):
     | Parameter  | Attribute |
     +------------+-----------+
     +------------+-----------+
-    |     a      |     A     |
+    |     a      |  height   |
     +------------+-----------+
     |     b      |  centre   |
     +------------+-----------+
@@ -50,48 +55,52 @@ class Gaussian(Component):
 
     """
 
-    def __init__(self, A=1., sigma=1., centre=0.):
-        Component.__init__(self, ['A', 'sigma', 'centre'])
-        self.A.value = A
+    def __init__(self, height=1., sigma=1., centre=0.):
+        Component.__init__(self, ['height', 'sigma', 'centre'])
+        self.height.value = height
         self.sigma.value = sigma
         self.centre.value = centre
         self._position = self.centre
 
         # Boundaries
-        self.A.bmin = 0.
-        self.A.bmax = None
+        self.height.bmin = None
+        self.height.bmax = None
 
-        self.sigma.bmin = None
+        self.sigma.bmin = 0.
         self.sigma.bmax = None
 
         self.isbackground = False
         self.convolved = True
 
         # Gradients
-        self.A.grad = self.grad_A
+        self.height.grad = self.grad_height
         self.sigma.grad = self.grad_sigma
         self.centre.grad = self.grad_centre
 
     def function(self, x):
-        A = self.A.value
-        sigma = self.sigma.value
-        centre = self.centre.value
-        return A * (1 / (sigma * sqrt2pi)) * np.exp(
-            -(x - centre) ** 2 / (2 * sigma ** 2))
+        s = self.sigma.value
+        c = self.centre.value
+        h = self.height.value
+        x1 = (x-c)
+        return h * np.exp(-x1**2 / (2 * s**2))
 
-    def grad_A(self, x):
-        return self.function(x) / self.A.value
+    def grad_height(self, x):
+        return self.function(x) / self.A
 
     def grad_sigma(self, x):
-        return ((x - self.centre.value) ** 2 * np.exp(-(x - self.centre.value) ** 2
-                                                      / (2 * self.sigma.value ** 2)) * self.A.value) / (sqrt2pi *
-                                                                                                        self.sigma.value ** 4) - (np.exp(-(x - self.centre.value) ** 2 / (2 *
-                                                                                                                                                                          self.sigma.value ** 2)) * self.A.value) / (sqrt2pi * self.sigma.value ** 2)
+        c = self.centre.value
+        s2 = self.sigma.value ** 2
+        A = self.A
+        x1 = (x-c)
+        return ((x1**2 * np.exp(-x1**2 / (2 * s2)) * A) / (sqrt2pi * s2 ** 2)) \
+                - (np.exp(-x1**2 / (2 * s2)) * A) / (sqrt2pi * s2)
 
     def grad_centre(self, x):
-        return ((x - self.centre.value) * np.exp(-(x - self.centre.value) ** 2 / (2
-                                                                                  * self.sigma.value ** 2)) * self.A.value) / (sqrt2pi *
-                                                                                                                               self.sigma.value ** 3)
+        c = self.centre.value
+        s = self.sigma.value
+        A = self.A
+        x1 = (x-c)
+        return (x1 * np.exp(-x1 ** 2 / (2 * s**2)) * A) / (sqrt2pi * s**3)
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the gaussian by calculating the momenta.
@@ -135,8 +144,7 @@ class Gaussian(Component):
         """
         axis = signal.axes_manager.signal_axes[0]
         binned = signal.metadata.Signal.binned
-        axis = signal.axes_manager.signal_axes[0]
-        binned = signal.metadata.Signal.binned
+        print axis.scale
         i1, i2 = axis.value_range_to_indices(x1, x2)
         X = axis.axis[i1:i2]
         if only_current is True:
@@ -164,18 +172,18 @@ class Gaussian(Component):
         if only_current is True:
             self.centre.value = center
             self.sigma.value = sigma
-            self.A.value = height * sigma * sqrt2pi
+            self.height.value = height
             if binned is True:
-                self.A.value /= axis.scale
+                self.height.value /= axis.scale
             return True
         else:
-            if self.A.map is None:
+            if self.height.map is None:
                 self._create_arrays()
-            self.A.map['values'][:] = height * sigma * sqrt2pi
+            self.height.map['values'][:] = height
 
             if binned is True:
-                self.A.map['values'] /= axis.scale
-            self.A.map['is_set'][:] = True
+                self.height.map['values'][:] /= axis.scale
+            self.height.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma
             self.sigma.map['is_set'][:] = True
             self.centre.map['values'][:] = center
@@ -190,3 +198,11 @@ class Gaussian(Component):
     @fwhm.setter
     def fwhm(self, value):
         self.sigma.value = value / sigma2fwhm
+
+    @property
+    def A(self):
+        return self.height.value * self.sigma.value * sqrt2pi
+
+    @A.setter
+    def A(self, value):
+        self.height.value = value / (self.sigma.value * sqrt2pi)
