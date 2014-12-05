@@ -28,12 +28,13 @@ sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 class Gaussian2(Component):
 
-    """Normalized gaussian function component, with a height parameter instead
-    of the A parameter (scaling difference of sigma * sqrt(2*Pi)). This makes
-    the parameter vs. peak maximum independent of sigma, and thereby makes 
-    locking of the parameter more viable. As long as there it no binning,
-    the height parameter corresponds directly to the peak maximum, if not,
-    the value is scaled by a linear constant (signal_axis.scale).
+    """Normalized gaussian function component, with a fwhm parameter instead
+    of the sigma parameter, and a height parameter instead of the A parameter 
+    (scaling difference of sigma * sqrt(2*Pi)). This makes the parameter vs. 
+    peak maximum independent of sigma, and thereby makes locking of the 
+    parameter more viable. As long as there it no binning, the height parameter
+    corresponds directly to the peak maximum, if not, the value is scaled by a 
+    linear constant (signal_axis.scale).
 
     .. math::
 
@@ -47,18 +48,15 @@ class Gaussian2(Component):
     +------------+-----------+
     |     b      |  centre   |
     +------------+-----------+
-    |     c      |   sigma   |
+    |     c      |   fwhm    |
     +------------+-----------+
-
-    For convenience the `fwhm` attribute can be used to get and set
-    the full-with-half-maximum.
 
     """
 
-    def __init__(self, height=1., sigma=1., centre=0.):
-        Component.__init__(self, ['height', 'sigma', 'centre'])
+    def __init__(self, height=1., fwhm=1., centre=0.):
+        Component.__init__(self, ['height', 'fwhm', 'centre'])
         self.height.value = height
-        self.sigma.value = sigma
+        self.fwhm.value = fwhm
         self.centre.value = centre
         self._position = self.centre
 
@@ -66,19 +64,19 @@ class Gaussian2(Component):
         self.height.bmin = None
         self.height.bmax = None
 
-        self.sigma.bmin = 0.
-        self.sigma.bmax = None
+        self.fwhm.bmin = 0.
+        self.fwhm.bmax = None
 
         self.isbackground = False
         self.convolved = True
 
         # Gradients
         self.height.grad = self.grad_height
-        self.sigma.grad = self.grad_sigma
+        self.fwhm.grad = self.grad_fwhm
         self.centre.grad = self.grad_centre
 
     def function(self, x):
-        s = self.sigma.value
+        s = self.sigma
         c = self.centre.value
         h = self.height.value
         x1 = (x-c)
@@ -87,9 +85,9 @@ class Gaussian2(Component):
     def grad_height(self, x):
         return self.function(x) / self.A
 
-    def grad_sigma(self, x):
+    def grad_fwhm(self, x):
         c = self.centre.value
-        s2 = self.sigma.value ** 2
+        s2 = self.sigma ** 2
         A = self.A
         x1 = (x-c)
         return ((x1**2 * np.exp(-x1**2 / (2 * s2)) * A) / (sqrt2pi * s2 ** 2)) \
@@ -97,7 +95,7 @@ class Gaussian2(Component):
 
     def grad_centre(self, x):
         c = self.centre.value
-        s = self.sigma.value
+        s = self.sigma
         A = self.A
         x1 = (x-c)
         return (x1 * np.exp(-x1 ** 2 / (2 * s**2)) * A) / (sqrt2pi * s**3)
@@ -168,10 +166,11 @@ class Gaussian2(Component):
 
         sigma = np.sqrt(np.abs(np.sum((X.reshape(X_shape) - center.reshape(
             center_shape)) ** 2 * data, i) / np.sum(data, i)))
+        fwhm = sigma * sigma2fwhm
         height = data.max(i)
         if only_current is True:
             self.centre.value = center
-            self.sigma.value = sigma
+            self.fwhm.value = fwhm
             self.height.value = height
             if binned is True:
                 self.height.value /= axis.scale
@@ -184,25 +183,25 @@ class Gaussian2(Component):
             if binned is True:
                 self.height.map['values'][:] /= axis.scale
             self.height.map['is_set'][:] = True
-            self.sigma.map['values'][:] = sigma
-            self.sigma.map['is_set'][:] = True
+            self.fwhm.map['values'][:] = fwhm
+            self.fwhm.map['is_set'][:] = True
             self.centre.map['values'][:] = center
             self.centre.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
 
     @property
-    def fwhm(self):
-        return self.sigma.value * sigma2fwhm
+    def sigma(self):
+        return self.fwhm.value / sigma2fwhm
 
-    @fwhm.setter
-    def fwhm(self, value):
-        self.sigma.value = value / sigma2fwhm
+    @sigma.setter
+    def sigma(self, value):
+        self.fwhm.value = value * sigma2fwhm
 
     @property
     def A(self):
-        return self.height.value * self.sigma.value * sqrt2pi
+        return self.height.value * self.sigma * sqrt2pi
 
     @A.setter
     def A(self, value):
-        self.height.value = value / (self.sigma.value * sqrt2pi)
+        self.height.value = value / (self.sigma * sqrt2pi)
