@@ -171,7 +171,7 @@ class Gaussian2(Component):
         if only_current is True:
             self.centre.value = center
             self.fwhm.value = fwhm
-            self.height.value = height
+            self.height.value = float(height)
             if binned is True:
                 self.height.value /= axis.scale
             return True
