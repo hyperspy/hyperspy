@@ -205,3 +205,10 @@ class Gaussian2(Component):
     @A.setter
     def A(self, value):
         self.height.value = value / (self.sigma * sqrt2pi)
+
+    def integral_as_signal(self):
+        """
+        Utility function to get gaussian integral as Signal
+        """
+        return self.height.as_signal() * self.fwhm.as_signal() * \
+                sqrt2pi / sigma2fwhm
