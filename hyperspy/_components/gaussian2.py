@@ -142,7 +142,6 @@ class Gaussian2(Component):
         """
         axis = signal.axes_manager.signal_axes[0]
         binned = signal.metadata.Signal.binned
-        print axis.scale
         i1, i2 = axis.value_range_to_indices(x1, x2)
         X = axis.axis[i1:i2]
         if only_current is True:
