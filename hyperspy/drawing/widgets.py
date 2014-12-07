@@ -362,8 +362,11 @@ class ResizebleDraggableRectangle(ResizebleDraggablePatch):
         
     def update_resizers(self):
         pos = self._get_resizer_pos()
+        rsize = self._get_resizer_size()
         for i in xrange(4):
             self.resizers[i].set_xy(pos[i])
+            self.resizers[i].set_width(rsize[0])
+            self.resizers[i].set_height(rsize[1])
             
 
     def update_patch_size(self):
