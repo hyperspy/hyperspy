@@ -100,7 +100,7 @@ class Parameter(t.HasTraits):
     # traitsui bugs out trying to make an editor for this, so always specify!
     # (it bugs out, because both editor shares the object, and Array editors 
     # don't like non-sequence objects). TextEditor() works well.
-    value = t.Property( t.Either([t.Float(0), Array()]), editor=tu.TextEditor())
+    value = t.Property( t.Either([t.CFloat(0), Array()]), editor=tu.TextEditor())
     units = t.Str('')
     free = t.Property( t.Bool(True) )
     
