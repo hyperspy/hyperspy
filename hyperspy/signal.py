@@ -2414,8 +2414,6 @@ class Signal(MVA,
         self.auto_replot = True
         self.inav = SpecialSlicers(self, True)
         self.isig = SpecialSlicers(self, False)
-        self.ROIs = set()
-        self.cascade_test = None
 
     @property
     def mapped_parameters(self):
@@ -2831,7 +2829,7 @@ class Signal(MVA,
             d = np.mean(d, axis=0)
         return np.atleast_1d(d)
 
-    def plot(self, navigator="auto", axes_manager=None):
+    def plot(self, navigator="auto", axes_manager=None, pointer_type=None):
         """Plot the signal at the current coordinates.
 
         For multidimensional datasets an optional figure,
@@ -2907,9 +2905,9 @@ class Signal(MVA,
         else:
             raise ValueError('Plotting is not supported for this view')
 
+        self._plot.pointer_type = pointer_type
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = self.__call__
-        self._plot.signal_test = self
         if self.metadata.General.title:
             self._plot.signal_title = self.metadata.General.title
         elif self.tmp_parameters.has_item('filename'):

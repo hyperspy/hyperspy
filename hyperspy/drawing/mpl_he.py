@@ -38,6 +38,7 @@ class MPL_HyperExplorer(object):
         self.navigator_plot = None
         self.axis = None
         self.pointer = None
+        self.pointer_type = None
         self._key_nav_cid = None
         self._pointer_nav_dim = None
 
@@ -137,7 +138,10 @@ class MPL_HyperExplorer(object):
 
         if nav_dim == 2:  # It is an image
             if self.axes_manager.navigation_dimension > 1:
-                Pointer = widgets.ResizebleDraggableRectangle
+                if self.pointer_type == None:
+                    Pointer = widgets.DraggableSquare
+                else:
+                    Pointer = widgets.ResizebleDraggableRectangle
             else:  # It is the image of a "spectrum stack"
                 Pointer = widgets.DraggableHorizontalLine
         elif nav_dim == 1:  # It is a spectrum

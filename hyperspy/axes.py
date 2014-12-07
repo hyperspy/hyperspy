@@ -454,7 +454,6 @@ class AxesManager(t.HasTraits):
         self.on_trait_change(self._update_attributes, '_axes.index')
         self.on_trait_change(self._update_attributes, '_axes.size')
         self._index = None  # index for the iterator
-        self.bounds_test = [0,0,0,0]
 
     def _get_positive_index(self, axis):
         if axis < 0:
