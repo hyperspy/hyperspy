@@ -31,7 +31,7 @@ from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.exceptions import NavigationDimensionError
 
-class NoneFloat(t.Float):   # Lazy solution, but usable
+class NoneFloat(t.CFloat):   # Lazy solution, but usable
     default_value = None
     
     def validate(self, object, name, value):
@@ -102,7 +102,7 @@ class Parameter(t.HasTraits):
     # don't like non-sequence objects). TextEditor() works well.
     value = t.Property( t.Either([t.CFloat(0), Array()]), editor=tu.TextEditor())
     units = t.Str('')
-    free = t.Property( t.Bool(True) )
+    free = t.Property( t.CBool(True) )
     
     bmin = t.Property( NoneFloat(), label="Lower bounds" )
     bmax = t.Property( NoneFloat(), label="Upper bounds" )
@@ -190,9 +190,6 @@ class Parameter(t.HasTraits):
                 bmax = (self.bmax if self.bmin is not None
                         else np.inf)
                 self.__value = np.clip(arg, bmin, bmax)
-        if (self._number_of_elements == 1 and
-            hasattr(self, 'map') and self.map is not None):
-            self.store_current_value_in_array()
 
         if (self._number_of_elements != 1 and
                 not isinstance(self.__value, tuple)):
@@ -474,7 +471,7 @@ class Parameter(t.HasTraits):
 class Component(t.HasTraits):
     __axes_manager = None
     
-    active = t.Property( t.Bool(True) )
+    active = t.Property( t.CBool(True) )
     name = t.Property( t.Str('') )
 
     def __init__(self, parameter_name_list):
