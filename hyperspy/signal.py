@@ -72,6 +72,8 @@ from hyperspy import components
 from hyperspy.misc.utils import underline
 from hyperspy.misc.borrowed.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
+from hyperspy.events import Events, Event
+
 
 
 class Signal2DTools(object):
@@ -2525,6 +2527,8 @@ class Signal(MVA,
         self.auto_replot = True
         self.inav = SpecialSlicers(self, True)
         self.isig = SpecialSlicers(self, False)
+        self.events = Events()
+        self.events.data_changed = Event()
 
     @property
     def mapped_parameters(self):
