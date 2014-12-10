@@ -77,6 +77,7 @@ from hyperspy.drawing.utils import animate_legend
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
+from hyperspy.events import Events, Event
 from datetime import datetime
 
 
@@ -2813,6 +2814,8 @@ class Signal(FancySlicing,
         self.auto_replot = True
         self.inav = SpecialSlicersSignal(self, True)
         self.isig = SpecialSlicersSignal(self, False)
+        self.events = Events()
+        self.events.data_changed = Event()
 
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
