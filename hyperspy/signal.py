@@ -2597,7 +2597,7 @@ class Signal(MVA,
 
         return string.encode('utf8')
 
-    def __getitem__(self, slices, isNavigation=None):
+    def __getitem__(self, slices, isNavigation=None, out=None):
         try:
             len(slices)
         except TypeError:
@@ -2608,7 +2608,12 @@ class Signal(MVA,
         has_signal = True if isNavigation is None else not isNavigation
 
         # Create a deepcopy of self that contains a view of self.data
-        _signal = self._deepcopy_with_new_data(self.data)
+        if out is None:
+            _signal = self._deepcopy_with_new_data(self.data)
+        else:
+            out.data = self.data
+            out.axes_manager = self.axes_manager.deepcopy()
+            _signal = out
 
         nav_idx = [el.index_in_array for el in
                    _signal.axes_manager.navigation_axes]
