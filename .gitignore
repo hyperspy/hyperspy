@@ -32,3 +32,6 @@ doc/gh-pages
 *Thumbs.db
 .ropeproject/*
 .idea/*
+tests.ipynb
+setup.cfg
+demos/
