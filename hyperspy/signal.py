@@ -1331,6 +1331,15 @@ class MVATools(object):
             print("Minimum number of components cannot be less than 2. Proceeding with default of 2.")
             min_components = 2
 
+        if save_plots:
+            import time
+            import datetime
+            ts = datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d_%H-%M-%S')
+            cmp_path = ts + " components/"
+            ld_path = ts + " loadings/"
+            os.mkdir(cmp_path)
+            os.mkdir(ld_path)
+
         # Build strings for legends
         legend_text_fast_ica = []
         legend_text_jade_ica = []
@@ -1395,12 +1404,12 @@ class MVATools(object):
                 ut.plot.plot_spectra(self.get_bss_factors(), style='mosaic', legend=alg_dict_legend[alg])
                 fig = plt.gcf()
                 if save_plots:
-                    fig.savefig(alg_dict_c_filename[alg][num_com - min_components])
+                    fig.savefig(cmp_path + alg_dict_c_filename[alg][num_com - min_components])
 
                 self.plot_bss_loadings()
                 fig = plt.gcf()
                 if save_plots:
-                    fig.savefig(alg_dict_l_filename[alg][num_com - min_components])
+                    fig.savefig(ld_path + alg_dict_l_filename[alg][num_com - min_components])
                 if not show_plots:
                     plt.close('all')
 
