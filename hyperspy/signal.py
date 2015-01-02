@@ -1283,6 +1283,131 @@ class Signal1DTools(object):
 class MVATools(object):
     # TODO: All of the plotting methods here should move to drawing
 
+    def multi_ica(self,
+              min_components=2,
+              max_components=6,
+              algorithms='all',
+              save_data=True,
+              show_plots=False,
+              save_plots=True):
+        """
+        Runs each type of specified ICA algorithm using the number of components specified,
+        saving the results as .png image files, as well as .hdf5 files (for later analysis).
+
+        Available algorithms: FastICA, JADE, CuBICA, and TDSEP
+
+        If TDSEP is desired, PCA analysis must have been done with data type of 'float64'
+
+        :param min_components: int
+            minimum number of principle components to run (lowest should be 2)
+        :param max_components: int
+            maximum number of principle components to run (can be anything)
+        :param algorithms: list
+            list containing algorithms to run or (by default) 'all'
+        :param save_data: boolean
+            save_data parameter determines whether or not to save the Signal as an hdf5 file
+        :param show_plots: boolean
+            show_plots parameter determines whether or not to close the figures that are plotted
+        :param save_plots: boolean
+            save_plots parameter determines whether or not to save the component and loading figures as png files
+        """
+
+        from hyperspy.hspy import utils as ut
+
+        # Determine the correct algorithms to use. Filters out any algorithms that are not in list
+        if algorithms == 'all':
+            algorithms = ['FastICA', 'JADE', 'CuBICA', 'TDSEP']
+        elif type(algorithms) is str:
+            algorithms = [algorithms]
+        algorithms = filter(lambda value: (value == 'FastICA' or value == 'JADE' or value == 'CuBICA' or
+                                           value == 'TDSEP'),
+                            algorithms)
+        if not algorithms:  # same as `if algorithms == []:`
+            print('No suitable algorithms found. Using default of all.')
+            algorithms = ['FastICA', 'JADE', 'CuBICA', 'TDSEP']
+
+        # Determine if minimum components value makes sense. If not, set to default of 2.
+        if min_components < 2:
+            print("Minimum number of components cannot be less than 2. Proceeding with default of 2.")
+            min_components = 2
+
+        # Build strings for legends
+        legend_text_fast_ica = []
+        legend_text_jade_ica = []
+        legend_text_cubica = []
+        legend_text_tdsep_ica = []
+        if 'FastICA' in algorithms:
+            for i in range(max_components):
+                legend_text_fast_ica.append('FastICA ' + repr(i))
+        if 'JADE' in algorithms:
+            for i in range(max_components):
+                legend_text_jade_ica.append('JADE ICA ' + repr(i))
+        if 'CuBICA' in algorithms:
+            for i in range(max_components):
+                legend_text_cubica.append('CuBICA ICA ' + repr(i))
+        if 'TDSEP' in algorithms:
+            self.change_dtype("float64")
+            print("WARNING: TDSEP requires float64 data type, so " + self.metadata.General.title + " has" +
+                  " been converted. Note that the initial decomposition must also be performed on the float64 data" +
+                  " for the TDSEP ICA procedure to work.")
+            print("")
+            for i in range(max_components):
+                legend_text_tdsep_ica.append('TDSEP ICA ' + repr(i))
+
+        # Build strings for file names (components - c and loadings - l)
+        filename_c_fast_ica = []
+        filename_l_fast_ica = []
+        filename_c_jade_ica = []
+        filename_l_jade_ica = []
+        filename_c_cubica_ica = []
+        filename_l_cubica_ica = []
+        filename_c_tdsep_ica = []
+        filename_l_tdsep_ica = []
+        if 'FastICA' in algorithms:
+            for i in range(min_components, max_components + 1):
+                filename_c_fast_ica.append('ICA_' + repr(i) + '-FastICA-components')
+                filename_l_fast_ica.append('ICA_' + repr(i) + '-FastICA-loadings')
+        if 'JADE' in algorithms:
+            for i in range(min_components, max_components + 1):
+                filename_c_jade_ica.append('ICA_' + repr(i) + '-JADE-components')
+                filename_l_jade_ica.append('ICA_' + repr(i) + '-JADE-loadings')
+        if 'CuBICA' in algorithms:
+            for i in range(min_components, max_components + 1):
+                filename_c_cubica_ica.append('ICA_' + repr(i) + '-CuBICA-components')
+                filename_l_cubica_ica.append('ICA_' + repr(i) + '-CuBICA-loadings')
+        if 'TDSEP' in algorithms:
+            for i in range(min_components, max_components + 1):
+                filename_c_tdsep_ica.append('ICA_' + repr(i) + '-TDSEP-components')
+                filename_l_tdsep_ica.append('ICA_' + repr(i) + '-TDSEP-loadings')
+
+        alg_dict_legend = {'FastICA': legend_text_fast_ica, 'JADE': legend_text_jade_ica, 'CuBICA': legend_text_cubica,
+                           'TDSEP': legend_text_tdsep_ica}
+        alg_dict_c_filename = {'FastICA': filename_c_fast_ica, 'JADE': filename_c_jade_ica, 'CuBICA': filename_c_cubica_ica,
+                               'TDSEP': filename_c_tdsep_ica}
+        alg_dict_l_filename = {'FastICA': filename_l_fast_ica, 'JADE': filename_l_jade_ica, 'CuBICA': filename_l_cubica_ica,
+                               'TDSEP': filename_l_tdsep_ica}
+
+        # loop through number of components
+        for num_com in range(min_components, max_components + 1):
+            for alg in algorithms:
+                print("BSS with " + alg + " algorithm with " + repr(num_com) + " components.")
+                self.blind_source_separation(num_com, algorithm=alg)
+                ut.plot.plot_spectra(self.get_bss_factors(), style='mosaic', legend=alg_dict_legend[alg])
+                fig = plt.gcf()
+                if save_plots:
+                    fig.savefig(alg_dict_c_filename[alg][num_com - min_components])
+
+                self.plot_bss_loadings()
+                fig = plt.gcf()
+                if save_plots:
+                    fig.savefig(alg_dict_l_filename[alg][num_com - min_components])
+                if not show_plots:
+                    plt.close('all')
+
+                if save_data:
+                    self.save(self.metadata.General.title + " ICA_" + repr(num_com) + "-" + alg)
+
+
     def _plot_factors_or_pchars(self, factors, comp_ids=None,
                                 calibrate=True, avg_char=False,
                                 same_window=None, comp_label='PC',
