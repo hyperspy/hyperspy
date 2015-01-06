@@ -27,7 +27,7 @@ class Marker(object):
     Attributes
     ----------
 
-    type : {'line','axvline','axhline','text','pointer'}
+    type : {'line','axvline','axhline','text','pointer','rect'}
         Select the type of markers
     orientation : {None,'v','h'}
         Orientation for lines. 'v' is vertical, 'h' is horizontal.
@@ -53,6 +53,7 @@ class Marker(object):
         For 'axhline': 'y1'
         For 'text': 'x1','y1','text'
         For 'pointer': 'x1','y1','size'. 'size' is optional
+        For 'rect': 'x1','y1','x2','y2'
 
     Example
     -------
@@ -75,6 +76,14 @@ class Marker(object):
     >>> im._plot.signal_plot.add_marker(m)
     >>> m.plot()
 
+    >>> im = signals.Image(np.zeros((100,100)))
+    >>> m = utils.plot.marker()
+    >>> m.type = 'rect'
+    >>> m.set_marker_properties(linewidth=4,color='red',ls='dotted')
+    >>> m.set_data(x1=20,x2=70,y1=20,y2=70)
+    >>> im.plot()
+    >>> im._plot.signal_plot.add_marker(m)
+    >>> m.plot()
 
     """
 
@@ -112,10 +121,14 @@ class Marker(object):
         elif value == 'pointer':
             lp['color'] = 'black'
             lp['linewidth'] = None
+        elif value == 'rect':
+            lp['color'] = 'black'
+            lp['fill'] = None
+            lp['linewidth'] = 1
         else:
             raise ValueError(
                 "`type` must be one of "
-                "{\'line\',\'axvline\',\'axhline\',\'text\',\'pointer\'}"
+                "{\'line\',\'axvline\',\'axhline\',\'text\',\'pointer\',\'rect\'}"
                 "but %s was given" % value)
         self._type = value
         self.marker_properties = lp
@@ -173,6 +186,13 @@ class Marker(object):
                 self.set_data(size=20)
                 data = self.data
             self.marker._sizes = [self.get_data_position('size')]
+
+        elif self.type == 'rect':
+            width = abs(self.get_data_position('x1') - self.get_data_position('x2'))
+            height = abs(self.get_data_position('y1') - self.get_data_position('y2'))
+            self.marker = self.ax.add_patch(plt.Rectangle(
+                (self.get_data_position('x1'), self.get_data_position('y1')),
+                width, height, **self.marker_properties))
 
         self.marker.set_animated(True)
         # To be discussed, done in Spectrum figure once.
@@ -261,6 +281,9 @@ class Marker(object):
             self.marker.set_offsets([self.get_data_position('x1'),
                                      self.get_data_position('y1')])
             self.marker._sizes = [self.get_data_position('size')]
+        elif self.type == 'rect':
+            self.marker.set_xdata([self.get_data_position('x1'),self.get_data_position('x2')])
+            self.marker.set_ydata([self.get_data_position('y1'),self.get_data_position('y2')])
         # To be discussed, done in SpectrumLine once.
         # try:
             # self.ax.figure.canvas.draw()
