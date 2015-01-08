@@ -1,4 +1,4 @@
-#/usr/bin/python
+# /usr/bin/python
 # -*- coding: utf-8 -*-
 # Copyright 2007-2011 The HyperSpy developers
 #
@@ -23,6 +23,76 @@ import _winreg
 import win32api
 from win32com.shell import shell
 import shutil
+
+try:
+    # When this script is run from inside the bdist_wininst installer,
+    # file_created() and directory_created() are additional builtin
+    # functions which write lines to Python23\pywin32-install.log. This is
+    # a list of actions for the uninstaller, the format is inspired by what
+    # the Wise installer also creates.
+    file_created()
+    is_bdist_wininst = True
+
+except NameError:
+    is_bdist_wininst = False  # we know what it is not - but not what it is :)
+
+    def file_created(file):
+        pass
+
+    def directory_created(directory):
+        pass
+
+    def get_root_hkey():
+        try:
+            winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                           root_key_name, winreg.KEY_CREATE_SUB_KEY)
+            return winreg.HKEY_LOCAL_MACHINE
+        except OSError, details:
+            # Either not exist, or no permissions to create subkey means
+            # must be HKCU
+            return winreg.HKEY_CURRENT_USER
+
+
+def get_special_folder_path(path_name):
+    import pythoncom
+    from win32com.shell import shellcon
+
+    for maybe in """
+        CSIDL_COMMON_STARTMENU CSIDL_STARTMENU CSIDL_COMMON_APPDATA
+        CSIDL_LOCAL_APPDATA CSIDL_APPDATA CSIDL_COMMON_DESKTOPDIRECTORY
+        CSIDL_DESKTOPDIRECTORY CSIDL_COMMON_STARTUP CSIDL_STARTUP
+        CSIDL_COMMON_PROGRAMS CSIDL_PROGRAMS CSIDL_PROGRAM_FILES_COMMON
+        CSIDL_PROGRAM_FILES CSIDL_FONTS""".split():
+        if maybe == path_name:
+            csidl = getattr(shellcon, maybe)
+            return shell.SHGetSpecialFolderPath(0, csidl, False)
+    raise ValueError("%s is an unknown path ID" % (path_name,))
+
+
+try:
+    create_shortcut()
+except NameError:
+    # Create a function with the same signature as create_shortcut provided
+    # by bdist_wininst
+    def create_shortcut(path, description, filename,
+                        arguments="", workdir="", iconpath="", iconindex=0):
+        import pythoncom
+        from win32com.shell import shell, shellcon
+
+        ilink = pythoncom.CoCreateInstance(shell.CLSID_ShellLink, None,
+                                           pythoncom.CLSCTX_INPROC_SERVER,
+                                           shell.IID_IShellLink)
+        ilink.SetPath(path)
+        ilink.SetDescription(description)
+        if arguments:
+            ilink.SetArguments(arguments)
+        if workdir:
+            ilink.SetWorkingDirectory(workdir)
+        if iconpath or iconindex:
+            ilink.SetIconLocation(iconpath, iconindex)
+        # now save it.
+        ipf = ilink.QueryInterface(pythoncom.IID_IPersistFile)
+        ipf.Save(filename, 0)
 
 
 def create_weblink(
@@ -192,8 +262,10 @@ def install_hyperspy_here(hspy_qtconsole_logo_path, hspy_notebook_logo_path):
     print("HyperSpy here correctly installed")
 
 
-def install():
+def uninstall():
     import hyperspy
+    import shutil
+
     commons_sm = get_special_folder_path("CSIDL_COMMON_STARTMENU")
     local_sm = get_special_folder_path("CSIDL_STARTMENU")
     if admin_rights() is True:
@@ -202,7 +274,62 @@ def install():
         start_menu = local_sm
     hyperspy_install_path = os.path.dirname(hyperspy.__file__)
     logo_path = os.path.expandvars(os.path.join(hyperspy_install_path,
-                                   'data'))
+                                                'data'))
+    hyperspy_qtconsole_bat = os.path.join(sys.prefix,
+                                          'Scripts',
+                                          'hyperspy_qtconsole.bat')
+    hyperspy_notebook_bat = os.path.join(sys.prefix,
+                                         'Scripts',
+                                         'hyperspy_notebook.bat')
+    # Create the start_menu entry
+    if sys.getwindowsversion()[0] < 6.:  # Older than Windows Vista:
+        hspy_sm_path = os.path.join(start_menu, "Programs", "HyperSpy")
+    else:
+        hspy_sm_path = os.path.join(start_menu, "HyperSpy")
+    if os.path.isdir(hspy_sm_path):
+        try:
+            shutil.rmtree(hspy_sm_path)
+        except:
+            # Sometimes we get a permission error
+            pass
+
+    # remove the shortcuts directory
+    if sys.getwindowsversion()[0] < 6.:  # Older than Windows Vista:
+        hspy_sm_path = os.path.join(start_menu, "Programs", "HyperSpy")
+        if os.path.isdir(hspy_sm_path):
+            try:
+                shutil.rmtree(hspy_sm_path)
+            except:
+                # Sometimes we get a permission error
+                pass
+    else:
+        hspy_sm_path = os.path.join(start_menu, "HyperSpy")
+        if os.path.isdir(hspy_sm_path):
+            try:
+                shutil.rmtree(hspy_sm_path)
+            except:
+                # Sometimes we get a permission error
+                pass
+
+    if admin_rights() is True:
+        uninstall_hyperspy_here()
+    else:
+        print("To correctly remove shortcuts and context menu \n"
+              "entries, rerun with administrator rights")
+
+
+def install():
+    import hyperspy
+
+    commons_sm = get_special_folder_path("CSIDL_COMMON_STARTMENU")
+    local_sm = get_special_folder_path("CSIDL_STARTMENU")
+    if admin_rights() is True:
+        start_menu = commons_sm
+    else:
+        start_menu = local_sm
+    hyperspy_install_path = os.path.dirname(hyperspy.__file__)
+    logo_path = os.path.expandvars(os.path.join(hyperspy_install_path,
+                                                'data'))
     hspy_qt_logo_path = os.path.join(logo_path,
                                      'hyperspy_qtconsole_logo.ico')
     hspy_nb_logo_path = os.path.join(logo_path,
@@ -272,7 +399,13 @@ def install():
 
     print "All was installed correctly"
 
-if sys.argv[1] == '-install':
-    install()
+
+if len(sys.argv) == 2:
+    if sys.argv[1] == '-install':
+        install()
+    elif sys.argv[1] == '-uninstall':
+        uninstall()
+    else:
+        print 'Please call function with one argument, either \'-install\' or \'-uninstall\'.'
 else:
-    uninstall_hyperspy_here()
+    print 'Please call function with one argument, either \'-install\' or \'-uninstall\'.'
