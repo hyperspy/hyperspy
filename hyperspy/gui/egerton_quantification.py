@@ -320,8 +320,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         else:
             minimum = max(0, self.argmax - 50)
             maximum = min(len(self.signal()) - 1, self.argmax + 50)
-            thresh_label = AnyObject(text="$\mathsf{\delta}_\mathsf{max}=$", color="black")
-            self.ax.legend([thresh_label], [repr(int(self.derivmax))], handler_map={AnyObject: AnyObjectHandler()}, loc='best')
+            thresh_label = DerivativeTextParameters(text="$\mathsf{\delta}_\mathsf{max}=$", color="black")
+            self.ax.legend([thresh_label], [repr(int(self.derivmax))], handler_map={DerivativeTextParameters: DerivativeTextHandler()}, loc='best')
             self.ax.set_xlim(
                 self.signal.axes_manager.signal_axes[0].index2value(
                     minimum),
@@ -464,13 +464,13 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 
 
 # For creating a text handler in legend (to label derivative magnitude)
-class AnyObject(object):
+class DerivativeTextParameters(object):
     def __init__(self, text, color):
         self.my_text = text
         self.my_color = color
 
 
-class AnyObjectHandler(object):
+class DerivativeTextHandler(object):
     def legend_artist(self, legend, orig_handle, fontsize, handlebox):
         x0, y0 = handlebox.xdescent, handlebox.ydescent
         width, height = handlebox.width, handlebox.height
