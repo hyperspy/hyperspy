@@ -3607,6 +3607,8 @@ class Signal(MVA,
 
         if axis == "navigation":
             s = self.get_current_signal(auto_filename=False, auto_title=False)
+            s.data = s.data.copy() # Don't overwrite self.data 
+
             iaxes = sorted([ax.index_in_array
                            for ax in self.axes_manager.navigation_axes])
         elif axis == "signal":
