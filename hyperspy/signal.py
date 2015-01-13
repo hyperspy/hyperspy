@@ -3601,20 +3601,34 @@ class Signal(MVA,
             self.metadata.Signal.record_by = self._record_by
             self._assign_subclass()
 
-    def _apply_function_on_data_and_remove_axis(self, function, axis):
+    def _apply_function_on_data_and_remove_axis(self, function, axis,
+                                                out=None):
         if axis not in ("navigation", "signal"):
-            s = self._deepcopy_with_new_data(
-                function(self.data,
-                         axis=self.axes_manager[axis].index_in_array))
-            s._remove_axis(axis)
-            return s
+            if out is None:
+                s = self._deepcopy_with_new_data(None)
+            else:
+                s = out
+            s.data = function(self.data,
+                            axis=self.axes_manager[axis].index_in_array)
+            if out is None:
+                s._remove_axis(axis)
+                return s
+            else:
+                return
 
         if axis == "navigation":
-            s = self.get_current_signal(auto_filename=False, auto_title=False)
+            if out is None:
+                s = self.get_current_signal(auto_filename=False,
+                                            auto_title=False)
+            else:
+                s = out
             iaxes = sorted([ax.index_in_array
                            for ax in self.axes_manager.navigation_axes])
         elif axis == "signal":
-            s = self._get_navigation_signal()
+            if out is None:
+                s = self._get_navigation_signal()
+            else:
+                s = out
             iaxes = sorted([ax.index_in_array
                             for ax in self.axes_manager.signal_axes])
         data = self.data
@@ -3622,9 +3636,12 @@ class Signal(MVA,
             data = function(data,
                             axis=iaxes.pop())
         s.data[:] = data
-        return s
+        if out is None:
+            return s
+        else:
+            out.events.data_changed.trigger()
 
-    def sum(self, axis="navigation"):
+    def sum(self, axis="navigation", out=None):
         """Sum the data over the given axis.
 
         Parameters
@@ -3653,9 +3670,10 @@ class Signal(MVA,
         s.sum(-1, True).plot()
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.sum, axis)
+        return self._apply_function_on_data_and_remove_axis(np.sum, axis,
+                                                            out=out)
 
-    def max(self, axis="navigation", return_signal=False):
+    def max(self, axis="navigation", out=None):
         """Returns a signal with the maximum of the signal along an axis.
 
         Parameters
@@ -3682,9 +3700,10 @@ class Signal(MVA,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.max, axis)
+        return self._apply_function_on_data_and_remove_axis(np.max, axis,
+                                                            out=out)
 
-    def min(self, axis="navigation"):
+    def min(self, axis="navigation", out=None):
         """Returns a signal with the minimum of the signal along an axis.
 
         Parameters
@@ -3712,9 +3731,10 @@ class Signal(MVA,
 
         """
 
-        return self._apply_function_on_data_and_remove_axis(np.min, axis)
+        return self._apply_function_on_data_and_remove_axis(np.min, axis,
+                                                            out=out)
 
-    def mean(self, axis="navigation"):
+    def mean(self, axis="navigation", out=None):
         """Returns a signal with the average of the signal along an axis.
 
         Parameters
@@ -3741,10 +3761,10 @@ class Signal(MVA,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.mean,
-                                                            axis)
+        return self._apply_function_on_data_and_remove_axis(np.mean, axis,
+                                                            out=out)
 
-    def std(self, axis="navigation"):
+    def std(self, axis="navigation", out=None):
         """Returns a signal with the standard deviation of the signal along
         an axis.
 
@@ -3772,9 +3792,10 @@ class Signal(MVA,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.std, axis)
+        return self._apply_function_on_data_and_remove_axis(np.std, axis,
+                                                            out=out)
 
-    def var(self, axis="navigation"):
+    def var(self, axis="navigation", out=None):
         """Returns a signal with the variances of the signal along an axis.
 
         Parameters
@@ -3801,7 +3822,8 @@ class Signal(MVA,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.var, axis)
+        return self._apply_function_on_data_and_remove_axis(np.var, axis,
+                                                            out=out)
 
     def diff(self, axis, order=1):
         """Returns a signal with the n-th order discrete difference along
@@ -3908,7 +3930,7 @@ class Signal(MVA,
         else:
             return self.sum(axis)
 
-    def indexmax(self, axis="navigation"):
+    def indexmax(self, axis="navigation", out=None):
         """Returns a signal with the index of the maximum along an axis.
 
         Parameters
@@ -3936,7 +3958,8 @@ class Signal(MVA,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.argmax, axis)
+        return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
+                                                            out=out)
 
     def valuemax(self, axis):
         """Returns a signal with the value of the maximum along an axis.
