@@ -10,7 +10,9 @@ class Events(object):
 
 
 class Event(object):
-    connected = set()
+
+    def __init__(self):
+        self.connected = set()
 
     def connect(self, function):
         if not callable(function):
@@ -23,3 +25,8 @@ class Event(object):
     def trigger(self, *args, **kwargs):
         for f in self.connected:
             f(*args, **kwargs)
+
+    def __deepcopy__(self, memo):
+        dc = type(self)()
+        memo[id(self)] = dc
+        return dc
