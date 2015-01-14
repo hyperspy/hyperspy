@@ -18,6 +18,7 @@
 
 import numpy as np
 import scipy as sp
+import matplotlib.text as mpl_text
 import traits.api as t
 import traitsui.api as tu
 from traitsui.menu import OKButton, CancelButton
@@ -252,6 +253,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.threshold = 400
         self.index = 0
         self.argmax = None
+        self.derivmax = None
         self.kind = "linear"
         self._temp_mask = np.zeros(self.signal().shape, dtype='bool')
         self.signal_mask = signal_mask
@@ -286,6 +288,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             derivative[self._temp_mask[:-1]] = 0
         if abs(derivative.max()) >= self.threshold:
             self.argmax = derivative.argmax()
+            self.derivmax = abs(derivative.max())
             return True
         else:
             return False
@@ -317,6 +320,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         else:
             minimum = max(0, self.argmax - 50)
             maximum = min(len(self.signal()) - 1, self.argmax + 50)
+            thresh_label = DerivativeTextParameters(text="$\mathsf{\delta}_\mathsf{max}=$", color="black")
+            self.ax.legend([thresh_label], [repr(int(self.derivmax))], handler_map={DerivativeTextParameters: DerivativeTextHandler()}, loc='best')
             self.ax.set_xlim(
                 self.signal.axes_manager.signal_axes[0].index2value(
                     minimum),
@@ -456,3 +461,20 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.interpolated_line = None
         self.reset_span_selector()
         self.find()
+
+
+# For creating a text handler in legend (to label derivative magnitude)
+class DerivativeTextParameters(object):
+    def __init__(self, text, color):
+        self.my_text = text
+        self.my_color = color
+
+
+class DerivativeTextHandler(object):
+    def legend_artist(self, legend, orig_handle, fontsize, handlebox):
+        x0, y0 = handlebox.xdescent, handlebox.ydescent
+        width, height = handlebox.width, handlebox.height
+        patch = mpl_text.Text(text=orig_handle.my_text, color=orig_handle.my_color)
+        handlebox.add_artist(patch)
+        return patch
+
