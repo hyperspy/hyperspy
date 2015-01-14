@@ -2670,7 +2670,8 @@ class Signal(MVA,
                     isNavigation)
         _signal.get_dimensions_from_data()
 
-        return _signal
+        if out is None:
+            return _signal
 
     def __setitem__(self, i, j):
         """x.__setitem__(i, y) <==> x[i]=y
