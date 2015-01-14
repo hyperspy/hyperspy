@@ -3620,6 +3620,7 @@ class Signal(MVA,
             if out is None:
                 s = self.get_current_signal(auto_filename=False,
                                             auto_title=False)
+                s.data = s.data.copy() # Don't overwrite self.data 
             else:
                 s = out
             iaxes = sorted([ax.index_in_array
