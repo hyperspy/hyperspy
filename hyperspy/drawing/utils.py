@@ -382,7 +382,7 @@ def plot_spectra(
     legend_loc : str or int
         This parameter will be control where the legend is placed on the figure
         (when plotting with 'cascade' or 'overlap' styles) according to
-        the `pyplot legend documentation <http://matplotlib.org/1.3.1/api/pyplot_api.html#matplotlib.pyplot.legend>`_
+        the pyplot legend documentation <http://matplotlib.org/1.3.1/api/pyplot_api.html#matplotlib.pyplot.legend>
     fig : matplotlib figure or None
         If None, a default figure will be created. Specifying fig will
         not work for the 'heatmap' style.
