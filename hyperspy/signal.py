@@ -3847,28 +3847,11 @@ class Signal(MVA,
         s._remove_axis(axis.index_in_axes_manager)
         return s
 
-    def fft(self, shape_fft=None, axes=None):
+    def fft(self):
         """Compute the discrete Fourier Transform.
 
-        This function computes the discrete Fourier Transform over
-        any number of axes in an *M*-dimensional array by means of the Fast
-        Fourier Transform (FFT).
-
-        Parameters
-        ----------
-        shape_fft : int or sequence of ints, optional
-            Shape (length of each transformed axis) of the output
-            (`s[0]` refers to axis 0, `s[1]` to axis 1, etc.).
-            This corresponds to `n` for `fft(x, n)`.
-            Along any axis, if the given shape is smaller than that of the
-            input, the input is cropped.  If it is larger, the input is padded
-            with zeros. if `s` is not given, the shape of the input (along the
-            axes specified by `axes`) is used.
-        axes : int or sequence of ints, optional
-            Axes over which to compute the FFT.  If not given, the last
-            ``len(s)`` axes are used, or all axes if `s` is also not specified.
-            Repeated indices in `axes` means that the transform over that axis
-            is performed multiple times.
+        This function computes the discrete Fourier Transform over the signal
+        axes by means of the Fast Fourier Transform (FFT).
 
         Return
         ------
@@ -3886,28 +3869,20 @@ class Signal(MVA,
         For further information see the documentation of numpy.fft.fftn
         """
 
-        from hyperspy.signals import Spectrum, Image
-
-        if self.axes_manager.signal_dimension == 2:
-            im_fft = Image(np.fft.fftshift(
-                np.fft.fftn(self.data, s=shape_fft, axes=axes), axes=axes))
-        else:
-            im_fft = Spectrum(np.fft.fftshift(
-                np.fft.fftn(self.data, s=shape_fft, axes=axes), axes=axes))
-
-        # scaling
-        if axes is None:
-            axes = range(len(self.axes_manager.shape))
-        if shape_fft is None:
-            shape_fft = self.axes_manager.shape
-
+        if self.axes_manager.signal_dimension == 0:
+            raise AttributeError("Signal dimension must be at least one.")
+        ax = self.axes_manager
+        axes = np.arange(ax.signal_dimension) + ax.navigation_dimension
+        im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
+            np.fft.fftn(self.data, axes=axes), axes=axes))
+        shape_fft = self.axes_manager.shape
+        im_fft.metadata.General.title = 'FFT of ' + \
+            im_fft.metadata.General.title
         for ax, dim in zip(axes, shape_fft):
             axis = im_fft.axes_manager[ax]
             axis.scale = 1. / dim / self.axes_manager[ax].scale
-            axis.name = self.axes_manager[ax].name
             axis.units = str(self.axes_manager[ax].units) + '$^{-1}$'
             axis.offset = -axis.high_value / 2.
-
         return im_fft
 
     def ifft(self, shape_ifft=None, axes=None):
@@ -3915,36 +3890,8 @@ class Signal(MVA,
         Compute the inverse discrete Fourier Transform.
 
         This function computes the inverse of the discrete
-        Fourier Transform over any number of axes in an M-dimensional array by
-        means of the Fast Fourier Transform (FFT).  In other words,
-        ``ifftn(fftn(a)) == a`` to within numerical accuracy.
-        For a description of the definitions and conventions used, see
-        `numpy.fft`.
-
-        The input, analogously to `ifft`, should be ordered in the same way as
-        is returned by `fftn`, i.e. it should have the term for zero frequency
-        in all axes in the low-order corner, the positive frequency terms in
-        the first half of all axes, the term for the Nyquist frequency in the
-        middle of all axes and the negative frequency terms in the second half
-        of all axes, in order of decreasingly negative frequency.
-
-        Parameters
-        ----------
-
-        shape_ifft : int or sequence of ints, optional
-            Shape (length of each transformed axis) of the output
-            (``s[0]`` refers to axis 0, ``s[1]`` to axis 1, etc.).
-            This corresponds to ``n`` for ``ifft(x, n)``.
-            Along any axis, if the given shape is smaller than that of the
-            input, the input is cropped.  If it is larger, the input is padded
-            with zeros. if `s` is not given, the shape of the input (along the
-            axes specified by `axes`) is used.  See notes for issue on `ifft`
-            zero padding.
-        axes : int or sequence of ints, optional
-            Axes over which to compute the IFFT.  If not given, the last
-            ``len(s)`` axes are used, or all axes if `s` is also not specified.
-            Repeated indices in `axes` means that the inverse transform over
-            that axis is performed multiple times.
+        Fourier Transform over the signal axes by
+        means of the Fast Fourier Transform (FFT).
 
         Return
         ------
@@ -3964,32 +3911,21 @@ class Signal(MVA,
 
         """
 
-        from hyperspy.signals import Spectrum, Image
-
-        dim = len(self.axes_manager.shape)
-
-        if self.axes_manager.signal_dimension == 2:
-            im_ifft = Image(np.fft.ifftn(np.fft.ifftshift(
-                self.data, axes=axes), s=shape_ifft, axes=axes).real)
-        else:
-            im_ifft = Spectrum(np.fft.ifftn(np.fft.ifftshift(
-                self.data, axes=axes), s=shape_ifft, axes=axes).real)
-
-        # scaling
-        if axes is None:
-            axes = range(len(self.axes_manager.shape))
-        if shape_ifft is None:
-            shape_ifft = self.axes_manager.shape
-
-        for ax, dim in zip(axes, shape_ifft):
+        if self.axes_manager.signal_dimension == 0:
+            raise AttributeError("Signal dimension must be at least one.")
+        ax = self.axes_manager
+        axes = np.arange(ax.signal_dimension) + ax.navigation_dimension
+        im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(np.fft.ifftshift(
+            self.data, axes=axes), axes=axes).real)
+        im_ifft.metadata.General.title = 'iFFT of ' + \
+            im_ifft.metadata.General.title
+        for ax, dim in zip(axes, self.axes_manager.shape):
             axis = im_ifft.axes_manager[ax]
             axis.scale = 1. / dim / self.axes_manager[ax].scale
-            axis.name = self.axes_manager[ax].name
-            if str(self.axes_manager[ax].units)[-7:] == '$^{-1}$':
+            if str(self.axes_manager[ax].units).endswith('$^{-1}$'):
                 axis.units = str(self.axes_manager[ax].units)[:-7]
             else:
                 axis.units = str(self.axes_manager[ax].units)
-
         return im_ifft
 
     def integrate1D(self, axis):
