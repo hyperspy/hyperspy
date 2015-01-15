@@ -3882,9 +3882,11 @@ class Signal(MVA,
         from hyperspy.signals import Spectrum, Image
 
         if self.axes_manager.signal_dimension == 2:
-            im_fft = Image(np.fft.fftn(self.data, s=shape_fft, axes=axes))
+            im_fft = Image(np.fft.fftshift(
+                np.fft.fftn(self.data, s=shape_fft, axes=axes), axes=axes))
         else:
-            im_fft = Spectrum(np.fft.fftn(self.data, s=shape_fft, axes=axes))
+            im_fft = Spectrum(np.fft.fftshift(
+                np.fft.fftn(self.data, s=shape_fft, axes=axes), axes=axes))
 
         # scaling
         if axes is None:
@@ -3897,7 +3899,6 @@ class Signal(MVA,
             axis.scale = 1. / dim / self.axes_manager[ax].scale
             axis.name = self.axes_manager[ax].name
             axis.units = str(self.axes_manager[ax].units) + '$^{-1}$'
-            axis.offset = 0
             axis.offset = -axis.high_value / 2.
 
         return im_fft
@@ -3953,11 +3954,11 @@ class Signal(MVA,
         dim = len(self.axes_manager.shape)
 
         if self.axes_manager.signal_dimension == 2:
-            im_ifft = Image(np.fft.ifftn(self.data,
-                                         s=shape_ifft, axes=axes).real)
+            im_ifft = Image(np.fft.ifftn(np.fft.ifftshift(
+                self.data, axes=axes), s=shape_ifft, axes=axes).real)
         else:
-            im_ifft = Spectrum(np.fft.ifftn(
-                self.data, s=shape_ifft, axes=axes).real)
+            im_ifft = Spectrum(np.fft.ifftn(np.fft.ifftshift(
+                self.data, axes=axes), s=shape_ifft, axes=axes).real)
 
         # scaling
         if axes is None:
@@ -3968,14 +3969,11 @@ class Signal(MVA,
         for ax, dim in zip(axes, shape_ifft):
             axis = im_ifft.axes_manager[ax]
             axis.scale = 1. / dim / self.axes_manager[ax].scale
-            axis.offset = 0
             axis.name = self.axes_manager[ax].name
             if str(self.axes_manager[ax].units)[-7:] == '$^{-1}$':
                 axis.units = str(self.axes_manager[ax].units)[:-7]
             else:
                 axis.units = str(self.axes_manager[ax].units)
-            axis.offset = 0
-            axis.offset = -axis.high_value / 2.
 
         return im_ifft
 
