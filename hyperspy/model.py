@@ -978,9 +978,8 @@ class Model(list):
 
             variance = self.spectrum.metadata.Signal.Noise_properties.variance
             if isinstance(variance, Signal):
-                variance = variance.data.__getitem__(
-                    self.spectrum.axes_manager._getitem_tuple
-                )[self.channel_switches]
+                variance = variance(self.spectrum.axes_manager)\
+                                                        [self.channel_switches]
         else:
             variance = 1.0
         d = self(onlyactive=True) - self.spectrum()[self.channel_switches]
@@ -1108,8 +1107,7 @@ class Model(list):
                 if isinstance(variance, Signal):
                     if (variance.axes_manager.navigation_shape ==
                             self.spectrum.axes_manager.navigation_shape):
-                        variance = variance.data.__getitem__(
-                            self.axes_manager._getitem_tuple)[
+                        variance = variance(self.axes_manager)[
                             self.channel_switches]
                     else:
                         raise AttributeError("The `navigation_shape` of the "

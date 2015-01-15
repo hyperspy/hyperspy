@@ -25,7 +25,6 @@ from hyperspy import messages
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
 
-
 class SpectrumFigure(BlittedFigure):
 
     """

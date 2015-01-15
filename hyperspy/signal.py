@@ -2936,10 +2936,12 @@ class Signal(MVA,
     def __call__(self, axes_manager=None):
         if axes_manager is None:
             axes_manager = self.axes_manager
-        return np.atleast_1d(
-            self.data.__getitem__(axes_manager._getitem_tuple))
+        d = self.data.__getitem__(axes_manager._getitem_tuple_nav_sliced)
+        while len(np.shape(d)) > len(axes_manager.signal_axes):
+            d = np.mean(d, axis=0)
+        return np.atleast_1d(d)
 
-    def plot(self, navigator="auto", axes_manager=None):
+    def plot(self, navigator="auto", axes_manager=None, pointer_type=None):
         """Plot the signal at the current coordinates.
 
         For multidimensional datasets an optional figure,
@@ -3015,6 +3017,7 @@ class Signal(MVA,
         else:
             raise ValueError('Plotting is not supported for this view')
 
+        self._plot.pointer_type = pointer_type
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = self.__call__
         if self.metadata.General.title:
