@@ -31,3 +31,6 @@ class Spline(Component):
 
     def function(self, x):
         return splev(x, (self.t, self.c.value, 3))
+
+    def __getinitargs__(self):
+        return ((self.t, self.c.value, self.k,),)
