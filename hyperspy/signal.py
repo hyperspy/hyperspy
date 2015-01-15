@@ -3851,8 +3851,8 @@ class Signal(MVA,
         """Compute the discrete Fourier Transform.
 
         This function computes the discrete Fourier Transform over
-        any number of axes in an *M*-dimensional array by means of the Fast Fourier
-        Transform (FFT).
+        any number of axes in an *M*-dimensional array by means of the Fast
+        Fourier Transform (FFT).
 
         Parameters
         ----------
@@ -3860,15 +3860,15 @@ class Signal(MVA,
             Shape (length of each transformed axis) of the output
             (`s[0]` refers to axis 0, `s[1]` to axis 1, etc.).
             This corresponds to `n` for `fft(x, n)`.
-            Along any axis, if the given shape is smaller than that of the input,
-            the input is cropped.  If it is larger, the input is padded with zeros.
-            if `s` is not given, the shape of the input (along the axes specified
-            by `axes`) is used.
+            Along any axis, if the given shape is smaller than that of the
+            input, the input is cropped.  If it is larger, the input is padded
+            with zeros. if `s` is not given, the shape of the input (along the
+            axes specified by `axes`) is used.
         axes : int or sequence of ints, optional
-            Axes over which to compute the FFT.  If not given, the last ``len(s)``
-            axes are used, or all axes if `s` is also not specified.
-            Repeated indices in `axes` means that the transform over that axis is
-            performed multiple times.
+            Axes over which to compute the FFT.  If not given, the last
+            ``len(s)`` axes are used, or all axes if `s` is also not specified.
+            Repeated indices in `axes` means that the transform over that axis
+            is performed multiple times.
 
         Return
         ------
@@ -3879,7 +3879,7 @@ class Signal(MVA,
         For further information see the documentation of numpy.fft.fftn
         """
 
-        from hyperspy.signals import Signal, Spectrum, Image
+        from hyperspy.signals import Spectrum, Image
 
         if self.axes_manager.signal_dimension == 2:
             im_fft = Image(np.fft.fftn(self.data, s=shape_fft, axes=axes))
@@ -3909,14 +3909,15 @@ class Signal(MVA,
         Fourier Transform over any number of axes in an M-dimensional array by
         means of the Fast Fourier Transform (FFT).  In other words,
         ``ifftn(fftn(a)) == a`` to within numerical accuracy.
-        For a description of the definitions and conventions used, see `numpy.fft`.
+        For a description of the definitions and conventions used, see
+        `numpy.fft`.
 
-        The input, analogously to `ifft`, should be ordered in the same way as is
-        returned by `fftn`, i.e. it should have the term for zero frequency
-        in all axes in the low-order corner, the positive frequency terms in the
-        first half of all axes, the term for the Nyquist frequency in the middle
-        of all axes and the negative frequency terms in the second half of all
-        axes, in order of decreasingly negative frequency.
+        The input, analogously to `ifft`, should be ordered in the same way as
+        is returned by `fftn`, i.e. it should have the term for zero frequency
+        in all axes in the low-order corner, the positive frequency terms in
+        the first half of all axes, the term for the Nyquist frequency in the
+        middle of all axes and the negative frequency terms in the second half
+        of all axes, in order of decreasingly negative frequency.
 
         Parameters
         ----------
@@ -3925,15 +3926,16 @@ class Signal(MVA,
             Shape (length of each transformed axis) of the output
             (``s[0]`` refers to axis 0, ``s[1]`` to axis 1, etc.).
             This corresponds to ``n`` for ``ifft(x, n)``.
-            Along any axis, if the given shape is smaller than that of the input,
-            the input is cropped.  If it is larger, the input is padded with zeros.
-            if `s` is not given, the shape of the input (along the axes specified
-            by `axes`) is used.  See notes for issue on `ifft` zero padding.
+            Along any axis, if the given shape is smaller than that of the
+            input, the input is cropped.  If it is larger, the input is padded
+            with zeros. if `s` is not given, the shape of the input (along the
+            axes specified by `axes`) is used.  See notes for issue on `ifft`
+            zero padding.
         axes : int or sequence of ints, optional
-            Axes over which to compute the IFFT.  If not given, the last ``len(s)``
-            axes are used, or all axes if `s` is also not specified.
-            Repeated indices in `axes` means that the inverse transform over that
-            axis is performed multiple times.
+            Axes over which to compute the IFFT.  If not given, the last
+            ``len(s)`` axes are used, or all axes if `s` is also not specified.
+            Repeated indices in `axes` means that the inverse transform over
+            that axis is performed multiple times.
 
         Return
         ------
@@ -3945,7 +3947,7 @@ class Signal(MVA,
 
         """
 
-        from hyperspy.signals import Signal, Spectrum, Image
+        from hyperspy.signals import Spectrum, Image
 
         dim = len(self.axes_manager.shape)
 
@@ -3967,7 +3969,6 @@ class Signal(MVA,
         for ax, dim in zip(axes, shape_ifft):
             axis = im_ifft.axes_manager[ax]
             axis.scale = 1. / dim / self.axes_manager[ax].scale
-            #axis.units = str(self.axes_manager[ax].units) + '$^{-1}$'
             axis.offset = 0
 
         return im_ifft

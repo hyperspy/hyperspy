@@ -290,7 +290,7 @@ def load_with_reader(filename,
 
 def assign_signal_subclass(record_by="",
                            signal_type="",
-                           signal_origin=""):
+                           signal_origin="",):
     """Given record_by and signal_type return the matching Signal subclass.
 
     Parameters
