@@ -3874,6 +3874,13 @@ class Signal(MVA,
         ------
         signals.Signal
 
+        Examples
+        --------
+        >>> import scipy.ndimage
+        >>> im = signals.Image(scipy.misc.lena())
+        >>> im.fft()
+        <Image, title: , dimensions: (|512, 512)>
+
         Notes
         -----
         For further information see the documentation of numpy.fft.fftn
@@ -3942,6 +3949,14 @@ class Signal(MVA,
         Return
         ------
         signals.Signal
+
+        Examples
+        --------
+        >>> import scipy.ndimage
+        >>> im = signals.Image(scipy.misc.lena())
+        >>> imfft = im.fft()
+        >>> imfft.ifft()
+        <Image, title: , dimensions: (|512, 512)>
 
         Notes
         -----
