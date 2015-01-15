@@ -4,10 +4,9 @@ import math
 
 import numpy as np
 import scipy as sp
-import scipy.interpolate
 
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.physical_constants import R, e, m0, a0, c
+from hyperspy.misc.physical_constants import R, a0
 from hyperspy.misc.eels.base_gos import GOSBase
 from hyperspy.misc.elements import elements
 

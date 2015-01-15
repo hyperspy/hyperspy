@@ -236,6 +236,24 @@ class ReverseBar(Bar):
 default_widgets = [Percentage(), ' ', Bar()]
 
 
+class DummyProgressBar:
+
+    def __init__(self, *args, **kwargs):
+        return
+
+    def start(self, *args, **kwargs):
+        return
+
+    def finish(self, *args, **kwargs):
+        return
+
+    def next(self, *args, **kwargs):
+        return
+
+    def update(self, *args, **kwargs):
+        return
+
+
 class ProgressBar(object):
 
     """This is the ProgressBar class, it updates and prints the bar.
@@ -401,7 +419,7 @@ class MyBar:
         self.pbar.update(i)
 
 
-def progressbar(text="calculating", maxval=100):
+def progressbar(text="calculating", maxval=100, disabled=False):
     """
     Returns a useful default progressbar.
 
@@ -415,12 +433,14 @@ def progressbar(text="calculating", maxval=100):
     >>> pbar.finish()
 
     """
-    widgets = [text, " ", Percentage(), ' ', Bar(), ' ', ETA()]
-    return ProgressBar(widgets=widgets, maxval=maxval).start()
+    if disabled:
+        return DummyProgressBar()
+    else:
+        widgets = [text, " ", Percentage(), ' ', Bar(), ' ', ETA()]
+        return ProgressBar(widgets=widgets, maxval=maxval).start()
 
 
 if __name__ == '__main__':
-    import os
 
     def example1():
         widgets = ['Test: ', Percentage(), ' ', Bar(marker=RotatingMarker()),

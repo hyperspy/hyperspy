@@ -17,10 +17,8 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import numpy as np
 import warnings
 
-import numpy as np
 import traits.api as t
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -30,7 +28,8 @@ from hyperspy.misc import rgb_tools
 # Plugin characteristics
 # ----------------------
 format_name = 'TIFF'
-description = 'Import/Export standard image formats Christoph Gohlke\'s tifffile library'
+description = ('Import/Export standard image formats Christoph Gohlke\'s '
+               'tifffile library')
 full_suport = False
 file_extensions = ['tif', 'tiff']
 default_extension = 0  # tif

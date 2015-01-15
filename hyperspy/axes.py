@@ -24,6 +24,7 @@ import traits.api as t
 from traits.trait_errors import TraitError
 
 from hyperspy.misc.utils import isiterable, ordinal
+from hyperspy.misc.math_tools import isfloat
 
 
 class ndindex_nat(np.ndindex):
@@ -131,10 +132,59 @@ class DataAxis(t.HasTraits):
         return index
 
     def _get_index(self, value):
-        if isinstance(value, float):
+        if isfloat(value):
             return self.value2index(value)
         else:
             return value
+
+    def _get_array_slices(self, slice_):
+        """Returns a slice to slice the corresponding data axis without
+        changing the offset and scale of the DataAxis.
+
+        Parameters
+        ----------
+        slice_ : {float, int, slice}
+
+        Returns
+        -------
+        my_slice : slice
+
+        """
+        v2i = self.value2index
+
+        if isinstance(slice_, slice):
+            start = slice_.start
+            stop = slice_.stop
+            step = slice_.step
+        else:
+            if isfloat(slice_):
+                start = v2i(slice_)
+            else:
+                start = self._get_positive_index(slice_)
+            stop = start + 1
+            step = None
+
+        if isfloat(step):
+            step = int(round(step / self.scale))
+        if isfloat(start):
+            try:
+                start = v2i(start)
+            except ValueError:
+                # The value is below the axis limits
+                # we slice from the start.
+                start = None
+        if isfloat(stop):
+            try:
+                stop = v2i(stop)
+            except ValueError:
+                # The value is above the axes limits
+                # we slice up to the end.
+                stop = None
+
+        if step == 0:
+            raise ValueError("slice step cannot be zero")
+
+        return slice(start, stop, step)
 
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and
@@ -150,41 +200,10 @@ class DataAxis(t.HasTraits):
 
         """
         i2v = self.index2value
-        v2i = self.value2index
 
-        if isinstance(slice_, slice):
-            start = slice_.start
-            stop = slice_.stop
-            step = slice_.step
-        else:
-            if isinstance(slice_, float):
-                start = v2i(slice_)
-            else:
-                start = self._get_positive_index(slice_)
-            stop = start + 1
-            step = None
+        my_slice = self._get_array_slices(slice_)
 
-        if isinstance(step, float):
-            step = int(round(step / self.scale))
-        if isinstance(start, float):
-            try:
-                start = v2i(start)
-            except ValueError:
-                # The value is below the axis limits
-                # we slice from the start.
-                start = None
-        if isinstance(stop, float):
-            try:
-                stop = v2i(stop)
-            except ValueError:
-                # The value is above the axes limits
-                # we slice up to the end.
-                stop = None
-
-        if step == 0:
-            raise ValueError("slice step cannot be zero")
-
-        my_slice = slice(start, stop, step)
+        start, stop, step = my_slice.start, my_slice.stop, my_slice.step
 
         if start is None:
             if step > 0 or step is None:
@@ -210,7 +229,7 @@ class DataAxis(t.HasTraits):
         if self.navigate is True:
             text += ", index: %i" % self.index
         text += ">"
-        return text
+        return text.encode('utf8')
 
     def __str__(self):
         return self._get_name() + " axis"
@@ -482,8 +501,8 @@ class AxesManager(t.HasTraits):
                 if y == axis.name:
                     return axis
             raise ValueError("There is no DataAxis named %s" % y)
-        elif (isinstance(y.real, float) and not y.real.is_integer() or
-                isinstance(y.imag, float) and not y.imag.is_integer()):
+        elif (isfloat(y.real) and not y.real.is_integer() or
+                isfloat(y.imag) and not y.imag.is_integer()):
             raise TypeError("axesmanager indices must be integers, "
                             "complex intergers or strings")
         if y.imag == 0:  # Natural order

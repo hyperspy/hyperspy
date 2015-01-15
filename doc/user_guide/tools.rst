@@ -243,7 +243,6 @@ subclasses.
 .. _signal.indexing:
 
 Indexing
-
 ^^^^^^^^
 .. versionadded:: 0.6
 

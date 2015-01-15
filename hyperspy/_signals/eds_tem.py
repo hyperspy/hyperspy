@@ -144,7 +144,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             'Acquisition_instrument.TEM.Detector.EDS.live_time': tem_par.live_time,
             'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle': tem_par.azimuth_angle,
             'Acquisition_instrument.TEM.Detector.EDS.elevation_angle': tem_par.elevation_angle,
-            'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa': tem_par.elevation_angle, }
+            'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa': tem_par.energy_resolution_MnKa, }
 
         for key, value in mapping.iteritems():
             if value != t.Undefined:

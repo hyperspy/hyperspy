@@ -23,6 +23,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from traits.api import Undefined
 
+import hyperspy.messages as messages
+
 
 def _plot_quiver_scatter_overlay(image, axes_manager,
                                  calibrate=True, shifts=None,
@@ -133,31 +135,6 @@ def _plot_2D_component(factors, idx, axes_manager,
     cax = div.append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
     return ax
-
-
-def _plot_component(axes_manager,
-                    factors=None, idx=None,
-                    comp_label=None,
-                    image=None, calibrate=True,
-                    shifts=None, char=None,
-                    ax=None, img_cmap=plt.cm.gray,
-                    sc_cmap=plt.cm.gray,
-                    cmap=plt.cm.gray,
-                    quiver_color='white',
-                    vector_scale=100,):
-    if axes_manager.signal_dimension == 1:
-        return self._plot_1D_component(factors=factors,
-                                       idx=idx, axes_manager=axes_manager,
-                                       ax=ax, calibrate=calibrate,
-                                       comp_label=comp_label,
-                                       same_window=same_window)
-    elif axes_manager.signal_dimension == 2:
-        return _plot_2D_component(factors=factors,
-                                  idx=idx,
-                                  axes_manager=axes_manager,
-                                  calibrate=calibrate, ax=ax,
-                                  cmap=cmap,
-                                  comp_label=comp_label)
 
 
 def _plot_loading(loadings, idx, axes_manager, ax=None,

@@ -17,7 +17,7 @@
 
 from traits.api import Undefined
 
-from hyperspy.drawing import widgets, spectrum, image, utils
+from hyperspy.drawing import widgets, spectrum, image
 from hyperspy.gui.axes import navigation_sliders
 
 

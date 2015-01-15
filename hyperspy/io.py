@@ -238,8 +238,9 @@ def load_single_file(filename,
         i += 1
     if i == len(io_plugins):
         # Try to load it with the python imaging library
-        reader = image
         try:
+            from hyperspy.io_plugins import image
+            reader = image
             return load_with_reader(filename, reader, record_by,
                                     signal_type=signal_type, **kwds)
         except:

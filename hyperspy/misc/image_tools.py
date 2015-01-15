@@ -18,9 +18,7 @@
 
 import numpy as np
 import scipy as sp
-import scipy.signal
 from scipy.fftpack import fftn, ifftn
-import scipy.ndimage
 import matplotlib.pyplot as plt
 
 
@@ -82,7 +80,6 @@ def fft_correlation(in1, in2, normalize=False):
     fsize = 2 ** np.ceil(np.log2(size))
     IN1 = fftn(in1, fsize)
     IN1 *= fftn(in2, fsize).conjugate()
-    fslice = tuple([slice(0, int(sz)) for sz in size])
     if normalize is True:
         ret = ifftn(np.nan_to_num(IN1 / np.absolute(IN1))).real.copy()
     else:
