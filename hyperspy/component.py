@@ -378,7 +378,7 @@ class Parameter(t.HasTraits):
 
         """
         shape = self._axes_manager._navigation_shape_in_array
-        if len(shape) == 1 and shape[0] == 0:
+        if not shape:
             shape = [1, ]
         dtype_ = np.dtype([
             ('values', 'float', self._number_of_elements),
