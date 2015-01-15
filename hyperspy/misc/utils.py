@@ -20,11 +20,11 @@ from __future__ import division
 import inspect
 import copy
 import types
-import re
 from StringIO import StringIO
 import codecs
 import collections
 import tempfile
+import unicodedata
 
 import numpy as np
 
@@ -88,8 +88,11 @@ def str2num(string, **kargs):
     return np.loadtxt(stringIO, **kargs)
 
 
-_slugify_strip_re = re.compile(r'[^\w\s-]')
-_slugify_hyphenate_re = re.compile(r'[-\s]+')
+_slugify_strip_re_data = ''.join(
+    c for c in map(
+        chr, np.delete(
+            np.arange(256), [
+                95, 32])) if not c.isalnum())
 
 
 def slugify(value, valid_variable_name=False):
@@ -100,7 +103,6 @@ def slugify(value, valid_variable_name=False):
     Adapted from Django's "django/template/defaultfilters.py".
 
     """
-    import unicodedata
     if not isinstance(value, unicode):
         try:
             # Convert to unicode using the default encoding
@@ -109,8 +111,8 @@ def slugify(value, valid_variable_name=False):
             # Try latin1. If this does not work an exception is raised.
             value = unicode(value, "latin1")
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    value = unicode(_slugify_strip_re.sub('', value).strip())
-    value = _slugify_hyphenate_re.sub('_', value)
+    value = unicode(value.translate(None, _slugify_strip_re_data).strip())
+    value = value.replace(' ', '_')
     if valid_variable_name is True:
         if value[:1].isdigit():
             value = u'Number_' + value
@@ -211,7 +213,7 @@ class DictionaryTreeBrowser(object):
                 continue
             if not isinstance(key_, types.MethodType):
                 key = ensure_unicode(value['key'])
-                value = ensure_unicode(value['value'])
+                value = ensure_unicode(value['_dtb_value_'])
                 if isinstance(value, DictionaryTreeBrowser):
                     if j == eoi - 1:
                         symbol = u'└── '
@@ -253,12 +255,16 @@ class DictionaryTreeBrowser(object):
     def __getattribute__(self, name):
         name = slugify(name, valid_variable_name=True)
         item = super(DictionaryTreeBrowser, self).__getattribute__(name)
-        if isinstance(item, dict) and 'value' in item:
-            return item['value']
+        if isinstance(item, dict) and '_dtb_value_' in item and "key" in item:
+            return item['_dtb_value_']
         else:
             return item
 
     def __setattr__(self, key, value):
+        if key.startswith('_sig_'):
+            key = key[5:]
+            from hyperspy.signal import Signal
+            value = Signal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
             if self.has_item(slugified_key):
@@ -268,7 +274,7 @@ class DictionaryTreeBrowser(object):
                 value = DictionaryTreeBrowser(value)
         super(DictionaryTreeBrowser, self).__setattr__(
             slugified_key,
-            {'key': key, 'value': value})
+            {'key': key, '_dtb_value_': value})
 
     def __len__(self):
         return len(
@@ -285,16 +291,20 @@ class DictionaryTreeBrowser(object):
         """Returns its dictionary representation.
 
         """
+        from hyperspy.signal import Signal
         par_dict = {}
         for key_, item_ in self.__dict__.iteritems():
             if not isinstance(item_, types.MethodType):
                 key = item_['key']
                 if key == "_db_index":
                     continue
-                if isinstance(item_['value'], DictionaryTreeBrowser):
-                    item = item_['value'].as_dictionary()
+                if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
+                    item = item_['_dtb_value_'].as_dictionary()
+                elif isinstance(item_['_dtb_value_'], Signal):
+                    item = item_['_dtb_value_']._to_dictionary()
+                    key = '_sig_' + key
                 else:
-                    item = item_['value']
+                    item = item_['_dtb_value_']
                 par_dict.__setitem__(key, item)
         return par_dict
 
@@ -774,7 +784,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
         step_sizes = 1
     else:
-        step_sizes = [obj.axes_manager.shape[axis_input]
+        step_sizes = [obj.axes_manager[axis_input].size
                       for obj in signal_list]
     signal.metadata._HyperSpy.set_item(
         'Stacking_history.axis',

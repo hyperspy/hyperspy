@@ -57,33 +57,32 @@ class EDSSpectrum(Spectrum):
         ------
 
         float: the line energy, if FWHM_MnKa is None
-        (float,float): the line energy and the energy resolution, if FWHM_MnKa is not None
+        (float,float): the line energy and the energy resolution, if FWHM_MnKa
+        is not None
         """
 
         units_name = self.axes_manager.signal_axes[0].units
-        element, line = utils_eds._get_element_and_line(Xray_line)
 
         if FWHM_MnKa == 'auto':
             if self.metadata.Signal.signal_type == 'EDS_SEM':
-                FWHM_MnKa = self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa
+                FWHM_MnKa = self.metadata.Acquisition_instrument.SEM.\
+                    Detector.EDS.energy_resolution_MnKa
             elif self.metadata.Signal.signal_type == 'EDS_TEM':
-                FWHM_MnKa = self.metadata.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa
+                FWHM_MnKa = self.metadata.Acquisition_instrument.TEM.\
+                    Detector.EDS.energy_resolution_MnKa
             else:
                 raise NotImplementedError(
                     "This method only works for EDS_TEM or EDS_SEM signals. "
                     "You can use `set_signal_type(\"EDS_TEM\")` or"
                     "`set_signal_type(\"EDS_SEM\")` to convert to one of these"
                     "signal types.")
-
+        line_energy = utils_eds._get_energy_xray_line(Xray_line)
         if units_name == 'eV':
-            line_energy = elements_db[element]['Atomic_properties']['Xray_lines'][
-                line]['energy (keV)'] * 1000
+            line_energy *= 1000
             if FWHM_MnKa is not None:
-                line_FWHM = utils_eds.get_FWHM_at_Energy(FWHM_MnKa,
-                                                         line_energy / 1000) * 1000
+                line_FWHM = utils_eds.get_FWHM_at_Energy(
+                    FWHM_MnKa, line_energy / 1000) * 1000
         elif units_name == 'keV':
-            line_energy = elements_db[element]['Atomic_properties']['Xray_lines'][
-                line]['energy (keV)']
             if FWHM_MnKa is not None:
                 line_FWHM = utils_eds.get_FWHM_at_Energy(FWHM_MnKa,
                                                          line_energy)
@@ -98,6 +97,29 @@ class EDSSpectrum(Spectrum):
             return line_energy
         else:
             return line_energy, line_FWHM
+
+    def _get_beam_energy(self):
+        """
+        Get the beam energy.
+
+        The return value is in the same units than the signal axis
+        """
+
+        if "Acquisition_instrument.SEM.beam_energy" in self.metadata:
+            beam_energy = self.metadata.Acquisition_instrument.SEM.beam_energy
+        elif "Acquisition_instrument.TEM.beam_energy" in self.metadata:
+            beam_energy = self.metadata.Acquisition_instrument.TEM.beam_energy
+        else:
+            raise AttributeError(
+                "To use this method the beam energy `Acquisition_instrument.TEM.beam_energy` "
+                "or `Acquisition_instrument.SEM.beam_energy` must be defined in "
+                "`metadata`.")
+
+        units_name = self.axes_manager.signal_axes[0].units
+
+        if units_name == 'eV':
+            beam_energy = beam_energy * 1000
+        return beam_energy
 
     def sum(self, axis):
         """Sum the data over the given axis.
@@ -321,14 +343,16 @@ class EDSSpectrum(Spectrum):
                     "Please provide a valid line symbol e.g. Fe_Ka")
             if element in elements_db:
                 elements.add(element)
-                if subshell in elements_db[element]['Atomic_properties']['Xray_lines']:
+                if subshell in elements_db[element]['Atomic_properties'
+                                                    ]['Xray_lines']:
                     lines_len = len(xray_lines)
                     xray_lines.add(line)
                     if lines_len != len(xray_lines):
                         print("%s line added," % line)
                     else:
                         print("%s line already in." % line)
-                    if (self._get_line_energy(element + '_' + subshell) > end_energy):
+                    if (self._get_line_energy(element + '_' +
+                                              subshell) > end_energy):
                         print("Warning: %s %s is above the data energy range."
                               % (element, subshell))
                 else:
@@ -376,17 +400,11 @@ class EDSSpectrum(Spectrum):
 
         Returns
         -------
+        list of X-ray lines alphabetically sorted
 
         """
-        if "Acquisition_instrument.SEM.beam_energy" in self.metadata:
-            beam_energy = self.metadata.Acquisition_instrument.SEM.beam_energy
-        elif "Acquisition_instrument.TEM.beam_energy" in self.metadata:
-            beam_energy = self.metadata.Acquisition_instrument.TEM.beam_energy
-        else:
-            raise AttributeError(
-                "To use this method the beam energy `Acquisition_instrument.TEM.beam_energy` "
-                "or `Acquisition_instrument.SEM.beam_energy` must be defined in "
-                "`metadata`.")
+
+        beam_energy = self._get_beam_energy()
 
         end_energy = self.axes_manager.signal_axes[0].high_value
         if beam_energy < end_energy:
@@ -395,14 +413,17 @@ class EDSSpectrum(Spectrum):
         for element in elements:
             # Possible line (existing and excited by electron)
             element_lines = []
-            for subshell in elements_db[element]['Atomic_properties']['Xray_lines'].keys():
+            for subshell in elements_db[element]['Atomic_properties'
+                                                 ]['Xray_lines'].keys():
                 if only_lines and subshell not in only_lines:
                     continue
-                if (self._get_line_energy(element + '_' + subshell) < end_energy):
+                if (self._get_line_energy(element + '_' +
+                                          subshell) < end_energy):
                     element_lines.append(element + "_" + subshell)
             if only_one and element_lines:
-            # Choose the best line
+                # Choose the best line
                 select_this = -1
+                element_lines.sort()
                 for i, line in enumerate(element_lines):
                     if (self._get_line_energy(line) < beam_energy / 2):
                         select_this = i
@@ -414,6 +435,7 @@ class EDSSpectrum(Spectrum):
                       "in the data spectral range")
             else:
                 lines.extend(element_lines)
+        lines.sort()
         return lines
 
     def get_lines_intensity(self,

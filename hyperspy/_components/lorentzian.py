@@ -64,7 +64,7 @@ class Lorentzian(Component):
         self.centre.grad = self.grad_centre
 
     def __repr__(self):
-        return 'Lorentzian'
+        return u'Lorentzian'
 
     def function(self, x):
         """

@@ -1,15 +1,11 @@
-from nose.tools import (
-    assert_true,
-    assert_equal,
-    assert_not_equal,
-    raises)
+from nose.tools import assert_true
 import numpy as np
 
 from hyperspy.signal import Signal
 from hyperspy import utils
 
 
-class Test_Utils_Stack():
+class TestUtilsStack():
 
     def setUp(self):
         s = Signal(np.ones((3, 2, 5)))
@@ -49,6 +45,8 @@ class Test_Utils_Stack():
         result_signal = utils.stack([s, s1, s2], axis=1)
         result_list = result_signal.split()
         assert_true(len(result_list) == 3)
+        assert_true((result_list[0].data == result_signal[::, 0].data).all())
+        result_signal = utils.stack([s, s1, s2], axis='y')
         assert_true((result_list[0].data == result_signal[::, 0].data).all())
 
     def test_stack_bigger_than_ten(self):

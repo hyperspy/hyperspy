@@ -16,19 +16,24 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
-
 import numpy as np
+import nose.tools
+from nose.plugins.skip import SkipTest
+from scipy.signal import savgol_filter
+try:
+    from statsmodels.nonparametric.smoothers_lowess import lowess
+    skip_lowess = False
+except:
+    skip_lowess = True
 
-from nose.tools import assert_true, assert_equal, assert_not_equal
-from hyperspy._signals.spectrum import Spectrum
-from hyperspy.hspy import *
+from hyperspy.misc.tv_denoise import _tv_denoise_1d
+import hyperspy.hspy as hs
 
 
 class TestAlignTools:
 
     def setUp(self):
-        s = Spectrum(np.zeros((10, 100)))
+        s = hs.signals.Spectrum(np.zeros((10, 100)))
         self.scale = 0.1
         self.offset = -2
         eaxis = s.axes_manager.signal_axes[0]
@@ -45,35 +50,37 @@ class TestAlignTools:
     def test_estimate_shift(self):
         s = self.spectrum
         eshifts = -1 * s.estimate_shift1D()
-        assert_true(np.allclose(eshifts, self.ishifts * self.scale))
+        nose.tools.assert_true(np.allclose(eshifts, self.ishifts * self.scale))
 
     def test_shift1D(self):
         s = self.spectrum
         s.shift1D(-1 * self.ishifts[:, np.newaxis] * self.scale)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        assert_true(np.allclose(s.data[:, i_zlp], 12))
+        nose.tools.assert_true(np.allclose(s.data[:, i_zlp], 12))
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
         # code is buggy
-        assert_true((s.data[:, -1] == 2).all())
-        assert_true((s.data[:, 0] == 2).all())
+        nose.tools.assert_true((s.data[:, -1] == 2).all())
+        nose.tools.assert_true((s.data[:, 0] == 2).all())
         # Check that the calibration is correct
-        assert_equal(s.axes_manager._axes[1].offset, self.new_offset)
-        assert_equal(s.axes_manager._axes[1].scale, self.scale)
+        nose.tools.assert_equal(
+            s.axes_manager._axes[1].offset, self.new_offset)
+        nose.tools.assert_equal(s.axes_manager._axes[1].scale, self.scale)
 
     def test_align(self):
         s = self.spectrum
         s.align1D()
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        assert_true(np.allclose(s.data[:, i_zlp], 12))
+        nose.tools.assert_true(np.allclose(s.data[:, i_zlp], 12))
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
         # code is buggy
-        assert_true((s.data[:, -1] == 2).all())
-        assert_true((s.data[:, 0] == 2).all())
+        nose.tools.assert_true((s.data[:, -1] == 2).all())
+        nose.tools.assert_true((s.data[:, 0] == 2).all())
         # Check that the calibration is correct
-        assert_equal(s.axes_manager._axes[1].offset, self.new_offset)
-        assert_equal(s.axes_manager._axes[1].scale, self.scale)
+        nose.tools.assert_equal(
+            s.axes_manager._axes[1].offset, self.new_offset)
+        nose.tools.assert_equal(s.axes_manager._axes[1].scale, self.scale)
 
     def test_align_axis0(self):
         s = self.spectrum
@@ -81,27 +88,28 @@ class TestAlignTools:
         s.align1D()
         s = s.swap_axes(0, 1)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        assert_true(np.allclose(s.data[:, i_zlp], 12))
+        nose.tools.assert_true(np.allclose(s.data[:, i_zlp], 12))
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
         # code is buggy
-        assert_true((s.data[:, -1] == 2).all())
-        assert_true((s.data[:, 0] == 2).all())
+        nose.tools.assert_true((s.data[:, -1] == 2).all())
+        nose.tools.assert_true((s.data[:, 0] == 2).all())
         # Check that the calibration is correct
-        assert_equal(s.axes_manager._axes[1].offset, self.new_offset)
-        assert_equal(s.axes_manager._axes[1].scale, self.scale)
+        nose.tools.assert_equal(
+            s.axes_manager._axes[1].offset, self.new_offset)
+        nose.tools.assert_equal(s.axes_manager._axes[1].scale, self.scale)
 
 
 class TestShift1D():
 
     def setUp(self):
-        self.s = Spectrum(np.arange(10))
+        self.s = hs.signals.Spectrum(np.arange(10))
         self.s.axes_manager[0].scale = 0.2
 
     def test_crop_left(self):
         s = self.s
         s.shift1D(np.array((0.01)), crop=True)
-        assert_equal(
+        nose.tools.assert_equal(
             tuple(
                 s.axes_manager[0].axis), tuple(
                 np.arange(
@@ -110,7 +118,7 @@ class TestShift1D():
     def test_crop_right(self):
         s = self.s
         s.shift1D(np.array((-0.01)), crop=True)
-        assert_equal(
+        nose.tools.assert_equal(
             tuple(
                 s.axes_manager[0].axis), tuple(
                 np.arange(
@@ -121,7 +129,7 @@ class TestFindPeaks1D:
 
     def setUp(self):
         x = np.arange(0, 50, 0.01)
-        s = Spectrum(np.vstack((np.cos(x), np.sin(x))))
+        s = hs.signals.Spectrum(np.vstack((np.cos(x), np.sin(x))))
         s.axes_manager.signal_axes[0].scale = 0.01
         self.peak_positions0 = np.arange(8) * 2 * np.pi
         self.peak_positions1 = np.arange(8) * 2 * np.pi + np.pi / 2
@@ -129,20 +137,20 @@ class TestFindPeaks1D:
 
     def test_single_spectrum(self):
         peaks = self.spectrum[0].find_peaks1D_ohaver()
-        assert_true(np.allclose(peaks[0]['position'],
-                    self.peak_positions0, rtol=1e-5, atol=1e-4))
+        nose.tools.assert_true(np.allclose(peaks[0]['position'],
+                                           self.peak_positions0, rtol=1e-5, atol=1e-4))
 
     def test_two_spectra(self):
         peaks = self.spectrum.find_peaks1D_ohaver()
         peaks = self.spectrum.find_peaks1D_ohaver()
-        assert_true(np.allclose(peaks[1]['position'],
-                    self.peak_positions1, rtol=1e-5, atol=1e-4))
+        nose.tools.assert_true(np.allclose(peaks[1]['position'],
+                                           self.peak_positions1, rtol=1e-5, atol=1e-4))
 
 
 class TestInterpolateInBetween:
 
     def setUp(self):
-        s = Spectrum(np.arange(40).reshape((2, 20)))
+        s = hs.signals.Spectrum(np.arange(40).reshape((2, 20)))
         s.axes_manager.signal_axes[0].scale = 0.1
         s[:, 8:12] = 0
         self.s = s
@@ -150,17 +158,17 @@ class TestInterpolateInBetween:
     def test_single_spectrum(self):
         s = self.s[0]
         s.interpolate_in_between(8, 12)
-        assert_true((s.data == np.arange(20)).all())
+        nose.tools.assert_true((s.data == np.arange(20)).all())
 
     def test_single_spectrum_in_units(self):
         s = self.s[0]
         s.interpolate_in_between(0.8, 1.2)
-        assert_true((s.data == np.arange(20)).all())
+        nose.tools.assert_true((s.data == np.arange(20)).all())
 
     def test_two_spectra(self):
         s = self.s
         s.interpolate_in_between(8, 12)
-        assert_true((s.data == np.arange(40).reshape(2, 20)).all())
+        nose.tools.assert_true((s.data == np.arange(40).reshape(2, 20)).all())
 
 
 class TestEstimatePeakWidth():
@@ -169,8 +177,8 @@ class TestEstimatePeakWidth():
         scale = 0.1
         window = 2
         x = np.arange(-window, window, scale)
-        g = components.Gaussian()
-        s = signals.Spectrum(g.function(x))
+        g = hs.components.Gaussian()
+        s = hs.signals.Spectrum(g.function(x))
         s.axes_manager[-1].scale = scale
         self.s = s
 
@@ -178,17 +186,17 @@ class TestEstimatePeakWidth():
         width, left, right = self.s.estimate_peak_width(
             window=None,
             return_interval=True)
-        assert_equal(width, 2.35482074)
-        assert_equal(left, 0.82258963)
-        assert_equal(right, 3.17741037)
+        nose.tools.assert_equal(width, 2.35482074)
+        nose.tools.assert_equal(left, 0.82258963)
+        nose.tools.assert_equal(right, 3.17741037)
 
     def test_too_narrow_range(self):
         width, left, right = self.s.estimate_peak_width(
             window=2.2,
             return_interval=True)
-        assert_equal(width, np.nan)
-        assert_equal(left, np.nan)
-        assert_equal(right, np.nan)
+        nose.tools.assert_equal(width, np.nan)
+        nose.tools.assert_equal(left, np.nan)
+        nose.tools.assert_equal(right, np.nan)
 
     def test_two_peaks(self):
         s = self.s.deepcopy()
@@ -197,6 +205,60 @@ class TestEstimatePeakWidth():
         width, left, right = self.s.estimate_peak_width(
             window=None,
             return_interval=True)
-        assert_equal(width, np.nan)
-        assert_equal(left, np.nan)
-        assert_equal(right, np.nan)
+        nose.tools.assert_equal(width, np.nan)
+        nose.tools.assert_equal(left, np.nan)
+        nose.tools.assert_equal(right, np.nan)
+
+
+class TestSmoothing:
+
+    def setUp(self):
+        n, m = 2, 100
+        self.s = hs.signals.SpectrumSimulation(np.arange(n * m).reshape(n, m))
+        np.random.seed(1)
+        self.s.add_gaussian_noise(0.1)
+
+    def test_lowess(self):
+        if skip_lowess:
+            raise SkipTest
+        frac = 0.5
+        it = 1
+        data = self.s.data.copy()
+        for i in range(data.shape[0]):
+            data[i, :] = lowess(
+                endog=data[i, :],
+                exog=self.s.axes_manager[-1].axis,
+                frac=frac,
+                it=it,
+                is_sorted=True,
+                return_sorted=False,)
+        self.s.smooth_lowess(smoothing_parameter=frac,
+                             number_of_iterations=it,)
+        nose.tools.assert_true(np.allclose(data, self.s.data))
+
+    def test_tv(self):
+        weight = 1
+        data = self.s.data.copy()
+        for i in range(data.shape[0]):
+            data[i, :] = _tv_denoise_1d(
+                im=data[i, :],
+                weight=weight,)
+        self.s.smooth_tv(smoothing_parameter=weight,)
+        nose.tools.assert_true(np.allclose(data, self.s.data))
+
+    def test_savgol(self):
+        window_length = 13
+        polyorder = 1
+        deriv = 1
+        data = savgol_filter(
+            x=self.s.data,
+            window_length=window_length,
+            polyorder=polyorder,
+            deriv=deriv,
+            delta=self.s.axes_manager[-1].scale,
+            axis=-1,)
+        self.s.smooth_savitzky_golay(
+            window_length=window_length,
+            polynomial_order=polyorder,
+            differential_order=deriv,)
+        nose.tools.assert_true(np.allclose(data, self.s.data))

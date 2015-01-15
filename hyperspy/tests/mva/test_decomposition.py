@@ -1,6 +1,6 @@
 import numpy as np
 
-from nose.tools import assert_true, assert_equal, assert_not_equal, raises
+from nose.tools import assert_true, raises
 from hyperspy import signals
 
 

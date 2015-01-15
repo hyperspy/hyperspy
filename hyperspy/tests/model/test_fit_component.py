@@ -18,7 +18,8 @@
 
 import numpy as np
 
-from nose.tools import assert_true, assert_equal, assert_not_equal
+import nose.tools
+from nose.tools import assert_true
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.hspy import create_model
 from hyperspy.components import Gaussian
@@ -51,6 +52,10 @@ class TestFitOneComponent:
                 self.g.function(axis),
                 g1.function(axis),
                 rtol=self.rtol))
+
+    @nose.tools.raises(ValueError)
+    def test_component_not_in_model(self):
+        self.model.fit_component(self.g)
 
 
 class TestFitSeveralComponent:

@@ -26,9 +26,6 @@ import os
 import numpy as np
 
 from hyperspy.misc.config_dir import os_name
-from hyperspy.misc.utils import generate_axis
-from hyperspy import messages
-from hyperspy.misc.io.tools import overwrite
 from hyperspy import Release
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
