@@ -341,6 +341,7 @@ def plot_spectra(
         padding=1.,
         legend=None,
         legend_picking=True,
+        legend_loc='upper right',
         fig=None,
         ax=None,):
     """Plot several spectra in the same figure.
@@ -378,6 +379,9 @@ def plot_spectra(
     legend_picking: bool
         If true, a spectrum can be toggle on and off by clicking on
         the legended line.
+    legend_loc : str or int
+        This parameter controls where the legend is placed on the figure;
+        see the pyplot.legend docstring for valid values
     fig : matplotlib figure or None
         If None, a default figure will be created. Specifying fig will
         not work for the 'heatmap' style.
@@ -446,7 +450,7 @@ def plot_spectra(
                            color=color,
                            line_style=line_style,)
         if legend is not None:
-            plt.legend(legend)
+            plt.legend(legend, loc=legend_loc)
             if legend_picking is True:
                 animate_legend(figure=fig)
     elif style == 'cascade':
@@ -460,7 +464,7 @@ def plot_spectra(
                               line_style=line_style,
                               padding=padding)
         if legend is not None:
-            plt.legend(legend)
+            plt.legend(legend, loc=legend_loc)
     elif style == 'mosaic':
         default_fsize = plt.rcParams["figure.figsize"]
         figsize = (default_fsize[0], default_fsize[1] * len(spectra))
