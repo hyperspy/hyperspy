@@ -380,9 +380,8 @@ def plot_spectra(
         If true, a spectrum can be toggle on and off by clicking on
         the legended line.
     legend_loc : str or int
-        This parameter will be control where the legend is placed on the figure
-        (when plotting with 'cascade' or 'overlap' styles) according to
-        the pyplot legend documentation <http://matplotlib.org/1.3.1/api/pyplot_api.html#matplotlib.pyplot.legend>
+        This parameter controls where the legend is placed on the figure;
+        see the pyplot.legend docstring for valid values
     fig : matplotlib figure or None
         If None, a default figure will be created. Specifying fig will
         not work for the 'heatmap' style.
