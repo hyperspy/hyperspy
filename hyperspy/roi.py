@@ -3,7 +3,7 @@ from hyperspy.events import Events, Event
 
 
 class RectangularROI(t.HasTraits):
-    top, bottom, left, right = (t.CInt(t.Undefined),) * 4
+    top, bottom, left, right = (t.CFloat(t.Undefined),) * 4
 
     def __init__(self, top, bottom, left, right):
         super(RectangularROI, self).__init__()
