@@ -2601,7 +2601,7 @@ class Signal(MVA,
 
         return string.encode('utf8')
 
-    def __getitem__(self, slices, isNavigation=None):
+    def __getitem__(self, slices, isNavigation=None, out=None):
         try:
             len(slices)
         except TypeError:
@@ -2612,7 +2612,12 @@ class Signal(MVA,
         has_signal = True if isNavigation is None else not isNavigation
 
         # Create a deepcopy of self that contains a view of self.data
-        _signal = self._deepcopy_with_new_data(self.data)
+        if out is None:
+            _signal = self._deepcopy_with_new_data(self.data)
+        else:
+            out.data = self.data
+            out.axes_manager = self.axes_manager.deepcopy()
+            _signal = out
 
         nav_idx = [el.index_in_array for el in
                    _signal.axes_manager.navigation_axes]
@@ -2669,7 +2674,8 @@ class Signal(MVA,
                     isNavigation)
         _signal.get_dimensions_from_data()
 
-        return _signal
+        if out is None:
+            return _signal
 
     def __setitem__(self, i, j):
         """x.__setitem__(i, y) <==> x[i]=y
@@ -3596,14 +3602,19 @@ class Signal(MVA,
             self.metadata.Signal.record_by = self._record_by
             self._assign_subclass()
 
-    def _apply_function_on_data_and_remove_axis(self, function, axis):
-        s = self._deepcopy_with_new_data(
-            function(self.data,
-                     axis=self.axes_manager[axis].index_in_array))
-        s._remove_axis(axis)
-        return s
+    def _apply_function_on_data_and_remove_axis(self, function, axis,
+                                                out=None):
+        if out is None:
+            s = self._deepcopy_with_new_data(None)
+        else:
+            s = out
+        s.data = function(self.data,
+                          axis=self.axes_manager[axis].index_in_array)
+        if out is None:
+            s._remove_axis(axis)
+            return s
 
-    def sum(self, axis):
+    def sum(self, axis, out=None):
         """Sum the data over the given axis.
 
         Parameters
@@ -3632,9 +3643,10 @@ class Signal(MVA,
         s.sum(-1, True).plot()
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.sum, axis)
+        return self._apply_function_on_data_and_remove_axis(np.sum, axis,
+                                                            out=out)
 
-    def max(self, axis, return_signal=False):
+    def max(self, axis, out=None):
         """Returns a signal with the maximum of the signal along an axis.
 
         Parameters
@@ -3661,9 +3673,10 @@ class Signal(MVA,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.max, axis)
+        return self._apply_function_on_data_and_remove_axis(np.max, axis,
+                                                            out=out)
 
-    def min(self, axis):
+    def min(self, axis, out=None):
         """Returns a signal with the minimum of the signal along an axis.
 
         Parameters
@@ -3691,9 +3704,10 @@ class Signal(MVA,
 
         """
 
-        return self._apply_function_on_data_and_remove_axis(np.min, axis)
+        return self._apply_function_on_data_and_remove_axis(np.min, axis,
+                                                            out=out)
 
-    def mean(self, axis):
+    def mean(self, axis, out=None):
         """Returns a signal with the average of the signal along an axis.
 
         Parameters
@@ -3720,10 +3734,10 @@ class Signal(MVA,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.mean,
-                                                            axis)
+        return self._apply_function_on_data_and_remove_axis(np.mean, axis,
+                                                            out=out)
 
-    def std(self, axis):
+    def std(self, axis, out=None):
         """Returns a signal with the standard deviation of the signal along
         an axis.
 
@@ -3751,9 +3765,10 @@ class Signal(MVA,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.std, axis)
+        return self._apply_function_on_data_and_remove_axis(np.std, axis,
+                                                            out=out)
 
-    def var(self, axis):
+    def var(self, axis, out=None):
         """Returns a signal with the variances of the signal along an axis.
 
         Parameters
@@ -3780,7 +3795,8 @@ class Signal(MVA,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.var, axis)
+        return self._apply_function_on_data_and_remove_axis(np.var, axis,
+                                                            out=out)
 
     def diff(self, axis, order=1):
         """Returns a signal with the n-th order discrete difference along
@@ -3887,7 +3903,7 @@ class Signal(MVA,
         else:
             return self.sum(axis)
 
-    def indexmax(self, axis):
+    def indexmax(self, axis, out=None):
         """Returns a signal with the index of the maximum along an axis.
 
         Parameters
@@ -3915,7 +3931,8 @@ class Signal(MVA,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.argmax, axis)
+        return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
+                                                            out=out)
 
     def valuemax(self, axis):
         """Returns a signal with the value of the maximum along an axis.
