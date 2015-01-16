@@ -67,16 +67,18 @@ def weight_to_atomic(weight_percent, elements='auto'):
     array([ 93.19698614,   6.80301386])
 
     """
+    from hyperspy.signals import Signal
     elements = _elements_auto(weight_percent, elements)
-    if isinstance(weight_percent[0], numbers.Number):
-        return _weight_to_atomic(weight_percent, elements)
-    else:
+
+    if isinstance(weight_percent[0], Signal):
         atomic_percent = stack(weight_percent)
         atomic_percent.data = _weight_to_atomic(
             atomic_percent.data, elements)
         atomic_percent.data = np.nan_to_num(atomic_percent.data)
         atomic_percent = atomic_percent.split()
         return atomic_percent
+    else:
+        return _weight_to_atomic(weight_percent, elements)
 
 
 def _atomic_to_weight(atomic_percent, elements):
@@ -142,15 +144,16 @@ def atomic_to_weight(atomic_percent, elements='auto'):
     array([ 88.00501989,  11.99498011])
 
     """
+    from hyperspy.signals import Signal
     elements = _elements_auto(atomic_percent, elements)
-    if isinstance(atomic_percent[0], numbers.Number):
-        return _atomic_to_weight(atomic_percent, elements)
-    else:
+    if isinstance(atomic_percent[0], Signal):
         weight_percent = stack(atomic_percent)
         weight_percent.data = _atomic_to_weight(
             weight_percent.data, elements)
         weight_percent = weight_percent.split()
         return weight_percent
+    else:
+        return _atomic_to_weight(atomic_percent, elements)
 
 
 def _density_of_mixture_of_pure_elements(weight_percent, elements):
@@ -228,14 +231,15 @@ def density_of_mixture_of_pure_elements(weight_percent, elements='auto'):
     8.6903187973131466
 
     """
+    from hyperspy.signals import Signal
     elements = _elements_auto(weight_percent, elements)
-    if isinstance(weight_percent[0], numbers.Number):
-        return _density_of_mixture_of_pure_elements(weight_percent, elements)
-    else:
-        density = weight_percent[0].deepcopy()
-        density.data = _density_of_mixture_of_pure_elements(
-            stack(weight_percent).data, elements)
+    if isinstance(weight_percent[0], Signal):
+        density = weight_percent[0]._deepcopy_with_new_data(
+            _density_of_mixture_of_pure_elements(
+                stack(weight_percent).data, elements))
         return density
+    else:
+        return _density_of_mixture_of_pure_elements(weight_percent, elements)
 
 
 def _elements_auto(composition, elements):
