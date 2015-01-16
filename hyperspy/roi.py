@@ -2,13 +2,18 @@ import traits.api as t
 from hyperspy.events import Events, Event
 
 
-class RectangularROI(t.HasTraits):
+class BaseROI(t.HasTraits):
+    def __init__(self):
+        super(BaseROI, self).__init__()
+        self.events = Events()
+        self.events.roi_changed = Event()
+
+
+class RectangularROI(BaseROI):
     top, bottom, left, right = (t.CFloat(t.Undefined),) * 4
 
     def __init__(self, top, bottom, left, right):
         super(RectangularROI, self).__init__()
-        self.events = Events()
-        self.events.roi_changed = Event()
         self.top, self.bottom, self.left, self.right = top, bottom, left, right
 
     def _top_changed(self, old, new):
