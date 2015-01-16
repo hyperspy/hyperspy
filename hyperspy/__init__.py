@@ -32,7 +32,14 @@ More details in the :mod:`~hyperspy.hspy` docstring.
 """
 # -*- coding: utf-8 -*-
 
+import os
+
+os.environ['QT_API'] = "pyqt"
+
 
 import Release
 
 __version__ = Release.version
+
+
+
