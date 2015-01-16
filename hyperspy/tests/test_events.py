@@ -20,7 +20,6 @@ class TestEventsSuppression:
     def setUp(self):
         self.events = he.Events()
         
-    def reset(self):
         self.events.a = he.Event()
         self.events.b = he.Event()
         self.events.c = he.Event()
@@ -30,8 +29,6 @@ class TestEventsSuppression:
         self.events.c.connect(self.on_trigger)
         
     def test_simple_suppression(self):
-        self.reset()
-        
         self.events.a.suppress = True
         self.trigger_check(self.events.a.trigger, False)
         self.trigger_check(self.events.b.trigger, True)
@@ -47,8 +44,6 @@ class TestEventsSuppression:
         self.trigger_check(self.events.c.trigger, True)
         
     def test_suppression_restore(self):
-        self.reset()
-        
         self.events.a.suppress = True
         self.events.b.suppress = False
         self.events.c.suppress = False
@@ -63,8 +58,6 @@ class TestEventsSuppression:
         self.trigger_check(self.events.c.trigger, True)
         
     def test_suppresion_nesting(self):
-        self.reset()
-        
         self.events.a.suppress = True
         self.events.b.suppress = False
         self.events.c.suppress = False
