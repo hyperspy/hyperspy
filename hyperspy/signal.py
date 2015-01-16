@@ -2676,6 +2676,8 @@ class Signal(MVA,
 
         if out is None:
             return _signal
+        else:
+            out.events.data_changed.trigger()
 
     def __setitem__(self, i, j):
         """x.__setitem__(i, y) <==> x[i]=y
