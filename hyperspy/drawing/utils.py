@@ -343,7 +343,8 @@ def plot_spectra(
         legend_picking=True,
         legend_loc='upper right',
         fig=None,
-        ax=None,):
+        ax=None,
+        **kwargs):
     """Plot several spectra in the same figure.
 
     Extra keyword arguments are passed to `matplotlib.figure`.
@@ -388,6 +389,9 @@ def plot_spectra(
     ax : matplotlib ax (subplot) or None
         If None, a default ax will be created. Will not work for 'mosaic'
         or 'heatmap' style.
+    **kwargs
+        remaining keyword arguments are passed to matplotlib.figure() or
+        matplotlib.subplots(). Has no effect on 'heatmap' style.
 
     Example
     -------
@@ -442,7 +446,7 @@ def plot_spectra(
 
     if style == 'overlap':
         if fig is None:
-            fig = plt.figure()
+            fig = plt.figure(**kwargs)
         if ax is None:
             ax = fig.add_subplot(111)
         _make_overlap_plot(spectra,
@@ -455,7 +459,7 @@ def plot_spectra(
                 animate_legend(figure=fig)
     elif style == 'cascade':
         if fig is None:
-            fig = plt.figure()
+            fig = plt.figure(**kwargs)
         if ax is None:
             ax = fig.add_subplot(111)
         _make_cascade_subplot(spectra,
@@ -468,7 +472,7 @@ def plot_spectra(
     elif style == 'mosaic':
         default_fsize = plt.rcParams["figure.figsize"]
         figsize = (default_fsize[0], default_fsize[1] * len(spectra))
-        fig, subplots = plt.subplots(len(spectra), 1, figsize=figsize)
+        fig, subplots = plt.subplots(len(spectra), 1, figsize=figsize, **kwargs)
         if legend is None:
             legend = [legend] * len(spectra)
         for spectrum, ax, color, line_style, legend in zip(spectra,
