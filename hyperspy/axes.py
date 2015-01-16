@@ -137,9 +137,9 @@ class DataAxis(t.HasTraits):
         else:
             return value
 
-    def _slice_me(self, slice_):
-        """Returns a slice to slice the corresponding data axis and
-        change the offset and scale of the DataAxis acordingly.
+    def _get_array_slices(self, slice_):
+        """Returns a slice to slice the corresponding data axis without
+        changing the offset and scale of the DataAxis.
 
         Parameters
         ----------
@@ -150,7 +150,6 @@ class DataAxis(t.HasTraits):
         my_slice : slice
 
         """
-        i2v = self.index2value
         v2i = self.value2index
 
         if isinstance(slice_, slice):
@@ -185,7 +184,26 @@ class DataAxis(t.HasTraits):
         if step == 0:
             raise ValueError("slice step cannot be zero")
 
-        my_slice = slice(start, stop, step)
+        return slice(start, stop, step)
+
+    def _slice_me(self, slice_):
+        """Returns a slice to slice the corresponding data axis and
+        change the offset and scale of the DataAxis acordingly.
+
+        Parameters
+        ----------
+        slice_ : {float, int, slice}
+
+        Returns
+        -------
+        my_slice : slice
+
+        """
+        i2v = self.index2value
+
+        my_slice = self._get_array_slices(slice_)
+
+        start, stop, step = my_slice.start, my_slice.stop, my_slice.step
 
         if start is None:
             if step > 0 or step is None:
@@ -651,17 +669,17 @@ class AxesManager(t.HasTraits):
             self.navigation_shape = tuple([
                 axis.size for axis in self.navigation_axes])
         else:
-            self.navigation_shape = (0,)
+            self.navigation_shape = ()
 
         if self.signal_dimension != 0:
             self.signal_shape = tuple([
                 axis.size for axis in self.signal_axes])
         else:
-            self.signal_shape = (0,)
-        self.navigation_size = \
-            np.cumprod(self.navigation_shape)[-1]
-        self.signal_size = \
-            np.cumprod(self.signal_shape)[-1]
+            self.signal_shape = ()
+        self.navigation_size = (np.cumprod(self.navigation_shape)[-1]
+                                if self.navigation_shape else 0)
+        self.signal_size = (np.cumprod(self.signal_shape)[-1]
+                            if self.signal_shape else 0)
         self._update_max_index()
 
     def set_signal_dimension(self, value):
