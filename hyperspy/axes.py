@@ -669,17 +669,17 @@ class AxesManager(t.HasTraits):
             self.navigation_shape = tuple([
                 axis.size for axis in self.navigation_axes])
         else:
-            self.navigation_shape = (0,)
+            self.navigation_shape = ()
 
         if self.signal_dimension != 0:
             self.signal_shape = tuple([
                 axis.size for axis in self.signal_axes])
         else:
-            self.signal_shape = (0,)
-        self.navigation_size = \
-            np.cumprod(self.navigation_shape)[-1]
-        self.signal_size = \
-            np.cumprod(self.signal_shape)[-1]
+            self.signal_shape = ()
+        self.navigation_size = (np.cumprod(self.navigation_shape)[-1]
+                                if self.navigation_shape else 0)
+        self.signal_size = (np.cumprod(self.signal_shape)[-1]
+                            if self.signal_shape else 0)
         self._update_max_index()
 
     def set_signal_dimension(self, value):
