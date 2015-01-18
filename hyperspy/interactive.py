@@ -4,7 +4,11 @@ class Interactive:
         self.args = args
         self.kwargs = kwargs
         self.sig = obj
-        self.out = self.f(*args, **kwargs)
+        if kwargs.has_key('out'):
+            self.f(*args, **kwargs)
+            self.out = kwargs.pop('out')
+        else:
+            self.out = self.f(*args, **kwargs)
         event.connect(self.update)
 
     def update(self):
