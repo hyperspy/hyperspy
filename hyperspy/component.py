@@ -21,6 +21,14 @@ import os
 import numpy as np
 import warnings
 
+# Hack to ensure that the gui toolkit is correctly set. Prevents problems
+# described in https://github.com/hyperspy/hyperspy/issues/435
+from traits.etsconfig.api import ETSConfig
+import matplotlib.pyplot as plt
+
+if "Qt" in plt.get_backend():
+    ETSConfig.toolkit = 'qt4'
+
 import traits.api as t
 import traitsui.api as tu
 from traits.trait_numeric import Array
