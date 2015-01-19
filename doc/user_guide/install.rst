@@ -45,7 +45,8 @@ Install using Python installers
    Although it is possible to install hyperspy in Windows using the
    instructions of this section, installing using the Windows installer is
    recommended in this platform because the Python installers do not create
-   entries in the ``Start Menu`` or the ``Context Menu``
+   entries in the ``Start Menu`` or the ``Context Menu``. If these are needed,
+   follow the instructions in :ref:`install-dev`
 
 Since version 4.1 HyperSpy is listed in the `Python Package Index
 <http://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded
@@ -144,6 +145,22 @@ which can be fixed by upgrading it through pip:
 .. code-block:: bash
 
     $ sudo pip install --upgrade ipython
+
+To install the context menu and Start Menu entries (on Windows), it is necessary to run the following
+from the bin directory of hyperspy (make sure to run as administrator):
+
+.. code-block:: bash
+
+    $ python install_hyperspy_here.py
+    $ python install_start_menu_entries.py
+
+Likewise, these entries can be removed with the following commands:
+
+.. code-block:: bash
+
+    $ python uninstall_hyperspy_here.py
+    $ python uninstall_start_menu_entries
+
  
 .. _create-debian-binary: 
     
