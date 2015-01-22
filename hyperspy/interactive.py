@@ -7,7 +7,7 @@ class Interactive:
         self.out = self.f(*args, **kwargs)
         event.connect(self.update)
 
-    def update(self):
+    def update(self, *args, **kwargs):
         self.f(out=self.out, *self.args, **self.kwargs)
 
 
