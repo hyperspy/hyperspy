@@ -27,7 +27,8 @@ class MPL_HyperExplorer(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, scale_color='white'):
+        self.scalebar_color = scale_color
         self.signal_data_function = None
         self.navigator_data_function = None
         self.axes_manager = None

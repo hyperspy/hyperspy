@@ -62,6 +62,7 @@ class ImagePlot(BlittedFigure):
         self.data_function = None
         self.pixel_units = None
         self.plot_scalebar = True
+        self.scalebar_color = 'white'
         self.plot_ticks = False
         self.plot_colorbar = True
         self._colorbar = None
@@ -193,6 +194,7 @@ class ImagePlot(BlittedFigure):
                     ax=self.ax,
                     units=self.pixel_units,
                     animated=True,
+                    color=self.scalebar_color,
                 )
 
         if self.plot_colorbar is True:

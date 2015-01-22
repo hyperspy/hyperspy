@@ -2939,7 +2939,7 @@ class Signal(MVA,
         return np.atleast_1d(
             self.data.__getitem__(axes_manager._getitem_tuple))
 
-    def plot(self, navigator="auto", axes_manager=None):
+    def plot(self, navigator="auto", axes_manager=None, scalebar_color='white'):
         """Plot the signal at the current coordinates.
 
         For multidimensional datasets an optional figure,
@@ -2988,6 +2988,10 @@ class Signal(MVA,
         axes_manager : {None, axes_manager}
             If None `axes_manager` is used.
 
+        scalebar_color : str
+            For plotting Images, defines the color to use when adding the
+            scale bar. It is white by default.
+
         """
 
         if self._plot is not None:
@@ -3011,7 +3015,7 @@ class Signal(MVA,
             # Hyperspectrum
             self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
         elif axes_manager.signal_dimension == 2:
-            self._plot = mpl_hie.MPL_HyperImage_Explorer()
+            self._plot = mpl_hie.MPL_HyperImage_Explorer(scalebar_color)
         else:
             raise ValueError('Plotting is not supported for this view')
 
