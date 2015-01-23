@@ -27,8 +27,8 @@ class MPL_HyperExplorer(object):
 
     """
 
-    def __init__(self, scale_color='white'):
-        self.scalebar_color = scale_color
+    def __init__(self):
+        self.scalebar_color = 'white'
         self.signal_data_function = None
         self.navigator_data_function = None
         self.axes_manager = None
@@ -107,6 +107,7 @@ class MPL_HyperExplorer(object):
                         axis.connect(imf.update)
 
             imf.title = self.signal_title + ' Navigator'
+            imf.scalebar_color = self.scalebar_color
             imf.plot()
             self.pointer.add_axes(imf.ax)
             self.navigator_plot = imf

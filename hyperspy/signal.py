@@ -3015,7 +3015,7 @@ class Signal(MVA,
             # Hyperspectrum
             self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
         elif axes_manager.signal_dimension == 2:
-            self._plot = mpl_hie.MPL_HyperImage_Explorer(scalebar_color)
+            self._plot = mpl_hie.MPL_HyperImage_Explorer()
         else:
             raise ValueError('Plotting is not supported for this view')
 
@@ -3071,6 +3071,7 @@ class Signal(MVA,
                         navigator.axes_manager.navigation_shape):
                     self._plot.navigator_data_function = \
                         get_dynamic_explorer_wrapper
+                    self._plot.scalebar_color = scalebar_color
 
                 elif (axes_manager.navigation_shape ==
                         navigator.axes_manager.signal_shape or
@@ -3080,6 +3081,8 @@ class Signal(MVA,
                         navigator.axes_manager.signal_shape):
                     self._plot.navigator_data_function = \
                         get_static_explorer_wrapper
+                    self._plot.scalebar_color = scalebar_color
+
                 else:
                     raise ValueError(
                         "The navigator dimensions are not compatible with "
@@ -3096,6 +3099,11 @@ class Signal(MVA,
                     " \"slider\", None, a Signal instance")
 
         self._plot.plot()
+
+        # Set scale bar color:
+        if axes_manager.signal_dimension == 2:
+            self._plot.signal_plot.ax.scalebar.set_color(scalebar_color)
+
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
