@@ -450,3 +450,37 @@ def _quantification_cliff_lorimer(intensities,
     for i in other_index:
         composition[i] = composition[ref_index] / ab[i]
     return composition
+
+
+def quantification_zetha_factor(intensities,
+                                zfactors,
+                                dose):
+    """
+    Quantification using Cliff-Lorimer
+
+    Parameters
+    ----------
+    intensities: numpy.array
+        the intensities for each X-ray lines. The first axis should be the
+        elements axis.
+    zfactors: list of float
+        The list of kfactor in same order as  intensities eg. zfactors =
+        [1, 1.47, 1.72] for ['Al_Ka','Cr_Ka', 'Ni_Ka']
+    dose: float
+        the dose given by i*t*N, i the current, t the acquisition time, and N
+        the number of electron by unit electric charge.
+
+    Return
+    ------
+    numpy.array containing the weight fraction with the same
+    shape as intensities and mass thickness in kg/m^2.
+    """
+
+    sumzi = np.zeros_like(intensities[0], dtype='float')
+    composition = np.zeros_like(intensities, dtype='float')
+    for intensity, zfactor in zip(intensities, zfactors):
+        sumzi = sumzi + intensity * zfactor
+    for i, (intensity, zfactor) in enumerate(zip(intensities, zfactors)):
+        composition[i] = intensity * zfactor / sumzi
+    mass_thickness = sumzi / dose
+    return composition, mass_thickness

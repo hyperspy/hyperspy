@@ -19,7 +19,8 @@ from __future__ import division
 
 import traits.api as t
 import numpy as np
-
+from scipy import ndimage
+from scipy import constants
 from hyperspy import utils
 from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.decorators import only_interactive
@@ -258,28 +259,31 @@ class EDSTEMSpectrum(EDSSpectrum):
             mp.Acquisition_instrument.TEM.Detector.EDS.live_time = \
                 mp_ref.Detector.EDS.live_time / nb_pix
 
+
     def quantification(self,
-                       intensities,
-                       kfactors,
+                       intensities='auto',
+                       method='CL',
+                       kfactors='auto',
                        composition_units='weight',
                        navigation_mask=1.0,
                        closing=True,
                        plot_result=False,
+                       store_in_mp=True,
                        **kwargs):
         """
-        Quantification of intensities to return elemental composition
-
-        Method: Cliff-Lorimer
+        Quantification using Cliff-Lorimer or zetha factor method
 
         Parameters
         ----------
         intensities: list of signal
             the intensitiy for each X-ray lines.
         kfactors: list of float
-            The list of kfactor in same order as intensities. Note that
-            intensities provided by hyperspy are sorted by the aplhabetical
-            order of the X-ray lines. eg. kfactors =[0.982, 1.32, 1.60] for
-            ['Al_Ka','Cr_Ka', 'Ni_Ka'].
+            The list of kfactor (or zfactor) in same order as intensities.
+            Note that intensities provided by hyperspy are sorted by the
+            aplhabetical order of the X-ray lines.
+            eg. kfactors =[0.982, 1.32, 1.60] for ['Al_Ka','Cr_Ka', 'Ni_Ka'].
+        method: 'CL' or 'zetha'
+            Set the quantification method: Cliff-Lorimer or zetha factor
         composition_units: 'weight' or 'atomic'
             Quantification returns weight percent. By choosing 'atomic', the
             return composition is in atomic percent.
@@ -325,9 +329,16 @@ class EDSTEMSpectrum(EDSSpectrum):
             navigation_mask = navigation_mask.data
         xray_lines = self.metadata.Sample.xray_lines
         composition = utils.stack(intensities)
-        composition.data = utils_eds.quantification_cliff_lorimer(
-            composition.data, kfactors=kfactors,
-            mask=navigation_mask) * 100.
+        if method == 'CL':
+            composition.data = utils_eds.quantification_cliff_lorimer(
+                composition.data, kfactors=kfactors,
+                mask=navigation_mask) * 100.
+        elif method == 'zetha':
+            results = utils_eds.quantification_zetha_factor(
+                composition.data, zfactors=kfactors, dose=self.get_dose())
+            composition.data = results[0] * 100.
+            mass_thickness = intensities[0]
+            mass_thickness.data = results[1]
         composition = composition.split()
         if composition_units == 'atomic':
             composition = utils.material.weight_to_atomic(composition)
@@ -346,8 +357,9 @@ class EDSTEMSpectrum(EDSSpectrum):
         if plot_result and composition[i].axes_manager.signal_dimension != 0:
             utils.plot.plot_signals(composition, **kwargs)
         return composition
+        
 
-    def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
+    def vacuum_mask(self, threshold=1.0, closing=True):
         """
         Generate mask of the vacuum region
 
@@ -483,3 +495,39 @@ class EDSTEMSpectrum(EDSSpectrum):
                             auto_add_lines=auto_add_lines,
                             *args, **kwargs)
         return model
+
+    def zfactors_from_kfactors(self, kfactors='auto'):
+        """
+        Provide Zetha factors from the k-factors
+
+        Parameters
+        ----------
+        zfactors: list of float
+            The list of kfactor in same order as intensities. Note that
+            intensities provided by hyperspy are sorted by the aplhabetical
+            order of the X-ray lines. eg. kfactors =[0.982, 1.32, 1.60] for
+            ['Al_Ka','Cr_Ka', 'Ni_Ka'].
+        """
+        print "Not working"
+        if kfactors == 'auto':
+            kfactors = self.metadata.Sample.kfactors
+        self.metadata.Sample.set_item(
+            'zfactors',
+            np.array(self.metadata.Sample.kfactors) / constants.N_A)
+
+    def get_dose(self, beam_current='auto', real_time='auto'):
+        """
+        Return the total electron dose.  given by i*t*N, i the current, t the
+        acquisition time, and N the number of electron by unit electric charge.
+
+        Parameters
+        ----------
+        beam_current:
+        real_time:
+        """
+        parameters = self.metadata.Acquisition_instrument.TEM
+        if beam_current == 'auto':
+            beam_current = parameters.beam_current
+        if real_time == 'auto':
+            real_time = parameters.Detector.EDS.real_time
+        return real_time * beam_current * 1e-9 / constants.e
