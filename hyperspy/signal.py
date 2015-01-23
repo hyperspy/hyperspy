@@ -3071,7 +3071,6 @@ class Signal(MVA,
                         navigator.axes_manager.navigation_shape):
                     self._plot.navigator_data_function = \
                         get_dynamic_explorer_wrapper
-                    self._plot.scalebar_color = scalebar_color
 
                 elif (axes_manager.navigation_shape ==
                         navigator.axes_manager.signal_shape or
@@ -3081,7 +3080,6 @@ class Signal(MVA,
                         navigator.axes_manager.signal_shape):
                     self._plot.navigator_data_function = \
                         get_static_explorer_wrapper
-                    self._plot.scalebar_color = scalebar_color
 
                 else:
                     raise ValueError(
@@ -3098,12 +3096,8 @@ class Signal(MVA,
                     "navigator must be one of \"spectrum\",\"auto\","
                     " \"slider\", None, a Signal instance")
 
+        self._plot.scalebar_color = scalebar_color
         self._plot.plot()
-
-        # Set scale bar color:
-        if axes_manager.signal_dimension == 2:
-            self._plot.signal_plot.ax.scalebar.set_color(scalebar_color)
-
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
