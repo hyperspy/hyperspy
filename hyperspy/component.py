@@ -155,7 +155,7 @@ class Parameter(t.HasTraits):
             # TypeError when calling. See issue #349.
             if len(arg) != self._number_of_elements:
                 raise ValueError(
-                    "The lenght of the parameter must be ",
+                    "The length of the parameter must be ",
                     self._number_of_elements)
             else:
                 if not isinstance(arg, tuple):
@@ -163,7 +163,7 @@ class Parameter(t.HasTraits):
         except TypeError:
             if self._number_of_elements != 1:
                 raise ValueError(
-                    "The lenght of the parameter must be ",
+                    "The length of the parameter must be ",
                     self._number_of_elements)
         old_value = self.__value
 
@@ -641,13 +641,13 @@ class Component(t.HasTraits):
             parameters = self.parameters
         i = 0
         for parameter in parameters:
-            lenght = parameter._number_of_elements
-            parameter.value = (p[i] if lenght == 1 else p[i:i + lenght])
+            length = parameter._number_of_elements
+            parameter.value = (p[i] if length == 1 else p[i:i + length])
             if p_std is not None:
-                parameter.std = (p_std[i] if lenght == 1 else
-                                 tuple(p_std[i:i + lenght]))
+                parameter.std = (p_std[i] if length == 1 else
+                                 tuple(p_std[i:i + length]))
 
-            i += lenght
+            i += length
 
     def _create_active_array(self):
         shape = self._axes_manager._navigation_shape_in_array
