@@ -474,7 +474,7 @@ class SmoothingSavitzkyGolay(Smoothing):
             self.window_length = nwl
         else:
             print(
-                "The window lenght must be greated than the polynomial order")
+                "The window length must be greated than the polynomial order")
 
     def _polynomial_order_changed(self, old, new):
         if self.window_length <= new:
