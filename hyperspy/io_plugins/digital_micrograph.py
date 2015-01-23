@@ -333,8 +333,8 @@ class DigitalMicrographReader(object):
         """
         if skip is True:
             offset = self.f.tell()
-            self.f.seek(lenght, 1)
-            return {'size': lenght,
+            self.f.seek(length, 1)
+            return {'size': length,
                     'size_bytes': size_bytes,
                     'offset': offset,
                     'endian': self.endian, }
