@@ -94,7 +94,7 @@ class DraggablePatch(object):
     def connect(self, ax):
         canvas = ax.figure.canvas
         self.cids.append(
-            canvas.mpl_connect('motion_notify_event', self.onmove))
+            canvas.mpl_connect('motion_notify_event', self.onmousemove))
         self.cids.append(canvas.mpl_connect('pick_event', self.onpick))
         self.cids.append(canvas.mpl_connect(
             'button_release_event', self.button_release))
@@ -115,7 +115,7 @@ class DraggablePatch(object):
     def onpick(self, event):
         self.picked = (event.artist is self.patch)
 
-    def onmove(self, event):
+    def onmousemove(self, event):
         """This method must be provided by the subclass"""
         pass
 
@@ -209,7 +209,7 @@ class DraggableSquare(ResizebleDraggablePatch):
         self.patch.set_xy(self._position)
         self.draw_patch()
 
-    def onmove(self, event):
+    def onmousemove(self, event):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
             xaxis = self.axes_manager.navigation_axes[0]
@@ -253,7 +253,7 @@ class DraggableHorizontalLine(DraggablePatch):
             color=self.color,
             picker=5)
 
-    def onmove(self, event):
+    def onmousemove(self, event):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
             try:
@@ -280,7 +280,7 @@ class DraggableVerticalLine(DraggablePatch):
                                 color=self.color,
                                 picker=5)
 
-    def onmove(self, event):
+    def onmousemove(self, event):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
             try:
