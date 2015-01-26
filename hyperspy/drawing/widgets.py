@@ -83,7 +83,7 @@ class DraggablePatch(object):
         ax.add_artist(self.patch)
         self.patch.set_animated(hasattr(ax, 'hspy_fig'))
 
-    def add_axes(self, ax):
+    def set_mpl_ax(self, ax):
         self.ax = ax
         canvas = ax.figure.canvas
         if self.is_on() is True:
