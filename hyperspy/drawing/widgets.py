@@ -43,7 +43,6 @@ class DraggablePatch(object):
         self.size = 1.
         self.color = 'red'
         self.__is_on = True
-        self._2D = True  # Whether the cursor lives in the 2D dimension
         self.patch = None
         self.cids = list()
         self.blit = True
@@ -237,7 +236,6 @@ class DraggableHorizontalLine(DraggablePatch):
 
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
-        self._2D = False
         # Despise the bug, we use blit for this one because otherwise the
         # it gets really slow
 
@@ -267,7 +265,6 @@ class DraggableVerticalLine(DraggablePatch):
 
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
-        self._2D = False
 
     def update_patch_position(self):
         if self.patch is not None:
@@ -294,7 +291,6 @@ class DraggableLabel(DraggablePatch):
 
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
-        self._2D = False
         self.string = ''
         self.y = 0.9
         self.text_color = 'black'
