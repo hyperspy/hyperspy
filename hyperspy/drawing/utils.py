@@ -333,6 +333,115 @@ def _set_spectrum_xlabel(spectrum, ax):
     ax.set_xlabel("%s (%s)" % (x_axis.name, x_axis.units))
 
 
+def plot_images(signals,
+                cmap=plt.cm.gray,
+                no_nans=False,
+                per_row=3,
+                signal_label='Signal',
+                label_list=None,
+                plot_colorbar=True,):
+    """Plot multiple signals as subimages in one figure.
+
+        Parameters
+        ----------
+
+        signals : list of Signals to plot
+            if any signal is not an image, a ValueError will be raised
+
+        cmap : matplotlib colormap
+            The colormap used for the images
+
+        no_nans : bool
+            If True, removes NaN's from the plots.
+
+        per_row : int
+            the number of plots in each row
+
+        signal_label : str
+            If legend_text is None, this label will be used as a predicate for an ordered
+            numbering of the plotted signals
+
+        label_list : list of str
+            This parameter is a list of the labels of the individual plots.
+            If set, overrides whatever value is set in signal_label.
+
+        plot_colorbar : bool
+            If True, a labeled colorbar is plotted alongside each image.
+
+
+        Returns
+        -------
+        f, the figure handler that is plotted
+
+    """
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+    if type(signals) is not list:
+        raise ValueError("signals must be a list of images."
+                         "" + repr(type(signals)) + " was given.")
+
+    for i, sig in enumerate(signals):
+        if sig.axes_manager.signal_dimension != 2:
+            raise ValueError("This method only plots signals that are images. "
+                             "The signal dimension must be equal to 2. "
+                             "The signal at position " + repr(i) + " was " + repr(sig) + ".")
+
+    # Determine labeling:
+    if label_list is None:
+        label_list = [signal_label + " " + repr(num) for num in range(len(signals))]
+    elif len(label_list) is not len(signals):
+        raise ValueError("Length of label_list must be the same as the number of signals to be plotted.\n"
+                         "Length of label_list was: " + repr(len(label_list)) + ";\n"
+                         "Number of signals was: " + repr(len(signals)) + ".")
+
+    # Determine appropriate number of images per row
+    n = len(signals)
+    rows = int(np.ceil(n / float(per_row)))
+    if n < per_row:
+            per_row = n
+
+    f = plt.figure(figsize=(4 * per_row, 3 * rows))
+
+    for i in xrange(n):
+        ax = f.add_subplot(rows, per_row, i + 1)
+        data = signals[i].data.flatten()
+        if no_nans:
+            data = np.nan_to_num(data)
+
+        axes_manager = sig.axes_manager
+        axes = axes_manager.signal_axes
+
+        if axes_manager.signal_dimension == 2:
+            extent = None
+            # get calibration from a passed axes_manager
+            shape = axes_manager._signal_shape_in_array
+
+            extent = (axes[0].low_value,
+                      axes[0].high_value,
+                      axes[1].high_value,
+                      axes[1].low_value)
+
+            im = ax.imshow(data.reshape(shape),
+                           cmap=cmap, extent=extent,
+                           interpolation='nearest')
+
+            plt.xlabel(axes[0].units)
+            plt.ylabel(axes[1].units)
+
+            plt.title(label_list[i])
+
+            if plot_colorbar:
+                div = make_axes_locatable(ax)
+                cax = div.append_axes("right", size="5%", pad=0.05)
+                plt.colorbar(im, cax=cax)
+
+    try:
+        plt.tight_layout()
+    except:
+        pass
+
+    return f
+
 def plot_spectra(
         spectra,
         style='default',
