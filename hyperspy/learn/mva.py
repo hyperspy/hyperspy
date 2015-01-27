@@ -567,6 +567,28 @@ class MVA():
         loadings[:] = loadings[:, sorting_indices]
         loadings[:] = loadings[:, sorting_indices]
 
+    def reverse_decomposition_component(self, component_number):
+        """Reverse the decomposition component
+
+        Parameters
+        ----------
+        component_number : list or int
+            component index/es
+
+        Examples
+        -------
+        >>> s = load('some_file')
+        >>> s.decomposition(True) # perform PCA
+        >>> s.reverse_decomposition_component(1) # reverse IC 1
+        >>> s.reverse_decomposition_component((0, 2)) # reverse ICs 0 and 2
+        """
+
+        target = self.learning_results
+
+        for i in [component_number, ]:
+            target.factors[:, i] *= -1
+            target.loadings[:, i] *= -1
+
     def reverse_bss_component(self, component_number):
         """Reverse the independent component
 
