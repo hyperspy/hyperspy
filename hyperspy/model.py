@@ -1709,8 +1709,8 @@ class Model(list):
             w = self._position_widgets[-1]
             w.string = component._get_short_description().replace(
                 ' component', '')
-            w.add_axes(self._plot.signal_plot.ax)
-            self._position_widgets[-2].add_axes(
+            w.set_mpl_ax(self._plot.signal_plot.ax)
+            self._position_widgets[-2].set_mpl_ax(
                 self._plot.signal_plot.ax)
         else:
             self._position_widgets.extend((
@@ -1718,7 +1718,7 @@ class Model(list):
             # Store the component for bookkeeping, and to reset
             # its twin when disabling adjust position
             self._position_widgets[-1].component = component
-            self._position_widgets[-1].add_axes(
+            self._position_widgets[-1].set_mpl_ax(
                 self._plot.signal_plot.ax)
         # Create widget -> parameter connection
         am._axes[0].continuous_value = True
