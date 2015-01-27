@@ -55,7 +55,7 @@ class DraggablePatch(object):
     def set_on(self, value):
         if value is not self.is_on():
             if value is True:
-                self.add_patch_to(self.ax)
+                self._add_patch_to(self.ax)
                 self.connect(self.ax)
             elif value is False:
                 for container in [
@@ -74,12 +74,12 @@ class DraggablePatch(object):
             else:
                 self.ax = None
 
-    def set_patch(self):
+    def _set_patch(self):
         pass
         # Must be provided by the subclass
 
-    def add_patch_to(self, ax):
-        self.set_patch()
+    def _add_patch_to(self, ax):
+        self._set_patch()
         ax.add_artist(self.patch)
         self.patch.set_animated(hasattr(ax, 'hspy_fig'))
 
@@ -87,18 +87,18 @@ class DraggablePatch(object):
         self.ax = ax
         canvas = ax.figure.canvas
         if self.is_on() is True:
-            self.add_patch_to(ax)
+            self._add_patch_to(ax)
             self.connect(ax)
             canvas.draw()
 
     def connect(self, ax):
         canvas = ax.figure.canvas
         self.cids.append(
-            canvas.mpl_connect('motion_notify_event', self.onmove))
+            canvas.mpl_connect('motion_notify_event', self._onmousemove))
         self.cids.append(canvas.mpl_connect('pick_event', self.onpick))
         self.cids.append(canvas.mpl_connect(
             'button_release_event', self.button_release))
-        self.axes_manager.connect(self.update_patch_position)
+        self.axes_manager.connect(self._update_patch_position)
         on_figure_window_close(ax.figure, self.close)
 
     def disconnect(self, ax):
@@ -107,7 +107,7 @@ class DraggablePatch(object):
                 ax.figure.canvas.mpl_disconnect(cid)
             except:
                 pass
-        self.axes_manager.disconnect(self.update_patch_position)
+        self.axes_manager.disconnect(self._update_patch_position)
 
     def close(self, window=None):
         self.set_on(False)
@@ -115,11 +115,11 @@ class DraggablePatch(object):
     def onpick(self, event):
         self.picked = (event.artist is self.patch)
 
-    def onmove(self, event):
+    def _onmousemove(self, event):
         """This method must be provided by the subclass"""
         pass
 
-    def update_patch_position(self):
+    def _update_patch_position(self):
         """This method must be provided by the subclass"""
         pass
 
@@ -145,7 +145,7 @@ class ResizebleDraggablePatch(DraggablePatch):
 
     def set_size(self, size):
         self.size = size
-        self.update_patch_size()
+        self._update_patch_size()
 
     def increase_size(self):
         self.set_size(self.size + 1)
@@ -154,7 +154,7 @@ class ResizebleDraggablePatch(DraggablePatch):
         if self.size > 1:
             self.set_size(self.size - 1)
 
-    def update_patch_size(self):
+    def _update_patch_size(self):
         """This method must be provided by the subclass"""
         pass
 
@@ -176,7 +176,7 @@ class DraggableSquare(ResizebleDraggablePatch):
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
 
-    def set_patch(self):
+    def _set_patch(self):
         self.calculate_size()
         self.calculate_position()
         self.patch = plt.Rectangle(
@@ -198,18 +198,18 @@ class DraggableSquare(ResizebleDraggablePatch):
         self._position = coordinates - (
             self._xsize / 2., self._ysize / 2.)
 
-    def update_patch_size(self):
+    def _update_patch_size(self):
         self.calculate_size()
         self.patch.set_width(self._xsize)
         self.patch.set_height(self._ysize)
-        self.update_patch_position()
+        self._update_patch_position()
 
-    def update_patch_position(self):
+    def _update_patch_position(self):
         self.calculate_position()
         self.patch.set_xy(self._position)
         self.draw_patch()
 
-    def onmove(self, event):
+    def _onmousemove(self, event):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
             xaxis = self.axes_manager.navigation_axes[0]
@@ -520,19 +520,19 @@ class DraggableHorizontalLine(DraggablePatch):
         # Despise the bug, we use blit for this one because otherwise the
         # it gets really slow
 
-    def update_patch_position(self):
+    def _update_patch_position(self):
         if self.patch is not None:
             self.patch.set_ydata(self.axes_manager.coordinates[0])
             self.draw_patch()
 
-    def set_patch(self):
+    def _set_patch(self):
         ax = self.ax
         self.patch = ax.axhline(
             self.axes_manager.coordinates[0],
             color=self.color,
             picker=5)
 
-    def onmove(self, event):
+    def _onmousemove(self, event):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
             try:
@@ -547,18 +547,18 @@ class DraggableVerticalLine(DraggablePatch):
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
 
-    def update_patch_position(self):
+    def _update_patch_position(self):
         if self.patch is not None:
             self.patch.set_xdata(self.axes_manager.coordinates[0])
             self.draw_patch()
 
-    def set_patch(self):
+    def _set_patch(self):
         ax = self.ax
         self.patch = ax.axvline(self.axes_manager.coordinates[0],
                                 color=self.color,
                                 picker=5)
 
-    def onmove(self, event):
+    def _onmousemove(self, event):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
             try:
@@ -577,12 +577,12 @@ class DraggableLabel(DraggablePatch):
         self.text_color = 'black'
         self.bbox = None
 
-    def update_patch_position(self):
+    def _update_patch_position(self):
         if self.patch is not None:
             self.patch.set_x(self.axes_manager.coordinates[0])
             self.draw_patch()
 
-    def set_patch(self):
+    def _set_patch(self):
         ax = self.ax
         trans = transforms.blended_transform_factory(
             ax.transData, ax.transAxes)
