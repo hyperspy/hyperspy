@@ -454,12 +454,16 @@ def in_interval(number, interval):
 class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
     def __init__(self, ax, **kwargs):
+        onsel = kwargs.pop('onselect', self.dummy)
         matplotlib.widgets.SpanSelector.__init__(
-            self, ax, direction='horizontal', useblit=False, **kwargs)
+            self, ax, onsel, direction='horizontal', useblit=False, **kwargs)
         # The tolerance in points to pick the rectangle sizes
         self.tolerance = 1
         self.on_move_cid = None
         self.range = None
+        
+    def dummy(self, *args, **kwargs):
+        pass
 
     def release(self, event):
         """When the button is realeased, the span stays in the screen and the
