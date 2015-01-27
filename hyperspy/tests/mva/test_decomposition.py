@@ -88,70 +88,49 @@ class TestGetExplainedVarinaceRation():
 class TestReverseDecompositionComponent():
 
     def setUp(self):
-        s = signals.Signal(np.random.random((10, 10, 100)))
+        s = signals.Signal(np.empty(1))
+        self.factors = np.ones([2 ,3])
+        self.loadings = np.ones([2 ,3])
+        s.learning_results.factors = self.factors.copy()
+        s.learning_results.loadings = self.loadings.copy()
         self.s = s
-        self.s_rev = s.deepcopy()
 
-    def test_reversal_factors(self):
-        # Reverse one component:
-        self.s.decomposition(output_dimension=5)
-        self.s_rev.decomposition(output_dimension=5)
-        self.s_rev.reverse_decomposition_component(0)
+    def test_reversal_factors_one_component_reversed(self):
+        self.s.reverse_decomposition_component(0)
         assert_true((self.s.learning_results.factors[:, 0] ==
-                     self.s_rev.learning_results.factors[:, 0] * -1).all())
+                     self.factors[:, 0] * -1).all())
 
-        # Reverse two components:
-        self.s.decomposition(output_dimension=5)
-        self.s_rev.decomposition(output_dimension=5)
-        self.s_rev.reverse_decomposition_component([0,1])
-        assert_true((self.s.learning_results.factors[:, 0] ==
-                     self.s_rev.learning_results.factors[:, 0] * -1).all())
+    def test_reversal_loadings_one_component_reversed(self):
+        self.s.reverse_decomposition_component(0)
+        assert_true((self.s.learning_results.loadings[:, 0] ==
+                     self.loadings[:, 0] * -1).all())
+
+    def test_reversal_factors_one_component_not_reversed(self):
+        self.s.reverse_decomposition_component(0)
+        assert_true((self.s.learning_results.factors[:, 1:] ==
+                     self.factors[:, 1:]).all())
+
+    def test_reversal_loadings_one_component_not_reversed(self):
+        self.s.reverse_decomposition_component(0)
+        assert_true((self.s.learning_results.loadings[:, 1:] ==
+                     self.loadings[:, 1:]).all())
+
+    def test_reversal_factors_multiple_components_reversed(self):
+        self.s.reverse_decomposition_component((0, 2))
+        assert_true((self.s.learning_results.factors[:, (0, 2)] ==
+                     self.factors[:, (0, 2)] * -1).all())
+
+    def test_reversal_loadings_multiple_components_reversed(self):
+        self.s.reverse_decomposition_component((0, 2))
+        assert_true((self.s.learning_results.loadings[:, (0, 2)] ==
+                     self.loadings[:, (0, 2)] * -1).all())
+
+    def test_reversal_factors_multiple_components_not_reversed(self):
+        self.s.reverse_decomposition_component((0, 2))
         assert_true((self.s.learning_results.factors[:, 1] ==
-                     self.s_rev.learning_results.factors[:, 1] * -1).all())
+                     self.factors[:, 1]).all())
 
-        # Reverse all components:
-        self.s.decomposition(output_dimension=5)
-        self.s_rev.decomposition(output_dimension=5)
-        self.s_rev.reverse_decomposition_component([0, 1, 2, 3, 4])
-        assert_true((self.s.learning_results.factors[:, 0] ==
-                     self.s_rev.learning_results.factors[:, 0] * -1).all())
-        assert_true((self.s.learning_results.factors[:, 1] ==
-                     self.s_rev.learning_results.factors[:, 1] * -1).all())
-        assert_true((self.s.learning_results.factors[:, 2] ==
-                     self.s_rev.learning_results.factors[:, 2] * -1).all())
-        assert_true((self.s.learning_results.factors[:, 3] ==
-                     self.s_rev.learning_results.factors[:, 3] * -1).all())
-        assert_true((self.s.learning_results.factors[:, 4] ==
-                     self.s_rev.learning_results.factors[:, 4] * -1).all())
-
-    def test_reversal_loadings(self):
-        # Reverse one component:
-        self.s.decomposition(output_dimension=5)
-        self.s_rev.decomposition(output_dimension=5)
-        self.s_rev.reverse_decomposition_component(0)
-        assert_true((self.s.learning_results.loadings[:, 0] ==
-                     self.s_rev.learning_results.loadings[:, 0] * -1).all())
-
-        # Reverse two components:
-        self.s.decomposition(output_dimension=5)
-        self.s_rev.decomposition(output_dimension=5)
-        self.s_rev.reverse_decomposition_component([0,1])
-        assert_true((self.s.learning_results.loadings[:, 0] ==
-                     self.s_rev.learning_results.loadings[:, 0] * -1).all())
+    def test_reversal_loadings_multiple_components_not_reversed(self):
+        self.s.reverse_decomposition_component((0, 2))
         assert_true((self.s.learning_results.loadings[:, 1] ==
-                     self.s_rev.learning_results.loadings[:, 1] * -1).all())
-
-        # Reverse all components:
-        self.s.decomposition(output_dimension=5)
-        self.s_rev.decomposition(output_dimension=5)
-        self.s_rev.reverse_decomposition_component([0, 1, 2, 3, 4])
-        assert_true((self.s.learning_results.loadings[:, 0] ==
-                     self.s_rev.learning_results.loadings[:, 0] * -1).all())
-        assert_true((self.s.learning_results.loadings[:, 1] ==
-                     self.s_rev.learning_results.loadings[:, 1] * -1).all())
-        assert_true((self.s.learning_results.loadings[:, 2] ==
-                     self.s_rev.learning_results.loadings[:, 2] * -1).all())
-        assert_true((self.s.learning_results.loadings[:, 3] ==
-                     self.s_rev.learning_results.loadings[:, 3] * -1).all())
-        assert_true((self.s.learning_results.loadings[:, 4] ==
-                     self.s_rev.learning_results.loadings[:, 4] * -1).all())
+                     self.loadings[:, 1]).all())
