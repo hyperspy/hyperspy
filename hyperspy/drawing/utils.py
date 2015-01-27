@@ -141,7 +141,7 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
         ax.frameon = False
         ax.set_axis_off()
         ax.imshow(rgb, interpolation='nearest')
-#        cursors.add_axes(ax)
+#        cursors.set_mpl_ax(ax)
         figure.canvas.draw()
     else:
         return rgb
