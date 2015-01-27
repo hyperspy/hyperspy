@@ -44,7 +44,6 @@ class DraggablePatch(object):
         self.size = 1.
         self.color = 'red'
         self.__is_on = True
-        self._2D = True  # Whether the cursor lives in the 2D dimension
         self.patch = None
         self.cids = list()
         self.blit = True
@@ -84,7 +83,7 @@ class DraggablePatch(object):
         ax.add_artist(self.patch)
         self.patch.set_animated(hasattr(ax, 'hspy_fig'))
 
-    def add_axes(self, ax):
+    def set_mpl_ax(self, ax):
         self.ax = ax
         canvas = ax.figure.canvas
         if self.is_on() is True:
@@ -518,7 +517,6 @@ class DraggableHorizontalLine(DraggablePatch):
 
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
-        self._2D = False
         # Despise the bug, we use blit for this one because otherwise the
         # it gets really slow
 
@@ -548,7 +546,6 @@ class DraggableVerticalLine(DraggablePatch):
 
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
-        self._2D = False
 
     def update_patch_position(self):
         if self.patch is not None:
@@ -575,7 +572,6 @@ class DraggableLabel(DraggablePatch):
 
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
-        self._2D = False
         self.string = ''
         self.y = 0.9
         self.text_color = 'black'
@@ -605,7 +601,7 @@ class DraggableLabel(DraggablePatch):
 class Scale_Bar():
 
     def __init__(self, ax, units, pixel_size=None, color='white',
-                 position=None, max_size_ratio=0.25, lw=2, lenght=None,
+                 position=None, max_size_ratio=0.25, lw=2, length=None,
                  animated=False):
         """Add a scale bar to an image.
 
@@ -622,11 +618,11 @@ class Scale_Bar():
             If None the position is automatically determined.
         max_size_ratio : float
             The maximum size of the scale bar in respect to the
-            lenght of the x axis
+            length of the x axis
         lw : int
             The line width
-        lenght : {None, float}
-            If None the lenght is automatically calculated using the
+        length : {None, float}
+            If None the length is automatically calculated using the
             max_size_ratio.
 
         """
@@ -640,10 +636,10 @@ class Scale_Bar():
         self.text = None
         self.line = None
         self.tex_bold = False
-        if lenght is None:
+        if length is None:
             self.calculate_size(max_size_ratio=max_size_ratio)
         else:
-            self.lenght = lenght
+            self.length = length
         if position is None:
             self.position = self.calculate_line_position()
         else:
@@ -656,12 +652,12 @@ class Scale_Bar():
         if self.tex_bold is True:
             if (self.units[0] and self.units[-1]) == '$':
                 return r'$\mathbf{%g\,%s}$' % \
-                    (self.lenght, self.units[1:-1])
+                    (self.length, self.units[1:-1])
             else:
                 return r'$\mathbf{%g\,}$\textbf{%s}' % \
-                    (self.lenght, self.units)
+                    (self.length, self.units)
         else:
-            return r'$%g\,$%s' % (self.lenght, self.units)
+            return r'$%g\,$%s' % (self.length, self.units)
 
     def calculate_line_position(self, pad=0.05):
         return ((1 - pad) * self.xmin + pad * self.xmax,
@@ -670,7 +666,7 @@ class Scale_Bar():
     def calculate_text_position(self, pad=1 / 100.):
         ps = self.pixel_size if self.pixel_size is not None else 1
         x1, y1 = self.position
-        x2, y2 = x1 + self.lenght / ps, y1
+        x2, y2 = x1 + self.length / ps, y1
 
         self.text_position = ((x1 + x2) / 2.,
                               y2 + (self.ymax - self.ymin) / ps * pad)
@@ -679,7 +675,7 @@ class Scale_Bar():
         ps = self.pixel_size if self.pixel_size is not None else 1
         size = closest_nice_number(ps * (self.xmax - self.xmin) *
                                    max_size_ratio)
-        self.lenght = size
+        self.length = size
 
     def remove(self):
         if self.line is not None:
@@ -691,7 +687,7 @@ class Scale_Bar():
         self.remove()
         ps = self.pixel_size if self.pixel_size is not None else 1
         x1, y1 = self.position
-        x2, y2 = x1 + self.lenght / ps, y1
+        x2, y2 = x1 + self.length / ps, y1
         self.line, = self.ax.plot([x1, x2], [y1, y2],
                                   linestyle='-',
                                   lw=line_width,
@@ -715,9 +711,9 @@ class Scale_Bar():
         self.text.set_color(c)
         self.ax.figure.canvas.draw_idle()
 
-    def set_lenght(self, lenght):
+    def set_length(self, length):
         color = self.line.get_color()
-        self.lenght = lenght
+        self.length = length
         self.calculate_scale_size()
         self.calculate_text_position()
         self.plot_scale(line_width=self.line.get_linewidth())
@@ -739,12 +735,16 @@ def in_interval(number, interval):
 class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
     def __init__(self, ax, **kwargs):
+        onsel = kwargs.pop('onselect', self.dummy)
         matplotlib.widgets.SpanSelector.__init__(
-            self, ax, direction='horizontal', useblit=False, **kwargs)
+            self, ax, onsel, direction='horizontal', useblit=False, **kwargs)
         # The tolerance in points to pick the rectangle sizes
         self.tolerance = 1
         self.on_move_cid = None
         self.range = None
+        
+    def dummy(self, *args, **kwargs):
+        pass
 
     def release(self, event):
         """When the button is realeased, the span stays in the screen and the
