@@ -348,3 +348,12 @@ an interactive way to generate intensity map.
    :align:   center
    :width:   800
 
+Quantification
+--------------
+
+The obtained composition is in weight percent. It can be changed transformed into atomic percent with :py:func:`~.misc.material.weight_to_atomic`. The reverse method is :py:func:`~.misc.material.atomic_to_weigth`.
+
+.. code-block:: python
+
+    >>> atomic_percent = utils.material.weight_to_atomic(weight_percent)
+
