@@ -958,7 +958,7 @@ class MVA():
             ax.semilogy()
         return ax
 
-    def scree_plot(self, n=50, log=True, highlight=0, highlight_col='r', col='b', markersize=100):
+    def scree_plot(self, n=50, log=True, highlight=0, highlight_col='#C24D52', col='#4A70B0', markersize=100):
         """Plot the decomposition explained variance ratio vs index number (Scree Plot).
         This method is an alternative to `plot_explained_variance_ratio`
 
