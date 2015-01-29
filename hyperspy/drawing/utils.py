@@ -339,7 +339,8 @@ def plot_images(signals,
                 per_row=3,
                 signal_label='Signal',
                 label_list=None,
-                plot_colorbar=True,):
+                plot_colorbar=True,
+                single_colorbar=False,):
     """Plot multiple signals as subimages in one figure.
 
         Parameters
@@ -368,6 +369,8 @@ def plot_images(signals,
         plot_colorbar : bool
             If True, a labeled colorbar is plotted alongside each image.
 
+        single_colorbar : bool
+            If True, figure will contain a single colorbar that is shared between all images
 
         Returns
         -------
@@ -400,8 +403,15 @@ def plot_images(signals,
     if n < per_row:
             per_row = n
 
+    # Set overall figure size
     f = plt.figure(figsize=(4 * per_row, 3 * rows))
 
+    # If using a single colorbar, find global min and max values of all the images
+    if single_colorbar:
+        gl_max, gl_min = max([signals[i].data.max() for i in range(len(signals))]), \
+                         min([signals[i].data.min() for i in range(len(signals))])
+
+    # Loop through each image, adding subplot for each one
     for i in xrange(n):
         ax = f.add_subplot(rows, per_row, i + 1)
         data = signals[i].data.flatten()
@@ -416,24 +426,41 @@ def plot_images(signals,
             # get calibration from a passed axes_manager
             shape = axes_manager._signal_shape_in_array
 
+            # Set dimensions of images
             extent = (axes[0].low_value,
                       axes[0].high_value,
                       axes[1].high_value,
                       axes[1].low_value)
 
-            im = ax.imshow(data.reshape(shape),
-                           cmap=cmap, extent=extent,
-                           interpolation='nearest')
+            # Plot image data, using vmin and vmax to set bounds, or allowing them
+            # to be set automatically if using individual colorbars
+            if single_colorbar:
+                im = ax.imshow(data.reshape(shape),
+                               cmap=cmap, extent=extent,
+                               interpolation='nearest',
+                               vmin=gl_min, vmax=gl_max)
+            else:
+                im = ax.imshow(data.reshape(shape),
+                               cmap=cmap, extent=extent,
+                               interpolation='nearest')
 
+            # Label the axes
             plt.xlabel(axes[0].units)
             plt.ylabel(axes[1].units)
 
             plt.title(label_list[i])
 
-            if plot_colorbar:
+            # If using independent colorbars, add them
+            if plot_colorbar and not single_colorbar:
                 div = make_axes_locatable(ax)
                 cax = div.append_axes("right", size="5%", pad=0.05)
                 plt.colorbar(im, cax=cax)
+
+    # If using a single colorbar, add it
+    if plot_colorbar and single_colorbar:
+        f.subplots_adjust(right=0.8)
+        cbar_ax = f.add_axes([0.9, 0.1, 0.03, 0.8])
+        f.colorbar(im, cax=cbar_ax)
 
     try:
         plt.tight_layout()
