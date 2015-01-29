@@ -340,6 +340,7 @@ def plot_images(signals,
                 per_row=3,
                 signal_label='Signal',
                 label_list=None,
+                labels_on=True,
                 plot_colorbar=True,
                 plot_scalebar=False,
                 scalebar_color='white',
@@ -370,6 +371,9 @@ def plot_images(signals,
         label_list : list of str
             This parameter is a list of the labels of the individual plots.
             If set, overrides whatever value is set in signal_label.
+
+        labels_on : bool
+            If True, the labels will be printed above each sub image.
 
         plot_colorbar : bool
             If True, a labeled colorbar is plotted alongside each image.
@@ -476,7 +480,8 @@ def plot_images(signals,
             plt.xlabel(axes[0].units)
             plt.ylabel(axes[1].units)
 
-            plt.title(label_list[i])
+            if labels_on:
+                plt.title(label_list[i])
 
             if not axes_on:
                 plt.axis('off')
