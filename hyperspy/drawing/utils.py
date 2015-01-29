@@ -342,6 +342,7 @@ def plot_images(signals,
                 label_list=None,
                 plot_colorbar=True,
                 single_colorbar=False,
+                axes_on=True,
                 fig=None,):
     """Plot multiple signals as subimages in one figure.
 
@@ -373,6 +374,9 @@ def plot_images(signals,
 
         single_colorbar : bool
             If True, figure will contain a single colorbar that is shared between all images
+
+        axes_on : bool
+            If true, axes (labels and values) will be plotted. If not, just image is shown.
 
         fig : mpl figure
             If set, the images will be plotted to an existing MPL figure
@@ -460,6 +464,9 @@ def plot_images(signals,
             plt.ylabel(axes[1].units)
 
             plt.title(label_list[i])
+
+            if not axes_on:
+                plt.axis('off')
 
             # If using independent colorbars, add them
             if plot_colorbar and not single_colorbar:
