@@ -341,7 +341,8 @@ def plot_images(signals,
                 signal_label='Signal',
                 label_list=None,
                 plot_colorbar=True,
-                single_colorbar=False,):
+                single_colorbar=False,
+                fig=None,):
     """Plot multiple signals as subimages in one figure.
 
         Parameters
@@ -372,6 +373,9 @@ def plot_images(signals,
 
         single_colorbar : bool
             If True, figure will contain a single colorbar that is shared between all images
+
+        fig : mpl figure
+            If set, the images will be plotted to an existing MPL figure
 
         Returns
         -------
@@ -407,8 +411,11 @@ def plot_images(signals,
     if n < per_row:
             per_row = n
 
-    # Set overall figure size
-    f = plt.figure(figsize=(4 * per_row, 3 * rows))
+    # Set overall figure size and define figure (if not pre-existing)
+    if fig is None:
+        f = plt.figure(figsize=(4 * per_row, 3 * rows))
+    else:
+        f = fig
 
     # If using a single colorbar, find global min and max values of all the images
     if single_colorbar:
