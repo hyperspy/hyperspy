@@ -430,7 +430,8 @@ def plot_images(signals,
 
     # Set overall figure size and define figure (if not pre-existing)
     if fig is None:
-        f = plt.figure(figsize=(4 * per_row, 3 * rows))
+        k = max(plt.rcParams['figure.figsize']) / max(per_row, rows)
+        f = plt.figure(figsize=(tuple(k * i for i in (per_row, rows))))
     else:
         f = fig
 
