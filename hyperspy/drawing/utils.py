@@ -345,8 +345,11 @@ def plot_images(signals,
                 plot_scalebar=False,
                 scalebar_color='white',
                 single_colorbar=False,
+                interp='nearest',
                 axes_on=True,
-                fig=None,):
+                fig=None,
+                *args,
+                **kwargs):
     """Plot multiple signals as subimages in one figure.
 
         Parameters
@@ -381,6 +384,12 @@ def plot_images(signals,
         single_colorbar : bool
             If True, figure will contain a single colorbar that is shared between all images
 
+        interp : None or str
+            Type of interpolation to use with matplotlib.imshow()
+            Possible values are None, 'none', 'nearest', 'bilinear', 'bicubic', 'spline16',
+           'spline36', 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric',
+           'catrom', 'gaussian', 'bessel', 'mitchell', 'sinc', 'lanczos'
+
         plot_scalebar : bool
             If True, a scalebar will be added to each plot
 
@@ -392,6 +401,9 @@ def plot_images(signals,
 
         fig : mpl figure
             If set, the images will be plotted to an existing MPL figure
+
+        *args, **kwargs
+            Additional arguments passed to matplotlib.imshow()
 
         Returns
         -------
@@ -470,12 +482,12 @@ def plot_images(signals,
             if single_colorbar:
                 im = ax.imshow(data.reshape(shape),
                                cmap=cmap, extent=extent,
-                               interpolation='nearest',
-                               vmin=gl_min, vmax=gl_max)
+                               interpolation=interp,
+                               vmin=gl_min, vmax=gl_max, *args, **kwargs)
             else:
                 im = ax.imshow(data.reshape(shape),
                                cmap=cmap, extent=extent,
-                               interpolation='nearest')
+                               interpolation=interp, *args, **kwargs)
 
             # Label the axes
             plt.xlabel(axes[0].units)
