@@ -1,6 +1,9 @@
 class Interactive:
-    def __init__(self, f, event, *args, **kwargs):
+    def __init__(self, obj, f, event, 
+                 recompute_out_event=None,
+                 *args, **kwargs):
         self.f = f
+        self.source = obj
         self.args = args
         self.kwargs = kwargs
         if kwargs.has_key('out'):
@@ -8,13 +11,24 @@ class Interactive:
             self.out = kwargs.pop('out')
         else:
             self.out = self.f(*args, **kwargs)
+            if recompute_out_event:
+                recompute_out_event.connect(self._recompute_out)
         event.connect(self.update)
+        self.out.events.data_changed.connect(lambda x=None: self.out.update_plot())
+        self.out.events.axes_changed.connect(lambda x=None: self.out._replot())
+
+    def _recompute_out(self):
+        out = self.f(*self.args, **self.kwargs)
+        self.out.data = out.data
+        changes = self.out._update_calibration_from(self.source.axes_manager)
+        if changes:
+            self.out.events.axes_changed.trigger(self.out)
 
     def update(self, *args, **kwargs):
         self.f(out=self.out, *self.args, **self.kwargs)
 
 
-def interactive(f, event, *args, **kwargs):
+def interactive(obj, f, event, *args, **kwargs):
     """Update operation result when a given event is triggered.
 
     Parameters
@@ -33,5 +47,5 @@ def interactive(f, event, *args, **kwargs):
 
     """
 
-    cls = Interactive(f, event, *args, **kwargs)
+    cls = Interactive(obj, f, event, *args, **kwargs)
     return cls.out
