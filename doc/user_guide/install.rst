@@ -208,11 +208,15 @@ get a fully functional installation:
 
 .. code-block:: bash
 
-    $ sudo pacman -Sy python2 python2-jinja python2-pip python2-pyzmq python2-numpy
-    python2-pandas python2-pillow python2-pyqt5 python2-pyqt4 python2-matplotlib
-    python2-scipy python2-setuptools python2-sip python2-tornado ipython ipython2
-    python2-traits python-traits python2-traitsui python2-h5py python2-nose python2-scikit-learn
-    python2-statsmodels python2-pygments
+    $ sudo pacman -Sy python2 python2-numpy	python2-matplotlib	python2-pip
+    python2-traits python2-traitsui python2-h5py python2-scikit-learn python2-nose
+    python2-statsmodels python2-pillow python2-pyqt4 python2-pyqt5 python2-scipy
+    python2-pandas python2-setuptools ipython2	python2-jinja python2-pyzmq
+    python2-pyqt4 python2-tornado python2-sip python2-pygments
+
+    # Or, just run this command from the root hyperspy directory to import the
+    # list of packages and install automatically:
+    $ xargs sudo pacman -Sy --noconfirm < doc/package_lists/arch_linux_package_list.txt
 
     # Once these are installed, go to the HyperSpy directory and run:
     $ sudo pip2 install -e ./
