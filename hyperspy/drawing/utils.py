@@ -25,6 +25,7 @@ import matplotlib as mpl
 
 from hyperspy.misc.utils import unfold_if_multidim
 from hyperspy.defaults_parser import preferences
+import hyperspy
 
 
 def create_figure(window_title=None,
@@ -380,8 +381,11 @@ def plot_images(signals,
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 
     if type(signals) is not list:
-        raise ValueError("signals must be a list of images."
-                         "" + repr(type(signals)) + " was given.")
+        if type(signals) is hyperspy.signals.Signal:
+            pass
+        else:
+            raise ValueError("signals must be a list of images."
+                             "" + repr(type(signals)) + " was given.")
 
     for i, sig in enumerate(signals):
         if sig.axes_manager.signal_dimension != 2:
