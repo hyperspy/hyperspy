@@ -3599,7 +3599,7 @@ class Signal(MVA,
         s._remove_axis(axis)
         return s
 
-    def sum(self, axis, nan2zero=False):
+    def sum(self, axis, ignore_nans=False):
         """Sum the data over the given axis.
 
         Parameters
@@ -3607,7 +3607,7 @@ class Signal(MVA,
         axis : {int, string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
-        nan2zero: bool
+        ignore_nans: bool
             Treat Not a Numbers (NaNs) as zero.
 
         Returns
@@ -3630,13 +3630,13 @@ class Signal(MVA,
         s.sum(-1, True).plot()
 
         """
-        if nan2zero:
+        if ignore_nans:
             f = np.nansum
         else:
             f = np.sum
         return self._apply_function_on_data_and_remove_axis(f, axis)
 
-    def max(self, axis, return_signal=False, nan2zero=False):
+    def max(self, axis, return_signal=False, ignore_nans=False):
         """Returns a signal with the maximum of the signal along an axis.
 
         Parameters
@@ -3663,13 +3663,13 @@ class Signal(MVA,
         (64,64)
 
         """
-        if nan2zero:
+        if ignore_nans:
             f = np.nanmax
         else:
             f = np.max
         return self._apply_function_on_data_and_remove_axis(f, axis)
 
-    def min(self, axis, nan2zero=False):
+    def min(self, axis, ignore_nans=False):
         """Returns a signal with the minimum of the signal along an axis.
 
         Parameters
@@ -3677,7 +3677,7 @@ class Signal(MVA,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
-        nan2zero: bool
+        ignore_nans: bool
             Treat Not a Numbers (NaNs) as zero.
 
         Returns
@@ -3699,13 +3699,13 @@ class Signal(MVA,
 
         """
 
-        if nan2zero:
+        if ignore_nans:
             f = np.nanmin
         else:
             f = np.min
         return self._apply_function_on_data_and_remove_axis(f, axis)
 
-    def mean(self, axis, nan2zero=False):
+    def mean(self, axis, ignore_nans=False):
         """Returns a signal with the average of the signal along an axis.
 
         Parameters
@@ -3713,7 +3713,7 @@ class Signal(MVA,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
-        nan2zero: bool
+        ignore_nans: bool
             Treat Not a Numbers (NaNs) as zero.
 
         Returns
@@ -3734,14 +3734,14 @@ class Signal(MVA,
         (64,64)
 
         """
-        if nan2zero:
+        if ignore_nans:
             f = np.nanmean
         else:
             f = np.mean
         return self._apply_function_on_data_and_remove_axis(f,
                                                             axis)
 
-    def std(self, axis, nan2zero=False):
+    def std(self, axis, ignore_nans=False):
         """Returns a signal with the standard deviation of the signal along
         an axis.
 
@@ -3769,13 +3769,13 @@ class Signal(MVA,
         (64,64)
 
         """
-        if nan2zero:
+        if ignore_nans:
             f = np.nanstd
         else:
             f = np.std
         return self._apply_function_on_data_and_remove_axis(f, axis)
 
-    def var(self, axis, nan2zero=False):
+    def var(self, axis, ignore_nans=False):
         """Returns a signal with the variances of the signal along an axis.
 
         Parameters
@@ -3783,7 +3783,7 @@ class Signal(MVA,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
-        nan2zero: bool
+        ignore_nans: bool
             Treat Not a Numbers (NaNs) as zero.
 
         Returns
@@ -3804,7 +3804,7 @@ class Signal(MVA,
         (64,64)
 
         """
-        if nan2zero:
+        if ignore_nans:
             f = np.nanvar
         else:
             f = np.var
@@ -3915,7 +3915,7 @@ class Signal(MVA,
         else:
             return self.sum(axis)
 
-    def indexmax(self, axis, nan2zero=False):
+    def indexmax(self, axis, ignore_nans=False):
         """Returns a signal with the index of the maximum along an axis.
 
         Parameters
@@ -3923,7 +3923,7 @@ class Signal(MVA,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
-        nan2zero: bool
+        ignore_nans: bool
             Treat Not a Numbers (NaNs) as zero.
 
         Returns
@@ -3945,7 +3945,7 @@ class Signal(MVA,
         (64,64)
 
         """
-        if nan2zero:
+        if ignore_nans:
             f = np.nanargmax
         else:
             f = np.argmax
