@@ -341,6 +341,8 @@ def plot_images(signals,
                 signal_label='Signal',
                 label_list=None,
                 plot_colorbar=True,
+                plot_scalebar=False,
+                scalebar_color='white',
                 single_colorbar=False,
                 axes_on=True,
                 fig=None,):
@@ -375,6 +377,12 @@ def plot_images(signals,
         single_colorbar : bool
             If True, figure will contain a single colorbar that is shared between all images
 
+        plot_scalebar : bool
+            If True, a scalebar will be added to each plot
+
+        scalebar_color : str
+            A valid MPL color string; will be used as the scalebar color
+
         axes_on : bool
             If true, axes (labels and values) will be plotted. If not, just image is shown.
 
@@ -387,6 +395,7 @@ def plot_images(signals,
 
     """
     from mpl_toolkits.axes_grid1 import make_axes_locatable
+    from hyperspy.drawing import widgets
 
     if type(signals) is not list:
         if type(signals) is hyperspy.signals.Signal:
@@ -421,6 +430,9 @@ def plot_images(signals,
     else:
         f = fig
 
+    # Initialize list to hold subplot axes
+    axes_list = []
+
     # If using a single colorbar, find global min and max values of all the images
     if single_colorbar:
         gl_max, gl_min = max([signals[i].data.max() for i in range(len(signals))]), \
@@ -429,6 +441,7 @@ def plot_images(signals,
     # Loop through each image, adding subplot for each one
     for i in xrange(n):
         ax = f.add_subplot(rows, per_row, i + 1)
+        axes_list.append(ax)
         data = signals[i].data.flatten()
         if no_nans:
             data = np.nan_to_num(data)
@@ -485,7 +498,17 @@ def plot_images(signals,
     except:
         pass
 
+    # If we want to plot scalebars, loop through the list of axes and add them
+    if plot_scalebar:
+        for ax in axes_list:
+            ax.scalebar = widgets.Scale_Bar(
+                ax=ax,
+                units=axes[0].units,
+                color=scalebar_color,
+            )
+
     return f
+
 
 def plot_spectra(
         spectra,
