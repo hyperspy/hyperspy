@@ -1684,8 +1684,8 @@ class Model(list):
     def _make_position_adjuster(self, component, fix_it, show_label):
         if (component._position is not None and
                 not component._position.twin):
-            set_value = component._position._setvalue
-            get_value = component._position._getvalue
+            set_value = component._position._set_value
+            get_value = component._position._get_value
         else:
             return
         # Create an AxesManager for the widget
