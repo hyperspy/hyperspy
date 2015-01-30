@@ -140,9 +140,9 @@ class MVA():
                 'Nothing done.')
             return
 
-        if self.axes_manager.navigation_size < 2:
+        if self.axes_manager.navigation_size < 1:
             raise AttributeError("It is not possible to decompose a dataset "
-                                 "with navigation_dimension < 2")
+                                 "with navigation_dimension < 1")
         # backup the original data
         self._data_before_treatments = self.data.copy()
 
