@@ -37,7 +37,6 @@ class SpectrumFigure(BlittedFigure):
         self.right_ax = None
         self.ax_lines = list()
         self.right_ax_lines = list()
-        self.lines = list()
         self.axes_manager = None
         self.right_axes_manager = None
 
