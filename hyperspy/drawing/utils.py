@@ -461,6 +461,9 @@ def plot_images(signals,
     # if so, disable the global colorbar
     for img in signals:
         if rgb_tools.is_rgbx(img.data):
+            if single_colorbar:
+                print "Using a single colorbar is not supported when plotting with"
+                print "RGB images, and has been disabled."
             single_colorbar = False
 
     # If using a single colorbar, find global min and max values of all the images
