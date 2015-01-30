@@ -337,9 +337,7 @@ def plot_images(images,
                 cmap=plt.cm.gray,
                 no_nans=False,
                 per_row=3,
-                signal_label='Image',
-                label_list=None,
-                labels_on=True,
+                label = 'titles',
                 plot_colorbar=True,
                 plot_scalebar=False,
                 scalebar_color='white',
@@ -366,16 +364,13 @@ def plot_images(images,
         per_row : int
             the number of plots in each row
 
-        signal_label : str
-            If legend_text is None, this label will be used as a predicate for an ordered
-            numbering of the plotted images
-
-        label_list : list of str
-            This parameter is a list of the labels of the individual plots.
-            If set, overrides whatever value is set in signal_label.
-
-        labels_on : bool
-            If True, the labels will be printed above each sub image.
+        label : None, str, or list of str
+            Control the title labeling of the plotted images.
+            If None, no titles will be shown.
+            If 'titles', the title from each image's metadata.General.title will be used.
+            If any other single str, images will be labeled in sequence using that str as a prefix.
+            If a list of str, the titles will be read from the list, and repeated if the length of the list
+                is shorter than the number of images to be plotted.
 
         plot_colorbar : bool
             If True, a labeled colorbar is plotted alongside each image.
@@ -431,13 +426,28 @@ def plot_images(images,
                              "The signal dimension must be equal to 2. "
                              "The signal at position " + repr(i) + " was " + repr(sig) + ".")
 
-    # Determine labeling:
-    if label_list is None:
-        label_list = [signal_label + " " + repr(num) for num in range(len(images))]
-    elif len(label_list) is not len(images):
-        raise ValueError("Length of label_list must be the same as the number of images to be plotted.\n"
-                         "Length of label_list was: " + repr(len(label_list)) + ";\n"
-                         "Number of images was: " + repr(len(images)) + ".")
+    # Sort out the labeling:
+    if label is None:
+        pass
+    elif label is 'titles':
+        # Set label_list to each image's pre-defined title
+        label_list = [x.metadata.General.title for x in images]
+    elif type(label) is str:
+        # Set label_list to an indexed list, based off of label
+        label_list = [label + " " + repr(num) for num in range(len(images))]
+    elif type(label) is list and all(isinstance(x, str) for x in label):
+        label_list = label
+        # If list of labels is longer than the number of images, just use the
+        # first len(images) elements
+        if len(label_list) > len(images):
+            del label_list[len(images):]
+        if len(label_list) < len(images):
+            label_list *= (len(images) / len(label_list)) + 1
+            del label_list[len(images):]
+    else:
+        # catch all others to revert to default if bad input
+        print "Did not understand input of labels. Defaulting to image titles."
+        label_list = [x.metadata.General.title for x in images]
 
     # Determine appropriate number of images per row
     n = len(images)
@@ -530,7 +540,7 @@ def plot_images(images,
             plt.xlabel(axes[0].units)
             plt.ylabel(axes[1].units)
 
-            if labels_on:
+            if label:
                 plt.title(label_list[i])
 
             if not axes_on:
