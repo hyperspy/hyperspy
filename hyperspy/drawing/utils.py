@@ -413,6 +413,7 @@ def plot_images(signals,
     from mpl_toolkits.axes_grid1 import make_axes_locatable
     from hyperspy.drawing import widgets
     from hyperspy.misc import rgb_tools
+    from traits import trait_base
 
     if type(signals) is not list:
         if type(signals) is hyperspy.signals.Signal:
@@ -456,34 +457,49 @@ def plot_images(signals,
     # Initialize list to hold subplot axes
     axes_list = []
 
+    # Check to see if there are any rgb images in list
+    # if so, disable the global colorbar
+    for img in signals:
+        if rgb_tools.is_rgbx(img.data):
+            single_colorbar = False
+
     # If using a single colorbar, find global min and max values of all the images
     if single_colorbar:
         gl_max, gl_min = max([signals[i].data.max() for i in range(len(signals))]), \
-                         min([signals[i].data.min() for i in range(len(signals))])
+                            min([signals[i].data.min() for i in range(len(signals))])
 
     # Loop through each image, adding subplot for each one
     for i in xrange(n):
         ax = f.add_subplot(rows, per_row, i + 1)
         axes_list.append(ax)
-        data = signals[i].data.flatten()
+        data = signals[i].data
 
-        # Remove NaNs (if specified)
+        # Enable RGB plotting
+        signals[i].isrgb = False
+        if rgb_tools.is_rgbx(data):
+            # plot_colorbar = False
+            single_colorbar = False
+            data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+            signals[i].isrgb = True
+        else:
+            data = signals[i].data.flatten()
+
+        # Remove NaNs (if requested)
         if no_nans:
             data = np.nan_to_num(data)
 
-        # Enable RGB plotting
-        if rgb_tools.is_rgbx(data):
-            plot_colorbar = False
-            data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
-
         # Get handles for the signal axes and axes_manager
-        axes_manager = sig.axes_manager
+        axes_manager = signals[i].axes_manager
         axes = axes_manager.signal_axes
 
         if axes_manager.signal_dimension == 2:
             extent = None
             # get calibration from a passed axes_manager
             shape = axes_manager._signal_shape_in_array
+
+            # Reshape the data for input into imshow (if not rgb)
+            if not signals[i].isrgb:
+                data = data.reshape(shape)
 
             # Set dimensions of images
             extent = (axes[0].low_value,
@@ -494,16 +510,21 @@ def plot_images(signals,
             # Plot image data, using vmin and vmax to set bounds, or allowing them
             # to be set automatically if using individual colorbars
             if single_colorbar:
-                im = ax.imshow(data.reshape(shape),
+                im = ax.imshow(data,
                                cmap=cmap, extent=extent,
                                interpolation=interp,
                                vmin=gl_min, vmax=gl_max, *args, **kwargs)
             else:
-                im = ax.imshow(data.reshape(shape),
+                im = ax.imshow(data,
                                cmap=cmap, extent=extent,
-                               interpolation=interp, *args, **kwargs)
+                               interpolation=interp,
+                               *args, **kwargs)
 
             # Label the axes
+            if type(axes[0].units) is trait_base._Undefined:
+                axes[0].units = 'pixels'
+            if type(axes[1].units) is trait_base._Undefined:
+                axes[1].units = 'pixels'
             plt.xlabel(axes[0].units)
             plt.ylabel(axes[1].units)
 
@@ -514,7 +535,7 @@ def plot_images(signals,
                 plt.axis('off')
 
             # If using independent colorbars, add them
-            if plot_colorbar and not single_colorbar:
+            if plot_colorbar and not single_colorbar and not signals[i].isrgb:
                 div = make_axes_locatable(ax)
                 cax = div.append_axes("right", size="5%", pad=0.05)
                 plt.colorbar(im, cax=cax)
