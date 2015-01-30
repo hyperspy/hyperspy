@@ -412,10 +412,16 @@ def plot_images(signals,
     """
     from mpl_toolkits.axes_grid1 import make_axes_locatable
     from hyperspy.drawing import widgets
+    from hyperspy.misc import rgb_tools
 
     if type(signals) is not list:
         if type(signals) is hyperspy.signals.Signal:
             pass
+        elif type(signals) is hyperspy._signals.image.Image:
+            print "Single image provided, consider using <Signal>.plot() instead."
+            signals.plot()
+            f = plt.gcf()
+            return f
         else:
             raise ValueError("signals must be a list of images."
                              "" + repr(type(signals)) + " was given.")
@@ -460,9 +466,17 @@ def plot_images(signals,
         ax = f.add_subplot(rows, per_row, i + 1)
         axes_list.append(ax)
         data = signals[i].data.flatten()
+
+        # Remove NaNs (if specified)
         if no_nans:
             data = np.nan_to_num(data)
 
+        # Enable RGB plotting
+        if rgb_tools.is_rgbx(data):
+            plot_colorbar = False
+            data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+
+        # Get handles for the signal axes and axes_manager
         axes_manager = sig.axes_manager
         axes = axes_manager.signal_axes
 
