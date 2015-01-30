@@ -333,11 +333,11 @@ def _set_spectrum_xlabel(spectrum, ax):
     ax.set_xlabel("%s (%s)" % (x_axis.name, x_axis.units))
 
 
-def plot_images(signals,
+def plot_images(images,
                 cmap=plt.cm.gray,
                 no_nans=False,
                 per_row=3,
-                signal_label='Signal',
+                signal_label='Image',
                 label_list=None,
                 labels_on=True,
                 plot_colorbar=True,
@@ -349,12 +349,12 @@ def plot_images(signals,
                 fig=None,
                 *args,
                 **kwargs):
-    """Plot multiple signals as subimages in one figure.
+    """Plot multiple images as subimages in one figure.
 
         Parameters
         ----------
 
-        signals : list of Signals to plot
+        images : list of Signals to plot
             if any signal is not an image, a ValueError will be raised
 
         cmap : matplotlib colormap
@@ -368,7 +368,7 @@ def plot_images(signals,
 
         signal_label : str
             If legend_text is None, this label will be used as a predicate for an ordered
-            numbering of the plotted signals
+            numbering of the plotted images
 
         label_list : list of str
             This parameter is a list of the labels of the individual plots.
@@ -415,17 +415,17 @@ def plot_images(signals,
     from hyperspy.signal import Signal
     from traits import trait_base
 
-    if isinstance(signals, Signal) and len(signals) is 1:
+    if isinstance(images, Signal) and len(images) is 1:
         print "Single image provided, using Signal.plot() instead."
         print "Use Signal.plot() directly to supply more options."
-        signals.plot()
+        images.plot()
         f = plt.gcf()
         return f
-    elif not isinstance(signals, (list, tuple, Signal)):
-        raise ValueError("signals must be a list of images."
-                         " " + repr(type(signals)) + " was given.")
+    elif not isinstance(images, (list, tuple, Signal)):
+        raise ValueError("images must be a list of image signals."
+                         " " + repr(type(images)) + " was given.")
 
-    for i, sig in enumerate(signals):
+    for i, sig in enumerate(images):
         if sig.axes_manager.signal_dimension != 2:
             raise ValueError("This method only plots signals that are images. "
                              "The signal dimension must be equal to 2. "
@@ -433,14 +433,14 @@ def plot_images(signals,
 
     # Determine labeling:
     if label_list is None:
-        label_list = [signal_label + " " + repr(num) for num in range(len(signals))]
-    elif len(label_list) is not len(signals):
-        raise ValueError("Length of label_list must be the same as the number of signals to be plotted.\n"
+        label_list = [signal_label + " " + repr(num) for num in range(len(images))]
+    elif len(label_list) is not len(images):
+        raise ValueError("Length of label_list must be the same as the number of images to be plotted.\n"
                          "Length of label_list was: " + repr(len(label_list)) + ";\n"
-                         "Number of signals was: " + repr(len(signals)) + ".")
+                         "Number of images was: " + repr(len(images)) + ".")
 
     # Determine appropriate number of images per row
-    n = len(signals)
+    n = len(images)
     rows = int(np.ceil(n / float(per_row)))
     if n < per_row:
             per_row = n
@@ -456,11 +456,11 @@ def plot_images(signals,
     axes_list = []
 
     # Initialize list of rgb tags
-    isrgb = [False]*len(signals)
+    isrgb = [False]*len(images)
 
     # Check to see if there are any rgb images in list
     # if so, disable the global colorbar
-    for img in signals:
+    for img in images:
         if rgb_tools.is_rgbx(img.data):
             if single_colorbar:
                 print "Using a single colorbar is not supported when plotting with"
@@ -469,14 +469,14 @@ def plot_images(signals,
 
     # If using a single colorbar, find global min and max values of all the images
     if single_colorbar:
-        gl_max, gl_min = max([signals[i].data.max() for i in range(len(signals))]), \
-                            min([signals[i].data.min() for i in range(len(signals))])
+        gl_max, gl_min = max([images[i].data.max() for i in range(len(images))]), \
+                            min([images[i].data.min() for i in range(len(images))])
 
     # Loop through each image, adding subplot for each one
     for i in xrange(n):
         ax = f.add_subplot(rows, per_row, i + 1)
         axes_list.append(ax)
-        data = signals[i].data
+        data = images[i].data
 
         # Enable RGB plotting
         if rgb_tools.is_rgbx(data):
@@ -485,18 +485,17 @@ def plot_images(signals,
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
             isrgb[i] = True
         else:
-            data = signals[i].data.flatten()
+            data = images[i].data.flatten()
 
         # Remove NaNs (if requested)
         if no_nans:
             data = np.nan_to_num(data)
 
         # Get handles for the signal axes and axes_manager
-        axes_manager = signals[i].axes_manager
+        axes_manager = images[i].axes_manager
         axes = axes_manager.signal_axes
 
         if axes_manager.signal_dimension == 2:
-            extent = None
             # get calibration from a passed axes_manager
             shape = axes_manager._signal_shape_in_array
 
