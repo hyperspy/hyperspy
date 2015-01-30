@@ -690,6 +690,48 @@ class AxesManager(t.HasTraits):
         self.signal_size = (np.cumprod(self.signal_shape)[-1]
                             if self.signal_shape else 0)
         self._update_max_index()
+    
+    def update_from(self, axes_manager, fields=('offset', 'scale'),
+                          add_missing=False, remove_extra=False):
+        """Copy values of specified axes fields from the passed AxesManager. 
+        
+        Parameters
+        ----------
+        axes_manager : AxesManager
+            The AxesManager to use as a source for values.
+        fields : iterable container of strings
+            The name of the fields to update. If the field does not exist in
+            either of the AxesManagers, an AttributeError will be raised.
+        add_missing : bool
+            If True, DataAxis that are present in axes_manager, but missing in
+            self will be added as copies.
+        remove_extra : bool
+            If True, DataAxis that are present in self, but not in axes_manager
+            will be removed.
+        """
+        self_lut = {a._origin_id: a for a in self.axes_manager._axes}
+        any_changes = False
+        for src_axis in axes_manager._axes:
+            if src_axis._origin_id not in self_lut:
+                if add_missing:
+                    idx = axes_manager._axes.index(src_axis)
+                    cp = src_axis.copy()
+                    cp.axes_manager = self
+                    self._axes.insert(idx, cp)
+                    any_changes = True
+                continue
+            dst_axis = self_lut.pop(src_axis._origin_id)
+            changed = {}
+            for f in fields:
+                if getattr(dst_axis, f) != getattr(src_axis, f):
+                    changed[f] = getattr(src_axis, f)
+            if len(changed) > 0:
+                dst_axis.trait_set(**changed)
+                any_changes = True
+        if remove_extra:
+            for extra in self_lut.values():
+                self._axes.remove(extra)
+        return any_changes
 
     def set_signal_dimension(self, value):
         """Set the dimension of the signal.
