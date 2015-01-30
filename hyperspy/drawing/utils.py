@@ -25,7 +25,6 @@ import matplotlib as mpl
 
 from hyperspy.misc.utils import unfold_if_multidim
 from hyperspy.defaults_parser import preferences
-import hyperspy
 
 
 def create_figure(window_title=None,
@@ -413,19 +412,18 @@ def plot_images(signals,
     from mpl_toolkits.axes_grid1 import make_axes_locatable
     from hyperspy.drawing import widgets
     from hyperspy.misc import rgb_tools
+    from hyperspy.signal import Signal
     from traits import trait_base
 
-    if type(signals) is not list:
-        if type(signals) is hyperspy.signals.Signal:
-            pass
-        elif type(signals) is hyperspy._signals.image.Image:
-            print "Single image provided, consider using <Signal>.plot() instead."
-            signals.plot()
-            f = plt.gcf()
-            return f
-        else:
-            raise ValueError("signals must be a list of images."
-                             "" + repr(type(signals)) + " was given.")
+    if isinstance(signals, Signal) and len(signals) is 1:
+        print "Single image provided, using Signal.plot() instead."
+        print "Use Signal.plot() directly to supply more options."
+        signals.plot()
+        f = plt.gcf()
+        return f
+    elif not isinstance(signals, (list, tuple, Signal)):
+        raise ValueError("signals must be a list of images."
+                         " " + repr(type(signals)) + " was given.")
 
     for i, sig in enumerate(signals):
         if sig.axes_manager.signal_dimension != 2:
@@ -457,6 +455,9 @@ def plot_images(signals,
     # Initialize list to hold subplot axes
     axes_list = []
 
+    # Initialize list of rgb tags
+    isrgb = [False]*len(signals)
+
     # Check to see if there are any rgb images in list
     # if so, disable the global colorbar
     for img in signals:
@@ -478,12 +479,11 @@ def plot_images(signals,
         data = signals[i].data
 
         # Enable RGB plotting
-        signals[i].isrgb = False
         if rgb_tools.is_rgbx(data):
             # plot_colorbar = False
             single_colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
-            signals[i].isrgb = True
+            isrgb[i] = True
         else:
             data = signals[i].data.flatten()
 
@@ -501,7 +501,7 @@ def plot_images(signals,
             shape = axes_manager._signal_shape_in_array
 
             # Reshape the data for input into imshow (if not rgb)
-            if not signals[i].isrgb:
+            if not isrgb[i]:
                 data = data.reshape(shape)
 
             # Set dimensions of images
@@ -538,7 +538,7 @@ def plot_images(signals,
                 plt.axis('off')
 
             # If using independent colorbars, add them
-            if plot_colorbar and not single_colorbar and not signals[i].isrgb:
+            if plot_colorbar and not single_colorbar and not isrgb[i]:
                 div = make_axes_locatable(ax)
                 cax = div.append_axes("right", size="5%", pad=0.05)
                 plt.colorbar(im, cax=cax)
