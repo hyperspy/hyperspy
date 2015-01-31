@@ -709,7 +709,7 @@ class AxesManager(t.HasTraits):
             If True, DataAxis that are present in self, but not in axes_manager
             will be removed.
         """
-        self_lut = {a._origin_id: a for a in self.axes_manager._axes}
+        self_lut = {a._origin_id: a for a in self._axes}
         any_changes = False
         for src_axis in axes_manager._axes:
             if src_axis._origin_id not in self_lut:
