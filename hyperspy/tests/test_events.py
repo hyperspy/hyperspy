@@ -3,20 +3,17 @@ import hyperspy.events as he
 
 class TriggeredCorrectly: pass
 
-class TestEventsSuppression:
-        
-    def on_trigger(self, should_trigger):
-        if should_trigger:
-            raise TriggeredCorrectly()
-        else:
-            nose.tools.assert_true(False, "This event should not trigger")
-            
-    def trigger_check(self, trigger, should_trigger):
-        if should_trigger:
-            nose.tools.assert_raises(TriggeredCorrectly, trigger, True)
-        else:
-            trigger(False)
-        
+class EventsBase():
+    def on_trigger(self, *args, **kwargs):
+        self.triggered = True
+
+    def trigger_check(self, trigger, should_trigger, *args):
+        self.triggered = False
+        trigger(*args)
+        nose.tools.assert_equal(self.triggered, should_trigger)
+
+class TestEventsSuppression(EventsBase):
+
     def setUp(self):
         self.events = he.Events()
         
@@ -27,7 +24,7 @@ class TestEventsSuppression:
         self.events.a.connect(self.on_trigger)
         self.events.b.connect(self.on_trigger)
         self.events.c.connect(self.on_trigger)
-        
+
     def test_simple_suppression(self):
         self.events.a.suppress = True
         self.trigger_check(self.events.a.trigger, False)
@@ -42,7 +39,7 @@ class TestEventsSuppression:
         self.trigger_check(self.events.a.trigger, True)
         self.trigger_check(self.events.b.trigger, True)
         self.trigger_check(self.events.c.trigger, True)
-        
+
     def test_suppression_restore(self):
         self.events.a.suppress = True
         self.events.b.suppress = False
@@ -56,7 +53,7 @@ class TestEventsSuppression:
         self.trigger_check(self.events.a.trigger, False)
         self.trigger_check(self.events.b.trigger, True)
         self.trigger_check(self.events.c.trigger, True)
-        
+
     def test_suppresion_nesting(self):
         self.events.a.suppress = True
         self.events.b.suppress = False
@@ -80,5 +77,46 @@ class TestEventsSuppression:
         self.trigger_check(self.events.a.trigger, False)
         self.trigger_check(self.events.b.trigger, True)
         self.trigger_check(self.events.c.trigger, True)
+
+
+class TestEventsSignatures(EventsBase):
+    
+    def setUp(self):
+        self.events = he.Events()
+        
+        self.events.a = he.Event()
         
         
+    def test_basic_triggers(self):
+        self.events.a.connect(lambda: 1)
+        self.events.a[None].connect(lambda: 1)
+        self.events.a[1].connect(lambda x: 1)
+        self.events.a[2].connect(lambda x, y: 1)
+        self.events.a[1].connect(lambda x, y=988: \
+                                 nose.tools.assert_equal(y, 988))
+        self.events.a[2].connect(lambda x, y=988: \
+                                 nose.tools.assert_not_equal(y, 988))
+        self.events.a.trigger(2, 5)
+        self.events.a[None].trigger(2,5)
+        self.events.a[1].trigger(2,5)
+        self.events.a[2].trigger(2,5)
+        
+        nose.tools.assert_raises(ValueError, self.events.a.trigger)
+        nose.tools.assert_raises(ValueError, self.events.a.trigger, 2)
+        self.events.a.trigger(2,5,8)
+    
+    def test_shared_suppresion(self):
+        self.events.a.connect(self.on_trigger)
+        self.events.a[1].connect(self.on_trigger)
+        self.events.a[2].connect(self.on_trigger)
+        
+        for e in [self.events.a, self.events.a[None], self.events.a[1], \
+                    self.events.a[2]]:
+            e.suppress = True
+            self.trigger_check(e.trigger, False, 2, 5)
+            self.events.a.suppress = False
+            self.trigger_check(e.trigger, True, 2, 5)
+            
+            with self.events.suppress:
+                self.trigger_check(e.trigger, False, 2, 5)
+            self.trigger_check(e.trigger, True, 2, 5)
