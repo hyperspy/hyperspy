@@ -1,9 +1,8 @@
 class Interactive:
-    def __init__(self, obj, f, event, 
+    def __init__(self, f, event, 
                  recompute_out_event=None,
                  *args, **kwargs):
         self.f = f
-        self.source = obj
         self.args = args
         self.kwargs = kwargs
         if kwargs.has_key('out'):
@@ -20,7 +19,7 @@ class Interactive:
     def _recompute_out(self):
         out = self.f(*self.args, **self.kwargs)
         self.out.data = out.data
-        changes = self.out.axes_manager.update_from(self.source.axes_manager)
+        changes = self.out.axes_manager.update_from(out.axes_manager)
         if changes:
             self.out.events.axes_changed.trigger(self.out)
 
@@ -28,7 +27,7 @@ class Interactive:
         self.f(out=self.out, *self.args, **self.kwargs)
 
 
-def interactive(obj, f, event, *args, **kwargs):
+def interactive(f, event, *args, **kwargs):
     """Update operation result when a given event is triggered.
 
     Parameters
@@ -47,5 +46,5 @@ def interactive(obj, f, event, *args, **kwargs):
 
     """
 
-    cls = Interactive(obj, f, event, *args, **kwargs)
+    cls = Interactive(f, event, *args, **kwargs)
     return cls.out
