@@ -14,8 +14,8 @@ class Interactive:
             if recompute_out_event:
                 recompute_out_event.connect(self._recompute_out)
         event.connect(self.update)
-        self.out.events.data_changed.connect(lambda x=None: self.out.update_plot())
-        self.out.events.axes_changed.connect(lambda x=None: self.out._replot())
+        self.out.events.data_changed.connect(self.out.update_plot)
+        self.out.events.axes_changed.connect(self.out._replot)
 
     def _recompute_out(self):
         out = self.f(*self.args, **self.kwargs)
@@ -24,7 +24,7 @@ class Interactive:
         if changes:
             self.out.events.axes_changed.trigger(self.out)
 
-    def update(self, *args, **kwargs):
+    def update(self):
         self.f(out=self.out, *self.args, **self.kwargs)
 
 
