@@ -2618,8 +2618,7 @@ class Signal(MVA,
         else:
             out.data = self.data
             out.axes_manager.update_from(self.axes_manager,
-                                         fields=('offset', 'scale', 'size'),
-                                         add_missing=True)
+                                         fields=('offset', 'scale', 'size'))
             _signal = out
 
         nav_idx = [el.index_in_array for el in
