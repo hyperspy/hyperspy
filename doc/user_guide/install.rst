@@ -119,7 +119,7 @@ To get the development version from our git repository you need to install `git
 
     $ git clone https://github.com/hyperspy/hyperspy.git
 
-To install HyperSpy you could proceed like in :ref:`iinstall-released-source`.
+To install HyperSpy you could proceed like in :ref:`install-released-source`.
 However, if you are installing from the development version most likely you
 will prefer to install HyperSpy using  `pip <http://www.pip-installer.org>`_
 development mode: 
@@ -161,6 +161,9 @@ Likewise, these entries can be removed with the following commands:
     $ python uninstall_hyperspy_here.py
     $ python uninstall_start_menu_entries
 
+
+If using Arch Linux, the latest checkout of the master development branch can be installed through
+the AUR by installing the `hyperspy-git package <https://aur.archlinux.org/packages/hyperspy-git/>`_
  
 .. _create-debian-binary: 
     
