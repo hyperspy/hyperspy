@@ -54,10 +54,18 @@ class Events(object):
 class Event(object):
 
     def __init__(self):
-        self.connected = set()
+        self._connected = {0: set()} # Shared
         self._suppress = [False]    # Keep in list so shallow copies share
         self._nargs = 0
-        self._signatures = {tuple([]): self}
+        self._signatures = {tuple([]): self}    # Shared
+    
+    @property
+    def connected(self):
+        return self._connected[self._nargs]
+    
+    @connected.setter
+    def connected(self, value):
+        self._connected[self._nargs] = value
     
     @property
     def suppress(self):
@@ -73,7 +81,9 @@ class Event(object):
         self.connected.add(function)
 
     def disconnect(self, function):
-        self.connected.remove(function)
+        for i in xrange(len(self._connected)):
+            if function in self._connected[i]:
+                self._connected[i].remove(function)
     
     def _do_trigger(self, *args):
         if len(args) < self._nargs:
@@ -100,8 +110,8 @@ class Event(object):
             return self._signatures[nargs]
         else:
             r = copy.copy(self)
-            r.connected = set()
             r._nargs = nargs
+            r._connected[nargs] = set()
             self._signatures[nargs] = r
             return r
             
