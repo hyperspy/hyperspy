@@ -60,7 +60,7 @@ class Events(object):
 class Event(object):
 
     def __init__(self):
-        self._connected = {0: set()}
+        self._connected = {}
         self.suppress = False
 
     def connected(self, nargs=None):
