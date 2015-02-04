@@ -32,14 +32,7 @@ except ImportError:
     argp = False
     import optparse
 
-try:
-    import PyQt4
-    import sip
-    # Set the QT_API environmental variable so that matplotlib uses API v2
-    # instead of API v1 that is the default in Python 2.x
-    os.environ['QT_API'] = "pyqt"
-except:
-    pass
+
 import IPython
 import traits.etsconfig.etsconfig
 

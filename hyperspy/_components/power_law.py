@@ -105,6 +105,8 @@ class PowerLaw(Component):
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if not (i2 + i1) % 2 == 0:
             i2 -= 1
+        if i2 == i1:
+            i2 += 2
         i3 = (i2 + i1) / 2
         x1 = axis.index2value(i1)
         x2 = axis.index2value(i2)

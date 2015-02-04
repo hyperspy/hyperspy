@@ -141,7 +141,7 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
         ax.frameon = False
         ax.set_axis_off()
         ax.imshow(rgb, interpolation='nearest')
-#        cursors.add_axes(ax)
+#        cursors.set_mpl_ax(ax)
         figure.canvas.draw()
     else:
         return rgb
@@ -295,11 +295,16 @@ def _make_heatmap_subplot(spectra):
 
 
 def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
+    if isinstance(color, str):
+        color = [color] * len(spectra)
+    if isinstance(line_style, str):
+        line_style = [line_style] * len(spectra)
     for spectrum_index, (spectrum, color, line_style) in enumerate(
             zip(spectra, color, line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
         ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style)
-    _set_spectrum_xlabel(spectrum, ax)
+    if len(spectra) > 1:
+        _set_spectrum_xlabel(spectra[-1], ax)
     ax.set_ylabel('Intensity')
     ax.autoscale(tight=True)
 
@@ -312,13 +317,18 @@ def _make_cascade_subplot(
                            np.nanmin(spectrum.data))
         if spectrum_yrange > max_value:
             max_value = spectrum_yrange
+    if isinstance(color, str):
+        color = [color] * len(spectra)
+    if isinstance(line_style, str):
+        line_style = [line_style] * len(spectra)
     for spectrum_index, (spectrum, color, line_style) in enumerate(
             zip(spectra, color, line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
         data_to_plot = ((spectrum.data - spectrum.data.min()) /
                         float(max_value) + spectrum_index * padding)
         ax.plot(x_axis.axis, data_to_plot, color=color, ls=line_style)
-    _set_spectrum_xlabel(spectrum, ax)
+    if len(spectra) > 1:
+        _set_spectrum_xlabel(spectra[-1], ax)
     ax.set_yticks([])
     ax.autoscale(tight=True)
 
@@ -341,8 +351,10 @@ def plot_spectra(
         padding=1.,
         legend=None,
         legend_picking=True,
+        legend_loc='upper right',
         fig=None,
-        ax=None,):
+        ax=None,
+        **kwargs):
     """Plot several spectra in the same figure.
 
     Extra keyword arguments are passed to `matplotlib.figure`.
@@ -378,12 +390,18 @@ def plot_spectra(
     legend_picking: bool
         If true, a spectrum can be toggle on and off by clicking on
         the legended line.
+    legend_loc : str or int
+        This parameter controls where the legend is placed on the figure;
+        see the pyplot.legend docstring for valid values
     fig : matplotlib figure or None
         If None, a default figure will be created. Specifying fig will
         not work for the 'heatmap' style.
     ax : matplotlib ax (subplot) or None
         If None, a default ax will be created. Will not work for 'mosaic'
         or 'heatmap' style.
+    **kwargs
+        remaining keyword arguments are passed to matplotlib.figure() or
+        matplotlib.subplots(). Has no effect on 'heatmap' style.
 
     Example
     -------
@@ -438,7 +456,7 @@ def plot_spectra(
 
     if style == 'overlap':
         if fig is None:
-            fig = plt.figure()
+            fig = plt.figure(**kwargs)
         if ax is None:
             ax = fig.add_subplot(111)
         _make_overlap_plot(spectra,
@@ -446,12 +464,12 @@ def plot_spectra(
                            color=color,
                            line_style=line_style,)
         if legend is not None:
-            plt.legend(legend)
+            plt.legend(legend, loc=legend_loc)
             if legend_picking is True:
                 animate_legend(figure=fig)
     elif style == 'cascade':
         if fig is None:
-            fig = plt.figure()
+            fig = plt.figure(**kwargs)
         if ax is None:
             ax = fig.add_subplot(111)
         _make_cascade_subplot(spectra,
@@ -460,11 +478,11 @@ def plot_spectra(
                               line_style=line_style,
                               padding=padding)
         if legend is not None:
-            plt.legend(legend)
+            plt.legend(legend, loc=legend_loc)
     elif style == 'mosaic':
         default_fsize = plt.rcParams["figure.figsize"]
         figsize = (default_fsize[0], default_fsize[1] * len(spectra))
-        fig, subplots = plt.subplots(len(spectra), 1, figsize=figsize)
+        fig, subplots = plt.subplots(len(spectra), 1, figsize=figsize, **kwargs)
         if legend is None:
             legend = [legend] * len(spectra)
         for spectrum, ax, color, line_style, legend in zip(spectra,
