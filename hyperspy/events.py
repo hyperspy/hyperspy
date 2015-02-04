@@ -69,7 +69,10 @@ class Event(object):
             ret.update(*[v for v in self._connected.itervalues()])
             return ret
         else:
-            return self._connected[nargs]
+            if nargs in self._connected:
+                return self._connected[nargs]
+            else:
+                return set()
 
     def connect(self, function, nargs='all'):
         if not callable(function):
