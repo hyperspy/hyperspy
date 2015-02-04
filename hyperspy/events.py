@@ -1,17 +1,20 @@
 import sys
 import inspect
 
+
 class EventSuppressionContext(object):
+
     """
     Context manager for event suppression. When passed an Events class,
     it will suppress all the events in that container when activated by
-    using it in a 'with' statement. The previous suppression state will be 
+    using it in a 'with' statement. The previous suppression state will be
     restored when the 'with' block completes.
     """
+
     def __init__(self, events):
         self.events = events
         self.old = {}
-        
+
     def __enter__(self):
         self.old = {}
         try:
@@ -22,13 +25,15 @@ class EventSuppressionContext(object):
             self.__exit__(*sys.exc_info())
             raise
         return self
-        
+
     def __exit__(self, type, value, tb):
         for e, oldval in self.old.iteritems():
             e.suppress = oldval
         # Never suppress events
 
+
 class Events(object):
+
     """
     Events container.
 
@@ -40,9 +45,9 @@ class Events(object):
     def suppress(self):
         """
         Use this property with a 'with' statement to temporarily suppress all
-        events in the container. When the 'with' vlock completes, the old 
+        events in the container. When the 'with' vlock completes, the old
         suppression values will be restored.
-        
+
         Example usage pattern:
         with obj.events.suppress:
             obj.val_a = a
@@ -95,8 +100,8 @@ class Event(object):
                 else:
                     if len(args) < nargs:
                         raise ValueError(
-                            ("Tried to call %s which require %d args " + \
-                            "with only %d.") % (str(c), nargs, len(args)))
+                            ("Tried to call %s which require %d args " +
+                             "with only %d.") % (str(c), nargs, len(args)))
                     for f in c:
                         f(*args[0:nargs])
 
@@ -104,4 +109,3 @@ class Event(object):
         dc = type(self)()
         memo[id(self)] = dc
         return dc
-            
