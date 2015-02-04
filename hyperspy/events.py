@@ -57,11 +57,11 @@ class Event(object):
     def __init__(self):
         self._connected = {0: set()}
         self.suppress = False
-    
+
     def connected(self, nargs='all'):
         if nargs == 'all':
             ret = set()
-            ret.update(self._connected.itervalues())
+            ret.update(*[v for v in self._connected.itervalues()])
             return ret
         else:
             return self._connected[nargs]
