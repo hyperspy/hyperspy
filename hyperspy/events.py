@@ -1,4 +1,5 @@
-import sys, copy
+import sys
+import inspect
 
 class EventSuppressionContext(object):
     """
@@ -54,64 +55,53 @@ class Events(object):
 class Event(object):
 
     def __init__(self):
-        self._connected = {0: set()} # Shared
-        self._suppress = [False]    # Keep in list so shallow copies share
-        self._nargs = 0
-        self._signatures = {tuple([]): self}    # Shared
+        self._connected = {0: set()}
+        self.suppress = False
     
-    @property
-    def connected(self):
-        return self._connected[self._nargs]
-    
-    @connected.setter
-    def connected(self, value):
-        self._connected[self._nargs] = value
-    
-    @property
-    def suppress(self):
-        return self._suppress[0]
-    
-    @suppress.setter
-    def suppress(self, value):
-        self._suppress[0] = value
+    def connected(self, nargs='all'):
+        if nargs == 'all':
+            ret = set()
+            ret.update(self._connected.itervalues())
+            return ret
+        else:
+            return self._connected[nargs]
 
-    def connect(self, function):
+    def connect(self, function, nargs='all'):
         if not callable(function):
             raise TypeError("Only callables can be registered")
-        self.connected.add(function)
+        if nargs == 'auto':
+            spec = inspect.getargspec(function)[0]
+            if spec is None:
+                nargs = 0
+            else:
+                nargs = len(spec)
+        elif nargs is None:
+            nargs = 0
+        if nargs not in self._connected:
+            self._connected[nargs] = set()
+        self._connected[nargs].add(function)
 
     def disconnect(self, function):
-        for i in xrange(len(self._connected)):
-            if function in self._connected[i]:
-                self._connected[i].remove(function)
-    
-    def _do_trigger(self, *args):
-        if len(args) < self._nargs:
-            raise ValueError(("Tried to call %s which require %d args " + \
-                "with only %d.") % (str(self.connected), self._nargs, len(args)))
-        for f in self.connected:
-            f(*args[0:self._nargs])
+        for c in self._connected.itervalues():
+            if function in c:
+                c.remove(function)
 
-    def trigger(self, *args):
+    def trigger(self, *args, **kwargs):
         if not self.suppress:
-            self._do_trigger(*args)
-            for s in self._signatures.values():
-                s._do_trigger(*args)
+            for nargs, c in self._connected.iteritems():
+                if nargs is 'all':
+                    for f in c:
+                        f(*args, **kwargs)
+                else:
+                    if len(args) < nargs:
+                        raise ValueError(
+                            ("Tried to call %s which require %d args " + \
+                            "with only %d.") % (str(c), nargs, len(args)))
+                    for f in c:
+                        f(*args[0:nargs])
 
     def __deepcopy__(self, memo):
         dc = type(self)()
         memo[id(self)] = dc
         return dc
-    
-    def __getitem__(self, nargs):
-        if nargs is None:
-            nargs = 0
-        if nargs in self._signatures:
-            return self._signatures[nargs]
-        else:
-            r = copy.copy(self)
-            r._nargs = nargs
-            r._connected[nargs] = set()
-            self._signatures[nargs] = r
-            return r
             
