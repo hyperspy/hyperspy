@@ -2617,8 +2617,10 @@ class Signal(MVA,
             _signal = self._deepcopy_with_new_data(self.data)
         else:
             out.data = self.data
-            out.axes_manager.update_from(self.axes_manager,
-                                         fields=('offset', 'scale', 'size'))
+            for out_axis, self_axis in zip(out.axes_manager._axes,
+                                           self.axes_manager._axes):
+                out_axis.update_from(self_axis,
+                                     fields=('offset', 'scale', 'size'))
             _signal = out
 
         nav_idx = [el.index_in_array for el in
