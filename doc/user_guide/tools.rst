@@ -612,7 +612,7 @@ method that operates *in place*.
 
 Extending the size of a dimension
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. versionadded:: 0.7.4
+.. versionadded:: 0.8
 
    It is possible extend any axis to the left or the right with the
    :py:meth:`~.signal.Signal.extend_dimension` method.
