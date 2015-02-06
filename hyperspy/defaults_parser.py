@@ -135,8 +135,8 @@ class EELSConfig(t.HasTraits):
                                       label='GOS directory',
                                       desc='The GOS files are required to create the EELS edge components')
     fine_structure_width = t.CFloat(30,
-                                    label='Fine structure lenght',
-                                    desc='The default lenght of the fine structure from the edge onset')
+                                    label='Fine structure length',
+                                    desc='The default length of the fine structure from the edge onset')
     fine_structure_active = t.CBool(False,
                                     label='Enable fine structure',
                                     desc="If enabled, the regions of the EELS spectrum defined as fine "

@@ -3134,7 +3134,7 @@ class Signal(MVA,
                 filename = os.path.join(
                     self.tmp_parameters.folder,
                     self.tmp_parameters.filename)
-                extesion = (self.tmp_parameters.extension
+                extension = (self.tmp_parameters.extension
                             if not extension
                             else extension)
             elif self.metadata.has_item('General.original_filename'):
@@ -3437,7 +3437,7 @@ class Signal(MVA,
 
     @auto_replot
     def _unfold(self, steady_axes, unfolded_axis):
-        """Modify the shape of the data by specifying the axes the axes which
+        """Modify the shape of the data by specifying the axes whose
         dimension do not change and the axis over which the remaining axes will
         be unfolded
 
@@ -3496,7 +3496,7 @@ class Signal(MVA,
 
     def unfold(self):
         """Modifies the shape of the data by unfolding the signal and
-        navigation dimensions separaterly
+        navigation dimensions separately
 
         """
         self.unfold_navigation_space()

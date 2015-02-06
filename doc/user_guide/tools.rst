@@ -165,8 +165,8 @@ scanning over a sample in two dimensions. In HyperSpy's terminology the
 spectrum dimension would be the signal dimension and the two other dimensions
 would be the navigation dimensions. We could see the same dataset as an image
 stack instead.  Actually it could has been acquired by capturing two
-dimensional images at different wavelenghts. Then it would be natural to
-identify the two spatial dimensions as the signal dimensions and the wavelenght
+dimensional images at different wavelengths. Then it would be natural to
+identify the two spatial dimensions as the signal dimensions and the wavelength
 dimension as the navigation dimension.  However, for data analysis purposes,
 one may like to operate with an image stack as if it was a set of spectra or
 viceversa. One can easily switch between these two alternative ways of
