@@ -707,31 +707,6 @@ class AxesManager(t.HasTraits):
                             if self.signal_shape else 0)
         self._update_max_index()
     
-    def update_from(self, axes_manager, fields=('offset', 'scale')):
-        """Copy values of specified axes fields from the passed AxesManager. 
-        
-        Parameters
-        ----------
-        axes_manager : AxesManager
-            The AxesManager to use as a source for values.
-        fields : iterable container of strings
-            The name of the fields to update. If the field does not exist in
-            either of the AxesManagers, an AttributeError will be raised.
-        
-        Returns a bolean indicating whether any changes were made
-        """
-        any_changes = False
-        for i, src_axis in enumerate(axes_manager._axes):
-            dst_axis = self._axes[i]
-            changed = {}
-            for f in fields:
-                if getattr(dst_axis, f) != getattr(src_axis, f):
-                    changed[f] = getattr(src_axis, f)
-            if len(changed) > 0:
-                dst_axis.trait_set(**changed)
-                any_changes = True
-        return any_changes
-
     def set_signal_dimension(self, value):
         """Set the dimension of the signal.
 
