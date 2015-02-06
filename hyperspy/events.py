@@ -66,7 +66,7 @@ class Event(object):
     def connected(self, nargs=None):
         if nargs is None:
             ret = set()
-            ret.update(*[v for v in self._connected.itervalues()])
+            ret.update(*self._connected.values())
             return ret
         else:
             if nargs in self._connected:
