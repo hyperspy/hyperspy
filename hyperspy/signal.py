@@ -3109,6 +3109,8 @@ class Signal(MVA,
                     " \"slider\", None, a Signal instance")
 
         self._plot.plot()
+        self.events.axes_changed.connect(self._replot)
+        self.events.data_changed.connect(self.update_plot)
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):

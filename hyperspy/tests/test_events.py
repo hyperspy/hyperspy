@@ -88,35 +88,16 @@ class TestEventsSignatures(EventsBase):
         
         
     def test_basic_triggers(self):
-        self.events.a.connect(lambda: 1)
-        self.events.a[None].connect(lambda: 1)
-        self.events.a[1].connect(lambda x: 1)
-        self.events.a[2].connect(lambda x, y: 1)
-        self.events.a[1].connect(lambda x, y=988: \
-                                 nose.tools.assert_equal(y, 988))
-        self.events.a[2].connect(lambda x, y=988: \
-                                 nose.tools.assert_not_equal(y, 988))
+        self.events.a.connect(lambda *args, **kwargs: 0)
+        self.events.a.connect(lambda: 0, None)
+        self.events.a.connect(lambda x: 0, 1)
+        self.events.a.connect(lambda x, y: 0, 2)
+        self.events.a.connect(lambda x, y=988: \
+                                 nose.tools.assert_equal(y, 988), 1)
+        self.events.a.connect(lambda x, y=988: \
+                                 nose.tools.assert_not_equal(y, 988), 2)
         self.events.a.trigger(2, 5)
-        self.events.a[None].trigger(2,5)
-        self.events.a[1].trigger(2,5)
-        self.events.a[2].trigger(2,5)
         
         nose.tools.assert_raises(ValueError, self.events.a.trigger)
         nose.tools.assert_raises(ValueError, self.events.a.trigger, 2)
         self.events.a.trigger(2,5,8)
-    
-    def test_shared_suppresion(self):
-        self.events.a.connect(self.on_trigger)
-        self.events.a[1].connect(self.on_trigger)
-        self.events.a[2].connect(self.on_trigger)
-        
-        for e in [self.events.a, self.events.a[None], self.events.a[1], \
-                    self.events.a[2]]:
-            e.suppress = True
-            self.trigger_check(e.trigger, False, 2, 5)
-            self.events.a.suppress = False
-            self.trigger_check(e.trigger, True, 2, 5)
-            
-            with self.events.suppress:
-                self.trigger_check(e.trigger, False, 2, 5)
-            self.trigger_check(e.trigger, True, 2, 5)

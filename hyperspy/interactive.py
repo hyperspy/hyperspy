@@ -13,8 +13,6 @@ class Interactive:
             if recompute_out_event:
                 recompute_out_event.connect(self._recompute_out)
         event.connect(self.update)
-        self.out.events.data_changed.connect(self.out.update_plot)
-        self.out.events.axes_changed.connect(self.out._replot)
 
     def _recompute_out(self):
         out = self.f(*self.args, **self.kwargs)
