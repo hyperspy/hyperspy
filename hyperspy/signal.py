@@ -2529,6 +2529,7 @@ class Signal(MVA,
         self.isig = SpecialSlicers(self, False)
         self.events = Events()
         self.events.data_changed = Event()
+        self.events.axes_changed = Event()
 
     @property
     def mapped_parameters(self):
@@ -2616,7 +2617,10 @@ class Signal(MVA,
             _signal = self._deepcopy_with_new_data(self.data)
         else:
             out.data = self.data
-            out.axes_manager = self.axes_manager.deepcopy()
+            for out_axis, self_axis in zip(out.axes_manager._axes,
+                                           self.axes_manager._axes):
+                out_axis.update_from(self_axis,
+                                     fields=('offset', 'scale', 'size'))
             _signal = out
 
         nav_idx = [el.index_in_array for el in
@@ -2676,6 +2680,9 @@ class Signal(MVA,
 
         if out is None:
             return _signal
+        else:
+            out.events.axes_changed.trigger()
+            out.events.data_changed.trigger()
 
     def __setitem__(self, i, j):
         """x.__setitem__(i, y) <==> x[i]=y
@@ -3102,6 +3109,8 @@ class Signal(MVA,
                     " \"slider\", None, a Signal instance")
 
         self._plot.plot()
+        self.events.axes_changed.connect(self._replot)
+        self.events.data_changed.connect(self.update_plot)
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
@@ -3145,7 +3154,7 @@ class Signal(MVA,
                 filename = os.path.join(
                     self.tmp_parameters.folder,
                     self.tmp_parameters.filename)
-                extesion = (self.tmp_parameters.extension
+                extension = (self.tmp_parameters.extension
                             if not extension
                             else extension)
             elif self.metadata.has_item('General.original_filename'):
@@ -3161,6 +3170,14 @@ class Signal(MVA,
         if self._plot is not None:
             if self._plot.is_active() is True:
                 self.plot()
+
+    def update_plot(self):
+        if self._plot is not None:
+            if self._plot.is_active() is True:
+                if self._plot.signal_plot is not None:
+                    self._plot.signal_plot.update()
+                if self._plot.navigator_plot is not None:
+                    self._plot.navigator_plot.update()
 
     @auto_replot
     def get_dimensions_from_data(self):
@@ -3448,7 +3465,7 @@ class Signal(MVA,
 
     @auto_replot
     def _unfold(self, steady_axes, unfolded_axis):
-        """Modify the shape of the data by specifying the axes the axes which
+        """Modify the shape of the data by specifying the axes whose
         dimension do not change and the axis over which the remaining axes will
         be unfolded
 
@@ -3507,7 +3524,7 @@ class Signal(MVA,
 
     def unfold(self):
         """Modifies the shape of the data by unfolding the signal and
-        navigation dimensions separaterly
+        navigation dimensions separately
 
         """
         self.unfold_navigation_space()
