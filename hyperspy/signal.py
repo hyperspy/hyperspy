@@ -3365,6 +3365,7 @@ class Signal(FancySlicing,
                     " \"slider\", None, a Signal instance")
 
         self._plot.plot(**kwargs)
+        self.events.data_changed.connect(self.update_plot)
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
