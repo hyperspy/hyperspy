@@ -103,7 +103,7 @@ class MPL_HyperExplorer(object):
                         self.axes_manager.navigation_axes,
                         title=self.signal_title + " navigation sliders")
                     for axis in self.axes_manager.navigation_axes[2:]:
-                        axis.connect(imf.update)
+                        axis.connect(imf._update)
 
             imf.title = self.signal_title + ' Navigator'
             imf.plot()
