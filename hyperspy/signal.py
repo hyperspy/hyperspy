@@ -3035,6 +3035,7 @@ class Signal(MVA,
         def get_dynamic_explorer_wrapper(*args, **kwargs):
             navigator.axes_manager.indices = self.axes_manager.indices[
                 navigator.axes_manager.signal_dimension:]
+            navigator.axes_manager._update_attributes()
             return navigator()
 
         if not isinstance(navigator, Signal) and navigator == "auto":
