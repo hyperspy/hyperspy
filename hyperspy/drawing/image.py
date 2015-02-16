@@ -183,6 +183,8 @@ class ImagePlot(BlittedFigure):
                 self.axes_manager.navigation_size == 0):
             self.plot_indices = False
         if self.plot_indices is True:
+            if self._text is not None:
+                self._text.remove()
             self._text = self.ax.text(
                 *self._text_position,
                 s=str(self.axes_manager.indices),
