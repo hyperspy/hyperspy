@@ -264,6 +264,9 @@ class SpectrumLine(object):
             data = f(axes_manager=self.axes_manager).real
         else:
             data = f(axes_manager=self.axes_manager).imag
+        if self.line is not None:
+            self.line.remove()
+            self.line = None
         self.line, = self.ax.plot(self.axis, data,
                                   **self.line_properties)
         self.line.set_animated(True)
