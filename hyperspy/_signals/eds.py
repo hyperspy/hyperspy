@@ -671,3 +671,31 @@ class EDSSpectrum(Spectrum):
                 windows_position[index[i]] = interv
                 windows_position[index[i+1]] = interv
         return windows_position
+
+    def plot_background_windows(self, windows_position):
+        """
+        Plot the windows position for background used for subtraction and
+        estimate with estimate_background_windows
+
+        Parameters
+        ----------
+        self: EDSSpectrum
+            The EDSspectrum to plot on.
+        windows_position: list of float
+            The position of the windows
+
+        See also
+        --------
+        estimate_background_windows, get_line_intensity
+        """
+        from hyperspy.drawing import marker
+        self.plot_xray_lines()
+        colors = itertools.cycle(np.sort(plt.rcParams['axes.color_cycle']*4))
+        for window, color in zip(np.ravel(windows_position), colors):
+            line = marker.Marker()
+            line.type = 'line'
+            line.orientation = 'v'
+            line.set_data(x1=window)
+            line.set_marker_properties(color=color)
+            self._plot.signal_plot.add_marker(line)
+            line.plot()
