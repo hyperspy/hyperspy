@@ -572,14 +572,14 @@ class EDSSpectrum(Spectrum):
             element, line = utils_eds._get_element_and_line(Xray_line)
             det = [line_energy - integration_window_factor * line_FWHM / 2.,
                    line_energy + integration_window_factor * line_FWHM / 2.]
-            img = self[..., det[0]:det[1]].integrate1D(-1)
+            img = self.isig[det[0]:det[1]].integrate1D(-1)
             if background_windows is not None:
                 bck = background_windows[i]
                 indexes = [float(ax.value2index(de)) for de in det+list(bck)]
                 corr_factor = (indexes[1] - indexes[0]) / (
                     (indexes[3] - indexes[2]) + (indexes[5] - indexes[4]))
-                img -= self[bck[0]:bck[1]].integrate1D(-1) +\
-                    self[bck[2]:bck[3]].integrate1D(-1) * corr_factor
+                img -= (self.isig[bck[0]:bck[1]].integrate1D(-1) +
+                        self.isig[bck[2]:bck[3]].integrate1D(-1)) * corr_factor
 
             img.metadata.General.title = (
                 'Intensity of %s at %.2f %s from %s' %
@@ -691,7 +691,7 @@ class EDSSpectrum(Spectrum):
                 windows_position[index[i+1]] = interv
         return windows_position
 
-    def plot_background_windows(self, windows_position):
+    def plot_background_windows(self, windows_position, xray_lines=None):
         """
         Plot the windows position for background used for subtraction and
         estimate with estimate_background_windows
@@ -702,13 +702,16 @@ class EDSSpectrum(Spectrum):
             The EDSspectrum to plot on.
         windows_position: list of float
             The position of the windows
+        xray_lines: None or list of string
+                If None, use `metadata.Sample.elements.xray_lines`
 
         See also
         --------
         estimate_background_windows, get_line_intensity
         """
+
         from hyperspy.drawing import marker
-        self.plot_xray_lines()
+        self.plot_xray_lines(xray_lines=xray_lines)
         colors = itertools.cycle(np.sort(plt.rcParams['axes.color_cycle']*4))
         for window, color in zip(np.ravel(windows_position), colors):
             line = marker.Marker()
@@ -716,6 +719,15 @@ class EDSSpectrum(Spectrum):
             line.orientation = 'v'
             line.set_data(x1=window)
             line.set_marker_properties(color=color)
+            self._plot.signal_plot.add_marker(line)
+            line.plot()
+        for bck in windows_position:
+            line = marker.Marker()
+            line.type = 'line'
+            line.set_data(x1=(bck[0]+bck[1])/2., x2=(bck[2]+bck[3])/2.,
+                          y1=self.isig[bck[0]:bck[1]].mean(-1).data,
+                          y2=self.isig[bck[2]:bck[3]].mean(-1).data)
+            line.set_marker_properties(color='black')
             self._plot.signal_plot.add_marker(line)
             line.plot()
 
