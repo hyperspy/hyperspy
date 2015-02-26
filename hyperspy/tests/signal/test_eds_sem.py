@@ -206,6 +206,17 @@ class Test_get_lines_intentisity:
         nose.tools.assert_true(
             np.allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3))
 
+    def test_background_substraction(self):
+        s = self.signal
+        intens = s.get_lines_intensity(["Al_Ka"], plot_result=False)[0].data
+        s = s + 1.
+        nose.tools.assert_true(np.allclose(s.estimate_background_windows(
+            xray_lines=["Al_Ka"])[0, 0], 1.25666201, atol=1e-3))
+        nose.tools.assert_true(np.allclose(s.get_lines_intensity(
+            ["Al_Ka"], background_windows=s.estimate_background_windows(
+                4, xray_lines=["Al_Ka"]), plot_result=False)[0].data,
+            intens, atol=1e-3))
+
 
 class Test_tools_bulk:
 
