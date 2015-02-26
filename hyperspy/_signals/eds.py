@@ -18,15 +18,16 @@
 from __future__ import division
 import itertools
 
-import matplotlib.pyplot as plt
 import numpy as np
 import warnings
+from matplotlib import pyplot as plt
 
 from hyperspy import utils
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
+from hyperspy.drawing import marker
 
 
 class EDSSpectrum(Spectrum):
@@ -717,3 +718,93 @@ class EDSSpectrum(Spectrum):
             line.set_marker_properties(color=color)
             self._plot.signal_plot.add_marker(line)
             line.plot()
+
+    def plot_xray_lines(self,
+                        xray_lines=None,
+                        only_lines=("a", "b"),
+                        only_one=False,
+                        **kwargs):
+        """
+        Annotate a spec.plot() with the name of the selected X-ray
+        lines
+
+        Parameters
+        ----------
+        xray_lines: {None, 'from_elements', list of string}
+            If None,
+            if `mapped.parameters.Sample.elements.xray_lines` contains a
+            list of lines use those.
+            If `mapped.parameters.Sample.elements.xray_lines` is undefined
+            or empty or if xray_lines equals 'from_elements' and
+            `mapped.parameters.Sample.elements` is defined,
+            use the same syntax as `add_line` to select a subset of lines
+            for the operation.
+            Alternatively, provide an iterable containing
+            a list of valid X-ray lines symbols.
+        only_lines : None or list of strings
+            If not None, use only the given lines (eg. ('a','Kb')).
+            If None, use all lines.
+        only_one : bool
+            If False, use all the lines of each element in the data spectral
+            range. If True use only the line at the highest energy
+            above an overvoltage of 2 (< beam energy / 2).
+        kwargs
+            The extra keyword arguments for plot()
+
+        See also
+        --------
+        set_elements, add_elements
+
+        """
+
+        if only_lines is not None:
+            only_lines = list(only_lines)
+            for only_line in only_lines:
+                if only_line == 'a':
+                    only_lines.extend(['Ka', 'La', 'Ma'])
+                elif only_line == 'b':
+                    only_lines.extend(['Kb', 'Lb1', 'Mb'])
+
+        if xray_lines is None or xray_lines == 'from_elements':
+            if 'Sample.xray_lines' in self.metadata \
+                    and xray_lines != 'from_elements':
+                xray_lines = self.metadata.Sample.xray_lines
+            elif 'Sample.elements' in self.metadata:
+                xray_lines = self._get_lines_from_elements(
+                    self.metadata.Sample.elements,
+                    only_one=only_one,
+                    only_lines=only_lines)
+            else:
+                raise ValueError(
+                    "No elements defined, set them with `add_elements`")
+
+        xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
+            xray_lines)
+        for xray in xray_not_here:
+            print("Warning: %s is not in the data energy range." % (xray))
+
+        line_energy = []
+        intensity = []
+        for xray_line in xray_lines:
+            element, line = utils_eds._get_element_and_line(xray_line)
+            line_energy.append(self._get_line_energy(xray_line))
+            relative_factor = elements_db[element][
+                'Atomic_properties']['Xray_lines'][line]['weight']
+            a_eng = self._get_line_energy(element + '_' + line[0] + 'a')
+            intensity.append(self[..., a_eng].data * relative_factor)
+
+        self.plot(**kwargs)
+        for i in range(len(line_energy)):
+            line = marker.Marker()
+            line.type = 'line'
+            line.orientation = 'v'
+            line.set_data(x1=line_energy[i], y2=intensity[i] * 0.8)
+            self._plot.signal_plot.add_marker(line)
+            line.plot()
+            text = marker.Marker()
+            text.type = 'text'
+            text.set_marker_properties(rotation=90)
+            text.set_data(x1=line_energy[i],
+                          y1=intensity[i] * 1.1, text=xray_lines[i])
+            self._plot.signal_plot.add_marker(text)
+            text.plot()
