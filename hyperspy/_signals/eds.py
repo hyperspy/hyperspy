@@ -469,6 +469,7 @@ class EDSSpectrum(Spectrum):
 
     def get_lines_intensity(self,
                             xray_lines=None,
+                            background_windows=None,
                             plot_result=False,
                             integration_window_factor=2.,
                             only_one=True,
@@ -499,6 +500,9 @@ class EDSSpectrum(Spectrum):
             for the operation.
             Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols.
+        background_windows: list of float or None
+            Winowds for background substraction. If None, no backcgrond
+            substraction
         plot_result : bool
             If True, plot the calculated line intensities. If the current
             object is a single spectrum it prints the result instead.
@@ -526,10 +530,16 @@ class EDSSpectrum(Spectrum):
 
         >>> specImg.get_lines_intensity(["C_Ka", "Ta_Ma"])
 
+        >>> specImg.set_lines(["C_Ka", "Ta_Ma"])
+        >>> bw = specImg.estimate_background_windows()
+        >>> specImg.plot_background_windows(bw)
+        >>> specImg.get_lines_intensity(background_windows=bw)
+
         See also
         --------
 
-        set_elements, add_elements.
+        set_elements, add_elements. estimate_background_windows,
+        plot_background_windows
 
         """
 
@@ -551,22 +561,30 @@ class EDSSpectrum(Spectrum):
                           "You can remove it with" +
                           "s.metadata.Sample.xray_lines.remove('%s')"
                           % (xray))
-
+        ax = self.axes_manager.signal_axes[0]
         intensities = []
         # test 1D Spectrum (0D problem)
         # signal_to_index = self.axes_manager.navigation_dimension - 2
-        for Xray_line in xray_lines:
+        for i, Xray_line in enumerate(xray_lines):
             line_energy, line_FWHM = self._get_line_energy(Xray_line,
                                                            FWHM_MnKa='auto')
             element, line = utils_eds._get_element_and_line(Xray_line)
-            det = integration_window_factor * line_FWHM / 2.
-            img = self[..., line_energy - det:line_energy + det
-                       ].integrate1D(-1)
+            det = [line_energy - integration_window_factor * line_FWHM / 2.,
+                   line_energy + integration_window_factor * line_FWHM / 2.]
+            img = self[..., det[0]:det[1]].integrate1D(-1)
+            if background_windows is not None:
+                bck = background_windows[i]
+                indexes = [float(ax.value2index(de)) for de in det+list(bck)]
+                corr_factor = (indexes[1] - indexes[0]) / (
+                    (indexes[3] - indexes[2]) + (indexes[5] - indexes[4]))
+                img -= self[bck[0]:bck[1]].integrate1D(-1) +\
+                    self[bck[2]:bck[3]].integrate1D(-1) * corr_factor
+
             img.metadata.General.title = (
                 'Intensity of %s at %.2f %s from %s' %
                 (Xray_line,
                  line_energy,
-                 self.axes_manager.signal_axes[0].units,
+                 ax.units,
                  self.metadata.General.title))
             if img.axes_manager.navigation_dimension >= 2:
                 img = img.as_image([0, 1])
@@ -576,7 +594,7 @@ class EDSSpectrum(Spectrum):
                 print("%s at %s %s : Intensity = %.2f"
                       % (Xray_line,
                          line_energy,
-                         self.axes_manager.signal_axes[0].units,
+                         ax.units,
                          img.data))
             img.metadata.set_item("Sample.elements", ([element]))
             img.metadata.set_item("Sample.xray_lines", ([Xray_line]))
