@@ -16,7 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
+import itertools
 
+import matplotlib.pyplot as plt
 import numpy as np
 import warnings
 
@@ -617,3 +619,55 @@ class EDSSpectrum(Spectrum):
                                        elevation_angle)
 
         return TOA
+
+    def estimate_background_windows(self,
+                                    line_width=2,
+                                    windows_width=1,
+                                    xray_lines=None):
+        """
+        Estimate with the windows for background subtraction that can be use
+        with get_line_intensity
+
+        Parameters
+        ----------
+        line_width: float
+            This factor times the calculated FWHM of the line give the spacing
+            around the lines.
+        windows_width: float
+            This factor factor times the calculated FWHM of the line give the
+            width of the windows.
+        xray_lines: None or list of string
+                If None, use `metadata.Sample.elements.xray_lines`
+
+        Return
+        ------
+        windows_position: list of float
+            The position of the windows
+
+        See also
+        --------
+        plot_background_windows, get_line_intensity
+        """
+        if xray_lines is None:
+            xray_lines = self.metadata.Sample.xray_lines
+        windows_position = []
+        for xray_line in xray_lines:
+            line_energy, line_FWHM = self._get_line_energy(xray_line,
+                                                           FWHM_MnKa='auto')
+            tmp = [line_energy - line_FWHM*line_width -
+                   line_FWHM*windows_width]
+            tmp.append(line_energy - line_FWHM*line_width)
+            tmp.append(line_energy + line_FWHM*line_width)
+            tmp.append(line_energy + line_FWHM*line_width +
+                       line_FWHM*windows_width)
+            windows_position.append(tmp)
+        windows_position = np.array(windows_position)
+        # merge ovelapping windows
+        index = windows_position.argsort(axis=0)[:, 0]
+        for i in range(len(index)-1):
+            if windows_position[index[i], 2] > windows_position[index[i+1], 0]:
+                interv = np.append(windows_position[index[i], :2],
+                                   windows_position[index[i+1], 2:])
+                windows_position[index[i]] = interv
+                windows_position[index[i+1]] = interv
+        return windows_position
