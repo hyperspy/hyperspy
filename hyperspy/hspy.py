@@ -99,9 +99,18 @@ def create_model(signal, *args, **kwargs):
     """
 
     from hyperspy._signals.eels import EELSSpectrum
+    from hyperspy._signals.eds_sem import EDSSEMSpectrum
+    from hyperspy._signals.eds_tem import EDSTEMSpectrum
     from hyperspy.models.eelsmodel import EELSModel
+    from hyperspy.models.edssemmodel import EDSSEMModel
+    from hyperspy.models.edstemmodel import EDSTEMModel
     from hyperspy.model import Model
     if isinstance(signal, EELSSpectrum):
         return EELSModel(signal, *args, **kwargs)
+    elif isinstance(signal, EDSSEMSpectrum):
+        return EDSSEMModel(signal, *args, **kwargs)
+    elif isinstance(signal, EDSTEMSpectrum):
+        return EDSTEMModel(signal, *args, **kwargs)
     else:
         return Model(signal, *args, **kwargs)
+
