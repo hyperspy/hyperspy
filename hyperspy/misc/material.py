@@ -101,7 +101,7 @@ def mass_absorption_coefficient(element, energies):
         The element symbol of the absorber, e.g. 'Al'.
     energies: float or list of float or str or list of str
         The energy or energies of the X-ray in keV, or the name of the X-rays,
-        eg 'Al_Ka'.
+        e.g. 'Al_Ka'.
 
     Return
     ------
@@ -109,7 +109,9 @@ def mass_absorption_coefficient(element, energies):
 
     Examples
     --------
-    >>> utils.material.mass_absorption_coefficient('Al',['C_Ka','Al_Ka'])
+    >>> utils.material.mass_absorption_coefficient(
+    >>>     element='Al', energies=['C_Ka','Al_Ka'])
+    array([ 26330.38933818,    372.02616732])
 
     See also
     --------
@@ -142,7 +144,8 @@ def mass_absorption_coefficient(element, energies):
 def mass_absorption_coefficient_of_mixture_of_pure_elements(elements,
                                                             weight_percent,
                                                             energies):
-    """Calculate the mass absorption coefficient a mixture of elements.
+    """Calculate the mass absorption coefficient for X-ray absorbed in a
+    mixture of elements.
 
     The mass absorption coefficient is calculated as a weighted mean of the
     weight percent and is retrieved from the database of Chantler2005.
@@ -151,16 +154,18 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(elements,
     ----------
     elements: list of str
         The list of element symbol of the absorber, e.g. ['Al','Zn'].
-    weight_fraction: np.array
-        The composition of the absorber in weight percent. The first dimension
-        of the matrix shoud corresponds to the elements.
+    weight_percent: np.array
+        The composition of the absorber(s) in weight percent. The first
+        dimension of the matrix corresponds to the elements.
     energies: float or list of float or str or list of str
-        The energy or energies of the Xray in keV, or the name eg 'Al_Ka'
+        The energy or energies of the X-ray in keV, or the name of the X-rays,
+        e.g. 'Al_Ka'.
 
     Examples
     --------
     >>> utils.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
-    >>>     ['Al','Zn'],[0.5,0.5],'Al_Ka')
+    >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
+    2587.4161643905127
 
     Return
     ------
@@ -181,7 +186,6 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(elements,
     if len(elements) != len(weight_percent):
         raise ValueError(
             "Elements and weight_fraction should have the same lenght")
-
     if hasattr(weight_percent[0], '__iter__'):
         weight_percent = np.array(weight_percent)
         mac_res = np.zeros(weight_percent.shape[1:])
