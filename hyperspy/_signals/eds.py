@@ -680,7 +680,8 @@ class EDSSpectrum(Spectrum):
                 raise ValueError(
                     "No elements defined, set them with `add_elements`")
 
-        xray_lines, xray_not_here = self._xray_lines_in_range(xray_lines)
+        xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
+            xray_lines)
         for xray in xray_not_here:
             print("Warning: %s is not in the data energy range." % (xray))
 

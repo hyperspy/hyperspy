@@ -316,7 +316,7 @@ elements in "metadata.Sample.elements".
 .. code-block:: python
 
     >>> spec.add_elements(['C','Mn','Cu','Al','Zr'])
-    >>> spec.plot_Xray_lines()
+    >>> spec.plot_xray_lines()
 
 .. figure::  images/EDS_plot_Xray_default.png
    :align:   center
@@ -326,7 +326,7 @@ Selecting certain type of lines:
    
 .. code-block:: python
 
-    >>> spec.plot_Xray_lines(only_lines=['Ka','b'])
+    >>> spec.plot_xray_lines(only_lines=['Ka','b'])
 
 .. figure::  images/EDS_plot_Xray_a.png
    :align:   center
