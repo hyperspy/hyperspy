@@ -26,7 +26,6 @@ from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 import hyperspy.components as create_component
-# from hyperspy import utils
 
 
 def _get_weight(element, line, weight_line=None):
@@ -50,7 +49,6 @@ def _get_sigma(E, E_ref, units_factor):
 
 
 class EDSModel(Model):
-
     """Build a fit a model
 
     Parameters
@@ -59,7 +57,6 @@ class EDSModel(Model):
     auto_add_lines : boolean
         If True, and if spectrum is an eds instance adds automatically
         gaussians to model the X-ray lines.
-
     """
 
     def __init__(self, spectrum,
@@ -277,7 +274,7 @@ class EDSModel(Model):
         self.reset_signal_range()
         self.enable_xray_lines()
         self.fix_background()
-        
+
     def free_energy_resolution(self, xray_lines):
         """
         Free the energy resolution of the main X-ray lines
@@ -349,9 +346,8 @@ class EDSModel(Model):
                               spread_to_all_lines=True,
                               **kwargs):
         """
-        Fit the calibration
-
-        energy scaling of the spectrum
+        Calibrate the resolution, the scale of the offset of the energy axis
+        by fitting
 
         Parameters
         ----------
@@ -384,4 +380,166 @@ class EDSModel(Model):
         elif calibrate == 'scale':
             print 'not done yet'
         elif calibrate == 'offset':
+            print 'not done yet'
+
+    def free_sub_xray_lines_weight(self, xray_lines='all', bound=0.01):
+        """
+        Free the weight of a sub X-ray lines
+
+        Free the height of the gaussians
+
+        Parameters
+        ----------
+        xray_lines: list of str or 'all'
+            The Xray lines. If 'all', fit all lines
+        bounds: float
+            Bound the height of the peak to fraction (bound) of
+            its height
+        """
+        def free_twin():
+            component.A.twin = None
+            component.A.free = True
+            if component.A.value - bound * component.A.value <= 0:
+                component.A.bmin = 1e-10
+                # print 'negative twin!'
+            else:
+                component.A.bmin = component.A.value - \
+                    bound * component.A.value
+            component.A.bmax = component.A.value + \
+                bound * component.A.value
+            component.A.ext_force_positive = True
+        xray_families = [
+            utils_eds._get_xray_lines_family(line) for line in xray_lines]
+        for component in self:
+            if component.isbackground is False:
+                if xray_lines == 'all':
+                    free_twin()
+                elif utils_eds._get_xray_lines_family(
+                        component.name) in xray_families:
+                    free_twin()
+
+    def fix_sub_xray_lines_weight(self, xray_lines='all'):
+        """
+        Fix the weight of a sub X-ray lines to the main X-ray lines
+
+        Fix the height of the gaussians with a twin function
+        """
+        def fix_twin():
+            component.A.bmin = 0.0
+            component.A.bmax = None
+            element, line = utils_eds._get_element_and_line(component.name)
+            for li in elements_db[element]['Atomic_properties']['Xray_lines']:
+                if line[0] in li and line != li:
+                    xray_sub = element + '_' + li
+                    component_sub = self[xray_sub]
+                    component_sub.A.bmin = 1e-10
+                    component_sub.A.bmax = None
+                    weight_line = component_sub.A.value / component.A.value
+                    component_sub.A.twin_function = _get_weight(
+                        element, li, weight_line)
+                    component_sub.A.twin_inverse_function = _get_iweight(
+                        element, li, weight_line)
+                    component_sub.A.twin = component.A
+        for component in self.xray_lines:
+            if xray_lines == 'all':
+                fix_twin()
+            elif component.name in xray_lines:
+                fix_twin()
+        self.fetch_stored_values()
+
+    def free_xray_lines_energy(self, xray_lines='all', bound=0.001):
+        """
+        Free the X-ray line energy (shift or centre of the Gaussian)
+
+        Parameters
+        ----------
+        xray_lines: {list of str | 'all'}
+            The Xray lines. If 'all', fit all lines
+        bound: float
+            the bound around the actual energy, in keV or eV
+        """
+
+        for component in self:
+            if component.isbackground is False:
+                if xray_lines == 'all':
+                    component.centre.free = True
+                    component.centre.bmin = component.centre.value - bound
+                    component.centre.bmax = component.centre.value + bound
+                elif component.name in xray_lines:
+                    component.centre.free = True
+                    component.centre.bmin = component.centre.value - bound
+                    component.centre.bmax = component.centre.value + bound
+
+    def fix_xray_lines_energy(self, xray_lines='all'):
+        """
+        Fix the X-ray line energy (shift or centre of the Gaussian)
+        """
+        for component in self:
+            if component.isbackground is False:
+                if xray_lines == 'all':
+                    component.centre.free = False
+                    component.centre.bmin = None
+                    component.centre.bmax = None
+                elif component.name in xray_lines:
+                    component.centre.free = False
+                    component.centre.bmin = None
+                    component.centre.bmax = None
+
+    def calibrate_xray_lines(self,
+                             calibrate='energy',
+                             xray_lines='all',
+                             bound=1,
+                             kind='single',
+                             fitter="mpfit",
+                             **kwargs):
+        """
+        Calibrate the X-ray line parameters set with a database, such as the
+        X-ray line energy, the weight of the sub-lines and the X-ray line
+        width.
+
+        Parameters
+        ----------
+        calibrate: 'energy' or 'sub_weight' or 'width'
+            If 'energy', calibrate the X-ray line energy.
+            If 'sub_lines_weight', calibrate the ratio between the main line
+            alpha and the other sub-lines of the family
+            If 'width', calibrate the X-ray line width.
+        xray_lines: list of str or 'all'
+            The Xray lines. If 'all', fit all lines
+        bounds: float
+            for 'energy' the bound around the actual energy, in eV
+            for 'sub_weight' Bound the height of the peak to fraction of
+            its height
+        kind : {'single', 'multi'}
+            If 'single' fit only the current location. If 'multi'
+            use multifit.
+        **kwargs : extra key word arguments
+            All extra key word arguments are passed to fit or
+        multifit, depending on the value of kind.
+
+        """
+        if calibrate == 'energy':
+            bound = bound / 1000. * self.units_factor
+            self.free_xray_lines_energy(xray_lines=xray_lines, bound=bound)
+            if kind == 'single':
+                if xray_lines != 'all':
+                    energy_before = []
+                    for xray_line in xray_lines:
+                        energy_before.append(self[xray_line].centre.value)
+                self.fit(fitter=fitter, bounded=True, **kwargs)
+                if xray_lines != 'all':
+                    for i, xray_line in enumerate(xray_lines):
+                        print xray_line + ' shift of ' + str(
+                            self[xray_line].centre.value - energy_before[i])
+            if kind == 'multi':
+                self.multifit(fitter=fitter, bounded=True, **kwargs)
+            self.fix_xray_lines_energy(xray_lines=xray_lines)
+        elif calibrate == 'sub_weight':
+            self.free_sub_xray_lines_weight(xray_lines=xray_lines, bound=bound)
+            if kind == 'single':
+                self.fit(fitter=fitter, bounded=True, **kwargs)
+            elif kind == 'multi':
+                self.multifit(fitter=fitter, bounded=True, **kwargs)
+            self.fix_sub_xray_lines_weight(xray_lines=xray_lines)
+        elif calibrate == 'sub_lines_weight':
             print 'not done yet'

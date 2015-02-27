@@ -15,6 +15,10 @@ def _get_energy_xray_line(xray_line):
         line]['energy (keV)']
 
 
+def _get_xray_lines_family(xray_line):
+    return xray_line[:xray_line.find('_') + 2]
+
+
 def get_FWHM_at_Energy(energy_resolution_MnKa, E):
     """Calculates the FWHM of a peak at energy E.
 
