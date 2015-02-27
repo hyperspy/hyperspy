@@ -102,8 +102,7 @@ class EDSModel(Model):
         -----------
         xray_lines: {None, 'from_elements', list of string}
             If None,
-            if `mapped.parameters.Sample.elements.xray_lines` contains a
-            list of lines use those.
+            if `metadata`  contains `xray_lines` list of lines use those.
             If `mapped.parameters.Sample.elements.xray_lines` is undefined
             or empty or if xray_lines equals 'from_elements' and
             `mapped.parameters.Sample.elements` is defined,
@@ -180,3 +179,13 @@ class EDSModel(Model):
                         component_sub.A.twin = component.A
                         self.append(component_sub)
             self.fetch_stored_values()
+
+    def add_background(self, order=3):
+        """
+        Add a quadratic background
+        """
+        background = create_component.Polynomial(order=order)
+        background.name = 'background'
+        background.isbackground = True
+        self.append(background)
+        self.background_components.append(background)

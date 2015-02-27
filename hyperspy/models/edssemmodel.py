@@ -64,3 +64,6 @@ class EDSSEMModel(EDSModel):
                  auto_add_lines=True,
                  *args, **kwargs):
         EDSModel.__init__(self, spectrum, auto_add_lines, *args, **kwargs)
+        self.background_components = list()
+        if auto_background is True:
+            self.add_background()
