@@ -57,6 +57,15 @@ class EDSModel(Model):
     auto_add_lines : boolean
         If True, and if spectrum is an eds instance adds automatically
         gaussians to model the X-ray lines.
+
+    Example
+    -------
+    >>> m = create_model(st)
+    >>> m.fit()
+    >>> m.fit_background()
+    >>> m.calibrate_energy_axis('resolution')
+    >>> m.calibrate_xray_lines('energy',['Au_Ma'])
+    >>> m.calibrate_xray_lines('sub_weight',['Mn_La'],bound=10)
     """
 
     def __init__(self, spectrum,
