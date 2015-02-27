@@ -1,6 +1,7 @@
 
 import numpy as np
 from nose.tools import assert_almost_equal
+from nose.tools import assert_true
 
 import hyperspy.hspy as hs
 from hyperspy.misc.elements import elements_db
@@ -41,3 +42,23 @@ def test_density_of_mixture():
     assert_almost_equal(density,
                         hs.utils.material.density_of_mixture_of_pure_elements(
                             elements, wt))
+
+
+def test_mass_absorption_coefficient():
+    assert_almost_equal(
+        hs.utils.material.mass_absorption_coefficient('Al', 3.5),
+        506.0153356472)
+    assert_true(np.allclose(
+        hs.utils.material.mass_absorption_coefficient('Ta', [1, 3.2, 2.3]),
+                [3343.7083701143229, 1540.0819991890, 3011.264941118]))
+    assert_almost_equal(
+        hs.utils.material.mass_absorption_coefficient('Zn', 'Zn_La'),
+        1413.291119134)
+    assert_true(np.allclose(
+        hs.utils.material.mass_absorption_coefficient(
+            'Zn', ['Cu_La', 'Nb_La']), [1704.7912903000029,
+                                        1881.2081950943339]))
+    assert_almost_equal(
+        hs.utils.material.
+        mass_absorption_coefficient_of_mixture_of_pure_elements(
+            ['Al', 'Zn'], [0.5, 0.5], 'Al_Ka'), 2587.4161643905127)
