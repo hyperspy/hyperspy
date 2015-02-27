@@ -482,28 +482,30 @@ class EDSSpectrum(Spectrum):
         suming the spectrum over the
         different X-ray lines. The sum window width
         is calculated from the energy resolution of the detector
-        defined as defined in
-        `self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa`
-        or
-        `self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa`.
-
+        defined as defined in `energy_resolution_MnKa` of the metadata.
+        Backgrounds average in provided windows can be subtracted from the
+        intensities.
 
         Parameters
         ----------
 
         xray_lines: {None, "best", list of string}
             If None,
-            if `mapped.parameters.Sample.elements.xray_lines` contains a
+            if `metadata.Sample.elements.xray_lines` contains a
             list of lines use those.
-            If `mapped.parameters.Sample.elements.xray_lines` is undefined
-            or empty but `mapped.parameters.Sample.elements` is defined,
+            If `metadata.Sample.elements.xray_lines` is undefined
+            or empty but `metadata.Sample.elements` is defined,
             use the same syntax as `add_line` to select a subset of lines
             for the operation.
             Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols.
-        background_windows: list of float or None
-            Winowds for background substraction. If None, no backcgrond
-            substraction
+        background_windows: None or 2D array of float
+            If None, no background subtraction. Else, the backgrounds average
+            in the windows are subtracted from the return intensities.
+            `background_windows` provides the position of the windows in
+            energy. Each line corresponds to a X-ray line. In a line, the two
+            first values correspond to the limits of the left window and the
+            two last values correspond to the limits of the right window.
         plot_result : bool
             If True, plot the calculated line intensities. If the current
             object is a single spectrum it prints the result instead.
@@ -528,18 +530,16 @@ class EDSSpectrum(Spectrum):
 
         Examples
         --------
-
-        >>> specImg.get_lines_intensity(["C_Ka", "Ta_Ma"])
-
         >>> specImg.set_lines(["C_Ka", "Ta_Ma"])
+        >>> specImg.get_lines_intensity()
+
         >>> bw = specImg.estimate_background_windows()
         >>> specImg.plot_background_windows(bw)
         >>> specImg.get_lines_intensity(background_windows=bw)
 
         See also
         --------
-
-        set_elements, add_elements. estimate_background_windows,
+        set_elements, add_elements, estimate_background_windows,
         plot_background_windows
 
         """
@@ -644,28 +644,35 @@ class EDSSpectrum(Spectrum):
                                     windows_width=1,
                                     xray_lines=None):
         """
-        Estimate with the windows for background subtraction that can be use
-        with get_line_intensity
+        Estimate two windows around each X-ray line containing only the
+        background.
 
         Parameters
         ----------
         line_width: float
-            This factor times the calculated FWHM of the line give the spacing
-            around the lines.
+            The width around the X-ray line is the `line_width` times the
+            calculated FWHM of the line.
         windows_width: float
-            This factor factor times the calculated FWHM of the line give the
-            width of the windows.
+            The width of the windows is is the `windows_width` times the
+            calculated FWHM of the line.
         xray_lines: None or list of string
-                If None, use `metadata.Sample.elements.xray_lines`
+            If None, use `metadata.Sample.elements.xray_lines`. Else,
+            provide an iterable containing a list of valid X-ray lines
+            symbols.
 
         Return
         ------
-        windows_position: list of float
-            The position of the windows
+        windows_position: 2D array of float
+            The position of the windows in energy. Each line corresponds to a
+            X-ray line. In a line, the two first values correspond to the
+            limits of the left window and the two last values correspond to
+            the limits of the right window.
 
         See also
         --------
-        plot_background_windows, get_line_intensity
+        The windows can be plotted with `plot_background_windows`.
+        Backgrounds average in the windows can be subtracted from the X-ray
+        intensities with `get_line_intensity`.
         """
         if xray_lines is None:
             xray_lines = self.metadata.Sample.xray_lines
@@ -693,21 +700,28 @@ class EDSSpectrum(Spectrum):
 
     def plot_background_windows(self, windows_position, xray_lines=None):
         """
-        Plot the windows position for background used for subtraction and
-        estimate with estimate_background_windows
+        Plot the background windows associated with each X-ray lines.
+
+        For X-ray lines, a black line links the left and right window with the
+        average value in each window.
 
         Parameters
         ----------
-        self: EDSSpectrum
-            The EDSspectrum to plot on.
-        windows_position: list of float
-            The position of the windows
+        windows_position: 2D array of float
+            The position of the windows in energy. Each line corresponds to a
+            X-ray lines. In a line, the two first value corresponds to the
+            limit of the left window and the two last values corresponds to the
+            limit of the right window.
         xray_lines: None or list of string
-                If None, use `metadata.Sample.elements.xray_lines`
+            If None, use `metadata.Sample.elements.xray_lines`. Else,
+            provide an iterable containing a list of valid X-ray lines
+            symbols.
 
         See also
         --------
-        estimate_background_windows, get_line_intensity
+        The windows position can be estimated with
+        `estimate_background_windows`. Backgrounds average in the windows
+        can be subtracted from the X-ray intensities with `get_line_intensity`.
         """
 
         from hyperspy.drawing import marker
@@ -744,11 +758,11 @@ class EDSSpectrum(Spectrum):
         ----------
         xray_lines: {None, 'from_elements', list of string}
             If None,
-            if `mapped.parameters.Sample.elements.xray_lines` contains a
+            if `metadata.Sample.elements.xray_lines` contains a
             list of lines use those.
-            If `mapped.parameters.Sample.elements.xray_lines` is undefined
+            If `metadata.Sample.elements.xray_lines` is undefined
             or empty or if xray_lines equals 'from_elements' and
-            `mapped.parameters.Sample.elements` is defined,
+            `metadata.Sample.elements` is defined,
             use the same syntax as `add_line` to select a subset of lines
             for the operation.
             Alternatively, provide an iterable containing
