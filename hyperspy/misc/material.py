@@ -1,6 +1,8 @@
 import numpy as np
 
 from hyperspy.misc.elements import elements as elements_db
+from hyperspy.misc.eds.ffast_mac import ffast_mac_db as ffast_mac
+from hyperspy.misc.eds import utils as utils_eds
 
 
 def weight_to_atomic(elements, weight_percent):
@@ -84,10 +86,11 @@ def density_of_mixture_of_pure_elements(elements, weight_percent):
         [elements_db[element]['Physical_properties']['density (g/cm^3)'] for element in elements])
     density = (weight_percent / densities / sum(weight_percent)).sum() ** -1
     return density
-    
+
+
 def mass_absorption_coefficient(element, energies):
     """
-    Get the mass absorption coefficient of a X-ray(s)
+    Get the mass absorption coefficient (mu/rho) of a X-ray(s)
 
     In a pure material for a Xray(s) of given energy(ies) or given name(s)
 
@@ -95,7 +98,7 @@ def mass_absorption_coefficient(element, energies):
     ----------
     element: str
         The element symbol of the absorber, e.g. 'Al'.
-    energies: {float or list of float or str or list of str}
+    energies: float or list of float or str or list of str
         The energy or energies of the Xray in keV, or the name eg 'Al_Ka'
 
     Return
@@ -111,9 +114,7 @@ def mass_absorption_coefficient(element, energies):
         if isinstance(energies[0], str):
             for i, energy in enumerate(energies):
                 energies[i] = utils_eds._get_energy_xray_line(energy)
-
     index = np.searchsorted(energies_db, energies)
-
     mac_res = np.exp(np.log(macs[index - 1])
                      + np.log(macs[index] / macs[index - 1])
                      * (np.log(energies / energies_db[index - 1])
@@ -126,7 +127,7 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(elements,
                                                             energies):
     """Calculate the mass absorption coefficients a mixture of elements.
 
-    A compund is a mixture of pure elements
+    A compound is a mixture of pure elements
 
     Parameters
     ----------
@@ -155,7 +156,6 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(elements,
             "Elements and weight_fraction should have the same lenght")
 
     if hasattr(weight_fraction[0], '__iter__'):
-
         weight_fraction = np.array(weight_fraction)
         mac_res = np.zeros(weight_fraction.shape[1:])
         for element, weight in zip(elements, weight_fraction):
