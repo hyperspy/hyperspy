@@ -93,6 +93,11 @@ class EDSModel(Model):
                 "but an object of type %s was provided" %
                 str(type(value)))
 
+    @property
+    def _active_xray_lines(self):
+        return [xray_line for xray_line
+                in self.xray_lines if xray_line.active]
+
     def add_family_lines(self, xray_lines='from_elements'):
         """Create the Xray-lines instances and configure them appropiately
 
@@ -101,13 +106,8 @@ class EDSModel(Model):
         Parameters
         -----------
         xray_lines: {None, 'from_elements', list of string}
-            If None,
-            if `metadata`  contains `xray_lines` list of lines use those.
-            If `mapped.parameters.Sample.elements.xray_lines` is undefined
-            or empty or if xray_lines equals 'from_elements' and
-            `mapped.parameters.Sample.elements` is defined,
-            use the same syntax as `add_line` to select a subset of lines
-            for the operation.
+            If None, if `metadata` contains `xray_lines` list of lines use
+            those. Else, add all lines from the elements contains in `metadata`
             Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols. (eg. ('Al_Ka','Zn_Ka')).
         """
@@ -180,6 +180,11 @@ class EDSModel(Model):
                         self.append(component_sub)
             self.fetch_stored_values()
 
+    @property
+    def _active_background_components(self):
+        return [bc for bc in self.background_components
+                if bc.coefficients.free]
+
     def add_background(self, order=3):
         """
         Add a quadratic background
@@ -189,3 +194,80 @@ class EDSModel(Model):
         background.isbackground = True
         self.append(background)
         self.background_components.append(background)
+
+    def free_background(self):
+        """Free the yscale of the background components.
+
+        """
+        for component in self.background_components:
+            component.coefficients.free = True
+
+    def fix_background(self):
+        """Fix the background components.
+
+        """
+        for component in self._active_background_components:
+            component.coefficients.free = False
+
+    def enable_xray_lines(self):
+        """Enable the X-ray lines components.
+
+        """
+        for component in self.xray_lines:
+            component.active = True
+
+    def disable_xray_lines(self):
+        """Disable the X-ray lines components.
+
+        """
+        for component in self._active_xray_lines:
+            component.active = False
+
+    def fit_background(self,
+                       start_energy=None,
+                       end_energy=None,
+                       windows_sigma=[4, 3],
+                       kind='single',
+                       **kwargs):
+        """
+        Fit the background to energy range containing no X-ray line.
+
+        Parameters
+        ----------
+        start_energy : {float, None}
+            If float, limit the range of energies from the left to the
+            given value.
+        kind : {'single', 'multi'}
+            If 'single' fit only the current location. If 'multi'
+            use multifit.
+        **kwargs : extra key word arguments
+            All extra key word arguments are passed to fit or
+        """
+
+        if end_energy is None:
+            end_energy = self.end_energy
+        if start_energy is None:
+            start_energy = self.start_energy
+
+        # desactivate line
+        self.free_background()
+        self.disable_xray_lines()
+        self.set_signal_range(start_energy, end_energy)
+        for component in self:
+            if component.isbackground is False:
+                try:
+                    self.remove_signal_range(
+                        component.centre.value -
+                        windows_sigma[0] * component.sigma.value,
+                        component.centre.value +
+                        windows_sigma[1] * component.sigma.value)
+                except:
+                    pass
+
+        if kind == 'single':
+            self.fit(**kwargs)
+        if kind == 'multi':
+            self.multifit(**kwargs)
+        self.reset_signal_range()
+        self.enable_xray_lines()
+        self.fix_background()
