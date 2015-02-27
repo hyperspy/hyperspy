@@ -115,22 +115,24 @@ class Test_metadata:
     def test_default_param(self):
         s = self.signal
         mp = s.metadata
-        nose.tools.assert_equal(mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa,
-                                preferences.EDS.eds_mn_ka)
+        nose.tools.assert_equal(
+            mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa,
+            preferences.EDS.eds_mn_ka)
 
     def test_SEM_to_TEM(self):
         s = self.signal[0, 0]
         signal_type = 'EDS_TEM'
         mp = s.metadata
-        mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa = 125.3
+        mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa = \
+            125.3
         sTEM = s.deepcopy()
         sTEM.set_signal_type(signal_type)
         mpTEM = sTEM.metadata
         results = [
             mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa]
         results.append(signal_type)
-        resultsTEM = [
-            mpTEM.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa]
+        resultsTEM = [mpTEM.Acquisition_instrument.TEM.Detector.
+                      EDS.energy_resolution_MnKa]
         resultsTEM.append(mpTEM.Signal.signal_type)
         nose.tools.assert_equal(results, resultsTEM)
 
@@ -186,6 +188,11 @@ class Test_get_lines_intentisity:
                                              plot_result=False,
                                              integration_window_factor=5)[0]
         nose.tools.assert_true(np.allclose(24.99516, sAl.data, atol=1e-3))
+        s.axes_manager[-1].offset = 1.0
+        sC = s.get_lines_intensity(["C_Ka"], plot_result=False)
+        nose.tools.assert_equal(len(sC), 0)
+        nose.tools.assert_true(sAl.metadata.Sample.elements, ["Al"])
+        nose.tools.assert_true(sAl.metadata.Sample.xray_lines, ["Al_Ka"])
 
     def test_eV(self):
         s = self.signal

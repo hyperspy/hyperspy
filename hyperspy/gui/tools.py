@@ -225,7 +225,7 @@ class LineInSpectrum(t.HasTraits):
 
         if new is True and old is False:
             self._line = DraggableVerticalLine(self.axes_manager)
-            self._line.add_axes(self.signal._plot.signal_plot.ax)
+            self._line.set_mpl_ax(self.signal._plot.signal_plot.ax)
             self._line.patch.set_linewidth(2)
             self._color_changed("black", "black")
             # There is not need to call draw because setting the
@@ -474,7 +474,7 @@ class SmoothingSavitzkyGolay(Smoothing):
             self.window_length = nwl
         else:
             print(
-                "The window lenght must be greated than the polynomial order")
+                "The window length must be greated than the polynomial order")
 
     def _polynomial_order_changed(self, old, new):
         if self.window_length <= new:

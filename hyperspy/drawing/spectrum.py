@@ -73,7 +73,7 @@ class SpectrumFigure(BlittedFigure):
         if self.right_ax is None:
             self.right_ax = self.ax.twinx()
             self.right_ax.hspy_fig = self
-            #~self.right_ax.set_animated(True)
+            self.right_ax.yaxis.set_animated(True)
 
     def add_line(self, line, ax='left'):
         if ax == 'left':
@@ -282,6 +282,8 @@ class SpectrumLine(object):
             data = f(axes_manager=self.axes_manager).real
         else:
             data = f(axes_manager=self.axes_manager).imag
+        if self.line is not None:
+            self.line.remove()
         self.line, = self.ax.plot(self.axis, data,
                                   **self.line_properties)
         self.line.set_animated(True)
@@ -289,6 +291,8 @@ class SpectrumLine(object):
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
+            if self.text is not None:
+                self.text.remove()
             self.text = self.ax.text(*self.text_position,
                                      s=str(self.axes_manager.indices),
                                      transform=self.ax.transAxes,

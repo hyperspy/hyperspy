@@ -55,6 +55,8 @@ class ImagePlot(BlittedFigure):
         Set the minimum aspect ratio of the image and the figure. To
         keep the image in the aspect limit the pixels are made
         rectangular.
+    perc: float
+        The percentile use to set the maximum and minimum of contrast
 
     """
 
@@ -83,6 +85,7 @@ class ImagePlot(BlittedFigure):
         self.yaxis = None
         self.min_aspect = 0.1
         self.ax_markers = list()
+        self.perc = 0.01
 
     def configure(self):
         xaxis = self.xaxis
@@ -125,7 +128,8 @@ class ImagePlot(BlittedFigure):
                 factor = 1
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
 
-    def optimize_contrast(self, data, perc=0.01):
+    def optimize_contrast(self, data):
+        perc = self.perc
         dc = data.copy().ravel()
         if 'complex' in dc.dtype.name:
             dc = np.log(np.abs(dc))
@@ -180,6 +184,8 @@ class ImagePlot(BlittedFigure):
                 self.axes_manager.navigation_size == 0):
             self.plot_indices = False
         if self.plot_indices is True:
+            if self._text is not None:
+                self._text.remove()
             self._text = self.ax.text(
                 *self._text_position,
                 s=str(self.axes_manager.indices),
