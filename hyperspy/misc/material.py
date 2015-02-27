@@ -90,20 +90,37 @@ def density_of_mixture_of_pure_elements(elements, weight_percent):
 
 def mass_absorption_coefficient(element, energies):
     """
-    Get the mass absorption coefficient (mu/rho) of a X-ray(s)
+    Mass absorption coefficient (mu/rho) of a X-ray absorbed in a pure
+    material.
 
-    In a pure material for a Xray(s) of given energy(ies) or given name(s)
+    The mass absorption is retrieved from the database of Chantler2005
 
     Parameters
     ----------
     element: str
         The element symbol of the absorber, e.g. 'Al'.
     energies: float or list of float or str or list of str
-        The energy or energies of the Xray in keV, or the name eg 'Al_Ka'
+        The energy or energies of the X-ray in keV, or the name of the X-rays,
+        eg 'Al_Ka'.
 
     Return
     ------
     mass absorption coefficient(s) in cm^2/g
+
+    Examples
+    --------
+    >>> utils.material.mass_absorption_coefficient('Al',['C_Ka','Al_Ka'])
+
+    See also
+    --------
+    utils.material.mass_absorption_coefficient_of_mixture_of_pure_elements
+
+    Note
+    ----
+    See http://physics.nist.gov/ffast
+    Chantler, C.T., Olsen, K., Dragoset, R.A., Kishore, A.R., Kotochigova,
+    S.A., and Zucker, D.S. (2005), X-Ray Form Factor, Attenuation and
+    Scattering Tables (version 2.1).
     """
 
     energies_db = np.array(ffast_mac[element].energies_keV)
@@ -123,19 +140,21 @@ def mass_absorption_coefficient(element, energies):
 
 
 def mass_absorption_coefficient_of_mixture_of_pure_elements(elements,
-                                                            weight_fraction,
+                                                            weight_percent,
                                                             energies):
-    """Calculate the mass absorption coefficients a mixture of elements.
+    """Calculate the mass absorption coefficient a mixture of elements.
 
-    A compound is a mixture of pure elements
+    The mass absorption coefficient is calculated as a weighted mean of the
+    weight percent and is retrieved from the database of Chantler2005.
 
     Parameters
     ----------
     elements: list of str
         The list of element symbol of the absorber, e.g. ['Al','Zn'].
     weight_fraction: np.array
-        dim = {el,z,y,x} The fraction of elements in the sample by weight
-    energies: {float or list of float or str or list of str}
+        The composition of the absorber in weight percent. The first dimension
+        of the matrix shoud corresponds to the elements.
+    energies: float or list of float or str or list of str
         The energy or energies of the Xray in keV, or the name eg 'Al_Ka'
 
     Examples
@@ -145,26 +164,35 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(elements,
 
     Return
     ------
+    float or array of float
     mass absorption coefficient(s) in cm^2/g
 
     See also
     --------
     utils.material.mass_absorption_coefficient
+
+    Note
+    ----
+    See http://physics.nist.gov/ffast
+    Chantler, C.T., Olsen, K., Dragoset, R.A., Kishore, A.R., Kotochigova,
+    S.A., and Zucker, D.S. (2005), X-Ray Form Factor, Attenuation and
+    Scattering Tables (version 2.1).
     """
-    if len(elements) != len(weight_fraction):
+    if len(elements) != len(weight_percent):
         raise ValueError(
             "Elements and weight_fraction should have the same lenght")
 
-    if hasattr(weight_fraction[0], '__iter__'):
-        weight_fraction = np.array(weight_fraction)
-        mac_res = np.zeros(weight_fraction.shape[1:])
-        for element, weight in zip(elements, weight_fraction):
+    if hasattr(weight_percent[0], '__iter__'):
+        weight_percent = np.array(weight_percent)
+        mac_res = np.zeros(weight_percent.shape[1:])
+        for element, weight in zip(elements, weight_percent):
             mac_re = mass_absorption_coefficient(
                 element, energies)
             mac_res += mac_re * weight
+        mac_res /= np.sum(weight_percent, 0)
         return mac_res
     else:
         mac_res = np.array([mass_absorption_coefficient(
             el, energies) for el in elements])
-        mac_res = np.dot(weight_fraction, mac_res)
+        mac_res = np.dot(weight_percent, mac_res) / np.sum(weight_percent, 0)
         return mac_res
