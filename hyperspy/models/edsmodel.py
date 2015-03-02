@@ -524,6 +524,51 @@ class EDSModel(Model):
                     component.centre.bmin = None
                     component.centre.bmax = None
 
+    def free_xray_lines_width(self, xray_lines='all', bound=0.01):
+        """
+        Free the X-ray line width (sigma of the Gaussian)
+
+        Parameters
+        ----------
+        xray_lines: list of str or 'all'
+            The Xray lines. If 'all', fit all lines
+        bound: float
+            the bound around the actual energy, in keV or eV
+        """
+
+        for component in self:
+            if component.isbackground is False:
+                if xray_lines == 'all':
+                    component.sigma.free = True
+                    component.sigma.bmin = component.sigma.value - bound
+                    component.sigma.bmax = component.sigma.value + bound
+                elif component.name in xray_lines:
+                    component.sigma.free = True
+                    component.sigma.bmin = component.sigma.value - bound
+                    component.sigma.bmax = component.sigma.value + bound
+
+    def fix_xray_lines_width(self, xray_lines='all'):
+        """
+        Fix the X-ray line width (sigma of the Gaussian)
+
+        Parameters
+        ----------
+        xray_lines: list of str or 'all'
+            The Xray lines. If 'all', fit all lines
+        bound: float
+            the bound around the actual energy, in keV or eV
+        """
+        for component in self:
+            if component.isbackground is False:
+                if xray_lines == 'all':
+                    component.sigma.free = False
+                    component.sigma.bmin = None
+                    component.sigma.bmax = None
+                elif component.name in xray_lines:
+                    component.sigma.free = False
+                    component.sigma.bmin = None
+                    component.sigma.bmax = None
+
     def calibrate_xray_lines(self,
                              calibrate='energy',
                              xray_lines='all',
@@ -541,7 +586,7 @@ class EDSModel(Model):
         ----------
         calibrate: 'energy' or 'sub_weight' or 'width'
             If 'energy', calibrate the X-ray line energy.
-            If 'sub_lines_weight', calibrate the ratio between the main line
+            If 'sub_weight', calibrate the ratio between the main line
             alpha and the other sub-lines of the family
             If 'width', calibrate the X-ray line width.
         xray_lines: list of str or 'all'
@@ -557,31 +602,25 @@ class EDSModel(Model):
             All extra key word arguments are passed to fit or
             multifit, depending on the value of kind.
         """
+
         if calibrate == 'energy':
             bound = bound / 1000. * self.units_factor
-            self.free_xray_lines_energy(xray_lines=xray_lines, bound=bound)
-            if kind == 'single':
-                if xray_lines != 'all':
-                    energy_before = []
-                    for xray_line in xray_lines:
-                        energy_before.append(self[xray_line].centre.value)
-                self.fit(fitter=fitter, bounded=True, **kwargs)
-                if xray_lines != 'all':
-                    for i, xray_line in enumerate(xray_lines):
-                        print xray_line + ' shift of ' + str(
-                            self[xray_line].centre.value - energy_before[i])
-            if kind == 'multi':
-                self.multifit(fitter=fitter, bounded=True, **kwargs)
-            self.fix_xray_lines_energy(xray_lines=xray_lines)
+            free = self.free_xray_lines_energy
+            fix = self.fix_xray_lines_energy
         elif calibrate == 'sub_weight':
-            self.free_sub_xray_lines_weight(xray_lines=xray_lines, bound=bound)
-            if kind == 'single':
-                self.fit(fitter=fitter, bounded=True, **kwargs)
-            elif kind == 'multi':
-                self.multifit(fitter=fitter, bounded=True, **kwargs)
-            self.fix_sub_xray_lines_weight(xray_lines=xray_lines)
-        elif calibrate == 'sub_lines_weight':
-            print 'not done yet'
+            free = self.free_sub_xray_lines_weight
+            fix = self.fix_sub_xray_lines_weight
+        elif calibrate == 'width':
+            bound = bound / 1000. * self.units_factor
+            free = self.free_xray_lines_width
+            fix = self.fix_xray_lines_width
+
+        free(xray_lines=xray_lines, bound=bound)
+        if kind == 'single':
+            self.fit(fitter=fitter, bounded=True, **kwargs)
+        elif kind == 'multi':
+            self.multifit(fitter=fitter, bounded=True, **kwargs)
+        fix(xray_lines=xray_lines)
 
     def get_lines_intensity(self,
                             xray_lines=None,
