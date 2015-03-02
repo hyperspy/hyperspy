@@ -267,15 +267,11 @@ class EDSModel(Model):
         self.set_signal_range(start_energy, end_energy)
         for component in self:
             if component.isbackground is False:
-                try:
-                    self.remove_signal_range(
-                        component.centre.value -
-                        windows_sigma[0] * component.sigma.value,
-                        component.centre.value +
-                        windows_sigma[1] * component.sigma.value)
-                except:
-                    pass
-
+                self.remove_signal_range(
+                    component.centre.value -
+                    windows_sigma[0] * component.sigma.value,
+                    component.centre.value +
+                    windows_sigma[1] * component.sigma.value)
         if kind == 'single':
             self.fit(**kwargs)
         if kind == 'multi':
