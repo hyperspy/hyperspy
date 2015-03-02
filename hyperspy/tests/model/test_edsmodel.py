@@ -25,7 +25,8 @@ class TestlineFit:
         s = self.s
         m = Model(s)
         m.fit()
-        nose.tools.assert_true(np.allclose(m.get_lines_intensity(),
+        nose.tools.assert_true(np.allclose([i.data for i in
+                                            m.get_lines_intensity()],
                                            [0.5, 0.2, 0.3], atol=1e-6))
 
     def test_calibrate_energy_axis(self):

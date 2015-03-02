@@ -548,3 +548,143 @@ class EDSModel(Model):
             self.fix_sub_xray_lines_weight(xray_lines=xray_lines)
         elif calibrate == 'sub_lines_weight':
             print 'not done yet'
+            
+            
+#    def get_lines_intensity(self,
+#                            xray_lines=None,
+#                            plot_result=False,
+#                            integration_window_factor=2.,
+#                            only_one=True,
+#                            only_lines=("Ka", "La", "Ma"),
+#                            **kwargs):
+#        """Return the intensity map of selected Xray lines.
+#
+#        The intensities, the number of X-ray counts, are computed by
+#        suming the spectrum over the
+#        different X-ray lines. The sum window width
+#        is calculated from the energy resolution of the detector
+#        defined as defined in
+#        `self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa`
+#        or
+#        `self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa`.
+#
+#
+#        Parameters
+#        ----------
+#
+#        xray_lines: {None, "best", list of string}
+#            If None,
+#            if `mapped.parameters.Sample.elements.xray_lines` contains a
+#            list of lines use those.
+#            If `mapped.parameters.Sample.elements.xray_lines` is undefined
+#            or empty but `mapped.parameters.Sample.elements` is defined,
+#            use the same syntax as `add_line` to select a subset of lines
+#            for the operation.
+#            Alternatively, provide an iterable containing
+#            a list of valid X-ray lines symbols.
+#        plot_result : bool
+#            If True, plot the calculated line intensities. If the current
+#            object is a single spectrum it prints the result instead.
+#        integration_window_factor: Float
+#            The integration window is centered at the center of the X-ray
+#            line and its width is defined by this factor (2 by default)
+#            times the calculated FWHM of the line.
+#        only_one : bool
+#            If False, use all the lines of each element in the data spectral
+#            range. If True use only the line at the highest energy
+#            above an overvoltage of 2 (< beam energy / 2).
+#        only_lines : {None, list of strings}
+#            If not None, use only the given lines.
+#        kwargs
+#            The extra keyword arguments for plotting. See
+#            `utils.plot.plot_signals`
+#
+#        Returns
+#        -------
+#        intensities : list
+#            A list containing the intensities as Signal subclasses.
+#
+#        Examples
+#        --------
+#
+#        >>> specImg.get_lines_intensity(["C_Ka", "Ta_Ma"])
+#
+#        See also
+#        --------
+#
+#        set_elements, add_elements.
+#
+#        """
+    def get_lines_intensity(self,
+                            xray_lines=None,
+                            plot_result=False,
+                            **kwargs):
+        """
+
+        Parameters
+        ----------
+        xray_lines: list of str or None or 'from_metadata'
+            If None, use the X-ray lines as set by `add_family_lines`
+            If 'from_metadata', take the Xray_lines stored in the `metadata`
+            of the spectrum. Alternatively, provide an iterable containing
+            a list of valid X-ray lines symbols.
+        plot_result : bool
+            If True, plot the calculated line intensities. If the current
+            object is a single spectrum it prints the result instead.
+        kwargs
+            The extra keyword arguments for plotting. See
+            `utils.plot.plot_signals`
+
+        Returns
+        -------
+        intensities : list
+            A list containing the intensities as Signal subclasses.
+
+        Examples
+        --------
+        >>> m.multifit()
+        >>> m.get_lines_intensity(["C_Ka", "Ta_Ma"])
+        """
+        from hyperspy import utils
+        intensities = []
+        if xray_lines is None:
+            xray_lines = []
+            for component in self.xray_lines:
+                xray_lines.append(component.name)
+        else:
+            if xray_lines == 'from_metadata':
+                xray_lines = self.spectrum.metadata.Sample.xray_lines
+            xray_lines = filter(lambda x: x in [a.name for a in
+                                self], xray_lines)
+        if xray_lines == []:
+            raise ValueError("These X-ray lines are not part of the model.")
+        for xray_line in xray_lines:
+            element, line = utils_eds._get_element_and_line(xray_line)
+            line_energy = self.spectrum._get_line_energy(xray_line)
+            data_res = self[xray_line].A.map['values']
+            if self.axes_manager.navigation_dimension == 0:
+                data_res = data_res[0]
+            img = self.spectrum.isig[0:1].integrate1D(-1)
+            img.data = data_res
+            img.metadata.General.title = (
+                'Intensity of %s at %.2f %s from %s' %
+                (xray_line,
+                 line_energy,
+                 self.spectrum.axes_manager.signal_axes[0].units,
+                 self.spectrum.metadata.General.title))
+            if img.axes_manager.navigation_dimension >= 2:
+                img = img.as_image([0, 1])
+            elif img.axes_manager.navigation_dimension == 1:
+                img.axes_manager.set_signal_dimension(1)
+            if plot_result and img.axes_manager.signal_dimension == 0:
+                print("%s at %s %s : Intensity = %.2f"
+                      % (xray_line,
+                         line_energy,
+                         self.spectrum.axes_manager.signal_axes[0].units,
+                         img.data))
+            img.metadata.set_item("Sample.elements", ([element]))
+            img.metadata.set_item("Sample.xray_lines", ([xray_line]))
+            intensities.append(img)
+        if plot_result and img.axes_manager.signal_dimension != 0:
+            utils.plot.plot_signals(intensities, **kwargs)
+        return intensities
