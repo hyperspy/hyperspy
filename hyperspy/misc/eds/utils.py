@@ -160,3 +160,44 @@ def take_off_angle(tilt_stage,
 
     return math.degrees(np.arcsin(-math.cos(a) * math.cos(b) * math.cos(c)
                                   + math.sin(a) * math.sin(c)))
+
+                                  
+def simulate_model(elements=None,
+                   shape_spectrum=None,
+                   beam_energy=None,
+                   live_time=None,
+                   weight_percents=None,
+                   energy_resolution_MnKa=None,
+                   counts_rate=None,
+                   elemental_map='random'):
+    """Simulate a model with default param defined
+
+    See database_1Dspec()
+    """
+    from hyperspy import signals
+
+    s = signals.EDSSEMSpectrum(np.zeros(1024))
+    # s = database.spec1D()
+
+    if elements is not None:
+        s.set_elements(elements)
+    else:
+        elements = s.metadata.Sample.elements
+    if weight_percents is not None:
+        s.metadata.Sample.weight_percents = weight_percents
+
+    if counts_rate is not None:
+        s.metadata.Acquisition_instrument.SEM.Detector.EDS.counts_rate = counts_rate
+
+    s.set_microscope_parameters(beam_energy=beam_energy,
+                                live_time=live_time,
+                                energy_resolution_MnKa=energy_resolution_MnKa)
+    if shape_spectrum is not None:
+        smap = signals.EDSSEMSpectrum(np.zeros(list(shape_spectrum)))
+        smap.get_calibration_from(s)
+        smap.set_elements(elements)
+        smap.simulate_model(elemental_map=elemental_map)
+        return smap
+    else:
+        model = s.simulate_model(elemental_map=elemental_map)
+        return model
