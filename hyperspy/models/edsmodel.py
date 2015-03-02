@@ -49,18 +49,22 @@ def _get_sigma(E, E_ref, units_factor):
 
 
 class EDSModel(Model):
-    """Build a fit a model
+    """Build a fit a model for EDS instance
 
     Parameters
     ----------
-    spectrum : an Spectrum (or any Spectrum subclass) instance
+    spectrum : an EDSSpectrum (or any EDSSpectrum subclass) instance
     auto_add_lines : boolean
-        If True, and if spectrum is an eds instance adds automatically
-        gaussians to model the X-ray lines.
+        If True, automatically add Gaussians for all X-rays generated
+        in the energy range by an element, using the edsmodel.add_family_lines
+        method
+    auto_background : boolean
+        If True, adds automatically a polynomial order 6 to the model,
+        using the edsmodel.add_polynomial_background method.
 
     Example
     -------
-    >>> m = create_model(st)
+    >>> m = create_model(s)
     >>> m.fit()
     >>> m.fit_background()
     >>> m.calibrate_energy_axis('resolution')
@@ -113,14 +117,16 @@ class EDSModel(Model):
     def add_family_lines(self, xray_lines='from_elements'):
         """Create the Xray-lines instances and configure them appropiately
 
-        If a X-ray line is given, all the the lines of the familiy is added
+        If a X-ray line is given, all the the lines of the familiy is added.
+        For instance if Zn Ka is given, Zn Kb is added too. The main lines
+        (alpha) is added to self.xray_lines
 
         Parameters
         -----------
         xray_lines: {None, 'from_elements', list of string}
             If None, if `metadata` contains `xray_lines` list of lines use
-            those. Else, add all lines from the elements contains in `metadata`
-            Alternatively, provide an iterable containing
+            those. If 'from_elements', add all lines from the elements contains
+            in `metadata`. Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols. (eg. ('Al_Ka','Zn_Ka')).
         """
 
@@ -197,9 +203,16 @@ class EDSModel(Model):
         return [bc for bc in self.background_components
                 if bc.coefficients.free]
 
-    def add_background(self, order=3):
+    def add_polynomial_background(self, order=6):
         """
-        Add a quadratic background
+        Add a polynomial background.
+
+        the background is added to self.background_components
+
+        Parameters
+        ----------
+        order: int
+            The order of the polynomial
         """
         background = create_component.Polynomial(order=order)
         background.name = 'background'
@@ -208,15 +221,15 @@ class EDSModel(Model):
         self.background_components.append(background)
 
     def free_background(self):
-        """Free the yscale of the background components.
-
+        """
+        Free the yscale of the background components.
         """
         for component in self.background_components:
             component.coefficients.free = True
 
     def fix_background(self):
-        """Fix the background components.
-
+        """
+        Fix the background components.
         """
         for component in self._active_background_components:
             component.coefficients.free = False
@@ -238,22 +251,34 @@ class EDSModel(Model):
     def fit_background(self,
                        start_energy=None,
                        end_energy=None,
-                       windows_sigma=[4, 3],
+                       windows_sigma=[4., 3.],
                        kind='single',
                        **kwargs):
         """
-        Fit the background to energy range containing no X-ray line.
+        Fit the background in the energy range containing no X-ray line.
+
+        After the fit, the background is fixed.
 
         Parameters
         ----------
         start_energy : {float, None}
             If float, limit the range of energies from the left to the
             given value.
+        end_energy : {float, None}
+            If float, limit the range of energies from the right to the
+            given value.
+        windows_sigma: list of two float
+            The uppet and lower bounds around each X-ray lines to define
+            the energy range free of X-ray lines.
         kind : {'single', 'multi'}
             If 'single' fit only the current location. If 'multi'
             use multifit.
         **kwargs : extra key word arguments
             All extra key word arguments are passed to fit or
+
+        See also
+        --------
+        free_background
         """
 
         if end_energy is None:
@@ -280,12 +305,11 @@ class EDSModel(Model):
         self.enable_xray_lines()
         self.fix_background()
 
-    def free_energy_resolution(self, xray_lines):
+    def twin_peak_width(self, xray_lines):
         """
-        Free the energy resolution of the main X-ray lines
+        Twin the width of the peaks
 
-        Resolutions of the different peak are twinned
-
+        The twinning models the energy resolution of the detector
         """
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
@@ -305,9 +329,9 @@ class EDSModel(Model):
                     E_ref, E, self.units_factor)
                 component.sigma.twin = component_ref.sigma
 
-    def fix_energy_resolution(self, xray_lines):
+    def fix_peak_width(self, xray_lines):
         """
-        Fix and remove twin of X-ray lines sigma
+        Fix and remove twin of X-ray lines width
         """
 
         if xray_lines == 'all_alpha':
@@ -319,8 +343,8 @@ class EDSModel(Model):
 
     def set_energy_resolution(self, xray_lines):
         """
-        Set the fitted energy resolution to the spectrum and
-        adjust the FHWM for all lines
+        Adjust the width of all lines and set the fitted energy resolution
+        to the spectrum
         """
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
@@ -351,35 +375,38 @@ class EDSModel(Model):
                               spread_to_all_lines=True,
                               **kwargs):
         """
-        Calibrate the resolution, the scale of the offset of the energy axis
-        by fitting
+        Calibrate the resolution, the scale or the offset of the energy axis
+        by fitting.
 
         Parameters
         ----------
         calibrate: 'resolution' or 'scale' or 'offset'
-            If 'resolution', calibrate by fitting the peak width given by
-            `energy_resolution_MnKa` in `metdata`
-            If 'scale', calibrate the scale of the energy axes
-            If 'scale', calibrate the offset of the energy axes
-        xray_lines: {list of str | 'all_alpha'}
+            If 'resolution', calibrate the width of all Gaussian. The width is
+            given by a model of the detector resolution, obtained by
+            extrapolation the `energy_resolution_MnKa`
+            If 'scale', calibrate the scale of the energy axis
+            If 'offset', calibrate the offset of the energy axis
+        xray_lines: list of str or 'all_alpha'
             The Xray lines. If 'all_alpha', fit all using all alpha lines
-        kind : {'single', 'multi'}
+        kind : 'single' or 'multi'
             If 'single' fit only the current location. If 'multi'
             use multifit.
         spread_to_all_lines: bool
-            if True, change the calibration value of the spectrum
+            if True, change the calibration value of the spectrum:
+            scale and offset in axes_manager or
+            the `energy_resolution_MnKa` in `metadata`
         **kwargs : extra key word arguments
             All extra key word arguments are passed to fit or
-        multifit, depending on the value of kind.
+            multifit, depending on the value of kind.
 
         """
         if calibrate == 'resolution':
-            self.free_energy_resolution(xray_lines=xray_lines)
+            self.twin_peak_width(xray_lines=xray_lines)
             if kind == 'single':
                 self.fit(**kwargs)
             if kind == 'multi':
                 self.multifit(**kwargs)
-            self.fix_energy_resolution(xray_lines=xray_lines)
+            self.fix_peak_width(xray_lines=xray_lines)
             if spread_to_all_lines:
                 self.set_energy_resolution(xray_lines=xray_lines)
         elif calibrate == 'scale':
@@ -391,14 +418,14 @@ class EDSModel(Model):
         """
         Free the weight of a sub X-ray lines
 
-        Free the height of the gaussians
+        Remove the twin on the height of sub-Xray lines (non alpha)
 
         Parameters
         ----------
         xray_lines: list of str or 'all'
             The Xray lines. If 'all', fit all lines
         bounds: float
-            Bound the height of the peak to fraction (bound) of
+            Bound the height of the peak to a fraction of
             its height
         """
         def free_twin():
@@ -427,7 +454,7 @@ class EDSModel(Model):
         """
         Fix the weight of a sub X-ray lines to the main X-ray lines
 
-        Fix the height of the gaussians with a twin function
+        Establish the twin on the height of sub-Xray lines (non alpha)
         """
         def fix_twin():
             component.A.bmin = 0.0
@@ -458,7 +485,7 @@ class EDSModel(Model):
 
         Parameters
         ----------
-        xray_lines: {list of str | 'all'}
+        xray_lines: list of str or 'all'
             The Xray lines. If 'all', fit all lines
         bound: float
             the bound around the actual energy, in keV or eV
@@ -478,6 +505,13 @@ class EDSModel(Model):
     def fix_xray_lines_energy(self, xray_lines='all'):
         """
         Fix the X-ray line energy (shift or centre of the Gaussian)
+
+        Parameters
+        ----------
+        xray_lines: list of str or 'all'
+            The Xray lines. If 'all', fit all lines
+        bound: float
+            the bound around the actual energy, in keV or eV
         """
         for component in self:
             if component.isbackground is False:
@@ -498,9 +532,10 @@ class EDSModel(Model):
                              fitter="mpfit",
                              **kwargs):
         """
-        Calibrate the X-ray line parameters set with a database, such as the
-        X-ray line energy, the weight of the sub-lines and the X-ray line
-        width.
+        Calibrate individually the X-ray line parameters.
+
+        The X-ray line energy, the weight of the sub-lines and the X-ray line
+        width can be calibrated.
 
         Parameters
         ----------
@@ -512,7 +547,7 @@ class EDSModel(Model):
         xray_lines: list of str or 'all'
             The Xray lines. If 'all', fit all lines
         bounds: float
-            for 'energy' the bound around the actual energy, in eV
+            for 'energy' and 'width' the bound in energy, in eV
             for 'sub_weight' Bound the height of the peak to fraction of
             its height
         kind : {'single', 'multi'}
@@ -520,8 +555,7 @@ class EDSModel(Model):
             use multifit.
         **kwargs : extra key word arguments
             All extra key word arguments are passed to fit or
-        multifit, depending on the value of kind.
-
+            multifit, depending on the value of kind.
         """
         if calibrate == 'energy':
             bound = bound / 1000. * self.units_factor
@@ -548,83 +582,20 @@ class EDSModel(Model):
             self.fix_sub_xray_lines_weight(xray_lines=xray_lines)
         elif calibrate == 'sub_lines_weight':
             print 'not done yet'
-            
-            
-#    def get_lines_intensity(self,
-#                            xray_lines=None,
-#                            plot_result=False,
-#                            integration_window_factor=2.,
-#                            only_one=True,
-#                            only_lines=("Ka", "La", "Ma"),
-#                            **kwargs):
-#        """Return the intensity map of selected Xray lines.
-#
-#        The intensities, the number of X-ray counts, are computed by
-#        suming the spectrum over the
-#        different X-ray lines. The sum window width
-#        is calculated from the energy resolution of the detector
-#        defined as defined in
-#        `self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa`
-#        or
-#        `self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa`.
-#
-#
-#        Parameters
-#        ----------
-#
-#        xray_lines: {None, "best", list of string}
-#            If None,
-#            if `mapped.parameters.Sample.elements.xray_lines` contains a
-#            list of lines use those.
-#            If `mapped.parameters.Sample.elements.xray_lines` is undefined
-#            or empty but `mapped.parameters.Sample.elements` is defined,
-#            use the same syntax as `add_line` to select a subset of lines
-#            for the operation.
-#            Alternatively, provide an iterable containing
-#            a list of valid X-ray lines symbols.
-#        plot_result : bool
-#            If True, plot the calculated line intensities. If the current
-#            object is a single spectrum it prints the result instead.
-#        integration_window_factor: Float
-#            The integration window is centered at the center of the X-ray
-#            line and its width is defined by this factor (2 by default)
-#            times the calculated FWHM of the line.
-#        only_one : bool
-#            If False, use all the lines of each element in the data spectral
-#            range. If True use only the line at the highest energy
-#            above an overvoltage of 2 (< beam energy / 2).
-#        only_lines : {None, list of strings}
-#            If not None, use only the given lines.
-#        kwargs
-#            The extra keyword arguments for plotting. See
-#            `utils.plot.plot_signals`
-#
-#        Returns
-#        -------
-#        intensities : list
-#            A list containing the intensities as Signal subclasses.
-#
-#        Examples
-#        --------
-#
-#        >>> specImg.get_lines_intensity(["C_Ka", "Ta_Ma"])
-#
-#        See also
-#        --------
-#
-#        set_elements, add_elements.
-#
-#        """
+
     def get_lines_intensity(self,
                             xray_lines=None,
                             plot_result=False,
                             **kwargs):
         """
+        Return the fitted intensity of the X-ray lines.
+
+        Return the area under the gaussian corresping to the X-ray lines
 
         Parameters
         ----------
         xray_lines: list of str or None or 'from_metadata'
-            If None, use the X-ray lines as set by `add_family_lines`
+            If None, all main X-ray lines (alpha)
             If 'from_metadata', take the Xray_lines stored in the `metadata`
             of the spectrum. Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols.

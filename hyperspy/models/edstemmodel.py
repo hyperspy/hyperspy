@@ -28,11 +28,14 @@ class EDSTEMModel(EDSModel):
 
     Parameters
     ----------
-    spectrum : an Spectrum (or any Spectrum subclass) instance
+    spectrum : an EDSTEMSpectrum instance
+    auto_add_lines : boolean
+        If True, automatically add Gaussians for all X-rays generated
+        in the energy range by an element, using the edsmodel.add_family_lines
+        method
     auto_background : boolean
-        If True, and if spectrum is an EELS instance adds automatically
-        a powerlaw to the model and estimate the parameters by the
-        two-area method.
+        If True, adds automatically a polynomial order 6 to the model,
+        using the edsmodel.add_polynomial_background method.
 
     """
 
@@ -42,4 +45,4 @@ class EDSTEMModel(EDSModel):
         EDSModel.__init__(self, spectrum, auto_add_lines, *args, **kwargs)
         self.background_components = list()
         if auto_background is True:
-            self.add_background()
+            self.add_polynomial_background()
