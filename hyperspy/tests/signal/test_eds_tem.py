@@ -21,6 +21,7 @@ from nose.tools import assert_true, assert_equal
 
 from hyperspy.signals import EDSTEMSpectrum
 from hyperspy.defaults_parser import preferences
+from hyperspy.misc.eds import utils as utils_eds
 
 
 class Test_metadata:
@@ -92,6 +93,19 @@ class Test_metadata:
         s.get_calibration_from(scalib)
         assert_equal(s.axes_manager.signal_axes[0].scale,
                      energy_axis.scale)
+
+
+class Test_simple_model:
+
+    def setUp(self):
+        s = utils_eds.xray_lines_model()
+        self.signal = s
+
+    def test_intensity(self):
+        s = self.signal
+        assert_true(np.allclose(
+            [i.data for i in s.get_lines_intensity(
+                integration_window_factor=5.0)], [0.5, 0.5], atol=1e-1))
 
 
 # class Test_get_lines_intentisity:
