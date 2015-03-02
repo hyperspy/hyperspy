@@ -176,7 +176,7 @@ def xray_lines_model(elements=['Al', 'Zn'],
     """
     Generate a model of X-ray lines using a Gaussian epr x-ray lines.
 
-    The area under a main peak (alpha) is equal to 1. times weighted by the
+    The area under a main peak (alpha) is equal to 1 and weighted by the
     composition.
 
     Parameters
