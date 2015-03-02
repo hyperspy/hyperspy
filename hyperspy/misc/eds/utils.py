@@ -201,7 +201,7 @@ def xray_lines_model(elements=['Al', 'Zn'],
     from hyperspy._signals.eds_tem import EDSTEMSpectrum
     from hyperspy.model import Model
     from hyperspy import components
-    s = EDSTEMSpectrum(np.zeros(1024), axes=[energy_axis])
+    s = EDSTEMSpectrum(np.zeros(energy_axis['size']), axes=[energy_axis])
     s.set_microscope_parameters(
         beam_energy=beam_energy,
         energy_resolution_MnKa=energy_resolution_MnKa)
