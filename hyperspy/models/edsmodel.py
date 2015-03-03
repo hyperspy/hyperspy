@@ -48,6 +48,14 @@ def _get_sigma(E, E_ref, units_factor):
         4.5077 * 1e-4 * (E - E_ref) * units_factor + np.power(sig_ref, 2)))
 
 
+def _get_offset(E, diff):
+    return lambda E: E + diff
+
+
+def _get_scale(E1, E_ref1, fact):
+    return lambda E: E1 + fact * (E - E_ref1)
+
+
 class EDSModel(Model):
     """Build a fit a model for EDS instance
 
@@ -305,11 +313,16 @@ class EDSModel(Model):
         self.enable_xray_lines()
         self.fix_background()
 
-    def twin_peak_width(self, xray_lines):
+    def twin_xray_lines_width(self, xray_lines):
         """
         Twin the width of the peaks
 
         The twinning models the energy resolution of the detector
+
+        Parameters
+        ----------
+        xray_lines: list of str or 'all_alpha'
+            The Xray lines. If 'all_alpha', fit all using all alpha lines
         """
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
@@ -329,22 +342,17 @@ class EDSModel(Model):
                     E_ref, E, self.units_factor)
                 component.sigma.twin = component_ref.sigma
 
-    def fix_peak_width(self, xray_lines):
-        """
-        Fix and remove twin of X-ray lines width
-        """
-
-        if xray_lines == 'all_alpha':
-            xray_lines = [compo.name for compo in self.xray_lines]
-        for i, xray_line in enumerate(xray_lines):
-            component = self[xray_line]
-            component.sigma.twin = None
-            component.sigma.free = False
-
-    def set_energy_resolution(self, xray_lines):
+    def set_energy_resolution(self, xray_lines, ref=None):
         """
         Adjust the width of all lines and set the fitted energy resolution
         to the spectrum
+
+        Parameters
+        ----------
+        xray_lines: list of str or 'all_alpha'
+            The Xray lines. If 'all_alpha', fit all using all alpha lines
+        ref: None
+            dummy args, to work like other set_..._energy
         """
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
@@ -357,21 +365,125 @@ class EDSModel(Model):
             print "FWHM_MnKa of " + str(FWHM_MnKa) + " smaller than " + \
                 "physically possible"
         else:
-
             self.spectrum.set_microscope_parameters(
                 energy_resolution_MnKa=FWHM_MnKa)
             print 'FWHM_MnKa ' + str(FWHM_MnKa)
-
             for component in self:
                 if component.isbackground is False:
                     line_energy, line_FWHM = self.spectrum._get_line_energy(
                         component.name, FWHM_MnKa='auto')
                     component.sigma.value = line_FWHM / 2.355
 
+    def twin_xray_lines_scale(self, xray_lines):
+        """
+        Twin the scale of the peaks
+
+        Parameters
+        ----------
+        xray_lines: list of str or 'all_alpha'
+            The Xray lines. If 'all_alpha', fit all using all alpha lines
+        """
+        if xray_lines == 'all_alpha':
+            xray_lines = [compo.name for compo in self.xray_lines]
+        ax = self.spectrum.axes_manager[-1]
+        ref = []
+        for i, xray_line in enumerate(xray_lines):
+            component = self[xray_line]
+            if i == 0:
+                component_ref = component
+                component_ref.centre.free = True
+                E_ref = component_ref.centre.value
+                ref.append(E_ref)
+            else:
+                component.centre.free = True
+                E = component.centre.value
+                fact = float(ax.value2index(E)) / ax.value2index(E_ref)
+                component.centre.twin_function = _get_scale(E, E_ref, fact)
+                component.centre.twin_inverse_function = _get_scale(
+                    E_ref, E, 1./fact)
+                component.centre.twin = component_ref.centre
+                ref.append(E)
+        return ref
+
+    def set_energy_scale(self, xray_lines, ref):
+        """
+        Adjust the width of all lines and set the fitted energy resolution
+        to the spectrum
+
+        Parameters
+        ----------
+        xray_lines: list of str or 'all_alpha'
+            The Xray lines. If 'all_alpha', fit all using all alpha lines
+        ref: float
+            the centre of the first line before the fit
+        """
+        if xray_lines == 'all_alpha':
+            xray_lines = [compo.name for compo in self.xray_lines]
+        ax = self.spectrum.axes_manager[-1]
+        scale_old = self.spectrum.axes_manager[-1].scale
+        E = self[xray_lines[0]].centre.value
+        scale = (ref[0] - ax.offset) / ax.value2index(E)
+        ax.scale = scale
+        for i, xray_line in enumerate(xray_lines):
+            component = self[xray_line]
+            component.centre.value = ref[i]
+        print "Scale changed from  %lf to %lf" % (scale_old, scale)
+
+    def twin_xray_lines_offset(self, xray_lines):
+        """
+        Twin the offset of the peaks
+
+        Parameters
+        ----------
+        xray_lines: list of str or 'all_alpha'
+            The Xray lines. If 'all_alpha', fit all using all alpha lines
+        """
+        if xray_lines == 'all_alpha':
+            xray_lines = [compo.name for compo in self.xray_lines]
+        ref = []
+        for i, xray_line in enumerate(xray_lines):
+            component = self[xray_line]
+            if i == 0:
+                component_ref = component
+                component_ref.centre.free = True
+                E_ref = component_ref.centre.value
+                ref.append(E_ref)
+            else:
+                component.centre.free = True
+                E = component.centre.value
+                diff = E_ref - E
+                component.centre.twin_function = _get_offset(E, -diff)
+                component.centre.twin_inverse_function = _get_offset(E, diff)
+                component.centre.twin = component_ref.centre
+                ref.append(E)
+        return ref
+
+    def set_energy_offset(self, xray_lines, ref):
+        """
+        Adjust the width of all lines and set the fitted energy resolution
+        to the spectrum
+
+        Parameters
+        ----------
+        xray_lines: list of str or 'all_alpha'
+            The Xray lines. If 'all_alpha', fit all using all alpha lines
+        ref: float
+            the centre of the first line before the fit
+        """
+        if xray_lines == 'all_alpha':
+            xray_lines = [compo.name for compo in self.xray_lines]
+        diff = self[xray_lines[0]].centre.value - ref[0]
+        offset_old = self.spectrum.axes_manager[-1].offset
+        self.spectrum.axes_manager[-1].offset -= diff
+        offset = self.spectrum.axes_manager[-1].offset
+        print "Offset changed from  %lf to %lf" % (offset_old, offset)
+        for i, xray_line in enumerate(xray_lines):
+            component = self[xray_line]
+            component.centre.value = ref[i]
+
     def calibrate_energy_axis(self,
                               calibrate='resolution',
                               xray_lines='all_alpha',
-                              kind='single',
                               spread_to_all_lines=True,
                               **kwargs):
         """
@@ -383,36 +495,34 @@ class EDSModel(Model):
         calibrate: 'resolution' or 'scale' or 'offset'
             If 'resolution', calibrate the width of all Gaussian. The width is
             given by a model of the detector resolution, obtained by
-            extrapolation the `energy_resolution_MnKa`
+            extrapolation the `energy_resolution_MnKa` in `metadata`
             If 'scale', calibrate the scale of the energy axis
             If 'offset', calibrate the offset of the energy axis
         xray_lines: list of str or 'all_alpha'
             The Xray lines. If 'all_alpha', fit all using all alpha lines
-        kind : 'single' or 'multi'
-            If 'single' fit only the current location. If 'multi'
-            use multifit.
-        spread_to_all_lines: bool
-            if True, change the calibration value of the spectrum:
-            scale and offset in axes_manager or
-            the `energy_resolution_MnKa` in `metadata`
         **kwargs : extra key word arguments
             All extra key word arguments are passed to fit or
             multifit, depending on the value of kind.
 
         """
+
         if calibrate == 'resolution':
-            self.twin_peak_width(xray_lines=xray_lines)
-            if kind == 'single':
-                self.fit(**kwargs)
-            if kind == 'multi':
-                self.multifit(**kwargs)
-            self.fix_peak_width(xray_lines=xray_lines)
-            if spread_to_all_lines:
-                self.set_energy_resolution(xray_lines=xray_lines)
+            free = self.twin_xray_lines_width
+            fix = self.fix_xray_lines_width
+            scale = self.set_energy_resolution
         elif calibrate == 'scale':
-            print 'not done yet'
+            free = self.twin_xray_lines_scale
+            fix = self.fix_xray_lines_energy
+            scale = self.set_energy_scale
         elif calibrate == 'offset':
-            print 'not done yet'
+            free = self.twin_xray_lines_offset
+            fix = self.fix_xray_lines_energy
+            scale = self.set_energy_offset
+        ref = free(xray_lines=xray_lines)
+        self.fit(**kwargs)
+        fix(xray_lines=xray_lines)
+        scale(xray_lines=xray_lines, ref=ref)
+        self.update_plot()
 
     def free_sub_xray_lines_weight(self, xray_lines='all', bound=0.01):
         """
@@ -513,13 +623,17 @@ class EDSModel(Model):
         bound: float
             the bound around the actual energy, in keV or eV
         """
+        if xray_lines == 'all_alpha':
+            xray_lines = [compo.name for compo in self.xray_lines]
         for component in self:
             if component.isbackground is False:
                 if xray_lines == 'all':
+                    component.centre.twin = None
                     component.centre.free = False
                     component.centre.bmin = None
                     component.centre.bmax = None
                 elif component.name in xray_lines:
+                    component.centre.twin = None
                     component.centre.free = False
                     component.centre.bmin = None
                     component.centre.bmax = None
@@ -558,13 +672,17 @@ class EDSModel(Model):
         bound: float
             the bound around the actual energy, in keV or eV
         """
+        if xray_lines == 'all_alpha':
+            xray_lines = [compo.name for compo in self.xray_lines]
         for component in self:
             if component.isbackground is False:
                 if xray_lines == 'all':
+                    component.sigma.twin = None
                     component.sigma.free = False
                     component.sigma.bmin = None
                     component.sigma.bmax = None
                 elif component.name in xray_lines:
+                    component.sigma.twin = None
                     component.sigma.free = False
                     component.sigma.bmin = None
                     component.sigma.bmax = None
@@ -574,7 +692,6 @@ class EDSModel(Model):
                              xray_lines='all',
                              bound=1,
                              kind='single',
-                             fitter="mpfit",
                              **kwargs):
         """
         Calibrate individually the X-ray line parameters.
@@ -617,9 +734,9 @@ class EDSModel(Model):
 
         free(xray_lines=xray_lines, bound=bound)
         if kind == 'single':
-            self.fit(fitter=fitter, bounded=True, **kwargs)
+            self.fit(bounded=True, **kwargs)
         elif kind == 'multi':
-            self.multifit(fitter=fitter, bounded=True, **kwargs)
+            self.multifit(bounded=True, **kwargs)
         fix(xray_lines=xray_lines)
 
     def get_lines_intensity(self,
