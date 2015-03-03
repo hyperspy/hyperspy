@@ -223,7 +223,7 @@ class EDSModel(Model):
             The order of the polynomial
         """
         background = create_component.Polynomial(order=order)
-        background.name = 'background'
+        background.name = 'background_order_' + str(order)
         background.isbackground = True
         self.append(background)
         self.background_components.append(background)
@@ -313,7 +313,7 @@ class EDSModel(Model):
         self.enable_xray_lines()
         self.fix_background()
 
-    def twin_xray_lines_width(self, xray_lines):
+    def _twin_xray_lines_width(self, xray_lines):
         """
         Twin the width of the peaks
 
@@ -342,7 +342,7 @@ class EDSModel(Model):
                     E_ref, E, self.units_factor)
                 component.sigma.twin = component_ref.sigma
 
-    def set_energy_resolution(self, xray_lines, ref=None):
+    def _set_energy_resolution(self, xray_lines, ref=None):
         """
         Adjust the width of all lines and set the fitted energy resolution
         to the spectrum
@@ -356,7 +356,9 @@ class EDSModel(Model):
         """
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
-        energy_Mn_Ka = self.spectrum._get_line_energy('Mn_Ka')
+        energy_Mn_Ka, FWHM_MnKa_old = self.spectrum._get_line_energy('Mn_Ka',
+                                                                     'auto')
+        FWHM_MnKa_old *= 1000. / self.units_factor
         get_sigma_Mn_Ka = _get_sigma(
             energy_Mn_Ka, self[xray_lines[0]].centre.value, self.units_factor)
         FWHM_MnKa = get_sigma_Mn_Ka(self[xray_lines[0]].sigma.value
@@ -367,14 +369,15 @@ class EDSModel(Model):
         else:
             self.spectrum.set_microscope_parameters(
                 energy_resolution_MnKa=FWHM_MnKa)
-            print 'FWHM_MnKa ' + str(FWHM_MnKa)
+            print("Energy resolution (FWHM at Mn Ka) changed from "
+                  + "%lf to %lf eV" % (FWHM_MnKa_old, FWHM_MnKa))
             for component in self:
                 if component.isbackground is False:
                     line_energy, line_FWHM = self.spectrum._get_line_energy(
                         component.name, FWHM_MnKa='auto')
                     component.sigma.value = line_FWHM / 2.355
 
-    def twin_xray_lines_scale(self, xray_lines):
+    def _twin_xray_lines_scale(self, xray_lines):
         """
         Twin the scale of the peaks
 
@@ -405,7 +408,7 @@ class EDSModel(Model):
                 ref.append(E)
         return ref
 
-    def set_energy_scale(self, xray_lines, ref):
+    def _set_energy_scale(self, xray_lines, ref):
         """
         Adjust the width of all lines and set the fitted energy resolution
         to the spectrum
@@ -431,7 +434,7 @@ class EDSModel(Model):
             component.centre.value = ref[i]
         print "Scale changed from  %lf to %lf" % (scale_old, scale)
 
-    def twin_xray_lines_offset(self, xray_lines):
+    def _twin_xray_lines_offset(self, xray_lines):
         """
         Twin the offset of the peaks
 
@@ -460,7 +463,7 @@ class EDSModel(Model):
                 ref.append(E)
         return ref
 
-    def set_energy_offset(self, xray_lines, ref):
+    def _set_energy_offset(self, xray_lines, ref):
         """
         Adjust the width of all lines and set the fitted energy resolution
         to the spectrum
@@ -509,17 +512,17 @@ class EDSModel(Model):
         """
 
         if calibrate == 'resolution':
-            free = self.twin_xray_lines_width
+            free = self._twin_xray_lines_width
             fix = self.fix_xray_lines_width
-            scale = self.set_energy_resolution
+            scale = self._set_energy_resolution
         elif calibrate == 'scale':
-            free = self.twin_xray_lines_scale
+            free = self._twin_xray_lines_scale
             fix = self.fix_xray_lines_energy
-            scale = self.set_energy_scale
+            scale = self._set_energy_scale
         elif calibrate == 'offset':
-            free = self.twin_xray_lines_offset
+            free = self._twin_xray_lines_offset
             fix = self.fix_xray_lines_energy
-            scale = self.set_energy_offset
+            scale = self._set_energy_offset
         ref = free(xray_lines=xray_lines)
         self.fit(**kwargs)
         fix(xray_lines=xray_lines)
