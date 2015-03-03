@@ -1,19 +1,19 @@
-# Copyright 2007-2012 The Hyperspy developers
+# Copyright 2007-2012 The HyperSpy developers
 #
-# This file is part of Hyperspy.
+# This file is part of HyperSpy.
 #
-# Hyperspy is free software: you can redistribute it and/or modify
+# HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# Hyperspy is distributed in the hope that it will be useful,
+# HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Hyperspy. If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
 import numpy as np
@@ -96,3 +96,23 @@ class TestChiSquared:
         m.set_signal_range(1, 7)
         m.fit()
         assert_true(np.allclose(m.red_chisq(), 2.87544335))
+
+    def test_chisq_with_inactive_components(self):
+        m = self.model
+        ga = Gaussian()
+        gin = Gaussian()
+        m.append(ga)
+        m.append(gin)
+        gin.active = False
+        m.fit()
+        assert_true(np.allclose(m.chisq(), 7.78966223))
+
+    def test_dof_with_inactive_components(self):
+        m = self.model
+        ga = Gaussian()
+        gin = Gaussian()
+        m.append(ga)
+        m.append(gin)
+        gin.active = False
+        m.fit()
+        assert_true(np.equal(m.dof(), 3))

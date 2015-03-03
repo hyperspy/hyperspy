@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
 import os.path
@@ -25,10 +25,19 @@ import inspect
 import numpy as np
 import numpy.ma as ma
 import scipy.interpolate
+try:
+    from scipy.signal import savgol_filter
+    savgol_imported = True
+except ImportError:
+    savgol_imported = False
 import scipy as sp
 from matplotlib import pyplot as plt
+try:
+    from statsmodels.nonparametric.smoothers_lowess import lowess
+    statsmodels_installed = True
+except:
+    statsmodels_installed = False
 
-from hyperspy import messages
 from hyperspy.axes import AxesManager
 from hyperspy import io
 from hyperspy.drawing import mpl_hie, mpl_hse, mpl_he
@@ -46,6 +55,7 @@ from hyperspy.gui.tools import (
     SmoothingLowess,
     SmoothingTV,
     ButterworthFilter)
+from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.gui.egerton_quantification import BackgroundRemoval
 from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
@@ -56,6 +66,7 @@ from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
 from hyperspy.misc import spectrum_tools
+from hyperspy.misc import rgb_tools
 from hyperspy.gui.tools import IntegrateArea
 from hyperspy import components
 from hyperspy.misc.utils import underline
@@ -75,7 +86,8 @@ class Signal2DTools(object):
                          medfilter=True,
                          hanning=True,
                          plot=False,
-                         dtype='float',):
+                         dtype='float',
+                         show_progressbar=None):
         """Estimate the shifts in a image using phase correlation
 
         This method can only estimate the shift by comparing
@@ -119,6 +131,9 @@ class Signal2DTools(object):
         dtype : str or dtype
             Typecode or data-type in which the calculations must be
             performed.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Returns
         -------
@@ -141,6 +156,8 @@ class Signal2DTools(object):
         Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_two()
         if roi is not None:
             # Get the indices of the roi
@@ -173,9 +190,11 @@ class Signal2DTools(object):
                 plot=plot,
                 dtype=dtype)
             np.fill_diagonal(pcarray['max_value'], max_value)
-            pbar = progressbar(maxval=nrows * images_number).start()
+            pbar = progressbar(maxval=nrows * images_number,
+                               disabled=not show_progressbar).start()
         else:
-            pbar = progressbar(maxval=images_number).start()
+            pbar = progressbar(maxval=images_number,
+                               disabled=not show_progressbar).start()
 
         # Main iteration loop. Fills the rows of pcarray when reference
         # is stat
@@ -368,7 +387,8 @@ class Signal1DTools(object):
                 shift_array,
                 interpolation_method='linear',
                 crop=True,
-                fill_value=np.nan):
+                fill_value=np.nan,
+                show_progressbar=None):
         """Shift the data in place over the signal axis by the amount specified
         by an array.
 
@@ -388,19 +408,24 @@ class Signal1DTools(object):
         fill_value : float
             If crop is False fill the data outside of the original
             interval with the given value where needed.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
 
         """
-
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         offset = axis.offset
         original_axis = axis.axis.copy()
         pbar = progressbar(
-            maxval=self.axes_manager.navigation_size)
+            maxval=self.axes_manager.navigation_size,
+            disabled=not show_progressbar)
         for i, (dat, shift) in enumerate(zip(
                 self._iterate_signal(),
                 shift_array.ravel(()))):
@@ -433,7 +458,8 @@ class Signal1DTools(object):
                 self.crop(axis.index_in_axes_manager,
                           imaximum)
 
-    def interpolate_in_between(self, start, end, delta=3, **kwargs):
+    def interpolate_in_between(self, start, end, delta=3,
+                               show_progressbar=None, **kwargs):
         """Replace the data in a given range by interpolation.
 
         The operation is performed in place.
@@ -447,12 +473,17 @@ class Signal1DTools(object):
         All extra keyword arguments are passed to
         scipy.interpolate.interp1d. See the function documentation
         for details.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
         i1 = axis._get_index(start)
@@ -460,7 +491,8 @@ class Signal1DTools(object):
         i0 = int(np.clip(i1 - delta, 0, np.inf))
         i3 = int(np.clip(i2 + delta, 0, axis.size))
         pbar = progressbar(
-            maxval=self.axes_manager.navigation_size)
+            maxval=self.axes_manager.navigation_size,
+            disabled=not show_progressbar)
         for i, dat in enumerate(self._iterate_signal()):
             dat_int = sp.interpolate.interp1d(
                 range(i0, i1) + range(i2, i3),
@@ -488,7 +520,8 @@ class Signal1DTools(object):
                          max_shift=None,
                          interpolate=True,
                          number_of_interpolation_points=5,
-                         mask=None):
+                         mask=None,
+                         show_progressbar=None):
         """Estimate the shifts in the current signal axis using
          cross-correlation.
 
@@ -521,6 +554,9 @@ class Signal1DTools(object):
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Returns
         -------
@@ -531,6 +567,8 @@ class Signal1DTools(object):
         SignalDimensionError if the signal dimension is not 1.
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         ip = number_of_interpolation_points + 1
         axis = self.axes_manager.signal_axes[0]
@@ -545,7 +583,8 @@ class Signal1DTools(object):
         if interpolate is True:
             ref = spectrum_tools.interpolate1D(ip, ref)
         pbar = progressbar(
-            maxval=self.axes_manager.navigation_size)
+            maxval=self.axes_manager.navigation_size,
+            disabled=not show_progressbar)
         for i, (dat, indices) in enumerate(zip(
                 self._iterate_signal(),
                 self.axes_manager._array_indices_generator())):
@@ -563,7 +602,7 @@ class Signal1DTools(object):
         if max_shift is not None:
             if interpolate is True:
                 max_shift *= ip
-            shift_array.clip(a_min=-max_shift, a_max=max_shift)
+            shift_array.clip(-max_shift, max_shift)
         if interpolate is True:
             shift_array /= ip
         shift_array *= axis.scale
@@ -650,8 +689,7 @@ class Signal1DTools(object):
             reference_indices=reference_indices,
             max_shift=max_shift,
             interpolate=interpolate,
-            number_of_interpolation_points=
-            number_of_interpolation_points,
+            number_of_interpolation_points=number_of_interpolation_points,
             mask=mask)
         for signal in also_align + [self]:
             signal.shift1D(shift_array=shift_array,
@@ -747,67 +785,134 @@ class Signal1DTools(object):
         calibration = SpectrumCalibration(self)
         calibration.edit_traits()
 
-    def smooth_savitzky_golay(self, polynomial_order=None,
-                              number_of_points=None, differential_order=0):
-        """Savitzky-Golay data smoothing in place.
+    def smooth_savitzky_golay(self,
+                              polynomial_order=None,
+                              window_length=None,
+                              differential_order=0):
+        """Apply a Savitzky-Golay filter to the data in place.
+
+        If `polynomial_order` or `window_length` or `differential_order` are
+        None the method is run in interactive mode.
+
+        Parameters
+        ----------
+        window_length : int
+            The length of the filter window (i.e. the number of coefficients).
+            `window_length` must be a positive odd integer.
+        polynomial_order : int
+            The order of the polynomial used to fit the samples.
+            `polyorder` must be less than `window_length`.
+        differential_order: int, optional
+            The order of the derivative to compute.  This must be a
+            nonnegative integer.  The default is 0, which means to filter
+            the data without differentiating.
+
+        Notes
+        -----
+        More information about the filter in `scipy.signal.savgol_filter`.
 
         """
+        if not savgol_imported:
+            raise ImportError("scipy >= 0.14 needs to be installed to use"
+                              "this feature.")
         self._check_signal_dimension_equals_one()
         if (polynomial_order is not None and
-                number_of_points is not None):
-            for spectrum in self:
-                spectrum.data[:] = spectrum_tools.sg(self(),
-                                                     number_of_points,
-                                                     polynomial_order,
-                                                     differential_order)
+                window_length is not None):
+            axis = self.axes_manager.signal_axes[0]
+            self.data = savgol_filter(
+                x=self.data,
+                window_length=window_length,
+                polyorder=polynomial_order,
+                deriv=differential_order,
+                delta=axis.scale,
+                axis=axis.index_in_array)
+
         else:
+            # Interactive mode
             smoother = SmoothingSavitzkyGolay(self)
             smoother.differential_order = differential_order
             if polynomial_order is not None:
                 smoother.polynomial_order = polynomial_order
-            if number_of_points is not None:
-                smoother.number_of_points = number_of_points
-
+            if window_length is not None:
+                smoother.window_length = window_length
             smoother.edit_traits()
 
-    def smooth_lowess(self, smoothing_parameter=None,
-                      number_of_iterations=None, differential_order=0):
+    def smooth_lowess(self,
+                      smoothing_parameter=None,
+                      number_of_iterations=None,
+                      show_progressbar=None):
         """Lowess data smoothing in place.
 
+        If `smoothing_parameter` or `number_of_iterations` are None the method
+        is run in interactive mode.
+
+        Parameters
+        ----------
+        smoothing_parameter: float or None
+            Between 0 and 1. The fraction of the data used
+            when estimating each y-value.
+        number_of_iterations: int or None
+            The number of residual-based reweightings
+            to perform.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
+        ImportError if statsmodels is not installed.
+
+        Notes
+        -----
+        This method uses the lowess algorithm from statsmodels. statsmodels
+        is required for this method.
 
         """
+        if not statsmodels_installed:
+            raise ImportError("statsmodels is not installed. This package is "
+                              "required for this feature.")
         self._check_signal_dimension_equals_one()
-        smoother = SmoothingLowess(self)
-        smoother.differential_order = differential_order
-        if smoothing_parameter is not None:
-            smoother.smoothing_parameter = smoothing_parameter
-        if number_of_iterations is not None:
-            smoother.number_of_iterations = number_of_iterations
-        if smoothing_parameter is None or smoothing_parameter is None:
+        if smoothing_parameter is None or number_of_iterations is None:
+            smoother = SmoothingLowess(self)
+            if smoothing_parameter is not None:
+                smoother.smoothing_parameter = smoothing_parameter
+            if number_of_iterations is not None:
+                smoother.number_of_iterations = number_of_iterations
             smoother.edit_traits()
         else:
-            smoother.apply()
+            self.map(lowess,
+                     exog=self.axes_manager[-1].axis,
+                     frac=smoothing_parameter,
+                     it=number_of_iterations,
+                     is_sorted=True,
+                     return_sorted=False,
+                     show_progressbar=show_progressbar)
 
-    def smooth_tv(self, smoothing_parameter=None, differential_order=0):
+    def smooth_tv(self, smoothing_parameter=None, show_progressbar=None):
         """Total variation data smoothing in place.
 
+        Parameters
+        ----------
+        smoothing_parameter: float or None
+           Denoising weight relative to L2 minimization. If None the method
+           is run in interactive mode.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
 
         """
         self._check_signal_dimension_equals_one()
-        smoother = SmoothingTV(self)
-        smoother.differential_order = differential_order
-        if smoothing_parameter is not None:
-            smoother.smoothing_parameter = smoothing_parameter
         if smoothing_parameter is None:
+            smoother = SmoothingTV(self)
             smoother.edit_traits()
         else:
-            smoother.apply()
+            self.map(_tv_denoise_1d, weight=smoothing_parameter,
+                     show_progressbar=show_progressbar)
 
     def filter_butterworth(self,
                            cutoff_frequency_ratio=None,
@@ -1079,7 +1184,8 @@ class Signal1DTools(object):
     def estimate_peak_width(self,
                             factor=0.5,
                             window=None,
-                            return_interval=False):
+                            return_interval=False,
+                            show_progressbar=None):
         """Estimate the width of the highest intensity of peak
         of the spectra at a given fraction of its maximum.
 
@@ -1102,6 +1208,9 @@ class Signal1DTools(object):
             If True, returns 2 extra signals with the positions of the
             desired height fraction at the left and right of the
             peak.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Returns
         -------
@@ -1109,6 +1218,8 @@ class Signal1DTools(object):
         `return_interval`.
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         if not 0 < factor < 1:
             raise ValueError("factor must be between 0 and 1.")
@@ -1122,7 +1233,8 @@ class Signal1DTools(object):
         x = axis.axis
         maxval = self.axes_manager.navigation_size
         if maxval > 0:
-            pbar = progressbar(maxval=maxval)
+            pbar = progressbar(maxval=maxval,
+                               disabled=not show_progressbar)
         for i, spectrum in enumerate(self):
             if window is not None:
                 vmax = axis.index2value(spectrum.data.argmax())
@@ -1950,7 +2062,7 @@ class MVATools(object):
             no_nans=no_nans,
             per_row=per_row)
 
-    def export_decomposition_results(sezalf, comp_ids=None,
+    def export_decomposition_results(self, comp_ids=None,
                                      folder=None,
                                      calibrate=True,
                                      factor_prefix='factor',
@@ -2222,7 +2334,7 @@ class MVATools(object):
 
     def _get_factors(self, factors):
         signal = self.__class__(factors.T.reshape((-1,) +
-                                self.axes_manager.signal_shape[::-1]),
+                                                  self.axes_manager.signal_shape[::-1]),
                                 axes=[{"size": factors.shape[-1],
                                        "navigate": True}] +
                                 self.axes_manager._get_signal_axes_dicts())
@@ -2309,7 +2421,7 @@ class MVATools(object):
         Signal}
             See `plot` documentation for details.
         factors_dim, loadings_dim: int
-            Currently Hyperspy cannot plot signals of dimension higher than
+            Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the BSS results when the
             factors or the loadings have signal dimension greater than 2
             we can view the data as spectra(images) by setting this parameter
@@ -2350,7 +2462,7 @@ class MVATools(object):
         Signal}
             See `plot` documentation for details.
         factors_dim, loadings_dim : int
-            Currently Hyperspy cannot plot signals of dimension higher than
+            Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the BSS results when the
             factors or the loadings have signal dimension greater than 2
             we can view the data as spectra(images) by setting this parameter
@@ -2483,7 +2595,7 @@ class Signal(MVA,
 
         string += '>'
 
-        return string
+        return string.encode('utf8')
 
     def __getitem__(self, slices, isNavigation=None):
         try:
@@ -2546,7 +2658,8 @@ class Signal(MVA,
 
         _signal.data = _signal.data[array_slices]
         if self.metadata.has_item('Signal.Noise_properties.variance'):
-            if isinstance(self.metadata.Signal.Noise_properties.variance, Signal):
+            if isinstance(
+                    self.metadata.Signal.Noise_properties.variance, Signal):
                 _signal.metadata.Signal.Noise_properties.variance = self.metadata.Signal.Noise_properties.variance.__getitem__(
                     _orig_slices,
                     isNavigation)
@@ -2869,11 +2982,14 @@ class Signal(MVA,
             navigator) or navigation_shape + signal_shape must be equal
             to the navigator_shape of the current object (for a dynamic
             navigator).
+            If the signal dtype is RGB or RGBA this parameters has no
+            effect and is always "slider".
 
         axes_manager : {None, axes_manager}
             If None `axes_manager` is used.
 
         """
+
         if self._plot is not None:
             try:
                 self._plot.close()
@@ -2884,6 +3000,11 @@ class Signal(MVA,
 
         if axes_manager is None:
             axes_manager = self.axes_manager
+        if self.is_rgbx is True:
+            if axes_manager.navigation_size < 2:
+                navigator = None
+            else:
+                navigator = "slider"
         if axes_manager.signal_dimension == 0:
             self._plot = mpl_he.MPL_HyperExplorer()
         elif axes_manager.signal_dimension == 1:
@@ -2914,6 +3035,7 @@ class Signal(MVA,
         def get_dynamic_explorer_wrapper(*args, **kwargs):
             navigator.axes_manager.indices = self.axes_manager.indices[
                 navigator.axes_manager.signal_dimension:]
+            navigator.axes_manager._update_attributes()
             return navigator()
 
         if not isinstance(navigator, Signal) and navigator == "auto":
@@ -2985,7 +3107,7 @@ class Signal(MVA,
         If no extension is provided the default file format as defined
         in the `preferences` is used.
         Please note that not all the formats supports saving datasets of
-        arbitrary dimensions, e.g. msa only suports 1D data.
+        arbitrary dimensions, e.g. msa only supports 1D data.
 
         Each format accepts a different set of parameters. For details
         see the specific format documentation.
@@ -3002,7 +3124,7 @@ class Signal(MVA,
             True(False) it (does not) overwrites the file if it exists.
         extension : {None, 'hdf5', 'rpl', 'msa',common image extensions e.g. 'tiff', 'png'}
             The extension of the file that defines the file format.
-            If None, the extesion is taken from the first not None in the follwoing list:
+            If None, the extension is taken from the first not None in the following list:
             i) the filename
             ii)  `tmp_parameters.extension`
             iii) `preferences.General.default_file_format` in this order.
@@ -3014,7 +3136,7 @@ class Signal(MVA,
                 filename = os.path.join(
                     self.tmp_parameters.folder,
                     self.tmp_parameters.filename)
-                extesion = (self.tmp_parameters.extension
+                extension = (self.tmp_parameters.extension
                             if not extension
                             else extension)
             elif self.metadata.has_item('General.original_filename'):
@@ -3200,7 +3322,7 @@ class Signal(MVA,
             splitting is homegenous. When the axis size is not divisible
             by the number_of_parts the reminder data is lost without
             warning. If number_of_parts and step_sizes is 'auto',
-            number_of_parts equals the lenght of the axis,
+            number_of_parts equals the length of the axis,
             step_sizes equals one  and the axis is supress from each sub_spectra.
         step_sizes : {'auto' | list of ints | int}
             Size of the splitted parts. If 'auto', the step_sizes equals one.
@@ -3286,7 +3408,8 @@ class Signal(MVA,
                     spectrum.axes_manager._get_data_slice([(axis, 0)])]
                 spectrum._remove_axis(axis_in_manager)
 
-        if mode == 'auto' and hasattr(self.original_metadata, 'stack_elements'):
+        if mode == 'auto' and hasattr(
+                self.original_metadata, 'stack_elements'):
             for i, spectrum in enumerate(splitted):
                 spectrum.metadata = copy.deepcopy(
                     self.original_metadata.stack_elements[
@@ -3316,7 +3439,7 @@ class Signal(MVA,
 
     @auto_replot
     def _unfold(self, steady_axes, unfolded_axis):
-        """Modify the shape of the data by specifying the axes the axes which
+        """Modify the shape of the data by specifying the axes whose
         dimension do not change and the axis over which the remaining axes will
         be unfolded
 
@@ -3368,10 +3491,14 @@ class Signal(MVA,
         for axis in to_remove:
             self.axes_manager.remove(axis.index_in_axes_manager)
         self.data = self.data.squeeze()
+        if self.metadata.has_item('Signal.Noise_properties.variance'):
+            variance = self.metadata.Signal.Noise_properties.variance
+            if isinstance(variance, Signal):
+                variance._unfold(steady_axes, unfolded_axis)
 
     def unfold(self):
         """Modifies the shape of the data by unfolding the signal and
-        navigation dimensions separaterly
+        navigation dimensions separately
 
         """
         self.unfold_navigation_space()
@@ -3415,6 +3542,10 @@ class Signal(MVA,
             folding.original_shape = None
             folding.original_axes_manager = None
             folding.unfolded = False
+            if self.metadata.has_item('Signal.Noise_properties.variance'):
+                variance = self.metadata.Signal.Noise_properties.variance
+                if isinstance(variance, Signal):
+                    variance.fold()
 
     def _make_sure_data_is_contiguous(self):
         if self.data.flags['C_CONTIGUOUS'] is False:
@@ -3881,9 +4012,11 @@ class Signal(MVA,
         hist_spec.axes_manager[0].name = 'value'
         hist_spec.metadata.General.title = (img.metadata.General.title +
                                             " histogram")
+        hist_spec.metadata.Signal.binned = True
         return hist_spec
 
-    def apply_function(self, function, **kwargs):
+    def map(self, function,
+            show_progressbar=None, **kwargs):
         """Apply a function to the signal data at all the coordinates.
 
         The function must operate on numpy arrays and the output *must have the
@@ -3902,8 +4035,18 @@ class Signal(MVA,
 
         function : function
             A function that can be applied to the signal.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
         keyword arguments : any valid keyword argument
             All extra keyword arguments are passed to the
+
+        Notes
+        -----
+        This method is similar to Python's :func:`map` that can also be utilize
+        with a :class:`Signal` instance for similar purposes. However, this
+        method has the advantage of being faster because it iterates the numpy
+        array instead of the :class:`Signal`.
 
         Examples
         --------
@@ -3912,7 +4055,7 @@ class Signal(MVA,
 
         >>> import scipy.ndimage
         >>> im = signals.Image(np.random.random((10, 64, 64)))
-        >>> im.apply_function(scipy.ndimage.gaussian_filter, sigma=2.5)
+        >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)
 
         Apply a gaussian filter to all the images in the dataset. The sigmal
         parameter is variable.
@@ -3920,9 +4063,11 @@ class Signal(MVA,
         >>> im = signals.Image(np.random.random((10, 64, 64)))
         >>> sigmas = signals.Signal(np.linspace(2,5,10))
         >>> sigmas.axes_manager.set_signal_dimension(0)
-        >>> im.apply_function(scipy.ndimage.gaussian_filter, sigma=sigmas)
+        >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         # Sepate ndkwargs
         ndkwargs = ()
         for key, value in kwargs.iteritems():
@@ -3943,7 +4088,13 @@ class Signal(MVA,
         # If the function has an axis argument and the signal dimension is 1,
         # we suppose that it can operate on the full array and we don't
         # interate over the coordinates.
-        fargs = inspect.getargspec(function).args
+        try:
+            fargs = inspect.getargspec(function).args
+        except TypeError:
+            # This is probably a Cython function that is not supported by
+            # inspect.
+            fargs = []
+
         if not ndkwargs and (self.axes_manager.signal_dimension == 1 and
                              "axis" in fargs):
             kwargs['axis'] = \
@@ -3960,7 +4111,8 @@ class Signal(MVA,
         else:
             # Iteration over coordinates.
             pbar = progressbar(
-                maxval=self.axes_manager.navigation_size)
+                maxval=self.axes_manager.navigation_size,
+                disabled=not show_progressbar)
             iterators = [signal[1]._iterate_signal() for signal in ndkwargs]
             iterators = tuple([self._iterate_signal()] + iterators)
             for data in zip(*iterators):
@@ -3993,13 +4145,25 @@ class Signal(MVA,
         return copy.deepcopy(self)
 
     def change_dtype(self, dtype):
-        """Change the data type
+        """Change the data type.
 
         Parameters
         ----------
-
         dtype : str or dtype
-            Typecode or data-type to which the array is cast.
+            Typecode or data-type to which the array is cast. In
+            addition to all standard numpy dtypes HyperSpy
+            supports four extra dtypes for RGB images:
+            "rgb8", "rgba8", "rgb16" and "rgba16". Changing from
+            and to any rgbx dtype is more constrained than most
+            other dtype conversions. To change to a rgbx dtype
+            the signal `record_by` must be "spectrum",
+            `signal_dimension` must be 3(4) for rgb(rgba) dtypes
+            and the dtype must be uint8(uint16) for rgbx8(rgbx16).
+            After conversion `record_by` becomes `image` and the
+            spectra dimension is removed. The dtype of images of
+            dtype rgbx8(rgbx16) can only be changed to uint8(uint16)
+            and the `record_by` becomes "spectrum".
+
 
         Examples
         --------
@@ -4013,8 +4177,50 @@ class Signal(MVA,
         array([ 1.,  2.,  3.,  4.,  5.])
 
         """
+        if not isinstance(dtype, np.dtype):
+            if dtype in rgb_tools.rgb_dtypes:
+                if self.metadata.Signal.record_by != "spectrum":
+                    raise AttributeError("Only spectrum signals can be converted "
+                                         "to RGB images.")
+                    if "rgba" in dtype:
+                        if self.axes_manager.signal_size != 4:
+                            raise AttributeError(
+                                "Only spectra with signal_size equal to 4 can be"
+                                "converted to RGBA images")
+                    else:
+                        if self.axes_manager.signal_size != 3:
+                            raise AttributeError(
+                                "Only spectra with signal_size equal to 3 can be"
+                                " converted to RGBA images")
+                if "8" in dtype and self.data.dtype.name != "uint8":
+                    raise AttributeError(
+                        "Only signals with dtype uint8 can be converted to rgb8 images")
+                elif "16" in dtype and self.data.dtype.name != "uint16":
+                    raise AttributeError(
+                        "Only signals with dtype uint16 can be converted to rgb16 images")
+                dtype = rgb_tools.rgb_dtypes[dtype]
+                self.data = rgb_tools.regular_array2rgbx(self.data)
+                self.axes_manager.remove(-1)
+                self.metadata.Signal.record_by = "image"
+                self._assign_subclass()
+                return
+            else:
+                dtype = np.dtype(dtype)
+        if rgb_tools.is_rgbx(self.data) is True:
+            ddtype = self.data.dtype.fields["B"][0]
 
-        self.data = self.data.astype(dtype)
+            if ddtype != dtype:
+                raise ValueError(
+                    "It is only possibile to change to %s." %
+                    ddtype)
+            self.data = rgb_tools.rgbx2regular_array(self.data)
+            self.get_dimensions_from_data()
+            self.metadata.Signal.record_by = "spectrum"
+            self.axes_manager[-1 + 2j].name = "RGB index"
+            self._assign_subclass()
+            return
+        else:
+            self.data = self.data.astype(dtype)
 
     def estimate_poissonian_noise_variance(self,
                                            expected_value=None,
@@ -4259,11 +4465,14 @@ class Signal(MVA,
         mp = self.metadata
         current_class = self.__class__
         self.__class__ = hyperspy.io.assign_signal_subclass(
-            record_by=mp.Signal.record_by if "Signal.record_by" in mp
+            record_by=mp.Signal.record_by
+            if "Signal.record_by" in mp
             else self._record_by,
-            signal_type=mp.Signal.signal_type if "signal_type" in mp.Signal
+            signal_type=mp.Signal.signal_type
+            if "Signal.signal_type" in mp
             else self._signal_type,
-            signal_origin=mp.Signal.signal_origin if "Signal.signal_origin" in mp.Signal
+            signal_origin=mp.Signal.signal_origin
+            if "Signal.signal_origin" in mp
             else self._signal_origin)
         self.__init__(**self._to_dictionary())
 
@@ -4279,15 +4488,15 @@ class Signal(MVA,
 
         Parameters
         ----------
-        signal_type : {"EELS", "EDS_TEM", "EDS_SEM", str}
+        signal_type : {"EELS", "EDS_TEM", "EDS_SEM", "DielectricFunction"}
             Currently there are special features for "EELS" (electron
             energy-loss spectroscopy), "EDS_TEM" (energy dispersive X-rays of
             thin samples, normally obtained in a transmission electron
-            microscope) and "EDS_SEM" (energy dispersive X-rays of
-            thick samples, normally obtained in a scanning electron
-            microscope) so setting the signal_type to the correct acronym
-            is highly advisable when analyzing any signal for which Hyperspy
-            provides extra features. Even if Hyperspy does not provide extra
+            microscope), "EDS_SEM" (energy dispersive X-rays of thick samples,
+            normally obtained in a scanning electron microscope) and
+            "DielectricFuction". Setting the signal_type to the correct acronym
+            is highly advisable when analyzing any signal for which HyperSpy
+            provides extra features. Even if HyperSpy does not provide extra
             features for the signal that you are analyzing, it is good practice
             to set signal_type to a value that best describes the data signal
             type.
@@ -4356,6 +4565,18 @@ class Signal(MVA,
                                                   75))
         print("max:\t" + formatter % data.max())
 
+    @property
+    def is_rgba(self):
+        return rgb_tools.is_rgba(self.data)
+
+    @property
+    def is_rgb(self):
+        return rgb_tools.is_rgb(self.data)
+
+    @property
+    def is_rgbx(self):
+        return rgb_tools.is_rgbx(self.data)
+
 # Implement binary operators
 for name in (
     # Arithmetic operators
@@ -4390,8 +4611,9 @@ for name in (
     # The following commented line enables the operators with swapped
     # operands. They should be defined only for commutative operators
     # but for simplicity we don't support this at all atm.
-    #~exec("setattr(Signal, \'%s\', %s)" % (name[:2] + "r" + name[2:],
-                                          #~name))
+
+    # exec("setattr(Signal, \'%s\', %s)" % (name[:2] + "r" + name[2:],
+    # name))
 
 # Implement unary arithmetic operations
 for name in (

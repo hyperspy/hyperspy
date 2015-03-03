@@ -8,6 +8,7 @@ Subpackages
 
     hyperspy.tests.axes
     hyperspy.tests.component
+    hyperspy.tests.drawing
     hyperspy.tests.io
     hyperspy.tests.model
     hyperspy.tests.mva

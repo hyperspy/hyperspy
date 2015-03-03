@@ -1,3 +1,5 @@
+.. _eds-label:
+
 Energy-Dispersive X-Rays Spectrometry (EDS)
 ******************************************
 
@@ -18,7 +20,7 @@ Loading
 ^^^^^^^^
 
 All data are loaded with the :py:func:`~.io.load` function, as described in details in 
-:ref:`Loading files<loading_files>`. Hyperspy is able to import different formats,
+:ref:`Loading files<loading_files>`. HyperSpy is able to import different formats,
 among them ".msa" and ".rpl" (the raw format of Oxford Instrument and Brucker). 
 
 Here is three example for files exported by Oxford Instrument software (INCA).
@@ -43,7 +45,9 @@ example 01, 02, 03,...):
 
     >>> spec_img_3D = load("spectrum_image_*.rpl",stack=True)  
     >>> spec_img_3D = spec_img_3D.as_spectrum(0) 
-    
+
+.. _eds_calibration-label: 
+   
 Microscope and detector parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -164,7 +168,8 @@ method.
     >>> # Set all the properties of spec to spec_img
     >>> spec_img.get_calibration_from(spec)
     
-    
+.. _eds_sample-label:
+   
 Describing the sample
 ---------------------
 
@@ -260,22 +265,24 @@ An elemental database is available with the energy of the X-ray lines.
     >>>  utils.material.elements.Fe.Atomic_properties.Xray_lines
     ├── Ka
     │   ├── energy (keV) = 6.404
-    │   └── factor = 1
+    │   └── weight = 1.0
     ├── Kb
     │   ├── energy (keV) = 7.0568
-    │   └── factor = 0.1
+    │   └── weight = 0.1272
     ├── La
     │   ├── energy (keV) = 0.705
-    │   └── factor = 1
+    │   └── weight = 1.0
     ├── Lb3
     │   ├── energy (keV) = 0.792
-    │   └── factor = 0.08
+    │   └── weight = 0.02448
     ├── Ll
     │   ├── energy (keV) = 0.615
-    │   └── factor = 0.04
+    │   └── weight = 0.3086
     └── Ln
         ├── energy (keV) = 0.62799
-        └── factor = 0.01
+        └── weight = 0.12525
+
+.. _eds_plot-label: 
 
 Plotting
 --------

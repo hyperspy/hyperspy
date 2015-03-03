@@ -3,6 +3,7 @@ syntax: glob
 /MANIFEST
 /*.rst
 *.pyc
+*.pyd
 *.swp
 *~
 *.bak
@@ -28,3 +29,6 @@ setup/windows/requires/*
 setup/windows/reccomends/*
 doc/examples
 doc/gh-pages
+*Thumbs.db
+.ropeproject/*
+.idea/*

@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
 
@@ -43,7 +43,6 @@ class DraggablePatch(object):
         self.size = 1.
         self.color = 'red'
         self.__is_on = True
-        self._2D = True  # Whether the cursor lives in the 2D dimension
         self.patch = None
         self.cids = list()
         self.blit = True
@@ -55,7 +54,7 @@ class DraggablePatch(object):
     def set_on(self, value):
         if value is not self.is_on():
             if value is True:
-                self.add_patch_to(self.ax)
+                self._add_patch_to(self.ax)
                 self.connect(self.ax)
             elif value is False:
                 for container in [
@@ -74,31 +73,31 @@ class DraggablePatch(object):
             else:
                 self.ax = None
 
-    def set_patch(self):
+    def _set_patch(self):
         pass
         # Must be provided by the subclass
 
-    def add_patch_to(self, ax):
-        self.set_patch()
+    def _add_patch_to(self, ax):
+        self._set_patch()
         ax.add_artist(self.patch)
         self.patch.set_animated(hasattr(ax, 'hspy_fig'))
 
-    def add_axes(self, ax):
+    def set_mpl_ax(self, ax):
         self.ax = ax
         canvas = ax.figure.canvas
         if self.is_on() is True:
-            self.add_patch_to(ax)
+            self._add_patch_to(ax)
             self.connect(ax)
             canvas.draw()
 
     def connect(self, ax):
         canvas = ax.figure.canvas
         self.cids.append(
-            canvas.mpl_connect('motion_notify_event', self.onmove))
+            canvas.mpl_connect('motion_notify_event', self._onmousemove))
         self.cids.append(canvas.mpl_connect('pick_event', self.onpick))
         self.cids.append(canvas.mpl_connect(
             'button_release_event', self.button_release))
-        self.axes_manager.connect(self.update_patch_position)
+        self.axes_manager.connect(self._update_patch_position)
         on_figure_window_close(ax.figure, self.close)
 
     def disconnect(self, ax):
@@ -107,20 +106,19 @@ class DraggablePatch(object):
                 ax.figure.canvas.mpl_disconnect(cid)
             except:
                 pass
-        self.axes_manager.disconnect(self.update_patch_position)
+        self.axes_manager.disconnect(self._update_patch_position)
 
     def close(self, window=None):
         self.set_on(False)
 
     def onpick(self, event):
-        if event.artist is self.patch:
-            self.picked = True
+        self.picked = (event.artist is self.patch)
 
-    def onmove(self, event):
+    def _onmousemove(self, event):
         """This method must be provided by the subclass"""
         pass
 
-    def update_patch_position(self):
+    def _update_patch_position(self):
         """This method must be provided by the subclass"""
         pass
 
@@ -146,7 +144,7 @@ class ResizebleDraggablePatch(DraggablePatch):
 
     def set_size(self, size):
         self.size = size
-        self.update_patch_size()
+        self._update_patch_size()
 
     def increase_size(self):
         self.set_size(self.size + 1)
@@ -155,7 +153,7 @@ class ResizebleDraggablePatch(DraggablePatch):
         if self.size > 1:
             self.set_size(self.size - 1)
 
-    def update_patch_size(self):
+    def _update_patch_size(self):
         """This method must be provided by the subclass"""
         pass
 
@@ -177,7 +175,7 @@ class DraggableSquare(ResizebleDraggablePatch):
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
 
-    def set_patch(self):
+    def _set_patch(self):
         self.calculate_size()
         self.calculate_position()
         self.patch = plt.Rectangle(
@@ -199,18 +197,18 @@ class DraggableSquare(ResizebleDraggablePatch):
         self._position = coordinates - (
             self._xsize / 2., self._ysize / 2.)
 
-    def update_patch_size(self):
+    def _update_patch_size(self):
         self.calculate_size()
         self.patch.set_width(self._xsize)
         self.patch.set_height(self._ysize)
-        self.update_patch_position()
+        self._update_patch_position()
 
-    def update_patch_position(self):
+    def _update_patch_position(self):
         self.calculate_position()
         self.patch.set_xy(self._position)
         self.draw_patch()
 
-    def onmove(self, event):
+    def _onmousemove(self, event):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
             xaxis = self.axes_manager.navigation_axes[0]
@@ -238,23 +236,22 @@ class DraggableHorizontalLine(DraggablePatch):
 
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
-        self._2D = False
         # Despise the bug, we use blit for this one because otherwise the
         # it gets really slow
 
-    def update_patch_position(self):
+    def _update_patch_position(self):
         if self.patch is not None:
             self.patch.set_ydata(self.axes_manager.coordinates[0])
             self.draw_patch()
 
-    def set_patch(self):
+    def _set_patch(self):
         ax = self.ax
         self.patch = ax.axhline(
             self.axes_manager.coordinates[0],
             color=self.color,
             picker=5)
 
-    def onmove(self, event):
+    def _onmousemove(self, event):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
             try:
@@ -268,20 +265,19 @@ class DraggableVerticalLine(DraggablePatch):
 
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
-        self._2D = False
 
-    def update_patch_position(self):
+    def _update_patch_position(self):
         if self.patch is not None:
             self.patch.set_xdata(self.axes_manager.coordinates[0])
             self.draw_patch()
 
-    def set_patch(self):
+    def _set_patch(self):
         ax = self.ax
         self.patch = ax.axvline(self.axes_manager.coordinates[0],
                                 color=self.color,
                                 picker=5)
 
-    def onmove(self, event):
+    def _onmousemove(self, event):
         'on mouse motion draw the cursor if picked'
         if self.picked is True and event.inaxes:
             try:
@@ -295,18 +291,17 @@ class DraggableLabel(DraggablePatch):
 
     def __init__(self, axes_manager):
         DraggablePatch.__init__(self, axes_manager)
-        self._2D = False
         self.string = ''
         self.y = 0.9
         self.text_color = 'black'
         self.bbox = None
 
-    def update_patch_position(self):
+    def _update_patch_position(self):
         if self.patch is not None:
             self.patch.set_x(self.axes_manager.coordinates[0])
             self.draw_patch()
 
-    def set_patch(self):
+    def _set_patch(self):
         ax = self.ax
         trans = transforms.blended_transform_factory(
             ax.transData, ax.transAxes)
@@ -325,7 +320,8 @@ class DraggableLabel(DraggablePatch):
 class Scale_Bar():
 
     def __init__(self, ax, units, pixel_size=None, color='white',
-                 position=None, max_size_ratio=0.25, lw=2, lenght=None):
+                 position=None, max_size_ratio=0.25, lw=2, length=None,
+                 animated=False):
         """Add a scale bar to an image.
 
         Parameteres
@@ -341,15 +337,16 @@ class Scale_Bar():
             If None the position is automatically determined.
         max_size_ratio : float
             The maximum size of the scale bar in respect to the
-            lenght of the x axis
+            length of the x axis
         lw : int
             The line width
-        lenght : {None, float}
-            If None the lenght is automatically calculated using the
+        length : {None, float}
+            If None the length is automatically calculated using the
             max_size_ratio.
 
         """
 
+        self.animated = animated
         self.ax = ax
         self.units = units
         self.pixel_size = pixel_size
@@ -358,10 +355,10 @@ class Scale_Bar():
         self.text = None
         self.line = None
         self.tex_bold = False
-        if lenght is None:
+        if length is None:
             self.calculate_size(max_size_ratio=max_size_ratio)
         else:
-            self.lenght = lenght
+            self.length = length
         if position is None:
             self.position = self.calculate_line_position()
         else:
@@ -374,12 +371,12 @@ class Scale_Bar():
         if self.tex_bold is True:
             if (self.units[0] and self.units[-1]) == '$':
                 return r'$\mathbf{%g\,%s}$' % \
-                    (self.lenght, self.units[1:-1])
+                    (self.length, self.units[1:-1])
             else:
                 return r'$\mathbf{%g\,}$\textbf{%s}' % \
-                    (self.lenght, self.units)
+                    (self.length, self.units)
         else:
-            return r'$%g\,$%s' % (self.lenght, self.units)
+            return r'$%g\,$%s' % (self.length, self.units)
 
     def calculate_line_position(self, pad=0.05):
         return ((1 - pad) * self.xmin + pad * self.xmax,
@@ -388,7 +385,7 @@ class Scale_Bar():
     def calculate_text_position(self, pad=1 / 100.):
         ps = self.pixel_size if self.pixel_size is not None else 1
         x1, y1 = self.position
-        x2, y2 = x1 + self.lenght / ps, y1
+        x2, y2 = x1 + self.length / ps, y1
 
         self.text_position = ((x1 + x2) / 2.,
                               y2 + (self.ymax - self.ymin) / ps * pad)
@@ -397,7 +394,7 @@ class Scale_Bar():
         ps = self.pixel_size if self.pixel_size is not None else 1
         size = closest_nice_number(ps * (self.xmax - self.xmin) *
                                    max_size_ratio)
-        self.lenght = size
+        self.length = size
 
     def remove(self):
         if self.line is not None:
@@ -409,11 +406,16 @@ class Scale_Bar():
         self.remove()
         ps = self.pixel_size if self.pixel_size is not None else 1
         x1, y1 = self.position
-        x2, y2 = x1 + self.lenght / ps, y1
+        x2, y2 = x1 + self.length / ps, y1
         self.line, = self.ax.plot([x1, x2], [y1, y2],
-                                  linestyle='-', lw=line_width)
+                                  linestyle='-',
+                                  lw=line_width,
+                                  animated=self.animated)
         self.text = self.ax.text(*self.text_position,
-                                 s=self.get_units_string(), ha='center', size='medium')
+                                 s=self.get_units_string(),
+                                 ha='center',
+                                 size='medium',
+                                 animated=self.animated)
         self.ax.set_xlim(self.xmin, self.xmax)
         self.ax.set_ylim(self.ymin, self.ymax)
         self.ax.figure.canvas.draw()
@@ -428,9 +430,9 @@ class Scale_Bar():
         self.text.set_color(c)
         self.ax.figure.canvas.draw_idle()
 
-    def set_lenght(self, lenght):
+    def set_length(self, length):
         color = self.line.get_color()
-        self.lenght = lenght
+        self.length = length
         self.calculate_scale_size()
         self.calculate_text_position()
         self.plot_scale(line_width=self.line.get_linewidth())
@@ -452,12 +454,16 @@ def in_interval(number, interval):
 class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
     def __init__(self, ax, **kwargs):
+        onsel = kwargs.pop('onselect', self.dummy)
         matplotlib.widgets.SpanSelector.__init__(
-            self, ax, direction='horizontal', useblit=False, **kwargs)
+            self, ax, onsel, direction='horizontal', useblit=False, **kwargs)
         # The tolerance in points to pick the rectangle sizes
         self.tolerance = 1
         self.on_move_cid = None
         self.range = None
+        
+    def dummy(self, *args, **kwargs):
+        pass
 
     def release(self, event):
         """When the button is realeased, the span stays in the screen and the
@@ -519,6 +525,9 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
     def move_left(self, event):
         if self.buttonDown is False or self.ignore(event):
             return
+        # Do not move the left edge beyond the right one.
+        if event.xdata >= self.range[1]:
+            return
         width_increment = self.range[0] - event.xdata
         self.rect.set_x(event.xdata)
         self.rect.set_width(self.rect.get_width() + width_increment)
@@ -529,6 +538,9 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
     def move_right(self, event):
         if self.buttonDown is False or self.ignore(event):
+            return
+        # Do not move the right edge beyond the left one.
+        if event.xdata <= self.range[0]:
             return
         width_increment = \
             event.xdata - self.range[1]

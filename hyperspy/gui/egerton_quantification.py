@@ -1,38 +1,36 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
+import matplotlib.text as mpl_text
 import traits.api as t
 import traitsui.api as tu
-from traitsui.menu import OKButton, ApplyButton, CancelButton
+from traitsui.menu import OKButton, CancelButton
 
 from hyperspy import components
 from hyperspy.component import Component
-from hyperspy.misc import utils
 from hyperspy import drawing
 from hyperspy.gui.tools import (SpanSelectorInSpectrum,
-                                SpanSelectorInSpectrumHandler, OurFindButton, OurPreviousButton,
+                                SpanSelectorInSpectrumHandler,
+                                OurFindButton,
+                                OurPreviousButton,
                                 OurApplyButton)
-from hyperspy.misc.progressbar import progressbar
 import hyperspy.gui.messages as messages
 
 
@@ -139,6 +137,8 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         return to_return
 
     def span_selector_changed(self):
+        if (self.ss_left_value is np.nan) or (self.ss_right_value is np.nan):
+            return
         if self.background_estimator is None:
             print("No bg estimator")
             return
@@ -210,12 +210,18 @@ class SpikesRemoval(SpanSelectorInSpectrum):
     interpolator = None
     default_spike_width = t.Int(5)
     index = t.Int(0)
+    add_noise = t.Bool(True,
+                       desc="Add noise to the healed portion of the "
+                       "spectrum. Use the noise properties "
+                       "defined in metadata if present, otherwise "
+                       "it defaults to shot noise.")
     view = tu.View(tu.Group(
         tu.Group(
             tu.Item('show_derivative_histogram', show_label=False),
             'threshold',
             show_border=True,),
         tu.Group(
+            'add_noise',
             'interpolator_kind',
             'default_spike_width',
             tu.Group(
@@ -242,14 +248,27 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.line = signal._plot.signal_plot.ax_lines[0]
         self.ax = signal._plot.signal_plot.ax
         signal._plot.auto_update_plot = False
-        signal.axes_manager.indices = self.coordinates[0]
+        if len(self.coordinates) > 1:
+            signal.axes_manager.indices = self.coordinates[0]
         self.threshold = 400
         self.index = 0
         self.argmax = None
+        self.derivmax = None
         self.kind = "linear"
         self._temp_mask = np.zeros(self.signal().shape, dtype='bool')
         self.signal_mask = signal_mask
         self.navigation_mask = navigation_mask
+        md = self.signal.metadata
+        from hyperspy.signal import Signal
+        if "Signal.Noise_properties" in md:
+            if "Signal.Noise_properties.variance" in md:
+                self.noise_variance = md.Signal.Noise_properties.variance
+                if isinstance(md.Signal.Noise_properties.variance, Signal):
+                    self.noise_type = "heteroscedastic"
+                else:
+                    self.noise_type = "white"
+        else:
+            self.noise_type = "shot noise"
 
     def _threshold_changed(self, old, new):
         self.index = 0
@@ -269,6 +288,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             derivative[self._temp_mask[:-1]] = 0
         if abs(derivative.max()) >= self.threshold:
             self.argmax = derivative.argmax()
+            self.derivmax = abs(derivative.max())
             return True
         else:
             return False
@@ -300,6 +320,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         else:
             minimum = max(0, self.argmax - 50)
             maximum = min(len(self.signal()) - 1, self.argmax + 50)
+            thresh_label = DerivativeTextParameters(text="$\mathsf{\delta}_\mathsf{max}=$", color="black")
+            self.ax.legend([thresh_label], [repr(int(self.derivmax))], handler_map={DerivativeTextParameters: DerivativeTextHandler()}, loc='best')
             self.ax.set_xlim(
                 self.signal.axes_manager.signal_axes[0].index2value(
                     minimum),
@@ -314,7 +336,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             self.interpolated_line = None
         self.reset_span_selector()
         self.update_spectrum_line()
-        self.signal._plot.pointer.update_patch_position()
+        if len(self.coordinates) > 1:
+            self.signal._plot.pointer._update_patch_position()
 
     def update_spectrum_line(self):
         self.line.auto_update = True
@@ -333,6 +356,9 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 
     def _spline_order_changed(self, old, new):
         self.kind = self.spline_order
+        self.span_selector_changed()
+
+    def _add_noise_changed(self, old, new):
         self.span_selector_changed()
 
     def _interpolator_kind_changed(self, old, new):
@@ -387,8 +413,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         iright = right + pad
         ileft = np.clip(ileft, 0, len(data))
         iright = np.clip(iright, 0, len(data))
-        left = np.clip(left, 0, len(data))
-        right = np.clip(right, 0, len(data))
+        left = int(np.clip(left, 0, len(data)))
+        right = int(np.clip(right, 0, len(data)))
         x = np.hstack((axis.axis[ileft:left], axis.axis[right:iright]))
         y = np.hstack((data[ileft:left], data[right:iright]))
         if ileft == 0:
@@ -405,7 +431,21 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             data[left:right] = intp(axis.axis[left:right])
 
         # Add noise
-        data = np.random.poisson(np.clip(data, 0, np.inf))
+        if self.add_noise is True:
+            if self.noise_type == "white":
+                data[left:right] += np.random.normal(
+                    scale=np.sqrt(self.noise_variance),
+                    size=right - left)
+            elif self.noise_type == "heteroscedastic":
+                noise_variance = self.noise_variance(
+                    axes_manager=self.signal.axes_manager)[left:right]
+                noise = [np.random.normal(scale=np.sqrt(item))
+                         for item in noise_variance]
+                data[left:right] += noise
+            else:
+                data[left:right] = np.random.poisson(
+                    np.clip(data[left:right], 0, np.inf))
+
         return data
 
     def span_selector_changed(self):
@@ -423,183 +463,18 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.find()
 
 
-# class EgertonPanel(t.HasTraits):
-#    define_background_window = t.Bool(False)
-#    bg_window_size_variation = t.Button()
-#    background_substracted_spectrum_name = t.Str('signal')
-#    extract_background = t.Button()
-#    define_signal_window = t.Bool(False)
-#    signal_window_size_variation = t.Button()
-#    signal_name = t.Str('signal')
-#    extract_signal = t.Button()
-#    view = tu.View(tu.Group(
-#        tu.Group('define_background_window',
-#                 tu.Item('bg_window_size_variation',
-#                         label = 'window size effect', show_label=False),
-#                 tu.Item('background_substracted_spectrum_name'),
-#                 tu.Item('extract_background', show_label=False),
-#                 ),
-#        tu.Group('define_signal_window',
-#                 tu.Item('signal_window_size_variation',
-#                         label = 'window size effect', show_label=False),
-#                 tu.Item('signal_name', show_label=True),
-#                 tu.Item('extract_signal', show_label=False)),))
-#
-#    def __init__(self, signal):
-#
-#        self.signal = signal
-#
-# Background
-#        self.span_selector = None
-#        self.background_estimator = components.PowerLaw()
-#        self.bg_line = None
-#        self.bg_cube = None
-#
-# Signal
-#        self.signal_span_selector = None
-#        self.signal_line = None
-#        self.signal_map = None
-#        self.map_ax = None
-#
-#    def store_current_spectrum_bg_parameters(self, *args, **kwards):
-#        if self.define_background_window is False or \
-#        self.span_selector.range is None: return
-#        pars = utils.two_area_powerlaw_estimation(
-#        self.signal, *self.span_selector.range,only_current_spectrum = True)
-#        self.background_estimator.r.value = pars['r']
-#        self.background_estimator.A.value = pars['A']
-#
-#        if self.define_signal_window is True and \
-#        self.signal_span_selector.range is not None:
-#            self.background_estimatorot_signal_map()
-#
-#    def _define_background_window_changed(self, old, new):
-#        if new is True:
-#            self.span_selector = \
-#            drawing.widgets.ModifiableSpanSelector(
-#            self.signal.hse.signal_plot.ax,
-#            onselect = self.store_current_spectrum_bg_parameters,
-#            onmove_callback = self.background_estimatorot_bg_removed_spectrum)
-#        elif self.span_selector is not None:
-#            if self.bg_line is not None:
-#                self.span_selector.ax.lines.remove(self.bg_line)
-#                self.bg_line = None
-#            if self.signal_line is not None:
-#                self.span_selector.ax.lines.remove(self.signal_line)
-#                self.signal_line = None
-#            self.span_selector.turn_off()
-#            self.span_selector = None
-#
-#    def _bg_window_size_variation_fired(self):
-#        if self.define_background_window is False: return
-#        left = self.span_selector.rect.get_x()
-#        right = left + self.span_selector.rect.get_width()
-#        energy_window_dependency(self.signal, left, right, min_width = 10)
-#
-#    def _extract_background_fired(self):
-#        if self.background_estimator is None: return
-#        signal = self.signal() - self.background_estimator.function(self.signal.energy_axis)
-#        i = self.signal.energy2index(self.span_selector.range[1])
-#        signal[:i] = 0.
-#        s = Spectrum({'calibration' : {'data_cube' : signal}})
-#        s.get_calibration_from(self.signal)
-#        interactive_ns[self.background_substracted_spectrum_name] = s
-#
-#    def _define_signal_window_changed(self, old, new):
-#        if new is True:
-#            self.signal_span_selector = \
-#            drawing.widgets.ModifiableSpanSelector(
-#            self.signal.hse.signal_plot.ax,
-#            onselect = self.store_current_spectrum_bg_parameters,
-#            onmove_callback = self.background_estimatorot_signal_map)
-#            self.signal_span_selector.rect.set_color('blue')
-#        elif self.signal_span_selector is not None:
-#            self.signal_span_selector.turn_off()
-#            self.signal_span_selector = None
-#
-#    def plot_bg_removed_spectrum(self, *args, **kwards):
-#        if self.span_selector.range is None: return
-#        self.store_current_spectrum_bg_parameters()
-#        ileft = self.signal.energy2index(self.span_selector.range[0])
-#        iright = self.signal.energy2index(self.span_selector.range[1])
-#        ea = self.signal.energy_axis[ileft:]
-#        if self.bg_line is not None:
-#            self.span_selector.ax.lines.remove(self.bg_line)
-#            self.span_selector.ax.lines.remove(self.signal_line)
-#        self.bg_line, = self.signal.hse.signal_plot.ax.plot(
-#        ea, self.background_estimator.function(ea), color = 'black')
-#        self.signal_line, = self.signal.hse.signal_plot.ax.plot(
-#        self.signal.energy_axis[iright:], self.signal()[iright:] -
-#        self.background_estimator.function(self.signal.energy_axis[iright:]), color = 'black')
-#        self.signal.hse.signal_plot.ax.figure.canvas.draw()
+# For creating a text handler in legend (to label derivative magnitude)
+class DerivativeTextParameters(object):
+    def __init__(self, text, color):
+        self.my_text = text
+        self.my_color = color
 
-#
-#    def plot_signal_map(self, *args, **kwargs):
-#        if self.define_signal_window is True and \
-#        self.signal_span_selector.range is not None:
-#            ileft = self.signal.energy2index(self.signal_span_selector.range[0])
-#            iright = self.signal.energy2index(self.signal_span_selector.range[1])
-#            signal_sp = self.signal.data_cube[ileft:iright,...].squeeze().copy()
-#            if self.define_background_window is True:
-#                pars = utils.two_area_powerlaw_estimation(
-#                self.signal, *self.span_selector.range, only_current_spectrum = False)
-#                x = self.signal.energy_axis[ileft:iright, np.newaxis, np.newaxis]
-#                A = pars['A'][np.newaxis,...]
-#                r = pars['r'][np.newaxis,...]
-#                self.bg_sp = (A*x**(-r)).squeeze()
-#                signal_sp -= self.bg_sp
-#            self.signal_map = signal_sp.sum(0)
-#            if self.map_ax is None:
-#                f = plt.figure()
-#                self.map_ax = f.add_subplot(111)
-#                if len(self.signal_map.squeeze().shape) == 2:
-#                    self.map = self.map_ax.imshow(self.signal_map.T,
-#                                                  interpolation = 'nearest')
-#                else:
-#                    self.map, = self.map_ax.plot(self.signal_map.squeeze())
-#            if len(self.signal_map.squeeze().shape) == 2:
-#                    self.map.set_data(self.signal_map.T)
-#                    self.map.autoscale()
-#
-#            else:
-#                self.map.set_ydata(self.signal_map.squeeze())
-#            self.map_ax.figure.canvas.draw()
-#
-#    def _extract_signal_fired(self):
-#        if self.signal_map is None: return
-#        if len(self.signal_map.squeeze().shape) == 2:
-#            s = Image(
-#            {'calibration' : {'data_cube' : self.signal_map.squeeze()}})
-#            s.xscale = self.signal.xscale
-#            s.yscale = self.signal.yscale
-#            s.xunits = self.signal.xunits
-#            s.yunits = self.signal.yunits
-#            interactive_ns[self.signal_name] = s
-#        else:
-#            s = Spectrum(
-#            {'calibration' : {'data_cube' : self.signal_map.squeeze()}})
-#            s.energyscale = self.signal.xscale
-#            s.energyunits = self.signal.xunits
-#            interactive_ns[self.signal_name] = s
-#
 
-# def energy_window_dependency(s, left, right, min_width = 10):
-#    ins = s.energy2index(left)
-#    ine = s.energy2index(right)
-#    energies = s.energy_axis[ins:ine - min_width]
-#    rs = []
-#    As = []
-#    for E in energies:
-#        di = utils.two_area_powerlaw_estimation(s, E, ine)
-#        rs.append(di['r'].mean())
-#        As.append(di['A'].mean())
-#    f = plt.figure()
-#    ax1  = f.add_subplot(211)
-#    ax1.plot(s.energy_axis[ins:ine - min_width], rs)
-#    ax1.set_title('Rs')
-#    ax1.set_xlabel('Energy')
-#    ax2  = f.add_subplot(212, sharex = ax1)
-#    ax2.plot(s.energy_axis[ins:ine - min_width], As)
-#    ax2.set_title('As')
-#    ax2.set_xlabel('Energy')
-#    return rs, As
+class DerivativeTextHandler(object):
+    def legend_artist(self, legend, orig_handle, fontsize, handlebox):
+        x0, y0 = handlebox.xdescent, handlebox.ydescent
+        width, height = handlebox.width, handlebox.height
+        patch = mpl_text.Text(text=orig_handle.my_text, color=orig_handle.my_color)
+        handlebox.add_artist(patch)
+        return patch
+

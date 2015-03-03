@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
 import os.path
@@ -86,18 +86,22 @@ class GeneralConfig(t.HasTraits):
                              " available."
                              "user interface elements are not available. "
                              "None is suitable to run headless. "
-                             "Hyperspy must be restarted for changes to take effect")
+                             "HyperSpy must be restarted for changes to take effect")
     default_export_format = t.Enum(*default_write_ext,
                                    desc='Using the hdf5 format is highly reccomended because is the '
                                    'only one fully supported. The Ripple (rpl) format it is useful '
                                    'to export data to other software that do not support hdf5')
     interactive = t.CBool(True,
-                          desc='If enabled, Hyperspy will prompt the user when optios are '
+                          desc='If enabled, HyperSpy will prompt the user when optios are '
                           'available, otherwise it will use the default values if possible')
     logger_on = t.CBool(False,
                         label='Automatic logging',
-                        desc='If enabled, Hyperspy will store a log in the current directory '
+                        desc='If enabled, HyperSpy will store a log in the current directory '
                         'of all the commands typed')
+
+    show_progressbar = t.CBool(True,
+                               label='Show progress bar',
+                               desc='If enabled, show a progress bar when available')
 
     def _logger_on_changed(self, old, new):
         if new is True:
@@ -131,8 +135,8 @@ class EELSConfig(t.HasTraits):
                                       label='GOS directory',
                                       desc='The GOS files are required to create the EELS edge components')
     fine_structure_width = t.CFloat(30,
-                                    label='Fine structure lenght',
-                                    desc='The default lenght of the fine structure from the edge onset')
+                                    label='Fine structure length',
+                                    desc='The default length of the fine structure from the edge onset')
     fine_structure_active = t.CBool(False,
                                     label='Enable fine structure',
                                     desc="If enabled, the regions of the EELS spectrum defined as fine "
@@ -185,7 +189,7 @@ class PlotConfig(t.HasTraits):
                            desc='If enabled, the object will be plot automatically on loading')
     pylab_inline = t.CBool(False,
                            desc="If True the figure are displayed inline."
-                           "Hyperspy must be restarted for changes to take effect")
+                           "HyperSpy must be restarted for changes to take effect")
 
 template = {
     'General': GeneralConfig(),

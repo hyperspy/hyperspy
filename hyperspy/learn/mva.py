@@ -1,25 +1,23 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
 from __future__ import division
-import sys
-import os
 import types
 
 import numpy as np
@@ -32,14 +30,12 @@ except:
     mdp_installed = False
 
 
-from hyperspy.misc.machine_learning.import_sklearn import *
-from hyperspy.misc import utils
+from hyperspy.misc.machine_learning import import_sklearn
 import hyperspy.misc.io.tools as io_tools
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
-from hyperspy.defaults_parser import preferences
 from hyperspy import messages
-from hyperspy.decorators import auto_replot, do_not_replot
+from hyperspy.decorators import do_not_replot
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 
@@ -146,7 +142,7 @@ class MVA():
 
         if self.axes_manager.navigation_size < 2:
             raise AttributeError("It is not possible to decompose a dataset "
-                                 "with navigation_dimension < 2")
+                                 "with navigation_size < 2")
         # backup the original data
         self._data_before_treatments = self.data.copy()
 
@@ -222,10 +218,10 @@ class MVA():
                     auto_transpose=auto_transpose)
 
             elif algorithm == 'sklearn_pca':
-                if sklearn_installed is False:
+                if import_sklearn.sklearn_installed is False:
                     raise ImportError(
                         'sklearn is not installed. Nothing done')
-                sk = sklearn.decomposition.PCA(**kwargs)
+                sk = import_sklearn.sklearn.decomposition.PCA(**kwargs)
                 sk.n_components = output_dimension
                 loadings = sk.fit_transform((
                     dc[:, signal_mask][navigation_mask, :]))
@@ -235,30 +231,30 @@ class MVA():
                 centre = 'trials'
 
             elif algorithm == 'nmf':
-                if sklearn_installed is False:
+                if import_sklearn.sklearn_installed is False:
                     raise ImportError(
                         'sklearn is not installed. Nothing done')
-                sk = sklearn.decomposition.NMF(**kwargs)
+                sk = import_sklearn.sklearn.decomposition.NMF(**kwargs)
                 sk.n_components = output_dimension
                 loadings = sk.fit_transform((
                     dc[:, signal_mask][navigation_mask, :]))
                 factors = sk.components_.T
 
             elif algorithm == 'sparse_pca':
-                if sklearn_installed is False:
+                if import_sklearn.sklearn_installed is False:
                     raise ImportError(
                         'sklearn is not installed. Nothing done')
-                sk = sklearn.decomposition.SparsePCA(
+                sk = import_sklearn.sklearn.decomposition.SparsePCA(
                     output_dimension, **kwargs)
                 loadings = sk.fit_transform(
                     dc[:, signal_mask][navigation_mask, :])
                 factors = sk.components_.T
 
             elif algorithm == 'mini_batch_sparse_pca':
-                if sklearn_installed is False:
+                if import_sklearn.sklearn_installed is False:
                     raise ImportError(
                         'sklearn is not installed. Nothing done')
-                sk = sklearn.decomposition.MiniBatchSparsePCA(
+                sk = import_sklearn.sklearn.decomposition.MiniBatchSparsePCA(
                     output_dimension, **kwargs)
                 loadings = sk.fit_transform(
                     dc[:, signal_mask][navigation_mask, :])
@@ -504,7 +500,7 @@ class MVA():
                     #'sklearn is not installed. Nothing done')
                 if 'tol' not in kwargs:
                     kwargs['tol'] = 1e-10
-                target.bss_node = FastICA(
+                target.bss_node = import_sklearn.FastICA(
                     **kwargs)
                 target.bss_node.whiten = False
                 target.bss_node.fit(factors)
@@ -570,6 +566,28 @@ class MVA():
         factors[:] = factors[:, sorting_indices]
         loadings[:] = loadings[:, sorting_indices]
         loadings[:] = loadings[:, sorting_indices]
+
+    def reverse_decomposition_component(self, component_number):
+        """Reverse the decomposition component
+
+        Parameters
+        ----------
+        component_number : list or int
+            component index/es
+
+        Examples
+        -------
+        >>> s = load('some_file')
+        >>> s.decomposition(True) # perform PCA
+        >>> s.reverse_decomposition_component(1) # reverse IC 1
+        >>> s.reverse_decomposition_component((0, 2)) # reverse ICs 0 and 2
+        """
+
+        target = self.learning_results
+
+        for i in [component_number, ]:
+            target.factors[:, i] *= -1
+            target.loadings[:, i] *= -1
 
     def reverse_bss_component(self, component_number):
         """Reverse the independent component
