@@ -52,6 +52,7 @@ from hyperspy import signals
 from hyperspy.io import load
 from hyperspy.defaults_parser import preferences
 from hyperspy import utils
+from hyperspy import datasets
 
 
 def get_configuration_directory_path():
