@@ -51,37 +51,38 @@ class Image(Signal):
             A 3D image.
         """
         if len(image.axes_manager.shape) != 3:
-            raise ValueError("Image must have 3 dimension.")
+            raise ValueError("image must have 3 dimension.")
 
-        image.metadata.General.title = 'xy'
-        image.axes_manager.set_signal_dimension(0)
+        im_xy = image.deepcopy()
+        im_xy.metadata.General.title = 'xy'
+        im_xy.axes_manager.set_signal_dimension(0)
 
-        im_xz = image.deepcopy()
+        im_xz = im_xy.deepcopy()
         im_xz = im_xz.rollaxis(2, 1)
         im_xz.metadata.General.title = 'xz'
         im_xz.axes_manager.set_signal_dimension(0)
 
-        im_xz.axes_manager._axes[2] = image.axes_manager._axes[2]
-        im_xz.axes_manager._axes[1] = image.axes_manager._axes[0]
-        im_xz.axes_manager._axes[0] = image.axes_manager._axes[1]
+        im_xz.axes_manager._axes[2] = im_xy.axes_manager._axes[2]
+        im_xz.axes_manager._axes[1] = im_xy.axes_manager._axes[0]
+        im_xz.axes_manager._axes[0] = im_xy.axes_manager._axes[1]
 
-        im_yz = image.deepcopy()
+        im_yz = im_xy.deepcopy()
         im_yz = im_yz.rollaxis(0, 2)
         im_yz = im_yz.rollaxis(1, 0)
         im_yz.metadata.General.title = 'yz'
         im_yz.axes_manager.set_signal_dimension(0)
 
-        im_yz.axes_manager._axes = image.axes_manager._axes[::-1]
+        im_yz.axes_manager._axes = im_xy.axes_manager._axes[::-1]
 
-        image.axes_manager[0].index = (image.axes_manager[0].high_index -
-                                       image.axes_manager[0].low_index)/2
-        image.axes_manager[1].index = (image.axes_manager[1].high_index -
-                                       image.axes_manager[1].low_index)/2
-        image.axes_manager[2].index = (image.axes_manager[2].high_index -
-                                       image.axes_manager[2].low_index)/2
+        im_xy.axes_manager[0].index = (im_xy.axes_manager[0].high_index -
+                                       im_xy.axes_manager[0].low_index)/2
+        im_xy.axes_manager[1].index = (im_xy.axes_manager[1].high_index -
+                                       im_xy.axes_manager[1].low_index)/2
+        im_xy.axes_manager[2].index = (im_xy.axes_manager[2].high_index -
+                                       im_xy.axes_manager[2].low_index)/2
 
         im_xz.axes_manager._update_attributes()
         im_yz.axes_manager._update_attributes()
-        image.plot()
+        im_xy.plot()
         im_xz.plot()
         im_yz.plot()
