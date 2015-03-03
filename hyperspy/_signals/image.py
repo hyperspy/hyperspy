@@ -71,12 +71,16 @@ class Image(Signal):
 
         Return
         ------
-        The reconstruction as a 3D image
+        The reconstruction as a stack of images
 
         Examples
         --------
-        >>> tilt_series.change_dtype('float')
-        >>> rec = tilt_series.tomographic_reconstruction()
+        >>> print tilt_series
+        >>> rec = tilt_series.tomographic_reconstruction(
+        >>>     'SART', iteration=5, relaxation=0.15)
+        >>> print rec
+        <Image, title: Tomogram, dimensions: (14|80, 92)>
+        <Image, title: Reconstruction from Tomogram, dimensions: (80|80, 92)>
 
         Notes
         -----
@@ -105,6 +109,8 @@ class Image(Signal):
                                          image=rec[i], **kwargs)
 
         rec = Spectrum(rec).as_image([2, 1])
+        rec.metadata.General.title = 'Reconstruction from ' + \
+            self.metadata.General.title
         rec.axes_manager = self.axes_manager.deepcopy()
         rec.axes_manager[0].scale = rec.axes_manager[1].scale
         rec.axes_manager[0].offset = rec.axes_manager[1].offset
