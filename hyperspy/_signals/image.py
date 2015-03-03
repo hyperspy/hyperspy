@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import numpy as np
 
 from hyperspy.signal import Signal
 
@@ -45,10 +46,12 @@ class Image(Signal):
                                    algorithm='FBP',
                                    tilt_stages='auto',
                                    iteration=1,
-                                   parallel=None,
+                                   relaxation=0.15,
                                    **kwargs):
         """
         Reconstruct a 3D tomogram from a sinogram
+
+        The siongram has x and y as signal axis and tilt as navigation axis
 
         Parameters
         ----------
@@ -56,13 +59,15 @@ class Image(Signal):
             FBP, filtered back projection
             SART, Simultaneous Algebraic Reconstruction Technique
         tilt_stages: list or 'auto'
-            the angles of the sinogram. If 'auto', takes axes_manager
+            the angles of the sinogram. If 'auto', take the navigation axis
+            value.
         iteration: int
             The numebr of iteration used for SART
-        parallel : {None, int}
-            If None or 1, does not parallelise multifit. If >1, will look for
-            ipython clusters. If no ipython clusters are running, it will
-            create multiprocessing cluster.
+        relaxation: float
+            For SART: Relaxation parameter for the update step. A higher value
+            can improve the convergence rate, but one runs the risk of
+            instabilities. Values close to or higher than 1 are not
+            recommended.
 
         Return
         ------
@@ -70,26 +75,25 @@ class Image(Signal):
 
         Examples
         --------
-        >>> adf_tilt = database.image3D('tilt_TEM')
-        >>> adf_tilt.change_dtype('float')
-        >>> rec = adf_tilt.tomographic_reconstruction()
+        >>> tilt_series.change_dtype('float')
+        >>> rec = tilt_series.tomographic_reconstruction()
+
+        Notes
+        -----
+        See skimage.transform.iradon and skimage.transform.iradon_sart
         """
         from hyperspy._signals.spectrum import Spectrum
-        # import time
-        if parallel is None:
-            sinogram = self.to_spectrum().data
+        sinogram = self.to_spectrum().data
         if tilt_stages == 'auto':
             tilt_stages = self.axes_manager[0].axis
-        # a = time.time()
         if algorithm == 'FBP':
-            # from skimage.transform import iradon
             from skimage.transform import iradon
             rec = np.zeros([sinogram.shape[0], sinogram.shape[1],
                             sinogram.shape[1]])
             for i in range(sinogram.shape[0]):
                 rec[i] = iradon(sinogram[i], theta=tilt_stages,
                                 output_size=sinogram.shape[1], **kwargs)
-        elif algorithm == 'SART' and parallel is None:
+        elif algorithm == 'SART':
             from skimage.transform import iradon_sart
             rec = np.zeros([sinogram.shape[0], sinogram.shape[1],
                             sinogram.shape[1]])
@@ -99,22 +103,6 @@ class Image(Signal):
                 for j in range(iteration - 1):
                     rec[i] = iradon_sart(sinogram[i], theta=tilt_stages,
                                          image=rec[i], **kwargs)
-        elif algorithm == 'SART':
-            from hyperspy.misc import multiprocessing
-            pool, pool_type = multiprocessing.pool(parallel)
-            sino = multiprocessing.split(self.to_spectrum(), parallel, axis=1)
-            kwargs.update({'theta': tilt_stages})
-            data = [[si.data, iteration, kwargs] for si in sino]
-            res = pool.map_sync(multiprocessing.isart, data)
-            if pool_type == 'mp':
-                pool.close()
-                pool.join()
-            # res = res.get()
-            rec = res[0]
-            for i in range(len(res)-1):
-                rec = np.append(rec, res[i+1], axis=0)
-
-        # print time.time() - a
 
         rec = Spectrum(rec).as_image([2, 1])
         rec.axes_manager = self.axes_manager.deepcopy()
