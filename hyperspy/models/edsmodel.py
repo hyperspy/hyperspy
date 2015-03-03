@@ -421,8 +421,10 @@ class EDSModel(Model):
             xray_lines = [compo.name for compo in self.xray_lines]
         ax = self.spectrum.axes_manager[-1]
         scale_old = self.spectrum.axes_manager[-1].scale
-        E = self[xray_lines[0]].centre.value
-        scale = (ref[0] - ax.offset) / ax.value2index(E)
+        ind = np.argsort(np.array(
+            [compo.centre.value for compo in self.xray_lines]))[-1]
+        E = self[xray_lines[ind]].centre.value
+        scale = (ref[ind] - ax.offset) / ax.value2index(E)
         ax.scale = scale
         for i, xray_line in enumerate(xray_lines):
             component = self[xray_line]
@@ -734,9 +736,9 @@ class EDSModel(Model):
 
         free(xray_lines=xray_lines, bound=bound)
         if kind == 'single':
-            self.fit(bounded=True, **kwargs)
+            self.fit(bounded=True, fitter='mpfit', **kwargs)
         elif kind == 'multi':
-            self.multifit(bounded=True, **kwargs)
+            self.multifit(bounded=True, fitter='mpfit', **kwargs)
         fix(xray_lines=xray_lines)
 
     def get_lines_intensity(self,

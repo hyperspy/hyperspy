@@ -29,10 +29,11 @@ class TestlineFit:
                                             m.get_lines_intensity()],
                                            [0.5, 0.2, 0.3], atol=1e-6))
 
-    def test_calibrate_energy_axis(self):
+    def test_calibrate_energy_resolution(self):
         s = self.s
         m = Model(s)
         m.fit()
+        m.fit_background()
         reso = s.metadata.Acquisition_instrument.TEM.Detector.EDS.\
             energy_resolution_MnKa,
         s.set_microscope_parameters(energy_resolution_MnKa=150)
@@ -40,6 +41,26 @@ class TestlineFit:
         nose.tools.assert_true(np.allclose(
             s.metadata.Acquisition_instrument.TEM.Detector.EDS.
             energy_resolution_MnKa, reso, atol=1))
+
+    def test_calibrate_energy_scale(self):
+        s = self.s
+        m = Model(s)
+        m.fit()
+        scale = s.axes_manager[-1].scale
+        s.axes_manager[-1].scale += 0.0004
+        m.calibrate_energy_axis('scale')
+        nose.tools.assert_true(np.allclose(s.axes_manager[-1].scale,
+                                           scale, atol=1e-3))
+
+    def test_calibrate_energy_offset(self):
+        s = self.s
+        m = Model(s)
+        m.fit()
+        offset = s.axes_manager[-1].offset
+        s.axes_manager[-1].offset += 0.04
+        m.calibrate_energy_axis('offset')
+        nose.tools.assert_true(np.allclose(s.axes_manager[-1].offset,
+                                           offset, atol=1e-1))
 
     def test_calibrate_xray_energy(self):
         s = self.s
@@ -65,3 +86,14 @@ class TestlineFit:
                                xray_lines=['Fe_Ka'], bound=100)
         nose.tools.assert_true(np.allclose(0.0347, m['Fe_Kb'].A.value,
                                atol=1e-3))
+
+    def test_calibrate_xray_width(self):
+        s = self.s
+        m = Model(s)
+        m.fit()
+        sigma = m['Fe_Ka'].sigma.value
+        m['Fe_Ka'].sigma.value = 0.065
+        m.calibrate_xray_lines(calibrate='energy', xray_lines=['Fe_Ka'],
+                               bound=10)
+        nose.tools.assert_true(np.allclose(sigma, m['Fe_Ka'].sigma.value,
+                                           atol=1e-2))
