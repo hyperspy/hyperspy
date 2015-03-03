@@ -201,8 +201,25 @@ the "maximum spectrum" for which each channel is the maximum of all pixels.
    
 Lastly, if no navigator is needed, "navigator=None" can be used.
 
-Using Mayavi to visualize 3D data
-=================================
+
+Visualize 3D data
+=================
+
+Plot orthoview
+--------------
+
+3D image can be plotted as orthogonal view with the :py:meth:`~._signal.image.Image.plot_orthoview` method.
+
+.. code-block:: python
+
+    >>> image3D.plot_orthoview()
+
+.. figure::  images/Image_plot_orthoview.png
+   :align:   center
+   :width:   650
+
+Using Mayavi
+------------
 
 Although HyperSpy does not currently support plotting when signal_dimension is
 greater than 2, `Mayavi <http://docs.enthought.com/mayavi/mayavi/>`_ can be
