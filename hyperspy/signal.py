@@ -4015,7 +4015,7 @@ class Signal(MVA,
         hist_spec.metadata.Signal.binned = True
         return hist_spec
 
-    def map(self, function,
+    def map(self, function, parallel=None,
             show_progressbar=None, **kwargs):
         """Apply a function to the signal data at all the coordinates.
 
@@ -4109,18 +4109,49 @@ class Signal(MVA,
                                     self.axes_manager.signal_axes])
             self.data = function(self.data, **kwargs)
         else:
-            # Iteration over coordinates.
-            pbar = progressbar(
-                maxval=self.axes_manager.navigation_size,
-                disabled=not show_progressbar)
-            iterators = [signal[1]._iterate_signal() for signal in ndkwargs]
-            iterators = tuple([self._iterate_signal()] + iterators)
-            for data in zip(*iterators):
-                for (key, value), datum in zip(ndkwargs, data[1:]):
-                    kwargs[key] = datum[0]
-                data[0][:] = function(data[0], **kwargs)
-                pbar.next()
-            pbar.finish()
+            if parallel is None:
+                # Iteration over coordinates.
+                pbar = progressbar(
+                    maxval=self.axes_manager.navigation_size,
+                    disabled=not show_progressbar)
+                iterators = [signal[1]._iterate_signal() for signal in
+                             ndkwargs]
+                iterators = tuple([self._iterate_signal()] + iterators)
+                for data in zip(*iterators):
+                    for (key, value), datum in zip(ndkwargs, data[1:]):
+                        kwargs[key] = datum[0]
+                    data[0][:] = function(data[0], **kwargs)
+                    pbar.next()
+                pbar.finish()
+            else:
+                import functools
+                fargs_default = inspect.getargspec(function).defaults
+                from hyperspy.misc import multiprocessing
+                pool = multiprocessing.pool(parallel)
+                ndkwargs_test = {}
+                for key, value in kwargs.iteritems():
+                    if isinstance(value, Signal):
+                        ndkwargs_test[key] = value
+                ndkwargs_mp = []
+                kwargs_mp = kwargs.copy()
+                for i, (farg, farg_default) in enumerate(zip(
+                        fargs, fargs_default)):
+                    if i == 0:
+                        ndkwargs_mp.append(self.data)
+                    elif ndkwargs_test != {}:
+                        if farg in kwargs.keys():
+                            if isinstance(kwargs[farg], Signal):
+                                ndkwargs_mp.append(kwargs[farg].data)
+                                del ndkwargs_test[farg]
+                                del kwargs_mp[farg]
+                            else:
+                                ndkwargs_mp.append([kwargs[farg]]*len(
+                                    self.data))
+                                del kwargs_mp[farg]
+                        else:
+                            ndkwargs_mp.append('')
+                self.data = np.array(pool.map_sync(functools.partial(
+                    function, **kwargs_mp), *ndkwargs_mp))
 
     def copy(self):
         try:
