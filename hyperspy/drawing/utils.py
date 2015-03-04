@@ -558,11 +558,6 @@ def plot_images(images,
         cbar_ax = f.add_axes([0.9, 0.1, 0.03, 0.8])
         f.colorbar(im, cax=cbar_ax)
 
-    try:
-        plt.tight_layout()
-    except:
-        pass
-
     # If we want to plot scalebars, loop through the list of axes and add them
     if plot_scalebar:
         for ax in axes_list:
