@@ -192,7 +192,7 @@ This fit can also be applied over the entire signal to fit a whole spectrum imag
 
 .. code-block:: python
 
-    >>> m.fit(kind='smart')
+    >>> m.multifit(kind='smart')
 
 
 Print the result of the fit 
