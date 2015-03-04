@@ -4035,6 +4035,10 @@ class Signal(MVA,
 
         function : function
             A function that can be applied to the signal.
+        parallel: int or None
+            To process in parallel, provide the number of cores (engines
+            cores in IPython.parallel) used for the processing. Parallelisation
+            is faster if the function is significantly slow.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
