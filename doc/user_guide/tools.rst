@@ -599,7 +599,27 @@ arguments as in the following example.
 
 .. figure::  images/rotate_lena_apply_ndkwargs.png
   :align:   center
-  :width:   500    
+  :width:   500 
+
+The :py:meth:`~.signal.Signal.map` method can be automatically parallelized using the `IPython parallel computing clusters  <http://ipython.org/ipython-doc/dev/parallel>`_ capability.
+
+.. code-block:: python
+
+    >>> parallel = 8
+    >>> from skimage.restoration import denoise_tv_chambolle
+    >>> self = signals.Image(np.random.random((50, 100, 100)))
+
+.. code-block:: python
+
+    >>> %%time
+    >>> self.map(denoise_tv_chambolle, eps=2e-5, n_iter_max=2000)
+    Wall time: 25.8 s
+
+.. code-block:: python
+
+    >>> %%time
+    >>> self.map(denoise_tv_chambolle, parallel=8, eps=2e-5, n_iter_max=2000)
+    Wall time: 6.61 s   
 
 Cropping
 ^^^^^^^^
