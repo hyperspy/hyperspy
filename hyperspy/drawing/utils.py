@@ -295,11 +295,16 @@ def _make_heatmap_subplot(spectra):
 
 
 def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
+    if isinstance(color, str):
+        color = [color] * len(spectra)
+    if isinstance(line_style, str):
+        line_style = [line_style] * len(spectra)
     for spectrum_index, (spectrum, color, line_style) in enumerate(
             zip(spectra, color, line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
         ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style)
-    _set_spectrum_xlabel(spectrum, ax)
+    if len(spectra) > 1:
+        _set_spectrum_xlabel(spectra[-1], ax)
     ax.set_ylabel('Intensity')
     ax.autoscale(tight=True)
 
@@ -312,13 +317,18 @@ def _make_cascade_subplot(
                            np.nanmin(spectrum.data))
         if spectrum_yrange > max_value:
             max_value = spectrum_yrange
+    if isinstance(color, str):
+        color = [color] * len(spectra)
+    if isinstance(line_style, str):
+        line_style = [line_style] * len(spectra)
     for spectrum_index, (spectrum, color, line_style) in enumerate(
             zip(spectra, color, line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
         data_to_plot = ((spectrum.data - spectrum.data.min()) /
                         float(max_value) + spectrum_index * padding)
         ax.plot(x_axis.axis, data_to_plot, color=color, ls=line_style)
-    _set_spectrum_xlabel(spectrum, ax)
+    if len(spectra) > 1:
+        _set_spectrum_xlabel(spectra[-1], ax)
     ax.set_yticks([])
     ax.autoscale(tight=True)
 
