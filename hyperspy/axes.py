@@ -373,7 +373,7 @@ class AxesManager(t.HasTraits):
 
     """Contains and manages the data axes.
 
-    It supports indexing, slicing, subscriptins and iteration. As an interator,
+    It supports indexing, slicing, subscriptins and iteration. As an iterator,
     iterate over the navigation coordinates returning the current indices.
     It can only be indexed and sliced to access the DataAxis objects that it
     contains. Standard indexing and slicing follows the "natural order" as in
