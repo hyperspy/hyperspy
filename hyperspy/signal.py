@@ -4036,9 +4036,10 @@ class Signal(MVA,
         function : function
             A function that can be applied to the signal.
         parallel: int or None
-            To process in parallel, provide the number of cores (engines
-            cores in IPython.parallel) used for the processing. Parallelisation
-            is faster if the function is significantly slow.
+            If int, process in parallel with `parallel` the number of cores
+            (number of engines in IPython.parallel). The cores must be
+            started before. It can be done in the Clusters tab of the
+            ipython dashboard.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
@@ -4050,7 +4051,8 @@ class Signal(MVA,
         This method is similar to Python's :func:`map` that can also be utilize
         with a :class:`Signal` instance for similar purposes. However, this
         method has the advantage of being faster because it iterates the numpy
-        array instead of the :class:`Signal`.
+        array instead of the :class:`Signal`. It can be parallelized, but
+        parallelisation is faster if the function is significantly slow.
 
         Examples
         --------

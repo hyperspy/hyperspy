@@ -601,7 +601,7 @@ arguments as in the following example.
   :align:   center
   :width:   500 
 
-The :py:meth:`~.signal.Signal.map` method can be automatically parallelized using the `IPython parallel computing clusters  <http://ipython.org/ipython-doc/dev/parallel>`_ capability.
+The :py:meth:`~.signal.Signal.map` method can be automatically parallelized using the `IPython parallel computing clusters  <http://ipython.org/ipython-doc/dev/parallel>`_ capability.  The cores must be started before, for instance in the Clusters tab of the ipython dashboard.
 
 .. code-block:: python
 
