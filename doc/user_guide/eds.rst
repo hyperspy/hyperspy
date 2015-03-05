@@ -282,6 +282,23 @@ An elemental database is available with the energy of the X-ray lines.
         ├── energy (keV) = 0.62799
         └── weight = 0.12525
 
+Mass absorption coefficient database
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A mass absorption coefficient database (Chantler2005 see http://physics.nist.gov/ffast) is available
+
+.. code-block:: python
+
+    >>> utils.material.mass_absorption_coefficient(
+    >>>     element='Al', energies=['C_Ka','Al_Ka'])
+    array([ 26330.38933818,    372.02616732])
+
+.. code-block:: python
+
+        >>> utils.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
+    >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
+    2587.4161643905127
+
 .. _eds_plot-label: 
 
 Plotting
