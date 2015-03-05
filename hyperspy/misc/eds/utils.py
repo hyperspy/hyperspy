@@ -179,12 +179,16 @@ def detetector_efficiency_from_layers(energies,
     thickness_detector: float
         The thickness of the detector in mm
 
+    Return
+    ------
+    list of efficiency, 1. is totaly efficient detector
+
     Notes
     -----
     Equation adapted from  Alvisi et al 2006
     """
     from hyperspy import utils
-    absorption = np.ones_like(energies)
+    efficiency = np.ones_like(energies)
 
     for element, thickness in zip(elements,
                                   thicknesses_layer):
@@ -193,13 +197,13 @@ def detetector_efficiency_from_layers(energies,
             element=element))
         density = utils.material.elements[element]\
             .Physical_properties.density_gcm3
-        absorption *= np.nan_to_num(np.exp(-(
+        efficiency *= np.nan_to_num(np.exp(-(
             macs * density * thickness * 1e-7)))
     macs = np.array(utils.material.mass_absorption_coefficient(
         energies=energies,
         element='Si'))
     density = utils.material.elements.Si\
         .Physical_properties.density_gcm3
-    absorption *= (1 - np.nan_to_num(np.exp(-(macs * density *
+    efficiency *= (1 - np.nan_to_num(np.exp(-(macs * density *
                                               thickness_detector * 1e-1))))
-    return absorption
+    return efficiency
