@@ -160,3 +160,46 @@ def take_off_angle(tilt_stage,
 
     return math.degrees(np.arcsin(-math.cos(a) * math.cos(b) * math.cos(c)
                                   + math.sin(a) * math.sin(c)))
+
+
+def detetector_efficiency_from_layers(energies,
+                                      elements,
+                                      thicknesses_layer,
+                                      thickness_detector):
+    """Compute the detector efficiency from the description of the layers
+
+    Parameters
+    ----------
+    energy: float or list of float
+        The energy of the generated X-ray in keV.
+    elements: list of str
+        The elements of the layer
+    thicknesses_layer: list of float
+        Thicknesses of layer in nm
+    thickness_detector: float
+        The thickness of the detector in mm
+
+    Notes
+    -----
+    Equation adapted from  Alvisi et al 2006
+    """
+    from hyperspy import utils
+    absorption = np.ones_like(energies)
+
+    for element, thickness in zip(elements,
+                                  thicknesses_layer):
+        macs = np.array(utils.material.mass_absorption_coefficient(
+            energies=energies,
+            element=element))
+        density = utils.material.elements[element]\
+            .Physical_properties.density_gcm3
+        absorption *= np.nan_to_num(np.exp(-(
+            macs * density * thickness * 1e-7)))
+    macs = np.array(utils.material.mass_absorption_coefficient(
+        energies=energies,
+        element='Si'))
+    density = utils.material.elements.Si\
+        .Physical_properties.density_gcm3
+    absorption *= (1 - np.nan_to_num(np.exp(-(macs * density *
+                                              thickness_detector * 1e-1))))
+    return absorption
