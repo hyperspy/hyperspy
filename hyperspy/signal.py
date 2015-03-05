@@ -4133,8 +4133,13 @@ class Signal(MVA,
                 import functools
                 fargs_default = inspect.getargspec(function).defaults
                 from hyperspy.misc import mp
-                # present method does not work with pool_type='mp'
-                pool, pool_type = mp.pool(parallel, pool_type='iypthon')
+                if isinstance(parallel, int):
+                    # present method does not work with pool_type='mp'
+                    pool, pool_type = mp.pool(parallel, pool_type='iypthon')
+                else:
+                    # For test purpose
+                    pool = parallel
+                    pool_type = 'mp'
                 ndkwargs = {}
                 for key, value in kwargs.iteritems():
                     if isinstance(value, Signal):
@@ -4162,8 +4167,9 @@ class Signal(MVA,
                         else:
                             # for default kwargs/ndkwargs
                             ndargs_mp.append('')
-                self.data = np.array(pool.map_sync(functools.partial(
-                    function, **kwargs_mp), *ndargs_mp))
+                result = pool.map_async(functools.partial(
+                    function, **kwargs_mp), *ndargs_mp)
+                self.data = np.array(result.get())
                 mp.close(pool, pool_type)
 
     def copy(self):

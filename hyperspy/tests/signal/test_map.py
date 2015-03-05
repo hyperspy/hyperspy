@@ -57,6 +57,20 @@ class TestImage:
               [9.46446609, 13., 16.53553391],
               [0., 14.76776695, 0.]]])))
 
+    def test_constant_sigma_mp(self):
+        im = self.im
+        from hyperspy.misc import mp
+        pool, pool_type = mp.pool(2, pool_type='mp')
+        im.map(gaussian_filter, parallel=pool, sigma=1)
+        nose.tools.assert_true(np.allclose(im.data, np.array(
+            [[[1.68829507, 2.2662213, 2.84414753],
+              [3.42207377, 4., 4.57792623],
+              [5.15585247, 5.7337787, 6.31170493]],
+
+             [[10.68829507, 11.2662213, 11.84414753],
+              [12.42207377, 13., 13.57792623],
+              [14.15585247, 14.7337787, 15.31170493]]])))
+
 
 class TestSpectrum:
 
