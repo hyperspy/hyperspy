@@ -617,3 +617,52 @@ class EDSSpectrum(Spectrum):
                                        elevation_angle)
 
         return TOA
+
+    def detetector_efficiency_from_layers(self,
+                                          elements=['C', 'Al', 'Si', 'O'],
+                                          thicknesses_layer=[50., 30.,
+                                                             40., 40.],
+                                          thickness_detector=0.45):
+        """Compute the detector efficiency from the description of the layers
+
+        Parameters
+        ----------
+        energy: float or list of float
+            The energy of the generated X-ray in keV.
+        elements: list of str
+            The elements of the layer
+        thicknesses_layer: list of float
+            Thicknesses of layer in nm
+        thickness_detector: float
+            The thickness of the detector in mm
+
+        Return
+        ------
+        A EDSspectrum instance, 1. is totaly efficient detector
+
+        Notes
+        -----
+        Equation adapted from  Alvisi et al 2006
+        """
+        # efficiency = self._get_signal()
+        efficiency = self.deepcopy()
+        if efficiency.metadata.Signal.signal_type == 'EDS_SEM':
+            mp = efficiency.metadata.Acquisition_instrument.SEM
+        elif self.metadata.Signal.signal_type == 'EDS_TEM':
+            mp = efficiency.metadata.Acquisition_instrument.TEM
+        efficiency.metadata.General.title = 'Detection efficiency'
+        mp.Detector.EDS.set_item('Description.elements', elements)
+        mp.Detector.EDS.set_item('Description.thicknesses_layer',
+                                 thicknesses_layer)
+        mp.Detector.EDS.set_item('Description.thickness_detector',
+                                 thickness_detector)
+        if efficiency.axes_manager.signal_axes[0].units == 'eV':
+            units_factor = 1000.
+        else:
+            units_factor = 1.
+        eng = efficiency.axes_manager.signal_axes[0].axis / units_factor
+        efficiency.data = utils_eds.detetector_efficiency_from_layers(
+            energies=eng, elements=elements,
+            thicknesses_layer=thicknesses_layer,
+            thickness_detector=thickness_detector)
+        return efficiency
