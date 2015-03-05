@@ -4036,9 +4036,9 @@ class Signal(MVA,
         function : function
             A function that can be applied to the signal.
         parallel: int or None
-            If int, process in parallel with `parallel` the number of cores
-            (number of engines in IPython.parallel). The cores must be
-            started before. It can be done in the Clusters tab of the
+            If int, the function is processed in parallel with `parallel` the
+            number of cores (number of engines in IPython.parallel). The cores
+            must be started before. It can be done in the Clusters tab of the
             ipython dashboard.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
