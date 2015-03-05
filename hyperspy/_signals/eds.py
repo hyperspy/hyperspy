@@ -638,14 +638,14 @@ class EDSSpectrum(Spectrum):
 
         Return
         ------
-        A EDSspectrum instance, 1. is totaly efficient detector
+        An EDSspectrum instance, 1. is totaly efficient detector
 
         Notes
         -----
         Equation adapted from  Alvisi et al 2006
         """
-        # efficiency = self._get_signal()
-        efficiency = self.deepcopy()
+        efficiency = self._get_signal_signal()
+        #efficiency = self.deepcopy()
         if efficiency.metadata.Signal.signal_type == 'EDS_SEM':
             mp = efficiency.metadata.Acquisition_instrument.SEM
         elif self.metadata.Signal.signal_type == 'EDS_TEM':
