@@ -4130,32 +4130,39 @@ class Signal(MVA,
             else:
                 import functools
                 fargs_default = inspect.getargspec(function).defaults
-                from hyperspy.misc import multiprocessing
-                pool = multiprocessing.pool(parallel)
-                ndkwargs_test = {}
+                from hyperspy.misc import mp
+                # present method does not work with pool_type='mp'
+                pool, pool_type = mp.pool(parallel, pool_type='iypthon')
+                ndkwargs = {}
                 for key, value in kwargs.iteritems():
                     if isinstance(value, Signal):
-                        ndkwargs_test[key] = value
-                ndkwargs_mp = []
+                        ndkwargs[key] = value
+                # Transform ndkwargs in ndargs_mp. Make sure the ndargs are in
+                # the order of fargs and there is no gap, to avoid
+                # mixing with kwargs_mp
+                ndargs_mp = []
                 kwargs_mp = kwargs.copy()
                 for i, (farg, farg_default) in enumerate(zip(
                         fargs, fargs_default)):
                     if i == 0:
-                        ndkwargs_mp.append(self.data)
-                    elif ndkwargs_test != {}:
+                        ndargs_mp.append(self.data)
+                    elif ndkwargs != {}:
                         if farg in kwargs.keys():
                             if isinstance(kwargs[farg], Signal):
-                                ndkwargs_mp.append(kwargs[farg].data)
-                                del ndkwargs_test[farg]
+                                ndargs_mp.append(kwargs[farg].data)
+                                del ndkwargs[farg]
                                 del kwargs_mp[farg]
                             else:
-                                ndkwargs_mp.append([kwargs[farg]]*len(
+                                # transform kwargs in ndargs to avoid gap
+                                ndargs_mp.append([kwargs[farg]]*len(
                                     self.data))
                                 del kwargs_mp[farg]
                         else:
-                            ndkwargs_mp.append('')
+                            # for default kwargs/ndkwargs
+                            ndargs_mp.append('')
                 self.data = np.array(pool.map_sync(functools.partial(
-                    function, **kwargs_mp), *ndkwargs_mp))
+                    function, **kwargs_mp), *ndargs_mp))
+                mp.close(pool, pool_type)
 
     def copy(self):
         try:
