@@ -344,7 +344,7 @@ def _set_spectrum_xlabel(spectrum, ax):
 
 
 def plot_images(images,
-                cmap=plt.cm.gray,
+                cmap=None,
                 no_nans=False,
                 per_row=3,
                 label='titles',
@@ -369,7 +369,7 @@ def plot_images(images,
             multi-dimensional images will have each plane plotted as a separate image
 
         cmap : matplotlib colormap
-            The colormap used for the images
+            The colormap used for the images, by default read from pyplot
 
         no_nans : bool
             If True, removes NaN's from the plots.
@@ -450,6 +450,10 @@ def plot_images(images,
     elif not isinstance(images, (list, tuple, Signal)):
         raise ValueError("images must be a list of image signals."
                          " " + repr(type(images)) + " was given.")
+
+    # Get default colormap from pyplot:
+    if cmap is None:
+        cmap = plt.get_cmap()
 
     n = 0
     for i, sig in enumerate(images):
