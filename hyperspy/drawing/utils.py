@@ -562,10 +562,13 @@ def plot_images(images,
                 im = ax.imshow(data,
                                cmap=cmap, extent=extent,
                                interpolation=interp,
-                               vmin=gl_min, vmax=gl_max, *args, **kwargs)
+                               vmin=gl_min, vmax=gl_max,
+                               aspect='auto',
+                               *args, **kwargs)
             else:
                 im = ax.imshow(data,
                                cmap=cmap, extent=extent,
+                               aspect='auto',
                                interpolation=interp,
                                *args, **kwargs)
 
