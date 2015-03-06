@@ -579,8 +579,12 @@ def plot_images(images,
                 axes[0].units = 'pixels'
             if isinstance(axes[1].units, trait_base._Undefined):
                 axes[1].units = 'pixels'
-            plt.xlabel(axes[0].units)
-            plt.ylabel(axes[1].units)
+            if isinstance(axes[0].name, trait_base._Undefined):
+                axes[0].name = 'x'
+            if isinstance(axes[1].name, trait_base._Undefined):
+                axes[1].name = 'y'
+            plt.xlabel(axes[0].name + " axis (" + axes[0].units + ")")
+            plt.ylabel(axes[1].name + " axis (" + axes[1].units + ")")
 
             if label:
                 title = label_list[i]
