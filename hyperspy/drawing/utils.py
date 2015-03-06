@@ -354,6 +354,7 @@ def plot_images(images,
                 scalebar_color='white',
                 interp='nearest',
                 axes_on=True,
+                padding=None,
                 tight_layout=True,
                 fig=None,
                 *args,
@@ -408,6 +409,12 @@ def plot_images(images,
 
         axes_on : bool
             If true, axes (labels and values) will be plotted. If not, just image is shown.
+
+        padding : None or dict
+            This parameter controls the spacing between images. If None, default options will be used
+            Otherwise, supply a dictionary with the spacing options as keywords and desired values as values
+            Possible spacings are:
+                'left', 'bottom', 'right', 'top', 'wspace' (width), and 'hspace' (height)
 
         tight_layout : bool
             If true, hyperspy will attempt to improve image placement in figure using matplotlib's tight_layout
@@ -604,6 +611,10 @@ def plot_images(images,
                 units=axes[0].units,
                 color=scalebar_color,
             )
+
+    # Adjust subplot spacing according to user's specification
+    if padding is not None:
+        plt.subplots_adjust(**padding)
 
     return f
 
