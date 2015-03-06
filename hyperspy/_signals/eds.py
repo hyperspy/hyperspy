@@ -624,25 +624,37 @@ class EDSSpectrum(Spectrum):
                                                              40., 40.],
                                           thickness_detector=0.45,
                                           cutoff_energy=0.1):
-        """Compute the detector efficiency from the description of the layers
+        """Compute the detector efficiency from the layers.
+
+        The efficiency is calculated by estimating the absorption of the
+        different the layers in front of the detector.
 
         Parameters
         ----------
         energy: float or list of float
-            The energy of the generated X-ray in keV.
+            The energy of the  X-ray reaching the detector in keV.
         elements: list of str
-            The elements of the layer
+            The composition of each layer. One element per layer.
         thicknesses_layer: list of float
-            Thicknesses of layer in nm
+            The thickness of each layer in nm
         thickness_detector: float
             The thickness of the detector in mm
         cutoff_energy: float
-            lower energy limit in keV below which the detector has no
+            The lower energy limit in keV below which the detector has no
             efficiency.
 
         Return
         ------
-        An EDSspectrum instance, 1. is totaly efficient detector
+        An EDSspectrum instance. 1. is a totaly efficient detector.
+
+        Example
+        -------
+
+        >>> s = signals.EDSTEMSpectrum(np.ones(1024))
+        >>> s.axes_manager.signal_axes[0].scale = 0.01
+        >>> s.axes_manager.signal_axes[0].units = "keV"
+        >>> s.detetector_efficiency_from_layers()
+        <EDSTEMSpectrum, title: Detection efficiency, dimensions: (|1024)>
 
         Notes
         -----

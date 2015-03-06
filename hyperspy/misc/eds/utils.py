@@ -167,24 +167,28 @@ def detetector_efficiency_from_layers(energies,
                                       thicknesses_layer,
                                       thickness_detector,
                                       cutoff_energy=0.05):
-    """Compute the detector efficiency from the description of the layers
+    """Compute the detector efficiency from the layers.
+
+    The efficiency is calculated by estimating the absorption of the
+    different the layers in front of the detector.
 
     Parameters
     ----------
     energy: float or list of float
-        The energy of the generated X-ray in keV.
+        The energy of the  X-ray reaching the detector in keV.
     elements: list of str
-        The elements of the layer
+        The composition of each layer. One element per layer.
     thicknesses_layer: list of float
-        Thicknesses of layer in nm
+        The thickness of each layer in nm
     thickness_detector: float
         The thickness of the detector in mm
     cutoff_energy: float
-        lower energy limit in keV below which the detector has no efficiency.
+        The lower energy limit in keV below which the detector has no
+        efficiency.
 
     Return
     ------
-    list of efficiency, 1. is totaly efficient detector
+    An EDSspectrum instance. 1. is a totaly efficient detector
 
     Notes
     -----
