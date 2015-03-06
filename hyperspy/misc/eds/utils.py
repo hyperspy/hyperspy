@@ -165,7 +165,8 @@ def take_off_angle(tilt_stage,
 def detetector_efficiency_from_layers(energies,
                                       elements,
                                       thicknesses_layer,
-                                      thickness_detector):
+                                      thickness_detector,
+                                      cutoff_energy=0.05):
     """Compute the detector efficiency from the description of the layers
 
     Parameters
@@ -178,6 +179,8 @@ def detetector_efficiency_from_layers(energies,
         Thicknesses of layer in nm
     thickness_detector: float
         The thickness of the detector in mm
+    cutoff_energy: float
+        lower energy limit in keV below which the detector has no efficiency.
 
     Return
     ------
@@ -206,5 +209,5 @@ def detetector_efficiency_from_layers(energies,
         .Physical_properties.density_gcm3
     efficiency *= (1 - np.nan_to_num(np.exp(-(macs * density *
                                               thickness_detector * 1e-1))))
-    efficiency[energies < 0.1] = 0.0
+    efficiency[energies < cutoff_energy] = 0.0
     return efficiency

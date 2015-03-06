@@ -622,7 +622,8 @@ class EDSSpectrum(Spectrum):
                                           elements=['C', 'Al', 'Si', 'O'],
                                           thicknesses_layer=[50., 30.,
                                                              40., 40.],
-                                          thickness_detector=0.45):
+                                          thickness_detector=0.45,
+                                          cutoff_energy=0.1):
         """Compute the detector efficiency from the description of the layers
 
         Parameters
@@ -635,6 +636,9 @@ class EDSSpectrum(Spectrum):
             Thicknesses of layer in nm
         thickness_detector: float
             The thickness of the detector in mm
+        cutoff_energy: float
+            lower energy limit in keV below which the detector has no
+            efficiency.
 
         Return
         ------
@@ -645,7 +649,6 @@ class EDSSpectrum(Spectrum):
         Equation adapted from  Alvisi et al 2006
         """
         efficiency = self._get_signal_signal()
-        #efficiency = self.deepcopy()
         if efficiency.metadata.Signal.signal_type == 'EDS_SEM':
             mp = efficiency.metadata.Acquisition_instrument.SEM
         elif self.metadata.Signal.signal_type == 'EDS_TEM':
@@ -664,5 +667,6 @@ class EDSSpectrum(Spectrum):
         efficiency.data = utils_eds.detetector_efficiency_from_layers(
             energies=eng, elements=elements,
             thicknesses_layer=thicknesses_layer,
-            thickness_detector=thickness_detector)
+            thickness_detector=thickness_detector,
+            cutoff_energy=cutoff_energy)
         return efficiency
