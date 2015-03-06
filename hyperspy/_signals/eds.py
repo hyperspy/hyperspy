@@ -659,10 +659,15 @@ class EDSSpectrum(Spectrum):
                                  thicknesses_layer)
         mp.Detector.EDS.set_item('Description.thickness_detector',
                                  thickness_detector)
-        if efficiency.axes_manager.signal_axes[0].units == 'eV':
+        units = efficiency.axes_manager.signal_axes[0].units
+        if units == 'eV':
             units_factor = 1000.
+        elif units == 'keV':
+            units_factor = 1.
         else:
             units_factor = 1.
+            warnings.warn("The energy unit %s is not supported. " % (units) +
+                          "It it supposed to be keV.")
         eng = efficiency.axes_manager.signal_axes[0].axis / units_factor
         efficiency.data = utils_eds.detetector_efficiency_from_layers(
             energies=eng, elements=elements,
